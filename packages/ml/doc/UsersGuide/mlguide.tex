@@ -14,7 +14,7 @@
 \newcommand{\Aztecoo}  {{\sc AztecOO}}
 \newcommand{\aztecoo}  {{\Aztecoo}}
 \newcommand{\epetra}  {{\sc Epetra}}
-\newcommand{\epetraext}  {{\sc Epetraext}}
+\newcommand{\epetraext}  {{\sc EpetraExt}}
 \newcommand{\ML}     {{\bf ML}}
 \newcommand{\trilinos}  {{\sc Trilinos}}
 \newcommand{\amesos}  {{\sc Amesos}}
@@ -31,6 +31,7 @@
 \newcommand{\parasails}  {{\sc ParaSails}}
 \newcommand{\teuchos}  {{\sc Teuchos}}
 \newcommand{\newpackage}  {{\sc new\_package}}
+\newcommand{\zoltan}  {{\sc Zoltan}}
 \newcommand{\nox}  {{\sc NOX}}
 \newcommand{\loca}  {{\sc Loca}}
 \newcommand{\be}  {\begin{enumerate}}
@@ -232,7 +233,7 @@ black-box preconditioner for {\sc Epetra} matrices. The definition of
 detailed. This class only requires the linear system matrix, and a list
 of options.  Available parameters for
 ML\_Epetra::MultiLevelPreconditioner are reported in Section
-\ref{sec:list}.  More advanced uses of \ML\ are presented in
+\ref{all possible parameters}.  More advanced uses of \ML\ are presented in
 Section~\ref{high level sample}. Here, we present how to define and
 fine-tune smoothers, coarse grid solver, and the multilevel hierarchy.
 Multigrid options are reported in Section~\ref{multigrid options}.
@@ -308,21 +309,26 @@ smoother (see Section \ref{multigrid options}).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 This section is intended for the impatient user.
-It's assumed that you've already have a local copy of Trilinos.
-Using the instructions here, your build of Trilinos will have the following
+It's assumed that you've already have a local copy of
+\trilinos\footnote{Please refer to the web page {\tt
+  http://software.sandia.gov/trilinos} to know how to obtain a copy of
+    \trilinos.}.
+Using the instructions here, your build of \trilinos~will have the following
 libraries: \aztecoo, \epetra, \epetraext, \ifpack, \loca, \ML, \newpackage,
-\nox, and \teuchos.
+\nox, \amesos~and \teuchos.
 \be
-\item \verb!cd! into the Trilinos directory.
+\item \verb!cd! into the \trilinos~directory.
 \item Make a build directory, e.g., \verb!mkdir sandbox!.
 \item \verb!cd sandbox!.
-\item Configure Trilinos:
+\item Configure \trilinos:
   \be
-  \item   \verb!../configure --enable-teuchos ! if you do not want to use MPI.
-  \item   \verb!../configure  --enable-teuchos --with-mpi-compilers=/usr/local/mpich/bin! (or wherever your MPI compilers are
+  \item   {\tt ../configure --enable-teuchos
+  --enable-amesos} if you do not want to use MPI.
+  \item   {\tt ../configure  --enable-teuchos \\
+  --enable-amesos --with-mpi-compilers=/usr/local/mpich/bin} (or wherever your MPI compilers are
 located) to use MPI.
   \ee
-\item Build Trilinos: \verb!make!.\footnote{If you are using GNU's make on a
+\item Build \trilinos: \verb!make!.\footnote{If you are using GNU's make on a
 machine with more than one processor, then you can speed up the
 build with {\tt make -j XX}, where {\tt XX} is the number of processors.}
 \item If your build finished without errors, you should see the directory\\
@@ -333,9 +339,10 @@ files \verb!config.log!, \verb!config.status!, \verb!Makefile!, and
 Directory \verb!src! contains object files and \verb!libml.a!.
 Directory \verb!examples! contains executables with extension \verb!.exe!,
 symbolic links to the corresponding source code, and object files.
-Directory \verb!\test! is intended primarily for developers and can be ignored.
+Directory \verb!test! is intended primarily for developers and can be ignored.
 \item Look in \verb!Trilinos/sandbox/packages/ml/examples! for examples of how
-to use \ML.
+to use \ML. File \verb!Trilinos/packages/ml/examples/README! suggests how to
+use the examples.
 \ee
 %
 %
@@ -477,7 +484,7 @@ can also find a complete list and explanations by typing {\tt
 %
 
 \ML\ can be configured with the following third party libraries (TPLs):
-\superlu, \superludist, \parasails, \metis, and \parmetis. It can take advantage of
+\superlu, \superludist, \parasails, \zoltan, \metis, and \parmetis. It can take advantage of
 the following \trilinos~packages: \ifpack, \teuchos, \triutils,
 \amesos. Through \amesos, \ML\ can interface with the direct solvers
 \klu, \umfpack, \superlu, \superludist\footnote{Currently, \ML\ can
@@ -496,6 +503,9 @@ packages also enables the interfaces to those packages within \ML.
 \choicebox{\tt --enable-epetra}
 {Enable support for the \epetra\ package.}
 %
+\choicebox{\tt --enable-epetraext}
+{Enable support for the \epetraext\ package.}
+%
 \choicebox{\tt --enable-aztecoo}
 {Enable support for the \aztecoo\ package.}
 %
@@ -503,13 +513,12 @@ packages also enables the interfaces to those packages within \ML.
 {Enables support for the \amesos~package.
   \amesos~is an interface with several direct solvers.  \ML\ supports
   \umfpack~\cite{umfpack-home-page}, \klu, \superludist~(1.0 and 2.0),
-  \mumps~\cite{MUMPS}.  This package is used only in function {\sf
-    ML\_Gen\_SmootherAmesos}.}
+  \mumps~\cite{MUMPS}. This package is necessary to use the \amesos\ 
+    interface to direct solvers.}
 %
 \choicebox{\tt --enable-teuchos}
-{Enables support for the \teuchos~package.  This package is used only
-  in the definition of class ML\_Epetra::MultiLevelPreconditioner (see
-  Section~\ref{sec:getting_started}). and by the Amesos smoother}
+{Enables support for the \teuchos~package.  This package is necessary to 
+  use the ML\_Epetra::MultiLevelPreconditioner class.}
 %
 \choicebox{\tt --enable-triutils}
 {Enables support for the \triutils~package.
@@ -518,13 +527,12 @@ packages also enables the interfaces to those packages within \ML.
 %
 \choicebox{\tt --enable-ifpack}
 {Enable support for the
-  \ifpack~package~\cite{Ifpack-Ref-Guide}. \ifpack~is used only to
-  create smoothers via {\sf ML\_Gen\_SmootherIfpack}.}
+  \ifpack~package~\cite{Ifpack-Ref-Guide}, to use \ifpack\ factorizations as
+    smoothers for \ML.}
 %
 \choicebox{\tt --enable-anasazi}
 {Enable support for the
-\anasazi\ package. \anasazi\ is a high level interface package
-for various eigenvalue computations.}
+\anasazi\ package. \anasazi\ can be used by \ML~for eigenvalue computations.}
 
 \medskip
 
@@ -566,11 +574,10 @@ TPLs. By default, all the {\tt --with-ml-}{\sl TPL} options are disabled.
 
 \medskip
 
-For \metis, {\sc ParMETIS}, and the \ML\ interface to \superlu~and
-\superludist, the user must specify the location of the header files,
-with the option
+If one of the above options is enables, then the user must specify the
+location of the header files, with the option
 \begin{verbatim}
---with-incdirs=include-locations
+--with-incdirs=<include-locations>
 \end{verbatim}
 (Header files for \trilinos~libraries are automatically located if \ML\ 
 is built through the \trilinos~{\tt configure}.)  In order to link the
@@ -581,8 +588,8 @@ packages' libraries\footnote{An example of configuration line that enables \meti
  --with-ldflags="-L\$HOME/lib/LINUX\_MPI" --with-libs="-lparmetis-3.1 -lmetis-4.0" }.}
 , with the option
 \begin{verbatim}
---with-ldflags=lib-locations
---with-libs=lib-list
+--with-ldflags=<lib-locations>
+--with-libs=<lib-list>
 \end{verbatim}
 The user might find useful the option 
 \begin{verbatim}
@@ -667,14 +674,8 @@ Class}\label{sec:getting_started}
 
 In this Section we show how to use \ML\ as a preconditioner to {\sc
   Epetra} and \aztecoo~through the MultiLevelPreconditioner
-class\footnote{The MultiLevelPreconditioner class is derived from the
-  Epetra\_RowMatrix class.} in the ML\_Epetra namespace.\footnote{\ML\ 
-  does not rely on any particular matrix format or iterative solver.
-  Examples of using of \ML\ as a preconditioner for user-defined
-  matrices (i.e., non-Epetra matrices) are reported in
-  Section~\ref{single} and~\ref{sec:multiple}.}  Although limited to
-algebraic multilevel preconditioners, this allows the use of \ML\ as a
-black-box preconditioner.
+class. This class is derived from the
+  Epetra\_RowMatrix class, and is defined in the ML\_Epetra namespace.
 
 The MultiLevelPreconditioner class automatically constructs all the
 components of the preconditioner, using the parameters specified in a
@@ -723,16 +724,14 @@ to exactly one process.} and a \teuchos~parameter list\footnote{In order to use 
   \verb!HAVE_CONFIG_H!  must be defined either in the user's code or as
   a compiler flag.
 
-\subsection{Example 1: ml\_example\_epetra\_preconditioner.cpp}
+\subsection{Example 1: ml\_preconditioner.cpp}
 \label{parameter list ex. 1}
 
 We now give a very simple fragment of code that uses the
 MultiLevelPreconditioner.
 For the complete code, see
-\verb!$ML_HOME/examples/ml_preconditioner.cpp!.
-(In order to be effectively compiled, this example
-requires \ML\ to be configured with option \verb!--enable-triutils!; see
-Section~\ref{configure}.)  The linear operator \verb!A! is derived from an
+\verb!$ML_HOME/examples/BasicExamples/ml_preconditioner.cpp!.
+The linear operator \verb!A! is derived from an
 Epetra\_RowMatrix, \verb!Solver! is an AztecOO object, and
 \verb!Problem! is an Epetra\_LinearProblem object.
 
@@ -755,7 +754,7 @@ Epetra\_RowMatrix, \verb!Solver! is an AztecOO object, and
   MLList.set("coarse: type","Amesos-KLU");
   
   // create the preconditioner
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
 
   // create an AztecOO solver
@@ -799,14 +798,14 @@ Input parameters are set via method \verb!set(Name,Value)!, where
 specified parameter value, whose type can be any C++ object or pointer. 
 A complete
 list of parameters available for class MultiLevelPreconditioner is
-reported in Section~\ref{sec:list}. 
+reported in Section~\ref{all possible parameters}.
 
 The parameter list is passed to the constructor, together with a pointer
 to the matrix, and a boolean flag.  If this flag is set to \verb!false!,
 the constructor will not create the multilevel hierarchy until when
 \verb!MLPrec->ComputePreconditioner()!  is called.  The hierarchy can be
-destroyed using \verb!MLPrec->DestroyPreconditioner()!\footnote{We suggest to create
-  the preconditioning object with {\tt new} and to free memory with {\tt
+destroyed using \verb!MLPrec->DestroyPreconditioner()!\footnote{We suggest to
+  always create the preconditioning object with {\tt new} and to delete it using {\tt
     delete}. Some MPI calls occur in {\tt DestroyPreconditioner()}, so the user should
   not call {\tt MPI\_Finalize()} or delete the communicator used by \ML\
   before the preconditioning object is destroyed.}.
@@ -814,7 +813,7 @@ For instance, the
 user may define a code like:
 \begin{verbatim}
   // A is still not filled with numerical values
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(A, MLList, false);
   
   // compute the elements of A
@@ -828,7 +827,7 @@ user may define a code like:
   MLPrec->DestroyPreconditioner();
 
   // re-compute the elements of A
-  // now re-compute (if required) the preconditioner
+  // now re-compute the preconditioner
   MLPrec->ComputePreconditioner();
 
   // re-solve the linear system
@@ -842,7 +841,7 @@ the preconditioner is created only with the call \verb!ComputePreconditioner()!.
 be useful, for example, when \ML\ is used in conjunction with
 nonlinear solvers (like {\sc Nox}~\cite{NOX-home-page}).
 
-\subsection{Example 2: ml\_example\_epetra\_preconditioner\_2level.cpp}
+\subsection{Example 2: ml\_2level\_DD.cpp}
 \label{parameter list ex. 2}
 
 As a second example, here we explain with some details the construction
@@ -850,7 +849,7 @@ of a 2-level domain decomposition preconditioner, with a coarse space
 defined using aggregation. 
 
 File {\tt
-  \$ML\_HOME/examples/ml\_example\_epetra\_preconditioner\_2level.cpp}
+  \$ML\_HOME/examples/TwoLevelDD/ml\_2level\_DD.cpp}
 reports the entire code.  In the example, the linear system matrix
 \verb!A!,  coded as an Epetra\_CrsMatrix, corresponds to the
 discretization of a 2D Laplacian on a Cartesian grid. \verb!x! and
@@ -898,7 +897,7 @@ in the parameter list\footnote{Only the {\sl pointer} is copied in the
 
 The \ML\ preconditioner is created as in the previous example,
 \begin{verbatim}
-  ML_Epetra::MultiLevelPreconditioner * MLPrec =
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
 \end{verbatim}
 and we can check that no options have been mispelled, using
@@ -908,11 +907,8 @@ and we can check that no options have been mispelled, using
 The AztecOO solver is called using, for instance,
 \begin{verbatim}
   solver.SetPrecOperator(MLPrec);
-
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-
   solver.SetAztecOption(AZ_kspace, 160);
-
   solver.Iterate(1550, 1e-12);
 \end{verbatim}
 Finally, some (limited) information about the preconditioning phase are
@@ -928,210 +924,13 @@ the preconditioner. Should the user need to modify parameters in the
 reference to the internally stored list:
 %
 \begin{verbatim}
-  ParameterList & List = MLPrec->GetList();
+  ParameterList& List = MLPrec->GetList();
 \end{verbatim}
 %
 and then directly modify \verb!List!. Method \verb!GetList()! should be used
 carefully, as a change to \verb!List! may modify the behavior of
 \verb!MLPrec!.
 
-%%%
-%%%
-%%%
-
-\section{Parameters for the ML\_Epetra::MultiLevelPreconditioner Class}
-\label{sec:list}
-
-In this section we give general guidelines for using the
-MultiLevelPreconditioner class effectively.
-The complete list of input parameters is also reported.
-%
-\subsection{Setting Options on a Specific Level}
-%
-Some of the parameters that affect MultiLevelPreconditioner can in
-principle be different from level to level.  By default, the set method
-for the MultiLevelPreconditioner class affects all levels in the
-multigrid hierarchy.  In order to change a setting on a particular level
-(say, \verb!d!), the string ``\verb!(level d)!" is appended to the
-option string (note that a space must separate the option and the level
-specification).  For instance, assuming decreasing levels starting from
-4, one could set the aggregation schemes as follows:
-\begin{verbatim}
-  MLList.set("aggregation: type","Uncoupled");
-  MLList.set("aggregation: type (level 1)","METIS");
-  MLList.set("aggregation: type (level 3)","MIS");
-\end{verbatim}
-
-\noindent
-If the finest level is 0, and one has 5 levels, the code will use {\tt
-  Uncoupled} for level 0, {\tt METIS} for levels 1 and 2, then {\tt MIS}
-for levels 3 and 4.
-
-In section~\ref{all possible parameters},
-parameters that can be set differently on individual levels are denoted
-with the symbol $\star$ (that is not part of the parameter name).
-Note that some parameters (e.g., {\tt Uncoupled-MIS} aggregation) correspond to quantities
-that must be the same at all levels.
-
-%
-\subsection{General Usage of the Parameter List}
-\label{parameter list usage}
-%
-\noindent
-All \ML\ options can have a common prefix, specified by the user in the
-construction phase. For example, suppose that we require \verb!ML: ! (in
-this case with a trailing space) to be the prefix. The constructor will
-be
-\begin{verbatim}
-  char Prefix[] = "ML: ";
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
-    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true, Prefix);
-\end{verbatim}
-A generic parameter, say \verb!aggregation: type!, will now be defined as
-\begin{verbatim}
-  MLList.set("ML: aggregation: type", "METIS");
-\end{verbatim}\\
-
-\noindent
-It is important to point out that some options can be effectively used
-only if \ML\ has been properly configured. In particular:
-\begin{itemize}
-\item \metis\ aggregation scheme requires \verb!--with-ml_metis!, or
-  otherwise the code will include all nodes in the calling processor in
-  a unique aggregate;
-\item \parmetis~aggregation scheme required {\tt --with-ml\_metis
-  --enable-epetra} and \newline {\tt --with-ml\_parmetis2x} or
-  {\tt --with-ml\_parmetis3x}. 
-\item \amesos~coarse solvers require \verb!--enable-amesos --enable-epetra --enable-teuchos!. Moreover,
-  \amesos~must have been configure to support the requested coarse
-  solver. Please refer to the \amesos~documentation for more details;
-\item \ifpack~smoother requires \verb!--enable-ifpack --enable-epetra!.
-\item \parasails~smoother requires \verb!--with-ml_parasails!.
-\end{itemize}
-%
-\subsection{Default Parameter Settings for Common Problem Types}
-%
-The MultiLevelPreconditioner class provides default values for four different
-preconditioner types:
-%
-\begin{enumerate}
-  \item Linear elasticity
-  \item Classical 2-level domain decomposition for the advection diffusion operator
-  \item 3-level algebraic domain decomposition for the advection diffusion operator
-  \item Eddy current formulation of Maxwell's equations
-\end{enumerate}
-%
-Default values are listed in Table~\ref{tab:default}.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%% table for SA, DD, DD-ML, and Maxwell problem type defaults %%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{sidewaystable}[tbhp]
-  \begin{tabular}{| p{7cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} |
-    p{2.5cm} | }
-    \hline
-    Option Name & Type & {\tt SA} & {\tt DD} & {\tt DD-ML} & \tt maxwell
-    \\
-    \hline
-    \hline
-{\tt max levels} & \tt int & 16 & 2 & 3 & 5 \\
-\tt output & \tt int & 8 &  8 & 8 & 10 \\
-\tt increasing or decreasing & \tt string & \tt increasing & \tt
-increasing & \tt increasing & \tt decreasing \\
-\tt PDE equations & \tt int & 1 & 1 & 1 & -- \\
-\tt null space dimension & \tt int & 1 & 1 & 1 & -- \\
-\tt null space vectors & \tt double * & \tt NULL & \tt NULL & \tt NULL &
-\tt NULL\\
-\hline
-\hline
-\tt aggregation: type & \tt string & \tt Uncoupled & \tt METIS & \tt METIS &
-\tt Uncoupled-MIS \\
-\tt aggregation: type (level 1) & \tt string & -- & -- & \tt ParMETIS &
--- \\
-\tt aggregation: type (level 8) & \tt string & \tt MIS & -- & -- & -- \\
-\tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
-\tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
-\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 0.0\\
-\tt eigen-analysis: type & \tt string & \tt Anorm & \tt Anorm & \tt Anorm & \tt
-Anorm \\
-\tt coarse: max size & \tt int & 128 & 128 & 128 & 128 \\
-\tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
-\tt aggregation: next-level aggregates per process & \tt int & -- & --
-&128 & --\\
-\hline
-\hline
-\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 2 \\
-\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 0.67 \\
-\tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
-& \tt both \\
-\tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
-Aztec & -- \\
-\tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
-false & -- \\
-\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
-\tt smoother: MLS alpha & \tt double & -- & -- & -- & 30.0 \\
-\hline
-\hline
-\tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
-Amesos\_KLU & \tt SuperLU \\
-\tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
-\tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
-\tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\
-\tt print unused & \tt int & 0 & 0 & 0 & 0 \\
-\hline
-  \end{tabular}
-  \caption{Default values for ML\_Epetra::MultiLevelPreconditioner for
-    the 4 currently supported problem types {\tt SA, DD, DD-ML,
-    Maxwell}. ``--'' means not set.}
-  \label{tab:default}
-\end{sidewaystable}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end of table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-In the table, {\tt SA} refers to ``classical'' smoothed aggregation (with
-small aggregates and relative large number of levels), {\tt DD} and {\tt
-  DD-ML} to domain decomposition methods (whose coarse matrix is defined
-using aggressive coarsening and limited number of levels).  {\tt
-  Maxwell} refers to the solution of Maxwell's equations. 
-
-Default values for the parameter list can be set by {\tt
-  ML\_Epetra::SetDefaults()}.  The user can easily put the desired
-default values in a given parameter list as follows:
-\begin{verbatim}
-  Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaults(ProblemType, MLList);
-\end{verbatim}
-or as
-\begin{verbatim}
-  Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaults(ProblemType, MLList, Prefix);
-\end{verbatim}
-
-\verb!Prefix! (defaulted to an empty string) is the prefix to assign to
-each entry in the parameter list.
-
-For {\tt DD} and {\tt DD-ML}, the default smoother is {\tt Aztec},
-with an incomplete factorization ILUT, and minimal overlap. 
-Memory for the two {\sc Aztec} vectors is allocated using {\tt new}, and the
-user is responsible to free this memory, for instance as follows:
-\begin{verbatim}
-int * options;
-options = MLList.get("smoother: Aztec options", options);
-double * params;
-params = MLList.get("smoother: Aztec params", params);
-.
-.
-.
-// Make sure solve is completed before deleting options & params!!
-delete [] options;
-delete [] params;
-\end{verbatim}
-The rational behind this is that the parameter list stores a {\sl pointer} to those
-vectors, not the content itself. (As a general rule, the vectors stored in the
-parameter list should not
-be prematurely destroyed or permitted to go out of scope.)
-%
-\subsection{Commonly Used Parameters}
-%
-Table \ref{tab:ml:aggr} lists parameter for changing aggregation schemes.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of aggregation options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1168,8 +967,6 @@ specified with the option {\tt aggregation: global number}. \\
 \end{center}
 \end{table}
 %
-Table \ref{tab:ml:smoother} lists common choices for smoothing options.
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of smoothing options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1198,18 +995,6 @@ The \aztecoo~vectors \verb!options! and {\tt params} can be set using
 \label{tab:ml:smoother}
 \end{center}
 \end{table}
-%
-Table \ref{tab:ml:coarse} lists common choices affecting the coarse grid
-solve.
-%
-
-\noindent
-{\bf Note that, in the parameters name, spaces are important: Do not
-  include non-required leading or trailing spaces, and separate words by
-  just one space! Mispelled parameters will not be detected.} One may
-find useful to print unused parameters by calling \verb!PrintUnused()!
-{\sl after} the construction
-of the multilevel hierarchy.\\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of coarse solver options
@@ -1222,11 +1007,11 @@ of the multilevel hierarchy.\\
 parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel(with damping
 parameter {\tt coarse: damping parameter}) as a solver. \\ 
-\verb!Amesos-KLU! & Use \klu through \amesos. Coarse grid problem is shipped to
+\verb!Amesos-KLU! & Use \klu\ through \amesos. Coarse grid problem is shipped to
  proc 0, solved, and solution is broadcast \\
-\verb!Amesos-UMFPACK! & Use \umfpack through \amesos. Coarse grid problem is shipped to
+\verb!Amesos-UMFPACK! & Use \umfpack\ through \amesos. Coarse grid problem is shipped to
  proc 0, solved, and solution is broadcasted. \\
-\verb!Amesos-Superludist! & Use \superludist through \amesos. \\
+\verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
 \verb!SuperLU! & Use \ML\ interface to \superlu. \\
@@ -1240,59 +1025,107 @@ matrix solvers. Note: Amesos solvers requires
 \end{center}
 \end{table}
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%--------------------------------------------------------------------%
 \subsection{List of All Parameters for MultiLevelPreconditioner Class}
 \label{all possible parameters}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%--------------------------------------------------------------------%
 %
+In this section we give general guidelines for using the
+MultiLevelPreconditioner class effectively.
+The complete list of input parameters is also reported.
+%
+It is important to point out that some options can be effectively used
+only if \ML\ has been properly configured. In particular:
+\begin{itemize}
+\item \metis\ aggregation scheme requires \verb!--with-ml_metis!, or
+  otherwise the code will include all nodes in the calling processor in
+  a unique aggregate;
+\item \parmetis~aggregation scheme requires {\tt --with-ml\_metis
+  --enable-epetra} and \newline {\tt --with-ml\_parmetis2x} or
+  {\tt --with-ml\_parmetis3x}. 
+\item \amesos~coarse solvers require \verb!--enable-amesos --enable-epetra --enable-teuchos!. Moreover,
+  \amesos~must have been configure to support the requested coarse
+  solver. Please refer to the \amesos~documentation for more details;
+\item \ifpack~smoothers require {\tt --enable-ifpack --enable-epetra
+  --enable-teuchos}.
+\item \parasails~smoother requires \verb!--with-ml_parasails!.
+\end{itemize}
+
+\medskip
+
+\noindent
+{\bf Note that, in the parameters name, spaces are important: Do not
+  include non-required leading or trailing spaces, and do separate words by
+  just one space! Mispelled parameters will not be detected.} One may
+find useful to print unused parameters by calling \verb!PrintUnused()!
+{\sl after} the construction
+of the multilevel hierarchy.\\
+
+\medskip
+
+Some of the parameters that affect the MultiLevelPreconditioner class can in
+principle be different from level to level.  By default, the set method
+for the MultiLevelPreconditioner class affects all levels in the
+multigrid hierarchy.  In order to change a setting on a particular level
+(say, \verb!d!), the string ``\verb!(level d)!" is appended to the
+option string (note that a space must separate the option and the level
+specification).  For instance, assuming decreasing levels starting from
+4, one could set the aggregation schemes as follows:
+\begin{verbatim}
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: type (level 1)","METIS");
+  MLList.set("aggregation: type (level 3)","MIS");
+\end{verbatim}
+
+\noindent
+If the finest level is 0, and one has 5 levels, the code will use {\tt
+  Uncoupled} for level 0, {\tt METIS} for levels 1 and 2, then {\tt MIS}
+for levels 3 and 4.
 Parameters that can be set differently on individual levels are denoted
 with the symbol $\star$ (this symbol is not part of the parameter name).
-Note that some parameters (e.g., {\tt Uncoupled-MIS} aggregation) correspond to
-quantities that must be the same at all levels.
-Descriptions follow the general format:\\\\
-\choicebox{\tt parameter}{[{\tt Type}] Description. \{[Value1], Value2, \dots\}}
-where $[\cdot]$ denotes the default value.
+
+%-----------------------------%
 \subsubsection{General Options}
+%-----------------------------%
 
-\choicebox{\tt output}{Output level, from 0 to 10 (10 being verbose).}
+\choicebox{\tt output}{[{\tt int}] Output level, from 0 to 10 (10 being verbose). 
+  Default: 10.}
 
-\choicebox{\tt print unused}{If non-negative, will print all the
-  unused parameter on the specified processor.}
+\choicebox{\tt print unused}{[{\tt int}] If non-negative, will print all the
+  unused parameter on the specified processor. If -1, the unused parameters
+    will be printed on all processes. If -2, nothing will be printed. 
+    Default: -2.}
 
-\choicebox{\tt max levels}{Maximum number of levels.}
+\choicebox{\tt max levels}{[{\tt int}] Maximum number of levels. Default: 10.}
 
 \smallskip
 
-\choicebox{\tt increasing or decreasing}{If set to {\tt
+\choicebox{\tt increasing or decreasing}{[{\tt string}] If set to {\tt
     increasing}, level 0 will correspond to the finest level. If set to
   {\tt decreasing}, {\tt max levels} - 1 will correspond to the finest
-  level.}
+  level. Default: {\tt increasing}.}
 
-\choicebox{\tt PDE equations}{Number of PDE equations for each grid node. This
+\choicebox{\tt PDE equations}{[{\tt int}] Number of PDE equations for each grid node. This
 value is not considered for {\tt Epetra\_VbrMatrix} objects, as in this
 case is obtained from the block map used to construct the object. Note
 that only block maps with constant element size can be
-considered.}
+considered. Default: 1.}
 
-\choicebox{\tt null space dimension}{Dimension of the null space. }
-
-\choicebox{\tt null space vectors}{Pointer to the null space
-vectors. If {\tt NULL}, \ML\ will use the default null space.}
-
+%------------------------------------%
 \subsubsection{Aggregation Parameters}
+%------------------------------------%
 
-\choicebox{\tt aggregation: type $\star$}{Define the
-  aggregation scheme. Can be: {\tt Uncoupled, Coupled, MIS, METIS,
-    ParMETIS}. See Table~\ref{tab:ml:aggr}. }
+\choicebox{\tt aggregation: type $\star$}{[{\tt string}] Define the
+  aggregation scheme. See Table~\ref{tab:ml:aggr}. Default: {\tt Uncoupled}.}
 
-\choicebox{\tt aggregation: global aggregates $\star$}{Defines the global number of
+\choicebox{\tt aggregation: global aggregates $\star$}{[{\tt int}] Defines the global number of
 aggregates (only for {\tt METIS} and {\tt ParMETIS} aggregation schemes). }
 
-\choicebox{\tt aggregation: local aggregates $\star$}{Defines the number of aggregates
+\choicebox{\tt aggregation: local aggregates $\star$}{[{\tt int}] Defines the number of aggregates
 of the calling processor (only for {\tt METIS} and {\tt ParMETIS} aggregation
 schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
 
-\choicebox{\tt aggregation: nodes per aggregate $\star$}{Defines
+\choicebox{\tt aggregation: nodes per aggregate $\star$}{[{\tt int}] Defines
   the number of nodes to be assigned to each aggregate (only for {\tt
     METIS} and {\tt ParMETIS} aggregation schemes). Note: this value
   overwrites {\tt aggregation: local aggregates}.  If none among {\tt
@@ -1300,142 +1133,143 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
   and {\tt aggregation: nodes per aggregate} is specified, the default
   value is 1 aggregate per process.}
 
-\choicebox{\tt aggregation: damping factor}{Damping factor for smoothed
-aggregation. }
+\choicebox{\tt aggregation: damping factor}{[{\tt double}] Damping factor for smoothed
+aggregation. Default: 0.0.}
 
-
-\choicebox{\tt eigen-analysis: type}{Defines the numerical scheme to
+\choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme to
 be used to compute an estimation of the maximum eigenvalue of $D^{-1}A$,
 where $D = diag(A)$ (for smoothed
-aggregation only). It can be: {\tt cg} (use 10 steps of conjugate gradient
-method), {\tt Anorm} (use A-norm of matrix), {\tt Anasazi} (use the {\sc
-Anasazi} package; the problem is supposed to be non-symmetric), or {\tt power-method}.}
+aggregation only). Choices are: {\tt cg} (10 steps of conjugate gradient
+method), {\tt Anomr} (the A-norm of the matrix), {\tt Anasazi} 
+(use the Arnoldi method), {\tt power-method}. Default: {\tt Anorm}.}
 
-\choicebox{\tt aggregation: threshold}{Threshold in aggregation.}
+\choicebox{\tt aggregation: threshold}{[{\tt double}] Threshold in aggregation.
+  Default: 0.0.}
 
 \choicebox{\tt aggregation: next-level aggregates per process
-  $\star$}{Defines the maximum number of next-level matrix rows
+  $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
   per process (only for {\tt ParMETIS} aggregation
-scheme). }
+scheme). Default: 128.}
 
+%----------------------------------%
 \subsubsection{Smoothing Parameters}
+%----------------------------------%
 
-\choicebox{\tt smoother: sweeps $\star$}{Number of sweeps of smoother.}
+\choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of sweeps of smoother. 
+Default: 1.}
 
-\choicebox{\tt smoother: damping factor $\star$}{Smoother damping factor.}
+\choicebox{\tt smoother: damping factor $\star$}{[{\tt double}] Smoother damping factor. 
+  Default: 0.67.}
 
-\choicebox{\tt smoother: pre or post $\star$}{If set to {\tt pre}, only pre-smoothing
-will be used. If set to {\tt post}, only post-smoothing will be used. If
-set to {\tt both}, pre- and post-smoothing will be used.}
+\choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
+  on the following values: {\tt pre, post, both}. Default: {\tt both}.}
 
-\choicebox{\tt smoother: type $\star$}{Type of the smoother. It can be:
-{\tt Jacobi, Gauss-Seidel, sym Gauss-Seidel,
-Aztec, IFPACK}. See Table~\ref{tab:ml:smoother}.}
+\choicebox{\tt smoother: type $\star$}{[{\tt string}] Type of the smoother. 
+  See Table~\ref{tab:ml:smoother}. Default: {\tt symmetric Gauss-Seidel}.}
 
-\choicebox{\tt smoother: Aztec options $\star$}{Pointer to {\sc Aztec}'s
-options vector (only for {\tt aztec}
+\choicebox{\tt smoother: Aztec options $\star$}{[{\tt int*}] Pointer to {\sc Aztec}'s
+options vector (only for {\tt Aztec}
   smoother) .}
 
-\choicebox{\tt smoother: Aztec params $\star$}{Pointer to {\sc Aztec}'s
-params vector (only for {\tt aztec}
+\choicebox{\tt smoother: Aztec params $\star$}{[{\tt double*}] Pointer to {\sc Aztec}'s
+params vector (only for {\tt Aztec}
   smoother) .}
 
-\choicebox{\tt smoother: Aztec as solver $\star$}{If {\tt true}, {\tt smoother: sweeps} iterations of {\sc Aztec}
+\choicebox{\tt smoother: Aztec as solver $\star$}{[{\tt bool}] If {\tt true}, {\tt smoother: sweeps} iterations of {\sc Aztec}
   solvers will be used as smoothers. If false, only the {\sc Aztec}'s
-  preconditioner function will be used as smoother (only for {\tt aztec}
-  smoother) .}
+  preconditioner function will be used as smoother (only for {\tt Aztec}
+  smoother). Default: {\tt false}.}
 
-\choicebox{\tt smoother: MLS polynomial order $\star$}{Polynomial order for {\tt
+\choicebox{\tt smoother: MLS polynomial order $\star$}{[{\tt int}] Polynomial order for {\tt
 MLS}
-smoothers. }
+smoothers. Default: 3.}
 
-\choicebox{\tt smoother: MLS alpha $\star$}{Alpha value for {\tt MLS} 
-smoothers. }
+\choicebox{\tt smoother: MLS alpha $\star$}{[{\tt double}] Alpha value for {\tt MLS} 
+smoothers. Default: 30.0.}
 
 \choicebox{\tt smoother: Hiptmair sweeps $\star$}{[{\tt int}] Number of Hiptmair iterations
-to perform.  [1].}
+to perform. Default: 1.}
 
 \choicebox{\tt smoother: Hiptmair efficient symmetric }{[{\tt bool}] Reduce the
 preconditioner computational work while maintaining symmetry by doing edge-node
 relaxation on the first leg of the V-cycle, and node-edge relaxation on the
-second leg. \{[true],false\}.}
+second leg. Default: {\tt true}.}
 
 \choicebox{\tt smoother: Hiptmair subsmoother type $\star$}{[{\tt string}] Smoother to be used
-as a subsmoother at each step of Hiptmair smoothing.  \{[{\tt MLS}],
-{\tt symmetric Gauss-Seidel}\}.}
+as a subsmoother at each step of Hiptmair smoothing.  It can assume on the
+  following values: {\tt MLS}, {\tt symmetric Gauss-Seidel}. Default: {\tt
+    MLS}.}
 
 \choicebox{\tt smoother: Hiptmair MLS polynomial order $\star$}{[{\tt int}] Polynomial
-order for {\tt MLS} sub-smoother.  [3].}
+order for {\tt MLS} sub-smoother.  Default: 3.}
 
 \choicebox{\tt smoother: Hiptmair SGS damping factor $\star$}{[{\tt double}]
 Damping factor for {\tt symmetric Gauss-Seidel}. Automatically calculated in
 the range $(0,2)$.}
 
 \choicebox{\tt smoother: Hiptmair SGS edge sweeps $\star$}{[{\tt int}] Number of iterations
- of SGS sub-smoothing to perform on edge problem. [1].}
+ of SGS sub-smoothing to perform on edge problem. Default: 1.}
 
 \choicebox{\tt smoother: Hiptmair SGS node sweeps $\star$}{[{\tt int}] Number of iterations
  of SGS sub-smoothing to perform on nodal projection problem.
-[1].}
+Default: 1.}
 
-
-%%%
-%%%
-%%%
-
+%--------------------------------------%
 \subsubsection{Coarsest Grid Parameters}
+%--------------------------------------%
 
-\choicebox{\tt coarse: max size}{Maximum dimension of the coarse grid. \ML\ will
-not coarsen further is the size of the current level  is less than this
-value.}
+\choicebox{\tt coarse: max size}{[{\tt int}] Maximum dimension of the coarse grid. \ML\ will
+not coarsen further if current level\'s size  is less than this
+value. Default: 128.}
 
-\choicebox{\tt coarse: type}{Coarse solver. It can be: {\tt Jacobi,
-Gauss-Seidel, Amesos\_KLU,
-Amesos\_UMFPACK, Amesos\_Superludist,
-Amesos\_MUMPS}. See Table~\ref{tab:ml:coarse}. }
+\choicebox{\tt coarse: type}{[{\tt string}] Coarse solver. 
+See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\_KLU}.}
 
-\choicebox{\tt coarse: sweeps}{(only for {\tt Jacobi} and {\tt Gauss-Seidel}) Number of
-sweeps in the coarse solver.}
+\choicebox{\tt coarse: sweeps}{[{\tt int}] (Only for {\tt Jacobi} and {\tt
+                                            Gauss-Seidel}.) Number of
+sweeps in the coarse solver. Default: 1.}
 
-\choicebox{\tt coarse: damping factor}{(only for {\tt Jacobi} and {\tt Gauss-Seidel})
-Damping factor in the coarse solver.}
+\choicebox{\tt coarse: damping factor}{[{\tt double}] (Only for {\tt Jacobi}
+                                                       and {\tt Gauss-Seidel}.)
+Damping factor in the coarse solver. Default: 0.67.}
 
-\choicebox{\tt coarse: max processes}{ Maximum number of processes to be used in the
+\choicebox{\tt coarse: max processes}{[{\tt int}] Maximum number of processes to be used in the
   coarse grid solution (only for {\tt
-    Amesos-Superludist, Amesos-MUMPS}).}
+    Amesos-Superludist, Amesos-MUMPS}). If -1, \amesos\ will decide the
+    optimal number of processors to be used. Default: -1.}
 
-%%%
-%%%
-%%%
-
+%------------------------------------%
 \subsubsection{Load-balancing Options}
+%------------------------------------%
 
 \choicebox{\tt repartition: enable}{[{\tt bool}] Enable/disable repartitioning.
-\{true, false\}.}
+Default: {\tt true}.}
 
 \choicebox{\tt repartition: partitioner}{[{\tt string}] Partitioning package
-to use. {Zoltan, ParMETIS}.}
+to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
+Zoltan}.}
 
 \choicebox{\tt repartition: node min max ratio}{[{\tt double}] Specifies ratio
 of maximum
 nodes on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
-$[1.1]$.}
+Default: 1.1.}
 
 \choicebox{\tt repartition: node min per proc}{[{\tt int}] Specifies the desired minimum
 number of nodes that should be on a processor once repartitioning is done.
-[20].}
+Default: 20.}
 
 \choicebox{\tt repartition: edge min max ratio}{[{\tt double}] Maxwell-specific option.  Specifies ratio of maximum
 edges on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
-$[1.1]$.}
+Default: 1.1.}
 
 \choicebox{\tt repartition: edge min per proc}{(Maxwell-specific option.)
 Specifies the desired minimum number of
-edges that should be on a processor once repartitioning is done.  [20].}
+edges that should be on a processor once repartitioning is done. Default: 20.}
 
-\choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the problem.  $\{2,3\}$.}
+\choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the
+  problem. Can assume the following values: $\{2,3\}$.}
 
 \choicebox{\tt repartition: Zoltan node coordinates}{[{\tt double*}] Pointer to array of
 double node coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
@@ -1450,7 +1284,7 @@ $z$- coordinates, in that order.}
 %%% Detection of null space %%%
 %%% ======================= %%%
 
-\subsection{Null Space Detection}
+\subsubsection{Null Space Detection}
 
 If used in conjunction with \anasazi, \ML~can compute an approximate null space
 of the linear operator to precondition. This can be done using the following
@@ -1462,7 +1296,8 @@ options:
   default null space are used (no computation required). If {\tt
     pre-computed}, a pointer to the already-computed null is obtained from
     option {\tt null space: vector}. If {\tt enriched}, \ML~will compute,
-  using \anasazi, an approximation of the null space of the operator.}
+  using \anasazi, an approximation of the null space of the operator.
+  Default: {\tt default vectors}.}
 
 \choicebox{\tt null space: vectors to compute}{[{\tt int}]. If {\tt null
   space: type} is set to {\tt enriched}, this option indicates the number of
@@ -1473,33 +1308,36 @@ options:
     to the computed null space. Default: {\tt true}.}
 
 \choicebox{\tt eigen-analysis: tolerance}{[{\tt double}] Tolerance for
-  \anasazi. Default: {\tt 0.1}.}
+  \anasazi. Default: 0.1.}
 
 \choicebox{\tt eigen-analysis: restart}{[{\tt int}] Number of restarts for
-  \anasazi. Default: {\tt 2}.}
+  \anasazi. Default: 2.}
 
 %%% ====================== %%%
 %%% auxiliary matrix stuff %%%
 %%% ====================== %%%
 
-\subsection{Aggregation Strategies}
+\subsubsection{Aggregation Strategies}
 \label{sec:MLP:auxiliary}
 
 In some case, it is preferable to generate the aggregates using a
 matrix defined as follows:
 \begin{equation}
-L_{i,j} = (\mathbf{x}_i - \mathbf{x}_j)^{-2},
+L_{i,j} = (\mathbf{x}_i - \mathbf{x}_j)^{-2}, \quad i \neq j, \quad \quad
+L_{i,i} = - \sum_{i \neq j} L_{i,j},
 \label{eq:discrete_laplacian}
 \end{equation}
-where $\mathbf{x}_i$ represents the coordinates of node $i$.
-This may happen, for instance, when working with strecthed elements. 
+(where $\mathbf{x}_i$ represents the coordinates of node $i$)
+in conjunction with a given nonzero dropping threshold.
+This may happen, for instance, when working with bilinear finite elements on 
+strecthed grids. 
 \ML~can be instructed to generate the aggregates using
 matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner using the
 actual linear system matrix, as done in the following code fragment:
 \begin{verbatim}
 double* x_coord;
-double* y_coord;
-double* z_coord;
+double* y_coord; // set to to 0 for 1D problems
+double* z_coord; // set to to 0 for 2D problems
 // here we define the nodal coordinates...
 
 MLList.set("aggregation: x-coordinates", x_coord );
@@ -1520,17 +1358,132 @@ The following options can be used:
 
 \choicebox{\tt aggregation: use auxiliary matrix}{[{\tt bool}]. Enable/disable
 the use of 
-matrix~(\ref{eq:discrete_laplacian}. Default: {\tt false}.}
+matrix~(\ref{eq:discrete_laplacian}). Ignored if the input matrix is an
+        Epetra\_VbrMatrix. Default: {\tt false}.}
 
 \choicebox{\tt aggregation: use symmetric pattern}{[{\tt bool}]. If
 {\tt true}, matrix~(\ref{eq:discrete_laplacian}) will have a symmetric
-pattern. Default: {\tt false}.}
+pattern. Ignored if the input matrix is an Epetra\_VbrMatrix. Default: {\tt
+false}.}
 
 \choicebox{\tt aggregation: theta}{[{\tt double}]. If $\theta$ is 
 different from zero, the
-code create the aggregates using matrix $\theta A + (1 - \theta)L$. Default:
+code create the aggregates using matrix $\theta A + (1 - \theta)L$. Ignored if the input matrix is an Epetra\_VbrMatrix. Default:
 {\tt 0.0}.}
 
+%--------------------------------------------------------------%
+\subsection{Default Parameter Settings for Common Problem Types}
+%--------------------------------------------------------------%
+%
+The MultiLevelPreconditioner class provides default values for four different
+preconditioner types:
+%
+\begin{enumerate}
+  \item Linear elasticity
+  \item Classical 2-level domain decomposition for the advection diffusion operator
+  \item 3-level algebraic domain decomposition for the advection diffusion operator
+  \item Eddy current formulation of Maxwell's equations
+\end{enumerate}
+%
+Default values are listed in Table~\ref{tab:default}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% table for SA, DD, DD-ML, and Maxwell problem type defaults %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{sidewaystable}[tbhp]
+  \begin{tabular}{| p{7cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} |
+    p{2.5cm} | }
+    \hline
+    Option Name & Type & {\tt SA} & {\tt DD} & {\tt DD-ML} & \tt maxwell
+    \\
+    \hline
+    \hline
+{\tt max levels} & \tt int & 16 & 2 & 3 & 5 \\
+\tt output & \tt int & 8 &  8 & 8 & 10 \\
+\tt increasing or decreasing & \tt string & \tt increasing & \tt
+increasing & \tt increasing & \tt decreasing \\
+\tt PDE equations & \tt int & 1 & 1 & 1 & -- \\
+\tt print unused & \tt int & 0 & 0 & 0 & 0 \\
+\hline
+\hline
+\tt aggregation: type & \tt string & \tt Uncoupled-MIS & \tt METIS & \tt METIS &
+\tt Uncoupled-MIS \\
+\tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
+\tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
+\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 0.0\\
+\tt eigen-analysis: type & \tt string & \tt Anorm & \tt Anorm & \tt Anorm & \tt
+Anorm \\
+\tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
+\tt aggregation: next-level aggregates per process & \tt int & -- & --
+&128 & --\\
+\hline
+\hline
+\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 2 \\
+\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 0.67 \\
+\tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
+& \tt both \\
+\tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
+Aztec & -- \\
+\tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
+false & -- \\
+\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
+\tt smoother: MLS alpha & \tt double & -- & -- & -- & 30.0 \\
+\hline
+\hline
+\tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
+Amesos\_KLU & \tt SuperLU \\
+\tt coarse: max size & \tt int & 128 & 128 & 128 & 128 \\
+\tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
+\tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
+\tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\
+\hline
+  \end{tabular}
+  \caption{Default values for ML\_Epetra::MultiLevelPreconditioner for
+    the 4 currently supported problem types {\tt SA, DD, DD-ML,
+    Maxwell}. ``--'' means not set.}
+  \label{tab:default}
+\end{sidewaystable}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end of table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+In the table, {\tt SA} refers to ``classical'' smoothed aggregation (with
+small aggregates and relative large number of levels), {\tt DD} and {\tt
+  DD-ML} to domain decomposition methods (whose coarse matrix is defined
+using aggressive coarsening and limited number of levels).  {\tt
+  Maxwell} refers to the solution of Maxwell's equations. 
+
+Default values for the parameter list can be set by {\tt
+  ML\_Epetra::SetDefaults()}.  The user can easily put the desired
+default values in a given parameter list as follows:
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  ML_Epetra::SetDefaults(ProblemType, MLList);
+\end{verbatim}
+or as
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  ML_Epetra::SetDefaults(ProblemType, MLList);
+\end{verbatim}
+
+For {\tt DD} and {\tt DD-ML}, the default smoother is {\tt Aztec},
+with an incomplete factorization ILUT, and minimal overlap. 
+Memory for the two {\sc Aztec} vectors is allocated using {\tt new}, and the
+user is responsible to free this memory, for instance as follows:
+\begin{verbatim}
+int* options;
+options = MLList.get("smoother: Aztec options", options);
+double* params;
+params = MLList.get("smoother: Aztec params", params);
+.
+.
+.
+// Make sure solve is completed before deleting options & params!!
+delete [] options;
+delete [] params;
+\end{verbatim}
+The rational behind this is that the parameter list stores a {\sl pointer} to those
+vectors, not the content itself. (As a general rule, the vectors stored in the
+parameter list should not
+be prematurely destroyed or permitted to go out of scope.)
+%
 
 %%% ============================ %%%
 %%% here stuff for visualization %%%
@@ -1553,9 +1506,9 @@ matrix.
 
 Two examples are included in the \ML~distribution:
 \begin{itemize}
-\item File \verb!ml_viz.cpp! shows how to
+\item File \verb!examples/Visualization/ml_viz.cpp! shows how to
 visualize the effect of the \ML~cycle and each level's smoother on a random vector;
-\item File \verb!ml_analyze.cpp! shows who to
+\item File \verb!examples/Advanced/ml_analyze.cpp! shows who to
 get some quantitative information about each level's matrix, and multilevel preconditioner.
 \end{itemize}
 
@@ -1919,12 +1872,19 @@ count  smoother type.................its.......||r||/||r_0||..time (s).......
 ------------------------------------------------------------------------------
 \end{verbatim}
 
+% ========================== %
+% visualization capabilities %
+% ========================== %
+
+\subsection{Visualization Capabilities}
 
 \subsubsection{Visualizing the Aggregates}
 \label{sec:viz:aggre}
 
 \ML~offers the possibility to visualize the aggregates for all levels. 
-
+Aggregates generated by {\tt Uncoupled} and {\tt METIS} aggregation schemes
+can be visualized for serial and parallel runs, while aggregates generated
+using {\tt MIS} and {\tt ParMETIS} can be visualized only for serial runs.
 
 Data are stored on a file in a simple format. For each aggregate, the file
 contains a line of type
@@ -1932,11 +1892,11 @@ contains a line of type
 x-coord y-coord <z-coord> aggregate-number
 \end{verbatim}
 (\verb!z-coord! is present only for 3D computations.) 
-A visualization software, called \verb!XD3D!\footnote{,
-More information about {\tt XD3D} can be found at the web site
-{\tt http://www.cmap.polytechnique.fr/~jouve/xd3d/index.php.}}
+A visualization software, called \verb!XD3D!\footnote{More 
+  information about {\tt XD3D} can be found at the web site
+{\tt http://www.cmap.polytechnique.fr/\~jouve/xd3d/index.php.}}
 can be used to visualize files in this format, but only for 2D problems.
-Results can be as reported in figure~\ref{fig:viz:aggr}.
+Results are as reported in figure~\ref{fig:viz:aggr}.
 
 \begin{figure}[ht]
 \centering
@@ -2020,7 +1980,7 @@ the application of the ML cycle, for equation \verb!X! at finest level.
 %%%
 %%%
 
-\subsubsection{Print the Computational Stencil for a 2D Cartesian Grid}
+\subsection{Print the Computational Stencil for a 2D Cartesian Grid}
 
 Method \verb!PrintStencil2D()! can be used to print out the computational
 stencil for problems defined on 2D Cartesian grids, if the nodes numbering
@@ -2030,7 +1990,7 @@ method:
 int Nx = 16; // nodes along the x-axis
 int Ny = 32; // nodes along the y-axis
 int NodeID = -1; // print the stencil for this node
-int EquationID = 0; // for vector problems
+int EquationID = 0; // equation 0, useful for vector problems
 
 // MLPrec is a pointer to an already created 
 // ML_Epetra::MultiLevelPreconditioner
@@ -2182,7 +2142,7 @@ The Chebyshev degree can be changed with the option\\
 \section{Advanced Usage of \ML} \label{high level sample}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-Sections~\ref{sec:getting_started} and ~\ref{sec:list} have detailed the
+Sections~\ref{sec:getting_started} and ~\ref{all possible parameters} have detailed the
 use of \ML~as a black box preconditioner. In some cases, instead, the
 user may need to explicitly construct the \ML\ hierarchy. This is
 reported in the following sections.
