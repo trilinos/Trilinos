@@ -234,11 +234,14 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     if (oldJacobianGrpPtr == NULL)
       oldJacobianGrpPtr = soln.clone(NOX::DeepCopy);
     else
-      oldJacobianGrpPtr->setX(soln.getX());
+      // RPP - update the entire group (this grabs state vectors in xyce).
+      // Otherwise, xyce is forced to recalculate F at each iteration.
+      //oldJacobianGrpPtr->setX(soln.getX());
+      *oldJacobianGrpPtr = soln;
 
     // Calcuate new Jacobian
     if (utils.isPrintProcessAndType(Utils::Details))
-      cout << "RECALCULATING JACOBIAN!" << endl;
+      cout << "        Recomputing Jacobian" << endl;
  
     status = oldJacobianGrpPtr->computeJacobian();
     if (status != NOX::Abstract::Group::Ok) 
