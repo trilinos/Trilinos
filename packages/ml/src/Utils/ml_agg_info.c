@@ -853,13 +853,13 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
           switch( dim ) {
             case 3:
               info[ilevel-1].z = (double *)malloc(sizeof(double)*Naggregates);
-	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].z[i] = 0.0;
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].z[i] = 0.0;
             case 2:
               info[ilevel-1].y = (double *)malloc(sizeof(double)*Naggregates);
-	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].y[i] = 0.0;
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].y[i] = 0.0;
             case 1:
               info[ilevel-1].x = (double *)malloc(sizeof(double)*Naggregates);
-	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].x[i] = 0.0;
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].x[i] = 0.0;
           }
           ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
                          info[ilevel-1], comm);
