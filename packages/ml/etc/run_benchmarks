@@ -345,7 +345,7 @@ rm -f ${SUMMARY_FILE}
 echo " *********** Summary ***************" >> ${SUMMARY_FILE}
 echo >> ${SUMMARY_FILE}
 echo >> ${SUMMARY_FILE}
-echo
+echo >> ${SUMMARY_FILE}
 tail -3 ${SUMMARY_FILE}
 
 
