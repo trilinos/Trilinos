@@ -56,7 +56,7 @@ EPETRA = \
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-if BUILD_NOXEPETRA
+if BUILD_LIBNOXEPETRA
 
 NOXEPETRA_LIB = libnoxepetra.a
 

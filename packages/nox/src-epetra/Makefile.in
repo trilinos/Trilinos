@@ -95,6 +95,7 @@ ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
 CXX = @CXX@
+CXXCPP = @CXXCPP@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
@@ -133,13 +134,13 @@ EPETRA = \
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-@BUILD_NOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
+@BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
 
-@BUILD_NOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
+@BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
 
-@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_SOURCES = $(EPETRA)
+@BUILD_LIBNOXEPETRA_TRUE@libnoxepetra_a_SOURCES = $(EPETRA)
 
-@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+@BUILD_LIBNOXEPETRA_TRUE@libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
 
 # ------------------------------------------------------------------------
@@ -183,13 +184,13 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libnoxepetra_a_DEPENDENCIES =
-@BUILD_NOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
-@BUILD_NOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
+@BUILD_LIBNOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
+@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
+@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
+@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
+@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
+@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
+@BUILD_LIBNOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@

@@ -703,6 +703,10 @@ ac_env_CPPFLAGS_set=${CPPFLAGS+set}
 ac_env_CPPFLAGS_value=$CPPFLAGS
 ac_cv_env_CPPFLAGS_set=${CPPFLAGS+set}
 ac_cv_env_CPPFLAGS_value=$CPPFLAGS
+ac_env_CXXCPP_set=${CXXCPP+set}
+ac_env_CXXCPP_value=$CXXCPP
+ac_cv_env_CXXCPP_set=${CXXCPP+set}
+ac_cv_env_CXXCPP_value=$CXXCPP
 ac_env_F77_set=${F77+set}
 ac_env_F77_value=$F77
 ac_cv_env_F77_set=${F77+set}
@@ -797,23 +801,25 @@ Optional Features:
                           (and sometimes confusing) to the casual installer
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
-  --enable-mpi            enable MPI using mpiCC C++ compiler
   --enable-debug          compile with debugging
   --enable-opt            compile with optimization
-  --disable-noxepetra     disable building noxepetra library
-  --enable-trilinos-dirs  enable use of Trilinos directory structure
+  --disable-epetra-examples   do not compile epetra examples
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-cppflags         add extra preprocessor flags (e.g., "-Dflag -Idir")
+  --with-cxxflags         add extra C++ compiler flags
+  --with-ar               specify archiver command (default is "ar cru")
+  --with-mpi-cxx          specify MPI C++ compiler (uses mpiCC if no argument)
   --with-mpi              specify root directory of MPI installation
-  --with-mpi-cxx          specify MPI C++ compiler
-  --with-mpi-include      specify include directory for MPI
   --with-mpi-libs         specify MPI libraries
+  --with-mpi-include      specify include directory for MPI
   --with-mpi-libdir       specify location of MPI libraries
-  --with-flags            add extra preprocessor flags ("-Dflag -Idir")
-  --with-ar               override archiver command (default is "ar cru")
-  --with-pkgdir           specify root directory of add'l packages
+  --with-trilinos         specify Trilinos root directory
+                          (uses TRILINOS_HOME if no argument)
+  --with-epetra-include    specify location of epetra header files
+  --with-aztecoo-include    specify location of aztecoo header files
   --with-ifpack-libdir    specify location of ifpack library
   --with-aztecoo-libdir    specify location of aztecoo library
   --with-epetra-libdir    specify location of epetra library
@@ -825,6 +831,7 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
+  CXXCPP      C++ preprocessor
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
 
@@ -1578,9 +1585,6 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 
 # Specify required version of autoconf.
 
-# Specify revision number of configure.ac that was used to generate
-# configure.
-
 # ------------------------------------------------------------------------
 # Check for user overrides (to be used later)
 # ------------------------------------------------------------------------
@@ -1589,19 +1593,62 @@ if test -n "${CXXFLAGS}"; then
   USERDEF_CXXFLAGS=yes
 fi
 
+if test -n "${CPPFLAGS}"; then
+  USERDEF_CPPFLAGS=yes
+fi
+
+# ------------------------------------------------------------------------
+# Checks for extra flags, etc
+# ------------------------------------------------------------------------
+
+# Check whether --with-cppflags or --without-cppflags was given.
+if test "${with_cppflags+set}" = set; then
+  withval="$with_cppflags"
+  EXTRA_CPPFLAGS=${withval}
+
+fi;
+
+# Check whether --with-cxxflags or --without-cxxflags was given.
+if test "${with_cxxflags+set}" = set; then
+  withval="$with_cxxflags"
+  EXTRA_CXXFLAGS=${withval}
+
+fi;
+
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+# Check whether --with-ar or --without-ar was given.
+if test "${with_ar+set}" = set; then
+  withval="$with_ar"
+
+echo "$as_me:$LINENO: checking user-defined archiver" >&5
+echo $ECHO_N "checking user-defined archiver... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6
+ALTERNATE_AR="${withval}"
+
+fi;
+
 # ------------------------------------------------------------------------
 # MPI configure command line option
 # ------------------------------------------------------------------------
 
-# Check whether --enable-mpi or --disable-mpi was given.
-if test "${enable_mpi+set}" = set; then
-  enableval="$enable_mpi"
+# Check whether --with-mpi-cxx or --without-mpi-cxx was given.
+if test "${with_mpi_cxx+set}" = set; then
+  withval="$with_mpi_cxx"
 
 HAVE_PKG_MPI=yes
-MPI_CXX=mpiCC
-
+if test X${withval} = Xyes; then
+  MPI_CXX=mpiCC
 else
-  HAVE_PKG_MPI=no
+  MPI_CXX=${withval}
+fi
+echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
+echo $ECHO_N "checking user-defined MPI C++ compiler... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${MPI_CXX}" >&5
+echo "${ECHO_T}${MPI_CXX}" >&6
 
 fi;
 
@@ -1618,16 +1665,16 @@ echo "${ECHO_T}${MPI_DIR}" >&6
 
 fi;
 
-# Check whether --with-mpi-cxx or --without-mpi-cxx was given.
-if test "${with_mpi_cxx+set}" = set; then
-  withval="$with_mpi_cxx"
+# Check whether --with-mpi-libs or --without-mpi-libs was given.
+if test "${with_mpi_libs+set}" = set; then
+  withval="$with_mpi_libs"
 
 HAVE_PKG_MPI=yes
-MPI_CXX=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
-echo $ECHO_N "checking user-defined MPI C++ compiler... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_CXX}" >&5
-echo "${ECHO_T}${MPI_CXX}" >&6
+MPI_LIBS=${withval}
+echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
+echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
+echo "${ECHO_T}${MPI_LIBS}" >&6
 
 fi;
 
@@ -1644,29 +1691,16 @@ echo "${ECHO_T}${MPI_INC}" >&6
 
 fi;
 
-# Check whether --with-mpi-libs or --without-mpi-libs was given.
-if test "${with_mpi_libs+set}" = set; then
-  withval="$with_mpi_libs"
-
-HAVE_PKG_MPI=yes
-MPI_LIBS=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
-echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
-echo "${ECHO_T}${MPI_LIBS}" >&6
-
-fi;
-
 # Check whether --with-mpi-libdir or --without-mpi-libdir was given.
 if test "${with_mpi_libdir+set}" = set; then
   withval="$with_mpi_libdir"
 
 HAVE_PKG_MPI=yes
 MPI_LIBDIR=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
-echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
-echo "${ECHO_T}${MPI_LIBS}" >&6
+echo "$as_me:$LINENO: checking user-defined MPI library directory" >&5
+echo $ECHO_N "checking user-defined MPI library directory... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${MPI_LIBDIR}" >&5
+echo "${ECHO_T}${MPI_LIBDIR}" >&6
 
 fi;
 
@@ -1676,11 +1710,15 @@ echo "$as_me:$LINENO: result: ${HAVE_PKG_MPI}" >&5
 echo "${ECHO_T}${HAVE_PKG_MPI}" >&6
 
 # ------------------------------------------------------------------------
-# Check for MPI compiler (must be done *before* AC_PROG_CXX)
+# Check for MPI C++ compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
 if test -n "${MPI_CXX}"; then
-  # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
+
+  if test -f ${MPI_CXX}; then
+    MPI_CXX_EXISTS=yes
+  else
+    # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
 set dummy ${MPI_CXX}; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -1716,6 +1754,8 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+  fi
+
   if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
     CXX=${MPI_CXX}
   else
@@ -1723,6 +1763,7 @@ fi
 echo "$as_me: error: MPI C++ compiler (${MPI_CXX}) not found." >&2;}
    { (exit 1); exit 1; }; }
   fi
+
 fi
 
 # ------------------------------------------------------------------------
@@ -2341,6 +2382,202 @@ echo "$as_me:$LINENO: result: $am_cv_CXX_dependencies_compiler_type" >&5
 echo "${ECHO_T}$am_cv_CXX_dependencies_compiler_type" >&6
 CXXDEPMODE="depmode=$am_cv_CXX_dependencies_compiler_type"
 
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+echo "$as_me:$LINENO: checking how to run the C++ preprocessor" >&5
+echo $ECHO_N "checking how to run the C++ preprocessor... $ECHO_C" >&6
+if test -z "$CXXCPP"; then
+  if test "${ac_cv_prog_CXXCPP+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+      # Double quotes because CXXCPP needs to be expanded
+    for CXXCPP in "$CXX -E" "/lib/cpp"
+    do
+      ac_preproc_ok=false
+for ac_cxx_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <assert.h>
+                     Syntax error
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether non-existent headers
+  # can be detected and how.
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <ac_nonexistent.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  # Broken: success on invalid input.
+continue
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then
+  break
+fi
+
+    done
+    ac_cv_prog_CXXCPP=$CXXCPP
+
+fi
+  CXXCPP=$ac_cv_prog_CXXCPP
+else
+  ac_cv_prog_CXXCPP=$CXXCPP
+fi
+echo "$as_me:$LINENO: result: $CXXCPP" >&5
+echo "${ECHO_T}$CXXCPP" >&6
+ac_preproc_ok=false
+for ac_cxx_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <assert.h>
+                     Syntax error
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether non-existent headers
+  # can be detected and how.
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <ac_nonexistent.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  # Broken: success on invalid input.
+continue
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then
+  :
+else
+  { { echo "$as_me:$LINENO: error: C++ preprocessor \"$CXXCPP\" fails sanity check" >&5
+echo "$as_me: error: C++ preprocessor \"$CXXCPP\" fails sanity check" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
@@ -2422,28 +2659,6 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# Checks for extra flags, etc
-# ------------------------------------------------------------------------
-
-# Check whether --with-flags or --without-flags was given.
-if test "${with_flags+set}" = set; then
-  withval="$with_flags"
-  XTRAFLAGS=${withval}
-
-fi;
-
-echo "$as_me:$LINENO: checking for extra preprocessor flags" >&5
-echo $ECHO_N "checking for extra preprocessor flags... $ECHO_C" >&6
-if test -z "${XTRAFLAGS}"; then
-  echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
-else
-  echo "$as_me:$LINENO: result: ${XTRAFLAGS}" >&5
-echo "${ECHO_T}${XTRAFLAGS}" >&6
-  CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
-fi
-
-# ------------------------------------------------------------------------
 # Checks for special compiler options
 # ------------------------------------------------------------------------
 
@@ -2473,13 +2688,22 @@ echo $ECHO_N "checking whether optimization is on... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: ${OPT}" >&5
 echo "${ECHO_T}${OPT}" >&6
 
+# options needed only for optimization
+CXXFLAGS_OPT=-O
+# options needed only for debugging
+CXXFLAGS_DBG=-g
+# options that are always needed
+CXXFLAGS_MISC=
+
 case $target in
 
   # IBM test
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
 
     case $CXX in
-      xlC* ) SPECIAL_CXXFLAGS="-qnolm -qrtti";;
+      xlC* )
+      CXXFLAGS_MISC="-qnolm -qrtti"
+      ;;
     esac
 
   ;;
@@ -2488,7 +2712,7 @@ case $target in
   mips-sgi-irix* )
 
     if test "${CXX}" = "CC"; then
-     SPECIAL_CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
@@ -2496,8 +2720,9 @@ case $target in
 
 esac
 
-echo "$as_me:$LINENO: checking for special C++ flags" >&5
-echo $ECHO_N "checking for special C++ flags... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for C++ flags" >&5
+echo $ECHO_N "checking for C++ flags... $ECHO_C" >&6
+
 if test "X${USERDEF_CXXFLAGS}" = "Xyes"; then
 
   echo "$as_me:$LINENO: result: ${CXXFLAGS} (user-specified via CXXFLAGS)" >&5
@@ -2505,42 +2730,58 @@ echo "${ECHO_T}${CXXFLAGS} (user-specified via CXXFLAGS)" >&6
 
 else
 
-  if test -n "${SPECIAL_CXXFLAGS}"; then
-    echo "$as_me:$LINENO: result: ${SPECIAL_CXXFLAGS}" >&5
-echo "${ECHO_T}${SPECIAL_CXXFLAGS}" >&6
-    CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
-  else
-    echo "$as_me:$LINENO: result: ${CXXFLAGS} (default)" >&5
-echo "${ECHO_T}${CXXFLAGS} (default)" >&6
+  if test ${DEBUG} = yes; then
+
+  CXXFLAGS=${CXXFLAGS_DBG}
+
+  elif test ${OPT} = yes; then
+
+  CXXFLAGS=${CXXFLAGS_OPT}
+
   fi
+
+  if test -n "${CXXFLAGS_MISC}"; then
+    CXXFLAGS="${CXXFLAGS} ${CXXFLAGS_MISC}"
+  fi
+
+  echo "$as_me:$LINENO: result: ${CXXFLAGS}" >&5
+echo "${ECHO_T}${CXXFLAGS}" >&6
 
 fi
 
+echo "$as_me:$LINENO: checking for extra C++ compiler flags" >&5
+echo $ECHO_N "checking for extra C++ compiler flags... $ECHO_C" >&6
+if test -z "${EXTRA_CPPFLAGS}"; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: ${EXTRA_CPPFLAGS}" >&5
+echo "${ECHO_T}${EXTRA_CPPFLAGS}" >&6
+  CXXFLAGS="${CXXFLAGS} ${EXTRA_CPPFLAGS}"
+fi
+
+echo "$as_me:$LINENO: checking for extra preprocessor flags" >&5
+echo $ECHO_N "checking for extra preprocessor flags... $ECHO_C" >&6
+if test -z "${EXTRA_CXXFLAGS}"; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: ${EXTRA_CXXFLAGS}" >&5
+echo "${ECHO_T}${EXTRA_CXXFLAGS}" >&6
+  CPPFLAGS="${CPPFLAGS} ${EXTRA_CXXFLAGS}"
+fi
+
 # ------------------------------------------------------------------------
-# Alternate archiver
+# Set up alternate archiver
 # ------------------------------------------------------------------------
 
-# Check whether --with-ar or --without-ar was given.
-if test "${with_ar+set}" = set; then
-  withval="$with_ar"
-
-echo "$as_me:$LINENO: checking user-defined archiver" >&5
-echo $ECHO_N "checking user-defined archiver... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6
-USE_ALTERNATE_AR=yes
-ALTERNATE_AR="${withval}"
-
-fi;
-
-if test -n "${SPECIAL_AR}" && test "X${USE_ALTERNATE_AR}" != "Xyes"; then
-  USE_ALTERNATE_AR=yes
+if test -n "${SPECIAL_AR}" && test -z "${ALTERNATE_AR}"; then
   ALTERNATE_AR="${SPECIAL_AR}"
 fi
 
 echo "$as_me:$LINENO: checking for special archiver command" >&5
 echo $ECHO_N "checking for special archiver command... $ECHO_C" >&6
-if test "X${USE_ALTERNATE_AR}" = "Xyes"; then
+if test -n "${ALTERNATE_AR}"; then
    echo "$as_me:$LINENO: result: ${ALTERNATE_AR}" >&5
 echo "${ECHO_T}${ALTERNATE_AR}" >&6
 
@@ -2565,33 +2806,17 @@ fi
 fi
 
 # ------------------------------------------------------------------------
-# MPI link check
+# MPI cpp check
 # ------------------------------------------------------------------------
 
 if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
   if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
-    MPI_INC=${MPI_DIR}/include
-  fi
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR=${MPI_DIR}/lib
+    MPI_INC="${MPI_DIR}/include"
   fi
 
   if test -n "${MPI_INC}"; then
-    CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
-  fi
-
-  if test -n "${MPI_LIBDIR}"; then
-    LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
-  fi
-
-  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-    MPI_LIBS="-lmpi"
-  fi
-
-  if test -n "${MPI_LIBS}"; then
-    LIBS = "${MPI_LIBS} ${LIBS}"
+    CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
   fi
 
   ac_ext=cc
@@ -2600,52 +2825,44 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  echo "$as_me:$LINENO: checking whether MPI will link using C++ compiler" >&5
-echo $ECHO_N "checking whether MPI will link using C++ compiler... $ECHO_C" >&6
+  echo "$as_me:$LINENO: checking for mpi.h" >&5
+echo $ECHO_N "checking for mpi.h... $ECHO_C" >&6
 
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <mpi.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-int c; char** v; MPI_Init(&c,&v);
-  ;
-  return 0;
-}
+mpi.h
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-echo "$as_me:$LINENO: result: no" >&5
+  cat conftest.$ac_ext >&5
+  echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-   { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
-echo "$as_me: error: MPI cannot link" >&2;}
+     { { echo "$as_me:$LINENO: error: cannot find mpi.h" >&5
+echo "$as_me: error: cannot find mpi.h" >&2;}
    { (exit 1); exit 1; }; }
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 fi
 
@@ -2665,33 +2882,25 @@ echo $ECHO_N "checking for iostream... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <iostream>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+iostream
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2702,7 +2911,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2711,33 +2920,25 @@ echo $ECHO_N "checking for iostream.h... $ECHO_C" >&6
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <iostream.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+iostream.h
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2748,7 +2949,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2756,10 +2957,10 @@ echo "${ECHO_T}no" >&6
 echo "$as_me: You do not appear to have iostream nor iostream.h!!" >&6;}
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 #iomanip
 ac_ext=cc
@@ -2773,33 +2974,25 @@ echo $ECHO_N "checking for iomanip... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <iomanip>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+iomanip
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2810,7 +3003,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2819,33 +3012,25 @@ echo $ECHO_N "checking for iomanip.h... $ECHO_C" >&6
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <iomanip.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+iomanip.h
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2856,7 +3041,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2864,10 +3049,10 @@ echo "${ECHO_T}no" >&6
 echo "$as_me: You do not appear to have iomanip nor iomanip.h!!" >&6;}
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 #cmath
 ac_ext=cc
@@ -2881,33 +3066,25 @@ echo $ECHO_N "checking for cmath... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <cmath>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+cmath
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2918,7 +3095,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2927,33 +3104,25 @@ echo $ECHO_N "checking for math.h... $ECHO_C" >&6
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <math.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+math.h
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
   ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
 
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -2964,7 +3133,7 @@ _ACEOF
 
 else
   echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+  cat conftest.$ac_ext >&5
 
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2972,10 +3141,10 @@ echo "${ECHO_T}no" >&6
 echo "$as_me: You do not appear to have cmath nor math.h!!" >&6;}
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_ext
 
 # can we say using std::ostream?
 ac_ext=cc
@@ -3010,13 +3179,13 @@ using std::ostream;
   return 0;
 }
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
+         { ac_try='test -s conftest.$ac_objext'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3036,13 +3205,138 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.$ac_objext conftest.$ac_ext
 
 # ------------------------------------------------------------------------
-# Checks for libraries
+# With Trilinos
+# ------------------------------------------------------------------------
+BUILD_LIBNOXEPETRA=no
+
+# Check whether --with-trilinos or --without-trilinos was given.
+if test "${with_trilinos+set}" = set; then
+  withval="$with_trilinos"
+
+  BUILD_LIBNOXEPETRA=yes
+  if test ${withval} = yes; then
+    TRILINOS_DIR=${TRILINOS_HOME}
+  else
+    TRILINOS_DIR=${withval}
+  fi
+
+fi;
+
+echo "$as_me:$LINENO: checking whether we should build the noxepetra library" >&5
+echo $ECHO_N "checking whether we should build the noxepetra library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LIBNOXEPETRA}" >&5
+echo "${ECHO_T}${BUILD_LIBNOXEPETRA}" >&6
+
+# ------------------------------------------------------------------------
+# Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
-echo "$as_me:$LINENO: checking for library containing pow" >&5
+if test X${BUILD_LIBNOXEPETRA} = Xyes; then
+
+# Check whether --with-epetra-include or --without-epetra-include was given.
+if test "${with_epetra_include+set}" = set; then
+  withval="$with_epetra_include"
+  epetra_INC=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking for epetra include directory" >&5
+echo $ECHO_N "checking for epetra include directory... $ECHO_C" >&6
+  if test -n "${epetra_INC}" && test -f ${epetra_INC}/Epetra_Vector.h; then
+    echo "$as_me:$LINENO: result: ${epetra_INC}" >&5
+echo "${ECHO_T}${epetra_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/include/Epetra_Vector.h; then
+    epetra_INC=${TRILINOS_DIR}/include
+    echo "$as_me:$LINENO: result: ${epetra_INC}" >&5
+echo "${ECHO_T}${epetra_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/include/epetra/Epetra_Vector.h; then
+    epetra_INC=${TRILINOS_DIR}/include/epetra
+    echo "$as_me:$LINENO: result: ${epetra_INC}" >&5
+echo "${ECHO_T}${epetra_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/packages/epetra/src/Epetra_Vector.h; then
+    epetra_INC=${TRILINOS_DIR}/packages/epetra/src
+    echo "$as_me:$LINENO: result: ${epetra_INC}" >&5
+echo "${ECHO_T}${epetra_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find epetra include directory containing Epetra_Vector.h" >&5
+echo "$as_me: error: Cannot find epetra include directory containing Epetra_Vector.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+# Check whether --with-aztecoo-include or --without-aztecoo-include was given.
+if test "${with_aztecoo_include+set}" = set; then
+  withval="$with_aztecoo_include"
+  aztecoo_INC=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking for aztecoo include directory" >&5
+echo $ECHO_N "checking for aztecoo include directory... $ECHO_C" >&6
+  if test -n "${aztecoo_INC}" && test -f ${aztecoo_INC}/AztecOO.h; then
+    echo "$as_me:$LINENO: result: ${aztecoo_INC}" >&5
+echo "${ECHO_T}${aztecoo_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/include/AztecOO.h; then
+    aztecoo_INC=${TRILINOS_DIR}/include
+    echo "$as_me:$LINENO: result: ${aztecoo_INC}" >&5
+echo "${ECHO_T}${aztecoo_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/include/aztecoo/AztecOO.h; then
+    aztecoo_INC=${TRILINOS_DIR}/include/aztecoo
+    echo "$as_me:$LINENO: result: ${aztecoo_INC}" >&5
+echo "${ECHO_T}${aztecoo_INC}" >&6
+  elif test -f ${TRILINOS_DIR}/packages/aztecoo/src/AztecOO.h; then
+    aztecoo_INC=${TRILINOS_DIR}/packages/aztecoo/src
+    echo "$as_me:$LINENO: result: ${aztecoo_INC}" >&5
+echo "${ECHO_T}${aztecoo_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find aztecoo include directory containing AztecOO.h" >&5
+echo "$as_me: error: Cannot find aztecoo include directory containing AztecOO.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+    TRILINOS_COMM="MPI"
+  else
+    TRILINOS_COMM="SERIAL"
+  fi
+
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC}"
+
+fi
+
+# ------------------------------------------------------------------------
+# Checks for building examples
+# ------------------------------------------------------------------------
+
+# Check whether --enable-epetra-examples or --disable-epetra-examples was given.
+if test "${enable_epetra_examples+set}" = set; then
+  enableval="$enable_epetra_examples"
+  BUILD_EPETRAEXAMPLES=${enableval}
+else
+  BUILD_EPETRAEXAMPLES=yes
+
+fi;
+
+if test X${BUILD_LIBNOXEPETRA} != Xyes; then
+  BUILD_EPETRAEXAMPLES=no
+fi
+
+echo "$as_me:$LINENO: checking whether we should build the epetra examples" >&5
+echo $ECHO_N "checking whether we should build the epetra examples... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_EPETRAEXAMPLES}" >&5
+echo "${ECHO_T}${BUILD_EPETRAEXAMPLES}" >&6
+
+# ------------------------------------------------------------------------
+# Checks for basic libraries
+# ------------------------------------------------------------------------
+
+if test ${BUILD_EPETRAEXAMPLES} = yes; then
+
+  echo "$as_me:$LINENO: checking for library containing pow" >&5
 echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
 if test "${ac_cv_search_pow+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3154,7 +3448,7 @@ echo "$as_me: error: Cannot find math library" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-echo "$as_me:$LINENO: checking for library containing sqrt" >&5
+  echo "$as_me:$LINENO: checking for library containing sqrt" >&5
 echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6
 if test "${ac_cv_search_sqrt+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3266,64 +3560,89 @@ echo "$as_me: error: Cannot find math library" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
+fi
+
 # ------------------------------------------------------------------------
-# Specify package directory
+# Check for MPI library
 # ------------------------------------------------------------------------
 
-# Check whether --with-pkgdir or --without-pkgdir was given.
-if test "${with_pkgdir+set}" = set; then
-  withval="$with_pkgdir"
+if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRAEXAMPLES} = Xyes; then
 
-USE_PKGDIR=yes
-PKGDIR=${withval}
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR="${MPI_DIR}/lib"
+  fi
 
-fi;
+  if test -n "${MPI_LIBDIR}"; then
+    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
+  fi
 
-if test "X${USE_PKGDIR}" = "Xyes"; then
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+    MPI_LIBS="-lmpi"
+  fi
 
-   echo "$as_me:$LINENO: checking whether package directory is valid" >&5
-echo $ECHO_N "checking whether package directory is valid... $ECHO_C" >&6
-   if test -d ${PKGDIR}; then
-      echo "$as_me:$LINENO: result: yes" >&5
+  if test -n "${MPI_LIBS}"; then
+    LIBS="${MPI_LIBS} ${LIBS}"
+  fi
+
+  ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  echo "$as_me:$LINENO: checking whether MPI will link using C++ compiler" >&5
+echo $ECHO_N "checking whether MPI will link using C++ compiler... $ECHO_C" >&6
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <mpi.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+int c; char** v; MPI_Init(&c,&v);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-   else
-      { echo "$as_me:$LINENO: no" >&5
-echo "$as_me: no" >&6;}
-      { { echo "$as_me:$LINENO: error: Specified package directory does not exist" >&5
-echo "$as_me: error: Specified package directory does not exist" >&2;}
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+   { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
+echo "$as_me: error: MPI cannot link" >&2;}
    { (exit 1); exit 1; }; }
-   fi
 
-   LDFLAGS="${LDFLAGS} -L${PKGDIR}/lib"
-   CPPFLAGS="${CPPFLAGS} -I${PKGDIR}/include"
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 
 fi
 
 # ------------------------------------------------------------------------
-# NOXEPETRA LIBRARY
+# Checks for Trilinos libraries
 # ------------------------------------------------------------------------
 
-# Check whether --enable-noxepetra or --disable-noxepetra was given.
-if test "${enable_noxepetra+set}" = set; then
-  enableval="$enable_noxepetra"
-  BUILD_NOXEPETRA=${enableval}
-else
-  BUILD_NOXEPETRA=yes
-
-fi;
-
-# Check whether --enable-trilinos-dirs or --disable-trilinos-dirs was given.
-if test "${enable_trilinos_dirs+set}" = set; then
-  enableval="$enable_trilinos_dirs"
-  USE_TRILINOS_DIRS=${withval}
-else
-  USE_TRILINOS_DIRS=default
-
-fi;
-
-# Case I: Using standard Trilinos directory structure
-# (a) Check if TRILINOS_HOME is valid
-if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
+if test X${BUILD_EPETRAEXAMPLES} = Xyes; then
 
     ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -3416,7 +3735,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:3419:" \
+echo "$as_me:3738:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3582,7 +3901,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3585: \"$ac_link\") >&5
+(eval echo $as_me:3904: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3654,7 +3973,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3657: \"$ac_link\") >&5
+(eval echo $as_me:3976: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3973,106 +4292,6 @@ echo "$as_me: error: Cannot find LAPACK library" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-  # Set TRILINOS_COMM (used several places)
-  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-    TRILINOS_COMM="MPI"
-  else
-    TRILINOS_COMM="SERIAL"
-  fi
-
-  # If the package directory isn't specified, use the standard
-  # TRILINOS directory structure
-  if test "X${USE_TRILINOS_DIRS}" != "Xno" && test "X${USE_PKGDIR}" != "Xyes"; then
-    USE_TRILINOS_DIRS=yes
-  fi
-
-  if test "X${USE_TRILINOS_DIRS}" != "Xyes" && test "X${USE_PKGDIR}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&5
-echo "$as_me: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-  if test "X${USE_TRILINOS_DIRS}" = "Xyes"; then
-
-    echo "$as_me:$LINENO: checking whether TRILINOS_HOME is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_HOME is defined... $ECHO_C" >&6
-    if test -n "${TRILINOS_HOME}"; then
-       echo "$as_me:$LINENO: result: yes (${TRILINOS_HOME})" >&5
-echo "${ECHO_T}yes (${TRILINOS_HOME})" >&6
-    else
-       echo "$as_me:$LINENO: result: no (using ${HOME}/Trilinos)" >&5
-echo "${ECHO_T}no (using ${HOME}/Trilinos)" >&6
-       TRILINOS_HOME=${HOME}/Trilinos
-    fi
-
-    echo "$as_me:$LINENO: checking whether TRILINOS_HOME is valid" >&5
-echo $ECHO_N "checking whether TRILINOS_HOME is valid... $ECHO_C" >&6
-    if test -d ${TRILINOS_HOME}; then
-       echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-    else
-       echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-       { { echo "$as_me:$LINENO: error: TRILINOS_HOME is invalid" >&5
-echo "$as_me: error: TRILINOS_HOME is invalid" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-
-    echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
-    if test -n "${TRILINOS_ARCH}"; then
-       echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
-echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
-    else
-       case $target in
- 	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-   	  TRILINOS_ARCH="AIX"
- 	  ;;
- 	alpha-unknown-linux-gnu)
- 	  TRILINOS_ARCH="LINUXALPHA"
- 	  ;;
- 	*)
- 	  TRILINOS_ARCH="LINUX"
-   	  ;;
-       esac
-       echo "$as_me:$LINENO: result: no (using ${TRILINOS_ARCH})" >&5
-echo "${ECHO_T}no (using ${TRILINOS_ARCH})" >&6
-    fi
-
-    echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
-    if test -n "${TRILINOS_ID}"; then
-       echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
-echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
-    else
-       echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-    fi
-
-    echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
-    if test -n "${TRILINOS_TARGET}"; then
-       echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
-echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
-    else
-       TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
-       echo "$as_me:$LINENO: result: no (using ${TRILINOS_TARGET})" >&5
-echo "${ECHO_T}no (using ${TRILINOS_TARGET})" >&6
-    fi
-
-    EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
-    AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
-    TRILINOS_LIBDIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
-    LDFLAGS="${LDFLAGS} -L${TRILINOS_LIBDIR}"
-
-  else
-
-    EPETRA_INC=${PKGDIR}/include/epetra
-    AZTECOO_INC=${PKGDIR}/include/aztecoo
-    TRILINOS_LIBDIR=${PKGDIR}/lib
-
-  fi
-
   # Find a valid y12m
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -4151,6 +4370,48 @@ echo "$as_me: error: Cannot find y12m library" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
+  echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
+  if test -n "${TRILINOS_ARCH}"; then
+    echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
+  else
+    case $target in
+      rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+   	TRILINOS_ARCH="AIX"
+	;;
+      alpha-unknown-linux-gnu)
+ 	TRILINOS_ARCH="LINUXALPHA"
+ 	;;
+      *)
+ 	TRILINOS_ARCH="LINUX"
+   	;;
+    esac
+    echo "$as_me:$LINENO: result: no (using ${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}no (using ${TRILINOS_ARCH})" >&6
+  fi
+
+  echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
+  if test -n "${TRILINOS_ID}"; then
+     echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
+  else
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  fi
+
+  echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
+  if test -n "${TRILINOS_TARGET}"; then
+     echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
+  else
+     TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
+     echo "$as_me:$LINENO: result: no (using ${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}no (using ${TRILINOS_TARGET})" >&6
+  fi
+
   # Check for ifpack
 
 # Check whether --with-ifpack-libdir or --without-ifpack-libdir was given.
@@ -4165,11 +4426,16 @@ echo $ECHO_N "checking for ifpack... $ECHO_C" >&6
     LDFLAGS="-L${ifpack_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/libifpack.a; then
+  elif test -f ${TRILINOS_DIR}/lib/libifpack.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/ifpack/libifpack.a; then
-    LDFLAGS="-L${TRILINOS_LIBDIR}/ifpack ${LDFLAGS}"
+  elif test -f ${TRILINOS_DIR}/lib/ifpack/libifpack.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/ifpack ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_DIR}/lib/${TRILINOS_TARGET}/libifpack.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/${TRILINOS_TARGET} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
@@ -4194,11 +4460,16 @@ echo $ECHO_N "checking for aztecoo... $ECHO_C" >&6
     LDFLAGS="-L${aztecoo_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/libaztecoo.a; then
+  elif test -f ${TRILINOS_DIR}/lib/libaztecoo.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/aztecoo/libaztecoo.a; then
-    LDFLAGS="-L${TRILINOS_LIBDIR}/aztecoo ${LDFLAGS}"
+  elif test -f ${TRILINOS_DIR}/lib/aztecoo/libaztecoo.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/aztecoo ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_DIR}/lib/${TRILINOS_TARGET}/libaztecoo.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/${TRILINOS_TARGET} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
@@ -4223,11 +4494,16 @@ echo $ECHO_N "checking for epetra... $ECHO_C" >&6
     LDFLAGS="-L${epetra_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/libepetra.a; then
+  elif test -f ${TRILINOS_DIR}/lib/libepetra.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  elif test -f ${TRILINOS_LIBDIR}/epetra/libepetra.a; then
-    LDFLAGS="-L${TRILINOS_LIBDIR}/epetra ${LDFLAGS}"
+  elif test -f ${TRILINOS_DIR}/lib/epetra/libepetra.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/epetra ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_DIR}/lib/${TRILINOS_TARGET}/libepetra.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/lib/${TRILINOS_TARGET} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
@@ -4240,32 +4516,26 @@ echo "$as_me: error: Cannot find epetra library" >&2;}
 
   LIBS="-lepetra ${LIBS}"
 
-  # If we make it through all the tests, define the correct libs and includes!!
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${EPETRA_INC} -I${AZTECOO_INC}"
 fi
 
 # ------------------------------------------------------------------------
 # Checks for TRILINOS status
 # ------------------------------------------------------------------------
 
-if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
-
-if true; then
-  BUILD_NOXEPETRA_TRUE=
-  BUILD_NOXEPETRA_FALSE='#'
+if test X${BUILD_LIBNOXEPETRA} = Xyes; then
+  BUILD_LIBNOXEPETRA_TRUE=
+  BUILD_LIBNOXEPETRA_FALSE='#'
 else
-  BUILD_NOXEPETRA_TRUE='#'
-  BUILD_NOXEPETRA_FALSE=
+  BUILD_LIBNOXEPETRA_TRUE='#'
+  BUILD_LIBNOXEPETRA_FALSE=
 fi
-else
 
-if false; then
-  BUILD_NOXEPETRA_TRUE=
-  BUILD_NOXEPETRA_FALSE='#'
+if test X${BUILD_EPETRAEXAMPLES} = Xyes; then
+  BUILD_EPETRAEXAMPLES_TRUE=
+  BUILD_EPETRAEXAMPLES_FALSE='#'
 else
-  BUILD_NOXEPETRA_TRUE='#'
-  BUILD_NOXEPETRA_FALSE=
-fi
+  BUILD_EPETRAEXAMPLES_TRUE='#'
+  BUILD_EPETRAEXAMPLES_FALSE=
 fi
 
 # ------------------------------------------------------------------------
@@ -4937,18 +5207,21 @@ s,@ac_ct_CXX@,$ac_ct_CXX,;t t
 s,@am__include@,$am__include,;t t
 s,@am__quote@,$am__quote,;t t
 s,@CXXDEPMODE@,$CXXDEPMODE,;t t
+s,@CXXCPP@,$CXXCPP,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
+s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@FLIBS@,$FLIBS,;t t
-s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
-s,@BUILD_NOXEPETRA_TRUE@,$BUILD_NOXEPETRA_TRUE,;t t
-s,@BUILD_NOXEPETRA_FALSE@,$BUILD_NOXEPETRA_FALSE,;t t
+s,@BUILD_LIBNOXEPETRA_TRUE@,$BUILD_LIBNOXEPETRA_TRUE,;t t
+s,@BUILD_LIBNOXEPETRA_FALSE@,$BUILD_LIBNOXEPETRA_FALSE,;t t
+s,@BUILD_EPETRAEXAMPLES_TRUE@,$BUILD_EPETRAEXAMPLES_TRUE,;t t
+s,@BUILD_EPETRAEXAMPLES_FALSE@,$BUILD_EPETRAEXAMPLES_FALSE,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF

@@ -62,6 +62,7 @@ ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
 CXX = @CXX@
+CXXCPP = @CXXCPP@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
@@ -79,7 +80,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_NOXEPETRA_TRUE@EXAMPLE = example
+EXAMPLE = example
 
 noinst_PROGRAMS = $(EXAMPLE)
 
@@ -104,8 +105,7 @@ subdir = example-epetra/1Dfem_nonlinear
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-@BUILD_NOXEPETRA_TRUE@noinst_PROGRAMS = example$(EXEEXT)
-@BUILD_NOXEPETRA_FALSE@noinst_PROGRAMS =
+noinst_PROGRAMS = example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-Example.$(OBJEXT) \

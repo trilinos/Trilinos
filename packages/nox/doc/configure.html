@@ -1,0 +1,131 @@
+<html>
+<head>
+<title>NOX Configuration Instructions</title>
+</head>
+<body bgcolor="white">
+<h1>NOX Configuration Instructions</h1>
+
+<h3>Basic Setup</h3>
+
+To just compile the basic NOX library, type
+<code>
+configure
+</code>
+
+<h3>Using Epetra/Trilinos</h3>
+
+<h5>Building the library</h5>
+
+<p>To compile NOX's Epetra library <code>libnoxepetra.a</code>, use one
+of the following sets of configuration options.</p>
+<ul>
+<li><code>--with-trilinos=/home/jdoe/Trilinos</code>
+<p>This will automatically search the directory
+<code>/home/jdoe/Trilinos</code> to find the necessary headers and
+libraries. 
+More specifically, it will look in the following locations
+for <code>Epetra_Vector.h</code>:</p>
+<ul>
+<li>directory optionally specified by <code>--with-epetra-include</code>
+<li><code>/home/jdoe/Trilinos/include</code>
+<li><code>/home/jdoe/Trilinos/include/epetra/</code>
+<li><code>/home/jdoe/Trilinos/packages/epetra/src</code>
+</ul>
+<p>Similarily, it will look in the following locations
+for <code>AztecOO.h</code>:</p>
+<ul>
+<li>directory optionally specified by <code>--with-aztecoo-include</code>
+<li><code>/home/jdoe/Trilinos/include</code>
+<li><code>/home/jdoe/Trilinos/include/aztecoo/</code>
+<li><code>/home/jdoe/Trilinos/packages/aztecoo/src</code>
+</ul>
+<p>These include files are used in building libnoxepetra.a.
+</p>
+<p> Further, if we are also building the Epetra examples, we will look
+for epetra, aztecoo, and ifpack libraries. For example, we would
+search for <code>libepetra.a</code> in the following
+directories:</p>
+<ul>
+<li>directory optionally specified by <code>--with-epetra-libdir</code>
+<li><code>/home/jdoe/Trilinos/lib</code>
+<li><code>/home/jdoe/Trilinos/lib/epetra</code>
+<li><code>/home/jdoe/Trilinos/lib/$TRILINOS_TARGET</code>
+</ul>
+<p>In the above, if <code>TRILINOS_TARGET</code> is not defined as an
+environmental variable, configure will define it.</p>
+<li><code>--with-trilinos</code>
+<p>This will automatically use the environmental variable 
+<code>TRILINOS_HOME</code>
+to find the necessary headers and libraries.</p>
+</ul>
+
+
+<h5>Building the Examples</h5>
+
+The set of examples for NOX-Epetra are built by default whenever
+<code>--with-trilinos</code> is specified. To disable building these
+examples (and the corresponding library checks), use the option
+<code>--disable-epetra-examples</code>.
+
+
+<h3>Using MPI</h3>
+
+
+
+<h5>Using the MPI C++ Compiler</h5>
+<p>Most MPI
+packages come with a wrapper to the compiler that specifies the
+correct flags, include files, libraries, and so on to compile with
+MPI. This is often the easiest way to compile with MPI.</p>
+<ul>
+<li> <code>--with-mpi-cxx</code> 
+<p> Use the default MPI C++ compiler (<code>mpiCC</code>). </P>
+<li> <code>--with-mpi-cxx=/home/jdoe/mpich-1.2.3/bin/mpiCC</code>
+<p>Specify the exact name and location of the MPI C++ compiler. This is
+useful if you have multiple installations of MPI or if <code>mpiCC</code>
+is not in your default path.</p>
+</ul>
+
+<h5>Specifying the MPI Include Directories, Library Directories, and
+Libraries</h5>
+
+<p>An alternative to using <code>mpiCC</code> is to specify the
+include directory, library directory, and libraries specifically,
+There are several flags that you can use to do this. These are
+generally incompatible with <code>--with-mpi-cxx</code>
+</p>
+
+<ul>
+<li> <code>--with-mpi=/home/jdoe/lam</code>
+<p>This specifies the general location of the MPI installation. We
+then assume that the headers are located in
+<code>/home/jdoe/lam/include</code>, that the libraries are
+located in <code>/home/jdoe/lam/lib</code>, and that the
+library is specifed by <code>-lmpi</code>.
+</p>
+<li> <code>--with-mpi=/home/jdoe/mpich --with-mpi-libs="-lmpich"</code>
+<p>This is the same as above except that the library to be linked with
+is explicitly specified.
+</p>
+<li> <code>--with-mpi-include="/home/jdoe/lam/include" 
+           --with-mpi-libdir="/home/jdoe/lam/lib"</code>
+<p>Specify the exact locations of the MPI include files and the MPI
+libraries. Assumes that the
+library is specifed by <code>-lmpi</code>.
+</p>
+<li> <code>--with-mpi-include="/home/jdoe/mpich/include"
+	   --with-mpi-libdir="/home/jdoe/mpich/lib"
+	   --with-mpi-libs="-lmpich"</code>
+<p>This is the same as above except that the library to be linked with
+is explicitly specified.
+</p>
+<li> <code>--with-mpi-include="/home/jdoe/mpich/include"
+	   --with-mpi-libs="/home/jdoe/mpich/lib/libmpich.a"</code>
+</code>
+<p>Explicitly specify the MPI library without specifying the library directory.
+</p>
+</ul>
+
+
+</body>
+</html>

@@ -62,6 +62,7 @@ ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
 CXX = @CXX@
+CXXCPP = @CXXCPP@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
@@ -79,7 +80,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
+@BUILD_EPETRAEXAMPLES_TRUE@SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
 subdir = example-epetra
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
@@ -91,7 +92,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
 all: all-recursive
 
 .SUFFIXES:
@@ -217,7 +218,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	for subdir in $(SUBDIRS); do \
+	for subdir in $(DIST_SUBDIRS); do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

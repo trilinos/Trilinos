@@ -3,9 +3,7 @@
 #@HEADER
 #@HEADER
 
-if BUILD_NOXEPETRA
 EXAMPLE = example
-endif
 
 noinst_PROGRAMS = $(EXAMPLE)
 
