@@ -236,7 +236,7 @@ report($SUMMARY);
 
         # grab flabs
         use Getopt::Std;
-        getopts("f:p:g:snthue", \%flags);
+        getopts("f:p:g:snthuek", \%flags);
         
         # parse config file and exit
         if ($flags{p}) {                         
@@ -378,14 +378,18 @@ report($SUMMARY);
         if (!$flags{t}) {
             # delete and recreate mpi dir
             if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {
-                system "rm -rf $options{'MPI_DIR'}[0]";
-                system "mkdir $options{'MPI_DIR'}[0]";
+                if (!$flags{k}) {
+                    system "rm -rf $options{'MPI_DIR'}[0]";
+                    system "mkdir $options{'MPI_DIR'}[0]";
+                }
             }
             
             # delete and recreate serial dir
             if (defined $options{'SERIAL_DIR'} && defined $options{'SERIAL_DIR'}[0]) {
-                system "rm -rf $options{'SERIAL_DIR'}[0]";
-                system "mkdir $options{'SERIAL_DIR'}[0]";
+                if (!$flags{k}) {
+                    system "rm -rf $options{'SERIAL_DIR'}[0]";
+                    system "mkdir $options{'SERIAL_DIR'}[0]";
+                }
             }
         }
         
@@ -1867,6 +1871,9 @@ report($SUMMARY);
         print "  -tf FILE : Run test harness with given test harness config file, but\n";
         print "             don't configure and build--only run tests (for cross-\n";
         print "             compiling machines)\n";
+        print "\n";
+        print "  -kf FILE : Run test harness with given test harness config file, but\n";
+        print "             keep build directory intact--don't blow it away.\n";
         print "\n";
         print "  -p FILE  : Parse given test harness config file and exit. This is useful\n";
         print "             for catching errors and inconsistencies without running the\n";
