@@ -330,6 +330,9 @@ public:
   int ComputeFilteringPreconditioner();
 #endif
   
+  int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
+                                    double* TentativeNullSpace);
+
   //! Queries whether multilevel hierarchy has been computed or not.
   int IsPreconditionerComputed()  const
   {
