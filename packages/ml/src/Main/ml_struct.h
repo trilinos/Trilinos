@@ -359,6 +359,9 @@ extern ML_Partitioner ML_Repartition_Get_Partitioner(ML* ml);
 extern void ML_Repartition_Activate(ML* ml);
 extern void ML_Repartition_Deactivate(ML* ml);
 extern int ML_Repartition_Status(ML* ml);
+extern int ML_Use_LowMemory();
+extern void ML_Enable_LowMemory();
+extern void ML_Disable_LowMemory();
 
 #ifndef ML_CPP
 #ifdef __cplusplus

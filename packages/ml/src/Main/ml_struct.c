@@ -6570,8 +6570,24 @@ int ML_Repartition_Status(ML* ml)
   return ml->use_repartitioning;
 }
 
+/* by default this is the standard ML */
 
+int LowMemoryFlag = ML_FALSE;
 
+int ML_Use_LowMemory()
+{
+  return(LowMemoryFlag);
+}
+
+void ML_Enable_LowMemory()
+{
+  LowMemoryFlag = ML_TRUE;
+}
+
+void ML_Disable_LowMemory()
+{
+  LowMemoryFlag = ML_FALSE;
+}
 
 #ifdef WKC
 
