@@ -4,10 +4,10 @@
 #include "mpi.h"
 #endif
 
-extern int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
+extern int Poisson_getrow(ML_Operator *mat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
 
-extern int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
+extern int Poisson_matvec(ML_Operator *mat_in, int in_length, double p[], int out_length,
                    double ap[]);
 extern int Poisson_comm(double x[], void *A_data);
 extern int send_msg(char *send_buffer,  int length, int neighbor);
@@ -107,13 +107,11 @@ int main(int argc, char *argv[]){
 }
 
 /* Application specific getrow. */
-int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
+int Poisson_getrow(ML_Operator *mat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int cols[], double values[], int row_lengths[])
 {
    int m = 0, i, row, proc, *itemp, start;
-   ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) A_data;
    itemp  = (int *) ML_Get_MyGetrowData(mat_in);
 
    proc  = *itemp;
@@ -138,14 +136,12 @@ int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
 }
 
 /* Application specific matrix-vector product. */
-int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
+int Poisson_matvec(ML_Operator *mat_in, int in_length, double p[], int out_length,
                    double ap[])
 {
    int i, proc, *itemp;
    double new_p[5];
-   ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) A_data;
    itemp = (int *) ML_Get_MyMatvecData(mat_in);
    
    proc  = *itemp; 
