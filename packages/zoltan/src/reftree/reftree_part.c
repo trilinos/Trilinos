@@ -900,4 +900,3 @@ static int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz)
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
->>>>>>> 1.25
