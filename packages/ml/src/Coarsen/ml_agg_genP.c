@@ -219,11 +219,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
-   void        (*Pmatrix_data_destroy)(void *) = NULL;
-   void        *Pmatrix_data = NULL;
-   char        matname[80];
-   double      *smdiag;
-   int         i;
 
 #ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
@@ -1632,7 +1627,6 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 							   ML_Aggregate *ag)
 {
    int mesh_level, old_mesh_level;
-   int nblocks, *block_list;
    ML_Operator *mat;
 
 

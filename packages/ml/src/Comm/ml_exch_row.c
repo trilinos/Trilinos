@@ -742,9 +742,9 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
 void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 {
-   int    lower, upper, next_nz, col, i, j, k, Nexternal, ii;
-   int    *bindx, *externals, *rowptr;
-   double *val, dtemp;
+  int    lower, upper, next_nz, col, i, j, k, Nexternal;
+   int    *bindx, *externals;
+   double *val;
    struct ML_CSR_MSRdata *temp;
    int    allocated, row_length;
    ML_Comm *comm;
