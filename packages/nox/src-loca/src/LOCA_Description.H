@@ -112,58 +112,95 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 <li> "NOX" sublist -- See <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
 <li> "LOCA: sublist
      <ul>
-     <li> "Stepper" sublist -- used by LOCA::Stepper
+     <li> "Stepper" sublist -- used by LOCA::Stepper to set parameters relevant for continuation run
           <ul>
-          <li> "Continuation Method" -- ["Natural", "Arc Length"] Continuation type
-	  <li> "Continuation Parameter" -- [string] Name of continuation parameter
-	  <li> "Initial Value" -- [double] Initial value of continuation parameter
-	  <li> "Max Value" -- [double] Maximum value of continuation parameter
-	  <li> "Min Value" -- [double] Minimum value of continuation parameter
-	  <li> "Max Steps" -- [int] Maximum number of continuation steps (including failed steps)
-	  <li> "Max Nonlinear Iterations" -- [int] Maximum number of nonlinear iterations per continuation step
-	  <li> "Goal Arc Length Parameter Contribution" -- [double] Goal for parameter contribution to unit arclength
-	  <li> "Max Arc Length Parameter Contribution" -- [double] Max for parameter contribution to unit arclength, triggering rescaling
-	  <li> "Initial Scale Factor" -- [double] Initial factor for parameter term of arclength eq.
-	  <li> "Min Scale Factor" -- [double] Minimum factor for scaling solution term of arclength eq.
-	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
-	  <li> "Min Tangent Factor" -- [double] Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
-	  <li> "Tangent Factor Exponent" -- [double] Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
-	  <li> "Compute Eigenvalues" -- [bool] Flag for requesting eigenvalue calculation after each continuation step
+          <li> "Continuation Method" -- [string] (default: "Natural") Type of continuation to use.  Choices are:
+	          <ul>
+                  <li> "Natural" -- Natural continuation (LOCA::Continuation::NaturalGroup)
+                  <li> "Arc Length" -- Pseudo arc-length continuation using bordering (LOCA::Continuation::ArcLengthGroup)
+                  <li> "Householder Arc Length" -- Pseudo arc-length continuation using Householder transformations (LOCA::Continuation::HouseholderGroup)
+                  </ul>
+	  <li> "Continuation Parameter" -- [string] (Must be supplied) Name of continuation parameter
+	  <li> "Initial Value" -- [double] (Must be supplied) Initial value of continuation parameter
+	  <li> "Max Value" -- [double] (Must be supplied) Maximum value of continuation parameter
+	  <li> "Min Value" -- [double] (Must be supplied) Minimum value of continuation parameter
+	  <li> "Max Steps" -- [int] (default: 100) Maximum number of continuation steps (including failed steps)
+	  <li> "Max Nonlinear Iterations" -- [int] (default: 15) Maximum number of nonlinear iterations per continuation step
+          <li> "Enable Arc Length Scaling" -- [bool] (default: true) Enable arc-length scaling to equilibrate solution and parameter components to arc-length equations (see LOCA::Continuation::ArcLengthGroup)
+	  <li> "Goal Arc Length Parameter Contribution" -- [double] (default: 0.5) Goal for parameter contribution to arc-length equation
+	  <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.0) Max for parameter contribution to arc-length equation, triggering rescaling
+	  <li> "Initial Scale Factor" -- [double] (default: 1.0) Initial scale factor for parameter term of arc-length equation
+	  <li> "Min Scale Factor" -- [double] (default: 1.0e-3) Minimum scale factor for scaling parameter term of arc-length equation
+	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] (default: false) Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
+	  <li> "Min Tangent Factor" -- [double] (default: 0.1) Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
+	  <li> "Tangent Factor Exponent" -- [double] (default: 1.0) Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
+	  <li> "Compute Eigenvalues" -- [bool] (default: false) Flag for requesting eigenvalue calculation after each continuation step
 	  </ul>
-     <li> "Predictor" sublist -- used by LOCA::Predictor::Manager
+     <li> "Bifurcation" sublist -- used by LOCA::Bifurcation::Manager to determine what type of bifurcation calculation, if any, to use
           <ul>
-	  <li> "Method" -- ["Constant", "Secant", "Tangent", "Random"] Predictor method
-	  <li> "Epsilon" -- [double] Size of perturbation for LOCA::Predictor::Random predictor
-	  <li> "First Step Predictor" sublist -- used by LOCA::Predictor::Secant -- Replicates "Predictor" sublist structure
-	  <li> "Last Step Predictor" sublist -- Predictor to use for last step of arc-length continuation to hit target (max or min) value exactly -- Replicates "Predictor" sublist structure
+          <li> "Method" -- [string] (default: "None") Bifurcation method to use.  Choices are
+               <ul>
+               <li> "None" -- No bifurcation and do equilibrium continuation instead
+               <li> "Turning Point" -- Turning point tracking using bordering (LOCA::Bifurcation::TPBord::ExtendedGroup) 
+               <li> "Modified Turning Point" -- Turning point tracking using modified bordering to avoid singular Jacobian solves (LOCA::Bifurcation::TPBord::ModifiedBorderingGroup) 
+               <li> "Nic-Day Modified Turning Point" -- Turning point tracking using a combination of Nic-Day deflation ideas with the modified turning point approach (LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup)
+               <li> "Pitchfork" -- Pitchfork tracking using bordering (LOCA::Bifurcation::PitchforkBord::ExtendedGroup) 
+               <li> "Hopf" -- Hopf point tracking using bordering (LOCA::Bifurcation::HopfBord::ExtendedGroup)
+               </ul>
+          <li> "Bifurcation Parameter" -- [string] (Must be supplied if "Method" is not "None") Name of bifurcation parameter
+          <li> "Length Normalization Vector" -- [NOX::Abstract::Vector*] (Must be supplied if "Method" is not "None) Pointer to NOX::Abstract::Vector holding length normilization vector \f$\phi\f$ used in turning point, pitchfork, and Hopf bifurcation algorithms
+          <li> "Initial Null Vector" -- [NOX::Abstract::Vector*] (Must be supplied for tuning point and pitchfork problems) Initial guess for null vector in turning point and pitchfork algorithms
+          <li> "Asymmetric Vector" -- [NOX::Abstract::Vector*] (Must be supplied for pitchfork problems) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm
+          <li> "Initial Real  Eigenvector" -- [NOX::Abstract::Vector*] (Must be supplied for Hopf problems) Initial guess for real component of generalized eigenvector in Hopf algorithm
+          <li> "Initial Imaginary  Eigenvector" -- [NOX::Abstract::Vector*] (Must be supplied for Hopf problems) Initial guess for imaginary component of generalized eigenvector in Hopf algorithm
+          <li> "Initial Frequency" -- [double] (Must be supplied for Hopf problems) Initial guess for Hopf frequency \f$\omega\f$ in Hopf algorithm
+          <li> "Perturb Initial Solution" -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
+          <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector
+          </ul>
+     <li> "Predictor" sublist -- used by LOCA::Predictor::Manager to determine what type of predictor to use for each continuation step
+          <ul>
+	  <li> "Method" -- [string] (default: "Constant") Predictor method to use for computing the initial guess for each continuation step.  Choices are 
+                 <ul>
+                 <li> "Constant" -- Use previous solution as initial guess for next step (LOCA::Predictor::Constant)
+                 <li> "Secant" -- Use secant vector to continuation curve to compute initial guess (LOCA::Predictor::Secant)
+                 <li> "Tangent" -- Use tangent vector to continuation curve to compute initial guess (LOCA::Predictor::Tangent)
+                 <li> "Random" -- Use a random perturbation of previous solution to compute initial guess (LOCA::Predictor::Random)
+                 </ul> 
+	  <li> "Epsilon" -- [double] (default: 1.0e-3) Relative size of perturbation for random predictor
+	  <li> "First Step Predictor" sublist -- used by the secant predictor to determine which predictor to use for the first continuation step -- Replicates "Predictor" sublist structure
+	  <li> "Last Step Predictor" sublist -- Predictor to use for last step of arc-length continuation to hit target (max or min) value exactly (usually "Constant" or "Random") -- Replicates "Predictor" sublist structure
 	  </ul>
-     <li> "Step Size" sublist -- used by LOCA::StepSize::Manager
+     <li> "Step Size" sublist -- used by LOCA::StepSize::Manager to determine step size constrol strategies
           <ul>
-	  <li> "Method" ["Constant", "Adaptive"]
-	  <li> "Initial Step Size" -- [double] Initial parameter step size
-	  <li> "Min Step Size" -- [double] Minimum parameter step size
-	  <li> "Max Step Size" -- [double] Maximum parameter step size
-	  <li> "Failed Step Reduction Factor" -- [double] Factor by which step size is reduced after a failed step
-	  <li> "Successful Step Increase Factor" - [double] Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
-	  <li> "Aggressiveness" -- [double] Aggressiveness factor in adaptive step size adjustment
+	  <li> "Method" -- [string] (default: "Constant") Step size control strategy to use.  Choices are
+                <ul>
+                <li> "Constant" -- Use a constant step size in general, reducing the step size after a failure and increasing step size back up to original value after subsequent successes (see LOCA::StepSize::Constant)
+                <li> "Adaptive" -- Use an adaptive step size control strategy that adjusts step size according to the number of Newton iterations per step (see LOCA::StepSize::Adaptive)
+	  <li> "Initial Step Size" -- [double] (default: 1.0) Initial parameter step size
+	  <li> "Min Step Size" -- [double] (default: 1.0e-12) Minimum parameter step size
+	  <li> "Max Step Size" -- [double] (default: 1.0e+12) Maximum parameter step size
+	  <li> "Failed Step Reduction Factor" -- [double] (default: 0.5) Factor by which step size is reduced after a failed step
+	  <li> "Successful Step Increase Factor" - [double] (default: 1.26) Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
+	  <li> "Aggressiveness" -- [double] (default: 0.0) Aggressiveness factor in adaptive step size adjustment
 	  </ul>
-     <li> "Utilities" sublist -- used by LOCA::Utils
+     <li> "Utilities" sublist -- used by LOCA::Utils to control screen output
           <ul>
-	  <li> "Output Information" -- [int] Sum of message types (see LOCA::Utils)
-	  <li> "Output Processor" -- [int] ID of printing processor
-	  <li> "MyPID" -- [int] Processor ID
-	  <li> "Output Precision" -- [int] Precision of output
+	  <li> "Output Information" -- [int] (default: 0xf) Sum of message types (see LOCA::Utils)
+	  <li> "Output Processor" -- [int] (default: 0) ID of printing processor
+	  <li> "MyPID" -- [int] (default: 0) Processor ID
+	  <li> "Output Precision" -- [int] (default: 3) Precision of output
 	  </ul>
-     <li> "Anasazi" sublist -- used by LOCA::Epetra::Group to compute eigenvalues using the Anasazi package
+     <li> "Anasazi" sublist -- used by LOCA::Continuation::AnasaziGroup to compute eigenvalues using the Anasazi package
           <ul>
-	  <li> "Block Size" -- [int] block size
-	  <li> "Arnoldi Size" -- [int] maximum length of the Arnoldi factorization
-	  <li> "NEV" -- [int] number of requested eigenvalues
-	  <li> "Tol" -- [double] tolerance for the converged eigenvalues
-	  <li> "Convergence Check" -- [int] checks convergence every so many steps
-	  <li> "Restarts" -- [int] number of restarts allowed
-	  <li> "Frequency" -- [int] how often to recalculate eigenvalues
-	  <li> "Debug Level" -- [int] Anasazi Debug level
+	  <li> "Block Size" -- [int] (default: 1) block size
+	  <li> "Arnoldi Size" -- [int] (default: 30) maximum length of the Arnoldi factorization
+	  <li> "NEV" -- [int] (default: 4) number of requested eigenvalues
+	  <li> "Tol" -- [double] (default: 1.0e-7) tolerance for the converged eigenvalues
+	  <li> "Convergence Check" -- [int] (default: 1) checks convergence every so many steps
+	  <li> "Restarts" -- [int] (default: 1) number of restarts allowed
+	  <li> "Frequency" -- [int] (default: 1) how often to recalculate eigenvalues
+	  <li> "Debug Level" -- [int] (default: 1) Anasazi Debug level
+	  <li> "Sorting Order" -- [string" (default: "LM") Sorting order of printed eigenvalues
 	  </ul>
      </ul>
 </ul>
@@ -173,9 +210,15 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 Parameters can also be passed to the LOCA::Abstract::Group constructor.  Currently, the only parameters used by the group are passed to the LOCA::Bifurcation::TPBord::SingularSolveGroup parent class, which provides techniques for approximating the solution to a (nearly) singular set of linear equations.
 
 <ul> 
-<li> "Singular Solve" sublist -- Used by LOCA::Bifurcation::TPBord::SingularSolveGroup
+<li> "Singular Solve" sublist -- Used by LOCA::Bifurcation::TPBord::SingularSolveGroup to determine which method to use for computing solutions to nearly singular systems
      <ul> 
-     <li> "Method" ["Default", "Nic", "Nic-Day", "Iterative Refinement"]
+     <li> "Method" -- [string] (default: "Default") Method to use.  Choices are
+           <ul>
+           <li> "Default" -- Use default solution method
+           <li> "Nic" -- Use "Nic" approach (LOCA::SingularJacobianSolve::Nic)
+           <li> "Nic-Day" -- Use "Nic-Day" approach (LOCA::SingularJacobianSolve::NicDay)
+           <li> "Iterative Refinement" -- Use iterative refinement (LOCA::SingularJacobianSolve::ItRef)
+           </ul>
      </ul>
 </ul>
 
