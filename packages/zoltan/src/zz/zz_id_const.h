@@ -57,6 +57,15 @@ extern "C" {
        ? ZOLTAN_Malloc_ID((num_obj) * (zz)->Num_LID, __FILE__, __LINE__) \
        : NULL)
 
+#define ZOLTAN_COPY_GID_ARRAY(to, from, zz,num_obj) \
+  memcpy(to, from, (num_obj) * (zz)->Num_GID * sizeof(ZOLTAN_ID_TYPE));
+
+#define ZOLTAN_COPY_LID_ARRAY(to, from, zz, num_obj) \
+  if ((zz)->Num_LID) { \
+     memcpy(to, from, (num_obj) * (zz)->Num_LID * sizeof(ZOLTAN_ID_TYPE)); \
+  }
+
+
 /*
  * Macros for reallocating arrays of IDs.
  */
