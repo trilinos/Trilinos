@@ -80,22 +80,22 @@ static void Zoltan_HSFC_hsfc2d(
   int        nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
 {
-  static int init = 0 ;
-  static unsigned char gray_inv[ 2 * 2 ] ;
+  volatile static int init = 0 ;
+  volatile static unsigned char gray_inv[ 2 * 2 ] ;
 
-  const unsigned NKey  = ( 2 < nkey ) ? 2 : nkey ;
-  const unsigned NBits = ( MaxBits * NKey ) / 2 ;
+  volatile const unsigned NKey  = ( 2 < nkey ) ? 2 : nkey ;
+  volatile const unsigned NBits = ( MaxBits * NKey ) / 2 ;
 
-  unsigned i ;
-  unsigned char order[2+2] ;
-  unsigned char reflect ;
+  volatile unsigned i ;
+  volatile unsigned char order[2+2] ;
+  volatile unsigned char reflect ;
   
   /* GRAY coding */
 
   if ( ! init ) {
-    unsigned char gray[ 2 * 2 ] ;
-    register unsigned k ;
-    register unsigned j ;
+    volatile unsigned char gray[ 2 * 2 ] ;
+    volatile register unsigned k ;
+    volatile register unsigned j ;
 
     gray[0] = 0 ;
     for ( k = 1 ; k < sizeof(gray) ; k <<= 1 ) {
@@ -114,14 +114,14 @@ static void Zoltan_HSFC_hsfc2d(
   reflect = ( 0 << 0 ) | ( 0 );
 
   for ( i = 1 ; i <= NBits ; i++ ) {
-    const unsigned s = MaxBits - i ;
-    const unsigned c = gray_inv[ reflect ^ (
+    volatile const unsigned s = MaxBits - i ;
+    volatile const unsigned c = gray_inv[ reflect ^ (
       ( ( ( coord[0] >> s ) & 01 ) << order[0] ) |
       ( ( ( coord[1] >> s ) & 01 ) << order[1] ) ) ];
 
-    const unsigned off   = 2 * i ;                   /* Bit offset */
-    const unsigned which = off / MaxBits ;           /* Which word to update */
-    const unsigned shift = MaxBits - off % MaxBits ; /* Which bits to update */
+    volatile const unsigned off   = 2 * i ;                   /* Bit offset */
+    volatile const unsigned which = off / MaxBits ;           /* Which word to update */
+    volatile const unsigned shift = MaxBits - off % MaxBits ; /* Which bits to update */
 
     /* Set the two bits */
 
@@ -272,12 +272,21 @@ void Zoltan_HSFC_fhsfc2d(
   int          nkey ,    /* IN: Word length of key */
   unsigned int key[] )   /* OUT: space-filling curve key */
 {
-  const unsigned imax = IScale ;
-  const double c0 = ( coord[0] <= 0 ) ? 0 : imax * coord[0] ;
-  const double c1 = ( coord[1] <= 0 ) ? 0 : imax * coord[1] ;
-  unsigned c[2] ;
-  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
-  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
+  const unsigned int imax = IScale ;
+  const double c0 = (coord[0] <= 0 ) ? 0.0 : (double) imax * coord[0];
+  const double c1 = (coord[1] <= 0 ) ? 0.0 : (double) imax * coord[1];
+  unsigned int c[2];
+
+/* the following were recoded due to a -m63 -o3 gcc bug!!   */
+/*  c[0] = ((double) imax < c0) ? imax : (unsigned int) c0; */
+/*  c[1] = ((double) imax < c1) ? imax : (unsigned int) c1; */
+
+  if ((double) imax < c0) c[0] = imax;
+  else                    c[0] = (unsigned int) c0;
+
+  if ((double) imax < c1) c[1] = imax;
+  else                    c[1] = (unsigned int) c1;
+
   Zoltan_HSFC_hsfc2d( c , nkey , key );
 }
 
@@ -287,13 +296,25 @@ void Zoltan_HSFC_fhsfc3d(
   unsigned   key[] )   /* OUT: space-filling curve key */
 {
   const unsigned imax = IScale ;
-  const double c0 = ( coord[0] <= 0 ) ? 0 : imax * coord[0] ;
-  const double c1 = ( coord[1] <= 0 ) ? 0 : imax * coord[1] ;
-  const double c2 = ( coord[2] <= 0 ) ? 0 : imax * coord[2] ;
+  const double c0 = (coord[0] <= 0 ) ? 0.0 : (double) imax * coord[0] ;
+  const double c1 = (coord[1] <= 0 ) ? 0.0 : (double) imax * coord[1] ;
+  const double c2 = (coord[2] <= 0 ) ? 0.0 : (double) imax * coord[2] ;
   unsigned c[3] ;
-  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
-  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
-  c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );
+
+/* the following were recoded due to a -m63 -o3 gcc bug!! */
+/*  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );       */
+/*  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );       */
+/*  c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );       */
+  
+  if ((double) imax < c0) c[0] = imax;
+  else                    c[0] = (unsigned int) c0;
+
+  if ((double) imax < c1) c[1] = imax;
+  else                    c[1] = (unsigned int) c1;
+
+  if ((double) imax < c2) c[2] = imax;
+  else                    c[2] = (unsigned int) c2;
+
   Zoltan_HSFC_hsfc3d( c , nkey , key );
 }
 
