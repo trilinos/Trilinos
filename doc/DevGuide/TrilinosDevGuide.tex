@@ -940,7 +940,7 @@ Lists for new packages can be set up very easily.  Each package usually has
 five mailing lists.  The example mailing lists mentioned below are to be used 
 for issues relating to all of Trilinos.  The names for the lists pertaining to 
 individual packages follow the same naming scheme, simply replace ``Trilinos'' 
-with the name of the package.  For example the list for Trilnos users is 
+with the name of the package.  For example, the list for Trilnos users is 
 called Trilinos-Users and the email address is 
 \InlineCommand{trilinos-users@software.sandia.gov}  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
@@ -1084,7 +1084,7 @@ add a new package to Trilinos, there are no prerequisites for adding a
 package to the Trilinos repository.  At this stage, it does not matter if the 
 package is finished.  In fact, we encourage
 developers to keep source files in the repository from package
-inception, so that source code is backed up and properly managed.
+inception so that source code is backed up and properly managed.
 Our primary restrictions are:
 \begin{enumerate}
 \item A package must be buildable on one or more platforms in order to
@@ -1324,10 +1324,10 @@ for multiple Trilinos packages, see Section~\ref{subsect:RegressionTesting}.
 
 
 \subsection{Retirement/Replacement}
-To the extent possible checkins to a release branch should not force interface 
-changes for users.  Even on the development branch, users should be notified 
-(via the package-users mail list) that checkins are about to happen that would 
-require an interface change to user code.
+To the extent possible, checkins to a release branch should not force 
+interface changes for users.  Even on the development branch, users should be 
+notified (via the package-users mail list) that checkins are about to happen 
+that would require an interface change to user code.
 
 In general, we will be very slow to omit a package, or version of a package, 
 that is in use unless there is equivalent interface and functionality support 
@@ -1379,7 +1379,7 @@ matrix.
 
 In summary, Epetra provides a common foundation for all other Trilinos
 packages while retaining an open architecture that allows any package
-to be used independently.  Epetra also supports light-weight copyin of
+to be used independently.  Epetra also supports light-weight copying of
 user data, allowing easy interoperability with other package such as
 PETSc.
 
@@ -1420,7 +1420,7 @@ operators with little overhead in time or memory.
 \end{enumerate}
 
 Both TSFCore and TSFExtended are important because they allow
-interfacing and sophisticated use of numerical linear algebra object
+interfacing and sophisticated use of numerical linear algebra objects
 without requiring the user or application to commit to any particular
 concrete linear algebra library.  This approach allows us to leverage
 the investment in sophisticated abstract numerical algorithms across
@@ -1431,10 +1431,10 @@ developers a single API that provides access to many solver packages.
 \section{Integrating a Package into Trilinos}
 \label{Section:IntegratingPackages}
 Before beginning to add a new package to Trilinos, permission must be 
-granted by the Trilinos Project leader.  In 
+granted by the Trilinos Project leader.  
 Sections~\ref{Subsection:AddSource},~\ref{Section:PackageRequirements}, 
-and~\ref{Section:SuggestPractices} different aspects of adding a package to 
-Trilinos are discussed.  These sections cover how to add files to a package,
+and~\ref{Section:SuggestPractices} discuss different aspects of adding a 
+package to Trilinos.  These sections cover how to add files to a package,
 what is required of a package, and how these requirements could be met, 
 respectively.  This section will address the steps that can be taken to 
 integrate a new package into the Trilinos configure and build system.  It is 
@@ -1475,7 +1475,7 @@ not have to be completed in the exact order listed below, nor does a step
 necessarily have to be completed in its entirety before moving onto the next
 step.  (For example, a portion of a library can be autotool'ed and tested
 before work begins on the rest of the library.)  The seven steps are listed
-below.  Note that new\_package is a work in progress; comments are welcome.
+below.
 
 \begin{enumerate}
 
@@ -1491,8 +1491,8 @@ begin and mail lists can preserve initial commit comments.
 
 Examples of all of the new, non-generated Autoconf and Automake files
 required to add a packages to the Trilinos Autotools configure and build 
-processesare located within the new\_package directory structure.  Most of 
-these fileswill need to be customized for each new package.  See the 
+processes are located within the new\_package directory structure.  Most of 
+these files will need to be customized for each new package.  See the 
 individual example files for more details.  Instructions for customizing are 
 listed behind 
 \begin{verbatim}
@@ -1539,13 +1539,7 @@ in the \InlineDirectory{Trilinos} directory.  If any Autotools files at the
 
 in the \DisplayCommand{Trilinos/packages/np} directory.
 
-The bootstrap commands should complete without any errors, however, at this
-time it is not uncommon to have warnings similar to the following:
-\begin{verbatim}
-warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-warning: do not use m4_regexp: use regexp or m4_bregexp
-\end{verbatim}
-These warnings will be fixed in the future.
+The bootstrap commands should complete without any errors.
 
 \item Test and debug Autoconf and Automake files.
 
@@ -1588,7 +1582,7 @@ to the repository.
 
 When the new files have been committed, a good sanity check is to checkout 
 a new copy of Trilinos and attempt to configure and build.  This will catch 
-any files that have not been properly added.
+any files that have not been added.
 
 \item Add regression tests to the Trilinos test harness.
 
