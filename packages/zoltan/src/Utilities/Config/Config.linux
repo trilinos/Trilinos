@@ -19,7 +19,7 @@
 #  in this architecture's makefile.
 #  The variable MPI_VERSION should be set to "lam" (the default) or "mpich"; 
 #  this variable is used only in this architecture's makefile.
-#  For explanations of these variables, please see Makefile.generic.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 F90_COMPILER		= nag
@@ -112,6 +112,11 @@ ifeq "$(MPI_VERSION)" "lam"
 MPI_LIB		= 
 MPI_LIBPATH	= 
 endif
+
+# Some users have needed these libraries.  If your linker can't find getarg or
+# iargc, uncomment these paths and try again.
+#MPI_LIB = -lg2c
+#MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
 PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3
 PARMETIS_INCPATH  	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3

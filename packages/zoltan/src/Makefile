@@ -32,40 +32,6 @@
 ##############################################################################
 
 TARGET=zdrive
-LIB_NAME=libzoltan.a     # if change LIB_NA##############################################################################
-# Zoltan Library for Parallel Applications                                   #
-# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
-# For more info, see the README file in the top-level Zoltan directory.      # 
-##############################################################################
-##############################################################################
-# CVS File Information
-#    $RCSfile$
-#    $Author$
-#    $Date$
-#    Revision: 1.107 $
-##############################################################################
-
-##############################################################################
-# Top-level Makefile for Zoltan library and Zoltan driver zdrive.
-#
-# To compile the library, type
-#    gmake ZOLTAN_ARCH=<targetmachine> zoltan
-# where
-#    targetmachine = the suffix of one of the configuration files Config.*
-#                    in Zoltan/Utilities/Config.
-#
-# To compile zdrive, type
-#    gmake <optional flags> zdrive
-#
-# The optional flags are:
-#    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
-#                    be called from Fortran.
-# Example:
-# To compile a version of Zoltan for tflop including the F90 interface, type
-#    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
-##############################################################################
-
-TARGET=zdrive
 LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
                          # in Utilities/Makefile
 LIB_TARGET=zoltan
@@ -114,7 +80,6 @@ ZOLTAN_HG=1
 ZOLTAN_OCT=1
 
 GDEFINES	=
-#define ZOLTAN_HG
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN

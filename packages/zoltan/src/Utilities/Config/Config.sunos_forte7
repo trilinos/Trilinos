@@ -16,7 +16,7 @@
 #  solaris with Forte7 compilers for ACME, SIERRA and NEVADA in bldg. 880. 
 #  Currently, we do not officially support this platform, but we include the 
 #  configuration file as a courtesy to these projects.
-#  For explanations of these variables, please see Makefile.generic.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 DEFS 			= 

@@ -16,7 +16,7 @@
 #  solaris on NIST's LAN.  
 #  The variable MPI_VERSION should be set to "lam" or "mpich"; this variable
 #  is an additional variable used only in this architecture's makefile.
-#  For explanations of these variables, please see Makefile.generic.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 MPI_VERSION 		= lam

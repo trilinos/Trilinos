@@ -16,7 +16,7 @@
 #  sgi darwin on the 980 LAN in 64-bit mode.  
 #  An F90 compiler in not available.  Thus, F90
 #  compilation  in this environment has not been tested.
-#  For explanations of these variables, please see Makefile.generic.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 DEFS                    = 

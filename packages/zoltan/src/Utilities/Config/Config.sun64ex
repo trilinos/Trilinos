@@ -12,10 +12,13 @@
 ##############################################################################
 
 ##############################################################################
-#  Environment variables for compiling the Zoltan and test drivers 
-#  for suns on Sandia's 980 LAN.  
+#  Environment variables for compiling the Zoltan and test drivers for
+#  sun 64-bit compilers in SIERRA's environment.
+#  Currently, we do not officially support this platform, but we include the
+#  configuration file as a courtesy to this project.
 #  For explanations of these variables, please see Config.generic.
 ##############################################################################
+
 
 DEFS 			= 
 DEPS			= -xM
@@ -24,36 +27,40 @@ RANLIB			= ranlib
 AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
-CC			= /Net/local/bin/cc
+#CC			= /Net/local/bin/cc
+CC       = mpcc
 PURE_CC			= 
 
-INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
-			  -I/Net/local/lang/SC3.0.1/ansi_include \
-			  -I/Net/proj/zoltan/arch/solaris/include \
-			  -I/Net/local/mpi/include \
-			  -I/Net/local/mpi/build/solaris/ch_p4/include
+INCLUDE_PATH            = 
+
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS 			= $(DBG_FLAGS)
+#CFLAGS 			= $(DBG_FLAGS)
 
-F90                     = f90
-LOCAL_F90               = f90
+F90                     = /opt/SUNWhpc/bin/f90
+LOCAL_F90               = /opt/SUNWhpc/bin/f90
 F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
 FFLAGS                  =
 SPPR_HEAD               = spprinc.most
 F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
-MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
-MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
-                  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
+MPI_LIB			= -lsocket -lnsl -laio -lgcc
+MPI_LIBPATH             = /lib/dp
 
-PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS2
-PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
+PARMETIS_LIBPATH        = \
+-L/sierra/Release/ParMetis/3.0-mpich.1.2.4/lib/sparc-sun-solaris2.8-s01/dp
+PARMETIS_INCPATH        = \
+-I/sierra/Release/ParMetis/3.0-mpich.1.2.4/. \
+-I/sierra/Release/ParMetis/3.0-mpich.1.2.4/METISLib
 
-JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
-JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
-JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+NEMESIS_LIBPATH = \
+-L/sierra/Release/nemesis/2.25.1/lib/sparc-sun-solaris2.8-s01/dp -lnemIc \
+-L/sierra/Release/exodusii/3.25/lib/sparc-sun-solaris2.8-s01/dp -lexoIIv2c \
+ -L/sierra/Release/netcdf/3.4-snl5/lib/sparc-sun-solaris2.8-s01/dp -lnetcdf
 
-NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
-NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
+ NEMESIS_INCPATH = -I/sierra/Release/nemesis/2.25.1 \
+ -I/sierra/Release/exodusii/3.25/cbind/include \
+ -I/sierra/Release/exodusii/3.25/forbind/include \
+ -I/sierra/Release/netcdf/3.4-snl5/src/libsrc
+

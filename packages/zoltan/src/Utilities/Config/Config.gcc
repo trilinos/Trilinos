@@ -15,7 +15,7 @@
 #  Environment variables for compiling the Zoltan and test drivers using gcc 
 #  for solaris on Sandia's 980 LAN.  The compiler flag -Wall tells gcc to
 #  print all warnings!  This option is good for cleaning up the code!
-#  For explanations of these variables, please see Makefile.generic.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 DEFS 			= 

@@ -1,6 +1,6 @@
 ##############################################################################
-# Zoltan Library for Parallel Applications                                   #
-# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
 # For more info, see the README file in the top-level Zoltan directory.      # 
 ##############################################################################
 ##############################################################################
@@ -12,11 +12,9 @@
 ##############################################################################
 
 ##############################################################################
-#  Config.generic  
-#  Copy this file to Makefile.$(ZOLTAN_ARCH), where ZOLTAN_ARCH specifies
-#  the architecture on which you wish to run Zoltan.
-#  Then set the following variables to reflect the environment for that
-#  architecture.
+#  Environment variables for compiling the Zoltan and test drivers for
+#  IBM ASCI White compilers for ACME, SIERRA and NEVADA.
+#  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
 ##############################################################################
@@ -47,7 +45,7 @@ AR			= ar r
 ##############################################################################
 
 # C Compiler
-CC			= mpicc
+CC			= newmpcc
 
 # Include paths needed for the C compiler; prefix all paths with -I.
 # This path should include the path for MPI, if it is not a default path.
@@ -90,7 +88,7 @@ LOCAL_F90		= f90
 #   If you use a PGI compiler, include -DPGI.
 #   If you use a FUJITSU or Lahey compiler, specify -DFUJITSU.
 # If you are not using MPI2, include -DNO_MPI2.
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
+F90CFLAGS 		= -DFMANGLE=LOWERCASE -DNO_MPI2
 
 # Flags used in F90 compilation of code in fort and fdriver.
 FFLAGS    		= 
@@ -149,8 +147,8 @@ MPI_LIBPATH		=
 # this header file on your system, you may use the header file that
 # is distributed with Zoltan. Make sure that you use a header file
 # that is compatible with the library version you link. 
-#PARMETIS_LIBPATH 	= -L.
-#PARMETIS_INCPATH      = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
+#PARMETIS_LIBPATH 	=
+#PARMETIS_INCPATH      =
 
 # For graph-partitioning, Zoltan includes an interface to the
 # Jostle graph-partitioning library of Chris Walshaw, U. Greenwich.
@@ -159,9 +157,9 @@ MPI_LIBPATH		=
 # If you already have Jostle on your machine, give the path here.
 # Otherwise, you first need to get Jostle from Chris Walshaw and
 # install it on your system.
-#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
-#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
-#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 	=
+#JOSTLE_INCPATH 	=
+#JOSTLE_SRCPATH 	=
 
 # In addition to accepting Chaco input files, the test driver zdrive 
 # can use Nemesis mesh database files as input.
@@ -169,6 +167,6 @@ MPI_LIBPATH		=
 # zdrive, comment out the NEMESIS_* variables.  Otherwise,
 # specify paths to the Nemesis, Exodus and NetCDF libraries and
 # include files.
-#NEMESIS_LIBPATH	= -L/Net/local/proj/zoltan/arch/solaris/lib
-#NEMESIS_INCPATH	= -I/Net/local/proj/zoltan/arch/solaris/include
+#NEMESIS_LIBPATH	=
+#NEMESIS_INCPATH	=
  
