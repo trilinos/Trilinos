@@ -88,7 +88,7 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear \
 	1Dfem_nonlinearColoring 1Dtransfem_nonlinear Brusselator Suite \
-	Brusselator_Split
+	Brusselator_Split Brusselator_EpetraNew
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -253,7 +253,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_EPETRA_EXAMPLES_TRUE@SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_nonlinearColoring 1Dtransfem_nonlinear Brusselator Suite Brusselator_Split
+@BUILD_EPETRA_EXAMPLES_TRUE@SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_nonlinearColoring 1Dtransfem_nonlinear Brusselator Suite Brusselator_Split Brusselator_EpetraNew
 all: all-recursive
 
 .SUFFIXES:
