@@ -1,0 +1,221 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  SFC</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="ParMETIS"></A>ParMETIS</H2>
+ParMETIS is a parallel library for graph partitioning&nbsp; (and repartitioning)
+developed at the University of Minnesota by Karypis, Schloegel and&nbsp;
+Kumar. ParMETIS is therefore strictly speaking not a method but rather
+a collection of methods. In the Zoltan context, ParMETIS is a method with
+many sub-methods. Zoltan provides an interface to all the ParMETIS (sub-)methods.&nbsp;
+The user selects which ParMETIS method to use through the parameter PARMETIS_METHOD.
+Most of the ParMETIS methods are based on either multilevel Kernighan-Lin
+partitioning or some diffusion algorithm. The names of the ParMETIS methods
+used by Zoltan are identical to those in the ParMETIS library. For further
+information about the various ParMETIS methods and parameters, please consult
+the ParMETIS User's Guide.
+
+<P>This interface is currently compatible with ParMETIS version 2.0.&nbsp;
+There is no guarantee that Zoltan will work correctly if you have a different
+version of ParMETIS on your computer. Source and documentation for ParMETIS
+can be obtained from the <A HREF="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
+home page</A>. As a courtesy service,&nbsp; a compatible version of the
+ParMETIS&nbsp; source code will be distributed with Zoltan. However, ParMETIS
+is a completely separate library. If you do not wish to install ParMETIS,
+it is possible to compile Zoltan without any references to ParMETIS&nbsp;
+(set the NO_PARMETIS flag when you 'make' Zoltan).
+
+<P>We only give a brief summary of the various ParMETIS methods here; for
+more details see the ParMETIS documentation. The methods fall into three
+categories:
+<OL>
+<LI>
+Part* - These algorithms perform graph partitioning without consideration
+of the initial distribution.</LI>
+
+<LI>
+Repart* - Incremental algorithms with small migration cost</LI>
+
+<LI>
+Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
+multiple times to reduce the communication cost (cut weight) if desired.</LI>
+</OL>
+&nbsp;As a general rule, use one of the Part* methods if you have a poor
+initial balance and you are willing to spend some time doing migration.
+Use the Repart* methods when you have a reasonably good load balance that
+you wish to update incrementally (for example, in adaptive mesh refinement).
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+
+<TD><B>PARMETIS</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</I></TD>
+
+<TD>The ParMETIS method to be used.; currently 8 are available.&nbsp;
+<BR><I>PartKway</I> - multilevel Kernighan-Lin partitioning&nbsp;
+<BR><I>PartGeom</I> - space filling curves (coordinate based)&nbsp;
+<BR><I>PartGeomKway</I> - hybrid method based on PartKway and PartGeom
+(needs both&nbsp; graph data and coordinates)&nbsp;
+<BR><I>RepartLDiffusion</I> - diffusion algorithm (local)&nbsp;
+<BR><I>RepartGDiffusion</I> - diffusion algorithm (global)&nbsp;
+<BR><I>RepartRemap</I> - multilevel partioning with remap seeking to minimize
+migration cost&nbsp;
+<BR><I>RepartMLRemap</I> - similar to RepartRemap but with additional multilevel
+refinement&nbsp;
+<BR><I>RefineKway</I> - refine the current partitioning (balance)</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>PARMETIS_OUTPUT_LEVEL</I></TD>
+
+<TD>Amount of output the load-balancing algorithm should produce.&nbsp;
+<BR>0 = no output, 1 = print timing info. Turning on more bits displays
+more information (for example, 3 = 1&amp;2, 5=1&amp;4, 7=1&amp;2&amp;4).</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>PARMETIS_VWGT_DIM</I></TD>
+
+<TD>Dimension of vertex (that is, object) weights to use .&nbsp;
+<BR>0 = don't use object weights; 1 = use scalar object weights, n>1 =
+use multidimensional weights (not yet supported by ParMetis)</TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD NOSAVE>&nbsp;&nbsp;&nbsp; <I>PARMETIS_EWGT_DIM</I></TD>
+
+<TD>Dimension of&nbsp; edge weights to use .&nbsp;
+<BR>0 = don't use edge weights; 1 = use scalar edge weights, n>1 = use
+multidimensional weights (not yet supported by ParMetis)</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>PARMETIS_COARSE_ALG</I></TD>
+
+<TD>Coarse algorithm for PartKway. 1 = serial, 2 = parallel.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>PARMETIS_FOLD</I></TD>
+
+<TD>Folding parameter for PartKway, for expert users only.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default values:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>PARMETIS_METHOD</I> = PartKway</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>PARMETIS_OUTPUT_LEVEL</I> = 0</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE></TD>
+
+<TD><I>PARMETIS_VWGT_DIM</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>PARMETIS_EWGT_DIM</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>PARMETIS_COARSE_ALG </I>= 2</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>PARMETIS_FOLD </I>= 150</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>For all submethods:</TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+pair</TD>
+</TR>
+
+<TR>
+<TD>Only PartGeom/PartGeomKway:</TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B></TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD>All but PartGeom:</TD>
+
+<TD NOSAVE><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_NUM_EDGES_FN</A></B>&nbsp;
+<BR><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_EDGE_LIST_FN</A></B></TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_alg_oct.html">Next:&nbsp; Octree/Space-Filling Curve (SFC)
+Partitioning</A>&nbsp; |&nbsp; <A HREF="ug_alg_rcb.html">Previous:&nbsp;
+Recursive Coordinate Bisection (RCB)</A>]
+</BODY>
+</HTML>
