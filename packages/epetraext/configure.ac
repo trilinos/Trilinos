@@ -184,7 +184,7 @@ AM_CONDITIONAL(BUILD_TRANSFORM_EXAMPLES, test X${SUBPKG_transform_EXAMPLES} = Xy
 
 EPETRAEXT_SUBPKG(inout,yes)
 AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout} = Xyes)
-AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout_TESTS} = Xyes)
+AM_CONDITIONAL(BUILD_INOUT_TESTS, test X${SUBPKG_inout_TESTS} = Xyes)
 AM_CONDITIONAL(BUILD_INOUT_EXAMPLES, test X${SUBPKG_inout_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------

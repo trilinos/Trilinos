@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_TRANSFORM_TESTS_TRUE BUILD_TRANSFORM_TESTS_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE HAVE_EPETRAEXT_ZOLTAN_TRUE HAVE_EPETRAEXT_ZOLTAN_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_TRANSFORM_TESTS_TRUE BUILD_TRANSFORM_TESTS_FALSE BUILD_TRANSFORM_EXAMPLES_TRUE BUILD_TRANSFORM_EXAMPLES_FALSE BUILD_INOUT_TRUE BUILD_INOUT_FALSE BUILD_INOUT_TESTS_TRUE BUILD_INOUT_TESTS_FALSE BUILD_INOUT_EXAMPLES_TRUE BUILD_INOUT_EXAMPLES_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE HAVE_EPETRAEXT_ZOLTAN_TRUE HAVE_EPETRAEXT_ZOLTAN_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -878,6 +878,14 @@ Optional Features:
                           compile transform sub-package
   --enable-epetraext-transform-tests
                           compile transform tests
+  --enable-epetraext-transform-examples
+                          compile transform examples
+  --enable-epetraext-inout
+                          compile inout sub-package
+  --enable-epetraext-inout-tests
+                          compile inout tests
+  --enable-epetraext-inout-examples
+                          compile inout examples
   --enable-threads        enable shared memory threads (default is no)
   --enable-fatal_messages enable printing of fatal error messages (default is
                           yes)
@@ -3172,7 +3180,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3175:" \
+echo "$as_me:3183:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4294,8 +4302,22 @@ else
 
 fi;
 
+  # Check whether --enable-epetraext-transform-examples or --disable-epetraext-transform-examples was given.
+if test "${enable_epetraext_transform_examples+set}" = set; then
+  enableval="$enable_epetraext_transform_examples"
+  SUBPKG_transform_EXAMPLES=$enableval
+else
+  SUBPKG_transform_EXAMPLES=no
+
+fi;
+
   #Cannot build tests if associated sub-package not built
   if test ${SUBPKG_transform_TESTS} = yes; then
+    SUBPKG_transform=yes;
+  fi
+
+  #Cannot build examples if associated sub-package not built
+  if test ${SUBPKG_transform_EXAMPLES} = yes; then
     SUBPKG_transform=yes;
   fi
 
@@ -4308,6 +4330,11 @@ echo "${ECHO_T}${SUBPKG_transform}" >&6
 echo $ECHO_N "checking whether the transform tests should be built... $ECHO_C" >&6
   echo "$as_me:$LINENO: result: ${SUBPKG_transform_TESTS}" >&5
 echo "${ECHO_T}${SUBPKG_transform_TESTS}" >&6
+
+  echo "$as_me:$LINENO: checking whether the transform examples should be built" >&5
+echo $ECHO_N "checking whether the transform examples should be built... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${SUBPKG_transform_EXAMPLES}" >&5
+echo "${ECHO_T}${SUBPKG_transform_EXAMPLES}" >&6
 
 
 
@@ -4327,6 +4354,100 @@ if test X${SUBPKG_transform_TESTS} = Xyes; then
 else
   BUILD_TRANSFORM_TESTS_TRUE='#'
   BUILD_TRANSFORM_TESTS_FALSE=
+fi
+
+
+
+if test X${SUBPKG_transform_EXAMPLES} = Xyes; then
+  BUILD_TRANSFORM_EXAMPLES_TRUE=
+  BUILD_TRANSFORM_EXAMPLES_FALSE='#'
+else
+  BUILD_TRANSFORM_EXAMPLES_TRUE='#'
+  BUILD_TRANSFORM_EXAMPLES_FALSE=
+fi
+
+
+
+  # Check whether --enable-epetraext-inout or --disable-epetraext-inout was given.
+if test "${enable_epetraext_inout+set}" = set; then
+  enableval="$enable_epetraext_inout"
+  SUBPKG_inout=$enableval
+else
+  SUBPKG_inout=yes
+
+fi;
+
+  # Check whether --enable-epetraext-inout-tests or --disable-epetraext-inout-tests was given.
+if test "${enable_epetraext_inout_tests+set}" = set; then
+  enableval="$enable_epetraext_inout_tests"
+  SUBPKG_inout_TESTS=$enableval
+else
+  SUBPKG_inout_TESTS=no
+
+fi;
+
+  # Check whether --enable-epetraext-inout-examples or --disable-epetraext-inout-examples was given.
+if test "${enable_epetraext_inout_examples+set}" = set; then
+  enableval="$enable_epetraext_inout_examples"
+  SUBPKG_inout_EXAMPLES=$enableval
+else
+  SUBPKG_inout_EXAMPLES=no
+
+fi;
+
+  #Cannot build tests if associated sub-package not built
+  if test ${SUBPKG_inout_TESTS} = yes; then
+    SUBPKG_inout=yes;
+  fi
+
+  #Cannot build examples if associated sub-package not built
+  if test ${SUBPKG_inout_EXAMPLES} = yes; then
+    SUBPKG_inout=yes;
+  fi
+
+  echo "$as_me:$LINENO: checking whether the sub-package inout should be built" >&5
+echo $ECHO_N "checking whether the sub-package inout should be built... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${SUBPKG_inout}" >&5
+echo "${ECHO_T}${SUBPKG_inout}" >&6
+
+  echo "$as_me:$LINENO: checking whether the inout tests should be built" >&5
+echo $ECHO_N "checking whether the inout tests should be built... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${SUBPKG_inout_TESTS}" >&5
+echo "${ECHO_T}${SUBPKG_inout_TESTS}" >&6
+
+  echo "$as_me:$LINENO: checking whether the inout examples should be built" >&5
+echo $ECHO_N "checking whether the inout examples should be built... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${SUBPKG_inout_EXAMPLES}" >&5
+echo "${ECHO_T}${SUBPKG_inout_EXAMPLES}" >&6
+
+
+
+if test X${SUBPKG_inout} = Xyes; then
+  BUILD_INOUT_TRUE=
+  BUILD_INOUT_FALSE='#'
+else
+  BUILD_INOUT_TRUE='#'
+  BUILD_INOUT_FALSE=
+fi
+
+
+
+if test X${SUBPKG_inout_TESTS} = Xyes; then
+  BUILD_INOUT_TESTS_TRUE=
+  BUILD_INOUT_TESTS_FALSE='#'
+else
+  BUILD_INOUT_TESTS_TRUE='#'
+  BUILD_INOUT_TESTS_FALSE=
+fi
+
+
+
+if test X${SUBPKG_inout_EXAMPLES} = Xyes; then
+  BUILD_INOUT_EXAMPLES_TRUE=
+  BUILD_INOUT_EXAMPLES_FALSE='#'
+else
+  BUILD_INOUT_EXAMPLES_TRUE='#'
+  BUILD_INOUT_EXAMPLES_FALSE=
 fi
 
 
@@ -6075,7 +6196,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6078: \"$ac_link\") >&5
+(eval echo $as_me:6199: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6155,7 +6276,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6158: \"$ac_link\") >&5
+(eval echo $as_me:6279: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8592,7 +8713,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8595: \"$ac_link\") >&5
+(eval echo $as_me:8716: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8672,7 +8793,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8675: \"$ac_link\") >&5
+(eval echo $as_me:8796: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8865,7 +8986,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile src/Makefile src/transform/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile"
+                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile src/Makefile src/transform/Makefile src/inout/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9005,6 +9126,34 @@ if test -z "${BUILD_TRANSFORM_TESTS_TRUE}" && test -z "${BUILD_TRANSFORM_TESTS_F
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRANSFORM_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TRANSFORM_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TRANSFORM_EXAMPLES_TRUE}" && test -z "${BUILD_TRANSFORM_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRANSFORM_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TRANSFORM_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_INOUT_TRUE}" && test -z "${BUILD_INOUT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_INOUT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_INOUT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_INOUT_TESTS_TRUE}" && test -z "${BUILD_INOUT_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_INOUT_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_INOUT_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_INOUT_EXAMPLES_TRUE}" && test -z "${BUILD_INOUT_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_INOUT_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_INOUT_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9475,6 +9624,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src/transform/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/transform/Makefile" ;;
+  "src/inout/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/inout/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BTF/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BTF/Makefile" ;;
   "test/Composite/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Composite/Makefile" ;;
@@ -9486,6 +9636,7 @@ do
   "test/SymmRCM/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SymmRCM/Makefile" ;;
   "test/View/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/View/Makefile" ;;
   "test/Zoltan/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Zoltan/Makefile" ;;
+  "test/inout/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/inout/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
@@ -9649,6 +9800,14 @@ s,@BUILD_TRANSFORM_TRUE@,$BUILD_TRANSFORM_TRUE,;t t
 s,@BUILD_TRANSFORM_FALSE@,$BUILD_TRANSFORM_FALSE,;t t
 s,@BUILD_TRANSFORM_TESTS_TRUE@,$BUILD_TRANSFORM_TESTS_TRUE,;t t
 s,@BUILD_TRANSFORM_TESTS_FALSE@,$BUILD_TRANSFORM_TESTS_FALSE,;t t
+s,@BUILD_TRANSFORM_EXAMPLES_TRUE@,$BUILD_TRANSFORM_EXAMPLES_TRUE,;t t
+s,@BUILD_TRANSFORM_EXAMPLES_FALSE@,$BUILD_TRANSFORM_EXAMPLES_FALSE,;t t
+s,@BUILD_INOUT_TRUE@,$BUILD_INOUT_TRUE,;t t
+s,@BUILD_INOUT_FALSE@,$BUILD_INOUT_FALSE,;t t
+s,@BUILD_INOUT_TESTS_TRUE@,$BUILD_INOUT_TESTS_TRUE,;t t
+s,@BUILD_INOUT_TESTS_FALSE@,$BUILD_INOUT_TESTS_FALSE,;t t
+s,@BUILD_INOUT_EXAMPLES_TRUE@,$BUILD_INOUT_EXAMPLES_TRUE,;t t
+s,@BUILD_INOUT_EXAMPLES_FALSE@,$BUILD_INOUT_EXAMPLES_FALSE,;t t
 s,@EGREP@,$EGREP,;t t
 s,@HAVE_THREADS_TRUE@,$HAVE_THREADS_TRUE,;t t
 s,@HAVE_THREADS_FALSE@,$HAVE_THREADS_FALSE,;t t
