@@ -11,6 +11,7 @@
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_EpetraBaseOperator.h"
 #include "MLAPI_MultiLevelSA.h"
+#include "MLAPI_MultiLevelAdaptiveSA.h"
 #include "MLAPI_MATLABStream.h"
 #include "MLAPI_Gallery.h"
 #include "MLAPI_Krylov.h"

@@ -22,6 +22,9 @@ MultiVector Duplicate(const MultiVector& y);
 //! Creates a new vector, x, such that x = y(:,v)
 MultiVector Duplicate(const MultiVector& y, const int v);
 
+//! Extracts a component from a vector.
+MultiVector Extract(const MultiVector& y, const int v);
+
 } // namespace MLAPI
 
 #endif

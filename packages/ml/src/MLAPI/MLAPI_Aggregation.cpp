@@ -42,14 +42,15 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   if (ThisNS.GetNumVectors() == 0)
     ML_THROW("zero-dimension null space", -1);
              
-  int size = ThisNS.GetMyTotalLength();
+  int size = ThisNS.GetMyLength();
 
   double* null_vect = 0;
-  ML_memory_alloc((void **)&null_vect, sizeof(double) * size, "ns");
+  ML_memory_alloc((void **)&null_vect, sizeof(double) * size * ThisNS.GetNumVectors(), "ns");
 
   int incr = 1;
-  DCOPY_F77(&size, (double*)ThisNS.GetValues(), &incr,
-            null_vect, &incr);
+  for (int v = 0 ; v < ThisNS.GetNumVectors() ; ++v)
+    DCOPY_F77(&size, (double*)ThisNS.GetValues(v), &incr,
+              null_vect + v * ThisNS.GetMyLength(), &incr);
 
   ML_Aggregate_Set_NullSpace(agg_object, NumPDEEquations,
                              ThisNS.GetNumVectors(), null_vect, 
@@ -88,9 +89,10 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
 
   NextNS.Reshape(CoarseSpace, ThisNS.GetNumVectors());
 
-  size = NextNS.GetMyTotalLength();
-  DCOPY_F77(&size, agg_object->nullspace_vect, &incr,
-            NextNS.GetValues(), &incr);
+  size = NextNS.GetMyLength();
+  for (int v = 0 ; v < NextNS.GetNumVectors() ; ++v)
+    DCOPY_F77(&size, agg_object->nullspace_vect + v * size, &incr,
+              NextNS.GetValues(v), &incr);
 
   ML_Aggregate_Destroy(&agg_object);
 

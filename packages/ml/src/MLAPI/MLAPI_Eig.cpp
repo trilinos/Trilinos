@@ -99,8 +99,11 @@ void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI, MultiVector& V)
   ER.Reshape(Op.GetDomainSpace());
   EI.Reshape(Op.GetDomainSpace());
 
+  ML_THROW("fixme.....", -1);
+  /* FIXME
   ierr = ML_Operator_Eigensolver_Dense(Op.GetML_Operator(), ER.GetValues(), 
                                        EI.GetValues(), V.GetValues());
+  */
   if (ierr)
     ML_THROW("Error occurred", -1);
   
@@ -154,9 +157,12 @@ void Eigs(const Operator& A, int NumEigenvalues,
   AnasaziList.set("eigen-analysis: action", "LM");
 
 #ifdef HAVE_ML_ANASAZI
+  ML_THROW("fixme...", -1);
+  /* FIXME
   ML_Anasazi::Interface(A.GetRowMatrix(),EigenVectors,ER.GetValues(),
 			EI.GetValues(), AnasaziList, 0, 0,
 			&NumRealEigenvectors, &NumImagEigenvectors, 0);
+                        */
 #else
   ML_THROW("Configure ML with --enable-anasazi to use Eigs()", -1);
 #endif

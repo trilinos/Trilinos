@@ -73,7 +73,7 @@ public:
 
     for (int v = 0 ; v < X_Epetra.NumVectors() ; ++v) {
 
-      MultiVector X_ML(Op_.GetOperatorDomainSpace(),&(X_Epetra[v][0]), 1);
+      MultiVector X_ML(Op_.GetOperatorDomainSpace(),(double**)&(X_Epetra[v]), 1);
 
       // need additional vector for AztecOO
       MultiVector Y_ML(Op_.GetOperatorRangeSpace(), 1);
@@ -82,7 +82,7 @@ public:
 
       int n = Y_Epetra.MyLength();
       int incr = 1;
-      DCOPY_F77(&n, Y_ML.GetValues(), &incr, &(Y_Epetra[v][0]), &incr);
+      DCOPY_F77(&n, Y_ML.GetValues(0), &incr, &(Y_Epetra[v][0]), &incr);
     }
 
     return(0);
