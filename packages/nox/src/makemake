@@ -6,24 +6,29 @@
 ### Automatically generates Makefile components
 ########################################################################
 
-# Build dependencies - requires three arguments.
 sub build_depends{
 
     # Copy inputs (@_) into local variables
+    # 1st argument is list of subdirectories to search
+    # 2nd argument is name of project
     local(*DIRS, $projname) = @_;
 
-    # Generate a list of all include and source files
-    # from each directory in DIRS
-    @incfiles = ();
-    @srcfiles = ();
+    @incfiles = ();		# list of all included files
+    @srcfiles = ();		# list of all source files
+    @metaobjs = ();		# list of all OBJS variables (one per subdir)
+    @incdirs = ();		# list of all dirs with include files
+
+    # Generate all the above lists by going through each directory listed in DIRSA
     foreach $dir (@DIRS) {
 
-	@objfiles = ();
+	$isinc = 0;		# Is this directory in @incdirs?
+	@objfiles = ();		# List of object files in this directory
 
 	opendir(DIR, $dir) || die "Can't open include directory $dir. $!\n";
 	@filenames = readdir(DIR);
 	foreach (@filenames) {
-	    (/.H$/) &&
+	    (/.H$/) && 
+		(($isinc == 1) || push(@incdirs, "$dir") && ($isinc = 1)) &&
 		((($dir =~ /^.$/) && push(@incfiles, "$_")) ||
 		 push(@incfiles, "$dir/$_"));
 	    (/.C$/) && 
@@ -34,12 +39,20 @@ sub build_depends{
 	}
 	closedir(DIR);
 
-	# Output object files for this particular directory
-	$shortdir = $dir;
-	($shortdir =~ s/$SRCDIRHOME\/(.*)/$1/) || ($shortdir = "");
-	print "Directory: $dir -> $shortdir\n";
-	print @objfiles;
-	print "\n";
+	# Create OBJS variable name for this directory's object files
+	@objname = ();
+	push(@objname, "$projname");
+	($dir =~ s/$SRCDIRHOME\/(.*)/$1/) && ($dir =~ tr/a-z/A-Z/) && 
+	    push(@objname, "$dir");
+	push(@objname, "OBJS");
+	$objname = join('_', @objname);	
+
+	# Output to definitions file
+	if ($#objfiles > 0) {
+	    $list = format_list(@objfiles);
+	    print DEFS "$objname = $list\n\n";
+	    push(@metaobjs, "$objname");
+	}
 
     }
 
@@ -65,8 +78,6 @@ sub build_depends{
 	$objfile =~ s/(.*)\///;
 	$objfile =~ s/\.C/\.o/;
 	
-	push(@objlist, $objfile);
-
 	# Construct a dependency list, including the dependencies
 	# of each included file (may miss dependencies that are more 
 	# than two deep)
@@ -84,50 +95,72 @@ sub build_depends{
 	
 	# Sort and remove duplicates
 	$prev = "";
-	@newlist = ($srcfile);
+	@newlist = ();
 	foreach (sort split(/\s+/, $deplist)) {
 	    (/^$prev$/) || push(@newlist, $_);
 	    $prev = $_;
 	}
-	
-	# Rejoin the list and add breaks
-	$list = join(' ', @newlist);
-	$list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
-	while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
+
+	# Get dependencies that are more than two deep
+	do {
+	    @list = @newlist;
+
+	    foreach (@list) {
+		$deplist .= $_ . ' ' . $includes{$_} . ' ';
+	    }
+
+	    $prev = "";
+	    @newlist = ();
+	    foreach (sort split(/\s+/, $deplist)) {
+		(/^$prev$/) || push(@newlist, $_);
+		$prev = $_;
+	    }
+	    
+
+	} until ($#list ==  $#newlist);
+
+	push (@newlist, "$srcfile");
 	
 	# Output the compile command for each object file
+	$list = format_list(@newlist);
 	print RULES "$objfile : $list \n";
 	print RULES "\t\$(CXX) -c \$(CXXFLAGS) $srcfile -o \$@\n";
 	print RULES "\n";
     }
 
-    # Print out include files directories
-
-    foreach (@DIRS) {
-	s/$SRCDIRHOME(.*)/-I$SRCDIRHOME_REPLACE$1/;
-	push(@INCDIRS, "$_");
-    }
-
-    $list = join(' ', @INCDIRS);
-    $list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
-    while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
-    
-    print DEFS "\n$projname";
-    print DEFS "_INCLUDES = $list \n";
-    print DEFS "\n";
-
     # Print out object file list
 
-    $list = join(' ', @objlist);
-    $list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
-    while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
-    
-    print DEFS "\n$projname";
-    print DEFS "_OBJ = $list \n";
+   foreach (@metaobjs) {
+	s/(.*)/\$($1)/;
+	push(@newmetaobjs, "$_");
+    }
+    $list = format_list(@newmetaobjs);
+    print DEFS "$projname";
+    print DEFS "_ALL_OBJS = $list \n";
+    print DEFS "\n";
+
+    # Print out include files directories
+
+    foreach (@incdirs) {
+	s/$SRCDIRHOME(.*)/-I$SRCDIRHOME_REPLACE$1/;
+	push(@newincdirs, "$_");
+    }
+
+    $list = format_list(@newincdirs);
+    print DEFS "$projname";
+    print DEFS "_INCLUDES = $list \n";
     print DEFS "\n";
 
 
 } # End sub build_depends
+
+sub format_list {
+    my @list = @_;
+    $lines = join(' ', @list);
+    $lines =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
+    while ($lines =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
+    return $lines;
+}    
 
 sub print_line {
     my $fh = shift;

@@ -17,11 +17,11 @@ all: $(LIBNLSPACK)
 # NLSPACK source files
 #=======================================================================
 
-include Makefile.NLSPACK.autorules
+include Makefile.autorules
 
-$(LIBNLSPACK): $(NLSPACK_OBJ)
+$(LIBNLSPACK): $(NLSPACK_ALL_OBJS)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) rcv $(LIBNLSPACK) $(NLSPACK_OBJ)
+	$(AR) rcv $(LIBNLSPACK) $(NLSPACK_ALL_OBJS)
 	$(RANLIB) $(LIBNLSPACK)
 
 clean:
