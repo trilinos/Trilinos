@@ -30,7 +30,8 @@ AR			= ar r
 # use CFLAGS = $(DBG_FLAGS) with purify.
 CC			= cc
 PURE_CC			= purify -best-effort -follow-child-processes=yes \
-			  -cache-dir=/Net/local/proj/zoltan/tmp/purify 
+			  -cache-dir=/Net/local/proj/zoltan/tmp/purify \
+			  -chain-length=12
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
