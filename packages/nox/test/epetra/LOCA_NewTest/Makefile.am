@@ -27,19 +27,19 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .exe
+#EXEEXT = .exe
 
-noinst_PROGRAMS = LOCA_NewTest
+noinst_PROGRAMS = LOCA_NewTest_exe
 
-LOCA_NewTest_SOURCES = $(srcdir)/test.C
+LOCA_NewTest_exe_SOURCES = $(srcdir)/test.C
 
-LOCA_NewTest_DEPENDENCIES = \
+LOCA_NewTest_exe_DEPENDENCIES = \
                           $(top_builddir)/src/libnox.a \
                           $(top_builddir)/src-epetra/libnoxepetra.a \
-                          $(top_builddir)/src-loca/src/libloca.a \
-                          $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+                          $(top_builddir)/src-loca/src/libloca.la \
+                          $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-LOCA_NewTest_CXXFLAGS = \
+LOCA_NewTest_exe_CXXFLAGS = \
                       -I$(top_srcdir)/src \
                       -I$(top_srcdir)/src-epetra \
                       -I$(top_srcdir)/src-loca/src \
@@ -48,9 +48,9 @@ LOCA_NewTest_CXXFLAGS = \
                       $(TRILINOS_CXXFLAGS)
 
 #Unsure why this test need to link to the BLAS on an IBM.
-LOCA_NewTest_LDADD = \
-                   -L$(top_builddir)/src-loca/src-epetra -llocaepetra \
-                   -L$(top_builddir)/src-loca/src -lloca $(BLAS_LIBS) \
+LOCA_NewTest_exe_LDADD = \
+                   $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+                   $(top_builddir)/src-loca/src/libloca.la $(BLAS_LIBS) \
                    -L$(top_builddir)/src-epetra -lnoxepetra \
                    -L$(top_builddir)/src -lnox $(LIBS) \
 	           $(BLAS_LIBS) $(FLIBS)

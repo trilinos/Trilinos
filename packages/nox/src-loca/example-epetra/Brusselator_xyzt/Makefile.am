@@ -39,16 +39,16 @@ example_SOURCES = $(srcdir)/Example.C \
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
-        $(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+        $(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
 example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra \
 	-I$(top_srcdir)/src-loca/src -I$(top_srcdir)/src-loca/src-epetra
 
 example_LDADD = \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
         $(top_builddir)/src-epetra/libnoxepetra.a \
-        $(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src/libnox.a \
         $(LIBS)

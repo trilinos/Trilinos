@@ -66,13 +66,13 @@ LOCA_EPETRANEW = \
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-liblocaepetra_a_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H) \
-	                  $(LOCA_EPETRANEW) $(LOCA_EPETRANEW_H)
+liblocaepetra_la_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H) \
+	                   $(LOCA_EPETRANEW) $(LOCA_EPETRANEW_H)
 
-liblocaepetra_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                           -I$(top_srcdir)/src \
-                           -I$(top_srcdir)/src-epetra \
-                           $(TRILINOS_CXXFLAGS) 
+liblocaepetra_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+                            -I$(top_srcdir)/src \
+                            -I$(top_srcdir)/src-epetra \
+                            $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -82,7 +82,7 @@ if BUILD_LIBLOCAEPETRA
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LIBRARIES = liblocaepetra.a
+lib_LTLIBRARIES = liblocaepetra.la
 
 # List of all headers to install in $(includedir)
 
@@ -100,11 +100,11 @@ endif
 
 if USE_ALTERNATE_AR
 
-liblocaepetra_a_AR = $(ALTERNATE_AR)
+liblocaepetra_la_AR = $(ALTERNATE_AR)
 
 else
 
-liblocaepetra_a_AR = $(AR) cru
+liblocaepetra_la_AR = $(AR) cru
 
 endif
 
@@ -113,7 +113,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-liblocaepetra_a_LIBADD = $(XTRALDADD)
+liblocaepetra_la_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

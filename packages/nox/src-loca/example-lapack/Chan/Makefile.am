@@ -57,8 +57,8 @@ chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
+	$(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
 chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
@@ -67,11 +67,11 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
                    -I$(top_srcdir)/src-loca/src-lapack
 
 chanContinuation_LDADD = \
-		-L$(top_builddir)/src \
-		-L$(top_builddir)/src-lapack \
-                -L$(top_builddir)/src-loca/src \
-                -L$(top_builddir)/src-loca/src-lapack \
-                -llocalapack -lloca -lnoxlapack -lnox $(LIBS)
+	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/src/libnox.a \
+        $(LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -153,7 +153,7 @@ chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
 		$(srcdir)/ChanProblemInterface.C
 
 chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
@@ -161,6 +161,6 @@ chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
                                     -I$(top_srcdir)/src-loca/src-mf \
                                     -I$(MF_INCDIR)
 
-chanMultiContinuation_LDADD = -L$(top_builddir)/src-loca/src-mf -llocamf \
+chanMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                               -L$(MF_LIBDIR) -lMF -lExpCmp \
-                                 $(chanContinuation_LDADD)
+                              $(chanContinuation_LDADD)

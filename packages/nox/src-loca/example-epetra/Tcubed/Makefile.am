@@ -54,8 +54,8 @@ example_SOURCES = $(srcdir)/Example.C \
 example_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+	$(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
 example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
@@ -63,11 +63,12 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-epetra
 
-example_LDADD = -L$(top_builddir)/src \
-                -L$(top_builddir)/src-epetra \
-                -L$(top_builddir)/src-loca/src \
-                -L$(top_builddir)/src-loca/src-epetra \
-		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
+example_LDADD = \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src/libnox.a \
+	$(LIBS)
 
 exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -120,7 +121,7 @@ exampleMultiContinuation_SOURCES = $(srcdir)/ExampleMultiContinuation.C \
         $(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 exampleMultiContinuation_DEPENDENCIES = $(example_DEPENDENCIES) \
-                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  $(MF_LIBDIR)/libExpCmp.a \
                                  $(MF_LIBDIR)/libMF.a
 
@@ -128,6 +129,6 @@ exampleMultiContinuation_CXXFLAGS = $(example_CXXFLAGS) \
                                     -I$(top_srcdir)/src-loca/src-mf \
                                     -I$(MF_INCDIR)
 
-exampleMultiContinuation_LDADD = -L$(top_builddir)/src-loca/src-mf -llocamf \
+exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \
                                  $(example_LDADD)

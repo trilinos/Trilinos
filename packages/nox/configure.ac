@@ -776,6 +776,68 @@ AC_MSG_RESULT([${BUILD_LIBLOCA}])
 AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
 # ------------------------------------------------------------------------
+# NOX/LOCA-Python Check.
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(python,
+ [AC_HELP_STRING([--enable-python],[enable Python support])],
+ [ADDON_PYTHON=$enableval],
+ [ADDON_PYTHON=no]
+)
+
+AC_MSG_CHECKING(whether we should build the python support)
+if test X${ADDON_PYTHON} = Xyes; then
+  BUILD_PYTHON=yes
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_PYTHON, true)
+else
+  AC_MSG_RESULT(no)
+  BUILD_PYTHON=no
+  AM_CONDITIONAL(BUILD_PYTHON, false)
+fi
+
+# Configure swig
+if test X${BUILD_PYTHON} = Xyes; then
+  AC_PROG_SWIG(1.3.23)
+  SWIG_ENABLE_CXX
+  SWIG_MULTI_MODULE_SUPPORT
+  SWIG_PYTHON
+fi
+
+# Determine which addon libraries to support in Python
+IMPORT_LAPACK=0
+if test X${BUILD_PYTHON} = Xyes && test X${ADDON_lapack} = Xyes; then
+  IMPORT_LAPACK=1
+fi
+AC_SUBST(IMPORT_LAPACK)
+
+IMPORT_EPETRA=0
+if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
+  IMPORT_EPETRA=1
+fi
+AC_SUBST(IMPORT_EPETRA)
+
+# ------------------------------------------------------------------------
+# Configure libtool
+# ------------------------------------------------------------------------
+# The default is to not build LOCA as a shared library, but we use libtool
+# either way.  If Python support is enabled, then we must build LOCA
+# as a shared library
+if test X${BUILD_LIBLOCA} = Xyes || test X${BUILD_PYTHON} = Xyes; then
+
+  # Disable shared libraries by default
+  AC_DISABLE_SHARED
+
+  # Enable shared libraries if Python is enabled
+  if test X${BUILD_PYTHON} = Xyes; then
+    enable_shared=yes
+  fi
+
+  # Configure libtool
+  AC_PROG_LIBTOOL
+
+fi
+
+# ------------------------------------------------------------------------
 # Multivector check
 # ------------------------------------------------------------------------
 
@@ -1389,6 +1451,22 @@ AC_DEFUN([TRILINOS_LIB_CHECK],
 
 ])
 
+#
+# We have to be careful about the order we do these checks in, since this
+# determins the order in which the libraries appear on the link line.
+# TRILINOS_LIB_CHECK prepends each library to LIBS, so we have to do the
+# checks in the opposite order
+#
+
+if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
+  REQUIRE_TEUCHOS=yes
+fi
+
+if test X${REQUIRE_TEUCHOS} = Xyes; then
+  TRILINOS_LIB_CHECK(teuchos,teuchos,src)
+  AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
+fi
+
 if test X${ADDON_epetra_EXAMPLES} = Xyes ||
    test X${ADDON_epetra_TESTS} = Xyes; then
 
@@ -1406,7 +1484,6 @@ fi
 if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
   TRILINOS_LIB_CHECK(ml,ml,src)
   AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
-  REQUIRE_TEUCHOS=yes
 
   if test X${ADDON_epetra_EXAMPLES} = Xyes ||
      test X${ADDON_epetra_TESTS} = Xyes; then
@@ -1421,19 +1498,14 @@ if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
 
 fi
 
-if test X${REQUIRE_TEUCHOS} = Xyes; then
-  TRILINOS_LIB_CHECK(teuchos,teuchos,src)
-  AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+  TRILINOS_LIB_CHECK(anasazi,anasazi,src)
+  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
 
 if test X${ADDON_belos} = Xyes; then
   TRILINOS_LIB_CHECK(belos,belos,src)
   AC_DEFINE(HAVE_NOX_BELOS,1,[define that Belos is activated in nox])
-fi
-
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-  TRILINOS_LIB_CHECK(anasazi,anasazi,src)
-  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
 
 AC_SUBST(MF_LIBDIR)
@@ -1629,6 +1701,8 @@ AC_MSG_RESULT($WITH_PRERELEASE)
 # ------------------------------------------------------------------------
 
 AC_SUBST(ac_aux_dir)
+AC_SUBST(abs_builddir)
+AC_SUBST(abs_top_builddir)
 
 AC_SUBST(MPI_LIBS)
 
@@ -1664,6 +1738,8 @@ AC_CONFIG_FILES([
 		example-belos/Makefile
 		example-belos/epetra/Makefile
 		example-belos/epetra/1Dfem_nonlinear/Makefile
+		python/Makefile
+		python/__init__.py
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile
@@ -1679,6 +1755,8 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
 		src-loca/example-lapack/Brusselator/Makefile
+		src-loca/python/Makefile
+		src-loca/python/__init__.py
                 test/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
@@ -1692,6 +1770,8 @@ AC_CONFIG_FILES([
                 test/lapack/LOCA_NewTest/Makefile
                 test/lapack/LOCA_Group/Makefile
                 test/lapack/LOCA_ChanProblem/Makefile
+		test/lapack/LOCA_python/Makefile
+		test/lapack/LOCA_python/setpath.py
                 test/epetra/Makefile
                 test/epetra/NOX_NewTest/Makefile
                 test/epetra/NOX_Vector/Makefile

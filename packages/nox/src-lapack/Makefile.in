@@ -80,6 +80,8 @@ DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -90,7 +92,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-AR = ar
 ARFLAGS = cru
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
@@ -112,13 +113,20 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxlapack_a_SOURCES)
 DIST_SOURCES = $(libnoxlapack_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/NOX_LAPACK.H \
@@ -135,6 +143,7 @@ ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -190,11 +199,14 @@ BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
 BUILD_PETSC_TESTS_TRUE = @BUILD_PETSC_TESTS_TRUE@
 BUILD_PRERELEASE_FALSE = @BUILD_PRERELEASE_FALSE@
 BUILD_PRERELEASE_TRUE = @BUILD_PRERELEASE_TRUE@
+BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -204,6 +216,7 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -217,6 +230,8 @@ HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
 HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+IMPORT_EPETRA = @IMPORT_EPETRA@
+IMPORT_LAPACK = @IMPORT_LAPACK@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -225,6 +240,8 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -247,16 +264,32 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
+PYTHON = @PYTHON@
+PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
+PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
+PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
+PYTHON_LDFLAGS = @PYTHON_LDFLAGS@
+PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PREFIX = @PYTHON_PREFIX@
+PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
+PYTHON_VERSION = @PYTHON_VERSION@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+abs_builddir = @abs_builddir@
+abs_top_builddir = @abs_top_builddir@
 ac_aux_dir = @ac_aux_dir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
@@ -291,8 +324,12 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pkgpyexecdir = @pkgpyexecdir@
+pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+pyexecdir = @pyexecdir@
+pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -358,7 +395,7 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .o .obj
+.SUFFIXES: .C .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -448,6 +485,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+.C.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
 libnoxlapack_a-NOX_LAPACK_Vector.o: $(srcdir)/NOX_LAPACK_Vector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Vector.o -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Vector.o `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo" "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Po"; else rm -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo"; exit 1; fi
@@ -463,6 +508,14 @@ libnoxlapack_a-NOX_LAPACK_Vector.obj: $(srcdir)/NOX_LAPACK_Vector.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Vector.obj `if test -f '$(srcdir)/NOX_LAPACK_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Vector.C'; fi`
+
+libnoxlapack_a-NOX_LAPACK_Vector.lo: $(srcdir)/NOX_LAPACK_Vector.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Vector.lo -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Vector.lo `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo" "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Plo"; else rm -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Vector.C' object='libnoxlapack_a-NOX_LAPACK_Vector.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Plo' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Vector.lo `test -f '$(srcdir)/NOX_LAPACK_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Vector.C
 
 libnoxlapack_a-NOX_LAPACK_Matrix.o: $(srcdir)/NOX_LAPACK_Matrix.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Matrix.o -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Matrix.o `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C; \
@@ -480,6 +533,14 @@ libnoxlapack_a-NOX_LAPACK_Matrix.obj: $(srcdir)/NOX_LAPACK_Matrix.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Matrix.obj `if test -f '$(srcdir)/NOX_LAPACK_Matrix.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Matrix.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Matrix.C'; fi`
 
+libnoxlapack_a-NOX_LAPACK_Matrix.lo: $(srcdir)/NOX_LAPACK_Matrix.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Matrix.lo -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Matrix.lo `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Tpo" "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Plo"; else rm -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Matrix.C' object='libnoxlapack_a-NOX_LAPACK_Matrix.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Plo' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Matrix.lo `test -f '$(srcdir)/NOX_LAPACK_Matrix.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Matrix.C
+
 libnoxlapack_a-NOX_LAPACK_Group.o: $(srcdir)/NOX_LAPACK_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Group.o -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Group.o `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo" "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Po"; else rm -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo"; exit 1; fi
@@ -495,6 +556,23 @@ libnoxlapack_a-NOX_LAPACK_Group.obj: $(srcdir)/NOX_LAPACK_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Group.obj `if test -f '$(srcdir)/NOX_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LAPACK_Group.C'; fi`
+
+libnoxlapack_a-NOX_LAPACK_Group.lo: $(srcdir)/NOX_LAPACK_Group.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxlapack_a-NOX_LAPACK_Group.lo -MD -MP -MF "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo" -c -o libnoxlapack_a-NOX_LAPACK_Group.lo `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo" "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Plo"; else rm -f "$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LAPACK_Group.C' object='libnoxlapack_a-NOX_LAPACK_Group.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Plo' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Group.lo `test -f '$(srcdir)/NOX_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_Group.C
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+	-rm -f libtool
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -619,13 +697,14 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES clean-libtool \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+	distclean-libtool distclean-tags
 
 dvi: dvi-am
 
@@ -654,7 +733,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -668,17 +748,17 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-libLIBRARIES clean-libtool ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-includeHEADERS \
+	uninstall-info-am uninstall-libLIBRARIES
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

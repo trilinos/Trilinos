@@ -312,11 +312,11 @@ LOCA = \
 # Loca library specifications
 # ------------------------------------------------------------------------
 
-libloca_a_SOURCES = $(LOCA_H) $(LOCA)
+libloca_la_SOURCES = $(LOCA_H) $(LOCA)
 
-libloca_a_CXXFLAGS = -I$(top_srcdir)/src \
-		     -I$(top_srcdir)/src-lapack \
-		     $(TRILINOS_CXXFLAGS) 
+libloca_la_CXXFLAGS = -I$(top_srcdir)/src \
+		      -I$(top_srcdir)/src-lapack \
+		      $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -326,7 +326,7 @@ if BUILD_LIBLOCA
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LIBRARIES = libloca.a
+lib_LTLIBRARIES = libloca.la
 
 # List of all headers to install in $(includedir)
 
@@ -344,11 +344,11 @@ endif
 
 if USE_ALTERNATE_AR
 
-libloca_a_AR = $(ALTERNATE_AR)
+libloca_la_AR = $(ALTERNATE_AR)
 
 else
 
-libloca_a_AR = $(AR) cru
+libloca_la_AR = $(AR) cru
 
 endif
 
@@ -357,7 +357,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libloca_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+libloca_la_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

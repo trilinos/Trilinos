@@ -52,11 +52,11 @@ LOCA_MF = \
 # locamf library specifications
 # ------------------------------------------------------------------------
 
-liblocamf_a_SOURCES = $(LOCA_MF) $(LOCA_MF_H)
+liblocamf_la_SOURCES = $(LOCA_MF) $(LOCA_MF_H)
 
-liblocamf_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                       -I$(top_srcdir)/src \
-                       -I$(MF_INCDIR) \
+liblocamf_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+                        -I$(top_srcdir)/src \
+                        -I$(MF_INCDIR) \
                         $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
@@ -67,7 +67,7 @@ if BUILD_LIBLOCAMF
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LIBRARIES = liblocamf.a
+lib_LTLIBRARIES = liblocamf.la
 
 # List of all headers to install in $(includedir)
 
@@ -85,11 +85,11 @@ endif
 
 if USE_ALTERNATE_AR
 
-liblocamf_a_AR = $(ALTERNATE_AR)
+liblocamf_la_AR = $(ALTERNATE_AR)
 
 else
 
-liblocamf_a_AR = $(AR) cru
+liblocamf_la_AR = $(AR) cru
 
 endif
 
@@ -98,7 +98,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-liblocamf_a_LIBADD = $(XTRALDADD)
+liblocamf_la_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -43,7 +43,9 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES) $(chanTPContinuation_ModifiedBordering_SOURCES) $(chanTP_ModifiedBordering_SOURCES)
+#EXEEXT = .exe
+
+SOURCES = $(chanContinuation_exe_SOURCES) $(chanHomotopy_exe_SOURCES) $(chanTPContinuation_ModifiedBordering_exe_SOURCES) $(chanTPContinuation_exe_SOURCES) $(chanTP_ModifiedBordering_exe_SOURCES) $(chanTP_exe_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -73,6 +75,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
@@ -83,71 +87,80 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = chanContinuation$(EXEEXT)
-am__EXEEXT_2 = chanTP$(EXEEXT)
-am__EXEEXT_3 = chanTPContinuation$(EXEEXT)
-am__EXEEXT_4 = chanHomotopy$(EXEEXT)
-am__EXEEXT_5 = chanTP_ModifiedBordering$(EXEEXT)
-am__EXEEXT_6 = chanTPContinuation_ModifiedBordering$(EXEEXT)
+am__EXEEXT_1 = chanContinuation_exe$(EXEEXT)
+am__EXEEXT_2 = chanTP_exe$(EXEEXT)
+am__EXEEXT_3 = chanTPContinuation_exe$(EXEEXT)
+am__EXEEXT_4 = chanHomotopy_exe$(EXEEXT)
+am__EXEEXT_5 = chanTP_ModifiedBordering_exe$(EXEEXT)
+am__EXEEXT_6 = chanTPContinuation_ModifiedBordering_exe$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_chanContinuation_OBJECTS =  \
-	chanContinuation-ChanContinuation.$(OBJEXT) \
-	chanContinuation-ChanProblemInterface.$(OBJEXT)
-chanContinuation_OBJECTS = $(am_chanContinuation_OBJECTS)
+am_chanContinuation_exe_OBJECTS =  \
+	chanContinuation_exe-ChanContinuation.$(OBJEXT) \
+	chanContinuation_exe-ChanProblemInterface.$(OBJEXT)
+chanContinuation_exe_OBJECTS = $(am_chanContinuation_exe_OBJECTS)
 am__DEPENDENCIES_1 =
-am_chanHomotopy_OBJECTS = chanHomotopy-ChanHomotopy.$(OBJEXT) \
-	chanHomotopy-ChanProblemInterface.$(OBJEXT)
-chanHomotopy_OBJECTS = $(am_chanHomotopy_OBJECTS)
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_chanTP_OBJECTS = chanTP-ChanTP.$(OBJEXT) \
-	chanTP-ChanProblemInterface.$(OBJEXT)
-chanTP_OBJECTS = $(am_chanTP_OBJECTS)
-am_chanTPContinuation_OBJECTS =  \
-	chanTPContinuation-ChanTPContinuation.$(OBJEXT) \
-	chanTPContinuation-ChanProblemInterface.$(OBJEXT)
-chanTPContinuation_OBJECTS = $(am_chanTPContinuation_OBJECTS)
-am_chanTPContinuation_ModifiedBordering_OBJECTS = chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.$(OBJEXT) \
-	chanTPContinuation_ModifiedBordering-ChanProblemInterface.$(OBJEXT)
-chanTPContinuation_ModifiedBordering_OBJECTS =  \
-	$(am_chanTPContinuation_ModifiedBordering_OBJECTS)
-am_chanTP_ModifiedBordering_OBJECTS =  \
-	chanTP_ModifiedBordering-ChanTP_ModifiedBordering.$(OBJEXT) \
-	chanTP_ModifiedBordering-ChanProblemInterface.$(OBJEXT)
-chanTP_ModifiedBordering_OBJECTS =  \
-	$(am_chanTP_ModifiedBordering_OBJECTS)
+am_chanHomotopy_exe_OBJECTS = chanHomotopy_exe-ChanHomotopy.$(OBJEXT) \
+	chanHomotopy_exe-ChanProblemInterface.$(OBJEXT)
+chanHomotopy_exe_OBJECTS = $(am_chanHomotopy_exe_OBJECTS)
+am__DEPENDENCIES_2 =  \
+	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
+	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_chanTPContinuation_ModifiedBordering_exe_OBJECTS = chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.$(OBJEXT) \
+	chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.$(OBJEXT)
+chanTPContinuation_ModifiedBordering_exe_OBJECTS =  \
+	$(am_chanTPContinuation_ModifiedBordering_exe_OBJECTS)
+am_chanTPContinuation_exe_OBJECTS =  \
+	chanTPContinuation_exe-ChanTPContinuation.$(OBJEXT) \
+	chanTPContinuation_exe-ChanProblemInterface.$(OBJEXT)
+chanTPContinuation_exe_OBJECTS = $(am_chanTPContinuation_exe_OBJECTS)
+am_chanTP_ModifiedBordering_exe_OBJECTS = chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.$(OBJEXT) \
+	chanTP_ModifiedBordering_exe-ChanProblemInterface.$(OBJEXT)
+chanTP_ModifiedBordering_exe_OBJECTS =  \
+	$(am_chanTP_ModifiedBordering_exe_OBJECTS)
+am_chanTP_exe_OBJECTS = chanTP_exe-ChanTP.$(OBJEXT) \
+	chanTP_exe-ChanProblemInterface.$(OBJEXT)
+chanTP_exe_OBJECTS = $(am_chanTP_exe_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/chanContinuation-ChanContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanContinuation-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy-ChanHomotopy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTP-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTP-ChanTP.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_exe-ChanTP.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
-	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
-	$(chanTPContinuation_ModifiedBordering_SOURCES) \
-	$(chanTP_ModifiedBordering_SOURCES)
-DIST_SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
-	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
-	$(chanTPContinuation_ModifiedBordering_SOURCES) \
-	$(chanTP_ModifiedBordering_SOURCES)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(chanContinuation_exe_SOURCES) $(chanHomotopy_exe_SOURCES) \
+	$(chanTPContinuation_ModifiedBordering_exe_SOURCES) \
+	$(chanTPContinuation_exe_SOURCES) \
+	$(chanTP_ModifiedBordering_exe_SOURCES) $(chanTP_exe_SOURCES)
+DIST_SOURCES = $(chanContinuation_exe_SOURCES) \
+	$(chanHomotopy_exe_SOURCES) \
+	$(chanTPContinuation_ModifiedBordering_exe_SOURCES) \
+	$(chanTPContinuation_exe_SOURCES) \
+	$(chanTP_ModifiedBordering_exe_SOURCES) $(chanTP_exe_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -156,6 +169,7 @@ ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -211,11 +225,14 @@ BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
 BUILD_PETSC_TESTS_TRUE = @BUILD_PETSC_TESTS_TRUE@
 BUILD_PRERELEASE_FALSE = @BUILD_PRERELEASE_FALSE@
 BUILD_PRERELEASE_TRUE = @BUILD_PRERELEASE_TRUE@
+BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -225,11 +242,12 @@ CXXREPOS = @CXXREPOS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -238,6 +256,8 @@ HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
 HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+IMPORT_EPETRA = @IMPORT_EPETRA@
+IMPORT_LAPACK = @IMPORT_LAPACK@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -246,6 +266,8 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -268,16 +290,32 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
+PYTHON = @PYTHON@
+PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
+PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
+PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
+PYTHON_LDFLAGS = @PYTHON_LDFLAGS@
+PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PREFIX = @PYTHON_PREFIX@
+PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
+PYTHON_VERSION = @PYTHON_VERSION@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+abs_builddir = @abs_builddir@
+abs_top_builddir = @abs_top_builddir@
 ac_aux_dir = @ac_aux_dir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
@@ -312,8 +350,12 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pkgpyexecdir = @pkgpyexecdir@
+pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+pyexecdir = @pyexecdir@
+pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -322,24 +364,24 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-CHANCONT = chanContinuation
-CHANTP = chanTP
-CHANTPCONT = chanTPContinuation
-CHANHOMOTOPY = chanHomotopy
-CHANTPMOD = chanTP_ModifiedBordering
-CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
-chanContinuation_SOURCES = \
+CHANCONT = chanContinuation_exe
+CHANTP = chanTP_exe
+CHANTPCONT = chanTPContinuation_exe
+CHANHOMOTOPY = chanHomotopy_exe
+CHANTPMOD = chanTP_ModifiedBordering_exe
+CHANTPCONTMOD = chanTPContinuation_ModifiedBordering_exe
+chanContinuation_exe_SOURCES = \
                 $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanContinuation_DEPENDENCIES = \
+chanContinuation_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
+	$(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
-chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+chanContinuation_exe_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
@@ -347,60 +389,60 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
                    -I$(top_srcdir)/test/utils \
 	           $(TRILINOS_CXXFLAGS)
 
-chanContinuation_LDADD = \
+chanContinuation_exe_LDADD = \
+                $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
+                $(top_builddir)/src-loca/src/libloca.la \
 		-L$(top_builddir)/src \
 		-L$(top_builddir)/src-lapack \
-                -L$(top_builddir)/src-loca/src \
-                -L$(top_builddir)/src-loca/src-lapack \
-                -llocalapack -lloca -lnoxlapack -lnox \
+                -lnoxlapack -lnox \
                 $(LIBS) $(FLIBS)
 
-chanTP_SOURCES = \
+chanTP_exe_SOURCES = \
                 $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-chanTP_LDADD = $(chanContinuation_LDADD)
-chanTPContinuation_SOURCES = \
+chanTP_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanTP_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
+chanTP_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanTPContinuation_exe_SOURCES = \
                 $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-chanTPContinuation_LDADD = $(chanContinuation_LDADD)
-chanHomotopy_SOURCES = \
+chanTPContinuation_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanTPContinuation_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
+chanTPContinuation_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanHomotopy_exe_SOURCES = \
                 $(srcdir)/ChanHomotopy.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-chanHomotopy_LDADD = $(chanContinuation_LDADD)
-chanTP_ModifiedBordering_SOURCES = \
+chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
+chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanTP_ModifiedBordering_exe_SOURCES = \
                 $(srcdir)/ChanTP_ModifiedBordering.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanTP_ModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-chanTP_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-chanTP_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
-chanTPContinuation_ModifiedBordering_SOURCES = \
+chanTP_ModifiedBordering_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
+chanTP_ModifiedBordering_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
+chanTP_ModifiedBordering_exe_LDADD = $(chanContinuation_exe_LDADD)
+chanTPContinuation_ModifiedBordering_exe_SOURCES = \
 		$(srcdir)/ChanTPContinuation_ModifiedBordering.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
-chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
-	$(chanContinuation_DEPENDENCIES)
+chanTPContinuation_ModifiedBordering_exe_DEPENDENCIES = \
+	$(chanContinuation_exe_DEPENDENCIES)
 
-chanTPContinuation_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-chanTPContinuation_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTPContinuation_ModifiedBordering_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
+chanTPContinuation_ModifiedBordering_exe_LDADD = $(chanContinuation_exe_LDADD)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .o .obj
+.SUFFIXES: .C .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -432,25 +474,29 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-chanContinuation$(EXEEXT): $(chanContinuation_OBJECTS) $(chanContinuation_DEPENDENCIES) 
-	@rm -f chanContinuation$(EXEEXT)
-	$(CXXLINK) $(chanContinuation_LDFLAGS) $(chanContinuation_OBJECTS) $(chanContinuation_LDADD) $(LIBS)
-chanHomotopy$(EXEEXT): $(chanHomotopy_OBJECTS) $(chanHomotopy_DEPENDENCIES) 
-	@rm -f chanHomotopy$(EXEEXT)
-	$(CXXLINK) $(chanHomotopy_LDFLAGS) $(chanHomotopy_OBJECTS) $(chanHomotopy_LDADD) $(LIBS)
-chanTP$(EXEEXT): $(chanTP_OBJECTS) $(chanTP_DEPENDENCIES) 
-	@rm -f chanTP$(EXEEXT)
-	$(CXXLINK) $(chanTP_LDFLAGS) $(chanTP_OBJECTS) $(chanTP_LDADD) $(LIBS)
-chanTPContinuation$(EXEEXT): $(chanTPContinuation_OBJECTS) $(chanTPContinuation_DEPENDENCIES) 
-	@rm -f chanTPContinuation$(EXEEXT)
-	$(CXXLINK) $(chanTPContinuation_LDFLAGS) $(chanTPContinuation_OBJECTS) $(chanTPContinuation_LDADD) $(LIBS)
-chanTPContinuation_ModifiedBordering$(EXEEXT): $(chanTPContinuation_ModifiedBordering_OBJECTS) $(chanTPContinuation_ModifiedBordering_DEPENDENCIES) 
-	@rm -f chanTPContinuation_ModifiedBordering$(EXEEXT)
-	$(CXXLINK) $(chanTPContinuation_ModifiedBordering_LDFLAGS) $(chanTPContinuation_ModifiedBordering_OBJECTS) $(chanTPContinuation_ModifiedBordering_LDADD) $(LIBS)
-chanTP_ModifiedBordering$(EXEEXT): $(chanTP_ModifiedBordering_OBJECTS) $(chanTP_ModifiedBordering_DEPENDENCIES) 
-	@rm -f chanTP_ModifiedBordering$(EXEEXT)
-	$(CXXLINK) $(chanTP_ModifiedBordering_LDFLAGS) $(chanTP_ModifiedBordering_OBJECTS) $(chanTP_ModifiedBordering_LDADD) $(LIBS)
+	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
+	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  echo " rm -f $$p $$f"; \
+	  rm -f $$p $$f ; \
+	done
+chanContinuation_exe$(EXEEXT): $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_DEPENDENCIES) 
+	@rm -f chanContinuation_exe$(EXEEXT)
+	$(CXXLINK) $(chanContinuation_exe_LDFLAGS) $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_LDADD) $(LIBS)
+chanHomotopy_exe$(EXEEXT): $(chanHomotopy_exe_OBJECTS) $(chanHomotopy_exe_DEPENDENCIES) 
+	@rm -f chanHomotopy_exe$(EXEEXT)
+	$(CXXLINK) $(chanHomotopy_exe_LDFLAGS) $(chanHomotopy_exe_OBJECTS) $(chanHomotopy_exe_LDADD) $(LIBS)
+chanTPContinuation_ModifiedBordering_exe$(EXEEXT): $(chanTPContinuation_ModifiedBordering_exe_OBJECTS) $(chanTPContinuation_ModifiedBordering_exe_DEPENDENCIES) 
+	@rm -f chanTPContinuation_ModifiedBordering_exe$(EXEEXT)
+	$(CXXLINK) $(chanTPContinuation_ModifiedBordering_exe_LDFLAGS) $(chanTPContinuation_ModifiedBordering_exe_OBJECTS) $(chanTPContinuation_ModifiedBordering_exe_LDADD) $(LIBS)
+chanTPContinuation_exe$(EXEEXT): $(chanTPContinuation_exe_OBJECTS) $(chanTPContinuation_exe_DEPENDENCIES) 
+	@rm -f chanTPContinuation_exe$(EXEEXT)
+	$(CXXLINK) $(chanTPContinuation_exe_LDFLAGS) $(chanTPContinuation_exe_OBJECTS) $(chanTPContinuation_exe_LDADD) $(LIBS)
+chanTP_ModifiedBordering_exe$(EXEEXT): $(chanTP_ModifiedBordering_exe_OBJECTS) $(chanTP_ModifiedBordering_exe_DEPENDENCIES) 
+	@rm -f chanTP_ModifiedBordering_exe$(EXEEXT)
+	$(CXXLINK) $(chanTP_ModifiedBordering_exe_LDFLAGS) $(chanTP_ModifiedBordering_exe_OBJECTS) $(chanTP_ModifiedBordering_exe_LDADD) $(LIBS)
+chanTP_exe$(EXEEXT): $(chanTP_exe_OBJECTS) $(chanTP_exe_DEPENDENCIES) 
+	@rm -f chanTP_exe$(EXEEXT)
+	$(CXXLINK) $(chanTP_exe_LDFLAGS) $(chanTP_exe_OBJECTS) $(chanTP_exe_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -458,18 +504,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation-ChanContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy-ChanHomotopy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP-ChanTP.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_exe-ChanTP.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -487,197 +533,310 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-chanContinuation-ChanContinuation.o: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation-ChanContinuation.o -MD -MP -MF "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo" -c -o chanContinuation-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation-ChanContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation-ChanContinuation.TPo' @AMDEPBACKSLASH@
+.C.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-chanContinuation-ChanContinuation.obj: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation-ChanContinuation.obj -MD -MP -MF "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo" -c -o chanContinuation-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation-ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation-ChanContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation-ChanContinuation.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanContinuation.o: $(srcdir)/ChanContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.o -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
 
-chanContinuation-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo" -c -o chanContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanContinuation-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanContinuation.obj: $(srcdir)/ChanContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.obj -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
 
-chanContinuation-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo" -c -o chanContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanContinuation-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanContinuation-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanContinuation.lo: $(srcdir)/ChanContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.lo -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Plo"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Plo' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
 
-chanHomotopy-ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy-ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo" -c -o chanHomotopy-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy-ChanHomotopy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" -c -o chanContinuation_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanContinuation_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanHomotopy-ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy-ChanHomotopy.obj -MD -MP -MF "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo" -c -o chanHomotopy-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy-ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy-ChanHomotopy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" -c -o chanContinuation_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanContinuation_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-chanHomotopy-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo" -c -o chanHomotopy-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo" "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanContinuation_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" -c -o chanContinuation_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanContinuation_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanHomotopy-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo" -c -o chanHomotopy-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo" "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanHomotopy-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
 
-chanTP-ChanTP.o: $(srcdir)/ChanTP.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -MT chanTP-ChanTP.o -MD -MP -MF "$(DEPDIR)/chanTP-ChanTP.Tpo" -c -o chanTP-ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP-ChanTP.Tpo" "$(DEPDIR)/chanTP-ChanTP.Po"; else rm -f "$(DEPDIR)/chanTP-ChanTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='chanTP-ChanTP.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP-ChanTP.Po' tmpdepfile='$(DEPDIR)/chanTP-ChanTP.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.obj -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -c -o chanTP-ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
 
-chanTP-ChanTP.obj: $(srcdir)/ChanTP.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -MT chanTP-ChanTP.obj -MD -MP -MF "$(DEPDIR)/chanTP-ChanTP.Tpo" -c -o chanTP-ChanTP.obj `if test -f '$(srcdir)/ChanTP.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP-ChanTP.Tpo" "$(DEPDIR)/chanTP-ChanTP.Po"; else rm -f "$(DEPDIR)/chanTP-ChanTP.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='chanTP-ChanTP.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP-ChanTP.Po' tmpdepfile='$(DEPDIR)/chanTP-ChanTP.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanHomotopy.lo: $(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.lo -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Plo"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Plo' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -c -o chanTP-ChanTP.obj `if test -f '$(srcdir)/ChanTP.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP.C'; fi`
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
 
-chanTP-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -MT chanTP-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo" -c -o chanTP-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" -c -o chanHomotopy_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -c -o chanTP-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanTP-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -MT chanTP-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo" -c -o chanTP-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" -c -o chanHomotopy_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -c -o chanTP-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-chanTPContinuation-ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation-ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo" -c -o chanTPContinuation-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation-ChanTPContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
+chanHomotopy_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" -c -o chanHomotopy_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanTPContinuation-ChanTPContinuation.obj: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation-ChanTPContinuation.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo" -c -o chanTPContinuation-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation-ChanTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.o: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C
 
-chanTPContinuation-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo" -c -o chanTPContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.obj: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; fi`
 
-chanTPContinuation-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo" -c -o chanTPContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.lo: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanTPContinuation_ModifiedBordering.lo `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C
 
-chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.o: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo" -c -o chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_ModifiedBordering.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.obj: $(srcdir)/ChanTPContinuation_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo" -c -o chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_ModifiedBordering.C' object='chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_ModifiedBordering.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-chanTPContinuation_ModifiedBordering-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTPContinuation_ModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_ModifiedBordering-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_exe-ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
 
-chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o: $(srcdir)/ChanTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_exe-ChanTPContinuation.obj: $(srcdir)/ChanTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`
 
-chanTP_ModifiedBordering-ChanTP_ModifiedBordering.obj: $(srcdir)/ChanTP_ModifiedBordering.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering-ChanTP_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering-ChanTP_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_ModifiedBordering.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='chanTP_ModifiedBordering-ChanTP_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_exe-ChanTPContinuation.lo: $(srcdir)/ChanTPContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.lo -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Plo"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Plo' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering-ChanTP_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_ModifiedBordering.C'; fi`
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
 
-chanTP_ModifiedBordering-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTP_ModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_ModifiedBordering-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanTP_ModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTP_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_ModifiedBordering-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+chanTPContinuation_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
+chanTPContinuation_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" -c -o chanTPContinuation_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.o: $(srcdir)/ChanTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C
+
+chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.obj: $(srcdir)/ChanTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_ModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_ModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_ModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_ModifiedBordering.C'; fi`
+
+chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.lo: $(srcdir)/ChanTP_ModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.lo -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.lo `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Plo"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_ModifiedBordering.C' object='chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.Plo' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanTP_ModifiedBordering.lo `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C
+
+chanTP_ModifiedBordering_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_ModifiedBordering_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTP_ModifiedBordering_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_ModifiedBordering_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
+chanTP_ModifiedBordering_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_ModifiedBordering_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTP_exe-ChanTP.o: $(srcdir)/ChanTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanTP.o -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" -c -o chanTP_exe-ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" "$(DEPDIR)/chanTP_exe-ChanTP.Po"; else rm -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='chanTP_exe-ChanTP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanTP.Po' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C
+
+chanTP_exe-ChanTP.obj: $(srcdir)/ChanTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanTP.obj -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" -c -o chanTP_exe-ChanTP.obj `if test -f '$(srcdir)/ChanTP.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" "$(DEPDIR)/chanTP_exe-ChanTP.Po"; else rm -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='chanTP_exe-ChanTP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanTP.Po' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanTP.obj `if test -f '$(srcdir)/ChanTP.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP.C'; fi`
+
+chanTP_exe-ChanTP.lo: $(srcdir)/ChanTP.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanTP.lo -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" -c -o chanTP_exe-ChanTP.lo `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo" "$(DEPDIR)/chanTP_exe-ChanTP.Plo"; else rm -f "$(DEPDIR)/chanTP_exe-ChanTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP.C' object='chanTP_exe-ChanTP.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanTP.Plo' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanTP.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanTP.lo `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C
+
+chanTP_exe-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" -c -o chanTP_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_exe-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTP_exe-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" -c -o chanTP_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_exe-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
+chanTP_exe-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTP_exe-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" -c -o chanTP_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/chanTP_exe-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_exe-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/chanTP_exe-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_exe-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+	-rm -f libtool
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -783,13 +942,14 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+	distclean-libtool distclean-tags
 
 dvi: dvi-am
 
@@ -818,7 +978,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -831,15 +992,16 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	clean-libtool clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

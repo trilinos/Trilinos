@@ -49,12 +49,12 @@ LOCA_LAPACK = \
 # localapack library specifications
 # ------------------------------------------------------------------------
 
-liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
+liblocalapack_la_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
-liblocalapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                           -I$(top_srcdir)/src \
-			   -I$(top_srcdir)/src-lapack \
-                           $(TRILINOS_CXXFLAGS) 
+liblocalapack_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+                            -I$(top_srcdir)/src \
+			    -I$(top_srcdir)/src-lapack \
+                            $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -64,7 +64,7 @@ if BUILD_LIBLOCALAPACK
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LIBRARIES = liblocalapack.a
+lib_LTLIBRARIES = liblocalapack.la
 
 # List of all headers to install in $(includedir)
 
@@ -82,11 +82,11 @@ endif
 
 if USE_ALTERNATE_AR
 
-liblocalapack_a_AR = $(ALTERNATE_AR)
+liblocalapack_la_AR = $(ALTERNATE_AR)
 
 else
 
-liblocalapack_a_AR = $(AR) cru
+liblocalapack_la_AR = $(AR) cru
 
 endif
 
@@ -95,7 +95,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-liblocalapack_a_LIBADD = $(XTRALDADD)
+liblocalapack_la_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
