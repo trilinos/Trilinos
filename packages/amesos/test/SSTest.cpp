@@ -369,7 +369,7 @@ main(int argc, char **argv)
 	  if ( numsolves > 1 ) { 
 	    TestMultiSolver( Comm, argv[2], numsolves, SparseSolver, (transpose==1), special ) ; 
 	  } else {
-	    (void) TestSolver( Comm, argv[2], SparseSolver, (transpose==1), special, MatrixType ) ; 
+	    TestSolver( Comm, argv[2], SparseSolver, (transpose==1), special, MatrixType ) ; 
 	  }
 	} 
       //
@@ -413,8 +413,13 @@ main(int argc, char **argv)
 	    " should be < " << maxerror  ; 
 
 	//
+	//  Here we check to see if the answer is better than we expect.
+	//
 	//  1e30 means that the code promises to complete but makes no 
 	//  promise about the answer
+	//  If maxerror is 1e30, we set it to 10, meaning that if the actual 
+	//  answer is good to 10/ MAX_TOLERANCE_RATIO (presently 10/1000 = .01)
+	//  we print a TOLERANCE is too large message.
 	//
 	if (maxerror == 1e30 ) maxerror = 10 ; 
 	if (SparseDirectTimingVars::SS_Result.Get_Error() < maxerror / MAX_TOLERANCE_RATIO && 

@@ -1,15 +1,16 @@
 #ifndef SPARSESOLVERRESULT
 #define SPARSESOLVERRESULT
 #include "Epetra_Object.h"
-#include "Time_Memory.h"
+const double UnUsedDbl = 13e130;
+
 class SparseSolverResult : public Epetra_Object { 
   
  public:
   SparseSolverResult() :  
+    first_time( UnUsedDbl ), middle_time( UnUsedDbl ), 
+    last_time( UnUsedDbl ), total_time( UnUsedDbl ),
     error( UnUsedDbl), residual(UnUsedDbl), 
-    Anorm( UnUsedDbl ), Xnorm( UnUsedDbl ), Bnorm( UnUsedDbl ),
-    SymbolicTime_(), 
-    FactorTime_()
+    Anorm( UnUsedDbl ), Xnorm( UnUsedDbl ), Bnorm( UnUsedDbl ) 
   { 
   ; } ; 
   ~SparseSolverResult(){};
@@ -40,10 +41,6 @@ class SparseSolverResult : public Epetra_Object {
   virtual void Print(ostream & os) const;
   virtual void PrintSummary(ostream & os) const;
 
-  inline Time_Memory& RedistribTime() { return RedistribTime_ ; } ; 
-  inline Time_Memory& SymbolicTime() { return SymbolicTime_ ; } ; 
-  inline Time_Memory& FactorTime() { return FactorTime_ ; } ; 
-  inline Time_Memory& SolveTime() { return SolveTime_ ; } ; 
 
  private:
   double first_time ;
@@ -55,10 +52,6 @@ class SparseSolverResult : public Epetra_Object {
   double Xnorm ;
   double Bnorm ;
   double Anorm ;
-  Time_Memory RedistribTime_; 
-  Time_Memory SymbolicTime_; 
-  Time_Memory FactorTime_;
-  Time_Memory SolveTime_;
 
 } ;
 

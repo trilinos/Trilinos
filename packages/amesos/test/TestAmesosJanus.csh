@@ -68,70 +68,70 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SuperLUdist
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-15 1e-14  >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 -2    -2  >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 1 -2    -2  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SuperLUdist
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 0 100000000 1  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 1 100000000 1  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 0 100000000 1  >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 1 100000000 1  >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (OK, distributed has little meaning on one process, but ...)
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 1 1e-10 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 1 1e-10 1e-4  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 1 1e-10 1e-4  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 1 1e-10 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 5 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
+yod -sz 5 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
+yod -sz 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 5 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+yod -sz 5 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
+yod -sz 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some solves on Aztec
 #
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
+yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
+yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
 
 
 echo "\nCOMMENT End TestAmesos.csh" >> SST.summary 

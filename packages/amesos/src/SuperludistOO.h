@@ -220,7 +220,7 @@ class SuperludistOO {
   bool GetTrans( ) const { return Transpose_ ;} ;
 
   //! Prints a summary of solver parameters, performs simple sanity checks.
-  int CheckInput() const { };
+  int CheckInput() const ;
 
   //! Get a copy of the Parameters
   map< string, double > GetParameters( ) const { return(Parameters_); } ; 
@@ -269,7 +269,7 @@ class SuperludistOO {
   //! Returns the condition number estimate for the current problem, if one exists, returns -1.0 if no estimate
     /*! Not supported in release 0.1
      */
-  double Condest() const {};
+  double Condest() const;
 
   //@}
 

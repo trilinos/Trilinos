@@ -2,7 +2,7 @@
 # class name
 #=======================================================================
 
-CLASS = DSS
+CLASS = AME
 
 #=======================================================================
 # Ken's debug 
@@ -14,9 +14,9 @@ SUPERLU_C =
 TEST_C = $(SUPERLU_C) 
 TEST_C =
 
+SRC_CXX = 
 SRC_CXX = Comm_assert_equal.cpp 
 SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp 
-SRC_CXX = 
 
 #=======================================================================
 # test source files
@@ -25,15 +25,16 @@ SRC_CXX =
 
 TEST_CXX = SSTest.cpp TestSolver.cpp TestMultiSolver.cpp TestMrhsSolver.cpp \
 	SparseDirectTimingVars.cpp \
-	SparseSolverResult.cpp Time_Memory.cpp TimeMemory.cpp $(SRC_CXX) 
+	SparseSolverResult.cpp $(SRC_CXX) 
 
 TEST_F =
 #=======================================================================
 # TEST include files
 #=======================================================================
+DEBUG_INCLUDE = Comm_assert_equal.h 
 TEST_INCLUDE = TestSolver.h \
 	SparseDirectTimingVars.h \
-	SparseSolverResult.h Time_Memory.h TimeMemory.h 
+	SparseSolverResult.h $(DEBUG_INCLUDE)
 
 TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC
 SDT =  -DSPARSE_DIRECT_TIMINGS
@@ -43,7 +44,7 @@ include ./Makefile.template
 #=======================================================================
 # TEST script and matrix files
 #=======================================================================
-TEST_CSH = TestAmesos.csh
+TEST_CSH = TestAmesos.csh TestAmesosJanus.csh TestAmesosSerial.csh
 TEST_MATRICES = SuperLU.rua ImpcolA.rua ImpcolB.rua ImpcolC.rua ImpcolD.rua \
 	ImpcolE.rua fidapm05.rua bcsstk18.rsa bcsstk24.rsa
 
@@ -57,4 +58,4 @@ TEST_MATRICES = SuperLU.rua ImpcolA.rua ImpcolB.rua ImpcolC.rua ImpcolD.rua \
 
 
 tar:
-	tar cf DSSLVtest.tar $(TEST_CXX) $(TEST_INCLUDE) $(TEST_CSH) $(TEST_MATRICES) classicMakefile Makefile.template 
+	tar cf AMESOStest.tar $(TEST_CXX) $(TEST_INCLUDE) $(TEST_CSH) $(TEST_MATRICES) classicMakefile Makefile.template 

@@ -145,13 +145,6 @@ int SuperludistOO::Solve(bool factor) {
   //  I am going to put these here until I determine that I need them in 
   //  SuperludistOO.h 
   //
-  Epetra_RowMatrix * UserMatrix_;
-  Epetra_MultiVector * X_;
-  Epetra_MultiVector * B_;
-  int x_LDA_;
-  double *x_;
-  int b_LDA_;
-  double *b_;
 
   bool CheckExtraction = false;    //  Set to true to force extraction for unit test
 
@@ -487,5 +480,5 @@ int SuperludistOO::Solve(bool factor) {
   //  SparseDirectTimingVars::SS_Result.FactorTime().Time_First( ) ; 
   //  SparseDirectTimingVars::SS_Result.SolveTime().Time_First( ) ; 
 
-  return(1) ; 
+  return(0) ; 
 }

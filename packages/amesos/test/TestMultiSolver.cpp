@@ -44,15 +44,15 @@
 //    passA - if ( distributed ) then distributedA else serialA
 //
 //
-void TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
+int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
 		      SparseSolverType SparseSolver, bool transpose,
 		      int special ) {
 
 
-  int hatever;
   int iam = Comm.MyPID() ;
 
   
+  //  int hatever;
   //  if ( iam == 0 )  cin >> hatever ; 
   Comm.Barrier();
 
@@ -158,7 +158,7 @@ void TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 			       (Epetra_MultiVector *) passb ) ; 
 #endif    
     superludist.SetTrans( transpose ) ; 
-    superludist.Solve( true ) ; 
+    EPETRA_CHK_ERR( superludist.Solve( true ) ) ; 
 #ifdef TEST_SPOOLES
   } else if ( SparseSolver == SPOOLES ) { 
     SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
@@ -185,7 +185,7 @@ void TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     
     spoolesserial.Solve() ;
 #endif
-#ifdef TFLOP_NOT 
+#ifndef TEST_AZTEC
   } else if ( SparseSolver == Aztec ) { 
     SparseDirectTimingVars::log_file 
       << "Aztec Solver was not working on TFLOP (no lapack)" << endl ;
@@ -280,4 +280,5 @@ void TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   
   Comm.Barrier();
 
+return 0 ;
 }

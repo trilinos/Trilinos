@@ -5,7 +5,9 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
+#ifdef TEST_KUNDERT
 #include "KundertOO.h"
+#endif
 #include "SuperludistOO.h"
 #include "AztecOO.h"
 
@@ -51,10 +53,10 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
 		 int special, AMESOS_MatrixType matrix_type ) {
 
 
-  int hatever;
   int iam = Comm.MyPID() ;
 
-  //  if ( iam == 0 )  cin >> hatever ; 
+  //  int whatever;
+  //  if ( iam == 0 )  cin >> whatever ; 
   Comm.Barrier();
 
 
@@ -213,7 +215,7 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
     
     spoolesserial.Solve() ;
 #endif
-#ifdef TFLOP_NOT 
+#ifndef TEST_AZTEC
   } else if ( SparseSolver == Aztec ) { 
     SparseDirectTimingVars::log_file 
       << "Aztec Solver was not working on TFLOP (no lapack)" << endl ;
@@ -276,4 +278,5 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
   
   Comm.Barrier();
 
+  return 0;
 }

@@ -43,15 +43,14 @@
 //    passA - if ( distributed ) then distributedA else serialA
 //
 //
-void TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
+int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
 		     SparseSolverType SparseSolver, bool transpose, 
 		     int special ) {
 
 
-  int hatever;
   int iam = Comm.MyPID() ;
 
-  
+  //  int hatever;
   //  if ( iam == 0 )  cin >> hatever ; 
   Comm.Barrier();
 
@@ -176,7 +175,7 @@ void TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Epetra_Vector *passx_i = (*passx)(i) ;
       Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
       Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      superludist.Solve( factor ) ; 
+      EPETRA_CHK_ERR( superludist.Solve( factor ) ); 
       factor = false; 
       if ( i == 0 ) 
 	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
@@ -212,7 +211,7 @@ void TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     
     spoolesserial.Solve() ;
 #endif 
-#ifdef TFLOP_NOT 
+#ifndef TEST_AZTEC
   } else if ( SparseSolver == Aztec ) { 
     SparseDirectTimingVars::log_file 
       << "Aztec Solver was not working on TFLOP (no lapack)" << endl ;
