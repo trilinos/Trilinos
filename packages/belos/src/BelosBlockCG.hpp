@@ -22,7 +22,10 @@
 #ifndef BLOCK_CG_HPP
 #define BLOCK_CG_HPP
 
-#include "Epetra_LAPACK.h"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*!	\class Belos::BlockCG
@@ -88,7 +91,7 @@ private:
 	void SetCGBlkTols();
     	void SetUpBlocks(Anasazi::MultiVec<TYPE>&, Anasazi::MultiVec<TYPE>&, int);
 	void ExtractCurSolnBlock(Anasazi::MultiVec<TYPE>&, int);
-	void QRFactorDef(Anasazi::MultiVec<TYPE>&, Anasazi::DenseMatrix<TYPE>&, bool&,int,
+	void QRFactorDef(Anasazi::MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>&, bool&,int,
 		                 int[],int&,bool);
     	void CheckCGOrth(Anasazi::MultiVec<TYPE>&, Anasazi::MultiVec<TYPE>&, bool);
 	void PrintCGIterInfo(int[], const int, int[], const int, int[], const int);
@@ -122,28 +125,28 @@ BlockCG<TYPE>::BlockCG(Anasazi::Matrix<TYPE> & mat,
 							_startblock(false), _debuglevel(0), 
 							_rhs_iter(0), _iter(0),
 							_prec(5.0e-15), _dep_tol(0.75), _blkerror(1.0) { 
-	//if (vb) cout << "ctor:BlockCG " << this << endl << endl;
-	assert(_maxits>=0); assert(_blocksize>=0); assert(_numrhs>=0);
-	//
-	// Make room for the direction and residual vectors
-	// We save 2 blocks of these vectors
-	//
-    _basisvecs = _rhs.Clone(2*_blocksize); assert(_basisvecs!=NULL);
-	_residvecs = _rhs.Clone(2*_blocksize); assert(_residvecs!=NULL);
+  //if (vb) cout << "ctor:BlockCG " << this << endl << endl;
+  assert(_maxits>=0); assert(_blocksize>=0); assert(_numrhs>=0);
+  //
+  // Make room for the direction and residual vectors
+  // We save 2 blocks of these vectors
+  //
+  _basisvecs = _rhs.Clone(2*_blocksize); assert(_basisvecs!=NULL);
+  _residvecs = _rhs.Clone(2*_blocksize); assert(_residvecs!=NULL);
+  //
+  if (2*_blocksize && _basisvecs) {
     //
-    if (2*_blocksize && _basisvecs) {
-		//
-		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
-		//if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize <<  _basisvecs << endl;
-	}
-	else {
-		//if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize << _basisvecs << endl;
-		exit(-1);
-	}
-	//
-	// Set the block orthogonality tolerances
-	//
-	SetCGBlkTols();
+    _residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
+    //if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize <<  _basisvecs << endl;
+  }
+  else {
+    //if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize << _basisvecs << endl;
+    exit(-1);
+  }
+  //
+  // Set the block orthogonality tolerances
+  //
+  SetCGBlkTols();
 }
 
 
@@ -151,7 +154,7 @@ template <class TYPE>
 BlockCG<TYPE>::~BlockCG() {
 	//	cout << "dtor:BlockCG " << this << endl;
 	if (_basisvecs) delete _basisvecs;
-    if (_residvecs) delete _residvecs;
+	if (_residvecs) delete _residvecs;
 	if (_solutions) delete _solutions;
 	if (_trueresids) delete [] _trueresids;
 	if (_residerrors) delete [] _residerrors;
@@ -170,8 +173,8 @@ void BlockCG<TYPE>::SetCGBlkTols() {
 	const TYPE two = 2.0;
 	TYPE eps;
 	char precision = 'P';
-	Epetra_LAPACK lapack;
-	lapack.LAMCH(precision, eps);
+	Teuchos::LAPACK<int,TYPE> lapack;
+	eps = lapack.LAMCH(precision);
 	_prec = eps;
 	_dep_tol = 1/sqrt(two);
 }
@@ -230,7 +233,7 @@ void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		// Easy case: The number of right-hand sides left to solve for is >= the 
 		// size of a block. Solve for the next _blocksize of these right-hand sides
 		// at this iteration.
-	    //
+	        //
 		// Put the next _blocksize of the right-hand sides into  
 		// the rhs_block 
 		//
@@ -422,13 +425,11 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	Anasazi::MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0, *AP_prev=0;
 	Anasazi::MultiVec<TYPE> *temp_block=0, *PC_resid=0;
 	Anasazi::MultiVec<TYPE> *precond_resid=0, *cur_sol=0;
-	TYPE * ptr_T1 = 0;
-	TYPE * ptr_T2 = 0;
 	TYPE * cur_resid_norms = new TYPE[_blocksize]; assert(cur_resid_norms!=NULL);
 	TYPE * init_resid_norms= new TYPE[_blocksize]; assert(init_resid_norms!=NULL);
 	int *index1 = new int[_numrhs + _blocksize]; assert(index1!=NULL);
-       int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
-    //
+	int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
+	//
 	//********************************************************************************
 	//
 	// max_rhs_iters is the number of times that we need to iterate in order to
@@ -438,23 +439,23 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	//
 	// Make room for current blocks of solutions and right-hand sides
 	//
-	 cur_block_sol = _rhs.Clone(_blocksize); assert(cur_block_sol!=NULL);
-	 cur_block_rhs = _rhs.Clone(_blocksize); assert(cur_block_rhs!=NULL);
+	cur_block_sol = _rhs.Clone(_blocksize); assert(cur_block_sol!=NULL);
+	cur_block_rhs = _rhs.Clone(_blocksize); assert(cur_block_rhs!=NULL);
         //
-	 // Make additional space needed during iteration
-	 //
-       temp_block = _rhs.Clone(_blocksize); assert(temp_block!=NULL);
-	 PC_resid = _rhs.Clone(_blocksize); assert(PC_resid!=NULL);
+	// Make additional space needed during iteration
+	//
+	temp_block = _rhs.Clone(_blocksize); assert(temp_block!=NULL);
+	PC_resid = _rhs.Clone(_blocksize); assert(PC_resid!=NULL);
         //
-	 // Additional initialization
-	 //
-	 int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
-	 int *cur_idx = new int[_blocksize]; assert(cur_idx!=NULL);
-	 int *conv_idx = new int[_blocksize]; assert(conv_idx!=NULL);
-	 int *cols = new int[_blocksize]; assert(cols!=NULL);	//
+	// Additional initialization
+	//
+	int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
+	int *cur_idx = new int[_blocksize]; assert(cur_idx!=NULL);
+	int *conv_idx = new int[_blocksize]; assert(conv_idx!=NULL);
+	int *cols = new int[_blocksize]; assert(cols!=NULL);	//
 	//
 	//  Start executable statements. 
-    //
+	//
 	for ( _rhs_iter=0; _rhs_iter < max_rhs_iters; _rhs_iter++ ) {
 		//
 		if (vb && _debuglevel > 2) {
@@ -465,7 +466,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		}	
 		//
 		cur_blksz = _blocksize;
-	       ind_blksz = _blocksize;
+		ind_blksz = _blocksize;
 		prev_ind_blksz = _blocksize;
 		num_conv = 0;
 		//
@@ -478,39 +479,39 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			_startblock = true;
 		}
 	 	//
-		 // Compute the number of right-hand sides remaining to be solved 
-	     //
-	     if ( _blocksize < _numrhs ) {
-		     numrhs_to_solve = _numrhs - (_rhs_iter * _blocksize);
-		 }
-	     else {
-		     numrhs_to_solve = _numrhs;
-		 }
-		 //
-		 // Put the current initial guesses and right-hand sides into current blocks
-		 //
-         SetUpBlocks(*cur_block_sol, *cur_block_rhs, numrhs_to_solve);
-		 //
-		 for (i=0;i<_blocksize;i++){
-			 ind_idx[i] = i; cur_idx[i] = i; conv_idx[i] = 0;
-			 cols[i] = i;
-		 }
+		// Compute the number of right-hand sides remaining to be solved 
+		//
+		if ( _blocksize < _numrhs ) {
+		  numrhs_to_solve = _numrhs - (_rhs_iter * _blocksize);
+		}
+		else {
+		  numrhs_to_solve = _numrhs;
+		}
+		//
+		// Put the current initial guesses and right-hand sides into current blocks
+		//
+		SetUpBlocks(*cur_block_sol, *cur_block_rhs, numrhs_to_solve);
+		//
+		for (i=0;i<_blocksize;i++){
+		  ind_idx[i] = i; cur_idx[i] = i; conv_idx[i] = 0;
+		  cols[i] = i;
+		}
 		//
 		// ************ Compute the initial residuals ********************************
 		//
 		// Associate the first block of _basisvecs with P_prev and the
-        // first block of _residvecs with R_prev
+		// first block of _residvecs with R_prev
 		//
 		for ( i=0; i<_blocksize; i++ ) {
-			index1[i] = i;
+		  index1[i] = i;
 		}
 		P_prev = _basisvecs->CloneView(index1, _blocksize); assert(P_prev!=NULL);
-             R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev!=NULL);
+		R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev!=NULL);
 		AP_prev = temp_block->CloneView(index1, _blocksize); assert(AP_prev!=NULL);
 		cur_sol = cur_block_sol->CloneView(index1, _blocksize); assert(cur_sol!=NULL);
-        //
-        // Store initial guesses to AX = B in 1st block of _basisvecs
-        //         P_prev = one*cur_block_sol + zero*P_prev
+		//
+		// Store initial guesses to AX = B in 1st block of _basisvecs
+		//         P_prev = one*cur_block_sol + zero*P_prev
 		//
 		P_prev->MvAddMv(one, *cur_block_sol, zero, *P_prev);
 		//
@@ -526,178 +527,173 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		//
 		//*******Compute and save the initial residual norms*******
 		//
-             R_prev->MvNorm(init_resid_norms);
+		R_prev->MvNorm(init_resid_norms);
 		//
-        // Update indices of current (independent) blocks.
+		// Update indices of current (independent) blocks.
 		// If a residual is too small, it will be dropped from
 		// the current block, thus, from future computations
 		//
 		k = 0; j = 0;
 		for (i=0; i<_blocksize; i++){
-			_residerrors[_rhs_iter*_blocksize +i] = init_resid_norms[i];
-			if (init_resid_norms[i] > _prec){
-				_residerrors[_rhs_iter*_blocksize +i] = one;
-				cur_idx[k] = i; ind_idx[k] = i;
-				k = k+1;
-			}
-			else {
-				conv_idx[j] = i;
-				j = j+1;
-			}
+		  _residerrors[_rhs_iter*_blocksize +i] = init_resid_norms[i];
+		  if (init_resid_norms[i] > _prec){
+		    _residerrors[_rhs_iter*_blocksize +i] = one;
+		    cur_idx[k] = i; ind_idx[k] = i;
+		    k = k+1;
+		  }
+		  else {
+		    conv_idx[j] = i;
+		    j = j+1;
+		  }
 		}
 		cur_blksz = k; ind_blksz = k; num_conv = j;
 		//
-        //***** If _debuglevel > 0, print out information****************************
-        //
-        if (vb && _debuglevel > 0) {
-			cout << endl;
-            cout << " CG Initial Residual Norms" << endl; 
+		//***** If _debuglevel > 0, print out information****************************
+		//
+		if (vb && _debuglevel > 0) {
+		  cout << endl;
+		  cout << " CG Initial Residual Norms" << endl; 
 			for (i=0; i<_blocksize; i++){
 				cout << _residerrors[_rhs_iter*_blocksize + i] << " ";
 			}
-            cout << endl << endl;
+			cout << endl << endl;
 		}
-	    //
+		//
 		//
 		if (cur_blksz > 0) { 
-			_blkerror = 1.0;
-			// All initial residuals have not converged -- continue Block CG	
-			//Compute the initial block of direciton vectors
-			//
-		    // Associate current blocks of residuals, directions, and precond residuals
-		    // with R_prev, P_prev, and precond_resid
+		  _blkerror = 1.0;
+		  // All initial residuals have not converged -- continue Block CG	
+		  //Compute the initial block of direciton vectors
+		  //
+		  // Associate current blocks of residuals, directions, and precond residuals
+		  // with R_prev, P_prev, and precond_resid
+		  //
+		  for (i=0; i< cur_blksz; i++){
+		    index1[i] = cur_idx[i];
+		  }
+		  delete R_prev; R_prev=0;
+		  delete P_prev, P_prev=0;
+		  delete precond_resid, precond_resid=0;
+		  R_prev = _residvecs->CloneView(index1,cur_blksz);
+		  P_prev = _basisvecs->CloneView(index1,cur_blksz);
+		  precond_resid = PC_resid->CloneView(index1,cur_blksz);
+		  //
+		  // Compute the preconditioned initial residual, store in precond_resid
+		  //
+		  _precond.ApplyPrecondition(*R_prev, *precond_resid);
+		  //
+		  //**************Compute initial direction vectors************************
+		  // Initially, they are set to the preconditioned residuals
+		  //
+		  P_prev->MvAddMv(one, *precond_resid, zero, *precond_resid);
+		  //
+		  // Compute an orthonormal block of initial direction vectors,
+		  // and check for dependencies, adjusting indices of independent
+		  // vectors if needed
+		  //
+		  Teuchos::SerialDenseMatrix<int,TYPE> G(cur_blksz, cur_blksz);
+		  num_ind = 0; pflg = false;
+		  QRFactorDef(*P_prev, G, pflg, cur_blksz, cols, num_ind, vb);
+		  //
+		  if (pflg) {
+		    // The initial block of direction vectors are linearly dependent
+		    if (vb && _debuglevel > 2) {
+		      cout << " Initial direction vectors are dependent" << endl;
+		      cout << " Adjusting blocks and indices for iteration" << endl;
+		    }
 		    //
-		    for (i=0; i< cur_blksz; i++){
-			    index1[i] = cur_idx[i];
-			}
-		    delete R_prev; R_prev=0;
-		    delete P_prev, P_prev=0;
-		    delete precond_resid, precond_resid=0;
-		    R_prev = _residvecs->CloneView(index1,cur_blksz);
-		    P_prev = _basisvecs->CloneView(index1,cur_blksz);
-		    precond_resid = PC_resid->CloneView(index1,cur_blksz);
-		    //
-		    // Compute the preconditioned initial residual, store in precond_resid
-		    //
-	    	_precond.ApplyPrecondition(*R_prev, *precond_resid);
-		    //
-		    //**************Compute initial direction vectors************************
-			// Initially, they are set to the preconditioned residuals
-		    //
-		    P_prev->MvAddMv(one, *precond_resid, zero, *precond_resid);
-		    //
-		    // Compute an orthonormal block of initial direction vectors,
-			// and check for dependencies, adjusting indices of independent
-			// vectors if needed
-		    //
-            Anasazi::DenseMatrix<TYPE> G(cur_blksz, cur_blksz);
-		    num_ind = 0; pflg = false;
-		    QRFactorDef(*P_prev, G, pflg, cur_blksz, cols, num_ind, vb);
-            //
-	 	    if (pflg) {
-			    // The initial block of direction vectors are linearly dependent
-			    if (vb && _debuglevel > 2) {
-			       cout << " Initial direction vectors are dependent" << endl;
-			       cout << " Adjusting blocks and indices for iteration" << endl;
-				}
-			    //
-			    ind_blksz = num_ind;
-			    for (i=0; i< ind_blksz; i++){
-				    ind_idx[i] = ind_idx[cols[i]];
-				}	
-			}  // end if (pflg)
-			//
-			if (ind_blksz == 0){
-				if (vb) {
-					cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
-						<< " -- Iteration# " << _iter << endl;
-					cout << " Reason: No independent initial direction vectors" << endl;
-				}
-				exit_flg = true;
-			}
-
+		    ind_blksz = num_ind;
+		    for (i=0; i< ind_blksz; i++){
+		      ind_idx[i] = ind_idx[cols[i]];
+		    }	
+		  }  // end if (pflg)
+		  //
+		  if (ind_blksz == 0){
+		    if (vb) {
+		      cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+			   << " -- Iteration# " << _iter << endl;
+		      cout << " Reason: No independent initial direction vectors" << endl;
+		    }
+		    exit_flg = true;
+		  }		  
 		}  // end if (cur_blksz > 0)
-	    //		
-	    else {  // all initial residuals have converged
-			if (vb) {
-				cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
-						<< " -- Iteration# " << _iter << endl;
-				cout << "Reason: All initial residuals have converged" << endl;
-			}
-			exit_flg = true;
+		//		
+		else {  // all initial residuals have converged
+		  if (vb) {
+		    cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+			 << " -- Iteration# " << _iter << endl;
+		    cout << "Reason: All initial residuals have converged" << endl;
+		  }
+		  exit_flg = true;
 		}
-	   //  Clean up before entering main loop
-	   delete AP_prev; AP_prev=0;
-	   delete P_prev; P_prev=0;
-	   delete R_prev; R_prev=0;
-	   delete cur_sol; cur_sol=0;
-        // ***************************************************************************
-        // ************************Main CG Loop***************************************
+		//  Clean up before entering main loop
+		delete AP_prev; AP_prev=0;
+		delete P_prev; P_prev=0;
+		delete R_prev; R_prev=0;
+		delete cur_sol; cur_sol=0;
 		// ***************************************************************************
-        // 
+		// ************************Main CG Loop***************************************
+		// ***************************************************************************
+		// 
 		int new_blk = 2;
-        if (vb && _debuglevel > 2) cout << "Entering main CG loop" << endl << endl;
-	    //
-	    for (_iter=0; _iter<_maxits; _iter++) {
-			//
-			if (exit_flg) break;
-		    // 
-		   //*******Compute the new blocks of iterates and residuals******************
-		   //
-		   // Get views of the previous blocks of residuals, direction vectors, etc.
-		   //
-		   for (i=0; i< ind_blksz; i++) {
-			   index1[i] = ind_idx[i];
-			   index2[i] = _blocksize + ind_idx[i];
-		   } 
-		   if (new_blk == 2){
-             P_prev = _basisvecs->CloneView(index1,ind_blksz);
-		   }
-		   else {
-			 P_prev = _basisvecs->CloneView(index2,ind_blksz);
-		   }
-		   AP_prev = temp_block->CloneView(index1,ind_blksz);
-		   //
-		   for (i=0; i < cur_blksz; i++){
-			   index1[i] = cur_idx[i];
-               index2[i] = _blocksize + cur_idx[i];
-		   }
-		   if (new_blk == 2){
-		      R_prev = _residvecs->CloneView(index1,cur_blksz);
-			  R_new = _residvecs->CloneView(index2,cur_blksz);
-		   }
-		   else {
-			  R_prev = _residvecs->CloneView(index2,cur_blksz);
-			  R_new = _residvecs->CloneView(index1,cur_blksz);
-		   }
-		   cur_sol = cur_block_sol->CloneView(index1,cur_blksz); 
-           //
-		   // Compute the coefficient matrix alpha
-		   //
-           // P_prev^T * A * P_prev * alpha = P_prev^T * R_prev
-		   // 1) Compute P_prev^T * A * P_prev = T2 and P_prev^T * R_prev = T1
-           // 2) Compute the Cholesky Factorization of T2
-           // 3) Back and Forward Solves for alpha
-           //
-		   Anasazi::DenseMatrix<TYPE> alpha(ind_blksz,cur_blksz);
-           Anasazi::DenseMatrix<TYPE> T1(ind_blksz,cur_blksz);
-           Anasazi::DenseMatrix<TYPE> T2(ind_blksz,ind_blksz);
-		   ptr_T1 = 0; ptr_T2 = 0;
-		   char UPLO = 'U';
-           int ii = 0;
-           int * info = &ii;
-           int numrhs = _numrhs;
-           Epetra_LAPACK lapack;
+		if (vb && _debuglevel > 2) cout << "Entering main CG loop" << endl << endl;
+		//
+		for (_iter=0; _iter<_maxits; _iter++) {
+		  //
+		  if (exit_flg) break;
+		  // 
+		  //*******Compute the new blocks of iterates and residuals******************
+		  //
+		  // Get views of the previous blocks of residuals, direction vectors, etc.
+		  //
+		  for (i=0; i< ind_blksz; i++) {
+		    index1[i] = ind_idx[i];
+		    index2[i] = _blocksize + ind_idx[i];
+		  } 
+		  if (new_blk == 2){
+		    P_prev = _basisvecs->CloneView(index1,ind_blksz);
+		  }
+		  else {
+		    P_prev = _basisvecs->CloneView(index2,ind_blksz);
+		  }
+		  AP_prev = temp_block->CloneView(index1,ind_blksz);
+		  //
+		  for (i=0; i < cur_blksz; i++){
+		    index1[i] = cur_idx[i];
+		    index2[i] = _blocksize + cur_idx[i];
+		  }
+		  if (new_blk == 2){
+		    R_prev = _residvecs->CloneView(index1,cur_blksz);
+		    R_new = _residvecs->CloneView(index2,cur_blksz);
+		  }
+		  else {
+		    R_prev = _residvecs->CloneView(index2,cur_blksz);
+		    R_new = _residvecs->CloneView(index1,cur_blksz);
+		  }
+		  cur_sol = cur_block_sol->CloneView(index1,cur_blksz); 
+		  //
+		  // Compute the coefficient matrix alpha
+		  //
+		  // P_prev^T * A * P_prev * alpha = P_prev^T * R_prev
+		  // 1) Compute P_prev^T * A * P_prev = T2 and P_prev^T * R_prev = T1
+		  // 2) Compute the Cholesky Factorization of T2
+		  // 3) Back and Forward Solves for alpha
+		  //
+		  Teuchos::SerialDenseMatrix<int,TYPE> alpha(ind_blksz,cur_blksz);
+		  Teuchos::SerialDenseMatrix<int,TYPE> T2(ind_blksz,ind_blksz);
+		  char UPLO = 'U';
+		  int ii = 0;
+		  int * info = &ii;
+		  int numrhs = _numrhs;
+		  Teuchos::LAPACK<int,TYPE> lapack;
 		   //
 		   // 1)
-		   _amat.ApplyMatrix(*P_prev, *AP_prev);
-		   R_prev->MvTransMv(one, *P_prev, T1);
-           AP_prev->MvTransMv(one, *P_prev, T2);
-		   // 2)
-		   ptr_T1 = T1.getarray(); assert(ptr_T1!=NULL);
-           ptr_T2 = T2.getarray(); assert(ptr_T2!=NULL);
-           lapack.POTRF(UPLO, ind_blksz, ptr_T2, ind_blksz, info);
-		   if (*info != 0) {
+		  _amat.ApplyMatrix(*P_prev, *AP_prev);
+		  R_prev->MvTransMv(one, *P_prev, alpha);
+		  AP_prev->MvTransMv(one, *P_prev, T2);
+		  // 2)
+		  lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, info);
+		  if (*info != 0) {
 			   if(vb){
 				   cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
 						<< " -- Iteration# " << _iter << endl;
@@ -708,8 +704,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			   break;
 		   }
 		   // 3)
-		   lapack.POTRS(UPLO, ind_blksz, cur_blksz, ptr_T2, ind_blksz, ptr_T1, ind_blksz, info);
-		   // Note: solution returned in ptr_T1
+		   lapack.POTRS(UPLO, ind_blksz, cur_blksz, T2.values(), ind_blksz, alpha.values(), ind_blksz, info);
+		   // Note: solution returned in alpha
 		   if (*info != 0) {
 			   if(vb){
 				   cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
@@ -719,27 +715,25 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			   }
 			   break;
 		   }
-           //
-           alpha.setvalues(ptr_T1,ind_blksz);
-           //
-           // Update the solution: cur_sol = one*cur_sol + one*P_prev*alpha
 		   //
-           cur_sol->MvTimesMatAddMv(one, *P_prev, alpha, one);
-           //
-           // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
-           //
-           R_new->MvAddMv(one, *R_prev, zero, *R_prev);
-           R_new->MvTimesMatAddMv(-one, *AP_prev, alpha, one);
+		   // Update the solution: cur_sol = one*cur_sol + one*P_prev*alpha
+		   //
+		   cur_sol->MvTimesMatAddMv(one, *P_prev, alpha, one);
+		   //
+		   // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
+		   //
+		   R_new->MvAddMv(one, *R_prev, zero, *R_prev);
+		   R_new->MvTimesMatAddMv(-one, *AP_prev, alpha, one);
 		   //
 		   // ****Compute the Current Relative Residual Norms and the Block Error****
-           //
-           R_new->MvNorm(cur_resid_norms);
+		   //
+		   R_new->MvNorm(cur_resid_norms);
 		   for (i=0; i<cur_blksz; i++){
-			   cur_resid_norms[i] = cur_resid_norms[i]/init_resid_norms[cur_idx[i]];
+		     cur_resid_norms[i] = cur_resid_norms[i]/init_resid_norms[cur_idx[i]];
 		   }
 		   // Update _residerrors
 		   for (i=0; i<cur_blksz; i++){
-			   _residerrors[_rhs_iter*_blocksize + cur_idx[i]] = cur_resid_norms[i];
+		     _residerrors[_rhs_iter*_blocksize + cur_idx[i]] = cur_resid_norms[i];
 		   }
 		   //
 		   prev_ind_blksz = ind_blksz; // Save old ind_blksz of P_prev
@@ -750,12 +744,12 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   k=0;
 		   _blkerror = _residerrors[_rhs_iter*_blocksize +cur_idx[0]];
 		   for (i=0; i<cur_blksz; i++){
-			   if (_residerrors[_rhs_iter*_blocksize + cur_idx[i]] > _blkerror){ // get new max error
-				   _blkerror = _residerrors[_rhs_iter*_blocksize + cur_idx[i]];
-			   }
-			   if (_residerrors[_rhs_iter*_blocksize + cur_idx[i]] > _prec){ // get new cur_idx
-				   cur_idx[k] = cur_idx[i]; k = k+1;
-			   }
+		     if (_residerrors[_rhs_iter*_blocksize + cur_idx[i]] > _blkerror){ // get new max error
+		       _blkerror = _residerrors[_rhs_iter*_blocksize + cur_idx[i]];
+		     }
+		     if (_residerrors[_rhs_iter*_blocksize + cur_idx[i]] > _prec){ // get new cur_idx
+		       cur_idx[k] = cur_idx[i]; k = k+1;
+		     }
 		   }
 		   cur_blksz = k;
 		   //
@@ -765,31 +759,31 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   //
 		   k = 0;
 		   for (i=0; i< ind_blksz; i++){
-               if (_residerrors[_rhs_iter*_blocksize +ind_idx[i]] > _prec){
-				   ind_idx[k] = ind_idx[i]; k = k+1;
-			   }
+		     if (_residerrors[_rhs_iter*_blocksize +ind_idx[i]] > _prec){
+		       ind_idx[k] = ind_idx[i]; k = k+1;
+		     }
 		   }
 		   ind_blksz = k;
-           //
+		   //
 		   // Update the number of converged residuals and their indices 
 		   //
 		   k = 0;
 		   for (i=0; i<_blocksize; i++){
-               if (_residerrors[_rhs_iter*_blocksize + i] < _residual_tolerance){
-				   conv_idx[k] = i; k = k+1;
-			   }
+		     if (_residerrors[_rhs_iter*_blocksize + i] < _residual_tolerance){
+		       conv_idx[k] = i; k = k+1;
+		     }
 		   }
 		   num_conv = k;
 		   //
 		   //****************Print iteration information*****************************
 		   //
 		   if (vb && _debuglevel > 0) {
-			   PrintCGIterInfo(cur_idx,cur_blksz,
-				                      ind_idx,ind_blksz,conv_idx,num_conv);
+		     PrintCGIterInfo(cur_idx,cur_blksz,
+				     ind_idx,ind_blksz,conv_idx,num_conv);
 		   }
 		   //
 		   if (_debuglevel > 1) {
-			   CheckCGResids(*cur_block_sol, *cur_block_rhs, vb);
+		     CheckCGResids(*cur_block_sol, *cur_block_rhs, vb);
 		   }
 		   //
 		   //****************Test for convergence*************************************
@@ -815,7 +809,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   //
 		   // **************Compute the new block of direction vectors****************
 		   //
-           // Get views of the new blocks of independent direction vectors and
+		   // Get views of the new blocks of independent direction vectors and
 		   // the corresponding residuals. Note: ind_idx are a subset of cur_idx.
 		   //
 		   for (i=0; i<ind_blksz; i++){
@@ -823,40 +817,37 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   }
 		   delete R_new; R_new=0;
 		   if(precond_resid) delete precond_resid; precond_resid=0;
-
+		   
 		   if (new_blk == 2) {
-		      R_new = _residvecs->CloneView(index2,ind_blksz);
-		      P_new = _basisvecs->CloneView(index2,ind_blksz);
+		     R_new = _residvecs->CloneView(index2,ind_blksz);
+		     P_new = _basisvecs->CloneView(index2,ind_blksz);
 		   }
 		   else {
-              	R_new = _residvecs->CloneView(index1,ind_blksz);
-		      P_new = _basisvecs->CloneView(index1,ind_blksz);
+		     R_new = _residvecs->CloneView(index1,ind_blksz);
+		     P_new = _basisvecs->CloneView(index1,ind_blksz);
 		   }
 		   precond_resid = PC_resid->CloneView(index1,ind_blksz);
 		   //
-           // Compute preconditioned residuals
+		   // Compute preconditioned residuals
 		   //
 		   _precond.ApplyPrecondition(*R_new, *precond_resid);
 		   // 
 		   // Compute coefficient matrix beta
 		   //
-           // P_prev^T A * P_prev * beta = P_prev^T A * precond_resid
-           // 1) Compute P_prev^T A * P_prev = T2 and P_prev^T * A * precond_resid = T3
+		   // P_prev^T A * P_prev * beta = P_prev^T A * precond_resid
+		   // 1) Compute P_prev^T A * P_prev = T2 and P_prev^T * A * precond_resid = T3
 		   //                                     or (A*P_prev)^T * precond_resid (A SPD)
-           // 2) Compute the Cholesky Factorization of T2
-           // 3) Back and Forward Solves for beta
-           //
-           Anasazi::DenseMatrix<TYPE> T3(prev_ind_blksz,ind_blksz);
-           Anasazi::DenseMatrix<TYPE> beta(prev_ind_blksz,ind_blksz);
-		   ptr_T1 = 0;
+		   // 2) Compute the Cholesky Factorization of T2
+		   // 3) Back and Forward Solves for beta
+		   //
+		   Teuchos::SerialDenseMatrix<int,TYPE> beta(prev_ind_blksz,ind_blksz);
 		   //
 		   // 1 & 2)  Note: we already have computed T2 and its Cholesky
 		   //         factorization during computation of alpha
-		   precond_resid->MvTransMv(-one, *AP_prev, T3);
+		   precond_resid->MvTransMv(-one, *AP_prev, beta);
 		   // 3)
-           ptr_T1 = T3.getarray(); assert(ptr_T1!=NULL);  
-           lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, ptr_T2, prev_ind_blksz, ptr_T1, prev_ind_blksz, info);
-		   // Note: Solution returned in ptr_T1
+		   lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, info);
+		   // Note: Solution returned in beta
 		   if (*info != 0) {
 			   if (vb) {
 				   cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
@@ -866,16 +857,14 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			   }
 			   break;
 		   }
-           //
-           beta.setvalues(ptr_T1,prev_ind_blksz);
-           //
-           // Compute: P_new = precond_resid + P_prev * beta
-           //
-           P_new->MvAddMv(one, *precond_resid, zero, *R_new);
-           P_new->MvTimesMatAddMv(one, *P_prev, beta, one);
-           //
-           // Check A-orthogonality of new and previous blocks of direction vectors
-           //
+		   //
+		   // Compute: P_new = precond_resid + P_prev * beta
+		   //
+		   P_new->MvAddMv(one, *precond_resid, zero, *R_new);
+		   P_new->MvTimesMatAddMv(one, *P_prev, beta, one);
+		   //
+		   // Check A-orthogonality of new and previous blocks of direction vectors
+		   //
 		   if (_debuglevel > 2) {
 			   if(vb){
 		         cout << "Orthogonality check" << endl;
@@ -887,94 +876,94 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   // and check for dependencies, adjusting indices of
 		   // independent vectors if needed
 		   //
-		   Anasazi::DenseMatrix<TYPE> G(ind_blksz,ind_blksz);
+		   Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz,ind_blksz);
 		   num_ind = 0; pflg = false;
 		   QRFactorDef(*P_new, G, pflg, ind_blksz, cols, num_ind, vb);
 		   //
 		   if (pflg) {
-			  ind_blksz = num_ind;
-			  // The new block of direction vectors are linearly dependent
-			  if (vb && _debuglevel > 2) {
-			     cout << "The new block of direction vectors are dependent " << endl;
-                 cout << "# independent direction vectors: " << ind_blksz << endl;
-			     cout << "independent indices: " << endl;
-		         for (i=0; i<ind_blksz ; i++) {
-			        cout << cols[i];
-				 }
-		         cout << endl << endl;
-			  }
-			  if (ind_blksz == 0){
-				  if (vb) {
-					  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
-						<< " -- Iteration# " << _iter << endl;
-				      cout << "Reason: No more linearly independent direction vectors" << endl;
-				      cout << " Solution will be updated upon exiting loop" << endl;
-				  }
-			      break;
-			  }
-			  for (i=0; i<ind_blksz; i++){
-				  ind_idx[i] = ind_idx[cols[i]];
-			  }
-			  //
-           }  // end of if (pflg)
+		     ind_blksz = num_ind;
+		     // The new block of direction vectors are linearly dependent
+		     if (vb && _debuglevel > 2) {
+		       cout << "The new block of direction vectors are dependent " << endl;
+		       cout << "# independent direction vectors: " << ind_blksz << endl;
+		       cout << "independent indices: " << endl;
+		       for (i=0; i<ind_blksz ; i++) {
+			 cout << cols[i];
+		       }
+		       cout << endl << endl;
+		     }
+		     if (ind_blksz == 0){
+		       if (vb) {
+			 cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+			      << " -- Iteration# " << _iter << endl;
+			 cout << "Reason: No more linearly independent direction vectors" << endl;
+			 cout << " Solution will be updated upon exiting loop" << endl;
+		       }
+		       break;
+		     }
+		     for (i=0; i<ind_blksz; i++){
+		       ind_idx[i] = ind_idx[cols[i]];
+		     }
+		     //
+		   }  // end of if (pflg)
 		   //
 		   // Check A-orthogonality after orthonormalization
 		   //
 		   if (_debuglevel > 2) {
-			   if(vb){
-				  cout << "Orthogonality check after orthonormalization " << endl; 
-			   }
-				  CheckCGOrth(*P_prev, *P_new, vb);
+		     if(vb){
+		       cout << "Orthogonality check after orthonormalization " << endl; 
+		     }
+		     CheckCGOrth(*P_prev, *P_new, vb);
 		   }
 		   // 
 		   // *****Update index of new blocks*****************************************
 		   //
-           if (new_blk == 2){
-			   new_blk = 1;
+		   if (new_blk == 2){
+		     new_blk = 1;
 		   }
 		   else {
-			   new_blk = 2;
+		     new_blk = 2;
 		   }
 		   //
-	 	if (P_prev) {delete P_prev; P_prev=0;}
-		 if (P_new) {delete P_new; P_new=0; }
-	 	if (R_prev) { delete R_prev; R_prev=0;}
-     	   if (R_new) { delete R_new; R_new=0;}
-	 	if (AP_prev) { delete AP_prev; AP_prev=0;}
-        	if (cur_sol) { delete cur_sol; cur_sol=0;}
-	 	if (precond_resid) {delete precond_resid; precond_resid=0;}
-
-     } // end of the main CG loop -- for(_iter = 0;...)
-	 //*******************************************************************************
-	 //
-	 // Iteration has converged, maxits has been reached,
-	 // or direction vector block is linearly dependent
-	 //
-	 if (_iter >= _maxits && _blkerror > _residual_tolerance){
-		 if (vb){
-			 cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
-						<< " -- Iteration# " << _iter << endl;
-			 cout << "Reason: maximum number of iterations has been reached" << endl;
-		 }
-	 }
-	 //
-	 if(vb){
-	   cout << " Iteration has stopped at step: " << _iter << endl;
-	   cout << endl;
-	 }
-	 //
-	 // Insert the current block of solutions into _solutions so we can
-	 // continue if we have more right-hand sides to solve for
-	 //
-	 ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);	 
-	 //
-  } // end if ( _rhs_iter = 0;... )
-  //**********************************************************************************
-  //
-    //
-    // ****************Free heap space***********************************************
- //
-
+		   if (P_prev) {delete P_prev; P_prev=0;}
+		   if (P_new) {delete P_new; P_new=0; }
+		   if (R_prev) { delete R_prev; R_prev=0;}
+		   if (R_new) { delete R_new; R_new=0;}
+		   if (AP_prev) { delete AP_prev; AP_prev=0;}
+		   if (cur_sol) { delete cur_sol; cur_sol=0;}
+		   if (precond_resid) {delete precond_resid; precond_resid=0;}
+		   
+		} // end of the main CG loop -- for(_iter = 0;...)
+		//*******************************************************************************
+		//
+		// Iteration has converged, maxits has been reached,
+		// or direction vector block is linearly dependent
+		//
+		if (_iter >= _maxits && _blkerror > _residual_tolerance){
+		  if (vb){
+		    cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+			 << " -- Iteration# " << _iter << endl;
+		    cout << "Reason: maximum number of iterations has been reached" << endl;
+		  }
+		}
+		//
+		if(vb){
+		  cout << " Iteration has stopped at step: " << _iter << endl;
+		  cout << endl;
+		}
+		//
+		// Insert the current block of solutions into _solutions so we can
+		// continue if we have more right-hand sides to solve for
+		//
+		ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);	 
+		//
+	} // end if ( _rhs_iter = 0;... )
+	//**********************************************************************************
+	//
+	//
+	// ****************Free heap space***********************************************
+	//
+	
   if (PC_resid) {delete PC_resid; PC_resid=0;}
   if (temp_block) { delete temp_block; temp_block=0;}
   if (cur_block_sol) { delete cur_block_sol; cur_block_sol=0;}
@@ -994,16 +983,16 @@ void BlockCG<TYPE>::Solve (bool vb) {
 
 template<class TYPE>
 void BlockCG<TYPE>::QRFactorDef (Anasazi::MultiVec<TYPE>& VecIn, 
-				     Anasazi::DenseMatrix<TYPE>& FouierR, bool &flg, int blksz,
+				     Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, bool &flg, int blksz,
 					 int cols[], int &num, bool vb) {
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == blksz);
-	int ldR = FouierR.getld();
 	int *index = new int[nb]; assert(index!=NULL);
 	int *dep_idx = new int[nb]; assert(dep_idx!=NULL);
 	int num_dep = 0;
-	TYPE * R = FouierR.getarray();
+	TYPE * R = FouierR.values();
 	Anasazi::MultiVec<TYPE> *qj = 0, *Qj = 0;
+	Teuchos::SerialDenseVector<int,TYPE> rj;
 	const int IntOne=1;
 	const int IntZero=0;
 	const TYPE zero=0.0;
@@ -1011,13 +1000,9 @@ void BlockCG<TYPE>::QRFactorDef (Anasazi::MultiVec<TYPE>& VecIn,
 	TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn!=NULL);
 	//
 	//
-    // Zero out the array that will contain the Fourier coefficients.
+	// Zero out the array that will contain the Fourier coefficients.
 	//
-	for ( j=0; j<nb; j++ ) {
-		for ( i=0; i<nb; i++ ) {
-			R[j*ldR+i] = zero;
-		}
-	}
+	FouierR.putScalar();
 	//
 	// Compute the Frobenius norm of VecIn -- this will be used to
 	// determine rank deficiency of VecIn
@@ -1025,91 +1010,89 @@ void BlockCG<TYPE>::QRFactorDef (Anasazi::MultiVec<TYPE>& VecIn,
 	VecIn.MvNorm(NormVecIn);
 	TYPE FroNorm = 0.0;
 	for (j=0;j<nb;j++) {
-		FroNorm += NormVecIn[j] * NormVecIn[j];
+	  FroNorm += NormVecIn[j] * NormVecIn[j];
 	}
 	FroNorm = sqrt(FroNorm);
 	num = 0; flg = false;
 	//
-    // Start the loop to orthogonalize the nb columns of VecIn.
+	// Start the loop to orthogonalize the nb columns of VecIn.
 	//
 	for ( j=0; j<nb; j++ ) {
-		//
-        // Grab the j-th column of VecIn (the first column is indexed to 
-        // be the zero-th one).
-		//
-		index[0] = j;
-		qj = VecIn.CloneView(index, IntOne); assert(qj!=NULL);
-		if ( j ) {
-			int num_orth;
-			for ( i=0; i<j; i++ ) {
-				index[i] = i;
-			}
-			//
-			// Grab the first j columns of VecIn (that are now an orthogonal
-			// basis for first j columns of the entering VecIn).
-			//
-			Qj = VecIn.CloneView(index, j);
-			Anasazi::DenseMatrix<TYPE> rj(j,1);
-			//
-			// Enter a for loop that does two (num_orth) steps of classical 
-			// Gram-Schmidt orthogonalization.
-			//
-			for (num_orth=0; num_orth<2; num_orth++) {
-				//
-				// Determine the Fourier coefficients for orthogonalizing column
-				// j of VecIn against columns 0:j-1 of VecIn. In other words, 
-				// result = trans(Qj)*qj.
-				//
-				qj->MvTransMv( one, *Qj, rj );
-				//
-				// Sum result[0:j-1] into column j of R.
-				//
-				TYPE* result = rj.getarray();
-				//
-				for (k=0; k<num_dep; k++) {
-					result[dep_idx[k]] = zero;
-				}
-				//
-				for ( k=0; k<j; k++ ) {
-					R[j*ldR+k] += result[k];
-				}
-				//
-				//   Compute qj <- qj - Qj * rj.
-				//
-				qj->MvTimesMatAddMv(-one, *Qj, rj, one);
-			}
-		}
-		//
-		// Compute the norm of column j of VecIn (=qj).
-		//
-		qj->MvNorm ( R+j*ldR+j );
+	  //
+	  // Grab the j-th column of VecIn (the first column is indexed to 
+	  // be the zero-th one).
+	  //
+	  index[0] = j;
+	  qj = VecIn.CloneView(index, IntOne); assert(qj!=NULL);
+	  if ( j ) {
+	    int num_orth;
+	    for ( i=0; i<j; i++ ) {
+	      index[i] = i;
+	    }
 	    //
-		if ( NormVecIn[j] > _prec && *(R+j*ldR+j) > (_prec * NormVecIn[j]) ) {
-			//
-			// Normalize qj to make it into a unit vector.
-			//
-			TYPE rjj = one / *(R+j*ldR+j);
-			qj->MvAddMv ( rjj, *qj, zero, *qj );
-			cols[num] = j;
-			num = num + 1;
-		}
-		else {
-			// 
-			if (vb && _debuglevel > 2){
-			    cout << "Rank deficiency at column index: " << j << endl;
-			}
-			flg = true;
-			//
-			// Don't normalize qj, enter one on diagonal of R,
-			// and zeros in the row to the right of the diagonal -- this
-			// requires updating the indices of the dependent columns
-			//
-			R[j*ldR+j] = one;
-			dep_idx[num_dep] = j;
-			num_dep = num_dep + 1;
-		}	
-		delete qj; qj = 0;
-		delete Qj; Qj = 0;
+	    // Grab the first j columns of VecIn (that are now an orthogonal
+	    // basis for first j columns of the entering VecIn).
+	    //
+	    Qj = VecIn.CloneView(index, j);
+	    rj.size(j);
+	    //
+	    // Enter a for loop that does two (num_orth) steps of classical 
+	    // Gram-Schmidt orthogonalization.
+	    //
+	    for (num_orth=0; num_orth<2; num_orth++) {
+	      //
+	      // Determine the Fourier coefficients for orthogonalizing column
+	      // j of VecIn against columns 0:j-1 of VecIn. In other words, 
+	      // result = trans(Qj)*qj.
+	      //
+	      qj->MvTransMv( one, *Qj, rj );
+	      //
+	      // Sum result[0:j-1] into column j of R.
+	      //
+	      for (k=0; k<num_dep; k++) {
+		rj[dep_idx[k]] = zero;
+	      }
+	      //
+	      for ( k=0; k<j; k++ ) {
+		FouierR(k,j) += rj[k];
+	      }
+	      //
+	      //   Compute qj <- qj - Qj * rj.
+	      //
+	      qj->MvTimesMatAddMv(-one, *Qj, rj, one);
+	    }
+	  }
+	  //
+	  // Compute the norm of column j of VecIn (=qj).
+	  //
+	  qj->MvNorm ( &FouierR(j,j) );
+	  //
+	  if ( NormVecIn[j] > _prec && FouierR(j,j) > (_prec * NormVecIn[j]) ) {
+	    //
+	    // Normalize qj to make it into a unit vector.
+	    //
+	    TYPE rjj = one / FouierR(j,j);
+	    qj->MvAddMv ( rjj, *qj, zero, *qj );
+	    cols[num] = j;
+	    num = num + 1;
+	  }
+	  else {
+	    // 
+	    if (vb && _debuglevel > 2){
+	      cout << "Rank deficiency at column index: " << j << endl;
+	    }
+	    flg = true;
+	    //
+	    // Don't normalize qj, enter one on diagonal of R,
+	    // and zeros in the row to the right of the diagonal -- this
+	    // requires updating the indices of the dependent columns
+	    //
+	    FouierR(j,j) = one;
+	    dep_idx[num_dep] = j;
+	    num_dep = num_dep + 1;
+	  }	
+	  delete qj; qj = 0;
+	  delete Qj; Qj = 0;
 	}
 	assert ((num + num_dep) == blksz);
 	delete [] index;
@@ -1140,10 +1123,10 @@ void BlockCG<TYPE>::CheckCGOrth(Anasazi::MultiVec<TYPE>& P1, Anasazi::MultiVec<T
   assert(AP!=NULL);
   _amat.ApplyMatrix(P1, *AP);
   //
-  Anasazi::DenseMatrix<TYPE> PAP(numvecs2, numvecs1);
+  Teuchos::SerialDenseMatrix<int,TYPE> PAP(numvecs2, numvecs1);
   AP->MvTransMv(one, P2, PAP);
   //
-  TYPE* ptr = PAP.getarray();
+  TYPE* ptr = PAP.values();
   TYPE column_sum;
   //
   for (k=0; k<numvecs1; k++) {
@@ -1153,7 +1136,7 @@ void BlockCG<TYPE>::CheckCGOrth(Anasazi::MultiVec<TYPE>& P1, Anasazi::MultiVec<T
 	  }
 	  if (vb) {
 	     cout << " P2^T*A*P1 " << " for column "
-		      << k << " is  " << fabs(column_sum) << endl;
+		      << k << " is  " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
 	  }
 	  ptr += numvecs2;
   }

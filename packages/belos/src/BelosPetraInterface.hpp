@@ -13,8 +13,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziPrecondition.hpp"
 #include "AnasaziReturnType.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosBlockCG.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
@@ -69,7 +68,7 @@ public:
 	// *this <- alpha * A * B + beta * (*this)
 	//
 	void MvTimesMatAddMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, 
-		Anasazi::DenseMatrix<TYPE>& B, TYPE beta );
+		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta );
 	//
 	// *this <- alpha * A + beta * B
 	//
@@ -78,7 +77,7 @@ public:
 	//
 	// B <- alpha * A^T * (*this)
 	//
-	void MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, Anasazi::DenseMatrix<TYPE>& B );
+	void MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B );
 	//
 	// alpha[i] = norm of i-th column of (*this)
 	//
@@ -203,12 +202,12 @@ int PetraVec<TYPE>::GetVecLength () const {
 //
 template<class TYPE>
 void PetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, 
-						   Anasazi::DenseMatrix<TYPE>& B, TYPE beta ) {
+						   Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) {
 	int info=0;
 	const int izero=0;
 	char* trans="N";
-	Epetra_LocalMap LocalMap(B.getrows(), izero, Map().Comm());
-	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.getarray(), B.getld(), B.getcols());
+	Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
+	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
 	PetraVec *A_vec = dynamic_cast<PetraVec *>(&A); assert(A_vec!=NULL);
 
@@ -236,11 +235,10 @@ void PetraVec<TYPE>::MvAddMv ( TYPE alpha , Anasazi::MultiVec<TYPE>& A,
 //
 template<class TYPE>
 void PetraVec<TYPE>::MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
-						   Anasazi::DenseMatrix<TYPE>& B) {
+						   Teuchos::SerialDenseMatrix<int,TYPE>& B) {
 	int info=0;
 	const int izero=0;
 	const TYPE zero=0.0;
-	//const TYPE one=1.0;
 	char* trans1="T";
 	char* trans2="N";
 
@@ -248,8 +246,8 @@ void PetraVec<TYPE>::MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
 
 	if (A_vec) {
 
-		Epetra_LocalMap LocalMap(B.getrows(), izero, Map().Comm());
-		Epetra_MultiVector B_Pvec(View, LocalMap, B.getarray(), B.getld(), B.getcols());
+		Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
+		Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
 
 		info = B_Pvec.Multiply( *trans1, *trans2, alpha, *A_vec, *this, zero ); 
 		assert(info==0);
