@@ -71,10 +71,12 @@ SUBDIRS		= Memory Communication
 MEM_CSRC	= mem.c
 MEM_INC		= mem_const.h
 MEM_LIB		= libzoltan_mem.a
+MEM_TARGET	= zoltan_mem
 
 MEM_DRIVER	= zdrive_mem
 MEM_DRIVER_CSRC	= mem_main.c
-MEM_DRIVER_LIBS = $(MEM_LIB) $(MPI_LIBPATH) $(MPI_LIB) 
+MEM_DRIVER_LIBS = -L. -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB) 
+MEM_DRIVER_DEP  = $(MEM_LIB)
 
 ############################################################################
 # COMMUNICATION PACKAGE
@@ -83,10 +85,12 @@ COMM_CSRC	= comm_create.c comm_do.c comm_do_reverse.c comm_destroy.c \
 		  comm_invert_map.c
 COMM_INC	= comm_const.h
 COMM_LIB	= libzoltan_comm.a
+COMM_TARGET     = zoltan_comm
 
 COMM_DRIVER	= zdrive_comm
 COMM_DRIVER_CSRC= comm_main.c
-COMM_DRIVER_LIBS= $(COMM_LIB) $(MEM_LIB) $(MPI_LIBPATH) $(MPI_LIB) 
+COMM_DRIVER_LIBS= -L. -l$(COMM_TARGET) -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB) 
+COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 
 
 ##############################################################################
@@ -179,7 +183,8 @@ zdrive_mem mem:
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(MEM_DRIVER_CSRC:.c=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
-	"LNK_LIBS=$(MEM_DRIVER_LIBS)"
+	"LNK_LIBS=$(MEM_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(MEM_DRIVER_DEP)"
 
 $(COMM_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
@@ -203,7 +208,7 @@ $(COMM_LIB):
 	then cp -f $(OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
 	fi
 
-zdrive_comm comm:
+zdrive_comm comm: 
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	@rm -f $(OBJ_DIR)/Makefile
@@ -215,7 +220,8 @@ zdrive_comm comm:
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(COMM_DRIVER_CSRC:.c=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
-	"LNK_LIBS=$(COMM_DRIVER_LIBS)"
+	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(COMM_DRIVER_DEP)"
 	
 #
 ############################################################################
