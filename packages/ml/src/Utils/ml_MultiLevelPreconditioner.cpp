@@ -1099,7 +1099,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
     
-    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_, ml_nodes_,LevelID_[0],
+    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_, &ml_nodes_,LevelID_[0],
 						    Direction,agg_,TMatrixML_,TMatrixTransposeML_, 
 						    &Tmat_array,&Tmat_trans_array, 
 						    ML_YES, 1.5); 

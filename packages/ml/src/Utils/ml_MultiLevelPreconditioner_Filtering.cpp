@@ -338,6 +338,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 				 flt_NullSpace_, NumMyRows());
       int CoarsestLevel = ML_Gen_MultiLevelHierarchy_UsingAggregation(flt_ml_,1, ML_DECREASING, flt_agg_);
 
+      if( CoarsestLevel != 2  ) {
+        cerr << ErrorMsg_ << "Something went wrong in generation of filtering hierarchy" << endl
+             << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+        exit( EXIT_FAILURE );
+      }
+
       ML_Gen_Smoother_Amesos(flt_ml_, 0, ML_AMESOS_KLU, -1);
       ML_Gen_Solver(flt_ml_, ML_MGV, 1, 0);
    
