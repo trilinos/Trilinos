@@ -30,11 +30,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_STEPPER_GENERIC_H
-#define LOCA_STEPPER_GENERIC_H
+#ifndef LOCA_STEPPER_H
+#define LOCA_STEPPER_H
 
 #include "LOCA_Parameter_Vector.H"   // class data element
 #include "NOX_Parameter_List.H"	     // class data element
+#include "NOX_Solver_Manager.H"	     // class data element
 #include "NOX_StatusTest_Generic.H"  // for enum StatusType
 #include "NOX_Common.H"              // for <string> class
 
@@ -44,15 +45,10 @@ namespace LOCA {
     class Vector;
     class Group;
   }
-  namespace Solver {
-    class Generic;
-  }
 }
 
 namespace LOCA {
 
-namespace Stepper {
-  
 /*!
   \brief Driver for the %LOCA Library.
 
@@ -89,38 +85,41 @@ namespace Stepper {
   \authors Roger Pawlowski (SNL 9233), Andrew Salinger (SNL 9233)
 */
 
-class Generic {
+class Stepper {
 
 public:
 
   //! Constructor 
-  Generic(Solver::Generic& s);
+  Stepper(LOCA::Abstract::Group& initialGuess,
+	  NOX::StatusTest::Generic& t,
+	  const NOX::Parameter::List& p);
 
   //! Destructor
-  virtual ~Generic();
+  virtual ~Stepper();
 
   //! Reset the Stepper to start a new continuation run
-  virtual bool reset(Solver::Generic& s) = 0;
-
-  //! Reset the solver after a failed continuation step
-  virtual bool resetFromFailedStep() = 0;
+  virtual bool reset(LOCA::Abstract::Group& initialGuess,
+		     NOX::StatusTest::Generic& t,
+		     const NOX::Parameter::List& p);
 
   //! Return the status of the continuation routine
-  virtual NOX::StatusTest::StatusType getStatus() = 0;
+  virtual NOX::StatusTest::StatusType getStatus();
 
   //! Solve for the entire continuation run
-  virtual NOX::StatusTest::StatusType solve() = 0;
+  virtual NOX::StatusTest::StatusType solve();
 
   //! Solve for one step of the continuation problem 
   //! (i.e. one entire nonlinear solve)
-  virtual NOX::StatusTest::StatusType step() = 0;
+  virtual NOX::StatusTest::StatusType step();
+
+  //@{ \name Information accessor methods.
 
   //! Return the current solution group.
-  virtual const Abstract::Group& getSolutionGroup() const = 0;
+  virtual const Abstract::Group& getSolutionGroup() const;
 
   //! Return the solution group with the solution for the previous continuation
   //! step.
-  virtual const Abstract::Group& getPreviousSolutionGroup() const = 0;
+  virtual const Abstract::Group& getPreviousSolutionGroup() const;
 
   //! Returns the number of continuation steps taken by LOCA
   virtual int getNumContinuationSteps() const;
@@ -132,9 +131,24 @@ public:
   virtual int getNumTotalSteps() const;
 
   //! Return the output parameters from the stepper algorithm. 
-  virtual const NOX::Parameter::List& getParameterList() const = 0;
+  virtual const NOX::Parameter::List& getParameterList() const;
+
+  //@}
 
 protected:
+
+  //! Reset the objects in the base class
+  virtual bool init();
+
+  //! Compute a new step size based on results from the previous step
+  virtual double computeStepSize(NOX::StatusTest::StatusType solverStatus);
+
+  //! Checks to see if convergence of the stepper algorithm is achieved.  
+  /*! Convergence is achieved if the stepper has either hit the max number of steps or has reached the final parameter value
+   */
+  virtual NOX::StatusTest::StatusType checkStepperStatus();
+
+  //@{ \name Output methods.
 
   //! Print to the screen the initialization information
   virtual void printInitializationInfo();
@@ -148,18 +162,27 @@ protected:
   //! Print to the screen the concluding information
   virtual void printEndInfo();
 
-  //! Reset the objects in the base class
-  virtual void resetGenericMembers(Solver::Generic& s);
-
-  //! Compute a new step size based on results from the previous step
-  virtual double computeStepSize(NOX::StatusTest::StatusType solverStatus);
-
-  //! Checks to see if convergence of the stepper algorithm is achieved.  
-  /*! Convergence is achieved if the stepper has either hit the max number of steps or has reached the final parameter value
-   */
-  virtual NOX::StatusTest::StatusType checkStepperStatus();
+  //@}
 
 protected:
+
+  //! Pointer to the Group with the initial guess for the nonlinear solver.  This is used for resetting the nonlinear solver in between successful steps.
+  LOCA::Abstract::Group* curGroupPtr;
+
+  //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
+  LOCA::Abstract::Group* prevGroupPtr;
+
+  //! Pointer to the status test.  This is used for resetting the nonlinear solver in between steps.
+  NOX::StatusTest::Generic* statusTestPtr;
+
+  //! Deep copy of the parameter list supplied initially in the constuctor. This can be changed via a call to the reset() method.
+  NOX::Parameter::List paramList;
+
+  //! Deep copy of the ParameterVector of the solution group.
+  ParameterVector conParams;
+
+  //! A NOX::Solver::Manager object
+  NOX::Solver::Manager solver;
 
   //! Label with the requested Stepper routine 
   string stepperMethod;
@@ -218,27 +241,13 @@ protected:
   int maxConSteps;
 
   //! Current status of the stepper.
-  NOX::StatusTest::StatusType status;
+  NOX::StatusTest::StatusType stepperStatus;
   
   //! Status of the last step of the Solver.
   NOX::StatusTest::StatusType solverStatus;
   
-  //! Pointer to  the parameter list owned by the solver.
-  NOX::Parameter::List* paramsPtr;
-  
-  //! Copy of the ParameterVector of the solution group.
-  ParameterVector conParams;
-
-  //! Pointer to the solver object that was passed in through the constructor or reset methods.
-  Solver::Generic* solverPtr;
-
-private:
-  //! Disallow default constructor
-  Generic() {};
-
 };
-} // namespace Stepper
-} // namespace LOCA
+} // end namespace LOCA
 
 #endif
 

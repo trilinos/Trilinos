@@ -138,25 +138,11 @@ LOCA_PARAMETER_VECTOR = \
 
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper_Generic.H \
-        $(srcdir)/LOCA_Stepper_ZeroOrder.H \
-	$(srcdir)/LOCA_Stepper_Manager.H
+	$(srcdir)/LOCA_Stepper.H
 
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper_Generic.C \
-        $(srcdir)/LOCA_Stepper_ZeroOrder.C \
-	$(srcdir)/LOCA_Stepper_Manager.C 
-
-
-LOCA_SOLVER_H = \
-        $(srcdir)/LOCA_Solver_Generic.H \
-        $(srcdir)/LOCA_Solver_NoxSolver.H
-
-
-LOCA_SOLVER = \
-        $(srcdir)/LOCA_Solver_Generic.C \
-        $(srcdir)/LOCA_Solver_NoxSolver.C
+	$(srcdir)/LOCA_Stepper.C
 
 
 LOCA_BIFURCATION_H = \
@@ -248,11 +234,7 @@ LIBRARIES = $(lib_LIBRARIES)
 libloca_a_DEPENDENCIES =
 am_libloca_a_OBJECTS = libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
-	libloca_a-LOCA_Stepper_Generic.$(OBJEXT) \
-	libloca_a-LOCA_Stepper_ZeroOrder.$(OBJEXT) \
-	libloca_a-LOCA_Stepper_Manager.$(OBJEXT) \
-	libloca_a-LOCA_Solver_Generic.$(OBJEXT) \
-	libloca_a-LOCA_Solver_NoxSolver.$(OBJEXT) \
+	libloca_a-LOCA_Stepper.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT) \
 	libloca_a-LOCA_DerivUtils.$(OBJEXT)
@@ -269,11 +251,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Solver_Generic.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Stepper.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -334,15 +312,7 @@ clean-libLIBRARIES:
 libloca_a-LOCA_Utils.$(OBJEXT): $(srcdir)/LOCA_Utils.C
 libloca_a-LOCA_Parameter_Vector.$(OBJEXT): \
 	$(srcdir)/LOCA_Parameter_Vector.C
-libloca_a-LOCA_Stepper_Generic.$(OBJEXT): \
-	$(srcdir)/LOCA_Stepper_Generic.C
-libloca_a-LOCA_Stepper_ZeroOrder.$(OBJEXT): \
-	$(srcdir)/LOCA_Stepper_ZeroOrder.C
-libloca_a-LOCA_Stepper_Manager.$(OBJEXT): \
-	$(srcdir)/LOCA_Stepper_Manager.C
-libloca_a-LOCA_Solver_Generic.$(OBJEXT): $(srcdir)/LOCA_Solver_Generic.C
-libloca_a-LOCA_Solver_NoxSolver.$(OBJEXT): \
-	$(srcdir)/LOCA_Solver_NoxSolver.C
+libloca_a-LOCA_Stepper.$(OBJEXT): $(srcdir)/LOCA_Stepper.C
 libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_TPBordVector.C
 libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT): \
@@ -363,11 +333,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Solver_Generic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Stepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Utils.Po@am__quote@
 
 distclean-depend:
@@ -409,65 +375,17 @@ libloca_a-LOCA_Parameter_Vector.obj: $(srcdir)/LOCA_Parameter_Vector.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Parameter_Vector.obj `cygpath -w $(srcdir)/LOCA_Parameter_Vector.C`
 
-libloca_a-LOCA_Stepper_Generic.o: $(srcdir)/LOCA_Stepper_Generic.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_Generic.C' object='libloca_a-LOCA_Stepper_Generic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Stepper.o: $(srcdir)/LOCA_Stepper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper.C' object='libloca_a-LOCA_Stepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_Generic.o `test -f $(srcdir)/LOCA_Stepper_Generic.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper_Generic.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper.o `test -f $(srcdir)/LOCA_Stepper.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper.C
 
-libloca_a-LOCA_Stepper_Generic.obj: $(srcdir)/LOCA_Stepper_Generic.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_Generic.C' object='libloca_a-LOCA_Stepper_Generic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Generic.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Stepper.obj: $(srcdir)/LOCA_Stepper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper.C' object='libloca_a-LOCA_Stepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_Generic.obj `cygpath -w $(srcdir)/LOCA_Stepper_Generic.C`
-
-libloca_a-LOCA_Stepper_ZeroOrder.o: $(srcdir)/LOCA_Stepper_ZeroOrder.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_ZeroOrder.C' object='libloca_a-LOCA_Stepper_ZeroOrder.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_ZeroOrder.o `test -f $(srcdir)/LOCA_Stepper_ZeroOrder.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper_ZeroOrder.C
-
-libloca_a-LOCA_Stepper_ZeroOrder.obj: $(srcdir)/LOCA_Stepper_ZeroOrder.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_ZeroOrder.C' object='libloca_a-LOCA_Stepper_ZeroOrder.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_ZeroOrder.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_ZeroOrder.obj `cygpath -w $(srcdir)/LOCA_Stepper_ZeroOrder.C`
-
-libloca_a-LOCA_Stepper_Manager.o: $(srcdir)/LOCA_Stepper_Manager.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_Manager.C' object='libloca_a-LOCA_Stepper_Manager.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_Manager.o `test -f $(srcdir)/LOCA_Stepper_Manager.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper_Manager.C
-
-libloca_a-LOCA_Stepper_Manager.obj: $(srcdir)/LOCA_Stepper_Manager.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Stepper_Manager.C' object='libloca_a-LOCA_Stepper_Manager.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper_Manager.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper_Manager.obj `cygpath -w $(srcdir)/LOCA_Stepper_Manager.C`
-
-libloca_a-LOCA_Solver_Generic.o: $(srcdir)/LOCA_Solver_Generic.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_Generic.C' object='libloca_a-LOCA_Solver_Generic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Generic.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Generic.o `test -f $(srcdir)/LOCA_Solver_Generic.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Solver_Generic.C
-
-libloca_a-LOCA_Solver_Generic.obj: $(srcdir)/LOCA_Solver_Generic.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_Generic.C' object='libloca_a-LOCA_Solver_Generic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Generic.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Generic.obj `cygpath -w $(srcdir)/LOCA_Solver_Generic.C`
-
-libloca_a-LOCA_Solver_NoxSolver.o: $(srcdir)/LOCA_Solver_NoxSolver.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_NoxSolver.C' object='libloca_a-LOCA_Solver_NoxSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_NoxSolver.o `test -f $(srcdir)/LOCA_Solver_NoxSolver.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Solver_NoxSolver.C
-
-libloca_a-LOCA_Solver_NoxSolver.obj: $(srcdir)/LOCA_Solver_NoxSolver.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_NoxSolver.C' object='libloca_a-LOCA_Solver_NoxSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_NoxSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_NoxSolver.obj `cygpath -w $(srcdir)/LOCA_Solver_NoxSolver.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper.obj `cygpath -w $(srcdir)/LOCA_Stepper.C`
 
 libloca_a-LOCA_Bifurcation_TPBordVector.o: $(srcdir)/LOCA_Bifurcation_TPBordVector.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBordVector.C' object='libloca_a-LOCA_Bifurcation_TPBordVector.o' libtool=no @AMDEPBACKSLASH@

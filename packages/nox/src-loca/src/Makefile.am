@@ -54,22 +54,10 @@ LOCA_PARAMETER_VECTOR = \
         $(srcdir)/LOCA_Parameter_Vector.C
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper_Generic.H \
-        $(srcdir)/LOCA_Stepper_ZeroOrder.H \
-	$(srcdir)/LOCA_Stepper_Manager.H
+	$(srcdir)/LOCA_Stepper.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper_Generic.C \
-        $(srcdir)/LOCA_Stepper_ZeroOrder.C \
-	$(srcdir)/LOCA_Stepper_Manager.C 
-
-LOCA_SOLVER_H = \
-        $(srcdir)/LOCA_Solver_Generic.H \
-        $(srcdir)/LOCA_Solver_NoxSolver.H
-
-LOCA_SOLVER = \
-        $(srcdir)/LOCA_Solver_Generic.C \
-        $(srcdir)/LOCA_Solver_NoxSolver.C
+	$(srcdir)/LOCA_Stepper.C
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \

@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Min Step Size", 100.0);
   locaStepperList.setParameter("Max Step Size", 2000.0);
   locaStepperList.setParameter("Step Size Aggressiveness", 0.0);
-  locaStepperList.setParameter("Max Continuation Steps", 5);
+  locaStepperList.setParameter("Max Continuation Steps", 30);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
 
   // Set the LOCA Utilities
@@ -192,31 +192,22 @@ int main(int argc, char *argv[])
   grp.computeF();
 
   // Create the Solver convergence test
-  NOX::StatusTest::LinearSolverTol lstol(0.1);
   NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  converged.addStatusTest(lstol);
-  converged.addStatusTest(wrms);
   NOX::StatusTest::MaxIters maxiters(800);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(converged);
+  combo.addStatusTest(wrms);
   combo.addStatusTest(maxiters);
 
-  // Create the  solver
-  LOCA::Solver::NoxSolver solver(grp, combo, locaParamsList);
-  //NOX::Solver::Manager solver(grp, combo, nlParams);
-  //NOX::StatusTest::StatusType status = solver.solve();
-
   // Create the stepper  
-  LOCA::Stepper::Manager stepper(solver);
+  LOCA::Stepper stepper(grp, combo, locaParamsList);
   NOX::StatusTest::StatusType status = stepper.solve();
 
   if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
-      cout << "Nonlinear solver failed to converge!" << endl;
+      cout << "Stepper failed to converge!" << endl;
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(stepper.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
@@ -225,7 +216,7 @@ int main(int argc, char *argv[])
   if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
+    stepper.getParameterList().print(cout);
     cout << endl;
   }
 
