@@ -1,0 +1,6 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= obj_weight_dim=3
+Zoltan Parameters	= parmetis_method=partkway
+File Type		= Chaco
+File Name		= brack2_3
+Parallel Disk Info	= number=0

@@ -1,0 +1,4 @@
+brack2 is a 3d finite element mesh with 62K nodes.
+brack2_3 is a variation with three weights at each node, and it 
+was obtained from Kirk Schloegel (UMN) to test multiconstraint partitioning.
+
