@@ -294,7 +294,9 @@ int ML_Aggregate_CoarsenParMETIS(ML_Aggregate *ml_ag,
   /* ------------------------------------------------------------------------- */
 /* miscellaneous local functions                                             */
 /* ------------------------------------------------------------------------- */
-
+int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
+				    ML_Aggregate *ag, int num_PDEs,
+				    int relative_level);
 int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value);
 int ML_Aggregate_LabelVertices(int, int *, char, char *,char *,int,
               int *, int *, int, int **, int, int **, int *, int *,
@@ -337,7 +339,8 @@ extern int ML_random_global_subset(ML_Operator *Amat, double reduction,
                                    int **list, int *length, int num_PDE_eqns);
 extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
                                  ML_Operator **permutation, 
-				 ML_Operator **permt, int num_PDE_eqns,int);
+				 ML_Operator **permt, int num_PDE_eqns,int,
+				 double *, double *, double *);
 extern int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 				  int R_is_Ptranspose);
 extern int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
