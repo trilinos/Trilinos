@@ -20,7 +20,7 @@
 /* generate the Ifpack smoother                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_Ifpack(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
 		       double rhs[])
 {
 
@@ -68,7 +68,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, int nl, int choice, int * options, double * p
   /* da mettere POST or PRE or BOTH */
   
 #ifdef HAVE_ML_IFPACK
-   int            (*fun1)(void *, int, double *, int, double *);
+   int            (*fun1)(ML_Smoother *, int, double *, int, double *);
 
    void *Ifpack_Handle ;
    int status;

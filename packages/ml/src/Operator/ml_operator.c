@@ -1499,7 +1499,7 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
 						 ML_Operator *hier)
 {
-  ML_1Level *ptr1, *ptr2;
+  /* ML_1Level *ptr1, *ptr2; */
 
   memcpy(newmat,hier, sizeof(struct ML_Operator_Struct));
   hier->label = NULL;
@@ -1522,7 +1522,7 @@ int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
 int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat, 
 						 ML_Operator *hier)
 {
-  ML_1Level *ptr1, *ptr2;
+  /*  ML_1Level *ptr1, *ptr2; */
 
   (*newmat)->label = hier->label;
   (*newmat)->bc    = hier->bc;

@@ -61,7 +61,7 @@ int ml_pdneupc__(int *comm,
     /* Local variables */
     static logical rvec;
     static integer i__;
-    static doublereal sigma, mu;
+    /* static doublereal sigma, mu; */
     static logical *select;
 
     /* Parameter adjustments */

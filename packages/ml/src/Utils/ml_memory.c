@@ -941,7 +941,7 @@ int ML_MaxMemorySize()
 { 
 #ifdef ML_MALLINFO
   long int fragments, total_free, largest_free, total_used; 
-  int percent;
+  /* int percent; */
   
 #ifndef  ML_TFLOP 
   struct mallinfo M; 

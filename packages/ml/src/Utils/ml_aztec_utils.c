@@ -319,8 +319,8 @@ int az_usergetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested
 {
    struct aztec_context *context;
    AZ_MATRIX *Amat;
-   void *temp1;
-   int status;
+   /* void *temp1;a*/
+   /* int status; */
    ML_Operator *mat_in;
 
    mat_in = (ML_Operator *) data;

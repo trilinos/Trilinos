@@ -278,7 +278,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 
   Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *)A_Base->GetProblem() ;
   
-  Epetra_BlockMap & map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
+  const Epetra_BlockMap & map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
 
   Epetra_Vector EV_rhs( View, map, rhs ) ;
   Epetra_Vector EV_lhs( View, map, x ) ;

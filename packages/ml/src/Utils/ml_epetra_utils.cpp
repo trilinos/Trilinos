@@ -70,7 +70,7 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 {
   int nz_ptr = 0;
   int NumEntries;
-  int MaxPerRow;
+  int MaxPerRow = 0;
   int NumPDEEqns=1;
   int * BlockIndices;
   Epetra_SerialDenseMatrix ** Entries;

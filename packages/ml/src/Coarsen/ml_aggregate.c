@@ -1600,8 +1600,11 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  int *Procs_WhoGive_TheirUnPermuted_Rows, *N_UnPermutedRows_ToSend;
  int GlobalId_RowsStaying_WithMe;
 #endif
- int mypid, nprocs, Nglobal, i, j, oldj, *the_list = NULL, the_length, offset;
- int *remote_offsets = NULL, *itemp = NULL, Nnonzero, oldNnonzero, *iwork = NULL;
+ int mypid, nprocs, Nglobal, i, j, the_length;
+ /*,int oldj, *the_list = NULL, offset, itemp, Nnonzero,
+  * oldNnonzero, *itemp = NULL
+  * double * d2vec */
+ int *remote_offsets = NULL, *iwork = NULL;
  int *ttemp = NULL, *Procs_WhoGive_TheirUnPermuted_Rows = NULL;
  int Nprocs_WhoGive_TheirUnPermuted_Rows, msgtype, prev;
  int *NRows_IGet_ForPermuted = NULL, *N_UnPermutedRows_ToSend = NULL;
@@ -1611,7 +1614,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  int GlobalId_RowsStaying_WithMe, *columns = NULL, *rowptr = NULL;
  ML_Operator *permt_mat = NULL, *perm_mat = NULL, *permuted_Amat = NULL;
  struct ML_CSR_MSRdata *temp = NULL;
- double *dvec, *d2vec, *values = NULL;
+ double *dvec, *values = NULL;
  USR_REQ *request = NULL; 
  ML_Comm *comm;
 

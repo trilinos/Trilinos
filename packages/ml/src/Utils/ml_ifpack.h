@@ -29,7 +29,7 @@
 #endif
 #endif
 
-extern int ML_Smoother_Ifpack(void *sm,int inlen,double x[],int outlen,
+extern int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
 			      double rhs[]);
 
 void ML_Smoother_Clean_Ifpack(void * Ifpack_Handle);

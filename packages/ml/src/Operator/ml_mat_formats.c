@@ -671,7 +671,7 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
-   double            *p2, sum, *ap2;
+   double            *p2/*, sum*/, *ap2;
    float *val;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
@@ -745,7 +745,7 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
-   double            *p2, sum, *ap2;
+   double            *p2/*, sum*/, *ap2;
    char *val;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
