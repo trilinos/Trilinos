@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_KLU_H_
-#define _EPETRA_KLU_H_
+#ifndef _AMESOS_KLU_H_
+#define _AMESOS_KLU_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -80,7 +80,10 @@ available, which does not do any partial pivoting at all.
 // klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
 // from having to include klu.h.
 //
+//  Doxygen does not handle forward class references well.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 class Amesos_Klu_Pimpl ; 
+#endif
 
 class Amesos_Klu: public Amesos_BaseSolver { 
 
@@ -301,4 +304,4 @@ public:
   const AMESOS::Parameter::List * ParameterList_ ; 
 
 };  // End of  class Amesos_Klu  
-#endif /* _EPETRA_KLU_H_ */
+#endif /* _AMESOS_KLU_H_ */

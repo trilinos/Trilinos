@@ -1,3 +1,4 @@
+#include "copyright.h"
 //
 //  CallAmesosFactory.ccp shows how to call Amesos_Factory() with 
 //  different right hand sides for each solve.  It performs three solves:
@@ -22,26 +23,20 @@ int main(int argc, char *argv[])
 {
 
 #ifdef EPETRA_MPI
-  // Initialize MPI
-
   MPI_Init(&argc,&argv);
-
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm Comm;
 #endif
   int iam = Comm.MyPID() ; 
 
-  const int NumPoints = 10;  // Must be between 2 and 100
-                              // larger numbers wil work, but the 
-                              // problem is quite ill-conditioned
+  const int NumPoints = 10;  // Must be between 2 and 100 (on large matrices,
+                             // the problem is quite ill-conditioned) 
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-
   Epetra_Map Map(NumPoints, 0, Comm);
 
-  //
   //  Create an empty EpetraCrsMatrix 
   Epetra_CrsMatrix A(Copy, Map, 0);
 
@@ -50,36 +45,32 @@ int main(int argc, char *argv[])
   //  See CreateTridi.cpp in this directory 
   CreateTridi( A ) ; 
   
-
-  // Create x and b vectors
-  Epetra_Vector x2(Map);
-  Epetra_Vector x1(Map);
-  Epetra_Vector x(Map);
-  Epetra_Vector b(Map);
-  Epetra_Vector residual(Map);
-  Epetra_Vector temp(Map);
-
-
-  Epetra_LinearProblem Problem;
-  
-  b.Random();
+  Epetra_Vector x2(Map), x1(Map), x(Map), b(Map), residual(Map), temp(Map);
 
   //
-  //  Solve Ax = b using KLU 
+  //  Solve Ax = b using Amesos_KLU via the Amesos_Factory interface
   //
   AMESOS::Parameter::List ParamList ;
+  Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos_Factory Afactory;
+  //
+  //  Note that Abase is created with an empty Problem, none of A, x or b
+  //  have been specified at this point.  
   Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_KLU not implemented " << endl ; 
     exit(13);
   }
 
+  //
+  //  Factor A
+  //
   Problem.SetOperator( &A );
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
+  b.Random();
   //
   //  Solve Ax = b 
   //
