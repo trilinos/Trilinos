@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "ml_utils.h"
 
+#ifdef COMPILE_DRIVER
+
 #ifdef ML_MPI
 #include <mpi.h>
 #include "ml_include.h"
@@ -69,3 +71,5 @@ int main(int argc, char *argv[])
 }
 #endif
 
+
+#endif
