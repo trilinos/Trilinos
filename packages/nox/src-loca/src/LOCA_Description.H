@@ -56,6 +56,10 @@ See \ref loca_class_overview.
 \section loca_params Parameter Specifications
 
 See \ref loca_parameters.
+
+\section loca_tutorials Tutorials
+
+See \ref loca_continuation_tutorial and \ref loca_tp_continuation_tutorial.
 */
 
 /* ************************************************************************ */
@@ -820,4 +824,47 @@ After running the example and reading the data file ChanTPContinuation.dat, we c
 \image latex chan_tp.eps
 
 There are two branches of the bifurcation curve which come together to form a cusp.  Starting at \f$\beta=0\f$ on one branch, traversing the cusp, and moving to \f$\beta=0\f$ on the second branch connects the two turning points shown in \ref loca_continuation_tutorial.
+
+As in the continuation tutorial, the MATLAB code used to generate this plot is shown below.
+
+\code
+% open output file
+fid = fopen('ChanTPContinuation.dat');
+
+% read dimension of discretization
+n = fscanf(fid, '%d', 1);
+  
+beta = [];     % array of continuation parameter values at each step
+alpha = [];    % array of bifurcation parameter values at each step
+x = [];        % array of solution components at each step
+y = [];        % array of null vector components at each step
+
+while ~feof(fid)
+  
+  % read beta
+  beta = [beta fscanf(fid, '%g', 1)];
+  
+  % read x
+  x = [x fscanf(fid, '%g', n)];
+  
+  % read alpha
+  alpha = [alpha fscanf(fid, '%g', 1)];
+  
+  % read y
+  y = [y fscanf(fid, '%g', n)];
+  
+end
+
+% close output file
+fclose(fid);
+
+% compute maximum of each temperature profile
+maxT = max(x);
+
+figure;
+plot(beta,alpha,'bo-');
+xlabel('\beta');
+ylabel('\alpha    ','Rotation',0);
+title('Locus of Turning Points');
+\endcode
 */
