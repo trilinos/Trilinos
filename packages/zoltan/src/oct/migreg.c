@@ -15,21 +15,21 @@
 #define MIGMIGREGCommCreate 32767
 #define MIGMIGREGCommDo     32766
 
-static int LB_insert_orphan(LB *lb, Region reg);
-static int LB_copy_info(LB *lb, pRegion src, pRegion *dest);
+static int Zoltan_Oct_insert_orphan(LB *lb, Region reg);
+static int Zoltan_Oct_copy_info(LB *lb, pRegion src, pRegion *dest);
 /*
- * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
+ * Zoltan_Oct_migreg_migrate_regions(Message *message_Array, int number_of_regions)
  *
  * migrate regions to the processor that have the octant owning their centroid.
  * receive regions from other processors and try to insert them into one of
  * the local subtree.
  */
 
-static int LB_migreg_migrate_regions(LB *lb, Region *regions, 
+static int Zoltan_Oct_migreg_migrate_regions(LB *lb, Region *regions, 
                               ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
                               int *npids, int nregions, int *c2) 
 {
-  char *yo = "LB_migreg_migrate_regions";
+  char *yo = "Zoltan_Oct_migreg_migrate_regions";
   int i;                         /* index counter */
   int ierr = ZOLTAN_OK;
   int n_import;
@@ -45,18 +45,18 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
                         MIGMIGREGCommCreate, &n_import);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Create");
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) ZOLTAN_MALLOC(n_import * sizeof(Region));
-    import_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, n_import);
-    import_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, n_import);
+    import_gids = ZOLTAN_MALLOC_GID_ARRAY(lb, n_import);
+    import_lids = ZOLTAN_MALLOC_LID_ARRAY(lb, n_import);
 
     if (!import_objs || !import_gids || (num_lid_entries && !import_lids)) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -64,7 +64,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
                    (char *) import_objs);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&import_objs);
     ZOLTAN_FREE(&import_gids);
     ZOLTAN_FREE(&import_lids);
@@ -75,7 +75,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
                     sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *) import_gids);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&import_objs);
     ZOLTAN_FREE(&import_gids);
     ZOLTAN_FREE(&import_lids);
@@ -87,7 +87,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
                       sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) import_lids);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       ZOLTAN_FREE(&import_objs);
       ZOLTAN_FREE(&import_gids);
       ZOLTAN_FREE(&import_lids);
@@ -99,7 +99,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
     import_objs[i].Local_ID = (num_lid_entries 
                                  ? &(import_lids[i*num_lid_entries]) 
                                  : NULL);
-    LB_insert_orphan(lb, import_objs[i]);
+    Zoltan_Oct_insert_orphan(lb, import_objs[i]);
   }
   
   ZOLTAN_FREE(&import_objs);
@@ -108,19 +108,19 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
 
   ierr = Zoltan_Comm_Destroy(&comm_plan);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   return ierr;
 }
 
 /*
- * void LB_insert_orphan(pRegion region)
+ * void Zoltan_Oct_insert_orphan(pRegion region)
  *
  * Insert orphan regions migrated from off processors, or to insert
  * regions that lie on the boundary.
  */
-static int LB_insert_orphan(LB *lb, Region reg) {
+static int Zoltan_Oct_insert_orphan(LB *lb, Region reg) {
   pRList  RootList;                /* list of all local roots */
   pOctant RootOct;
   int rflag;                       /* flag to indicate region fits in octant */
@@ -128,7 +128,7 @@ static int LB_insert_orphan(LB *lb, Region reg) {
   double upper,                    /* upper bounds of the octant */
          lower;                    /* lower bounds of the octant */
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
-  char *yo = "LB_insert_orphan";
+  char *yo = "Zoltan_Oct_insert_orphan";
   int ierr = ZOLTAN_OK;
 
   if (OCT_info->OCT_dimension == 2)
@@ -137,7 +137,7 @@ static int LB_insert_orphan(LB *lb, Region reg) {
     i = 3;
 
   rflag = 0;
-  RootList = LB_POct_localroots(OCT_info);               /* get a list all local roots */
+  RootList = Zoltan_Oct_POct_localroots(OCT_info);               /* get a list all local roots */
   while((RootOct = RL_nextRootOctant(&RootList))) {
     rflag = 1;
     for (j=0; j<i; j++) {
@@ -152,21 +152,21 @@ static int LB_insert_orphan(LB *lb, Region reg) {
     if(rflag == 1) { 
       /* region fits inside octant */
       /* found a place to insert region */
-      LB_oct_subtree_insert(lb, RootOct, &reg);
+      Zoltan_Oct_subtree_insert(lb, RootOct, &reg);
       return ierr;
     }
   }
   ierr = ZOLTAN_WARN;
-  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "could not insert region");
+  ZOLTAN_TRACE_DETAIL(lb, yo, "could not insert region");
   
   fprintf(stderr,"%s failed to insert %f %f %f on proc %d\n",yo, reg.Coord[0], reg.Coord[1], reg.Coord[2], lb->Proc);
 
-  RootList = LB_POct_localroots(OCT_info); 
+  RootList = Zoltan_Oct_POct_localroots(OCT_info); 
   RL_printRootOctants(RootList);
   return ierr;
 }
 
-int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
+int Zoltan_Oct_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
                                int level, Map *array, int *c1, int *c2) {
   int     i, j, k;                    /* index counters */
   pRegion ptr;                        /* region in the mesh */
@@ -188,7 +188,7 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   pRList  RootList;              
   pOctant RootOct;
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
-  char *yo = "LB_migreg_migrate_orphans_static";
+  char *yo = "Zoltan_Oct_migreg_migrate_orphans_static";
   int ierr = ZOLTAN_OK;
   ZOLTAN_ID_PTR gids2, lids2;
   int num_gid_entries = lb->Num_GID;
@@ -200,12 +200,12 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     
     if((regions = (pRegion *) ZOLTAN_MALLOC(nregions * sizeof(pRegion))) == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if((npids = (int *) ZOLTAN_MALLOC(nregions * sizeof(int))) == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       ZOLTAN_FREE(&regions);
       return ZOLTAN_MEMERR;
     }
@@ -229,16 +229,16 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
      * translate which child to which entry in map array.
      */
     for(i=0; i<level; i++) {
-      LB_bounds_to_origin(min, max, origin);
+      Zoltan_Oct_bounds_to_origin(min, max, origin);
       if(OCT_info->OCT_dimension == 2)
 	j = j * 4;
       else
 	j = j * 8;
-      k = LB_child_which(OCT_info,origin, ptr->Coord);
-      new_num = LB_convert_idx_from_map(OCT_info, dir, k);
-      dir = LB_get_child_dir(OCT_info, dir, new_num);
+      k = Zoltan_Oct_child_which(OCT_info,origin, ptr->Coord);
+      new_num = Zoltan_Oct_convert_idx_from_map(OCT_info, dir, k);
+      dir = Zoltan_Oct_get_child_dir(OCT_info, dir, new_num);
       j += new_num;
-      LB_child_bounds(min, max, origin, k, cmin, cmax);
+      Zoltan_Oct_child_bounds(min, max, origin, k, cmin, cmax);
       vector_set(min, cmin);
       vector_set(max, cmax);
     }
@@ -246,17 +246,17 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     npids[n] = array[j].npid;
     RootList = array[j].list;
     while((RootOct = RL_nextRootOctant(&RootList))) {
-      LB_Oct_bounds(RootOct,rmin,rmax);
-      if (LB_in_box_closure(OCT_info, ptr->Coord ,rmin, rmax)) {
+      Zoltan_Oct_bounds(RootOct,rmin,rmax);
+      if (Zoltan_Oct_in_box_closure(OCT_info, ptr->Coord ,rmin, rmax)) {
 	npids[n] = RootOct->npid;
 	break;
       }
     }
     if((npids[n] != -1) && (npids[n] != lb->Proc)) {
-      LB_copy_info(lb, ptr, &(regions[n++]));
+      Zoltan_Oct_copy_info(lb, ptr, &(regions[n++]));
     }
     else {
-      LB_insert_orphan(lb, *ptr);
+      Zoltan_Oct_insert_orphan(lb, *ptr);
     }
     nreg++;                                      /* increment region counter */
     ptr = ptr->next;                                  /* look at next region */
@@ -272,8 +272,8 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   }
 
   regions2 = (Region *) ZOLTAN_MALLOC(n * sizeof(Region));
-  gids2 = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, n);
-  lids2 = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, n);
+  gids2 = ZOLTAN_MALLOC_GID_ARRAY(lb, n);
+  lids2 = ZOLTAN_MALLOC_LID_ARRAY(lb, n);
   npids2 = (int *) ZOLTAN_MALLOC(n * sizeof(int));
   
   for(i=0; i<n; i++) {
@@ -284,15 +284,15 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     regions2[i].Local_ID = (num_lid_entries 
                               ? &(lids2[i*num_lid_entries]) 
                               : NULL);
-    ZOLTAN_LB_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
-    ZOLTAN_LB_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
+    ZOLTAN_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
+    ZOLTAN_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
     regions2[i].Proc = regions[i]->Proc;
     regions2[i].attached = 0;
   }
 
   *c1 = n;
   /* migrate the orphan regions according to the message array */
-  LB_migreg_migrate_regions(lb, regions2, gids2, lids2, npids2, n, c2);
+  Zoltan_Oct_migreg_migrate_regions(lb, regions2, gids2, lids2, npids2, n, c2);
   
   for (i=0; i < n; i++) {
     ZOLTAN_FREE(&(regions[i]->Global_ID));
@@ -310,25 +310,25 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
 }
 
 /*
- * int LB_copy_info(pRegion *destination, pRegion source)
+ * int Zoltan_Oct_copy_info(pRegion *destination, pRegion source)
  *
  * Copies region information from the source to the destination
  */
-static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
+static int Zoltan_Oct_copy_info(LB *lb, pRegion src, pRegion *dest) {
   pRegion copy;
-  char *yo = "LB_copy_info";
+  char *yo = "Zoltan_Oct_copy_info";
   int ierr = ZOLTAN_OK;
 
   /* mallloc space for destination */
   copy = (pRegion) ZOLTAN_MALLOC(sizeof(Region));
   if(copy == NULL) {
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
-  copy->Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
-  copy->Local_ID  = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
+  copy->Global_ID = ZOLTAN_MALLOC_GID(lb);
+  copy->Local_ID  = ZOLTAN_MALLOC_LID(lb);
   if (copy->Global_ID == NULL || (lb->Num_LID && copy->Local_ID == NULL)) {
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   
@@ -338,8 +338,8 @@ static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   /* copy all important information */
   vector_set(copy->Coord, src->Coord);
   copy->Weight = src->Weight;
-  ZOLTAN_LB_SET_GID(lb, copy->Global_ID, src->Global_ID);
-  ZOLTAN_LB_SET_LID(lb, copy->Local_ID, src->Local_ID);
+  ZOLTAN_SET_GID(lb, copy->Global_ID, src->Global_ID);
+  ZOLTAN_SET_LID(lb, copy->Local_ID, src->Local_ID);
   copy->Proc = src->Proc;
   copy->attached = 0;
   return ierr;

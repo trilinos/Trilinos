@@ -47,42 +47,42 @@ typedef struct _Octant {             /* octant tree node that has 8 children */
 } Octant;
 
 /* #ifdef LGG_MIGOCT */
-extern void    LB_Oct_setID(pOctant oct, int id);
+extern void    Zoltan_Oct_setID(pOctant oct, int id);
 /* #endif  *//* LGG_MIGOCT */
-extern void    LB_Oct_initCounters();
-extern pOctant LB_Oct_newremote();
-extern pOctant LB_Oct_new();
-extern int     LB_Oct_id(pOctant oct);
-extern int     LB_Oct_dir(pOctant oct);
-extern int     LB_Oct_mapidx(pOctant oct);
-extern void    LB_Oct_setDir(pOctant oct, int dir);
-extern void    LB_Oct_setchildnum(pOctant oct, int childnum);
-extern void    LB_Oct_setchildren(pOctant oct, pOctant *children, int *cpids);
-extern void    LB_Oct_setchild(pOctant oct, int i, pOctant child);
-extern void    LB_Oct_setbounds(pOctant oct, COORD min, COORD max);
-extern void    LB_Oct_setMapIdx(pOctant oct, int idx);
-extern void    LB_Oct_bounds(pOctant oct, COORD min, COORD max);
-extern pOctant LB_Oct_parent(pOctant oct);
-extern pOctant LB_Oct_child(pOctant oct, int i);
-extern void    LB_Oct_cpids(pOctant oct, int cpids[8]);
-extern int     LB_Oct_children(pOctant oct, pOctant children[8]);
-extern int     LB_Oct_isTerminal(pOctant oct);
-extern pRegion LB_Oct_regionlist(pOctant oct);
-extern int     LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region);
-extern void    LB_Oct_clearRegions(pOctant oct);
-extern int     LB_Oct_nRegions(pOctant oct);
-extern void    LB_Oct_modify_cost(pOctant oct, float cost);
-extern void    LB_Oct_modify_newpid(pOctant oct, int newpid);
-extern int     LB_Oct_data_newpid(pOctant oct);
-extern int     LB_Oct_nOctants(void);
-extern void    LB_Oct_origin_volume(pOctant oct,COORD origin,double *volume);
-extern int     LB_Oct_Ppid(pOctant octant);
-extern int     LB_Oct_Cpid(pOctant octant, int i);
-extern int     LB_Oct_childnum(pOctant octant);
-extern void    LB_Oct_setCpid(pOctant octant, int i, int cpid); 
-/* extern pOctant PLB_Oct_nextDfs(pOcant octant);
- * extern void    PLB_Oct_setOrientation(pOctant octant, int orientation);
- * extern int     PLB_Oct_getOrientation(pOctant octant);
+extern void    Zoltan_Oct_initCounters();
+extern pOctant Zoltan_Oct_newremote();
+extern pOctant Zoltan_Oct_new();
+extern int     Zoltan_Oct_id(pOctant oct);
+extern int     Zoltan_Oct_dir(pOctant oct);
+extern int     Zoltan_Oct_mapidx(pOctant oct);
+extern void    Zoltan_Oct_setDir(pOctant oct, int dir);
+extern void    Zoltan_Oct_setchildnum(pOctant oct, int childnum);
+extern void    Zoltan_Oct_setchildren(pOctant oct, pOctant *children, int *cpids);
+extern void    Zoltan_Oct_setchild(pOctant oct, int i, pOctant child);
+extern void    Zoltan_Oct_setbounds(pOctant oct, COORD min, COORD max);
+extern void    Zoltan_Oct_setMapIdx(pOctant oct, int idx);
+extern void    Zoltan_Oct_bounds(pOctant oct, COORD min, COORD max);
+extern pOctant Zoltan_Oct_parent(pOctant oct);
+extern pOctant Zoltan_Oct_child(pOctant oct, int i);
+extern void    Zoltan_Oct_cpids(pOctant oct, int cpids[8]);
+extern int     Zoltan_Oct_children(pOctant oct, pOctant children[8]);
+extern int     Zoltan_Oct_isTerminal(pOctant oct);
+extern pRegion Zoltan_Oct_regionlist(pOctant oct);
+extern int     Zoltan_Oct_addRegion(LB *lb, pOctant oct, pRegion region);
+extern void    Zoltan_Oct_clearRegions(pOctant oct);
+extern int     Zoltan_Oct_nRegions(pOctant oct);
+extern void    Zoltan_Oct_modify_cost(pOctant oct, float cost);
+extern void    Zoltan_Oct_modify_newpid(pOctant oct, int newpid);
+extern int     Zoltan_Oct_data_newpid(pOctant oct);
+extern int     Zoltan_Oct_nOctants(void);
+extern void    Zoltan_Oct_origin_volume(pOctant oct,COORD origin,double *volume);
+extern int     Zoltan_Oct_Ppid(pOctant octant);
+extern int     Zoltan_Oct_Cpid(pOctant octant, int i);
+extern int     Zoltan_Oct_childnum(pOctant octant);
+extern void    Zoltan_Oct_setCpid(pOctant octant, int i, int cpid); 
+/* extern pOctant PZoltan_Oct_nextDfs(pOcant octant);
+ * extern void    PZoltan_Oct_setOrientation(pOctant octant, int orientation);
+ * extern int     PZoltan_Oct_getOrientation(pOctant octant);
  */
 
 #endif

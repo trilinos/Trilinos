@@ -13,16 +13,16 @@
 /*****************************************************************************/
 static int OCT_count;                /* count of all local octants           */
 static int OCT_idcount;              /* count for id's, help with uniqueness */
-static pOctant LB_Oct_mallocremote();
-static pOctant LB_Oct_malloc();
-static int     LB_Oct_nlocal(pOctant oct);
+static pOctant Zoltan_Oct_mallocremote();
+static pOctant Zoltan_Oct_malloc();
+static int     Zoltan_Oct_nlocal(pOctant oct);
 /*****************************************************************************/
 /*
- * pOctant LB_Oct_mallocremote()
+ * pOctant Zoltan_Oct_mallocremote()
  *
  * creates space in memory for a new octant
  */
-static pOctant LB_Oct_mallocremote() {
+static pOctant Zoltan_Oct_mallocremote() {
   pOctant ptr;                                  /* pointer to the new octant */
   
   ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
@@ -33,11 +33,11 @@ static pOctant LB_Oct_mallocremote() {
 }
 /*****************************************************************************/
 /*
- * pOctant LB_Oct_malloc()
+ * pOctant Zoltan_Oct_malloc()
  *
  * creates space in memory for a new octant
  */
-static pOctant LB_Oct_malloc() {
+static pOctant Zoltan_Oct_malloc() {
   pOctant ptr;                                  /* pointer to the new octant */
   
   ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
@@ -48,23 +48,23 @@ static pOctant LB_Oct_malloc() {
   return(ptr);
 }
 
-void LB_Oct_initCounters() {
+void Zoltan_Oct_initCounters() {
   OCT_count = 0;
   OCT_idcount = 0;
 }
 
 /*****************************************************************************/
 /*
- * LB_Oct_newremote()
+ * Zoltan_Oct_newremote()
  *
  * create a new octant on the local processor and return
  * a pointer to it.  It will have no parents or children.
  */
-pOctant LB_Oct_newremote() {
+pOctant Zoltan_Oct_newremote() {
   pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   
-  new_ptr=LB_Oct_mallocremote();                /* create space for the new octant */
+  new_ptr=Zoltan_Oct_mallocremote();                /* create space for the new octant */
   if(!new_ptr)
     return NULL;
   new_ptr->type = REMOTEOCT;
@@ -92,16 +92,16 @@ pOctant LB_Oct_newremote() {
 
 /*****************************************************************************/
 /*
- * LB_Oct_new()
+ * Zoltan_Oct_new()
  *
  * create a new octant on the local processor and return
  * a pointer to it.  It will have no parents or children.
  */
-pOctant LB_Oct_new() {
+pOctant Zoltan_Oct_new() {
   pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   
-  new_ptr=LB_Oct_malloc();                   /* create space for the new octant */
+  new_ptr=Zoltan_Oct_malloc();                   /* create space for the new octant */
   if(!new_ptr)
     return NULL;
 
@@ -130,7 +130,7 @@ pOctant LB_Oct_new() {
 
 /* KDDKDDFREE changed oct to *oct to allow NULL ptr from ZOLTAN_FREE to 
  * KDDKDDFREE propagate back to the calling routine. */
-void LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
+void Zoltan_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 /* KDDKDDFREE Bookkeeping -- set parent's child pointers and children's
  * KDDKDDFREE parent pointers to NULL when delete an octant.  Following
  * KDDKDDFREE pointers that are no longer valid but were not set to NULL
@@ -142,7 +142,7 @@ pOctant parent;
   /* Set parent's child pointer to NULL */
   parent = (*oct)->parent;
   if (parent != NULL && (*oct)->ppid == OCT_info->OCT_localpid) {
-    i = LB_Oct_childnum(*oct);
+    i = Zoltan_Oct_childnum(*oct);
     parent->child[i] = NULL;
     parent->cpid[i] = -1;
   }
@@ -171,75 +171,75 @@ pOctant parent;
  * to do so again.
  */
 /*
- * void LB_Oct_setID(pOctant octant, int id)
+ * void Zoltan_Oct_setID(pOctant octant, int id)
  *
  * sets the id of the octant
  */
-void LB_Oct_setID(pOctant oct, int id) {
+void Zoltan_Oct_setID(pOctant oct, int id) {
   oct->id=id;
 }
 /* #endif */ /* LGG_MIGOCT */ 
 
 /*
- * void LB_Oct_setID(pOctant octant, int id)
+ * void Zoltan_Oct_setID(pOctant octant, int id)
  *
  * sets the id of the octant
  */
-void LB_Oct_setMapIdx(pOctant oct, int idx) {
+void Zoltan_Oct_setMapIdx(pOctant oct, int idx) {
   oct->mapidx=idx;
 }
 
-void LB_Oct_setDir(pOctant oct, int dir) {
+void Zoltan_Oct_setDir(pOctant oct, int dir) {
   oct->dir = dir;
 }
 
-int LB_Oct_mapidx(pOctant oct) {
+int Zoltan_Oct_mapidx(pOctant oct) {
   return oct->mapidx;
 }
 
-int LB_Oct_dir(pOctant oct) {
+int Zoltan_Oct_dir(pOctant oct) {
   return oct->dir;
 }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_id(pOctant octant)
+ * void Zoltan_Oct_id(pOctant octant)
  *
  * gets the id of the octant 
  */
-int LB_Oct_id(pOctant oct) 
+int Zoltan_Oct_id(pOctant oct) 
 { return(oct->id); }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_setchildnum(pOctant octant, int childnumber)
+ * void Zoltan_Oct_setchildnum(pOctant octant, int childnumber)
  *
  * sets the child number of the octant
  */
-void LB_Oct_setchildnum(pOctant oct, int childnum)
+void Zoltan_Oct_setchildnum(pOctant oct, int childnum)
 { oct->which=childnum; }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_setcildren(pOctant octant, pOctant children, int *cpids)
+ * void Zoltan_Oct_setcildren(pOctant octant, pOctant children, int *cpids)
  *
  * sets the child pointers to point to the children
  */
-void LB_Oct_setchildren(pOctant oct, pOctant *children, int *cpids) {
+void Zoltan_Oct_setchildren(pOctant oct, pOctant *children, int *cpids) {
   int i;
   for(i = 0; i < 8; i++) {
-    LB_Oct_setchild(oct, i, children[i]);
-    LB_Oct_setCpid(oct, i, cpids[i]);
+    Zoltan_Oct_setchild(oct, i, children[i]);
+    Zoltan_Oct_setCpid(oct, i, cpids[i]);
   }
 }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_setcild(pOctant octant, int childnumber, pOctant child)
+ * void Zoltan_Oct_setcild(pOctant octant, int childnumber, pOctant child)
  *
  * sets the ith child pointer to point to the child
  */
-void LB_Oct_setchild(pOctant oct, int i, pOctant child) {
+void Zoltan_Oct_setchild(pOctant oct, int i, pOctant child) {
   oct->child[i]=child;         /* need to make sure child's info is correct */
   if( oct->numChild < 8 )
     oct->numChild++;
@@ -247,48 +247,48 @@ void LB_Oct_setchild(pOctant oct, int i, pOctant child) {
 
 /*****************************************************************************/
 /*
- * void LB_Oct_setbounds(pOctant octant, COORD minimum_bounds,
+ * void Zoltan_Oct_setbounds(pOctant octant, COORD minimum_bounds,
  *                    COORD maximum_bounds)
  *
  * sets the min and max bounds of an octant 
  */
-void LB_Oct_setbounds(pOctant oct, COORD min, COORD max)
+void Zoltan_Oct_setbounds(pOctant oct, COORD min, COORD max)
 { vector_set(oct->min,min); vector_set(oct->max,max); }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_bounds(pOctant octant, COORD minimum, COORD maximum)
+ * void Zoltan_Oct_bounds(pOctant octant, COORD minimum, COORD maximum)
  *
  * gets the min and max bounds of an octant
  */
-void LB_Oct_bounds(pOctant oct, COORD min, COORD max)
+void Zoltan_Oct_bounds(pOctant oct, COORD min, COORD max)
 { vector_set(min,oct->min); vector_set(max,oct->max); }
 
 /*****************************************************************************/
 /*
- * pOctant LB_Oct_parent(pOctant octant)
+ * pOctant Zoltan_Oct_parent(pOctant octant)
  *
  * returns a pointer to the parent of the octant
  */
-pOctant LB_Oct_parent(pOctant oct) 
+pOctant Zoltan_Oct_parent(pOctant oct) 
 { return(oct->parent); }
 
 /*****************************************************************************/
 /*
- * pOctant LB_Oct_child(pOctant octant, int child_index)
+ * pOctant Zoltan_Oct_child(pOctant octant, int child_index)
  *
  * return the ith child of oct
  */
-pOctant LB_Oct_child(pOctant oct, int i) 
+pOctant Zoltan_Oct_child(pOctant oct, int i) 
 { return(oct->child[i]); }
 
 /*****************************************************************************/
 /*
- * LB_Oct_cpids(pOctant octant, pOctant children[8])
+ * Zoltan_Oct_cpids(pOctant octant, pOctant children[8])
  *
  * fill in values of all an octants children pids
  */
-void LB_Oct_cpids(pOctant oct, int cpids[8]) {
+void Zoltan_Oct_cpids(pOctant oct, int cpids[8]) {
   int i;                                                    /* index counter */
   
   for (i=0; i<8; i++)
@@ -297,25 +297,25 @@ void LB_Oct_cpids(pOctant oct, int cpids[8]) {
   
 /*****************************************************************************/
 /*
- * LB_Oct_children(pOctant octant, pOctant children[8])
+ * Zoltan_Oct_children(pOctant octant, pOctant children[8])
  *
  * fill in values of all an octants children
  */
-int LB_Oct_children(pOctant oct, pOctant children[8]) {
+int Zoltan_Oct_children(pOctant oct, pOctant children[8]) {
   int i;                                                    /* index counter */
   
   for (i=0; i<8; i++)
-    children[i] = LB_Oct_child(oct,i);
+    children[i] = Zoltan_Oct_child(oct,i);
   return(oct->numChild);
 }
   
 /*****************************************************************************/
 /*
- * int LB_Oct_isTerminal(pOctant octant)
+ * int Zoltan_Oct_isTerminal(pOctant octant)
  *
  * returns TRUE if the octant is terminal (has NO children)
  */
-int LB_Oct_isTerminal(pOctant oct) {
+int Zoltan_Oct_isTerminal(pOctant oct) {
   int i,                                         /* index counter */
       child;                                     /* flag identifying a child */
 
@@ -331,22 +331,22 @@ int LB_Oct_isTerminal(pOctant oct) {
 
 /*****************************************************************************/
 /*
- * pRegion LB_Oct_regionlist(pOctant octant)
+ * pRegion Zoltan_Oct_regionlist(pOctant octant)
  * get a copy of the octant's region list
  */
-pRegion LB_Oct_regionlist(pOctant oct) {
-  if (!LB_Oct_isTerminal(oct))
+pRegion Zoltan_Oct_regionlist(pOctant oct) {
+  if (!Zoltan_Oct_isTerminal(oct))
     abort();
   return(oct->list);
 }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_addRegion(pOctant octant, pRegion region)
+ * void Zoltan_Oct_addRegion(pOctant octant, pRegion region)
  * add a region to oct's list
  */
-int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) { 
-  char *yo = "LB_Oct_addRegion";
+int Zoltan_Oct_addRegion(LB *lb, pOctant oct, pRegion region) { 
+  char *yo = "Zoltan_Oct_addRegion";
   pRegion entry;                      /* pointer to new entry in region list */
 
   if(oct == NULL) 
@@ -358,13 +358,13 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
     return ZOLTAN_MEMERR;
   }
 
-  entry->Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
-  entry->Local_ID = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
+  entry->Global_ID = ZOLTAN_MALLOC_GID(lb);
+  entry->Local_ID = ZOLTAN_MALLOC_LID(lb);
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
-  ZOLTAN_LB_SET_GID(lb, entry->Global_ID, region->Global_ID);
-  ZOLTAN_LB_SET_LID(lb, entry->Local_ID, region->Local_ID);
+  ZOLTAN_SET_GID(lb, entry->Global_ID, region->Global_ID);
+  ZOLTAN_SET_LID(lb, entry->Local_ID, region->Local_ID);
   entry->Proc = region->Proc;
 
   /* attach region to region list */
@@ -375,10 +375,10 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
 
 /*****************************************************************************/
 /*
- * void LB_Oct_clearRegions(pOctant octant)
+ * void Zoltan_Oct_clearRegions(pOctant octant)
  * erase all of a oct's regions
  */
-void LB_Oct_clearRegions(pOctant oct) { 
+void Zoltan_Oct_clearRegions(pOctant oct) { 
   pRegion ptr;                                         /* pointer to regions */
   
   ptr = oct->list;
@@ -394,17 +394,17 @@ void LB_Oct_clearRegions(pOctant oct) {
 
 /*****************************************************************************/
 /*
- * int LB_Oct_nRegions(pOctant octant)
+ * int Zoltan_Oct_nRegions(pOctant octant)
  * return the number of regions in the octant's list
  */
-int LB_Oct_nRegions(pOctant oct) {
+int Zoltan_Oct_nRegions(pOctant oct) {
   pRegion ptr;                     /* pointer to iterate through region list */
   int count;                       /* count of number of regions in list */
 
   if (oct == NULL) 
     return 0;
 
-  if(!LB_Oct_isTerminal(oct)) 
+  if(!Zoltan_Oct_isTerminal(oct)) 
     return 0;
 
   count = 0;
@@ -418,106 +418,106 @@ int LB_Oct_nRegions(pOctant oct) {
 /*****************************************************************************/
 /***                        attached data routines                         ***/
 /*
- * void LB_Oct_modify_cost(pOctant octant, float cost)
+ * void Zoltan_Oct_modify_cost(pOctant octant, float cost)
  *
  * modifies the cost field of the octant
  */
-void LB_Oct_modify_cost(pOctant oct, float cost)
+void Zoltan_Oct_modify_cost(pOctant oct, float cost)
 {
   oct->cost = cost;
 }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_modify_newpid(pOctant octant, int new_processor_id)
+ * void Zoltan_Oct_modify_newpid(pOctant octant, int new_processor_id)
  *
  * modifies the npid field of the octant, telling where the octant should
  * migrate to
  */
-void LB_Oct_modify_newpid(pOctant oct, int newpid)
+void Zoltan_Oct_modify_newpid(pOctant oct, int newpid)
 {
   oct->npid = newpid;
 }
 
 /*****************************************************************************/
 /*
- * int LB_Oct_data_newpid(pOctant octant)
+ * int Zoltan_Oct_data_newpid(pOctant octant)
  *
  * returns the new processor id of the octant 
  */
-int LB_Oct_data_newpid(pOctant oct)
+int Zoltan_Oct_data_newpid(pOctant oct)
 { 
   return(oct->npid);
 }
 
 /*****************************************************************************/
 /*
- * int LB_Oct_nlocal(pOctant octant)
+ * int Zoltan_Oct_nlocal(pOctant octant)
  *
  * return the number of local leaves in the subtree
  */
-static int LB_Oct_nlocal(pOctant oct) {
+static int Zoltan_Oct_nlocal(pOctant oct) {
   int i;                                    /* index counter */
   pOctant child;                            /* child of an octant */
   int total;                                /* total number of local octants */
 
-  if (LB_Oct_isTerminal(oct))
+  if (Zoltan_Oct_isTerminal(oct))
     return(1);
   total=0;
   for (i=0; i<8; i++) {
-    child = LB_Oct_child(oct,i);
+    child = Zoltan_Oct_child(oct,i);
     if (child)
-      total+=LB_Oct_nlocal(child);
+      total+=Zoltan_Oct_nlocal(child);
   }
   return(total);
 }
 
 /*****************************************************************************/
 /*
- * int LB_Oct_nOctant()
+ * int Zoltan_Oct_nOctant()
  *
  * returns the number of octants on local processor
  */
-int LB_Oct_nOctants()
+int Zoltan_Oct_nOctants()
 { return (OCT_count); }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_origin_volume(pOctant oct, COORD origin, double *volume)
+ * void Zoltan_Oct_origin_volume(pOctant oct, COORD origin, double *volume)
  *
  * gets the origin and volume of the octant
  */
-void LB_Oct_origin_volume(pOctant oct, COORD origin, double *volume) {
+void Zoltan_Oct_origin_volume(pOctant oct, COORD origin, double *volume) {
   COORD min,                                         /* octant minimum bound */
         max;                                         /* octant maximum bound */
   double size[3];                                    /* size of the octant */
 
-  LB_Oct_bounds(oct,min,max);
-  LB_bounds_to_origin_size(min,max,origin,size);  
+  Zoltan_Oct_bounds(oct,min,max);
+  Zoltan_Oct_bounds_to_origin_size(min,max,origin,size);  
   *volume=size[0]*size[1]*size[2];
 }
 
-int LB_Oct_Cpid(pOctant octant, int i)
+int Zoltan_Oct_Cpid(pOctant octant, int i)
 {
   return octant->cpid[i];
 }
 
-int LB_Oct_Ppid(pOctant octant)
+int Zoltan_Oct_Ppid(pOctant octant)
 {
   return octant->ppid;
 }
 
-int LB_Oct_childnum(pOctant octant)
+int Zoltan_Oct_childnum(pOctant octant)
 {
   return octant->which;
 }
 
 /*****************************************************************************/
 /*
- * void LB_Oct_setCpid(pOctant octant, int child_index, int child_processor_id)
+ * void Zoltan_Oct_setCpid(pOctant octant, int child_index, int child_processor_id)
  *
  * sets the child processor id field of an octant
  */
-void LB_Oct_setCpid(pOctant octant, int i, int cpid) {
+void Zoltan_Oct_setCpid(pOctant octant, int i, int cpid) {
   octant->cpid[i] = cpid;
 }

@@ -145,7 +145,7 @@ int RL_printRootOctants(pRList rlist) {
     return -1;
 
   while((rootoct = RL_nextRootOctant(&rlist))) {
-    LB_Oct_bounds(rootoct,rmin,rmax);
+    Zoltan_Oct_bounds(rootoct,rmin,rmax);
     fprintf(stderr, "RL_printRootOctants ppid %d id %d area %f  npid %d ", rootoct->ppid, rootoct->id, rootoct->area, rootoct->npid);   
     fprintf(stderr,"min box %f %f %f ",rmin[0], rmin[1], rmin[2]);
     fprintf(stderr,"max box %f %f %f\n",rmax[0], rmax[1], rmax[2]);

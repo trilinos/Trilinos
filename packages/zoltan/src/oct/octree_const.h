@@ -55,17 +55,17 @@ typedef struct {
 
 /* Octree functions */
 
-extern OCT_Global_Info *LB_POct_init(LB *, int pid, int dim);
-extern pOctant LB_POct_new(OCT_Global_Info *);
-extern void    LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct);
-extern void    LB_POct_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);
-extern pRList  LB_POct_localroots(OCT_Global_Info *);
-extern pOctant LB_POct_nextDfs(OCT_Global_Info *OCT_info, pOctant octant);
-extern int     LB_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
-extern int     LB_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
+extern OCT_Global_Info *Zoltan_Oct_POct_init(LB *, int pid, int dim);
+extern pOctant Zoltan_Oct_POct_new(OCT_Global_Info *);
+extern void    Zoltan_Oct_POct_free(OCT_Global_Info *OCT_info, pOctant *oct);
+extern void    Zoltan_Oct_POct_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);
+extern pRList  Zoltan_Oct_POct_localroots(OCT_Global_Info *);
+extern pOctant Zoltan_Oct_POct_nextDfs(OCT_Global_Info *OCT_info, pOctant octant);
+extern int     Zoltan_Oct_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
+extern int     Zoltan_Oct_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
 
 /* KDDKDDFREE moved to octree_const.h to allow OCT_Global_Info arg. */
-extern void    LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
+extern void    Zoltan_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct);
 
 #endif /*__OCT_OCTREE_CONST_H*/

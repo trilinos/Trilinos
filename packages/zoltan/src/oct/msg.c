@@ -17,7 +17,7 @@ static void msg_abort(MPI_Comm, int, int errcode);
 
 /*****************************************************************************/
 /*
- * LB_msg_int_scan
+ * Zoltan_Oct_msg_int_scan
  *
  * perform "exclusive" scan
  *
@@ -25,7 +25,7 @@ static void msg_abort(MPI_Comm, int, int errcode);
  * out    0   v0   v0+v1  v0+v1+v2 ...
  *
  */
-int LB_msg_int_scan(MPI_Comm communicator, int proc, int value)
+int Zoltan_Oct_msg_int_scan(MPI_Comm communicator, int proc, int value)
 {
   int recvbuf;
   int ret;
@@ -33,7 +33,7 @@ int LB_msg_int_scan(MPI_Comm communicator, int proc, int value)
   ret=MPI_Scan(&value,&recvbuf,1,MPI_INT,MPI_SUM,communicator);
 
   if (ret!= MPI_SUCCESS) {
-    fprintf(stderr,"%d(%d) LB_msg_int_scan: Scan ret=%d\n",proc, proc,ret);
+    fprintf(stderr,"%d(%d) Zoltan_Oct_msg_int_scan: Scan ret=%d\n",proc, proc,ret);
     msg_abort(communicator, proc, ret);
   }
   
@@ -42,7 +42,7 @@ int LB_msg_int_scan(MPI_Comm communicator, int proc, int value)
 
 /*****************************************************************************/
 /*
- * LB_msg_float_scan
+ * Zoltan_Oct_msg_float_scan
  *
  * perform "exclusive" scan
  *
@@ -50,7 +50,7 @@ int LB_msg_int_scan(MPI_Comm communicator, int proc, int value)
  * out    0   v0   v0+v1  v0+v1+v2 ...
  *
  */
-float LB_msg_float_scan(MPI_Comm communicator, int proc, float value)
+float Zoltan_Oct_msg_float_scan(MPI_Comm communicator, int proc, float value)
 {
   float recvbuf;
   int ret;
@@ -58,7 +58,7 @@ float LB_msg_float_scan(MPI_Comm communicator, int proc, float value)
   ret=MPI_Scan(&value,&recvbuf,1,MPI_FLOAT,MPI_SUM,communicator);
 
   if (ret!= MPI_SUCCESS) {
-    fprintf(stderr,"%d(%d) LB_msg_float_scan: Scan ret=%d\n",proc,proc,ret);
+    fprintf(stderr,"%d(%d) Zoltan_Oct_msg_float_scan: Scan ret=%d\n",proc,proc,ret);
     msg_abort(communicator, proc, ret);
   }
 
