@@ -103,12 +103,26 @@ char *recv_data)		/* array of data I'll own after comm */
     MPI_Comm_rank(plan->comm, &my_proc);
 
     if ((plan->nsends + plan->self_msg) && !send_data) {
-	ZOLTAN_COMM_ERROR("nsends not zero, but send_data = NULL", yo, my_proc);
-	return ZOLTAN_FATAL;
+        int sum = 0;
+        if (plan->sizes_to)   /* Not an error if all sizes_to == 0 */
+            for (i = 0; i < (plan->nsends + plan->self_msg); i++) 
+                sum += plan->sizes_to[i];
+        if (!plan->sizes_to || (plan->sizes_to && sum)) {
+            ZOLTAN_COMM_ERROR("nsends not zero, but send_data = NULL", 
+                              yo, my_proc);
+            return ZOLTAN_FATAL;
+        }
     }
     if ((plan->nrecvs + plan->self_msg) && !recv_data) {
-	ZOLTAN_COMM_ERROR("nrecvs not zero, but recv_data = NULL", yo, my_proc);
-	return ZOLTAN_FATAL;
+        int sum = 0;
+        if (plan->sizes_from)   /* Not an error if all sizes_from == 0 */
+            for (i = 0; i < (plan->nrecvs + plan->self_msg); i++) 
+                sum += plan->sizes_from[i];
+        if (!plan->sizes_from || (plan->sizes_from && sum)) {
+            ZOLTAN_COMM_ERROR("nrecvs not zero, but recv_data = NULL", 
+                              yo, my_proc);
+            return ZOLTAN_FATAL;
+        }
     }
     if (nbytes < 0) {
 	ZOLTAN_COMM_ERROR("Scale factor nbytes is negative", yo, my_proc);
@@ -151,11 +165,15 @@ char *recv_data)		/* array of data I'll own after comm */
 	    k = 0;
 	    for (i = 0; i < plan->nrecvs + plan->self_msg; i++) {
 		if (plan->procs_from[i] != my_proc) {
-		    MPI_Irecv((void *) &recv_buff[plan->starts_from_ptr[i] * nbytes],
-			      plan->sizes_from[i] * nbytes,
-			      (MPI_Datatype) MPI_BYTE, plan->procs_from[i], tag,
-			      plan->comm, &plan->request[k]);
-		    k++;
+                    if (plan->sizes_from[i]) 
+		        MPI_Irecv((void *)
+                                  &recv_buff[plan->starts_from_ptr[i] * nbytes],
+			          plan->sizes_from[i] * nbytes,
+			          (MPI_Datatype) MPI_BYTE, plan->procs_from[i], 
+			          tag, plan->comm, &plan->request[k]);
+                    else
+                        plan->request[k] = MPI_REQUEST_NULL;
+	            k++;
 		}
 		else {
 		    self_recv_address = plan->starts_from_ptr[i] * nbytes;
@@ -257,10 +275,13 @@ char *recv_data)		/* array of data I'll own after comm */
 	    for (i = proc_index, j = 0; j < nblocks; j++) {
 
 		if (plan->procs_to[i] != my_proc) {
-		    MPI_Rsend((void *) &send_data[plan->starts_to_ptr[i] * nbytes],
-			      plan->sizes_to[i] * nbytes,
-			      (MPI_Datatype) MPI_BYTE, plan->procs_to[i], tag,
-			      plan->comm);
+                    if (plan->sizes_to[i]) {
+		        MPI_Rsend((void *)
+                                  &send_data[plan->starts_to_ptr[i] * nbytes],
+			          plan->sizes_to[i] * nbytes,
+			          (MPI_Datatype) MPI_BYTE, plan->procs_to[i],
+			          tag, plan->comm);
+                    }
 		}
 		else
 		    self_num = i;
@@ -269,9 +290,10 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-		memcpy(&recv_buff[self_recv_address],
-		       &send_data[plan->starts_to_ptr[self_num] * nbytes],
-		       plan->sizes_to[self_num] * nbytes);
+                if (plan->sizes_to[self_num])
+		    memcpy(&recv_buff[self_recv_address],
+		           &send_data[plan->starts_to_ptr[self_num] * nbytes],
+		           plan->sizes_to[self_num] * nbytes);
 	    }
 	}
 
@@ -282,14 +304,20 @@ char *recv_data)		/* array of data I'll own after comm */
 		    offset = 0;
 		    j = plan->starts_to[i];
 		    for (k = 0; k < plan->lengths_to[i]; k++) {
-			memcpy(&send_buff[offset],
+                        if (plan->sizes[plan->indices_to[j]]) {
+			    memcpy(&send_buff[offset],
 			       &send_data[plan->indices_to_ptr[j] * nbytes],
 			       plan->sizes[plan->indices_to[j]] * nbytes);
-			offset += plan->sizes[plan->indices_to[j]] * nbytes;
+			    offset += plan->sizes[plan->indices_to[j]] * nbytes;
+                        }
 			j++;
 		    }
-		    MPI_Rsend((void *) send_buff, plan->sizes_to[i] * nbytes,
-		      (MPI_Datatype) MPI_BYTE, plan->procs_to[i], tag, plan->comm);
+                    if (plan->sizes_to[i]) {
+		        MPI_Rsend((void *) send_buff, 
+                                  plan->sizes_to[i] * nbytes,
+		                  (MPI_Datatype) MPI_BYTE, plan->procs_to[i],
+                                  tag, plan->comm);
+                    }
 		}
 		else
 		    self_num = i;
@@ -297,14 +325,17 @@ char *recv_data)		/* array of data I'll own after comm */
 		    i = 0;
 	    }
 	    if (plan->self_msg) {	/* Copy data to self. */
-		j = plan->starts_to[self_num];
-		for (k = 0; k < plan->lengths_to[self_num]; k++) {
-		    jj = plan->indices_to_ptr[j];
-		    memcpy(&recv_buff[self_recv_address],
-			   &send_data[jj * nbytes],
-			   plan->sizes[plan->indices_to[j]] * nbytes);
-		    self_recv_address += plan->sizes[plan->indices_to[j]] * nbytes;
-		    j++;
+                if (plan->sizes_to[self_num]) {
+		    j = plan->starts_to[self_num];
+		    for (k = 0; k < plan->lengths_to[self_num]; k++) {
+		        jj = plan->indices_to_ptr[j];
+		        memcpy(&recv_buff[self_recv_address],
+			       &send_data[jj * nbytes],
+			       plan->sizes[plan->indices_to[j]] * nbytes);
+		        self_recv_address += plan->sizes[plan->indices_to[j]] 
+                                           * nbytes;
+		        j++;
+		    }
 		}
 	    }
 
@@ -345,12 +376,13 @@ char *recv_data)		/* array of data I'll own after comm */
 	    for (self_num = 0; self_num < plan->nrecvs + plan->self_msg; self_num++) 
 		if (plan->procs_from[self_num] == my_proc) break;
 	    k = plan->starts_from[self_num];
-	    for (j = plan->lengths_from[self_num]; j; j--) {
-		memcpy(&recv_data[plan->indices_from[k] * nbytes],
-		    &recv_buff[k * nbytes], nbytes);
-		k++;
+            if (!plan->sizes_from || plan->sizes_from[self_num]) {
+	        for (j = plan->lengths_from[self_num]; j; j--) {
+		    memcpy(&recv_data[plan->indices_from[k] * nbytes],
+		        &recv_buff[k * nbytes], nbytes);
+		    k++;
+	        }
 	    }
-
 	}
 	else
 	    self_num = plan->nrecvs;
@@ -358,6 +390,8 @@ char *recv_data)		/* array of data I'll own after comm */
 	for (jj = 0; jj < plan->nrecvs; jj++) {
 
 	    MPI_Waitany(plan->nrecvs, plan->request, &i, &status);
+
+            if (i == MPI_UNDEFINED) break;  /* No more receives */
 
 	    if (i >= self_num) i++;
 
