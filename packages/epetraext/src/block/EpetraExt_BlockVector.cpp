@@ -112,7 +112,7 @@ int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockR
 		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
 	     return -1;
       }
-      BaseVector.ReplaceMyValues(1, &Values_[localIndex], &i); 
+      BaseVector[i] = Values_[localIndex]; 
    }
 
    return 0;
@@ -137,8 +137,7 @@ int BlockVector::LoadBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow)
 		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
 	     return -1;
       }
-      double val = BaseVector[i];
-      this->ReplaceMyValues(1, &val, &localIndex); 
+      (*this)[localIndex] = BaseVector[i];
    }
 
    return 0;

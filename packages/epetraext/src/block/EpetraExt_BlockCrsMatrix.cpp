@@ -166,8 +166,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_CrsMatrix & BaseMatrix, const int Ro
     for( int l = 0; l < NumIndices; ++l )
        Indices[l] += ColOffset;
 
-    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
-    if (ierr != 0) cout << "WARNING BlockCrsMatrix::LoadBlock SumIntoGlobalValues err = " << ierr <<
+    ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
+    if (ierr != 0) cout << "WARNING BlockCrsMatrix::LoadBlock ReplaceGlobalValues err = " << ierr <<
 	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
   }
 }
