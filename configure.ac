@@ -38,6 +38,10 @@ AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 #TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
 #AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 
+# After building Amesos from the Trilinos level is stabilized, the 
+#default could be changed to yes.
+TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
+AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 # After building Nox from the Trilinos level is stabilized, the default should be 
 # changed to yes.
 TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
@@ -67,6 +71,7 @@ TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xyes" || 
+	test "X$ac_cv_use_amesos" != "Xyes" || 
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
@@ -120,6 +125,10 @@ fi
 
 if test "X$ac_cv_use_tsf" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSF])
+fi
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/amesos])
 fi
 
 AC_CONFIG_FILES([

@@ -578,44 +578,584 @@ AC_MSG_RESULT($_am_result)
 rm -f confinc confmf
 ])
 
-dnl @synopsis TAC_ARG_ENABLE_FEATURE(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
+dnl @synopsis TAC_ARG_CONFIG_MPI
 dnl
-dnl Test for --enable-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
-dnl Also calls AC_DEFINE to define HAVE_${HAVE_NAME} if value is not equal to "no"
-dnl 
-dnl Use this macro to help defining whether or not optional 
-dnl features* should compiled.  For example:
+dnl Test a variety of MPI options:
+dnl --enable-mpi       - Turns MPI compiling mode on
+dnl --with-mpi         - specify root directory of MPI
+dnl --with-mpi-cxx     - specify MPI C++ compiler
+dnl --with-mpi-cc      - specify MPI C compiler
+dnl --with-mpi-f77     - specify MPI Fortran 77 compiler
+dnl --with-mpi-include - specify include directory for MPI 
+dnl --with-mpi-libs    - specify MPI libraries
+dnl --with-mpi-libdir  - specify location of MPI libraries
 dnl
-dnl TAC_ARG_ENABLE_FEATURE(epetra, [Configure and build epetra], EPETRA, yes)
-dnl 
-dnl will test for --enable-epetra when configure is run.  If it is defined 
-dnl and not set to "no" or not defined (default is "yes") then HAVE_EPETRA will
-dnl be defined, if --enable-epetra is defined to be "no", HAVE_EPETRA will not
-dnl be defined.
+dnl If any of these options are set, HAVE_MPI will be defined for both
+dnl Autoconf and Automake, and HAVE_MPI will be defined in the
+dnl generated config.h file
 dnl
-dnl *NOTE: epetra, aztecoo, komplex, ifpack, and other software found in
-dnl subdirectories of Trilinos/packages are "packages" in their own right.
-dnl However, these packages are also "features" of the larger package
-dnl "Trilinos".  Therefore, when configuring from the Trilinos directory,
-dnl it is appropriate to refer to these software packages as "features".
 dnl
-dnl This file was based on tac_arg_with_package.m4 by Mike Heroux
-dnl @author James Willenbring <jmwille@sandia.gov>
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
 dnl
-AC_DEFUN([TAC_ARG_ENABLE_FEATURE],
+AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
-AC_ARG_ENABLE([$1],
-AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
-ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
+AC_ARG_ENABLE(mpi,
+AC_HELP_STRING([--enable-mpi],[enable MPI using mpiCC C++ compiler]),
+[
+HAVE_PKG_MPI=yes
+MPI_CXX=mpiCC
+MPI_CC=mpicc
+MPI_F77=mpif77
+],
+[HAVE_PKG_MPI=no]
+)
 
-AC_MSG_CHECKING(whether to use [$1])
+AC_ARG_WITH(mpi,
+AC_HELP_STRING([--with-mpi],[specify root directory of MPI installation]),
+[
+HAVE_PKG_MPI=yes
+MPI_DIR=${withval}
+AC_MSG_CHECKING(MPI directory)
+AC_MSG_RESULT([${MPI_DIR}])
+]
+)
 
-if test "X$ac_cv_use_$1" != "Xno"; then
-  AC_MSG_RESULT(yes)  
-  AC_DEFINE([HAVE_$3],,[Define if want to build $1])
-else
-  AC_MSG_RESULT(no)
+AC_ARG_WITH(mpi-cxx,
+AC_HELP_STRING([--with-mpi-cxx],[specify MPI C++ compiler]),
+[
+HAVE_PKG_MPI=yes 
+MPI_CXX=${withval}
+AC_MSG_CHECKING(user-defined MPI C++ compiler)
+AC_MSG_RESULT([${MPI_CXX}])
+]
+)
+
+AC_ARG_WITH(mpi-cc,
+AC_HELP_STRING([--with-mpi-cc],[specify MPI C compiler]),
+[
+HAVE_PKG_MPI=yes 
+MPI_CC=${withval}
+AC_MSG_CHECKING(user-defined MPI C compiler)
+AC_MSG_RESULT([${MPI_CC}])
+]
+)
+
+AC_ARG_WITH(mpi-f77,
+AC_HELP_STRING([--with-mpi-f77],[specify MPI Fortran 77 compiler]),
+[
+HAVE_PKG_MPI=yes 
+MPI_F77=${withval}
+AC_MSG_CHECKING(user-defined MPI Fortran 77 compiler)
+AC_MSG_RESULT([${MPI_F77}])
+]
+)
+
+AC_ARG_WITH(mpi-include,
+AC_HELP_STRING([--with-mpi-include],[specify include directory for MPI]),
+[
+HAVE_PKG_MPI=yes
+MPI_INC=${withval}
+AC_MSG_CHECKING(user-defined MPI includes)
+AC_MSG_RESULT([${MPI_INC}])
+]
+)
+
+AC_ARG_WITH(mpi-libs,
+AC_HELP_STRING([--with-mpi-libs],[specify MPI libraries]),
+[
+HAVE_PKG_MPI=yes
+MPI_LIBS=${withval}
+AC_MSG_CHECKING(user-defined MPI libraries)
+AC_MSG_RESULT([${MPI_LIBS}])
+]
+)
+
+AC_ARG_WITH(mpi-libdir,
+AC_HELP_STRING([--with-mpi-libdir],[specify location of MPI libraries]),
+[
+HAVE_PKG_MPI=yes
+MPI_LIBDIR=${withval}
+AC_MSG_CHECKING(user-defined MPI libraries)
+AC_MSG_RESULT([${MPI_LIBS}])
+]
+)
+
+AC_MSG_CHECKING(whether we are using MPI)
+AC_MSG_RESULT([${HAVE_PKG_MPI}])
+
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+   AC_DEFINE(HAVE_MPI,,[define if we want to use MPI])
 fi
+
+dnl Define Automake version of HAVE_MPI if appropriate
+
+AM_CONDITIONAL(HAVE_MPI, [test "X${HAVE_PKG_MPI}" = "Xyes"])
+
+
+dnl
+dnl --------------------------------------------------------------------
+dnl Check for MPI compilers (must be done *before* AC_PROG_CXX,
+dnl AC_PROG_CC and AC_PROG_F77)
+dnl 
+dnl --------------------------------------------------------------------
+
+if test -n "${MPI_CXX}"; then
+  AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
+  if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
+    CXX=${MPI_CXX}
+  else
+    AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
+  fi
+fi
+
+if test -n "${MPI_CC}"; then
+  AC_CHECK_PROG(MPI_CC_EXISTS, ${MPI_CC}, yes, no)
+  if test "X${MPI_CC_EXISTS}" = "Xyes"; then
+    CC=${MPI_CC}
+  else
+    AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
+  fi
+fi
+
+if test -n "${MPI_F77}"; then
+  AC_CHECK_PROG(MPI_F77_EXISTS, ${MPI_F77}, yes, no)
+  if test "X${MPI_F77_EXISTS}" = "Xyes"; then
+    F77=${MPI_F77}
+  else
+    AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
+  fi
+fi
+])
+
+dnl @synopsis TAC_ARG_ENABLE_COMPILER_OPTIONS
+dnl
+dnl Test for --enable-debug,  --enable-optimize, --enable-profile,
+dnl --enable-purify and attempt to set appropriate compiler/loader
+dnl flags depending on the value of target
+dnl
+dnl Use this macro to facilitate definition of options to set for the
+dnl compiler and loader.
+dnl 
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_ENABLE_COMPILER_OPTIONS],
+[
+#------------------------------------------------------------------------
+# Check for --enable-debug, --enable-opt, --enable-profile, and --enable-purify
+#------------------------------------------------------------------------
+
+#TAC_ARG_ENABLE_OPTION(debug, [enable debugging], DEBUG, no)
+
+#TAC_ARG_ENABLE_OPTION(opt,[enable optimization],OPTIMIZE,no)
+
+#TAC_ARG_ENABLE_OPTION(profile,[enable profiling],PROFILE,no)
+
+#TAC_ARG_ENABLE_OPTION(purify,[enable purify],PURIFY,no)
+
+#------------------------------------------------------------------------
+# Check if any user overrides were defined in the above section
+#------------------------------------------------------------------------
+# Likely will permanently remove the concept of a custom platform when 
+# another way to turn on debug, opt, profile, and purify is found.
+#AC_ARG_WITH(platform,
+#AC_HELP_STRING([--with-platform],[Utilize a custom platform] (must specify)),
+#ac_cv_use_platform=$withval, ac_cv_use_platform=no)
+
+#AC_MSG_CHECKING(whether to use a custom platform)
+
+#if test "X$ac_cv_use_platform" != "Xno"; then
+#  AC_MSG_RESULT(yes)  
+  dnl users who define a custom platform need to add a case below
+  dnl that will recognize the name of the platform and run the correct m4 macro
+  # case $ac_cv_use_platform in
+  dnl if your command line includes --with-platform=foo and there is a customized
+  dnl version of the 'tac_set_compile_options_template' file called 
+  dnl 'tac_set_compile_options_foo.m4' containing a macro named
+  dnl 'TAC_SET_COMPILE_OPTIONS_FOO', use the following syntax:
+  # foo*) TAC_SET_COMPILE_OPTIONS_FOO;;
+  # esac
+#else
+#  AC_MSG_RESULT(no) 
+#  if test "X$ac_cv_use_debug" != "Xno" || test "X$ac_cv_use_opt" != "Xno" ||
+#     test "X$ac_cv_use_profile" != "Xno"|| test "X$ac_cv_use_purify" != "Xno"; then
+#    if test "X${CXX}" != "XmpiCC"; then
+#      BASE_CXX=${CXX}
+#    fi
+  # Check if user defined a custom platform name
+  #otherwise parse info gathered
+#  case $target in
+#    *linux*)
+#      case $BASE_CXX in
+# 	 *g++*) TAC_SET_COMPILE_OPTIONS_LINUX_GCC;;
+#    esac
+#    ;;
+
+#    *solaris*)
+#      case $BASE_CXX in
+#	*cc* | *CC*) TAC_SET_COMPILE_OPTIONS_SOLARIS_CC;;
+#    esac
+#    ;;
+    # need to add case for cplant
+
+    # need to add case for sgi - and sub-cases for 32 and 64
+
+#  esac
+
+#  fi
+#fi
+])
+
+
+dnl @synopsis TAC_ARG_WITH_FLAGS(lcase_name, UCASE_NAME)
+dnl
+dnl Test for --with-lcase_name="compiler/loader flags".  if defined, prepend 
+dnl flags to standard UCASE_NAME definition.
+dnl
+dnl Use this macro to facilitate additional special flags that should be
+dnl passed on to the preprocessor/compilers/loader.
+dnl
+dnl Example use
+dnl 
+dnl TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+dnl 
+dnl tests for --with-cxxflags and pre-pends to CXXFLAGS
+dnl 
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_WITH_FLAGS],
+[
+AC_MSG_CHECKING([whether additional [$2] flags should be added])
+AC_ARG_WITH($1,
+AC_HELP_STRING([--with-$1], 
+[additional [$2] flags to be added: will prepend to [$2]]),
+[
+$2="${withval} ${$2}"
+AC_MSG_RESULT([$2 = ${$2}])
+],
+AC_MSG_RESULT(no)
+)
+])
+
+
+dnl @synopsis TAC_ARG_WITH_AR
+dnl
+dnl Test for --with-ar="ar_program ar_flags".
+dnl Default is "ar cru"
+dnl 
+dnl Generates an Automake conditional USE_ALTERNATE_AR that can be tested.  
+dnl Generates the user-specified archiver command in @ALTERNATE_AR@.
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_WITH_AR],
+[
+AC_ARG_WITH(ar,
+AC_HELP_STRING([--with-ar], [override archiver command (default is "ar cru")]),
+[
+AC_MSG_CHECKING(user-defined archiver)
+AC_MSG_RESULT([${withval}])
+USE_ALTERNATE_AR=yes
+ALTERNATE_AR="${withval}"
+]
+)
+
+if test -n "${SPECIAL_AR}" && test "X${USE_ALTERNATE_AR}" != "Xyes";
+then
+  USE_ALTERNATE_AR=yes
+  ALTERNATE_AR="${SPECIAL_AR}"
+fi
+
+AC_MSG_CHECKING(for special archiver command)
+if test "X${USE_ALTERNATE_AR}" = "Xyes"; then
+   AC_MSG_RESULT([${ALTERNATE_AR}])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, true)
+else
+   AC_MSG_RESULT([none])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, false)
+fi
+AC_SUBST(ALTERNATE_AR)
+])
+
+
+dnl @synopsis TAC_ARG_CHECK_MPI
+dnl
+dnl Check to make sure any definitions set in TAC_ARG_CONFIG_MPI
+dnl are valid, set the MPI flags.  Test MPI compile using C++ compiler.
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_CHECK_MPI],
+[
+
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
+    MPI_INC=${MPI_DIR}/include
+  fi
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR=${MPI_DIR}/lib
+  fi
+
+  if test -n "${MPI_INC}"; then
+    CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
+  fi
+
+  if test -n "${MPI_LIBDIR}"; then
+    LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
+  fi
+
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test -n "${MPI_LIBS}"; then
+    LIBS="${MPI_LIBS}"
+  fi
+
+  AC_LANG_CPLUSPLUS 
+  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
+  AC_TRY_LINK([#include <mpi.h>],
+  [int c; char** v; MPI_Init(&c,&v);],
+  [AC_MSG_RESULT(yes)], 
+  [AC_MSG_RESULT(no)  
+   AC_MSG_ERROR(MPI cannot link)]
+  )
+fi
+])
+
+dnl @synopsis AC_CXX_NAMESPACES
+dnl
+dnl If the compiler can prevent names clashes using namespaces, define
+dnl HAVE_NAMESPACES.
+dnl
+dnl @version $Id$
+dnl @author Luc Maisonobe
+dnl
+AC_DEFUN([AC_CXX_NAMESPACES],
+[AC_CACHE_CHECK(whether the compiler implements namespaces,
+ac_cv_cxx_namespaces,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([namespace Outer { namespace Inner { int i = 0; }}],
+                [using namespace Outer::Inner; return i;],
+ ac_cv_cxx_namespaces=yes, ac_cv_cxx_namespaces=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_namespaces" = yes; then
+  AC_DEFINE(HAVE_NAMESPACES,,[define if the compiler implements namespaces])
+fi
+])
+
+dnl @synopsis AC_CXX_HAVE_STL
+dnl
+dnl If the compiler supports the Standard Template Library, define HAVE_STL.
+dnl
+dnl @version $Id$
+dnl @author Luc Maisonobe
+dnl
+AC_DEFUN([AC_CXX_HAVE_STL],
+[AC_CACHE_CHECK(whether the compiler supports Standard Template Library,
+ac_cv_cxx_have_stl,
+[AC_REQUIRE([AC_CXX_NAMESPACES])
+ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([#include <list>
+#include <deque>
+#ifdef HAVE_NAMESPACES
+using namespace std;
+#endif],[list<int> x; x.push_back(5);
+list<int>::iterator iter = x.begin(); if (iter != x.end()) ++iter; return 0;],
+ ac_cv_cxx_have_stl=yes, ac_cv_cxx_have_stl=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_have_stl" = yes; then
+  AC_DEFINE(HAVE_STL,,[define if the compiler supports Standard Template Library])
+fi
+])
+
+dnl @synopsis AC_CXX_BOOL
+dnl
+dnl If the compiler recognizes bool as a separate built-in type,
+dnl define HAVE_BOOL. Note that a typedef is not a separate
+dnl type since you cannot overload a function such that it accepts either
+dnl the basic type or the typedef.
+dnl
+dnl @version $Id$
+dnl @author Luc Maisonobe
+dnl
+AC_DEFUN([AC_CXX_BOOL],
+[AC_CACHE_CHECK(whether the compiler recognizes bool as a built-in type,
+ac_cv_cxx_bool,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+int f(int  x){return 1;}
+int f(char x){return 1;}
+int f(bool x){return 1;}
+],[bool b = true; return f(b);],
+ ac_cv_cxx_bool=yes, ac_cv_cxx_bool=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_bool" = yes; then
+  AC_DEFINE(HAVE_BOOL,,[define if bool is a built-in type])
+fi
+])
+
+dnl @synopsis AC_CXX_MUTABLE
+dnl
+dnl If the compiler allows modifying class data members flagged with
+dnl the mutable keyword even in const objects (for example in the
+dnl body of a const member function), define HAVE_MUTABLE.
+dnl
+dnl @version $Id$
+dnl @author Luc Maisonobe
+dnl
+AC_DEFUN([AC_CXX_MUTABLE],
+[AC_CACHE_CHECK(whether the compiler supports the mutable keyword,
+ac_cv_cxx_mutable,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+class A { mutable int i;
+          public:
+          int f (int n) const { i = n; return i; }
+        };
+],[A a; return a.f (1);],
+ ac_cv_cxx_mutable=yes, ac_cv_cxx_mutable=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_mutable" = yes; then
+  AC_DEFINE(HAVE_MUTABLE,,[define if the compiler supports the mutable keyword])
+fi
+])
+
+dnl @synopsis AC_CXX_NEW_FOR_SCOPING
+dnl
+dnl If the compiler accepts the new for scoping rules (the scope of a
+dnl variable declared inside the parentheses is restricted to the
+dnl for-body), define HAVE_NEW_FOR_SCOPING.
+dnl
+dnl @version $Id$
+dnl @author Luc Maisonobe
+dnl
+AC_DEFUN([AC_CXX_NEW_FOR_SCOPING],
+[AC_CACHE_CHECK(whether the compiler accepts the new for scoping rules,
+ac_cv_cxx_new_for_scoping,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE(,[
+  int z = 0;
+  for (int i = 0; i < 10; ++i)
+    z = z + i;
+  for (int i = 0; i < 10; ++i)
+    z = z - i;
+  return z;],
+ ac_cv_cxx_new_for_scoping=yes, ac_cv_cxx_new_for_scoping=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_new_for_scoping" = yes; then
+  AC_DEFINE(HAVE_NEW_FOR_SCOPING,,[define if the compiler accepts the new for scoping rules])
+fi
+])
+
+dnl @synopsis AC_CXX_STD_SPRINTF
+dnl
+dnl If the compiler recognizes std::sprintf as a function for IO,
+dnl define HAVE_STD_SPRINTF.  If this test fails, use sprintf with no std prefix
+dnl Note that we try to compile two versions of this routine, one using cstdio and
+dnl another using stdio.h.  This approach is used to eliminate the need to test which
+dnl of the two header files is present.  If one or both is usable the test will return true.
+dnl
+
+AC_DEFUN([AC_CXX_STD_SPRINTF],
+[AC_CACHE_CHECK([[whether the compiler recognizes std::sprintf as supported IO function]],
+ac_cv_cxx_std_sprintf,
+[ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+#include <cstdio>
+#include <string>
+],
+[
+     int x = 100;
+     char s[100];
+     std::sprintf(s, "%d", x);
+],
+ ac_cv_cxx_std_sprintf1=yes, ac_cv_cxx_std_sprintf1=no)
+
+AC_TRY_COMPILE([
+#include <stdio.h>
+#include <string>
+],
+[
+     int x = 100;
+     char s[100];
+     std::sprintf(s, "%d", x);
+],
+ ac_cv_cxx_std_sprintf2=yes, ac_cv_cxx_std_sprintf2=no)
+
+if (test "$ac_cv_cxx_std_sprintf1" = yes || test "$ac_cv_cxx_std_sprintf2" = yes); then
+ ac_cv_cxx_std_sprintf=yes
+else
+ ac_cv_cxx_std_sprintf=no
+fi
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_std_sprintf" = yes; then
+  AC_DEFINE(HAVE_STD_SPRINTF,,[define if std::sprintf is supported])
+fi
+])
+
+dnl @synopsis TAC_ARG_WITH_LIBDIRS
+dnl
+dnl Test for --with-libdirs="-Llibdir1 -Llibdir2".  if defined, 
+dnl prepend "-Llibdir1 -Llibdir2" to LDFLAGS
+dnl
+dnl Use this macro to facilitate addition of directories to library search path.
+dnl 
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_WITH_LIBDIRS],
+[
+AC_MSG_CHECKING([whether additional library search paths defined])
+AC_ARG_WITH(libdirs,
+AC_HELP_STRING([--with-libdirs], 
+[additional directories containing libraries: will prepend to search here for libraries, use -Ldir format]),
+[
+LDFLAGS="${withval} ${LDFLAGS}"
+AC_MSG_RESULT([${withval}])
+],
+AC_MSG_RESULT(no)
+)
+])
+
+
+dnl @synopsis TAC_ARG_WITH_INCDIRS
+dnl
+dnl Test for --with-incdirs="-Iincdir1 -Iincdir2".  if defined, prepend 
+dnl "-Iincdir1 -Iincdir2" to CPPFLAGS
+dnl
+dnl Use this macro to facilitate addition of directories to include file search path.
+dnl 
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_WITH_INCDIRS],
+[
+AC_MSG_CHECKING([whether additional include search paths defined])
+AC_ARG_WITH(incdirs,
+AC_HELP_STRING([--with-incdirs], 
+[additional directories containing include files: will prepend to search here for includes, use -Idir format]),
+[
+CPPFLAGS="${withval} ${CPPFLAGS}"
+AC_MSG_RESULT([${withval}])
+],
+AC_MSG_RESULT(no)
+)
 ])
 
 

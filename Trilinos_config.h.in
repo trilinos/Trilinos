@@ -1,5 +1,8 @@
 /* Trilinos_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if want to build amesos */
+#undef HAVE_AMESOS
+
 /* Define if want to build aztecoo */
 #undef HAVE_AZTECOO
 
