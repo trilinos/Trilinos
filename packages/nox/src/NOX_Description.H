@@ -81,19 +81,24 @@
   optionally, the Jacobian. Complete details are provided in
   the class decription.
 
-  Included with %NOX are two such interfaces:
+  Included with %NOX are three such interfaces:
 
   - NOX::Example::Vector and NOX::Example::Group
   - NOX::Epetra::Vector and NOX::Epetra::Group
+  - NOX::Petsc::Vector and NOX::Petsc::Group
 
   The \b Example interface is a very simple interface that is not
   intended for actual computations, but to serve as an
   easy-to-understand example of how one might interface to NOX.
   
-  The \b Epetra interface is a fully function interface with the
+  The \b Epetra interface is a full function interface with the
   Trilinos/Epetra library.
 
-  All solvers are the tht NOX::Solver namespace. The solvers are
+  The \b Petsc interface is a full function interface with the
+  Petsc library developed at Argonne National Labs,
+   <a href="http://www-fp.mcs.anl.gov/petsc">PETSC-Home</a>
+
+  All solvers are in the NOX::Solver namespace. The solvers are
   accessed via the NOX::Solver::Manager. The recommended solver is
   NOX::Solver::LineSearchBased, which is a basic nonlinear solver
   based on a line search. Each solver has a number of options that can
@@ -111,7 +116,7 @@
   - NOX::LineSearch::Backtrack
   - NOX::LineSearch::MoreThuente
 
-  Convergence or failure of a given solver method is determined the
+  Convergence or failure of a given solver method is determined by 
   the status tests defined in the NOX::StatusTest namespace. Various
   status tests may be combined via the NOX::StatusTest::Combo
   object. Users are free to create additional status tests that derive
