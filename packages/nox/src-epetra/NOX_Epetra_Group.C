@@ -522,8 +522,8 @@ void Group::computeX(const Abstract::Group& grp,
 		     double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
-  const Group& epetragrp = dynamic_cast<const Group&> (grp);
-  const Vector& epetrad = dynamic_cast<const Vector&> (d);
+  const Group& epetragrp = dynamic_cast<const Group&>(grp);
+  const Vector& epetrad = dynamic_cast<const Vector&>(d);
   computeX(epetragrp, epetrad, step); 
   return;
 }
