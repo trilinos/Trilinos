@@ -400,8 +400,10 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 
 // ================================================ ====== ==== ==== == =
 
+#ifdef HAVE_ML_AZTECOO
 /*! Another constructor for Maxwell equations that takes an Epetra_MsrMatrix,
- * an ML_Operator, and an AZ_MATRIX type.
+ * an ML_Operator, and an AZ_MATRIX type.  The Epetra_MsrMatrix type is defined
+ * in aztecoo.
  * Two conditions are required on their maps:
  * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
  * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
@@ -464,6 +466,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 
   ML_Comm_Destroy(&ml_comm);
 }
+#endif
 
 // ================================================ ====== ==== ==== == =
 // FIXME: should I be deleted??
@@ -1648,6 +1651,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "SuperLU" ) 
     ML_Gen_CoarseSolverSuperLU( ml_ptr, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-KLU" ) {
+    cout << "\n\nCreating AMESOS smoother\n\n" << endl;
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);

@@ -92,7 +92,9 @@ class Epetra_VbrMatrix;
 
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#ifdef HAVE_ML_AZTECOO
 #include "Epetra_MsrMatrix.h"
+#endif
 #include "Teuchos_ParameterList.hpp"
 
 namespace ML_Epetra
@@ -247,12 +249,14 @@ public:
   /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
     requires the edge matrix, the connectivity matrix T, the nodal matrix.
   */
+#ifdef HAVE_ML_AZTECOO
 MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
                          ML_Operator * ML_TMatrix,
                          AZ_MATRIX * AZ_NodeMatrix,
                          int       * proc_config,
                          const Teuchos::ParameterList & List,
                          const bool ComputePrec);
+#endif
 
   //@}
   
