@@ -197,8 +197,15 @@ endif
 OBJ_EXT = o
 LIB_EXT = a
 
+#####  Amesos default values #####
+
 #  Supermatrix.h is the same for both so it should not matter which directory we pick it up from
 SUPERLU_INCLUDES = -I$(TRILINOS3PL_HOME)/SuperLU_DIST/SRC -I$(TRILINOS3PL_HOME)/SuperLU/SRC
 LIBSUPERLUDIST = $(TRILINOS3PL_HOME)/SuperLU_DIST/libsuperludist.a
 LIBAMESOS_HOME = $(TRILINOS_HOME)/packages/amesos
 LIBAMESOS = $(LIBAMESOS_HOME)/libamesos.a 
+LIBKUNDERT = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra_sparse.a
+
+#  The link fails on Ken Stanley's cygwingcc if LISBUPERLUDIST is listed before LIBAZTECOO 
+AMESOS_LIBS =  $(LIBAZTECOO) $(LIBSUPERLUDIST) $(LIBKUNDERT) $(LIBY12M) $(LIBIFPACK)
+AMESOS_TESTDEFS = -DTEST_AZTEC -DTEST_SUPERLUDIST -DTEST_KUNDERT

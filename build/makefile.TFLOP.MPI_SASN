@@ -1,4 +1,4 @@
-# This is for cross compiling on Sandia's engsci lan 
+# This is for cross compiling on sasn100
 #
 # Default environment variable definitions are defined in makefile.defaults
  
@@ -6,33 +6,40 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 
 
 # Define architecture specific flags for C++, C and Fortran
-ARCH_CXXFLAGS= -cougar -g -Wc,-tlocal
-ARCH_CFLAGS= -cougar -g
-ARCH_FFLAGS= -cougar -g
+ARCH_CXXFLAGS= -cougar -O3 -Wc,-tlocal
+ARCH_CFLAGS= -cougar -O3
+ARCH_FFLAGS= -cougar -O3
 
 # Define library directory name
 ARCH_LIBDIR = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
 # Define compiler commands
 
-CC=icc
-FC=if77
-CXX=iCC
-CCC=iCC
+CC=cicc
+FC=cif77
+CXX=ciCC
+CCC=ciCC
 
 #Define include directories (remember to use -Idirectory_name)
 
 #this is where the cross-compiler stuff lives on sandia's engsci lan.
-TFLOPS_XDEV=/usr/local/x-comp/intel/tflop/current
+# TFLOPS_XDEV=/usr/local/x-comp/intel/tflop/current
+TFLOPS_XDEV=/usr/local/intel/tflop/current/
 
 MPI_INCLUDES =
 ARCH_INCLUDES = $(MPI_INCLUDES) -I$(TFLOPS_XDEV)/tflops/include/CC/RW
 
 LIBMPI = -lmpi
-ARCH_LIBS = -llapack -lblas -lf $(MPI_LIBS)
+# ARCH_LIBS = -llapack -lblas -lf $(MPI_LIBS)
+ARCH_LIBS = -lcsmath -lf $(MPI_LIBS) -L$(TFLOPS_XDEV)tflops/lib/RW -lstd -lpgf90_cgr -lpgf90_rpm1 -lpgf902_cgr -lpgftnrtl_cgr -lm -lpuma -lpgf90rtl_cgr -lpgftnrtl_cgr -lpuma -lc -lpgc_cgr -lc -lpuma -lm 
+ARCH_LIBS = -lcsmath -lf $(MPI_LIBS) -L$(TFLOPS_XDEV)tflops/lib/RW -lstd  -lpgf90_cgr -lpgf90_rpm1 -lpgf902_cgr -lpgftnrtl_cgr -lm -lpuma -lpgf90rtl_cgr -lpgftnrtl_cgr -lpuma -lc -lpgc_cgr -lc -lpuma -lm 
+
 
 LN=/usr/bin/ln -fs
 
+
+LIBLAPACK = /usr/home/ksstanl/lapack/LAPACK/lapack_TFLOP.a
+LIBBLAS = 
 ################## Amesos corrections ##########################
 
 #  Kundert's sparse solver does not compile on TFLOP
