@@ -38,9 +38,9 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
-	$(srcdir)/EDT_CrsGraph_MapColoring.C $(srcdir)/EDT_CrsGraph_MapColoring.H \
-	$(srcdir)/EDT_CrsGraph_MapColoringIndex.C $(srcdir)/EDT_CrsGraph_MapColoringIndex.H \
-	$(srcdir)/EDT_CrsGraph_Transpose.C $(srcdir)/EDT_CrsGraph_Transpose.H
+	$(srcdir)/nox_EDT_CrsGraph_MapColoring.C $(srcdir)/nox_EDT_CrsGraph_MapColoring.H \
+	$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C $(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.H \
+	$(srcdir)/nox_EDT_CrsGraph_Transpose.C $(srcdir)/nox_EDT_CrsGraph_Transpose.H
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
