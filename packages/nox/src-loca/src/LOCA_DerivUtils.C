@@ -58,7 +58,7 @@ DerivUtils::~DerivUtils()
  
 }
 
-DerivUtils* DerivUtils::clone(NOX::CopyType type)
+DerivUtils* DerivUtils::clone(NOX::CopyType type) const
 {
   return new DerivUtils(*this);  //Call Copy Constructor
 }

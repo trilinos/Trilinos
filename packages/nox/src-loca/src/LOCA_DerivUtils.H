@@ -69,7 +69,7 @@ public:
   virtual ~DerivUtils();
 
   //! %DerivUtils clone function
-  virtual DerivUtils* clone(NOX::CopyType type = NOX::DeepCopy);
+  virtual DerivUtils* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Compute derivative of f with respect to parameter, identified by param_id
   virtual bool computeDfDp(LOCA::Abstract::Group& grp, const int param_id,
