@@ -14,6 +14,10 @@
 	+ We use simple non-symmetric ARPACK mode                            
                                                               
 	*/                                                            
+#ifndef __MLGGB_
+#define __MLGGB_
+
+
 
 #define SHIFTS   0 
 #define MAX_ITRS 2 
@@ -49,10 +53,15 @@ extern void ML_ARPACK_GGB(
 		    struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		    struct ML_CSR_MSRdata *mydata);
 
+    void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
+		 int *, double *, int *, int *, int *, double *, double *,
+		 int *, int *);
 
 
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
 #endif
+#endif
+
 #endif

@@ -16,6 +16,7 @@
 	*/                                                            
 #include "ml_ggb.h"
 #include "ml_lapack.h"
+#include "ml_eigf2c.h"
 
 
 /*****************************************************************************************
@@ -26,12 +27,12 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
    
 {
 
-  int i ,  j, MatSize, level;
+  int  level;
   
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, info, mode, nconv;
-  double   tol, tm, tmp_tol;
+  int      nev, ncv, mode;
+  double   tol, tm;
   char     bmat[2], which[3];
   ML_Operator *Amat;
   
@@ -100,10 +101,10 @@ void  ML_ARPACK_driver(char which[],
                               struct ML_CSR_MSRdata *mydata)
 {
 
-  int        i, j, kk, ldv, lworkl;
+  int        /* i, */ j, kk, ldv, lworkl;
   int        nloc, nloc_max, nloc2, ido, flag, counter;
   int        count, nconv, ierr, info, comm;
-  int        ipntr[14], m=0;
+  int        ipntr[14]; /* , m=0; */
   int        one = 1, dummy1, dummy2, dummy3, dummy4;
   double     a1 , a2  , lamR, lamI;
   char       string[4];
@@ -113,7 +114,6 @@ void  ML_ARPACK_driver(char which[],
   double     *vecx, *vecy, *rhs, *rhs1;                       /* Dummy Pointers */
   double     **eigvec;                                        /* Pointer to hold eigenvectors */ 
  
-  FILE       *ifp;
   ML_Operator *Amat;
 
   /********************************  Begin ************************************/
@@ -264,7 +264,7 @@ void  ML_ARPACK_driver(char which[],
     ml_dneupc__(&rvec, string, select, d, v, &ldv,
 		  workev, bmat, &nloc, which, &nev,
 		  &tol, resid, &ncv, iparam, ipntr, workd, workl,
-		  &lworkl, &ierr);
+		  &lworkl, &ierr, (ftnlen)1, (ftnlen)1, (ftnlen) 2);
     
     
     /*----------------------------------------------
@@ -519,7 +519,7 @@ void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize,
   int          i, j , count;
   double       *values;
  
-  FILE          *fp, *fp1, *eig;
+  /* FILE          *fp, *fp1, *eig; */
   
 
 
