@@ -679,7 +679,11 @@ components of the preconditioner, using the parameters specified in a
 %  Section~\ref{high level sample}).  \ML\ must be configured with the
 %  option \verb!--with-ml_epetra!.
 The constructor of this class takes as input an Epetra\_RowMatrix
-pointer and a \teuchos~parameter list\footnote{In order to use the
+pointer\footnote{Note that not all Epetra matrices can be used with ML. Clearly,
+the input matrix must be a square matrix. Besides,
+it is supposed that the {\tt OperatorDomainMap()}, {\tt the OperatorRangeMap()} and
+the {\tt RowMatrixRowMap()} of the matrix all coincide, and that each row is assigned
+to exactly one process.} and a \teuchos~parameter list\footnote{In order to use the
   MultiLevelPreconditioner class, \ML\ must be configured with options
   {\tt -enable-epetra --enable-teuchos}.}.
 
