@@ -40,13 +40,18 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-Newton::Newton(Parameter::List& p) 
+Newton::Newton(Parameter::List& p) :
+  predrhs(0),
+  stepdir(0)
+  
 {
   reset(p);
 }
 
 Newton::~Newton()
 {
+  delete predrhs;
+  delete stepdir;
 }
 
 bool Newton::reset(Parameter::List& p)
@@ -190,7 +195,30 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln,
     else {
 
       // Return norm of predicted F
-      const double normpredf = oldsoln.getNormNewtonSolveResidual();
+
+      // do NOT use the following line!! This does NOT account for 
+      // line search step length taken.
+      //const double normpredf = oldsoln.getNormNewtonSolveResidual();
+      
+      // Create a new vector to be the predicted RHS
+      if (predrhs == NULL) {
+	predrhs = oldsoln.getF().clone(ShapeCopy);
+      }
+      if (stepdir == NULL) {
+	stepdir = oldsoln.getF().clone(ShapeCopy);
+      }
+      
+      // stepdir = X - oldX (i.e., the step times the direction)
+      stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
+      
+      // Compute predrhs = Jacobian * step * dir
+      oldsoln.applyJacobian(*stepdir, *predrhs);
+      
+      // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
+      predrhs->update(1.0, oldsoln.getF(), 1.0);
+      
+      // Return norm of predicted RHS
+      const double normpredf = predrhs->norm();
       
       if (normpredf < 0) {
 	cerr << "NOX::Direction::Newton::resetForcingTerm " 

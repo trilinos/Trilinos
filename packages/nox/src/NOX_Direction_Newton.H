@@ -150,6 +150,12 @@ private:
    */
   Parameter::List* paramsPtr;
 
+  //! Vector containing the predicted RHS
+  Abstract::Vector* predrhs;
+
+  //! Vector containing the computed direction
+  Abstract::Vector* stepdir;
+
 };
 } // namespace Direction
 } // namespace NOX
