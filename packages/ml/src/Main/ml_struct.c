@@ -6667,7 +6667,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
 #endif
 
 
-   double      res_norm , *normalscales;
+   double      res_norm=0.0 , *normalscales;
 
    Amat     = curr->Amat;
    Rmat     = curr->Rmat;
