@@ -52,7 +52,7 @@
 #include <stdlib.h>
 #include <math.h>
 #ifdef AZTEC
-#undef AZxEC
+#undef AxTEC
 #endif
 #ifdef AZTEC
 #include "az_aztec.h"
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
   ML_Comm *comm;
   ML_Krylov *kdata;
 #endif
-
+int i;
 
 
   /* get processor information (id & # of procs) and set ML's printlevel. */
@@ -385,7 +385,12 @@ int main(int argc, char *argv[])
 
   /* Set initial guess and right hand side. */
 
+#ifdef AZTEC
+  xxx = (double *) ML_allocate((Edge_Partition.Nlocal+
+				Edge_Partition.Nghost)*sizeof(double)); 
+#else
   xxx = (double *) ML_allocate(Edge_Partition.Nlocal*sizeof(double)); 
+#endif
   rhs = (double *) ML_allocate(Edge_Partition.Nlocal*sizeof(double)); 
   ML_random_vec(xxx, Edge_Partition.Nlocal, ml_edges->comm);
   ML_random_vec(rhs, Edge_Partition.Nlocal, ml_edges->comm);
@@ -759,6 +764,7 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
 			       &reordered_glob_edges, &reordered_edge_externs, 
 			       &Ke_data_org, Nlocal_edges, 0, 0, 0, 
 			       &cpntr,	       AZ_MSR_MATRIX);
+  Edge_Partition->Nghost = Ke_data_org[AZ_N_external];
 
   /* Convert old style Aztec matrix to newer style Aztec matrix */
 
@@ -836,6 +842,7 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 			       &reordered_glob_nodes, &reordered_node_externs, 
 			       &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
 			       &cpntr, AZ_MSR_MATRIX);
+  Node_Partition->Nghost = Kn_data_org[AZ_N_external];
 
   /* Convert old style Aztec matrix to newer style Aztec matrix */
 
