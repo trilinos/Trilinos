@@ -16,6 +16,7 @@ CXXFLAGS="-g" \
 --enable-tsfcore \
 --enable-tsfcore-epetra \
 --enable-tsfcore-mpi \
+--enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-ml \
 --enable-teuchos-extended \
