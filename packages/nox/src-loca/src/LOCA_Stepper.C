@@ -36,7 +36,6 @@
 // LOCA Includes
 #include "LOCA_Utils.H"		      // for static function doPrint
 #include "LOCA_Abstract_Group.H"      // class data element
-#include "LOCA_Abstract_Vector.H"     // class data element
 #include "LOCA_Bifurcation_ArcLengthGroup.H"   //
 
 using namespace LOCA;

@@ -44,7 +44,6 @@
 // Forward Declarations
 namespace LOCA {
   namespace Abstract {
-    class Vector;
     class Group;
   }
   namespace Bifurcation {

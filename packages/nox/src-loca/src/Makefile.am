@@ -38,7 +38,6 @@
 # ------------------------------------------------------------------------
 
 LOCA_ABSTRACT_H = \
-        $(srcdir)/LOCA_Abstract_Vector.H \
         $(srcdir)/LOCA_Abstract_Group.H \
 	$(srcdir)/LOCA_Abstract_DataOutput.H
 
