@@ -39,6 +39,8 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_VbrMatrix.cpp \
             Epetra_DistObject.cpp \
             Epetra_CompObject.cpp \
+            Epetra_IntSerialDenseMatrix.cpp \
+            Epetra_IntSerialDenseVector.cpp \
             Epetra_SerialDenseMatrix.cpp \
             Epetra_SerialDenseVector.cpp \
             Epetra_SerialDenseSolver.cpp\

@@ -54,7 +54,9 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialSpdDenseSolver.cpp \
 	$(srcdir)/Epetra_SerialDenseSolver.cpp   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp \
-	$(srcdir)/Epetra_SerialDenseVector.cpp
+	$(srcdir)/Epetra_SerialDenseVector.cpp \
+	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp 
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
