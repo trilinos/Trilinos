@@ -5,78 +5,71 @@
 ### NLSPACK Object File Rules
 ########################################################################
 
-NLS_PetraGroup.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/epetra/NLS_PetraGroup.H ../src/epetra/NLS_PetraGroupInterface.H \
-	../src/epetra/NLS_PetraSharedJacobian.H \
-	../src/epetra/NLS_PetraVector.H ../src/utils/NLS_Parameter.H \
-	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
-	../src/epetra/NLS_PetraGroup.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NLS_PetraGroup.C -o $@
+NOX_Utils.o : ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/utils/NOX_Utils.H \
+	../src/utils/NOX_Utils.C 
+	$(CXX) -c $(CXXFLAGS) ../src/utils/NOX_Utils.C -o $@
 
-NLS_PetraSharedJacobian.o : ../src/epetra/NLS_PetraSharedJacobian.H \
-	../src/epetra/NLS_PetraSharedJacobian.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NLS_PetraSharedJacobian.C -o $@
+NOX_Parameter_List.o : ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_List.C 
+	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_List.C -o $@
 
-NLS_PetraVector.o : ../src/abstract/NLS_Vector.H ../src/epetra/NLS_PetraVector.H \
-	../src/epetra/NLS_PetraVector.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NLS_PetraVector.C -o $@
+NOX_Parameter_Entry.o : ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_Entry.C 
+	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_Entry.C -o $@
 
-NLS_FullStep.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/linesearches/NLS_FullStep.H ../src/linesearches/NLS_LineSearch.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/linesearches/NLS_FullStep.C 
-	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_FullStep.C -o $@
+NOX_Linesearch_Halving.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/linesearch/NOX_Linesearch_Halving.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/utils/NOX_Utils.H ../src/linesearch/NOX_Linesearch_Halving.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Halving.C -o $@
 
-NLS_IntervalHalving.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/linesearches/NLS_IntervalHalving.H \
-	../src/linesearches/NLS_LineSearch.H ../src/utils/NLS_Parameter.H \
-	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
-	../src/linesearches/NLS_IntervalHalving.C 
-	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_IntervalHalving.C -o $@
+NOX_Linesearch_Manager.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Fullstep.H \
+	../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/linesearch/NOX_Linesearch_Halving.H \
+	../src/linesearch/NOX_Linesearch_Manager.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/linesearch/NOX_Linesearch_Manager.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Manager.C -o $@
 
-NLS_LineSearchManager.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/linesearches/NLS_FullStep.H ../src/linesearches/NLS_IntervalHalving.H \
-	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/linesearches/NLS_LineSearchManager.C 
-	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_LineSearchManager.C -o $@
+NOX_Linesearch_Fullstep.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Fullstep.H \
+	../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/linesearch/NOX_Linesearch_Fullstep.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Fullstep.C -o $@
 
-NLS_AdaptiveTolerance.o : ../src/methods/NLS_AdaptiveTolerance.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/methods/NLS_AdaptiveTolerance.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_AdaptiveTolerance.C -o $@
+NOX_Solver_Newton.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/linesearch/NOX_Linesearch_Manager.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/solver/NOX_Solver_Generic.H ../src/solver/NOX_Solver_Newton.H \
+	../src/status/NOX_Status_Test.H ../src/utils/NOX_Utils.H \
+	../src/solver/NOX_Solver_Newton.C 
+	$(CXX) -c $(CXXFLAGS) ../src/solver/NOX_Solver_Newton.C -o $@
 
-NLS_MethodManager.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_Method.H ../src/methods/NLS_MethodManager.H \
-	../src/methods/NLS_Newton.H ../src/methods/NLS_StatusTest.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/methods/NLS_MethodManager.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_MethodManager.C -o $@
+NOX_Status_AbsResid.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/solver/NOX_Solver_Generic.H \
+	../src/status/NOX_Status_AbsResid.H ../src/status/NOX_Status_Test.H \
+	../src/status/NOX_Status_AbsResid.C 
+	$(CXX) -c $(CXXFLAGS) ../src/status/NOX_Status_AbsResid.C -o $@
 
-NLS_Newton.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_AdaptiveTolerance.H ../src/methods/NLS_Method.H \
-	../src/methods/NLS_Newton.H ../src/methods/NLS_StatusTest.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/methods/NLS_Newton.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_Newton.C -o $@
+NOX_Epetra_SharedJacobian.o : ../src/epetra/NOX_Epetra_SharedJacobian.H \
+	../src/epetra/NOX_Epetra_SharedJacobian.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_SharedJacobian.C -o $@
 
-NLS_StatusTest.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
-	../src/methods/NLS_Method.H ../src/methods/NLS_StatusTest.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/methods/NLS_StatusTest.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_StatusTest.C -o $@
+NOX_Epetra_Vector.o : ../src/abstract/NOX_Abstract_Vector.H \
+	../src/epetra/NOX_Epetra_Vector.H ../src/epetra/NOX_Epetra_Vector.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Vector.C -o $@
 
-NLS_Parameter.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Parameter.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Parameter.C -o $@
-
-NLS_ParameterList.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_ParameterList.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_ParameterList.C -o $@
-
-NLS_Utilities.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/utils/NLS_Utilities.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Utilities.C -o $@
+NOX_Epetra_Group.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/epetra/NOX_Epetra_Group.H \
+	../src/epetra/NOX_Epetra_Interface.H ../src/epetra/NOX_Epetra_SharedJacobian.H \
+	../src/epetra/NOX_Epetra_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/utils/NOX_Utils.H \
+	../src/epetra/NOX_Epetra_Group.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Group.C -o $@
 

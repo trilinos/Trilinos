@@ -17,7 +17,7 @@ LIB_PATHS= $(LIBNLSPACK) $(LIBEPETRA) $(LIBAZTEC) $(LIBIFPACK) \
 # Petra test source files
 #=======================================================================
 
-TEST_CC = cc_main.cc fill.cc basis.cc NLS_Interface.cc
+TEST_CC = cc_main.cc fill.cc basis.cc Problem_Interface.cc
 TEST_C = 
 TEST_F = 
 

@@ -1,0 +1,118 @@
+// $Id$ 
+// $Source$ 
+
+// NOX: An Object-Oriented Nonlinear Solver Package
+// COPYRIGHT (2002) Sandia Corporation.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
+// CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
+
+#ifndef _NOX_EPETRA_VECTOR_H
+#define _NOX_EPETRA_VECTOR_H
+
+#include "NOX_Abstract_Vector.H"	// Base Class
+#include "Epetra_Vector.h"
+
+namespace NOX {
+
+//! NOX Epetra support.
+namespace Epetra {
+
+//! Implementation of NOX::Abstract::Vector for Epetra vectors.
+class Vector : public Abstract::Vector {
+
+ public:			
+
+  //! Construct by copying map and/or elements of an Epetra_Vector.
+  Vector(const Epetra_Vector& source, CopyType type = DeepCopy);
+
+  //! Destruct Vector.
+  ~Vector();
+
+  //@{ \name Access to underlying Petra vector.
+
+  //! Get reference to underlying Epetra vector.
+  virtual Epetra_Vector& getEpetraVector();
+  //! Get const reference to underlying Epetra vector.
+  virtual const Epetra_Vector& getEpetraVector() const;
+ 
+  //@}
+
+  //@{ \name Initialization methods.
+
+  virtual Abstract::Vector& init(double value);
+
+  //! Copies source vector into "this".
+  virtual Abstract::Vector& operator=(const Epetra_Vector& source);
+
+  virtual Abstract::Vector& operator=(const Vector& source);
+  //! See above.
+  virtual Abstract::Vector& operator=(const Abstract::Vector& source);
+  
+  virtual Abstract::Vector& abs(const Vector& source);
+  //! See above.
+  virtual Abstract::Vector& abs(const Abstract::Vector& source);
+
+  virtual Abstract::Vector& reciprocal(const Vector& source);
+  //! See above.
+  virtual Abstract::Vector& reciprocal(const Abstract::Vector& source);
+
+  //@}
+
+  //@{ \name Update methods.
+
+  virtual Abstract::Vector& scale(double gamma);
+
+  virtual Abstract::Vector& update(double alpha, const Vector& a, 
+			     double gamma = 0.0);
+  //! See above.
+  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
+			     double gamma = 0.0);
+
+  virtual Abstract::Vector& update(double alpha, const Vector& a, 
+			     double beta, const Vector& b,
+			     double gamma = 0.0);
+  //! See above.
+  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
+			     double beta, const Abstract::Vector& b,
+			     double gamma = 0.0);
+
+  //@}
+
+  //@{ \name Creating new Vectors. 
+
+  virtual Abstract::Vector* clone(CopyType type = DeepCopy) const;
+
+  //@}
+
+  //@{ \name Norms.
+
+  virtual double norm(NormType type = TWO) const;
+
+  virtual double norm(const Vector& weights, NormType type = TWO) const;
+  //! See above.
+  virtual double norm(const Abstract::Vector& weights, NormType type = TWO) const;
+
+  //@}
+
+  //@{ \name Dot products
+
+  virtual double dot(const Vector& y) const;
+  //! See above.
+  virtual double dot(const Abstract::Vector& y) const;
+
+  //@}
+
+  virtual int length() const;
+
+ private:
+  
+  //! Pointer to petra vector owned by this object
+  Epetra_Vector* epetraVec;
+
+};
+}
+}
+
+#endif

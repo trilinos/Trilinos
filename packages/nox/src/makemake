@@ -48,7 +48,7 @@ sub build_depends{
 	$objname = join('_', @objname);	
 
 	# Output to definitions file
-	if ($#objfiles > 0) {
+	if ($#objfiles > -1) {
 	    $list = format_list(@objfiles);
 	    print DEFS "$objname = $list\n\n";
 	    push(@metaobjs, "$objname");

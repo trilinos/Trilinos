@@ -5,22 +5,26 @@
 ### NLSPACK Object File-Related Definitions
 ########################################################################
 
-NLSPACK_EPETRA_OBJS = NLS_PetraGroup.o NLS_PetraSharedJacobian.o \
-	NLS_PetraVector.o
+NLSPACK_UTILS_OBJS = NOX_Utils.o
 
-NLSPACK_LINESEARCHES_OBJS = NLS_FullStep.o NLS_IntervalHalving.o \
-	NLS_LineSearchManager.o
+NLSPACK_PARAMETER_OBJS = NOX_Parameter_List.o NOX_Parameter_Entry.o
 
-NLSPACK_METHODS_OBJS = NLS_AdaptiveTolerance.o NLS_MethodManager.o \
-	NLS_Newton.o NLS_StatusTest.o
+NLSPACK_LINESEARCH_OBJS = NOX_Linesearch_Halving.o NOX_Linesearch_Manager.o \
+	NOX_Linesearch_Fullstep.o
 
-NLSPACK_UTILS_OBJS = NLS_Parameter.o NLS_ParameterList.o \
-	NLS_Utilities.o
+NLSPACK_SOLVER_OBJS = NOX_Solver_Newton.o
 
-NLSPACK_ALL_OBJS = $(NLSPACK_EPETRA_OBJS) $(NLSPACK_LINESEARCHES_OBJS) \
-	$(NLSPACK_METHODS_OBJS) $(NLSPACK_UTILS_OBJS) 
+NLSPACK_STATUS_OBJS = NOX_Status_AbsResid.o
 
-NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src/epetra -I$(NLSPACK_HOME)/src/linesearches \
-	-I$(NLSPACK_HOME)/src/methods -I$(NLSPACK_HOME)/src/utils \
-	-I$(NLSPACK_HOME)/src/abstract 
+NLSPACK_EPETRA_OBJS = NOX_Epetra_SharedJacobian.o NOX_Epetra_Vector.o \
+	NOX_Epetra_Group.o
+
+NLSPACK_ALL_OBJS = $(NLSPACK_UTILS_OBJS) $(NLSPACK_PARAMETER_OBJS) \
+	$(NLSPACK_LINESEARCH_OBJS) $(NLSPACK_SOLVER_OBJS) \
+	$(NLSPACK_STATUS_OBJS) $(NLSPACK_EPETRA_OBJS) 
+
+NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src/utils -I$(NLSPACK_HOME)/src/abstract \
+	-I$(NLSPACK_HOME)/src/parameter -I$(NLSPACK_HOME)/src/linesearch \
+	-I$(NLSPACK_HOME)/src/solver -I$(NLSPACK_HOME)/src/status \
+	-I$(NLSPACK_HOME)/src/epetra 
 

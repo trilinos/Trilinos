@@ -24,13 +24,14 @@
 #include <Epetra_CrsMatrix.h>
 
 // NLSPack Objects
-#include <NLS_Interface.h>
-#include <NLS_PetraGroup.H>
-#include <NLS_MethodManager.H>
-#include <NLS_PetraSharedJacobian.H>
+#include "NOX_Epetra_Group.H"
+#include "NOX_Solver_Newton.H"
+#include "NOX_Epetra_SharedJacobian.H"
+#include "NOX_Status_AbsResid.H"
 
 // User specific files 
-#include <fill.h>
+#include "fill.h"
+#include "Problem_Interface.h"
 
 using namespace std;
 
@@ -132,45 +133,38 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create and set the parameters
-  NLS_ParameterList nlParams;
-  nlParams.setParameter("Nonlinear Solver", "Newton");   
+  NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
 
-  NLS_ParameterList& convParams = nlParams.sublist("Convergence Tests");
-  convParams.setParameter("Max Iterations", 20);  
-  convParams.setParameter("Absolute Residual Tolerance", 1.0e-8); 
-  convParams.setParameter("Relative Residual Tolerance", 1.0e-4); 
-
   // Sublist for linear solver
-  NLS_ParameterList& lsParams = nlParams.sublist("Linear Solver Parameters");
+  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4); 
+
+  // Sublist for line search
+  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+  searchParams.setParameter("Method", "Interval Halving");
+  searchParams.setParameter("Default Step", 1.0);
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of abstract base class:
   // NLS_PetraGroupInterface
-  NLS_Interface Interface;
-  Interface.registerFill(&LO);
+  Problem_Interface interface;
+  interface.registerFill(&LO);
 
   // Crate the shared Jacobian
-  NLS_PetraSharedJacobian SharedA(A);
+  NOX::Epetra::SharedJacobian shareda(A);
 
   // Create the Groups 
-  NLS_PetraGroup initialGuess(soln, SharedA, Interface);
-  NLS_PetraGroup solutionSpace(soln, SharedA, Interface);  
+  NOX::Epetra::Group grp(soln, shareda, interface);
+
+  // Create the convergence tests
+  NOX::Status::AbsResid test1(1.0e-6);
 
   // Create the method
-  NLS_MethodManager Newton(initialGuess, solutionSpace, nlParams);
-  ierr = Newton.solve();
-
-  // If converged, get the group with the final solution
-  if (ierr >= 0) {
-    NLS_Group& finalSolution(Newton.getSolutionGroup());
-    // Copy the solution into a petra vector for printing
-    soln = dynamic_cast<const NLS_PetraVector&> 
-      (finalSolution.getX()).getPetraVector();
-  }  
+  NOX::Solver::Newton newton(grp, test1, nlParams);
+  NOX::Status::StatusType status = newton.solve();
 
   // End Nonlinear Solver **************************************
 
