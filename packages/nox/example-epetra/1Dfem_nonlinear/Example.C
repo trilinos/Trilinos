@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Information", 
 			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
 			NOX::Utils::Parameters + 
 			NOX::Utils::Details + 
@@ -158,20 +159,21 @@ int main(int argc, char *argv[])
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
   grp.computeF();
 
+  // ATOL vector if using NOX::StatusTest::WRMS
   NOX::Epetra::Vector weights(soln);
-  weights.scale(1.0e-12);
+  weights.scale(1.0e-8);
 
   // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-6);
+  NOX::StatusTest::NormF absresid(1.0e-8);
   NOX::StatusTest::NormF relresid(grp, 1.0e-2);
-  //NOX::StatusTest::WRMS wrms(1.0e-2, 1.0e-12);
+  NOX::StatusTest::NormUpdate update(1.0e-5);
+  NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
   //NOX::StatusTest::WRMS wrms(1.0e-2, weights);
-  //NOX::StatusTest::SizeIndAbsResid sizeindabsresid(1.0e-6);
   NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
   converged.addStatusTest(absresid);
   converged.addStatusTest(relresid);
-  //converged.addTest(wrms);
-  //converged.addTest(sizeindabsresid);
+  converged.addStatusTest(wrms);
+  converged.addStatusTest(update);
   NOX::StatusTest::MaxIters maxiters(2000);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);

@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_StatusTest_WRMS.H"
+#include "NOX_StatusTest_NormWRMS.H"
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -42,7 +42,7 @@
 
 using namespace NOX::StatusTest;
 
-WRMS::WRMS(double a, double b, double c) :
+NormWRMS::NormWRMS(double a, double b, double c) :
   atolIsScalar(true),
   atoli(0),
   factor(c),
@@ -54,7 +54,7 @@ WRMS::WRMS(double a, double b, double c) :
   status = Unconverged;
 }
 
-WRMS::WRMS(double a, Abstract::Vector& b, double c) :
+NormWRMS::NormWRMS(double a, Abstract::Vector& b, double c) :
   atolIsScalar(false),
   atoli(0),
   factor(c),
@@ -66,14 +66,14 @@ WRMS::WRMS(double a, Abstract::Vector& b, double c) :
   status = Unconverged;
 }
 
-WRMS::~WRMS()
+NormWRMS::~NormWRMS()
 {
   delete atoli;
   delete u;
   delete v;
 }
 
-StatusType WRMS::checkStatus(const Solver::Generic& problem)
+StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
 
@@ -81,6 +81,16 @@ StatusType WRMS::checkStatus(const Solver::Generic& problem)
   const Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
   const Abstract::Vector& x = soln.getX();
   
+  // On the first iteration, the old and current solution are the same so
+  // we should return the test as unconverged until there is a valid 
+  // old solution (i.e. the number of iterations is greater than zero).
+  int niters = problem.getNumIterations();
+  if (niters == 0) {
+    status = Unconverged;
+    value = -1.0;
+    return status;
+  } 
+
   // Create the working vectors if this is the first time this
   // operator is called.
   if (u == 0)
@@ -89,14 +99,14 @@ StatusType WRMS::checkStatus(const Solver::Generic& problem)
     v = x.clone(NOX::ShapeCopy);
   
   // Create the weighting vector u = RTOL |x| + ATOL
+  // |x| is evaluated at the old time step
+  v->abs(oldsoln.getX());
   if (atolIsScalar) {    
     u->init(1.0);
-    v->abs(oldsoln.getX());
     u->update(rtol, *v, atol);
   }
   else {
     *u = *atoli;
-    v->abs(oldsoln.getX());
     u->update(rtol, *v, 1.0);
   }
 
@@ -111,47 +121,30 @@ StatusType WRMS::checkStatus(const Solver::Generic& problem)
   u->scale(*v);
   u->scale(factor);
 
-  /*
-  cout << "Before Dynamic cast" << endl;
-  NOX::Epetra::Vector* testVec = dynamic_cast<NOX::Epetra::Vector*>(u);
-  Epetra_Vector* testVec2 = dynamic_cast<Epetra_Vector*>(&(testVec->getEpetraVector()));
-  cout << "After elementwise multiply" << endl;
-  testVec2->Print(cout);
-  */
-
   // Compute the sum of u^2 then divide by vector length: tmp = u*u/N
   double tmp = u->dot(*u)/((double) u->length());
 
-  // Finally, compute the ratio by taking the sqrt
-  double ratio = sqrt(tmp);
+  // Finally, compute the WRMS norm value by taking the sqrt
+  value = sqrt(tmp);
 
-  //cout << "WRMS = " << ratio << endl;
-  
-  if (ratio < 1.0)
+  if (value < 1.0)
     status = Converged;
   
   return status;
 }
 
-StatusType WRMS::getStatus() const
+StatusType NormWRMS::getStatus() const
 {
   return status;
 }
 
 
-ostream& WRMS::print(ostream& stream, int indent) const
+ostream& NormWRMS::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  if (atolIsScalar) {
-    stream << "WRMS with RTOL = " << Utils::sci(rtol) 
-	   << " and ATOL = " << Utils::sci(atol) << " < 1";
-  }
-  else {
-    stream << "WRMS with RTOL = " << Utils::sci(rtol) 
-	   << " and ATOL vector < 1";
-  }
+    stream << "Norm-WRMS:  " << Utils::sci(value) << " < 1.0";
   stream << endl;
   return stream;
 }

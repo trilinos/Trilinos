@@ -92,16 +92,18 @@ SOLVER = \
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
-        $(srcdir)/NOX_StatusTest_WRMS.H 
+        $(srcdir)/NOX_StatusTest_NormWRMS.H 
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
-        $(srcdir)/NOX_StatusTest_WRMS.C  
+        $(srcdir)/NOX_StatusTest_NormWRMS.C  
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H 

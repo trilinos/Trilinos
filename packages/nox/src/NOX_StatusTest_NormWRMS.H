@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_STATUS_WRMS_H
-#define NOX_STATUS_WRMS_H
+#ifndef NOX_STATUS_NORM_WRMS_H
+#define NOX_STATUS_NORM_WRMS_H
 
 #include "NOX_StatusTest_Generic.H"	// base class
 
@@ -55,35 +55,37 @@ namespace StatusTest {
   \f]
  
   where \f$ E_n \f$ is the vector containing the local error estimate,
-  \f$ C_q*(x_n-x_{n-1)} \f$, at nonlinear iteration \f$ n \f$:
+  \f$ E_n = K*(x_n-x_{n-1}) \f$, at nonlinear iteration \f$ n \f$:
 
   \f[
-  ||E_n||_{rms,w} =  \left[ \frac{1}{N} \sum_{i=1}^N \frac {E_{n,i}}{RTOL |x_i| + ATOL_i} \right]^\frac{1}{2} 
+  ||E_n||_{rms,w} =   \sqrt{ \frac{1}{N} \sum_{i=1}^N \left( \frac {E_{n,i}}{RTOL |x_i| + ATOL_i} \right) ^2  }
   \f]
 
   Here, \f$ E_{n,i} \f$ denotes the \f$ i \f$ -th component of \f$ E_n
   \f$, \f$RTOL \f$ is the relative error tolerance, and \f$ ATOL_i \f$
   is the absolute error tolerance.  \f$ ATOL_i \f$ can be a scalar or
-  a vector of length \f$ N \f$. \f$ C_q \f$ is a constant that depends
+  a vector of length \f$ N \f$. \f$ K \f$ is a constant that depends
   on the time stepping algorithm (which BDF method is chosen).
+
+  NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value to -1.0.  Once an iteration has taken place the WRMS Norm value is calculated as above.  
 
   Reference: "PVODE, an ODE %Solver for Parallel Computers", Byrne,
   G. D., and Hindmarsh, A. C., Center for Applied Scientific Computing
   (CASC), UCRL-JC-132361, Rev. 1, May 1999.
 
 */
-class WRMS : public Generic {
+class NormWRMS : public Generic {
 
 public:
 
   //! Constructor where ATOL is a scalar
-  WRMS(double rtol, double atol, double BDFMultiplier = 1.0);
+  NormWRMS(double rtol, double atol, double BDFMultiplier = 1.0);
 
   //! Constructor where ATOL is a vector
-  WRMS(double rtol, Abstract::Vector& atol, double BDFMultiplier = 1.0);
+  NormWRMS(double rtol, Abstract::Vector& atol, double BDFMultiplier = 1.0);
 
   //! Destructor.
-  virtual ~WRMS();
+  virtual ~NormWRMS();
 
   virtual StatusType checkStatus(const Solver::Generic& problem);
   virtual StatusType getStatus() const;
@@ -91,6 +93,9 @@ public:
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
 private:
+
+  //! Current value of the 
+  double value;
 
   //! Relative tolerance for convergence.
   double rtol;

@@ -54,7 +54,7 @@ MaxIters::~MaxIters()
 StatusType MaxIters::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
-  int niters = problem.getNumIterations();
+  niters = problem.getNumIterations();
   if (niters >= maxiters)
     status = Failed;
   return status;
@@ -70,7 +70,7 @@ ostream& MaxIters::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  stream << "Number of Iterations < " << maxiters;
+  stream << "Number of Iterations: " << niters << " < " << maxiters;
   stream << endl;
  return stream;
 }

@@ -178,17 +178,19 @@ SOLVER = \
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
-        $(srcdir)/NOX_StatusTest_WRMS.H 
+        $(srcdir)/NOX_StatusTest_NormWRMS.H 
 
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
-        $(srcdir)/NOX_StatusTest_WRMS.C  
+        $(srcdir)/NOX_StatusTest_NormWRMS.C  
 
 
 UTILS_H = \
@@ -294,9 +296,10 @@ am_libnox_a_OBJECTS = NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_Solver_TrustRegionBased.$(OBJEXT) \
 	NOX_Solver_NonlinearCG.$(OBJEXT) \
 	NOX_StatusTest_Generic.$(OBJEXT) NOX_StatusTest_NormF.$(OBJEXT) \
+	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
-	NOX_StatusTest_MaxIters.$(OBJEXT) NOX_StatusTest_WRMS.$(OBJEXT) \
-	NOX_Utils.$(OBJEXT)
+	NOX_StatusTest_MaxIters.$(OBJEXT) \
+	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -324,7 +327,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Generic.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_MaxIters.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormF.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_WRMS.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormUpdate.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormWRMS.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -426,9 +430,11 @@ NOX_Solver_TrustRegionBased.$(OBJEXT): \
 NOX_Solver_NonlinearCG.$(OBJEXT): $(srcdir)/NOX_Solver_NonlinearCG.C
 NOX_StatusTest_Generic.$(OBJEXT): $(srcdir)/NOX_StatusTest_Generic.C
 NOX_StatusTest_NormF.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormF.C
+NOX_StatusTest_NormUpdate.$(OBJEXT): \
+	$(srcdir)/NOX_StatusTest_NormUpdate.C
 NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
 NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
-NOX_StatusTest_WRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_WRMS.C
+NOX_StatusTest_NormWRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormWRMS.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
@@ -460,7 +466,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_MaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormF.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_WRMS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormUpdate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormWRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
 
 distclean-depend:
@@ -682,6 +689,18 @@ NOX_StatusTest_NormF.obj: $(srcdir)/NOX_StatusTest_NormF.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormF.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormF.C`
 
+NOX_StatusTest_NormUpdate.o: $(srcdir)/NOX_StatusTest_NormUpdate.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormUpdate.C' object='NOX_StatusTest_NormUpdate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormUpdate.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormUpdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormUpdate.o `test -f $(srcdir)/NOX_StatusTest_NormUpdate.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_NormUpdate.C
+
+NOX_StatusTest_NormUpdate.obj: $(srcdir)/NOX_StatusTest_NormUpdate.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormUpdate.C' object='NOX_StatusTest_NormUpdate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormUpdate.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormUpdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormUpdate.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormUpdate.C`
+
 NOX_StatusTest_Combo.o: $(srcdir)/NOX_StatusTest_Combo.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Combo.C' object='NOX_StatusTest_Combo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_Combo.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_Combo.TPo' @AMDEPBACKSLASH@
@@ -706,17 +725,17 @@ NOX_StatusTest_MaxIters.obj: $(srcdir)/NOX_StatusTest_MaxIters.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_MaxIters.obj `cygpath -w $(srcdir)/NOX_StatusTest_MaxIters.C`
 
-NOX_StatusTest_WRMS.o: $(srcdir)/NOX_StatusTest_WRMS.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_WRMS.C' object='NOX_StatusTest_WRMS.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_WRMS.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_NormWRMS.o: $(srcdir)/NOX_StatusTest_NormWRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormWRMS.C' object='NOX_StatusTest_NormWRMS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_WRMS.o `test -f $(srcdir)/NOX_StatusTest_WRMS.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_WRMS.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormWRMS.o `test -f $(srcdir)/NOX_StatusTest_NormWRMS.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_NormWRMS.C
 
-NOX_StatusTest_WRMS.obj: $(srcdir)/NOX_StatusTest_WRMS.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_WRMS.C' object='NOX_StatusTest_WRMS.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_WRMS.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_NormWRMS.obj: $(srcdir)/NOX_StatusTest_NormWRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormWRMS.C' object='NOX_StatusTest_NormWRMS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_WRMS.obj `cygpath -w $(srcdir)/NOX_StatusTest_WRMS.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormWRMS.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormWRMS.C`
 
 NOX_Utils.o: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Utils.C' object='NOX_Utils.o' libtool=no @AMDEPBACKSLASH@

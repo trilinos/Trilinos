@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_StatusTest_NormF.H"
+#include "NOX_StatusTest_NormUpdate.H"
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -40,8 +40,9 @@
 using namespace NOX;
 using namespace NOX::StatusTest;
 
-NormF::NormF(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
+NormUpdate::NormUpdate(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unconverged),
+  updateVector(0),
   normType(ntype),
   scaleType(stype),
   toleranceType(Absolute),
@@ -51,8 +52,9 @@ NormF::NormF(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype
 {
 }
 
-NormF::NormF(double tolerance, ScaleType stype) :
+NormUpdate::NormUpdate(double tolerance, ScaleType stype) :
   status(Unconverged),
+  updateVector(0),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   toleranceType(Absolute),
@@ -62,8 +64,9 @@ NormF::NormF(double tolerance, ScaleType stype) :
 {
 }
 
-NormF::NormF(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
+NormUpdate::NormUpdate(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unconverged),
+  updateVector(0),
   normType(ntype),
   scaleType(stype),
   toleranceType(Relative),
@@ -77,8 +80,9 @@ NormF::NormF(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::
 }
 
 
-NormF::NormF(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
+NormUpdate::NormUpdate(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
   status(Unconverged),
+  updateVector(0),
   normType(Abstract::Vector::TwoNorm),
   scaleType(stype),
   toleranceType(Relative),
@@ -91,54 +95,75 @@ NormF::NormF(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
   trueTolerance = specifiedTolerance / initialTolerance;
 }
 
-NormF::~NormF()
+NormUpdate::~NormUpdate()
 {
+  delete updateVector;
 }
 
-StatusType NormF::checkStatus(const Solver::Generic& problem)
+StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
   const Abstract::Group& grp = problem.getSolutionGroup();
+  const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
+  const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
+
+  // On the first iteration, the old and current solution are the same so
+  // we should return the test as unconverged until there is a valid 
+  // old solution (i.e. the number of iterations is greater than zero).
+  int niters = problem.getNumIterations();
+  if (niters == 0) {
+    status = Unconverged;
+    normUpdate = -1.0;
+    return status;
+  } 
+
+  if (updateVector == 0) 
+    updateVector = curSoln.clone();
+
+  *updateVector = curSoln;
+
+  updateVector->update(-1.0, oldSoln, 1.0); 
+
   int n = grp.getX().length();
 
   switch (normType) {
     
   case NOX::Abstract::Vector::TwoNorm:
-    normF = grp.getNormF();
+    normUpdate = updateVector->norm();
     if (scaleType == Scaled)
-      normF /= sqrt(1.0 * n);
+      normUpdate /= sqrt(1.0 * n);
     break;
 
   default:
-    normF = grp.getF().norm(normType);
+    normUpdate = updateVector->norm(normType);
     if (scaleType == Scaled)
-      normF /= n;
+      normUpdate /= n;
     break;
 
   }
 
-  if (normF < trueTolerance)
+  if (normUpdate < trueTolerance)
     status = Converged;
 
   return status;
 }
 
-StatusType NormF::getStatus() const
+StatusType NormUpdate::getStatus() const
 {
   return status;
 }
 
-ostream& NormF::print(ostream& stream, int indent) const
+ostream& NormUpdate::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   if (toleranceType == Absolute) {
-    stream << "F-Norm (Absolute):  " << Utils::sci(normF) << " < " 
+    stream << "Update-Norm (Absolute):  " << Utils::sci(normUpdate) << " < " 
 	   << Utils::sci(trueTolerance);
   }
   else {
-    stream << "F-Norm (Relative):  " << Utils::sci(normF) << " < " 
+    stream << "Update-Norm (Relative):  " << Utils::sci(normUpdate) << " < " 
 	   << Utils::sci(trueTolerance);
   }
   stream << endl;

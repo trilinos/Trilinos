@@ -61,6 +61,9 @@ private:
   //! Maximum number of iterations
   int maxiters;
 
+  //! Current number of iterations
+  int niters;
+
   //! %Status
   StatusType status;
 

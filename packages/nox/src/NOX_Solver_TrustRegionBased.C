@@ -440,6 +440,15 @@ const Parameter::List& TrustRegionBased::getOutputParameters() const
 // protected
 void TrustRegionBased::printUpdate() 
 {
+  // Print the status test parameters at each iteration if requested  
+  if ((status == StatusTest::Unconverged) && 
+      (Utils::doPrint(Utils::OuterIterationStatusTest))) {
+    cout << Utils::fill(72) << "\n";
+    cout << "-- Status Test Results --\n";    
+    testPtr->print(cout);
+    cout << Utils::fill(72) << "\n";
+  }
+  
   double fmax = solnPtr->getF().norm(Abstract::Vector::MaxNorm);
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";

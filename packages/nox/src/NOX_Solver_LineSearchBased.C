@@ -231,6 +231,15 @@ void LineSearchBased::printUpdate()
   double norm_soln;
   double norm_step;
 
+  // Print the status test parameters at each iteration if requested  
+  if ((status == StatusTest::Unconverged) && 
+      (Utils::doPrint(Utils::OuterIterationStatusTest))) {
+    cout << Utils::fill(72) << "\n";
+    cout << "-- Status Test Results --\n";    
+    testptr->print(cout);
+    cout << Utils::fill(72) << "\n";
+  }
+
   // All processes participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
     norm_soln = solnptr->getNormF();
@@ -250,7 +259,8 @@ void LineSearchBased::printUpdate()
       cout << " (Failed!)";
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
-  
+
+  // Print the final parameter values of the status test
   if ((status != StatusTest::Unconverged) && 
       (Utils::doPrint(Utils::OuterIteration))) {
     cout << Utils::fill(72) << "\n";
