@@ -194,6 +194,47 @@ namespace LOCA {
       //! Print out the solution vector and continuation parameter
       void printSolution(const double conParam) const;
 
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::Abstract::Vector& x_, 
+			 const double conParam) const;
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //@}
+
+      /*!
+       * \brief Solve a bordered system of equations
+       */
+      /*!
+       * Compute the solution to the bordered system of equations
+       * \f[
+       *     \begin{bmatrix}
+       *        J & a \\
+       *        b^T & 0
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *        \text{vResult} \\
+       *        \text{sResult}
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *        \text{vInput} \\
+       *        \text{sInput}
+       *     \end{bmatrix}
+       * \f]
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyBorderedJacobianInverse(bool trans,
+				   NOX::Parameter::List& params,
+				   const NOX::Abstract::Vector& a,
+				   const NOX::Abstract::Vector& b,
+				   const NOX::Abstract::Vector& vInput,
+				   double sInput,
+				   NOX::Abstract::Vector& vResult,
+				   double& sResult) const;
+
       //@}
 
       /*! 
@@ -254,10 +295,6 @@ namespace LOCA {
 
       //! Print out a vector and a parameter
       void printSolution(const NOX::LAPACK::Vector& x_, 
-			 const double conParam) const;
-
-      //! Print out a vector and a parameter
-      void printSolution(const NOX::Abstract::Vector& x_, 
 			 const double conParam) const;
 
       //! %LAPACK interface to applyMassMatrix
