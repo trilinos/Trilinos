@@ -33,7 +33,32 @@ query functions. We anticipate that this problem can be overcome, and support
 will be added soon. 
 -------------------------------------------------------------------------------
 PROBLEMS EXISTING IN PARMETIS 
-(reported to ParMETIS development team at the University of Minnesota)
+(reported to the ParMETIS development team at the University of Minnesota)
+
+Name: tpwgts ignored for small graphs.
+Version: ParMETIS 3.0
+Symptom: incorrect output (partitioning)
+Description:
+   When using ParMETIS_V3_PartKway to partition into partitions
+   of unequal sizes, the input array tpwgts is ignored and
+   uniform-sized patrtitions are computed. This bug shows up when
+   (a) the number of vertices is < 10000 and (b) only one weight
+   per vertex is given (ncon=1).
+Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/10/30.
+Status: Acknowledged by GK. He said it will be fixed in a few weeks.
+
+
+Name: AdaptiveRepart crashes on partless test.
+Version: ParMETIS 3.0
+Symptom: run-time segmentation violation. 
+Description:
+   ParMETIS_V3_AdaptiveRepart crashes with a SIGSEGV if
+   the input array _part_ contains any value greater then
+   the desired number of partitions, nparts. This shows up
+   in Zoltan's "partless" test cases. 
+Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/12/02.
+Status: 
+
 
 Name: load imbalance tolerance
 Version: ParMETIS 2.0
@@ -43,8 +68,7 @@ Description:
    only be set at compile-time. With Zoltan it is
    necessary to be able to set this parameter at run-time.
 Reported: Reported to metis@cs.umn.edu on 19 Aug 1999.
-Status: George Karypis said it will be fixed in the next release.
-        No specific time frame was given.
+Status: Fixed in version 3.0.
 
 
 Name: no edges
@@ -58,8 +82,7 @@ Description:
    Apparently, the bug occurs both with NULL as input or
    a valid pointer to an array.
 Reported: Reported to metis@cs.umn.edu on 5 Oct 1999.
-Status: George Karypis says it will be fixed in the next release.
-        No specific time frame was given.
+Status: Fixed in version 3.0.
 
 
 Name: no vertices
@@ -71,7 +94,7 @@ Description:
    Again, it is unclear if NULL pointers are valid input.
 Reported: Reported to metis@cs.umn.edu on 6 Oct 1999.
 Status: George Karypis says it will be fixed in the next release.
-        No specific time frame was given.
+        Unclear if it has been fixed in version 3.0.
 
 
 Name: partgeom bug
@@ -82,7 +105,7 @@ Description:
    is zero (e.g., all nodes lie along the y-axis), a floating point
    exception can occur when the partgeom algorithm is used.
 Reported: kirk@cs.umn.edu in Jan 2001.
-Status: Kirk Schloegel says it will be fixed in the next release.
-        No specific time frame was given.
+Status: Fixed in version 3.0.
+
 -------------------------------------------------------------------------------
 
