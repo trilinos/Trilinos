@@ -97,8 +97,14 @@ int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels )
       exit(-1);
     }
 
+  info = (ML_Aggregate_Viz_Stats *)(ag->aggr_viz_and_stats);
+
+  /* return is VizAndStats have not been set before */
+
+  if (info == NULL) 
+    return 0;
+  
   for( i=0 ; i<MaxLevels ; i++ ) {
-    info = (ML_Aggregate_Viz_Stats *)(ag->aggr_viz_and_stats);
     if( info[i].x != NULL ) {
       ML_free( info[i].x );
       info[i].x = NULL;
@@ -1864,6 +1870,10 @@ int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag)
   
   info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
   
+  /* return if VizAndStats have not been set before */
+
+  if (info == NULL) return 0;
+
   /* ********************************************************************** */
   /* Clear memory allocated while creating the center of gravity (but not   */
   /* for the finest level, as those arrays are provided by the user). So I  */
