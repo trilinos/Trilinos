@@ -47,7 +47,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
   char *yo = "Zoltan_LB_Set_LB_Method";
   char msg[256];
   char *method_upper;
-  int error;
+  int error = ZOLTAN_OK;
 
   /*
    *  Compare method_name string with standard strings for methods.
@@ -67,8 +67,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
   if (error) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
       "Error returned from Zoltan_Clean_String; No method set.");
-    ZOLTAN_FREE(&method_upper);
-    return error;
+    goto End;
   }
 
   if (strcmp(method_upper, "RCB") == 0) {
@@ -79,11 +78,19 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
   else if (strcmp(method_upper, "OCTPART") == 0) {
+#ifdef ZOLTAN_OCT
     zz->LB.Method = OCTPART;
     zz->LB.LB_Fn = Zoltan_Octpart;
     zz->LB.Free_Structure = Zoltan_Oct_Free_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "OCTPART method selected but not compiled into Zoltan; "
+                       "Compile with ZOLTAN_OCT=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
   }
   else if (strcmp(method_upper, "PARMETIS") == 0) {
     zz->LB.Method = PARMETIS;
@@ -114,11 +121,19 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
   else if (strcmp(method_upper, "BSFC") == 0) {
+#ifdef ZOLTAN_BSFC
     zz->LB.Method = BSFC;
     zz->LB.LB_Fn = Zoltan_BSFC;
     zz->LB.Free_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "BSFC method selected but not compiled into Zoltan; "
+                       "Compile with ZOLTAN_BSFC=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
   }
   else if (strcmp(method_upper, "HSFC") == 0) {
     zz->LB.Method = HSFC;
@@ -128,11 +143,19 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
   else if (strcmp(method_upper, "HG") == 0) {
+#ifdef ZOLTAN_HG
     zz->LB.Method = HG;
     zz->LB.LB_Fn = Zoltan_HG;
     zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "HG method selected but not compiled into Zoltan; "
+                       "Compile with ZOLTAN_HG=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
   }
   else if (strcmp(method_upper, "NONE") == 0) {
     zz->LB.Method = NONE;
@@ -149,8 +172,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
   else {  
     sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ZOLTAN_FREE(&method_upper);
-    return (ZOLTAN_FATAL);
+    error = ZOLTAN_FATAL;
+    goto End;
   }
 
   if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS) {
@@ -158,9 +181,11 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
            zz->LB.Method, method_name);
   }
 
+End:
+
   ZOLTAN_FREE(&method_upper);
 
-  return (ZOLTAN_OK);
+  return (error);
 }
 
 #ifdef __cplusplus

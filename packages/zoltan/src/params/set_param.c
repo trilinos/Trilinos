@@ -28,18 +28,23 @@ extern "C" {
 #include "zz_util_const.h"
 #include "params_const.h"
 #include "rcb_const.h"
+#ifdef ZOLTAN_OCT
 #include "octupdate_const.h"
+#endif
 #include "parmetis_jostle_const.h"
 #include "reftree_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
+#ifdef ZOLTAN_BSFC
 #include "sfc_const.h"
+#endif
 #include "hsfc_const.h"
 #include "all_allo_const.h"
-#include "hsfc_const.h"
 #include "order_const.h"
+#ifdef ZOLTAN_HG
 #include "hg_const.h"
+#endif
 
 static int add_param(ZZ *, char *, char *);
 static int remove_param(ZZ *, char *);
@@ -50,13 +55,19 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_RCB_Set_Param,
        Zoltan_ParMetis_Set_Param,
        Zoltan_Jostle_Set_Param,
+#ifdef ZOLTAN_OCT
        Zoltan_Oct_Set_Param,
+#endif
        Zoltan_Reftree_Set_Param,
        Zoltan_RIB_Set_Param,
+#ifdef ZOLTAN_BSFC
        Zoltan_BSFC_Set_Param,
+#endif
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
+#ifdef ZOLTAN_HG
        Zoltan_HG_Set_Param,
+#endif
        /* Zoltan_Set_Machine_Param, */
        /*** Add your new parameter setting function here! ***/
        NULL /* Last entry _must_ be NULL! */

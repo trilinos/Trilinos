@@ -75,6 +75,11 @@ endif
 ##############################################################################
 # Process input flags
 ##############################################################################
+# Default values for inclusion of methods.
+ZOLTAN_HG = 1
+ZOLTAN_BSFC = 1
+ZOLTAN_OCT = 1
+
 GDEFINES	= 
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
@@ -173,6 +178,7 @@ RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
                   inertial1d.c inertial2d.c inertial3d.c shared.c
 RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
 
+ifdef ZOLTAN_OCT
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c migtags.c octree.c rootlist.c
 OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
@@ -180,19 +186,36 @@ OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
 		  migreg.h hsfc_hilbert_const.h migtags_const.h octree_const.h \
 		  rootlist_const.h SFC.h
+GDEFINES       += -DZOLTAN_OCT
+else
+OCT_CSRC	=
+OCT_INC		=
+endif
 
-SFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
+ifdef ZOLTAN_BSFC
+BSFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
 		  sfc_refine_partition_level.c sfc_refine_overloaded_bins.c
-SFC_INC		= hilbert_const.h sfc.h sfc_const.h
+BSFC_INC	= hilbert_const.h sfc.h sfc_const.h
+GDEFINES       += -DZOLTAN_BSFC
+else
+BSFC_CSRC	=
+BSFC_INC	=
+endif
 
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
+ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
 		  hg_part.c hg_sort.c hg_util.c zoltan_hg_readfile.c
 HG_INC 		= hg.h hypergraph.h
+GDEFINES       += -DZOLTAN_HG
+else
+HG_CSRC		=
+HG_INC		=
+endif
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
@@ -220,7 +243,11 @@ REFTREE_INC     = reftree_const.h
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c \
-		  dr_maps.c dr_eval.c dr_gnuplot.c dr_hypergraph_io.c
+		  dr_maps.c dr_eval.c dr_gnuplot.c 
+ifdef ZOLTAN_HG
+DR_CSRC        += dr_hypergraph_io.c
+endif
+
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h
@@ -245,7 +272,7 @@ endif
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(ORDER_CSRC) $(OCT_CSRC) $(SFC_CSRC) $(HSFC_CSRC) \
+		  $(ORDER_CSRC) $(OCT_CSRC) $(BSFC_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
@@ -435,7 +462,7 @@ zscript:
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../oct/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/bsfc'" >> zoltan_script
-	@for iii in $(SFC_CSRC) ; do \
+	@for iii in $(BSFC_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../bsfc/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/hsfc'" >> zoltan_script

@@ -291,11 +291,17 @@ static int read_mesh(
         return 0;
     }
   }
+#ifdef ZOLTAN_HG
   else if (pio_info->file_type == HYPERGRAPH_FILE) {
     if (!read_hypergraph_file(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_hypergraph_file\n");
         return 0;
     }
+  }
+#endif
+  else {
+    Gen_Error(0, "fatal: Invalid file type.\n");
+    return 0;
   }
   return 1;
 }
