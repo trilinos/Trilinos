@@ -1122,10 +1122,10 @@ report($SUMMARY);
         
         # subject (email)
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-            $subject .= "$hostOS - $hostName - ";
-            if (defined $comm) {$subject .= "$comm - ";}
-            if (defined $testName) {$subject .= "$testName - ";}
             $subject .= $codes[$code];
+            $subject .= " - $hostOS - $hostName - ";
+            if (defined $comm) {$subject .= "$comm - ";}
+            if (defined $testName) {$subject .= "$testName";}
         }    
         
         # filename (local report)
