@@ -29,9 +29,9 @@
 \section{Other Epetra Classes}
 \label{chap:epetra_others}
 
-Epetra includes a certain number of classes that can greatly help the
-development of parallel codes. In this Chapter we will recall the main
-usage of some of those classes:
+Epetra includes classes that facilitate the development of parallel
+codes. In this Chapter we will recall the main usage of some of those
+classes:
 \begin{itemize}
 \item Epetra\_Time (in Section \ref{sec:time});
 \item Epetra\_Flops (in Section \ref{sec:flops}).
@@ -46,8 +46,8 @@ usage of some of those classes:
 \subsection{Epetra\_Time}
 \label{sec:time}
 
-To retrieve elapsed and wall-clock time can be problematic because of
-several platform-dependent and language-dependent issues. To avoid those
+Retrieving elapsed and wall-clock time is problematic due to
+platform-dependent and language-dependent issues. To avoid those
 problems, Epetra furnishes the Epetra\_Time class.  Epetra\_Time is
 meant to insulate the user from the specifics of timing among a variety
 of platforms.  Using Epetra\_Time, it is possible to measure the elapsed
@@ -93,18 +93,17 @@ computational object, in the following way:
 x.SetFlopCounter(counter);
 y.SetFlopCounter(counter);
 \end{verbatim}
-Then, we perform the desired computations on Epetra objects (in this
-case, the vector-vector problem):
+Then, perform the desired computations on Epetra objects, like
 \begin{verbatim}
 x.Dot(y,&dotProduct);
 \end{verbatim}
-Finally we can extract the number of performed operations ans stored it
-in the double variable \verb!total_flops! as
+Finally, extract the number of performed operations and stored it in the
+double variable \verb!total_flops! as
 \begin{verbatim}
 total_flops = counter.Flops();
 \end{verbatim}
-which are the toal number of {\sl serial} flops. This will also reset
-the flop counter.
+This returns the total number of {\sl serial} flops, and then resets the
+flop counter to zero.
 
 
 Epetra\_Time objects can be used in conjunction with Epetra\_Flops
@@ -142,12 +141,12 @@ q dot z = 2
 \end{verbatim}
 
 \begin{remark} Operation count are serial count, and therefore keep
-  trace of local operations only.
+  track of local operations only.
 \end{remark}
 
 \begin{remark}
-  Each computational class has a \verb!Flops()! method, that can queried
-  for the flop count of that object.
+  Each computational class has a \verb!Flops()! method, that may be
+  queried for the flop count of that object.
 \end{remark}
 
 %%%
@@ -158,26 +157,23 @@ q dot z = 2
 \subsection{Epetra\_Operator and Epetra\_RowMatrix Classes}
 \label{sec:operator}
 
-Matrix-free methods can be easily introduced in the Epetra framework
-using one of the following two classes:
+Matrix-free methods are introduced in the Epetra framework using either
+of the following two classes:
 \begin{itemize}
 \item Epetra\_Operator;
 \item Epetra\_RowMatrix.
 \end{itemize}
-Technically, both classes are pure virtual classes (that is, they
-specify interfaces only), that enable the use of real-valued
-double-precision sparse matrices. Epetra\_RowMatrix, derived from
-Epetra\_Operator, is meant for matrices where the matrix entries are
-intended for row access, and it is currently implemented by
-Epetra\_CrsMatrix, Epetra\_VbrMatrix, Epetra\_FECrsMatrix, and
-Epetra\_FEVbrMatrix.
+Each class is a pure virtual class (specifing interfaces only), that
+enable the use of real-valued double-precision sparse matrices.
+Epetra\_RowMatrix, derived from Epetra\_Operator, is meant for matrices
+where the matrix entries are intended for row access, and it is
+currently implemented by Epetra\_CrsMatrix, Epetra\_VbrMatrix,
+Epetra\_FECrsMatrix, and Epetra\_FEVbrMatrix.
 
-In the following, we consider for instance how to apply a matrix to a
-vector without explicitly constructing the matrix. The matrix is the
-classical finite-difference discretization of a Laplace on a 1D grid
-with constant grid-size. For the sake of simplicity, we avoid the issues
-related to intra-process communication (hence this code can be run with
-one process only). 
+Consider for example the 3-point centered difference discretization of a
+one dimensional Laplacian on a regular grid. For the sake of simplicity,
+we avoid the issues related to intra-process communication (hence this
+code can be run with one process only).
 
 The first step is the definition of a class, here called
 \verb!TriDiagonalOperator!, and derived from the Epetra\_Operator class.
@@ -229,18 +225,20 @@ using the specified constructor:
 \begin{verbatim}
   TriDiagonalOperator TriDiagOp(-1.0,2.0,-1.0,Map);
 \end{verbatim}
-and we can apply this operator to a vector as:
+and
 \begin{verbatim}
   DiagOp.Apply(x,y);
 \end{verbatim}
+computes the discrete Laplacian on \verb!x! and returns the product in
+\verb!y!. 
 
-\TriExe{epetra/ex21.cpp} reportes the entire source code.
+\TriExe{epetra/ex21.cpp} reportes the complete source code.
 
 \begin{remark}
   The clear disadvantage of deriving Epetra\_Operator or
   Epetra\_RowMatrix with respect to use Epetra\_CrsMatrix or
   Epetra\_VbrMatrix, is that users must specify their communication
-  patterns for intra-process data exchange. For this purpose,
+  pattern for intra-process data exchange. For this purpose,
   Epetra\_Import classes can be used.  File \TriExe{epetra/ex22.cpp}
   shows how to extend \verb!ex21.cpp! to the multi-process case. This
   example makes use of the Epetra\_Import class to exchange data.
@@ -250,13 +248,13 @@ and we can apply this operator to a vector as:
 %%%
 %%%
 
-Another use of  Epetra\_Operator and Epetra\_RowMatrix is to allow
-support for user's defined matrix format. For instance, suppose that
-your code generates matrices in MSR format (detailed in the Aztec
+Another use of Epetra\_Operator and Epetra\_RowMatrix is to allow
+support for user defined matrix format. For instance, suppose that your
+code generates matrices in MSR format (detailed in the Aztec
 documentation). You can easily create an Epetra\_Operator, that applies
 the MSR format to Epetra\_MultiVectors. For the sake of simplicity, we
-will limit ourselves to the monoprocess case. Extentions to
-multi-processes case requires to handle ghost-nodes updates.
+will limit ourselves to the serial case. In the distributed, we must
+also handle ghost-node updates.
 
 As a first step, we create a class, derived from the Epetra\_Operator
 class,
@@ -299,9 +297,8 @@ private:
   int * bindx_; double * val_;
 }
 \end{verbatim}
-As stated by the fragment of code above, the constructor take the two
-MSR vectors, and an Epetra\_Map. The complete code is reported in
-\newline
+In this sketch of code, the constructor takes the two MSR vectors, and
+an Epetra\_Map. The complete code is reported in \newline
 \TriExe{epetra/ex25.cpp}.
 
 %%%
@@ -311,18 +308,17 @@ MSR vectors, and an Epetra\_Map. The complete code is reported in
 \subsection{Epetra\_LinearProblem}
 \label{sec:linear_problem}
 
-A linear problem of type $A X = B$ is defined by an
-Epetra\_LinearProblem class. This class required an Epetra\_RowMatrix or
-an Epetra\_Operator object (often an Epetra\_CrsMatrix or
-Epetra\_VbrMatrix), and two (multi-)vectors $X$ and $B$. $X$ must have
-been defined using a map equivalent to the DomainMap of $A$, while $B$
-using a map equivalent ot the RangeMap of $A$ (see
-Section~\ref{sec:sparse_mat}).
+A linear system $A X = B$ is defined by an Epetra\_LinearProblem class.
+The class requires an Epetra\_RowMatrix or an Epetra\_Operator object
+(often an Epetra\_CrsMatrix or Epetra\_VbrMatrix), and two
+(multi-)vectors $X$ and $B$. $X$ must have been defined using a map
+equivalent to the DomainMap of $A$, while $B$ using a map equivalent ot
+the RangeMap of $A$ (see Section~\ref{sec:sparse_mat}).
 
-Linear problems can be used to solve linear systems with iterative
-methods (typically, using AztecOO, covered in
-Chapter~\ref{chap:aztecoo}), or with direct solvers (typically, using
-Amesos, described in Chapter~\ref{chap:amesos}. 
+Linear systems may be solved either by iterative methods (typically,
+using AztecOO, covered in Chapter~\ref{chap:aztecoo}), or by direct
+solvers (typically, using Amesos, described in
+Chapter~\ref{chap:amesos}).
 
 Once the linear problem has been defined, the user can:
 
@@ -335,6 +331,7 @@ Once the linear problem has been defined, the user can:
 \item change $A$, using \verb!SetOperator(&A)!.
 \end{itemize}
 
+Please refer to Table~\ref{tab:linear_sys} for a summary of the methods.
 
 \begin{table}
 \begin{center}
@@ -351,10 +348,10 @@ SetOperator (Epetra\_Operator *A) \\
 Set Operator A of linear problem AX = B using an Epetra\_Operator.  \\
 \tt void 
 SetLHS (Epetra\_MultiVector *X) \\
-Set left-hand-side X of linear problem AX = B. \\
+Set left-hand side X of linear problem AX = B. \\
 \tt void 
 SetRHS (Epetra\_MultiVector *B) \\
-Set right-hand-side B of linear problem AX = B.  \\
+Set right-hand side B of linear problem AX = B.  \\
 \tt int 
 CheckInput () const \\
 Check input parameters for existence and size consistency. \\
@@ -385,7 +382,7 @@ Get operator symmetry bool. \\
 \hline
 \end{tabular}
 \caption{Methods of {\tt Epetra\_LinearProblem}}
-\label{tab:distr_vec}
+\label{tab:linear_sys}
 \end{center}
 \end{table}
 

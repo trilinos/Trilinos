@@ -36,7 +36,19 @@ extensively used in the examples of the later chapters:
   Section~\ref{sec:triutils:CLP});
 \item the Triutils matrix generator (in \ref{sec:triutils:gallery}).
 \end{itemize}
-The reader not interested in the examples may decide to skip this chapter.
+%Readers not interested in the examples may decide to skip this chapter.
+Some readers may choose to skip this Chapter because theri application
+is their example. However, it does help to find the test matrices
+closest to the ones in their code for severla reasons.  Using
+well-chosen matrices, simple but sufficiently close to the final
+application, one can quickly test the performances of a given set of
+algorithms on the problem of interest, using a serial or a parallel
+environment. Several test matrices exhibit a known behavior (e.g.,
+theory predicts the behavior of the condition number), and can be used
+to validate algorithms. Besides, as they can be quickly generate with
+few code lines, experts may use them to optimize or fix thier code.
+Therefore, a short code using a gallery matrix may be used to
+communicate with developers.
 
 %%%
 %%%
@@ -45,8 +57,9 @@ The reader not interested in the examples may decide to skip this chapter.
 \subsection{Trilinos\_Util::CommandLineParser}
 \label{sec:triutils:CLP}
 
-\verb!Trilinos_Util::CommandLineParser! is a class to parse the command
-line.  With this class, it is easy to handle input line arguments and
+Trilinos is big. To avoid several compilations, one can use the \newline
+\verb!Trilinos_Util::CommandLineParser! class to parse the command line.
+With this class, it is easy to handle input line arguments and
 shell-defined variables. For instance, the user can write
 \begin{verbatim}
 [msala:triutils]>ex2.exe -nx 10 -tol 1e-6 -solver=cg -output
@@ -80,13 +93,13 @@ the following ways:
 \item \verb!-tolerance=1e-12! (with \verb!=! sign and no spaces)
 \end{itemize}
 
-Option names must begin with one or more dashes (`\verb!-!'). Each option
-cannot have more than one value.
+Option names must begin with one or more dashes (`\verb!-!'). Options
+may have at most one value.
  
 If option name is not found in the database, the default value is
 returned. If needed, the user can also specify a default value to return
-when the option name is not found in the database. Method
-\verb!HaveOption! can be used to query the database for an option.
+when the option name is not found in the database. The method
+\verb!HaveOption! will query the database for an option.
 
 File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
  
@@ -97,9 +110,8 @@ File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
 \subsection{Trilinos\_Util::CrsMatrixGallery}
 \label{sec:triutils:gallery}
 
-\verb!Trilinos_Util::CrsMatrixGallery! is a class to Epetra\_CrsMatrix
-and Epetra\_LinearProblem. It is meant to provide functionalities
-similar to the MATLAB's \verb!gallery! function\footnote{Many of the
+The class \verb!Trilinos_Util::CrsMatrixGallery! provides functions
+similar to the MATLAB's \verb!gallery!  function\footnote{Many of the
   matrices that can be created using Trilinos\_Util::CrsMatrixGallery
   are equivalent or simiilar to those provided by the
   MATLAB\copyright~function {\tt gallery}. In these cases, the reader is
@@ -107,52 +119,51 @@ similar to the MATLAB's \verb!gallery! function\footnote{Many of the
   matrices' properties.}.
 
 A typical constructor requires the problem type and an Epetra\_Comm, and
-it is followed by a set of instructions to specify the problem. For
-instance, we may have:
+is followed by a set of instructions to specify the problem.  The
+following example creates a matrix corresponding to the discretization
+of a 2D Laplacian on a Cartesian grid with 100 points:
 \begin{verbatim}
 Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", Comm);
 Gallery.set("problem_size",100);
 Gallery.set("map_type","linear");
 Gallery.set("solution_type","random");
 \end{verbatim}
-which creates a matrix corresponding to the discretization of a 2D
-Laplacian on a Cartesian grid with 100 points. The nodes are decomposed
-linearly, and the exact solution is a random vector.
+The nodes are decomposed linearly, and the exact solution is a random
+vector.
 
-As a second example, we show here how to read a matrix stored in
-Harwell/Boeing format:
+The next example will read a matrix stored in Harwell/Boeing format:
 \begin{verbatim}
 Trilinos_Util::CrsMatrixGallery Gallery("hb", Comm);
 Gallery.set("matrix_name","bcsstk14.rsa");
 Gallery.set("map_type","greedy");
 \end{verbatim}
-This example code will read matrix (and, if available, solution and
-right-hand side) from the file \verb!bcsstk14.rsa!, and will partition
-the matrix across the processes using a gredy algorithm.
+The example reads the matrix (and, if available, solution and right-hand
+side) from the file \verb!bcsstk14.rsa!, and partitions the matrix
+across the processes using a simple greedy algorithm.
 
 \bigskip
 
 Once all the required parameters have been specified, the user can get a
 pointer to the constructed Epetra\_CrsMatrix, to the exact and starting
-solution, and to the right-hand side (all Epetra\_Vector's) by using
+solution, and to the right-hand side (all Epetra\_Vector's):
 \begin{verbatim}
 A = Gallery.GetMatrix();
 ExactSolution = Gallery.GetExactSolution();
 RHS = Gallery.GetRHS();
 StartingSolution = Gallery.GetStartingSolution();
 \end{verbatim}
-and a pointer to the Epetra\_LinearProblem as
+An Epetra\_LinearProblem is defined by
 \begin{verbatim}  
 Epetra_LinearProblem Problem(A,StartingSolution,RHS);
 \end{verbatim}
-At this point, one can for instance solve the linear problem as
+Next one may use AztecOO to solve the linear system:
 \begin{verbatim}  
 AztecOO Solver(Problem);
 Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );  
 Solver.Iterate(1000,1E-9);
 \end{verbatim}
-Using Trilinos\_Util::MatrixGallery, one can easily compute the true
-residual and the difference between computed and exact solution, as
+Using Trilinos\_Util::MatrixGallery, one computes the true
+residual and the difference between computed and exact solution:
 \begin{verbatim} 
 double residual;
 Gallery.ComputeResidual(residual);
@@ -185,7 +196,7 @@ reported in Table~\ref{tab:triutils:crs}.
     \\
     {\tt GetLinearProblem()} \\
     {Returns a pointer to the internally
-      stored  Epetra\_LinearProblem for the Vbr matrix).} \\
+      stored  Epetra\_LinearProblem for the VBR matrix).} \\
     \\
     {\tt GetMap()}\\
     {Returns a pointer to the internally
@@ -206,7 +217,7 @@ If \verb!UseSparse! is true, the matrix is created in sparse format
 
 \medskip
 
-The main options are here reported.
+To sum up, the main options review here are:.
 
 \vskip .1 in
 
@@ -251,9 +262,9 @@ The main options are here reported.
  {\tt linear} & {Create a linear map. Elements are divided into
   continuous chunks among the processors. This is the default value.} \\
 {\tt box} & {Used for problems defined on Cartesian grids over a
-  square. The domain subdivided into {\tt mx x my} subdomains.  {\tt mx}
+  square. The domain is subdivided into {\tt mx x my} subdomains.  {\tt mx}
   and {\tt my} are automatically computed if the total number or
-  processes is a square number. Alternatively, {\tt
+  processes is a perfect square. Alternatively, {\tt
     mx} and {\tt my} are specified via {\tt Set("mx",IntValue)} and {\tt
     Set("my",IntValue)}.} \\
 {\tt interlaced} & {Elements are subdivided so that element i is
@@ -264,7 +275,7 @@ The main options are here reported.
 \\
 \hline
   \end{tabular}
-  \caption{Available options for {\tt map\_type}.}
+  \caption{Available {\tt map\_type} optins.}
   \label{tab:triutils:map}
 \end{table}
 
@@ -281,20 +292,19 @@ The main options are here reported.
   computed as $x(1-x)y(1-y)$. \\
     \hline
   \end{tabular}
-  \caption{Available options for {\tt exact\_solution}.}
+  \caption{Available {\tt exact\_solution} options.}
   \label{tab:triutils:exact}
 \end{table}
 
-A list of currently avaialble problems is reported below. By notation,
-\verb!IntValue! refers to a generic positive integer, {\tt
-  a,b,c,d,e,f,g} to double-precision values or the Epetra\_Vector.
-defined on the map \verb!Gallery.GetMap()!. In the latter case, vector
-elements {\tt i} will be use to define the specified coefficient for row
-{\tt i}.  Note that some matrices are dense, but still stored as
-Epetra\_CrsMatrix. The generic $(i,j)$ element of a given matrix is
-$A_{i,j}$ (for simplicity, we suppose that indices start from
-1\footnote{It is understood that, in the actual implementation, indices
-  start from 0.}). $n$ represents the matrix size.
+A list of currently avaialble problems is reported below. We use the
+following notation.  \verb!IntValue! always refer to a generic positive
+integer. The following symbols {\tt a,b,c,d,e,f,g} always refer to
+double-precision values.  Note that some matrices are dense, but still
+stored as Epetra\_CrsMatrix, a sparse matrix format. The generic $(i,j)$
+element of a given matrix is $A_{i,j}$ (for simplicity, we suppose that
+indices start from 1\footnote{It is understood that, in the actual
+  implementation, indices start from 0.}). $n$ represents the matrix
+size.
 
 \vskip .1 in
 
@@ -304,8 +314,8 @@ $A_{i,j}$ (for simplicity, we suppose that indices start from
 
 
 \choicebox{\tt cauchy}{Creates a particular instance of a Cauchy matrix
-  with elements $A_{i,j} = 1/(i+j)$ Explicit formulas are known for the
-  inverse and determinand of a Cauchy matrix. For this particular Cauchy
+  with elements $A_{i,j} = 1/(i+j)$. Explicit formulas are known for the
+  inverse and determinant of a Cauchy matrix. For this particular Cauchy
   matrix, the determinant is nonzero and the matrix is totally
   positive.}
 
@@ -366,7 +376,7 @@ $A_{i,j}$ (for simplicity, we suppose that indices start from
   {\tt Set("a",DoubleVal)}. The default value is 0.1. The problem size
   is specified as for {\tt eye}.}
     
-\choicebox{\tt kms}{Create the $n \times n$ Kac-Murdock-Szego
+\choicebox{\tt kms}{Create the $n \times n$ Kac-Murdock-Szeg\"o
   Toepliz matrix such that $A_{i,j} = \rho^{|i-j|}$ (for real $\rho$
   only).  Default value is $\rho= 0.5$, or can be set as {\tt
     Set("a",value)}. The inverse of this matrix is tridiagonal, and
@@ -382,7 +392,7 @@ $A_{i,j}$ (for simplicity, we suppose that indices start from
 \choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the
   stencil of a 2D Laplacian operator on a structured Cartesian grid.
   The problem size is specified using {\tt Set("problem size",
-    IntValue)}.  In this case, IntValue must be a square number.
+    IntValue)}.  In this case, IntValue must be a perfect square.
   Alternatively, one can set the number of nodes along the x-axis and
   y-axis, using {\tt Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
 
@@ -408,7 +418,7 @@ $A_{i,j}$ (for simplicity, we suppose that indices start from
   \right. .
   \]
   This matrix has three properties: is totally nonnegative, the inverse
-  is tridiagonal and esplicitly known, The condition number is bounded
+  is tridiagonal and explicitly known, The condition number is bounded
   as $ n \le cond(A) \le 4*n$. The problem size is set as for {\tt
     eye}.}
 
@@ -434,8 +444,8 @@ A_{i,j} = \left\{ \begin{array}{cc}
 \end{array}
 \right. .
 \]
-The value of $\alpha$ can be set as {\tt Set("a",value)}, and it is
-defaulted to 1. This matrix is singular for $\alpha = 0$ or $-n$.}
+The value of $\alpha$ can be set as {\tt Set("a",value)}, and it
+defaults to 1. This matrix is singular for $\alpha = 0$ or $-n$.}
 
 
 \choicebox{\tt recirc\_2d}{Returns a matrix corresponding to the
@@ -443,9 +453,9 @@ defaulted to 1. This matrix is singular for $\alpha = 0$ or $-n$.}
   \[
 - \mu \Delta u + (v_x,v_y) \cdot \nabla u = f
 \]
-on the unitary square, with homogeneous Dirichlet boundary
-conditions. A standard 5-pt formula is used to discretize the diffusive
-term, and a simple upwind for the convective term. Here,
+on the unit square, with homogeneous Dirichlet boundary conditions. A
+standard 5-pt stencil is used to discretize the diffusive term, and a
+simple upwind stencil is used for the convective term. Here,
 \[
 v_x = ( y - 1/2 ) V, \quad \quad \quad v_y = ( 1/2 - x ) V
 \]
@@ -470,9 +480,9 @@ specified as in {\tt laplace\_3d}.}
   \[
 - \mu \Delta u + (v_x,v_y) \cdot \nabla u = f
 \]
-on the unitary square, with homogeneous Dirichlet boundary
-conditions. A standard 5-pt formula is used to discretize the diffusive
-term, and a simple upwind for the convective term. Here,
+on the unit square, with homogeneous Dirichlet boundary conditions. A
+standard 5-pt stencil is used to discretize the diffusive term, and a
+simple upwind stencil is used for the convective term. Here,
 \[
 v_x = cos(\alpha) V, \quad \quad \quad v_y =  sin(\alpha) V 
 \]
@@ -508,7 +518,7 @@ reported in Table~\ref{tab:triutils:vbr}.
     \hline
     {\tt GetVrbMatrix()}\\
     {Returns a pointer to the internally
-  stored Vbr matrix.} \\
+  stored VBR matrix.} \\
 \tt GetVrbExactSolution() \\
 {Returns a pointer to the internally
   stored exact solution vector (as an Epetra\_Vector).} \\
@@ -520,7 +530,7 @@ reported in Table~\ref{tab:triutils:vbr}.
   stored right-hand side (as an Epetra\_Vector).} \\
 {\tt GetVrbLinearProblem()} \\
  {Returns a pointer to the internally
-  stored  Epetra\_LinearProblem for the Vbr matrix).} \\
+  stored  Epetra\_LinearProblem for the VBR matrix).} \\
 {\tt GetBlockMap()}\\
  {Returns a pointer to the internally
   stored Epetra\_BlockMap.} \\
@@ -591,7 +601,7 @@ Matrix gallery option names shall be specified with an additional
 leading dash (``\verb!-!''). Options values will be specified as usual.
 
 \begin{remark}
-  Most of the examples reported in the following chapters use both
+  Most of the examples reported in the following chapters use both\newline
   Trilinos\_Util::CommandLineParser and Trilinos\_Util::CrsMatrixGallery
   to define the distributed matrix. The user is encouraged to test a
   given method using matrices with different numerical properties.

@@ -29,14 +29,14 @@
 \section{Working with Epetra Vectors}
 \label{chap:epetra_vec}
 
-A vector is a fundamental data structure requires by almost all
+A vector is a fundamental data structure required by almost all
 numerical methods. Within the Trilinos framework, vectors are usually
 constructed starting from Epetra Classes.
 
 An Epetra vector may store either double-precision values (like the
 solution of a PDE problem, the right-hand side of a linear system, or
-the nodal coordinates), or integer data values (such as a set of indexes
-or global IDs).
+nodal coordinates), or integer data values (such as a set of indexes or
+global IDs).
 
 An Epetra vector may be either {\em serial} or {\em distributed}. Serial
 vectors are usually small, so that it is not convenient to distribute
@@ -56,9 +56,9 @@ During the Chapter, the user will be introduced to:
 \item The fundamental Epetra communicator object, Epetra\_Comm (in
   Section~\ref{sec:comm});
 \item The Epetra\_Map object (in Section~\ref{sec:map});
-\item The creation and assembling of Epetra vectors (in
+\item The creation and assembly of Epetra vectors (in
   Sections~\ref{sec:serial_vec} and \ref{sec:distr_vec}). The sections
-  also present common vector operations, as dot products, fill with
+  also present common vector operations, such as dot products, fill with
   constant or random values, vector scalings and norms;
 \item A tool to redistributing vectors across processes (in
   Section~\ref{sec:import_export}).
@@ -114,11 +114,12 @@ call, are likely to be the {\em only} MPI calls users have to explicitly
 introduce in their code.
 
 Most of Epetra\_Comm methods are similar to MPI functions. The class
-provides methods as \verb!MyPID()!, \verb!NumProc()!, \verb!Barrier()!,
-\verb!Broadcast()!, \verb!SumAll()!, \verb!GatherAll()!,
-\verb!MaxAll()!, \verb!MinAll()!, \verb!ScanSum()!.  For instance, the
-number of processes in the communicator, \verb!NumProc!, and the ID of
-the calling process, \verb!MyPID!, can be obtained as
+provides methods such as \verb!MyPID()!, \verb!NumProc()!,
+\verb!Barrier()!, \verb!Broadcast()!, \verb!SumAll()!,
+\verb!GatherAll()!, \verb!MaxAll()!, \verb!MinAll()!, \verb!ScanSum()!.
+For instance, the number of processes in the communicator,
+\verb!NumProc!, and the ID of the calling process, \verb!MyPID!, can be
+obtained by
 \begin{verbatim}
 int NumProc = Comm.NumProc();
 int MyPID = Comm.MyPID();
@@ -157,10 +158,11 @@ The minimum local index value on the calling process. \\
 The maximum local index value on the calling process. \\
 \\
  \verb!LinearMap()! \\
-Returns true if the elements are distributed linear across processes,
+Returns true if the elements are distributed linearly across processes,
 i.e., process 0 gets the first n/p elements, process 1 gets the next
 n/p elements, etc. where n is the number of elements and p is the number
 of processes.  \\
+\\
 \bf \verb!DistributedGlobal()! \\
 Returns true if the element space of the map spans more than one
 process. This will be true in most cases, but will be false in serial
@@ -184,11 +186,11 @@ Very often, various distributed objects such as matrices or vectors,
 identically distribute elements among the processes.  The distribution
 of elements (or points) is here called a {\sl map}, and its actual
 implementation is given by the Epetra\_Map class (or, more precisely, by
-an Epetra\_BlockMap).  Basically, the class handles the definition of:
+an Epetra\_BlockMap).  Basically, the class handles the definition of the:
 \begin{itemize}
 \item global number of elements (called \verb!NumGlobalElements!);
-\item the local number of elements (called \verb!NumMyElements!);
-\item the global numbering of all local elements (an integer vector of size
+\item local number of elements (called \verb!NumMyElements!);
+\item global numbering of all local elements (an integer vector of size
   \verb!NumMyElements!, called \verb!MyGlobalElements!).
 \end{itemize}
 
@@ -197,14 +199,14 @@ specify the global number of elements, and let Epetra decide:
 \begin{verbatim}
 Epetra_Map Map(NumGlobalElements,0,Comm);
 \end{verbatim}
-In this case, the constructor takes the global dimension of the vector
-(here, \verb!NumGlobalElements!), the base index\footnote{The index base
-  is the index of the lowest order element, and is usually, {\tt 0} for
-  C or C++ arrays, and {\tt 1} for FORTRAN arrays. Epetra can indeed
-  accept any number as index base. However, some other Trilinos package
-  may require a C-style index base.}, and an \verb!Epetra_Comm!  object
-(introduced in Section~\ref{sec:comm}). As a result, each process will
-be assigned a contiguous set of elements.
+In this case, the constructor takes the global dimension of the vector,
+the base index\footnote{The index base is the index of the lowest order
+  element, and is usually, {\tt 0} for C or C++ arrays, and {\tt 1} for
+  FORTRAN arrays. Epetra can indeed accept any number as index base.
+  However, some other Trilinos package may require a C-style index
+  base.}, and an \verb!Epetra_Comm!  object (introduced in
+Section~\ref{sec:comm}). As a result, each process will be assigned a
+contiguous set of elements.
 
 A second way to build the Epetra\_Comm object is to furnish the local
 number of elements:
@@ -267,7 +269,7 @@ The class Epetra\_Map is derived from Epetra\_BlockMap. The class keeps
 information that describes the distribution of objects that have block
 elements (for example, one or more contiguous entries of a vector). This
 situation is common in applications like multiple-unknown PDE problems.
-A variety of constructors are available for the class. An example of
+A variety of constructors are available for the class. An example of the
 use of block maps is reported in \TriExe{epetra/ex23.cpp}.
 
 \smallskip
@@ -343,13 +345,13 @@ The vector can be filled using the \verb![]! or \verb!()!  operators.
 Both methods return a reference to the specified element of the vector.
 However, using \verb!()!, bound checking is enforced. Using using
 \verb![]!, no bounds checking is done unless Epetra is compiled with
-\verb!EPETRA_ARRAY_BOUNDS_CHECK!.
+\newline \verb!EPETRA_ARRAY_BOUNDS_CHECK!.
 
 \begin{remark}
   To construct replicated Epetra objects on distributed memory machines,
-  the user may consider the class Epetra\_LocalMap. This class allows
-  the constructions of those replicated local objects and keeps
-  information that describe the distribution.
+  the user may consider the class Epetra\_LocalMap. The class constructs
+  the replicated local objects and keeps information that describe the
+  distribution.
 \end{remark}
 
 The file \TriExe{epetra/ex4.cpp} illustrates basic operations on dense
@@ -362,7 +364,7 @@ vectors.
 \subsection{Creating and Assembling a Distributed Vector}
 \label{sec:distr_vec}
 
-A distributed object are entities whose elements are partitioned across
+A distributed object is an entity whose elements are partitioned across
 more than one process. Epetra's distributed objects (derived from the
 Epetra\_DistObject class) are created from a Map. For example, a
 distributed vector can be constructed starting from an Epetra\_Map (or
@@ -372,7 +374,7 @@ Epetra_Vector x(Map);
 \end{verbatim}
 (We shall see that this dependency on Map objects holds for all
 distributed Epetra objects. ) This constructor allocates space for the
-vector and set all the elements to zero. A copy constructor can be used
+vector and sets all the elements to zero. A copy constructor may be used
 as well:
 \begin{verbatim}
 Epetra_Vector y(x);
@@ -387,14 +389,14 @@ Note the word \verb!Copy! is input to the constructor. It specifies the
 Epetra\_CopyMode, and refers to many Epetra objects. In fact, Epetra
 allows two data access modes:
 \begin{enumerate}
-\item \verb!Copy!: Means to allocate memory and copy the user-provided
-  data. In this case, the user data is not needed be the new
-  Epetra\_Vector after construction;
-\item \verb!View!: Means to create a ``view'' of the user's data. The
-  user data is assumed to remain untouched for the life of the vector
-  (or modified carefully). From a data hiding perspective, View mode is
-  very dangerous. But is is often the only way to get the required
-  performances. Therefore, users are strongly encouraged to develop code
+\item \verb!Copy!: allocate memory and copy the user-provided data. In
+  this mode, the user data is not needed be the new Epetra\_Vector after
+  construction;
+\item \verb!View!: create a ``view'' of the user's data. The user data
+  is assumed to remain untouched for the life of the vector (or modified
+  carefully). From a data hiding perspective, View mode is very
+  dangerous. But is is often the only way to get the required
+  performance. Therefore, users are strongly encouraged to develop code
   using the Copy mode. Only use View mode as needed in a secondary
   performance optimization phase. To use the View mode, the user has to
   define the vector entries using a (double) vector (of appropriate
@@ -420,25 +422,21 @@ values, with indexes in the {\em local} index space;
 \verb!ReplaceGlobalValues! or \verb!SumIntoGlobalValues! will replace or
 sum values into a vector with a given indexed list of values in the {\em
   global} index space (but locally owned). It is important to note that
-no process may set vector entries locally owner by another process. In
-other words, both global and local insert and replace functions refers
-to the part of a vector assigned to the calling process. Intra-process
+no process may set vector entries locally owned by another process. In
+other words, both global and local insert and replace functions refer to
+the part of a vector assigned to the calling process. Intra-process
 communications can be (easily) performed using Import and Export
 objects, covered in Section~\ref{sec:import_export}.
 
-The user might require (for example, for reasons of computationally
+The user might need (for example, for reasons of computational
 efficiency) to work on Epetra\_Vectors as if they were \verb!double *!
-pointers.  File 
-\newline
-\TriExe{epetra/ex5.cpp} 
-\newline
-shows the use of \verb!ExtractCopy()!.
-\verb!ExtractCopy! does not give access to the vector elements, but only
-copies them into the user-provided array.  The user must commit those
-changes to the vector object, using, for instance,
-\verb!ReplaceMyValues!.
+pointers.  File \newline \TriExe{epetra/ex5.cpp} \newline shows the use
+of \verb!ExtractCopy()!.  \verb!ExtractCopy! does not give access to the
+vector elements, but only copies them into the user-provided array.  The
+user must commit those changes to the vector object, using, for
+instance, \verb!ReplaceMyValues!.
 
-A further, computationally efficient way, is to extract a ``view'' of the
+A further computationally efficient way, is to extract a ``view'' of the
 (multi-)vector internal data.  This can be done as follows, using method
 \verb!ExtractView()!. Let \verb!z! be an Epetra\_Vector. 
 \begin{verbatim}
@@ -453,19 +451,19 @@ data of the Epetra\_Vector \verb!x!.  An example of the use of
 \begin{remark}
   The class Epetra\_Vector is derived from Epetra\_MultiVector. Roughly
   speaking, a multi-vector is a collection of one or more vectors, all
-  having the same length and distribution. The reader may look to the
-  file \TriExe{epetra/ex7.cpp} for an example of use of multi-vectors.
+  having the same length and distribution.  File \TriExe{epetra/ex7.cpp}
+  illustrates use of multi-vectors.
 \end{remark}
 
 The user can also consider the function \verb!ResetView!, which allows a
 (very) light-weight replacement of multi-vector values, created using
 the Epetra\_DataMode \verb!View!. Note that no checking is performed to
 see if the values passed in contain valid data. This method can be
-extremely useful in situation where a vector is needed for use with an
-Epetra operator or matrix, and the user is not passing in a
+extremely useful in the situation where a vector is needed for use with
+an Epetra operator or matrix, and the user is not passing in a
 multi-vector. Use this method with caution as it could be extremely
-dangerous.
-A simple example is reported in \newline \TriExe{epetra/ex8.cpp}
+dangerous.  A simple example is reported in \newline
+\TriExe{epetra/ex8.cpp}
 
 \medskip
 
@@ -525,7 +523,7 @@ multi-vector with constant value \\
 \subsection{Epetra\_Import and Epetra\_Export classes}
 \label{sec:import_export}
 
-Epetra\_Import and Epetra\_Export are two classes meant for efficient
+The Epetra\_Import and Epetra\_Export classes are meant for efficient
 importing of off-processors elements. Epetra\_Import and Epetra\_Export
 are used to construct a communication plan that can be called repeatedly
 by computational classes such the Epetra multi-vectors of the Epetra
@@ -545,15 +543,15 @@ Epetra\_Import or Epetra\_Export is appropriate.
 
 \medskip
 
-To better illustrate the functionalities of these two classes, we
-consider the following example. Suppose that the double-precision
-distributed vector \verb!x! of global length 4, is distributed over two
-processes. Process 0 own elements 0,1,2, while process 1 owns elements
-1,2,3. This means that elements 1 and 2 are replicated over the two
-processes. Suppose that we want to bring all the components of \verb!x!
-to process 0, summing up the contributions of elements 1 and 2 from the
-2 processes. This is done in the following example (the complete code is
-reported in \TriExe{epetra/ex9.cpp}).
+To better illustrate the use of these two classes, we present the
+following example. Suppose that the double-precision distributed vector
+\verb!x! of global length 4, is distributed over two processes. Process
+0 own elements 0,1,2, while process 1 owns elements 1,2,3. This means
+that elements 1 and 2 are replicated over the two processes. Suppose
+that we want to bring all the components of \verb!x!  to process 0,
+summing up the contributions of elements 1 and 2 from the 2 processes.
+This is done in the following example (the complete code is reported in
+\TriExe{epetra/ex9.cpp}).
 \begin{verbatim}
   int NumGlobalElements = 4; // global dimension of the problem
 

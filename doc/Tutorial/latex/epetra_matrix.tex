@@ -40,8 +40,8 @@ Other matrices, like for instance the linear system matrices for
 large-scale computing, must be distributed to obtain scalability.  For
 distributed sparse matrices, the basic Epetra class is
 Epetra\_RowMatrix, meant for double-precision matrices with row access.
-Epetra\_RowMatrix is a pure virtual class.  Various classes are derived
-\verb!Epetra_RowMatrix!. Among them, here we recall:
+Epetra\_RowMatrix is a pure virtual class.  The classes that are derived
+from \verb!Epetra_RowMatrix! include:
 \begin{itemize}
 \item \verb!Epetra_CrsMatrix! for point matrices;
 \item \verb!Epetra_VbrMatrix! for block matrices (that is, for
@@ -52,8 +52,8 @@ Epetra\_RowMatrix is a pure virtual class.  Various classes are derived
   matrices arising from FE discretizations.
 \end{itemize}
 
-This Chapter will show the fundamental Trilinos capabilities to work
-with matrices. During the Chapter, the user will be introduced to:
+The purpose of the Chapter is to review the allocation and assembling of
+different types of matrices as follows:
 \begin{itemize}
 \item The creation of (serial) dense matrices (in Section~\ref{sec:dense_mat});
 \item The creation of sparse point matrices (in Section~\ref{sec:sparse_mat});
@@ -86,11 +86,10 @@ D.Shape(n,m);
 \end{verbatim}
 ({\tt D} could be reshaped using \verb!ReShape()!.)
 
-Epetra\_SerialDenseMatrix are stored in a column-major order in the
+An Epetra\_SerialDenseMatrix is stored in a column-major order in the
 usual FORTRAN style. This class is built on the top of the BLAS library,
 and is derived from Epetra\_Blas (not covered in this tutorial).
-Epetra\_SerialDenseMatrix is intended to provide a very basic support
-for dense rectangular matrices.
+Epetra\_SerialDenseMatrix supports dense rectangular matrices.
 
 \smallskip
 
@@ -120,31 +119,29 @@ cout << AtimesB;
 \verb!Multiply()! performs the operation $C = \alpha A^{opA} + \beta
 B^{opA}$, where $A$ replaced by $A^T$ if the first input parameter is
 \verb!T!, and $B$ replaced by $B^T$ if the second input parameter is
-\verb!T!.  The complete code is reported in file
+\verb!T!.  The corresponding source code file is
 \TriExe{epetra/ex10.cpp}.
 
 \smallskip
 
 To solve a linear system with a dense matrix, one has to create an
-Epetra\_SerialDenseSolver. This class uses the most sophisticated
-techniques available in the LAPACK library. The class is built on the
-top of BLAS and LAPACK, and thus has excellent performances and
-numerical capabilities\footnote{Another package, Teuchos, covered in
+Epetra\_SerialDenseSolver. This class uses the most robust techniques
+available in the LAPACK library. The class is built on the top of BLAS
+and LAPACK, and thus has excellent performance and numerical
+stability\footnote{Another package, Teuchos, covered in
   Chapter~\ref{chap:teuchos}, allows a templated access to LAPACK.
-  ScaLAPACK are supported through Amesos, see
+  ScaLAPACK is supported through Amesos, see
   Chapter~\ref{chap:amesos}.}.
 
 The primary difference is that Epetra\_LAPACK is a ``thin'' layer on the
 top of LAPACK, while Epetra\_SerialDenseSolver attempts to provide easy
-access to the more sophisticated aspects of solving dense linear
-systems.
+access to the more robust dense linear solvers.
 
-As a general rule, we can say that Epetra\_LAPACK should be preferred
-when the user is looking for a convenient wrapper around the FORTRAN
-LAPACK routines, and the problem at hand is well-conditioned. Instead,
-when the user wants (or potentially wants to) solve ill-conditioned
-problems or want to work with a more object-oriented interface, he/she
-will probably use Epetra\_SerialDenseMatrix.
+Epetra\_LAPACK is preferable if the user seeks a convenient wrapper
+around the FORTRAN LAPACK routines, and the problem at hand is
+well-conditioned. Instead, when the user wants (or potentially wants to)
+solve ill-conditioned problems or favors a more object-oriented
+interface, then we suggest Epetra\_SerialDenseMatrix..
 
 \smallskip
 
@@ -164,7 +161,7 @@ double rcond=Solve.RCOND();
 returns the reciprocal of the condition number of matrix {\tt D} (or -1
 if not computed).
 
-File \TriExe{epetra/ex11.cpp} outlines some of the capabilities of the
+\TriExe{epetra/ex11.cpp} outlines some of the capabilities of the
 Epetra\_SerialDenseSolver class.
 
 %%%
@@ -177,7 +174,7 @@ Epetra\_SerialDenseSolver class.
 Epetra provides an extensive set of classes to create and fill
 distributed sparse matrices. These classes allow row-by-row or
 element-by-element constructions. Support is provided for common matrix
-operations, as scaling, norm, matrix-vector multiplication and
+operations, including scaling, norm, matrix-vector multiplication and
 matrix-multivector multiplication\footnote{Methods for matrix-matrix
   products are avaiable through the EpetraExt package. Another
   alternative is to use the efficient matrix-matrix product of ML, which
@@ -187,13 +184,11 @@ matrix-multivector multiplication\footnote{Methods for matrix-matrix
 
 Using Epetra objects, applications do not need to know about the
 particular storage format, and other implementation details such as data
-layout, number and location of ghost nodes. Epetra furnishes two basic
-formats, one suited for point matrices, the other for block matrices.
-The former is presented in this Section; the latter, generally much more
-efficient for problems with multiple degree of freedom per node, is
-introduced in Section~\ref{sec:sparse_vbr}. If required, other matrix
-formats can be introduced by deriving the Epetra\_RowMatrix virtual
-class.
+layout, the number and location of ghost nodes. Epetra furnishes two
+basic formats, one suited for point matrices, the other for block
+matrices.  The former is presented in this Section; the latter is
+introduced in Section~\ref{sec:sparse_vbr}. Other matrix formats can be
+introduced by deriving the Epetra\_RowMatrix virtual class as needed.
 
 \begin{table}
 \begin{center}
@@ -221,8 +216,8 @@ Scales the Epetra\_RowMatrix on the left with a Epetra\_Vector x.  \\
 \\
 \tt virtual int 
 InvColSums (Epetra\_Vector \&x) const=0 \\
-Computes the sum of absolute values of the columns of the
-Epetra\_RowMatrix, results returned in x.  \\
+Computes the sum of absolute values of the cols of the Epetra\_RowMatrix,
+results returned in x.  \\
 \\
 \tt virtual int 
 RightScale (const Epetra\_Vector \&x)=0 \\
@@ -304,18 +299,18 @@ distributed operations. \\
 
 
 \begin{remark}
-Some numerical algorithms require  the application of the linear
-operator only. For this reason, some applications find convenient to not
-store a given matrix. Epetra can handle this situation using with the
-Epetra\_Operator class; see Section~\ref{sec:operator}.
+  Some numerical algorithms require the application of the linear
+  operator only. For this reason, some applications choose not to not
+  store a given matrix. Epetra can handle this situation using with the
+  Epetra\_Operator class; see Section~\ref{sec:operator}.
 \end{remark}
 
-The process of creating a sparse matrix is more involved with respect to
-that of dense matrices. This is because, in order to obtain excellent
-numerical performances, one has to provide an estimation of the nonzero
-elements on each row of the sparse matrix. (Recall that dynamic
-allocation of new memory and copying the old storage into the new one is
-an expensive operation.) 
+The process of creating a sparse matrix is more involved than the
+process for dense matrices. This is because, in order to obtain
+excellent numerical performance, one has to provide an estimation of
+the nonzero elements on each row of the sparse matrix. (Recall that
+dynamic allocation of new memory and copying the old storage into the
+new one is an expensive operation.)
 
 As a general rule, the process of constructing a (distributed) sparse
 matrix is as follows:
@@ -370,10 +365,10 @@ instruction
 \begin{verbatim}
 Epetra_CrsMatrix A(Copy,Map,3);
 \end{verbatim}
-(Note the \verb!Copy! keyword, see Section~\ref{sec:distr_vec}.) In this
-case, Epetra considers the number 3 as a ``suggestion,'' in the sense
-that the user can still add more than 3 elements per row (at the price
-of a possible performance decay).  The second approach can be coded as
+(The \verb!Copy! keyword is explained in Section~\ref{sec:distr_vec}.)
+In this case, Epetra considers the number 3 as a ``suggestion,'' in the
+sense that the user can still add more than 3 elements per row (at the
+price of a possible performance decay).  The second approach is as
 follows:
 \begin{verbatim}
 int * NumNz = new int[NumMyElements];
@@ -385,19 +380,19 @@ else
   NumNz[i] = 3;
 \end{verbatim}
 We are building a tridiagonal matrix where each row has (-1 2 -1).  Here
-\verb!NumNz[i]! is the Number of nonzero terms in the i-th global
+\verb!NumNz[i]! is the number of nonzero terms in the i-th global
 equation on this process (2 off-diagonal terms (except for the first and
 last equation).
 
-Now, we create an Epetra\_CsrMatrix as
+Now, the command to create an Epetra\_CsrMatrix is
 \begin{verbatim}
 Epetra_CrsMatrix A(Copy,Map,NumNz);
 \end{verbatim}
-and we add rows one-at-a-time. \verb!A! has been created in Copy mode,
-and relies on the specified map. To fill its values, we need some
-additional variables: let us call them \verb!Indexes! and \verb!Values!.
-Those variables will contain the global column number and the values of
-the nonzeros for each row.
+We add rows one at a time. The matrix \verb!A! has been created in Copy
+mode, in a way that relies on the specified map. To fill its values, we
+need some additional variables: let us call them \verb!Indexes! and
+\verb!Values!. For each row, \verb!Indices! contains global column
+indices, and \verb!Values! the correspondingly values.
 \begin{verbatim}
 double *Values = new double[2];
 Values[0] = -1.0; Values[1] = -1.0;
@@ -424,11 +419,11 @@ for( int i=0 ; i<NumMyElements; ++i ) {
                        MyGlobalElements+i);
 }
 \end{verbatim}
-Note that column indexes have been inserted using global indexes (but a
-method called \verb!InsertMyValues! can be used as well) .  As a final
-operation, we can transform the matrix into local indexes. This phase in
-required in order to perform efficient parallel matrix-vector products
-and other matrix operations.
+Note that column indices have been inserted using global indices (but a
+method called \verb!InsertMyValues! can be used as well) .  Finally, we
+transform the matrix representation into one based on local indexes. The
+transformation in required in order to perform efficient parallel
+matrix-vector products and other matrix operations.
 \begin{verbatim}
 A.FillComplete();
 \end{verbatim}
@@ -437,37 +432,35 @@ data so that each process knows the set of internal, border and external
 elements. Also, the communication pattern is established. As we have
 specified just one map, Epetra considers that the the rows of $A$ are
 distributed among the processes in the same way of the elements of $X$
-and $B$.  Although very common, this approach is only a particular case.
-Epetra allows the user to handle the more general case of a matrix
-defined using a Map, is different from that of $X$ and that of $B$. In
-fact, each Epetra matrix is defined by {\sl four} maps:
+and $B$.  Although standard, this approach is only a particular case.
+Epetra allows the user to handle the more general case of a matrix whose
+Map differs from that of $X$ and that of $B$. In fact, each Epetra
+matrix is defined by {\sl four} maps:
 \begin{itemize}
-\item Two maps, called RowMap and ColumnMap, are used to determine the
-  set of rows and the columns of the elements assigned to a given
-  processor. In general, one processor cannot set elements assigned to
-  other processors\footnote{Some classes, derived from the
-    Epetra\_RowMatrix, can perform data exchange; see for instance
-    Epetra\_FECrsMatrix or Epetra\_FEVbrMatrix.}. RowMap and ColumnMap
-  determine the pattern of the matrix, as it is used during the
-  construction. They can be obtained using the methods
-  \verb!RowMatrixRowMap()!  and \verb!RowMatrixColMap()! of the
-  Epetra\_RowMatrix class. Usually, the user dos not specify a
-  ColumnMap, which is automatically created by Epetra.  RowMap and
-  ColumnMap can differ.
+\item Two maps, called RowMap and ColumnMap, define the sets of rows and
+  columns of the elements assigned to a given processor. In general, one
+  processor cannot set elements assigned to other
+  processors\footnote{Some classes, derived from the Epetra\_RowMatrix,
+    can perform data exchange; see for instance Epetra\_FECrsMatrix or
+    Epetra\_FEVbrMatrix.}. RowMap and ColumnMap define the pattern of
+  the matrix, as it is used during the construction. They can be
+  obtained using the methods \verb!RowMatrixRowMap()!  and
+  \verb!RowMatrixColMap()! in the Epetra\_RowMatrix class. Usually, the
+  as one does not specify a ColumnMap, it is automatically created by
+  Epetra.  RowMap and ColumnMap can differ.
 \item DomainMap and RangeMap define, instead, the parallel data layout
-  of $X$ and $B$, respectively. Note that those two maps can completely
-  different from RowMap and ColumnMap, meaning that a matrix can be
-  constructed using a certain data distribution, then used on vectors
-  with another data distribution. DomainMap and RangeMap can
-  differ. Those tow maps can be obtained using the methods
-  \verb!DomainMap()! and \verb!RangeMap()!.
+  of $X$ and $B$, respectively. Note that those two maps can be
+  completely different from RowMap and ColumnMap, meaning that a matrix
+  can be constructed using a certain data distribution, then used on
+  vectors with another data distribution. DomainMap and RangeMap can
+  differ.  Maps can be obtained using the methods \verb!DomainMap()! and
+  \verb!RangeMap()!.
 \end{itemize}
-The potentialities of this approach are better explained using an
-example, reported in the example file \TriExe{epetra/ex24.cpp}. In this
-example, to be run using two processors, we build up two maps:
-\verb!MapA! will be used to construct the matrix, while \verb!MapB! to
-define the parallel layout of the vectors $X$ and $B$. For the sake of
-simplicity, $A$ is diagonal.
+The potential of the approach are illustated by the example file
+\TriExe{epetra/ex24.cpp}. In this example, to be run using two
+processors, we build two maps: \verb!MapA! will be used to construct the
+matrix, while \verb!MapB! to define the parallel layout of the vectors
+$X$ and $B$. For the sake of simplicity, $A$ is diagonal.
 \begin{verbatim}
 Epetra_CrsMatrix A(Copy,MapA,MapA,1);
 \end{verbatim}
@@ -482,7 +475,7 @@ for( int i=0 ; i<NumElementsA ; ++i ) {
 }
 \end{verbatim}
 Now, as both $X$ and $B$ are defined using \verb!MapB!, instead of
-calling \verb!FillComplete()!, we do
+calling \verb!FillComplete()!, invoke
 \begin{verbatim}
 A.FillComplete(MapB,MapB);
 \end{verbatim}
@@ -495,7 +488,7 @@ A.Multiply(false,VecB,VecB2);
 
 \begin{remark}
 Although presented for Epetra\_CrsMatrix objects, the distinction
-between RowMap, ColMap, DomainMap, and RangeMap is valid for all classed
+between RowMap, ColMap, DomainMap, and RangeMap holds for all classed
 derived from Epetra\_RowMatrix. 
 \end{remark}
 
@@ -505,10 +498,10 @@ derived from Epetra\_RowMatrix.
 
 \medskip
 
-Example \TriExe{epetra/ex14.cpp} shows the use of some of the methods of 
-the Epetra\_CrsMatrix class. The code prints out several information
-about the structure of the matrix, and some of its properties.
-The output will be approximatively as here reported:
+Example \TriExe{epetra/ex14.cpp} shows the use of some of the methods of
+the Epetra\_CrsMatrix class. The code prints out information about the
+structure of the matrix and its properties.  The output will be as
+reported here:
 \begin{verbatim}
 [msala:epetra]> mpirun -np 2 ./ex14
 *** general Information about the matrix
@@ -537,12 +530,12 @@ are there diagonal entries = yes
 is matrix sorted           = yes
 \end{verbatim}
 
-Other examples are reported for Epetra\_CrsMatrix:
+Other examples for Epetra\_CrsMatrix include:
 \begin{itemize}
 \item Example \TriExe{epetra/ex13.cpp} implements a simple distributed
   finite-element solver.  The code solves a 2D Laplace problem with
   unstructured triangular grids. In this example, the information about
-  the grid are hardwired.  The interested user can easily modify those
+  the grid is hardwired.  The interested user can easily modify those
   lines in order to read the grid information from a file.
 \item Example \TriExe{epetra/ex15.cpp} explains how to export an
   Epetra\_CrsMatrix to file in a MATLAB format.  The output of this
@@ -566,9 +559,9 @@ A(4,3) = -1;
 A(5,4) = -1;
 A(5,5) = 2;
 \end{verbatim}
-  A companion to this
-  example is \newline \TriExe{epetra/ex16.cpp}, which exports an Epetra\_Vector to
-  MATLAB format.
+  A companion to this example is \newline \TriExe{epetra/ex16.cpp},
+  which exports an Epetra\_Vector to MATLAB format. Note also that the
+  package EpetraExt contains several purpose tools for such tasks.
 \end{itemize}
 %%%
 %%%
@@ -577,24 +570,24 @@ A(5,5) = 2;
 \subsection{Creating Block Matrices}
 \label{sec:sparse_vbr}
 
-In this section we will show how to work with block matrices (where each
-block has a small dimension with respect to the dimension of the entire
-matrix)\footnote{Trilinos offers capabilities to deal with matrices
-  composed by few large blocks, like for instance matrices arising from
-  the discretization of the incompressible Navier-Stokes equations,
-  through the Meros package (not covered in this tutorial).}. This
-format has been designed for PDE problems with more than one unknown per
-grid node.  The resulting matrix has a sparse block structure, and the
-size of each dense block equals the number of PDE equations defined on
-that block.  This format is quite general, and can handle matrices with
-variable block size, as it is done is the following example.
+This section reviews how to work with block matrices (where each block
+is a dense matrix)\footnote{Trilinos offers capabilities to deal with
+  matrices composed by few sparse blocks, like for instance matrices
+  arising from the discretization of the incompressible Navier-Stokes
+  equations, through the Meros package (not covered in this tutorial).}.
+This format has been designed for PDE problems with more than one
+unknown per grid node.  The resulting matrix has a sparse block
+structure, and the size of each dense block equals the number of PDE
+equations defined on that block.  This format is quite general, and can
+handle matrices with variable block size, as is done is the following
+example.
 
-First, we create a map, containing the distribution of the blocks:
+First, create a map, containing the distribution of the blocks:
 \begin{verbatim}
 Epetra_Map Map(NumGlobalElements,0,Comm);
 \end{verbatim}
 Here, a linear decomposition is used for the sake of simplicity, but any
-map can be used as well.
+map may be used as well.
 Now, we obtain some information about the map:
 \begin{verbatim}
 // local number of elements
@@ -673,11 +666,11 @@ Please refer to \TriExe{epetra/ex17.cpp} for the entire source.
 
 The most important additional feature provided by the
 Epetra\_FECrsMatrix with respect to Epetra\_CrsMatrix, is the capability
-of setting non-local matrix elements. We will illustrate this using the
-following example, reported in \TriExe{epetra/ex23.cpp}. In the example,
-we will set all the entries of a distributed matrix from process 0. For
-the sake of simplicity, this matrix is diagonal, but more complex cases
-can be handled as well.
+to set non-local matrix elements. We will illustrate this using the
+following example, reported in \newline \TriExe{epetra/ex23.cpp}. In the
+example, we will set all the entries of a distributed matrix from
+process 0. For the sake of simplicity, this matrix is diagonal, but more
+complex cases can be handled as well.
 
 First, we define the Epetra\_FECrsMatrix in Copy mode as
 \begin{verbatim}
@@ -701,9 +694,9 @@ element code, the user will probably insert more than one coefficient
 at time (typically, all the matrix entries corresponding to an elemental
 matrix).
 
-At this point, we need to exchange data, to that each matrix element not
-owned by process 0 could be send to the owner, as specified by
-\verb!Map!. This is accomplished by calling, on all processes,
+Next, we need to exchange data, to that each matrix element not owned by
+process 0 could be send to the owner, as specified by \verb!Map!. This
+is accomplished by calling, on all processes,
 \begin{verbatim}
 A.GlobalAssemble();
 \end{verbatim}

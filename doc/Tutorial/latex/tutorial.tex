@@ -65,7 +65,7 @@ Marzio Sala, Michael Heroux, David Day}
   
   The Trilinos Project is an effort to facilitate the design,
   development, integration and ongoing support of mathematical software
-  libraries.  The goal of the Trilinos Project is develop parallel
+  libraries.  The goal of the Trilinos Project is to develop parallel
   solver algorithms and libraries within an object-oriented software
   framework for the solution of large-scale, complex multiphysics
   engineering and scientific applications. The emphasis is on developing
@@ -88,13 +88,14 @@ Marzio Sala, Michael Heroux, David Day}
   distributed matrices and vectors with Epetra, the iterative solution
   of linear systems with AztecOO, incomplete factorizations with IFPACK,
   multilevel and domain decomposition preconditioners with ML, direct
-  solution of linear system with Amesos, eigenvalues and eigenvectors
-  computations with Anasazi, and iterative solution of nonlinear systems
-  with NOX, and a description of several utility classes provided by
-  other Trilinos packages.  With the help of several examples, some of
-  the most important classes and methods are explained to the
-  unexperienced user.  For the most part, each example is largely
-  annotated.  Other comments can be found in the source of each example.
+  solution of linear system with Amesos, eigenvalue and eigenvector
+  computations with Anasazi, iterative solution of nonlinear systems
+  with NOX.
+  
+  The tutorial is a self-contained introduction, intented to help users
+  effectively apply the appropriate Trilinos package to their
+  applications. In each basic, each examples are presented that are fit
+  to be imitated. 
 
   \medskip
   
@@ -128,9 +129,9 @@ have never been possible.
 
 \include{introduction}
 
-\clearpage
-\newpage
-\include{getting_started}
+%\clearpage
+%\newpage
+%\include{getting_started}
 
 \clearpage
 \newpage
@@ -158,6 +159,10 @@ have never been possible.
 
 \clearpage
 \newpage
+\include{teuchos}
+
+\clearpage
+\newpage
 \include{ml}
 
 \clearpage
@@ -171,10 +176,6 @@ have never been possible.
 \clearpage
 \newpage
 \include{nox}
-
-\clearpage
-\newpage
-\include{teuchos}
 
 \bibliographystyle{plain}
 \bibliography{../../CommonFiles/TrilinosBibliography,tutorial_biblio}

@@ -35,10 +35,10 @@
 \subsection{Getting Started}
 \label{sec:getting}
 
-The Trilinos Project uses a two-level software structure designed around
-collections of {\sl packages}. A Trilinos package is an integral unit,
+The Trilinos framework uses a two level software structure that connects
+a system of {\sl packages}. A Trilinos package is an integral unit,
 usually developed to solve a specific task, by a (relatively) small
-group of experts.  Packages exist underneath the Trilinos top level,
+group of experts.  Packages exist beneath the Trilinos top level,
 which provides a common look-and-feel. Each package has its own
 structure, documentation and set of examples, and it is possibly
 available independently of Trilinos. However, each package is even more
@@ -52,19 +52,17 @@ of numerical methods for large scale computing, as well as a large set
 of utilities to improve the development of software for scientific
 computing. 
 
-Clearly, a fully understanding all the functionalities of the Trilinos
+Clearly, a full understanding all the functionalities of the Trilinos
 packages requires time.  Each package offers sophisticated features,
-difficult to ``unleashed'' at a first sight.  Besides that, a detailed
+difficult to ``unleash'' at a first sight.  Besides that, a detailed
 description of each Trilinos package is beyond the scope of this
-document: the reader is referred to the documentation contained in each
-package. For those reasons, we will limit ourselves to the basic (and
-intermediate) features. Our goal is to present enough material so that
-the reader can be sufficiently familiar with the described packages.  In
-fact, for new users, it is neither easy, nor necessary, to manage all
-the Trilinos functionalities.  At the beginning, it is more important to
-understand how to manipulate the basic classes, such as vector, matrix
-and linear system classes.  For a successive fine-tuning phase, users
-still must look through individual package's documentation and examples.
+document. Instead, the tutorial ensures that users have the background
+to make good use of the extensive documentation contained in each
+package. Initially, it is important to understand how to manipulate the
+basic classes, such as vector, matrix and linear system classes.
+%For a
+%successive fine-tuning phase, users still must look through individual
+%package's documentation and examples.
 
 \medskip
 
@@ -77,15 +75,19 @@ We will describe the following subset of the Trilinos packages.
   languages). Each Trilinos package accepts as input Epetra objects.
   This allows powerful combinations among the various Trilinos
   functionalities.
-\item {\bf Triutils}. This is a collection of utilities, that can be
-  useful in some phases of software development. Here, we present a
-  command line parser and a matrix generator, that are used throughout
-  this document to define example matrices.
+\item {\bf Triutils}. This is a collection of utilities that are useful
+  in software development. Here, we present a command line parser and a
+  matrix generator, that are used throughout this document to define
+  example matrices.
 \item {\bf AztecOO}. This is a linear solve package based on
-  preconditioned Krylov methods. It supports all the Aztec interfaces
-  and functionality, but also provides significant new functionality.
+  preconditioned Krylov methods. Aztec users will find that AztecOO
+  supports all the Aztec interfaces and functionality, and also provides
+  significant new functionality.
 \item {\bf IFPACK}. The package performs various incomplete
   factorizations, and is here used with AztecOO.
+\item {\bf Teuchos}. This is a collection of classes that can be
+  essential for advanced code development. A Teuchos class can be used
+  to define ML and Amesos objects.
 \item {\bf ML}. The algebraic multilevel and domain decomposition
   preconditioner package provides scalable preconditioning capabilities
   for a variety of problem classes. It is here used as a preconditioner
@@ -99,8 +101,6 @@ We will describe the following subset of the Trilinos packages.
 \item {\bf NOX}. This is a collection of nonlinear solvers, designed to
   be easily integrated into an application and used with many different
   linear solvers.
-\item {\bf Teuchos}. This is a collection of classes that can be
-  essential for advanced code development.
 \end{itemize}
 
 Table~\ref{tab:tripackages} gives a partial overview of what can be
@@ -112,45 +112,47 @@ accomplished using Trilinos.
     {\bf Task} & {\bf Package} & {\bf Tutorial}\\
     \hline
     \hline
-    Definition of serial dense or sparse matrices: & Epetra 
+    Advanced serial dense or sparse matrices: & Epetra 
     & Chapter \ref{chap:epetra_mat} \\
-    Utilities for Epetra vectors and sparse matrices: & EpetraExt & -- 
+    Advanced utilities for Epetra vectors and sparse matrices: &
+    EpetraExt & --  
     \\
     \hline
     Templated distributed vectors and sparse matrices: & Tpetra$^\star$
-    & -- \\
+    & \ref{chap:epetra_mat} \\
     \hline
-    Definition of distributed sparse matrices:& Epetra & -- \\
-    Solve a linear system with preconditioned Krylov accelerators, like
+    Distributed sparse matrices:& Epetra & -- \\
+    \hline
+    Solve a linear system with preconditioned Krylov accelerators, 
     CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ &
     Chapter \ref{chap:aztecoo} \\
     \hline
-    Definition of incomplete factorizations:& AztecOO, \newline IFPACK &
+    Incomplete Factorizations:& AztecOO, \newline IFPACK &
     Chapter \ref{chap:ifpack} \\
-    Definition of a multilevel preconditioner:& ML & Chapter
-    \ref{chap:ml} \\
     \hline
-    Definition of black-box smoothed aggregation:& ML & Section
+    Multilevel  preconditioners: & ML & Chapter \ref{chap:ml} \\
+    \hline
+    ``Black-box'' smoothed aggregation preconditioners:& ML & Section
     \ref{sec:ml:preconditioner} \\
     \hline
-    Definition of a one-level Schwarz preconditioner (overlapping domain
+    One-level Schwarz preconditioner (overlapping domain
     decomposition):& AztecOO, \newline IFPACK & Chapter \ref{chap:ifpack} \\
-    Definition a two-level Schwarz preconditioner, with coarse grid based on
+    Two-level Schwarz preconditioner, with coarse grid based on
     aggregation:& AztecOO+ML & Section \ref{sec:ml_DD} \\
     \hline
-    Solution of  systems of nonlinear equations:& NOX & Chapter \ref{chap:nox} \\
-    Interface with various direct solvers, as UMFPACK, MUMPS, SuperLU
-    and others :& Amesos & Chapter \ref{chap:amesos} \\
+    Systems of nonlinear equations:& NOX & Chapter \ref{chap:nox} \\
+    Interface with various direct solvers, as UMFPACK, MUMPS, SuperLU\_DIST
+    and ScaLAPACK :& Amesos & Chapter \ref{chap:amesos} \\
     \hline
-    Computation of eigenvalue of large, sparse matrices:& Anasazi &
+    Eigenvalue problems for sparse matrices:& Anasazi &
     Chapter \ref{chap:anasazi} 
     \\
     \hline
-    Solution of complex linear equations (using equivalent real formulation):&
+    Complex linear systems (using equivalent real formulation):&
     Komplex$^\star$ & -- \\
     \hline
-    Definition of segregated preconditioners and block preconditioners (for
-    instance, for the incompressible Navier-Stokes equations):&
+    Segregated and block preconditioners (e.g., incompressible
+    Navier-Stokes equations):& 
     Meros$^\star$ & -- \\
     \hline
     Light-weight interface to BLAS and LAPACK: & Epetra 
@@ -164,7 +166,7 @@ accomplished using Trilinos.
     solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$   & --
     \\
     \hline
-    Generation of matrices & Triutils & Section~\ref{sec:triutils:gallery} \\
+    Generation of test matrices & Triutils & Section~\ref{sec:triutils:gallery} \\
     \hline
   \end{tabular}
   \caption{Partial overview of intended uses of  Trilinos. $\star$:
@@ -175,12 +177,14 @@ accomplished using Trilinos.
 \begin{remark}
   As already pointed out, Epetra objects are meant to be the ``common
   language'' spoken by all the Trilinos packages, and are a natural
-  starting point for new users. Therefore we suggest to read Chapters
-  \ref{chap:epetra_vec}-\ref{chap:epetra_others} before considering
-  other Trilinos packages. Chapter~\ref{chap:triutils} is not essential
-  to understand Trilinos, but the functionalities there presented are
-  used in this document as a starting point for many examples.
-  Chapter~\ref{chap:aztecoo} should be read before
+  starting point. For new users, Chapters
+  \ref{chap:epetra_vec}-\ref{chap:epetra_others} are a prerequisite to
+  the later chapters. Chapters~\ref{chap:triutils} is not essential to
+  understand Trilinos, but the functionalities there presented are used
+  in this document as a starting point for many examples.  One of the
+  classes described in Chapter~\ref{chap:teuchos}, the
+  Teuchos\_ParameterList, is later used in Chapters~\ref{chap:ml} and
+  \ref{chap:amesos}.  Chapter~\ref{chap:aztecoo} should be read before
   Chapters~\ref{chap:ifpack} and~\ref{chap:ml} (even if both IFPACK and
   ML can be compiled and run without AztecOO).
 \end{remark}
@@ -202,14 +206,15 @@ Trilinos philosophy, and a description of the packages provided by
 Trilinos, the reader is referred to \cite{Trilinos-Overview}.
 Developers should also consider the Trilinos Developers' Guide, which
 addresses many topics, including the development tools used by Trilinos'
-developers, and how to include a new package\footnote{ Trilinos provides
-  a variety of services to a developer wanting to integrate a package
-  into Trilinos.  The services include Autoconf~\cite{Autoconf},
-  Automake~\cite{Automake} and Libtool~\cite{Libtool}. The tools provide
-  a robust, full-featured set of tools for building software across a
-  broad set of platforms.  The tools are not officially standards, but
-  are widely used.  All existing Trilinos packages use Autoconf and
-  Automake.  Libtool support will be added in future releases.}.
+developers, and a description of how to include a new package\footnote{
+  Trilinos provides a variety of services to a developer wanting to
+  integrate a package into Trilinos.  The services include
+  Autoconf~\cite{Autoconf}, Automake~\cite{Automake} and
+  Libtool~\cite{Libtool}. The tools provide a robust, full-featured set
+  of tools for building software across a broad set of platforms.  The
+  tools are not officially standards, but are widely used.  All existing
+  Trilinos packages use Autoconf and Automake.  Libtool support will be
+  added in future releases.}.
 
 %%%
 %%%
@@ -218,8 +223,7 @@ developers, and how to include a new package\footnote{ Trilinos provides
 \subsection{Installation}
 \label{sec:installing}
 
-To obtain Trilinos, please refers to the instructions reported at the
-following web site:
+To obtain Trilinos, please follow the instructions at the web site
 \begin{verbatim}
 http://software.sandia.gov/Trilinos
 \end{verbatim}
@@ -227,18 +231,19 @@ http://software.sandia.gov/Trilinos
 Trilinos has been compiled on a variety of architectures, including
 various flavors of Linux, Sun Solaris, SGI Irix, DEC, ASCI Red, and many
 others. Trilinos has been designed to support parallel applications.
-However, it can be compiled and run on serial computer.  Detailed
-comments on the installation, and an exhaustive list of FAQs, can be
+However, it also compiles and runs on serial computers.  Detailed
+comments on the installation, and an exhaustive list of FAQs, may be
 found at the web pages:
 \begin{verbatim}
 http://software.sandia.gov/Trilinos/installing_manual.html
 http://software.sandia.gov/Trilinos/faq.html
 \end{verbatim}
 
+After obtaining Trilinos, the next step is its compilation. The
+description here is for LINUX platforms with MPI.
 
-Suppose that we will compile on a LINUX platform with MPI. Here, we {\sl
-  suggest} to set the environmental
-variables \verb!TRILINOS_HOME!, indicating the full path of the Trilinos
+We strongly recommend that the user set the environmental variables
+\verb!TRILINOS_HOME!, indicating the full path of the Trilinos
 directory, \verb!TRILINOS_LIB!, indicating the location of the compiled
 Trilinos library, and \verb!TRILINOS_ARCH!, containing the architecture
 and the communicator currently used.  For example, using the BASH shell,
@@ -256,7 +261,7 @@ Each Trilinos' package can be enabled or disabled at configuration time.
 A procedure one may follow in order to compile Trilinos with AztecOO,
 ML, IFPACK, Anasazi, NOX, and Triutils is reported below. \$ indicates the
 shell prompt. The \verb!tee! command is used to write the output to
-standard output and to the specified file, and can be omitted.  More
+standard output and to the specified file, and may be omitted.  More
 details about the installation of Trilinos can be found in
 \cite{Trilinos-Users-Guide}.
 \begin{verbatim}
@@ -329,7 +334,7 @@ Here we assume that the reader knows about UNIX makefiles.  Line 5
 includes basic definitions of Trilinos. (On some architectures, one may
 need to use \verb!gmake! instead of \verb!make!.)  In line 7, the
 variable \verb!HAVE_CONFIG_H! is defined.  This definition is extremely
-important, and must not be omitted.  Linker flags of lines 10-13 defines
+important, and must not be omitted.  Linker flags of lines 10-13 define
 the library to link (other libraries may be needed).  The variable
 \verb!ARCH_LIBS! is defined in line 5.
 
