@@ -62,6 +62,7 @@ namespace Teuchos
     //@}
 
     //@{ \name Level 1 BLAS Routines.
+    void ROTG(ScalarType da, ScalarType db, ScalarType c, ScalarType s);
     void SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx);
     void COPY(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
     void AXPY(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy);
@@ -94,6 +95,12 @@ namespace Teuchos
 //      LEVEL 1 BLAS ROUTINES  
 //------------------------------------------------------------------------------------------
     
+  template<typename OrdinalType, typename ScalarType>
+  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType da, ScalarType db, ScalarType c, ScalarType s)
+  {
+    cout<<"Not implemented right now!"<<endl;
+  }
+
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::SCAL(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx)
   {
@@ -1409,6 +1416,7 @@ namespace Teuchos
     inline BLAS(void) {};
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
+    void ROTG(float da, float db, float c, float s);
     float ASUM(OrdinalType, float*, OrdinalType);
     void AXPY(OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
     void COPY(OrdinalType, float*, OrdinalType, float*, OrdinalType);
@@ -1424,6 +1432,10 @@ namespace Teuchos
     void TRMM(char, char, char, char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
     void TRSM(char, char, char, char, OrdinalType, OrdinalType, float, float*, OrdinalType, float*, OrdinalType);
   };
+
+  template<typename OrdinalType>
+  float BLAS<OrdinalType, float>::ROTG(float da, float db, float c, float s);
+  { SROTG_F77(&da, &db, &c, &s ); }
 
   template<typename OrdinalType>
   float BLAS<OrdinalType, float>::ASUM(OrdinalType n, float* x, OrdinalType incx)
@@ -1490,6 +1502,7 @@ namespace Teuchos
     inline BLAS(void) {};
     inline BLAS(const BLAS& BLAS_source) {};
     inline virtual ~BLAS(void) {};
+    void ROTG(double da, double db, double c, double s);
     double ASUM(OrdinalType n, double* x, OrdinalType incx);
     void AXPY(OrdinalType n, double alpha, double* x, OrdinalType incx, double* y, OrdinalType incy);
     void COPY(OrdinalType n, double* x, OrdinalType incx, double* y, OrdinalType incy);
@@ -1506,6 +1519,10 @@ namespace Teuchos
     void TRSM(char side, char uplo, char transa, char diag, OrdinalType m, OrdinalType n, double alpha, double* A, OrdinalType lda, double* B, OrdinalType ldb);
   };
   
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, double>::ROTG(double da, double db, double c, double s)
+  { DROTG_F77(&da, &db, &c, &s); }
+
   template<typename OrdinalType>
   double BLAS<OrdinalType, double>::ASUM(OrdinalType n, double* x, OrdinalType incx)
   { return DASUM_F77(&n, x, &incx); }

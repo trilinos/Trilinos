@@ -24,6 +24,7 @@
 #define PREFIX
 #define Teuchos_fcd fcd 
 
+#define DROTG_F77   F77_FUNC(srotg,sROTG)
 #define DASUM_F77   F77_FUNC(sasum,DASUM) 
 #define DAXPY_F77   F77_FUNC(saxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(scopy,DCOPY)
@@ -44,6 +45,7 @@
 #define PREFIX __stdcall 
 #define Teuchos_fcd char *, unsigned int 
 
+#define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -64,6 +66,7 @@
 #define PREFIX
 #define Teuchos_fcd char *
 
+#define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -113,6 +116,7 @@
 
 #endif /* HAVE_CONFIG_H */
 
+#define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -133,13 +137,14 @@
 
 /* Explicitly define each F77 name for all BLAS kernels */
 
+#define SROTG_F77   F77_FUNC(srotg,SROTG)
 #define SSCAL_F77   F77_FUNC(sscal,SSCAL) 
 #define SCOPY_F77   F77_FUNC(scopy,SCOPY)
 #define SAXPY_F77   F77_FUNC(saxpy,SAXPY)
 #define SDOT_F77    F77_FUNC(sdot,SDOT)
 #define SNRM2_F77   F77_FUNC(snrm2,SNRM2)
 #define SASUM_F77   F77_FUNC(sasum,SASUM)
-#define ISAMAX_F77 F77_FUNC(isamax,ISAMAX)
+#define ISAMAX_F77  F77_FUNC(isamax,ISAMAX)
 
 #define SGEMV_F77   F77_FUNC(sgemv,SGEMV)
 #define SGER_F77    F77_FUNC(sger,SGER)
@@ -155,6 +160,7 @@ extern "C" {
 
 
 /* Double precision BLAS 1 */
+void PREFIX DROTG_F77(double* da, double* db, double* c, double* s);
 double PREFIX DASUM_F77(int* n, double x[], int* incx);
 void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
 void PREFIX DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
@@ -164,6 +170,7 @@ void PREFIX DSCAL_F77(int* n, double* alpha, double *x, int* incx);
 int PREFIX IDAMAX_F77(int* n, double *x, int* incx);
 
 /* Single precision BLAS 1 */ 
+void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
 float PREFIX SASUM_F77(int* n, float x[], int* incx);
 void PREFIX SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
 void PREFIX SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
