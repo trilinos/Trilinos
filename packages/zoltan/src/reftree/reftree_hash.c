@@ -18,54 +18,6 @@
 #include "reftree_const.h"
 #include "all_allo_const.h"
 
-/* LB_Reftree_hashf is a hash function for global ids. 
- *
- * Input:
- *   key: a key to hash of type LB_GID (any data type)
- *   n: the desired range of the hash function is 0..n-1
- *
- * Return value:
- *   the hash value, an unsigned integer between 0 and n-1
- *
- * Algorithm: 
- *   This hash function uses bitwise xor to hash into an unsigned int,
- *   and then finally employs Don Knuth's golden ratio multiplicative
- *   method. This hash function is good for int-sized keys
- *   (integers and pointers) but may be poor for longer keys.
- *   Feel free to replace it with a more sophisticated method.
- *
- * Author: Erik Boman, eboman@cs.sandia.gov (9226) (for parmetis/jostle)
- * Modified for refinement tree nodes by william.mitchell@nist.gov
- */
-
-
-unsigned int LB_Reftree_hashf(LB_GID key, int n)
-{
-  unsigned int h, rest, *p;
-  char *byteptr;
-  int bytes;
-
-  /* First xor the int-sized portions of the key */
-  h = 0;
-  for (p = (unsigned int *)&key, bytes=sizeof(LB_GID); bytes >= sizeof(int); 
-       bytes-=sizeof(int), p++){
-    h ^= *p;
-  }
-  /* Then take care of the remaining bytes, if any */
-  rest = 0;
-  for (byteptr = (char *)p; bytes > 0; bytes--, byteptr++){
-    rest = (rest<<8) | (*byteptr);
-  }
-
-  /* Compute hash value based on Knuth's golden ratio mult. method */
-  h = (h ^ rest) * 2654435761U;
-
-  /* Take the hash value mod n */
-  h = h%n;
-
-  return h;
-}
-
 /* LB_Reftree_hash_lookup uses LB_hashf to lookup a key 
  *
  * Input:
