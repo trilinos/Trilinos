@@ -1,0 +1,133 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE> Zoltan Developer's Guide:  Migration-Help Tools</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="migration_help"></A>Using the test script <I>test_zoltan</I></H2>
+The purpose of the Zoltan test script is to run the test driver <I><A HREF="dev_driver.html">zdrive</A></I>
+on a set of test problems to verify that the Zoltan library works correctly.
+The script compares the output of actual runs with precomputed output.
+The assumption is that if the outputs are identical, then the current implementation
+is is likely to be correct. It is strongly recommended that developers
+run <I>test_zoltan</I> to verify correctness before committing changes
+to existing code!
+<BR>&nbsp;
+<H3>
+How to run <I>test_zoltan</I></H3>
+First make sure you have compiled the driver <I><A HREF="dev_driver.html">zdrive</A></I>.&nbsp;
+Then go to the Zoltan directory <I>tests </I>and type<I> test_zoltan </I>and
+give suitable options as described below. This will run the test script
+in interactive mode. The output from zdrive will be sent to stdout together
+with a summary of results. The summary of results is also saved in a log
+file. If&nbsp; an error occured, look at the log file to find out what
+went wrong. The script currently assumes that runs are deterministic&nbsp;
+and reproducable which is not necessarily true in a parallel environment
+Hence false alarms may occur, but the test problems have been selected
+to minimize this problem.
+<BR>&nbsp;
+<H3>
+Syntax</H3>
+<B>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </B>[-arch arch-type] [-cmd command]
+[-logfile filename] [-no_parmetis] [-no_nemesis] [-no_chaco]
+
+<P>It is required to use either the -arch or the -cmd option.&nbsp; The
+other arguments are optional.
+
+<P>Options:
+<BR>&nbsp;
+<TABLE BORDER=0 WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD WIDTH="25%" NOSAVE>-arch <I>arch-type</I></TD>
+
+<TD WIDTH="75%" NOSAVE>Currently the supported architectures (<I>arch-type</I>)
+are sun, sunos, smos, tflop, cplant.</TD>
+
+<TD></TD>
+</TR>
+
+<TR NOSAVE>
+<TD>-cmd <I>command</I></TD>
+
+<TD WIDTH="25%" NOSAVE>The <I>command</I> is the command that the script
+will use to launch the driver. Default settings have been provided for
+all the supported architectures.</TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>-logfile <I>filename</I></TD>
+
+<TD>The name of the log file. The default is <I>test_zoltan.log</I>. If
+an old log file exists, it will be moved to <I>test_zoltan.log.old.</I>&nbsp;</TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>-no_parmetis</TD>
+
+<TD>Do not run any ParMetis methods.</TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>-no_nemesis</TD>
+
+<TD>Do not run test problems in Nemesis format.</TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>-no_chaco</TD>
+
+<TD>Do not run test problems in Chaco format.</TD>
+
+<TD></TD>
+</TR>
+</TABLE>
+&nbsp;
+<BR>The default behaviour is to run all methods on all types of input format.
+<BR>&nbsp;
+<H3>
+Load balancing methods</H3>
+The following load balancing methods are currently tested in test_zoltan:
+<BR>RCB,&nbsp; ParMetis/Partkway, ParMetis/Partgeom, ParMetis//Repartldiffusion,
+and Octpart.
+
+<P>&nbsp;If you would like to run only a subset of these methods, you have
+to edit the script manually.
+<BR>&nbsp;
+<H3>
+<B>Number of processors</B></H3>
+Each test problem is run on a predetermined number of processors, currently
+ranging from 3 to 9.
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_rcb.html">Next:
+RCB</A>|&nbsp; <A HREF="dev_driver.html">Previous:&nbsp; Using the test
+driver zdrive</A>]
+</BODY>
+</HTML>
