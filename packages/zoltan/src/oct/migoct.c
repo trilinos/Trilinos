@@ -531,7 +531,7 @@ int nrecocts)       /* number of octants received in this processor */
 
 
 static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int *size) {
-  int j, k;
+  int j, k = 0;
   int *despid = NULL;
   int nroots, nreceives;
   pRList  RootList;                  /* list of the local roots */
@@ -547,6 +547,8 @@ static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int 
  
   nroots = RL_numRootOctants(Zoltan_Oct_POct_localroots(OCT_info));
 
+
+  if (nroots > 0) {  /* KDDKDD -- Added test to prevent departure before comm */
   if((despid = (int *) ZOLTAN_MALLOC((zz->Num_Proc)*nroots * sizeof(int))) == NULL) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
@@ -569,6 +571,7 @@ static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int 
 /*       } */
     }
   }
+  }  /* KDDKDD */
   
   ierr = Zoltan_Comm_Create(&comm_plan, k, despid, zz->Communicator,
 			RootListCommCreate, &nreceives);
@@ -580,11 +583,13 @@ static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int 
     return (ierr);
   }
 
+  if (nreceives > 0) {
   if((rcv_rmsg = (Migrate_msg *) ZOLTAN_MALLOC(nreceives * sizeof(Migrate_msg))) == NULL) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&snd_rmsg);
     return ZOLTAN_MEMERR;
+  }
   }
 
   
