@@ -5,10 +5,6 @@ namespace SLU
 {
 extern "C" {
 #include "dsp_defs.h"
-
-#ifdef Xyce_NEW_SLU
-extern int sp_ienv_fill_size(int);
-#endif
 }
 }
 
@@ -126,15 +122,6 @@ Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem,
 
   R_ = new double[m];
   C_ = new double[n];
-
-#ifdef Xyce_NEW_SLU
-  cout << "Fill Fac: " << fill_fac << endl;
-  if( fill_fac != -1 )
-  {
-    cout << "Calling Reset of SLU's fill factor!\n";
-    sp_ienv_fill_size( fill_fac );
-  }
-#endif
 }
 
 Epetra_SLU::~Epetra_SLU()
