@@ -54,9 +54,9 @@ type(ELEM_INFO), pointer :: elements(:)
 
   integer(LB_INT) :: i, nvtxs, iostat, allocstat
   integer(LB_INT) :: ndim = 0
-  integer(LB_INT), pointer, dimension(:) :: start, adj, vwgts, vtxdist
+  integer(LB_INT), pointer, dimension(:) :: start, adj, vtxdist
 
-  real(LB_FLOAT), pointer, dimension(:) :: ewgts, x, y, z
+  real(LB_FLOAT), pointer, dimension(:) :: vwgts, ewgts, x, y, z
 
   integer(LB_INT), parameter :: fp=12
 !/***************************** BEGIN EXECUTION ******************************/
@@ -197,7 +197,7 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
   integer(LB_INT), pointer ::  vtxdist(:) ! vertex distribution data
   integer(LB_INT), pointer ::  start(:)   ! start of edge list for each vertex
   integer(LB_INT), pointer ::  adj(:)     ! edge list data
-  integer(LB_INT), pointer ::  vwgts(:)   ! vertex weight list data
+  real(LB_FLOAT), pointer  ::  vwgts(:)   ! vertex weight list data
   real(LB_FLOAT), pointer  ::  ewgts(:)   ! edge weight list data
   integer(LB_INT) ::  ndim                ! dimension of the geometry
   real(LB_FLOAT), pointer  ::  x(:)       ! x-coordinates of the vertices
@@ -312,7 +312,7 @@ character(len=*) :: inname	         !/* name of input file */
 integer(LB_INT), pointer :: start(:)     !/* start of edge list for each vertex
 integer(LB_INT), pointer :: adjacency(:) !/* edge list data */
 integer(LB_INT) :: nvtxs	         !/* number of vertices in graph */
-integer(LB_INT), pointer :: vweights(:)	 !/* vertex weight list data */
+real(LB_FLOAT), pointer :: vweights(:)	 !/* vertex weight list data */
 real(LB_FLOAT), pointer :: eweights(:)   !/* edge weight list data */
  
 integer(LB_INT) :: adjptr                !/* loops through adjacency data */
@@ -330,7 +330,7 @@ logical :: using_vwgts	!/* are vertex weights in input file? */
 logical :: vtxnums		!/* are vertex numbers in input file? */
 integer(LB_INT) :: vertex		!/* current vertex being read */
 logical :: new_vertex	!/* new vertex being read */
-integer(LB_INT) :: weight	!/* weight being read */
+real(LB_FLOAT) :: weight	!/* weight being read */
 real(LB_FLOAT) :: eweight	!/* edge weight being read */
 integer(LB_INT) :: neighbor		!/* neighbor of current vertex */
 integer(LB_INT) :: self_edge	!/* is a self edge encountered? */
@@ -341,6 +341,8 @@ integer(LB_INT) :: j		!/* loop counters */
 integer(LB_INT) :: i ! current data index on input line
 integer(LB_INT) :: ints_read(32) ! array of integers from one input line
 integer(LB_INT) :: nints_read    ! number of integers on last input line read
+real(LB_FLOAT)  :: vals_read(32) ! array of values from one input line
+integer(LB_INT) :: nvals_read    ! number of values on last input line read
 
     nullify(start, adjacency, vweights, eweights)
     error_flag = .false.
@@ -420,9 +422,9 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 
   if (narcs > 0) then
     do
-        call read_graph_line(fin,ints_read,nints_read)
+        call read_real_line(fin,vals_read,nvals_read)
         i = 1
-        if (nints_read == 0) then ! end of data
+        if (nvals_read == 0) then ! end of data
            if (vertex == nvtxs) exit
            print *,"ERROR in graph file ", inname, &
                    ": end of data before assigning all vertices"
@@ -433,7 +435,7 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 
 !/* If multiple input lines per vertex, read vertex number. */
 	if (vtxnums) then
-	    j = ints_read(i)
+	    j = NINT(vals_read(i))
             i = i+1
 	    if (j /= vertex .and. j /= vertex + 1) then
 		print *,"ERROR in graph file ", inname, &
@@ -457,14 +459,14 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 
 !/* If vertices are weighted, read vertex weight. */
 	if (using_vwgts .and. new_vertex) then
-	    if (nints_read < i) then
+	    if (nvals_read < i) then
 		print *,"ERROR in graph file ", inname, &
 		        ": no weight for vertex ", vertex
 		close(fin)
                 chaco_input_graph = .false.
 		return
 	    endif
-	    weight = ints_read(i)
+	    weight = vals_read(i)
             i = i+1
 	    if (weight <= 0) then
 		print *,"ERROR in graph file ", inname, &
@@ -479,10 +481,10 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 	nedge = 0;
 
 	do
-            if (i > nints_read) exit
+            if (i > nvals_read) exit
 
 !/* Read number of adjacent vertex. */
-	    neighbor = ints_read(i)
+	    neighbor = NINT(vals_read(i))
             i = i+1
 
 	    skip_flag = .false.
@@ -536,7 +538,7 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 
 !/* Read edge weight if it's being input. */
 	    if (using_ewgts) then
-		if (nints_read < i) then
+		if (nvals_read < i) then
 		    print *,"ERROR in graph file ", inname, &
 		            ": no weight for edge ",vertex,",",neighbor,")."
 		    close(fin)
@@ -544,7 +546,7 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 		    return
 		endif
 
-		eweight = ints_read(i)
+		eweight = vals_read(i)
                 i = i+1
 
 		if (eweight <= 0 .and. CHECK_INPUT) then
@@ -602,8 +604,8 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
   endif ! narcs > 0
 
 !/* Make sure there's nothing else in file. */
-    call read_graph_line(fin,ints_read,nints_read)
-    if (nints_read /= 0 .and. CHECK_INPUT) then
+    call read_real_line(fin,vals_read,nvals_read)
+    if (nvals_read /= 0 .and. CHECK_INPUT) then
 	print *,"WARNING: Possible error in graph file ", inname
 	print *,"         Data found after expected end of file"
     endif
@@ -741,7 +743,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
   integer(LB_INT), pointer :: vtxdist(:) !/* vertex distribution data */
   integer(LB_INT), pointer :: xadj(:)    !/* start of edge list for each vertex
   integer(LB_INT), pointer :: adjncy(:)  !/* edge list data */
-  integer(LB_INT), pointer :: vwgts(:)   !/* vertex weight list data */
+  real(LB_FLOAT), pointer :: vwgts(:)   !/* vertex weight list data */
   real(LB_FLOAT), pointer :: ewgts(:)    !/* edge weight list data */
   integer(LB_INT) :: ndim                !/* dimension of the geometry */
   real(LB_FLOAT), pointer :: x(:)        !/* x-coordinates of the vertices */
@@ -758,9 +760,10 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
   integer(LB_INT) :: nprocs, myproc, i, n, p, nedges, nsend, rest
   integer(LB_INT) :: ierr, allocstat
   integer(LB_INT) :: offset, use_vwgts, use_ewgts, use_graph
-  integer(LB_INT), pointer, dimension(:) :: old_xadj, old_adjncy, old_vwgts, &
+  integer(LB_INT), pointer, dimension(:) :: old_xadj, old_adjncy,  &
                                             size
-  real(LB_FLOAT), pointer, dimension(:) :: old_x, old_y, old_z, old_ewgts
+  real(LB_FLOAT), pointer, dimension(:) :: old_x, old_y, old_z, old_vwgts, &
+                                           old_ewgts
   integer :: status(MPI_STATUS_SIZE)
 
   nullify(old_xadj, old_adjncy, old_vwgts, size, old_x, old_y, old_z, old_ewgts)
@@ -896,7 +899,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
           call MPI_Send( old_xadj(offset), nsend+1, MPI_INTEGER, p, 1, comm, ierr)
         endif
         if (use_vwgts /= 0) then
-          call MPI_Send( old_vwgts(offset), nsend, MPI_INTEGER, p, 2, comm, ierr)
+          call MPI_Send( old_vwgts(offset), nsend, MPI_REAL, p, 2, comm, ierr)
         endif
         if (ndim > 0) then
           call MPI_Send(old_x(offset), nsend, MPI_REAL, p, 3, comm, ierr)
@@ -914,7 +917,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
       call MPI_Recv (xadj, nvtxs+1, MPI_INTEGER, host_proc, 1, comm, status, ierr)
     endif
     if (use_vwgts /= 0) then
-      call MPI_Recv (vwgts, nvtxs, MPI_INTEGER, host_proc, 2, comm, status, ierr)
+      call MPI_Recv (vwgts, nvtxs, MPI_REAL, host_proc, 2, comm, status, ierr)
     endif
     if (ndim > 0) then
       call MPI_Recv(x, nvtxs,  MPI_REAL, host_proc, 3, comm, status, ierr)

@@ -417,7 +417,8 @@ type(LB_User_Data_2) :: data
 integer(LB_INT) :: num_gid_entries, num_lid_entries
 integer(LB_INT) :: global_id(*), nbor_global_id(*)
 integer(LB_INT) :: local_id(*)
-integer(LB_INT) :: nbor_procs(*), get_ewgts, nbor_ewgts(*), ierr
+integer(LB_INT) :: nbor_procs(*), get_ewgts, ierr
+real(LB_FLOAT)  :: nbor_ewgts(*)
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
