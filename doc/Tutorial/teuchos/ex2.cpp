@@ -1,50 +1,20 @@
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_Hashtable.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "complex.h"
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-using namespace Teuchos;
-using std::string;
+#include "Teuchos_BLAS.hpp"
 
 int main(int argc, char* argv[])
 {
-  try {
-#ifdef HAVE_MPI
-    MPI_Init(&argc, &argv);
-#endif
+  // Creating an instance of the BLAS class for double-precision kernels looks like:
+  Teuchos::BLAS<int, double> blas;
 
-    Teuchos::SerialDenseMatrix<int,float> Matrix(4,4);
-    Teuchos::SerialDenseVector<int,float> Vector(4);
-
-    Matrix.random();
-    Vector.random();
-
-    int ipiv[4], info;
-    
-    Teuchos::LAPACK<int,float> L;
-
-    cout << Matrix;
-    
-    L.GETRF(4,4,Matrix.values(),4,ipiv,&info);
-    
-    cout << Matrix;
-    
-    
-  } catch(std::exception& e) {
-    cerr << "caught exception " << e.what() << endl;
-  } 
+  // This instance provides the access to all the BLAS kernels listed in Figure \ref{blas_kernels}:
+  const int n = 10;
+  double alpha = 2.0;
+  double x[ n ];
+  for ( int i=0; i<n; i++ ) { x[i] = i; }
+  blas.SCAL( n, alpha, x, 1 );
+  int max_idx = blas.IAMAX( n, x, 1 );
+  cout<< "The index of the maximum magnitude entry of x[] is the "
+      <<  max_idx <<"-th and x[ " << max_idx-1 << " ] = "<< x[max_idx-1] 
+      << endl;
   
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
   return 0;
 }
