@@ -2178,48 +2178,10 @@ extern int Zoltan_LB_Partition(
  *  Appropriate only when the number of requested partitions is equal to the
  *  number of processors.
  *
- *  Input:
- *    zz                  --  The Zoltan structure containing 
- *                            info for this load-balancing invocation.
- *  Output:
- *    changes             --  This value tells whether the new 
- *                            decomposition computed by Zoltan differs 
- *                            from the one given as input to Zoltan.
- *                            It can be either a one or a zero:
- *                            zero - No changes to the decomposition
- *                                   were made by the load-balancing
- *                                   algorithm; migration isn't needed.
- *                            one  - A new decomposition is suggested
- *                                   by the load-balancer; migration
- *                                   is needed to establish the new
- *                                   decomposition.
- *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    num_import          --  The number of non-local objects in the 
- *                            processor's new decomposition (i.e.,
- *                            number of objects to be imported).
- *    import_global_ids   --  Pointer to array of Global IDs for the
- *                            objects to be imported.
- *    import_local_ids    --  Pointer to array of Local IDs for the 
- *                            objects to be imported (local to the
- *                            exporting processor).
- *    import_procs        --  Pointer to array of Processor IDs for the
- *                            objects to be imported (processor IDs of
- *                            source processor).
- *    num_export          --  The number of local objects that must be
- *                            exported from the processor to establish
- *                            the new decomposition.
- *    export_global_ids   --  Pointer to array of Global IDs for the
- *                            objects to be exported from the current
- *                            processor.
- *    export_local_ids    --  Pointer to array of Local IDs for the
- *                            objects to be exported (local to the
- *                            current processor).
- *    export_procs        --  Pointer to array of Processor IDs for the
- *                            objects to be exported (processor IDs of
- *                            destination processors).
+ *  Input and output:
+ *    Arguments are analogous to Zoltan_LB_Partition.  Arrays import_to_part
+ *    and export_to_part are not included, as Zoltan_LB_Balance assumes
+ *    partitions and processors are equivalent.
  *  Returned value:       --  Error code
  */
 
@@ -2328,28 +2290,12 @@ extern int Zoltan_Invert_Lists(
  *  number of partitions == number of processors (or when partition information
  *  is not desired).
  *
- *  Input:
- *    zz                  --  Zoltan structure for current 
- *                            balance.
- *    num_input           --  Number of objects known to be 
- *                            sent/received.
- *    input_global_ids    --  Array of global IDs for known objects.
- *    input_local_ids     --  Array of local IDs for known objects.
- *    input_procs         --  Array of IDs of processors to/from whom the
- *                            known objects will be sent/received.
- *  Output:
- *    num_output          --  The number of objects will be received/sent.
- *    output_global_ids   --  Pointer to array of Global IDs for the
- *                            objects to be received/sent.
- *    output_local_ids    --  Pointer to array of Local IDs for the
- *                            objects to be received/sent.
- *    output_procs        --  Pointer to array of Processor IDs 
- *                            from/to which the output_global_ids will be
- *                            received/sent.
- *                            destination processors).
+ *  Input and Output:
+ *    Arguments are analogous to Zoltan_Invert_Lists.  Arrays import_to_part
+ *    and export_to_part are not included, as Zoltan_Compute_Destinations 
+ *    assumes partitions and processors are equivalent.
  *  Returned value:       --  Error code
  */
-
 
 extern int Zoltan_Compute_Destinations(
   struct Zoltan_Struct *zz,
@@ -2365,19 +2311,21 @@ extern int Zoltan_Compute_Destinations(
 
 /*****************************************************************************/
 /*
- *  Routine to help perform migration.  If migration pre-processing routine
- *  (ZOLTAN_PRE_MIGRATE_FN) is specified, this routine first calls the function.
- *  It then calls a function to obtain the size of the migrating objects
- *  (ZOLTAN_OBJ_SIZE_FN).  The routine next calls an application-specified
- *  object packing routine (ZOLTAN_PACK_OBJ_FN) for each object
- *  to be exported.  Zoltan_Migrate then develops the needed communication 
- *  map to move the objects to other processors.  It performs the communication 
- *  according to the map. It then calls a mid-migration processing routine
- *  (ZOLTAN_MID_MIGRATE_FN) if specified, allowing the application to process 
- *  its own data structures before the imported data is unpacked.
- *  It then calls an application-specified object unpacking 
- *  routine (ZOLTAN_UNPACK_OBJ_FN) for each object imported.  Finally, a 
- *  post-processing function (ZOLTAN_POST_MIGRATE_FN) is invoked if specified.
+ *  Routine to help perform migration.  Zoltan_Migrate performs the following
+ *  operations:
+ *  - Call migration pre-processing routine (ZOLTAN_PRE_MIGRATE_PP_FN), if 
+ *    specified.
+ *  - Call a ZOLTAN_OBJ_SIZE_FN to obtain the size of the migrating objects.
+ *  - Call the application-specified object packing routine (ZOLTAN_PACK_OBJ_FN)
+ *    for each object to be exported.  
+ *  - Develop the communication map to move the objects to other processors.  
+ *  - Perform the communication according to the map. 
+ *  - Call mid-migration processing routine (ZOLTAN_MID_MIGRATE_PP_FN), if 
+ *    specified.
+ *  - Call the application-specified object unpacking routine 
+ *    (ZOLTAN_UNPACK_OBJ_FN) for each object imported. 
+ *  - Call post-migration processing routine (ZOLTAN_POST_MIGRATE_PP_FN), if 
+ *    specified.
  *
  *  Input:
  *    zz                  --  Zoltan structure for current 
@@ -2431,35 +2379,13 @@ extern int Zoltan_Migrate(
 /*
  *  Routine to help perform migration.  Can be used instead of Zoltan_Migrate
  *  if the number of partitions is equal to the number of processors.
+ *  Calls ZOLTAN_PRE_MIGRATE_FN, ZOLTAN_MID_MIGRATE_FN, and 
+ *  ZOLTAN_POST_MIGRATE_FN.
  *
- *  Input:
- *    zz                  --  Zoltan structure for current 
- *                            balance.
- *    num_import          --  Number of non-local objects assigned to the
- *                            processor in the new decomposition.
- *    import_global_ids   --  Array of global IDs for non-local objects
- *                            assigned to this processor in the new
- *                            decomposition.
- *    import_local_ids    --  Array of local IDs for non-local objects
- *                            assigned to the processor in the new
- *                            decomposition.
- *    import_procs        --  Array of processor IDs of processors owning
- *                            the non-local objects that are assigned to
- *                            this processor in the new decomposition.
- *    num_export          --  The number of local objects that need to be
- *                            exported from the processor to establish
- *                            the new decomposition.
- *    export_global_ids   --  Array of Global IDs for the objects to be
- *                            exported from the current processor.
- *    export_local_ids    --  Array of Local IDs for the objects to be 
- *                            exported (local to the current processor).
- *    export_procs        --  Array of Processor IDs for the objects to
- *                            be exported (processor IDs of destination
- *                            processor).
- *  Output:
- *    none                --  The objects are migrated to their new
- *                            processor locations.  The input arrays
- *                            are unchanged.
+ *  Input and Output:
+ *    Arguments are analogous to Zoltan_Migrate.  Arrays import_to_part
+ *    and export_to_part are not included, as Zoltan_Help_Migrate 
+ *    assumes partitions and processors are equivalent.
  *  Returned value:       --  Error code
  */
 
