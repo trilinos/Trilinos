@@ -11,23 +11,21 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
+#include <mpi.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
 
-#include <mpi.h>
-
 #include "dr_const.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 static int Num_GID = 1, Num_LID = 1;
 

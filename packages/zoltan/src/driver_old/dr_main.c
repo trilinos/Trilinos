@@ -12,11 +12,6 @@
  ****************************************************************************/
 
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */
@@ -32,11 +27,11 @@ extern "C" {
 /*    30 March 1999:    Date of creation                                    */
 /*--------------------------------------------------------------------------*/
 
+#include <mpi.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mpi.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -44,6 +39,11 @@ extern "C" {
 #include "dr_output_const.h"
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 int Debug_Driver = 1;
 int DDirectory_Test = 1;  /* Flag indicating whether to exercise DDirectory */

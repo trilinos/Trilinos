@@ -11,17 +11,16 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <mpi.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "dr_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <mpi.h>
-#include "dr_const.h"
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s):	Matthew M. St.John (SNL 9226)
