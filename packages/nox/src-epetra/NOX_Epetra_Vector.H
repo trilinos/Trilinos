@@ -68,25 +68,30 @@ class Vector : public Abstract::Vector {
   virtual Abstract::Vector& init(double value);
 
   //! Copies source vector into "this".
-  virtual Abstract::Vector& operator=(const Epetra_Vector& source);
+  virtual Abstract::Vector& operator=(const Epetra_Vector& y);
 
-  virtual Abstract::Vector& operator=(const Vector& source);
+  virtual Abstract::Vector& operator=(const Vector& y);
   //! See above.
-  virtual Abstract::Vector& operator=(const Abstract::Vector& source);
+  virtual Abstract::Vector& operator=(const Abstract::Vector& y);
   
-  virtual Abstract::Vector& abs(const Vector& source);
+  virtual Abstract::Vector& abs(const Vector& y);
   //! See above.
-  virtual Abstract::Vector& abs(const Abstract::Vector& source);
+  virtual Abstract::Vector& abs(const Abstract::Vector& y);
 
-  virtual Abstract::Vector& reciprocal(const Vector& source);
+  virtual Abstract::Vector& reciprocal(const Vector& y);
   //! See above.
-  virtual Abstract::Vector& reciprocal(const Abstract::Vector& source);
+  virtual Abstract::Vector& reciprocal(const Abstract::Vector& y);
 
   //@}
 
   //@{ \name Update methods.
 
   virtual Abstract::Vector& scale(double gamma);
+
+  virtual Abstract::Vector& scale(const Vector& a);
+
+  //! See above
+  virtual Abstract::Vector& scale(const Abstract::Vector& a);
 
   virtual Abstract::Vector& update(double alpha, const Vector& a, 
 			     double gamma = 0.0);
@@ -102,11 +107,6 @@ class Vector : public Abstract::Vector {
 			     double beta, const Abstract::Vector& b,
 			     double gamma = 0.0);
 
-  virtual Abstract::Vector& multiply(double gamma, const Vector& A,
-				     const Vector& B, double alpha);
-  //! See above
-  virtual Abstract::Vector& multiply(double gamma, const Abstract::Vector& A,
-				     const Abstract::Vector& B, double alpha);
 
   //@}
 

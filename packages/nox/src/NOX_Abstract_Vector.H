@@ -37,7 +37,19 @@
 
   \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
 
-  Useful Links...
+  \section intro Introduction
+  
+  %NOX is short for "Nonlinear Object-Oriented Solutions". Its 
+  objective is to enable efficient solution of the equation:
+  \f[
+  F(x)=0.
+  \f]
+
+
+  \section started Getting Started
+
+
+  \section links Useful Links
   <UL>
   <LI><A HREF="../configure.html">Configuration and compilation instructions</A>
   <LI><A HREF="http://csmr.ca.sandia.gov/bugzilla/">Bugzilla (Bug Tracking)</A> 
@@ -64,6 +76,10 @@ namespace Abstract {
   used by the NLS solver. We require only limited functionality for
   the vectors.
 
+  The documentation throughout assumes that \f$x\f$ denotes "this"
+  vector, \f$x_i\f$ is the i-th component (or entry) of \f$x\f$, and
+  \f$n\f$ is the length of \f$x\f$.
+
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
@@ -82,48 +98,54 @@ public:
 
   //@{ \name Initialization methods.
 
-  //! Initialize every element of "this" with specified value.
-  virtual Vector& init(double value) = 0;
+  //! Initialize every element of "this" with the specified value, gamma.
+  /*! \f[ x_i = \alpha \quad \mbox{for } i=1,\dots,n \f] */
+  virtual Vector& init(double gamma) = 0;
 
-  //! Puts element-wise absolute values of source vector into "this".
-  virtual Vector& abs(const Vector& source) = 0;
+  //! Puts element-wise absolute values of source vector y into "this".
+  /*! \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] */
+  virtual Vector& abs(const Vector& y) = 0;
 
-  //! Copies source vector into "this".
-  virtual Vector& operator=(const Vector& source) = 0;
+  //! Copies source vector y into "this".
+  /*! \f[ x_i = y_i \quad \mbox{for } i=1,\dots,n \f] */
+  virtual Vector& operator=(const Vector& y) = 0;
 
   //! Puts element-wise reciprocal of source vector into "this".
-  virtual Vector& reciprocal(const Vector& source) = 0;
+  /*! \f[ x_i =  \frac{1}{y_i} \quad \mbox{for } i=1,\dots,n  \f] */
+  virtual Vector& reciprocal(const Vector& y) = 0;
 
   //@}
 
   //@{ \name Update methods.
 
   //! this = gamma * this.
+  /*! \f[ x_i = \gamma x_i \quad \mbox{for } i=1,\dots,n \f] */
   virtual Vector& scale(double gamma) = 0;
 
+  //! Scale "this" by another vector, element-by-element.
+  /*! \f[ x_i = x_i \cdot a_i \quad \mbox{for } i=1,\dots,n \f] */
+  virtual Vector& scale(const Vector& a) = 0;
+
   //! this = (alpha * a) + (gamma * this).
+  /*! \f[ x_i = \alpha \; a_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
   virtual Vector& update(double alpha, const Vector& a, double gamma = 0.0) = 0;
 
   //! this = (alpha * a) + (beta * b) + (gamma * this).
+  /*! \f[ x_i = \alpha \; a_i + \beta \; b_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
   virtual Vector& update(double alpha, const Vector& a, 
 			 double beta, const Vector& b,
 			 double gamma = 0.0) = 0;
 
-  //! Multiply a vector with another, element-by-element.
-  /*!The actual computation is this = alpha * this + gamma * B @ A 
-   * where @ denotes element-wise multiplication. 
-   */ 
-  virtual Vector&  multiply(double gamma, const Vector& A,
-			    const Vector& B, double alpha) = 0;
   //@}
 
   //@{ \name Creating new Vectors.
 
   /*! \brief Create a new %Vector of the same underlying type by
-   * cloning "this", and return a pointer to the new vector.  If type
-   * is "DeepCopy", then we need to create an exact replica of
-   * "this". Otherwise, if type is "CopyShape", we need only replicate
-   * the shape of "this". Returns NULL if clone is not supported. */
+    cloning "this", and return a pointer to the new vector.  */
+  /*! If type is "DeepCopy", then we need to create an exact replica
+    of "this". Otherwise, if type is "CopyShape", we need only
+    replicate the shape of "this". Returns NULL if clone is not
+    supported. */
   virtual Vector* clone(CopyType type = DeepCopy) const = 0;
 
   //@}
@@ -131,16 +153,27 @@ public:
   //@{ \name Norms.
 
   //! Norm.
+  /*! Defined as follows for each NormType:
+    <ul>
+    <li>\c TWO : 2-norm \f[ \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
+    <li>\c ONE : 1-norm \f[ \sum_{i=1}^{n} |x_i| \f]
+    <li>\c INF : infinity- or max-norm \f[ \max_{i} |x_i| \f]
+    </uL>
+  */
   virtual double norm(NormType type = TWO) const = 0;
 
-  //! Weighted Norm.
-  virtual double norm(const Vector& weights, NormType type = TWO) const = 0;
+  //! Weighted 2-Norm.
+  /*! Defined as 
+    \f[ \sqrt{\sum_{i=1}^{n} w_i \; x_i^2} \f] 
+  */
+  virtual double norm(const Vector& weights) const = 0;
 
   //@}
 
   //@{ \name Dot products.
 
   //! Dot product with y-vector.
+  /*! \f[\sum_{i=1}^n x_i y_i\f] */
   virtual double dot(const Vector& y) const = 0;
   
   //@}

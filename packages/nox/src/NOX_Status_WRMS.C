@@ -107,7 +107,9 @@ StatusType WRMS::operator()(const Solver::Generic& problem)
   u->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0.0);
 
   // u = Cp * u @ v (where @ represents an elementwise multiply)
-  u->multiply(factor, *u, *v, 0.0);
+  //u->multiply(factor, *u, *v, 0.0);
+  u->scale(*v);
+  u->scale(factor);
 
   /*
   cout << "Before Dynamic cast" << endl;

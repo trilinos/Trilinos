@@ -148,19 +148,14 @@ Abstract::Vector& Vector::update(double alpha, const Vector& a,
   return *this;
 }
 
-Abstract::Vector& Vector::multiply(double gamma, const Abstract::Vector& A,
-				   const Abstract::Vector& B, double alpha)
+Abstract::Vector& Vector::scale(const Abstract::Vector& a)
 {  
-  multiply(gamma, dynamic_cast<const Epetra::Vector&>(A),
-	   dynamic_cast<const Epetra::Vector&>(B), alpha);
-  return *this;
+  return scale(dynamic_cast<const Epetra::Vector&>(a));
 }
 
-Abstract::Vector& Vector::multiply(double gamma, const Vector& A,
-				   const Vector& B, double alpha)
+Abstract::Vector& Vector::scale(const Vector& a)
 {  
-  int status = epetraVec->Multiply(gamma, A.getEpetraVector(), 
-				   B.getEpetraVector(), alpha);\
+  int status = epetraVec->Multiply(1.0, *epetraVec, a.getEpetraVector(), 0.0);
   return *this;
 }
 
@@ -188,26 +183,15 @@ double Vector::norm(Abstract::Vector::NormType type) const
   return n;
 }
 
-double Vector::norm(const Abstract::Vector& weights, Abstract::Vector::NormType type) const
+double Vector::norm(const Abstract::Vector& weights) const
 {
-  return norm(dynamic_cast<const Vector&>(weights), type);
+  return norm(dynamic_cast<const Vector&>(weights));
 }
 
-double  Vector::norm(const Vector& weights, Abstract::Vector::NormType type) const
+double Vector::norm(const Vector& weights) const
 {
-  double n;
-  switch (type) {
-  case INF:
-  case ONE:
-    cerr << "Norm type not supported for weighted norm" << endl;
-    throw;
-    break;
-  case TWO:
-  default:
-    epetraVec->NormWeighted(weights.getEpetraVector(), &n);
-    break;
-  }
-  return n;
+    cerr << "NOX::Epetra::Vector - Weighted norm not supported" << endl;
+    throw "NOX-Epetra Error";
 }
 
 double Vector::dot(const Abstract::Vector& y) const
