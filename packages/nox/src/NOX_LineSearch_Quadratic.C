@@ -56,7 +56,7 @@ Quadratic::~Quadratic()
 bool Quadratic::reset(Parameter::List& params)
 { 
   if (params.isParameterString("Convergence Criteria")) {
-    string choice = params.getParameter("Convergence Criteria", "AredPred");
+    string choice = params.getParameter("Convergence Criteria", "Ared/Pred");
     if (choice == "Ared/Pred") {
       convCriteria = AredPred;
     }
