@@ -208,7 +208,6 @@ public:
   DSC_Solver	MyDSCObject;
   MPI_Comm MPIC ; 
 
-  bool Factored_;
   bool FirstCallToSolve_;
   bool A_and_LU_built ;            // Tells us whether to free them 
   int *GlobalStructNewColNum ; 
