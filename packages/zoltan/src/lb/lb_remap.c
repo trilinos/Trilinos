@@ -19,7 +19,8 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "hypergraph.h"
+#include "hg_hypergraph.h"
+#include "hg_util.h"
 #include <limits.h>
 
 /*
@@ -28,15 +29,6 @@ extern "C" {
 #define ZOLTAN_LB_REMAP_NONE 0
 #define ZOLTAN_LB_REMAP_PROCESSORS 1
 #define ZOLTAN_LB_REMAP_PARTITIONS 2
-
-
-  /* Generate serial HG.
-   * Two cases:  
-   * Case 1:  HE = [OldProc, NewProc] 
-   *          with HEwgt = #obj in OldProc that are now assigned to NewProc.
-   * Case 2:  HE = [OldPart, NewPart] 
-   *          with HEwgt = #obj in OldPart that are now assigned to NewPart.
-   */
 
 #define HEINFO_ENTRIES 3
 
@@ -739,7 +731,7 @@ int tmp, i;
 /******************************************************************************/
 
 /* path growing matching, hypergraph version */
-static int matching_pgm (ZZ *zz, HGraph *hg, Matching match, int *limit)
+static int matching_pgm (ZZ *zz, HGraph *hg, int *match, int *limit)
 {
 int i, j, k, side = 0, edge, vertex, *Match[2], limits[2], neighbor,
  next_vertex, pins;
