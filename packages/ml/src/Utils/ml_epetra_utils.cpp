@@ -199,7 +199,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,
 		      &row_length, 0);
 
-    int ierr = Result_epet->InsertGlobalValues(global_rows[i],
+    Result_epet->InsertGlobalValues(global_rows[i],
 					       row_length, val,
 					       bindx);
   }
@@ -265,7 +265,7 @@ Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt
 					    B_crs->RowMatrixColMap(), 0);
   BBt_ml->data = (void *) BBt_crs;
   ML_Operator_Add(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX, scalar);
-  int ierr=BBt_crs->TransformToLocal(&(B_crs->OperatorRangeMap()),
+  BBt_crs->TransformToLocal(&(B_crs->OperatorRangeMap()),
 				     &(B_crs->OperatorDomainMap()));
 
   ML_Comm_Destroy(&comm);
@@ -287,7 +287,7 @@ int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int le
   Epetra_CrsMatrix *A_crs = (Epetra_CrsMatrix *) A->data;
 
   global_rows = A_crs->RowMatrixRowMap().MyGlobalElements();
-  int ierr = A_crs->InsertGlobalValues(global_rows[row],length, vals, cols);
+  A_crs->InsertGlobalValues(global_rows[row],length, vals, cols);
 
   return 0;
 }
