@@ -17,6 +17,9 @@ aztecoo = \
 belos = \
 --enable-belos
 
+didasko = \
+--enable-didasko
+
 epetra = \
 --enable-epetra \
 --enable-amesos \
