@@ -54,13 +54,14 @@
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
+using namespace ML_Epetra;
 
-// *) inspired from ml_example_MultiLevelPreconditioner_viz.cpp (in the
-//    examples subdirectory)
 // *) define VIZ to visualize the aggregates (does not work for
 //    all the aggregation schemes)
 //
-// Marzio Sala, SNL 9214, Nov-04
+// \author Marzio Sala, SNL 9214
+//
+// \date last updated on 26-Mar-05
 
 int main(int argc, char *argv[])
 {
@@ -73,22 +74,22 @@ int main(int argc, char *argv[])
 #endif
 
   int NumNodes = 65536;
-  int NumPDEEqns = 1;
+  int NumPDEEqns = 2;
 
   VbrMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumNodes);
   Gallery.Set("output",0);
 
   // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem * Problem = Gallery.GetVbrLinearProblem();
+  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
+  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
 
-  double * x_coord = 0;
-  double * y_coord = 0;
-  double * z_coord = 0; // the problem is 2D, here z_coord will be NULL
+  double* x_coord = 0;
+  double* y_coord = 0;
+  double* z_coord = 0; // the problem is 2D, here z_coord will be NULL
   
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
 
@@ -107,15 +108,9 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type (level 1)", "Uncoupled");
   MLList.set("aggregation: type (level 2)", "Zoltan");
 
-  int NumMyElements = A->RowMatrixRowMap().NumMyElements() / NumPDEEqns;
-  vector<double> zz_coord(NumMyElements * NumPDEEqns * 2);
-  for (int i = 0 ; i < NumMyElements ; ++i) {
-    zz_coord[i] = x_coord[i];
-    zz_coord[i + NumMyElements] = y_coord[i];
-  }
-
-  MLList.set("aggregation: zoltan coordinates", &zz_coord[0]);
-  MLList.set("aggregation: zoltan dimensions", 2);
+  MLList.set("x-coordinates", x_coord);
+  MLList.set("y-coordinates", y_coord);
+  MLList.set("z-coordinates", z_coord);
 
   // specify the reduction with respect to the previous level
   // (very small values can break the code)
@@ -136,8 +131,8 @@ int main(int argc, char *argv[])
   // create the preconditioner object and compute hierarchy
   // See comments in "ml_example_epetra_preconditioner.cpp"
 
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
-    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+  MultiLevelPreconditioner* MLPrec = 
+    new MultiLevelPreconditioner(*A, MLList, true);
 
 #ifdef VIZ  
   MLPrec->VisualizeAggregates();
@@ -146,8 +141,6 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
-
-  // solve with 500 iterations and 1e-12 tolerance  
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
@@ -164,9 +157,9 @@ int main(int argc, char *argv[])
   }
 
   // delete memory for coordinates
-  if( x_coord ) delete [] x_coord;
-  if( y_coord ) delete [] y_coord;
-  if( z_coord ) delete [] z_coord;
+  if (x_coord) delete[] x_coord;
+  if (y_coord) delete[] y_coord;
+  if (z_coord) delete[] z_coord;
   
   if (Comm.MyPID() && residual > 1e-5) {
     cout << "TEST FAILED!!!!" << endl;
