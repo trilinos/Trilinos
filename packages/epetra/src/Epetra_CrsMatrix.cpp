@@ -516,21 +516,32 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
-  if (!Graph_->HaveColMap()) {
+  if (StaticGraph() && !Graph_->HaveColMap()) {
     EPETRA_CHK_ERR(-1);
   }
 
-  const Epetra_BlockMap& colmap = Graph_->ColMap();
-  int NumColIndices = Graph_->NumMyIndices(Row);
-  const int* ColIndices = Graph_->Indices(Row);
+  if (!StaticGraph()) {
+    for (j=0; j<NumEntries; j++) {
+      int Index = Indices[j];
+      if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc))
+        Values_[Row][Loc] += Values[j];
+      else
+        ierr = 2; // Value Excluded
+    }
+  }
+  else {
+    const Epetra_BlockMap& colmap = Graph_->ColMap();
+    int NumColIndices = Graph_->NumMyIndices(Row);
+    const int* ColIndices = Graph_->Indices(Row);
 
-  double* RowValues = Values_[Row]; 
-  for (j=0; j<NumEntries; j++) {
-    int Index = colmap.LID(Indices[j]);
-    if (Graph_->FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
-      RowValues[Loc] += Values[j];
-    else 
-      ierr = 2; // Value Excluded
+    double* RowValues = Values_[Row]; 
+    for (j=0; j<NumEntries; j++) {
+      int Index = colmap.LID(Indices[j]);
+      if (Graph_->FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+        RowValues[Loc] += Values[j];
+      else 
+        ierr = 2; // Value Excluded
+    }
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.

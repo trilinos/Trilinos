@@ -101,9 +101,11 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
     throw ReportError("Error with NumAllocatedIndicesPerRow_ allocation.", -99);
 
   if(CrsGraphData_->CV_ == Copy) {
-    for(i = 0; i < numMyBlockRows; i++) {
-      CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndicesPerRow[i*Inc];
-      //CrsGraphData_->NumIndicesPerRow_[i] = 0; // already 0 from sizing
+    if (NumIndicesPerRow != NULL) {
+      for(i = 0; i < numMyBlockRows; i++) {
+        CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndicesPerRow[i*Inc];
+        //CrsGraphData_->NumIndicesPerRow_[i] = 0; // already 0 from sizing
+      }
     }
   }
   else {
@@ -117,8 +119,8 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
   // Allocate and initialize entries if we are copying data
   if(CrsGraphData_->CV_ == Copy) {
     for(i = 0; i < numMyBlockRows; i++) {
-      const int NumIndices = NumIndicesPerRow[i*Inc]; // Inc is either 0 or 1.  Allows use of same Allocate function
-                                                      // for all constructors.
+      const int NumIndices = NumIndicesPerRow==NULL ? 0 :NumIndicesPerRow[i*Inc];
+
       if(NumIndices > 0) {
 	Epetra_IntSerialDenseVector temp(NumIndices);
 	CrsGraphData_->Indices_[i] = temp;
