@@ -29,7 +29,6 @@ functions that include the macro: */
 #define CHAR_MACRO(char_var) &char_var
 #endif
 
-#include "Teuchos_Object.cpp"
 #include "Teuchos_LAPACK_wrappers.hpp"
 
 namespace Teuchos

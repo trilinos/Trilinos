@@ -189,11 +189,6 @@ typedef ostrstream TeuchosOStringStream;
 #endif
 using namespace std;
 #else /*TFLOP defined */
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#else
-#include <iomanip.h>  
-#endif
 #ifdef HAVE_STRING
 using std::string;
 #endif
@@ -211,11 +206,11 @@ using std::complex;
 #endif /* TFLOP */
 
 // RAB: 20031002: Added this for all platforms in addition to TFLOPS?
-//#ifdef HAVE_IOMANIP
-//#include <iomanip>
-//#else
-//#include <iomanip.h>  
-//#endif
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#else
+#include <iomanip.h>  
+#endif
 
 #else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
 
