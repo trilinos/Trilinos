@@ -29,6 +29,7 @@ int power_method(bool TransA, Epetra_VbrMatrix& A,
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
+int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose);
  
 int main(int argc, char *argv[])
 {
@@ -445,6 +446,7 @@ int main(int argc, char *argv[])
   }
   */
 
+  EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose), ierr);
 			
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
@@ -761,4 +763,90 @@ int CompareValues(double * A, int LDA, int NumRowsA, int NumColsA,
   }
   EPETRA_TEST_ERR(forierr,ierr);
   return ierr;
+}
+
+int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
+{
+  int numProcs = comm.NumProc();
+  int localProc = comm.MyPID();
+
+  int myFirstRow = localProc*3;
+  int myLastRow = myFirstRow+2;
+  int numMyRows = myLastRow - myFirstRow + 1;
+  int numGlobalRows = numProcs*numMyRows;
+  int i,j, ierr;
+
+  //We'll set up a matrix which is globally block-diagonal, i.e., on each
+  //processor the list of columns == list of rows.
+  //Set up a list of column-indices which is twice as long as it should be,
+  //and its contents will be the list of local rows, repeated twice.
+  int numCols = 2*numMyRows;
+  int* myCols = new int[numCols];
+
+  int col = myFirstRow;
+  for(i=0; i<numCols; ++i) {
+    myCols[i] = col++;
+    if (col > myLastRow) col = myFirstRow;
+  }
+
+  int elemSize = 1;
+  int indexBase = 0;
+
+  Epetra_BlockMap map(numGlobalRows, numMyRows,
+		      elemSize, indexBase, comm);
+
+  Epetra_VbrMatrix A(Copy, map, numCols);
+
+  double coef = 0.5;
+
+  //we're going to insert each row twice, with coef values of 0.5. So after
+  //TransformToLocal, which internally calls MergeRedundantEntries, the
+  //matrix should contain 1.0 in each entry.
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+    EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
+
+    for(j=0; j<numCols; ++j) {
+      EPETRA_TEST_ERR( A.SubmitBlockEntry(&coef, 1, 1, 1), ierr);
+    }
+
+    EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
+
+  int numBlockEntries = 0;
+  int RowDim;
+  int* BlockIndices = new int[numMyRows];
+  int* ColDims;
+  int* LDAs;
+  double** Values;
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+    EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
+					       RowDim, numBlockEntries,
+					       BlockIndices, ColDims,
+					       LDAs, Values), ierr);
+
+    if (numMyRows != numBlockEntries) return(-1);
+    if (RowDim != 1) return(-2);
+    for(j=0; j<numBlockEntries; ++j) {
+      if (Values[j][0] != 1.0) {
+	cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
+	     << " should be 1.0" << endl;
+	return(-3); //comment-out this return to de-activate this test
+      }
+    }
+  }
+
+  if (verbose) {
+    cout << "checkMergeRedundantEntries, A:" << endl;
+  }
+
+  A.Print(cout);
+
+  delete [] BlockIndices;
+  delete [] myCols;
+
+  return(0);
 }

@@ -158,6 +158,7 @@ COMP_H = \
 	$(srcdir)/Epetra_Vector.h \
 	$(srcdir)/Epetra_CrsSingletonFilter.h \
 	$(srcdir)/Epetra_FECrsMatrix.h \
+	$(srcdir)/Epetra_FEVbrMatrix.h \
 	$(srcdir)/Epetra_FEVector.h \
 	$(srcdir)/Epetra_IntVector.h
 
@@ -171,6 +172,7 @@ COMP = \
 	$(srcdir)/Epetra_Vector.cpp \
 	$(srcdir)/Epetra_CrsSingletonFilter.cpp \
 	$(srcdir)/Epetra_FECrsMatrix.cpp \
+	$(srcdir)/Epetra_FEVbrMatrix.cpp \
 	$(srcdir)/Epetra_FEVector.cpp \
 	$(srcdir)/Epetra_IntVector.cpp
 

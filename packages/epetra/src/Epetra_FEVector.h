@@ -25,8 +25,8 @@
 #ifndef _EPETRA_FEVECTOR_H_
 #define _EPETRA_FEVECTOR_H_
 
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
+#include <Epetra_Map.h>
+#include <Epetra_MultiVector.h>
 
 /** Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
   and thus provides all Epetra_MultiVector functionality, with one

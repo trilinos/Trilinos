@@ -314,6 +314,7 @@ AC_CONFIG_FILES([
 		test/CrsMatrix/Makefile
 		test/CrsRectMatrix/Makefile
 		test/FECrsMatrix/Makefile
+		test/FEVbrMatrix/Makefile
 		test/FEVector/Makefile
 		test/ImportExport/Makefile
 		test/Map/Makefile

@@ -703,30 +703,32 @@ int Epetra_VbrMatrix::MergeRedundantEntries() {
   bool SumInto = true;
   for (i=0; i<NumMyBlockRows_; i++){
     int NumEntries = NumBlockEntriesPerRow_[i];
-    if (NumEntries>0) {
+    if (NumEntries>1) {
       double ** const Values = Values_[i];
       int * const Indices = Indices_[i];
       int * const LDAs = LDAs_[i];
       int * const ColDims = ColDims_[i];
       int RowDim = ElementSizeList_[i];
-      int j0 = 0;
-      int jj0 = Indices[j0];
-      for (j=1; j<NumEntries; j++) {
-	int jj = Indices[j];
-	int ColDim = ColDims[j];
-	if (jj==jj0) {// Check if index is repeated
-	  // Values[j0] += Values[j];
-	  CopyMat(Values[j], LDAs[j], RowDim, ColDim, Values[j0], LDAs[j0], SumInto);
-	  delete [] Values[j]; // Get rid of space
-	  for (k=j; k<NumEntries-1; k++) Values[k] = Values[k+1]; // Sum up values
-	  Values[NumEntries-1] = 0; // No space associated with this pointer anymore
-	  NumEntries--;
+      int curEntry =0;
+      double* curValues = Values[0];
+      int curLDA = LDAs[0];
+      int curColDim = ColDims[0];
+      for (int k=1; k<NumEntries; k++) {
+	if (Indices[k]==Indices[k-1]) {
+	  CopyMat(Values[k], LDAs[k], RowDim, ColDims[k],
+		  curValues, curLDA, SumInto);
 	}
 	else {
-	  j0=j; // Redefine comparison index value
-	  jj0=Indices[j0];
+	  CopyMat(curValues, curLDA, RowDim, curColDim,
+		  Values[curEntry], LDAs[curEntry], false);
+	  curEntry++;
+	  curValues = Values[k];
+	  curLDA = LDAs[k];
+	  curColDim = ColDims[k];
 	}
       }
+      CopyMat(curValues, curLDA, RowDim, curColDim,
+	      Values[curEntry], LDAs[curEntry], false);
     }
   }
     

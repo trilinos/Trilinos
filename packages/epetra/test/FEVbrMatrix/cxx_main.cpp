@@ -1,8 +1,8 @@
-// Epetra_FEVector Test routine
+// Epetra_FECrsMatrix Test routine
 
 #include "Epetra_Time.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_FEVector.h"
+#include "Epetra_Map.h"
+#include "Epetra_FECrsMatrix.h"
 #include "ExecuteTestProblems.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-  Comm.SetTracebackMode(0); // This should shut down any error tracing
+//  Comm.SetTracebackMode(0); // This should shut down any error tracing
   bool verbose = false;
 
   // Check if we should print results to standard out
@@ -62,21 +62,19 @@ int main(int argc, char *argv[]) {
   int ElementSize = 1;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
+  // Test Petra-defined uniform linear distribution constructor
+
   if (verbose) {
     cout << "\n*********************************************************"<<endl;
-    cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
+    cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
     cout << "*********************************************************" << endl;
   }
 
-  Epetra_BlockMap BlockMap(NumGlobalElements, NumMyElements,
-                           ElementSize, IndexBase, Comm);
-  EPETRA_TEST_ERR(MultiVectorTests(BlockMap, NumVectors, verbose),ierr);
+  Epetra_Map Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
-  Comm.Barrier();
-  cout << endl;
-  Comm.Barrier();
+  EPETRA_TEST_ERR( quad1(Map, verbose), ierr);
 
-  EPETRA_TEST_ERR( fevec1(Comm, verbose), ierr);
+  EPETRA_TEST_ERR(MultiVectorTests(Map, NumVectors, verbose),ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
