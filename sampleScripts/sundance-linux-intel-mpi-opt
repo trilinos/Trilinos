@@ -61,13 +61,14 @@ CXXFLAGS="-O3 -finline-functions -cxxlib-gcc -I/usr/local/include" \
 --with-ldflags=-L${INTEL_LIB} \
 FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
 --with-blas="-L/usr/local/intel/mkl70/lib/32 -lmkl_lapack -lmkl_ia32" \
+--with-libs="-lexpat" \
 --enable-tsfextended \
 --enable-tsfcore \
 --enable-tsfcore-epetra \
 --enable-tsfcore-mpi \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
---enable-expat \
+--enable-teuchos-expat \
 --disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \

@@ -10,15 +10,16 @@
 
 BUILD_DIR=`pwd`
 
-../configure --enable-mpi --with-mpi-libs="-lmpich -lpmpich" \
+../configure --enable-mpi --with-mpi-compilers \
 CXXFLAGS="-O3 -finline-functions -funroll-all-loops" \
+--with-libs="-lexpat" \
 --enable-tsfextended \
 --enable-tsfcore \
 --enable-tsfcore-epetra \
 --enable-tsfcore-mpi \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
---enable-expat \
+--enable-teuchos-expat \
 --disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \

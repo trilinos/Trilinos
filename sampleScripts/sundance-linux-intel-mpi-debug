@@ -61,6 +61,7 @@ CC="/usr/local/intel/bin/icc" \
 CXXFLAGS="-g -cxxlib-gcc -I/usr/local/include" \
 --with-ldflags="-L/usr/local/intel/lib" \
 FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
+--with-libs="-lexpat" \
 --enable-tsfextended \
 --enable-tsfcore \
 --enable-tsfcore-epetra \
@@ -68,7 +69,7 @@ FLIBS="-lfrtbegin -lg2c -lm -lgcc_s -lstdc++ -lgcc" \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-teuchos-abc \
---enable-expat \
+--enable-teuchos-expat \
 --disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
