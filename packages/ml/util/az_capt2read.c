@@ -116,7 +116,8 @@ int main(int argc, char *argv[]) {
           fprintf(stderr,"Error: rows are not in order\n");
           exit(1);
        }
-       if ((val != 0.0) || (col == row)) {
+       /* always print out the nonzero entry ... even if it is zero */
+       if (/* (val != 0.0)*/ (1 == 1) ||  (col == row)) {
           printf("%d  %20.13e\n",col-1,val);
           empty = 0;
        }
