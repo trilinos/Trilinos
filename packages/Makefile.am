@@ -106,6 +106,10 @@ if BUILD_PYTRILINOS
 PYTRILINOS_SUBDIR = PyTrilinos 
 endif
 
+if BUILD_PLIRIS
+PLIRIS_SUBDIR = pliris
+endif
+                                                                                                    
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
 endif
@@ -165,7 +169,7 @@ SUBDIRS = $(TEUCHOS_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
 	  $(TRIUTILS_SUBDIR) $(TPETRA_SUBDIR) $(AZTECOO_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(IFPACK_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(CLAPS_SUBDIR) $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) \
-          $(BELOS_SUBDIR) $(ANASAZI_SUBDIR) \
+          $(BELOS_SUBDIR) $(ANASAZI_SUBDIR) $(PLIRIS_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(ML_SUBDIR) $(TSF_SUBDIR) \
 		$(TSFEXTENDED_SUBDIR) \
 	  $(EPETRAEXT_SUBDIR) \

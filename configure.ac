@@ -77,6 +77,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package], NEW_PACKAGE)
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox], NOX)
 
+TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris], PLIRIS, no)
+
 TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
@@ -152,6 +154,17 @@ else
 fi
 AM_CONDITIONAL(BUILD_EPETRA, test "X$BUILD_EPETRA" != "Xno")
 
+if test "X$ac_cv_use_pliris" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/pliris])
+  BUILD_PLIRIS=yes
+  if test "X$ac_cv_use_pliris_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-pliris"
+  fi
+else
+  BUILD_PLIRIS=no
+fi
+AM_CONDITIONAL(BUILD_PLIRIS, test "X$BUILD_PLIRIS" != "Xno")
+                                                                                                    
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
@@ -165,6 +178,7 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 else
   BUILD_TRIUTILS=no
 fi
+
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$BUILD_TRIUTILS" != "Xno")
 
 if test "X$ac_cv_use_ifpack" != "Xno"; then
