@@ -4,4 +4,4 @@
 SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix \
 FECrsMatrix FEVbrMatrix FEVector ImportExport Map MapColoring \
 MultiVector Object SerialDense SerialSpdDense \
-VbrMatrix Vector Comm scripts
+VbrMatrix Vector Comm scripts CrsPerf
