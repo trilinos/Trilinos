@@ -149,10 +149,8 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 #  #np# - Customize the checks for headers needed in package being added.
-#NOTE: This section still needs to be updated for new_package, it is still 
-# code from Epetra
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
+# Checks for header files - used in Teuchos_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
@@ -231,13 +229,14 @@ AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
+# Checks for compiler characteristics - Teuchos_ConfigDefs.h uses these, 
 # so it makes sense to leave them in - see PORTABILITY in this directory
 # ------------------------------------------------------------------------
 AC_CXX_NAMESPACES
 AC_CXX_HAVE_STL
 AC_CXX_BOOL
 AC_CXX_MUTABLE
+AC_CXX_NUMERIC_LIMITS
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------

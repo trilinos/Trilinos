@@ -75,7 +75,6 @@
 */
 
 namespace Teuchos {
-
   template<class T>
   struct UndefinedScalarTraits
   {
@@ -116,6 +115,10 @@ namespace Teuchos {
     static inline T zero()                     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns representation of one for this scalar type.
     static inline T one()                      { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns a number that represents NaN.
+    static inline T nan()                      { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns <tt>true</tt> if <tt>x</tt> is NaN or Inf.
+    static inline bool isnaninf(const T& x)     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Seed the random number generator returned by <tt>random()</tt>.
     static inline void seedrandom(unsigned int s) { int i; T t = &i; };
     //! Returns a random number (between -one() and +one()) of this scalar type.
@@ -143,13 +146,21 @@ namespace Teuchos {
     static inline std::string name() { return "int"; };
     static inline int squareroot(int x) { return (int) sqrt((double) x); };
   };
-  
+
+  extern float flt_nan;
+ 
   template<>
   struct ScalarTraits<float>
   {
     typedef float magnitudeType;
     static inline bool haveMachineParameters() { return true; };
-    static inline float eps()   { LAPACK<int, float> lp; return lp.LAMCH('E'); };
+    static inline float eps()   {
+#ifdef HAVE_NUMERIC_LIMITS
+			return std::numeric_limits<float>::epsilon();
+#else
+			LAPACK<int, float> lp; return lp.LAMCH('E');
+#endif
+		}
     static inline float sfmin() { LAPACK<int, float> lp; return lp.LAMCH('S'); };
     static inline float base()  { LAPACK<int, float> lp; return lp.LAMCH('B'); };
     static inline float prec()  { LAPACK<int, float> lp; return lp.LAMCH('P'); };
@@ -162,21 +173,33 @@ namespace Teuchos {
     static inline magnitudeType magnitude(float a) { return fabs(a); };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
+    static inline float nan()   { return flt_nan; };
+    static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
+			const float tol = 1e-6; // Any (bounded) number should do!
+			if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
+			float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
+			return false;
+		}
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "float"; };
     static inline float squareroot(float x) { return sqrt(x); };
   };
-  
+
+  extern double dbl_nan;
+ 
   template<>
   struct ScalarTraits<double>
   {
     typedef double magnitudeType;
     static inline bool haveMachineParameters() { return true; };
-    static inline magnitudeType magnitude(double a) { return fabs(a); };
-    static inline double zero()  { return 0.0; };
-    static inline double one()   { return 1.0; };
-    static inline double eps()   { LAPACK<int, double> lp; return lp.LAMCH('E'); };
+    static inline double eps()   {
+#ifdef HAVE_NUMERIC_LIMITS
+			return std::numeric_limits<double>::epsilon();
+#else
+			LAPACK<int, double> lp; return lp.LAMCH('E');
+#endif
+		};
     static inline double sfmin() { LAPACK<int, double> lp; return lp.LAMCH('S'); };
     static inline double base()  { LAPACK<int, double> lp; return lp.LAMCH('B'); };
     static inline double prec()  { LAPACK<int, double> lp; return lp.LAMCH('P'); };
@@ -186,6 +209,16 @@ namespace Teuchos {
     static inline double rmin()  { LAPACK<int, double> lp; return lp.LAMCH('U'); };
     static inline double emax()  { LAPACK<int, double> lp; return lp.LAMCH('L'); };
     static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
+    static inline magnitudeType magnitude(double a) { return fabs(a); };
+    static inline double zero()  { return 0.0; };
+    static inline double one()   { return 1.0; };
+    static inline double nan() { return dbl_nan; };
+    static inline bool isnaninf(double x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
+			const double tol = 1e-6; // Any (bounded) number should do!
+			if( !(x <= tol) && !(x > tol) ) return true;                  // IEEE says this should fail for NaN
+			double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
+			return false;
+		}
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "double"; };
@@ -210,6 +243,7 @@ namespace Teuchos {
     static inline mp_real random() { return mp_rand(); };
     static inline std::string name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
+    // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
   };
   
 #endif // HAVE_TEUCHOS_ARPREC
@@ -243,9 +277,11 @@ namespace Teuchos {
     static inline magnitudeType rmin()         { return ScalarTraits<magnitudeType>::rmin(); };
     static inline magnitudeType emax()         { return ScalarTraits<magnitudeType>::emax(); };
     static inline magnitudeType rmax()         { return ScalarTraits<magnitudeType>::rmax(); };
-    static magnitudeType magnitude(ComplexT a) { return std::fabs(a); };
+    static magnitudeType magnitude(ComplexT a) { return std::abs(a); };
     static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); };
-    static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero());; };
+    static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero()); };
+    static inline ComplexT nan()               { return ComplexT(ScalarTraits<magnitudeType>::nan(),ScalarTraits<magnitudeType>::nan()); };
+    static inline bool isnaninf(ComplexT x)    { return ScalarTraits<magnitudeType>::isnaninf(x.real()) || ScalarTraits<magnitudeType>::isnaninf(x.imag()); };
     static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
     static inline ComplexT random()
     {

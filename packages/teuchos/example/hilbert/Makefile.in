@@ -74,6 +74,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_mutable.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
+	$(top_srcdir)/config/ac_cxx_numeric_limits.m4 \
 	$(top_srcdir)/config/ac_cxx_std_ios_base_fmtflags.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/ac_cxx_template_qualifier.m4 \

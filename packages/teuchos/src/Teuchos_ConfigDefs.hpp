@@ -191,6 +191,10 @@
 #include <typeinfo>
 #endif
 
+#ifdef HAVE_NUMERIC_LIMITS
+#include <limits>
+#endif
+
 /******************************************************************************
  * Choose string stream type: preferably std::ostringstream, otherwise
  * ostringstream or (gasp!) ostrstream. 
