@@ -23,7 +23,8 @@ RANLIB			= xranlib
 AR			= xar r
 
 CC			= pgcc -cougar
-INCLUDE_PATH		=
+CPPC			= pgCC -cougar
+INCLUDE_PATH		= -I/Net/local/mp/itflop/current/tflops/include/CC/RW
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O3 -Minfo=all
 CFLAGS = $(OPT_FLAGS)
