@@ -3,9 +3,9 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
+#include "ml_config.h"
 #include "ml_include.h"
-
-#ifdef ML_HAVE_IFPACK
+#ifdef HAVE_ML_IFPACK
 #include "ml_utils.h"
 #include "ml_epetra_utils.h"
 
@@ -216,4 +216,4 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
 
 static int ciao=0;
 
-#endif /* #ifdef ML_HAVE_IFPACK */
+#endif /* #ifdef HAVE_ML_IFPACK */

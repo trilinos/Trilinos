@@ -10,10 +10,10 @@
 #include <assert.h>
 #include "ml_struct.h"
 
-#define ML_AMESOS_KLU 0
-#define ML_AMESOS_UMFPACK 1
-#define ML_AMESOS_SUPERLUDIST 2
-
+#define ML_AMESOS_KLU            0
+#define ML_AMESOS_UMFPACK        1
+#define ML_AMESOS_SUPERLUDIST    2
+#define ML_AMESOS_MUMPS          3
 
 extern int ML_Smoother_Amesos(void *sm,int inlen,double x[],int outlen,
 			      double rhs[]);

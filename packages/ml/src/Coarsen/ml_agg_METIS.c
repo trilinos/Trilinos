@@ -717,7 +717,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
   if ( mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
    
-    printf("METIS reordering (level %d) Time required = %e\n",
+    printf("METIS (level %d) Time required for reordering = %e (s)\n",
 	   level,
 	   t0 );
     
@@ -1040,7 +1040,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	  fprintf( stderr,
 		   "*ML*WRN* something went **VERY** wrong in calling METIS\n"
 		   "*ML*WRN* try to ask for a smaller number of subdomains\n"
-		   "*ML*WRN* I will put all the nodes into one aggregate...\n",
+		   "*ML*WRN* I will put all the nodes into one aggregate...\n"
 		   "*ML*WRN* (file %x, line %d)\n",
 		   __FILE__,
 		   __LINE__ );
@@ -1127,7 +1127,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* the entire graph in input; in output, we will have the max radius.     */
   /* ********************************************************************** */
 
-  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES || 1 ) {
+  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
   
     dep = (int *) malloc(sizeof(int) * Nrows );
     for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
@@ -1169,7 +1169,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
    
-    printf("%s time required = %e\n",
+    printf("%s Time to partition graph = %e (s)\n",
 	   str,
 	   t0 );
     
@@ -1269,7 +1269,8 @@ int agg_offset, vertex_offset;
  printflag               = ml_ag->print_flag;
  
  if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-     printf("ML_Aggregate_CoarsenMETIS : num_PDE_eqns = %d\n",
+     printf("%s num PDE eqns = %d\n",
+	    str,
 	    num_PDE_eqns);
  }
  
@@ -1324,7 +1325,7 @@ int agg_offset, vertex_offset;
      ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
      if( aggr_index == NULL ) {
        fprintf( stderr,
-		"*ML*ERR* not enough memory for %d bytes\n",
+		"*ML*ERR* not enough memory for %d bytes\n"
 		"*ML*ERR* (file %s, line %d)\n",
 		nbytes,
 		__FILE__,
@@ -1563,9 +1564,10 @@ int agg_offset, vertex_offset;
      printf("%s Using %d aggregates (globally)\n",
 	    str,
 	    j );
-     printf("%s Naggre/Nrows = %8.5f %%\n",
+     printf("%s # aggre/ # (block) rows = %8.5f %% ( = %d / %d)\n",
 	    str,
-	    100.0*j/i );
+	    100.0*j/i,
+	    j, i);
    }
    /*
    if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
@@ -1625,8 +1627,9 @@ int agg_offset, vertex_offset;
    i = ML_Comm_GsumInt( comm, Nrows);
 
    if ( mypid == 0 && 8 < ML_Get_PrintLevel())
-     printf("Aggregation(METIS) : Total nonzeros = %d (Total Nrows=%d)\n",
-	    total_nz,i);
+     printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
+	    str,
+	    total_nz,1.0*total_nz/i);
    
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = total_nz;

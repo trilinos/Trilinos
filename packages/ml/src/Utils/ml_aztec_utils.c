@@ -28,6 +28,7 @@
 
 #include "ml_agg_METIS.h"
 #include "ml_agg_genP.h"
+#include "ml_ifpack.h"
 
 int warning_flag = 0;
 
@@ -3131,6 +3132,10 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 			   Settings.Level[i].params,
 			   proc_config, Settings.Level[i].status,
 			   num_smoother_steps, pre_or_post_smoother, NULL); 
+      break;
+
+    case MLAZ_IFPACK:
+      ML_Gen_Smoother_Ifpack(ml, i, pre_or_post_smoother, NULL, NULL);
       break;
 
     default:

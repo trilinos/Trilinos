@@ -1314,7 +1314,6 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
     orig_dep[i] = dep[i];
   
   max_dep = get_max_dep_line( Nrows, ia, ja, dep );
-  printf("-> %d\n", max_dep);  
   /* define the center nodes */
 
   Ncenter = 0;

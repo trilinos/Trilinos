@@ -35,6 +35,9 @@ typedef struct ML_Aggregate_Options_Struct
 extern "C" {
 #endif
 #endif
+
+  extern int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
+					    int NumLevels );
   
   extern int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag, 
 					    int level, int nodes_per_aggre );

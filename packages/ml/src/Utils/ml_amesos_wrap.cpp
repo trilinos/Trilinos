@@ -44,6 +44,10 @@ Garbage - ML_MPI and EPETRA_MPI must be the same
   double *SendThisToEMV ; 
   }
 
+static double TimeForSolve__ = 0.0;
+static int Level__ = -1;
+static int NumSolves__ = 0;
+
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
@@ -128,9 +132,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 
   // I got the impression that small problems are "safer"
   // in other hands than superludist ones.
-  // Certo che 'stp superludist e` proprio 'na schifezza ;)
-  // ????? brrrrr, what the hell is this ???????
-  if( NumGlobalRows < 4*MaxProcs || NumGlobalRows < 16 ) choice = ML_AMESOS_KLU;
+
+  if( NumGlobalRows < 128 ) choice = ML_AMESOS_KLU;
   
   switch( choice ) {
 
@@ -148,6 +151,14 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	   << ") : building SUPERLUDIST\n";
     A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
     
+    assert(A_Base!=0);
+    break;
+
+  case ML_AMESOS_MUMPS:
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : building MUMPS\n";
+    A_Base = A_Factory.Create(AMESOS_MUMPS, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
 
@@ -169,8 +180,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   Time.ResetStartTime();
   A_Base->NumericFactorization();
   Time2 = Time.ElapsedTime();
+
+  Level__ = -1;
   
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+    Level__ = curr_level;
     cout << "Amesos (level " << curr_level
 	 << ") : Time for symbolic fact  = "
 	 << Time1 << " (s)" << endl;
@@ -179,6 +193,10 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	 << Time2 << " (s)" << endl;
   }
 
+  // those are very simple timing for solution
+  TimeForSolve__ = 0.0;
+  NumSolves__ = 0;
+  
   *Amesos_Handle = (void *) A_Base ;
 
   return 0;
@@ -188,8 +206,11 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 {
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
-  Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *) A_Base->GetProblem() ; 
 
+  Epetra_Time Time(A_Base->Comm());  
+
+  Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *)A_Base->GetProblem() ;
+  
   Epetra_BlockMap map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
 
   Epetra_Vector EV_rhs( View, map, rhs ) ;
@@ -200,12 +221,27 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 
   A_Base->Solve() ; 
 
+  TimeForSolve__ += Time.ElapsedTime();
+  NumSolves__++;
+  
   return 0;
 }
 
 void ML_Amesos_Destroy(void *Amesos_Handle)
 {
 
+  if( Level__ != -1 ) {
+    cout << endl;
+    cout << "Amesos (level " << Level__
+	 << ") : Time for solve = "
+	 << TimeForSolve__ << " (s)" << endl;
+    cout << "Amesos (level " << Level__
+	 << ") : avg time for solve = "
+	 << TimeForSolve__/NumSolves__ << " (s) ( # solve = "
+	 << NumSolves__ << ")" << endl;
+    cout << endl;
+  }
+  
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   const Epetra_LinearProblem *Amesos_LinearProblem;
   Amesos_LinearProblem = A_Base->GetProblem() ; 
@@ -215,6 +251,7 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
 
   delete Amesos_LinearProblem ;
   delete A_Base ;
+
 }
 
 

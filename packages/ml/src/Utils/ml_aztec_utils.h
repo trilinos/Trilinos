@@ -231,6 +231,7 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_Aztec                  2
 #define MLAZ_BlockGaussSeidel       3
 #define MLAZ_MLS                    4
+#define MLAZ_IFPACK                 5
 #define MLAZ_SuperLU                -1
 #define MLAZ_Amesos                 -2
   

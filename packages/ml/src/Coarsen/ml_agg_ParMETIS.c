@@ -65,6 +65,7 @@ extern ML_Operator * ML_BuildQ( int StartingNumElements,
 				double * StartingBdry, double * ReorderedBdry,
 				USR_COMM mpi_communicator,
 				ML_Comm *ml_communicator );
+extern void ML_DestroyQ(void);
 
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */
@@ -432,11 +433,11 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 
 /* ======================================================================== */
 /*!
- \brief Reorder the local graph for the coarser level matrix using a METIS
+ \brief Reorder the local graph for the coarser level matrix using a ParMETIS
  function
 
  This function builds the graph of the coarser level matrix (without
- filling it with numerical values), then call METIS_NodeND to compute a
+ filling it with numerical values), then call ParMETIS_NodeND to compute a
  reordering which reduces the fill-in during LU factorizations. It is
  just a LOCAL reordering.
  
@@ -468,7 +469,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   idxtype * vtxdist = NULL;
   int ncon = 1;
   float * tpwgts = NULL;
-  int ubvec; /* size = ncon */
+  float ubvec; /* size = ncon */
   int * proc_with_parmetis = NULL;
 #ifdef ML_MPI
   MPI_Group orig_group, parmetis_group;
@@ -775,7 +776,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	    fprintf( stderr,
 		     "*ML*WRN* something went **VERY** wrong in calling ParMETIS\n"
 		     "*ML*WRN* try to ask for a smaller number of subdomains\n"
-		     "*ML*WRN* I will put all the nodes into one aggregate...\n",
+		     "*ML*WRN* I will put all the nodes into one aggregate...\n"
 		     "*ML*WRN* (file %x, line %d)\n",
 		     __FILE__,
 		     __LINE__ );
@@ -1030,12 +1031,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
 
-      printf("--%d-->  row %d ", mypid, i);
-      for( j=0 ; j<rowi_N ; ++j ) {
-	printf(" %d ",rowi_col[j]);
-      }
-      puts("");
-      
       if (rowi_N > 1) {
         starting_amalg_bdry[i] = 0.0;
         Nnonzeros2 += rowi_N;
@@ -1210,8 +1205,13 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      exit( EXIT_FAILURE );
    }
    
-   if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-     printf("%s Naggre/Nrows = %8.5f %%  (= %d/%d)\n",
+   if( mypid == 0 && 8 < ML_Get_PrintLevel() ) 
+     printf("%s Using %d aggregates (globally)\n",
+	    str,
+	    starting_aggr_count );
+
+     if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+     printf("%s # aggre/ # (block) rows = %7.3f %%  (= %d/%d)\n",
 	    str,
 	    100.0*starting_aggr_count/Nrows_global,
 	    starting_aggr_count,

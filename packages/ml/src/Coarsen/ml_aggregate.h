@@ -178,6 +178,8 @@ int ML_Aggregate_Set_CoarsenScheme_MIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_count, int nvertices, 
 				  int *aggr_index, int exp_Nrows, 
@@ -256,7 +258,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 int ML_Aggregate_CoarsenCoupled(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
 
-/* ------------------------------------------------------------------------- */
+int ML_Aggregate_CoarsenMETIS(ML_Aggregate *ml_ag,
+           ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
+
+int ML_Aggregate_CoarsenParMETIS(ML_Aggregate *ml_ag,
+           ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
+
+  /* ------------------------------------------------------------------------- */
 /* miscellaneous local functions                                             */
 /* ------------------------------------------------------------------------- */
 
