@@ -164,7 +164,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    getrow_obj = Amatrix->getrow;
-   getrowfunc=getrow_obj->internal;
+   getrowfunc=getrow_obj->func_ptr;
    getrowdata = Amatrix;
    if ( getrowfunc == NULL ) 
      {

@@ -60,7 +60,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    flag    = 1;
    next    = Bmatrix;
    while (next != NULL) {
-      if (next->getrow->internal != CSR_getrow) flag = 0;
+      if (next->getrow->func_ptr != CSR_getrow) flag = 0;
       next = next->sub_matrix;
    }
    if (flag == 1) { 
@@ -78,7 +78,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    flag    = 1;
    next    = Amatrix;
    while (next != NULL) {
-      if (next->getrow->internal != CSR_getrow) flag = 0;
+      if (next->getrow->func_ptr != CSR_getrow) flag = 0;
       next = next->sub_matrix;
    }
    if (flag == 1) Agetrow = ML_get_matrow_CSR;
@@ -1200,7 +1200,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    flag = 1;
    next = Bmatrix;
    while ( (next != NULL) ) {
-      if (next->getrow->internal != CSR_getrow) flag = 0;
+      if (next->getrow->func_ptr != CSR_getrow) flag = 0;
       next = next->sub_matrix;
    }
    if ( (flag == 1)) { 
@@ -1216,7 +1216,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    flag = 1;
    next = Amatrix;
    while ( (next != NULL) ) {
-      if (next->getrow->internal != CSR_getrow) flag = 0;
+      if (next->getrow->func_ptr != CSR_getrow) flag = 0;
       next = next->sub_matrix;
    }
    if ( (flag == 1)) { fun1 = ML_get_matrow_CSR; }

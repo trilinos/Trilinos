@@ -279,7 +279,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   /* setup matvec for diagonal part */
 
-  ML_Operator_blockmat_data->Ke_matvec = Ke->matvec->internal;
+  ML_Operator_blockmat_data->Ke_matvec = Ke->matvec->func_ptr;
   ML_Operator_blockmat_data->Ke_matvec_data = Ke;
 
   /* setup matvec for offdiagonal part */
@@ -287,7 +287,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
   ML_Operator_blockmat_data->M_matvec = NULL;
   ML_Operator_blockmat_data->M_matvec_data = NULL;
   if (M != NULL) {
-    ML_Operator_blockmat_data->M_matvec = M->matvec->internal;
+    ML_Operator_blockmat_data->M_matvec = M->matvec->func_ptr;
     ML_Operator_blockmat_data->M_matvec_data = M;
   } 
   ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng, 
@@ -298,7 +298,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   /* set getrow for diagonal block */
 
-  ML_Operator_blockmat_data->Ke_getrow = Ke->getrow->internal;
+  ML_Operator_blockmat_data->Ke_getrow = Ke->getrow->func_ptr;
   ML_Operator_blockmat_data->Ke_getrow_data = Ke;
 
   ML_Operator_blockmat_data->M_getrow = NULL;
@@ -306,7 +306,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   /* set getrow for offdiagonal block */
   if (M != NULL) {
-    ML_Operator_blockmat_data->M_getrow = M->getrow->internal;
+    ML_Operator_blockmat_data->M_getrow = M->getrow->func_ptr;
     ML_Operator_blockmat_data->M_getrow_data = M;
   }
 

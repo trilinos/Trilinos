@@ -100,7 +100,7 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ml_sm->tol = 0;
    ML_memory_alloc((void**)&(ml_sm->smoother),sizeof(ML_SmootherFunc),"SF2");
    ml_sm->smoother->ML_id = ML_EMPTY; 
-   ml_sm->smoother->internal = NULL; 
+   ml_sm->smoother->func_ptr = NULL; 
    ml_sm->smoother->data = NULL; 
    ml_sm->data_destroy = NULL;
    ml_sm->build_time = 0.0;
@@ -200,8 +200,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    /* ********************************************************* */
    /* ********************************************************* */
    /* ********************************************************* 
-   if ( ml_sm->smoother->internal == ML_Smoother_VBlockSGS ||
-        ml_sm->smoother->internal == ML_Smoother_VBlockJacobi )
+   if ( ml_sm->smoother->func_ptr == ML_Smoother_VBlockSGS ||
+        ml_sm->smoother->func_ptr == ML_Smoother_VBlockJacobi )
    {
       ml_data = ml_sm->smoother->data;
       if ( ml_data != NULL )
@@ -211,7 +211,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       }
    }
    */
-   if ( ml_sm->smoother->internal == ML_Smoother_OverlappedILUT &&
+   if ( ml_sm->smoother->func_ptr == ML_Smoother_OverlappedILUT &&
         ml_sm->smoother->data != NULL )
    {
      printf("This should be switched to using the data_destroy field\n");
@@ -224,7 +224,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       ML_Smoother_Destroy_ILUT_Data(ilut_data);
       ml_sm->smoother->data = NULL;
    }
-   if ( ml_sm->smoother->internal == ML_Smoother_SGS &&
+   if ( ml_sm->smoother->func_ptr == ML_Smoother_SGS &&
         ml_sm->smoother->data != NULL )
    {
      printf("This should be switched to using the data_destroy field\n");
@@ -235,8 +235,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       ml_sm->smoother->data = NULL;
 #endif
    }
-   if (((ml_sm->smoother->internal == ML_Smoother_VBlockAdditiveSchwarz) ||
-        (ml_sm->smoother->internal == ML_Smoother_VBlockMultiplicativeSchwarz)) &&
+   if (((ml_sm->smoother->func_ptr == ML_Smoother_VBlockAdditiveSchwarz) ||
+        (ml_sm->smoother->func_ptr == ML_Smoother_VBlockMultiplicativeSchwarz)) &&
         ml_sm->smoother->data != NULL )
    {
      printf("This should be switched to using the data_destroy field\n");
@@ -287,7 +287,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
   t0 = GetClock();
 #endif
 
-  if (pre->smoother->internal == NULL) return 1;
+  if (pre->smoother->func_ptr == NULL) return 1;
   pre->init_guess = init_guess;
 
   if (pre->ntimes == ML_CONVERGE) {
@@ -299,7 +299,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
     pre->ntimes = 100;
     while ( temp > tol ) 
       {
-	pre->smoother->internal(pre,n,sol,n, rhs);
+	pre->smoother->func_ptr(pre,n,sol,n, rhs);
 	ML_Operator_Apply(Amat, n, sol, n, res);
 	for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
 	temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
@@ -307,7 +307,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
     pre->ntimes = ML_CONVERGE;
     ML_free(res);
   }
-  else pre->smoother->internal(pre,inlen,sol,outlen,rhs);
+  else pre->smoother->func_ptr(pre,inlen,sol,outlen,rhs);
 
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
   pre->apply_time += (GetClock() - t0);
@@ -320,10 +320,10 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
 /* ************************************************************************* */
 
 int ML_Smoother_Set(ML_Smoother *smoo,void *data,
-                    int (*internal)(ML_Smoother*,int,double*,int,double *),
+                    int (*func_ptr)(ML_Smoother*,int,double*,int,double *),
                     int ntimes, double omega, char *str)
 {
-  smoo->smoother->internal = internal;
+  smoo->smoother->func_ptr = func_ptr;
   smoo->smoother->ML_id = ML_NONEMPTY;
   smoo->smoother->data= data;
   smoo->ntimes = ntimes;
@@ -362,7 +362,7 @@ int ML_Smoother_Jacobi(ML_Smoother *sm,int inlen,double x[],int outlen,double rh
 
    omega = smooth_ptr->omega;
    Amat = smooth_ptr->my_level->Amat;
-   if (Amat->matvec->internal == NULL) {
+   if (Amat->matvec->func_ptr == NULL) {
          pr_error("Error(ML_Jacobi): Need matvec\n");
 	 ML_avoid_unused_param((void *) &inlen);
 	 ML_avoid_unused_param((void *) &outlen);
@@ -374,7 +374,7 @@ int ML_Smoother_Jacobi(ML_Smoother *sm,int inlen,double x[],int outlen,double rh
 
    if (Amat->diagonal == NULL) 
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(ML_Jacobi): Need diagonal\n");
       else 
       {
@@ -489,7 +489,7 @@ int ML_Smoother_GaussSeidel(ML_Smoother *sm, int inlen, double x[], int outlen,
    Nrows = Amat->getrow->Nrows;
    omega = smooth_ptr->omega;
 
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_GaussSeidel): Need getrow() for GS smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -603,7 +603,7 @@ int ML_Smoother_SGS(ML_Smoother *sm,int inlen,double x[],int outlen, double rhs[
    ilut_data  = smooth_ptr->smoother->data;
 #endif
 
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -860,7 +860,7 @@ int ML_Smoother_BlockHiptmair(ML_Smoother *sm, int inlen, double x[], int outlen
    x_nodal1 = (double *) dataptr->x_nodal1;
    x_nodal2 = (double *) dataptr->x_nodal2;
 
-   if (Ke_mat->getrow->internal == NULL) 
+   if (Ke_mat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
 
 #ifdef ML_DEBUG_SMOOTHER
@@ -1130,7 +1130,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
    reduced_smoother_flag = (int) dataptr->reduced_smoother;
 
 
-   if (Ke_mat->getrow->internal == NULL) 
+   if (Ke_mat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
 #ifdef ML_DEBUG_SMOOTHER
    printf("\n--------------------------------\n");
@@ -1365,7 +1365,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ATmat_trans_val = temp_csrdata->values;
 #endif
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
 
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
@@ -1704,7 +1704,7 @@ int ML_Smoother_SGSSequential(ML_Smoother *sm,int inlen,double x[],int outlen,
    mypid      = comm->ML_mypid;
    Nrows      = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_SGSSequential): Need getrow() for SGS smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -1837,7 +1837,7 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    blocksize=dataptr->blocksize;
    Nblocks=Nrows/blocksize;
 
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -2067,7 +2067,7 @@ int ML_Smoother_VBlockJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_VBlockJacobi): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -2262,7 +2262,7 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_VBlockSymGS): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -2469,7 +2469,7 @@ int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[],
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->internal == NULL) {
+   if (Amat->getrow->func_ptr == NULL) {
       pr_error("Error(ML_VBlockSymGSSeq): Need getrow() for smoother\n");
       ML_avoid_unused_param((void *) &outlen);
    }
@@ -2724,7 +2724,7 @@ int ML_Smoother_OverlappedILUT(ML_Smoother *sm,int inlen,double x[],int outlen,
    Amat       = smooth_ptr->my_level->Amat;
    dataptr    = (ML_Sm_ILUT_Data *) smooth_ptr->smoother->data;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_OverlappedILUT): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for ML_OverlappedILUT\n");
@@ -2742,7 +2742,7 @@ int ML_Smoother_OverlappedILUT(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    if ( extNrows > outlen )
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(ML_OverlappedILUT): Need getrow()\n");
       if (Amat->getrow->post_comm != NULL)
          pr_error("Post communication not implemented for ML_OverlappedILUT\n");
@@ -2819,7 +2819,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Smoother_AdditiveSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for AdditiveSchwarz\n");
@@ -2990,7 +2990,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Smoother_MultiplicativeSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for MultiplicativeSchwarz\n");
@@ -3650,9 +3650,9 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 #ifdef GREG
    if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
 
-     dataptr->ml_edge->pre_smoother[0].smoother->internal = ML_complex_Cheby;
+     dataptr->ml_edge->pre_smoother[0].smoother->func_ptr = ML_complex_Cheby;
 #ifdef IWANTONESTEP
-     dataptr->ml_edge->pre_smoother[0].smoother->internal = ML_DiagScaled_1stepKrylov;
+     dataptr->ml_edge->pre_smoother[0].smoother->func_ptr = ML_DiagScaled_1stepKrylov;
 #endif
      widget = (struct MLSthing *) dataptr->ml_edge->pre_smoother[0].smoother->data;
      if (Amat->lambda_max_img != 0.0) {
@@ -4071,7 +4071,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    /* Force the diagonal to not be zero */
 
    vals = NULL;
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       Amat_data   = (struct ML_CSR_MSRdata *) Amat->data;
       vals  = Amat_data->values;
       cols = Amat_data->columns;
@@ -4336,7 +4336,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    /* see if communicator is present                              */
    /* ----------------------------------------------------------- */
 
-   if (Amat->getrow->internal == NULL)
+   if (Amat->getrow->func_ptr == NULL)
       pr_error("Error(ComposeOverlappedMatrix): Need getrow()\n");
 
    if (Amat->getrow->post_comm != NULL)
@@ -5493,7 +5493,7 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5600,7 +5600,7 @@ int ML_Smoother_MSR_SGSnodamping(ML_Smoother *sm,int inlen,double x[],int outlen
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5735,7 +5735,7 @@ int ML_Smoother_MSR_SGS(ML_Smoother *sm,int inlen,double x[],int outlen,double r
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5847,7 +5847,7 @@ extra  = (int *) data[3];
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5997,10 +5997,10 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
    Amat = smooth_ptr->my_level->Amat;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -6113,10 +6113,10 @@ int ML_Smoother_OrderedSGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -6455,7 +6455,7 @@ int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
   olddata = Amat->data;
 
   Amat->matvec->ML_id    = DinvA_widget->ML_id;
-  Amat->matvec->internal = DinvA_widget->internal;
+  Amat->matvec->func_ptr = DinvA_widget->func_ptr;
   Amat->data             = DinvA_widget->data;
   
   ML_Operator_Apply(Amat, in, p, out, ap);
@@ -6463,7 +6463,7 @@ int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
   for (i = 0; i < Amat->outvec_leng; i++) ap[i] = ap[i]/diagonal[i];
 
   Amat->matvec->ML_id    = ML_NONEMPTY;
-  Amat->matvec->internal = DinvA;
+  Amat->matvec->func_ptr = DinvA;
   Amat->data             = olddata;
   return 0;
 }
@@ -6515,7 +6515,7 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    if (Amat->diagonal == NULL) 
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(MLS_Apply): Need diagonal\n");
       else 
       {
@@ -6551,11 +6551,11 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
 
    DinvA_widget.ML_id = Amat->matvec->ML_id;
-   DinvA_widget.internal = Amat->matvec->internal;
+   DinvA_widget.func_ptr = Amat->matvec->func_ptr;
    DinvA_widget.data     = Amat->data;
    DinvA_widget.Amat     = Amat;
    Amat->matvec->ML_id    = ML_NONEMPTY;
-   Amat->matvec->internal = DinvA;
+   Amat->matvec->func_ptr = DinvA;
    Amat->data             = &DinvA_widget;
 #endif
 
@@ -6609,7 +6609,7 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
        ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
 #ifdef RST_MODIF
        Amat->matvec->ML_id    = DinvA_widget.ML_id;
-       Amat->matvec->internal = DinvA_widget.internal;
+       Amat->matvec->func_ptr = DinvA_widget.func_ptr;
        Amat->data             = DinvA_widget.data;
 #endif
        return 0;
@@ -6640,7 +6640,7 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
    ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
 #ifdef RST_MODIF
    Amat->matvec->ML_id    = DinvA_widget.ML_id;
-   Amat->matvec->internal = DinvA_widget.internal;
+   Amat->matvec->func_ptr = DinvA_widget.func_ptr;
    Amat->data             = DinvA_widget.data;
 #endif
    return 0;
@@ -6892,7 +6892,7 @@ ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int pre_or_post)
 	   ml->ML_num_levels);
     exit(1);
   }
-  if (ml->pre_smoother[level].smoother->internal != ML_Smoother_Hiptmair) {
+  if (ml->pre_smoother[level].smoother->func_ptr != ML_Smoother_Hiptmair) {
     printf("ML_Smoother_Get_Hiptmair_nodal:Hiptmair not set on level %d\n",
 	   level);
     exit(1);
@@ -7212,7 +7212,7 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
    if ((Amat->diagonal == NULL) && (widget->block_scaling == NULL))
 
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(MLS_Apply): Need diagonal\n");
       else 
       {
@@ -7351,7 +7351,7 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -7487,7 +7487,7 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -7966,7 +7966,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
    t0 = GetClock();
 #endif
 
-   if (pre->smoother->internal == NULL) return 1;
+   if (pre->smoother->func_ptr == NULL) return 1;
    pre->init_guess = init_guess;
 
    if (pre->ntimes == ML_CONVERGE) {
@@ -7982,7 +7982,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
          pre->ntimes = 100;
          while ( temp > tol ) 
 	   {
-	     pre->smoother->internal(pre,n,sol,n, rhs);
+	     pre->smoother->func_ptr(pre,n,sol,n, rhs);
 	     ML_Operator_Apply(Amat, n, sol, n, res);
 	     for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
 	     temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
@@ -7993,7 +7993,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
    }
    else {
 
-     if ( (void *)pre->smoother->internal == (void *)ML_Cheby )
+     if ( (void *)pre->smoother->func_ptr == (void *)ML_Cheby )
        ML_Cheby_WKC ( pre , inlen , (double *)&ep_sol , outlen , 
 		      (double *) &ep_rhs );
 
@@ -8002,7 +8002,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
 	 double *sol = pp_sol[KK];
 	 double *rhs = pp_rhs[KK];
 
-	 pre->smoother->internal(pre,inlen,sol,outlen,rhs);
+	 pre->smoother->func_ptr(pre,inlen,sol,outlen,rhs);
        }
      }
    }
@@ -8059,7 +8059,7 @@ int ML_Cheby_WKC(void *sm, int inlen, double *pep_x, int outlen, double *pep_rhs
 
    if (Amat->diagonal == NULL) 
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(MLS_Apply): Need diagonal\n");
       else 
       {

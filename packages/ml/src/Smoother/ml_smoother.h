@@ -52,7 +52,7 @@ typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 struct ML_SmootherFunc_Struct 
 {
    int ML_id;
-   int (*internal)(ML_Smoother *, int, double *, int, double *);
+   int (*func_ptr)(ML_Smoother *, int, double *, int, double *);
    void *data;
 };
 
@@ -102,7 +102,7 @@ struct ML_Sm_ILUT_Data_Struct
 };
 struct DinvA_widget {
   int ML_id;
-  int (*internal)(ML_Operator *, int, double *, int, double *);
+  int (*func_ptr)(ML_Operator *, int, double *, int, double *);
   void *data;
   ML_Operator *Amat;
 };
@@ -228,7 +228,7 @@ extern  int ML_Smoother_Apply(ML_Smoother *,int,Epetra_MultiVector &,
 
 
 extern  int ML_Smoother_Set(ML_Smoother *, void *,
-                 int (*internal)(ML_Smoother*,int,double*,int,double *),
+                 int (*func_ptr)(ML_Smoother*,int,double*,int,double *),
                  int, double, char *);
 extern  int ML_Smoother_Jacobi(ML_Smoother *, int, double *x, int, double *);
 extern  int ML_Smoother_GaussSeidel(ML_Smoother *, int, double *, int, double *);

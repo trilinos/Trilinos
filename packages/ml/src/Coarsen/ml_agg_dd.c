@@ -78,7 +78,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amatrix;
    if ( getrowfunc == NULL )
    {

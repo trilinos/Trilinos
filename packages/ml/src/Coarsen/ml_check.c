@@ -163,7 +163,7 @@ void ML_check_it(double sol[], double rhs[], ML *ml)
       for (i = 0; i < ml->SingleLevel[0].BCs->Dirichlet_eqn_length; i++ )
          coarse_sol[ml->SingleLevel[0].BCs->Dirichlet_eqn_list[i]] = 0.0;
    }
-   ml->SingleLevel[0].Amat->matvec->internal(ml->SingleLevel[0].Amat->data, coarse_sol, coarse_rhs);
+   ml->SingleLevel[0].Amat->matvec->func_ptr(ml->SingleLevel[0].Amat->data, coarse_sol, coarse_rhs);
 
    if ( ml->sl_ptr[0]->Dirichlet_eqn_list != NULL) {
       for (i = 0; i < ml->sl_ptr[0]->Dirichlet_eqn_length; i++ ){

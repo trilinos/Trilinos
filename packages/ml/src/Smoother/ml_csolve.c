@@ -35,7 +35,7 @@ int ML_CSolve_Create(ML_CSolve **cs)
    ml_cs->data = NULL;
    ML_memory_alloc((void**) &(ml_cs->func),sizeof(ML_CSolveFunc),"CF1" );
    ml_cs->func->ML_id = ML_EMPTY;
-   ml_cs->func->internal = NULL;
+   ml_cs->func->func_ptr = NULL;
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
@@ -56,7 +56,7 @@ int ML_CSolve_Init(ML_CSolve *ml_cs)
    ml_cs->data = NULL;
    ML_memory_alloc((void**) &(ml_cs->func),sizeof(ML_CSolveFunc),"CF2" );
    ml_cs->func->ML_id = ML_EMPTY;
-   ml_cs->func->internal = NULL;
+   ml_cs->func->func_ptr = NULL;
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
@@ -116,9 +116,9 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
       ml_cs->data_destroy( ml_cs->data );
       ml_cs->data = NULL;
    }
-   if ( ml_cs->func->internal == ML_SuperLU_Solve && ml_cs->data != NULL )
+   if ( ml_cs->func->func_ptr == ML_SuperLU_Solve && ml_cs->data != NULL )
        ML_Clean_CSolveSuperLU( ml_cs->data, ml_cs->func );
-   if (ml_cs->func->internal == ML_CSolve_Aggr)
+   if (ml_cs->func->func_ptr == ML_CSolve_Aggr)
        ML_CSolve_Clean_Aggr( ml_cs->data, ml_cs->func );
    ML_memory_free( (void**) &(ml_cs->func) );
    ml_cs->data = NULL;
@@ -139,7 +139,7 @@ int ML_CSolve_Check(ML_CSolve *ml_cs)
       printf("ML_CSolve_Check : wrong object.\n");
       exit(1);
    }
-   if ( ml_cs->func->internal == NULL ) return 0;
+   if ( ml_cs->func->func_ptr == NULL ) return 0;
    else                                  return 1;
 }
 
@@ -169,10 +169,10 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->internal == NULL) 
+   if (csolve->func->func_ptr == NULL) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
-   csolve->func->internal(csolve->data, inlen, din, outlen, dout);
+   csolve->func->func_ptr(csolve->data, inlen, din, outlen, dout);
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    csolve->apply_time += (GetClock() - t0);
 #endif
@@ -315,10 +315,10 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->internal == NULL) 
+   if (csolve->func->func_ptr == NULL) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
-   if ( (void *) csolve->func->internal == (void *)ML_SuperLU_Solve )
+   if ( (void *) csolve->func->func_ptr == (void *)ML_SuperLU_Solve )
      ML_SuperLU_Solve_WKC (csolve->data, inlen, (double *) &ep_din, outlen, 
                          (double *) &ep_dout); 
    else {
@@ -326,7 +326,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
          double *din = pp_din[KK];
          double *dout = pp_dout[KK];
 
-         csolve->func->internal (csolve->data, inlen, din, outlen, dout); 
+         csolve->func->func_ptr (csolve->data, inlen, din, outlen, dout); 
        }
    }
    

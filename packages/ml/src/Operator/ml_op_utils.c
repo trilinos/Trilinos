@@ -23,7 +23,7 @@ int oldML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2,
 
    int size;
 
-   if (ml_handle->Pmat[level2].getrow->internal != CSR_getrow)
+   if (ml_handle->Pmat[level2].getrow->func_ptr != CSR_getrow)
      perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
 
    temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
@@ -85,7 +85,7 @@ int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
 
 
 
-   if (ml_handle->Pmat[level2].getrow->internal != CSR_getrow)
+   if (ml_handle->Pmat[level2].getrow->func_ptr != CSR_getrow)
      perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
 
    temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
@@ -292,7 +292,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    isize = Pmat->outvec_leng;
    osize = Pmat->invec_leng;
    data   = (void *) Pmat;
-   getrow = Pmat->getrow->internal;
+   getrow = Pmat->getrow->func_ptr;
 
    /* transpose Pmat's communication list. This means that PRE communication */
    /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
@@ -640,7 +640,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    isize = Amat->outvec_leng;
    osize = Amat->invec_leng;
    data   = (void *) Amat;
-   getrow = Amat->getrow->internal;
+   getrow = Amat->getrow->func_ptr;
 
    /* transpose Amat's communication list. This means that PRE communication */
    /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
@@ -985,7 +985,7 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
   double *vals, *tdiag;
    if (Amat->diagonal == NULL) 
    {
-      if (Amat->getrow->internal == NULL) 
+      if (Amat->getrow->func_ptr == NULL) 
          pr_error("Error(ML_Jacobi): Need diagonal\n");
       else 
       {
@@ -1196,8 +1196,8 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 
   if ( Pmat->getrow == NULL) return 1;
 
-  if ( (Pmat->getrow->internal != sCSR_getrows) &&
-       (Pmat->getrow->internal != cCSR_getrows)) return 1;
+  if ( (Pmat->getrow->func_ptr != sCSR_getrows) &&
+       (Pmat->getrow->func_ptr != cCSR_getrows)) return 1;
 
   if (PostCommAlreadySet == ML_FALSE) {
     if (Rmat->getrow->post_comm != NULL)
@@ -1206,7 +1206,7 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 			    Pmat->invec_leng);
   }
 
-  if (Pmat->getrow->internal == sCSR_getrows)
+  if (Pmat->getrow->func_ptr == sCSR_getrows)
     ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
 				Pmat->invec_leng, 
 				Pmat->data, -1, sCSR_trans_matvec, 0);
@@ -1215,7 +1215,7 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 				Pmat->invec_leng, 
 				Pmat->data, -1, cCSR_trans_matvec, 0);
 
-  Rmat->getrow->internal = NULL;
+  Rmat->getrow->func_ptr = NULL;
   Rmat->data_destroy = NULL;
   return 0;
 }

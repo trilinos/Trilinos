@@ -33,7 +33,7 @@ void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
    int *cols, i;
    int allocated, row_length;
 
-   if (matrix->getrow->internal == NULL) {
+   if (matrix->getrow->func_ptr == NULL) {
       printf("ML_getrow_matvec: empty object? \n");
       exit(1);
    }
@@ -288,7 +288,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
 
    data = (void *) input_matrix;
    getfunction = (int (*)(void *,int,int*,int,int*,double*,int*))
-     input_matrix->getrow->internal;
+     input_matrix->getrow->func_ptr;
 
    while(getfunction(data,1,&row,*allocated_space-index,
                &((*columns)[index]), &((*values)[index]), row_lengths) == 0) {

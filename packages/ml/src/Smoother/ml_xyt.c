@@ -26,10 +26,10 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
 
    Amat = &(my_ml->Amat[grid0]);
-   if (Amat->matvec->internal == NULL)
+   if (Amat->matvec->func_ptr == NULL)
       perror("Can't get number of rows because matvec not set\n");
 
-   if (Amat->getrow->internal == NULL)
+   if (Amat->getrow->func_ptr == NULL)
       perror("Get row not set!!! Can't setup henry\n");
 
 

@@ -44,7 +44,7 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 struct ML_CSolveFunc_Struct 
 {
    int ML_id;
-   int (*internal)(ML_Solver *, int, double *, int, double *);
+   int (*func_ptr)(ML_Solver *, int, double *, int, double *);
 };
 
 struct ML_CSolve_Struct 

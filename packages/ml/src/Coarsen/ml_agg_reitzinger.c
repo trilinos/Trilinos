@@ -476,8 +476,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) 
        if (Tcoarse_vec[i1] < 0) Tcoarse_vec[i1] = -Tcoarse_vec[i1];
 
-     tmp_fun = Pn_coarse->matvec->internal;
-     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn off the scaling */
+     tmp_fun = Pn_coarse->matvec->func_ptr;
+     Pn_coarse->matvec->func_ptr = CSR_ones_matvec; /* turn off the scaling */
                                                     /* in Pn for the test. */
      Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
 						     +1));
@@ -500,7 +500,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
 		       Tfine->outvec_leng,Tfine_Pn_vec);
      ML_free(Pn_vec);
-     Pn_coarse->matvec->internal = tmp_fun;
+     Pn_coarse->matvec->func_ptr = tmp_fun;
      for (i1 = 0; i1 < Tfine->outvec_leng; i1++) 
        if (Tfine_Pn_vec[i1] < 0) Tfine_Pn_vec[i1] = -Tfine_Pn_vec[i1];
 
@@ -534,12 +534,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         exit(1);
      }
 
-     tmp_fun = Pn_coarse->matvec->internal;
-     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn off the scaling */
+     tmp_fun = Pn_coarse->matvec->func_ptr;
+     Pn_coarse->matvec->func_ptr = CSR_ones_matvec; /* turn off the scaling */
                                                     /* in Pn for the test. */
      ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, pid_coarse_node,
 		       Pn_coarse->outvec_leng, pid_fine_node);
-     Pn_coarse->matvec->internal = tmp_fun;      /* turn on the scaling */
+     Pn_coarse->matvec->func_ptr = tmp_fun;      /* turn on the scaling */
      ML_free(pid_coarse_node);
 
      if (Tfine->getrow->pre_comm != NULL) {
@@ -802,11 +802,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* We want all +1 entries to avoid changing sign of entries in Pe. */
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
      csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
-     if (Pn_coarse->getrow->internal == CSR_getrow) {
+     if (Pn_coarse->getrow->func_ptr == CSR_getrow) {
        for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
 	 if (csr_data->values[i] != 0) csr_data->values[i] = 1.;
      }
-     else if (Pn_coarse->getrow->internal == sCSR_getrows) {
+     else if (Pn_coarse->getrow->func_ptr == sCSR_getrows) {
        ftemp = (float *) csr_data->values;
        for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
 	 if (ftemp[i] != 0) ftemp[i] = 1.;
@@ -1080,9 +1080,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        }
      }
     
-     Pe->getrow->internal = CSR_getrow;
+     Pe->getrow->func_ptr = CSR_getrow;
      Pe->getrow->ML_id    = ML_NONEMPTY;
-     Pe->matvec->internal = CSR_matvec;
+     Pe->matvec->func_ptr = CSR_matvec;
      Pe->matvec->ML_id = ML_NONEMPTY;
 
 /*

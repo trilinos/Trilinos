@@ -590,7 +590,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL )
@@ -608,7 +608,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL)
    {
@@ -620,7 +620,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 #endif
 #endif
    ML_Solver_Destroy( &solver );
@@ -712,7 +712,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL ) {
@@ -729,7 +729,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL) {
       Destroy_CompCol_Matrix(Amat);
@@ -740,7 +740,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 #endif
 #endif
    ML_Solver_Destroy( &solver );
@@ -792,7 +792,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
-   if ( op->getrow->internal != NULL ) {
+   if ( op->getrow->func_ptr != NULL ) {
       getrow_flag = 1; 
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
@@ -809,7 +809,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr, 
+	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr, 
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          if (flag == 0) break;
          zero_flag = 1;
@@ -909,11 +909,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->func_ptr == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = ML_SuperLU_Solve;
+      sl->csolve->func->func_ptr = ML_SuperLU_Solve;
       ML_CSolve_Set_Label( sl->csolve, "SuperLU");
 
    }
@@ -1048,7 +1048,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
-   if ( op->getrow->internal != NULL ) {
+   if ( op->getrow->func_ptr != NULL ) {
       getrow_flag = 1;
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
@@ -1065,7 +1065,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          if (flag == 0) break;
          nz_ptr += length;
@@ -1203,11 +1203,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->func_ptr == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = ML_SuperLU_Solve;
+      sl->csolve->func->func_ptr = ML_SuperLU_Solve;
       ML_CSolve_Set_Label( sl->csolve, "Dist. SuperLU");
    }
 
@@ -1323,7 +1323,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Smoother_AdditiveSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for AdditiveSchwarz\n");
@@ -1499,7 +1499,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("Error(ML_Smoother_MultiplicativeSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for MultiplicativeSchwarz\n");

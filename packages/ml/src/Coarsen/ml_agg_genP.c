@@ -989,7 +989,7 @@ int ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows,
    /* fetch row                                                         */
    /* ----------------------------------------------------------------- */
 
-   info = getrow_obj->internal(widget->Amat, N_requested_rows,
+   info = getrow_obj->func_ptr(widget->Amat, N_requested_rows,
 			    requested_rows, allocated_space, columns,
 			    values, row_lengths);
    if (info == 0) return(0);
@@ -1123,7 +1123,7 @@ int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows,
       exit(1);
    }
 
-   info = getrow_obj->internal(widget->Amat, N_requested_rows,
+   info = getrow_obj->func_ptr(widget->Amat, N_requested_rows,
 			    requested_rows, allocated_space, columns,
 			    values, row_lengths);
    if (info == 0) return(0);
@@ -1170,7 +1170,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    Amat     = &(ml->Amat[level]);
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amat;
    max_nz_per_row = 100;
    col_ind = (int *)    ML_allocate( max_nz_per_row * sizeof(int) );
@@ -1520,7 +1520,7 @@ int ML_AGG_DD_Matvec(ML_Operator *obj,int leng1,double p[],int leng2,double ap[]
       exit(-1);
    }
    getrow_obj = Amat->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amat;
    if ( getrowfunc == NULL )
    {
@@ -1581,7 +1581,7 @@ int ML_AGG_DD_Getrow(ML_Operator *obj,int inNrows, int *rowlist,int alloc_space,
    Amat    = (ML_Operator *) context->Amat;
    nRows   = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amat;
    if ( getrowfunc == NULL )
    {
@@ -1631,7 +1631,7 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
 
    nRows   = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amat;
 
    if ( getrowfunc == NULL )
@@ -1702,7 +1702,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
 
    local_nrows = mat->outvec_leng;
    getrow_obj = mat->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) mat;
 
    /* ----------------------------------------------------------------- */

@@ -1005,7 +1005,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       fun  = ML_Smoother_SGS;
       Amat = &(ml->Amat[i]);
 
-      if (Amat->getrow->internal == MSR_getrows){
+      if (Amat->getrow->func_ptr == MSR_getrows){
          ptr   = (struct ML_CSR_MSRdata *) Amat->data;
          val   = ptr->values;
          bindx = ptr->columns;
@@ -1151,7 +1151,7 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
    Amat = &(ml->Amat[nl]);
    fun  = ML_Smoother_SGS;
 
-   if (Amat->getrow->internal == MSR_getrows){
+   if (Amat->getrow->func_ptr == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -2167,7 +2167,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      }
 
 
-     if (Amat->matvec->internal != NULL) {
+     if (Amat->matvec->func_ptr != NULL) {
          widget = ML_Smoother_Create_MLS();
 	 widget->mlsDeg   = degree;
 	 widget->eig_ratio = eig_ratio;
@@ -2268,7 +2268,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
-     if (Amat->matvec->internal != NULL) {
+     if (Amat->matvec->func_ptr != NULL) {
 	 if (pre_or_post == ML_PRESMOOTHER) {
            sprintf(str,"ERF_1STEP_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), 
@@ -2465,7 +2465,7 @@ printf("    (%d): Amat(%d,%d)  Rmat(%d,%d)  Pmat(%d,%d)\n",
 fflush(stdout);
 */
 
-   if (Amat->matvec->internal == NULL) {
+   if (Amat->matvec->func_ptr == NULL) {
       if (output_level > 3)
       printf("Warning: No Amat matvec on grid %d (where finest = 0).\n\
 		can not check Amat's getrow\n",i);
@@ -2474,7 +2474,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow( Amat,ml->comm,i,"Amat");
 */
 
-   if (Amat->getrow->internal == NULL)
+   if (Amat->getrow->func_ptr == NULL)
       pr_error("Error: No A matrix getrow on grid %d : \
                        can not do ML_Gen_Amatrix_RAP.\n",i);
 
@@ -2486,7 +2486,7 @@ fflush(stdout);
        }
    }
 
-   if (Rmat->matvec->internal == NULL) {
+   if (Rmat->matvec->func_ptr == NULL) {
       if (output_level > 3)
       printf("Warning: No Rmat matvec on grid %d (where finest = 0).\n\
 		can not check Rmat's getrow\n",i);
@@ -2495,7 +2495,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow( Rmat,ml->comm,i,"Rmat");
 */
 
-   if (Rmat->getrow->internal == NULL)
+   if (Rmat->getrow->func_ptr == NULL)
       pr_error("Error: No R matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
@@ -2507,7 +2507,7 @@ fflush(stdout);
        }
    }
 
-   if (Pmat->matvec->internal == NULL) {
+   if (Pmat->matvec->func_ptr == NULL) {
       if (output_level > 3)
       printf("Warning: No Pmat matvec on grid %d (where finest = 0).\n\
 		can not check Pmat's getrow\n",i);
@@ -2516,7 +2516,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow(Pmat,ml->comm,i,"Pmat");
 */
 
-   if (Pmat->getrow->internal == NULL)
+   if (Pmat->getrow->func_ptr == NULL)
       pr_error("Error: No P matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
@@ -2678,14 +2678,14 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
    level = finest_level;
    i = 0;
    while (current_level != NULL) {
-      if (current_level->Amat->matvec->internal == NULL &&
+      if (current_level->Amat->matvec->func_ptr == NULL &&
           level != coarsest_level) {
          pr_error("Error: No A matrix on grid %d.\n",level);
       }
 
       if ((current_level->Amat->getrow->pre_comm  == NULL) &&
           (current_level->Amat->getrow->post_comm == NULL) &&
-          (current_level->Amat->getrow->internal != NULL) &&
+          (current_level->Amat->getrow->func_ptr != NULL) &&
           (ml->comm->ML_nprocs > 1) ) {
          if (ml->comm->ML_mypid == 0) {
          printf("Warning:No communication information given with Amat's \n");
@@ -2701,22 +2701,22 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       temp = current_level->Rmat->to;
 
       if (temp != NULL) {
-         if (current_level->Rmat->matvec->internal == NULL)
+         if (current_level->Rmat->matvec->func_ptr == NULL)
             pr_error("Error: No R matvec on grid %d.\n",level);
 /*
          ML_Operator_Check_Getrow(current_level->Rmat,ml->comm,level,"Rmat");
 */
          if (level != finest_level &&
-             current_level->Pmat->matvec->internal == NULL)
+             current_level->Pmat->matvec->func_ptr == NULL)
             pr_error("Error: No P matvec on grid %d.\n",level);
 /*
          ML_Operator_Check_Getrow(current_level->Pmat,ml->comm,level, "Pmat");
 */
       }
 
-      if (current_level->pre_smoother->smoother->internal==ML_Smoother_Jacobi)
+      if (current_level->pre_smoother->smoother->func_ptr==ML_Smoother_Jacobi)
       {
-         if ((temp == NULL) && (current_level->csolve->func->internal == NULL))
+         if ((temp == NULL) && (current_level->csolve->func->func_ptr == NULL))
          {
             if (current_level->pre_smoother->ntimes == ML_NOTSET) {
                current_level->pre_smoother->ntimes = ML_CONVERGE;
@@ -3533,7 +3533,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->internal != NULL) )
+           ( pre->smoother->func_ptr != NULL) )
       {
    	ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
@@ -4316,7 +4316,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhs, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->internal != NULL) )
+           ( pre->smoother->func_ptr != NULL) )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
@@ -4718,7 +4718,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL ) {
@@ -4735,7 +4735,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL) {
       Destroy_CompCol_Matrix(Amat);
@@ -4746,7 +4746,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->internal( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( vsolver, 0, NULL, 0, NULL);
 #endif
 #endif
    ML_Solver_Destroy( &solver );
@@ -4798,7 +4798,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
-   if ( op->getrow->internal != NULL ) {
+   if ( op->getrow->func_ptr != NULL ) {
       getrow_flag = 1;
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
@@ -4815,7 +4815,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
 
          if (flag == 0) break;
@@ -4916,11 +4916,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->func_ptr == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = ML_SuperLU_Solve;
+      sl->csolve->func->func_ptr = ML_SuperLU_Solve;
       ML_CSolve_Set_Label( sl->csolve, "SuperLU");
 
    }
@@ -5054,7 +5054,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
-   if ( op->getrow->internal != NULL ) {
+   if ( op->getrow->func_ptr != NULL ) {
       getrow_flag = 1;
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
@@ -5071,7 +5071,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          if (flag == 0) break;
          nz_ptr += length;
@@ -5209,11 +5209,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->func_ptr == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = ML_SuperLU_Solve;
+      sl->csolve->func->func_ptr = ML_SuperLU_Solve;
       ML_CSolve_Set_Label( sl->csolve, "Dist. SuperLU");
    }
 
@@ -5448,7 +5448,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
-   if      ( op->getrow->internal != NULL ) getrow_flag = 1;
+   if      ( op->getrow->func_ptr != NULL ) getrow_flag = 1;
    else
    {
       printf("ML_Gen_CoarseSolverAggregation ERROR : no getrow function.\n");
@@ -5467,7 +5467,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
       flag = 1;
       for (i = 0; i < osize; i++)
       {
-	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
 
          if (flag == 0) break;
@@ -5520,11 +5520,11 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == ML_CSolve_Aggr ) reuse = 1;
+   if ( sl->csolve->func->func_ptr == ML_CSolve_Aggr ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = ML_CSolve_Aggr;
+      sl->csolve->func->func_ptr = ML_CSolve_Aggr;
    }
 
    /* ----------------------------------------------------------------- */
@@ -6539,7 +6539,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       ML_Smoother_Apply(pre, lengf, ep_sol, lengf, ep_rhss, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->internal != NULL) )
+           ( pre->smoother->func_ptr != NULL) )
       {
          ML_Operator_Apply(Amat, lengf, ep_sol, lengf, ep_res);
          for ( i = 0; i < lengf; i++ )

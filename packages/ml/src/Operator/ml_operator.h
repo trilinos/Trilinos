@@ -46,7 +46,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 struct ML_Function_Struct {
    int ML_id;
    int Nrows;
-   int (*internal)(ML_Operator *, int, double *, int, double *);
+   int (*func_ptr)(ML_Operator *, int, double *, int, double *);
 };
 
 /* -------------------------------------------------------------------- */
@@ -59,7 +59,7 @@ struct ML_GetrowFunc_Struct {
    int           Nrows;
    ML_CommInfoOP *pre_comm;
    ML_CommInfoOP *post_comm;
-   int           (*internal)(ML_Operator *,int,int*,int,int*,double*,int*);
+   int           (*func_ptr)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *data;
    int           use_loc_glob_map;
    int           *loc_glob_map;

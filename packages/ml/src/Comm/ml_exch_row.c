@@ -756,7 +756,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
    total_nz += next_nz;
    matrix->getrow->Nrows  = row_count;
-   matrix->getrow->internal = CSR_getrow;
+   matrix->getrow->func_ptr = CSR_getrow;
    matrix->getrow->ML_id = ML_NONEMPTY;
    matrix->getrow->loc_glob_map   = NULL;
    matrix->getrow->use_loc_glob_map = ML_NO;

@@ -2735,7 +2735,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   getrowfunc = getrow_obj->internal;
+   getrowfunc = getrow_obj->func_ptr;
    getrowdata = (void *) Amatrix;
    if ( getrowfunc == NULL )
    {

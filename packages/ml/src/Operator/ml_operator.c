@@ -53,7 +53,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    ML_memory_alloc((void**)&(mat->matvec),sizeof(ML_Function),"OF1");
    mat->matvec->ML_id    = ML_EMPTY;
    mat->matvec->Nrows    = 0;
-   mat->matvec->internal = NULL;
+   mat->matvec->func_ptr = NULL;
    mat->lambda_max       = -666.666;
    mat->lambda_max_img   = 0.0;
    mat->lambda_min       = -666.666;
@@ -63,7 +63,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->getrow->Nrows            = 0;
    mat->getrow->pre_comm         = NULL;
    mat->getrow->post_comm        = NULL;
-   mat->getrow->internal         = NULL;
+   mat->getrow->func_ptr         = NULL;
    mat->getrow->data             = NULL;
    mat->getrow->use_loc_glob_map = ML_NO;
    mat->getrow->loc_glob_map     = NULL;
@@ -227,12 +227,12 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->halfclone        = ML_TRUE;
    mat->matvec->ML_id    = original->matvec->ML_id;
    mat->matvec->Nrows    = original->matvec->Nrows;
-   mat->matvec->internal = original->matvec->internal;
+   mat->matvec->func_ptr = original->matvec->func_ptr;
    mat->getrow->ML_id            = original->getrow->ML_id;
    mat->getrow->Nrows            = original->getrow->Nrows;
    mat->getrow->pre_comm         = original->getrow->pre_comm;
    mat->getrow->post_comm        = original->getrow->post_comm;
-   mat->getrow->internal         = original->getrow->internal;
+   mat->getrow->func_ptr         = original->getrow->func_ptr;
    mat->getrow->data             = original->getrow->data;
    mat->getrow->use_loc_glob_map = original->getrow->use_loc_glob_map;
    mat->getrow->loc_glob_map     = original->getrow->loc_glob_map;
@@ -351,7 +351,7 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
    mat->invec_leng = inlen;
    mat->outvec_leng = outlen;
    mat->data = data;
-   mat->matvec->internal = func;
+   mat->matvec->func_ptr = func;
 
    mat->matvec->ML_id = ML_NONEMPTY;
    mat->matvec->Nrows = nrows;
@@ -366,7 +366,7 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
 int ML_Operator_Set_ApplyFunc(ML_Operator *Op, 
                        int (*func)(ML_Operator *, int, double *, int, double *))
 {
-  Op->matvec->internal = func;
+  Op->matvec->func_ptr = func;
   Op->matvec->ML_id    = ML_NONEMPTY;
    return 0;
 }
@@ -396,7 +396,7 @@ int ML_Operator_Set_Diag(ML_Operator *Op, int size, double diagonal[])
 int ML_Operator_Set_Getrow(ML_Operator *Op, 
         int size, int (*func)(ML_Operator *,int,int*,int,int*,double*,int*))
 {
-  Op->getrow->internal = func;
+  Op->getrow->func_ptr = func;
   
   Op->getrow->ML_id = ML_NONEMPTY;
   Op->getrow->Nrows = size;
@@ -412,10 +412,10 @@ int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
                 int requested_rows[], int allocated_space, int columns[], 
                 double values[], int row_lengths[])
 {
-   if (Amat->getrow->internal == NULL) 
+   if (Amat->getrow->func_ptr == NULL) 
       pr_error("ML_Operator_Getrow : Amat getrow not defined\n");
 
-   return(Amat->getrow->internal(Amat,N_requested_rows, requested_rows, 
+   return(Amat->getrow->func_ptr(Amat,N_requested_rows, requested_rows, 
 			 allocated_space, columns, values, row_lengths));
 
 }
@@ -431,7 +431,7 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
 
    if (Amat->diagonal == NULL)
    {
-      if (Amat->getrow->internal == NULL)
+      if (Amat->getrow->func_ptr == NULL)
          pr_error("Error(ML_Operator_Get_Diag): diagonal not available\n");
       else
       {
@@ -482,10 +482,10 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->internal == NULL)
+   if (Op->matvec->func_ptr == NULL)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
-   Op->matvec->internal(Op,       inlen, din, olen, dout);
+   Op->matvec->func_ptr(Op,       inlen, din, olen, dout);
 
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
@@ -510,12 +510,12 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->internal == NULL) 
+   if (Op->matvec->func_ptr == NULL) 
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
 
-   Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
+   Op->matvec->func_ptr((void*)Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 
@@ -541,7 +541,7 @@ int ML_Operator_Check_Getrow(ML_Operator *Amat, int level, char *str)
    double  *t1,*t2,*t3, norm1, norm2;
    ML_Comm *comm;
 
-   if (Amat->getrow->internal == NULL) return(1);
+   if (Amat->getrow->func_ptr == NULL) return(1);
 
    comm  = Amat->comm;
    Nrows = Amat->outvec_leng;
@@ -966,7 +966,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      Amat->getrow->Nrows            = 0;
      Amat->getrow->pre_comm         = NULL;
      Amat->getrow->post_comm        = NULL;
-     Amat->getrow->internal         = NULL;
+     Amat->getrow->func_ptr         = NULL;
      Amat->getrow->data             = NULL;
      Amat->getrow->use_loc_glob_map = ML_NO;
      Amat->getrow->loc_glob_map     = NULL;
@@ -1578,12 +1578,12 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->internal == NULL) 
+   if (Op->matvec->func_ptr == NULL) 
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
 
-   Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
+   Op->matvec->func_ptr((void*)Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 
@@ -1619,22 +1619,22 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
    ep_din.ExtractView ( &pp_din );
    ep_dout.ExtractView ( &pp_dout );
 
-   if (Op->matvec->internal == NULL)
+   if (Op->matvec->func_ptr == NULL)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
 
-   if ( (void *)Op->matvec->internal == (void *)Epetra_ML_matvec )
+   if ( (void *)Op->matvec->func_ptr == (void *)Epetra_ML_matvec )
      /* WKC  Call the new blocked function!! */
      Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
 			    (double *)&ep_dout );
 
-   else if ( (void *)Op->matvec->internal == (void *) MSR_matvec )
+   else if ( (void *)Op->matvec->func_ptr == (void *) MSR_matvec )
      MSR_matvec_WKC (Op,inlen, (double *)&ep_din , olen , (double *)&ep_dout );
    else {
          for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
             double *din = pp_din[KK];
             double *dout = pp_dout[KK];
-            Op->matvec->internal(Op,       inlen, din, olen, dout);
+            Op->matvec->func_ptr(Op,       inlen, din, olen, dout);
          }
    }
 #if defined(ML_TIMING) || defined(ML_FLOPS)
