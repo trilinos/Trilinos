@@ -59,7 +59,7 @@ StatusType RelResid::operator()(const Solver::Generic& problem)
     return Unconverged;
 }
 
-ostream& RelResid::print(ostream& stream, int indent = 0) const
+ostream& RelResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';

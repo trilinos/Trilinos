@@ -58,7 +58,7 @@ StatusType MaxIters::operator()(const Solver::Generic& problem)
   return status;
 }
 
-ostream& MaxIters::print(ostream& stream, int indent = 0) const
+ostream& MaxIters::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';

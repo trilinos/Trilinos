@@ -57,7 +57,7 @@ StatusType AbsResid::operator()(const Solver::Generic& problem)
   return status;
 }
 
-ostream& AbsResid::print(ostream& stream, int indent = 0) const
+ostream& AbsResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
