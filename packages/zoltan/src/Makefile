@@ -125,22 +125,23 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../all ../lb ../par ../rcb ../oct ../bsfc \
+		  ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
-		  -I../all -I../lb -I../par -I../rcb  -I../oct  -I../bsfc \
+		  -I../all -I../lb -I../par -I../rcb  -I../oct  \
+		  -I../bsfc -I../hsfc \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver ch all lb par rcb oct bsfc parmetis params timer ha \
+SUBDIRS		= driver ch all lb par rcb oct bsfc hsfc parmetis params \
+		  timer ha \
 		  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
-
 
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
@@ -159,15 +160,18 @@ OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 		  octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
-		  migreg.h hilbert_const.h migtags_const.h octree_const.h \
+		  migreg.h hsfc_hilbert_const.h migtags_const.h octree_const.h \
 		  rootlist_const.h SFC.h
 
 SFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
 		  sfc_refine_partition_level.c sfc_refine_overloaded_bins.c
 SFC_INC		= hilbert_const.h sfc.h sfc_const.h
 
+HSFC_CSRC	= hsfc_hilbert.c hsfc.c
+HSFC_INC	= hsfc_hilbert.h hsfc_const.h hsfc.h
+
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
-		  key_params.c free_params.c bind_param.c 
+		  key_params.c free_params.c bind_param.c
 PARAMS_INC	= params_const.h
 
 PAR_CSRC	= par_median.c par_sync.c par_stats.c
@@ -215,7 +219,8 @@ endif
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(OCT_CSRC) $(SFC_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
+		  $(OCT_CSRC) $(SFC_CSRC) $(HSFC_CSRC) \
+		  $(PARAMS_CSRC) $(PARMETIS_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o) 
@@ -241,7 +246,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 #
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
-		  -Ioct -Ibsfc -Iparmetis -Itimer -Iha -Ireftree \
+		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -I$(ZOLTAN_INC_PATH)
@@ -395,6 +400,10 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/bsfc'" >> zoltan_script
 	@for iii in $(SFC_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../bsfc/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/hsfc'" >> zoltan_script
+	@for iii in $(HSFC_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hsfc/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/params'" >> zoltan_script
 	@for iii in $(PARAMS_CSRC) ; do \

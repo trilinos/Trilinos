@@ -11,87 +11,38 @@
 #    $Revision$
 ##############################################################################
 
-*************************   CHACO TEST PROBLEMS   *****************************
--------------------------------------------------------------------------------
-ch_bug
-  Small graph where all nodes are aligned along the y-axis.  Also contains
-  duplicate nodes at the same coordinates and zero-weight nodes.
-  Graph and coordinates included.
-  Vertex and edge weights specified.
-  Note:  ParMETIS method partgeom may fail on this problem.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_ewgt
-  Simple graph.
-  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
-  Graph and coordinates included.
-  Edge weights specified.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_film
-  Film graph included with Chaco distribution.
-  Small finite element grid with quadrilateral elements.
-  Graph and coordinates included.
-  No vertex weights.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_grid20x19
-  Simple grid graph.
-  20x19 uniform grid.
-  Graph and coordinates included.
-  No vertex weights.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_hammond
-  hammond graph included with Chaco distribution.
-  fairly small, 2D finite element grid with triangular elements
-  Graph and coordinates included.
-  No vertex weights.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_nograph
-  Simple graph.
-  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
-  No graph specified; only coordinates included.
-  No vertex weights.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_simple
-  Simple graph.
-  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
-  Graph and coordinates included.
-  No vertex weights.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-ch_vwgt
-  Simple graph.
-  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
-  Graph and coordinates included.
-  Vertex weights specified.
--------------------------------------------------------------------------------
+The test directory contains a series of tests used for regression testing.
+Each test is in its own directory.  Within each directory, 
+  - file README gives a brief description of the particular test.
+  - files "zdrive.inp.*" are input files for the zdrive or zfdrive test drivers.
+  - subdirectory "answers" contains the accepted solutions for the test.
 
+Test directories ch_* use Chaco-format input files.  These tests may be run
+on any number of processors; regression test results are for a specified number
+of processors.
 
+Test directories nem_* use Nemesis-format input files.  Running these tests
+on arbitrary numbers of processors requires generation of Nemesis parallel
+input files; instructions for generating these files are included in the
+nem_*/README files.  However, since generating these files is non-trivial, 
+it is easiest to run these problems on the specified number of processors.
 
-*************************   NEMESIS TEST PROBLEMS   ***************************
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-nem_ti_300
-  3D Tilted Reactor mesh with approx. 300 elements.
-  Run on 6 processors (for committed values).
-  Random Chaco decomposition initially.
-  No vertex weighting.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-nem_ti_4k
-  3D Tilted Reactor mesh with approx. 4k elements.
-  Run on 9 processors (for committed values).
-  Random Chaco decomposition initially.
-  No vertex weighting.
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-nem_ti_20k
-  3D Tilted Reactor mesh with approx. 20k elements.
-  Run on 36 processors (for committed values).
-  Random Chaco decomposition initially.
-  No vertex weighting.
--------------------------------------------------------------------------------
+The script, test_zoltan, in this directory, runs the entire regression test
+suite.  See descriptions of test_zoltan in the Zoltan developer's guide.
+
+Test input files zdrive.inp.* have a suffix indicating the particular
+partitioning method and parameters used for the test problem.  A summary of
+the suffixes is included below:
+  - rcb:               RCB method
+  - rcb-ts:            RCB method with TFLOPS_SPECIAL parameter.
+  - rib:               RIB method
+  - rib-ts:            RIB method with TFLOPS_SPECIAL parameter.
+  - oct[0,1,2]:        OCTPART method with OCT_METHOD parameter = [0,1,2]
+  - partkway:          ParMETIS PartKWay method
+  - partgeom:          ParMETIS PartGeom method
+  - diffusion:         ParMETIS Diffusion method
+  - jostle:            Jostle partitioning method
+  - jostle-diffusion:  Jostle partitioning method with jostle_reduction=off
+  - *-oneproc:         Initial distribution on only one processor.
+  - *-cyclic:          Cyclic initial distribution.
+  

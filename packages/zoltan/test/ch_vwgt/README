@@ -19,3 +19,14 @@ ch_vwgt
   Graph and coordinates included.
   Vertex weights specified.
 -------------------------------------------------------------------------------
+Differences between output on Sun and TFlops for test rib-oneproc:
+  Node 17 assigned to proc 0 on Sun, proc 1 on Tflops.
+  Verified that this difference is most likely due to differences in
+  arithmetic on machines.  In LB_find_median's calculation of the
+  second cut, node 11 lies almost exactly on the median line.  On Suns, it
+  is <= the median; on Tflops, it is > the median; thus, it is assigned to
+  the lo set on the Suns, and the hi set on Tflops.  This difference causes
+  the re-calculation of the median to differ on the two platforms.  Given 
+  the tolerance used in LB_find_median to stop iterations, the different
+  medians persist after leaving LB_find_median.
+  Result verified by Karen Devine, February 2002.

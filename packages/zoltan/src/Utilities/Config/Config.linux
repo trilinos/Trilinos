@@ -113,12 +113,12 @@ MPI_LIB		=
 MPI_LIBPATH	= 
 endif
 
-PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/linux/lib/ParMETIS2
-PARMETIS_INCPATH  	= -I/Net/proj/zoltan/arch/all/src/ParMETIS2
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS2
+PARMETIS_INCPATH  	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
 
-#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/linux/lib
-#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
-#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/Net/proj/zoltan/arch/linux/lib
-NEMESIS_INCPATH		= -I/Net/proj/zoltan/arch/linux/include
+NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
+NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include

@@ -44,9 +44,9 @@ MPI_LIBPATH             = -lmpi
 PARMETIS_LIBPATH        = -L/Net/pecos/proj/xyce/arch/sgin32_MPI/lib
 PARMETIS_INCPATH 	= -I/Net/pecos/proj/xyce/arch/sgin32_MPI/include/zoltan_new -I../../ParMETIS
 
-#JOSTLE_LIBPATH         = -L/Net/proj/zoltan/arch/solaris/lib
-#JOSTLE_INCPATH         = -I/Net/proj/zoltan/arch/all/src
-#JOSTLE_SRCPATH         = /Net/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH         = -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH         = -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH         = /Net/local/proj/zoltan/arch/all/src
 
 NEMESIS_LIBPATH         = -L/Net/pecos/rf_crew/arch/sgin32/lib
 NEMESIS_INCPATH         = -I/Net/pecos/rf_crew/arch/sgin32/include

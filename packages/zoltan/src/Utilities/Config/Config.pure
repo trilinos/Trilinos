@@ -30,7 +30,7 @@ AR			= ar r
 # use CFLAGS = $(DBG_FLAGS) with purify.
 CC			= cc
 PURE_CC			= purify -best-effort -follow-child-processes=yes \
-			  -cache-dir=/Net/proj/zoltan/tmp/purify 
+			  -cache-dir=/Net/local/proj/zoltan/tmp/purify 
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
@@ -38,7 +38,7 @@ INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS = $(DBG_FLAGS)
+CFLAGS 			= $(DBG_FLAGS)
 
 F90			= mpif90
 LOCAL_F90		= f90
@@ -52,12 +52,12 @@ MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
                   -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 
-PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib/ParMETIS2
-PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src/ParMETIS2
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS2
+PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
 
-JOSTLE_LIBPATH 		= -L/Net/proj/zoltan/arch/solaris/lib
-JOSTLE_INCPATH 		= -I/Net/proj/zoltan/arch/all/src
-JOSTLE_SRCPATH 		= /Net/proj/zoltan/arch/all/src
+JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/Net/proj/zoltan/arch/solaris/lib
-NEMESIS_INCPATH		= -I/Net/proj/zoltan/arch/solaris/include
+NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include

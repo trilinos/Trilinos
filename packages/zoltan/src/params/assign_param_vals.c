@@ -137,6 +137,7 @@ PARAM_VARS *param_ptr;       /* pointer to current param */
 param_ptr = params;
 
     while (param_ptr->name != NULL) {
+      if (param_ptr->ptr != NULL) {
         if (!strcmp(param_ptr->type, "INT") || 
             !strcmp(param_ptr->type, "INTEGER")) {
  
@@ -160,6 +161,7 @@ param_ptr = params;
             printf("ZOLTAN Parameter %s = %c\n", 
                     param_ptr->name, *((char *) param_ptr->ptr));
         }
-        param_ptr++;
+      }
+      param_ptr++;
     }
 }

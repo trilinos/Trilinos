@@ -1168,8 +1168,8 @@ float newsize; /* size of partition if this subroot gets added to it */
     if (subroot->num_child != 0) {
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
-        Zoltan_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,current_size,
-                               num_exp, cutoff, num_part, partition_size, eps);
+        Zoltan_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,
+               current_size, num_exp, cutoff, num_part, partition_size, eps);
     }
     else {
 

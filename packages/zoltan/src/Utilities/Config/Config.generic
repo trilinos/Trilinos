@@ -150,7 +150,7 @@ MPI_LIBPATH		=
 # is distributed with Zoltan. Make sure that you use a header file
 # that is compatible with the library version you link. 
 #PARMETIS_LIBPATH 	= -L.
-#PARMETIS_INCPATH      = -I/Net/proj/zoltan/arch/all/src/ParMETIS2
+#PARMETIS_INCPATH      = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
 
 # For graph-partitioning, Zoltan includes an interface to the
 # Jostle graph-partitioning library of Chris Walshaw, U. Greenwich.
@@ -159,9 +159,9 @@ MPI_LIBPATH		=
 # If you already have Jostle on your machine, give the path here.
 # Otherwise, you first need to get Jostle from Chris Walshaw and
 # install it on your system.
-#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
-#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
-#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
 # In addition to accepting Chaco input files, the test driver zdrive 
 # can use Nemesis mesh database files as input.
@@ -169,6 +169,6 @@ MPI_LIBPATH		=
 # zdrive, comment out the NEMESIS_* variables.  Otherwise,
 # specify paths to the Nemesis, Exodus and NetCDF libraries and
 # include files.
-#NEMESIS_LIBPATH	= -L/Net/proj/zoltan/arch/solaris/lib
-#NEMESIS_INCPATH	= -I/Net/proj/zoltan/arch/solaris/include
+#NEMESIS_LIBPATH	= -L/Net/local/proj/zoltan/arch/solaris/lib
+#NEMESIS_INCPATH	= -I/Net/local/proj/zoltan/arch/solaris/include
  

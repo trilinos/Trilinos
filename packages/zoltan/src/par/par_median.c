@@ -76,7 +76,8 @@ int Zoltan_RB_find_median(
   double weight,        /* weight of entire partition (input) */
   double *wtlo,         /* weight of lower partition (output) */
   double *wthi,         /* weight of upper partition (output) */
-  int    *dotlist       /* list of active dots */
+  int    *dotlist,      /* list of active dots */
+  int rectilinear_blocks/* if set all dots with same value on same side of cut*/
 )
 {
 /* Local declarations. */
@@ -281,20 +282,28 @@ int Zoltan_RB_find_median(
           wtok = 0.0;
           if (medme.valuehi == med.valuehi) wtok = medme.wthi;   
           if (weightlo + med.wthi >= targetlo) {                /* all done */
-            if (lb->Tflops_Special)
-              Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
-            else
-              MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
-            wtmax = targetlo - weightlo;
-            if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
+            if (rectilinear_blocks) {
+              if (weightlo + med.wthi - targetlo > targetlo - weightlo)
+                wtok = 0.0;                      /* don't move if moving group
+                                                    of dots has worse balance*/
+            } else {
+              if (lb->Tflops_Special)
+                Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, 
+                               num_procs);
+              else
+                MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
+              wtmax = targetlo - weightlo;
+              if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
+            }
             breakflag = 1;
           }                                      /* wtok = most I can move */
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuehi) { /* only move if better */
-              if (wtsum + wgts[i] - wtok < wtok - wtsum)
+              if (wtsum + wgts[i] - wtok < wtok - wtsum) {
                 dotmark[i] = 0;
-              wtsum += wgts[i];
+                wtsum += wgts[i];  /* KDD Moved sum inside if test 1/2002 */
+              }
             }
           }
           if (breakflag) {                        /* done if moved enough */
@@ -343,20 +352,28 @@ int Zoltan_RB_find_median(
           wtok = 0.0;
           if (medme.valuelo == med.valuelo) wtok = medme.wtlo;   
           if (weighthi + med.wtlo >= targethi) {                /* all done */
-            if (lb->Tflops_Special)
-               Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
-            else
-               MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
-            wtmax = targethi - weighthi;
-            if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
+            if (rectilinear_blocks) {
+              if (weighthi + med.wtlo - targethi > targethi - weighthi)
+                wtok = 0.0;                      /* don't move if moving group
+                                                    of dots has worse balance*/
+            } else {
+              if (lb->Tflops_Special)
+                Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, 
+                               num_procs);
+              else
+                MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
+              wtmax = targethi - weighthi;
+              if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
+            }
             breakflag = 1;
           }                                      /* wtok = most I can move */
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuelo) { /* only move if better */
-              if (wtsum + wgts[i] - wtok < wtok - wtsum) 
+              if (wtsum + wgts[i] - wtok < wtok - wtsum) {
                 dotmark[i] = 1;
-              wtsum += wgts[i];
+                wtsum += wgts[i]; /* KDD Moved sum inside if test 1/2002 */
+              }
             }
           }
           if (breakflag) {                        /* done if moved enough */

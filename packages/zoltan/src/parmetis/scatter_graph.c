@@ -21,7 +21,6 @@
  * The entire graph structure is shuffled around; no attempt is made
  * to keep data local. Processor i receives nodes i*n/p through (i+1)*n/p. 
  * This routine is only useful if the distribution is highly imbalanced!
- * Weights are currently ignored.
  *
  * The input graph structure is lost and fresh memory is allocated
  * for the new distributed graph.
@@ -30,14 +29,17 @@
  *
  * The vertex communication plan is returned so it may be used to compute
  * the export lists after partitioning. 
+ *
+ * Currently the number of weights are inferred from lb->Obj_Weight_Dim
+ * and lb->Comm_Weight_Dim. Perhaps these values should be input parameters.
  */
 
 int Zoltan_Scatter_Graph(
-  int     have_graph,		/* do I have graph data, or only the geometry? */
   idxtype **vtxdist,
   idxtype **xadj,
   idxtype **adjncy,
   idxtype **vwgt,
+  idxtype **vsize,
   idxtype **adjwgt,
   float   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
@@ -47,30 +49,40 @@ int Zoltan_Scatter_Graph(
 {
   static char *yo = "Zoltan_Scatter_Graph";
   char     msg[256];
-  idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt, *old_adjwgt;
+  idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt; 
+  idxtype *old_vsize, *old_adjwgt;
   float   *old_xyz;
   int *ptr, *proclist = NULL, *proclist2;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
+  int use_graph;	/* do we use graph data, or only the geometry? */
+  int use_vsize;	/* do we use the vsize array? */
   int vwgt_dim= lb->Obj_Weight_Dim, ewgt_dim= lb->Comm_Weight_Dim;
   ZOLTAN_COMM_OBJ *plan2;
 
   ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* Save pointers to "old" data distribution */
-  old_vtxdist = *vtxdist;
-  old_xadj = *xadj;
-  old_adjncy = *adjncy;
-  old_vwgt = *vwgt;
-  old_adjwgt = *adjwgt;
-  old_xyz = *xyz;
+  old_vtxdist = old_xadj = old_adjncy = NULL;
+  old_vwgt = old_vsize = old_adjwgt = NULL;
+  old_xyz = NULL;
+  if (vtxdist)
+    old_vtxdist = *vtxdist;
+  if (xadj)
+    old_xadj = *xadj;
+  if (adjncy)
+    old_adjncy = *adjncy;
+  if (vwgt)
+    old_vwgt = *vwgt;
+  if (vsize)
+    old_vsize = *vsize;
+  if (adjwgt)
+    old_adjwgt = *adjwgt;
+  if (xyz)
+    old_xyz = *xyz;
 
   old_num_obj = old_vtxdist[lb->Proc+1] - old_vtxdist[lb->Proc]; 
   if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Old number of objects = %d\n", lb->Proc, old_num_obj);
-
-  /* Reset all data pointers to NULL for now */
-  *vtxdist = *xadj = *adjncy = *vwgt = *adjwgt = NULL;
-  *xyz = NULL;
 
   /* Compute new distribution, *vtxdist */
   (*vtxdist) = (idxtype *)ZOLTAN_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
@@ -78,8 +90,21 @@ int Zoltan_Scatter_Graph(
     (*vtxdist)[i] = (i*old_vtxdist[lb->Num_Proc])/lb->Num_Proc;
   }
 
+  /* Check if any proc has graph data */
+  i = (old_xadj != NULL);
+  MPI_Allreduce(&i, &use_graph, 1, MPI_INT, MPI_LOR, lb->Communicator);
+  j = (old_vsize != NULL);
+  MPI_Allreduce(&j, &use_vsize, 1, MPI_INT, MPI_LOR, lb->Communicator);
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
+    printf("[%1d] Debug: use_graph = %1d, use_vsize = %1d\n", lb->Proc, 
+          use_graph, use_vsize);
+
+  /* Reset all data pointers to NULL for now */
+  *xadj = *adjncy = *vwgt = *vsize = *adjwgt = NULL;
+  *xyz = NULL;
+
   /* Convert the xdj array so that it contains the degree of each vertex */
-  if (have_graph){
+  if (use_graph){
     for (i=0; i<old_num_obj; i++){
       old_xadj[i] = old_xadj[i+1] - old_xadj[i];
     }
@@ -89,10 +114,12 @@ int Zoltan_Scatter_Graph(
   num_obj = (*vtxdist)[lb->Proc+1] - (*vtxdist)[lb->Proc];
   if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: New number of objects = %d\n", lb->Proc, num_obj);
-  if (have_graph)
+  if (use_graph)
     *xadj = (idxtype *) ZOLTAN_MALLOC((num_obj+1)*sizeof(idxtype));
   if (vwgt_dim)
     *vwgt = (idxtype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(idxtype));
+  if (use_vsize)
+    *vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
   if (ndims)
     *xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj*sizeof(float));
 
@@ -129,19 +156,22 @@ int Zoltan_Scatter_Graph(
   if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Starting vertex-based communication.\n", lb->Proc);
 
-  if (have_graph){
+  if (use_graph){
     Zoltan_Comm_Do( *plan, TAG2, (char *) old_xadj, sizeof(idxtype), (char *) *xadj);
   }
   if (vwgt_dim){
     Zoltan_Comm_Do( *plan, TAG3, (char *) old_vwgt, vwgt_dim*sizeof(idxtype), (char *) *vwgt);
   }
+  if (use_vsize){
+    Zoltan_Comm_Do( *plan, TAG4, (char *) old_vsize, sizeof(idxtype), (char *) *vsize);
+  }
   if (ndims){
-    Zoltan_Comm_Do( *plan, TAG4, (char *) old_xyz, ndims*sizeof(idxtype), (char *) *xyz);
+    Zoltan_Comm_Do( *plan, TAG5, (char *) old_xyz, ndims*sizeof(idxtype), (char *) *xyz);
   }
   if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Finished vertex-based communication.\n", lb->Proc);
 
-  if (have_graph){
+  if (use_graph){
 
     /* Rebuild xadj from degrees */
     for (i=1; i<num_obj; i++)
@@ -162,7 +192,11 @@ int Zoltan_Scatter_Graph(
     for (i=0; i<old_num_obj; i++)
       for (j=0; j<old_xadj[i]; j++)
         *ptr++ = proclist[i];
-  
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+      printf("[%1d] Debug: Allocated proclist of length %d for edges.\n", 
+             lb->Proc, old_xadj[old_num_obj]);
+    }
+
     Zoltan_Comm_Create(&plan2, old_xadj[old_num_obj], proclist2, lb->Communicator, 
                    TAG1, &nrecv);
   
@@ -173,6 +207,13 @@ int Zoltan_Scatter_Graph(
       /* Free data */
       ZOLTAN_FREE(&proclist);
       ZOLTAN_FREE(&proclist2);
+      ZOLTAN_FREE(&old_vtxdist);
+      ZOLTAN_FREE(&old_xadj);
+      ZOLTAN_FREE(&old_adjncy);
+      ZOLTAN_FREE(&old_vwgt);
+      ZOLTAN_FREE(&old_vsize);
+      ZOLTAN_FREE(&old_adjwgt);
+      ZOLTAN_FREE(&old_xyz);
       ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
@@ -192,7 +233,7 @@ int Zoltan_Scatter_Graph(
     /* Free the comm. plan for edge data */
     Zoltan_Comm_Destroy(&plan2);
 
-  } /* end of have_graph */
+  } /* end of use_graph */
 
   /* Free data structures */
   ZOLTAN_FREE(&proclist);
@@ -201,6 +242,7 @@ int Zoltan_Scatter_Graph(
   ZOLTAN_FREE(&old_xadj);
   ZOLTAN_FREE(&old_adjncy);
   ZOLTAN_FREE(&old_vwgt);
+  ZOLTAN_FREE(&old_vsize);
   ZOLTAN_FREE(&old_adjwgt);
   ZOLTAN_FREE(&old_xyz);
 

@@ -28,24 +28,27 @@
 #include "ha_const.h"
 #include "rib_const.h"
 #include "sfc_const.h"
+#include "hsfc_const.h"
 #include "all_allo_const.h"
+#include "hsfc_const.h"
 
 static int add_param(LB *, char *, char *);
 static int remove_param(LB *, char *);
 
 /* List of set_parameter functions to be called */
 static ZOLTAN_SET_PARAM_FN * Param_func[] = {
-        Zoltan_Set_Malloc_Param,
-        Zoltan_RCB_Set_Param,
-        Zoltan_ParMetis_Set_Param,
-        Zoltan_Jostle_Set_Param,
-        Zoltan_Oct_Set_Param,
-        Zoltan_Reftree_Set_Param,
-        Zoltan_RIB_Set_Param,
-	Zoltan_SFC_Set_Param,
-     /* Zoltan_Set_Machine_Param, */
-   /*** Add your new parameter setting function here! ***/
-        NULL /* Last entry _must_ be NULL! */
+       Zoltan_Set_Malloc_Param,
+       Zoltan_RCB_Set_Param,
+       Zoltan_ParMetis_Set_Param,
+       Zoltan_Jostle_Set_Param,
+       Zoltan_Oct_Set_Param,
+       Zoltan_Reftree_Set_Param,
+       Zoltan_RIB_Set_Param,
+       Zoltan_SFC_Set_Param,
+       Zoltan_HSFC_Set_Param,
+       /* Zoltan_Set_Machine_Param, */
+       /*** Add your new parameter setting function here! ***/
+       NULL /* Last entry _must_ be NULL! */
 };
 
 int Zoltan_Set_Param(

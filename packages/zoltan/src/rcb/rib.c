@@ -216,6 +216,7 @@ static int rib_fn(
   double weightlo;            /* weight of lower side of cut */
   double weighthi;            /* weight of upper side of cut */
   int *dotlist;               /* list of dots for find_median */
+  int rectilinear_blocks = 0; /* parameter for find_median (not used by rib) */
 
   /* MPI data types and user functions */
 
@@ -450,11 +451,11 @@ static int rib_fn(
     if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time2 = Zoltan_Time(lb->Timer);
 
-    if (!Zoltan_RB_find_median(lb, value, wgts, dotmark, dotnum, proc, fractionlo,
-                        local_comm, &valuehalf, first_guess,
-                        &(counters[0]), nprocs, old_nprocs, proclower,
-                        wgtflag, valuelo, valuehi, weight, &weightlo,
-                        &weighthi, dotlist)) {
+    if (!Zoltan_RB_find_median(lb, value, wgts, dotmark, dotnum, proc, 
+                   fractionlo, local_comm, &valuehalf, first_guess,
+                   &(counters[0]), nprocs, old_nprocs, proclower,
+                   wgtflag, valuelo, valuehi, weight, &weightlo,
+                   &weighthi, dotlist, rectilinear_blocks)) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from find_median.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&value);
@@ -464,9 +465,9 @@ static int rib_fn(
     }
 
     if (set)    /* set weight for current partition */
-       weight = weighthi;
+      weight = weighthi;
     else
-       weight = weightlo;
+      weight = weightlo;
 
     if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(lb->Timer);

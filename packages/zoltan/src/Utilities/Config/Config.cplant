@@ -43,9 +43,9 @@ MPI_LIBPATH		= -L/usr/local/cplant/current/lib
 PARMETIS_LIBPATH 	= -L../../ParMETIS2
 PARMETIS_INCPATH 	= -I../../ParMETIS2
 
-#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
-#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
-#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/alpha/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
 NEMESIS_LIBPATH		= -L/home/glhenni/arch/cplant/lib
 NEMESIS_INCPATH		= -I/home/glhenni/arch/cplant/include

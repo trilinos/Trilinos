@@ -47,7 +47,7 @@
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define ZOLTAN_VER   1.241
+#define ZOLTAN_VER   1.3
 
 
 /*
@@ -85,6 +85,7 @@ typedef enum Zoltan_LB_Method {
   REFTREE,
   RIB,
   SFC,
+  HSFC,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
 
@@ -524,6 +525,6 @@ extern ZOLTAN_LB_FN Zoltan_Jostle;
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_SFC;
-
+extern ZOLTAN_LB_FN Zoltan_HSFC;
 
 #endif

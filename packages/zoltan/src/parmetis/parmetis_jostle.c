@@ -45,6 +45,9 @@ struct Hash_Node {
 static PARAM_VARS Parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
         { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
+        { "PARMETIS_SEED", NULL, "INT" },
+        { "PARMETIS_IPC2REDIST", NULL, "FLOAT" },
+        { "PARMETIS_USE_OBJ_SIZE", NULL, "INT" },
         { "PARMETIS_COARSE_ALG", NULL, "INT" },
         { "PARMETIS_FOLD", NULL, "INT" },
         { NULL, NULL, NULL } };
@@ -72,10 +75,13 @@ static PARAM_VARS Graph_params[] = {
 
 static int Zoltan_ParMetis_Jostle(LB *lb, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options);
+  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, float *ipc2r);
 static int hash_lookup (LB *, struct Hash_Node **, ZOLTAN_ID_PTR, int);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
+#if PARMETIS_VERSION >= 3
+static int pmv3method(char *alg);
+#endif
 
 #endif  /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
 
@@ -107,51 +113,82 @@ int Zoltan_ParMetis(
   int  i; 
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
+  int output_level, seed, coarse_alg, fold, use_obj_size;
+  float ipc2redist;
 
   /* Set parameters */
+#if PARMETIS_VERSION >= 3
+  strcpy(alg, "ADAPTIVEREPART");
+  ipc2redist = 100.0;  /* 100 gives about the same partition quality as GDiffusion */
+#else
   strcpy(alg, "REPARTGDIFFUSION");
-  for (i=0; i<MAX_OPTIONS; i++)
-    options[i] = -1;
+#endif
+ 
+  /* Always use ParMetis option array because Zoltan by default 
+     produces no output (silent mode). ParMetis requires options[0]=1
+     when options array is to be used. */
+  options[0] = 1;
+  for (i = 1; i < MAX_OPTIONS; i++)
+    options[i] = 0;
+
+  /* Set the default option values. */
+  output_level = 0;
+  coarse_alg = 2;
+  use_obj_size = 0;
+  fold = 0;
+  seed = GLOBAL_SEED;
 
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     
-               (void *) alg);
-  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
-                (void *) &(options[OPTION_IPART]));
-  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       
-                (void *) &(options[OPTION_FOLDF]));
+                    (void *) alg);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", 
-                (void *) &(options[OPTION_DBGLVL]));
+                    (void *) &output_level);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_SEED", 
+                    (void *) &seed);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_IPC2REDIST",       
+                    (void *) &ipc2redist);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",       
+                    (void *) &use_obj_size);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
+                    (void *) &coarse_alg);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       
+                    (void *) &fold);
 
-  Zoltan_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc,
-                       lb->Debug_Proc);
+  Zoltan_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, 
+                           lb->Proc, lb->Debug_Proc);
 
-  /* Set options[0] to 1 if any of the low level ParMetis options were set,
-     or 0 otherwise. This is required by ParMetis. */
-  for (i=1; i<MAX_OPTIONS; i++)
-    if (options[i]>0) options[0] = 1;
-  if (options[0] == -1) 
-    options[0] = 0;
-  else {
-    /* If one option was set, fill in the others. We need to do this
-     * because ParMetis requires all or nothing! 
-     * The default values below are consistent with ParMetis 2.0 
-     */
-    if (options[OPTION_IPART] == -1)
-      options[OPTION_IPART] = 2; 
-    if (options[OPTION_FOLDF] == -1)
-      options[OPTION_FOLDF] = 150; 
-    if (options[OPTION_DBGLVL] == -1)
-      options[OPTION_DBGLVL] = 0; 
+  /* Copy option values to ParMetis options array */
+#if PARMETIS_VERSION >= 3
+  if (pmv3method(alg)){
+    /* ParMetis 3.0 options */
+    options[PMV3_OPTION_DBGLVL] = output_level; 
+    options[PMV3_OPTION_SEED] = seed; 
+    options[PMV3_OPT_USE_OBJ_SIZE] = use_obj_size; 
+  }
+  else
+#endif
+  {
+    /* ParMetis 2.0 options */
+    options[OPTION_IPART] = coarse_alg; 
+    options[OPTION_FOLDF] = fold; 
+    options[OPTION_DBGLVL] = output_level; 
   }
 
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options);
+            alg, options, &ipc2redist);
 
 #endif /* ZOLTAN_PARMETIS */
 }
 
+#if PARMETIS_VERSION >= 3
+static int pmv3method( char *alg)
+{
+   /* Check if alg is a ParMetis 3.0 method */
+   return ((!strcmp(alg, "PARTKWAY")) || (!strcmp(alg, "PARTGEOMKWAY"))
+          || (!strcmp(alg, "ADAPTIVEREPART")));
+}
+#endif
 
 /**********************************************************/
 /* Interface routine for Jostle. This is just a simple    */
@@ -282,7 +319,7 @@ int Zoltan_Jostle(
   /* Call the real Jostle/ParMetis interface */
   return Zoltan_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, &output_level);
+            alg, &output_level, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
 }
@@ -308,7 +345,8 @@ int Zoltan_Jostle(
   ZOLTAN_FREE(&nbors_proc); ZOLTAN_FREE(&nbors_global); \
   ZOLTAN_FREE(&local_ids); ZOLTAN_FREE(&global_ids); \
   ZOLTAN_FREE(&proc_list); ZOLTAN_FREE(&proc_list_nbor); ZOLTAN_FREE(&plist); \
-  ZOLTAN_FREE(&tmp_ewgts); \
+  ZOLTAN_FREE(&tmp_ewgts); ZOLTAN_FREE(&imb_tols);\
+  ZOLTAN_FREE(&vsize); ZOLTAN_FREE(&tpwgt);\
   }
 
 static int Zoltan_ParMetis_Jostle(
@@ -322,7 +360,8 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   char *alg,            /* algorithm to use */
-  int  *options         /* option array */
+  int  *options,        /* option array */
+  float *ipc2redist     /* ParMetis 3.0 parameter */
 )
 {
   static char *yo = "Zoltan_ParMetis_Jostle";
@@ -332,9 +371,9 @@ static int Zoltan_ParMetis_Jostle(
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2;
-  int tmp_num_obj, nself;
-  float *float_vwgt, *ewgts, *xyz, *imb_tols, *tmp_ewgts; 
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
+  int tmp_num_obj, nself, ncon;
+  float *float_vwgt, *ewgts, *xyz, *imb_tols, *tmp_ewgts, *tpwgt; 
   double geom_vec[6];
   struct Edge_Info *ptr;
   struct Edge_Info *proc_list;   /* Edge information; contains global IDs
@@ -382,12 +421,12 @@ static int Zoltan_ParMetis_Jostle(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  vtxdist = xadj = adjncy = vwgt = adjwgt = part = vsize = NULL;
   nbors_proc = NULL;
   nbors_global = NULL;
   local_ids = NULL;
   global_ids = NULL;
-  float_vwgt = ewgts = tmp_ewgts = xyz = imb_tols = NULL;
+  float_vwgt = ewgts = tmp_ewgts = xyz = imb_tols = tpwgt = NULL;
   ptr = proc_list = NULL;
   proc_list_nbor = NULL;
   hashtab = NULL;
@@ -1048,6 +1087,27 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
+#if (PARMETIS_VERSION >= 3)
+  /* Get object sizes if requested */ 
+  if (options[PMV3_OPT_USE_OBJ_SIZE] && lb->Migrate.Get_Obj_Size){
+    vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
+    if (num_obj && !vsize){
+      /* Not enough space */
+      FREE_MY_MEMORY;
+      ZOLTAN_TRACE_EXIT(lb, yo);
+      return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<num_obj; i++){
+      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
+      vsize[i] = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, 
+                     num_gid_entries, num_lid_entries,
+                     &(global_ids[i*num_gid_entries]), 
+                     lid, &ierr);
+    }
+  }
+#endif
+
+  /* Scatter graph? */
   tmp_num_obj = num_obj;
   if ((scatter>0) && (scatter<3)){
     /* Decide if the data imbalance is so bad that we should scatter the graph. */
@@ -1069,8 +1129,8 @@ static int Zoltan_ParMetis_Jostle(
   }
 
   if (scatter){
-    ierr = Zoltan_Scatter_Graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
-              lb, &comm_plan);
+    ierr = Zoltan_Scatter_Graph(&vtxdist, &xadj, &adjncy, &vwgt, &vsize,
+              &adjwgt, &xyz, ndims, lb, &comm_plan);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       FREE_MY_MEMORY;
       ZOLTAN_TRACE_EXIT(lb, yo);
@@ -1090,12 +1150,18 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
-  if (obj_wgt_dim>0){
-    /* Set Imbalance Tolerance for each component. For now, they are all the same. */
-    imb_tols = (float *) ZOLTAN_MALLOC(obj_wgt_dim * sizeof(float));
-    for (i=0; i<obj_wgt_dim; i++)
-      imb_tols[i] = lb->Imbalance_Tol;
+  ncon = (obj_wgt_dim > 0 ? obj_wgt_dim : 1);
+
+  /* Set Imbalance Tolerance for each weight component. For now, they are all the same. */
+  imb_tols = (float *) ZOLTAN_MALLOC(ncon * sizeof(float));
+  if (!imb_tols){
+    /* Not enough memory */
+    FREE_MY_MEMORY;
+    ZOLTAN_TRACE_EXIT(lb, yo);
+    return ZOLTAN_MEMERR;
   }
+  for (i=0; i<ncon; i++)
+    imb_tols[i] = lb->Imbalance_Tol;
 
   /* Verify that graph is correct */
   if (get_graph_data){
@@ -1106,7 +1172,7 @@ static int Zoltan_ParMetis_Jostle(
     ierr = Zoltan_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, flag);
   
-    /* Special error checks to avoid certain death in ParMETIS */
+    /* Special error checks to avoid certain death in ParMETIS 2.0 */
     if (xadj[tmp_num_obj] == 0){
       /* No edges on a proc is a fatal error in ParMETIS 2.0
        * and in Jostle 1.2. This error test should be removed
@@ -1133,17 +1199,28 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Select the desired ParMetis or Jostle function */
 
-#ifndef BETA_PARMETIS
-  if ((obj_wgt_dim >= 2) && strcmp(alg, "JOSTLE")) {
+#if (PARMETIS_VERSION >= 3)
+  tpwgt = (float *) ZOLTAN_MALLOC(ncon*num_proc * sizeof(float));
+  if (!tpwgt){
+    /* Not enough memory */
+    FREE_MY_MEMORY;
+    ZOLTAN_TRACE_EXIT(lb, yo);
+    return ZOLTAN_MEMERR;
+  }
+  /* For now, all desired partition sizes are equal */
+  for (i=0; i<ncon*num_proc; i++)
+    tpwgt[i] = 1.0/num_proc;
+#else /* PARMETIS_VERSION < 3 */
+  if ((ncon >= 2) && strcmp(alg, "JOSTLE")) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-      "You need the newest beta version of ParMETIS to use multi-weights.\n"
-      "If you have this installed, please define BETA_PARMETIS and "
-      "recompile Zoltan.");
+      "You need ParMETIS version 3.0 or higher to use multi-weights.\n"
+      "If you have this installed, please make sure you include the appropriate\n"
+      "version of parmetis.h and recompile Zoltan.");
     FREE_MY_MEMORY;
     ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
-#endif /* !BETA_PARMETIS */
+#endif 
   if (strcmp(alg, "JOSTLE") == 0){
 #ifdef ZOLTAN_JOSTLE
     offset = 0;            /* Index of the first object/node. */
@@ -1178,70 +1255,76 @@ static int Zoltan_ParMetis_Jostle(
     FREE_MY_MEMORY;
     ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
-#endif
+#endif /* ZOLTAN_JOSTLE */
   }
+#if PARMETIS_VERSION >= 3
   else if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
-    if (obj_wgt_dim <= 1)
-      ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-        &numflag, &num_proc, options, &edgecut, part, &comm);
-#ifdef BETA_PARMETIS
-    else { /* obj_wgt_dim >= 2 */
-      /* Beta version of multiconstraint ParMetis. Interface may change! */
-      Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, 
-        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part,
-        &comm, (lb->Proc +1));
-    }
-#endif /* BETA_PARMETIS */
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, 
+      &wgtflag, &numflag, &ncon, &num_proc, tpwgt,
+      imb_tols, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
+      &numflag, &ndims, xyz, &ncon, &num_proc, tpwgt,
+      imb_tols, options, &edgecut, part, &comm);
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+  }
+  else if (strcmp(alg, "ADAPTIVEREPART") == 0){
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_AdaptiveRepart (vtxdist, xadj, adjncy, vwgt, vsize, adjwgt, 
+      &wgtflag, &numflag, &ncon, &num_proc, tpwgt, imb_tols, 
+      ipc2redist, options, &edgecut, part, &comm);
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+  }
+#endif  /* PARMETIS_VERSION >= 3 */
+  /* Check for ParMetis 2.0 routines */
+  else if (strcmp(alg, "PARTKWAY") == 0){
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
+    ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
+      &numflag, &num_proc, options, &edgecut, part, &comm);
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+  }
+  else if (strcmp(alg, "PARTGEOMKWAY") == 0){
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
       &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
       part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
-    if (obj_wgt_dim <= 1)
-      ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-        &numflag, options, &edgecut, part, &comm);
-#ifdef BETA_PARMETIS
-    else { /* obj_wgt_dim >= 2 */
-      /* Beta version of multiconstraint ParMetis. Interface may change! */
-      Moc_ParMETIS_SR (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, NULL,
-        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm,
-        (lb->Proc+1));
-    }
-#endif /* BETA_PARMETIS */
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
+    ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
+      &numflag, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS 2 library");
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
@@ -1266,11 +1349,14 @@ static int Zoltan_ParMetis_Jostle(
   if (obj_wgt_dim) {
     ZOLTAN_FREE(&vwgt);
     if (float_vwgt) ZOLTAN_FREE(&float_vwgt);
-    ZOLTAN_FREE(&imb_tols);
   }
   if (comm_wgt_dim){
     ZOLTAN_FREE(&adjwgt);
   }
+  /* Also free temp arrays for ParMetis 3.0 */
+  ZOLTAN_FREE(&tpwgt);
+  ZOLTAN_FREE(&imb_tols);
+  if (vsize) ZOLTAN_FREE(&vsize);
 
   /* If we have been using a scattered graph, convert partition result back to 
    * original distribution 

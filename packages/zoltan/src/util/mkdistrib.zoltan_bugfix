@@ -47,6 +47,6 @@ done;
 chmod -R ogu+r *
 tar cvf zoltan_distrib.tar Zoltan ParMETIS
 gzip zoltan_distrib.tar
-cvs rtag ${ACT_TAG} -r Zoltan_v1_23_bugfix Zoltan 
+cvs rtag -r Zoltan_v1_23_bugfix ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS 
 exit 0

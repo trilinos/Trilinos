@@ -1,0 +1,22 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# This software is distributed under the GNU Lesser General Public License.  #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+-------------------------------------------------------------------------------
+ch_ewgt
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  Edge weights specified.
+-------------------------------------------------------------------------------
+

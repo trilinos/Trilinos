@@ -52,7 +52,7 @@
 /* function prototypes */
 
 static int rcb_fn(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, double,
-                 int, int, int, int, int);
+                 int, int, int, int, int, int, int, int);
 static void print_rcb_tree(LB *, struct rcb_tree *);
 
 
@@ -64,6 +64,9 @@ static PARAM_VARS RCB_params[] = {
                   { "CHECK_GEOM", NULL, "INT" },
                   { "RCB_OUTPUT_LEVEL", NULL, "INT" },
                   { "KEEP_CUTS", NULL, "INT" },
+                  { "RCB_LOCK_DIRECTIONS", NULL, "INT" },
+                  { "RCB_SET_DIRECTIONS", NULL, "INT" },
+                  { "RCB_RECTILINEAR_BLOCKS", NULL, "INT" },
                   { NULL, NULL, NULL } };
 
 /*---------------------------------------------------------------------------*/
@@ -119,6 +122,12 @@ int Zoltan_RCB(
     int stats;                /* Print timing & count summary? */
     int gen_tree;             /* (0) don't (1) generate whole treept to use
                                  later for point and box drop. */
+    int reuse_dir;            /* (0) don't (1) reuse directions determined in
+                                 the first iteration for future iterations. */
+    int preset_dir;           /* Set order of directions: 0: don't set
+                                 1: xyz,        2: xzy,      3: yzx,
+                                 4: yxz,        5: zxy,      6: zyx  */
+    int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
 
 
     Zoltan_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
@@ -126,6 +135,10 @@ int Zoltan_RCB(
     Zoltan_Bind_Param(RCB_params, "CHECK_GEOM", (void *) &check_geom);
     Zoltan_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
     Zoltan_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
+    Zoltan_Bind_Param(RCB_params, "RCB_LOCK_DIRECTIONS", (void *) &reuse_dir);
+    Zoltan_Bind_Param(RCB_params, "RCB_SET_DIRECTIONS", (void *) &preset_dir);
+    Zoltan_Bind_Param(RCB_params, "RCB_RECTILINEAR_BLOCKS",
+                              (void *) &rectilinear_blocks);
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
@@ -133,6 +146,9 @@ int Zoltan_RCB(
     stats = RCB_DEFAULT_OUTPUT_LEVEL;
     gen_tree = 0;
     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
+    reuse_dir = 0;
+    preset_dir = 0;
+    rectilinear_blocks = 0;
 
     Zoltan_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc,
                          lb->Debug_Proc);
@@ -143,7 +159,8 @@ int Zoltan_RCB(
 
     return(rcb_fn(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag,
-                 check_geom, stats, gen_tree));
+                 check_geom, stats, gen_tree, reuse_dir, preset_dir,
+                 rectilinear_blocks));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -171,7 +188,13 @@ static int rcb_fn(
                                    Multidimensional weights not supported    */
   int check_geom,               /* Check input & output for consistency?     */
   int stats,                    /* Print timing & count summary?             */
-  int gen_tree                  /* (0) do not (1) do generate full treept    */
+  int gen_tree,                 /* (0) do not (1) do generate full treept    */
+  int reuse_dir,                /* (0) don't (1) reuse directions determined in
+                                   the first iteration for future iterations. */
+  int preset_dir,               /* Set order of directions:     0: don't set,
+                                    1: xyz,        2: xzy,      3: yzx,
+                                    4: yxz,        5: zxy,      6: zyx  */
+  int rectilinear_blocks        /* (0) do (1) don't break ties in find_median*/
 )
 {
   char    yo[] = "rcb_fn";
@@ -239,6 +262,12 @@ static int rcb_fn(
   double weightlo;                  /* weight of lower side of cut */
   double weighthi;                  /* weight of upper side of cut */
   int *dotlist;                     /* list of dots for find_median */
+  int lock_direction = 0;           /* flag to determine direction after first
+                                       iteration */
+  int level;                        /* recursion level of RCB for preset_dir */
+  int *dim_spec = NULL;             /* specified direction for preset_dir */
+  int ix[3];                        /* temporaries for preset_dir */
+  double wx, wy, wz;                /* width for preset_dir */
 
   /* MPI data types and user functions */
 
@@ -450,6 +479,87 @@ static int rcb_fn(
 
   MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,lb->Communicator);
 
+  /* if preset_dir is turned on, count number of levels of recursion,
+     determine number of cuts in each direction, and then assign those
+     cuts to an order according to order of directions */
+  if (preset_dir) {
+     if (preset_dir < 0 || preset_dir > 6) {
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+                       "Error: parameter RCB_SET_DIRECTIONS out of bounds");
+        preset_dir = 1;
+     }
+     wx = rcbbox->hi[0] - rcbbox->lo[0];
+     wy = rcbbox->hi[1] - rcbbox->lo[1];
+     wz = rcbbox->hi[2] - rcbbox->lo[2];
+     for (i = 0; i < 3; i++) ix[i] = 0;
+     for (tmp_nprocs = nprocs, level = 0; tmp_nprocs > 1; level++) {
+        tmp_nprocs = (tmp_nprocs + 1)/2;
+        if (wz > wx && wz > wy) {
+           ix[2]++;
+           wz /= 2.0;
+        }
+        else
+           if (wy > wx && wy > wz) {
+              ix[1]++;
+              wy /= 2.0;
+           }
+           else {
+              ix[0]++;
+              wx /= 2.0;
+           }
+     }
+     dim_spec = (int *) ZOLTAN_MALLOC(level*sizeof(int));
+     if (dim_spec == NULL) {
+        ZOLTAN_FREE(&wgts);
+        ZOLTAN_FREE(&dotmark);
+        ZOLTAN_FREE(&coord);
+        ZOLTAN_FREE(&dotlist);
+        ZOLTAN_TRACE_EXIT(lb, yo);
+        return ZOLTAN_MEMERR;
+     }
+     for (i = j = 0; i < level; i++) {
+        if (j == 0) {
+           if (preset_dir < 3)
+              dim = 0;
+           else if (preset_dir < 5)
+              dim = 1;
+           else
+              dim = 2;
+           if (ix[dim] == 0)
+              j++;
+        }
+        if (j == 1) {
+           if (preset_dir == 1 || preset_dir == 6)
+              dim = 1;
+           else if (preset_dir < 4)
+              dim = 2;
+           else
+              dim = 0;
+           if (ix[dim] == 0)
+              j++;
+        }
+        if (j == 2) {
+           if (preset_dir == 3 || preset_dir == 6)
+              dim = 0;
+           else if (preset_dir == 2 || preset_dir == 5)
+              dim = 1;
+           else
+              dim = 0;
+        }
+        dim_spec[i] = dim;
+        ix[dim]--;
+     }
+  }
+
+  /* if reuse_dir is turned on, turn on gen_tree since it is needed. */
+  /* Also, if this is not first time through, set lock_direction to reuse
+     the directions determined previously */
+  if (reuse_dir) {
+     gen_tree = 1;
+     if (treept[0].dim != -1)
+        lock_direction = 1;
+  }
+
   /* create local communicator for use in recursion */
 
   if (lb->Tflops_Special)
@@ -473,6 +583,7 @@ static int rcb_fn(
      proclower = 0;
      tmp_nprocs = nprocs;
   }
+  level = 0;
 
   while (num_procs > 1 || (lb->Tflops_Special && tmp_nprocs > 1)) {
     /* tmp_nprocs is size of largest partition - force all processors to go
@@ -493,16 +604,22 @@ static int rcb_fn(
     
     /* dim = dimension (xyz = 012) to bisect on */
 
-    dim = 0;
-    if (rcbbox->hi[1] - rcbbox->lo[1] >
-	rcbbox->hi[0] - rcbbox->lo[0])
-      dim = 1;
-    if (dim == 0 && rcbbox->hi[2] - rcbbox->lo[2] >
-	rcbbox->hi[0] - rcbbox->lo[0])
-      dim = 2;
-    if (dim == 1 && rcbbox->hi[2] - rcbbox->lo[2] >
-	rcbbox->hi[1] - rcbbox->lo[1])
-      dim = 2;
+    if (lock_direction)
+       dim = treept[procmid].dim;
+    else if (preset_dir)
+       dim = dim_spec[level++];
+    else {
+       dim = 0;
+       if (rcbbox->hi[1] - rcbbox->lo[1] >
+	   rcbbox->hi[0] - rcbbox->lo[0])
+         dim = 1;
+       if (dim == 0 && rcbbox->hi[2] - rcbbox->lo[2] >
+	   rcbbox->hi[0] - rcbbox->lo[0])
+         dim = 2;
+       if (dim == 1 && rcbbox->hi[2] - rcbbox->lo[2] >
+	   rcbbox->hi[1] - rcbbox->lo[1])
+         dim = 2;
+    }
     
     /* create mark array and active list for dots */
 
@@ -555,14 +672,15 @@ static int rcb_fn(
     }
     else first_guess = 0;
 
-    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time2 = Zoltan_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      time2 = Zoltan_Time(lb->Timer);
 
-    if (!Zoltan_RB_find_median(lb, coord, wgts, dotmark, dotnum, proc, fractionlo,
-                        local_comm, &valuehalf, first_guess, &(counters[0]),
-                        nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
-                        rcbbox->hi[dim], weight, &weightlo, &weighthi,
-                        dotlist)) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median.");
+    if (!Zoltan_RB_find_median(lb, coord, wgts, dotmark, dotnum, proc, 
+                fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
+                nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
+                rcbbox->hi[dim], weight, &weightlo, &weighthi,
+                dotlist, rectilinear_blocks)) {
+      ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
@@ -575,7 +693,8 @@ static int rcb_fn(
     else
        weight = weightlo;
 
-    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time3 = Zoltan_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      time3 = Zoltan_Time(lb->Timer);
 
     /* store cut info in tree only if I am procmid */
 
@@ -656,6 +775,7 @@ static int rcb_fn(
   ZOLTAN_FREE(&wgts);
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&dotlist);
+  if (preset_dir) ZOLTAN_FREE(&dim_spec);
 
   end_time = Zoltan_Time(lb->Timer);
   lb_time[1] = end_time - start_time;

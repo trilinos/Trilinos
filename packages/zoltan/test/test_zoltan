@@ -17,13 +17,14 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, solaris, gcc, linux, smos, tflop, cplant, dec}.
+# where arch-type is one of {generic, solaris, gcc, linux, tflop, cplant, dec, 
+# linux, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
 
 # Chaco problems to run
-set ch_name = (simple nograph vwgt ewgt bug grid20x19 film hammond)
-set ch_nproc = (4 4 3 4 3 5 6 8) # no. of procs
+set ch_name = (simple nograph vwgt ewgt bug grid20x19 film hammond drake)
+set ch_nproc = (4 4 3 4 3 5 6 8 3) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
@@ -130,13 +131,13 @@ if (! $?run ) then
     switch ( $arch )
     case generic:
     case gcc:
+    case gccP3:
     case linux:
     case solaris:
     case sgi32:
     case sgi64:
       set run = "mpirun -np"
       breaksw
-    case smos:
     case tflop:
       set run = "yod -proc 3 -sz"
       breaksw
@@ -205,20 +206,20 @@ endif
 if ( $yes_fortran ) then
 # Using F90
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rib oct0 oct1 oct2 )
+    set ch_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc )
     set nem_methods = ( )
   else
-    set ch_methods = ( rcb rib oct0 oct1 oct2 partkway partgeom diffusion )
+    set ch_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc partkway partgeom diffusion )
     set nem_methods = ( )
   endif
 else
 # Using C
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-oneproc rib rib-oneproc oct0 oct1 oct2 )
-    set nem_methods = ( rcb rib oct0 oct1 oct2 )
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts oct0 oct1 oct2 hsfc)
+    set nem_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc)
   else
-    set ch_methods = ( rcb rcb-oneproc rib rib-oneproc oct0 oct1 oct2 partkway partkway-oneproc partkway-cyclic partgeom diffusion )
-    set nem_methods = ( rcb rib oct0 oct1 oct2 partkway partgeom diffusion )
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts oct0 oct1 oct2 hsfc partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set nem_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc partkway partgeom diffusion )
   endif
 endif
 # Check for Jostle
@@ -285,7 +286,12 @@ if (! $no_chaco ) then
           @ i = 0
           while ( $i < $np )
             /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-            diff -cw ${outdir}/${ch_name[1]}.$mtd.$np.$i ${answers}/${ch_name[1]}.$mtd.$np.$i >> ../$logfile
+            if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch ) then
+       	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch
+            else
+              set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
+            endif
+            diff -cw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
             if ( $status ) then 
               @ fail = 1
             endif
@@ -375,7 +381,12 @@ if (! $no_nemesis ) then
                set pdir = pio_${pdirno}
             endif
             /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
-            diff -cw ${outdir}/${nem_name[1]}.$mtd.$np.$i ${answers}/${nem_name[1]}.$mtd.$np.$i >> ../$logfile
+            if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$arch ) then
+       	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$arch
+            else
+              set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
+            endif
+            diff -cw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
             if ( $status ) then 
               @ fail = 1
             endif
@@ -429,7 +440,7 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {generic, gcc, solaris, smos, tflop, cplant, dec}."
+  echo "where arch-type is one of {generic, gcc, solaris, tflop, cplant, dec, linux, sgi32, sgi64}."
   echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."

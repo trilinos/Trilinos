@@ -1,0 +1,13 @@
+Decomposition Method 	= sfc
+Zoltan Parameters	= 
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+gnuplot output = 1
+Global element ids assigned to processor 0
+1
+2
+6
+7
+11
+12

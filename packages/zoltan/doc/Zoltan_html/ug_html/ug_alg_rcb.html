@@ -107,6 +107,37 @@ or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
 </tr>
 
 <tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_LOCK_DIRECTIONS</i></td>
+
+<td>Flag that determines whether the order of the directions of the cuts is kept
+constant after they are determined the first time RCB is called.&nbsp;
+<br>0 = don't lock directions; 1 = lock directions.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_SET_DIRECTIONS</i></td>
+
+<td>If this flag is set, the order of cuts is changed so that all of the cuts
+in any direction are done as a group.  The number of cuts in each direction is
+determined and then the value of the parameter is used to determine the order
+that those cuts are made in.  When 1D and 2D problems are partitioned, the
+directions corresponding to unused dimensions are ignored.&nbsp;
+<br>0 = don't order cuts;  1 = xyz;  2 = xzy;  3 = yzx;  4 = yxz;  5 = zxy; 6 = zyx;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_RECTILINEAR_BLOCKS</i></td>
+
+<td>Flag controlling the shape of the resulting regions.  If this option is
+specified, then when a cut is made, all of the dots located on the cut are
+moved to the same side of the cut.  The resulting regions are then
+rectilinear.  When these dots are treated as a group, then the resulting
+load balance may not be as good as when the group of dots is split by the
+cut.&nbsp;
+<br>0 = move dots individually; 1 = move dots in groups.</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP><b>Default:</b></td>
 
 <td></td>
@@ -140,6 +171,24 @@ or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
 <td></td>
 
 <td><i>KEEP_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RCB_LOCK_DIRECTIONS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RCB_SET_DIRECTIONS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RCB_RECTILINEAR_BLOCKS</i> = 0</td>
 </tr>
 
 <tr>

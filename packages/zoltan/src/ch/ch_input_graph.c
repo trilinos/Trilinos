@@ -154,7 +154,7 @@ float   **eweights 		/* edge weight list data */
     vertex = 0;
     vtx = 0;
     new_vertex = TRUE;
-    while (narcs && end_flag != -1) {
+    while ((using_vwgts || vtxnums || narcs) && end_flag != -1) {
 	++line_num;
 
 	/* If multiple input lines per vertex, read vertex number. */

@@ -18,6 +18,6 @@ extern int Zoltan_RB_find_median(LB *, double *, double *, int *,
   int, int, double, MPI_Comm,
   double *, int, int *, int, int,
   int, int, double, double, double,
-  double *, double *, int *);
+  double *, double *, int *, int);
 
 #endif

@@ -93,6 +93,10 @@ int Zoltan_LB_Set_Method(LB *lb, char *method_name)
     lb->Method = SFC;
     lb->LB_Fn = Zoltan_SFC;
   }
+  else if (strcmp(method_upper, "HSFC") == 0) {
+    lb->Method = HSFC;
+    lb->LB_Fn = Zoltan_HSFC;
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;
     lb->LB_Fn = NULL;
