@@ -63,7 +63,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-  double, int, int, int, int, int, int, int, int, int, int, float *);
+  double, int, int, int, int, int, int, int, int, int, int, double, float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
   struct rcb_box *);
@@ -86,7 +86,8 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
                   { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
                   { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
-                  { "MULTICRITERIA_NORM", NULL, "INT", 0 },
+                  { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
+                  { "RCB_MAX_ASPECT_RATIO", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -159,6 +160,7 @@ int Zoltan_RCB(
     int obj_wgt_comp;         /* 1 if all (multi-)weights for an object 
                                  have same units, 0 otherwise. */
     int mcnorm;               /* norm (1,2,3) to use in multicriteria alg. */
+    double max_aspect_ratio;  /* maximum allowed ratio of box dimensions */
     int ierr;
 
 
@@ -173,8 +175,10 @@ int Zoltan_RCB(
                               (void *) &rectilinear_blocks);
     Zoltan_Bind_Param(RCB_params, "OBJ_WEIGHTS_COMPARABLE",
                               (void *) &obj_wgt_comp);
-    Zoltan_Bind_Param(RCB_params, "MULTICRITERIA_NORM",
+    Zoltan_Bind_Param(RCB_params, "RCB_MULTICRITERIA_NORM",
                               (void *) &mcnorm);
+    Zoltan_Bind_Param(RCB_params, "RCB_MAX_ASPECT_RATIO",
+                              (void *) &max_aspect_ratio);
 
     /* Set default values. */
     overalloc = RCB_DEFAULT_OVERALLOC;
@@ -188,6 +192,7 @@ int Zoltan_RCB(
     rectilinear_blocks = 0;
     obj_wgt_comp = 0;     
     mcnorm = 1; 
+    max_aspect_ratio = 100.;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -199,7 +204,8 @@ int Zoltan_RCB(
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
-                 rectilinear_blocks, obj_wgt_comp, mcnorm, part_sizes);
+                 rectilinear_blocks, obj_wgt_comp, mcnorm, 
+                 max_aspect_ratio, part_sizes);
 
     return(ierr);
 }
@@ -239,6 +245,7 @@ static int rcb_fn(
   int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
   int obj_wgt_comp,             /* (1) obj wgts have same units, no scaling */
   int mcnorm,                   /* norm for multicriteria bisection */
+  double max_aspect_ratio,      /* max allowed ratio of box dimensions */
   float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
                                    * wgtflag containing the percentage of work 
                                    to be assigned to each partition.    */
@@ -661,7 +668,7 @@ static int rcb_fn(
       }
       else {
         /* Do not cut along this dimension if box is too thin. */
-        if (rcbbox->hi[dim] - rcbbox->lo[dim] < 0.01 * max_box)
+        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio)
           continue;
 
         /* Restore original dotmark array. */
