@@ -6,9 +6,15 @@
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
+<<<<<<< phg_match.c
  *    $Author$
  *    $Date$
  *    $Revision$
+=======
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+>>>>>>> 1.39
  ****************************************************************************/
 
  
@@ -17,6 +23,7 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
 #include "phg.h"
 
 
@@ -241,7 +248,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, *psums, *tsums, *order;
+  int i, j, k, lno, loop, vertex, *psums, *tsums, *order;
   int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int ncandidates, nloop;
   int *select, pselect;
@@ -259,9 +266,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        
   psums = tsums = select = cmatch = each_size = displs = NULL;
   if (hg->nVtx > 0 && (
-      !(psums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
-   || !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-   || !(tsums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
+      !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
+   || !(psums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+   || !(tsums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))))     {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
@@ -278,6 +285,8 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   for (i = 0; i < hg->nVtx; i++)
      order[i] = match[i] = i;
      
+
+
   if (hgc->nProc_x > 0 && (
       !(select    = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
    || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
@@ -363,8 +372,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
      }          
-     if (size > 0
-      && !(rbuffer=(char*) ZOLTAN_MALLOC (size * sizeof(int))))    {
+     if (size > 0 && !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
      }          
@@ -395,11 +403,11 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
          m_vedge[pins++] = *ip++;           
      } 
      m_vindex[i] = pins;
-     count = i-1;                  
+          
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);            
                
      /* for each match vertex, compute all local partial inner products */
-     for (vertex = 0; vertex < count; vertex++)  {
+     for (vertex = 0; vertex < total_count; vertex++)  {
        for (i = 0; i < hg->nVtx; i++)
          tsums[i] = psums[i] = 0;
 
@@ -428,7 +436,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
         
      /************************ PHASE 3: **************************************/
 
-     size = 3 * count;     
+     size = 3 * total_count;     
      if (size > 0 && (
          !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int) * hgc->nProc_x))
       || !(buffer  = (char*) ZOLTAN_MALLOC (size * sizeof(int)))))    {
@@ -438,7 +446,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
                       
      /* prepare send buffer */       
      ip = (int*) buffer; 
-     for (vertex = 0; vertex < count; vertex++)  {
+     for (vertex = 0; vertex < total_count; vertex++)  {
        *ip++ = m_gno [vertex];
        *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);
        *ip++ = m_bestsum [vertex];
@@ -451,7 +459,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        b_bestsum[i] = -2;   
                  
      ip = (int*) rbuffer;
-     for (i = 0; i < count * hgc->nProc_x; i++)   {
+     for (i = 0; i < total_count * hgc->nProc_x; i++)   {
        vertex  = *ip++;
        bestv   = *ip++;
        bestsum = *ip++;
