@@ -376,7 +376,6 @@ int Amesos_Mumps::ConvertToTripletValues()
   for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
 
     bool FoundDiagonal = false;
-    int Diag;
 
     GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
     /*    
@@ -641,6 +640,12 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
 void Amesos_Mumps::CheckParameters() 
 {
+
+  // FIXME ???
+#ifndef HAVE_AMESOS_MPI_C2F
+  MaxProcs_ = -3;
+  MaxProcsInputMatrix_ = -3;
+#endif
 
   // check parameters and fix values of MaxProcs_ and MaxProcsInputMatrix_
 
