@@ -34,7 +34,7 @@ CLEAN_DEBUG	15
      Coarsen/ml_agg_ParMETIS.c  1
 COMPILE_DRIVER	1
      Main/driver.c  1
-COMPUTE_RADIUS	4
+COMPUTE_RADIUS	4                          MS used for statistics
      Utils/ml_agg_info.c  4
 COUGAR	1
      Utils/ml_utils.c  1
@@ -62,13 +62,13 @@ DUMP_MATLAB_FILE	1
      Coarsen/ml_agg_METIS.c  1
 DUMP_WEST	1
      Coarsen/ml_agg_METIS.c  1
-EXTREME_DEBUG	2
+EXTREME_DEBUG	2                         MS this is crap, I will delete it
      Coarsen/ml_agg_genP.c  2
-EXTREME_DEBUGGING	10
+EXTREME_DEBUGGING	10                MS crap again, to be deleted
      Coarsen/ml_agg_METIS.c  10
 F77_FUNC	4
      Utils/ml_lapack.h  4
-FIXME	3
+FIXME	3                                 MS ops, something to be fixed...
      Utils/ml_epetra_utils.h  1
      Coarsen/ml_agg_Zoltan.c  2
 GEOMETRIC_2D	5
@@ -78,24 +78,24 @@ GREG	17
      Smoother/ml_smoother.c  12
      Main/ml_struct.h  1
      Main/ml_struct.c  1
-HAVE_AMESOS	1
+HAVE_AMESOS	1                         MS interface to Amesos
      Include/ml_common.h  1
 HAVE_ANASAZI	1
-     Include/ml_common.h  1
+     Include/ml_common.h  1               MS
 HAVE_BLAS	1
      Include/ml_common.h  1
 HAVE_CONFIG_H	2
      Include/ml_common.h  2
-HAVE_IFPACK	1
+HAVE_IFPACK	1                         MS
      Include/ml_common.h  1
 HAVE_LAPACK	1
      Include/ml_common.h  1
 HAVE_MALLOC_H	1
      Utils/ml_memory.c  1
-HAVE_ML_AMESOS	5
+HAVE_ML_AMESOS	5                         MS
      Utils/ml_amesos.c  3
      Utils/ml_aztec_utils.c  2
-HAVE_ML_ANASAZI	2
+HAVE_ML_ANASAZI	2                         MS
      Main/ml_struct.c  2
 HAVE_ML_ARPACK	3
      Main/ml_ggb.c  1
@@ -108,13 +108,13 @@ HAVE_ML_COMPLEX_MAXWELL	1
      Include/ml_common.h  1
 HAVE_ML_ENRICH	1
      Include/ml_common.h  1
-HAVE_ML_EPETRA	1
+HAVE_ML_EPETRA	1                        MS
      Include/ml_common.h  1
 HAVE_ML_FLOPS	1
      Include/ml_common.h  1
-HAVE_ML_IFPACK	3
+HAVE_ML_IFPACK	3                        MS
      Utils/ml_ifpack.c  3
-HAVE_ML_METIS	8
+HAVE_ML_METIS	8                        MS
      Operator/ml_op_utils.c  2
      Coarsen/ml_agg_METIS.c  6
 HAVE_ML_NEW_T_PE	1
@@ -132,15 +132,15 @@ HAVE_ML_SUPERLU_DIST	1
      Include/ml_common.h  1
 HAVE_ML_TIMING	1
      Include/ml_common.h  1
-HAVE_ML_TRIUTILS	3
+HAVE_ML_TRIUTILS	3               MS I can probably delete this as well
      Utils/ml_MultiLevelPreconditioner.h  3
-HAVE_MPI	6
+HAVE_MPI	6                       MS
      Utils/ml_utils.c  2
      Include/ml_common.h  1
      Utils/ml_RowMatrix.h  3
-HAVE_TEUCHOS	1
+HAVE_TEUCHOS	1                      MS
      Include/ml_common.h  1
-HAVE_TRIUTILS	1
+HAVE_TRIUTILS	1                      MS only for examples??
      Include/ml_common.h  1
 ICL	1
      Utils/ml_utils.h  1
@@ -151,10 +151,10 @@ IWANTONESTEP	1
      Smoother/ml_smoother.c  1
 LATER	1
      Coarsen/ml_agg_METIS.c  1
-MARZIO	3
+MARZIO	3                             MS ?????? will delete this
      Coarsen/ml_agg_genP.c  1
      Utils/ml_aztec_utils.c  2
-MAYBE	1
+MAYBE	1                             MS other crap
      Coarsen/ml_agg_ParMETIS.c  1
 MB_FORNOW	3
      Smoother/ml_smoother.c  3
@@ -162,7 +162,7 @@ MB_MODIF	3
      Smoother/ml_smoother.c  1
      Utils/ml_aztec_utils.c  1
      Main/ml_struct.c  1
-METIS_DEBUG	2
+METIS_DEBUG	2                     MS delete as well
      Coarsen/ml_agg_METIS.c  2
 ML_AGGR_DEBUG	26
      Coarsen/ml_agg_dd.c  2
@@ -235,7 +235,7 @@ ML_FLOPS	4
 ML_FUNCTION_NAME	8
      Utils/ml_memory.c  1
      Comm/ml_exch_row.c  7
-ML_MALLINFO	2
+ML_MALLINFO	2                   MS or Ray? for memory info
      Utils/ml_memory.c  2
 ML_MATCHED	1
      Include/ml_defs.h  1
@@ -284,7 +284,7 @@ ML_SCALEIT	4
      Utils/tumi.c  4
 ML_SEG	1
      Main/ml_seg_precond.c  1
-ML_SHUFFLE	1
+ML_SHUFFLE	1                      MS we can keep this
      Utils/ml_viz_xyz.c  1
 ML_SINGLE_LEVEL_PROFILING	2
      Main/ml_struct.c  2
@@ -319,7 +319,7 @@ ML_VAMPIR	17
      Coarsen/ml_agg_reitzinger.c  15
 ML_VECTOR_DEBUG	4
      Utils/ml_vec.c  4
-ML_WITH_EPETRA	14
+ML_WITH_EPETRA	14             should it be only HAVE_ML_EPETRA? Or HAVE_EPETRA??
      Operator/ml_operator.c  5
      Operator/ml_rap.c  1
      Utils/ml_aztec_utils.c  1
