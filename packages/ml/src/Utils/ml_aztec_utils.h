@@ -123,7 +123,8 @@ extern int az_matvec_wrapper(void *data, int, double p[], int, double ap[]);
 
 extern void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
 			      int proc_config[]);
-
+extern int AZ_convert_aztec_matrix_2ml_matrix(AZ_MATRIX *AZmat, ML_Operator *MLmat,
+					      int *proc_config);
 extern int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
 	AZ_MATRIX *Amat, int *proc_config);
 
