@@ -39,6 +39,9 @@
 #define _D SLU_D
 #define GE SLU_GE
 #define NR SLU_NR
+extern void dCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz,
+                                   double *nzval, int *colind, int *rowptr,
+                                   Stype_t stype, Dtype_t dtype, Mtype_t mtype);
 #endif
 
 /* ******************************************************************** */
