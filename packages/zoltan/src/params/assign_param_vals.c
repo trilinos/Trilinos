@@ -10,7 +10,7 @@
 void      LB_Assign_Param_Vals(
 LB_PARAM * change_list,		/* list of parameter values being changed */
 PARAM_VARS * params)		/* structure describing parameters */
-{
+{	
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter */
     int       found;		/* is name found? */
@@ -41,31 +41,30 @@ PARAM_VARS * params)		/* structure describing parameters */
 		    *((int *) params->ptr) = atoi(val);
 		}
 	    }
-	}
 
-	else if (!strcmp(params->type, "DOUBLE")) {
-	    *((double *) params->ptr) = atof(val);
-	}
+	    else if (!strcmp(params->type, "DOUBLE")) {
+		*((double *) params->ptr) = atof(val);
+	    }
 
-	else if (!strcmp(params->type, "LONG")) {
-	    /* First special case if True or False */
-	    if (*val == 'T')
-		*((long *) params->ptr) = 1;
-	    else if (*val == 'F')
-		*((long *) params->ptr) = 0;
-	    else {
-		*((long *) params->ptr) = atol(val);
+	    else if (!strcmp(params->type, "LONG")) {
+		/* First special case if True or False */
+		if (*val == 'T')
+		    *((long *) params->ptr) = 1;
+		else if (*val == 'F')
+		    *((long *) params->ptr) = 0;
+		else {
+		    *((long *) params->ptr) = atol(val);
+		}
+	    }
+
+	    else if (!strcmp(params->type, "STRING")) {
+		strncpy((char *) params->ptr, val, MAX_PARAM_STRING_LEN);
+	    }
+
+	    else if (!strcmp(params->type, "CHAR")) {
+		*((char *) params->ptr) = *val;
 	    }
 	}
-
-	else if (!strcmp(params->type, "STRING")) {
-	    strncpy((char *) params->ptr, val, MAX_PARAM_STRING_LEN);
-	}
-
-	else if (!strcmp(params->type, "CHAR")) {
-	    *((char *) params->ptr) = *val;
-	}
-
 
 	change_list = change_list->next;
     }
