@@ -612,6 +612,11 @@ adding or editing autoconf-specific files such as configure.ac.
 with Autotools in a directory that contains a classic build will not work.  
 Before attempting an autotools build, the classic build object, library, and 
 executable files within the source tree should be removed.
+
+\item Pavel Bochev has discovered the the build process will fail on OSX if 
+``DropZip'' is used to unzip the Trilinos tarball.  This utility truncates 
+long file names.
+
 \end{itemize}
 
 \subsection{Adding and Removing Source Files}
