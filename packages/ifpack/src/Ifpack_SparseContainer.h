@@ -158,7 +158,7 @@ public:
   //! Returns a pointer to the internally stored ID's.
   const Epetra_IntSerialDenseVector* ID() const
   {
-    return(ID_);
+    return(GID_);
   }
 
   //! Returns a pointer to the internally stored inverse operator.
