@@ -242,7 +242,9 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
   
     OverlapA = new Epetra_VbrMatrix(Copy, *Graph_.OverlapGraph());
     EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
-    EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+    Epetra_BlockMap * DomainMap = (Epetra_BlockMap * )&(A.DomainMap());
+    Epetra_BlockMap * RangeMap = (Epetra_BlockMap * )&(A.RangeMap());
+    EPETRA_CHK_ERR(OverlapA->TransformToLocal(DomainMap, RangeMap));
   }
   
   //cout << "Overlap Matrix " << endl << *OverlapA << endl << flush;
@@ -359,8 +361,12 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
 
 
   if (!ReplaceValues) {
-    EPETRA_CHK_ERR(L_->TransformToLocal());
-    EPETRA_CHK_ERR(U_->TransformToLocal());
+    Epetra_Map * L_DomainMap = (Epetra_Map *) &(L_->RowMatrixColMap());
+    Epetra_Map * L_RangeMap = (Epetra_Map *) &(OverlapA.OperatorRangeMap());
+    Epetra_Map * U_DomainMap = (Epetra_Map *) &(OverlapA.OperatorDomainMap());
+    Epetra_Map * U_RangeMap = (Epetra_Map *) &(U_->RowMatrixRowMap());
+    EPETRA_CHK_ERR(L_->TransformToLocal(L_DomainMap, L_RangeMap));
+    EPETRA_CHK_ERR(U_->TransformToLocal(U_DomainMap, U_RangeMap));
   }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D

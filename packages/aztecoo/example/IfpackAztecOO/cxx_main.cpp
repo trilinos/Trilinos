@@ -76,10 +76,8 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Uncomment the next three lines to debug in mpi mode
-  //int tmp;
-  //if (MyPID==0) cin >> tmp;
-  //Comm.Barrier();
+  // Uncomment the next line to debug in mpi mode
+  // int tmp; if (MyPID==0) {cout << "Type a character and Enter to continue" <<endl; cin >> tmp; } Comm.Barrier();
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
