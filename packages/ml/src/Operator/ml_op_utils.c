@@ -434,6 +434,9 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
   int nmbng = 0, edgecut = -1, n = nLocalNd, np = *nblk;
   double *val = NULL;
   int allocated = 0, row_length, j;
+  float partwts[4] ={.10, .40, .38, .12};
+  FILE *fp;
+  int edgecount;
 
   if( egwts ) weightflag++;
 
@@ -442,42 +445,89 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     return 0;
   }
 
-  /* set 'xadj' & 'adjncy' adjacentcy data */
+  /* Set 'xadj' & 'adjncy' adjacency data.  This is the graph
+     that Metis requires.  It corresponds to the matrix graph
+     without self connections (diagonal entries). */
+
+  /*ndwts = (int *) ML_allocate(nLocalNd * sizeof(int) );*/
 
   xadj = (idxtype *) ML_allocate( (nLocalNd+1) * sizeof(idxtype) );
   if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
   ii = 0;
-  for( locid = 0 ; locid < nLocalNd ; locid++ ) {
+  for( locid = 0 ; locid < nLocalNd ; locid++ )
+  {
     ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx, &val,
                       &row_length, 0);
-
-    for (j = 0; j < row_length; j++) {
-       if ( bindx[j] < nLocalNd) ii++;
-    }
+    ii += row_length - 1;
+    /*ndwts[locid] = row_length - 1;*/
   }
   numadjac = ii;
   adjncy = (idxtype *) ML_allocate( (numadjac+1) * sizeof(idxtype) );
   if (adjncy == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
   ii = 0;
-  for( locid = 0 ; locid < nLocalNd ; locid++ ) {
+  for( locid = 0 ; locid < nLocalNd ; locid++ )
+  {
     xadj[locid] = ii;
     ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx,
                       &val, &row_length, 0);
-
-    for (j = 0; j < row_length; j++) {
-       if ( bindx[j] < nLocalNd) adjncy[ii++] = bindx[j];
+    for (j = 0; j < row_length; j++)
+    {
+       if ( bindx[j] != locid ) adjncy[ii++] = bindx[j];
     }
   }
   xadj[nLocalNd] = ii;
   ML_free(val);
   ML_free(bindx);
 
-  /* get local partition */
+  /*
+  fp = fopen("matrix_graph","w");
+  fprintf(fp,"%d %d %d\n",nLocalNd,xadj[nLocalNd]/2,numadjac);
+  for( locid = 0 ; locid < nLocalNd ; locid++ )
+  {
+     for (j=xadj[locid]; j < xadj[locid+1]; j++)
+        fprintf(fp,"%d ",adjncy[j]+1);
+     fprintf(fp,"\n");
+  }
+  fclose(fp);
 
-  METIS_PartGraphKway( &n, xadj, adjncy, ndwts, egwts, &weightflag, &nmbng,
-                       &np, options, &edgecut, pnode_part );
+  fp = fopen("np_check","w"); 
+  fprintf(fp,"%d\n",edgecut);
+  for( locid = 0 ; locid < nLocalNd ; locid++ )
+     fprintf(fp,"%d\n",pnode_part[locid]);
+  fclose(fp);
+  */
+
+  /*
+   n                number of vertices in graph
+   xadj,adjncy      adjacency structure of graph
+   vwgt,adjwgt      weights of vertices and edges
+   weightflag          0 = no weights, 1 = weights on edges only
+                    2 = weights on nodes only, 3 = weights on both
+   numflag          0 = C style numbering, 1 = Fortran style numbering
+   np               desired number of parts
+   options          options for matching type, initial partitioning,
+                    refinement, and debugging
+                    If options[0] == 0, then default values are used.
+   edgecut          returns number of edges cut by partition
+   part             returns the partition
+   
+   The METIS authors suggest using METIS_PartGraphRecursive if the desired
+   partition should have 8 or less parts.  They suggest using
+   METIS_PartGraphKway otherwise.
+
+   (See the METIS 4.0 manual for more details.)
+  */
+
+  /* Get local partition. */
+
+  if (np < 8)
+     METIS_PartGraphRecursive( &n, xadj, adjncy, ndwts, egwts, &weightflag,
+                               &nmbng, &np, options, &edgecut, pnode_part );
+  else
+     METIS_PartGraphKway( &n, xadj, adjncy, ndwts, egwts, &weightflag, &nmbng,
+                          &np, options, &edgecut, pnode_part );
   ML_free(xadj);
   ML_free(adjncy);
 
