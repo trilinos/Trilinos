@@ -44,6 +44,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    double t1, t6;
    */
    int tcols, hash_used, j, *tptr;
+   int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
    /*
    t1 = GetClock();
    */
@@ -411,8 +412,14 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    /* Perform the matrix-matrix multiply operation by computing one new row  */
    /* at a time.                                                             */
    /*------------------------------------------------------------------------*/
+#ifdef takeout
+   for (k = 0; k < accum_size; k++) accum_val[k] = 0.;
+#endif
+
    for (i = start; i < end ; i++) {
       Ncols = 0;
+      acc_col_ptr = accum_col;
+      acc_val_ptr = accum_val;
       Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, &rowi_N, 0);
 
       /***********************************************************************/
@@ -420,25 +427,71 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       /* row in B. Muliply each B row and sum it into the accumulator.       */
       /*---------------------------------------------------------------------*/
 
-      for (k = 0; k < rowi_N; k++) {
-         multiplier = A_i_vals[k];
+      if (rowi_N != 0) {
+         multiplier = A_i_vals[0];
          if ( multiplier == 0.0 ) continue; 
-	 row2_N = Bptr[A_i_cols[k]+1] - Bptr[A_i_cols[k]];
-	 for (jj = Bptr[A_i_cols[k]]; jj < Bptr[A_i_cols[k]+1]; jj++) {
-	   if (accum_index[Bcols[jj]] == -1) {
-	     accum_col[Ncols] = Bcols[jj];
-	     accum_val[Ncols] = multiplier*Bvals[jj];
-	     accum_index[Bcols[jj]] = Ncols++;
-	   }
-	   else accum_val[accum_index[Bcols[jj]]] += multiplier*Bvals[jj];
+	 jj = Bptr[*A_i_cols];
+	 Bval_ptr = &(Bvals[jj]);
+	 Bcol_ptr = &(Bcols[jj]);
+	 while (jj++ < Bptr[*A_i_cols+1]) {
+	   *acc_col_ptr++ =  *Bcol_ptr;
+	   *acc_val_ptr++ = multiplier*(*Bval_ptr++);
+	   accum_index[*Bcol_ptr++] = Ncols++;
+	 }
+      }
+      for (k = 1; k < rowi_N; k++) {
+	multiplier = A_i_vals[k];
+	if ( multiplier == 0.0 ) continue; 
+	jj = Bptr[A_i_cols[k]];
+	Bval_ptr = &(Bvals[jj]);
+	Bcol_ptr = &(Bcols[jj]);
+	while (jj++ < Bptr[A_i_cols[k]+1]) {
+	  if (accum_index[*Bcol_ptr] < 0) {
+	    *acc_col_ptr++ = *Bcol_ptr;
+	    *acc_val_ptr++ = multiplier*(*Bval_ptr++);
+	    accum_index[*Bcol_ptr++] = Ncols++;
+	  }
+	  else accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
          }
       }
+#ifdef takeout
+      for (k = 0; k < rowi_N; k++) {
+	jj = Bptr[A_i_cols[k]];
+	Bcol_ptr = &(Bcols[jj]);
+	while (jj++ < Bptr[A_i_cols[k]+1]) {
+	    *acc_col_ptr++ = *Bcol_ptr;
+	     accum_index[*Bcol_ptr++] = Ncols++;
+	}
+      }
+      for (k = 0; k < rowi_N; k++) {
+	multiplier = A_i_vals[k];
+	if ( multiplier == 0.0 ) continue; 
+	jj = Bptr[A_i_cols[k]];
+	Bval_ptr = &(Bvals[jj]);
+	Bcol_ptr = &(Bcols[jj]);
+	while (jj++ < Bptr[A_i_cols[k]+1]) {
+	   accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
+         }
+      }
+      k = 0;
+      for (jj = 0; jj < Ncols; jj++ ) {
+	if (jj == accum_index[accum_col[jj]]) {
+	  accum_val[k] = accum_val[jj];
+	  accum_col[k++] = accum_col[jj];
+	}
+      }
+      for (jj = k; jj < Ncols; jj++) accum_val[jj] = 0.;
+      Ncols = k;
+#endif
       /***********************************************************************/
       /* Convert back to the original column indices.                        */
       /*---------------------------------------------------------------------*/
 
-      for (jj = 0; jj < Ncols; jj++ ) accum_index[accum_col[jj]] = -1;
-      for (jj = 0; jj < Ncols; jj++ ) accum_col[jj] = col_inds[accum_col[jj]];
+      acc_col_ptr = accum_col;
+      for (jj = 0; jj < Ncols; jj++ ) {
+	accum_index[*acc_col_ptr] = -1;
+	*acc_col_ptr++ = col_inds[*acc_col_ptr];
+      }
 
       /* empty row. Let's just put a zero in the first column */
 
@@ -502,10 +555,19 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       /* store matrix row */
 
+      memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
+      memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
+      next_nz += Ncols;
+
+      /* above code might be a bit faster???
       for (k = 0; k < Ncols; k++) {
           Ccol[next_nz] = accum_col[k];
           Cval[next_nz++] = accum_val[k];
       }
+      */
+#ifdef takeout
+for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
+#endif
       C_ptr[sub_i+1] = next_nz;
       sub_i++;
       if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
@@ -940,11 +1002,6 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
   index = new_val<<1;
   if (index < 0) index = new_val;
   index = index%hash_length;
-  /*
-  while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
-     index = (++index)%hash_length;
-  }
-  */
 #ifdef charles
   origindex = index;
 #endif
