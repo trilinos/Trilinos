@@ -2289,7 +2289,7 @@ report($SUMMARY);
             print outFile "# (LAM only) path and filename of the file containing the names of the machines\n"; 
             print outFile "# to be used for parallel jobs. If this file doesn't exist, parallel jobs will\n";
             print outFile "# be run on the local machine only. (If this is the case, make sure\n";  
-            print outFile "# MPI_STARTUP_CMD reflects this.)\n";           
+            print outFile "# <HOSTFILE> is removed from the value of MPI_STARTUP_CMD.)\n";           
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: NO\n";
