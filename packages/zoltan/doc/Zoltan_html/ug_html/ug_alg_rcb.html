@@ -95,6 +95,17 @@ produces.&nbsp;
 <BR>0 = no output; 1 = print summary; 2 = print data for each processor.</TD>
 </TR>
 
+<TR>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> KEEP_CUTS</I></TD>
+
+<TD>Should information about the cuts determining the RCB decomposition be
+retained?  It costs a bit of time to do so, but this information is necessary
+if application wants to add more objects to the decomposition via calls
+to <B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
+or to <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>.
+<BR>0 = don't keep cuts; 1 = keep cuts.</TD>
+</TR>
+
 
 <TR>
 <TD VALIGN=TOP><B>Default:</B></TD>
@@ -130,6 +141,12 @@ produces.&nbsp;
 <TD></TD>
 
 <TD><I>RCB_STATS</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>KEEP_CUTS</I> = 0</TD>
 </TR>
 
 <TR>

@@ -23,17 +23,78 @@
 <A NAME="Algorithms"></A>Algorithms</H2>
 The following dynamic load-balancing algorithms are currently included
 in the Zoltan library:
-<BLOCKQUOTE><A HREF="ug_alg_rcb.html#RCB">Recursive Coordinate Bisection
-(RCB)</A>
-<BR><A HREF="ug_alg_parmetis.html">ParMETIS</A>
-<BR><A HREF="ug_alg_oct.html#Octree">Octree Partitioning (OCTPART)</A></BLOCKQUOTE>
-The input string argument for <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
-is listed for each method. The parameters listed can be specified for the
-method through the parameters array in the argument list of <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
-For further analysis and discussion of the algorithms, see [<A HREF="ug_refs.html#hendrickson-devine">Hendrickson
-and Devine</A>].
+<BLOCKQUOTE>
+    <A HREF="ug_alg_rcb.html#RCB">Recursive Coordinate Bisection (RCB)</A>
+<BR><A HREF="ug_alg_parmetis.html">ParMETIS (PARMETIS)</A>
+<BR><A HREF="ug_alg_oct.html#Octree">Octree Partitioning (OCTPART)</A>
+</BLOCKQUOTE>
+The parenthetical string is the input argument for
+<B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
+to enable the corresponding method.  
+For further analysis and discussion of the algorithms, see
+[<A HREF="ug_refs.html#hendrickson-devine">Hendrickson and Devine</A>].
+The behavior of each method is controlled
+by several parameters which can be set by calls to
+<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
+Although many of the parameters are specific to individual partitioning
+algorithms, several have meaning across multiple algorithms.  These
+more general parameters include the following.
 <BR>&nbsp;
-<BR>&nbsp;
+
+
+<TABLE WIDTH="100%" NOSAVE >
+
+<TR>
+<TD><B>General Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>IMBALANCE_TOL</I></TD>
+
+<TD>The amount of load imbalance the partitioning algorithm should deem
+acceptable.  The load on each processor is computed as the sum of the
+weights of vertices it is assigned.  The imbalance is then computed
+as the maximum load divided by the average load.  An value for
+IMBALANCE_TOL of .2 indicates that 20% imbalance is OK; that is the
+max over the average shouldn't exceed 1.2.
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>KEEP_CUTS</I></TD>
+
+<TD>The recursive geometric partitioning algorithms have the nice
+property that each processor owns a portion of the global geometric
+space.  With this geometric decompsition, it is possible to determine
+which processor a new object should be assigned to via the 
+<B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
+or <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>
+functions.  If you intend to use these functions, then information about
+the geometric partitioning must be retained by setting KEEP_CUTS to 1.
+</TR>
+
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>IMBALANCE_TOL</I> = .1</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>KEEP_CUTS</I> = 0</TD>
+</TR>
+
+</TABLE>
+
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
