@@ -1017,8 +1017,18 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
   char *yo = "ML_gsum_vec_int: ";
 
   USR_REQ     request;  /* Message handle */
+#ifdef ML_USEMPIFUNCTIONS
+    int i;
+#endif
 
   /*********************** first executable statment *****************/
+
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) vals,(void *) vals2, length, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  for (i=0; i<length; i++) vals[i] = vals2[i];
+  return;
+#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1623,6 +1633,11 @@ double ML_gsum_double(double val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_SUM,
+                MPI_COMM_WORLD);
+  return val2;
+#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1772,6 +1787,11 @@ double ML_gmax_double(double val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_MAX,
+                MPI_COMM_WORLD);
+  return val2;
+#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1925,6 +1945,11 @@ int ML_gmax_int(int val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_INT, MPI_MAX,
+                MPI_COMM_WORLD);
+  return val2;
+#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
