@@ -145,6 +145,57 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 }
 
 //----------------------------------------------------------------------------
+Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(const Epetra_FEVbrMatrix& src)
+  : Epetra_VbrMatrix(src),
+    ignoreNonLocalEntries_(src.ignoreNonLocalEntries_),
+    numNonlocalBlockRows_(0),
+    nonlocalBlockRows_(NULL),
+    nonlocalBlockRowLengths_(NULL),
+    nonlocalBlockRowAllocLengths_(NULL),
+    nonlocalBlockCols_(NULL),
+    nonlocalCoefs_(NULL),
+    curRowOffset_(-1),
+    curColOffset_(0),
+    curNumCols_(0),
+    curCols_(NULL),
+    curMode_(Add)
+{
+  operator=(src);
+}
+
+//----------------------------------------------------------------------------
+Epetra_FEVbrMatrix& Epetra_FEVbrMatrix::operator=(const Epetra_FEVbrMatrix& src)
+{
+  if (this == &src) {
+    return( *this );
+  }
+
+  Epetra_VbrMatrix::operator=(src);
+
+  numNonlocalBlockRows_ = src.numNonlocalBlockRows_;
+
+  nonlocalBlockRows_ = new int[numNonlocalBlockRows_];
+  nonlocalBlockRowLengths_ = new int[numNonlocalBlockRows_];
+  nonlocalBlockRowAllocLengths_ = new int[numNonlocalBlockRows_];
+  nonlocalBlockCols_ = new int*[numNonlocalBlockRows_];
+  nonlocalCoefs_ = new Epetra_SerialDenseMatrix**[numNonlocalBlockRows_];
+
+  for(int i=0; i<numNonlocalBlockRows_; ++i) {
+    nonlocalBlockRows_[i] = src.nonlocalBlockRows_[i];
+    nonlocalBlockRowLengths_[i] = src.nonlocalBlockRowLengths_[i];
+    nonlocalBlockRowAllocLengths_[i] = src.nonlocalBlockRowAllocLengths_[i];
+
+    for(int j=0; j<nonlocalBlockRowLengths_[i]; ++j) {
+      nonlocalBlockCols_[i][j] = src.nonlocalBlockCols_[i][j];
+
+      nonlocalCoefs_[i][j] = new Epetra_SerialDenseMatrix(*(src.nonlocalCoefs_[i][j]));
+    }
+  }
+
+  return( *this );
+}
+
+//----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix()
 {
   destroyNonlocalData();

@@ -598,8 +598,11 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
   EPETRA_CHK_ERR( A->GlobalAssemble() );
 
+  Epetra_FEVbrMatrix Acopy(*A);
+
   if (verbose) {
-    cout << *A << endl;
+    cout << "A:"<<*A << endl;
+    cout << "Acopy:"<<Acopy<<endl;
   }
 
   int len = 20;

@@ -134,11 +134,16 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     const Epetra_CrsGraph& Graph,
 		     bool ignoreNonLocalEntries=false);
 
+  /** Copy Constructor. */
+  Epetra_FEVbrMatrix(const Epetra_FEVbrMatrix& src);
+
   //! Epetra_VbrMatrix Destructor
   virtual ~Epetra_FEVbrMatrix();
   //@}
   
   //@{ \name Insertion/Replace/SumInto methods.
+
+  Epetra_FEVbrMatrix& operator=(const Epetra_FEVbrMatrix& src);
 
   //! Initialize all values in graph of the matrix with constant value.
   /*!
