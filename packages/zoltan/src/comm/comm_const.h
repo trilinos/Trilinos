@@ -44,6 +44,6 @@ typedef struct Comm_Obj COMM_OBJ;
 
 extern void comm_do(struct Comm_Obj *, char *, int, char *);
 extern struct Comm_Obj *comm_create(int, int *, MPI_Comm, int *);
-extern void comm_destroy(struct Comm_Obj *);
+extern void comm_destroy(struct Comm_Obj **);
 
 #endif

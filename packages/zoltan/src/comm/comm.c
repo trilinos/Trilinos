@@ -254,24 +254,24 @@ struct Comm_Obj *comm_create(
 /* ------------------------------------------------------------------- */
 /* free all memory associated with irregular communication plan */
 
-void comm_destroy(struct Comm_Obj *plan)
+void comm_destroy(struct Comm_Obj **plan)
 
 {
 /* free MPI communicator */
 
-  MPI_Comm_free(&plan->comm);
+  MPI_Comm_free(&((*plan)->comm));
 
 /* free internal arrays */
 
-  LB_safe_free((void **) &(plan->procs_to));
-  LB_safe_free((void **) &(plan->procs_from));
-  LB_safe_free((void **) &(plan->lengths_to));
-  LB_safe_free((void **) &(plan->lengths_from));
-  LB_safe_free((void **) &(plan->indices_to));
+  LB_safe_free((void **) &((*plan)->procs_to));
+  LB_safe_free((void **) &((*plan)->procs_from));
+  LB_safe_free((void **) &((*plan)->lengths_to));
+  LB_safe_free((void **) &((*plan)->lengths_from));
+  LB_safe_free((void **) &((*plan)->indices_to));
 
 /* free plan itself */
 
-  LB_safe_free((void **) &plan);
+  LB_safe_free((void **) plan);
 }
 
 
@@ -321,7 +321,7 @@ void comm_create_(int *n, int *proclist, MPI_Comm *original_comm,
 void comm_destroy_(struct Comm_Obj **plan)
 
 {
-  comm_destroy(*plan);
+  comm_destroy(plan);
 }
 
 /* KDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDD */
