@@ -16,7 +16,7 @@ To compile ml ...
         "-L/usr/people/tuminaro/codes/mpich/lib/IRIX64/ch_p4 -lmpi"
     setenv AZTEC_LIB_PATH \
         "-L/usr/people/tuminaro/codes/arch/sgi/lib -laztec -ly12m -lblas"
-    setenv SUPERLU_LIB_PATH "/usr/people/tuminaro/codes/ml/lib/DSuperLU/superlu_sgi.a"
+    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_sgi.a"
 *************************************************************************
                               LINUX PC
 
@@ -30,7 +30,7 @@ To compile ml ...
         "-L/home/people/chtong/mpich/lib/LINUX/ch_p4 -lmpi"
     setenv AZTEC_LIB_PATH \
         "-L/home/people/tuminaro/codes/arch/pclinux/lib -laztec -ly12m -lblas"
-    setenv SUPERLU_LIB_PATH "/usr/people/tuminaro/codes/ml/lib/DSuperLU/superlu_linux.a"
+    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_linux.a"
 *************************************************************************
                               TFLOP
 
@@ -40,8 +40,8 @@ To compile ml ...
     setenv AZTEC_INC_PATH "-I/home/u/tuminaro/Aztec/az"
     setenv SUPERLU_INC_PATH "-I/usr/people/tuminaro/codes/ml/lib/DSuperLU/SRC"
     setenv AZTEC_LIB_PATH  \
-       "-L/home/u/tuminaro/Aztec/Obj_tflop/ -laztec -L/Net/pecos/rf_crew/arch/tflop/lib -ly12m -lmydgemv"
-    setenv SUPERLU_LIB_PATH "/usr/people/tuminaro/codes/ml/lib/DSuperLU/superlu_tflop.a"
+       "-L/home/tuminaro/Aztec/Obj_tflop/ -laztec -L/Net/pecos/rf_crew/arch/tflop/lib -ly12m -lmydgemv"
+    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_tflop.a"
 *************************************************************************
 
     Omit relevant entries if not using AZTEC, MPI or SUPERLU.
@@ -54,17 +54,24 @@ To compile ml ...
     If you prefer object files in Obj_xxx
 	        ==> type 'etc/build_obj Obj_xxx; cd Obj_xxx; make'
 
+    When the day is done, you will find a libml.a file in the src/lib
+    directory.  To use packages such as MPI or SuperLU, edit the environment
+    variable PACKAGES (e.g. setenv PACKAGE "-DSUPERLU -DML_MPI") before "make".
+
  4) There is a major porting problem associated with blas and lapack. In particular,
     different machines have different portions of blas/lapack and different packages
     such as Aztec or SuperLU might also have different portions of blas/lapack. 
     The trick is to compile ml without having undefines or multiple defines.
-    Each blas/lapack subroutine xxx has associated with it a define of the form ML_XXX_FUNC 
-    (for a complete list: grep "ifndef ML" src/ml_lapack.c).  By setting defines, you tell ml 
-    not to compile its version of the corresponding subroutine. Currently, defines are set 
-    either via CFLAGS in a etc/makefile.machine file or in the files etc/ml_aztec_lapack.h 
-    etc/ml_superlu_lapack.h etc/ml_vendor_lapack.h that are included by src/ml_lapack.c. You 
-    may need to add new definitions if the defaults don't work for you.
+    Each blas/lapack subroutine xxx has associated with it a define of the form 
+    ML_XXX_FUNC (for a complete list: grep "ifndef ML" src/ml_lapack.c).  By 
+    setting defines, you tell ml not to compile its version of the corresponding 
+    subroutine. Currently, defines are set either via CFLAGS in a 
+    etc/makefile.machine file or in the files etc/ml_aztec_lapack.h 
+    etc/ml_superlu_lapack.h etc/ml_vendor_lapack.h that are included by 
+    src/ml_lapack.c. You may need to add new definitions if the defaults don't 
+    work for you.
     
 
 FOR ML DEVELOPERS: When new files are added, the perl script 
 		   'etc/build_depends' should be run. 
+
