@@ -1,0 +1,278 @@
+#!/usr/bin/perl -w
+# /Trilinos/test/runtests
+
+################################################################################
+# The Trilinos Project - runtests
+# 
+# Mike Phenow, Jim Willenbring
+#
+################################################################################
+
+use strict;
+
+# Variable Declarations ========================================================
+
+my $trilinosdir;        # absolute path to top-level Trilinos directory
+my $resultsdir;         # absolute path to results directory
+
+my $trilinosdir;        # Trilinos directory        (required argument) 
+my $comm;               # comm                      (required argument) 
+my $builddir;           # build directory           (required argument) 
+my $category;           # test category             (required argument) 
+my $mpistart;           # mpi startup command       (default: lamboot)
+my $mpistop;            # mpi shutdown command      (default: lamhalt)
+my $mpigo;              # mpigo command             (default: mpigo -np )
+my $outputdir;          # output directory          (default: .)
+my $verbosity;          # verbosity level           (default: 1)
+my $logverbosity;       # log file verbosity level  (default: 0)
+
+my $startTime;          # start time string
+
+# Constants
+my $v0 = "0";           # quiet
+my $v1 = "1";           # normal verbosity
+my $v2 = "2";           # level 2 verbosity
+my $v3 = "4";           # level 3 verbosity
+        
+################################################################################
+# Execution ####################################################################
+################################################################################
+
+getArgs();
+init();
+run();
+cleanUp();
+
+################################################################################
+# Subroutines ##################################################################
+################################################################################
+
+    ############################################################################
+    # getArgs()
+    #
+    # Parse command line arguments.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub getArgs {
+        
+        my $quiet;
+        my $help;
+
+        use Getopt:Long;
+        GetOptions( "trilinosdir=s" => \$trilinosdir,
+                    "comm=s" => \$comm,
+                    "builddir=s" => \$builddir,
+                    "category=s" => \$category,
+                    "mpistart=s" => \$mpistart,
+                    "mpistop=s" => \$mpistop,
+                    "mpigo=s" => \$mpigo,
+                    "outputdir=s" => \$outputdir,
+                    "verbosity=i" => \$verbosity,
+                    "logverbosity=i" => \$logverbosity,
+                    "quiet" => \$quiet,
+                    "help" => \$help );
+        
+        # print help and exit
+        if ($help) { 
+            printHelp();
+            exit;
+        }
+        
+        if (!$trilinosdir) {
+            die "trilinosdir value required, see --help for more information"; 
+        } else {
+            $trilinosdir =~ s/\/?$/\//;     # enforce trailing slash
+        }
+        
+        if (!$comm) {
+            die "comm value required, see --help for more information"; 
+        }
+        
+        if (!$builddir) {
+            die "builddir value required, see --help for more information"; 
+        }
+        
+        if (!$category) {
+            die "category value required, see --help for more information"; 
+        }
+        
+        if (!$mpistart) {
+            $mpistart = "";
+        }
+        
+        if (!$mpistart) {
+            $mpistart = "";
+        }
+        
+        if ($mpigo) {
+            $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpigo;
+        } else {
+    		$ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
+    	}
+        
+        if (!$outputdir) {
+            $outputdir = "."; 
+        } else {
+            $outputdir =~ s/\///;
+        }
+        
+        if (!$verbosity) {
+            $verbosity = $v1; 
+        }
+        
+        if (!$logverbosity) {
+            $logverbosity = $v0; 
+        }
+        
+        if ($quiet) {
+            $verbosity = $v0; 
+        }            
+        
+    } # getArgs()
+
+    ############################################################################
+    # init()
+    #
+    # Prepares varibles.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub init {
+    
+        my $yr = "00";
+        my $mo = "00";
+        my $da = "00";
+        my $hr = "00";
+        my $mn = "00";
+        my $se = "00";
+        
+        ($se, 
+        
+        use Cwd;
+        use File::Basename;
+        my $cwd = dirname(getcwd());
+        $trilinosdir = $cwd;
+        $trilinosdir =~ s/test\/$//;
+        
+        $resultsdir = $cwd.$outputdir;
+        
+    } # init()
+    
+    ############################################################################
+    # cleanUp()
+    #
+    # Clean up environment variables, temp files, etc.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub cleanUp {
+        delete $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'};    
+    } # cleanUp()
+    
+    ############################################################################
+    # printMessage()
+    #
+    # Prints an event if the verbosity is set.
+    #
+    #   - args:     $message        (message to be printed)
+    #               $level          (verbosity level of message)
+    #
+    #   - returns:  NONE
+    #
+
+    sub printMessage {
+        my $message = $_[0];
+        my $level = $_[1];
+        
+        if ($vebosity & $level) {
+            print $message;
+        }
+        
+        if ($logverbosity & $level) {       
+            my $log = $resultsdir."log.txt";
+            open (LOG, ">>$log")
+                or die "can't open $log";            
+            print LOG $message;
+            close LOG;       
+        }            
+    } # printMessage()
+
+    ############################################################################
+    # printHelp()
+    #
+    # Prints help output.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub printHelp {
+        print "Trilinos Test Harness\n";
+        print "\n";
+        print "Usage:  perl runtest --comm=mpi --buildir=MPI --category=all\n";
+        print "\n";
+        print "Options:\n";
+        print "\n";
+        print "  --trilinosdir=DIR      Specify the absolute path to the top-level Trilinos\n";
+        print "                         directory that contains this program.\n";
+        print "                         Example: /home/user/Trilinos\n";
+        print "                         REQUIRED.\n";
+        print "\n";
+        print "  --comm=COMM            Specify the type of build, either \"serial\" or \"mpi\"\n";
+        print "                         REQUIRED.\n";
+        print "\n";
+        print "  --builddir=DIR         Specify the name of the build directory that contains\n";
+        print "                         the tests you would like run.  It is assumed that this\n";
+        print "                         directory is in the given Trilinos directory.\n";
+        print "                         REQUIRED.\n";
+        print "\n";
+        print "  --category=CATEGORY    Specify the category of tests to be run.  This must be\n";
+        print "                         one of the predefined tests types:  FRAMEWORK,\n";
+        print "                         CHECKIN, PERFORMANCE, SCALABILITY, or ALL.  See\n";
+        print "                         README-definition for more information.\n";
+        print "                         REQUIRED.\n";
+        print "\n";
+        print "  --mpistart=COMMAND     Specify the mpi startup command for this system.\n";
+        print "                         Default: \"lamboot\"\n";
+        print "\n";
+        print "  --mpistop=COMMAND      Specify the mpi shutdown command for this system.\n";
+        print "                         Default: \"lamhalt\"\n";
+        print "\n";
+        print "  --mpigo=COMMAND        Specify the mpigo command for this system.\n";
+        print "                         Default: \"mpigo -np \"\n";
+        print "\n";
+        print "  --outputdir=OUTPUTDIR  Specify the directory in which to create the directory\n";
+        print "                         containing the test results.  This value must be a path\n";
+        print "                         relative to trilinosdir/test/.\n";
+        print "                         Default: \".\"\n";
+        print "\n";
+        print "  --verbosity=LEVEL      0 = no non-fatal ouput (same as --quiet)\n";
+        print "                         1 = normal output (Default)\n";
+        print "                         2 = level 2 verbosity\n";
+        print "                         3 = level 3 verbosity\n";
+        print "\n";
+        print "  --logverbosity=LEVEL   0 = no log (Default)\n";
+        print "                         1 = normal output\n";
+        print "                         2 = level 2 verbosity\n";
+        print "                         3 = level 3 verbosity\n";
+        print "\n";
+        print "  --quiet                Produce no non-fatal output.\n";
+        print "\n";
+        print "  --help                 Print this help output and exit.\n";
+        print "\n";
+        print "Notes:\n";
+        print "  - For more information, see README-runtest in Trilinos/testharness\n";
+        print "    or visit http://software.sandia.gov/trilinos/developer/\n";
+        print "\n";
+    } # printHelp()

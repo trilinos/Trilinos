@@ -1,0 +1,72 @@
+###############################################################################
+# runmake - The Trilinos Make Utility                                         #
+#                                                                             #
+# The Trilinos Project                                                        #
+#                                                                             #
+#   Mike Phenow, Jim Willenbring                                              #
+#                                                                             #
+###############################################################################
+
+  This document describes the usage of runmake, the Trilinos make utility.
+  
+-------------------------------------------------------------------------------
+I.  Prerequisites
+
+  In order for the make utility to work, you must have the following in place:
+  
+    1. You must have a correctly configured build directory.
+       
+-------------------------------------------------------------------------------
+II.  Execution
+
+  To execute the Trilinos make utility, simply type:
+  
+    cd /PATH/TO/Trilinos/test/
+    runmake BUILDDIR OUTPUTDIR
+    
+  where /PATH/TO/ is the absolute path to your top-level Trilinos directory, 
+  BUILDDIR is the name of the build directory, and OUTPUTDIR is the directory
+  in which the make results file will be created (if this is omitted, . is
+  assumed).  It is assumed that your build directory resides in your
+  Trilinos directory.
+  
+-------------------------------------------------------------------------------
+IV.  Make Results File
+
+  The results of the make attempt will be placed in the specified output
+  directory and will be named according to the following scheme:
+  
+    make_YR-MO-DA_HR.MN.SE.txt
+  
+  The test results files will consist of the following:
+  
+  +---------------------------------------------------------------------------+
+  |HOST_NAME        = herouxsmp
+  |DNS_NAME         = cs.csbsju.edu
+  |HOST_OS          = linux
+  |
+  |TRILINOS_DIR     = /u/TrilinosTestHarness/TrilinosRelease5.0/Trilinos/
+  |BRANCH           = trilinos-release-5-0-branch
+  |
+  |BUILD_DIR        = SERIAL2/
+  |COMM             = serial
+  |
+  |START_TIME       = 2005-03-31 16:40:23
+  |END_TIME         = 2005-03-31 16:40:25
+  |RUN_TIME         = 00:00:02
+  |
+  |EXIT_STATUS      = 0
+  |RESULT           = pass
+  |
+  |BROKEN_PACKAGE   = NONE
+  |
+  |BEGIN_MAKE_OUTPUT
+  |
+  |  Hello, World.
+  |  *** test passed ***
+  |
+  |END_MAKE_OUTPUT
+  |
+  +---------------------------------------------------------------------------+
+
+-------------------------------------------------------------------------------

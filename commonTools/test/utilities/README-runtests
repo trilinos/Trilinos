@@ -1,0 +1,126 @@
+###############################################################################
+# runtests - The Trilinos Test Utility                                         #
+#                                                                             #
+# The Trilinos Project                                                        #
+#                                                                             #
+#   Mike Phenow, Jim Willenbring                                              #
+#                                                                             #
+###############################################################################
+
+  This document describes the usage of runtests, the Trilinos test utility.
+  
+-------------------------------------------------------------------------------
+I.  Prerequisites
+
+  In order for the test utility to work, you must have the following in place:
+  
+    1. You must have a working build directory.
+    
+    2. Your build directory must contain successfully built tests.
+  
+    3. Each package should have a well-formed definition file in 
+       BUILD_DIR/packages/PACKAGE/test.
+       
+-------------------------------------------------------------------------------
+II.  Execution
+
+  To execute the Trilinos test utility, simply type:
+  
+    cd /PATH/TO/Trilinos/test/
+    runtests COMM BUILDDIR CATEGORY OUTPUTDIR
+    
+  where /PATH/TO/ is the absolute path to your top-level Trilinos directory, 
+  COMM is "serial" or "mpi", BUILDDIR is the build directory, CATEGORY is the
+  category of tests you would like run, and OUTPUTDIR is the directory in which
+  the test results directory will be created (if this is omitted, . is
+  assumed).  It is assumed that your build directory resides in your Trilinos
+  directory.
+    
+-------------------------------------------------------------------------------
+III.  Test Results Directory
+
+  The results of the tests will be placed in a new directory in the current
+  working directory.  The directory will be named according to the following
+  scheme:
+  
+    test_YR-MO-DA_HR.MN.SE/
+  
+-------------------------------------------------------------------------------
+IV.  Test Results Files
+
+  The results of the individual tests will be placed in the directory mentioned
+  above and will be named according to the following scheme:
+  
+    PACKAGE_TEST_YR-MO-DA_HR.MN.SE.txt
+    
+  where PACKAGE is the name of the package and TEST is the name of the test.
+  
+  The test results files will consist of the following:
+  
+  +---------------------------------------------------------------------------+
+  |HOST_NAME        = herouxsmp
+  |DNS_NAME         = cs.csbsju.edu
+  |HOST_OS          = linux
+  |
+  |TRILINOS_DIR     = /u/TrilinosTestHarness/TrilinosRelease5.0/Trilinos/
+  |BRANCH           = trilinos-release-5-0-branch
+  |
+  |BUILD_DIR        = SERIAL2/
+  |COMM             = serial
+  |
+  |PACKAGE_DIR      = packages/epetra/
+  |PACKAGE          = epetra
+  |
+  |TEST_DIR         = Vector/
+  |TEST             = ExecuteTestProblems.exe
+  |TEST_REVISION    = 1.45
+  |ARGUMENTS        = matrix1
+  |
+  |START_TIME       = 2005-03-31 16:40:23
+  |END_TIME         = 2005-03-31 16:40:25
+  |RUN_TIME         = 00:00:02
+  |
+  |EXIT_STATUS      = 0
+  |RESULT           = pass
+  |
+  |BEGIN_TEST_OUTPUT
+  |
+  |  Hello, World.
+  |  *** test passed ***
+  |
+  |END_TEST_OUTPUT
+  |
+  +---------------------------------------------------------------------------+
+
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
