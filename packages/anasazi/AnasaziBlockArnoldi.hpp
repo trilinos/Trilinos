@@ -7,8 +7,6 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziCommon.hpp"
 
-//using namespace std;
-
 // 
 // BlockArnoldi base class
 //
@@ -17,12 +15,13 @@ class BlockArnoldi {
 public:
 	BlockArnoldi( AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE>& vec,
 		const TYPE tol=1.0e-6, const int nev=5, const int length=25, 
-		const int block=1, const string which="LM", const int restarts=0 );
+		const int block=1, const string which="LM", const int step=25, 
+		const int restarts=0 );
 	virtual ~BlockArnoldi();
 	void iterate( int steps=1 );
 	void solve();
-	AnasaziMultiVec<TYPE>* getEvecs(); 
-	AnasaziMultiVec<TYPE>* getiEvecs();
+	void getEvecs(AnasaziMultiVec<TYPE>& evecs); 
+	void getiEvecs(AnasaziMultiVec<TYPE>& ievecs);
 	TYPE * getEvals();
 	TYPE * getiEvals();
 	TYPE * getResiduals();
@@ -43,7 +42,7 @@ private:
 	AnasaziMultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
 	AnasaziDenseMatrix<TYPE>* _hessmatrix;
 	AnasaziDenseMatrix<TYPE>* _B; // needed for block Krylov decomposition
-	const int _nev, _length, _block, _restarts;
+	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_evalr, *_evali;
 	int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _nconv;
@@ -59,11 +58,11 @@ private:
 template <class TYPE>
 BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE> & vec, 
 				const TYPE tol, const int nev, const int length, const int block,
-				const string which, const int restarts ) : 
+				const string which, const int step, const int restarts) : 
 				_amat(mat), _ivec(vec), _basisvecs(0), _evecr(0), _eveci(0), 
 				_hessmatrix(0), _nev(nev), _length(length), _block(block), 
-				_restarts(restarts), _residual_tolerance(tol), _ritzresiduals(0), 
-				_evalr(0), _evali(0), _restartiter(0), _B(0), 
+				_restarts(restarts), _residual_tolerance(tol), _step(step),
+				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), _B(0), 
 				_iter(0), _jstart(0), _jend(0), _which(which),
 				_initialguess(false), _debuglevel(0), _nevblock(0),
 				_qrfact(false), _issym(false), _nconv(0) {
@@ -135,13 +134,33 @@ BlockArnoldi<TYPE>::~BlockArnoldi() {
 }
 
 template <class TYPE>
-AnasaziMultiVec<TYPE> * BlockArnoldi<TYPE>::getEvecs() {
-	return _evecr->CloneCopy();
+void BlockArnoldi<TYPE>::getEvecs(AnasaziMultiVec<TYPE>& evecs) {
+        int i, numvecs = evecs.GetNumberVecs(); 
+        if (numvecs > _nev) {
+                numvecs = _nev;
+        } 
+        int* index = new int[ numvecs ];
+        for (i=0; i<numvecs; i++) {
+                index[i] = i;
+        }
+        evecs.SetBlock( *_evecr, index, numvecs );
+                 
+        delete [] index;
 }
  
 template <class TYPE>
-AnasaziMultiVec<TYPE> * BlockArnoldi<TYPE>::getiEvecs() {
-	return _eveci->CloneCopy();
+void BlockArnoldi<TYPE>::getiEvecs(AnasaziMultiVec<TYPE>& ievecs) {
+        int i, numvecs = ievecs.GetNumberVecs(); 
+        if (numvecs > _nev) {
+                numvecs = _nev;
+        } 
+        int* index = new int[ numvecs ];
+        for (i=0; i<numvecs; i++) {
+                index[i] = i;
+        }
+        ievecs.SetBlock( *_eveci, index, numvecs );
+                 
+        delete [] index;
 }
 
 template <class TYPE>
@@ -198,7 +217,7 @@ void BlockArnoldi<TYPE>::currentStatus() {
 	std::cout<<"------------------------------------------------------"<<std::endl;
 	std::cout<<"Current Eigenvalue Estimates: "<<std::endl;
 	if (_issym) {
-		std::cout<<"Eigenvalue \t Residual"<<std::endl;
+		std::cout<<"Eigenvalue \t Ritz Residual"<<std::endl;
 		std::cout<<"------------------------------------------------------"<<std::endl;
 		for (i=0; i<_nev; i++) {
 			std::cout.width(10);
@@ -206,7 +225,7 @@ void BlockArnoldi<TYPE>::currentStatus() {
 		}
 		std::cout<<"------------------------------------------------------"<<std::endl;
 	} else {
-		std::cout<<"Real Part \t Imag Part \t Residual"<<std::endl;
+		std::cout<<"Real Part \t Imag Part \t Ritz Residual"<<std::endl;
 		std::cout<<"------------------------------------------------------"<<std::endl;
 		for (i=0; i<_nev; i++) {
 			std::cout.width(10);
@@ -303,7 +322,6 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 	// Lets see how many loops we'll have to do, take into account that we may not
 	// be in the beginning of the factorization.
 	//
-
 	if (_jstart+steps < _length) {
 		// If we don't need to restart, just get it over with.
 		_jend = _jstart+steps;
@@ -347,7 +365,7 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 	// Compute the current eigenvalue estimates before returning.
 	//
 	ComputeResiduals( false );		
-
+	
 	// Output current information if necessary
 	if (_debuglevel > 0) {
 		currentStatus();
@@ -360,7 +378,12 @@ void BlockArnoldi<TYPE>::solve () {
 
 	// Right now the solver will just go the remaining iterations, but this design will allow
 	// for checking of the residuals every so many iterations, independent of restarts.
-	iterate( rem_iters );
+	while (_nconv < _nev && _iter < (_restarts+1)*_length*_block) {
+		iterate( _step );
+		if (_debuglevel > 0) {
+			currentStatus();
+		}
+	}
 }
 
 template<class TYPE>
@@ -712,14 +735,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//  Check convergence before returning to iterate/solve routine
 	//---------------------------------------------------------------------
 	_nconv = 0;
-	std::cout<<"Checking residuals for tolerance : "<<_residual_tolerance<<std::endl;
+//	std::cout<<"Checking residuals for tolerance : "<<_residual_tolerance<<std::endl;
 	for (i=0; i<_nev; i++) {
-		std::cout<<"Eigenvalue "<<i<<" : "<<_ritzresiduals[i]<<std::endl;
+//		std::cout<<"Eigenvalue "<<i<<" : "<<_ritzresiduals[i]<<std::endl;
 		if ( _ritzresiduals[i] < _residual_tolerance ) {
 			_nconv++;		
 		}
 	}			
-	std::cout<<"Converged eigenvalues : "<<_nconv<<std::endl<<std::endl;
+//	std::cout<<"Converged eigenvalues : "<<_nconv<<std::endl<<std::endl;
 
 	delete [] work; 
 	delete [] index;
