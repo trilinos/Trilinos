@@ -35,7 +35,19 @@
 \newcommand{\loca}  {{\sc Loca}}
 \newcommand{\be}  {\begin{enumerate}}
 \newcommand{\ee}  {\end{enumerate}}
+% Maxwell abbreviations
+\newcommand \Ke {\ensuremath{K^{(e)}}}
+\newcommand \Kn {\ensuremath{K^{(n)}}}
+\newcommand \Th {\ensuremath{T_h}}
+\newcommand \curlcurl {({\it curl,curl})}
 
+\newcommand{\comm}[2]{\bigskip
+                      \begin{tabular}{|p{4.5in}|}\hline
+                      \multicolumn{1}{|c|}{{\bf Comment by #1}}\\ \hline
+                      #2\\ \hline
+                      \end{tabular}\\
+                      \bigskip
+                     }
 %
 % ***********************************************************************
 % * 02 July 1993: McCorkle                                              *
@@ -1232,6 +1244,13 @@ matrix solvers. Note: Amesos solvers requires
 \label{all possible parameters}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
+Parameters that can be set differently on individual levels are denoted
+with the symbol $\star$ (this symbol is not part of the parameter name).
+Note that some parameters (e.g., {\tt Uncoupled-MIS} aggregation) correspond to
+quantities that must be the same at all levels.
+Descriptions follow the general format:\\\\
+\choicebox{\tt parameter}{[{\tt Type}] Description. \{[Value1], Value2, \dots\}}
+where $[\cdot]$ denotes the default value.
 \subsubsection{General Options}
 
 \choicebox{\tt output}{Output level, from 0 to 10 (10 being verbose).}
@@ -1332,6 +1351,33 @@ smoothers. }
 \choicebox{\tt smoother: MLS alpha $\star$}{Alpha value for {\tt MLS} 
 smoothers. }
 
+\choicebox{\tt smoother: Hiptmair sweeps $\star$}{[{\tt int}] Number of Hiptmair iterations
+to perform.  [1].}
+
+\choicebox{\tt smoother: Hiptmair efficient symmetric }{[{\tt bool}] Reduce the
+preconditioner computational work while maintaining symmetry by doing edge-node
+relaxation on the first leg of the V-cycle, and node-edge relaxation on the
+second leg. \{[true],false\}.}
+
+\choicebox{\tt smoother: Hiptmair subsmoother type $\star$}{[{\tt string}] Smoother to be used
+as a subsmoother at each step of Hiptmair smoothing.  \{[{\tt MLS}],
+{\tt symmetric Gauss-Seidel}\}.}
+
+\choicebox{\tt smoother: Hiptmair MLS polynomial order $\star$}{[{\tt int}] Polynomial
+order for {\tt MLS} sub-smoother.  [3].}
+
+\choicebox{\tt smoother: Hiptmair SGS damping factor $\star$}{[{\tt double}]
+Damping factor for {\tt symmetric Gauss-Seidel}. Automatically calculated in
+the range $(0,2)$.}
+
+\choicebox{\tt smoother: Hiptmair SGS edge sweeps $\star$}{[{\tt int}] Number of iterations
+ of SGS sub-smoothing to perform on edge problem. [1].}
+
+\choicebox{\tt smoother: Hiptmair SGS node sweeps $\star$}{[{\tt int}] Number of iterations
+ of SGS sub-smoothing to perform on nodal projection problem.
+[1].}
+
+
 %%%
 %%%
 %%%
@@ -1363,36 +1409,39 @@ Damping factor in the coarse solver.}
 
 \subsubsection{Load-balancing Options}
 
-\choicebox{\tt repartition: enable}{Enable/disable repartitioning:  true,false}
+\choicebox{\tt repartition: enable}{[{\tt bool}] Enable/disable repartitioning.
+\{true, false\}.}
 
-\choicebox{\tt repartition: partitioner}{Partitioning package to use: Zoltan,
-ParMETIS}
+\choicebox{\tt repartition: partitioner}{[{\tt string}] Partitioning package
+to use. {Zoltan, ParMETIS}.}
 
-\choicebox{\tt repartition: node min max ratio}{Specifies ratio of maximum
+\choicebox{\tt repartition: node min max ratio}{[{\tt double}] Specifies ratio
+of maximum
 nodes on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
-(positive real value)}
+$[1.1]$.}
 
-\choicebox{\tt repartition: node min per proc}{Specifies the desired minimum number of
-nodes that should be on a processor once repartitioning is done.}
+\choicebox{\tt repartition: node min per proc}{[{\tt int}] Specifies the desired minimum
+number of nodes that should be on a processor once repartitioning is done.
+[20].}
 
-\choicebox{\tt repartition: edge min max ratio}{(Maxwell-specific option.)  Specifies ratio of maximum
+\choicebox{\tt repartition: edge min max ratio}{[{\tt double}] Maxwell-specific option.  Specifies ratio of maximum
 edges on a processor to minimum nodes on a processor.   If actual ratio is
 greater than this value, repartitioning occurs.  Otherwise, nothing is done.
-(positive real value)}
+$[1.1]$.}
 
 \choicebox{\tt repartition: edge min per proc}{(Maxwell-specific option.)
 Specifies the desired minimum number of
-edges that should be on a processor once repartitioning is done.}
+edges that should be on a processor once repartitioning is done.  [20].}
 
-\choicebox{\tt repartition: Zoltan dimensions}{Dimension of the problem: 2 or
-3.}
+\choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the problem.  $\{2,3\}$.}
 
-\choicebox{\tt repartition: Zoltan node coordinates}{Pointer to array of
+\choicebox{\tt repartition: Zoltan node coordinates}{[{\tt double*}] Pointer to array of
 double node coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
 $z$- coordinates, in that order.}
 
-\choicebox{\tt repartition: Zoltan edge coordinates}{(Maxwell-specific option.) Pointer to array of
+\choicebox{\tt repartition: Zoltan edge coordinates}{[{\tt double*}] Maxwell-specific option.
+Pointer to array of
 double edge coordinates.  The array is one-dimensional, containing $x$-,$y$-, and
 $z$- coordinates, in that order.}
 
@@ -1998,6 +2047,138 @@ computational domain. The result can be something as follows:
                       -1               4              -1
                        0              -1               0
 \end{verbatim}
+
+\clearpage
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Using the Maxwell Solver in \ML} \label{maxwell solver}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+This section gives a brief overview of how to ML's AMG preconditioner for
+the eddy current formulation of Maxwell's equations.
+The solver is intended only for equations in the time domain (real-valued),
+not the frequency domain (complex-valued).
+
+\subsection{Background}\label{maxwell background}
+The eddy current formulation of Maxwell's equations can be written as
+\begin{equation} \label{maxwell pde}
+\nabla\times\nabla\times \vec{E} + \sigma \vec{E} = \vec{f},
+\end{equation}
+where
+$\vec{E}$\ is the unknown electric field to be computed,
+$\sigma$ is the spatially-varying electrical conductivity,
+and $\vec{f}$\ is the known right-hand side.
+Neumann, Dirichlet, and/or periodic boundary conditions are supported.
+
+Although we assume that (\ref{maxwell pde}) is discretized with
+first-order edge elements, it is possible to use this preconditioner for
+higher-order discretizations, as long as the user provides the sub-matrix
+that corresponds to just the first-order discretization.
+%% FIXME add paper references
+For more theoretical background and algorithm descriptions, please see \cite{}.
+
+\subsection{Notational conventions}\label{maxwell notation}
+For the remainder of the discussion, \Ke\ denotes the matrix corresponding to
+the first-order element discretization of (\ref{maxwell pde}).   \Ke\ can be
+written as
+$$\Ke = S + M,$$
+where $S$ is the stiffness matrix corresponding to the \curlcurl\ term in
+(\ref{maxwell pde}), and $M$ is the mass matrix corresponding to the $\sigma\vec{E}$
+term in (\ref{maxwell pde}).
+The null-space of $S$ is given by the discrete gradient matrix, $T$.
+$T$ corresponds to the null space of the \curlcurl\ term in
+(\ref{maxwell pde}).
+\Kn\ is an auxiliary nodal matrix that is described in \S\ref{Kn matrix}.
+
+\subsection{Operators that the user must supply}
+The user must provide three matrices:
+\be
+\item the first-order edge element matrix \Ke.
+\item the auxiliary nodal matrix \Kn.
+\item the discrete gradient matrix $T$.
+\ee
+
+%%%%%%%%%%%%%%
+\subsubsection{Description of the auxiliary nodal matrix \Kn}\label{Kn matrix}
+%%%%%%%%%%%%%%
+%
+\Kn\ is a square, $N_n\times N_n$ matrix, where $N_n$ is the number of nodes in
+the mesh.
+There are two ways to contruct \Kn.
+The first method is to discretize the PDE
+\begin{equation}
+   \int_\Omega \sigma u \cdot v + \int_\Omega \nabla u \cdot \nabla v,
+   \label{nodal pde}
+\end{equation}
+using nodal linear finite elements on the same mesh as (\ref{maxwell pde}).
+The second method assumes that you already have $T$ available.
+\Kn\ can be formed via the triple-matrix product $$T^{\mathrm{T}}\Ke T =
+T^{\mathrm{T}}M T,$$
+where we have used the fact that $ST=0$.
+%FIXME
+%boundary conditions
+%%%%%%%%%%%%%%
+\subsubsection{Description of the discrete gradient matrix $T$}\label{T matrix}
+%%%%%%%%%%%%%%
+%
+$T$ is a rectangular, $N_e\times N_n$ matrix, where $N_e$ is the number of
+edges in the mesh (rows in \Ke) and $N_n$ is the number of nodes in the mesh
+(rows in \Kn).
+Each row of $T$ has at most two entries, a $+1$ and/or a $-1$.
+There are two ways to contruct $T$.
+In the first method, 
+it's assumed that the mesh topology is available.
+$T$ can be viewed as a node-edge incidence matrix of the mesh as a
+directed graph.
+As such,
+each row of $T$ corresponds to an edge, and the $+1$/$-1$ entries in the
+row are the head/tail of the edge, respectively.
+Hence, $T$ can be built one row at a time by visiting each edge and inserting
+$+1$/$-1$ in the appropriate columns.
+%FIXME
+\comm{JJH}{What about directionality?  As I recall, it doesn't matter.}
+The second method assumes that \Kn\ is already constructed.
+Each off-diagonal nonzero $(i,j)$ in the upper triangular
+portion of \Kn\ corresponds to a row in $T$ containing
+a $1$ and a $-1$ in columns $i$ and $j$. 
+%FIXME
+%note consistency in parallel of how nodes, edges are distributed
+%
+%FIXME
+%boundary conditions
+%%%%%%%%%%%%%%
+\subsection{Smoother options}\label{maxwell smoothers}
+%%%%%%%%%%%%%%
+%
+The default smoother for Maxwell's equations is a two-stage smoother that we
+call Hiptmair smoothing \cite{}.
+This smoother consists of three steps: one step of a smoother $\mathcal S$ on
+the entire system $Kx=f$; one step of a smoother $\mathcal S$ on the
+projected system $T^{\mathrm{T}}MTe=T^{\mathrm{T}}r$, where $r = f - Kx$;
+and finally one step of a smoother $\mathcal S$ on the entire system with
+initial guess $x+e$.
+
+In serial, the default sub-smoother $\mathcal S$ is symmetric Gauss-Seidel
+(SGS).
+In parallel, the default sub-smoother $\mathcal S$ a degree 3 Chebyshev
+polynomial.
+The coefficients of this polynomial are calculated automatically based on the
+coarsening rate of the multigrid hierarchy.
+The Chebyshev degree can be changed with the option\\
+\verb!smoother: Hiptmair MLS polynomial order!
+%
+%%%%%%%%%%%%%%
+\subsection{Prolongation options}\label{maxwell coarsening}
+%%%%%%%%%%%%%%
+%
+%
+%%%%%%%%%%%%%%
+\subsection{Prolongation options}\label{maxwell coarsening}
+%%%%%%%%%%%%%%
+%
+
+
 
 \clearpage
 \newpage
