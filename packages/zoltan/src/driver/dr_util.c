@@ -294,7 +294,7 @@ int find_min(const int list_length, const int list[])
 /*****************************************************************************/
 /* Function find_inter() begins:
  *----------------------------------------------------------------------------
- * This function finds the intersection between two lists of interger values,
+ * This function finds the intersection between two lists of integer values,
  * and returns the number of values in the intersection.
  *****************************************************************************/
 int find_inter(const int set1[], const int set2[], const int length1,

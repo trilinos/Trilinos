@@ -20,10 +20,11 @@ static char *cvs_dr_output_const = "$Id$";
 #ifndef _DR_OUTPUT_CONST_H_
 #define _DR_OUTPUT_CONST_H_
 
+#include "dr_input_const.h"
+
 extern void print_distributed_mesh(
   int Proc,
   int Num_Proc,
-  PROB_INFO_PTR prob,
   ELEM_INFO *elements
 );
 

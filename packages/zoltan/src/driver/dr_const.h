@@ -13,12 +13,13 @@
  * $Revision$
  *
  *====================================================================*/
+#ifndef _DR_CONST_H
+#define _DR_CONST_H
+
 #ifndef lint
 static char *cvs_dr_const_id = "$Id$";
 #endif
 
-#ifndef _DR_CONST_H
-#define _DR_CONST_H
 
 #include "lbi_const.h"
 
@@ -91,6 +92,17 @@ struct Mesh_Description
   int     elem_array_len;	/* length that the ELEM_INFO array is
 				   allocated for. Need to know this when array
 				   is not completely filled during migration */
+  int     necmap;               /* number of elemental communication maps.   */
+  int    *ecmap_id;             /* IDs of each elemental communication map.  */
+  int    *ecmap_cnt;            /* number of elements in each elemental
+                                   communication map.                        */
+  int    *ecmap_elemids;        /* element ids of elements for all elemental
+                                   communication maps. (local numbering)     */
+  int    *ecmap_sideids;        /* side ids of elements for all elemental 
+                                   communication maps.                       */
+  int    *ecmap_neighids;       /* elements ids of neighboring elements 
+                                   for all elemental communication maps. 
+                                   (global numbering)                        */
 };
 typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;

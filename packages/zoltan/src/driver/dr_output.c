@@ -31,11 +31,11 @@ static char *cvs_output = "$Id$";
 void print_distributed_mesh(
      int Proc, 
      int Num_Proc, 
-     PROB_INFO_PTR prob,
      ELEM_INFO *elements)
 {
 int i, j, k;
 int elem;
+int offset;
 
 
 /*
@@ -92,6 +92,23 @@ int elem;
     printf("\n");
   }
 
+  printf("\nCommunication maps\n");
+  printf("Number of maps: %d\n", Mesh.necmap);
+  printf("Map Ids(and Counts):");
+  for (i = 0; i < Mesh.necmap; i++)
+    printf(" %d(%d)", Mesh.ecmap_id[i], Mesh.ecmap_cnt[i]);
+  printf("\n");
+  offset = 0;
+  for (i = 0; i < Mesh.necmap; i++) {
+    printf("Map %d:\n", Mesh.ecmap_id[i]);
+    printf("    elem   side   globalID\n");
+    for (j = 0; j < Mesh.ecmap_cnt[i]; j++) {
+      k = j + offset;
+      printf("    %d     %d     %d\n", Mesh.ecmap_elemids[k],
+           Mesh.ecmap_sideids[k], elements[Mesh.ecmap_elemids[k]].globalID);
+    }
+    offset += Mesh.ecmap_cnt[i];
+  }
   print_sync_end(Proc, Num_Proc, 1);
 }
 

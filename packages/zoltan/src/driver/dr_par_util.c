@@ -19,6 +19,7 @@ static char *cvs_dr_par_util = "$Id$";
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>
+#include "dr_const.h"
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s):	Matthew M. St.John (SNL 9226)
@@ -27,6 +28,7 @@ static char *cvs_dr_par_util = "$Id$";
  * Functions contained in this file:
  *      print_sync_start()
  *      print_sync_end()
+ *      boundary_exchange()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /*****************************************************************************/
@@ -132,5 +134,47 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
 
   MPI_Barrier(MPI_COMM_WORLD);
 
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void boundary_exchange(
+  int vec_len,           /* Length of vector for each element.               */
+  int *send_vec,         /* Vector of values to be sent.                     */
+  int *recv_vec          /* Vector of values to be received.                 */
+)
+{
+int i, ierr, offset;
+int msg_type = 111;
+
+MPI_Status  *status = NULL;
+MPI_Request *req = NULL;
+
+  req = (MPI_Request *) malloc(Mesh.necmap * sizeof(MPI_Request));
+  status = (MPI_Status *) malloc(Mesh.necmap * sizeof(MPI_Status));
+
+  /* Post receives */
+  offset = 0;
+  for (i = 0; i < Mesh.necmap; i++) {
+    ierr = MPI_Irecv(&(recv_vec[offset]), Mesh.ecmap_cnt[i], MPI_INT, 
+                     Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
+    offset += Mesh.ecmap_cnt[i];
+  }
+
+  /* Send messages */
+  offset = 0;
+  for (i = 0; i < Mesh.necmap; i++) {
+    ierr = MPI_Send(&(send_vec[offset]), Mesh.ecmap_cnt[i], MPI_INT, 
+                    Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD);
+    offset += Mesh.ecmap_cnt[i];
+  }
+
+  /* Receive messages */
+  MPI_Waitall(Mesh.necmap, req, status);
+
+  free(req);
+  free(status);
 }
 

@@ -42,6 +42,7 @@ static char *cvs_dr_main = "$Id$";
 #include "dr_loadbal_const.h"
 #include "dr_output_const.h"
 #include "dr_err_const.h"
+#include "dr_elem_util_const.h"
 
 /* global mesh information struct variable */
 MESH_INFO Mesh;
@@ -112,6 +113,12 @@ int main(int argc, char *argv[])
   Mesh.eb_cnts			= NULL;
   Mesh.eb_nnodes		= NULL;
   Mesh.eb_nattrs		= NULL;
+  Mesh.necmap 			= 0;
+  Mesh.ecmap_id 		= NULL;
+  Mesh.ecmap_cnt 		= NULL;
+  Mesh.ecmap_elemids 		= NULL;
+  Mesh.ecmap_sideids 		= NULL;
+  Mesh.ecmap_neighids 		= NULL;
 
   pio_info.dsk_list_cnt		= -1;
   pio_info.num_dsk_ctrlrs	= -1;
@@ -182,15 +189,7 @@ int main(int argc, char *argv[])
 
   if (elements != NULL) {
     for (i = 0; i < Mesh.elem_array_len; i++) {
-      if (elements[i].coord != NULL) {
-        for (j = 0; j < Mesh.eb_nnodes[elements[i].elem_blk]; j++) 
-          if (elements[i].coord[j] != NULL) free(elements[i].coord[j]);
-        free(elements[i].coord);
-      }
-      if (elements[i].connect != NULL) free(elements[i].connect);
-      if (elements[i].adj != NULL) free(elements[i].adj);
-      if (elements[i].adj_proc != NULL) free(elements[i].adj_proc);
-      if (elements[i].edge_wgt != NULL) free(elements[i].edge_wgt);
+      free_element_arrays(&(elements[i]));
     }
     free(elements);
   }

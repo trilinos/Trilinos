@@ -33,5 +33,11 @@ void print_sync_end (
   int do_print_line
 );
 
+extern
+void boundary_exchange(
+  int vec_len,
+  int *send_vec,
+  int *recv_vec
+);
 /* Function prototypes */
 #endif /* _DR_PAR_UTIL_CONST_H_ */

@@ -39,6 +39,7 @@ static char *cvs_dr_chaco_io = "$Id$";
 #include "dr_par_util_const.h"
 #include "dr_err_const.h"
 #include "dr_output_const.h"
+#include "dr_elem_util_const.h"
 #include "ch_input_const.h"
 #include "ch_input.h"
 
@@ -161,14 +162,8 @@ int read_chaco_mesh(int Proc,
    * intialize all of the element structs as unused by
    * setting the globalID to -1
    */
-  for (i = 0; i < Mesh.elem_array_len; i++) {
-    (*elements)[i].globalID = -1;
-    (*elements)[i].coord = NULL;
-    (*elements)[i].connect = NULL;
-    (*elements)[i].adj = NULL;
-    (*elements)[i].adj_proc = NULL;
-    (*elements)[i].edge_wgt = NULL;
-  }
+  for (i = 0; i < Mesh.elem_array_len; i++) 
+    initialize_element(&((*elements)[i]));
 
   /*
    * now fill the element structure array with the
@@ -301,7 +296,7 @@ static int fill_elements(
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
 
  /*
-  print_distributed_mesh(Proc, Num_Proc, prob, elem);
+  print_distributed_mesh(Proc, Num_Proc, elem);
   */
 
   return 1;

@@ -43,6 +43,7 @@ static char *cvs_dr_exoII_io = "$Id$";
 #include "dr_par_util_const.h"
 #include "dr_err_const.h"
 #include "dr_output_const.h"
+#include "dr_elem_util_const.h"
 
 #define LIST_ALLOC 10
 
@@ -178,14 +179,8 @@ int read_exoII_mesh(int Proc,
    * intialize all of the element structs as unused by
    * setting the globalID to -1
    */
-  for (i = 0; i < Mesh.elem_array_len; i++) {
-    (*elements)[i].globalID = -1;
-    (*elements)[i].coord = NULL;
-    (*elements)[i].connect = NULL;
-    (*elements)[i].adj = NULL;
-    (*elements)[i].adj_proc = NULL;
-    (*elements)[i].edge_wgt = NULL;
-  }
+  for (i = 0; i < Mesh.elem_array_len; i++) 
+    initialize_element(&((*elements)[i]));
 
   /* read the information for the individual elements */
   if (!read_elem_info(pexoid, Proc, prob, *elements)) {
@@ -208,7 +203,7 @@ int read_exoII_mesh(int Proc,
 #ifdef DEBUG_EXO
 
   /* print out the distributed mesh */
-  print_distributed_mesh(Proc, Num_Proc, prob, *elements);
+  print_distributed_mesh(Proc, Num_Proc, *elements);
 
 #endif
 
@@ -228,7 +223,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 {
   /* Local declarations. */
   int    iblk, ielem, inode, lnode, cnode, iplace, len;
-  int    max_nsur;
+  int    max_nsur = 0;
   int   *nmap, *emap, *connect;
   int  **sur_elem, *nsurnd;
 
@@ -456,7 +451,7 @@ static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
        * surrounding this node
        */
       if (nsurnd[lnode] > 0 &&
-            ielem == sur_elem[lnode][(nsurnd[inode]) - 1])
+            ielem == sur_elem[lnode][(nsurnd[lnode]) - 1])
         continue;
 
       nsurnd[lnode]++;
@@ -464,7 +459,7 @@ static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
       /* keep track of the largest number of surrounding elements */
       if (nsurnd[lnode] > *max_nsur) *max_nsur = nsurnd[lnode];
 
-      /* Check to see if this rows size should be increased */
+      /* Check to see if this row's size should be increased */
       if(nsurnd[lnode] > alloc_cnt[lnode]) {
         alloc_cnt[lnode] += LIST_ALLOC;
         tmp_ptr = (int *) realloc(sur_elem[lnode],
@@ -683,9 +678,9 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 {
   /* Local declarations. */
   int  ielem, imap, loc_elem, iblk, max_len, offset, index;
-  int  nnodei, nnodeb, nnodee, nelemi, nelemb, nncmap, necmap;
-  int *int_elem, *bor_elem, *ecmap_cnt, *ecmap_id;
-  int *elem_ids, *side_ids, *proc_ids, *neigh_ids;
+  int  nnodei, nnodeb, nnodee, nelemi, nelemb, nncmap;
+  int *int_elem, *bor_elem;
+  int *proc_ids;
 
   E_Type etype;
 
@@ -693,7 +688,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 /***************************** BEGIN EXECUTION ******************************/
 
   if (ne_get_loadbal_param(pexoid, &nnodei, &nnodeb, &nnodee,
-                           &nelemi, &nelemb, &nncmap, &necmap, Proc) < 0) {
+                     &nelemi, &nelemb, &nncmap, &(Mesh.necmap), Proc) < 0) {
     Gen_Error(0, "fatal: Error returned from ne_get_loadbal_param");
     return 0;
   }
@@ -715,7 +710,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   }
 
   for (ielem = 0; ielem < nelemb; ielem++) {
-    elements[ielem-1].border = 1;
+    elements[bor_elem[ielem]-1].border = 1;
   }
 
   free(int_elem);
@@ -729,66 +724,56 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * adjacent will have to be added. When that happens,
    * the nodal communication maps will be needed.
    */
-  ecmap_cnt = (int *) malloc (2 * necmap * sizeof(int));
-  if (!ecmap_cnt) {
+  Mesh.ecmap_cnt = (int *) malloc (2 * Mesh.necmap * sizeof(int));
+  if (!Mesh.ecmap_cnt) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  ecmap_id = ecmap_cnt + necmap;
+  Mesh.ecmap_id = Mesh.ecmap_cnt + Mesh.necmap;
 
-  if (ne_get_cmap_params(pexoid, NULL, NULL, ecmap_id, ecmap_cnt, Proc) < 0) {
+  if (ne_get_cmap_params(pexoid, NULL, NULL, Mesh.ecmap_id, 
+                         Mesh.ecmap_cnt, Proc) < 0) {
     Gen_Error(0, "fatal: Error returned from ne_get_cmap_params");
     return 0;
   }
 
   max_len = 0;
-  for (imap = 0; imap < necmap; imap++)
-    max_len += ecmap_cnt[imap];
+  for (imap = 0; imap < Mesh.necmap; imap++)
+    max_len += Mesh.ecmap_cnt[imap];
 
-  elem_ids = (int *) malloc(4 * max_len * sizeof(int));
-  if (!elem_ids) {
+  proc_ids = (int *) malloc(max_len * sizeof(int));
+  Mesh.ecmap_elemids = (int *) malloc(3 * max_len * sizeof(int));
+  if (!Mesh.ecmap_elemids) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  side_ids = elem_ids + max_len;
-  proc_ids = side_ids + max_len;
-  neigh_ids = proc_ids + max_len;
+  Mesh.ecmap_sideids = Mesh.ecmap_elemids + max_len;
+  Mesh.ecmap_neighids = Mesh.ecmap_sideids + max_len;
 
   offset = 0;
-  for (imap = 0; imap < necmap; imap++) {
+  for (imap = 0; imap < Mesh.necmap; imap++) {
 
-    if(ne_get_elem_cmap(pexoid, ecmap_id[imap], &(elem_ids[offset]),
-                        &(side_ids[offset]), &(proc_ids[offset]), Proc) < 0) {
+    if(ne_get_elem_cmap(pexoid, Mesh.ecmap_id[imap],
+                        &(Mesh.ecmap_elemids[offset]),
+                        &(Mesh.ecmap_sideids[offset]), 
+                        &(proc_ids[offset]), Proc) < 0) {
       Gen_Error(0, "fatal: Error returned from ne_get_elem_cmap");
       return 0;
     }
-    offset += ecmap_cnt[imap];
-  } /* End: "for (imap = 0; imap < necmap; imap++)" */
+    offset += Mesh.ecmap_cnt[imap];
+  } /* End: "for (imap = 0; imap < Mesh.necmap; imap++)" */
 
   /*
-   * convert the element ids to global ids to send to
+   * Decrement the ecmap_elemids by one for zero-based local numbering.
+   * Convert the element ids to global ids to send to
    * the neighboring processor. Store them in the proc_ids
    * array, since the proc_id information is not used for
    * anything here.
    */
-  for (ielem = 0; ielem < max_len; ielem++)
-    proc_ids[ielem] = elements[elem_ids[ielem]-1].globalID;
-
-#ifdef DEBUG_ALL
-  printf("\nCommunication maps for Proc %d\n", Proc);
-  printf("Number of maps: %d\n", necmap);
-  printf("Map Counts:");
-  for (imap = 0; imap < necmap; imap++)
-    printf(" %d", ecmap_cnt[imap]);
-  printf("\n");
-  printf("Map Ids:");
-  for (imap = 0; imap < necmap; imap++)
-    printf(" %d", ecmap_id[imap]);
-  printf("\n");
-  printf("elem side globalID\n");
-  for (ielem = 0; ielem < max_len; ielem++)
-    printf("%d   %d   %d\n", elem_ids[ielem], side_ids[ielem], proc_ids[ielem]);
-#endif
+  for (ielem = 0; ielem < max_len; ielem++) {
+    Mesh.ecmap_elemids[ielem]--;
+    proc_ids[ielem] = elements[Mesh.ecmap_elemids[ielem]].globalID;
+  }
 
   /*
    * Now communicate with other processor to get global IDs
@@ -800,30 +785,30 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * number that it is for
    */
   offset = 0;
-  for (imap = 0; imap < necmap; imap++) {
+  for (imap = 0; imap < Mesh.necmap; imap++) {
 
     /*
      * handshake with processor and wait until it is ready
      * to talk
      */
-    MPI_Send(NULL, 0, MPI_INT, ecmap_id[imap], 0, MPI_COMM_WORLD);
-    MPI_Recv(NULL, 0, MPI_INT, ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
+    MPI_Send(NULL, 0, MPI_INT, Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD);
+    MPI_Recv(NULL, 0, MPI_INT, Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
 
     /* now send list of global element ids to the processor for this map */
-    MPI_Send(&(proc_ids[offset]), ecmap_cnt[imap], MPI_INT, ecmap_id[imap], 0,
-             MPI_COMM_WORLD);
-    MPI_Recv(&(neigh_ids[offset]), ecmap_cnt[imap], MPI_INT, ecmap_id[imap],
-             0, MPI_COMM_WORLD, &status);
-    offset += ecmap_cnt[imap];
+    MPI_Send(&(proc_ids[offset]), Mesh.ecmap_cnt[imap], MPI_INT, 
+             Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD);
+    MPI_Recv(&(Mesh.ecmap_neighids[offset]), Mesh.ecmap_cnt[imap], MPI_INT, 
+             Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
+    offset += Mesh.ecmap_cnt[imap];
   }
 
   /* now process all of the element ids that have been received */
   offset = 0;
-  for (imap = 0; imap < necmap; imap++) {
-    for (ielem = 0; ielem < ecmap_cnt[imap]; ielem++) {
+  for (imap = 0; imap < Mesh.necmap; imap++) {
+    for (ielem = 0; ielem < Mesh.ecmap_cnt[imap]; ielem++) {
       index = ielem + offset;
       /* translate from element id in the communication map to local elem id */
-      loc_elem = elem_ids[index] - 1;
+      loc_elem = Mesh.ecmap_elemids[index];
       iblk = elements[loc_elem].elem_blk;
       etype = get_elem_type(Mesh.eb_names[iblk], Mesh.eb_nnodes[iblk],
                             Mesh.num_dims);
@@ -846,17 +831,18 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         }
       }
 
-      elements[loc_elem].adj[elements[loc_elem].nadj-1] = neigh_ids[index];
-      elements[loc_elem].adj_proc[elements[loc_elem].nadj-1] = ecmap_id[imap];
+      elements[loc_elem].adj[elements[loc_elem].nadj-1] = 
+                                                   Mesh.ecmap_neighids[index];
+      elements[loc_elem].adj_proc[elements[loc_elem].nadj-1] = 
+                                                          Mesh.ecmap_id[imap];
       elements[loc_elem].edge_wgt[elements[loc_elem].nadj-1] =
-                     (float) get_elem_info(NSNODES, etype, side_ids[index]);
+             (float) get_elem_info(NSNODES, etype, Mesh.ecmap_sideids[index]);
 
-    } /* End: "for (ielem = 0; ielem < ecmap_cnt[imap]; ielem++)" */
-    offset += ecmap_cnt[imap];
-  } /* End: "for for (imap = 0; imap < necmap; imap++)" */
+    } /* End: "for (ielem = 0; ielem < Mesh.ecmap_cnt[imap]; ielem++)" */
+    offset += Mesh.ecmap_cnt[imap];
+  } /* End: "for for (imap = 0; imap < Mesh.necmap; imap++)" */
   
-  free (ecmap_cnt);
-  free (elem_ids);
+  free (proc_ids);
 
   return 1;
 }
