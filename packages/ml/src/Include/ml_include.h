@@ -22,6 +22,7 @@
 #include "ml_comm.h"
 #include "ml_gmres.h"
 #include "ml_grid.h"
+#include "ml_gridagx.h"
 #include "ml_gridfunc.h"
 #include "ml_krylov.h"
 #include "ml_operator.h"
@@ -29,6 +30,7 @@
 #include "ml_pde.h"
 #include "ml_solver.h"
 #include "ml_vec.h"
+#include "ml_aztec_utils.h"
 
 #ifdef __cplusplus
 extern "C"
