@@ -60,6 +60,8 @@
  *           FORTRAN CALL               C DECLARATION
  *           call dgemm(...)           void DGEMM(...)
  */
+#define xerbla_   XERBLA
+#define lsame_    LSAME
 #define sasum_    SASUM
 #define isamax_   ISAMAX
 #define scopy_    SCOPY
@@ -131,6 +133,8 @@
  *           FORTRAN CALL               C DECLARATION
  *           call dgemm(...)           void dgemm(...)
  */
+#define xerbla_   xerbla
+#define lsame_    lsame
 #define sasum_    sasum
 #define isamax_   isamax
 #define scopy_    scopy
