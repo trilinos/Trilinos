@@ -2734,3 +2734,48 @@ int ML_build_global_numbering( ML_Operator *Amat,
     
 }
 /*ms*/
+
+/*******************************************************************************
+ * ML_Operator_Lump is intended to create a lumped matrix, e.g., a lumped
+ * mass matrix.   It does the obvious thing. Let v = [1,1,...1]' and
+ * d = A*v.  Then A'=diag(d) is the lumped version of A.
+ *
+ * To create the lumped matrix, I do a half clone, then populate the getrow,
+ * matvec, and data fields of the new matrix.
+ *
+ * This works in serial, but hasn't been tested in parallel.
+ *
+ * JJH, 3/5/2004
+ ******************************************************************************/
+
+int ML_Operator_Lump(ML_Operator *A, ML_Operator **B)
+{
+  double *vin,*vout;
+  int mm,nn,i;
+  struct ML_CSR_MSRdata *csr_data;
+
+  mm = A->invec_leng;
+  nn = A->outvec_leng;
+  vin = (double *) ML_allocate(mm * sizeof(double) );
+  vout = (double *) ML_allocate((nn+1) * sizeof(double) );
+  for (i=0;i<mm;i++) vin[i] = 1.0;
+  ML_Operator_Apply(A,mm,vin,nn,vout);
+
+  *B = ML_Operator_halfClone(A);
+  (*B)->halfclone = ML_FALSE;
+  (*B)->N_nonzeros = nn;
+  ML_Operator_Set_Getrow(*B, ML_EXTERNAL, nn, MSR_getrows);
+
+  csr_data = (struct ML_CSR_MSRdata *)
+               ML_allocate(sizeof(struct ML_CSR_MSRdata));
+
+  csr_data->rowptr = NULL;
+  csr_data->values = vout;
+  csr_data->columns = (int *) ML_allocate((nn+1) * sizeof(int));
+  for (i=0; i<nn+1; i++) csr_data->columns[i] = nn+1;
+
+  ML_Operator_Set_ApplyFuncData( *B, mm, nn,
+                  ML_EXTERNAL, csr_data, nn, MSR_matvec, 0);
+
+  ML_free(vin);
+}

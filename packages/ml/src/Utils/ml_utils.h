@@ -129,6 +129,8 @@
               ML_Comm *comm, int **pglobal_numbering );
 
 
+   int ML_Operator_Lump(ML_Operator *A, ML_Operator **B);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
