@@ -49,6 +49,8 @@
 #include <math.h>
 #include "az_aztec.h"
 #include "ml_include.h"
+#include "ml_viz_stats.h"
+#include "ml_agg_info.h"
 
 /*****************************************************************************/
 /* All functions/structures starting with the word 'user' denote things that */

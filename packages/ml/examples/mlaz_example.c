@@ -49,6 +49,7 @@
 #include <math.h>
 #include "az_aztec.h"
 #include "ml_include.h"
+#include "ml_aztec_utils.h"
 
 /*****************************************************************************/
 /* All functions/structures starting with the word 'user' denote things that */
@@ -86,21 +87,15 @@ int main(int argc, char *argv[])
 {
   int    Nnodes=128*128;          /* Total number of nodes in the problem.*/
                                     /* 'Nnodes' must be a perfect square.   */
-  int    MaxMgLevels=6;             /* Maximum number of Multigrid Levels   */
   double tolerance = 1.0e-8;        /* At convergence:                      */
                                     /*   ||r_k||_2 < tolerance ||r_0||_2    */
 
-  ML           *ml;          
-  ML_Aggregate *ag;
-  int          Nlevels;
-  int          level, coarsest_level;
   double       *rhs, *xxx;
   struct       user_partition_data Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
   /* See Aztec User's Guide for information on these variables */
 
   AZ_MATRIX    *Kn_mat;
-  AZ_PRECOND   *Pmat = NULL;
   int          proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
   double       params[AZ_PARAMS_SIZE], status[AZ_STATUS_SIZE];
   double *x = NULL, *y = NULL, *z = NULL;

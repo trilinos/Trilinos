@@ -33,7 +33,7 @@ struct data {
 
 int myinterp(void *mydata, int leng1, double p[], int leng2, double ap[])
 {
-   int i, fine_i, fine_size, coarse_size, proc_id, start_row;
+   int i, fine_i, fine_size, coarse_size, proc_id;
    double ghost;
    struct data *data;
 
@@ -74,6 +74,8 @@ int my_comm(double *vec, void *idata)
       if ( data->from_size >=  data->to_size) 
          vec[data->from_size] = ghost_value;
    }
+
+   return 0;
 }
 
 int mymatvec(void *mydata, int leng1, double p[], int leng2, double ap[])
@@ -298,7 +300,6 @@ extern void sample3(struct data *Afine_data, struct data *Acoarse_data,
 
 int main(int argc, char *argv[]) 
 {
-   struct data  fine, coarse;
    struct data  Rmat_data, Pmat_data, Afine_data, Acoarse_data;
    int          processor_info[2], i;
    double       *sol, *rhs;
@@ -357,6 +358,8 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
    MPI_Finalize();
 #endif
+
+   return 0;
 }
 
 
@@ -407,8 +410,7 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
 	     double *sol, double *rhs )
 {
    ML  *my_ml;
-   int N_neighbors, N_send, N_recv, proc, i;
-   int partners[1], send_list[1], recv_list[1];
+   int i;
    int fine_grid, output_level = 10, N_grids = 2, grid0 = 0, grid1 = 1;
    int Nfine, Ncoarse, blocksize;
    double *diagonal;

@@ -69,24 +69,29 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage = NULL, nblocks, *blocks;
+  int i, j, Nrigid, *garbage = NULL;
+#ifdef ML_partition
+  int nblocks;
+  int *block_list = NULL;
+  int k;
+#endif
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
 double *mode, *rigid;
 char filename[80];
 double alpha;
-int    one = 1;
-int allocated = 0, *newbindx, offset, current, *block_list = NULL,  k, block;
-double *newval;
+int allocated = 0;
 int old_prec, old_sol;
 double old_tol;
+/*
 double *Amode, beta, biggest;
+int big_ind = -1, ii;
+*/
 ML_Operator *Amatrix;
 int *rowi_col = NULL, rowi_N, count2, ccc;
 double *rowi_val = NULL;
-int max_nz_row, big_ind = -1, ii;
 double max_diag, min_diag, max_sum, sum;
- int nBlocks, Nper_block, *blockIndices, Ndof;
+ int nBlocks, *blockIndices, Ndof;
 #ifdef ML_partition
    FILE *fp2;
    int count;
@@ -606,7 +611,7 @@ min_diag = 1.e30;
 max_sum  = 0.;
 for (i = 0; i < N_update; i++) {
    if (Amat->val[i] < 0.) printf("woops negative diagonal A(%d,%d) = %e\n",
-				 i,Amat->val[i]);
+				 i,i,Amat->val[i]);
    if (Amat->val[i] > max_diag) max_diag = Amat->val[i];
    if (Amat->val[i] < min_diag) min_diag = Amat->val[i];
    sum = fabs(Amat->val[i]);

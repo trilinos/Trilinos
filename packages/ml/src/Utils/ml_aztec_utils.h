@@ -273,6 +273,11 @@ extern int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
 			       AZ_MATRIX * Amat, int proc_config[],
 			       int choice, int max_procs );
+void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
+				   int update[], int external[],
+				   int update_index[], int extern_index[],
+				   double x[], double y[], double z[],
+				   int option );
 #endif
 
 #ifndef ML_CPP

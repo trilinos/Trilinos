@@ -119,13 +119,15 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage, nblocks, *blocks;
+  int i, j, Nrigid, *garbage, nblocks, *blocks;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
-  double *mode, *rigid, alpha, *newval;
+  double *mode, *rigid, alpha;
   char filename[80];
   int    one = 1;
-  int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
+#ifdef ML_partition
+  int *block_list = NULL, k;
+#endif
 
 #ifdef ML_partition
    FILE *fp2;

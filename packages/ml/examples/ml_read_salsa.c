@@ -39,7 +39,8 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=5, N_levels=9, nsmooth=1;
+	int num_PDE_eqns=5, N_levels=9;
+    /* int nsmooth=1; */
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -66,7 +67,6 @@ int main(int argc, char *argv[])
    struct AZ_SCALING *scaling;
 double solve_time, setup_time, start_time;
 ML_Aggregate *ag;
-int  nblocks, *blocks;
 
 
 #ifdef ML_MPI
@@ -194,6 +194,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
           /*
 	  ML_Gen_Smoother_SymGaussSeidel(ml,level,ML_PRESMOOTHER, nsmooth,1.);
 	  ML_Gen_Smoother_SymGaussSeidel(ml,level,ML_POSTSMOOTHER,nsmooth,1.);
+          */
 
           /* Block Gauss-Seidel with block size equal to #DOF per node.    */
           /* Not a true Gauss-Seidel in that each processor does a         */
