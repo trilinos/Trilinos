@@ -113,7 +113,7 @@ For new_package, we added the following non-generated files to the
 CVS repository:
    cvs add example/Makefile.am
    cvs add bootstrap configure.ac Makefile.am
-   cvs add src/Makefile.am
+   cvs add src/Makefile.am src/New_Package_config.h
 
 For new_package, we added the following files in the config directory:
    cvs add ac_cxx_bool.m4 ac_cxx_have_std.m4 ac_cxx_have_stl.m4
@@ -128,6 +128,10 @@ For new_package, we added the following files in the config directory:
    cvs add tac_arg_with_incdirs.m4 tac_arg_with_lapacklib.m4
    cvs add tac_arg_with_libdirs.m4 tac_arg_with_package.m4
    cvs add config.guess config.sub install-sh missing mkinstalldirs 
+   cvs add depcomp
+
+Note:  It is probably worth checking CVS/Entries for the various directories
+to double the above list.  
 
 For new_package, we added the following automake and autoconf generated
 files to the CVS repository
