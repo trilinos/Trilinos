@@ -213,6 +213,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** Unusual Partition generation testing flag ******/
+      else if (token_compare(cptr, "test partitions")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Test_Partitions) != 1) {
+          Gen_Error(0, "fatal: test partitions must be an integer.");
+          return 0;
+        }
+      }
+
       /****** Generate GNUplot output? ******/
       else if (token_compare(cptr, "gnuplot output")) {
         cptr = strtok(NULL, "\t=");
@@ -590,12 +600,13 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
 /* local declarations */
   int ctrl_id;
   int size;
-  int int_params[11];  /* Make sure this array is large enough */
+  int int_params[12];  /* Make sure this array is large enough */
 /***************************** BEGIN EXECUTION ******************************/
   
   int j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test_DDirectory;
+  int_params[j++] = Test_Partitions;
   int_params[j++] = Test_Multi_Callbacks;
   int_params[j++] = Test_Null_Import_Lists;
   int_params[j++] = Gnuplot_Output;
@@ -611,6 +622,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
   j = 0;
   Debug_Driver           = int_params[j++];
   Test_DDirectory        = int_params[j++];
+  Test_Partitions        = int_params[j++];
   Test_Multi_Callbacks   = int_params[j++];
   Test_Null_Import_Lists = int_params[j++];
   Gnuplot_Output         = int_params[j++];

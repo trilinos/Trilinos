@@ -102,6 +102,30 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+  if (Test_Partitions == 1) {
+    /* Compute Proc partitions for each processor */
+    char s[8];
+    sprintf(s, "%d", Proc);
+    if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
+      return 0;
+    }
+  }
+  else if (Test_Partitions == 2) {
+    /* Compute Proc partitions for lower-ranked processors; let remaining
+     * partitions be in upper-ranked processors. */
+    int Num_Proc;
+    MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+    if (Proc < Num_Proc/2) {
+      char s[8];
+      sprintf(s, "%d", Proc);
+      if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
+        return 0;
+      }
+    }
+  }
+
   /*
    * Set the callback functions
    */
