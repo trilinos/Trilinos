@@ -122,17 +122,19 @@ AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_ARG_WITH( ml_multiple_rhs,
              AC_HELP_STRING([--with-ml_multiple_rhs],[Enables blocked code
                 for multiple right hand sides.  Example:
-                --with-ml_multiple_rhs="4" for a blocking factor of 4.]),
+                --with-ml_multiple_rhs=4 for a blocking factor of 4.
+                (default is no)]),
              [ac_cv_use_ml_multiple_rhs=${withval}],
              [ac_cv_use_ml_multiple_rhs=no])
+
+if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
+CC=${CXX}
 # if multiple rhs are going to be used, create a preprocessor macro
 #  that has the value given on the configure line
 AC_DEFINE_UNQUOTED(ML_MULTIPLE_RHS_BLOCK_FACTOR, $ac_cv_use_ml_multiple_rhs,
    [Support for multiple right hand sides.])
-
-if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
-CC=${CXX}
 fi
+
 AC_PROG_CC(cc gcc)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
