@@ -5,7 +5,8 @@ How to Add a Script to the Test Harness (Initial DRAFT)
 This discussion assumes that the reader has test executables for one or more 
 Trilinos packages that are produced by autotools and would like to add those
 tests to the automated daily or weekly testing for Trilinos.  Also, tests
-should return 0 to indicate 'pass' and non zero to indicate 'fail'.  Output
+should return 0 to indicate 'pass' and non zero to indicate 'fail' (See
+section below on how to return status).  Output
 from the tests will be captured for the script owners.  It is recommened 
 that scripts accept a '-v' for verbose mode.  Example scripts run all tests
 without -v, and rerun test executables that return a non zero return code
@@ -40,6 +41,11 @@ check it into the repository in the
 Trilinos/packages/(name_of_package)/test/scripts/daily/mpi/ directory.  If
 this directory does not exist, simply create it, the test harness will find it.
 The owner listed inside the script will receive emails with test results.
+
+
+How to indicate whether or not test passed (properly returning status)
+
+Some description of how to define $status
 
 -Future enhancements
 
