@@ -32,6 +32,8 @@ noinst_PROGRAMS = hello_test  RunValgrind
 
 hello_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+RunValgrind_SOURCES = $(srcdir)/RunValgrind
+
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
