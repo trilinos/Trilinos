@@ -14,7 +14,8 @@
 #include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"
-#include "shared_const.h"
+#include "rcb_const.h"
+#include "rib_const.h"
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "create_proc_list_const.h"
@@ -521,3 +522,139 @@ int num_lid_entries = lb->Num_LID;
   return(LB_OK);
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int LB_RB_check_geom_input(
+  LB *lb,
+  struct Dot_Struct *dotpt,
+  int dotnum
+)
+{
+/* Routine to check input to geometric methods for consistency. */
+  char *yo = "LB_RB_check_geom_input";
+  int i, j, k;
+  char msg[256];
+  int proc = lb->Proc;
+  int ierr = LB_OK;
+
+  /* Error check the weights. */
+  for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
+  MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
+  if (k > 0 && proc == 0) {
+     sprintf(msg, "%d dot weights are equal to 0.", k);
+     LB_PRINT_WARN(proc, yo, msg);
+     ierr = LB_WARN;
+  }
+
+  for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
+  MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
+  if (k > 0) {
+    if (proc == 0) {
+      sprintf(msg, "%d dot weights are < 0.",k);
+      LB_PRINT_ERROR(proc, yo, msg);
+    }
+    ierr = LB_FATAL;
+  }
+  return(ierr);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_RB_check_geom_output(
+  LB *lb, 
+  struct Dot_Struct *dotpt,
+  int dotnum,
+  int dotorig,
+  void *rcbbox_arg)
+{
+/* Routine to check output of geometric methods for consistency. */
+
+  char *yo = "LB_RB_check_geom_output";
+  char msg[256];
+  int i,iflag,proc,nprocs,total1,total2;
+  double weight,wtmax,wtmin,wtone,tolerance;
+  struct rcb_box *rcbbox;
+  int ierr = LB_OK;
+
+  MPI_Comm_rank(lb->Communicator,&proc);
+  MPI_Comm_size(lb->Communicator,&nprocs);
+
+  /* check that total # of dots remained the same */
+
+  MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
+  if (total1 != total2) {
+    if (proc == 0) {
+      sprintf(msg, "Points before partitioning = %d, "
+                   "Points after partitioning = %d.",
+                    total1,total2);
+      LB_PRINT_WARN(proc, yo, msg);
+      ierr = LB_WARN;
+    }
+  }
+  
+  /* check that result is load-balanced within log2(P)*max-wt */
+
+  weight = wtone = 0.0;
+  for (i = 0; i < dotnum; i++) {
+    weight += dotpt[i].Weight;
+    if (dotpt[i].Weight > wtone) wtone = dotpt[i].Weight;
+  }
+
+  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+
+  /* i = smallest power-of-2 >= nprocs */
+  /* tolerance = largest-single-weight*log2(nprocs) */
+
+  for (i = 0; (nprocs >> i) != 0; i++);
+  tolerance = tolerance * i * (1.0 + TINY);
+
+  if (wtmax - wtmin > tolerance) {
+    if (proc == 0) {
+      sprintf(msg, "Load-imbalance > tolerance of %g.",
+              tolerance);
+      LB_PRINT_WARN(proc, yo, msg);
+      ierr = LB_WARN;
+    }
+    MPI_Barrier(lb->Communicator);
+    if (weight == wtmin) {
+      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
+      LB_PRINT_WARN(proc, yo, msg);
+      ierr = LB_WARN;
+    }
+    if (weight == wtmax) {
+      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
+      LB_PRINT_WARN(proc, yo, msg);
+      ierr = LB_WARN;
+    }
+  }
+  
+  MPI_Barrier(lb->Communicator);
+  
+  if (lb->Method == RCB) {
+
+    /* check that final set of points is inside RCB box of each proc */
+  
+    rcbbox = (struct rcb_box *) rcbbox_arg;
+    iflag = 0;
+    for (i = 0; i < dotnum; i++) {
+      if (dotpt[i].X[0] < rcbbox->lo[0] || dotpt[i].X[0] > rcbbox->hi[0] ||
+          dotpt[i].X[1] < rcbbox->lo[1] || dotpt[i].X[1] > rcbbox->hi[1] ||
+  	  dotpt[i].X[2] < rcbbox->lo[2] || dotpt[i].X[2] > rcbbox->hi[2])
+      iflag++;
+    }
+    if (iflag > 0) {
+      sprintf(msg, "%d points are out-of-box on proc %d.", iflag, proc);
+      LB_PRINT_ERROR(proc, yo, msg);
+      ierr = LB_FATAL;
+    }
+  
+    MPI_Barrier(lb->Communicator);
+  }
+  return(ierr);
+}

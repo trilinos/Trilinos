@@ -41,28 +41,21 @@
      need to do MPI_Allgather if wish to collect it on all procs
 */
 #define MYHUGE 1.0e30
-#define TINY   1.0e-6
 
+/*  RCB_DEFAULT_OUTPUT_LEVEL = 0  No statistics logging */
+/*  RCB_DEFAULT_OUTPUT_LEVEL = 1  Log times and counts, print summary */
+/*  RCB_DEFAULT_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
+#define RCB_DEFAULT_OUTPUT_LEVEL 0
 #define RCB_DEFAULT_OVERALLOC 1.0
 #define RCB_DEFAULT_REUSE FALSE
 
 /* function prototypes */
 
-static void RCB_check(LB *, struct Dot_Struct *, int, int, struct rcb_box *);
 static void RCB_stats(LB *, double, struct Dot_Struct *,int, double *, 
  		      int *, int *, struct rcb_box *, int, int);
 
 static int rcb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                  int, int, int, int, int);
-
-/*  RCB_CHECK = 0  No consistency check on input or results */
-/*  RCB_CHECK = 1  Check input weights and final results for consistency */
-static int RCB_CHECK = 1;
-
-/*  RCB_OUTPUT_LEVEL = 0  No statistics logging */
-/*  RCB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
-/*  RCB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
-static int RCB_OUTPUT_LEVEL = 0;
 
 
 /*  Parameters structure for RCB method.  Used in  */
@@ -70,7 +63,7 @@ static int RCB_OUTPUT_LEVEL = 0;
 static PARAM_VARS RCB_params[] = {
                   { "RCB_OVERALLOC", NULL, "DOUBLE" },
                   { "RCB_REUSE", NULL, "INT" },
-                  { "RCB_CHECK", NULL, "INT" },
+                  { "CHECK_GEOM", NULL, "INT" },
                   { "RCB_OUTPUT_LEVEL", NULL, "INT" },
                   { "KEEP_CUTS", NULL, "INT" },
                   { NULL, NULL, NULL } };
@@ -124,7 +117,7 @@ int LB_rcb(
                                  stored in treept at initial guesses.  */
     int wgtflag;              /* (0) do not (1) do use weights.
                                  Multidimensional weights not supported */
-    int check;                /* Check input & output for consistency? */
+    int check_geom;           /* Check input & output for consistency? */
     int stats;                /* Print timing & count summary? */
     int gen_tree;             /* (0) don't (1) generate whole treept to use
                                  later for point and box drop. */
@@ -132,14 +125,14 @@ int LB_rcb(
 
     LB_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
     LB_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
-    LB_Bind_Param(RCB_params, "RCB_CHECK", (void *) &check);
+    LB_Bind_Param(RCB_params, "CHECK_GEOM", (void *) &check_geom);
     LB_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
     LB_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
-    check = RCB_CHECK;
-    stats = RCB_OUTPUT_LEVEL;
+    check_geom = DEFAULT_CHECK_GEOM;
+    stats = RCB_DEFAULT_OUTPUT_LEVEL;
     gen_tree = 0;
     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
@@ -152,7 +145,7 @@ int LB_rcb(
 
     return(rcb_fn(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag,
-                 check, stats, gen_tree));
+                 check_geom, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -178,13 +171,12 @@ static int rcb_fn(
                                    stored in treept at initial guesses.      */
   int wgtflag,                  /* (0) do not (1) do use weights.
                                    Multidimensional weights not supported    */
-  int check,                    /* Check input & output for consistency?     */
+  int check_geom,               /* Check input & output for consistency?     */
   int stats,                    /* Print timing & count summary?             */
   int gen_tree                  /* (0) do not (1) do generate full treept    */
 )
 {
   char    yo[] = "rcb_fn";
-  char    msg[256];
   int     proc,nprocs;              /* my proc id, total # of procs */
   LB_ID_PTR gidpt;                  /* pointer to rcb->Global_IDs. */
   LB_ID_PTR lidpt;                  /* pointer to rcb->Local_IDs. */
@@ -229,7 +221,7 @@ static int rcb_fn(
 				      6 = # of reallocs of dot array */
   int     reuse_count[7];           /* counter (as above) for reuse to record
                                        the number of dots premoved */
-  int     i,j,k;                 /* local variables */
+  int     i,j;                      /* local variables */
 
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
@@ -389,25 +381,12 @@ static int rcb_fn(
   if (!wgtflag)
     for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
 
-  /* check that all weights > 0 */
-
-  if (check) {
-    for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
-    MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
-    if (k > 0 && proc == 0) {
-       sprintf(msg, "%d dot weights are equal to 0.", k);
-       LB_PRINT_WARN(proc, yo, msg);
-    }
-
-    for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
-    MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
-    if (k > 0) {
-      if (proc == 0) {
-        sprintf(msg, "%d dot weights are < 0.",k);
-        LB_PRINT_ERROR(proc, yo, msg);
-      }
+  if (check_geom) {
+    ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
+    if (ierr == LB_FATAL) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
       LB_TRACE_EXIT(lb, yo);
-      return LB_FATAL;
+      return(ierr);
     }
   }
 
@@ -605,7 +584,15 @@ static int rcb_fn(
 
   /* error checking and statistics */
 
-  if (check) RCB_check(lb, dotpt,dotnum,pdotnum,rcbbox);
+  if (check_geom) {
+    ierr = LB_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,rcbbox);
+    if (ierr == LB_FATAL) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
+      LB_TRACE_EXIT(lb, yo);
+      return(ierr);
+    }
+  }
+
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
     RCB_stats(lb, timestop-timestart,dotpt,dotnum,
               timers,counters,reuse_count,rcbbox,reuse, stats);
@@ -696,87 +683,7 @@ void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-/* consistency checks on RCB results */
-
-static void RCB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig,
-	       struct rcb_box *rcbbox)
-
-{
-  char *yo = "RCB_check";
-  char msg[256];
-  int i,iflag,proc,nprocs,total1,total2;
-  double weight,wtmax,wtmin,wtone,tolerance;
-
-  MPI_Comm_rank(lb->Communicator,&proc);
-  MPI_Comm_size(lb->Communicator,&nprocs);
-
-  /* check that total # of dots remained the same */
-
-  MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,lb->Communicator);
-  MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
-  if (total1 != total2) {
-    if (proc == 0) {
-      sprintf(msg, "Points before RCB = %d, Points after RCB = %d.",
-	     total1,total2);
-      LB_PRINT_WARN(proc, yo, msg);
-    }
-  }
-  
-  /* check that result is load-balanced within log2(P)*max-wt */
-
-  weight = wtone = 0.0;
-  for (i = 0; i < dotnum; i++) {
-    weight += dotpt[i].Weight;
-    if (dotpt[i].Weight > wtone) wtone = dotpt[i].Weight;
-  }
-
-  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-  MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-
-  /* i = smallest power-of-2 >= nprocs */
-  /* tolerance = largest-single-weight*log2(nprocs) */
-
-  for (i = 0; (nprocs >> i) != 0; i++);
-  tolerance = tolerance * i * (1.0 + TINY);
-
-  if (wtmax - wtmin > tolerance) {
-    if (proc == 0) {
-      sprintf(msg, "Load-imbalance > tolerance of %g.",
-              tolerance);
-      LB_PRINT_WARN(proc, yo, msg);
-    }
-    MPI_Barrier(lb->Communicator);
-    if (weight == wtmin) {
-      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      LB_PRINT_WARN(proc, yo, msg);
-    }
-    if (weight == wtmax) {
-      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      LB_PRINT_WARN(proc, yo, msg);
-    }
-  }
-  
-  MPI_Barrier(lb->Communicator);
-  
-  /* check that final set of points is inside RCB box of each proc */
-  
-  iflag = 0;
-  for (i = 0; i < dotnum; i++) {
-    if (dotpt[i].X[0] < rcbbox->lo[0] || dotpt[i].X[0] > rcbbox->hi[0] ||
-	dotpt[i].X[1] < rcbbox->lo[1] || dotpt[i].X[1] > rcbbox->hi[1] ||
-	dotpt[i].X[2] < rcbbox->lo[2] || dotpt[i].X[2] > rcbbox->hi[2])
-      iflag++;
-  }
-  if (iflag > 0) {
-    sprintf(msg, "%d points are out-of-box on proc %d.", iflag, proc);
-    LB_PRINT_WARN(proc, yo, msg);
-  }
-  
-  MPI_Barrier(lb->Communicator);
-}
-
-
+/* ----------------------------------------------------------------------- */
 /* RCB statistics */
 
 static void RCB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,

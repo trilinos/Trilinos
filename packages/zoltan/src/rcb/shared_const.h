@@ -14,9 +14,12 @@
 #ifndef __SHARED_CONST_H
 #define __SHARED_CONST_H
 
-/* Data structures shared by parallel RCB and RIB */
+/* Definitions shared by parallel RCB and RIB */
+#define DEFAULT_CHECK_GEOM 1
+#define TINY 1.0e-6
 
-                             /* dot to balance on for RCB and RIB */ 
+/* Data structures shared by parallel RCB and RIB */
+/* dot to balance on for RCB and RIB */ 
 struct Dot_Struct {	        /* dot = point in 3-space */
   double    X[3];		/* location of dot */
   double    Weight;             /* weight of dot - if used must be > 0 */
@@ -42,5 +45,10 @@ extern int LB_RB_Send_Dots(LB *, LB_ID_PTR *, LB_ID_PTR *,
 
 extern int LB_RB_Return_Arguments(LB *, LB_ID_PTR, LB_ID_PTR, 
   struct Dot_Struct *, int, LB_ID_PTR *, LB_ID_PTR *, int **, int);
+
+extern int LB_RB_check_geom_input(LB *, struct Dot_Struct *, int);
+
+extern int LB_RB_check_geom_output(LB *, struct Dot_Struct *, 
+  int, int, void *);
 
 #endif

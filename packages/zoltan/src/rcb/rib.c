@@ -32,748 +32,671 @@
    returned tree only contains one cut on each proc,
    need to do MPI_Allgather if wish to collect it on all procs */
 
-#define TINY   1.0e-6
-
-#define RIB_DEFAULT_OVERALLOC 1.0
-
-static void RIB_check(LB *, struct Dot_Struct *, int, int);
-static void RIB_stats(LB *, double, struct Dot_Struct *,int, double *,
-                      int *, int);
-
-static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
-               int, int, int, int);
-
-/*  RIB_CHECK = 0  No consistency check on input or results */
-/*  RIB_CHECK = 1  Check input weights and final results for consistency */
-static int RIB_CHECK = 1;
-
 /*  RIB_OUTPUT_LEVEL = 0  No statistics logging */
 /*  RIB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
 /*  RIB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
-static int RIB_OUTPUT_LEVEL = 0;
+#define RIB_DEFAULT_OUTPUT_LEVEL 0
+#define RIB_DEFAULT_OVERALLOC 1.0
+
+static void RIB_stats(LB *, double, struct Dot_Struct *,int, double *,
+                   int *, int);
+
+static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
+            int, int, int, int);
 
 /*  Parameters structure for RIB method.  Used in  */
 /*  LB_Set_RIB_Param and LB_RIB.                      */
 static PARAM_VARS RIB_params[] = {
-                  { "RIB_OVERALLOC", NULL, "DOUBLE" },
-                  { "RIB_CHECK", NULL, "INT" },
-                  { "RIB_OUTPUT_LEVEL", NULL, "INT" },
-                  { "KEEP_CUTS", NULL, "INT" },
-                  { NULL, NULL, NULL } };
+               { "RIB_OVERALLOC", NULL, "DOUBLE" },
+               { "RIB_CHECK", NULL, "INT" },
+               { "RIB_OUTPUT_LEVEL", NULL, "INT" },
+               { "KEEP_CUTS", NULL, "INT" },
+               { NULL, NULL, NULL } };
 
 /*---------------------------------------------------------------------------*/
 
 int LB_Set_RIB_Param(
-     char *name,                 /* name of variable */
-     char *val                   /* value of variable */
+  char *name,                 /* name of variable */
+  char *val                   /* value of variable */
 )
 {
-     int status;
-     PARAM_UTYPE result;         /* value returned from Check_Param */
-     int index;                  /* index returned from Check_Param */
+  int status;
+  PARAM_UTYPE result;         /* value returned from Check_Param */
+  int index;                  /* index returned from Check_Param */
 
-     status = LB_Check_Param(name, val, RIB_params, &result, &index);
+  status = LB_Check_Param(name, val, RIB_params, &result, &index);
 
-     return(status);
+  return(status);
 }
 
 /*---------------------------------------------------------------------------*/
 
 int LB_rib(
-     LB *lb,                       /* The load-balancing structure with info for
-                                      the RIB balancer.                       */
-     int *num_import,              /* Number of non-local objects assigned to
-                                      this processor in the new decomposition.*/
-     LB_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
-                                      non-local objects in this processor's new
-                                      decomposition.                          */
-     LB_ID_PTR *import_local_ids,  /* Returned value: array of local IDs for
-                                      non-local objects in this processor's new
-                                      decomposition.                          */
-     int **import_procs,           /* Returned value: array of processor IDs for
-                                      processors owning the non-local objects in
-                                      this processor's new decomposition.     */
-     int *num_export,              /* Not computed, set to -1 */
-     LB_ID_PTR *export_global_ids, /* Not computed. */
-     LB_ID_PTR *export_local_ids,  /* Not computed. */
-     int **export_procs            /* Not computed. */
+  LB *lb,                       /* The load-balancing structure with info for
+                                the RIB balancer.                       */
+  int *num_import,              /* Number of non-local objects assigned to
+                                this processor in the new decomposition.*/
+  LB_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
+                                non-local objects in this processor's new
+                                decomposition.                          */
+  LB_ID_PTR *import_local_ids,  /* Returned value: array of local IDs for
+                                non-local objects in this processor's new
+                                decomposition.                          */
+  int **import_procs,           /* Returned value: array of processor IDs for
+                                processors owning the non-local objects in
+                                this processor's new decomposition.     */
+  int *num_export,              /* Not computed, set to -1 */
+  LB_ID_PTR *export_global_ids, /* Not computed. */
+  LB_ID_PTR *export_local_ids,  /* Not computed. */
+  int **export_procs            /* Not computed. */
 )
 {
-     /* Wrapper routine to set parameter values and call the real rib. */
-     double overalloc;           /* amount to overallocate by when realloc
-                                    of dot array must be done.
-                                    1.0 = no extra; 1.5 = 50% extra; etc. */
-     int wgtflag;                /* (0) do not (1) do use weights.
-                                    Multidimensional weights not supported */
-     int check;                  /* Check input & output for consistency? */
-     int stats;                  /* Print timing & count summary? */
-     int gen_tree;               /* (0) don't (1) generate whole treept to use
-                                    later for point and box drop. */
+  /* Wrapper routine to set parameter values and call the real rib. */
+  double overalloc;           /* amount to overallocate by when realloc
+                              of dot array must be done.
+                              1.0 = no extra; 1.5 = 50% extra; etc. */
+  int wgtflag;                /* (0) do not (1) do use weights.
+                              Multidimensional weights not supported */
+  int check_geom;             /* Check input & output for consistency? */
+  int stats;                  /* Print timing & count summary? */
+  int gen_tree;               /* (0) don't (1) generate whole treept to use
+                              later for point and box drop. */
 
-     LB_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
-     LB_Bind_Param(RIB_params, "RIB_CHECK", (void *) &check);
-     LB_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
-     LB_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
+  LB_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
+  LB_Bind_Param(RIB_params, "RIB_CHECK", (void *) &check_geom);
+  LB_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
+  LB_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
 
-     overalloc = RIB_DEFAULT_OVERALLOC;
-     check = RIB_CHECK;
-     stats = RIB_OUTPUT_LEVEL;
-     gen_tree = 0;
-     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
+  overalloc = RIB_DEFAULT_OVERALLOC;
+  check_geom = DEFAULT_CHECK_GEOM;
+  stats = RIB_DEFAULT_OUTPUT_LEVEL;
+  gen_tree = 0;
+  wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
-     LB_Assign_Param_Vals(lb->Params, RIB_params, lb->Debug_Level, lb->Proc,
-                          lb->Debug_Proc);
+  LB_Assign_Param_Vals(lb->Params, RIB_params, lb->Debug_Level, lb->Proc,
+                    lb->Debug_Proc);
 
-     /* Initializations in case of early exit. */
-     *num_import = -1;
-     *num_export = -1;  /* We don't compute the export map. */
+  /* Initializations in case of early exit. */
+  *num_import = -1;
+  *num_export = -1;  /* We don't compute the export map. */
 
-     return(rib_fn(lb, num_import, import_global_ids, import_local_ids,
-                import_procs, overalloc, wgtflag, check, stats, gen_tree));
+  return(rib_fn(lb, num_import, import_global_ids, import_local_ids,
+                import_procs, overalloc, wgtflag, check_geom, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int rib_fn(
-     LB *lb,                       /* The load-balancing structure with info for
-                                      the RIB balancer. */
-     int *num_import,              /* Number of non-local objects assigned to
-                                      this processor in the new decomposition.*/
-     LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
-                                      non-local objects in this processor's new
-                                      decomposition. */
-     LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
-                                      non-local objects in this processor's new
-                                      decomposition. */
-     int **import_procs,           /* Returned value: array of processor IDs for
-                                      processors owning the non-local objects in
-                                      this processor's new decomposition. */
-     double overalloc,             /* amount to overallocate by when realloc
-                                      of dot array must be done.
-                                        1.0 = no extra; 1.5 = 50% extra; etc. */
-     int wgtflag,                  /* (0) do not (1) do use weights.
-                                      Multidimensional weights not supported */
-     int check,                    /* Check input & output for consistency? */
-     int stats,                    /* Print timing & count summary? */
-     int gen_tree                  /* (0) do not (1) do generate full treept */
+  LB *lb,                       /* The load-balancing structure with info for
+                                the RIB balancer. */
+  int *num_import,              /* Number of non-local objects assigned to
+                                this processor in the new decomposition.*/
+  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                non-local objects in this processor's new
+                                decomposition. */
+  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                non-local objects in this processor's new
+                                decomposition. */
+  int **import_procs,           /* Returned value: array of processor IDs for
+                                processors owning the non-local objects in
+                                this processor's new decomposition. */
+  double overalloc,             /* amount to overallocate by when realloc
+                                of dot array must be done.
+                                  1.0 = no extra; 1.5 = 50% extra; etc. */
+  int wgtflag,                  /* (0) do not (1) do use weights.
+                                Multidimensional weights not supported */
+  int check_geom,               /* Check input & output for consistency? */
+  int stats,                    /* Print timing & count summary? */
+  int gen_tree                  /* (0) do not (1) do generate full treept */
 )
 {
-     char    yo[] = "rib_fn";
-     char    msg[256];
-     int     proc,nprocs;        /* my proc id, total # of procs */
-     LB_ID_PTR gidpt;            /* local global IDs array. */
-     LB_ID_PTR lidpt;            /* local local IDs array. */
-     struct Dot_Struct *dotpt;   /* local dot arrays */
-     int     pdotnum;            /* # of dots - decomposition changes it */
-     int     pdottop;            /* dots >= this index are new */
-     int    *dotmark = NULL;     /* which side of median for each dot */
-     int     dotnum;             /* number of dots */
-     int     dotmax = 0;         /* max # of dots arrays can hold */
-     int     dottop;             /* dots >= this index are new */
-     int     proclower;          /* lower proc in partition */
-     int     procmid;            /* 1st proc in upper half of part */
-     int     set;                /* which part processor is in = 0/1 */
-     int     old_set;            /* part processor was in last cut = 0/1 */
-     int     root;               /* processor that stores last cut */
-     int     num_procs;          /* number of procs in current part */
-     int     ierr;               /* error flag. */
-     double *value = NULL;       /* temp array for median_find */
-     double *wgts = NULL;        /* temp array for median_find */
-     double  valuehalf;          /* median cut position */
-     double  fractionlo;         /* desired wt in lower half */
-     double  cm[3];              /* Center of mass of objects */
-     double  evec[3];            /* Eigenvector defining direction */
-     int     first_guess = 0;    /* flag if first guess for median search */
-     int     allocflag;          /* have to re-allocate space */
-     double  time1,time2;        /* timers */
-     double  time3,time4;        /* timers */
-     double  timestart,timestop; /* timers */
-     double  timers[4]={0.,0.,0.,0.}; 
-                                 /* diagnostic timers
-                                    0 = start-up time before recursion
-                                    1 = time before median iterations
-                                    2 = time in median iterations
-                                    3 = communication time */
-     int     counters[7];        /* diagnostic counts
-                                    0 = # of median iterations
-                                    1 = # of dots sent
-                                    2 = # of dots received
-                                    3 = most dots this proc ever owns
-                                    4 = most dot memory this proc ever allocs
-                                    5 = # of times a previous cut is re-used
-                                    6 = # of reallocs of dot array */
-     int     i,j,k;              /* local variables */
+  char    yo[] = "rib_fn";
+  int     proc,nprocs;        /* my proc id, total # of procs */
+  LB_ID_PTR gidpt;            /* local global IDs array. */
+  LB_ID_PTR lidpt;            /* local local IDs array. */
+  struct Dot_Struct *dotpt;   /* local dot arrays */
+  int     pdotnum;            /* # of dots - decomposition changes it */
+  int     pdottop;            /* dots >= this index are new */
+  int    *dotmark = NULL;     /* which side of median for each dot */
+  int     dotnum;             /* number of dots */
+  int     dotmax = 0;         /* max # of dots arrays can hold */
+  int     dottop;             /* dots >= this index are new */
+  int     proclower;          /* lower proc in partition */
+  int     procmid;            /* 1st proc in upper half of part */
+  int     set;                /* which part processor is in = 0/1 */
+  int     old_set;            /* part processor was in last cut = 0/1 */
+  int     root;               /* processor that stores last cut */
+  int     num_procs;          /* number of procs in current part */
+  int     ierr;               /* error flag. */
+  double *value = NULL;       /* temp array for median_find */
+  double *wgts = NULL;        /* temp array for median_find */
+  double  valuehalf;          /* median cut position */
+  double  fractionlo;         /* desired wt in lower half */
+  double  cm[3];              /* Center of mass of objects */
+  double  evec[3];            /* Eigenvector defining direction */
+  int     first_guess = 0;    /* flag if first guess for median search */
+  int     allocflag;          /* have to re-allocate space */
+  double  time1,time2;        /* timers */
+  double  time3,time4;        /* timers */
+  double  timestart,timestop; /* timers */
+  double  timers[4]={0.,0.,0.,0.}; 
+                              /* diagnostic timers
+                                 0 = start-up time before recursion
+                                 1 = time before median iterations
+                                 2 = time in median iterations
+                                 3 = communication time */
+  int     counters[7];        /* diagnostic counts
+                                 0 = # of median iterations
+                                 1 = # of dots sent
+                                 2 = # of dots received
+                                 3 = most dots this proc ever owns
+                                 4 = most dot memory this proc ever allocs
+                                 5 = # of times a previous cut is re-used
+                                 6 = # of reallocs of dot array */
+  int     i;                  /* local variables */
 
-     RIB_STRUCT *rib = NULL;     /* Pointer to data structures for RIB */
-     struct rib_tree *treept = NULL; /* tree of cuts - single cut on exit*/
+  RIB_STRUCT *rib = NULL;     /* Pointer to data structures for RIB */
+  struct rib_tree *treept = NULL; /* tree of cuts - single cut on exit*/
 
-     double start_time, end_time;
-     double lb_time[2];
+  double start_time, end_time;
+  double lb_time[2];
 
-     /* MPI data types and user functions */
+  /* MPI data types and user functions */
 
-     MPI_Comm local_comm, tmp_comm;
+  MPI_Comm local_comm, tmp_comm;
 
-     LB_TRACE_ENTER(lb, yo);
-     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-        MPI_Barrier(lb->Communicator);
-        timestart = time1 = LB_Time(lb->Timer);
-     }
+  LB_TRACE_ENTER(lb, yo);
+  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+    MPI_Barrier(lb->Communicator);
+    timestart = time1 = LB_Time(lb->Timer);
+  }
 
-     /* setup for parallel */
+  /* setup for parallel */
 
-     proc = lb->Proc;
-     nprocs = lb->Num_Proc;
+  proc = lb->Proc;
+  nprocs = lb->Num_Proc;
 
-     /*
-      *  Build the RIB Data structure and
-      *  set pointers to information in it.
-      */
+  /*
+   *  Build the RIB Data structure and
+   *  set pointers to information in it.
+   */
 
-     start_time = LB_Time(lb->Timer);
-     ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
-     if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        LB_PRINT_ERROR(proc, yo, "Error returned from LB_RIB_Build_Structure.");
+  start_time = LB_Time(lb->Timer);
+  ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+  if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+    LB_PRINT_ERROR(proc, yo, "Error returned from LB_RIB_Build_Structure.");
+    LB_TRACE_EXIT(lb, yo);
+    return(ierr);
+  }
+
+  rib = (RIB_STRUCT *) (lb->Data_Structure);
+
+  gidpt = rib->Global_IDs;
+  lidpt = rib->Local_IDs;
+  dotpt  = rib->Dots;
+  treept = rib->Tree_Ptr;
+  end_time = LB_Time(lb->Timer);
+  lb_time[0] = end_time - start_time;
+  start_time = end_time;
+
+  /* local copies of calling parameters */
+
+  dottop = dotnum = pdotnum;
+
+  /* initialize timers and counters */
+
+  counters[0] = 0;
+  counters[1] = 0;
+  counters[2] = 0;
+  counters[3] = dotnum;
+  counters[4] = dotmax;
+  counters[5] = 0;
+  counters[6] = 0;
+
+  /* create mark and list arrays for dots */
+
+  allocflag = 0;
+  if (dotmax > 0) {
+    dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
+    if (dotmark == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+    value = (double *) LB_MALLOC(dotmax*sizeof(double));
+    if (value == NULL) {
+      LB_FREE(&dotmark);
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+    wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
+    if (wgts == NULL) {
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+  }
+  else {
+    dotmark = NULL;
+    value = NULL;
+    wgts = NULL;
+  }
+
+  /* set dot weights = 1.0 if user didn't */
+
+  if (!wgtflag)
+    for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
+
+  if (check_geom) {
+    ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
+    if (ierr == LB_FATAL) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
+      LB_TRACE_EXIT(lb, yo);
+      return(ierr);
+    }
+  }
+
+  /* create local communicator for use in recursion */
+
+  MPI_Comm_dup(lb->Communicator,&local_comm);
+
+  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+    time2 = LB_Time(lb->Timer);
+    timers[0] = time2 - time1;
+  }
+
+  /* recursively halve until just one proc in partition */
+
+  num_procs = nprocs;
+  root = 0;
+  old_set = 1;
+  treept[proc].parent = 0;
+  treept[proc].left_leaf = 0;
+
+  while (num_procs > 1) {
+
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+      time1 = LB_Time(lb->Timer);
+
+    ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
+                             &procmid, &num_procs, &fractionlo);
+    if (ierr != LB_OK && ierr != LB_WARN) {
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
+    }
+
+    /* create mark array and active list for dots */
+
+    if (allocflag) {
+      allocflag = 0;
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_FREE(&wgts);
+      dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
+      if (dotmark == NULL) {
         LB_TRACE_EXIT(lb, yo);
-        return(ierr);
-     }
+        return LB_MEMERR;
+      }
+      value = (double *) LB_MALLOC(dotmax*sizeof(double));
+      if (value == NULL) {
+        LB_FREE(&dotmark);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
+      if (wgts == NULL) {
+        LB_FREE(&dotmark);
+        LB_FREE(&value);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+    }
 
-     rib = (RIB_STRUCT *) (lb->Data_Structure);
+    for (i = 0; i < dotnum; i++) {
+      wgts[i] = dotpt[i].Weight;
+    }
+    switch (rib->Num_Geom) {
+    case 3:
+      ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value,
+                           local_comm);
+      break;
+    case 2:
+      ierr = LB_inertial2d(dotpt, dotnum, wgtflag, cm, evec, value,
+                           local_comm);
+      break;
+    case 1:
+      ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
+      break;
+    }
 
-     gidpt = rib->Global_IDs;
-     lidpt = rib->Local_IDs;
-     dotpt  = rib->Dots;
-     treept = rib->Tree_Ptr;
-     end_time = LB_Time(lb->Timer);
-     lb_time[0] = end_time - start_time;
-     start_time = end_time;
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+      time2 = LB_Time(lb->Timer);
 
-     /* local copies of calling parameters */
+    if (!LB_find_median(value, wgts, dotmark, dotnum, proc, fractionlo,
+                        local_comm, &valuehalf, first_guess,
+                        &(counters[0]))) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from find_median.");
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return LB_FATAL;
+    }
 
-     dottop = dotnum = pdotnum;
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+      time3 = LB_Time(lb->Timer);
 
-     /* initialize timers and counters */
+    /* store cut info in tree only if I am procmid, the lowest numbered
+       processor in right set.  The left set will have proclower which
+       if the lowest numbered processor in either set. */
 
-     counters[0] = 0;
-     counters[1] = 0;
-     counters[2] = 0;
-     counters[3] = dotnum;
-     counters[4] = dotmax;
-     counters[5] = 0;
-     counters[6] = 0;
+    if (proc == procmid) {
+      treept[proc].cm[0] = cm[0];
+      treept[proc].cm[1] = cm[1];
+      treept[proc].cm[2] = cm[2];
+      treept[proc].ev[0] = evec[0];
+      treept[proc].ev[1] = evec[1];
+      treept[proc].ev[2] = evec[2];
+      treept[proc].cut = valuehalf;
+      treept[proc].parent = old_set ? -(root+1) : root+1;
+      /* The following two will get overwritten when the information
+         is assembled if this is not a terminal cut */
+      treept[proc].left_leaf = -proclower;
+      treept[proc].right_leaf = -procmid;
+    }
+    old_set = set;
+    root = procmid;
 
-     /* create mark and list arrays for dots */
-
-     allocflag = 0;
-     if (dotmax > 0) {
-        dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
-        if (dotmark == NULL) {
-           LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-        value = (double *) LB_MALLOC(dotmax*sizeof(double));
-        if (value == NULL) {
-           LB_FREE(&dotmark);
-           LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-        wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
-        if (wgts == NULL) {
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-     }
-     else {
-        dotmark = NULL;
-        value = NULL;
-        wgts = NULL;
-     }
-
-     /* set dot weights = 1.0 if user didn't */
-
-     if (!wgtflag)
-        for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
-
-     /* check that all weights > 0 */
-
-     if (check) {
-        for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
-        MPI_Allreduce(&j, &k, 1, MPI_INT, MPI_SUM, lb->Communicator);
-        if (k > 0 && proc == 0) {
-           sprintf(msg, "%d dot weights are equal to 0.", k);
-           LB_PRINT_WARN(proc, yo, msg);
-        }
-
-        for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
-        MPI_Allreduce(&j, &k, 1, MPI_INT, MPI_SUM, lb->Communicator);
-        if (k > 0) {
-           if (proc == 0) {
-              sprintf(msg, "%d dot weights are < 0.", k);
-              LB_PRINT_ERROR(proc, yo, msg);
-           }
-           LB_TRACE_EXIT(lb, yo);
-           return LB_FATAL;
-        }
-     }
-
-     /* create local communicator for use in recursion */
-
-     MPI_Comm_dup(lb->Communicator,&local_comm);
-
-     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-        time2 = LB_Time(lb->Timer);
-        timers[0] = time2 - time1;
-     }
-
-     /* recursively halve until just one proc in partition */
-
-     num_procs = nprocs;
-     root = 0;
-     old_set = 1;
-     treept[proc].parent = 0;
-     treept[proc].left_leaf = 0;
-
-     while (num_procs > 1) {
-
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
-           time1 = LB_Time(lb->Timer);
-
-        ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
-                                 &procmid, &num_procs, &fractionlo);
-        if (ierr != LB_OK && ierr != LB_WARN) {
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return (ierr);
-        }
-
-        /* create mark array and active list for dots */
-
-        if (allocflag) {
-           allocflag = 0;
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
-           if (dotmark == NULL) {
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
-           value = (double *) LB_MALLOC(dotmax*sizeof(double));
-           if (value == NULL) {
-              LB_FREE(&dotmark);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
-           wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
-           if (wgts == NULL) {
-              LB_FREE(&dotmark);
-              LB_FREE(&value);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
-        }
-
-        for (i = 0; i < dotnum; i++) {
-          wgts[i] = dotpt[i].Weight;
-        }
-        switch (rib->Num_Geom) {
-           case 3:
-              ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value,
-                                   local_comm);
-              break;
-           case 2:
-              ierr = LB_inertial2d(dotpt, dotnum, wgtflag, cm, evec, value,
-                                   local_comm);
-              break;
-           case 1:
-              ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
-              break;
-        }
-
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
-           time2 = LB_Time(lb->Timer);
-
-        if (!LB_find_median(value, wgts, dotmark, dotnum, proc, fractionlo,
-                            local_comm, &valuehalf, first_guess,
-                            &(counters[0]))) {
-           LB_PRINT_ERROR(proc, yo, "Error returned from find_median.");
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return LB_FATAL;
-        }
-
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
-           time3 = LB_Time(lb->Timer);
-
-        /* store cut info in tree only if I am procmid, the lowest numbered
-           processor in right set.  The left set will have proclower which
-           if the lowest numbered processor in either set. */
-
-        if (proc == procmid) {
-           treept[proc].cm[0] = cm[0];
-           treept[proc].cm[1] = cm[1];
-           treept[proc].cm[2] = cm[2];
-           treept[proc].ev[0] = evec[0];
-           treept[proc].ev[1] = evec[1];
-           treept[proc].ev[2] = evec[2];
-           treept[proc].cut = valuehalf;
-           treept[proc].parent = old_set ? -(root+1) : root+1;
-           /* The following two will get overwritten when the information
-              is assembled if this is not a terminal cut */
-           treept[proc].left_leaf = -proclower;
-           treept[proc].right_leaf = -procmid;
-        }
-        old_set = set;
-        root = procmid;
-
-        ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
-                                   &dotnum, &dotmax, set, &allocflag, overalloc,
-                                   stats, counters, local_comm);
-        if (ierr) {
-           LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return ierr;
-        }
+    ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
+                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               stats, counters, local_comm);
+    if (ierr) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return ierr;
+    }
     
-        if (allocflag) {
-           /* 
-            * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
-            * store their values in rib.
-            */
-           rib->Global_IDs = gidpt;
-           rib->Local_IDs = lidpt;
-           rib->Dots = dotpt;
-        }
+    if (allocflag) {
+      /* 
+       * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
+       * store their values in rib.
+       */
+      rib->Global_IDs = gidpt;
+      rib->Local_IDs = lidpt;
+      rib->Dots = dotpt;
+    }
 
-        /* create new communicators */
+    /* create new communicators */
 
-        MPI_Comm_split(local_comm,set,proc,&tmp_comm);
-        MPI_Comm_free(&local_comm);
-        local_comm = tmp_comm;
+    MPI_Comm_split(local_comm,set,proc,&tmp_comm);
+    MPI_Comm_free(&local_comm);
+    local_comm = tmp_comm;
 
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-           time4 = LB_Time(lb->Timer);
-           timers[1] += time2 - time1;
-           timers[2] += time3 - time2;
-           timers[3] += time4 - time3;
-        }
-     }
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+      time4 = LB_Time(lb->Timer);
+      timers[1] += time2 - time1;
+      timers[2] += time3 - time2;
+      timers[3] += time4 - time3;
+    }
+  }
 
-     /* have recursed all the way to final single sub-domain */
+  /* have recursed all the way to final single sub-domain */
 
-     /* free all memory used by RIB and MPI */
+  /* free all memory used by RIB and MPI */
 
-     MPI_Comm_free(&local_comm);
+  MPI_Comm_free(&local_comm);
 
-     LB_FREE(&value);
-     LB_FREE(&wgts);
-     LB_FREE(&dotmark);
+  LB_FREE(&value);
+  LB_FREE(&wgts);
+  LB_FREE(&dotmark);
 
-     end_time = LB_Time(lb->Timer);
-     lb_time[1] = end_time - start_time;
+  end_time = LB_Time(lb->Timer);
+  lb_time[1] = end_time - start_time;
 
-     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-        MPI_Barrier(lb->Communicator);
-        timestop = time1 = LB_Time(lb->Timer);
-     }
+  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+    MPI_Barrier(lb->Communicator);
+    timestop = time1 = LB_Time(lb->Timer);
+  }
 
-     /* error checking and statistics */
+  /* error checking and statistics */
 
-     if (check) RIB_check(lb, dotpt, dotnum, pdotnum);
-     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME))
-        RIB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
-                  stats);
+  if (check_geom) {
+    ierr = LB_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,NULL);
+    if (ierr == LB_FATAL) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
+      LB_TRACE_EXIT(lb, yo);
+      return(ierr);
+    }
+  }
 
-     /* update calling routine parameters */
+  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME))
+    RIB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
+              stats);
 
-     start_time = LB_Time(lb->Timer);
+  /* update calling routine parameters */
 
-     pdotnum = dotnum;
-     pdottop = dottop;
+  start_time = LB_Time(lb->Timer);
 
-     /*  build return arguments */
+  pdotnum = dotnum;
+  pdottop = dottop;
 
-     if (lb->Return_Lists) {
-        *num_import = dotnum - dottop;
-        if (*num_import > 0) {
-           ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
-                                         import_global_ids, import_local_ids,
-                                         import_procs, dottop);
-           if (ierr) {
-              LB_PRINT_ERROR(proc, yo,
-                             "Error returned from LB_RB_Return_Arguments.");
-              LB_TRACE_EXIT(lb, yo);
-              return ierr;
-           }
-        }
-     }
+  /*  build return arguments */
 
-     if (gen_tree) {
-        MPI_Allgather(&treept[proc], sizeof(struct rib_tree), MPI_BYTE,
-                      treept, sizeof(struct rib_tree), MPI_BYTE,
-                      lb->Communicator);
-        for (i = 1; i < nprocs; i++)
-           if (treept[i].parent > 0)
-              treept[treept[i].parent - 1].left_leaf = i;
-           else if (treept[i].parent < 0)
-              treept[-treept[i].parent - 1].right_leaf = i;
-     }
-     else {
-        treept[0].right_leaf = -1;
-     }
+  if (lb->Return_Lists) {
+    *num_import = dotnum - dottop;
+    if (*num_import > 0) {
+      ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
+                                    import_global_ids, import_local_ids,
+                                    import_procs, dottop);
+      if (ierr) {
+        LB_PRINT_ERROR(proc, yo,
+                       "Error returned from LB_RB_Return_Arguments.");
+        LB_TRACE_EXIT(lb, yo);
+        return ierr;
+      }
+    }
+  }
 
-     end_time = LB_Time(lb->Timer);
-     lb_time[0] += (end_time - start_time);
+  if (gen_tree) {
+    MPI_Allgather(&treept[proc], sizeof(struct rib_tree), MPI_BYTE,
+                  treept, sizeof(struct rib_tree), MPI_BYTE,
+                  lb->Communicator);
+    for (i = 1; i < nprocs; i++)
+      if (treept[i].parent > 0)
+        treept[treept[i].parent - 1].left_leaf = i;
+      else if (treept[i].parent < 0)
+        treept[-treept[i].parent - 1].right_leaf = i;
+  }
+  else {
+    treept[0].right_leaf = -1;
+  }
 
-     if (lb->Debug_Level >= LB_DEBUG_ATIME) {
-        if (lb->Proc == lb->Debug_Proc)
-           printf("ZOLTAN RIB Times:  \n");
-        LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
-                       "ZOLTAN       Build:       ");
-        LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
-                       "ZOLTAN         RIB:         ");
-     }
+  end_time = LB_Time(lb->Timer);
+  lb_time[0] += (end_time - start_time);
 
-     if (lb->Debug_Level >= LB_DEBUG_ALL) {
-        LB_RB_Print_All(lb, rib->Global_IDs, rib->Dots, 
-                        pdotnum, pdottop, *num_import, 
-                        *import_global_ids, *import_procs);
-     }
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+    if (lb->Proc == lb->Debug_Proc)
+      printf("ZOLTAN RIB Times:  \n");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
+                   "ZOLTAN       Build:       ");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
+                   "ZOLTAN         RIB:         ");
+  }
 
-     LB_TRACE_EXIT(lb, yo);
-     /* Temporary return value until error codes are fully implemented */
-     return(LB_OK);
+  if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    LB_RB_Print_All(lb, rib->Global_IDs, rib->Dots, 
+                    pdotnum, pdottop, *num_import, 
+                    *import_global_ids, *import_procs);
+  }
+
+  LB_TRACE_EXIT(lb, yo);
+  /* Temporary return value until error codes are fully implemented */
+  return(LB_OK);
 }
 
 
 /* ----------------------------------------------------------------------- */
-
-/* consistency checks on RIB results */
-
-static void RIB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
-{
-     char *yo = "RIB_check";
-     char msg[256];
-     int i, proc, nprocs, total1, total2;
-     double weight, wtmax, wtmin, wtone, tolerance;
-
-     MPI_Comm_rank(lb->Communicator,&proc);
-     MPI_Comm_size(lb->Communicator,&nprocs);
-
-     /* check that total # of dots remained the same */
-
-     MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
-     if (total1 != total2) {
-        if (proc == 0) {
-           sprintf(msg, "Points before RIB = %d, "
-                        "Points after RIB = %d\n", total1,total2);
-           LB_PRINT_WARN(proc, yo, msg);
-        }
-     }
-
-     /* check that result is load-balanced within log2(P)*max-wt */
-
-     weight = wtone = 0.0;
-     for (i = 0; i < dotnum; i++) {
-        weight += dotpt[i].Weight;
-        if (dotpt[i].Weight > wtone) wtone = dotpt[i].Weight;
-     }
-
-     MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-     MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-
-     /* i = smallest power-of-2 >= nprocs */
-     /* tolerance = largest-single-weight*log2(nprocs) */
-
-     for (i = 0; (nprocs >> i) != 0; i++);
-     tolerance = tolerance * i * (1.0 + TINY);
-
-     if (wtmax - wtmin > tolerance) {
-        if (proc == 0) {
-           sprintf(msg,"Load-imbalance > tolerance of %g.", tolerance);
-           LB_PRINT_WARN(proc, yo, msg);
-        }
-        MPI_Barrier(lb->Communicator);
-        if (weight == wtmin) {
-           sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-           LB_PRINT_WARN(proc, yo, msg);
-        }
-        if (weight == wtmax) {
-           sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-           LB_PRINT_WARN(proc, yo, msg);
-        }
-     }
-
-     MPI_Barrier(lb->Communicator);
-}
-
-
 /* RIB statistics */
 
 static void RIB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
-                      int dotnum, double *timers, int *counters, int stats)
+                   int dotnum, double *timers, int *counters, int stats)
 {
-     int i, proc, nprocs, sum, min, max, print_proc;
-     double ave, rsum, rmin, rmax;
-     double weight, wttot, wtmin, wtmax;
+  int i, proc, nprocs, sum, min, max, print_proc;
+  double ave, rsum, rmin, rmax;
+  double weight, wttot, wtmin, wtmax;
 
-     MPI_Comm_rank(lb->Communicator,&proc);
-     MPI_Comm_size(lb->Communicator,&nprocs);
-     print_proc = lb->Debug_Proc;
+  MPI_Comm_rank(lb->Communicator,&proc);
+  MPI_Comm_size(lb->Communicator,&nprocs);
+  print_proc = lb->Debug_Proc;
 
-     if (proc == print_proc) printf("RIB total time: %g (secs)\n",timetotal);
+  if (proc == print_proc) printf("RIB total time: %g (secs)\n",timetotal);
 
-     if (stats) {
-        if (proc == print_proc) printf("RIB Statistics:\n");
+  if (stats) {
+     if (proc == print_proc) printf("RIB Statistics:\n");
 
-        MPI_Barrier(lb->Communicator);
+     MPI_Barrier(lb->Communicator);
 
-        /* distribution info */
+     /* distribution info */
 
-        for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight;
-        MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+     for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight;
+     MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
 
-        if (proc == print_proc) {
-           printf(" Total weight of dots = %g\n",wttot);
-           printf(" Weight on each proc: ave = %g, max = %g, min = %g\n",
-                  wttot/nprocs,wtmax,wtmin);
-        }
-
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1) printf("    Proc %d has weight = %g\n",proc,weight);
-
-        for (i = 0, weight = 0.0; i < dotnum; i++)
-           if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
-        MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-
-        if (proc == print_proc)
-           printf(" Maximum weight of single dot = %g\n",wtmax);
-
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1) printf("    Proc %d max weight = %g\n",proc,weight);
-
-        /* counter info */
-
-        MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d median count = %d\n",proc,counters[0]);
-
-        MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d send count = %d\n",proc,counters[1]);
-
-        MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d recv count = %d\n",proc,counters[2]);
-
-        MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d max dots = %d\n",proc,counters[3]);
-
-        MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d max memory = %d\n",proc,counters[4]);
-
-        MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-        MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-        MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-        ave = ((double) sum)/nprocs;
-        if (proc == print_proc)
-           printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",
-                  ave,min,max);
-        MPI_Barrier(lb->Communicator);
-        if (stats > 1)
-           printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
+     if (proc == print_proc) {
+        printf(" Total weight of dots = %g\n",wttot);
+        printf(" Weight on each proc: ave = %g, max = %g, min = %g\n",
+               wttot/nprocs,wtmax,wtmin);
      }
 
-     /* timer info */
+     MPI_Barrier(lb->Communicator);
+     if (stats > 1) printf("    Proc %d has weight = %g\n",proc,weight);
 
-     MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-     ave = rsum/nprocs;
+     for (i = 0, weight = 0.0; i < dotnum; i++)
+        if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
+     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+
      if (proc == print_proc)
-        printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
-               ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+        printf(" Maximum weight of single dot = %g\n",wtmax);
+
+     MPI_Barrier(lb->Communicator);
+     if (stats > 1) printf("    Proc %d max weight = %g\n",proc,weight);
+
+     /* counter info */
+
+     MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
+     if (proc == print_proc)
+        printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
      MPI_Barrier(lb->Communicator);
      if (stats > 1)
-        printf("    Proc %d start-up time = %g\n",proc,timers[0]);
+        printf("    Proc %d median count = %d\n",proc,counters[0]);
 
-     MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-     ave = rsum/nprocs;
+     MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
      if (proc == print_proc)
-        printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
-               ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+        printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
      MPI_Barrier(lb->Communicator);
      if (stats > 1)
-        printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
+        printf("    Proc %d send count = %d\n",proc,counters[1]);
 
-     MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-     ave = rsum/nprocs;
+     MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
      if (proc == print_proc)
-        printf(" Median time %%: ave = %g, min = %g, max = %g\n",
-               ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+        printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
      MPI_Barrier(lb->Communicator);
      if (stats > 1)
-        printf("    Proc %d median time = %g\n",proc,timers[2]);
+        printf("    Proc %d recv count = %d\n",proc,counters[2]);
 
-     MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-     ave = rsum/nprocs;
+     MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
      if (proc == print_proc)
-        printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
-               ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+        printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
      MPI_Barrier(lb->Communicator);
      if (stats > 1)
-        printf("    Proc %d comm time = %g\n",proc,timers[3]);
+        printf("    Proc %d max dots = %d\n",proc,counters[3]);
 
+     MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
+     if (proc == print_proc)
+        printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
      MPI_Barrier(lb->Communicator);
+     if (stats > 1)
+        printf("    Proc %d max memory = %d\n",proc,counters[4]);
+
+     MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+     MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+     MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+     ave = ((double) sum)/nprocs;
+     if (proc == print_proc)
+        printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",
+               ave,min,max);
+     MPI_Barrier(lb->Communicator);
+     if (stats > 1)
+        printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
+  }
+
+  /* timer info */
+
+  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  ave = rsum/nprocs;
+  if (proc == print_proc)
+     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
+            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+  MPI_Barrier(lb->Communicator);
+  if (stats > 1)
+     printf("    Proc %d start-up time = %g\n",proc,timers[0]);
+
+  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  ave = rsum/nprocs;
+  if (proc == print_proc)
+     printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
+            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+  MPI_Barrier(lb->Communicator);
+  if (stats > 1)
+     printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
+
+  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  ave = rsum/nprocs;
+  if (proc == print_proc)
+     printf(" Median time %%: ave = %g, min = %g, max = %g\n",
+            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+  MPI_Barrier(lb->Communicator);
+  if (stats > 1)
+     printf("    Proc %d median time = %g\n",proc,timers[2]);
+
+  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  ave = rsum/nprocs;
+  if (proc == print_proc)
+     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
+            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+  MPI_Barrier(lb->Communicator);
+  if (stats > 1)
+     printf("    Proc %d comm time = %g\n",proc,timers[3]);
+
+  MPI_Barrier(lb->Communicator);
 }
