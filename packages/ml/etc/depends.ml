@@ -100,12 +100,20 @@ driver.o : ../flat/driver.c ../flat/ml_agg_genP.h ../flat/ml_aggregate.h \
         ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
 	$(CC) -c $(CFLAGS) ../flat/driver.c -o $@
 
+ml_edmond.o : ../flat/ml_edmond.c ../flat/ml_1level.h ../flat/ml_agg_genP.h \
+        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bdrypts.h ../flat/ml_comm.h ../flat/ml_comminfoop.h ../flat/ml_csolve.h ../flat/ml_defs.h ../flat/ml_grid.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_krylov.h ../flat/ml_lapack.h ../flat/ml_mapper.h ../flat/ml_mat_formats.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_rap.h ../flat/ml_smoother.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_utils.h ../flat/ml_vec.h
+	$(CC) -c $(CFLAGS) ../flat/ml_edmond.c -o $@
+
 ml_seg_precond.o : ../flat/ml_seg_precond.c ../flat/ml_1level.h \
         ../flat/ml_agg_genP.h ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bdrypts.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_comminfoop.h ../flat/ml_csolve.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_mapper.h ../flat/ml_mat_formats.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_rap.h ../flat/ml_seg_precond.h ../flat/ml_smoother.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_utils.h ../flat/ml_vec.h ../flat/mli_solver.h
 	$(CC) -c $(CFLAGS) ../flat/ml_seg_precond.c -o $@
 
+ml_smoother_edmond.o : ../flat/ml_smoother_edmond.c ../flat/ml_1level.h \
+        ../flat/ml_aztec_utils.h ../flat/ml_defs.h ../flat/ml_include.h ../flat/ml_lapack.h ../flat/ml_memory.h ../flat/ml_smoother.h
+	$(CC) -c $(CFLAGS) ../flat/ml_smoother_edmond.c -o $@
+
 ml_struct.o : ../flat/ml_struct.c ../flat/ml_1level.h ../flat/ml_agg_genP.h \
-        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bdrypts.h ../flat/ml_comm.h ../flat/ml_comminfoop.h ../flat/ml_csolve.h ../flat/ml_defs.h ../flat/ml_grid.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_krylov.h ../flat/ml_lapack.h ../flat/ml_mapper.h ../flat/ml_mat_formats.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_rap.h ../flat/ml_smoother.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_utils.h ../flat/ml_vec.h
+        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bdrypts.h ../flat/ml_comm.h ../flat/ml_comminfoop.h ../flat/ml_csolve.h ../flat/ml_defs.h ../flat/ml_grid.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_krylov.h ../flat/ml_lapack.h ../flat/ml_mapper.h ../flat/ml_mat_formats.h ../flat/ml_memory.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_rap.h ../flat/ml_smoother.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_utils.h ../flat/ml_vec.h
 	$(CC) -c $(CFLAGS) ../flat/ml_struct.c -o $@
 
 mli_solver.o : ../flat/mli_solver.c ../flat/ml_1level.h \
@@ -187,9 +195,9 @@ ml_vec.o : ../flat/ml_vec.c ../flat/ml_comm.h ../flat/ml_defs.h \
         ../flat/ml_memory.h ../flat/ml_vec.h
 	$(CC) -c $(CFLAGS) ../flat/ml_vec.c -o $@
 
-mlguide.o : ../examples/mlguide.c ../flat/ml_agg_genP.h \
+ml_read_elas.o : ../examples/ml_read_elas.c ../flat/ml_agg_genP.h \
         ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
-	$(CC) -c $(CFLAGS) ../examples/mlguide.c -o $@
+	$(CC) -c $(CFLAGS) ../examples/ml_read_elas.c -o $@
 
 convertSund2AZdatafile.o : ../examples/convertSund2AZdatafile.c
 	$(CC) -c $(CFLAGS) ../examples/convertSund2AZdatafile.c -o $@
@@ -222,6 +230,14 @@ ml_star2d.o : ../examples/ml_star2d.c ../flat/ml_agg_genP.h \
         ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/ml_star2d.c -o $@
 
+mlguide.o : ../examples/mlguide.c ../flat/ml_agg_genP.h \
+        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/mlguide.c -o $@
+
+mlguide_par.o : ../examples/mlguide_par.c ../flat/ml_agg_genP.h \
+        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/mlguide_par.c -o $@
+
 new_readex.o : ../examples/new_readex.c ../flat/ml_agg_genP.h \
         ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/new_readex.c -o $@
@@ -234,7 +250,11 @@ seg_readex.o : ../examples/seg_readex.c ../flat/ml_agg_genP.h \
         ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/seg_readex.c -o $@
 
-mlguide_par.o : ../examples/mlguide_par.c ../flat/ml_agg_genP.h \
+ml_recirc.o : ../examples/ml_recirc.c ../flat/ml_agg_genP.h \
         ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
-	$(CC) -c $(CFLAGS) ../examples/mlguide_par.c -o $@
+	$(CC) -c $(CFLAGS) ../examples/ml_recirc.c -o $@
+
+ml_read_salsa.o : ../examples/ml_read_salsa.c ../flat/ml_agg_genP.h \
+        ../flat/ml_aggregate.h ../flat/ml_aztec_utils.h ../flat/ml_bicgstabl.h ../flat/ml_cg.h ../flat/ml_comm.h ../flat/ml_defs.h ../flat/ml_elementagx.h ../flat/ml_gmres.h ../flat/ml_grid.h ../flat/ml_gridagx.h ../flat/ml_gridfunc.h ../flat/ml_include.h ../flat/ml_intlist.h ../flat/ml_krylov.h ../flat/ml_operator.h ../flat/ml_operatoragx.h ../flat/ml_pde.h ../flat/ml_solver.h ../flat/ml_struct.h ../flat/ml_vec.h ../flat/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/ml_read_salsa.c -o $@
 
