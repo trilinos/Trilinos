@@ -105,7 +105,7 @@ Output files:
 #include "ml_aztec_utils.h"
 #include "ml_lapack.h"
 
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
 #include "ml_read_utils.h"
 #endif
 
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
   int Ndirichlet, *dirichlet;
 
   char input[MAX_INPUT_STR_LN];
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   FILE *ifp;
 #endif
 
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
   if (proc_config[AZ_node] == 0)
   {
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
     printf("Enter the total number of elements on a side\n");
     scanf("%d",&Nglobal_edges);
     printf("Enter value for sigma\n");
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
         }
       }
       fclose(ifp);
-#endif /*ifndef BENCHMARK*/
+#endif /*ifndef ML_BENCHMARK*/
 #ifdef HARDWIRE3D
     Nglobal_nodes = Nglobal_edges*Nglobal_edges*Nglobal_edges;
 Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst dirichlet */
@@ -1737,7 +1737,7 @@ nx = nx--; /* rst dirichlet */
 	}
       else if (ML_strcmp(context->subsmoother,"MLS") == 0)
 	{
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
 	  /* printf("polynomial degree?\n");
 	     scanf("%d",&poly_degree); */
 #else
@@ -1753,7 +1753,7 @@ nx = nx--; /* rst dirichlet */
         }
       }
       fclose(ifp);
-#endif /*ifndef BENCHMARK*/
+#endif /*ifndef ML_BENCHMARK*/
 	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
@@ -2305,7 +2305,7 @@ nx = nx--; /* rst dirichlet */
   if (proc_config[AZ_node] == 0) 
     printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   if (proc_config[AZ_node] == 0) {
     printf("Printing out a few entries of the solution ...\n");
     for (i = 0; i < Ke_mat->data_org[AZ_N_internal] +
@@ -2318,7 +2318,7 @@ nx = nx--; /* rst dirichlet */
       }
     }
   }
-#endif /*ifdef BENCHMARK*/
+#endif /*ifdef ML_BENCHMARK*/
 
   ML_free(temp1);
   ML_free(temp2);

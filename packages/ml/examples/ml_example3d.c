@@ -74,7 +74,7 @@ extern void add_row_3D(int row,int location,double val[],int bindx[], int *n);
 
 /* -------------  end external function declarations ----------------------*/
 
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   struct reader_context *context;
 #endif
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 {
   int    i, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   int    j;
 #endif
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND  *Pmat = NULL;
   AZ_MATRIX   *Amat = NULL;
   ML          *ml;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
 #endif
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
   /* Read and broadcast: problem choice, problem size, etc.  */
 
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
    if (proc_config[AZ_node] == 0) {
       ML_Reader_ReadInput("ml_inputfile", &context);
       ifp = fopen("ml_inputfile", "r");
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
                x[update_index[i]], (double) update[i]);
   }
   */
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
    if (proc_config[AZ_node] == 0) 
      printf("Printing out a few entries of the solution ...\n");
 
@@ -329,7 +329,7 @@ void init_options(int options[], double params[])
   AZ_defaults(options, params);
 
   options[AZ_solver]   = AZ_cg;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   if (ML_strcmp(context->krylov,"Cg") == 0) {
     options[AZ_solver]   = AZ_cg;
   }
@@ -473,7 +473,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   ML          *subml;
   struct aztec_context *context;
   */
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   int nblocks, *blocks;
 #endif
 
@@ -558,7 +558,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
        /* does a Gauss-Seidel on its local submatrix independent of the */
        /* other processors.                                             */
 
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
 
@@ -643,7 +643,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
        */
     }
 
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
     if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);
     else {
        ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 

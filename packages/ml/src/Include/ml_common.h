@@ -112,6 +112,9 @@
 #define ML_FLOPS
 #endif
 
+#ifdef HAVE_ML_BENCHMARKING
+#define ML_BENCHMARK
+#endif
 
 #endif /*ifdef HAVE_CONFIG_H*/
 

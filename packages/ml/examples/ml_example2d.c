@@ -100,7 +100,7 @@ int global_nrows, global_ncoarse;
 int coarse_iterations = 0, use_cg = 0, num_levels = 2; 
   int    *update = NULL, *external = NULL;
   int    *update_index = NULL, *extern_index = NULL;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   struct reader_context *context;
 #endif
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
   AZ_MATRIX   *Amat = NULL;
   ML          *ml;
   ML_Aggregate *ml_ag = NULL;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
 #endif
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
   /* Read and broadcast: problem choice, problem size, etc.  */
 
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
    if (proc_config[AZ_node] == 0) {
       ML_Reader_ReadInput("ml_inputfile", &context);
       ifp = fopen("ml_inputfile", "r");
@@ -390,7 +390,7 @@ void init_options(int options[], double params[])
   AZ_defaults(options, params);
 
   options[AZ_solver]   = AZ_cg;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   if (ML_strcmp(context->krylov,"Cg") == 0) {
     options[AZ_solver]   = AZ_cg;
   }
@@ -535,7 +535,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   int          N_levels = 2, level;
   int          coarsest_level;
   int          old_guy, ndim;
-#ifdef BENCHMARK
+#ifdef ML_BENCHMARK
   int nblocks, *blocks;
 #endif
 
@@ -675,7 +675,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          /* other processors.                                             */
 #define MB_MODIF
 #define MB_MODIF2
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_BOTH,  nsmooth,1.);
 	 /* ml->pre_smoother[level].smoother->internal = 
 	                                  ML_Smoother_MSR_GSforwardnodamping;
@@ -759,7 +759,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	 }
 #endif
       }
-#ifndef BENCHMARK
+#ifndef ML_BENCHMARK
       if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
 					  coarse_iterations,1.);
