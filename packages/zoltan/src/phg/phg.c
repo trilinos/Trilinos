@@ -52,6 +52,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
   {"PHG_COARSE_ITERATIONS",           NULL,  "INT",    0},    
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
+  {"USE_TIMERS",                      NULL,  "INT",    0},    
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",    0},    
   {NULL,                              NULL,  NULL,     0}     
 };
@@ -227,7 +228,7 @@ End:
    * KDDKDD code.  */
   if ((err == ZOLTAN_OK) && hgp.final_output) {
     HGraph *hg = &zoltan_hg->HG;
-    static int KDDcnt=0;
+    static int nRuns=0;
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
     static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
     static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
@@ -247,10 +248,6 @@ End:
      
       /* Add in cut contributions from removed edges */
       err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-      /*
-        UVC: commented out...
-        printf("KDDKDD TESTING nRemove = %d cutl = %f + %f   cutn = %f + %f\n", zoltan_hg->nRemove, cutl, remcutl, cutn, remcutn);
-      */
       cutl += remcutl;
       cutn += remcutn;
   
@@ -263,18 +260,18 @@ End:
       balsum += bal;
       if (bal > balmax) balmax = bal;
       if (bal < balmin) balmin = bal;
-      KDDcnt++;
+      nRuns++;
    
       if (zz->Proc == 0) {
         uprintf(hg->comm, 
                 "STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
-                KDDcnt, bal, balmax, balmin, balsum/KDDcnt);
+                nRuns, bal, balmax, balmin, balsum/nRuns);
         uprintf(hg->comm, 
                 "STATS Runs %d  cutl CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
-                KDDcnt, cutl, cutlmax, cutlmin, cutlsum/KDDcnt);
+                nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
         uprintf(hg->comm, 
                 "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
-                KDDcnt, cutn, cutnmax, cutnmin, cutnsum/KDDcnt);
+                nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
       }
     }
   }
@@ -327,6 +324,8 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_ITERATIONS",
                                  (void*) &hgp->num_coarse_iter);  
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
+                                 (void*) &hgp->use_timers);  
+  Zoltan_Bind_Param(PHG_params, "USE_TIMERS",
                                  (void*) &hgp->use_timers);  
   Zoltan_Bind_Param(PHG_params, "EDGE_SIZE_THRESHOLD",
                                  (void*) &hgp->EdgeSizeThreshold);  
