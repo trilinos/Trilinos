@@ -974,3 +974,66 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
    ML_DVector_GetDataPtr( Amat->diagonal, diagonal);
    return 0;
 }
+int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
+{
+  int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
+  int *row_ptr, *col_ptr;
+  double *values = NULL;
+  float  *val_ptr;
+  struct ML_CSR_MSRdata *temp;
+
+
+
+  /* first count how many nonzeros are in the old matrix */
+
+  Nnz = 0;
+  if (matrix->getrow == NULL) return(1);
+  Nrows = matrix->getrow->Nrows;
+
+  for (i = 0 ; i < Nrows; i++) {
+    ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+                        &row_length, 0);
+    Nnz += row_length;
+  }
+
+  /* allocate space */
+
+  row_ptr = (int   *) ML_allocate(sizeof(int  )*(Nrows + 1));
+  col_ptr = (int   *) ML_allocate(sizeof(int  )*(Nnz + 1));
+  val_ptr = (float *) ML_allocate(sizeof(float)*(Nnz + 1));
+  temp    = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  
+  /* getrow everything and copy it to single precision */
+
+   row_ptr[0] = 0;
+   Nnz = 0;
+   for (i = 0 ; i < Nrows; i++) {
+     ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+		       &row_length, 0);
+     for (k = 0; k < row_length; k++) {
+         val_ptr[Nnz  ] = (float) values[k];
+         col_ptr[Nnz++] = columns[k];
+     }
+     row_ptr[i+1] = Nnz;
+   }
+   temp->rowptr = row_ptr;
+   temp->columns = col_ptr;
+   temp->values = (double *) val_ptr;
+
+   /* Get rid of the old data pointer */
+
+   if ((matrix->data_destroy != NULL) && (matrix->data != NULL)) {
+      matrix->data_destroy(matrix->data);
+      matrix->data = NULL;
+   }
+
+   ML_Operator_Set_ApplyFuncData(matrix,matrix->invec_leng, 
+				 matrix->outvec_leng,ML_INTERNAL,temp,
+				 matrix->matvec->Nrows, sCSR_matvec,
+				 matrix->from_an_ml_operator);
+
+   ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,sCSR_getrows);
+   matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
+
+   return 0;
+}

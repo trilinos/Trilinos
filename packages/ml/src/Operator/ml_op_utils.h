@@ -27,6 +27,7 @@ extern int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size,
 extern int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
      int fine_size );
 
+extern int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix);
 extern int ML_Gen_Restrictor_TransP(ML *, int, int);
 extern int ML_Gen_Prolongator_Getrow(ML *, int , int , int , int ,
             int (*)(void* , int , int *, int , int *, double *, int *),

@@ -38,6 +38,7 @@ struct ML_CSR_MSRdata
                               /* These fields are not normally filled */
                               /* in the rest of ml. */
 };
+
 struct ML_vbrdata 
 {
    int    *bindx, *bpntr, *cpntr, *rpntr, *indx;
@@ -80,6 +81,9 @@ extern void ML_Scale_CSR(ML_Operator *input_matrix,
 extern int CSR_getrows(void *data,int N_requested_rows,int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
+extern int sCSR_getrows(void *data,int N_requested_rows,int requested_rows[],
+                       int allocated_space, int columns[], double values[],
+                       int row_lengths[]);
 extern int CSR_get_ones_rows(void *data, int N_requested_rows, 
 			     int requested_rows[], int allocated_space, 
 			     int columns[], double values[], int row_lengths[]);
@@ -101,6 +105,8 @@ extern int MSR_matvec_WKC(void *Amat, int, double *p, int, double *ap);
 
 extern int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
 extern int CSR_matvec(void *Amat, int, double p[], int, double ap[]);
+extern int sCSR_trans_matvec(void *Amat, int, double p[], int, double ap[]);
+extern int sCSR_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int CSR_ones_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
                            double ap[]);

@@ -358,6 +358,39 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
+/* single precision version to save storage */
+int sCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+{
+   register int    *bindx, j;
+   int     *rowptr,  row, itemp;
+   register float *val;
+   struct ML_CSR_MSRdata *input_matrix;
+
+   row            = *requested_rows;
+   input_matrix = (struct ML_CSR_MSRdata *) data;
+   rowptr = input_matrix->rowptr;
+   itemp = rowptr[row];
+   *row_lengths = rowptr[row+1] - itemp;
+
+
+   if (*row_lengths > allocated_space) {
+    ML_avoid_unused_param( (void *) &N_requested_rows);
+    return(0);
+  }
+
+   bindx  = &(input_matrix->columns[itemp]);
+   for (j = 0 ; j < *row_lengths; j++) {
+      *columns++ = *bindx++;
+   }
+   val    = (float *) input_matrix->values;
+   val    = &(val[itemp]);
+   for (j = 0 ; j < *row_lengths; j++) {
+      *values++  = (double) *val++;
+   }
+   return(1);
+}
+
 int CSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -629,6 +662,139 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
         sum  += val[k] * p2[bindx[k]];
+     }
+
+     ap2[i] = sum;
+   }
+
+   if (Amat->getrow->pre_comm != NULL) ML_free(p2);
+
+   if (getrow_comm != NULL) {
+      if (getrow_comm->remap != NULL) {
+         if (getrow_comm->remap_max != olen-1) {
+            printf("Error: The largest remapping index after communication\n");
+            printf("       should be one less than the vector's output\n");
+            printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
+            exit(1);
+         }
+      }
+      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
+      for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
+      ML_free(ap2);
+  }
+  return(1);
+}
+
+int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, jj, k, /* Nrows,*/ *bindx;
+   double            *p2, sum, *ap2;
+   float *val;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   int               *row_ptr, Nstored;
+   ML_Comm           *comm;
+
+   Amat    = (ML_Operator *) Amat_in;
+   comm    = Amat->comm;
+   Nstored = Amat->outvec_leng;
+   temp    = (struct ML_CSR_MSRdata *) Amat->data;
+   val     = (float *) temp->values;
+   bindx   = temp->columns;
+   row_ptr = temp->rowptr;
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+     p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
+                                  sizeof(double));
+     for (i = 0; i < ilen; i++) p2[i] = p[i];
+
+     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
+
+   }
+   else p2 = p;
+
+   getrow_comm= Amat->getrow->post_comm;
+   if (getrow_comm != NULL) {
+      i = Nstored+getrow_comm->minimum_vec_size + 1;
+      if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
+      ap2 = (double *) ML_allocate(i* sizeof(double));
+   }
+   else ap2 = ap;
+
+   for (i = 0; i < olen; i++) ap2[i] = 0.;
+   for (i = 0; i < ilen; i++) {
+     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+     {
+        ap2[bindx[k]] += ((double) val[k]) * p2[i];
+     }
+   }
+
+   if (Amat->getrow->pre_comm != NULL) ML_free(p2);
+
+   if (getrow_comm != NULL) {
+      if (getrow_comm->remap != NULL) {
+         if (getrow_comm->remap_max != olen-1) {
+            printf("Error: The largest remapping index after communication\n");
+            printf("       should be one less than the vector's output\n");
+            printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
+            exit(1);
+         }
+      }
+      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
+      for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
+      ML_free(ap2);
+  }
+  return(1);
+}
+
+int sCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, jj, k, /* Nrows,*/ *bindx;
+   double            *p2, sum, *ap2;
+   float             *val;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   int               *row_ptr, Nstored;
+   ML_Comm           *comm;
+
+   Amat    = (ML_Operator *) Amat_in;
+   comm    = Amat->comm;
+   /* Nrows   = Amat->outvec_leng; */
+   Nstored = Amat->getrow->Nrows;
+   temp    = (struct ML_CSR_MSRdata *) Amat->data;
+   val     = (float *) temp->values;
+   bindx   = temp->columns;
+   row_ptr = temp->rowptr;
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+     p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
+                                  sizeof(double));
+     for (i = 0; i < ilen; i++) p2[i] = p[i];
+
+     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
+
+   }
+   else p2 = p;
+
+   getrow_comm= Amat->getrow->post_comm;
+   if (getrow_comm != NULL) {
+      i = Nstored+getrow_comm->minimum_vec_size + 1;
+      if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
+      ap2 = (double *) ML_allocate(i* sizeof(double));
+   }
+   else ap2 = ap;
+
+   for (i = 0; i < Nstored; i++) {
+     sum = 0;
+     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+     {
+        sum  += ((double) val[k]) * p2[bindx[k]];
      }
 
      ap2[i] = sum;
