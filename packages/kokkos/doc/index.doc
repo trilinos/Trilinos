@@ -1,0 +1,86 @@
+/*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
+\htmlonly
+<center>
+<img align=center lowsrc="../tpetra.gif" src="../tpetra.gif" 
+     width=500 height=300 alt="Tpetra"><br>
+</center>
+\endhtmlonly
+
+\section intro Introduction
+Tpetra is an attempt at applying generic algorithm techniques to the
+serial and parallel linear algebra libraries of Epetra.  It is hoped that
+Tpetra will complement Epetra by providing an alternative foundation 
+for future Trilinos solvers.  The lessons learned and discoveries made 
+while creating Tpetra are also being applied to improving their Epetra cousins.
+
+\section startup Overview of Tpetra.
+
+\subsection formulations Tpetra Classes
+
+Tpetra contains a number of classes.  They can be categorized as follows:
+
+<ul> 
+
+<li> Primary parallel user classes.  These are typically the most important classes for most users.
+
+<ol>
+
+<li> Communicator class: Tpetra::Comm - Contains specific information about the parallel machine we are using.  Currently
+     only supports serial, but support is planned for other models, including MPI 
+		 and hybrid MPI/threaded.
+
+<li> Mapping classes: Tpetra::ElementSpace and Tpetra::BlockElementSpace - Contain information used to
+     distribute vectors, matrices and other objects on a parallel (or serial) machine.
+
+<li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two
+     ElementSpace or BlockElementSpace objects.  Allows
+     efficient transfer of objects built using one mapping to a new
+     object with a new mapping.  Supports local and global permutations,
+     overlapping Schwarz operations and many other data movement
+     algorithms.
+
+</ol>
+
+<li> Primary serial user classes.  These classes provide object oriented interfaces to LAPACK capabilities,
+     providing easy access to the most powerful numerical methods in LAPACK.
+
+<ol>
+
+<li> General dense matrix class: Tpetra::DenseMatrix - Provides dense matrix services such as 
+     factorizations, solves, QR, SVD, etc., with special attention focused on numerically robust solutions.
+</ol>
+
+<li> Utility classes. 
+
+<ol>
+<li> Timing class: Tpetra::Time - Provides timing functions for the
+     purposes of performance analysis.
+
+<li> Floating point operation class: Tpetra::Flops - Provides floating point operations (FLOPS)
+     counting and reporting functions for the purposes of performance analysis.  All Tpetra computational
+     classes accumulate FLOP counts associated with the \e this object of the computations.
+
+<li> Distributed directory class:  Tpetra::Directory - Allows construction of a distributed directory.
+     Once constructed, a directory allows one to access randomly distributed objects in an efficient, scalable
+     manner.  This class is intended for support of general ElementSpace and BlockElementSpace objects, but is 
+     useful in other settings as well.
+
+<li> BLAS wrapper class: Tpetra::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+     This class provides a single instance interface between Epetra and the BLAS.  In this way we can easily
+     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+     computer systems.  This class also provides a very convenient way to templatize the BLAS.
+
+<li> LAPACK wrapper class: Tpetra::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Tpetra::BLAS,
+     it provides nice C++ access to LAPACK.
+
+</ol>
+</ul>
+     
+
+\subsection trilinos Trilinos and Tpetra
+
+Tpetra can be used as a stand-alone package.  However, in the future it will also provides the foundation for
+Trilinos.  Trilinos is a collection of solver packages, such as AztecOO and TSF.  But as Tpetra is not yet completed, 
+it is suggested that for the time being, Epetra be used in conjunction with other Trilinos solvers instead.
+
+*/
