@@ -14,6 +14,7 @@ int klu	/* returns 0 if OK, negative if error */
     int Ap [ ],	    /* size n+1, column pointers for A */
     int Ai [ ],	    /* size nz = Ap [n], row indices for A */
     double Ax [ ],  /* size nz, values of A */
+    int Q [ ],	    /* size n, optional column permutation */
     double Control [ ],	    /* Control parameters (optional) */
 
     /* outputs, allocated on output (or NULL if error occurs) */
@@ -23,7 +24,8 @@ int klu	/* returns 0 if OK, negative if error */
     int **p_Up,	    /* Column pointers for U, of size n+1 */
     int **p_Ui,	    /* row indices for U */
     double **p_Ux,  /* values of U */
-    int **p_P	    /* row permutation */
+    int **p_P,	    /* row permutation */
+    int *p_noffdiag /* # of off-diagonal pivots chosen */
 ) ;
 
 
@@ -84,8 +86,6 @@ void klu_defaults
 #define KLU_TOL 0	    /* partial pivoting tolerance */
 #define KLU_LSIZE 1	    /* initial size of L */
 #define KLU_USIZE 2	    /* initial size of U */
-#define KLU_PRUNE 3	    /* whether or not to prune */
-#define KLU_RECURSIVE 4	    /* whether or not to use recursive DFS */
 #define KLU_CONTROL 10	    /* size of Control array */
 
 /* return values of klu */

@@ -55,6 +55,9 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
+  klu_btf_free_symbolic (&Symbolic_) ;
+  klu_btf_free_numeric (&Numeric_) ;
+
 }
 
 int Amesos_Klu::ConvertToSerial() { 
@@ -155,38 +158,22 @@ int Amesos_Klu::ConvertToKluCRS(){
 
 int Amesos_Klu::PerformSymbolicFactorization() {
 
-#ifdef USE_AMD
-  double *Control = (double *) NULL, *Info = (double *) NULL ;
-  
-  if ( iam== 0 ) {
-    amd_defaults( Control ) ; 
-    permuation.resize(NumGlobalElements_);
-    int status = amd_order (NumGlobalElements_, &Ap[0], 
-			    &Ai[0], &Permutation_[0],  
-				Control, Info) ;
-    EPETRA_CHK_ERR( status ) ; 
+  if ( iam == 0 ) { 
+    Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
+    if ( Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }
-#endif 
   return 0;
 }
 
 int Amesos_Klu::PerformNumericFactorization( ) {
 
   if ( iam == 0 ) {
-    double Klu_Control[KLU_CONTROL];
-    
-    klu_defaults( Klu_Control ) ; 
-    int status = klu( NumGlobalElements_, &Ap[0], &Ai[0], 
-		      &Aval[0], Klu_Control, 
-		      &Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
 
-#if 0
-    if (Numeric) umfpack_di_free_numeric (&Numeric) ;
-    int status = umfpack_di_numeric (&Ap[0], &Ai[0], 
-				 &Aval[0], Symbolic, 
-				 &Numeric, Control, Info) ;
-#endif
-    EPETRA_CHK_ERR( status ) ; 
+    const double tol = 0.001; //  At some point we need to expose this to the user 
+
+    Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], tol, Symbolic_) ;
+    if ( Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
+    
   }
   
   return 0;
@@ -278,11 +265,14 @@ int Amesos_Klu::Solve() {
   //  Call KLU to perform the solve
   //
 
+  
+  SerialX->Scale(1.0, *SerialB) ;
 
   int SerialBlda, SerialXlda ; 
   if ( iam == 0 ) {
     assert( SerialB->ExtractView( &SerialBvalues, &SerialBlda ) == 0 ) ; 
     assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
+
     assert( SerialBlda == NumGlobalElements_ ) ; 
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
@@ -309,45 +299,36 @@ int Amesos_Klu::Solve() {
       assert( klu_valid( NumGlobalElements_, Up, Ui, Ux ) ) ; 
 #endif
 
+#if 0
       klu_permute( NumGlobalElements_, P, 
 		   &SerialBvalues[j*SerialBlda],
 		   &SerialXvalues[j*SerialXlda] ) ;
+#endif
+
+      
 #if 0
       cout << " X = " << 
 	SerialXvalues[0] << " " <<
-	SerialXvalues[1] << " " <<
-	SerialXvalues[2] << " " <<
-	SerialXvalues[3] << " " <<
-	SerialXvalues[4] << " before the left solve" << endl ; 
+	SerialXvalues[1] << " " <<  " before the left solve" << endl ; 
 #endif
+	//  kludge debugxx knen fix this:  
+      vector<double> workspace( 100* (10+NumGlobalElements_) ) ; 
+      klu_btf_solve( Symbolic_, Numeric_,  
+		     &SerialXvalues[j*SerialXlda], &workspace[0] );
+#if 0
       klu_lsolve(  NumGlobalElements_, 
 		   Lp, Li, Lx, &SerialXvalues[j*SerialXlda] );
+#endif
 #if 0
       cout << " X = " << 
 	SerialXvalues[0] << " " <<
-	SerialXvalues[1] << " " <<
-	SerialXvalues[2] << " " <<
-	SerialXvalues[3] << " " <<
-	SerialXvalues[4] << " before the right solve" << endl ; 
+	SerialXvalues[1] << " " << " after the right solve" << endl ; 
 #endif
+#if 0
       klu_usolve(  NumGlobalElements_, 
 		   Up, Ui, Ux, &SerialXvalues[j*SerialXlda] );
+#endif
 	
-#if 0			    
-      cout << " X = " << 
-	SerialXvalues[0] << " " <<
-	SerialXvalues[1] << " " <<
-	SerialXvalues[2] << " " <<
-	SerialXvalues[3] << " " <<
-	SerialXvalues[4] << " after the right solve" << endl ; 
-#endif
-#if 0
-      int status = umfpack_di_solve (KluRequest, &Ap[0], 
-				     &Ai[0], &Aval[0], 
-				     &SerialXvalues[j*SerialXlda], 
-				     &SerialBvalues[j*SerialBlda], 
-				     Numeric, Control, Info) ;
-#endif
 #if 0
       for ( int k=0; k < nrhs ; k++ ) {
 	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
@@ -360,7 +341,7 @@ int Amesos_Klu::Solve() {
 	}
       }
 #endif
-      EPETRA_CHK_ERR( status ) ; 
+      //      EPETRA_CHK_ERR( status ) ; 
     }
   }
     

@@ -9,8 +9,8 @@
  * that no column ordering is provided (see COLAMD or AMD for suitable
  * orderings).  SuperLU is based on this algorithm, except that it adds the
  * use of dense matrix operations on "supernodes" (adjacent columns with
- * identical).  This code doesn't use supernodes, thus its name (Kent LU,
- * as in Clark Kent, in contrast with Super-LU...).  This algorithm is slower
+ * identical).  This code doesn't use supernodes, thus its name ("Kent" LU,
+ * as in "Clark Kent", in contrast with Super-LU...).  This algorithm is slower
  * than SuperLU and UMFPACK for large matrices with lots of nonzeros in their
  * factors (such as for most finite-element problems).  However, for matrices
  * with very sparse LU factors, this algorithm is typically faster than both
@@ -21,30 +21,37 @@
  * pure library-quality shape.  It is a reasonable implementation, but a robust
  * code would provide a mechanism for verifying and printing its inputs and
  * outputs, use fill-reducing orderings, provide scaling options, and so on.
+ *
+ * See klu_btf for the BTF+AMD ordering, and scaling.
+ *
  * The 7 output arrays
  * should be allocated in one call to malloc, and then grown in size via
  * realloc.  This typically allows realloc to perform without copying.
- * UMFPACK includes all of the above features.
+ * UMFPACK includes all of the above features (except it doesn't do BTF).
  *
  * No fill-reducing ordering is provided!  The ordering quality of klu is your
- * responsibility.  You must pre-permute A to reduce fill-in.  Two typical
- * scenarios (in MATLAB notation) are:
+ * responsibility.  You must pre-permute A to reduce fill-in, or provide a
+ * fill-reducing input permutation Q.  Two typical scenarios (in MATLAB
+ * notation) are:
  *
- *	q = colamd (A) ;
- *	[L,U,P] = klu (A (:,q)) ;
+ *	Q = colamd (A) ;
+ *	[L,U,P] = klu (A, Q) ;
  *
- * which returns L, U, and P such that L*U = P*A(:,q) or
+ * or
  *
- *	q = symamd (A) ;	    % or q = amd (A)
- *	[L,U,P] = klu (A (q,q)) ;
+ *	Q = symamd (A) ;	    % or Q = amd (A)
+ *	[L,U,P] = klu (A, Q) ;
  *
- * which returns L, U, and P such that L*U = P*A(q,q).  In the latter case, a
- * pivot tolerance of 1e-3 would be appropriate, to preserve symmetry.  See the
- * MATLAB interface klu.m for more details.
+ * Both return L, U, and P such that L*U = A(P,Q).  In the latter case, a
+ * pivot tolerance of 1e-3 would be appropriate, to preserve symmetry.  In
+ * the former case, use a pivot tolerance of 1.0.  See the MATLAB interface
+ * klu.m for more details.
  *
- * The input matrix A must be in compressed-column form, with sorted row
- * indices.  Row indices for column j of A is in Ai [Ap [j] ... Ap [j+1]-1]
- * and the same range of indices in Ax holds the numerical values.
+ * The input matrix A must be in compressed-column form, with either sorted 
+ * or unsorted row indices.  Row indices for column j of A is in
+ * Ai [Ap [j] ... Ap [j+1]-1] and the same range of indices in Ax holds the
+ * numerical values.  No duplicate entries are allowed.
+ *
  * Control is ignored if it is (double *) NULL.  To set the
  * Control array to default values before calling klu, you may use:
  *
@@ -58,12 +65,13 @@
  *	int n, Ap [n+1], Ai [anz] ;	Ap, Ai, and Ax allocated and defined
  *	double Ax [anz] ;
  *	int result ;
+ *	int Q [n] ;			Q is optional, it may be (int *) NULL
  *	double Control [KLU_CONTROL] ;
  *
  *	int *Lp, *Li, *Up, *Ui, *P ;	not allocated or defined
  *	double *Lx, *Ux ;
  *
- *	result = klu (n, Ap, Ai, Ax, Control,
+ *	result = klu (n, Ap, Ai, Ax, Q, Control,
  *		&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
  *
  * At this point, the matrices P, L, and U are allocated and defined if
@@ -82,15 +90,28 @@
  * To solve Ax=b after calling klu, do the following:
  *
  *	in C notation:			    equivalent MATLAB notation:
- *	klu_permute (n, P, X, B) ;	    x = P*b
+ *	klu_permute (n, P, B, X) ;	    x = P*b
  *	klu_lsolve (n, Lp, Li, Lx, X) ;	    x = L\x
  *	klu_usolve (n, Up, Ui, Ux, X) ;	    x = U\x
+ *	klu_permute (n, Q, B, X) ;	    x = Q*x
  *
  * Copyright August 2003, Tim Davis.  All rights reserved.  See the README
  * file for details on permitted use.  Note that no code from The MathWorks,
  * Inc, or from SuperLU, or from any other source appears here.  The code is
  * written from scratch, from the algorithmic description in Gilbert & Peierls'
  * and Eisenstat & Liu's journal papers.
+ *
+ * Aug 20, 2003:  the input permutation Q added.  In MATLAB
+ * notation, klu now computes the factorization L*U = A (P,Q), where P is
+ * determined by partial pivoting, and Q is the input ordering.  If the
+ * pivot tolerance is less than 1, the "diagonal" entry that klu attempts to
+ * choose is the diagonal of A (Q,Q).  In other words, the input permutation
+ * is applied symmetrically to the input matrix.  The output permutation P
+ * includes both the partial pivoting ordering and the input permutation.
+ * If Q is (int *) NULL, then it is assumed to be the identity permutation.
+ * Q is not modified.
+ *
+ * TODO Cite Gilbert, Eisenstat here.  Write README file.
  */
 
 /* ========================================================================== */
@@ -105,6 +126,7 @@ int klu	/* returns 0 if OK, negative if error */
     int Ap [ ],	    /* size n+1, column pointers for A */
     int Ai [ ],	    /* size nz = Ap [n], row indices for A */
     double Ax [ ],  /* size nz, values of A */
+    int Q [ ],	    /* size n, optional column permutation */
     double User_Control [ ],	    /* Control parameters (optional) */
 
     /* outputs, allocated on output (or NULL if error occurs) */
@@ -114,11 +136,12 @@ int klu	/* returns 0 if OK, negative if error */
     int **p_Up,	    /* Column pointers for U, of size n+1 */
     int **p_Ui,	    /* row indices for U */
     double **p_Ux,  /* values of U */
-    int **p_P	    /* row permutation */
+    int **p_P,	    /* row permutation */
+    int *p_noffdiag /* # of off-diagonal pivots chosen */
 )
 {
-    int *Pinv, lsize, usize, result, *P, k, anz, *Lp, *Li, *Up, *Ui, prune,
-	*Lpend, *Lpruned, *Stack, recursive ;
+    int *Pinv, lsize, usize, result, *P, k, anz, *Lp, *Li, *Up, *Ui,
+	*Lpend, *Lpruned, *Stack, *Flag, noffdiag ;
     double tol, s, *Lx, *Ux, Control [KLU_CONTROL], *X ;
     WorkStackType *WorkStack ;
 
@@ -160,8 +183,6 @@ int klu	/* returns 0 if OK, negative if error */
 	usize = (int) s ;
     }
     tol = Control [KLU_TOL] ;
-    prune = Control [KLU_PRUNE] != 0 ;
-    recursive = Control [KLU_RECURSIVE] != 0 ;
 
     /* make sure control parameters are in legal range */
     lsize = MAX (1, lsize) ;
@@ -185,32 +206,18 @@ int klu	/* returns 0 if OK, negative if error */
     X  = (double *) ALLOCATE (n * sizeof (double)) ;
     Pinv  = (int *) ALLOCATE (n * sizeof (int)) ;
     Stack = (int *) ALLOCATE (n * sizeof (int)) ;
-    if (prune)
-    {
-	Lpend   = (int *) ALLOCATE (n * sizeof (int)) ;
-	Lpruned = (int *) ALLOCATE (n * sizeof (int)) ;
-    }
-    else
-    {
-	Lpend = (int *) NULL ;
-	Lpruned = (int *) NULL ;
-    }
-    if (!recursive)
-    {
-	WorkStack = (WorkStackType *) ALLOCATE (n * sizeof (WorkStackType)) ;
-    }
-    else
-    {
-	WorkStack = (WorkStackType *) NULL ;
-    }
+    Flag = (int *) ALLOCATE (n * sizeof (int)) ;
+    Lpend   = (int *) ALLOCATE (n * sizeof (int)) ;
+    Lpruned = (int *) ALLOCATE (n * sizeof (int)) ;
+    WorkStack = (WorkStackType *) ALLOCATE (n * sizeof (WorkStackType)) ;
 
     /* create sparse matrix for P, L, and U */
     P  = (int *) ALLOCATE (n * sizeof (int)) ;
     Lp = (int *) ALLOCATE ((n+1) * sizeof (int)) ;
     Up = (int *) ALLOCATE ((n+1) * sizeof (int)) ;
     Li = (int *) ALLOCATE (lsize * sizeof (int)) ;
-    Ui = (int *) ALLOCATE (usize * sizeof (int)) ;
     Lx = (double *) ALLOCATE (lsize * sizeof (double)) ;
+    Ui = (int *) ALLOCATE (usize * sizeof (int)) ;
     Ux = (double *) ALLOCATE (usize * sizeof (double)) ;
 
     if ((X == (double *) NULL) || (Pinv == (int *) NULL) ||
@@ -218,14 +225,16 @@ int klu	/* returns 0 if OK, negative if error */
 	(Li == (int *) NULL) || (Lx == (double *) NULL) ||
 	(Up == (int *) NULL) || (Ui == (int *) NULL) ||
 	(Ux == (double *) NULL) || (P == (int *) NULL) ||
-	(prune && ((Lpend == (int *) NULL) || (Lpruned == (int *) NULL)))
-	)
+	(Lpend == (int *) NULL) || (Lpruned == (int *) NULL) ||
+	(Flag == (int *) NULL) || (WorkStack == (WorkStackType *) NULL))
     {
 	FREE (X, double) ;
 	FREE (Pinv, int) ;
 	FREE (Stack, int) ;
+	FREE (Flag, int) ;
 	FREE (Lpend, int) ;
 	FREE (Lpruned, int) ;
+	FREE (WorkStack, WorkStackType) ;
 	klu_free (&Lp, &Li, &Lx, &Up, &Ui, &Ux, &P) ;
 	return (KLU_OUT_OF_MEMORY) ;
     }
@@ -234,46 +243,10 @@ int klu	/* returns 0 if OK, negative if error */
     /* factorize */
     /* ---------------------------------------------------------------------- */
 
-    if (recursive)
-    {
-#if 1
-#include "assert.h"      
-      assert( 0 ) ; 
-#else
-        Ken Stanley commented this out so 
-	if (prune)
-	{
-	    result = klu_prune
-		(n, Ap, Ai, Ax, tol, &lsize, &usize,
-		Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, X, Stack,
-		WorkStack, Lpend, Lpruned) ;
-	}
-	else
-	{
-	    result = klu_noprune
-		(n, Ap, Ai, Ax, tol, &lsize, &usize,
-		Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, X, Stack,
-		WorkStack, Lpend, Lpruned) ;
-	}
-#endif
-    }
-    else
-    {
-	if (prune)
-	{
-	    result = klu_prune_nonrecursive
-		(n, Ap, Ai, Ax, tol, &lsize, &usize,
-		Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, X, Stack,
-		WorkStack, Lpend, Lpruned) ;
-	}
-	else
-	{
-	    result = klu_noprune_nonrecursive
-		(n, Ap, Ai, Ax, tol, &lsize, &usize,
-		Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, X, Stack,
-		WorkStack, Lpend, Lpruned) ;
-	}
-    }
+    /* with pruning, and non-recursive depth-first-search */
+    result = klu_kernel (n, Ap, Ai, Ax, Q, tol, &lsize, &usize,
+	    Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, &noffdiag, X, Stack, Flag,
+	    WorkStack, Lpend, Lpruned) ;
 
     /* ---------------------------------------------------------------------- */
     /* free workspace */
@@ -282,6 +255,7 @@ int klu	/* returns 0 if OK, negative if error */
     FREE (X, double) ;
     FREE (Pinv, int) ;
     FREE (Stack, int) ;
+    FREE (Flag, int) ;
     FREE (Lpend, int) ;
     FREE (Lpruned, int) ;
     FREE (WorkStack, WorkStackType) ;
@@ -304,6 +278,8 @@ int klu	/* returns 0 if OK, negative if error */
 	*p_Ui = Ui ;
 	*p_Ux = Ux ;
     }
+    *p_noffdiag = noffdiag ;
+    PRINTF ((" in klu noffdiag %d\n", noffdiag)) ;
 
     return (result) ;
 }
@@ -456,16 +432,6 @@ void klu_permute
  * are expanded in size (via the ANSI realloc, or the MATLAB mxRealloc routine).
  * When klu is done, L and U are shrunk in size, via realloc or mxRealloc, to be
  * just large enough to hold all of the nonzeros in L and U.
- *
- * Control [KLU_PRUNE] determines whether or not to use symmetric pruning.
- * This has no affect on the output factorization.  Symmetric pruning has the
- * potential to reduce the run time for matrices with nonzero pattern that is
- * at least moderately symmetric.  Default is to do pruning.
- *
- * Control [KLU_RECURSIVE] determines whether the recursive or non-recursive
- * version of the depth-first-search is to be used.  The non-recursive version
- * is immune to possible stack overflow.  Default is to use the non-recursive
- * version.
  */
 
 void klu_defaults
@@ -476,6 +442,4 @@ void klu_defaults
     Control [KLU_TOL] = 1.0 ;	    /* partial pivoting tolerance */
     Control [KLU_LSIZE] = -10 ;	    /* L starts out as size 10*nnz(A) */
     Control [KLU_USIZE] = -10 ;	    /* U starts out as size 10*nnz(A) */
-    Control [KLU_PRUNE] = TRUE ;    /* use symmetric pruning */
-    Control [KLU_RECURSIVE] = FALSE ;	/* use non-recursive DFS */
 }

@@ -187,9 +187,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 				 (Epetra_MultiVector *) passb );
   
 
-  cout << " Amesos_testSolver B = " << *passb << endl ; 
-
-
   Epetra_Time TotalTime( Comm ) ; 
   for ( int i = 0; i < 1+special ; i++ ) { 
     if ( false ) { 

@@ -4,17 +4,27 @@
 
 /* Sparse left-looking LU factorization, with partial pivoting.  Based on
  * Gilbert & Peierl's method, with or without Eisenstat & Liu's symmetric
- * pruning.  No user-callable routines are in this file. */
-
-/* TODO: NaN handling.  Could easily add drop tolerance.  Check for tiny
- * pivots (not just zero pivots).  Remove recursive dfs, and use my own
- * stack instead. */
+ * pruning.  No user-callable routines are in this file.
+ *
+ * TODO: NaN handling.
+ * TODO: Check for tiny pivots (not just zero pivots).
+ * TODO: make GROWTH a run-time control parameter
+ * TODO: keep track of diagonal when pivoting (= DiagonalMap in UMFPACK)
+ */
 
 #include "klu.h"
 #include "klu_kernel.h"
 
-#define EMPTY (-1)
-#define PIVOTAL(i) (Pinv [i] != EMPTY)
+#define GROWTH 1.2
+#define PIVOTAL(i) (Pinv [i] >= 0)
+
+/* force pruning on, and use non-recursive depth-first-search */
+#ifndef PRUNE
+#define PRUNE
+#endif
+#ifdef RECURSIVE
+#undef RECURSIVE
+#endif
 
 /* ========================================================================== */
 /* === GET_COLUMN =========================================================== */
@@ -316,11 +326,12 @@ static void lsolve_numeric
 }
 
 /* ========================================================================== */
-/* === klu_*prune_*recursive ================================================ */
+/* === klu_kernel =========================================================== */
 /* ========================================================================== */
 
 /* returns KLU_OK (0), KLU_SINGULAR (-1), or KLU_OUT_OF_MEMORY (-2) */
 
+#if 0
 #ifdef RECURSIVE
 #ifdef PRUNE
 int klu_prune			/* with symmetric pruning, recursive DFS */
@@ -335,12 +346,18 @@ int klu_prune_nonrecursive	/* with symmetric pruning, non-recursive DFS */
 int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 #endif
 #endif
+#else
+
+int klu_kernel	    /* with pruning, and non-recursive depth-first-search */
+
+#endif
 (
     /* input, not modified */
     int n,	    /* A is n-by-n */
     int Ap [ ],	    /* size n+1, column pointers for A */
     int Ai [ ],	    /* size nz = Ap [n], row indices for A */
     double Ax [ ],  /* size nz, values of A */
+    int Q [ ],	    /* size n, optional input permutation */
     double tol,	    /* partial pivoting tolerance parameter */
 
     /* input and output: */
@@ -358,19 +375,21 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 		     * row i is the kth pivot row */
     int P [ ],	    /* size n, row permutation, where P [k] = i if row i is the
 		     * kth pivot row. */
+    int *p_noffdiag,	/* # of off-diagonal pivots chosen */
 
     /* workspace, not defined on input or output */
     double X [ ],   /* size n */
     int Stack [ ],  /* size n */
+    int Flag [ ],   /* size n */
 
     /* other workspace: */
     WorkStackType WorkStack [ ],    /* size n, for non-recursive DFS only */
     int Lpend [ ],		    /* size n workspace, for pruning only */
     int Lpruned [ ]		    /* size n workspace, for pruning only */
 )
-{
-    int lp, up, k, nzb, *Bi, top, p, lnz, unz, i, pivrow, found,
-	*Li, *Ui, lsize, usize, ok, oki, okx ;
+{ 
+    int lp, up, k, nzb, *Bi, top, p, lnz, unz, i, pivrow, found, kbar,
+	*Li, *Ui, lsize, usize, ok, oki, okx, kcol, diagrow, noffdiag ;
     double pivot, *Bx, *Lx, *Ux, x, diag, abs_pivot, abs_diag, abs_x, xsize ;
 
     /* ---------------------------------------------------------------------- */
@@ -395,17 +414,50 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
     /* initializations */
     /* ---------------------------------------------------------------------- */
 
+    noffdiag = 0 ;
     lp = 0 ;
     up = 0 ;
     for (k = 0 ; k < n ; k++)
     {
 	X [k] = 0 ;
-	P [k] = EMPTY ;		/* use as Flag workspace for lsolve_symbolic */
-	Pinv [k] = EMPTY ;	/* mark all rows as non-pivotal */
+	Flag [k] = EMPTY ;
 #ifdef PRUNE
 	Lpruned [k] = FALSE ;	/* flag k as not pruned */
 #endif
     }
+
+    /* mark all rows as non-pivotal, and find the row indices of the initial
+     * diagonal entries for each column */
+    if (Q == (int *) NULL)
+    {
+	for (k = 0 ; k < n ; k++)
+	{
+	    P [k] = k ;
+	    Pinv [k] = FLIP (k) ;	/* mark all rows as non-pivotal */
+	}
+    }
+    else
+    {
+	for (k = 0 ; k < n ; k++)
+	{
+	    /* Assume Q is applied symmetrically to the system, so the initial
+	     * P is equal to Q.  This can change via partial pivoting. */
+	    P [k] = Q [k] ;
+	    Pinv [Q [k]] = FLIP (k) ;	/* mark all rows as non-pivotal */
+	}
+    }
+
+    /* P [k] = row means that UNFLIP (Pinv [row]) = k, and visa versa.
+     * If row is pivotal, then Pinv [row] >= 0.  A row is initially "flipped"
+     * (Pinv [k] < EMPTY), and then marked "unflipped" when it becomes
+     * pivotal. */
+
+#ifndef NDEBUG
+    for (k = 0 ; k < n ; k++)
+    {
+	PRINTF (("Initial P [%d] = %d\n", k, P [k])) ;
+    }
+#endif
 
     /* ---------------------------------------------------------------------- */
     /* factorize */
@@ -413,25 +465,37 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 
     for (k = 0 ; k < n ; k++)
     {
-	/* printf ("k %d:\n", k) ; */
 	PRINTF (("\n\n==================================== k: %d\n", k)) ;
 	Lp [k] = lp ;
 	Up [k] = up ;
 
 	/* ------------------------------------------------------------------ */
-	/* get the kth column of A */
+	/* get the kth column of A and find the "diagonal" */
 	/* ------------------------------------------------------------------ */
 
-	nzb = Ap [k+1] - Ap [k] ;
-	Bi = Ai + Ap [k] ;
-	Bx = Ax + Ap [k] ;
+	if (Q == (int *) NULL)
+	{
+	    kcol = k ;
+	}
+	else
+	{
+	    kcol = Q [k] ;
+	}
+
+	nzb = Ap [kcol+1] - Ap [kcol] ;
+	Bi = Ai + Ap [kcol] ;
+	Bx = Ax + Ap [kcol] ;
+
+	diagrow = P [k] ;   /* might already be pivotal */
+	PRINTF (("k %d kcol %d, diagrow = %d, UNFLIP(diagrow) = %d\n",
+	    k, kcol, diagrow, UNFLIP (diagrow))) ;
 
 	/* ------------------------------------------------------------------ */
 	/* compute the kth column of L and U */
 	/* ------------------------------------------------------------------ */
 
-	top = lsolve_symbolic (k, n, Lp, Li, Pinv, nzb, Bi, Stack, P,
-		WorkStack , Lpend) ;
+	top = lsolve_symbolic (k, n, Lp, Li, Pinv, nzb, Bi, Stack, Flag,
+		WorkStack, Lpend) ;
 	lsolve_numeric (n, Lp, Li, Lx, Pinv, nzb, Bi, Bx, top, Stack, X) ;
 
 	/* ------------------------------------------------------------------ */
@@ -460,7 +524,7 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 		x = X [i] ;
 		abs_x = ABS (x) ;
 		/* find the diagonal, if it is nonzero */
-		if (!found && i == k && abs_x > 0.)
+		if (!found && i == diagrow && abs_x > 0.)
 		{
 		    found = TRUE ;
 		    diag = x ;
@@ -484,11 +548,12 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	    if (abs_diag >= tol * abs_pivot)
 	    {
 		/* the diagonal is large enough */
-		pivrow = k ;
+		pivrow = diagrow ;
 		pivot = diag ;
 		PRINTF (("diagonal pivot: pivrow %d %g\n", pivrow, pivot)) ;
 	    }
 	}
+	ASSERT (!PIVOTAL (pivrow)) ;
 
 	/* ------------------------------------------------------------------ */
 	/* determine if LU factors have grown too big */
@@ -499,13 +564,13 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	PRINTF (("lp %d lnz %d lsize %d\n", lp, lnz, lsize)) ;
 	if (lp + lnz > lsize)
 	{
-	    xsize = (1.2 * ((double) lsize) + 2*n + 1) * sizeof (double) ;
+	    xsize = (GROWTH * ((double) lsize) + 2*n + 1) * sizeof (double) ;
 	    if (INT_OVERFLOW (xsize))
 	    {
-		printf ("Matrix is too large (L, int overflow)\n") ;
+		PRINTF (("Matrix is too large (L, int overflow)\n")) ;
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
-	    lsize = 1.2 * lsize + n + 1 ;
+	    lsize = GROWTH * lsize + n + 1 ;
 	    PRINTF (("inc L to %d\n", lsize)) ;
 	    REALLOCATE (Li, int,    lsize, oki) ;
 	    PRINTF (("did Li: %d\n", oki)) ;
@@ -515,7 +580,7 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	    *p_Lx = Lx ;
 	    if (!oki || !okx)
 	    {
-		printf ("Matrix is too large (L)\n") ;
+		PRINTF (("Matrix is too large (L)\n")) ;
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
 	    *p_lsize = lsize ;
@@ -525,13 +590,13 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	PRINTF (("up %d unz %d usize %d\n", up, unz, usize)) ;
 	if (up + unz > usize)
 	{
-	    xsize = (1.2 * ((double) usize) + 2*n + 1) * sizeof (double) ;
+	    xsize = (GROWTH * ((double) usize) + 2*n + 1) * sizeof (double) ;
 	    if (INT_OVERFLOW (xsize))
 	    {
-		printf ("Matrix is too large (U, int overflow)\n") ;
+		PRINTF (("Matrix is too large (U, int overflow)\n")) ;
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
-	    usize = 1.2 * usize + n + 1 ;
+	    usize = GROWTH * usize + n + 1 ;
 	    PRINTF (("inc U to %d\n", usize)) ;
 	    REALLOCATE (Ui, int,    usize, oki) ;
 	    PRINTF (("did Ui: %d\n", oki)) ;
@@ -541,7 +606,7 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	    *p_Ux = Ux ;
 	    if (!oki || !okx)
 	    {
-		printf ("Matrix is too large (U)\n") ;
+		PRINTF (("Matrix is too large (U)\n")) ;
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
 	    *p_usize = usize ;
@@ -555,7 +620,7 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	PRINTF (("\nk %d : Pivot row %d : %g\n", k, pivrow, pivot)) ;
 	if (pivrow == EMPTY || pivot == 0.0)
 	{
-	    printf ("Matrix is singular\n") ;
+	    PRINTF (("Matrix is singular\n")) ;
 	    return (KLU_SINGULAR) ;
 	}
 
@@ -608,6 +673,29 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 	/* log the pivot permutation */
 	/* ------------------------------------------------------------------ */
 
+#ifndef NDEBUG
+	kbar = UNFLIP (Pinv [diagrow]) ;
+	ASSERT (kbar < n) ;
+	ASSERT (P [kbar] == diagrow) ;
+#endif
+	if (pivrow != diagrow)
+	{
+	    /* an off-diagonal pivot has been chosen */
+	    noffdiag++ ;
+	    PRINTF ((">>>>>>>>>>>>>>>>> pivrow %d k %d off-diagonal\n",
+			pivrow, k)) ;
+	    if (!PIVOTAL (diagrow))
+	    {
+		/* the former diagonal row index, diagrow, has not yet been
+		 * chosen as a pivot row.  Log this diagrow as the "diagonal"
+		 * entry in the column kbar for which the chosen pivot row,
+		 * pivrow, was originally logged as the "diagonal" */
+		kbar = FLIP (Pinv [pivrow]) ;
+		P [kbar] = diagrow ;
+		Pinv [diagrow] = FLIP (kbar) ;
+	    }
+	}
+	P [k] = pivrow ;
 	Pinv [pivrow] = k ;
 
 #ifndef NDEBUG
@@ -720,17 +808,22 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
     Up [n] = up ;
     for (p = 0 ; p < lp ; p++)
     {
+	ASSERT (PIVOTAL (Li [p])) ;
 	Li [p] = Pinv [Li [p]] ;
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* compute the final permutation */
-    /* ---------------------------------------------------------------------- */
-
+#ifndef NDEBUG
     for (i = 0 ; i < n ; i++)
     {
-	P [Pinv [i]] = i ;
+	PRINTF (("P[%d] = %d   Pinv[%d] = %d\n", i, P [i], i, Pinv [i])) ;
     }
+    for (i = 0 ; i < n ; i++)
+    {
+	ASSERT (Pinv [i] >= 0 && Pinv [i] < n) ;
+	ASSERT (P [i] >= 0 && P [i] < n) ;
+	ASSERT (P [Pinv [i]] == i) ;
+    }
+#endif
 
     /* ---------------------------------------------------------------------- */
     /* shrink the LU factors to just the required size */
@@ -740,7 +833,8 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
     usize = up ;
     *p_lsize = lsize ;
     *p_usize = usize ;
-    /* printf ("Final lsize %d usize %d\n", lsize, usize) ; */
+    *p_noffdiag = noffdiag ;
+    PRINTF (("noffdiag %d\n", noffdiag)) ;
 
     REALLOCATE (Li, int,    lsize, ok) ;
     REALLOCATE (Lx, double, lsize, ok) ;
@@ -753,5 +847,3 @@ int klu_noprune_nonrecursive	/* no symmetric pruning, non-recursive DFS */
 
     return (KLU_OK) ;
 }
-
-

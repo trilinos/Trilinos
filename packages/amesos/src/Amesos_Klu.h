@@ -37,7 +37,7 @@
 
 extern "C" {
   // #include "amd.h"
-#include "klu.h"
+#include "klu_btf.h"
 }
 
 //! Amesos_Klu:  An object-oriented wrapper for Klu.
@@ -241,12 +241,10 @@ public:
 
     int *Lp, *Li, *Up, *Ui, *P ;	
     double *Lx, *Ux ;
-#ifdef YES_AMD 
-  double Control[AMD_CONTROL];
-  double Info[AMD_INFO];
-  vector<int> permutation;
-#endif
+    klu_symbolic *Symbolic_ ;
+    klu_numeric *Numeric_ ;
 
+    
 
   //
   //  Ap, Ai, Aval form the compressed row storage used by Klu
@@ -254,15 +252,6 @@ public:
   vector <int> Ap;
   vector <int> Ai;
   vector <double> Aval;
-#ifdef YES_AMD 
-  //
-  //  Ap, Ai, Aval form the permuted compressed column storage used by 
-  //  Klu
-  //
-  vector <int> KAp;
-  vector <int> KAi;
-  vector <double> KAval;
-#endif
 
   int iam;                 //  Process number (i.e. Comm().MyPID() 
   

@@ -94,6 +94,8 @@ SpoolesJanusScript$(EXEEXT): $(srcdir)/SpoolesJanusScript
 
 SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
+	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa
+	cp  $(srcdir)/meg1.rua  meg1_out.rua
 	cp  $(srcdir)/In_ImpcolA.rua  ImpcolA.rua
 	cp  $(srcdir)/In_ImpcolB.rua  ImpcolB.rua
 	cp  $(srcdir)/In_ImpcolC.rua  ImpcolC.rua

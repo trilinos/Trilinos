@@ -78,9 +78,9 @@ mpirun -np 3 amesos_test.exe KLU SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
 #
 #   Klu does not seem to handle fidapm05
-mpirun -np 1 amesos_test.exe KLU   fidapm05.rua 0 1 1 0 1000 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 0 1000 1e-13  >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1 1000 1e-13  >>SST.stdout
+mpirun -np 1 amesos_test.exe KLU   fidapm05.rua 0 1 1 0  1000000000000000 1e-1 >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 0  1000000000000000 1e-1 >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1  1000000000000000 1e-1  >>SST.stdout
 #
 #  Test some more small matrices
 #

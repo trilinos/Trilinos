@@ -463,6 +463,7 @@ fi
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that umfmain.h is in the directory pointed to by amesos-umfpackincdic
+#    Make sure that amd.h is in the directory pointed to by amesos-umfpackamdincdic
 #    Make sure that umfpack_di_default is in the library pointed to by amesos-umfpacklib
 #    Make sure that amd_default is in the library pointed to by amesos-umfpackamdlib
 #
@@ -480,6 +481,9 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   TAC_ARG_WITH_SUB( amesos, umfpackincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}UMFPACK/Include )
   AC_CHECK_FILE(${tac_with_amesos_umfpackincdir})
 
+  TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK AMD include directory],  ${tac_with_amesos_umfpackdir}AMD/Include )
+  AC_CHECK_FILE(${tac_with_amesos_umfpackincdir})
+
 #
 # This is a bad way to check for umfpack.h, it won't pick umfpack.h up if
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
@@ -489,9 +493,14 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
     AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]] ))
 
 
+  AC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
+    AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]] ))
+
+
 ##  LDFLAGS="${tac_with_amesos_umfpacklib} ${LDFLAGS}"
 
-  CXXFLAGS="-I${tac_with_amesos_umfpackincdir} ${CXXFLAGS}"
+  CXXFLAGS="-I${tac_with_amesos_umfpackincdir} -I${tac_with_amesos_umfpackamdincdir}   ${CXXFLAGS}"
+  CPPFLAGS="-I${tac_with_amesos_umfpackincdir} -I${tac_with_amesos_umfpackamdincdir}   ${CPPFLAGS}"
 
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_umfpacklib} ${MPI_LIBS} ${LIBS}"
