@@ -35,15 +35,31 @@ template<typename OrdinalType, typename ScalarType>
 class VectorSpaceData : public Object {
 	friend class VectorSpace<OrdinalType, ScalarType>;
  public:
-	VectorSpaceData() 
-		: Object("Tpetra::VectorSpaceData")
-		{};
+    // default constructor
+	VectorSpaceData(bool blockspace, OrdinalType indexBase, OrdinalType numMyEntries, OrdinalType numGlobalEntries, Platform<OrdinalType, ScalarType> const& platform) 
+    : Object("Tpetra::VectorSpaceData")
+    , blockspace_(blockspace)
+    , indexBase_(indexBase)
+    , numMyEntries_(numMyEntries)
+    , numGlobalEntries_(numGlobalEntries)
+    , Platform_()
+    , Comm_()
+    {
+        Platform_ = Teuchos::rcp(platform.clone());
+        Comm_ = Teuchos::rcp(platform.createScalarComm());
+    };
 
+    // destructor. no heap-data, so no need to override
 	~VectorSpaceData() {};
 
  protected:
+    bool blockspace_;
+    OrdinalType const indexBase_;
+	OrdinalType const numMyEntries_;
+	OrdinalType const numGlobalEntries_;
+	Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
+	Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
 
-	
  private:
 	//! Copy constructor (declared but not defined, do not use)
 	VectorSpaceData(VectorSpaceData<OrdinalType, ScalarType> const& Source);

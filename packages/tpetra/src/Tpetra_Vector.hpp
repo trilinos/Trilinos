@@ -183,6 +183,9 @@ public:
 		// use Comm call to sum all local dot products
 		ScalarType globalDP;
 		vectorSpace().comm().sumAll(&localDP, &globalDP, ordinalOne);
+        
+        // update flops counter: 2n-1
+        updateFlops(length + length - ordinalOne);
 		
 		return(globalDP);
 	}
@@ -207,6 +210,9 @@ public:
 
 		for(OrdinalType i = ordinalZero; i < length; i++)
 			scalarArray_[i] = scalarOne / x[i];
+        
+        // update flops counter: n
+        updateFlops(length);
 	}
 
   //! Scale the current values of a vector, \e this = scalarThis*\e this.
@@ -216,6 +222,9 @@ public:
 	  OrdinalType const length = getNumMyEntries();
 	  
 	  BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+      
+      // update flops counter: n
+      updateFlops(length);
   }
 
   //! Replace vector values with scaled values of x, \e this = scalarX*x.
@@ -226,9 +235,11 @@ public:
 	  
 	  // this = x
 	  scalarArray_ = x.scalarArray_;
-	  
 	  // this = this * scalarX
 	  BLAS_.SCAL(length, scalarX, &scalarArray_[ordinalZero], ordinalOne);
+      
+      // update flops counter: n
+      updateFlops(length);
   }
 
   //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
@@ -245,6 +256,9 @@ public:
 	  
 	  // calculate this += scalarX * x
 	  BLAS_.AXPY(length, scalarX, &x.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+      
+      // update flops counter: 3n
+      updateFlops(length + length + length);
   }
 
   //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
@@ -260,12 +274,13 @@ public:
 		  
 	// calculate this *= scalarThis
 	BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
-		  
 	// calculate this += scalarX * x
 	BLAS_.AXPY(length, scalarX, &x.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
-	
 	// calculate this += scalarY * y
 	BLAS_.AXPY(length, scalarY, &y.scalarArray_[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+    
+    // update flops counter: 5n
+    updateFlops(length + length + length + length + length);
   }
 
   //! Compute 1-norm of vector.
@@ -281,6 +296,9 @@ public:
 		ScalarType globalNorm;
 		vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
 		
+        // update flops counter: n-1
+        updateFlops(length - ordinalOne);
+        
 		return(globalNorm);
 	}
 
@@ -299,6 +317,9 @@ public:
 		// calculate global sum
 		ScalarType globalSum;
 		vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+        
+        // update flops counter: 2n
+        updateFlops(length + length);
 		
 		// return square root of global sum
 		return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
@@ -332,6 +353,9 @@ public:
 		
 		// divide by global length, and then take square root of that
 		globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
+        
+        // update flops counter: 3n
+        updateFlops(length + length + length);
 		
 		return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
 	}
@@ -339,20 +363,24 @@ public:
   //! Compute minimum value of vector.
   ScalarType minValue() const {
 		return(*(min_element(scalarArray_.begin(), scalarArray_.end()))); // use STL min_element, takes constant time
-	}
+  }
 
   //! Compute maximum value of vector.
   ScalarType maxValue() const {
 		return(*(max_element(scalarArray_.begin(), scalarArray_.end()))); // use STL max_element, takes constant time
-	}
+  }
 
   //! Compute mean (average) value of vector.
   ScalarType meanValue() const {
 		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
 		ScalarType length = getNumMyEntries(); // implicit cast from OT to ST
 		ScalarType total = accumulate(scalarArray_.begin(), scalarArray_.end(), scalarZero); // use STL accumulate, takes linear time
+        
+        // update flops counter: n
+        updateFlops(length);
+        
 		return(total / length);
-	}
+  }
 
 	//! Vector multiplication (elementwise) 
 	/*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
@@ -375,6 +403,9 @@ public:
 
 		// calculate this = scalarXY * temp + this
 		BLAS_.AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+        
+        // update flops counter: n
+        updateFlops(length);
 	}
 
 	//! Reciprocal multiply (elementwise)
@@ -398,6 +429,9 @@ public:
 		
 		// calculate this += scalarXY * temp
 		BLAS_.AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+        
+        // update flops counter: 2n
+        updateFlops(length + length);
 	}
 
 	//@}

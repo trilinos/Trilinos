@@ -38,8 +38,9 @@
 
 namespace Tpetra {
 
-// forward declaration of Vector, needed to prevent circular inclusions
+// forward declaration of Vector and VectorSpaceData, needed to prevent circular inclusions
 template<typename OrdinalType, typename ScalarType> class Vector;
+template<typename OrdinalType, typename ScalarType> class VectorSpaceData;
 
 //! Tpetra::VectorSpace
 /*! VectorSpace serves two purposes. In addition to creating Tpetra::Vectors,
@@ -59,55 +60,70 @@ public:
 	//! Tpetra::VectorSpace constructor taking an ElementSpace object.
 	VectorSpace(ElementSpace<OrdinalType> const& elementSpace, Platform<OrdinalType, ScalarType> const& platform)
 		: Object("Tpetra::VectorSpace")
-			, blockspace_(false)
-			, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, one_(Teuchos::OrdinalTraits<OrdinalType>::one())
-			, indexBase_(elementSpace.getIndexBase())
-			, numMyEntries_(elementSpace.getNumMyElements())
-			, numGlobalEntries_(elementSpace.getNumGlobalElements())
-			, ElementSpace_()
-			, BlockElementSpace_()
-			, Platform_()
-			, Comm_()
+        //, blockspace_(false)
+        , VectorSpaceData_()
+        , zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+        , one_(Teuchos::OrdinalTraits<OrdinalType>::one())
+        //, indexBase_(elementSpace.getIndexBase())
+        //, numMyEntries_(elementSpace.getNumMyElements())
+        //, numGlobalEntries_(elementSpace.getNumGlobalElements())
+        , ElementSpace_()
+        , BlockElementSpace_()
+        //, Platform_()
+        //, Comm_()
 	{
+        VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>(false, 
+                                                                                     elementSpace.getIndexBase(), 
+                                                                                     elementSpace.getNumMyElements(),
+                                                                                     elementSpace.getNumGlobalElements(),
+                                                                                     platform));
+            
 		ElementSpace_ = Teuchos::rcp(new ElementSpace<OrdinalType>(elementSpace));
-		Platform_ = Teuchos::rcp(platform.clone());
-		Comm_ = Teuchos::rcp(platform.createScalarComm());
+		//Platform_ = Teuchos::rcp(platform.clone());
+		//Comm_ = Teuchos::rcp(platform.createScalarComm());
 	};
 	
 	//! Tpetra::VectorSpace constructor taking a BlockElementSpace object.
 	VectorSpace(BlockElementSpace<OrdinalType> const& blockElementSpace, Platform<OrdinalType, ScalarType> const& platform)
 		: Object("Tpetra::VectorSpace")
-			, blockspace_(true)
-			, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, one_(Teuchos::OrdinalTraits<OrdinalType>::one())
-			, indexBase_(blockElementSpace.elementSpace().getIndexBase())
-			, numMyEntries_(blockElementSpace.getNumMyPoints())
-			, numGlobalEntries_(blockElementSpace.getNumGlobalPoints())
-			, ElementSpace_()
-			, BlockElementSpace_()
-			, Platform_()
-			, Comm_()
+        //, blockspace_(true)
+        , VectorSpaceData_()
+        , zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+        , one_(Teuchos::OrdinalTraits<OrdinalType>::one())
+        //, indexBase_(blockElementSpace.elementSpace().getIndexBase())
+        //, numMyEntries_(blockElementSpace.getNumMyPoints())
+        //, numGlobalEntries_(blockElementSpace.getNumGlobalPoints())
+        , ElementSpace_()
+        , BlockElementSpace_()
+        //, Platform_()
+        //, Comm_()
 	{
+        VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>(true,
+                                                                                     blockElementSpace.elementSpace().getIndexBase(),
+                                                                                     blockElementSpace.getNumMyPoints(),
+                                                                                     blockElementSpace.getNumGlobalPoints(),
+                                                                                     platform));
+        
 		BlockElementSpace_ = Teuchos::rcp(new BlockElementSpace<OrdinalType>(blockElementSpace));
 		ElementSpace_ = Teuchos::rcp(blockElementSpace.generateCompatibleElementSpace());
-		Platform_ = Teuchos::rcp(platform.clone());
-		Comm_ = Teuchos::rcp(platform.createScalarComm());
+		//Platform_ = Teuchos::rcp(platform.clone());
+		//Comm_ = Teuchos::rcp(platform.createScalarComm());
 	};
 	
 	//! Tpetra::VectorSpace copy constructor.
 	VectorSpace(VectorSpace<OrdinalType, ScalarType> const& vectorSpace)
 		: Object(vectorSpace.label())
-		, blockspace_(vectorSpace.blockspace_)
+        , VectorSpaceData_(vectorSpace.VectorSpaceData_)
+		//, blockspace_(vectorSpace.blockspace_)
 		, zero_(vectorSpace.zero_)
 		, one_(vectorSpace.one_)
-		, indexBase_(vectorSpace.indexBase_)
-		, numMyEntries_(vectorSpace.numMyEntries_)
-		, numGlobalEntries_(vectorSpace.numGlobalEntries_)
+		//, indexBase_(vectorSpace.indexBase_)
+		//, numMyEntries_(vectorSpace.numMyEntries_)
+		//, numGlobalEntries_(vectorSpace.numGlobalEntries_)
 		, ElementSpace_(vectorSpace.ElementSpace_)
 		, BlockElementSpace_(vectorSpace.BlockElementSpace_)
-		, Platform_(vectorSpace.Platform_)
-		, Comm_(vectorSpace.Comm_)
+		//, Platform_(vectorSpace.Platform_)
+		//, Comm_(vectorSpace.Comm_)
 	{}
 
 	//! Tpetra::VectorSpace destructor.
@@ -119,13 +135,13 @@ public:
 	//@{ \name VectorSpace Attribute Methods
 	
 	//! Returns the number of entries in this VectorSpace.
-	OrdinalType getNumGlobalEntries() const {return(numGlobalEntries_);};
+	OrdinalType getNumGlobalEntries() const {return(VectorSpaceData_->numGlobalEntries_);};
 	
 	//! Returns the number of entries belonging to the calling image.
-	OrdinalType getNumMyEntries() const {return(numMyEntries_);};
+	OrdinalType getNumMyEntries() const {return(VectorSpaceData_->numMyEntries_);};
 	
 	//! Returns the index base for this VectorSpace.
-	OrdinalType getIndexBase() const {return(indexBase_);};
+	OrdinalType getIndexBase() const {return(VectorSpaceData_->indexBase_);};
 	
 	//! Min/Max Indices
 	OrdinalType getMinLocalIndex() const {return(zero_);};
@@ -179,7 +195,7 @@ public:
 	
 	//! Returns true if the VectorSpace passed in is identical to this VectorSpace. Also implemented through the == and != operators.
 	bool isSameAs(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {
-		if(blockspace_)
+		if(isBlockSpace())
 			return(blockElementSpace().isSameAs(vectorSpace.blockElementSpace())); // compare BlockElementSpaces
 		else
 			return(elementSpace().isSameAs(vectorSpace.elementSpace())); // compare ElementSpaces
@@ -208,7 +224,7 @@ public:
 				os << endl;
 			}
 		}
-		if(blockspace_) {
+		if(isBlockSpace()) {
 			os << "Built on a BlockElementSpace" << endl;
 			blockElementSpace().print(os);
 			os << "Compatible ElementSpace:" << endl;
@@ -222,8 +238,8 @@ public:
 	
 	
 	//! Access function for the Tpetra::Platform and Tpetra::Comm communicators.
-	Platform<OrdinalType, ScalarType> const& platform() const {return(*Platform_);};
-	Comm<ScalarType, OrdinalType> const& comm() const {return(*Comm_);}; // Comm is <ST, OT> because ST represents PT
+	Platform<OrdinalType, ScalarType> const& platform() const {return(*VectorSpaceData_->Platform_);};
+	Comm<ScalarType, OrdinalType> const& comm() const {return(*VectorSpaceData_->Comm_);}; // Comm is <ST, OT> because ST represents PT
 	
 	//! Assignment operator (declared but not defined, do not use)
 	VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source);
@@ -234,23 +250,26 @@ private:
 	
 	ElementSpace<OrdinalType> const& elementSpace() const {return(*ElementSpace_);};
 	BlockElementSpace<OrdinalType> const& blockElementSpace() const {return(*BlockElementSpace_);};
+    bool isBlockSpace() const {return(VectorSpaceData_->blockspace_);};
+    
+    Teuchos::RefCountPtr< VectorSpaceData<OrdinalType, ScalarType> > VectorSpaceData_;
 	
-	bool const blockspace_;
+	//bool const blockspace_;
 	OrdinalType const zero_;
 	OrdinalType const one_;
-	OrdinalType const indexBase_;
-	OrdinalType const numMyEntries_;
-	OrdinalType const numGlobalEntries_;
+	//OrdinalType const indexBase_;
+	//OrdinalType const numMyEntries_;
+	//OrdinalType const numGlobalEntries_;
 	Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
 	Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
-	Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
-	Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
-
+	//Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
+	//Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
 	
 }; // VectorSpace class
 
 } // Tpetra namespace
 
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_VectorSpaceData.hpp"
 
 #endif // _TPETRA_VECTORSPACE_HPP_
