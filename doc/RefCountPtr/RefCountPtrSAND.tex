@@ -24,8 +24,8 @@
 
 \title{\center
 {\Huge\bf Teuchos::RefCountPtr}\\[1.5ex]
-A Smart Reference-Counted Pointer Class for (Almost) Automatic Dynamic
-Memory Management in C++.
+The Trilinos Smart Reference-Counted Pointer Class
+for (Almost) Automatic Dynamic Memory Management in C++
 }
 \author{
 Roscoe A. Bartlett \\ Optimization/Uncertainty Estim \\
@@ -73,21 +73,15 @@ Roscoe A. Bartlett \\ Optimization/Uncertainty Estim
 %
 \begin{abstract}
 %
-Dynamic memory management in C++ is one of the most common areas of
-difficulty and errors for amateur and expert C++ developers alike.
-The improper use of \texttt{new} and \texttt{delete} is arguably the
-most common cause (perhaps followed by indexing past array bounds) of
-incorrect program behavior and segmentation faults in C++ programs.
-Here we describe a very simple templated concrete C++ class
-{}\texttt{Teuchos::RefCountPtr<>}, which is part of the Trilinos tools
-package \texttt{Teuchos}, that combines the concepts of smart pointers
-and reference counting to build a low-overhead but effective means for
-simplifying dynamic memory management in C++.  We discuss the proper
-use of this new data type and how it relates to built-in C++ data types
-and other user-defined data types.  A variety of other issues related
-to \texttt{Teuchos::RefCountPtr<>} are also discussed and much of this
-material is contained in the included appendix along with a quick
-start and short reference.
+This document builds on the material in the document ``
+Teuchos::RefCountPtr 101: A Beginner's Guide to the Trilinos Smart
+Reference-Counted Pointer Class for (Almost) Automatic Dynamic Memory
+Management in C++''.  In this document we discuss the templated
+concrete C++ class {}\texttt{Teuchos::RefCountPtr<>} in more detail.
+We expand on the proper use of this new data type and how it relates
+to built-in C++ data types and other user-defined data types.  A
+variety of other issues related to \texttt{Teuchos::RefCountPtr<>} are
+also discussed.
 %
 \end{abstract}
 %
@@ -99,7 +93,9 @@ start and short reference.
 %
 \clearpage
 \section*{Acknowledgment}
-The author would like to thank ...
+The author would like to thank Carl Laird, Heidi Thornquist, Mike
+Heroux and Mazrio Sala for comments on earlier drafts of this
+document.
 
 The format of this report is based on information found
 in~\cite{Sand98-0730}.
@@ -112,7 +108,7 @@ in~\cite{Sand98-0730}.
 \clearpage
 \tableofcontents
 \listoffigures
-\listoftables
+%\listoftables
 
 % ---------------------------------------------------------------------- %
 % An optional preface or Foreword
@@ -163,8 +159,6 @@ in~\cite{Sand98-0730}.
 % one appendix, put \setcounter{secnumdepth}{0} after \appendix
 %
 \appendix
-\input{apdx_RefCountPtrQuickStart}
-\input{apdx_RefCountPtrPassingArgs}
 \input{apdx_SeperateConstructAndInitialize}
 \input{apdx_RefCountPtrDesign}
 \input{apdx_RefCountPtrMIVBC}
@@ -190,48 +184,21 @@ in~\cite{Sand98-0730}.
 %\SANDdistInternal{1}{0847}{Sudip Dosanjh}{9233}
 % 9211
 \SANDdistInternal{1}{0847}{Scott Mitchell}{9211}
-\SANDdistInternal{1}{1110}{Roscoe Bartlett}{9211}
+\SANDdistInternal{5}{1110}{Roscoe Bartlett}{9211}
 \SANDdistInternal{1}{1110}{Scott Collis}{9211}
 \SANDdistInternal{1}{0847}{Bart van Bloemen Waanders}{9211}
-\SANDdistInternal{1}{0847}{Mike Eldred}{9211}
-%\SANDdistInternal{1}{0819}{Tim Trucano}{9211}
-%\SANDdistInternal{1}{0847}{Tony Giunta}{9211}
-%\SANDdistInternal{1}{0947}{Laura Swiler}{9211}
 % 9214
-\SANDdistInternal{1}{9217}{Mark Adams}{9214}
-\SANDdistInternal{1}{1110}{Pavel Bochev}{9214}
 \SANDdistInternal{1}{1110}{Todd Coffey}{9214}
-\SANDdistInternal{1}{1110}{David Day}{9214}
-\SANDdistInternal{1}{1110}{John Delaurentis}{9214}
 \SANDdistInternal{1}{1110}{Michael Heroux}{9214}
-\SANDdistInternal{1}{1110}{Ulrich Hetmaniuk}{9214}
-\SANDdistInternal{1}{9217}{Jonathan Hu}{9214}
-\SANDdistInternal{1}{1110}{Richard Lehoucq}{9214}
-\SANDdistInternal{1}{1110}{Louis Romero}{9214}
-\SANDdistInternal{1}{1110}{David Ropp}{9214}
 \SANDdistInternal{1}{1110}{Heidi Thornquist}{9214}
-\SANDdistInternal{1}{9217}{Raymond Tuminaro}{9214}
 \SANDdistInternal{1}{1110}{James Willenbring}{9214}
-\SANDdistInternal{1}{1110}{David Womble}{9214}
 % 8962
-\SANDdistInternal{1}{9217}{Steve Thomas}{8962}
 \SANDdistInternal{1}{9217}{Paul Boggs}{8962}
 \SANDdistInternal{1}{9217}{Kevin Long}{8962}
-\SANDdistInternal{1}{9217}{Patricia Hough}{8962}
-\SANDdistInternal{1}{9217}{Tamara Kolda}{8962}
-\SANDdistInternal{1}{9217}{Monica Martinez-Canales}{8962}
-\SANDdistInternal{1}{9217}{Pamela Williams}{8962}
-\SANDdistInternal{1}{9217}{Victoria Howle}{8962}
 % Sandia Misc
 \SANDdistInternal{1}{1110}{William Hart}{9215}
-%\SANDdistInternal{1}{0847}{Steve Wojtkiewicz}{9124}
 % Xyce developers
-\SANDdistInternal{1}{0316}{Eric Keiter}{9233}
-\SANDdistInternal{1}{0316}{Scott Hutchinson}{9233}
 \SANDdistInternal{1}{0316}{Robert Hoekstra}{9233}
-% Premo developers
-\SANDdistInternal{1}{0316}{Curt Ober}{9233}
-\SANDdistInternal{1}{0316}{Tom Smith}{9233}
 % Main Sierra developers
 \SANDdistInternal{1}{9143}{Carter Edwards}{0827}
 \SANDdistInternal{1}{9143}{James Stewart}{0826}
@@ -240,10 +207,8 @@ in~\cite{Sand98-0730}.
 % NOX/LOCA developers
 \SANDdistInternal{1}{0316}{Roger Pawlowski}{9233}
 \SANDdistInternal{1}{1110}{Eric Phipps}{9233}
-\SANDdistInternal{1}{1110}{Andrew Salinger}{9233}
 % Other Trilinos developers
 \SANDdistInternal{1}{0826}{Alan Williams}{8961}
-\SANDdistExternal{1}{}{Kendall Stanley}{}
 % Housekeeping copies necessary for every unclassified report:
 \SANDdistInternal{1}{9018}{Central Technical Files}{8945-1}
 \SANDdistInternal{2}{0899}{Technical Library}{9610}

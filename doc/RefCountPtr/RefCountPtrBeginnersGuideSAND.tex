@@ -1,0 +1,1373 @@
+\documentclass[pdf,ps2pdf,11pt]{SANDreport}
+\usepackage{pslatex}
+
+%Local stuff
+\usepackage{graphicx}
+\usepackage{latexsym}
+\input{rab_commands}
+
+\newtheorem{commandment}{Commandment}
+\newtheorem{anticommandment}{Anti-Commandment}
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+
+\title{\center
+{\Huge\bf Teuchos::RefCountPtr 101}\\[1.5ex]
+A Beginner's Guide to the Trilinos Smart Reference-Counted Pointer
+Class for (Almost) Automatic Dynamic Memory Management in C++
+}
+\author{
+Roscoe A. Bartlett \\ Optimization/Uncertainty Estim \\
+Sandia National Laboratories\footnote{
+Sandia is a multiprogram laboratory operated by Sandia Corporation, a
+Lockheed-Martin Company, for the United States Department of Energy
+under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
+}
+\date{}
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2003-xxx}
+\SANDprintDate{December 2003}
+\SANDauthor{
+Roscoe A. Bartlett \\ Optimization/Uncertainty Estim
+}
+
+% ---------------------------------------------------------------------------- %
+% The following definitions are optional. The values shown are the default
+% ones provided by SANDreport.cls
+%
+\SANDreleaseType{Unlimited Release}
+%\SANDreleaseType{Not approved for release outside Sandia}
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+%\SANDsupersed{SAND1901-0001}{January 1901}
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+
+\maketitle
+
+% ------------------------------------------------------------------------ %
+% An Abstract is required for SAND reports
+%
+
+%
+\begin{abstract}
+%
+Dynamic memory management in C++ is one of the most common areas of
+difficulty and errors for amateur and expert C++ developers alike.
+The improper use of operator {}\texttt{new} and operator
+{}\texttt{delete} is arguably the most common cause of incorrect
+program behavior and segmentation faults in C++ programs.  Here we
+introduce a templated concrete C++ class
+{}\texttt{Teuchos\-::Ref\-Count\-Ptr<>}, which is part of the Trilinos
+tools package {}\texttt{Teuchos} (teuchos means ``tool'' in Latin),
+that combines the concepts of smart pointers and reference counting to
+build a low-overhead but effective means for simplifying dynamic
+memory management in C++.  Here we describe why raw use of pointers
+and raw calls to operator {}\texttt{new} and operator
+{}\texttt{delete} is so difficult to pull of without making mistakes
+and how programs that use raw pointers for memory management can
+easily be modifed to {}\texttt{Ref\-Count\-Ptr<>}.  In its most basic
+usage, {}\texttt{Ref\-Count\-Ptr<>} automatically determines when
+operator {}\texttt{delete} should be called to free an object
+allocated with operator {}\texttt{new} but the class also supports
+more sophisticated use cases as well.  This document provides just the
+most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to allow developers
+to get started using it right away.  However, more detailed
+information on the design and advanced usage of
+{}\texttt{Ref\-Count\-Ptr<>} is described in the companion documnet
+``Teuchos::RefCountPtr 101 : A Beginner's Guide to the Trilinos Smart
+Reference-Counted Pointer Class for (Almost) Automatic Dynamic Memory
+Management in C++''.
+%
+\end{abstract}
+%
+
+% ------------------------------------------------------------------------ %
+% An Acknowledgement section is optional but important, if someone made
+% contributions or helped beyond the normal part of a work assignment.
+% Use \section* since we don't want it in the table of context
+%
+\clearpage
+\section*{Acknowledgment}
+The author would like to thank Carl Laird, Heidi Thornquist, Mike
+Heroux and Mazrio Sala for comments on earlier drafts of this
+document.
+
+The format of this report is based on information found
+in~\cite{Sand98-0730}.
+
+% ------------------------------------------------------------------------ %
+% The table of contents and list of figures and tables
+% Comment out \listoffigures and \listoftables if there are no
+% figures or tables. Make sure this starts on an odd numbered page
+%
+\clearpage
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+% ---------------------------------------------------------------------- %
+% This is where the body of the report begins; usually with an Introduction
+%
+\SANDmain % Start the main part of the report
+
+%
+\section{Introduction}
+%
+
+The main purpose of the document is provide a quick start introducing
+how to incorporate the use of the reference-counting smart pointer
+class {}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} into C++ programs that
+use dynamic memory allocation and object orientation.  This code is
+included in the Trilinos {}\cite{ref:Trilinos-Overview} tools package
+{}\texttt{Teuchos}.  This design is based partly on the interface for
+{}\texttt{std::auto\_ptr<>} and Items 28 and 29 in "More Effective
+C++" by Scott Myers {}\cite{ref:meyers_1996}.  In short, using this
+class allows one client to dynamically create an object (using
+operator {}\texttt{new} for instance), pass the object around to many
+other clients which also need to access the object and then never
+requiring any client to explicitly call delete.  The object will
+(almost magically) be deleted when all of the clients remove their
+references to it.  This is very similar to the type of garbage
+collection that is in languages like Perl and Java.  There are,
+although, some pathological cases (such as the classic problem of
+circular references, see {}\cite[Item 29, page 212]{ref:meyers_1996})
+where {}\texttt{Ref\-Count\-Ptr<>} will result in a memory leak but these
+situations can be avoided.  However, realizing the potential of
+hands-off garbage collection with {}\texttt{Ref\-Count\-Ptr<>} requires
+following some rules.  These rules are partly spelled out in the form
+of commandments (see Appendix {}\ref{rcpqs:apdx:commandments}).
+
+The use of {}\texttt{Ref\-Count\-Ptr<>} is critical in the development
+and maintaince of complex object oriented programs composed of many
+seperately-developed pieces (such as Trilinos).  This discussion
+assumes that the reader has a basic familarity and some programming
+experience with C++ and has at least been exposed to the basic
+concepts of object-oriented programming in C++ (good sources include
+{}\cite{ref:stroustrup_2000}) and is comfortable with the use of C++
+pointers and references.
+
+The Appendices contain basic reference material for
+{}\texttt{Ref\-Count\-Ptr<>}.  For those readers that like to see the
+C++ declarations right up front, Appendix {}\ref{rcpqs:apdx:c++decl}
+contains the C++ declarations in the {}\texttt{Teuchos} namespace for
+the templated class {}\texttt{Ref\-Count\-Ptr<>} and some important
+associated non-member templated functions.  Appendix
+{}\ref{rcpqs:apdx:quickstart} is a short reference-card-like quick
+start for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The quick start in
+this appendix shows how to create {}\texttt{Ref\-Count\-Ptr<>} objects
+from raw C++ pointers, how to represent different forms on
+constantness, cast from one pointer type to another, access the
+underlying reference-counted object as well as to associate and manage
+extra data.  Appendix {}\ref{rcpqs:apdx:commandments} gives some
+commandments for the use of {}\texttt{Ref\-Count\-Ptr<>} and
+reinforces the material in Appendix {}\ref{rcpqs:apdx:quickstart}.
+Appendix {}\ref{rcpqs:apdx:passing-args} gives tables for recommended
+idioms for how to pass raw C++ objects and
+{}\texttt{Ref\-Count\-Ptr<>}-wrapped objects to and from functions.
+More detailed discussions of all of the material in the appendices is
+contained in the design document for {}\texttt{Ref\-Count\-Ptr<>}
+{}\cite{ref:RefCountPtr}.  Appendix {}\ref{rcpqs:apdx:ex-prg} gives a
+listing for an example program that uses raw pointer variables and
+direct calls to operator {}\texttt{new} and operator {}\texttt{delete}
+while Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows a
+refactoring of this example program to use
+{}\texttt{Ref\-Count\-Ptr<>}.  Anxious readers are encouraged to jump
+directly to Appendix {}\ref{rcpqs:apdx:ex-prg} and
+{}\ref{rcpqs:apdx:ex-prg-refactored} to get an idea of what
+{}\texttt{Ref\-Count\-Ptr<>} is all about.
+
+For less anxious readers, in the following section, we describe why
+the use of raw C++ pointers and raw calls to operator {}\texttt{new}
+and especially operator {}\texttt{delete} is difficult to program
+correctly in even moderately complex C++ programs.  We then discuss
+different ways C++ pointers are used in such C++ programs and then
+describe how to refactor these C++ programs to replace some of the raw
+C++ pointers and raw calls to operator {}\texttt{delete} with
+{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion, a
+distiction will be made between {}\textit{transitive} and
+{}\textit{non-transitive} associations.  {}\texttt{Ref\-Count\-Ptr<>}
+is recommended for use ony with {}\textit{non-transitive}
+associations.  In addition, {}\texttt{Ref\-Count\-Ptr<>} is designed
+for the memory management of individual objects, not arrays of
+objects.  Array allocation and deallocation should be performed using
+standard C++ containers such as {}\texttt{std\-::vector<>} or perhaps
+{}\texttt{std\-::valaray<>} or some other such convenient C++ array
+class.
+
+%
+\section{An example C++ program}
+%
+
+The use of object-oriented (OO) programing in C++ is major motivation
+for the use of {}\texttt{Ref\-Count\-Ptr<>}.  OO programs are
+characterized by the use of abstract classes (i.e.~interfaces) and
+concrete subclasses (i.e.~implementations).  In OO programs it is
+common that the selection of which concrete subclass(es) to use is not
+known until runtime.  The ``Abstract Factory'' is a popular design
+pattern that allows the flexible runtime selection of what concrete
+subclasses to create.
+
+Below we describe a fictitious program that demonstrates some of the
+typical features of an OO program that uses dynamic memory management
+in C++.  In this simple program it will seem easy to be able to handle
+the C++ memory management using raw C++ pointers and calls to operator
+{}\texttt{new} and operator {}\texttt{delete} but real larger OO
+programs are much more complicated and it is definitely not easy to do
+memory managment without some help.
+
+%
+\subsection{Original example C++ program using raw dynamic memory management}
+%
+
+One of the prominate features of this example program is the use of
+the following abstract interface base class {}\texttt{Utility\-Base}
+that defines an inteface that provides some useful capability.
+
+{\small\begin{verbatim}
+class UtilityBase {
+public:
+  virtual void f() const = 0;
+  ...
+};
+\end{verbatim}}
+
+In our example program, {}\texttt{Utility\-Base} will have two
+subclasses where one or the other will be used at runtime.
+
+{\small\begin{verbatim}
+UtilityA : public UtilityBase {
+public:
+  void f() const { ... }
+};
+
+UtilityB : public UtilityBase {
+public:
+  void f() const { ... }
+};
+\end{verbatim}}
+
+Some of the client software in this program has to create
+{}\texttt{Utility\-Base} objects without knowing exactly what the
+concrete subclasses are being used.  This is accomplished through the
+use of the ``abstract factory'' design pattern
+{}\cite{ref:gama_et_al_1995}.  For {}\texttt{Utility\-Base}, the
+abstract factory looks like
+
+{\small\begin{verbatim}
+class UtilityBaseFactory {
+public:
+  virtual UtilityBase* createUtility() const = 0;
+  ...
+};
+\end{verbatim}}
+
+{}\noindent{}and has factory subclasses for creating
+{}\texttt{Utility\-A} and {}\texttt{Utility\-B} objects.
+
+{\small\begin{verbatim}
+UtilityAFactory : public UtilityBaseFactory {
+public:
+  UtilityBase* createUtility() const { return new UtilityA(); }
+};
+
+UtilityBFactory : public UtilityBaseFactory {
+public:
+  UtilityBase* createUtility() const { return new UtilityB(); }
+};
+\end{verbatim}}
+
+Now let's assume that our example program has the folling client
+classes.
+
+{\small\begin{verbatim}
+class ClientA {
+public:
+  void f( const UtilityBase &utility ) const { utility.f(); }
+  ...
+};
+
+class ClientB {
+public:
+  ClientB() : utility_(0) {}
+  ~ClientB() { delete utility_; }
+  void initialize( UtilityBase *utility ) { utility_ = utility; }
+  void g( const ClientA &a ) { a.f(*utility_); }
+  ...
+private:
+  UtilityBase *utility_;
+};
+
+class ClientC {
+public:
+  ClientC( const UtilityBaseFactory *utilityFactory, bool shareUtility )
+    :utilityFactory_(utilityFactory)
+    ,utility_(utilityFactory->createUtility())
+    ,shareUtility_(shareUtility)
+  {}
+  ~ClientC() { delete utilityFactory_; delete utility_; }
+  void h( ClientB *b ) {
+    if( shareUtility_ ) b.initialize(utility_);
+    else                b.initialize(utilityFactory_->createUtility());
+  }
+  ...
+private:
+  const UtilityBaseFactory *utilityFactory_;
+  UtilityBase              *utility_;
+  bool                     shareUtility_;
+};
+\end{verbatim}}
+
+The type of logic shown in {}\texttt{ClientC} for how it is determined
+when new objects should be created and when objects should be passed
+around is very common in complex OO programs.  The above client
+classes show two different types of assocations between objects:
+{}\textit{transitive} and {}\textit{non-transitive}.
+
+{}\textit{Transitive} associations are those assocations that exist
+only within a single function call and do not persist after the
+function has finished executing.  For example, objects of type
+{}\texttt{Client\-A} and {}\texttt{Utility\-Base} have a transitive
+relationship through the function {}\texttt{ClientA\-::f(const
+UtilityBase \&utility)}.  Likewise, objects of type
+{}\texttt{Client\-B} and {}\texttt{Client\-A} have a transitive
+association through the function {}\texttt{ClientB\-::g( const ClientA
+\&a )}.
+
+{}\textit{Non-transitive} associations are those associations where a
+relationship between two objects exists past a single function call.
+The most typical kind of non-transitive association in an OO C++
+program is where one object maintains a private pointer data member to
+another object.  For example, non-transitive assocations exist between
+a {}\texttt{ClientC} object and a {}\texttt{Utility\-Base\-Factory}
+and a {}\texttt{Utility\-Base} object through the the private C++
+pointer data members {}\texttt{ClientC\-::utility\-Factory\_} and
+{}\texttt{ClientC\-::utility\_} respectively.  Likewise, a
+non-transitive association exists between a {}\texttt{ClientB} object
+and a {}\texttt{Utility\-Base} object through the private pointer data
+member {}\texttt{ClientB\-::utility\_}.
+
+Non-transitive relationships are significantly more complex than
+transitive transitive relationships since in many programs a
+non-transitive relationship implies that some objects must be
+responsible for the lifetime of other objects.  This is never the case
+in a transitive relationship as defined above.
+
+Appendix {}\ref{rcpqs:apdx:ex-prg} shows an example program that uses
+all of the C++ classes described above.  All of the class declarations
+are repeated in the listing for sake of completeness.  The program in
+Appendix {}\ref{rcpqs:apdx:ex-prg} has several memory managment
+problems. An astute reader will notice that the
+{}\texttt{Utility\-Base\-Factory} created in in {}\texttt{main()} gets
+deleted twice; once in the destructor for the {}\texttt{ClientC}
+object {}\texttt{c} and again at the end of {}\texttt{main()} in an
+explicit call to operator {}\texttt{delete}.  This problem could be
+fixed in this program by arbitrating ``ownership'' of the
+{}\texttt{Utility\-Base\-Factory} object to either {}\texttt{main()}
+or {}\texttt{ClientC} object, but not both which is the case in
+Appendix {}\ref{rcpqs:apdx:ex-prg}.
+
+A more difficult memmory management problem to catch and fix occurs in
+the {}\texttt{ClientB} and {}\texttt{ClientC} objects regrading a
+shared {}\texttt{Utility\-Base} object.  When {}\texttt{shareUtility}
+is set to {}\texttt{false} (by the user in the commandline arguments)
+the objects {}\texttt{b1}, {}\texttt{b2} and {}\texttt{c} each own a
+pointer to different {}\texttt{Utility\-Base} objects and the software
+will correctly delete each dynamically allocated object using one and
+only one call to operator {}\texttt{delete} (in the destructors of
+these classes).  However, when {}\texttt{shareUtility} is to set to
+{}\texttt{true} the objects {}\texttt{b1}, {}\texttt{b2} and
+{}\texttt{c} will contain pointers to the same
+{}\texttt{Utility\-Base} object and operator {}\texttt{delete} will be
+called on this shared {}\texttt{Utility\-Base} object multiple times
+when {}\texttt{b1}, {}\texttt{b2} and {}\texttt{c} are destroyed.  In
+this case, it is not so easy to arbitrate ownership of the shared
+{}\texttt{Utility\-Base} object to the {}\texttt{ClientB} or the
+{}\texttt{ClientC} objects.  Logic could easily be developed in this
+simple program to insure that ownership was assigned properly but such
+logic would enlarge the program, complicate maintance, and would
+ultimately make the software components less reusable.  In more
+complex programs, trying to dynamically arbitrate ownership at run
+time is much more difficult and error prone if done manually.
+
+%
+\subsection{Refactored example C++ program using {}\texttt{Ref\-Count\-Ptr<>}}
+%
+
+Now we describe how {}\texttt{Ref\-Count\-Ptr<>} can be used to
+greatly simplify these types of OO programs.  Appendix
+{}\ref{rcpqs:apdx:ex-prg-refactored} shows the refactoring of the
+program in Appendix {}\ref{rcpqs:apdx:ex-prg} to use
+{}\texttt{Ref\-Count\-Ptr<>} for all non-transitive relationships.  In
+general, the refactoring of software that uses raw C++ pointers to use
+{}\texttt{Ref\-Count\-Ptr<>} is to simply replace {}\texttt{T*} with
+{}\texttt{Ref\-Count\-Ptr<T>} where {}\texttt{T} is nearly any class
+or builtin data type.
+
+The first non-transitive relationship that
+{}\texttt{Ref\-Count\-Ptr<>} is used for is the relationship between a
+{}\texttt{Utility\-Base\-Factory} object and a client that uses it.
+The refactoring changes the return type of
+{}\texttt{Utility\-Base\-Factory\-::createUtility()} from a raw
+{}\texttt{Utility\-Base*} pointer to a
+{}\texttt{Ref\-Count\-Ptr<Utility\-Base>} object.  The new ``abstract
+factory'' class declarations (assuming that the symbols from the
+{}\texttt{Teuchos} namespace are in scope so that explict
+{}\texttt{Teuchos::} qualification is not necessary) become
+
+{\small\begin{verbatim}
+class UtilityBaseFactory {
+public:
+  virtual RefCountPtr<UtilityBase> createUtility() const = 0;
+  ...
+};
+
+UtilityAFactory : public UtilityBaseFactory {
+public:
+  RefCountPtr<UtilityBase> createUtility() const
+  { return rcp(new UtilityA()); }
+};
+
+UtilityBFactory : public UtilityBaseFactory {
+public:
+  RefCountPtr<UtilityBase> createUtility() const
+  { return rcp(new UtilityB()); }
+};
+\end{verbatim}}
+
+In addition to the change of the return type, the refactoring also
+requires that the {}\texttt{new} expressions be wrapped in a templated
+function call {}\texttt{Teuchos\-::rcp(...)} (see ??? for a discussion
+of why this is the case).
+
+The refactoring shown in Appendix {}\ref{rcpqs:apdx:ex-prg-refactored}
+does not impact the definition of the {}\texttt{ClientA} class since
+this class does not have any non-transitive relationships with any
+other objects.  However, the definitions of the {}\texttt{ClientB} and
+{}\texttt{ClientC} classes do change and become
+
+{\small\begin{verbatim}
+class ClientB {
+public:
+  void initialize(const RefCountPtr<UtilityBase> &utility) { utility_=utility; }
+  void g( const ClientA &a ) { a.f(*utility_); }
+  ...
+private:
+  RefCountPtr<UtilityBase> utility_;
+};
+
+class ClientC {
+public:
+  ClientC( const RefCountPtr<UtilityBaseFactory> &utilityFactory, bool shareUtility )
+    :utilityFactory_(utilityFactory)
+    ,utility_(utilityFactory->createUtility())
+    ,shareUtility_(shareUtility)
+  {}
+  void h( ClientB *b ) {
+    if( shareUtility_ ) b.initialize(utility_);
+    else                b.initialize(utilityFactory_->createUtility());
+  }
+  ...
+private:
+  RefCountPtr<UtilityBaseFactory> utilityFactory_;
+  RefCountPtr<UtilityBase>        utility_;
+  bool                                     shareUtility_;
+};
+\end{verbatim}}
+
+The first thing that one should notice about the refactored
+{}\texttt{ClientB} and {}\texttt{ClientC} classes is that the
+destructors are gone.  It turns out that the compiler-generated
+destructors do exactly the correct thing (i.e.~call the destructor on
+the {}\texttt{Ref\-Count\-Ptr<>} data members which in turns calls
+operator {}\texttt{delete} on the underlying reference-counted object
+when the reference count goes to zero).  One should also notice that
+the old default constructor {}\texttt{ClientB::ClientB()} which
+initialized the raw C++ pointer {}\texttt{utility\_} to null is no
+longer needed since {}\texttt{Ref\-Count\-Ptr<>} has a default
+constructor that already does that.
+
+%
+\section{More advanced features of {}\texttt{Ref\-Count\-Ptr<>}}
+%
+
+While the use cases for {}\texttt{Ref\-Count\-Ptr<>} described above
+comprise 95\% or more of the relavent use cases, there are some more
+challenging use cases that require more advanced features.  Some of
+these advanced features (the C++ declarations for which are shown in
+Appendix {}\ref{rcpqs:apdx:c++decl}) are discussed in the design
+document {}\cite{ref:RefCountPtr} and are mentioned below:
+
+\begin{enumerate}
+
+\item \textbf{Reference-count information}
+
+The function {}\texttt{Ref\-Count\-Ptr<>\-::count()} returns the
+number of {}\texttt{Ref\-Count\-Ptr<>} objects that point to the
+underlying reference-counted object.  If used with caution, this
+reference-count can be used to simplify the logic in some types of use
+cases.
+
+\item \textbf{Associating extra data with a reference-counted object}
+
+There are some more difficult use cases where certain types of
+information or other objects must be bundled with a reference-counted
+object and must not be deleted until the reference-counted object is
+deleted.  The non-member templated functions
+{}\texttt{set\-\_extra\-\_data<>(...)} and
+{}\texttt{get\-\_extra\-\_data<>(...)} serve this purpose (see item
+({}\ref{rcpqs:apdx:qs:extra-data}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}).
+
+\item \textbf{Customized deallocation policies}
+
+While the default behavior of {}\texttt{Ref\-Count\-Ptr<>} in calling
+operator {}\texttt{delete} on reference-counted objects once the
+reference count goes to zero is the most commonly needed behavior,
+there are use cases where more specialized dellocation polices are
+required.  There is an overloaded form of the templated function
+{}\texttt{Teuchos\-::rcp(...)} that takes a templated deallocation
+policy object that defines how a reference-counted object is
+deallocated when required.
+
+\end{enumerate}
+
+%
+\section{Summary}
+%
+
+
+The templated C++ class {}\texttt{Ref\-Count\-Ptr<>} provides a
+low-overhead option for (almost) automatic memory management in C++.
+This class has been developed and refined over many years and has been
+proven to improve the quality of software projects that use it
+consistently.  Careful use of {}\texttt{Ref\-Count\-Ptr<>} eliminates
+the need to manually call operator {}\texttt{delete} when dynamically
+allocated objects are no longer needed and helps to reduce the amount
+of code that developers have to write (for example, most classes that
+use {}\texttt{Ref\-Count\-Ptr<>} for dynamically allocated memory do
+not need developer-supplied destructors since the compiler-generated
+destructors do the right thing).
+
+The class {}\texttt{Ref\-Count\-Ptr<>} also has other advanced
+features not found in other smart-pointer implementations such as the
+ability to tack on extra data and the customization of the
+deallocation policy.
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\bibliographystyle{plain}
+\bibliography{references}
+\addcontentsline{toc}{section}{References}
+
+% ---------------------------------------------------------------------- %
+% Appendices should be stand-alone for SAND reports. If there is only
+% one appendix, put \setcounter{secnumdepth}{0} after \appendix
+%
+
+\appendix
+
+%
+\section{C++ declarations for {}\texttt{Ref\-Count\-Ptr<>}}
+\label{rcpqs:apdx:c++decl}
+%
+
+{\scriptsize\begin{verbatim}
+namespace Teuchos {
+
+enum ENull { null };
+
+template<class T>
+class DeallocDelete { public: void free( T* ptr ) { if(ptr) delete ptr; }  };
+
+template<class T>
+class RefCountPtr {
+public:
+  typedef T  element_type;
+  RefCountPtr( ENull null_arg = null );
+  RefCountPtr(const RefCountPtr<T>& r_ptr);
+  template<class T2> RefCountPtr(const RefCountPtr<T2>& r_ptr);
+  ~RefCountPtr();
+  RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
+  T* operator->() const;
+  T& operator*() const;
+  T* get() const;
+  T* release();
+  int count() const;
+  void set_has_ownership();
+  bool has_ownership() const;
+  bool shares_resource(const RefCountPtr<T>& r_ptr) const;
+private:
+  ...
+};
+
+template<class T>            RefCountPtr<T>   rcp( T* p );
+template<class T>            RefCountPtr<T>   rcp( T* p, bool owns_mem);
+template<class T
+  ,class Dealloc_T>          RefCountPtr<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T2, class T1> RefCountPtr<T2>  rcp_implicit_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+template<class T1, class T2> int              set_extra_data( const T1 &extra_data
+                                                ,const std::string& name, RefCountPtr<T2> *p
+                                                ,bool force_unique = true );
+template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
+                                                ,const std::string& name );
+template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
+                                                ,const std::string& name );
+template<class Dealloc_T
+  , class T>                 Dealloc_T&       get_dealloc( RefCountPtr<T>& p );
+template<class Dealloc_T
+  , class T>                 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
+
+}
+\end{verbatim}}
+
+%
+\section{\texttt{RefCountPtr<>} quick-start and reference}
+\label{rcpqs:apdx:quickstart}
+%
+
+The following class hierarchy will be used in the following
+examples.
+%
+{\small\begin{verbatim}
+class A { public: virtual ~A(){} A& operator=(const A&){} virtual void f(){} };
+class B1 : virtual public A {};
+class B2 : virtual public A {};
+class C : virtual public B1, virtual public B2 {};
+\end{verbatim}}
+%
+Also, all of the following code examples are assumed to be in the
+namespace {}\texttt{Teuchos}.
+
+\begin{enumerate}
+
+\item {\bf Creation of \texttt{RefCountPtr<>} objects}
+
+\begin{enumerate}
+
+\item {\bf Creating a \texttt{RefCountPtr<>} object using \texttt{new}}
+\label{rcpqs:apdx:qs:new}
+%
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr = rcp(new C);
+\end{verbatim}}
+%
+\item {\bf Initializing a \texttt{RefCountPtr<>} object to NULL}
+\label{rcpqs:apdx:qs:null}
+%
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr;
+\end{verbatim}}
+or
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr = null;
+\end{verbatim}}
+%
+\item {\bf Initializing a \texttt{RefCountPtr<>} object to an object
+       \underline{not} allocated with \texttt{new}}
+\label{rcpqs:apdx:qs:not-new}
+%
+{\small\begin{verbatim}
+C               c;
+RefCountPtr<C>  c_ptr = rcp(&c,false);
+\end{verbatim}}
+%
+%
+\item {\bf Representing constantness and non-constantness}
+%
+\begin{enumerate}
+%
+\item {\bf Non-constant pointer to non-constant object }
+{\small\begin{verbatim}
+RefCountPtr<C> c_ptr;
+\end{verbatim}}
+%
+\item {\bf Constant pointer to non-constant object }
+{\small\begin{verbatim}
+const RefCountPtr<C> c_ptr;
+\end{verbatim}}
+%
+\item {\bf Non-Constant pointer to constant object }
+{\small\begin{verbatim}
+RefCountPtr<const C> c_ptr;
+\end{verbatim}}
+%
+\item {\bf Constant pointer to constant object }
+{\small\begin{verbatim}
+const RefCountPtr<const C> c_ptr;
+\end{verbatim}}
+%
+\end{enumerate}
+%
+\item {\bf Copy constructor (implicit casting)}
+%
+{\small\begin{verbatim}
+RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
+RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
+RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
+\end{verbatim}}
+%
+\end{enumerate}
+
+\item {\bf Reinitialization \texttt{RefCountPtr<>} objects (using assignment operator)}
+%
+\begin{enumerate}
+%
+\item {\bf Resetting from a raw pointer}
+%
+{\small\begin{verbatim}
+RefCountPtr<A> a_ptr;
+a_ptr = rcp(new C());
+\end{verbatim}}
+%
+\item {\bf Resetting to null}
+%
+{\small\begin{verbatim}
+RefCountPtr<A> a_ptr = rcp(new C());
+a_ptr = null; // The object C will be deleted here
+\end{verbatim}}
+%
+\item {\bf Assigning from a \texttt{RefCountPtr<>} object}
+%
+{\small\begin{verbatim}
+RefCountPtr<A> a_ptr1;
+RefCountPtr<A> a_ptr2 = rcp(new C());
+a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
+\end{verbatim}}
+%
+\end{enumerate}
+
+\item {\bf Accessing the reference-counted object}
+%
+\begin{enumerate}
+%
+\item {\bf Access to object reference (runtime checked)}
+%
+{\small\begin{verbatim}
+C &c_ref = *c_ptr;
+\end{verbatim}}
+%
+\item {\bf Access to object pointer (unchecked, may return \texttt{NULL})}
+%
+{\small\begin{verbatim}
+C *c_rptr = c_ptr.get();
+\end{verbatim}}
+%
+\item {\bf Access to object pointer (runtime checked, will not return \texttt{NULL})}
+%
+{\small\begin{verbatim}
+C *c_rptr = &*c_ptr;
+\end{verbatim}}
+%
+\item {\bf Access of object's member (runtime checked)}
+%
+{\small\begin{verbatim}
+c_ptr->f();
+\end{verbatim}}
+%
+\end{enumerate}
+
+\item {\bf Casting}
+\label{rcpqs:apdx:qs:casting}
+%
+\begin{enumerate}
+%
+\item {\bf Implicit casting (see copy constructor above)}
+%
+\item {\bf Casting away \texttt{const}}
+%
+{\small\begin{verbatim}
+RefCountPtr<const A>  ca_ptr = rcp(new C);
+RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
+\end{verbatim}}
+%
+\item {\bf Static cast (no runtime check)}
+%
+{\small\begin{verbatim}
+RefCountPtr<D>     d_ptr = rcp(new E);
+RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
+\end{verbatim}}
+%
+\item {\bf Dynamic cast (runtime checked)}
+%
+{\small\begin{verbatim}
+RefCountPtr<A>     a_ptr  = rcp(new C);
+RefCountPtr<B1>    b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
+RefCountPtr<B2>    b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
+RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+\end{verbatim}}
+%
+\end{enumerate}
+
+\item {\bf Managing extra data}
+\label{rcpqs:apdx:qs:extra-data}
+%
+\begin{enumerate}
+%
+\item {\bf Adding extra data}
+%
+{\small\begin{verbatim}
+set_extra_data(rcp(new B1),"A:B1",&a_ptr);
+\end{verbatim}}
+%
+\item {\bf Retrieving extra data}
+%
+{\small\begin{verbatim}
+get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1")->f();
+\end{verbatim}}
+%
+\item {\bf Resetting extra data}
+%
+{\small\begin{verbatim}
+get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C); // Same access type
+get_extra_data<RefCountPtr<B1> >(a_ptr,ctx)->f();
+\end{verbatim}}
+or
+{\small\begin{verbatim}
+set_extra_data(rcp(new C),"A:B1",&a_ptr,false);  // New access type (replaces old)
+get_extra_data<RefCountPtr<C> >(a_ptr,ctx)->f();
+\end{verbatim}}
+%
+\end{enumerate}
+
+\end{enumerate}
+
+%
+\section{Commandments for the use of {}\texttt{Ref\-Count\-Ptr<>}}
+\label{rcpqs:apdx:commandments}
+%
+
+Here are listed commandments for the use of
+{}\texttt{Ref\-Count\-Ptr<>}.  These commandments reinforce some of
+the material in the quickstart in Appendix
+{}\ref{rcpqs:apdx:quickstart}.  The reasoning behind these
+commandments can be found in the design document for
+{}\texttt{Ref\-Count\-Ptr<>} {}\cite{ref:RefCountPtr}.  Along with
+each commandment is one or more anti-commandments stating the netative
+of the commandment which include anti-examples.
+
+\begin{commandment}\label{rcp:cmd:rcp-new}
+Thou shall put a pointer for an object allocated with operator
+{}\texttt{new} into a {}\texttt{Ref\-Count\-Ptr<>} object only once.
+The best way to insure this is to call operator {}\texttt{new}
+directly in a call to {}\texttt{rcp(...)} to create a dynamically
+allocated object that is to be managed by a
+{}\texttt{Ref\-Count\-Ptr<>} object (see item
+({}\ref{rcpqs:apdx:qs:new}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}).
+\end{commandment}
+
+\begin{anticommandment}
+Thou shall never give a raw C++ pointer returned from operator
+{}\texttt{new} to more than one {}\texttt{Ref\-Count\-Ptr<>} object.
+\end{anticommandment}
+
+{}\noindent{}Anti-example:
+{\small\begin{verbatim}
+  A *ra_ptr = new C;
+  RefCountPtr<A> a_ptr1 = rcp(ra_ptr); // Okay
+  RefCountPtr<A> a_ptr2 = rcp(ra_ptr); // no, No, NO !!!!
+\end{verbatim}}
+
+\begin{anticommandment}
+Thou shall never give a raw C++ pointer to an array of objects
+returned operator {}\texttt{new[]} to a {}\texttt{Ref\-Count\-Ptr<>}
+object.
+\end{anticommandment}
+
+{}\noindent{}Anti-example:
+{\small\begin{verbatim}
+  RefCountPtr<std::vector<C> > c_array_ptr1 = rcp(new std::vector<C>(N)); // Okay
+  RefCountPtr<C>               c_array_ptr2 = rcp(new C[N]);              // no, No, NO !!!!
+\end{verbatim}}
+
+\begin{commandment}
+Thou shall only create a {}\texttt{NULL} {}\texttt{Ref\-Count\-Ptr<>}
+object by using the default constructor or by using the
+{}\texttt{null} enum (and its associated special constructor) (see
+item ({}\ref{rcpqs:apdx:qs:null}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}).  Trying to assign to {}\texttt{NULL}
+or {}\texttt{0} will not compile.
+\end{commandment}
+
+\begin{anticommandment}
+Thou shall not create a {}\texttt{NULL} {}\texttt{Ref\-Count\-Ptr<>}
+object using the templated function {}\texttt{rcp(...)} since it is
+very verbose and complicates maintenance.
+\end{anticommandment}
+
+{}\noindent{}Anti-example:
+{\small\begin{verbatim}
+  RefCountPtr<A> a_ptr1 = null;          // Yes :-)
+  RefCountPtr<A> a_ptr2 = rcp<A>(NULL);  // No, too verbose :-(
+\end{verbatim}}
+
+\begin{commandment}
+Thou shall only pass a raw pointer for an object that is
+{}\underline{not} allocated by operator {}\texttt{new} (e.g.~allocated
+on the stack) into a {}\texttt{Ref\-Count\-Ptr<>} object by using the
+templated function {}\texttt{rcp<T>(T* p, bool owns\_mem)} and setting
+{}\texttt{owns\_mem} to {}\texttt{false} (see item
+({}\ref{rcpqs:apdx:qs:not-new}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}).
+\end{commandment}
+
+\begin{anticommandment}
+Thou shall never pass a pointer for an object not allocated with
+operator {}\texttt{new} into a {}\texttt{Ref\-Count\-Ptr<>} object unless
+{}\texttt{owns\_mem} is set to {}\texttt{false}.
+\end{anticommandment}
+
+{}\noindent{}Anti-example:
+{\small\begin{verbatim}
+  C c;
+  RefCountPtr<A> a_ptr1 = rcp(&c,false);  // Yes :-)
+  RefCountPtr<A> a_ptr2 = rcp(&c);        // no, No, NO !!!!
+\end{verbatim}}
+
+\begin{commandment}\label{rcp:cmnd:converstion}
+Thou shalt only cast between {}\texttt{Ref\-Count\-Ptr<>} objects using
+the default copy constructor (for implicit conversions) and the
+nonmember template functions
+{}\texttt{rcp\-\_static\-\_cast<>(\-...)},
+{}\texttt{rcp\-\_const\-\_cast<>(\-...)} and
+{}\texttt{rcp\-\_dynamic\-\_cast<>(\-...)}  described above (see item
+({}\ref{rcpqs:apdx:qs:casting}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}).
+\end{commandment}
+
+\begin{anticommandment}
+Thou shall never convert between {}\texttt{Ref\-Count\-Ptr<>} objects
+using raw pointer access.
+\end{anticommandment}
+
+{}\noindent{}Anti-example:
+{\small\begin{verbatim}
+  RefCountPtr<A>     a_ptr   = rcp(new C);
+  RefCountPtr<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr);         // Yes :-)
+  RefCountPtr<B1>    b1_ptr2 = rcp(dynamic_cast<B1*>(a_ptr.get())); // no, No, NO !!!
+\end{verbatim}}
+
+%
+\section{Recommendations for passing objects to and from C++ functions}
+\label{rcpqs:apdx:passing-args}
+%
+
+Below are recommendations for idioms for declarations for passing
+required\footnote{Required arguments must be bound to valid objects
+(i.e.~can not be {}\texttt{NULL})} and optional\footnote{Optional
+arguments can be {}\texttt{NULL} in some cases} arguments into and out
+of C++ functions for various use cases and different types of objects.
+These idioms are designed to exploit the C++ language to make C++
+function prototypes as self documenting as possible, avoid common
+coding errors and increase readability of C++ code.  In general,
+{}\texttt{Ref\-Count\-Ptr<>} objects should be passed and manipulated
+as through there where raw C++ pointers with the exception that
+{}\texttt{Ref\-Count\-Ptr<>} objects should generally be passed by
+reference instead of by value (see {}\cite{ref:RefCountPtr} for more
+details).
+
+%
+%\fbox{
+\begin{minipage}{{}\textwidth}
+\begin{tabular}{|c|c|c|}
+\hline
+argument purpose
+& transitive
+& non-transitive \\
+\hline
+non-mutable object (required$^1$)
+& \begin{minipage}{12ex}
+    \begin{center}
+    {\tiny .}\\
+    {}\texttt{S s} \\
+    or \\
+    {}\texttt{const S s} \\
+    or \\
+    {}\texttt{const S \&s} \\
+    {\tiny .}
+    \end{center}
+  \end{minipage}
+& {}\texttt{const RefCountPtr<const S> \&s} \\
+\hline
+non-mutable object (optional$^2$)
+& {}\texttt{const S *s}
+& {}\texttt{const RefCountPtr<const S> \&s} \\
+\hline
+mutable object
+& {}\texttt{S *s}
+& {}\texttt{const RefCountPtr<S> \&s} \\
+\hline
+array of non-mutable objects
+& {}\texttt{const S s[]}
+& {}\texttt{const RefCountPtr<const S> s[]} \\
+\hline
+array of mutable objects
+& {}\texttt{S s[]}
+& {}\texttt{const RefCountPtr<S> s[]} \\
+\hline
+\end{tabular}
+\begin{center}
+C++ declarations for passing small concrete (i.e.~with value
+semantics) objects to and from functions (where {}\texttt{S} is a
+place holder for an actual built-in or user-defined data type).
+\end{center}
+\end{minipage}
+%} % end fbox
+%
+\\[5ex]
+%
+%\fbox{
+\begin{minipage}{{}\textwidth}
+\begin{tabular}{|c|c|c|}
+\hline
+argument purpose
+& transitive
+& non-transitive \\
+\hline
+non-mutable object (required$^1$)
+& {}\texttt{const A \&a}
+& {}\texttt{const RefCountPtr<const A> \&a} \\
+\hline
+non-mutable object (optional$^2$)
+& {}\texttt{const A *a}
+& {}\texttt{const RefCountPtr<const A> \&a} \\
+\hline
+mutable object
+& {}\texttt{A *a}
+& {}\texttt{const RefCountPtr<A> \&a} \\
+\hline
+array of non-mutable objects
+& {}\texttt{const A* a[]}
+& {}\texttt{const RefCountPtr<const A> a[]} \\
+\hline
+array of mutable objects
+& {}\texttt{A* a[]}
+& {}\texttt{const RefCountPtr<A> a[]} \\
+\hline
+\end{tabular}
+\begin{center}
+C++ declarations for passing abstract (i.e.~with reference or pointer
+semantics) or large concrete objects to and from functions (where
+{}\texttt{A} is a place holder for an actual abstract C++ base class).
+\end{center}
+\end{minipage}
+%} % end fbox
+
+%
+\section{Example C++ program using raw C++ pointers}
+\label{rcpqs:apdx:ex-prg}
+%
+
+{\small\begin{verbatim}
+
+// Abstract interfaces
+class UtilityBase {
+public:
+  virtual void f() const = 0;
+  ...
+};
+class UtilityBaseFactory {
+public:
+  virtual UtilityBase* createUtility() const = 0;
+  ...
+};
+
+// Concrete implemnetations
+UtilityA : public UtilityBase {
+public:
+  void f() const { ... }
+};
+UtilityB : public UtilityBase {
+public:
+  void f() const { ... }
+};
+UtilityAFactory : public UtilityBaseFactory {
+public:
+  UtilityBase* createUtility() const { return new UtilityA(); }
+};
+UtilityBFactory : public UtilityBaseFactory {
+public:
+  UtilityBase* createUtility() const { return new UtilityB(); }
+};
+
+// Client classes
+class ClientA {
+public:
+  void f( const UtilityBase &utility ) const { utility.f(); }
+  ...
+};
+class ClientB {
+public:
+  ClientB() : utility_(0) {}
+  ~ClientB() { delete utility_; }
+  void initialize( UtilityBase *utility ) { utility_ = utility; }
+  void g( const ClientA &a ) { a.f(*utility_); }
+  ...
+private:
+  UtilityBase *utility_;
+};
+class ClientC {
+public:
+  ClientC( const UtilityBaseFactory *utilityFactory, bool shareUtility )
+    :utilityFactory_(utilityFactory)
+    ,utility_(utilityFactory->createUtility())
+    ,shareUtility_(shareUtility)
+  {}
+  ~ClientC() { delete utilityFactory_; delete utility_; }
+  void h( ClientB *b ) {
+    if( shareUtility_ ) b.initialize(utility_);
+    else                b.initialize(utilityFactory_->createUtility());
+  }
+  ...
+private:
+  const UtilityBaseFactory *utilityFactory_;
+  UtilityBase              *utility_;
+  bool                     shareUtility_;
+};
+
+// Main program
+int main( int argc, char* argv[] )
+{
+  // Read options from the commandline
+  bool useA, shareUtility;
+  ...
+  // Create factory
+  UtilityBaseFactory
+    *utilityFactory = ( useA ? new UtilityAFactory() : new UtilityBFactory() );
+  // Create cleints
+  ClientA a;
+  ClientB b1, b2;
+  ClientC c(utilityFactory);
+  // Do some stuff
+  c.h(&b1);
+  c.h(&b2);
+  b.g(a);
+  ...
+  // Cleanup memory
+  delete utilityFactory;
+}
+\end{verbatim}}
+
+%
+\section{Refactored example C++ program using {}\texttt{Ref\-Count\-Ptr<>}}
+\label{rcpqs:apdx:ex-prg-refactored}
+%
+
+{\small\begin{verbatim}
+// Inject symbols for RefCountPtr so we don't need Teuchos:: qualification
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
+
+// Abstract interfaces
+class UtilityBase {
+public:
+  virtual void f() const = 0;
+  ...
+};
+class UtilityBaseFactory {
+public:
+  virtual RefCountPtr<UtilityBase> createUtility() const = 0;
+  ...
+};
+
+// Concrete implemnetations
+UtilityA : public UtilityBase {
+public:
+  void f() const { ... }
+};
+UtilityB : public UtilityBase {
+public:
+  void f() const { ... }
+};
+UtilityAFactory : public UtilityBaseFactory {
+public:
+  RefCountPtr<UtilityBase> createUtility() const
+  { return rcp(new UtilityA()); }
+};
+UtilityBFactory : public UtilityBaseFactory {
+public:
+  RefCountPtr<UtilityBase> createUtility() const
+  { return rcp(new UtilityB()); }
+};
+
+// Client classes
+class ClientA {
+public:
+  void f( const UtilityBase &utility ) const { utility.f(); }
+  ...
+};
+class ClientB {
+public:
+  void initialize(const RefCountPtr<UtilityBase> &utility) { utility_=utility; }
+  void g( const ClientA &a ) { a.f(*utility_); }
+  ...
+private:
+  RefCountPtr<UtilityBase> utility_;
+};
+class ClientC {
+public:
+  ClientC( const RefCountPtr<UtilityBaseFactory> &utilityFactory, bool shareUtility )
+    :utilityFactory_(utilityFactory)
+    ,utility_(utilityFactory->createUtility())
+    ,shareUtility_(shareUtility)
+  {}
+  void h( ClientB *b ) {
+    if( shareUtility_ ) b.initialize(utility_);
+    else                b.initialize(utilityFactory_->createUtility());
+  }
+  ...
+private:
+  RefCountPtr<UtilityBaseFactory> utilityFactory_;
+  RefCountPtr<UtilityBase>        utility_;
+  bool                                     shareUtility_;
+};
+
+// Main program
+int main( int argc, char* argv[] )
+{
+  // Read options from the commandline
+  bool useA, shareUtility;
+  ...
+  // Create factory
+  RefCountPtr<UtilityBaseFactory>
+    utilityFactory = ( useA ? rcp(new UtilityAFactory())
+                            : rcp(new UtilityBFactory()) );
+  // Create cleints
+  ClientA a;
+  ClientB b1, b2;
+  ClientC c(utilityFactory);
+  // Do some stuff
+  c.h(&b1);
+  c.h(&b2);
+  b.g(a);
+  ...
+}
+\end{verbatim}}
+
+%
+% The Glossary
+%
+
+%\begin{theglossary}
+%\entry{transitive relationship}
+%A relationship that exits between two objects only during the
+%execution of a function.
+%\entry{non-transitive relationship}
+%A relationship that exits between two objects that spans
+%two or more function calls and may linger until the destruction
+%of one or more of the related objects.
+%\end{theglossary}
+
+%
+\begin{SANDdistribution}
+%
+
+% External
+\SANDdistExternal{1}{} Carl Laird \\ Department Chemical Engineering\\Carnegie Mellon University\\5000 Forms Ave.\\Pittsburgh, PA 15213
+\SANDdistExternal{1}{} Matthias Heinkenschloss \\ Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Bill Symes\\Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Tony Padula\\Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Mark Gockenbach \\ Department of Mathematical Sciences\\Michigan Technological University\\ 
+1400 Townsend Drive\\Houghton, Michigan 49931-1295, U.S.A.
+\SANDdistExternal{1}{} Paul Sexton \\ Box 1560 \\ St. John's University \\ Collegeville, MN 56321
+\SANDdistExternal{1}{} Andreas ???Wachter??? \\ ??? \\ IBM Watson Research Center \\
+???Address???
+% Sandia Line
+%\SANDdistInternal{1}{0847}{Bill Camp}{9200}
+%\SANDdistInternal{1}{0847}{Sudip Dosanjh}{9233}
+% 9211
+\SANDdistInternal{1}{0847}{Scott Mitchell}{9211}
+\SANDdistInternal{1}{0847}{David Gay}{9211}
+\SANDdistInternal{5}{1110}{Roscoe Bartlett}{9211}
+\SANDdistInternal{1}{1110}{Scott Collis}{9211}
+\SANDdistInternal{1}{0847}{Bart van Bloemen Waanders}{9211}
+\SANDdistInternal{1}{0847}{Mike Eldred}{9211}
+\SANDdistInternal{1}{0947}{Laura Swiler}{9211}
+% 9214
+\SANDdistInternal{1}{9217}{Mark Adams}{9214}
+\SANDdistInternal{1}{1110}{Pavel Bochev}{9214}
+\SANDdistInternal{1}{1110}{Todd Coffey}{9214}
+\SANDdistInternal{1}{1110}{David Day}{9214}
+\SANDdistInternal{1}{1110}{John Delaurentis}{9214}
+\SANDdistInternal{1}{1110}{Michael Heroux}{9214}
+\SANDdistInternal{1}{1110}{Ulrich Hetmaniuk}{9214}
+\SANDdistInternal{1}{9217}{Jonathan Hu}{9214}
+\SANDdistInternal{1}{1110}{Richard Lehoucq}{9214}
+\SANDdistInternal{1}{1110}{Louis Romero}{9214}
+\SANDdistInternal{1}{1110}{David Ropp}{9214}
+\SANDdistInternal{1}{1110}{Heidi Thornquist}{9214}
+\SANDdistInternal{1}{9217}{Raymond Tuminaro}{9214}
+\SANDdistInternal{1}{1110}{James Willenbring}{9214}
+% 9210
+\SANDdistInternal{1}{1110}{David Womble}{9210}
+% 8962
+\SANDdistInternal{1}{9217}{Steve Thomas}{8962}
+\SANDdistInternal{1}{9217}{Paul Boggs}{8962}
+\SANDdistInternal{1}{9217}{Kevin Long}{8962}
+\SANDdistInternal{1}{9217}{Patricia Hough}{8962}
+\SANDdistInternal{1}{9217}{Tamara Kolda}{8962}
+\SANDdistInternal{1}{9217}{Monica Martinez-Canales}{8962}
+\SANDdistInternal{1}{9217}{Pamela Williams}{8962}
+\SANDdistInternal{1}{9217}{Victoria Howle}{8962}
+% Sandia Misc
+\SANDdistInternal{1}{1110}{William Hart}{9215}
+%\SANDdistInternal{1}{0847}{Steve Wojtkiewicz}{9124}
+% Xyce developers
+\SANDdistInternal{1}{0316}{Eric Keiter}{9233}
+\SANDdistInternal{1}{0316}{Scott Hutchinson}{9233}
+\SANDdistInternal{1}{0316}{Robert Hoekstra}{9233}
+% Premo developers
+\SANDdistInternal{1}{0316}{Curt Ober}{9233}
+%\SANDdistInternal{1}{0316}{Tom Smith}{9233}
+% Main Sierra developers
+\SANDdistInternal{1}{9143}{Carter Edwards}{0827}
+\SANDdistInternal{1}{9143}{James Stewart}{0826}
+% Main Nevada developers
+\SANDdistInternal{1}{0819}{Ricard Drake}{9231}
+% NOX/LOCA developers
+\SANDdistInternal{1}{0316}{Roger Pawlowski}{9233}
+\SANDdistInternal{1}{1110}{Eric Phipps}{9233}
+\SANDdistInternal{1}{1110}{Andrew Salinger}{9233}
+% Other Trilinos developers
+\SANDdistInternal{1}{0826}{Alan Williams}{8961}
+\SANDdistExternal{1}{}{Kendall Stanley}{}
+% Housekeeping copies necessary for every unclassified report:
+\SANDdistInternal{1}{9018}{Central Technical Files}{8945-1}
+\SANDdistInternal{2}{0899}{Technical Library}{9610}
+\SANDdistInternal{2}{0612}{Review \& Approval Desk}{4916}
+% If report has a Patent Caution or Patent Interest, add this:
+%\SANDdistInternal{3}{0161}{Patent and Licensing Office}{4916}
+\end{SANDdistribution}
+
+\end{document}

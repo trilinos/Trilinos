@@ -6,33 +6,24 @@
 Described herein is the templated class {}\texttt{RefCountPtr<>}
 (which exists in the namespace {}\texttt{Teuchos}) and a set of global
 template functions for implementing automatic garbage collection in
-C++ using smart reference-counted pointers.  This code is included in
-the Trilinos {}\cite{ref:Trilinos-Overview} tools package
-{}\texttt{Teuchos}.  This design is based partly on the interface for
-{}\texttt{std::auto\_ptr<>} and Items 28 and 29 in "More Effective
-C++" by Scott Myers {}\cite{ref:meyers_1996}.  In short, using this
-class allows one client to dynamically create an object (using
-{}\texttt{new} for instance), pass the object around to many other
-clients which also need to access the object and then never requiring
-any client to explicitly call delete.  The object will (almost
-magically) be deleted when all of the clients remove their references
-to it.  This is very similar to the type of garbage collection that
-is in languages like Perl and Java.  There are, however, some
-pathological cases (such as the classic problem of circular
-references, see {}\cite[Item 29, page 212]{ref:meyers_1996}) where
-{}\texttt{RefCountPtr<>} will result in a memory leak but these
-situations can be avoided.  However, realizing the potential of
-hands-off garbage collection with {}\texttt{RefCountPtr<>} requires
-following some rules.  These rules are spelled out in the form of
-commandments in the following discussion.
+C++ using smart reference-counted pointers.  This document builds on
+the material in the beginner's guide
+{}\cite{ref:RefCountPtrBeginnersGuide}.  The beginner's guide is
+considered an integral part of this document and this document is
+incomplete without it.
 
 This discussion assumes that the reader is knowledgeable of C++ and
 has read books such as {}\cite{ref:stroustrup_2000} and
 {}\cite{ref:meyers_1994}.  While understanding and appreciating the
 advanced features of {}\texttt{RefCountPtr<>} requires advanced C++
-knowledge and experience, the basic use requires only basic C++
-skills.  By ``coding by example'' even beginner C++ programmers can to
-realize the benefits of {}\texttt{RefCountPtr<>}.
+knowledge and experience, the basic use (as described in the
+beginner's guide {}\cite{ref:RefCountPtrBeginnersGuide}) requires only
+basic C++ skills.  By ``coding by example'' even beginner C++
+programmers can immediately realize the benefits of
+{}\texttt{RefCountPtr<>}.
+
+The commandments stated in Appendix ??? in the beginner's guide are
+represented here in the context of a wider discussion.
 
 The following class hierarchy is used to demonstrate this smart
 pointer design.
@@ -55,78 +46,22 @@ the current scope or as if all of the code resided in the
 {}\texttt{Teuchos} namespace.
 
 The public C++ declarations for all of the code discussed here are
-shown in Figure {}\ref{rcp:fig:decl}.  A short quick-start and
-reference for {}\texttt{RefCountPtr<>} is contained in Appendix
-{}\ref{rcp:apdx:quickstart}.
-
-\begin{figure}
-
-{\scriptsize\begin{verbatim}
-namespace Teuchos {
-
-enum ENull { null };
-
-template<class T>
-class DeallocDelete { public: void free( T* ptr ) { if(ptr) delete ptr; }  };
-
-template<class T>
-class RefCountPtr {
-public:
-  typedef T  element_type;
-  RefCountPtr( ENull null_arg = null );
-  RefCountPtr(const RefCountPtr<T>& r_ptr);
-  template<class T2> RefCountPtr(const RefCountPtr<T2>& r_ptr);
-  ~RefCountPtr();
-  RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
-  T* operator->() const;
-  T& operator*() const;
-  T* get() const;
-  T* release();
-  int count() const;
-  void set_has_ownership();
-  bool has_ownership() const;
-  bool shares_resource(const RefCountPtr<T>& r_ptr) const;
-private:
-  ...
-};
-
-template<class T>            RefCountPtr<T>   rcp( T* p );
-template<class T>            RefCountPtr<T>   rcp( T* p, bool owns_mem);
-template<class T
-  ,class Dealloc_T>          RefCountPtr<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
-template<class T2, class T1> RefCountPtr<T2>  rcp_implicit_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1);
-template<class T1, class T2> int              set_extra_data( const T1 &extra_data
-                                                ,const std::string& name, RefCountPtr<T2> *p
-                                                ,bool force_unique = true );
-template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
-                                                ,const std::string& name );
-template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
-                                                ,const std::string& name );
-template<class Dealloc_T
-  , class T>                 Dealloc_T&       get_dealloc( RefCountPtr<T>& p );
-template<class Dealloc_T
-  , class T>                 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
-
-}
-\end{verbatim}}
-\caption{\label{rcp:fig:decl}
-Declaration of C++ code for {}\texttt{RefCountPtr<>} and supporting functions.}
-\end{figure}
+shown in Appendix A in the beginner's guide
+{}\cite{ref:RefCountPtrBeginnersGuide}.  A short quick-start and
+reference for {}\texttt{RefCountPtr<>} is contained in Appendix B in
+the beginner's guide {}\cite{ref:RefCountPtrBeginnersGuide}.
 
 A word of caution; note that the design of the reference-counted smart
 pointer class discussed in Item 29 of {}\cite{ref:meyers_1996} in the
 subsection ``Adding Reference Counting to Existing Classes'' has a
 purpose very similar to {}\texttt{RefCountPtr<>} but the design of
 {}\texttt{RefCountPtr<>} is very different (see Appendix
-{}\ref{rcp:apdx:design}).  Therefore, while the designs discussed in
-{}\cite{ref:meyers_1996} are not used in their presented form,
-{}\cite{ref:meyers_1996} does discuss in detail many of the issues
-involved in using smart pointers and reference counting and hence
-provides very useful background information and interested readers are
-strongly encouraged to study this reference.
+{}\ref{rcp:apdx:design}).  Since many of the issues involved in using
+smart pointers and reference counting discussed Meyers
+{}\cite{ref:meyers_1996} are the same as with {}\texttt{RefCountPtr<>}
+this reference is worthy of study.  However, the exact designs used in
+this reference are not used in {}\texttt{RefCountPtr<>} since they
+lead to less flexible software.
 
 %
 \subsection{Initializing {}\texttt{RefCountPtr} objects}
@@ -154,7 +89,7 @@ allocation/deallocation errors will occur.  Therefore, the following
 templated function
 
 {\scriptsize\begin{verbatim}
-template<class T> RefCountPtr<T> rcp(T* p);
+template<class T> RefCountPtr<T> rcp(T* p, bool owns_mem = true );
 \end{verbatim}}
 
 {}\noindent{}must be used to initialize a smart pointer object given a
@@ -163,10 +98,23 @@ related to multiple inheritance and/or virtual base classes (see
 Appendix {}\ref{rcp:apdx:mivbc}).
 
 \begin{commandment}\label{rcp:cmd:rcp-new}
-Thou shall only call {}\texttt{new} directly
-in the call to {}\texttt{rcp(...)} to create a dynamically allocated
+Thou shall only put a pointer for an object allocated with operator
+{}\texttt{new} into a {}\texttt{RefCountPtr<>} object only once.  The
+best way to insure this is to call operator {}\texttt{new} directly in
+the call to {}\texttt{rcp(...)} to create a dynamically allocated
 object that is to be managed by a {}\texttt{RefCountPtr<>} object.
 \end{commandment}
+
+
+{}\textbf{Warning!} It is not advisable to create a raw pointer using
+{}\texttt{new} first and then pass it into a {}\texttt{RefCountPtr<>}
+in a different statement as shown above (which breaks Commandment
+{}\ref{rcp:cmd:rcp-new}) unless one is 100\% sure of what one is
+doing.  Subtle issues with multiple inheritance and/or virtual base
+classes can result in a runtime segmentation fault on certain
+platforms (see Appendix {}\ref{rcp:apdx:mivbc}).  Breaking Commandment
+{}\ref{rcp:cmd:rcp-new} (and its embedded suggestion) just increases
+the likelihood that a runtime error will occur on some platforms.
 
 The only case where the template function {}\texttt{rcp<>(...)} should
 not be used to create a smart pointer is the initialization to
@@ -177,12 +125,13 @@ use the default constructor as
 RefCountPtr<A> a_ptr;   // A a_ptr = NULL:
 \end{verbatim}}
 
-One of the big pluses for using {}\texttt{RefCountPtr<>} over raw
+One of the big advantages for using {}\texttt{RefCountPtr<>} over raw
 pointers (independent of the reference counting and garbage collection
-features) is this default initialization to {}\texttt{NULL}.
-To be more explicit about the initialization to {}\texttt{NULL} (and for
+features) is this default initialization to {}\texttt{NULL}.  To be
+more explicit about the initialization to {}\texttt{NULL} (and for
 passing a null pointer into a function), a special constructor is
-included which takes the enumeration value {}\texttt{null}.  For example
+included which takes the enumeration value {}\texttt{null}.  For
+example
 
 {\scriptsize\begin{verbatim}
 RefCountPtr<A> a_ptr = null; // i.e. A a_ptr = NULL:
@@ -191,7 +140,8 @@ RefCountPtr<A> a_ptr = null; // i.e. A a_ptr = NULL:
 \begin{commandment}
 Thou shall only create a {}\texttt{NULL} {}\texttt{RefCountPtr<>}
 object by using the default constructor or by using the
-{}\texttt{null} enum (and its associated special constructor).
+{}\texttt{null} enum (and its associated special constructor).  Trying
+to assign to {}\texttt{NULL} or {}\texttt{0} will not compile.
 \end{commandment}
 
 Another situation that commonly occurs is when an object is allocated
@@ -218,19 +168,13 @@ C c;
 Foo foo(rcp(&c,false));
 \end{verbatim}}
 
-In this example, the templated function
-
-{\scriptsize\begin{verbatim}
-template<class T> RefCountPtr<T> rcp( T*
-p, bool owns_mem );
-\end{verbatim}}
-
-{}\noindent{}is used with the parameter {}\texttt{owns\_mem} set to
-{}\texttt{false}.  In this example, when the {}\texttt{foo} object
-goes out of scope (and its {}\texttt{Foo::a\_} member is deleted),
-{}\texttt{delete} will not be called on the underlying pointer and no
-memory error will occur.  For more specialized types of memory
-deallocation control see Section {}\ref{rcp:sec:dealloc}.
+In this example, the templated function {}\texttt{rcp(...)} is used
+with the parameter {}\texttt{owns\_mem} set to {}\texttt{false}.  In
+this example, when the {}\texttt{foo} object goes out of scope (and
+its {}\texttt{Foo::a\_} member is deleted), {}\texttt{delete} will not
+be called on the underlying pointer and no memory error will occur.
+For more specialized types of memory deallocation control see Section
+{}\ref{rcp:sec:dealloc}.
 
 \begin{commandment}
 Thou shall only pass a raw pointer for an object that is
@@ -256,8 +200,8 @@ a_ptr->f();
 \end{verbatim}}
 
 Therefore, using a smart reference-counted pointer is very similar to
-using a raw C++ pointer.  Some things you can do with smart
-reference-counted pointers that are similar as for raw pointers are
+using a raw C++ pointer.  The use of smart pointers is very similar
+to raw pointers as shown below.
 
 {\scriptsize\begin{verbatim}
 RefCountPtr<A>
@@ -277,16 +221,6 @@ ra_ptr1->f();                // ""
 What makes smart pointers different however is that the above piece of code
 does not create any memory leaks that would have otherwise occurred
 if {}\texttt{a\_ptr1} and {}\texttt{a\_ptr2} where raw C++ pointers.
-
-{}\textbf{Warning!} It is not advisable to create a raw pointer using
-{}\texttt{new} first and then pass it into a {}\texttt{RefCountPtr<>} in a
-different statement as shown above (which breaks Commandment
-{}\ref{rcp:cmd:rcp-new}) unless one are 100\% sure of what one is doing.
-Subtle issues with multiple inheritance and/or virtual base classes
-can result in a runtime segmentation fault on certain platforms (see
-Appendix {}\ref{rcp:apdx:mivbc}).  Breaking Commandment
-{}\ref{rcp:cmd:rcp-new} just increases the likelihood that a runtime
-error will occur on some platforms.
 
 However, these smart reference-counted pointers can not be used
 everywhere a raw pointer can.  For instance, the following
@@ -309,9 +243,13 @@ if( a_ptr1.get() == a_ptr2.get() )
     std::cout << "a_ptr1 and a_ptr2 point to the same object\n";
 \end{verbatim}}
 
-The goal of {}\texttt{RefCountPtr<>} is not to hide the fact smart
-pointers are being used over raw pointers and therefore not all raw
-pointer syntax is allowed.
+{}\texttt{RefCountPtr<>} purposefully does not support all raw pointer
+syntax.  The goal of {}\texttt{RefCountPtr<>} is not to hide the fact
+smart pointers are being used over raw pointers so developers should
+not expect (or even want) to simply change the data type of raw
+pointers from {}\texttt{T*} to {}\texttt{Ref\-Count\-Ptr<T>} and then
+have a large body of code simply recompile without a wimper from the
+compiler.
 
 %
 \subsection{Conversion of {}\texttt{RefCountPtr<>} objects}
@@ -375,7 +313,7 @@ RefCountPtr<C>       c_ptr1 = rcp(new C);
 RefCountPtr<A>       a_ptr  = c_ptr;
 RefCountPtr<const C> c_ptr2 = rcp_dynamic_cast<const C>(a_ptr);                      // Error!
 RefCountPtr<const C> c_ptr3 = rcp_dynamic_cast<const C>(const_cast<const A>(a_ptr)); // Okay!
-RefCountPtr<D>  d_ptr  = rcp(new D);
+RefCountPtr<D>  d_ptr  = rcp(new E);
 RefCountPtr<E>  e_ptr1 = rcp_dynamic_cast<E>(d_ptr); // Error, D and E are not polymorphic!
 RefCountPtr<E>  e_ptr2 = rcp_static_cast<E>(d_ptr);  // Okay, but unchecked!
 \end{verbatim}}
@@ -385,7 +323,7 @@ This brings us to another commandment.
 \begin{commandment}\label{rcp:cmnd:converstion}
 Thou shalt only cast between {}\texttt{RefCountPtr<>} objects using the
 default copy constructor (for implicit conversions) and the nonmember
-template functions {}\texttt{rcp\-\_static\-\_cast<>(...)},
+template functions {}\texttt{rcp\-\_static\-\_cast<>( ...)},
 {}\texttt{rcp\-\_const\-\_cast<>(...)} and
 {}\texttt{rcp\-\_dynamic\-\_cast<>(...)}  described above.
 \end{commandment}
@@ -405,9 +343,9 @@ example, the following piece of code
   }
 \end{verbatim}}
 
-{}\noindent{} will always (unless other steps are taken) result in a
+{}\noindent{}will always (unless other steps are taken) result in a
 memory deallocation error when these smart pointer objects are deleted
-(i.e.~the the pointer being deleted twice).
+(i.e.~the pointer being deleted twice).
 
 %
 \section{The proper use of {}\texttt{RefCountPtr<>} and other C++ data types}
@@ -419,77 +357,24 @@ user-defined concrete or abstract data type.  Therefore, one may ask
 why {}\texttt{RefCountPtr<>} should not be used for all objects.
 There is nothing stopping a developer from using
 {}\texttt{RefCountPtr<>} in this way but to do so would be overkill
-and in this author's opinion is counter productive.  The most
-compelling situation where {}\texttt{RefCountPtr<>} should be used is
-when a client needs to maintain a private data member to another
+and in this author's opinion is counterproductive.  The most
+compelling situation where {}\texttt{Ref\-Count\-Ptr<>} should be used
+is when a client needs to maintain a private data member to another
 object which is of an abstract type or is an object that is shared
-with other clients.  Note that {}\texttt{RefCountPtr<>} usually should
-not be used for built-in data types such as {}\texttt{int} or
-{}\texttt{double} unless there is a desire to allow one client to
-change the value and then have this value automatically updated in
-other clients (which is rarely a good idea to allow in general).
-
-In this author's opinion, {}\texttt{RefCountPtr<>} should only be used
-to wrap an object in situations where the client has more than a
-transient relationship to the object.  An example of transient
-relationship with an object is one where the object is simply passed
-into and out of a function and no ``memory'' of the object resides
-after the function call finishes.  For example, the following use
-of {}\texttt{RefCountPtr<>}
-
-{\scriptsize\begin{verbatim}
-class SomeClass {
-public:
-  void someFunction( RefCountPtr<A> a ) { a->f(); }
-};
-\end{verbatim}}
-
-{}\noindent{}is unnecessary.  In the above example, the use of an
-object {}\texttt{a} of type {}\texttt{A} is only used during the
-function invocation and no ``memory'' if the object {}\texttt{a} is
-maintained.  Another minor other problem with the above usage is the
-fact that the object {}\texttt{a} is passed by value which results in
-unnecessary constructor and destructor invocations (if the function is
-not inlined as shown above).  A better way to pass the object
-{}\texttt{a} in the above example is as follows
-
-{\scriptsize\begin{verbatim}
-class SomeClass { public: void
-someFunction( A* a ) { a->f(); } };
-\end{verbatim}}
-
-{}\noindent{}Not only is there less typing involved but less (be it
-small) overhead is required.  The other reason for preferring the last
-implementation is that it speaks to the intent of the argument more
-clearly (see Section {}\ref{rcp:sec:passing-args}).
-
-A non-transient relationship is one where a client maintains a private
-data member to an external object that may or may not be shared by
-another client.  The following is the example of such a use case.
-
-{\scriptsize\begin{verbatim}
-class SomeClass {
-public:
-  SomeClass( const RefCountPtr<A>& a ) : a_(a) {}
-  void aFunction() { a_->f(); }
-private:
-  RefCountPtr<A> a_;
-};
-\end{verbatim}}
-
-{}\noindent{} In the above example, the object {}\texttt{a} is
-maintained using a private {}\texttt{RefCountPtr<A>} object since it
-is called on multiple times within a member function.
+with other clients.  As described in the beginner's guide
+{}\cite{ref:RefCountPtrBeginnersGuide} this is an example of a
+{}\textit{non-trnasitive} relationship and
+{}\texttt{Ref\-Count\-Ptr<>} should be used for all
+{}\textit{non-trnasitive} relationships.  Note that
+{}\texttt{RefCountPtr<>} usually should not be used for built-in data
+types such as {}\texttt{int} or {}\texttt{double} unless there is a
+desire to allow one client to change the value and then have this
+value automatically updated in other clients (which is rarely a good
+idea to allow in general).
 
 Note that the consistent use of {}\texttt{RefCountPtr<>} makes it
 possible to skip writing explicit destructors for most classes since
-the compiler-generated destructor does exactly the right thing.  In
-the above example, if the object {}\texttt{a} was dynamically
-allocated before it was passed to the constructor for
-{}\texttt{SomeClass} then that object would be maintained
-automatically and would not be deleted until the {}\texttt{SomeClass}
-object was destroyed and this required no special code in the
-{}\texttt{SomeClass} object at all.
+the compiler-generated destructor does exactly the right thing.
 
 %
 \subsection{Passing {}\texttt{RefCountPtr<>} and other types of objects to and from functions}
@@ -532,128 +417,32 @@ an array is specified as {}\texttt{int a[]} it is not clear if this
 array is required (i.e.~{}\texttt{a!=NULL} required) or is optional
 (i.e.~{}\texttt{a==NULL} allowed).
 
-There are other C++ idioms that can be used so that general nature of
-arguments passed to and from a function can be largely discerned just
-by looking at the C++ prototype for the function.  The
+There are other C++ idioms that can be used so that the general nature
+of arguments passed to and from a function can be largely discerned
+just by looking at the C++ prototype for the function.  The
 {}\texttt{const} qualifier just mentioned above is one of the language
 features which is self-documenting but there are others.  Another
 example is passing arrays to and from functions (by declaring an
 integer array argument as {}\texttt{int arg[]} instead of
-{}\texttt{int* arg} for instance).  Table {}\ref{rcp:tbl:fnc-decl}
-shows recommendations for how to pass objects to and from C++
-functions in a way that is as self-documenting as possible.
+{}\texttt{int* arg} for instance).  Appendix ??? in the beginner's
+guide {}\cite{ref:RefCountPtrBeginnersGuide} shows recommendations for
+how to pass objects to and from C++ functions in a way that is as
+self-documenting as possible.
 
-\begin{table}
-%
-%\fbox{
-\begin{minipage}{{}\textwidth}
-\begin{tabular}{|c|c|c|}
-\hline
-argument purpose
-& transitive
-& non-transitive \\
-\hline
-non-mutable object (required)
-& \begin{minipage}{12ex}
-    \begin{center}
-    {\tiny .}\\
-    {}\texttt{S s} \\
-    or \\
-    {}\texttt{const S s} \\
-    or \\
-    {}\texttt{const S \&s} \\
-    {\tiny .}
-    \end{center}
-  \end{minipage}
-& {}\texttt{const RefCountPtr<const S> \&s} \\
-\hline
-non-mutable object (optional)
-& {}\texttt{const S *s}
-& {}\texttt{const RefCountPtr<const S> \&s} \\
-\hline
-mutable object
-& {}\texttt{S *s}
-& {}\texttt{const RefCountPtr<S> \&s} \\
-\hline
-array of non-mutable objects
-& {}\texttt{const S s[]}
-& {}\texttt{const RefCountPtr<const S> s[]} \\
-\hline
-array of mutable objects
-& {}\texttt{S s[]}
-& {}\texttt{const RefCountPtr<S> s[]} \\
-\hline
-\end{tabular}
-\begin{center}
-C++ declarations for passing small concrete (i.e.~with value
-semantics) objects to and from functions for various reasons (where
-{}\texttt{S} is a place holder for an actual built-in or user-defined
-data type).
-\end{center}
-\end{minipage}
-%} % end fbox
-%
-\\[5ex]
-%
-%\fbox{
-\begin{minipage}{{}\textwidth}
-\begin{tabular}{|c|c|c|}
-\hline
-argument purpose
-& transitive
-& non-transitive \\
-\hline
-non-mutable object (required)
-& {}\texttt{const A \&a}
-& {}\texttt{const RefCountPtr<const A> \&a} \\
-\hline
-non-mutable object (optional)
-& {}\texttt{const A *a}
-& {}\texttt{const RefCountPtr<const A> \&a} \\
-\hline
-mutable object
-& {}\texttt{A *a}
-& {}\texttt{const RefCountPtr<A> \&a} \\
-\hline
-array of non-mutable objects
-& {}\texttt{const A* a[]}
-& {}\texttt{const RefCountPtr<const A> a[]} \\
-\hline
-array of mutable objects
-& {}\texttt{A* a[]}
-& {}\texttt{const RefCountPtr<A> a[]} \\
-\hline
-\end{tabular}
-\begin{center}
-C++ declarations for passing abstract (i.e.~with reference or pointer
-semantics) or large concrete objects to and from functions for various
-reasons (where {}\texttt{A} is a place holder for an actual abstract C++
-base class).
-\end{center}
-\end{minipage}
-%} % end fbox
-%
-\caption{\label{rcp:tbl:fnc-decl}
-Recommendations for declarations for arguments being passed into and
-out of C++ functions for various use cases and different types of
-objects.}
-%
-\end{table}
-
-The reasons why the declarations are the way they are in Table
-{}\ref{rcp:tbl:fnc-decl} can be found in the references
+The reasons why the declarations are the way they are in Appendix D in
+{}\cite{ref:RefCountPtrBeginnersGuide} can be found in the references
 {}\cite{ref:stroustrup_2000} and {}\cite{ref:meyers_1994}.
 Specifically, see the sections ???.  Appendix
 {}\ref{rcp:apdx:passing_args} describes each of the use cases shown in
-Table {}{}\ref{rcp:tbl:fnc-decl} and how {}\texttt{RefCountPtr<>} fits
-in.
+Appendix D in {}\cite{ref:RefCountPtrBeginnersGuide} and how
+{}\texttt{RefCountPtr<>} fits in.
 
 In short, {}\texttt{RefCountPtr<>} objects should be passed around as
-through they where raw C++ pointers to the underlying objects.  The
+though they where raw C++ pointers to the underlying objects.  The
 main difference between passing {}\texttt{RefCountPtr<>} and and raw
 C++ pointers, however, is that it usually a good idea to pass
 {}\texttt{RefCountPtr<>} objects by {}\texttt{const} reference instead
-of by value since passing {}\texttt{RefCountPtr<>} objects be value
+of by value since passing {}\texttt{RefCountPtr<>} objects by value
 results in unnecessary calls to copy constructors and destructors
 that, if nothing else, make stepping through code in debugger more
 difficult.
@@ -694,25 +483,11 @@ the object without worry that such a change will affect another
 client.
 
 This type of information must be used very carefully but can be very
-helpful in simplifying the logic in certain types of use cases. If this
-type of logic is to be used then it must be documented very clearly
-since it is easy to falsely show a reference count higher than the
-number of clients that really own {}\texttt{RefCountPtr<>} objects to
-the reference-counted object.
-
-%
-% ToDo: Consider changing the feature of has_ownership() to apply to
-% individual RefCountPtr objects.  This would allow a client to perform
-% a conversion like:
-%
-% obj.someFunc( rcp(new C(),false) );
-%
-% This statement would cause the temporary object RefCountPtr<A>
-% to not increase the count() and therefore code inside the implementation
-% of the function obj.someFunc(...) would see count==1 and could therefore
-% see that it is the only client that owns the object.  However, this is very
-% dangerous and could result in a memory leak if not careful.
-%
+helpful in simplifying the logic in certain types of use cases. If
+this type of logic is to be used then it must be documented very
+clearly since it is easy to falsely show a reference count higher than
+the number of clients that really own {}\texttt{RefCountPtr<>} objects
+to the reference-counted object.
 
 %
 \subsection{Associating extra data with a {}\texttt{RefCountPtr<>} object}
@@ -809,8 +584,8 @@ RefCountPtr<Base> createBase(bool someFlag)
 }
 \end{verbatim}
 
-}{}\noindent{}Anyone who knows C++ 101 knows the problem with the
-above function.  As soon as the block of code where {}\texttt{u} is
+}{}\noindent{}After some thought, the problem with the above function
+should be obvious.  As soon as the block of code where {}\texttt{u} is
 allocated (on the stack) is exited, the created {}\texttt{u} object
 (and therefore also the {}\texttt{Derived2(u)} object) becomes invalid
 before the function even returns.  A second naive and incorrect
@@ -932,14 +707,12 @@ The reason that {}\texttt{get\-\_extra\-\_data()} template functions
 are nonmember functions is that the C++ standard does not allow the
 explicit specification of a template argument in a member template
 function without the use of a verbose nonintuitive syntax
-{}\cite[C.13.6]{ref:stroustrup_2000}.  However
-{}\texttt{set\-\_extra\-\_data()} could have been made a member
-function of {}\texttt{RefCountPtr<>} but the primary reason that it
-was made a nonmember function was to maintain consistency with the use
-of the other nonmember {}\texttt{get\-\_extra\-\_data()} functions.
-Also, there may be cases where a client may want to be specific about
-what type is being used to store extra data such as in the following
-case
+{}\cite[C.13.6]{ref:stroustrup_2000}.
+
+Even though {}\texttt{set\-\_extra\-\_data()} can deduce the template
+type from the input argument there may be cases where a client may
+want to be specific about what type is being used to store extra data
+such as in the following case
 
 {\scriptsize\begin{verbatim}
 set_extra_data<float>( 1e+5, "some-number", &a_ptr );
@@ -951,7 +724,7 @@ would have used {}\texttt{double} as dictated by the standard.
 However, the same result could have been achieved as
 
 {\scriptsize\begin{verbatim}
-set_extra_data( static_cast<double>(1e+5), "some-number", &a_ptr );
+set_extra_data( static_cast<float>(1e+5), "some-number", &a_ptr );
 \end{verbatim}}
 
 {}\noindent{}which is more verbose but it is up to the developer to
@@ -962,23 +735,23 @@ decide what form is more desirable.
 \label{rcp:sec:dealloc}
 %
 
-In the most common scenario for the use of {}\texttt{RefCountPtr<>}
-object is to manage the lifetime of objects allocated using
-{}\texttt{new} and deallocated using {}\texttt{delete}.  For these use
-cases, the built-in behavior in {}\texttt{RefCountPtr<>} does exactly
-the right thing.  However, there are situations when one can not
-simply call {}\texttt{delete} to deallocate an object.  Some examples
-of these situations include:
+The most common use of {}\texttt{RefCountPtr<>} is to manage the
+lifetime of objects allocated using operator {}\texttt{new} and
+deallocated using operator {}\texttt{delete}.  For these use cases,
+the built-in behavior in {}\texttt{RefCountPtr<>} does exactly the
+right thing.  However, there are situations when one can not simply
+call {}\texttt{delete} to deallocate an object.  Some examples of
+these situations include:
 %
 \begin{enumerate}
 \item
 When reference counts for objects are managed by requiring clients to
-explicitly call increment and deincremented functions such as is the case
-in CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}.  Such an
-approach is also presented in {}\cite[Item 29]{ref:meyers_1996}) in
-the subsection ``A Reference-Counting Base Class''.  In these
-protocols, deallocation occurs automatically behind the scenes when
-this other reference count goes to zero.
+explicitly call increment and deincremented functions such as is the
+case in CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}.  Such an
+approach is also presented in {}\cite[Item 29]{ref:meyers_1996} in the
+subsection ``A Reference-Counting Base Class''.  In these protocols,
+deallocation occurs automatically behind the scenes when this other
+reference count goes to zero.
 \item
 When objects are managed by certain types of object databases.  In
 some object databases, an object that is grabbed from the database must
@@ -1077,7 +850,7 @@ class DeallocObjectADB
 public:
   DeallocObjectADB( ObjectjADB* db, int id ) : db_(db), id_(id) {}
   typedef A ptr_t;
-  void free( T* ptr ) { db_->remove(id); }
+  void free( T* ptr ) { db_->release(id); }
 private:
   ObjectjADB* db_;
   int id_;
@@ -1130,19 +903,5 @@ but the reader should get the basic idea.
 \section{Summary}
 %
 
-The templated C++ class {}\texttt{RefCountPtr<>} provides a
-low-overhead option for (almost) automatic memory management in C++.
-This class has been developed and refined over many years and has been
-proven to improve the quality of software projects that use it
-consistently.  Careful use of {}\texttt{RefCountPtr<>} eliminates the
-need to manually call {}\texttt{deleted} when dynamically allocated
-objects are no longer needed and helps to reduce the amount of code
-that developers have to write (for example, most classes that use
-dynamically allocated memory do not need developer-supplied
-destructors since the compiler-generated destructors do exactly the
-right thing).
-
-The class {}\texttt{RefCountPtr<>} also has other advanced features
-not found in other smart-pointer implementations such as the ability
-to tack on extra data and the customization of the deallocation
-policy.
+This document expanded on the introductory discussion in the
+beginner's guide {}\cite{ref:RefCountPtrBeginnersGuide}.
