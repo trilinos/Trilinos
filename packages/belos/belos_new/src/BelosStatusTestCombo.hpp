@@ -289,11 +289,14 @@ StatusType StatusTestCombo<TYPE,OP,MV>::CheckStatus( IterativeSolver<TYPE,OP,MV>
 template <class TYPE, class OP, class MV>
 void StatusTestCombo<TYPE,OP,MV>::Reset( )
 {
-  // Resets all status tests.
+  // Resets all status tests in my list.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     {
       (*i)->Reset();
     }
+  // Reset my status.
+  status_ = Unchecked;
+  //
   return;
 }
 
