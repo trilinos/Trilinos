@@ -58,6 +58,8 @@ void Krylov(const Operator& A, const MultiVector& LHS,
     solver.SetAztecOption(AZ_solver, AZ_gmres);
   else if (type == "gmres_condnum")
     solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
+  else if (type == "fixed point")
+    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
   else
     ML_THROW("krylov: type has incorrect value )" +
              type + ")", -1);
