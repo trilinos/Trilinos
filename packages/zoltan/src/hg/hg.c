@@ -28,7 +28,7 @@ extern "C" {
 
 
 
-/*****************************************************************************
+/*****************************************************************************/
 /*  Parameters structure for HG method.  */
 static PARAM_VARS HG_params[] = {
  /* Add parameters here. */
@@ -156,15 +156,22 @@ static int Zoltan_HG_Initialize_Params(
   HGPartParams *hgp
 )
 {
-  Zoltan_Bind_Param(HG_params,"HG_OUTPUT_LEVEL",     (void*)&hgp->output_level);
-  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LIMIT",    (void*)&hgp->redl);
-  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_METHOD",   (void*) hgp->redm_str);
-  Zoltan_Bind_Param(HG_params,"HG_EDGE_WEIGHT_SCALING",(void*)&hgp->ews);
-  Zoltan_Bind_Param(HG_params,"HG_GLOBAL_PARTITIONING",(void*) hgp->global_str);
-  Zoltan_Bind_Param(HG_params,"HG_LOCAL_REFINEMENT",   (void*) hgp->local_str);
-  Zoltan_Bind_Param(HG_params,"CHECK_GRAPH",          (void*)&hgp->check_graph);
+  Zoltan_Bind_Param(HG_params,"HG_OUTPUT_LEVEL",
+                              (void*) &hgp->output_level);
+  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LIMIT",
+                              (void*) &hgp->redl);
+  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_METHOD",
+                              (void*) hgp->redm_str);
+  Zoltan_Bind_Param(HG_params,"HG_EDGE_WEIGHT_SCALING",
+                              (void*) &hgp->ews);
+  Zoltan_Bind_Param(HG_params,"HG_GLOBAL_PARTITIONING",
+                              (void*) hgp->global_str);
+  Zoltan_Bind_Param(HG_params,"HG_LOCAL_REFINEMENT",
+                              (void*) hgp->local_str);
+  Zoltan_Bind_Param(HG_params,"CHECK_GRAPH",
+                              (void*) &hgp->check_graph);
   Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LOCAL_IMPROVEMENT",
-   (void*) hgp->redmo_str);
+                              (void*) hgp->redmo_str);
 
   /* Set default values */
   strcpy(hgp->redm_str,   "grg");
@@ -237,13 +244,14 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
     /* Allocate memory for return lists. */
     if (*num_exp > 0) {
       if (!Zoltan_Special_Malloc(zz, (void**)exp_gids, *num_exp,
-       ZOLTAN_SPECIAL_MALLOC_GID)
+                                 ZOLTAN_SPECIAL_MALLOC_GID)
        || !Zoltan_Special_Malloc(zz, (void**)exp_lids, *num_exp,
-       ZOLTAN_SPECIAL_MALLOC_LID)
+                                 ZOLTAN_SPECIAL_MALLOC_LID)
        || !Zoltan_Special_Malloc(zz, (void**)exp_procs, *num_exp,
-       ZOLTAN_SPECIAL_MALLOC_INT)
+                                 ZOLTAN_SPECIAL_MALLOC_INT)
        || !Zoltan_Special_Malloc(zz, (void**)exp_to_part, *num_exp,
-       ZOLTAN_SPECIAL_MALLOC_INT)) {
+                                 ZOLTAN_SPECIAL_MALLOC_INT)) 
+       {
           Zoltan_Special_Free(zz,(void**)exp_gids,   ZOLTAN_SPECIAL_MALLOC_GID);
           Zoltan_Special_Free(zz,(void**)exp_lids,   ZOLTAN_SPECIAL_MALLOC_LID);
           Zoltan_Special_Free(zz,(void**)exp_procs,  ZOLTAN_SPECIAL_MALLOC_INT);
