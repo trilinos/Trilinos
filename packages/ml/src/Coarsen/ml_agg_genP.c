@@ -309,9 +309,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
-#ifdef ML_repartition
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE);
-#endif
 
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
       			    &(ml->Pmat[next]), ML_TRUE);

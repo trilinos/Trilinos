@@ -2169,14 +2169,40 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 			   int R_is_Ptranspose)
 {
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
-  int status, offset1, offset2, j;
+  int status, offset1, offset2, j, flag = 0;
   double *new_null;
+  int ml_gmin, ml_gmax;
 
+#ifndef ML_repartition
+  return 0;
+#endif
   Amatrix = &(ml->Amat[coarse]);
   Rmat = &(ml->Rmat[fine]);
   Pmat = &(ml->Pmat[coarse]);
 
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
+  if ((ml->MinPerProc_repartition == -1) && 
+      (ml->LargestMinMaxRatio_repartition == -1.)) 
+    return 0;
+
+  ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
+  ml_gmin = Amatrix->invec_leng;
+  if (ml_gmin == 0) ml_gmin = ml_gmax; /* don't count */
+                                      /* empty processors */
+  ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
+ 
+  if ( (ml->MinPerProc_repartition != -1) &&
+       (ml_gmin < ml->MinPerProc_repartition))
+    flag = 1;
+  else if ((ml->LargestMinMaxRatio_repartition != -1.) &&
+	     ((((double) ml_gmax)/((double) ml_gmin)) > 
+	      ml->LargestMinMaxRatio_repartition))
+    flag = 1;
+
+  if (flag == 0) return 0;
+
+
+
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
