@@ -48,8 +48,8 @@
    for increasingly ill-conditioned problems might be 0.9, 0.99,
    0.999, etc.
 
-   The standard starting point is x(i) = -1, but x(i) = 0 requires a 
-   few linesearches to test that code functionality.
+   The standard starting point is x(i) = -1, but setting x(i) = 0 tests
+   the selected global strategy.
 
    \author Brett Bader, UC Boulder, 2002
 */
@@ -59,7 +59,6 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_LAPACK_Group.H"
-#include "NOX_Solver_TensorBased.H"  
 
 //! Interface to modified Broyden problem defined in Broyden.C
 class Broyden : public NOX::LAPACK::Interface {
@@ -169,7 +168,8 @@ int main()
   NOX::Parameter::List solverParameters;
 
   // Set the nonlinear solver method
-  solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
+  //solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
+  solverParameters.setParameter("Nonlinear Solver", "Block Tensor Based");
   
   // Sublist for printing parameters
   NOX::Parameter::List& printParams = solverParameters.sublist("Printing");
@@ -193,13 +193,13 @@ int main()
   // Sublist for local solver parameters
   NOX::Parameter::List& localSolverParameters = 
     directionParameters.sublist("Tensor").sublist("Linear Solver");
-  localSolverParameters.setParameter("Compute Step","Tensor");
+  localSolverParameters.setParameter("Compute Step","Tensor2");
   localSolverParameters.setParameter("Tolerance",1e-4);
-  localSolverParameters.setParameter("Reorthogonalize","As Needed");
-  localSolverParameters.setParameter("Output Frequency",20);  
+  localSolverParameters.setParameter("Reorthogonalize","Always");
+  localSolverParameters.setParameter("Output Frequency",1);
   localSolverParameters.setParameter("Max Restarts",2);
   localSolverParameters.setParameter("Size of Krylov Subspace",100);
-  localSolverParameters.setParameter("Preconditioning","Placeholder");
+  //localSolverParameters.setParameter("Preconditioning","Tridiagonal");
   localSolverParameters.setParameter("Preconditioning Side","None");
   localSolverParameters.setParameter("Use Shortcut Method",false);
 
@@ -207,9 +207,8 @@ int main()
   NOX::Parameter::List& lineSearchParameters = 
     solverParameters.sublist("Line Search");
   lineSearchParameters.setParameter("Method","Tensor");
-  lineSearchParameters.sublist("Tensor").setParameter("Submethod","Standard");
-  lineSearchParameters.sublist("Tensor").setParameter("Lambda Selection",
-						      "Quadratic");
+  lineSearchParameters.sublist("Tensor").setParameter("Submethod","Curvilinear");
+  lineSearchParameters.sublist("Tensor").setParameter("Lambda Selection","Halving");
   lineSearchParameters.sublist("Tensor").setParameter("Max Iters",20);
 
 
@@ -222,7 +221,7 @@ int main()
 					  statusTestA, statusTestB);
 
   // Create the solver
-  NOX::Solver::TensorBased solver(grp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
 
   // Print the starting point
   cout << "\n" << "-- Starting Point --" << "\n";
