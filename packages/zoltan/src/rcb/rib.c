@@ -47,12 +47,21 @@ extern "C" {
 #define RIB_DEFAULT_OVERALLOC 1.0
 
 
+/*---------------------------------------------------------------------------*/
 static int rib_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
                   double, int, int, int, int, float *);
-static void print_rib_tree(ZZ *, struct rib_tree *);
+static void print_rib_tree(ZZ *, int, int, struct rib_tree *);
+static int compute_rib_direction(ZZ *, int, int, double *, double *,
+  struct Dot_Struct *, int *, int, int, double *, double *, double *,
+  MPI_Comm, int, int, int);
+static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
+  int, double, int, int, int *, int *, int, int, int, int, int, int *, 
+  struct rib_tree *, double *, double *, float *);
+
 /* for Tflops_Special */
 static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
 
+/*---------------------------------------------------------------------------*/
 /*  Parameters structure for RIB method.  Used in  */
 /*  Zoltan_RIB_Set_Param and Zoltan_RIB.                      */
 static PARAM_VARS RIB_params[] = {
@@ -99,8 +108,7 @@ int Zoltan_RIB(
                                 processors owning the non-local objects in
                                 this processor's new decomposition.     */
   int **import_to_part,         /* Returned value:  array of partitions to
-                                 which imported objects should be assigned.
-                                 KDDKDD  Currently assumes #parts == #proc. */
+                                 which imported objects should be assigned. */
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
@@ -186,8 +194,7 @@ static int rib_fn(
                                 processors owning the non-local objects in
                                 this processor's new decomposition. */
   int **import_to_part,         /* Returned value: array of partitions to
-                                which objects are imported.
-                                KDDKDD Currently assumes #parts == #procs */
+                                which objects are imported. */
   double overalloc,             /* amount to overallocate by when realloc
                                 of dot array must be done.
                                   1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -212,13 +219,16 @@ static int rib_fn(
   int     dotnum;             /* number of dots */
   int     dotmax = 0;         /* max # of dots arrays can hold */
   int     dottop;             /* dots >= this index are new */
-  int     proclower;          /* lower proc in partition */
-  int     procmid;            /* 1st proc in upper half of part */
-  int     set;                /* which part processor is in = 0/1 */
-  int     old_set;            /* part processor was in last cut = 0/1 */
-  int     root;               /* processor that stores last cut */
-  int     num_procs;          /* number of procs in current part */
-  int     ierr;               /* error flag. */
+  int     proclower;          /* 1st proc in lower set */
+  int     procmid;            /* 1st proc in upper set */
+  int     partlower;          /* 1st part in lower set */
+  int     partmid;            /* 1st part in upper set */
+  int     set;                /* which set processor is in = 0/1 */
+  int     old_set;            /* set processor was in last cut = 0/1 */
+  int     root;               /* partition that stores last cut */
+  int     num_procs;          /* number of procs in current set */
+  int     num_parts;          /* number of parts in current set */
+  int     ierr = ZOLTAN_OK;   /* error flag. */
   double *value = NULL;       /* temp array for median_find */
   double *wgts = NULL;        /* temp array for median_find */
   double  valuehalf;          /* median cut position */
@@ -257,15 +267,24 @@ static int rib_fn(
 
   double start_time, end_time;
   double lb_time[2];
-  int tmp_nprocs;             /* added for Tflops_Special */
+  int tfs[2], tmp_tfs[2];     /* added for Tflops_Special; max number
+                                 of procs and parts over all processors
+                                 in each iteration (while loop) of
+                                 parallel partitioning.  */
   int old_nprocs;             /* added for Tflops_Special */
+  int old_nparts;             /* added for Tflops_Special */
   double valuelo;             /* smallest value of value[i] */
   double valuehi;             /* largest value of value[i] */
-  double weight;              /* weight for current partition */
+  double weight;              /* weight for current set */
   double weightlo;            /* weight of lower side of cut */
   double weighthi;            /* weight of upper side of cut */
-  int *dotlist;               /* list of dots for find_median */
+  int *dotlist = NULL;        /* list of dots for find_median.
+                                 allocated above find_median for
+                                 better efficiency (don't necessarily
+                                 have to realloc for each find_median).*/
   int rectilinear_blocks = 0; /* parameter for find_median (not used by rib) */
+  int fp;                     /* first partition assigned to this proc. */
+  int np;                     /* number of parts assigned to this proc. */
 
   /* MPI data types and user functions */
 
@@ -281,6 +300,7 @@ static int rib_fn(
 
   proc = zz->Proc;
   nprocs = zz->Num_Proc;
+  num_parts = zz->LB.Num_Global_Parts;
 
   /*
    * Determine whether to store, manipulate, and communicate global and
@@ -295,10 +315,10 @@ static int rib_fn(
 
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RIB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, use_ids);
-  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-    ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RIB_Build_Structure.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ierr);
+  if (ierr < 0) {
+    ZOLTAN_PRINT_ERROR(proc, yo, 
+      "Error returned from Zoltan_RIB_Build_Structure.");
+    goto End;
   }
 
   rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
@@ -329,31 +349,12 @@ static int rib_fn(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-    if (dotmark == NULL) {
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-    if (value == NULL) {
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-    if (wgts == NULL) {
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&value);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-    if (dotlist == NULL) {
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&value);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+    if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+     || !(value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+     || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+     || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
   }
   else {
@@ -376,10 +377,10 @@ static int rib_fn(
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
-    if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_input");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return(ierr);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo,
+        "Error returned from Zoltan_RB_check_geom_input");
+      goto End;
     }
   }
 
@@ -395,32 +396,43 @@ static int rib_fn(
     timers[0] = time2 - time1;
   }
 
-  /* recursively halve until just one proc in partition */
+  /* recursively halve until just one part or proc in set */
 
   old_nprocs = num_procs = nprocs;
+  old_nparts = num_parts;
+  partlower = 0;
   root = 0;
   old_set = 1;
-  treept[proc].parent = 0;
-  treept[proc].left_leaf = 0;
+  ierr = Zoltan_LB_Proc_To_Part(zz, proc, &np, &fp);
+  for (i = fp; i < (fp + np); i++) {
+    treept[i].parent = 0;
+    treept[i].left_leaf = 0;
+  }
   if (zz->Tflops_Special) {
-     proclower = 0;
-     tmp_nprocs = nprocs;
+    proclower = 0;
+    tfs[0] = nprocs;
+    tfs[1] = num_parts;
   }
 
-  while (num_procs > 1 || (zz->Tflops_Special && tmp_nprocs > 1)) {
-    /* tmp_nprocs is size of largest partition - force all processors to go
-       through all levels of rib */
-    if (zz->Tflops_Special) tmp_nprocs = (tmp_nprocs + 1)/2;
+  while ((num_parts > 1 && num_procs > 1) || 
+         (zz->Tflops_Special && tfs[0] > 1 && tfs[1] > 1)) {
 
-    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, 
-                                 &set, &proclower,
-                                 &procmid, &num_procs, &fractionlo);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&value);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, &set, 
+                                 &proclower, &procmid, &num_procs, 
+                                 &partlower, &partmid, &num_parts, 
+                                 &fractionlo);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
+      goto End;
+    }
+
+    /* tfs[0] is max number of processors in all sets over all processors -
+     * tfs[1] is max number of partitions in all sets over all processors -
+     * force all processors to go through all levels of parallel rib */
+    if (zz->Tflops_Special) {
+      tmp_tfs[0] = num_procs;
+      tmp_tfs[1] = num_parts;
+      MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, local_comm);
     }
 
     /* create mark array and active list for dots */
@@ -431,71 +443,37 @@ static int rib_fn(
       ZOLTAN_FREE(&value);
       ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotlist);
-      dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-      if (dotmark == NULL) {
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-      if (value == NULL) {
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-      if (wgts == NULL) {
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&value);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-      if (dotlist == NULL) {
-        ZOLTAN_FREE(&wgts);
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&value);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+      if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+       || !(value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
+        ierr = ZOLTAN_MEMERR;
+        goto End;
       }
     }
 
     for (i = 0; i < dotnum; i++) {
       wgts[i] = dotpt[i].Weight;
     }
-    if (old_nprocs > 1) {    /* for Tflops_Special */
-       switch (rib->Num_Geom) {
-          case 3:
-             ierr = Zoltan_RIB_inertial3d(zz, dotpt, dotnum, wgtflag, cm, evec, value,
-                                  local_comm, proc, old_nprocs, proclower);
-             break;
-          case 2:
-             ierr = Zoltan_RIB_inertial2d(zz, dotpt, dotnum, wgtflag, cm, evec, value,
-                                  local_comm, proc, old_nprocs, proclower);
-             break;
-          case 1:
-             ierr = Zoltan_RIB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
-             break;
-       }
-       valuelo = MYHUGE;
-       valuehi = -MYHUGE;
-       for (i = 0; i < dotnum; i++) {
-          if (value[i] < valuelo) valuelo = value[i];
-          if (value[i] > valuehi) valuehi = value[i];
-       }
-       if (zz->Tflops_Special)
-          Zoltan_RIB_min_max(&valuelo, &valuehi, proclower, proc, old_nprocs,
-                     local_comm);
-       else {
-          valuehalf = valuehi;
-          MPI_Allreduce(&valuehalf,&valuehi,1,MPI_DOUBLE,MPI_MAX,local_comm);
-          valuehalf = valuelo;
-          MPI_Allreduce(&valuehalf,&valuelo,1,MPI_DOUBLE,MPI_MIN,local_comm);
-       }
+    if (old_nparts > 1 && old_nprocs > 1) { /* test added for Tflops_Special;
+                                               compute values only if looping
+                                               to decompose, not if looping to
+                                               keep Tflops_Special happy.  */
+      ierr = compute_rib_direction(zz, zz->Tflops_Special, rib->Num_Geom, 
+                                   &valuelo, &valuehi, dotpt, NULL, dotnum, 
+                                   wgtflag, cm, evec, value,
+                                   local_comm, proc, old_nprocs, proclower);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+          "Error returned from compute_rib_direction");
+        goto End;
+      }
     }
-    else {                    /* For Tflops_Special initialize value */
-       for (i = 0; i < dotmax; i++)
-          value[i] = 0.0;
-       valuelo = valuehi = 0.0;
+    else {  /* For Tflops_Special: initialize value when looping only 
+                                   for Tflops_Special */
+      for (i = 0; i < dotmax; i++)
+        value[i] = 0.0;
+      valuelo = valuehi = 0.0;
     }
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
@@ -504,15 +482,13 @@ static int rib_fn(
     if (!Zoltan_RB_find_median(
                    zz->Tflops_Special, value, wgts, dotmark, dotnum, proc, 
                    fractionlo, local_comm, &valuehalf, first_guess,
-                   &(counters[0]), nprocs, old_nprocs, proclower,
+                   &(counters[0]), nprocs, old_nprocs, proclower, old_nparts,
                    wgtflag, valuelo, valuehi, weight, &weightlo,
                    &weighthi, dotlist, rectilinear_blocks)) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from find_median.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&value);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(proc, yo,
+        "Error returned from Zoltan_RB_find_median.");
+      ierr = ZOLTAN_FATAL;
+      goto End;
     }
 
     if (set)    /* set weight for current partition */
@@ -523,38 +499,50 @@ static int rib_fn(
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
 
-    /* store cut info in tree only if I am procmid, the lowest numbered
-       processor in right set.  The left set will have proclower which
-       if the lowest numbered processor in either set. */
+    /* store cut info in tree only if proc "owns" partmid */
+    /* test of partmid > 0 prevents treept[0] being set when this cut is 
+       only removing low-numbered processors (proclower to procmid-1) that
+       have no partitions in them from the processors remaining to 
+       be partitioned. */
 
-    if (proc == procmid) {
-      treept[proc].cm[0] = cm[0];
-      treept[proc].cm[1] = cm[1];
-      treept[proc].cm[2] = cm[2];
-      treept[proc].ev[0] = evec[0];
-      treept[proc].ev[1] = evec[1];
-      treept[proc].ev[2] = evec[2];
-      treept[proc].cut = valuehalf;
-      treept[proc].parent = old_set ? -(root+1) : root+1;
+    if (partmid > 0 && partmid == fp) {
+      treept[partmid].cm[0] = cm[0];
+      treept[partmid].cm[1] = cm[1];
+      treept[partmid].cm[2] = cm[2];
+      treept[partmid].ev[0] = evec[0];
+      treept[partmid].ev[1] = evec[1];
+      treept[partmid].ev[2] = evec[2];
+      treept[partmid].cut = valuehalf;
+      treept[partmid].parent = old_set ? -(root+1) : root+1;
       /* The following two will get overwritten when the information
          is assembled if this is not a terminal cut */
-      treept[proc].left_leaf = -proclower;
-      treept[proc].right_leaf = -procmid;
+      treept[partmid].left_leaf = -partlower;
+      treept[partmid].right_leaf = -partmid;
     }
-    old_set = set;
-    root = procmid;
 
-    ierr = Zoltan_RB_Send_Outgoing(zz, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
-                               &dotnum, &dotmax, set, &allocflag, overalloc,
+    if (old_nprocs > 1 && partmid > 0 && partmid != partlower + old_nparts) {  
+      /* old_nprocs > 1 test: Don't reset these values if proc is in loop only 
+       * because of other procs for Tflops_Special.
+       * partmid > 0 test:  Don't reset these values if low-numbered processors
+       * (proclower to procmid-1) have zero partitions and this cut is removing
+       * them from the processors remaining to be partitioned. 
+       * partmid != partlower + old_nparts test:  Don't reset these values if
+       * cut is removing high-numbered processors with zero partitions from
+       * the processors remaining to be partitioned.
+       */
+      old_set = set;
+      root = partmid;
+    }
+
+    ierr = Zoltan_RB_Send_Outgoing(zz, &gidpt, &lidpt, &dotpt, &dotmark,
+                               &dottop, &dotnum, &dotmax,
+                               set, &allocflag, overalloc,
                                stats, counters, use_ids, local_comm, proclower,
-                               old_nprocs);
-    if (ierr) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_Send_Outgoing.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&value);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ierr;
+                               old_nprocs, partlower, partmid);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo,
+        "Error returned from Zoltan_RB_Send_Outgoing.");
+      goto End;
     }
     
     if (allocflag) {
@@ -570,13 +558,20 @@ static int rib_fn(
     /* create new communicators */
 
     if (zz->Tflops_Special) {
-       if (set) proclower = procmid;
-       old_nprocs = num_procs;
+      if (set) {
+        proclower = procmid;
+        partlower = partmid;
+      }
+      old_nprocs = num_procs;
+      old_nparts = num_parts;
     }
     else {
-       MPI_Comm_split(local_comm,set,proc,&tmp_comm);
-       MPI_Comm_free(&local_comm);
-       local_comm = tmp_comm;
+      if (set) partlower = partmid;
+      MPI_Comm_split(local_comm,set,proc,&tmp_comm);
+      MPI_Comm_free(&local_comm);
+      local_comm = tmp_comm;
+      old_nprocs = num_procs;
+      old_nparts = num_parts;
     }
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
@@ -587,16 +582,66 @@ static int rib_fn(
     }
   }
 
-  /* have recursed all the way to final single sub-domain */
+  /* have recursed all the way to a single processor sub-domain */
 
-  /* free all memory used by RIB and MPI */
+  /* Send dots to correct processors for their partitions.  This is needed
+     most notably when a processor has zero partitions on it, but still has
+     some dots after the parallel partitioning. */
 
-  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
+  ierr = Zoltan_RB_Send_To_Part(zz, &gidpt, &lidpt, &dotpt, &dotmark, &dottop,
+                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               stats, counters, use_ids);
 
-  ZOLTAN_FREE(&value);
-  ZOLTAN_FREE(&wgts);
-  ZOLTAN_FREE(&dotmark);
-  ZOLTAN_FREE(&dotlist);
+  if (ierr < 0) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                       "Error returned from Zoltan_RB_Send_To_Part");
+    goto End;
+  }
+
+  if (allocflag) {
+    /* 
+     * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_To_Part;
+     * store their values in rib.
+     */
+    rib->Global_IDs = gidpt;
+    rib->Local_IDs = lidpt;
+    rib->Dots = dotpt;
+  }
+
+  /* All dots are now on the processors they will end up on; now generate
+   * more partitions if needed. */
+
+  if (num_parts > 1) {
+    int *dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
+    int *tmpdindx = dindx + dotnum;
+    if (allocflag) {
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
+      ZOLTAN_FREE(&wgts);
+      ZOLTAN_FREE(&dotlist);
+      if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+       || !(value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
+    }
+    for (i = 0; i < dotnum; i++)
+      dindx[i] = i;
+
+    ierr = serial_rib(zz, dotpt, dotmark, dotlist, old_set, root, rib->Num_Geom,
+                      weight, dotnum, num_parts,
+                      &(dindx[0]), &(tmpdindx[0]), partlower,
+                      proc, wgtflag, stats, gen_tree,
+                      counters, treept, value, wgts, part_sizes);
+    ZOLTAN_FREE(&dindx);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rib");
+      goto End;
+    }
+  }
 
   end_time = Zoltan_Time(zz->Timer);
   lb_time[1] = end_time - start_time;
@@ -609,12 +654,12 @@ static int rib_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes, 
+    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes, np, fp,
                                        dotnum, pdotnum, NULL);
-    if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_output");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return(ierr);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo,
+                         "Error returned from Zoltan_RB_check_geom_output");
+      goto End;
     }
   }
 
@@ -633,36 +678,46 @@ static int rib_fn(
 
   if (zz->LB.Return_Lists) {
     /* zz->LB.Return_Lists is true ==> use_ids is true */
-    *num_import = dotnum - dottop;
-    if (*num_import > 0) {
-      ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, *num_import,
-                                    import_global_ids, import_local_ids,
-                                    import_procs, import_to_part, dottop);
-      if (ierr) {
-        ZOLTAN_PRINT_ERROR(proc, yo,
-                       "Error returned from Zoltan_RB_Return_Arguments.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ierr;
-      }
+    ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, num_import,
+                                      import_global_ids, import_local_ids,
+                                      import_procs, import_to_part, 
+                                      dotnum, dottop);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo,
+                     "Error returned from Zoltan_RB_Return_Arguments.");
+      goto End;
     }
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-    print_rib_tree(zz, &(treept[proc]));
-
   if (gen_tree) {
-    MPI_Allgather(&treept[proc], sizeof(struct rib_tree), MPI_BYTE,
-                  treept, sizeof(struct rib_tree), MPI_BYTE,
-                  zz->Communicator);
-    for (i = 1; i < nprocs; i++)
+    int *displ, *recvcount;
+    int sendcount;
+
+    if (!(displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    recvcount = displ + zz->Num_Proc;
+
+    ierr = Zoltan_RB_Tree_Gatherv(zz, sizeof(struct rib_tree), &sendcount,
+                                  recvcount, displ);
+
+    MPI_Allgatherv(&treept[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
+                   MPI_BYTE, zz->Communicator);
+    for (i = 1; i < zz->LB.Num_Global_Parts; i++)
       if (treept[i].parent > 0)
         treept[treept[i].parent - 1].left_leaf = i;
       else if (treept[i].parent < 0)
         treept[-treept[i].parent - 1].right_leaf = i;
+    ZOLTAN_FREE(&displ);
   }
   else {
     treept[0].right_leaf = -1;
   }
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    print_rib_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
   lb_time[0] += (end_time - start_time);
@@ -683,7 +738,16 @@ static int rib_fn(
                     *import_global_ids, *import_procs);
   }
 
-  /* Free memory allocated by the algorithm. */
+End:
+
+  /* Free memory allocated by the algorithm.  */
+
+  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
+  ZOLTAN_FREE(&wgts);
+  ZOLTAN_FREE(&dotmark);
+  ZOLTAN_FREE(&value);
+  ZOLTAN_FREE(&dotlist);
+
   if (!gen_tree) {
     /* Free all memory used. */
     Zoltan_RIB_Free_Structure(zz);
@@ -696,24 +760,33 @@ static int rib_fn(
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  /* Temporary return value until error codes are fully implemented */
-  return(ZOLTAN_OK);
+  return(ierr);
 }
 
-static void print_rib_tree(ZZ *zz, struct rib_tree *treept)
+/*****************************************************************************/
+
+static void print_rib_tree(ZZ *zz, int np, int fp, struct rib_tree *treept_arr)
 {
+int i;
+struct rib_tree *treept = treept_arr;
+
   Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
-  printf("Proc %d:  Tree Struct:\n", zz->Proc);
-  printf("          cm         = (%e,%e,%e)\n", 
-         treept->cm[0], treept->cm[1], treept->cm[2]);
-  printf("          ev         = (%e,%e,%e)\n", 
-         treept->ev[0], treept->ev[1], treept->ev[2]);
-  printf("          cut        = %e\n", treept->cut);
-  printf("          parent     = %d\n", treept->parent);
-  printf("          left_leaf  = %d\n", treept->left_leaf);
-  printf("          right_leaf = %d\n", treept->right_leaf);
+  for (i = fp; i < fp+np; i++) {
+    printf("Proc %d Part %d:  Tree Struct:\n", zz->Proc, i);
+    printf("          cm         = (%e,%e,%e)\n", 
+           treept->cm[0], treept->cm[1], treept->cm[2]);
+    printf("          ev         = (%e,%e,%e)\n", 
+           treept->ev[0], treept->ev[1], treept->ev[2]);
+    printf("          cut        = %e\n", treept->cut);
+    printf("          parent     = %d\n", treept->parent);
+    printf("          left_leaf  = %d\n", treept->left_leaf);
+    printf("          right_leaf = %d\n", treept->right_leaf);
+    treept++;
+  }
   Zoltan_Print_Sync_End(zz->Communicator, TRUE);
 }
+
+/*****************************************************************************/
 
 static void Zoltan_RIB_min_max(
    double   *min,             /* minimum value */
@@ -776,6 +849,209 @@ static void Zoltan_RIB_min_max(
 
    *min = tmp[0];
    *max = tmp[1];
+}
+
+/*****************************************************************************/
+
+static int compute_rib_direction(
+  ZZ *zz, 
+  int Tflops_Special,         /* Tflops_Special flag for special processing.
+                                 Should be 0 when called by serial_rib. */
+  int num_geom,               /* number of dimensions */
+  double *valuelo,            /* smallest value of value[i] */
+  double *valuehi,            /* largest value of value[i] */
+  struct Dot_Struct *dotpt,   /* local dot array */
+  int *dindx,                 /* index array into dotpt; if NULL, access dotpt
+                                 directly */
+  int dotnum,                 /* number of dots */
+  int wgtflag,                /* (0) do not (1) do use weights.
+                                 Multidimensional weights not supported */
+  double *cm,                 /* Center of mass of objects */
+  double *evec,               /* Eigenvector defining direction */
+  double *value,              /* temp array for median_find; rotated coords */
+  MPI_Comm local_comm,        /* MPI communicator for set */
+  int proc,                   /* Current processor; needed for Tflops_Special */
+  int nprocs,                 /* Number of procs in operation; needed for
+                                 Tflops_Special */
+  int proclower               /* Lowest numbered proc; needed for 
+                                 Tflops_Special */
+)
+{
+int i, ierr;
+double tmp;
+
+  switch (num_geom) {
+  case 3:
+    ierr = Zoltan_RIB_inertial3d(Tflops_Special, dotpt, dindx, dotnum, wgtflag, 
+                                 cm, evec, value,
+                                 local_comm, proc, nprocs, proclower);
+    break;
+  case 2:
+    ierr = Zoltan_RIB_inertial2d(Tflops_Special, dotpt, dindx, dotnum, wgtflag, 
+                                 cm, evec, value,
+                                 local_comm, proc, nprocs, proclower);
+    break;
+  case 1:
+    ierr = Zoltan_RIB_inertial1d(dotpt, dindx, dotnum, wgtflag,
+                                 cm, evec, value);
+    break;
+  }
+  *valuelo = MYHUGE;
+  *valuehi = -MYHUGE;
+  for (i = 0; i < dotnum; i++) {
+    if (value[i] < *valuelo) *valuelo = value[i];
+    if (value[i] > *valuehi) *valuehi = value[i];
+  }
+  if (Tflops_Special)
+    Zoltan_RIB_min_max(valuelo, valuehi, proclower, proc, nprocs,
+                       local_comm);
+  else {
+    tmp = *valuehi;
+    MPI_Allreduce(&tmp, valuehi, 1, MPI_DOUBLE, MPI_MAX, local_comm);
+    tmp = *valuelo;
+    MPI_Allreduce(&tmp, valuelo, 1, MPI_DOUBLE, MPI_MIN, local_comm);
+  }
+
+  return ierr;
+}
+
+/*****************************************************************************/
+
+static int serial_rib(
+  ZZ *zz, 
+  struct Dot_Struct *dotpt,   /* local dot array */
+  int *dotmark,              /* which side of median for each dot */
+  int *dotlist,              /* list of dots used only in find_median;
+                                allocated above find_median for
+                                better efficiency (don't necessarily
+                                have to realloc for each find_median).*/
+  int old_set,               /* Set the objects to be partitioned were in
+                                for last cut */
+  int root,                  /* partition for which last cut was stored. */
+  int num_geom,              /* number of dimensions */
+  double weight,             /* Weight for current set */
+  int dotnum,                 /* number of dots */
+  int num_parts,             /* number of partitions to create. */
+  int *dindx,                /* Index into dotpt for dotnum dots to be
+                                partitioned; reordered in serial_rib so set0
+                                dots are followed by set1 dots. */
+  int *tmpdindx,             /* Temporary memory used in reordering dindx. */
+  int partlower,             /* smallest partition number to be created. */
+  int proc,                  /* processor number. */
+  int wgtflag,                /* (0) do not (1) do use weights.
+                                 Multidimensional weights not supported */
+  int stats,                 /* Print timing & count summary?             */
+  int gen_tree,              /* (0) do not (1) do generate full treept    */
+  int counters[],            /* diagnostic counts */
+  struct rib_tree *treept,   /* tree of RCB cuts */
+  double *value,              /* temp array for median_find; rotated coords */
+  double *wgts,              /* temp array for median_find */
+  float *part_sizes          /* Array of size zz->LB.Num_Global_Parts
+                                containing the percentage of work to be
+                                assigned to each partition.               */
+)
+{
+char *yo = "serial_rib";
+int ierr = ZOLTAN_OK;
+double valuelo;            /* smallest value of value[i] */
+double valuehi;            /* largest value of value[i] */
+int partmid;
+int new_nparts;
+double fractionlo;
+double valuehalf;
+double weightlo, weighthi;
+double cm[3];                 /* Center of mass of objects */
+double evec[3];               /* Eigenvector defining direction */
+int set0, set1;
+int i;
+
+
+  if (num_parts == 1) {
+    for (i = 0; i < dotnum; i++)
+      dotpt[dindx[i]].Part = partlower;
+  }
+  else {
+    ierr = Zoltan_Divide_Parts(zz, part_sizes, num_parts,
+                               &partlower, &partmid, &fractionlo);
+
+    for (i = 0; i < dotnum; i++) {
+      wgts[i] = dotpt[dindx[i]].Weight;
+    }
+
+    ierr = compute_rib_direction(zz, 0, num_geom, &valuelo, &valuehi, 
+                                 dotpt, dindx, dotnum, wgtflag, cm, evec, value,
+                                 MPI_COMM_SELF, proc, 1, proc);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, 
+        "Error returned from compute_rib_direction");
+      goto End;
+    }
+
+    if (!Zoltan_RB_find_median(0, value, wgts, dotmark, dotnum, proc, 
+                               fractionlo, MPI_COMM_SELF, &valuehalf, 0,
+                               &(counters[0]), 1, 1, proc, num_parts,
+                               wgtflag, valuelo, valuehi, weight, &weightlo,
+                               &weighthi, dotlist, 0)) {
+      ZOLTAN_PRINT_ERROR(proc, yo, 
+        "Error returned from Zoltan_RB_find_median.");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+    treept[partmid].cm[0] = cm[0];
+    treept[partmid].cm[1] = cm[1];
+    treept[partmid].cm[2] = cm[2];
+    treept[partmid].ev[0] = evec[0];
+    treept[partmid].ev[1] = evec[1];
+    treept[partmid].ev[2] = evec[2];
+    treept[partmid].cut = valuehalf;
+    treept[partmid].parent = old_set ? -(root+1) : root+1;
+    /* The following two will get overwritten when the information
+       is assembled if this is not a terminal cut */
+    treept[partmid].left_leaf = -partlower;
+    treept[partmid].right_leaf = -partmid;
+
+    root = partmid;
+
+      /* Create new dindx, grouping set 0 and set 1 dots together */
+    for (set0 = 0, set1 = dotnum, i = 0; i < dotnum; i++) {
+      if (dotmark[i] == 0)
+        tmpdindx[set0++] = dindx[i];
+      else
+        tmpdindx[--set1] = dindx[i];
+    }
+    memcpy(dindx, tmpdindx, dotnum * sizeof(int));
+
+    /* If set 0 has at least one partition and at least one dot,
+     * call serial_rib for set 0 */
+    new_nparts = partmid - partlower;
+    if (new_nparts > 0 && set1 != 0) {
+      ierr = serial_rib(zz, dotpt, dotmark, dotlist, 0, root, num_geom,
+                        weightlo, set0, new_nparts,
+                        &(dindx[0]), &(tmpdindx[0]), partlower,
+                        proc, wgtflag, stats, gen_tree,
+                        counters, treept, value, wgts, part_sizes);
+      if (ierr < 0) {
+        goto End;
+      }
+    }
+
+    /* If set 1 has at least one partition and at least one dot,
+     * call serial_rcb for set 1 */
+    new_nparts = partlower + num_parts - partmid;
+    if (new_nparts > 0 && set0 != dotnum) {
+      ierr = serial_rib(zz, dotpt, dotmark, dotlist, 1, root, num_geom,
+                        weighthi, dotnum-set0, new_nparts,
+                        &(dindx[set1]), &(tmpdindx[set1]), partmid,
+                        proc, wgtflag, stats, gen_tree,
+                        counters, treept, value, wgts, part_sizes);
+      if (ierr < 0) {
+        goto End;
+      }
+    }
+  }
+    
+End:
+  return ierr;
 }
 
 #ifdef __cplusplus

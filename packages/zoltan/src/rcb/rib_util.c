@@ -51,14 +51,14 @@ int            i, ierr = 0;
     rib->Dots = NULL;
 
     rib->Tree_Ptr = (struct rib_tree *)
-                    ZOLTAN_MALLOC(zz->Num_Proc* sizeof(struct rib_tree));
+              ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
     if (rib->Tree_Ptr == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       Zoltan_RIB_Free_Structure(zz);
       return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
-    for (i = 0; i < zz->Num_Proc; i++) {
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
       treeptr = &(rib->Tree_Ptr[i]);
       treeptr->cm[0] = treeptr->cm[1] = treeptr->cm[2] = 0.0;
       treeptr->ev[0] = treeptr->ev[1] = treeptr->ev[2] = 0.0;
@@ -77,7 +77,8 @@ int            i, ierr = 0;
                                &(rib->Dots), num_obj, max_obj, &(rib->Num_Geom),
                                wgtflag, use_ids);
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_RB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                       "Error returned from Zoltan_RB_Build_Structure.");
     Zoltan_RIB_Free_Structure(zz);
     return(ierr);
   }

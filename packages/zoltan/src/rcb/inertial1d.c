@@ -25,11 +25,12 @@ extern "C" {
 
 
 #include <stdio.h>
-#include "zz_const.h"
 #include "rib.h"
 
 int Zoltan_RIB_inertial1d(
      struct Dot_Struct *dotpt,  /* graph data structure for weights */
+     int             *dindx,    /* index array into dotpt; if NULL, access dotpt
+                                   directly */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
@@ -37,11 +38,13 @@ int Zoltan_RIB_inertial1d(
      double           *value    /* array for value to sort on */
 )
 {
-     int       i;               /* loop counter */
+     int i, j;               /* loop counter */
 
      /* Copy values into double precision array. */
-     for (i = 0; i < dotnum; i++)
-        value[i] = dotpt[i].X[0];
+     for (j = 0; j < dotnum; j++) {
+        i = (dindx ? dindx[j] : j);
+        value[j] = dotpt[i].X[0];
+     }
 
      /* zero unused center of mass and eigenvector */
      cm[0] = cm[1] = cm[2] = 0.0;

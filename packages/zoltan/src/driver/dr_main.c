@@ -46,24 +46,12 @@ extern "C" {
 #include "dr_elem_util_const.h"
 
 int Debug_Driver = 1;
-int Test_DDirectory = 0;       /* Flag indicating whether to exercise 
-                                  DDirectory */
-int Test_Local_Partitions = 0;       /* Flag indicating whether to generate 
-                                  unusual numbers of partitions per processor */
-int Test_Drops = 0;            /* Flag indicating whether to exercise 
-                                  Box Assign and Point Assign functions */
-int Test_Multi_Callbacks = 0;  /* Flag indicating whether to use 
-                                  list-based (MULTI) callbacks */
-int Test_Null_Import_Lists = 0;/* Flag indicating whether to test passing
-                                  NULL import lists to Help_Migrate */
-int Gnuplot_Output = 0;
-int Nemesis_Output = 0;
-int Plot_Partitions = 0;
-int Print_Mesh_Info_File = 0;
 int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
 int Debug_Chaco_Input = 0;
 int Chaco_In_Assign_Inv = 0;
+struct Test_Flags Test;
+struct Output_Flags Output;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
@@ -99,6 +87,18 @@ int main(int argc, char *argv[])
   /* get some machine information */
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+
+  /* Initialize flags */
+  Test.DDirectory = 0;
+  Test.Local_Partitions = 0;
+  Test.Drops = 0;
+  Test.Multi_Callbacks = 0;
+  Test.Null_Import_Lists = 0;
+
+  Output.Gnuplot = 0;
+  Output.Nemesis = 0;
+  Output.Plot_Partitions = 0;
+  Output.Mesh_Info_File = 0;
 
   /* Interpret the command line */
   switch(argc)
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
         error_report(Proc);
         exit(1);
       }
-      if (Gnuplot_Output)
+      if (Output.Gnuplot)
         if (!output_gnu(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
           Gen_Error(0, "warning: Error returned from output_gnu\n");
           error_report(Proc);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  if (Gnuplot_Output) {
+  if (Output.Gnuplot) {
     if (!output_gnu(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
       Gen_Error(0, "warning: Error returned from output_gnu\n");
       error_report(Proc);

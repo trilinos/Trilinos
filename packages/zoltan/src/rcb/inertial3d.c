@@ -25,7 +25,6 @@ extern "C" {
 
 #include <stdio.h>
 #include <math.h>
-#include "zz_const.h"
 #include "rib.h"
 
 /* macros for routines */ 
@@ -40,8 +39,11 @@ static double determinant(double[3][3]);
 static void eigenvec3(double[3][3], double, double *, double *);
 
 int Zoltan_RIB_inertial3d(
-     ZZ               *Zz,      /* Zoltan structure Tflops_Special */
+     int Tflops_Special,        /* Use Tflops_Special communication;
+                                   should be 0 if called from serial_rib */
      struct Dot_Struct *dotpt,  /* graph data structure */
+     int             *dindx,    /* index array into dotpt; if NULL, access dotpt
+                                   directly */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
@@ -54,12 +56,13 @@ int Zoltan_RIB_inertial3d(
 )
 {
      double    tensor[3][3];    /* inertia tensor */
+     double    tmp1[6], tmp2[6];/* temporary variables for MPI_Allreduce */
      double    xx, yy, zz;      /* elements of inertial tensor */
      double    xy, xz, yz;      /* elements of inertial tensor */
      double    xdif, ydif, zdif;/* deviation from center of mass */
      double    eval, res;       /* eigenvalue and error in eval calculation */
      double    wgt_sum;         /* sum of all the vertex weights */
-     int       i;               /* loop counter */
+     int       i, j;            /* loop counter */
      double    cmt[3], wgtt;    /* temp for center of mass */
      double    xxt, yyt, zzt;   /* temp for inertial tensor */
      double    xyt, xzt, yzt;   /* temp for inertial tensor */
@@ -69,7 +72,8 @@ int Zoltan_RIB_inertial3d(
      cm[0] = cm[1] = cm[2] = 0.0;
      if (wgtflag) {
         wgt_sum = 0;
-        for (i = 0; i < dotnum; i++) {
+        for (j = 0; j < dotnum; j++) {
+           i = (dindx ? dindx[j] : j);
            wgt_sum += dotpt[i].Weight;
            cm[0] += dotpt[i].Weight*dotpt[i].X[0];
            cm[1] += dotpt[i].Weight*dotpt[i].X[1];
@@ -78,7 +82,8 @@ int Zoltan_RIB_inertial3d(
      }
      else {
         wgt_sum = dotnum;
-        for (i = 0; i < dotnum; i++) {
+        for (j = 0; j < dotnum; j++) {
+           i = (dindx ? dindx[j] : j);
            cm[0] += dotpt[i].X[0];
            cm[1] += dotpt[i].X[1];
            cm[2] += dotpt[i].X[2];
@@ -87,7 +92,7 @@ int Zoltan_RIB_inertial3d(
 
      /* Sum weights across processors */
 
-     if (Zz->Tflops_Special) {
+     if (Tflops_Special) {
         rank = proc - proclower;
         Zoltan_RIB_reduce_double(cm, cmt, 3, comm, nproc, rank, proc, 1);
         Zoltan_RIB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
@@ -104,7 +109,8 @@ int Zoltan_RIB_inertial3d(
      /* Generate 6 elements of Inertial tensor. */
      xx = yy = zz = xy = xz = yz = 0.0;
      if (wgtflag)
-        for (i = 0; i < dotnum; i++) {
+        for (j = 0; j < dotnum; j++) {
+           i = (dindx ? dindx[j] : j);
            xdif = dotpt[i].X[0] - cm[0];
            ydif = dotpt[i].X[1] - cm[1];
            zdif = dotpt[i].X[2] - cm[2];
@@ -116,7 +122,8 @@ int Zoltan_RIB_inertial3d(
            yz += dotpt[i].Weight*ydif*zdif;
         }
      else
-        for (i = 0; i < dotnum; i++) {
+        for (j = 0; j < dotnum; j++) {
+           i = (dindx ? dindx[j] : j);
            xdif = dotpt[i].X[0] - cm[0];
            ydif = dotpt[i].X[1] - cm[1];
            zdif = dotpt[i].X[2] - cm[2];
@@ -130,21 +137,19 @@ int Zoltan_RIB_inertial3d(
 
      /* Sum tensor across processors */
 
-     if (Zz->Tflops_Special) {
-        Zoltan_RIB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
-        Zoltan_RIB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
-        Zoltan_RIB_reduce_double(&zz, &zzt, 1, comm, nproc, rank, proc, 1);
-        Zoltan_RIB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
-        Zoltan_RIB_reduce_double(&xz, &xzt, 1, comm, nproc, rank, proc, 1);
-        Zoltan_RIB_reduce_double(&yz, &yzt, 1, comm, nproc, rank, proc, 1);
+     if (Tflops_Special) {
+        tmp1[0] = xx; tmp1[1] = yy; tmp1[2] = zz; 
+        tmp1[3] = xy; tmp1[4] = xz; tmp1[5] = yz;
+        Zoltan_RIB_reduce_double(tmp1, tmp2, 6, comm, nproc, rank, proc, 1);
+        xxt = tmp2[0]; yyt = tmp2[1]; zzt = tmp2[2]; 
+        xyt = tmp2[3]; xzt = tmp2[4]; yzt = tmp2[5];
      }
      else {
-        MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
-        MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
-        MPI_Allreduce(&zz,&zzt,1,MPI_DOUBLE,MPI_SUM,comm);
-        MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
-        MPI_Allreduce(&xz,&xzt,1,MPI_DOUBLE,MPI_SUM,comm);
-        MPI_Allreduce(&yz,&yzt,1,MPI_DOUBLE,MPI_SUM,comm);
+        tmp1[0] = xx; tmp1[1] = yy; tmp1[2] = zz; 
+        tmp1[3] = xy; tmp1[4] = xz; tmp1[5] = yz;
+        MPI_Allreduce(tmp1, tmp2, 6, MPI_DOUBLE, MPI_SUM, comm);
+        xxt = tmp2[0]; yyt = tmp2[1]; zzt = tmp2[2]; 
+        xyt = tmp2[3]; xzt = tmp2[4]; yzt = tmp2[5];
      }
 
      /* Compute eigenvector with maximum eigenvalue. */
@@ -160,10 +165,12 @@ int Zoltan_RIB_inertial3d(
 
      /* Calculate value to sort/split on for each cell. */
      /* This is inner product with eigenvector. */
-     for (i = 0; i < dotnum; i++)
-        value[i] = (dotpt[i].X[0] - cm[0])*evec[0] +
+     for (j = 0; j < dotnum; j++) {
+        i = (dindx ? dindx[j] : j);
+        value[j] = (dotpt[i].X[0] - cm[0])*evec[0] +
                    (dotpt[i].X[1] - cm[1])*evec[1] +
                    (dotpt[i].X[2] - cm[2])*evec[2];
+     }
 
      return(ZOLTAN_OK);
 }

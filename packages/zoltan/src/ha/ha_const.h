@@ -26,7 +26,10 @@ extern "C" {
 extern int Zoltan_Get_Processor_Name(ZZ *, char *);
 extern int Zoltan_Build_Machine_Desc(ZZ *);
 extern int Zoltan_Divide_Machine(ZZ *, float *, int, MPI_Comm, int *, 
-                                 int *, int *, int *, double *);
+                                 int *, int *, int *, int *, int *, int *,
+                                 double *);
+extern int Zoltan_Divide_Parts(ZZ *, float *, int, int *, int *, double *);
+
 
 /* Misc. constants */
 #define MAX_PROC_NAME_LEN (MPI_MAX_PROCESSOR_NAME+1)

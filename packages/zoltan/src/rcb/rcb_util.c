@@ -58,7 +58,7 @@ int num_geom;
     rcb->Dots = NULL;
 
     rcb->Tree_Ptr = (struct rcb_tree *)
-      ZOLTAN_MALLOC(zz->Num_Proc* sizeof(struct rcb_tree));
+      ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -66,7 +66,7 @@ int num_geom;
       return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
-    for (i = 0; i < zz->Num_Proc; i++) {
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
        treeptr = &(rcb->Tree_Ptr[i]);
        /* initialize dim to -1 to prevent use of cut */
        treeptr->dim = -1;

@@ -268,7 +268,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
   safe_free((void **) &tmp_maps);
   safe_free((void **) &sindex);
 
-  if (Test_DDirectory) 
+  if (Test.DDirectory) 
     compare_maps_with_ddirectory_results(proc, mesh);
 
   DEBUG_TRACE_END(proc, yo);

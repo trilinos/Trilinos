@@ -47,6 +47,7 @@ extern "C" {
    returned RCB tree only contains one cut on each proc,
      need to do MPI_Allgather if wish to collect it on all procs
 */
+/*****************************************************************************/
 #define MYHUGE 1.0e30
 
 /*  RCB_DEFAULT_OUTPUT_LEVEL = 0  No statistics logging */
@@ -56,13 +57,22 @@ extern "C" {
 #define RCB_DEFAULT_OVERALLOC 1.0
 #define RCB_DEFAULT_REUSE FALSE
 
+/*****************************************************************************/
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                  double, int, int, int, int, int, int, int, int, float *);
-static void print_rcb_tree(ZZ *, struct rcb_tree *);
+  double, int, int, int, int, int, int, int, int, float *);
+static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
+static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
+  struct rcb_box *);
+static int set_preset_dir(int, int, int, struct rcb_box *, int **);
+static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
+  struct rcb_box *, double, int, int, int *, int *, int, int, int, int,
+  int, int, int, int, int, int *, struct rcb_tree *, int *, int,
+  double *, double *, float *);
 
 
+/*****************************************************************************/
 /*  Parameters structure for RCB method.  Used in  */
 /*  Zoltan_RCB_Set_Param and Zoltan_RCB.                   */
 static PARAM_VARS RCB_params[] = {
@@ -75,6 +85,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
                   { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
+/*****************************************************************************/
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -101,6 +112,7 @@ int Zoltan_RCB(
   ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
   float *part_sizes,            /* Input:  Array of size zz->LB.Num_Global_Parts
+                                   * zz->Obj_Weight_Dim
                                    containing the percentage of work to be
                                    assigned to each partition.               */
   int *num_import,              /* Returned value:  Number of non-local 
@@ -116,8 +128,7 @@ int Zoltan_RCB(
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
   int **import_to_part,         /* Returned value:  array of partitions to
-                                   which imported objects should be assigned. 
-                                   KDDKDD  Currently assumes #parts == #procs.*/
+                                   which imported objects should be assigned. */
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
@@ -221,8 +232,7 @@ static int rcb_fn(
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
   int **import_to_part,         /* Returned value:  array of partitions
-                                   to which objects are imported.
-                                   KDDKDD Currently Assume #parts == #procs. */
+                                   to which objects are imported.            */
   double overalloc,             /* amount to overallocate by when realloc
                                    of dot array must be done.     
                                    1.0 = no extra; 1.5 = 50% extra; etc.     */
@@ -246,8 +256,8 @@ static int rcb_fn(
 {
   char    yo[] = "rcb_fn";
   int     proc,nprocs;              /* my proc id, total # of procs */
-  ZOLTAN_ID_PTR gidpt = NULL;           /* pointer to rcb->Global_IDs. */
-  ZOLTAN_ID_PTR lidpt = NULL;           /* pointer to rcb->Local_IDs. */
+  ZOLTAN_ID_PTR gidpt = NULL;       /* pointer to rcb->Global_IDs. */
+  ZOLTAN_ID_PTR lidpt = NULL;       /* pointer to rcb->Local_IDs. */
   struct Dot_Struct *dotpt;         /* pointer to rcb->Dots. */
   struct rcb_box boxtmp;            /* tmp rcb box */
   int     pdotnum;                  /* # of dots - decomposition changes it */
@@ -256,14 +266,17 @@ static int rcb_fn(
   int     dotnum;                   /* number of dots */
   int     dotmax = 0;               /* max # of dots arrays can hold */
   int     dottop;                   /* dots >= this index are new */
-  int     proclower;                /* lower proc in partition */
-  int     procmid;                  /* 1st proc in upper half of part */
-  int     set;                      /* which part processor is in = 0/1 */
-  int     old_set;                  /* part processor was in last cut = 0/1 */
-  int     root;                     /* processor that stores last cut */
-  int     num_procs;                /* number of procs in current part */
+  int     proclower;                /* 1st proc in lower set */
+  int     procmid;                  /* 1st proc in upper set */
+  int     partlower;                /* 1st part in lower set */
+  int     partmid;                  /* 1st part in upper set */
+  int     set;                      /* which set processor is in = 0/1 */
+  int     old_set;                  /* set processor was in last cut = 0/1 */
+  int     root;                     /* partition that stores last cut */
+  int     num_procs;                /* number of procs in current set */
+  int     num_parts;                /* number of parts in current set */
   int     dim;                      /* which of 3 axes median cut is on */
-  int     ierr;                     /* error flag. */
+  int     ierr = ZOLTAN_OK;         /* error flag. */
   int    *proc_list = NULL;         /* temp array for reusing old cuts */
   int     outgoing;                 /* number of outgoing dots for reuse */
   double *coord = NULL;             /* temp array for median_find */
@@ -294,8 +307,7 @@ static int rcb_fn(
                                        stored along with dots in the RCB_STRUCT.
                                        When false, storage, manipulation, and
                                        communication of IDs is avoided.     
-                                       Set by call to Zoltan_RB_Use_IDs().         */
-
+                                       Set by call to Zoltan_RB_Use_IDs(). */
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
   struct rcb_tree *treept = NULL;   /* tree of RCB cuts - only single cut on 
@@ -303,18 +315,25 @@ static int rcb_fn(
 
   double start_time, end_time;
   double lb_time[2];
-  int    tmp_nprocs;                /* added for Tflops_Special */
+  int    tfs[2], tmp_tfs[2];        /* added for Tflops_Special; max number
+                                       of procs and parts over all processors
+                                       in each iteration (while loop) of 
+                                       parallel partitioning.  */
   int    old_nprocs;                /* added for Tflops_Special */
-  double weight;                    /* weight for current partition */
+  int    old_nparts;                /* added for Tflops_Special */
+  double weight;                    /* weight for current set */
   double weightlo;                  /* weight of lower side of cut */
   double weighthi;                  /* weight of upper side of cut */
-  int *dotlist;                     /* list of dots for find_median */
+  int *dotlist = NULL;              /* list of dots used only in find_median;
+                                       allocated above find_median for 
+                                       better efficiency (don't necessarily
+                                       have to realloc for each find_median).*/
   int lock_direction = 0;           /* flag to determine direction after first
                                        iteration */
   int level;                        /* recursion level of RCB for preset_dir */
   int *dim_spec = NULL;             /* specified direction for preset_dir */
-  int ix[3];                        /* temporaries for preset_dir */
-  double wx, wy, wz;                /* width for preset_dir */
+  int fp;                           /* first partition assigned to this proc */
+  int np;                           /* number of parts assigned to this proc */
 
   /* MPI data types and user functions */
 
@@ -333,6 +352,13 @@ static int rcb_fn(
 
   proc = zz->Proc;
   nprocs = zz->Num_Proc;
+  num_parts = zz->LB.Num_Global_Parts;
+
+  /* create MPI data and function types for box and median */
+
+  MPI_Type_contiguous(6,MPI_DOUBLE,&box_type);
+  MPI_Type_commit(&box_type);
+  MPI_Op_create(&Zoltan_RCB_box_merge,1,&box_op);
 
   /* initializations */
 
@@ -349,11 +375,10 @@ static int rcb_fn(
 
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, use_ids);
-  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
+  if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
                    "Error returned from Zoltan_RCB_Build_Structure.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ierr);
+    goto End;
   }
 
   rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
@@ -387,35 +412,13 @@ static int rcb_fn(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-    if (dotmark == NULL) {
+    if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+     || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+     || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+     || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-    if (coord == NULL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-    if (wgts == NULL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-    dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-    if (dotlist == NULL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
   }
   else {
@@ -433,18 +436,20 @@ static int rcb_fn(
     if (treept[0].dim != -1) {
       /* find previous location of dots */
       for (outgoing = i = 0; i < dotnum; i++) {
-        ierr = Zoltan_LB_Point_Assign(zz, dotpt[i].X, &dotmark[i]);
+        ierr = Zoltan_RB_Point_Assign(zz, dotpt[i].X, &dotmark[i], NULL);
+        if (ierr < 0) {
+          ZOLTAN_PRINT_ERROR(proc, yo, 
+                             "Error returned from Zoltan_RB_Point_Assign");
+          goto End;
+        }
         if (dotmark[i] != proc) outgoing++;
       }
 
       if (outgoing)
         if ((proc_list = (int *) ZOLTAN_MALLOC(outgoing*sizeof(int))) == NULL) {
           ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-          ZOLTAN_FREE(&dotmark);
-          ZOLTAN_FREE(&coord);
-          ZOLTAN_FREE(&wgts);
-          ZOLTAN_TRACE_EXIT(zz, yo);
-          return ZOLTAN_MEMERR;
+          ierr = ZOLTAN_MEMERR;
+          goto End;
         }
 
       for (dottop = j = i = 0; i < dotnum; i++)
@@ -455,18 +460,15 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
-      ierr = Zoltan_RB_Send_Dots(zz, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
-                             outgoing, &dotnum, &dotmax, proc, &allocflag,
-                             overalloc, stats, reuse_count, use_ids,
-                             zz->Communicator);
-      if (ierr) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_Send_Dots.");
-        ZOLTAN_FREE(&proc_list);
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&coord);
-        ZOLTAN_FREE(&wgts);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return (ierr);
+      ierr = Zoltan_RB_Send_Dots(zz, &gidpt, &lidpt, &dotpt, &dotmark, 
+                                 proc_list, outgoing, 
+                                 &dotnum, &dotmax, proc, &allocflag,
+                                 overalloc, stats, reuse_count, use_ids,
+                                 zz->Communicator);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+                           "Error returned from Zoltan_RB_Send_Dots.");
+        goto End;
       }
 
       if (allocflag) {
@@ -488,12 +490,6 @@ static int rcb_fn(
     }
   }
 
-  /* create MPI data and function types for box and median */
-
-  MPI_Type_contiguous(6,MPI_DOUBLE,&box_type);
-  MPI_Type_commit(&box_type);
-
-  MPI_Op_create(&Zoltan_RCB_box_merge,1,&box_op);
 
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
@@ -508,10 +504,10 @@ static int rcb_fn(
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
-    if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_input");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return(ierr);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, 
+                         "Error returned from Zoltan_RB_check_geom_input");
+      goto End;
     }
   }
 
@@ -531,78 +527,14 @@ static int rcb_fn(
 
   MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,zz->Communicator);
 
-  /* if preset_dir is turned on, count number of levels of recursion,
-     determine number of cuts in each direction, and then assign those
-     cuts to an order according to order of directions */
+  /* if preset_dir is turned on, assign cut order according to order of 
+     directions */
   if (preset_dir) {
-     if (preset_dir < 0 || preset_dir > 6) {
-        ZOLTAN_PRINT_ERROR(proc, yo, 
-                       "Error: parameter RCB_SET_DIRECTIONS out of bounds");
-        preset_dir = 1;
-     }
-     wx = rcbbox->hi[0] - rcbbox->lo[0];
-     wy = rcbbox->hi[1] - rcbbox->lo[1];
-     wz = rcbbox->hi[2] - rcbbox->lo[2];
-     for (i = 0; i < 3; i++) ix[i] = 0;
-     for (tmp_nprocs = nprocs, level = 0; tmp_nprocs > 1; level++) {
-        tmp_nprocs = (tmp_nprocs + 1)/2;
-        if (wz > wx && wz > wy) {
-           ix[2]++;
-           wz /= 2.0;
-        }
-        else
-           if (wy > wx && wy > wz) {
-              ix[1]++;
-              wy /= 2.0;
-           }
-           else {
-              ix[0]++;
-              wx /= 2.0;
-           }
-     }
-     dim_spec = (int *) ZOLTAN_MALLOC(level*sizeof(int));
-     if (dim_spec == NULL) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_FREE(&wgts);
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&coord);
-        ZOLTAN_FREE(&dotlist);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-     }
-     for (i = j = 0; i < level; i++) {
-        if (j == 0) {
-           if (preset_dir < 3)
-              dim = 0;
-           else if (preset_dir < 5)
-              dim = 1;
-           else
-              dim = 2;
-           if (ix[dim] == 0)
-              j++;
-        }
-        if (j == 1) {
-           if (preset_dir == 1 || preset_dir == 6)
-              dim = 1;
-           else if (preset_dir < 4)
-              dim = 2;
-           else
-              dim = 0;
-           if (ix[dim] == 0)
-              j++;
-        }
-        if (j == 2) {
-           if (preset_dir == 3 || preset_dir == 6)
-              dim = 0;
-           else if (preset_dir == 2 || preset_dir == 5)
-              dim = 1;
-           else
-              dim = 0;
-        }
-        dim_spec[i] = dim;
-        ix[dim]--;
-     }
+     ierr = set_preset_dir(proc, num_parts, preset_dir, rcbbox, &dim_spec);
+     if (ierr < 0) 
+       goto End;
   }
+
 
   /* if reuse_dir is turned on, turn on gen_tree since it is needed. */
   /* Also, if this is not first time through, set lock_direction to reuse
@@ -625,57 +557,49 @@ static int rcb_fn(
     timers[0] = time2 - time1;
   }
 
-  /* recursively halve until just one proc in partition */
+  /* recursively halve until just one part or proc in set */
   
   old_nprocs = num_procs = nprocs;
+  old_nparts = num_parts;
+  partlower = 0;
   root = 0;
   old_set = 1;
-  treept[proc].parent = 0;
-  treept[proc].left_leaf = 0;
+  ierr = Zoltan_LB_Proc_To_Part(zz, proc, &np, &fp);
+  for (i = fp; i < (fp + np); i++) {
+    treept[i].parent = 0;
+    treept[i].left_leaf = 0;
+  }
   if (zz->Tflops_Special) {
-     proclower = 0;
-     tmp_nprocs = nprocs;
+    proclower = 0;
+    tfs[0] = nprocs;
+    tfs[1] = num_parts;
   }
   level = 0;
 
-  while (num_procs > 1 || (zz->Tflops_Special && tmp_nprocs > 1)) {
-    /* tmp_nprocs is size of largest partition - force all processors to go
-       through all levels of rcb */
-    if (zz->Tflops_Special) tmp_nprocs = (tmp_nprocs + 1)/2;
+  while ((num_parts > 1 && num_procs > 1) || 
+         (zz->Tflops_Special && tfs[0] > 1 && tfs[1] > 1)) {
 
-    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time1 = Zoltan_Time(zz->Timer);
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      time1 = Zoltan_Time(zz->Timer);
 
-    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, 
-                                 &set, &proclower,
-                                 &procmid, &num_procs, &fractionlo);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, &set, 
+                                 &proclower, &procmid, &num_procs, 
+                                 &partlower, &partmid, &num_parts, 
+                                 &fractionlo);
+    if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+      goto End;
     }
-    
-    /* dim = dimension (xyz = 012) to bisect on */
 
-    if (lock_direction)
-       dim = treept[procmid].dim;
-    else if (preset_dir)
-       dim = dim_spec[level++];
-    else {
-       dim = 0;
-       if (rcbbox->hi[1] - rcbbox->lo[1] >
-	   rcbbox->hi[0] - rcbbox->lo[0])
-         dim = 1;
-       if (dim == 0 && rcbbox->hi[2] - rcbbox->lo[2] >
-	   rcbbox->hi[0] - rcbbox->lo[0])
-         dim = 2;
-       if (dim == 1 && rcbbox->hi[2] - rcbbox->lo[2] >
-	   rcbbox->hi[1] - rcbbox->lo[1])
-         dim = 2;
+    /* tfs[0] is max number of processors in all sets over all processors -
+     * tfs[1] is max number of partitions in all sets over all processors -
+     * force all processors to go through all levels of parallel rcb */
+    if (zz->Tflops_Special) {
+      tmp_tfs[0] = num_procs;
+      tmp_tfs[1] = num_parts;
+      MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, local_comm);
     }
-    
+
     /* create mark array and active list for dots */
 
     if (allocflag) {
@@ -684,49 +608,30 @@ static int rcb_fn(
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotlist);
-      dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-      if (dotmark == NULL) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-      if (coord == NULL) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
-      if (wgts == NULL) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&coord);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
-      if (dotlist == NULL) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_FREE(&wgts);
-        ZOLTAN_FREE(&dotmark);
-        ZOLTAN_FREE(&coord);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+      if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+       || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
       }
     }
 
     /* copy correct coordinate value into the temporary array */
+
+    dim = cut_dimension(lock_direction, treept, partmid, 
+                        preset_dir, dim_spec, &level, rcbbox);
     for (i = 0; i < dotnum; i++) {
       coord[i] = dotpt[i].X[dim];
       wgts[i] = dotpt[i].Weight;
     }
 
     /* determine if there is a first guess to use */
-    /* The test on old_nprocs is for the TFLOPS_SPECIAL flag */
-    if (old_nprocs > 1 && reuse && dim == treept[procmid].dim) {
+    /* The test on old_nparts is for the TFLOPS_SPECIAL flag */
+    if (old_nparts > 1 && reuse && dim == treept[partmid].dim) {
       if (stats) counters[5]++;
-      valuehalf = treept[procmid].cut;
+      valuehalf = treept[partmid].cut;
       first_guess = 1;
     }
     else first_guess = 0;
@@ -737,15 +642,13 @@ static int rcb_fn(
     if (!Zoltan_RB_find_median(
                 zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
                 fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
-                nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
-                rcbbox->hi[dim], weight, &weightlo, &weighthi,
+                nprocs, old_nprocs, proclower, old_nparts, 
+                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+                weight, &weightlo, &weighthi,
                 dotlist, rectilinear_blocks)) {
       ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_FATAL;
+      ierr = ZOLTAN_FATAL;
+      goto End;
     }
 
     if (set)    /* set weight for current partition */
@@ -756,19 +659,33 @@ static int rcb_fn(
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
 
-    /* store cut info in tree only if I am procmid */
-
-    if (proc == procmid) {
-      treept[proc].dim = dim;
-      treept[proc].cut = valuehalf;
-      treept[proc].parent = old_set ? -(root+1) : root+1;
+    /* store cut info in tree only if proc "owns" partmid */
+    /* test of partmid > 0 prevents treept[0] being set when this cut is 
+       only removing low-numbered processors (proclower to procmid-1) that
+       have no partitions in them from the processors remaining to 
+       be partitioned. */
+    if (partmid > 0 && partmid == fp) {
+      treept[partmid].dim = dim;
+      treept[partmid].cut = valuehalf;
+      treept[partmid].parent = old_set ? -(root+1) : root+1;
       /* The following two will get overwritten when the information is
          assembled if this is not a terminal cut */
-      treept[proc].left_leaf = -proclower;
-      treept[proc].right_leaf = -procmid;
+      treept[partmid].left_leaf = -partlower;
+      treept[partmid].right_leaf = -partmid;
     }
-    old_set = set;
-    root = procmid;
+    if (old_nprocs > 1 && partmid > 0 && partmid != partlower + old_nparts) {  
+      /* old_nprocs > 1 test: Don't reset these values if proc is in loop only 
+       * because of other procs for Tflops_Special.
+       * partmid > 0 test:  Don't reset these values if low-numbered processors
+       * (proclower to procmid-1) have zero partitions and this cut is removing
+       * them from the processors remaining to be partitioned. 
+       * partmid != partlower + old_nparts test:  Don't reset these values if
+       * cut is removing high-numbered processors with zero partitions from
+       * the processors remaining to be partitioned.
+       */
+      old_set = set;
+      root = partmid;
+    }
     
     /* use cut to shrink RCB domain bounding box */
 
@@ -780,17 +697,15 @@ static int rcb_fn(
     }
 
     allocflag = 0;
-    ierr = Zoltan_RB_Send_Outgoing(zz, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
-                               &dotnum, &dotmax, set, &allocflag, overalloc,
+    ierr = Zoltan_RB_Send_Outgoing(zz, &gidpt, &lidpt, &dotpt, &dotmark,
+                               &dottop, &dotnum, &dotmax,
+                               set, &allocflag, overalloc,
                                stats, counters, use_ids, local_comm, proclower,
-                               old_nprocs);
-    if (ierr) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_Send_Outgoing.");
-      ZOLTAN_FREE(&dotmark);
-      ZOLTAN_FREE(&coord);
-      ZOLTAN_FREE(&wgts);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+                               old_nprocs, partlower, partmid);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo,
+                         "Error returned from Zoltan_RB_Send_Outgoing.");
+      goto End;
     }
 
     if (allocflag) {
@@ -806,13 +721,20 @@ static int rcb_fn(
     /* create new communicators */
 
     if (zz->Tflops_Special) {
-       if (set) proclower = procmid;
+       if (set) {
+         proclower = procmid;
+         partlower = partmid;
+       }
        old_nprocs = num_procs;
+       old_nparts = num_parts;
     }
     else {
+       if (set) partlower = partmid;
        MPI_Comm_split(local_comm,set,proc,&tmp_comm);
        MPI_Comm_free(&local_comm);
        local_comm = tmp_comm;
+       old_nprocs = num_procs;
+       old_nparts = num_parts;
     }
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
@@ -823,19 +745,66 @@ static int rcb_fn(
     }
   }
 
-  /* have recursed all the way to final single sub-domain */
+  /* have recursed all the way to a single processor sub-domain */
 
-  /* free all memory used by RCB and MPI */
+  /* Send dots to correct processors for their partitions.  This is needed
+     most notably when a processor has zero partitions on it, but still has
+     some dots after the parallel partitioning. */
 
-  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
-  MPI_Type_free(&box_type);
-  MPI_Op_free(&box_op);
+  ierr = Zoltan_RB_Send_To_Part(zz, &gidpt, &lidpt, &dotpt, &dotmark, &dottop,
+                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               stats, counters, use_ids);
+  if (ierr < 0) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Error returned from Zoltan_RB_Send_To_Part");
+    goto End;
+  }
 
-  ZOLTAN_FREE(&coord);
-  ZOLTAN_FREE(&wgts);
-  ZOLTAN_FREE(&dotmark);
-  ZOLTAN_FREE(&dotlist);
-  if (preset_dir) ZOLTAN_FREE(&dim_spec);
+  if (allocflag) {
+    /* 
+     * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_To_Part;
+     * store their values in rcb.
+     */
+    rcb->Global_IDs = gidpt;
+    rcb->Local_IDs = lidpt;
+    rcb->Dots = dotpt;
+  }
+
+  /* All dots are now on the processors they will end up on; now generate
+   * more partitions if needed. */
+
+  if (num_parts > 1) {
+    int *dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
+    int *tmpdindx = dindx + dotnum;
+    if (allocflag) {
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&coord);
+      ZOLTAN_FREE(&wgts);
+      ZOLTAN_FREE(&dotlist);
+      if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+       || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
+    }
+    for (i = 0; i < dotnum; i++)
+      dindx[i] = i;
+    ierr = serial_rcb(zz, dotpt, dotmark, dotlist, old_set, root,
+               rcbbox, weight, dotnum, num_parts,
+               &(dindx[0]), &(tmpdindx[0]), partlower, 
+               proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
+               preset_dir, 
+               rectilinear_blocks, counters, treept, dim_spec, level,
+               coord, wgts, part_sizes);
+    ZOLTAN_FREE(&dindx);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rcb");
+      goto End;
+    }
+  }
 
   end_time = Zoltan_Time(zz->Timer);
   lb_time[1] = end_time - start_time;
@@ -848,12 +817,12 @@ static int rcb_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes,
+    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes, np, fp,
                                        dotnum, pdotnum, rcbbox);
-    if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_output");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return(ierr);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(proc, yo, 
+                         "Error returned from Zoltan_RB_check_geom_output");
+      goto End;
     }
   }
 
@@ -872,35 +841,47 @@ static int rcb_fn(
 
   if (zz->LB.Return_Lists) {
     /* zz->LB.Return_Lists is true ==> use_ids is true */
-    *num_import = dotnum - dottop;
-    if (*num_import > 0) {
-      ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, *num_import,
-                                    import_global_ids, import_local_ids,
-                                    import_procs, import_to_part, dottop);
-      if (ierr) {
-         ZOLTAN_PRINT_ERROR(proc,yo,"Error returned from Zoltan_RB_Return_Arguments.");
-         ZOLTAN_TRACE_EXIT(zz, yo);
-         return ierr;
-      }
+    ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, num_import,
+                                      import_global_ids, import_local_ids,
+                                      import_procs, import_to_part, 
+                                      dotnum, dottop);
+    if (ierr < 0) {
+       ZOLTAN_PRINT_ERROR(proc,yo,
+                          "Error returned from Zoltan_RB_Return_Arguments.");
+       goto End;
     }
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-    print_rcb_tree(zz, &(treept[proc]));
-
   if (gen_tree) {
-    MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
-      treept, sizeof(struct rcb_tree), MPI_BYTE, zz->Communicator);
+    int *displ, *recvcount;
+    int sendcount;
+
+    if (!(displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    recvcount = displ + zz->Num_Proc;
+
+    ierr = Zoltan_RB_Tree_Gatherv(zz, sizeof(struct rcb_tree), &sendcount,
+                                  recvcount, displ);
+
+    MPI_Allgatherv(&treept[fp], sendcount, MPI_BYTE, treept, recvcount, displ,
+                   MPI_BYTE, zz->Communicator);
     treept[0].dim = 0;
-    for (i = 1; i < nprocs; i++)
+    for (i = 1; i < zz->LB.Num_Global_Parts; i++)
       if (treept[i].parent > 0)
         treept[treept[i].parent - 1].left_leaf = i;
       else if (treept[i].parent < 0)
         treept[-treept[i].parent - 1].right_leaf = i;
+    ZOLTAN_FREE(&displ);
   }
   else {
     treept[0].dim = -1;
   }
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
   lb_time[0] += (end_time - start_time);
@@ -922,7 +903,20 @@ static int rcb_fn(
                     *import_global_ids, *import_procs);
   }
 
+End:
+
   /* Free memory allocated by the algorithm. */
+
+  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
+  MPI_Type_free(&box_type);
+  MPI_Op_free(&box_op);
+
+  ZOLTAN_FREE(&coord);
+  ZOLTAN_FREE(&wgts);
+  ZOLTAN_FREE(&dotmark);
+  ZOLTAN_FREE(&dotlist);
+  if (preset_dir) ZOLTAN_FREE(&dim_spec);
+
   if (!reuse && !gen_tree) {
     /* Free all memory used. */
     Zoltan_RCB_Free_Structure(zz);
@@ -935,11 +929,12 @@ static int rcb_fn(
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  /* Temporary return value until error codes are fully implemented */
-  return(ZOLTAN_OK);  
+  return(ierr);  
 }
 
 
+
+/******************************************************************************/
 
 /* ----------------------------------------------------------------------- */
 
@@ -964,16 +959,314 @@ void Zoltan_RCB_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-static void print_rcb_tree(ZZ *zz, struct rcb_tree *treept)
+/******************************************************************************/
+
+static void print_rcb_tree(ZZ *zz, int np, int fp, struct rcb_tree *treept_arr)
 {
+int i;
+struct rcb_tree *treept = treept_arr;
+
   Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
-  printf("Proc %d:  Tree Struct:\n", zz->Proc);
-  printf("          cut        = %e\n", treept->cut);
-  printf("          dim        = %d\n", treept->dim);
-  printf("          parent     = %d\n", treept->parent);
-  printf("          left_leaf  = %d\n", treept->left_leaf);
-  printf("          right_leaf = %d\n", treept->right_leaf);
+  for (i = fp; i < fp+np; i++) {
+    printf("Proc %d, Part %d:  Tree Struct:\n", zz->Proc, i);
+    printf("                   cut        = %e\n", treept->cut);
+    printf("                   dim        = %d\n", treept->dim);
+    printf("                   parent     = %d\n", treept->parent);
+    printf("                   left_leaf  = %d\n", treept->left_leaf);
+    printf("                   right_leaf = %d\n", treept->right_leaf);
+    treept++;
+  }
   Zoltan_Print_Sync_End(zz->Communicator, TRUE);
+}
+
+/******************************************************************************/
+
+static int cut_dimension(
+  int lock_direction,        /* flag indicating whether directions are locked */
+  struct rcb_tree *treept,   /* tree of RCB cuts */
+  int partmid,               /* lowest partition in set 1. */
+  int preset_dir,            /* Set order of directions:     0: don't set,
+                                 1: xyz,        2: xzy,      3: yzx,
+                                 4: yxz,        5: zxy,      6: zyx  */
+  int *dim_spec,             /* specified direction for preset_dir */
+  int *level,                /* recursion level of RCB for preset_dir */
+  struct rcb_box *rcbbox     /* bounding box of RCB sub-domain */
+)
+{
+/* compute dim = dimension (xyz = 012) to bisect on */
+int dim;
+
+  if (lock_direction)
+    dim = treept[partmid].dim;
+  else if (preset_dir)
+    dim = dim_spec[(*level)++];
+  else {
+    dim = 0;
+    if (rcbbox->hi[1] - rcbbox->lo[1] > rcbbox->hi[0] - rcbbox->lo[0])
+      dim = 1;
+    if (dim == 0 && 
+        rcbbox->hi[2] - rcbbox->lo[2] > rcbbox->hi[0] - rcbbox->lo[0])
+      dim = 2;
+    if (dim == 1 &&
+        rcbbox->hi[2] - rcbbox->lo[2] > rcbbox->hi[1] - rcbbox->lo[1])
+      dim = 2;
+  }
+
+  return dim;
+}
+
+/******************************************************************************/
+
+static int set_preset_dir(
+  int proc,                  /* Current processor */
+  int nparts,                /* total number of partitions */
+  int preset_dir,            /* Set order of directions:     0: don't set,
+                                 1: xyz,        2: xzy,      3: yzx,
+                                 4: yxz,        5: zxy,      6: zyx  */
+  struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
+  int **dim_spec             /* specified direction for preset_dir */
+)
+{
+/* if preset_dir is turned on, count number of levels of recursion,
+   determine number of cuts in each direction, and then assign those
+   cuts to an order according to order of directions */
+
+char *yo = "set_preset_dir";
+int ix[3];                        /* temporaries for preset_dir */
+double wx, wy, wz;                /* width for preset_dir */
+int tmp_nparts;
+int level;
+int i, j;
+int ierr = ZOLTAN_OK;
+int dim;
+
+  if (preset_dir < 0 || preset_dir > 6) {
+    ZOLTAN_PRINT_WARN(proc, yo, 
+                    "Parameter RCB_SET_DIRECTIONS out of bounds; reset to 1.");
+    ierr = ZOLTAN_WARN;
+    preset_dir = 1;
+  }
+
+  wx = rcbbox->hi[0] - rcbbox->lo[0];
+  wy = rcbbox->hi[1] - rcbbox->lo[1];
+  wz = rcbbox->hi[2] - rcbbox->lo[2];
+
+  for (i = 0; i < 3; i++) ix[i] = 0;
+
+  for (tmp_nparts = nparts, level = 0; tmp_nparts > 1; level++) {
+    tmp_nparts = (tmp_nparts + 1)/2;
+    if (wz > wx && wz > wy) {
+      ix[2]++;
+      wz /= 2.0;
+    }
+    else if (wy > wx && wy > wz) {
+      ix[1]++;
+      wy /= 2.0;
+    }
+    else {
+      ix[0]++;
+      wx /= 2.0;
+    }
+  }
+
+  if (level > 0) {
+    *dim_spec = (int *) ZOLTAN_MALLOC(level*sizeof(int));
+    if (*dim_spec == NULL) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
+    for (i = j = 0; i < level; i++) {
+      if (j == 0) {
+        if (preset_dir < 3)
+          dim = 0;
+        else if (preset_dir < 5)
+          dim = 1;
+        else
+          dim = 2;
+        if (ix[dim] == 0)
+          j++;
+      }
+      if (j == 1) {
+        if (preset_dir == 1 || preset_dir == 6)
+          dim = 1;
+        else if (preset_dir < 4)
+          dim = 2;
+        else
+          dim = 0;
+        if (ix[dim] == 0)
+          j++;
+      }
+      if (j == 2) {
+        if (preset_dir == 3 || preset_dir == 6)
+          dim = 0;
+        else if (preset_dir == 2 || preset_dir == 5)
+          dim = 1;
+        else
+          dim = 0;
+      }
+      (*dim_spec)[i] = dim;
+      ix[dim]--;
+    }
+  }
+
+End:
+  return ierr;
+}
+
+/******************************************************************************/
+
+static int serial_rcb(
+  ZZ *zz,
+  struct Dot_Struct *dotpt,  /* pointer to rcb->Dots. */
+  int *dotmark,              /* which side of median for each dot */
+  int *dotlist,              /* list of dots used only in find_median;
+                                allocated above find_median for 
+                                better efficiency (don't necessarily
+                                have to realloc for each find_median).*/
+  int old_set,               /* Set the objects to be partitioned were in 
+                                for last cut */
+  int root,                  /* partition for which last cut was stored. */
+  struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
+  double weight,             /* weight for current set */
+  int dotnum,                /* number of input dots */
+  int num_parts,             /* number of partitions to create. */
+  int *dindx,                /* Index into dotpt for dotnum dots to be 
+                                partitioned; reordered in serial_rcb so set0
+                                dots are followed by set1 dots. */
+  int *tmpdindx,             /* Temporary memory used in reordering dindx. */
+  int partlower,             /* smallest partition number to be created. */
+  int proc,                  /* processor number. */
+  int wgtflag,               /* (0) do not (1) do use weights. */
+  int lock_direction,        /* flag indicating whether directions are locked */
+  int reuse,                 /* (0) don't use (1) use previous cuts
+                                stored in treept at initial guesses.      */
+  int stats,                 /* Print timing & count summary?             */
+  int gen_tree,              /* (0) do not (1) do generate full treept    */
+  int preset_dir,            /* Set order of directions:     0: don't set,
+                                 1: xyz,        2: xzy,      3: yzx,
+                                 4: yxz,        5: zxy,      6: zyx  */
+  int rectilinear_blocks,    /* (0) do (1) don't break ties in find_median*/
+  int counters[],            /* diagnostic counts */
+  struct rcb_tree *treept,   /* tree of RCB cuts */
+  int *dim_spec,             /* specified direction for preset_dir */
+  int level,                 /* recursion level of RCB for preset_dir */
+  double *coord,             /* temp array for median_find */
+  double *wgts,              /* temp array for median_find */
+  float *part_sizes          /* Array of size zz->LB.Num_Global_Parts
+                                containing the percentage of work to be
+                                assigned to each partition.               */
+
+)
+{
+char *yo = "serial_rcb";
+int ierr = ZOLTAN_OK;
+int i;
+int dim;
+int first_guess;
+int new_nparts;
+int partmid;
+double fractionlo;
+double valuehalf;
+double weightlo, weighthi;
+int set0, set1;
+struct rcb_box tmpbox;
+
+  if (num_parts == 1) {
+    for (i = 0; i < dotnum; i++)
+      dotpt[dindx[i]].Part = partlower;
+  }
+  else {
+    ierr = Zoltan_Divide_Parts(zz, part_sizes, num_parts,
+                               &partlower, &partmid, &fractionlo);
+
+    dim = cut_dimension(lock_direction, treept, partmid, 
+                        preset_dir, dim_spec, &level, rcbbox);
+
+    for (i = 0; i < dotnum; i++) {
+      coord[i] = dotpt[dindx[i]].X[dim];
+      wgts[i] = dotpt[dindx[i]].Weight;
+    }
+
+    if (reuse && dim == treept[partmid].dim) {
+      if (stats) counters[5]++;
+      valuehalf = treept[partmid].cut;
+      first_guess = 1;
+    }
+    else
+      first_guess = 0;
+
+    /* Call find_median with Tflops_Special == 0; avoids communication */
+    if (!Zoltan_RB_find_median(0, coord, wgts, dotmark, dotnum, proc, 
+                               fractionlo, MPI_COMM_SELF, &valuehalf,
+                               first_guess, &(counters[0]), 1, 1,
+                               proc, num_parts, wgtflag, rcbbox->lo[dim], 
+                               rcbbox->hi[dim], weight, &weightlo, &weighthi,
+                               dotlist, rectilinear_blocks)) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+
+    treept[partmid].dim = dim;
+    treept[partmid].cut = valuehalf;
+    treept[partmid].parent = old_set ? -(root+1) : root+1;
+    /* The following two will get overwritten when the information is
+       assembled if this is not a terminal cut */
+    treept[partmid].left_leaf = -partlower;
+    treept[partmid].right_leaf = -partmid;
+
+    root = partmid;
+
+    /* Create new dindx, grouping set 0 and set 1 dots together */
+    for (set0 = 0, set1 = dotnum, i = 0; i < dotnum; i++) {
+      if (dotmark[i] == 0) 
+        tmpdindx[set0++] = dindx[i];
+      else
+        tmpdindx[--set1] = dindx[i];
+    }
+    memcpy(dindx, tmpdindx, dotnum * sizeof(int));
+
+    /* If set 0 has at least one partition and at least one dot,
+     * call serial_rcb for set 0 */
+    new_nparts = partmid - partlower;
+    if (new_nparts > 0 && set1 != 0) {
+      memcpy(&tmpbox, rcbbox, sizeof(struct rcb_box));
+      tmpbox.hi[dim] = valuehalf;
+      ierr = serial_rcb(zz, dotpt, dotmark, dotlist, 0, root,
+                        &tmpbox, weightlo, set0, new_nparts,
+                        &(dindx[0]), &(tmpdindx[0]), partlower, 
+                        proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
+                        preset_dir, 
+                        rectilinear_blocks, counters, treept, dim_spec, level,
+                        coord, wgts, part_sizes);
+      if (ierr < 0) {
+        goto End;
+      }
+    }
+
+    /* If set 1 has at least one partition and at least one dot,
+     * call serial_rcb for set 1 */
+    new_nparts = partlower + num_parts - partmid;
+    if (new_nparts > 0 && set0 != dotnum) {
+      memcpy(&tmpbox, rcbbox, sizeof(struct rcb_box));
+      tmpbox.lo[dim] = valuehalf;
+      ierr = serial_rcb(zz, dotpt, dotmark, dotlist, 1, root,
+                        &tmpbox, weighthi, dotnum-set0, new_nparts,
+                        &(dindx[set1]), &(tmpdindx[set1]), partmid, 
+                        proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
+                        preset_dir, 
+                        rectilinear_blocks, counters, treept, dim_spec, level,
+                        coord, wgts, part_sizes);
+      if (ierr < 0) {
+        goto End;
+      }
+    }
+  }
+End:
+
+  return ierr;
 }
 
 #ifdef __cplusplus

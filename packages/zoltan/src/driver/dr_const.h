@@ -167,21 +167,32 @@ struct Problem_Description
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
+/* Structure for driver flags for various test options. */
+struct Test_Flags {
+  int DDirectory;           /* Exercises data directories */
+  int Local_Partitions;     /* Sets NUM_LOCAL_PARTITIONS parameter in various
+                               ways. */
+  int Drops;                /* Exercises point- and box-assign. */
+  int Multi_Callbacks;      /* Exercises list-based callback functions. */
+  int Null_Import_Lists;    /* Exercises null import lists to Zoltan_Migrate. */
+};
+
+/* Structure for output flags for various types of output. */
+struct Output_Flags {
+  int Gnuplot;
+  int Nemesis;
+  int Plot_Partitions;
+  int Mesh_Info_File;
+};
+
 /* Global variables for driver */
 extern int Debug_Driver;
-extern int Test_DDirectory;
-extern int Test_Local_Partitions;
-extern int Test_Drops;
-extern int Test_Multi_Callbacks;
-extern int Test_Null_Import_Lists;
-extern int Gnuplot_Output;
-extern int Nemesis_Output;
-extern int Plot_Partitions;
-extern int Print_Mesh_Info_File;
+extern int Debug_Chaco_Input;
 extern int Number_Iterations;
 extern int Driver_Action;
-extern int Debug_Chaco_Input;
 extern int Chaco_In_Assign_Inv;
+extern struct Test_Flags Test;
+extern struct Output_Flags Output;
 
 #define DEBUG_TRACE_START(proc,yo) \
   if (((proc) == 0 && Debug_Driver > 1) || (Debug_Driver > 2))  \

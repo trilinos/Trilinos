@@ -25,61 +25,151 @@ int Zoltan_Divide_Machine(
    ZZ *zz,             /* The Zoltan structure (not used now, will be
                           used for pointer to machine details */
    float *part_sizes,  /* Array of partition sizes, containing percentage
-                          of work per partition.   
-                          KDDKDD For now, part == proc.  */
+                          of work per partition.   */
    int proc,           /* my processor number in global sense */
    MPI_Comm comm,      /* communicator for part of machine to be divided */
-   int *set,           /* part that proc is in after divide (lowest global
+   int *set,           /* set that proc is in after divide (lowest global
                           numbered processor in set 0) */
-   int *proclower,     /* lowest numbered processor in first part */
-   int *procmid,       /* lowest numbered processor in second part */
-   int *num_procs,     /* on input, number of procs in the part to be divided
-                          on exit, number of procs in part that proc is in */
-   double *fractionlo  /* actual division of machine */
+   int *proclower,     /* lowest numbered processor in first set */
+   int *procmid,       /* lowest numbered processor in second set */
+   int *num_procs,     /* on input, # of procs to be divided
+                          on exit, # of procs in the set that proc is in */
+   int *partlower,     /* lowest numbered partition in first set */
+   int *partmid,       /* lowest numbered partition in second set */
+   int *num_parts,     /* on input, # of partitions to be divided
+                          on exit, # of parts in the set that proc is in */
+   double *fractionlo  /* actual division of machine: % of work to be assigned
+                          to first set */
+)
+{
+int i, j;
+double sum;
+int np = 0;     /* Number of partitions on procmid */
+int fpartmid;   /* First partition on procmid */
+int totalparts; /* Total number of partitions in input set. */
+int totalprocs; /* Total number of processors in input set. */
+
+/* This routine divides the current machine (defined by the communicator)
+ * into two pieces.
+ * For now, it simply divides the machine in half.  In the future, it will
+ * be a more complicated routine taking into account the architecture of
+ * the machine and communication network. 
+ * The two resulting sets contain contiguously numbered processors 
+ * and partitions.
+ */
+
+  /* The following statement assumes that proclower is being set correctly in
+     the calling routine if Tflops_Special flag is set */
+  if (!zz->Tflops_Special)
+     MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
+
+  totalparts = *partlower + *num_parts;
+  totalprocs = *proclower + *num_procs;
+
+  /* Compute procmid as roughly half the number of processors. */
+  /* Then partmid is the lowest-numbered partition on procmid. */
+
+  *procmid = *proclower + (*num_procs - 1)/2 + 1;
+  if (*procmid < totalprocs)
+    Zoltan_LB_Proc_To_Part(zz, *procmid, &np, &fpartmid);
+  if (np > 0)
+    *partmid = fpartmid;
+  else {
+    /* No partitions on procmid; find next part number in procs > procmid */
+    i = *procmid;
+    while (np == 0 && (++i) < totalprocs) {
+      Zoltan_LB_Proc_To_Part(zz, i, &np, &fpartmid);
+    }
+    if (np) 
+      *partmid = fpartmid;
+    else
+      *partmid = totalparts;
+  }
+
+  /* Check special cases */
+
+  if (!zz->LB.Single_Proc_Per_Part && *partmid != totalparts) {
+    i = Zoltan_LB_Part_To_Proc(zz, *partmid, NULL);
+    if (i != *procmid) {
+
+      /* Partition is spread across several processors. 
+         Don't allow mid to fall within a partition; reset procmid so that it
+         falls at a partition boundary.  */
+
+      if (i != *proclower) {
+        /* set procmid to lowest processor containing partmid */
+        *procmid = i;
+      }
+      else { /* i == *proclower */
+        /* Move mid to next partition so that procmid != proclower */
+        (*partmid)++;
+        *procmid = Zoltan_LB_Part_To_Proc(zz, *partmid, NULL);
+      }
+    }
+  }
+
+  sum = 0.0;
+  *fractionlo = 0.0;
+  for (i = 0; i < *num_parts; i++) {
+    j = *partlower + i;
+    if (j < *partmid)
+      *fractionlo += (double) part_sizes[j];
+    sum += (double) part_sizes[j];
+  }
+  if (sum != 0.0) *fractionlo /= sum;
+   
+
+  if (proc < *procmid) {
+    *set = 0;
+    *num_parts = *partmid - *partlower;
+    *num_procs = *procmid - *proclower;
+  } 
+  else {
+    *set = 1;
+    *num_parts = totalparts - *partmid;
+    *num_procs = totalprocs - *procmid;
+  }
+
+  return ZOLTAN_OK;
+}
+
+int Zoltan_Divide_Parts(
+   ZZ *zz,             /* The Zoltan structure (not used now, will be
+                          used for pointer to machine details */
+   float *part_sizes,  /* Array of partition sizes, containing percentage
+                          of work per partition.   */
+   int num_parts,      /* Input: # of partitions to be divided */
+   int *partlower,     /* lowest numbered partition in first set */
+   int *partmid,       /* lowest numbered partition in second set */
+   double *fractionlo  /* actual division of machine: % of work to be assigned
+                          to first set */
 )
 {
 int i, j;
 double sum;
 
-/* This routine divides the current machine (defined by the communicator)
-   into two pieces.
-   For now, it simply divides the machine in half.  In the future, it will
-   be a more complicated routine taking into account the architecture of
-   the machine and communication network. */
-/* If using Tflops_Special, then we have to divide the set into two
-   contiguously numbered sets. */
+/* This SERIAL routine divides the current group of partitions
+ * into two pieces with roughly equal numbers of partitions per piece. 
+ * It is designed to be used within a single processor to divides its
+ * partitions into two sets (e.g., in serial_rcb).
+ */
 
-   /* assume for now that processors coming in are in a contiguously
-      numbered set and we will divide them into two roughly equal
-      contiguously numbered sets */
+  /* Compute procmid as roughly half the number of processors. */
+  /* Then partmid is the lowest-numbered partition on procmid. */
 
-   /* The following statement assumes that proclower is being set correctly in
-      the calling routine if Tflops_Special flag is set */
-   if (!zz->Tflops_Special)
-      MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
+  *partmid = *partlower + (num_parts - 1)/2 + 1;
 
-   *procmid = *proclower + (*num_procs - 1)/2 + 1;
-
-   sum = 0.0;
-   *fractionlo = 0.0;
-   for (i = 0; i < *num_procs; i++) {
-     j = *proclower + i;
-     if (j < *procmid)
-       *fractionlo += (double) part_sizes[j];
-     sum += (double) part_sizes[j];
-   }
-   if (sum != 0.0) *fractionlo /= sum;
+  sum = 0.0;
+  *fractionlo = 0.0;
+  for (i = 0; i < num_parts; i++) {
+    j = *partlower + i;
+    if (j < *partmid)
+      *fractionlo += (double) part_sizes[j];
+    sum += (double) part_sizes[j];
+  }
+  if (sum != 0.0) *fractionlo /= sum;
    
-
-   if (proc < *procmid) {
-      *set = 0;
-      *num_procs = *procmid - *proclower;
-   } else {
-      *set = 1;
-      *num_procs = *num_procs - *procmid + *proclower;
-   }
-
-   return ZOLTAN_OK;
+  return ZOLTAN_OK;
 }
 
 #ifdef __cplusplus

@@ -37,11 +37,13 @@ typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, float *, int *,
 
 typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
-typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *);
+typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *, 
+                                      int *);
 
 typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *, 
                                     double, double, double,
-                                    double, double, double, int*, int*);
+                                    double, double, double,
+                                    int*, int*, int *, int *);
 
 /*
  *  Define the possible load balancing methods allowed.

@@ -36,7 +36,10 @@ int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
  * If a partition is entirely within a processor, that processor's rank is
  * returned.
  * If a partition is spread across several processors, find the range of its
- * processors.  If zz->Proc is one of them, return zz->Proc.  Otherwise,
+ * processors.  If zz->Proc is one of them, return zz->Proc.  
+ * If a gid is not given (gid == NULL) return the lowest-numbered processor
+ * in the range.  (RCB and RIB depend upon this feature.)
+ * If a gid is given, 
  * hash the input gid to a processor within the range of processors.
  * If no input gid is given, the processor number is hashed instead.
  * NOTE:  The special case of returning zz->Proc when it is within range 
@@ -44,6 +47,7 @@ int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
  * for the same gid on different processors.
  * If all processors must map a gid to the same processor, this special
  * case must be removed.
+ *
  */
 char *yo = "Zoltan_LB_Part_To_Proc";
 int proc;
@@ -62,7 +66,7 @@ int hash_value;
     num_procs_for_part = pdist[part+1] - pdist[part];
     if (zz->LB.Single_Proc_Per_Part || num_procs_for_part <= 1)
       proc = pdist[part];
-    else if (zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
+    else if (gid != NULL && zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
       /* zz->Proc is in range of procs holding part; return zz->Proc
        * to prevent data movement for exported items.  */
       proc = zz->Proc;
@@ -73,12 +77,7 @@ int hash_value;
       if (gid != NULL) 
         hash_value = Zoltan_Hash(gid, zz->Num_GID, num_procs_for_part);
       else {
-      /* Hash on processor number if no gid is given.
-       * This will make sure that different processors
-       * compute different values, to improve load balance. */
-        ZOLTAN_ID_TYPE procid = (ZOLTAN_ID_TYPE) zz->Proc;
-        hash_value = Zoltan_Hash((ZOLTAN_ID_PTR) &procid, 
-                     1, num_procs_for_part);
+        hash_value = 0;
       }
       proc = pdist[part] + hash_value;
     }

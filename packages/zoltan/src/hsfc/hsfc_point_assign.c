@@ -25,7 +25,11 @@ extern "C" {
 
 
 /* Point drop for refinement after above partitioning */
-int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *parts)
+int Zoltan_HSFC_Point_Assign (
+   ZZ *zz, 
+   double *x, 
+   int *proc,
+   int *part)
    {
    double     scaled[3] ;
    double     fsfc ;
@@ -58,7 +62,10 @@ int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *parts)
        p = &(d->final_partition[zz->LB.Num_Global_Parts - 1]) ;
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen") ;
-   *parts = p->index ;
+   if (part != NULL)
+      *part = p->index ;
+   if (proc != NULL)
+      *proc = Zoltan_LB_Part_To_Proc(zz, p->index, NULL);
    err = ZOLTAN_OK ;
 
 free:

@@ -74,8 +74,9 @@ int Zoltan_RB_find_median(
   int first_guess,      /* if set, use value in valuehalf as first guess     */
   int *counter,         /* returned for stats, # of median interations       */
   int nprocs,           /* Total number of processors (Tflops_Special)       */
-  int num_procs,        /* Number of procs in partition (Tflops_Special)     */
-  int proclower,        /* Lowest numbered proc in partition (Tflops_Special)*/
+  int num_procs,        /* Number of procs in set (Tflops_Special)     */
+  int proclower,        /* Lowest numbered proc in set (Tflops_Special)*/
+  int num_parts,        /* Number of partitions in set (Tflops_Special) */
   int wgtflag,          /* True if user supplied weights */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
@@ -93,7 +94,7 @@ int Zoltan_RB_find_median(
   double  tolerance;                 /* largest single weight of a dot */
   double  targetlo, targethi;        /* desired wt in lower half */
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
-  double  tmp_half;
+  double  tmp_half = 0.0;
 
   int     i, j, k, numlist;
   int     first_iteration;
@@ -145,10 +146,8 @@ int Zoltan_RB_find_median(
       /* find tolerance (max of wtmax) */
       tolerance = wtmax;
       Zoltan_RB_max_double(&tolerance, proclower, rank, num_procs, local_comm);
-
-      tmp_half = 0.0;    /* in case of a set with one processor return a value*/
     }
-    else
+    else 
       tolerance = 1.0;   /* if user did not supply weights, all are 1.0 */
   }
   else {
@@ -186,8 +185,11 @@ int Zoltan_RB_find_median(
           all dots <= valuehalf are marked with 0 in dotmark
           all dots >= valuehalf are marked with 1 in dotmark */
 
-  if (num_procs > 1) { /* don't need to go through if only one proc.  This
-                          added for Tflops_Special */
+  if (!Tflops_Special || num_procs > 1) { /* don't need to go thru if only
+                                             one proc with Tflops_Special. 
+                                             Input argument Tflops_Special 
+                                             should be 0 for
+                                             serial partitioning. */
   while (1) {
 
     /* choose bisector value */
@@ -424,7 +426,7 @@ int Zoltan_RB_find_median(
   }
   else { /* if one processor set all dots to 0 (Tflops_Special) */
     for (i = 0; i < numlist; i++)
-       dotmark[i] = 0;
+      dotmark[i] = 0;
     weightlo = weight;
   }
 

@@ -27,23 +27,28 @@ extern "C" {
 int Zoltan_RB_Point_Assign(
 ZZ       *zz,                   /* The Zoltan structure */
 double   *coords,               /* vector of point coordinates */
-int      *proc)                 /* processor that point lands in */
+int      *proc,                 /* processor that point lands in;
+                                   if NULL, processor info is not returned. */
+int      *part                  /* partition that point lands in; 
+                                   if NULL, partition info is not returned. */
+)
 {
 /* Locate which processor a point is inside within the tree defined
    by the recursive bisection algorithm chosen. */
 
-     char             *yo = "Zoltan_LB_Point_Assign";
-     int               procmid; /* 1st processor in upper half */
+     char             *yo = "Zoltan_RB_Point_Assign";
+     int               partmid; /* 1st partition in upper half */
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB.  */
      struct rcb_tree   *treept; /* tree of RCB cuts */
      RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
      struct rib_tree   *itree;  /* tree of RIB cuts */
+     int ierr = ZOLTAN_OK;
 
      if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
                    "No Decomposition Data available; use KEEP_CUTS parameter.");
-        *proc = -1;
-        return(ZOLTAN_FATAL);
+        ierr = ZOLTAN_FATAL;
+        goto End;
      }
 
      if (zz->LB.Method == RCB) {
@@ -52,71 +57,81 @@ int      *proc)                 /* processor that point lands in */
         if (treept[0].dim < 0) { /* RCB tree was never created. */
            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RCB tree saved; "
                                         "Must set parameter KEEP_CUTS to 1.");
-           *proc = -1;
-           return(ZOLTAN_FATAL);
+           ierr = ZOLTAN_FATAL;
+           goto End;
         }
 
-        procmid = treept[0].right_leaf;
+        partmid = treept[0].right_leaf;
 
-        while (procmid > 0)
-           if (coords[treept[procmid].dim] <= treept[procmid].cut)
-              procmid = treept[procmid].left_leaf;
+        while (partmid > 0)
+           if (coords[treept[partmid].dim] <= treept[partmid].cut)
+              partmid = treept[partmid].left_leaf;
            else
-              procmid = treept[procmid].right_leaf;
+              partmid = treept[partmid].right_leaf;
 
-        *proc = -procmid;
-
-        return(ZOLTAN_OK);
+        if (part != NULL)
+           *part = -partmid;
+        if (proc != NULL)
+           *proc = Zoltan_LB_Part_To_Proc(zz, -partmid, NULL);
      }
      else if (zz->LB.Method == RIB) {
         rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
         itree = rib->Tree_Ptr;
-        if ((procmid = itree[0].right_leaf) < 0) { /* RIB tree never created */
+        if ((partmid = itree[0].right_leaf) < 0) { /* RIB tree never created */
            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RIB tree saved; "
                                      "Must set parameter KEEP_CUTS to 1.");
-           *proc = -1;
-           return(ZOLTAN_FATAL);
+           ierr = ZOLTAN_FATAL;
+           goto End;
         }
 
         switch (rib->Num_Geom) {
            case 3:
-              while (procmid > 0)
-                 if(((coords[0] - itree[procmid].cm[0])*itree[procmid].ev[0] +
-                     (coords[1] - itree[procmid].cm[1])*itree[procmid].ev[1] +
-                     (coords[2] - itree[procmid].cm[2])*itree[procmid].ev[2])
-                       <= itree[procmid].cut)
-                    procmid = itree[procmid].left_leaf;
+              while (partmid > 0)
+                 if(((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0] +
+                     (coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1] +
+                     (coords[2] - itree[partmid].cm[2])*itree[partmid].ev[2])
+                       <= itree[partmid].cut)
+                    partmid = itree[partmid].left_leaf;
                  else
-                    procmid = itree[procmid].right_leaf;
+                    partmid = itree[partmid].right_leaf;
               break;
            case 2:
-              while (procmid > 0)
-                 if(((coords[0] - itree[procmid].cm[0])*itree[procmid].ev[0] +
-                     (coords[1] - itree[procmid].cm[1])*itree[procmid].ev[1])
-                       <= itree[procmid].cut)
-                    procmid = itree[procmid].left_leaf;
+              while (partmid > 0)
+                 if(((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0] +
+                     (coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1])
+                       <= itree[partmid].cut)
+                    partmid = itree[partmid].left_leaf;
                  else
-                    procmid = itree[procmid].right_leaf;
+                    partmid = itree[partmid].right_leaf;
               break;
            case 1:
-              while (procmid > 0)
-                 if (coords[0] <= itree[procmid].cut)
-                    procmid = itree[procmid].left_leaf;
+              while (partmid > 0)
+                 if (coords[0] <= itree[partmid].cut)
+                    partmid = itree[partmid].left_leaf;
                  else
-                    procmid = itree[procmid].right_leaf;
+                    partmid = itree[partmid].right_leaf;
               break;
         }
 
-        *proc = -procmid;
-
-        return(ZOLTAN_OK);
+        if (part != NULL)
+           *part = -partmid;
+        if (proc != NULL)
+           *proc = Zoltan_LB_Part_To_Proc(zz, -partmid, NULL);
      }
      else {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
           "Valid only when load-balancing method is RCB or RIB.");
-        *proc = -1;
-        return(ZOLTAN_FATAL);
+        ierr = ZOLTAN_FATAL;
+        goto End;
      }
+End:
+     if (ierr == ZOLTAN_FATAL) {
+        if (part != NULL)
+           *part = -1;
+        if (proc != NULL)
+           *proc = -1;
+     }
+     return ierr;
 }
 
 #ifdef __cplusplus

@@ -76,7 +76,7 @@ int output_gnu(char *cmd_file,
   int    max_part = -1;
   int    gmax_part = Num_Proc-1;
   int    gnum_part = Num_Proc;
-  int   *parts;
+  int   *parts = NULL;
   int   *index;
   int   *elem_index;
   FILE  *fp = NULL;
@@ -103,22 +103,24 @@ int output_gnu(char *cmd_file,
    * will be used even when plotting by processor numbers (for generality), 
    * so build it regardless. 
    */
-  parts = (int *) malloc(3 * mesh->num_elems * sizeof(int));
-  index = parts + mesh->num_elems;
-  elem_index = index + mesh->num_elems;
-  for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
-    current_elem = &(mesh->elements[i]);
-    if (current_elem->globalID >= 0) {
-      if (current_elem->my_part > max_part) max_part = current_elem->my_part;
-      parts[j] = (Plot_Partitions ? current_elem->my_part : Proc);
-      index[j] = j;
-      elem_index[j] = i;
-      j++;
+  if (mesh->num_elems > 0) {
+    parts = (int *) malloc(3 * mesh->num_elems * sizeof(int));
+    index = parts + mesh->num_elems;
+    elem_index = index + mesh->num_elems;
+    for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
+      current_elem = &(mesh->elements[i]);
+      if (current_elem->globalID >= 0) {
+        if (current_elem->my_part > max_part) max_part = current_elem->my_part;
+        parts[j] = (Output.Plot_Partitions ? current_elem->my_part : Proc);
+        index[j] = j;
+        elem_index[j] = i;
+        j++;
+      }
     }
   }
-  if (Plot_Partitions) {
+  if (Output.Plot_Partitions) {
     /* Sort by partition numbers.  Assumes # parts >= # proc. */
-    sort_index(mesh->num_elems, parts, index);
+    if (mesh->num_elems > 0) sort_index(mesh->num_elems, parts, index);
     MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
     gnum_part = gmax_part + 1;
   }
@@ -154,7 +156,7 @@ int output_gnu(char *cmd_file,
               current_elem->coord[0][0], current_elem->coord[0][1]);
       for (j = 0; j < current_elem->nadj; j++) {
         if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
-          if (!Plot_Partitions || 
+          if (!Output.Plot_Partitions || 
               mesh->elements[current_elem->adj[j]].my_part == 
                              current_elem->my_part) {  
             /* Not plotting partitions, or nbor is in same partition */
@@ -207,8 +209,14 @@ int output_gnu(char *cmd_file,
       fprintf(fp, "%e %e\n\n", sum[0], sum[1] + 0.001);
     }
   }
+  
+  if (mesh->num_elems == 0 && !Output.Plot_Partitions) { 
+    /* Open a file just so one exists; satisfies the gnuload file. */
+    gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
+    fp = fopen(par_out_fname, "w");
+  }
     
-  fclose(fp);
+  if (fp != NULL) fclose(fp);
   safe_free((void **) &parts);
 
   if (Proc == 0) {

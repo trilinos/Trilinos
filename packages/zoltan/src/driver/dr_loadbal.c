@@ -30,6 +30,7 @@ extern "C" {
 #include "dr_eval_const.h"
 
 static int Num_GID = 1, Num_LID = 1;
+static void test_drops(struct Zoltan_Struct *, int);
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -95,7 +96,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   for (i = 0; i < prob->num_params; i++) {
     ierr = Zoltan_Set_Param(zz, prob->params[i][0], prob->params[i][1]);
     if (ierr == ZOLTAN_FATAL) {
-      sprintf(errmsg,"fatal: error in Zoltan_Set_Param when setting parameter %s\n",
+      sprintf(errmsg,
+              "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
               prob->params[i][0]);
       Gen_Error(0, errmsg);
       return 0;
@@ -112,7 +114,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (Test_Local_Partitions == 1) {
+  if (Test.Local_Partitions == 1) {
     /* Compute Proc partitions for each processor */
     char s[8];
     sprintf(s, "%d", Proc);
@@ -121,7 +123,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
   }
-  else if (Test_Local_Partitions == 2) {
+  else if (Test.Local_Partitions == 2) {
     /* Compute Proc partitions for odd-ranked processors; let remaining
      * partitions be in even-ranked processors. */
     if (Proc%2) {
@@ -133,7 +135,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
     }
   }
-  else if (Test_Local_Partitions == 3) {
+  else if (Test.Local_Partitions == 3) {
     /* Variable partition sizes, but one partition per proc */
     i = 0;
     psize[0] = (float) Proc;    /* Partition size = myproc */
@@ -145,7 +147,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
     }
   }
-  else if (Test_Local_Partitions == 4) {
+  else if (Test.Local_Partitions == 4) {
     /* Variable number of partitions per proc and variable sizes. */
     /* Request Proc partitions for each processor, of size 1/Proc.  */
     char s[8];
@@ -367,30 +369,15 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 
 #ifdef ZOLTAN_NEMESIS
-    if (pio_info->file_type == NEMESIS_FILE && Nemesis_Output) {
+    if (pio_info->file_type == NEMESIS_FILE && Output.Nemesis) {
       i = write_elem_vars(Proc, mesh, pio_info, num_exported, export_gids,
                           export_procs, export_to_part);
     }
 #endif
   
-    if (Test_Drops) {
-      double x[] = {0.0L, 0.0L, 0.0L} ;
-      int proc ;
-      int status ;
-      double xlo, ylo, zlo ;
-      double xhi, yhi, zhi ;
-      int procs[1000] ;
-      int count ;
-  
-      status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
-      if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
+    if (Test.Drops) 
+      test_drops(zz, Proc);
 
-      xlo = ylo = zlo = 0.0L ;
-      xhi = yhi = zhi = 1.0L ;
-      status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, 
-                                     &count) ;
-      if (status != ZOLTAN_OK) printf ("Box_Assign returned an error\n") ;
-    }
   
     /*
      * Call another routine to perform the migration
@@ -1004,6 +991,71 @@ ELEM_INFO *elem, *found_elem = NULL;
     }
   
   return(found_elem);
+}
+
+/*****************************************************************************/
+static void test_drops(
+  struct Zoltan_Struct *zz,
+  int Proc
+)
+{
+double x[] = {0.0L, 0.0L, 0.0L};
+int i, status;
+double xlo, ylo, zlo;
+double xhi, yhi, zhi;
+int procs[1000], parts[1000];
+int proccnt, partcnt;
+  
+  status = Zoltan_LB_Point_Assign(zz, x, &(procs[0]));
+  if (status != ZOLTAN_OK) 
+    Gen_Error(1, "error returned from Zoltan_LB_Point_Assign()\n");
+  else
+    printf("%d Point_Assign (%f %f %f) on %d\n",
+            Proc, x[0], x[1], x[2], procs[0]);
+
+  status = Zoltan_LB_Point_PP_Assign(zz, x, &(procs[0]), &(parts[0]));
+  if (status != ZOLTAN_OK) 
+    Gen_Error(1, "error returned from Zoltan_LB_Point_PP_Assign()\n");
+  else
+    printf("%d Point_PP_Assign (%f %f %f) on %d part %d\n",
+            Proc, x[0], x[1], x[2], procs[0], parts[0]);
+
+  xlo = ylo = zlo = 0.0L;
+  xhi = yhi = zhi = 1.0L;
+  status = Zoltan_LB_Box_Assign(zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, 
+                                &proccnt);
+  if (status != ZOLTAN_OK) 
+    Gen_Error(1, "error returned from Zoltan_LB_Box_Assign()\n");
+  else {
+    printf("%d Box_Assign LO: (%f %f %f)\n"
+           "%d            HI: (%f %f %f)\n", 
+           Proc, xlo, ylo, zlo, Proc, xhi, yhi, zhi);
+    printf("       On %d Procs: ", proccnt);
+    for (i = 0; i < proccnt; i++)
+      printf("%d ", procs[i]);
+    printf("\n");
+  }
+
+
+  status = Zoltan_LB_Box_PP_Assign(zz, xlo, ylo, zlo, xhi, yhi, zhi,
+                                   procs, &proccnt, parts, &partcnt);
+  if (status != ZOLTAN_OK) 
+    Gen_Error(1, "error returned from Zoltan_LB_Box_PP_Assign()\n");
+  else {
+    printf("%d Box_PP_Assign LO: (%f %f %f)\n"
+           "%d               HI: (%f %f %f)\n", 
+           Proc, xlo, ylo, zlo, Proc, xhi, yhi, zhi);
+
+    printf("       On %d Procs: ", proccnt);
+    for (i = 0; i < proccnt; i++)
+      printf("%d ", procs[i]);
+    printf("\n");
+
+    printf("       In %d Parts: ", partcnt);
+    for (i = 0; i < partcnt; i++)
+      printf("%d ", parts[i]);
+    printf("\n");
+  }
 }
 
 #ifdef __cplusplus

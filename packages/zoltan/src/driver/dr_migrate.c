@@ -120,7 +120,7 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-  if (!Test_Null_Import_Lists) {
+  if (!Test.Null_Import_Lists) {
     /* If not passing NULL import lists, let Help_Migrate call the
      * pre-processing and post-processing routines.
      */
@@ -139,7 +139,7 @@ char *yo = "migrate_elements";
     }
   }
 
-  if (Test_Multi_Callbacks) {
+  if (Test.Multi_Callbacks) {
     if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE, 
                       (void (*)()) migrate_elem_size_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
@@ -185,7 +185,7 @@ char *yo = "migrate_elements";
   }
 
 
-  if (!Test_Null_Import_Lists) {
+  if (!Test.Null_Import_Lists) {
     if (Zoltan_Migrate(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
       == ZOLTAN_FATAL) {

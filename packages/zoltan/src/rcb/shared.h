@@ -34,6 +34,10 @@ struct Dot_Struct {	        /* dot = point in 3-space */
                                    For now, we'll keep it with a dot, even 
                                    though the global and local ids are now
                                    stored separately.                       */
+  int Input_Part;               /* Partition to which the dot is assigned
+                                   initially (input).  */
+  int Part;                     /* New partition to which the dot is 
+                                   assigned.  */
 };
 
 extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
@@ -43,26 +47,32 @@ extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
   int , int , int , ZOLTAN_ID_PTR , int *);
 
 extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
-  struct Dot_Struct **, int *, int *, int *, int *, int, int *, double, int,
-  int *, int, MPI_Comm, int, int);
+  struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
+  int *, int, MPI_Comm, int, int, int, int);
+
+extern int Zoltan_RB_Send_To_Part(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
+  int *, int);
 
 extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
-  struct Dot_Struct **, int *, int *, int, int *, int *, int, int *, double,
+  struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
   int, int *, int, MPI_Comm);
 
 extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
-  struct Dot_Struct *, int, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **, 
-  int);
+  struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **, 
+  int, int);
 
 extern int Zoltan_RB_check_geom_input(ZZ *, struct Dot_Struct *, int);
 
 extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, float *,
-  int, int, void *);
+  int, int, int, int, void *);
 
 extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , double *, 
   int *, int, int *, void *, int);
 
 extern int Zoltan_RB_Use_IDs(ZZ *);
+
+extern int Zoltan_RB_Tree_Gatherv(ZZ *, int, int *, int *, int *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

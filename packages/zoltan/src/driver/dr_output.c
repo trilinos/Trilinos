@@ -223,7 +223,7 @@ int output_results(char *cmd_file,
   fclose(fp);
   free(global_ids);
 
-  if (Print_Mesh_Info_File) {
+  if (Output.Mesh_Info_File) {
 
     ELEM_INFO_PTR current_element;
     int total_nodes = 0;

@@ -1,0 +1,7 @@
+Decomposition Method 	= rib
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters	= num_global_partitions=9
+File Type		= Chaco
+File Name		= vwgt
+Parallel Disk Info	= number=0
+test local partitions	= 2

@@ -1,0 +1,13 @@
+Decomposition Method 	= rib
+Zoltan Parameters       = tflops_special=1
+Zoltan Parameters	= num_global_partitions=7
+Zoltan Parameters       = keep_cuts=1
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+16	0	-1	-1
+17	0	-1	-1
+21	0	-1	-1
+22	0	-1	-1

@@ -2478,9 +2478,10 @@ extern int Zoltan_LB_Free_Data(
 
 /*****************************************************************************/
 /* 
- * Routine to determine which processor a new point should be assigned to.
+ * Routine to determine which processor and partition a new point should be 
+ * assigned to.
  * Note that this only works of the current partition was produced via a
- * geometric algorithm - currently RCB and RIB.
+ * geometric algorithm - currently RCB, RIB, HSFC.
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
@@ -2488,8 +2489,35 @@ extern int Zoltan_LB_Free_Data(
  *
  * Output:
  *   proc                 -- processor that point should be assigned to
+ *   part                 -- partition that point should be assigned to
  *
  *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_LB_Point_PP_Assign(
+  struct Zoltan_Struct *zz,
+  double *coords,
+  int *proc,
+  int *part
+);
+
+/*****************************************************************************/
+/* 
+ * Routine to determine which processor a new point should be assigned to.
+ * Can be used instead of Zoltan_LB_Point_PP_Assign when the number of 
+ * partitions equals the number of processors.
+ * Note that this only works of the current partition was produced via a
+ * geometric algorithm - currently RCB, RIB, HSFC.
+ * 
+ * Input:
+ *    Arguments are analogous to Zoltan_LB_Point_PP_Assign.  
+ *    Variable part is not included, as Zoltan_LB_Point_Assign
+ *    assumes partitions and processors are equivalent.
+ *
+ * Output:
+ *   proc                 -- processor that point should be assigned to
+ *
+ * Returned value:       --  Error code
  */
 
 extern int Zoltan_LB_Point_Assign(
@@ -2500,9 +2528,49 @@ extern int Zoltan_LB_Point_Assign(
 
 /*****************************************************************************/
 /* 
+ * Routine to determine which partitions and processors 
+ * a bounding box intersects.
+ * Note that this only works of the current partition was produced via a
+ * geometric algorithm - currently RCB, RIB, HSFC.
+ * 
+ * Input:
+ *   zz                   -- pointer to Zoltan structure
+ *   xmin, ymin, zmin     -- lower left corner of bounding box
+ *   xmax, ymax, zmax     -- upper right corner of bounding box
+ *
+ * Output:
+ *   procs                -- list of processors that box intersects.  
+ *                           Note: application is
+ *                               responsible for ensuring sufficient memory.
+ *   numprocs             -- number of processors box intersects
+ *   parts                -- list of partitions that box intersects.  
+ *                           Note: application is
+ *                               responsible for ensuring sufficient memory.
+ *   numparts             -- number of partitions box intersects (may differ
+ *                           from numprocs).
+ *
+ * Returned value:       --  Error code
+ */
+
+extern int Zoltan_LB_Box_PP_Assign(
+  struct Zoltan_Struct *zz,
+  double xmin,
+  double ymin,
+  double zmin,
+  double xmax,
+  double ymax,
+  double zmax,
+  int *procs,
+  int *numprocs,
+  int *parts,
+  int *numparts
+);
+
+/*****************************************************************************/
+/* 
  * Routine to determine which processors a bounding box intersects.
  * Note that this only works of the current partition was produced via a
- * geometric algorithm - currently RCB and RIB.
+ * geometric algorithm - currently RCB, RIB, HSFC.
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
