@@ -58,7 +58,7 @@ LB_EDGE_LIST_FN get_edge_list;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
+int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
@@ -119,45 +119,45 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
    */
 
   if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
-                NULL) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, (void *) get_first_element,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
   if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
-                NULL) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
   if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh)== LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
@@ -165,7 +165,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   /* Evaluate the old balance */
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
-    driver_eval();
+    driver_eval(mesh);
     LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
   }
 
@@ -183,7 +183,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
    * Call another routine to perform the migration
    */
   if (new_decomp) {
-    if (!migrate_elements(Proc, elements, lb_obj, num_imported, import_gids,
+    if (!migrate_elements(Proc, mesh, lb_obj, num_imported, import_gids,
                           import_lids, import_procs, num_exported, export_gids,
                           export_lids, export_procs)) {
       Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
@@ -194,7 +194,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   /* Evaluate the new balance */
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
-    driver_eval();
+    driver_eval(mesh);
     LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
   }
 
@@ -216,9 +216,17 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 /*****************************************************************************/
 int get_num_elements(void *data, int *ierr)
 {
+MESH_INFO_PTR mesh;
+
+  if (data == NULL) {
+    *ierr = LB_FATAL;
+    return 0;
+  }
+  mesh = (MESH_INFO_PTR) data;
+
   *ierr = LB_OK; /* set error code */
 
-  return(Mesh.num_elems);
+  return(mesh->num_elems);
 }
 
 /*****************************************************************************/
@@ -227,6 +235,7 @@ int get_num_elements(void *data, int *ierr)
 int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
                       int wdim, float *wgt, int *ierr)
 {
+  MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
 
  *ierr = LB_OK; 
@@ -236,12 +245,13 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
     return 0;
   }
   
-  if (Mesh.num_elems == 0) {
+  mesh = (MESH_INFO_PTR) data;
+  if (mesh->num_elems == 0) {
     /* No elements on this processor */
     return 0;
   }
 
-  elem = (ELEM_INFO *) data;
+  elem = mesh->elements;
 
   *local_id = 0;
   *global_id = elem[*local_id].globalID;
@@ -264,15 +274,17 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
 {
   int found = 0;
   ELEM_INFO *elem;
+  MESH_INFO_PTR mesh;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
     return 0;
   }
   
-  elem = (ELEM_INFO *) data;
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
-  if (local_id+1 < Mesh.num_elems) { 
+  if (local_id+1 < mesh->num_elems) { 
     found = 1;
     *next_local_id = local_id + 1;
     *next_global_id = elem[*next_local_id].globalID;
@@ -294,10 +306,17 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
 /*****************************************************************************/
 int get_num_geom(void *data, int *ierr)
 {
+  MESH_INFO_PTR mesh;
+
+  if (data == NULL) {
+    *ierr = LB_FATAL;
+    return 0;
+  }
+  mesh = (MESH_INFO_PTR) data;
 
   *ierr = LB_OK; /* set error flag */
 
-  return(Mesh.num_dims);
+  return(mesh->num_dims);
 }
 
 /*****************************************************************************/
@@ -309,15 +328,16 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
   ELEM_INFO *elem;
   int i, j;
   double tmp;
+  MESH_INFO_PTR mesh;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
     return;
   }
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
-  elem = (ELEM_INFO *) data;
-
-  if (Mesh.eb_nnodes[elem[local_id].elem_blk] == 0) {
+  if (mesh->eb_nnodes[elem[local_id].elem_blk] == 0) {
     /* No geometry info was read. */
     *ierr = LB_FATAL;
     return;
@@ -327,12 +347,12 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
    * calculate the geometry of the element by averaging
    * the coordinates of the nodes in its connect table
    */
-  for (i = 0; i < Mesh.num_dims; i++) {
+  for (i = 0; i < mesh->num_dims; i++) {
     tmp = 0.0;
-    for (j = 0; j < Mesh.eb_nnodes[elem[local_id].elem_blk]; j++)
+    for (j = 0; j < mesh->eb_nnodes[elem[local_id].elem_blk]; j++)
       tmp += elem[local_id].coord[j][i];
 
-    coor[i] = tmp / Mesh.eb_nnodes[elem[local_id].elem_blk];
+    coor[i] = tmp / mesh->eb_nnodes[elem[local_id].elem_blk];
   }
 
   *ierr = LB_OK;
@@ -343,14 +363,15 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
 /*****************************************************************************/
 int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 {
+  MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
     return 0;
   }
-
-  elem = (ELEM_INFO *) data;
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
   *ierr = LB_OK;
 
@@ -364,6 +385,7 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
                    LB_GID *nbor_global_id, int *nbor_procs,
                    int get_ewgts, int *nbor_ewgts, int *ierr)
 {
+  MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   int i, j, proc, local_elem;
 
@@ -372,7 +394,8 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
     return;
   }
 
-  elem = (ELEM_INFO *) data;
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
   /* get the processor number */
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
