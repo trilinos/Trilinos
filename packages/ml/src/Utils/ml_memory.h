@@ -23,6 +23,14 @@
 
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
 #define ML_free(i)        { free(i); i = NULL; }
+#define ML_allocate_check(ptr_to_check) \
+                         {if ((ptr_to_check) == NULL) {\
+                            printf("In file %s (line %d): "\
+                                   "memory allocation failed for pointer "\
+                                   #ptr_to_check "\n", __FILE__, __LINE__);\
+                            exit(1);\
+                            }\
+                         }
 
 #ifdef __cplusplus
 extern "C"
