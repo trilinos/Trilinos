@@ -27,11 +27,11 @@
 #include "NOX_Epetra_Vector.H"
 
 // Local includes
-#include "../Callback.h"
-#include "../Epetra_VectorHelper.h"
 #include "../Epetra_NumPyVector.h"
+#include "../Epetra_VectorHelper.h"
 #include "../NumPyWrapper.h"
-#include "../PyInterface.h"
+#include "Callback.h"
+#include "PyInterface.h"
 
 // Namespace flattening
 using namespace NOX          ;
@@ -84,7 +84,6 @@ using namespace NOX::Epetra  ;
 %import "NOX_Abstract_Group.H"
 %import "NOX_Abstract_Vector.H"
 %import "../Epetra_NumPyVector.h"
-//%import "../EpetraExt.i"
 
 // NOX interface includes
 using namespace std;
@@ -95,8 +94,8 @@ using namespace std;
 %include "NOX_Epetra_Vector.H"
 
 // Local interface includes
-%include "../Callback.h"
-%include "../PyInterface.h"
+%include "Callback.h"
+%include "PyInterface.h"
 
 // Extensions
 %extend NOX::Epetra::Group {

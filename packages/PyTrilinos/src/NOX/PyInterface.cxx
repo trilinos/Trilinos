@@ -1,6 +1,6 @@
 #include "PyInterface.h"
 #include "Epetra_Vector.h"
-#include "Epetra_VectorHelper.h"
+#include "../Epetra_VectorHelper.h"
 
 // Constructor
 PyInterface::PyInterface(PyObject * problem) :

@@ -51,13 +51,13 @@ using namespace std;
 
   PyObject * getParameter(const string & name) {
     if (self->isParameterInt(name)) {
-      int value;
+      int value(0);
       return PyInt_FromLong(long(self->getParameter(name, value)));
     } else if (self->isParameterDouble(name)) {
-      double value;
+      double value(0.0);
       return PyFloat_FromDouble(self->getParameter(name, value));
     } else if (self->isParameterString(name)) {
-      string value;
+      string value("");
       return PyString_FromString(self->getParameter(name, value).c_str());
     } else {
       PyErr_SetString(PyExc_TypeError,"Unknown Parameter Type");
@@ -67,13 +67,13 @@ using namespace std;
 
   const PyObject * getParameter(const string & name) const {
     if (self->isParameterInt(name)) {
-      int value;
+      int value(0);
       return PyInt_FromLong(long(self->getParameter(name, value)));
     } else if (self->isParameterDouble(name)) {
-      double value;
+      double value(0.0);
       return PyFloat_FromDouble(self->getParameter(name, value));
     } else if (self->isParameterString(name)) {
-      string value;
+      string value("");
       return PyString_FromString(self->getParameter(name, value).c_str());
     } else {
       PyErr_SetString(PyExc_TypeError,"Unknown Parameter Type");

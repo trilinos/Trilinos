@@ -53,9 +53,12 @@
 
 [Done] Re-wrap Epetra_MultiVector::Print() method
 
-****** Get rid of NOX_Parameter_List warnings
+[Done] Get rid of NOX_Parameter_List warnings
 
-[Done] Move NOX_Epetra into NOX directory
+****** Move NOX_Epetra into NOX directory
+    [Done] NOX_Epetra.i -> NOX/Epetra.i
+    [Done] Callback.{cxx,h}
+    [Done] PyInterface.{cxx,h}
 
 [Done] Inside setup.py, change NOX Extensions to have NOX_ prefix
 

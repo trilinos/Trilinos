@@ -73,11 +73,11 @@ PROXIES         := $(patsubst %.i, %.py,  $(INTERFACES))
 
 # Dependency files
 DEPDIR          := depend/
-DEPEND          := $(patsubst %.i,   $(DEPDIR)%.d, $(INTERFACES)) \
-	           $(patsubst %.cxx, $(DEPDIR)%.d, $(SRC)       )
+DEPEND          := $(patsubst %.i,   $(DEPDIR)%.d, $(INTERFACES)) #\
+#	           $(patsubst %.cxx, $(DEPDIR)%.d, $(SRC)       )
 
 # All the objects
-OBJECTS         := $(patsubst %.cxx,      %.o,      $(SRC)     )
+#OBJECTS         := $(patsubst %.cxx,      %.o,      $(SRC)     )
 WRAP_OBJECTS    := $(patsubst %_wrap.cxx, %_wrap.o, $(WRAPPERS))
 
 # Phony targets
@@ -94,10 +94,10 @@ include $(DEPEND)
 %_wrap.cxx %.py: %.i
 	$(SWIG) $(COMMON_INCLUDE) $(TRILINOS_INCLUDE1) -noruntime -python -c++ $<
 
-# Generate an object file from a C++ file and its header
-%.o: %.cxx %.h
-	$(CXX) $(CXXFLAGS) -DHAVE_CONFIG_H -I. $(PYTHON_INCLUDE) \
-	$(TRILINOS_INCLUDE2) -c $<
+# # Generate an object file from a C++ file and its header
+# %.o: %.cxx %.h
+# 	$(CXX) $(CXXFLAGS) -DHAVE_CONFIG_H -I. $(PYTHON_INCLUDE) \
+# 	$(TRILINOS_INCLUDE2) -c $<
 
 # Generate a dependency file from a SWIG interface file
 $(DEPDIR)%.d: %.i

@@ -37,7 +37,6 @@
 #include "Epetra_SerialSymDenseMatrix.h"
 
 // Local includes
-#include "Callback.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_VectorHelper.h"
 #include "NumPyArray.h"

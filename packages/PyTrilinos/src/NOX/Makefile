@@ -16,10 +16,10 @@ include $(ROOT)common.mk
 # First target: default make
 all: $(WRAPPERS)
 
-# Install target
-install: $(DYNAMIC_LIBS) $(PYC_FILES)
-	install -d $(INSTALL_DIR)
-	install $^ $(INSTALL_DIR)
+# # Install target
+# install: $(DYNAMIC_LIBS) $(PYC_FILES)
+# 	install -d $(INSTALL_DIR)
+# 	install $^ $(INSTALL_DIR)
 
 # Remove object and wrapper files
 clean:

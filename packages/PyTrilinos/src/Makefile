@@ -2,10 +2,10 @@
 ROOT       := ../
 
 # Source Files
-SRC        := Callback.cxx            \
-              NumPyArray.cxx          \
-              NumPyWrapper.cxx        \
-	      PyInterface.cxx
+# SRC        := Callback.cxx            \
+#               NumPyArray.cxx          \
+#               NumPyWrapper.cxx        \
+# 	      PyInterface.cxx
 
 # The interface files
 #INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i

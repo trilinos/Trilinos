@@ -90,11 +90,11 @@ EpetraExt = Extension("PyTrilinos._EpetraExt",
 # NOX_Epetra extension module
 NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
                        ["src/NOX/Epetra_wrap.cxx",
-                        "src/Callback.cxx",
                         "src/Epetra_VectorHelper.cxx",
                         "src/NumPyArray.cxx",
                         "src/NumPyWrapper.cxx",
-                        "src/PyInterface.cxx"],
+                        "src/NOX/Callback.cxx",
+                        "src/NOX/PyInterface.cxx"],
                        include_dirs    = stdIncDirs,
                        library_dirs    = stdLibDirs,
                        libraries       = stdLibs + noxEpetraLib + noxLib +     \
