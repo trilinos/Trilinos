@@ -51,6 +51,8 @@ WITH_CPP_H = \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
 	$(srcdir)/AZOO_iterate.h \
+        $(srcdir)/AztecOO_StatusTest.h \
+        $(srcdir)/AztecOO_StatusType.h \
         $(srcdir)/AztecOO_StatusTestCombo.h \
         $(srcdir)/AztecOO_StatusTestMaxIters.h \
         $(srcdir)/AztecOO_StatusTestResNorm.h
