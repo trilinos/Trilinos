@@ -10,7 +10,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "all_allo_const.h"
 #include "sppr_header"
 
@@ -274,7 +274,7 @@ int Zfw_Get_Comm_Dim(int *addr_lb, int *nbytes)
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   return lb->Comm_Weight_Dim;
+   return lb->Edge_Weight_Dim;
 }
 
 /*--------------------------------------------------------------------*/
@@ -412,7 +412,7 @@ int Zoltan_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
             int num_lid_entries, ZOLTAN_ID_PTR global_id, 
             ZOLTAN_ID_PTR local_id, int *ierr)
 {
-   return Zoltan_Current->Migrate.Get_Obj_Size_Fort(data,
+   return Zoltan_Current->Get_Obj_Size_Fort(data,
              &num_gid_entries, &num_lid_entries,
              global_id, local_id, ierr);
 }
@@ -481,7 +481,7 @@ void Zoltan_Pack_Obj_Fort_Wrapper(void *data,
                             ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                             int dest_proc, int size, char *buf, int *ierr)
 {
-   Zoltan_Current->Migrate.Pack_Obj_Fort(data, 
+   Zoltan_Current->Pack_Obj_Fort(data, 
                                         &num_gid_entries, &num_lid_entries, 
                                         global_id, local_id,
                                         &dest_proc, &size, buf, ierr);
@@ -491,7 +491,7 @@ void Zoltan_Unpack_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                 ZOLTAN_ID_PTR global_id, int size,
                                 char *buf, int *ierr)
 {
-   Zoltan_Current->Migrate.Unpack_Obj_Fort(data, &num_gid_entries, 
+   Zoltan_Current->Unpack_Obj_Fort(data, &num_gid_entries, 
                                           global_id, &size, buf, ierr);
 }
 
@@ -736,17 +736,17 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                (void (*)())Zoltan_Post_Migrate_Fort_Wrapper, data);
       break;
    case ZOLTAN_OBJ_SIZE_FN_TYPE:
-      lb->Migrate.Get_Obj_Size_Fort = (ZOLTAN_OBJ_SIZE_FORT_FN *) fn;
+      lb->Get_Obj_Size_Fort = (ZOLTAN_OBJ_SIZE_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Obj_Size_Fort_Wrapper, data);
       break;
    case ZOLTAN_PACK_OBJ_FN_TYPE:
-      lb->Migrate.Pack_Obj_Fort = (ZOLTAN_PACK_OBJ_FORT_FN *) fn;
+      lb->Pack_Obj_Fort = (ZOLTAN_PACK_OBJ_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Pack_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_UNPACK_OBJ_FN_TYPE:
-      lb->Migrate.Unpack_Obj_Fort = (ZOLTAN_UNPACK_OBJ_FORT_FN *) fn;
+      lb->Unpack_Obj_Fort = (ZOLTAN_UNPACK_OBJ_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Unpack_Obj_Fort_Wrapper, data);
       break;
