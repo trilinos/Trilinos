@@ -3,8 +3,8 @@ common header file when the software package may not have been autoconfigured.
 -- HKT  07/14/03
 */
 
-#ifndef ANASAZI_COMMON_HPP
-#define ANASAZI_COMMON_HPP
+#ifndef ANASAZI_CONFIGDEFS_HPP
+#define ANASAZI_CONFIGDEFS_HPP
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -120,4 +120,4 @@ using namespace std;
 
 #endif /*HAVE_CONFIG_H*/
 
-#endif /*ANASAZI_COMMON_HPP*/
+#endif /*ANASAZI_CONFIGDEFS_HPP*/

@@ -25,8 +25,7 @@ CORE_H = \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziPetraInterface.hpp \
 	$(srcdir)/AnasaziLOCAInterface.hpp \
-	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziCommon.hpp 
+	$(srcdir)/AnasaziReturnType.hpp
 
 CORE = 
 
