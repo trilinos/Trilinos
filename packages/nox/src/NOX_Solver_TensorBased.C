@@ -124,7 +124,7 @@ void TensorBased::init()
 
 }
 
-bool TensorBased::reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p) 
+bool TensorBased::reset(Abstract::Group& xgrp, StatusTest::Generic& t, Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
