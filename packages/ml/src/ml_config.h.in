@@ -77,6 +77,9 @@
 /* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_FLOPS
 
+/* Define if want to build with ml_metis enabled */
+#undef HAVE_ML_METIS
+
 /* Define if want to build with ml_multiple_rhs enabled */
 #undef HAVE_ML_MULTIPLE_RHS
 
