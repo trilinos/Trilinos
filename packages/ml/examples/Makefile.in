@@ -93,13 +93,15 @@ install_sh = @install_sh@
 #EXAMPLE = ml_read_maxwell
 
 # List the names of all exe's in this directory here
-noinst_PROGRAMS = ml_read_maxwell
+#noinst_PROGRAMS = ml_read_maxwell
+noinst_PROGRAMS = mlguide
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
 # "(Exe_name)_(PRIMARY_NAME) = ").
 # List all source files needed to compile the exe.
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.cpp
+mlguide_SOURCES = $(srcdir)/mlguide.c
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
@@ -107,6 +109,7 @@ ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.cpp
 ml_read_maxwell_DEPENDENCIES = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
 
+mlguide_DEPENDENCIES = 
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -125,6 +128,7 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 # One CXXFLAGS primary can be defined for each exe listed above.  Include 
 # any -I's necessary for building the exe.
 ml_read_maxwell_CXXFLAGS = ${ml_common_include_locations}
+mlguide_CFLAGS = ${ml_common_include_locations}
 
 # One LDADD primary can be defined for each exe listed above.  Include any
 # LDFLAGS  necessary for building the exe.
@@ -135,16 +139,22 @@ ml_read_maxwell_LDADD = $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 $(BLAS_LIBS)                            \
                 $(LIBS) $(FLIBS)
 
+#
+mlguide_LDADD = $(top_builddir)/src/libml.a        \
+                $(LAPACK_LIBS)                            \
+                $(BLAS_LIBS)                            \
+                $(LIBS) $(FLIBS)
+
 subdir = examples
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = ml_read_maxwell$(EXEEXT)
+noinst_PROGRAMS = mlguide$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
-ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
-ml_read_maxwell_LDFLAGS =
+am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
+mlguide_OBJECTS = $(am_mlguide_OBJECTS)
+mlguide_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -153,21 +163,20 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(ml_read_maxwell_SOURCES)
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/mlguide-mlguide.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
+DIST_SOURCES = $(mlguide_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_read_maxwell_SOURCES)
+SOURCES = $(mlguide_SOURCES)
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  examples/Makefile
@@ -176,10 +185,10 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ml_read_maxwell-ml_read_maxwell.$(OBJEXT): $(srcdir)/ml_read_maxwell.cpp
-ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
-	@rm -f ml_read_maxwell$(EXEEXT)
-	$(CXXLINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
+mlguide-mlguide.$(OBJEXT): $(srcdir)/mlguide.c
+mlguide$(EXEEXT): $(mlguide_OBJECTS) $(mlguide_DEPENDENCIES) 
+	@rm -f mlguide$(EXEEXT)
+	$(LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -187,35 +196,35 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
 
-.cpp.o:
+.c.o:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
 
-.cpp.obj:
+.c.obj:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
 
-ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.cpp
-@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.cpp' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.cpp
+mlguide-mlguide.o: $(srcdir)/mlguide.c
+@AMDEP_TRUE@	source='$(srcdir)/mlguide.c' object='mlguide-mlguide.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/mlguide-mlguide.Po' tmpdepfile='$(DEPDIR)/mlguide-mlguide.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -c -o mlguide-mlguide.o `test -f '$(srcdir)/mlguide.c' || echo '$(srcdir)/'`$(srcdir)/mlguide.c
 
-ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.cpp
-@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.cpp' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `cygpath -w $(srcdir)/ml_read_maxwell.cpp`
-CXXDEPMODE = @CXXDEPMODE@
+mlguide-mlguide.obj: $(srcdir)/mlguide.c
+@AMDEP_TRUE@	source='$(srcdir)/mlguide.c' object='mlguide-mlguide.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/mlguide-mlguide.Po' tmpdepfile='$(DEPDIR)/mlguide-mlguide.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -c -o mlguide-mlguide.obj `cygpath -w $(srcdir)/mlguide.c`
+CCDEPMODE = @CCDEPMODE@
 uninstall-info-am:
 
 ETAGS = etags
