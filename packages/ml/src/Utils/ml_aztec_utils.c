@@ -154,6 +154,20 @@ int az_matvec_wrapper(void *data,  int in, double p[], int out, double ap[])
 }
 
 /***************************************************************************/
+/*                     Aztec Wrapper for ml matvec                         */
+/***************************************************************************/
+
+void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
+		       int proc_config[])
+{
+  ML_Operator *ML_Amat;
+
+  ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
+  ML_Operator_Apply(ML_Amat, ML_Amat->invec_leng, invec, 
+		    ML_Amat->outvec_leng, outvec);
+}
+
+/***************************************************************************/
 /*                     Wrapper for Aztec communication                     */
 /***************************************************************************/
 
@@ -172,6 +186,22 @@ int az_comm_wrapper(double vector[], void *data)
 }
 
 /***************************************************************************/
+/*                     Aztec wrapper for ml communication                    */
+/***************************************************************************/
+
+int az_wrap_ml_comm(double vector[], AZ_MATRIX *Amat)
+{
+  ML_Operator *ML_Amat;
+
+  ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
+
+  if (ML_Amat->getrow->pre_comm != NULL)
+    ML_exchange_bdry(vector,ML_Amat->getrow->pre_comm, ML_Amat->invec_leng,
+		     ML_Amat->comm, ML_OVERWRITE,NULL);
+  return 0;
+}
+
+/***************************************************************************/
 /*                     Wrapper for Aztec MSR getrow                        */
 /***************************************************************************/
 
@@ -184,6 +214,22 @@ int az_msrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
 
    return(MSR_getrows(context->getrowstuff, N_requested_rows, 
           requested_rows, allocated_space, columns, values, row_lengths) );
+}
+
+/***************************************************************************/
+/*                     Aztec wrapper for ML getrow                        */
+/***************************************************************************/
+
+int az_wrap_ml_getrow(int columns[], double values[], int row_lengths[],
+		      struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
+		      int requested_rows[], int allocated_space)
+{
+  ML_Operator *ML_Amat;
+
+  ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
+
+  return(ML_Operator_Getrow(ML_Amat, N_requested_rows, requested_rows, 
+		      allocated_space, columns, values, row_lengths) );
 }
 
 /***************************************************************************/
@@ -504,12 +550,6 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    return 0;
 }
 
-#ifdef TRILINOS
-extern void *Petra_gimmie(ML_Operator *Amat, AZ_MATRIX *newmat, int proc_config_[],
-			void * data,
-			int (*external)(void *, int, double *, int, double * ));
-#endif
-
 #ifndef AZTEC2_0
 
 /*****************************************************************************/
@@ -535,6 +575,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    ML_Operator    *op;
    int            osize, *row_ptr, space, getrow_flag, flag, *cols, nz_ptr;
    int            length, zero_flag, j, offset, nrows, *sub_proc_config;
+   int N_ghost;
    double         *vals, dsize, di;
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
 #ifdef ML_MPI
@@ -729,14 +770,21 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
          }
       }
 	 else { /* Assume it is a petra matrix */
-#ifdef TRILINOS
 	   ML_free(data_org);
+
+	   AZ_set_MATFREE(AZ_Amat, ML_Amat, az_wrap_ml_matvec);
+
+	   ML_CommInfoOP_Compute_TotalRcvLength(ML_Amat->getrow->pre_comm);
+	   if (ML_Amat->getrow->pre_comm != NULL)
+	     N_ghost =  ML_Amat->getrow->pre_comm->total_rcv_length;
+	   else N_ghost = 0;
+
+	   AZ_set_MATFREE_getrow(AZ_Amat, ML_Amat, az_wrap_ml_getrow,
+                        az_wrap_ml_comm, N_ghost, proc_config);
+	   /*
 	   Petra_gimmie(ML_Amat,AZ_Amat, proc_config, data,
 			ML_Amat->matvec->external);
-#else
-	   printf("ML_Gen_SmootherAztec: Trilinos not linked in\n");
-	   exit(1);
-#endif
+	   */
 	 }
       }
       else if ((ML_Amat->matvec->ML_id == ML_INTERNAL) &&
