@@ -46,6 +46,30 @@ extern "C" {
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
 
+klu is Davis' implementation of Gilbert-Peierl's left-looking
+sparse partial pivoting algorithm, with Eisenstat & Liu's symmetric
+pruning.  Gilbert's version appears as [L,U,P]=lu(A) in MATLAB.
+It doesn't exploit dense matrix kernels, but it is the only sparse
+LU factorization algorithm known to be asymptotically optimal,
+in the sense that it takes time proportional to the number of
+floating-point operations.  It is the precursor to SuperLU,
+thus the name ("clark Kent LU").  For very sparse matrices that
+do not suffer much fill-in (such as most circuit matrices when
+permuted properly) dense matrix kernels do not help, and the
+asymptotic run-time is of practical importance.
+
+The klu_btf code first permutes the matrix to upper block
+triangular form (using two algorithms by Duff and Reid,
+MC13 and MC21, in the ACM Collected Algorithms).  It then permutes
+each block via a symmetric minimum degree ordering (AMD, by Amestoy,
+Davis, and Duff).  This ordering phase can be done just once
+for a sequence of matrices.  Next, it factorizes each reordered
+block via the klu routine, which also attempts to preserve
+diagonal pivoting, but allows for partial pivoting if the diagonal
+is to small.    A fast-factorization version of klu is
+available, which does not do any partial pivoting at all.
+
+
   Klu execution can be tuned through a variety of parameters.
   Amesos_Klu.h allows control of these parameters through the
   following named parameters, ignoring parameters with names that it

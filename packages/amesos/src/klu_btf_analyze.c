@@ -47,8 +47,6 @@ static int klu_btf_analyze2	/* returns max nz in any block or < 0 if error*/
 	result, pc, p, newrow, col, maxnz, nzoff ;
     double Info [AMD_INFO], lnz, lnz1 ;
 
-    maxnz = 0 ;
-
     /* ---------------------------------------------------------------------- */
     /* initializations */
     /* ---------------------------------------------------------------------- */
@@ -76,6 +74,7 @@ static int klu_btf_analyze2	/* returns max nz in any block or < 0 if error*/
 #endif
     nzoff = 0 ;
     lnz = 0 ;
+    maxnz = 1 ;
 
     /* ---------------------------------------------------------------------- */
     /* order each block using AMD */
@@ -367,7 +366,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     Symbolic->lnz = lnz ;
     Symbolic->unz = lnz ;	/* estimated fill-in is symmetric, currently */
     Symbolic->maxnz = maxnz ;
-
     Symbolic->nzoff = nzoff ;
 
     /* ---------------------------------------------------------------------- */
