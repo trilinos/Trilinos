@@ -48,6 +48,7 @@ LB_ID obj_global_id;                  /* Global ID returned by application.  */
 LB_ID obj_local_id;                   /* Local ID returned by application.   */
 int num_geom;                         /* # values per object used to describe
                                          the geometry.                       */
+int found;
 int i;
 
   /*
@@ -74,7 +75,7 @@ int i;
    * for objects that are imported to the processor.
    */
 
-  *num_obj = lb->Get_Num_Local_Obj();
+  *num_obj = lb->Get_Num_Obj();
   *max_obj = 1.5 * *num_obj;
   rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1, *max_obj,
                                                 sizeof(struct rcb_dot));
@@ -96,7 +97,7 @@ int i;
    *  Access objects based on the method provided by the application.
    */
 
-  if (lb->Get_All_Local_Objs != NULL) {
+  if (lb->Get_Obj_List != NULL) {
 
     /*
      *  Call the application for the IDs of all objects and initialize the
@@ -106,29 +107,40 @@ int i;
     objs_global = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, 2 * *num_obj,
                                            sizeof(LB_ID));
     objs_local = (LB_ID *) (objs_global + *num_obj);
-    lb->Get_All_Local_Objs(objs_global, objs_local);
+    lb->Get_Obj_List(objs_global, objs_local);
 
     for (i = 0; i < *num_obj; i++) {
       initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i]);
     }
     LB_safe_free((void **) &objs_global);
   }
-  else if (lb->Get_Next_Local_Obj != NULL) {
+  else if (lb->Get_First_Obj != NULL && lb->Get_Next_Obj != NULL) {
 
     /*
      *  Call the application for each object and initialize the dot for 
      *  that object.
      */
 
-    for (i = 0, obj_global_id = NULL, obj_local_id = NULL; i < *num_obj; i++) {
-      lb->Get_Next_Local_Obj(obj_global_id, obj_local_id, 
-                             &obj_global_id, &obj_local_id);
+    i = 0;
+    found = lb->Get_First_Obj(&obj_global_id, &obj_local_id);
+    while (found) {
       initialize_dot(lb, &(rcb->Dots[i]), obj_global_id, obj_local_id);
+      i++;
+      found = lb->Get_Next_Obj(obj_global_id, obj_local_id, 
+                                     &obj_global_id, &obj_local_id);
+    }
+    if (i != *num_obj) {
+      fprintf(stderr, "Error in %s:  Number of objects returned %d != "
+                      "Number of objects declared %d\n", yo, i, *num_obj);
+      fprintf(stderr, "Check implementation of LB_FIRST_OBJ_FN and "
+                      "LB_NEXT_OBJ_FN \n");
+      exit(-1);
     }
   }
   else {
-    fprintf(stderr, "Error in %s:  Must define and register either function "
-                    "Get_Next_Local_Obj or Get_All_Local_Objs\n", yo);
+    fprintf(stderr, "Error in %s:  Must define and register either "
+                    "LB_OBJ_LIST_FN or LB_FIRST_OBJ_FN/LB_NEXT_OBJ_FN pair\n",
+                     yo);
     fprintf(stderr, "Cannot perform RCB without one of these functions.\n");
     exit(-1);
   }
@@ -150,7 +162,7 @@ static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_ID global_id,
   dot->Tag.Local_ID = local_id;
   dot->Tag.Proc = LB_Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
-  lb->Get_Obj_Geom(global_id, local_id, dot->X);
+  lb->Get_Geom(global_id, local_id, dot->X);
   if (lb->Get_Obj_Weight != NULL) {
     dot->Weight = lb->Get_Obj_Weight(global_id, local_id);
   }

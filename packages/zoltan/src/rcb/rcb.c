@@ -40,7 +40,6 @@ static char *cvs_rcbc_id = "$Id$";
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include "mpi.h"
 #include "lb_const.h"
 #include "rcb_const.h"
 #include "all_allo_const.h"
@@ -128,7 +127,7 @@ void lb_rcb(
 
   RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
   int wtflag;                      /* (0) do not (1) do use weights.  */
-  double overalloc;                /* amount ot overallocate by when realloc
+  double overalloc;                /* amount to overallocate by when realloc
                                       of dot array must be done.     
                                       1.0 = no extra; 1.5 = 50% extra; etc. */
   int reuse;                       /* (0) don't use (1) use previous cuts
