@@ -1,28 +1,46 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
-
-/************************************************************************/
-/*          Utilities for Trilinos/ML users                             */
-/*----------------------------------------------------------------------*/
-/* Author :  Marzio Sala (SNL)                                          */
-/************************************************************************/
-
+/*!
+ *  \file ml_MultiLevelPreconditioner_Viz.cpp
+ *
+ *  \brief Visualization utilities for MultiLevelPreconditioner class
+ *
+ *  \author Marzio Sala, SNL, 9214
+ *
+ *  \date Last update do Doxygen: 06-Aug-04
+ *
+ */
 
 #include "ml_common.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
+#include "ml_include.h"
+extern "C" {
+  
+extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate * agg_, int NumLevels_);
+extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
+                                     double *x, double *y, double *z, int Ndimensions,
+                                     char *base_filename );
+extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate *, int);
+extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
+						 double *x, double *y, double *z);
+extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
+extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
+			    double * vector, char * base_filename, int level);
+extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
+extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
+
+}
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "ml_epetra_preconditioner.h"
 
 // ============================================================================
 void ML_Epetra::MultiLevelPreconditioner::RandomAndZero(double * tmp_rhs, double * tmp_sol, int size)

@@ -31,18 +31,6 @@ extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int res_norm_or_not, ML *ml);
 extern int ML_MaxAllocatableSize();
 extern int ML_MaxMemorySize();
-extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate * agg_, int NumLevels_);
-extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
-                                     double *x, double *y, double *z, int Ndimensions,
-                                     char *base_filename );
-extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate *, int);
-extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
-						 double *x, double *y, double *z);
-extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
-extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
-			    double * vector, char * base_filename, int level);
-extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
-extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 
 }
 
