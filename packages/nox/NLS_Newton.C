@@ -8,6 +8,7 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
+#include "NLS_MethodManager.H"
 #include "NLS_Newton.H"
 
 NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
@@ -16,7 +17,9 @@ NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
   params(p),
   niter(0)
 {
-  // Get initial guess for x and corresponding rhs
+  maxiter = p.getParameter("Max Nonlinear Iterations", 15);
+  abstol = p.getParameter("Absolute Tolerance",1.0e-9);
+  reltol = p.getParameter("Relative Tolerance",1.0e-4);
   soln.copy(oldsoln);
   soln.computeRHS();
 }
@@ -36,20 +39,22 @@ bool NLS_Newton::isConverged()
   double normupdate = soln.getNewton().norm();
 
   // Output 
-  if ((params.getParameter("MyPID",0)==0) && 
-      (params.getParameter("Output Level",4) >= 2)) {
-    cout << "**************************************************************"
+  if (NLS_MethodManager::util.isPrintProc() && 
+      NLS_MethodManager::util.isOutput(1)) {
+    cout << endl 
+	 << "***********************************************************************"
 	 << endl;
     cout << "Newton Step " << niter << " : Residual Norm = " << normrhs 
 	 << "  Update Norm = " << normupdate << endl;
-    cout << "**************************************************************"
-	 << endl;
+    cout << "***********************************************************************"
+	 << endl << endl;;
   }
 
-  if ((normrhs < params.getParameter("Absolute Tolerance",1.0e-10))
-      &&(normupdate < params.getParameter("Relative Tolerance",1.0e-6))) {
-    if (params.getParameter("MyPID",0)==0) 
-      cout << "Solution is CONVERGED!" << endl;
+  if ((normrhs < abstol)
+      &&(normupdate < reltol)) {
+    if (NLS_MethodManager::util.isPrintProc() &&  
+	NLS_MethodManager::util.isOutput(1)) 
+      cout << endl << "Solution is CONVERGED!" << endl << endl;
     return true;
   }
   return false;
@@ -85,15 +90,17 @@ int NLS_Newton::iterate()
 
 int NLS_Newton::solve()
 {
-  cout << "Beginning nonlinear solve with Newtons method" << endl;
+  if (NLS_MethodManager::util.isPrintProc() && 
+      NLS_MethodManager::util.isOutput(2)) 
+    cout << endl << "Beginning nonlinear solve with Newtons method!" << endl;
+
   // Check for convergence of initial guess
   isConverged();
-
+  
   const NLS_Vector& RHS = soln.getX();
 
   // Get Parameters
-  int maxit = params.getParameter("Max Nonlinear Iterations", 15);
-  for (int i=0; i<maxit; i++) {
+  for (int i=0; i<maxiter; i++) {
     iterate();
     if (isConverged()) break;
   }

@@ -37,7 +37,7 @@ private:
   
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
-  NLS_ParameterList& params;    //!< Parameter list
+  NLS_ParameterList& params;     //!< Parameter List
   double normrhs;		//!< Norm of RHS
 
   // Statistics

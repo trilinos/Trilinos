@@ -20,6 +20,7 @@
   to the nonlinear solver component. 
 */
 
+#include "NLS_Utilities.H"
 //-----------------------------------------------------------------------------
 class NLS_MethodManager : public NLS_Method {
 
@@ -40,6 +41,7 @@ public:
   NLS_Group& getSolutionGroup() const;
   bool getProfileInfo(string& name, NLS_Parameter& p) const;
 
+  static NLS_Utilities util;
 
 private:
 

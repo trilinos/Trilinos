@@ -11,15 +11,19 @@
 #include "NLS_Newton.H"
 #include "NLS_MethodManager.H"
 
+NLS_Utilities NLS_MethodManager::util;
+
 NLS_MethodManager::NLS_MethodManager(NLS_Group& i, 
 				     NLS_Group& s, 
 				     NLS_ParameterList& p) :
   ptr(NULL)
 {
 
+  util.setUtilities(p);
+
   string method = p.getParameter("Nonlinear Solver", "Newton");
 
-  cout << "Nonlinear Solver: " << method << endl; 
+  if (util.isPrintProc()) cout << "Nonlinear Solver: " << method << endl; 
   
   if (method == "Newton") {
     ptr = new NLS_Newton(i, s, p);
