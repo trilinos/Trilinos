@@ -1,26 +1,26 @@
-#include "AztecOO.h"
+#include "AztecOO_config.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "AztecOO.h"
 
 int main(int argc, char *argv[]) {
+
 #ifdef EPETRA_MPI
-  // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
-  cout << Comm <<endl;
 #else
   Epetra_SerialComm Comm;
 #endif
-  int NumMyElements = 1000;
+  cout << Comm <<endl;
 
+  int NumMyElements = 100;
   // Construct a Map that puts same number of equations on each processor
   Epetra_Map Map(-1, NumMyElements, 0, Comm);
   int NumGlobalElements = Map.NumGlobalElements();
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   AztecOO solver(problem);
 
   solver.SetAztecOption(AZ_precond, AZ_Jacobi);
-  solver.Iterate(1000, 1.0E-8);
+  solver.Iterate(100, 1.0E-8);
 
   cout << "Solver performed " << solver.NumIters() << " iterations." << endl
        << "Norm of true residual = " << solver.TrueResidual() << endl;
