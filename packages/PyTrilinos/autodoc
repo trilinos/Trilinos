@@ -1,0 +1,130 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+"""
+AUTODOC - A python script for automating some documentation tasks.
+
+usage: autodoc [options] filename1 ...
+
+options: -h | --help      Print this message
+         -H | --html      Output in HTML
+         -v | --version   Print the version number
+
+filename1 ...             A list of SWIG interface files
+"""
+
+__version__ = "1.0"
+__author__  = "Bill Spotz"
+__date__    = "Feb 24 2005"
+
+# System imports
+from   getopt   import *
+import os
+import os.path
+import re
+import string
+import sys
+
+# Find out where we are
+localDir = os.path.split(os.getcwd())[1]
+
+# Define list of headers to ignore
+ignoreHeaders = ["Callback.h", "Epetra_NumPyVector.h", "Epetra_VectorHelper.h",
+                 "NumPyArray.h", "NumPyWrapper.h", "PyInterface.h",
+                 "PyTrilinos.h", "numeric_include.h"]
+
+# Define a regular expression
+includeRE = re.compile(r"%include\s+['\"<](.+)['\">]")
+
+######################################################
+
+def main():
+
+    # Initialization
+    (progDir,progName) = os.path.split(sys.argv[0])
+    options      = "hHv"
+    long_options = ["help", "html", "version"]
+    html         = False
+
+    # Get the options and arguments from the command line
+    (opts,args) = getopt(sys.argv[1:], options, long_options)
+
+    # Loop over options and implement
+    for flag in opts:
+        if flag[0] in ("-h","--help"):
+            print __doc__
+            sys.exit()
+        elif flag[0] in ("-H", "--html"):
+            html = True
+        elif flag[0] in ("-v", "--version"):
+            print progName, __version__, __date__
+            sys.exit()
+        else:
+            print "Unrecognized flag:", flag[0]
+            print __doc__
+            sys.exit()
+
+    # We are going to create a dictionary whose keys are the module names of the
+    # interface files, and whose values are a list of the %include files
+    wrapperDict = { }
+
+    # Loop over the arguments
+    for interfaceFile in args:
+
+        # Read in the interface file
+        file = open(interfaceFile,"r")
+        text = file.readlines()
+        file.close()
+
+        # Build the list of header files
+        headerList = [ ]
+        for line in text:
+            match = includeRE.search(line)
+            if match:
+                includeFile = match.group(1)
+                ofInterest = (not includeFile.endswith(".i")) and \
+                             includeFile not in ignoreHeaders
+                if ofInterest:
+                    headerList.append(includeFile)
+        headerList.sort()
+
+        # Construct the module name
+        (dirs,base) = os.path.split(interfaceFile)
+        dirs = dirs.replace("/",".")
+        if base[:3] == "Raw":
+            base = base[3:]
+        base = os.path.splitext(base)[0]
+        if dirs == "":
+            moduleName = base
+        else:
+            moduleName = string.join((dirs,base), ".")
+        if moduleName[:4] == "src.":
+            moduleName = moduleName[4:]
+
+        # Store the module wrapper information
+        wrapperDict[moduleName] = headerList
+
+    # Output the results
+    keys = wrapperDict.keys()
+    keys.sort()
+    if html:
+        print "  <ul>"
+    for key in keys:
+        if html:
+            print "    <li> %s:\n    <ul>" % key
+        else:
+            print "%s:" % key
+        for header in wrapperDict[key]:
+            if html:
+                print "      <li> %s" % header
+            else:
+                print "    %s" % header
+        if html:
+            print "    </ul>"
+    if html:
+        print "  </ul>"
+
+######################################################
+
+if __name__ == "__main__":
+    main()
