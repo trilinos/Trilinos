@@ -67,7 +67,6 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## For one owner type "owner@abc.com", for multiple owners
 ## "owner1@abc.com, owner2@def.com"
     #echo "msala@sandia.gov, amesos-regression@software.sandia.gov" >>& $file
-    echo "msala@sandia.gov" >>& $file
     echo "Script owner(s) is listed on the previous line." >>& $file
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Amesos  " >>& $file

@@ -29,7 +29,7 @@
 #@HEADER
 
 ## For multiple owners, list as "owner1@abc.com, owner2@def.com"
-set OWNERS = "jhu@sandia.gov, msala@sandia.gov, rstumin@sandia.gov, mwgee@sandia.gov"
+set OWNERS = "jhu@sandia.gov, rstumin@sandia.gov, mwgee@sandia.gov"
 ## For multiple subdirectories, separate by spaces
 set TEST_SUBDIRS = "2d_Poisson 3d_Poisson"
 
