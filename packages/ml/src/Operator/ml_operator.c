@@ -51,6 +51,8 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->matvec->Nrows    = 0;
    mat->matvec->internal = NULL;
    mat->matvec->external = NULL;
+   mat->lambda_max       = -666.666;
+   mat->lambda_min       = -666.666;
    ML_memory_alloc((void**)&(mat->getrow),sizeof(ML_GetrowFunc),"OF2");
    mat->getrow->ML_id            = ML_EMPTY;
    mat->getrow->Nrows            = 0;
