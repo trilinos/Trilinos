@@ -46,9 +46,9 @@ inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
                             -I$(top_builddir)/../triutils/src
 
 inout_test_LDADD = \
-  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/src/inout/libepetraext_inout.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../epetra/src/libtriutils.a \
+  $(top_builddir)/../triutils/src/libtriutils.a \
   $(BLAS_LIBS) \
   $(LIBS) \
   $(FLIBS)
