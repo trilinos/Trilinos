@@ -474,8 +474,8 @@ static int Zoltan_ParMetis_Jostle(
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   int compute_only_part_changes=0; /* EBEB: Read parameter when implemented. */
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
-  idxtype *sep_sizes;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *vsize;
+  idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
@@ -514,7 +514,7 @@ static int Zoltan_ParMetis_Jostle(
   float_vwgt = ewgts = xyz = imb_tols = tpwgt = NULL;
   local_ids = NULL;
   global_ids = NULL;
-  parts = NULL;
+  parts = part_orig = NULL;
 
   /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
@@ -631,11 +631,6 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
 
-    /* Copy parts array to part, in case ParMetis needs it. */
-    /* EBEB: part not defined yet!
-      for (i=0; i<num_obj; i++)
-      part[i] = parts[i];
-    */
   }
   
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
@@ -655,8 +650,17 @@ static int Zoltan_ParMetis_Jostle(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
+  part = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
+  if (!part){
+    /* Not enough memory */
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+  }
+  /* Copy parts array to part, in case ParMetis needs it. */
+  for (i=0; i<num_obj; i++)
+    part[i] = parts[i];
 
   /* ParMetis 2 and 3 require integer weights. Convert from float. */
+
     /* Get vertex weights if needed */
     if (obj_wgt_dim){
       vwgt = (idxtype *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj
@@ -798,17 +802,16 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");
     }
     num_obj = vtxdist[zz->Proc+1]-vtxdist[zz->Proc];
+    part_orig = part;
+    part = (idxtype *) ZOLTAN_MALLOC((num_obj+1) * sizeof(int));
+    Zoltan_Comm_Do(comm_plan, TAG1, (char *) part_orig, sizeof(idxtype), 
+                   (char *) part);
   }
 
   /* Get ready to call ParMETIS or Jostle */
   edgecut = -1; 
   wgtflag = 2*(obj_wgt_dim>0) + (edge_wgt_dim>0); 
   numflag = 0;
-  part = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
-  if (!part){
-    /* Not enough memory */
-    ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-  }
   ncon = (obj_wgt_dim > 0 ? obj_wgt_dim : 1);
 
   /* Set Imbalance Tolerance for each weight component. For now, they are all the same. */
@@ -1047,17 +1050,11 @@ static int Zoltan_ParMetis_Jostle(
   if (scatter){
     num_obj = num_obj_orig; /* Restore value from original distribution. */
 
-    /* Allocate space for partition array under original distribution */
-    part2 = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype)); 
-    if (num_obj && !part2){
-      /* Not enough memory */
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
-    }
     /* Use reverse communication to compute the partition array under the 
      * original distribution.
      */
-    ierr = Zoltan_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
-                              NULL, (char *) part2);
+    ierr = Zoltan_Comm_Do_Reverse(comm_plan, TAG2, (char *) part, 
+           sizeof(idxtype), NULL, (char *) part_orig);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Comm_Do_Reverse returned error.");
     }
@@ -1065,8 +1062,9 @@ static int Zoltan_ParMetis_Jostle(
     /* We don't need the partition array with the scattered distribution 
      * any more */
     ZOLTAN_FREE(&part); 
-    /* part is now the partition array under the original distribution */
-    part = part2;   
+    /* part is now the new partition array under the original distribution */
+    part = part_orig;   
+    part_orig = NULL;
   }
  
   if (compute_order){
@@ -1181,6 +1179,7 @@ End:
   if (tpwgt)     ZOLTAN_FREE(&tpwgt);
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
   if (newproc)   ZOLTAN_FREE(&newproc);
+  if (part_orig) ZOLTAN_FREE(&part_orig);
 
   /* Free local_ids and global_ids if they were allocated here */
   if (!compute_order){
