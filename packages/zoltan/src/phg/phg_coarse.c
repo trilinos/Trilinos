@@ -26,13 +26,12 @@ extern "C" {
 
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
-   match are clustered to a single vertex. Currently, we allow more
-   than two vertices to be merged/grouped locally on a proc, but
-   allow only pairs of two to be merged between processors.
-   All hyperedges are kept; identical hyperedges are not collapsed. 
-   The array LevelMap is the mapping of
-   the old vertices to the new vertices. It will be used to pass a partition
-   of the coarse graph back to the original graph.                         */
+   match are clustered to a single vertex. Currently, we allow more than two
+   vertices to be merged/grouped locally on a proc, but allow only pairs of two
+   to be merged between processors.  All hyperedges are kept; identical
+   hyperedges are not collapsed. The array LevelMap is the mapping of the old
+   vertices to the new vertices. LevelMap will be used to pass a partition of the
+   coarse graph back to the original graph.                         */
    
 int Zoltan_PHG_Coarsening
 ( ZZ     *zz,         /* the Zoltan data structure */
@@ -41,9 +40,12 @@ int Zoltan_PHG_Coarsening
   HGraph *c_hg,       /* output: the coarse hypergraph */
   int    *LevelMap,
   int    *LevelCnt,
-  int   **LevelData)   /* information to reverse coarsenings later */
+  int    *LevelSndCnt,
+  int   **LevelData,  /* information to reverse coarsenings later */
+  struct Zoltan_Comm_Obj  **comm_plan
+  )   
 {
-  int i, j, vertex, edge, me, size, count, nrecv, pincnt=hg->nPins;
+  int i, j, vertex, edge, me, size, count, pincnt=hg->nPins;
   int *ip, *ip_old;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   int *listgno=NULL, *listlno=NULL,  *listproc=NULL;
@@ -52,14 +54,13 @@ int Zoltan_PHG_Coarsening
   char *buffer=NULL, *rbuffer=NULL;
   PHGComm *hgc = hg->comm;
   char *yo = "Zoltan_PHG_Coarsening";
-  struct Zoltan_Comm_Obj  *comm_plan;
+
  
   ZOLTAN_TRACE_ENTER (zz, yo);  
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   
   /* (over) estimate number of external matches that we need to send data to */
-  count = 0;
-  for (i = 0; i < hg->nVtx; i++)
+  for (count = i = 0; i < hg->nVtx; i++)
     if (match[i] < 0)
       ++count;
  
@@ -79,13 +80,10 @@ int Zoltan_PHG_Coarsening
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
   }        
- 
-  for (i = 0; i < hg->nVtx; i++)
-     cmatch[i] = match[i];         /* working copy of match array */
+  memcpy (cmatch, match, hg->nVtx * sizeof(int));   /* working copy of match[] */
        
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of resulting coarse vertices. */
-  *LevelCnt   = 0;
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
   me = hgc->myProc_x;             /* short name, convenience variable */
   size  = 0;                      /* size (in ints) to communicate */
@@ -101,16 +99,13 @@ int Zoltan_PHG_Coarsening
       
       /* prepare to send data to owner */
       if (proc != me)   {             /* another processor owns this vertex */
-        size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
-        listgno[count]   = gx;                    /* listgno of vtx's to send */
-        listproc[count]  = proc;                  /* proc to send to */
-        listlno[count++] = i;                     /* lno of my match to gno */
+        size += hg->vindex[i+1] - hg->vindex[i];  /* for send buffer sizing */ 
+        listgno [count]   = gx;                   /* listgno of vtx's to send */
+        listproc[count]   = proc;                 /* proc to send to */
+        listlno [count++] = i;                    /* lno of my match to gno */
       }
-      else   {       
-        c_hg->nVtx++;         /* myProc owns the matching across processors */ 
-        (*LevelData)[(*LevelCnt)++] = gx;
-        (*LevelData)[(*LevelCnt)++] = i;        
-      }
+      else      
+        c_hg->nVtx++;         /* myProc owns the matching across processors */
     }
     else if (cmatch[i] >= 0)  {     /* local matching, packing and groupings */    
       c_hg->nVtx++;
@@ -121,22 +116,22 @@ int Zoltan_PHG_Coarsening
       }
     }
   }
-
+  *LevelSndCnt = count;
+  
   /* size and allocate the send buffer */
-  size += ((2 + hg->VtxWeightDim) * count);
+  size += ((3 + hg->VtxWeightDim) * count);
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))  {  
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_TRACE_EXIT (zz, yo);
     return ZOLTAN_MEMERR;
   }
-
-  /* Use communication plan for unstructured communication. */
         
   /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
   /* We pack ints and floats into same buffer */
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
     ip_old = ip;
+    *ip++ = listlno[i];                            /* source lno */
     *ip++ = listgno[i];                            /* destination vertex gno */
     for (j = 0; j < hg->VtxWeightDim; j++) {
        /* EBEB Assume a float is no larger than an int. 
@@ -154,11 +149,11 @@ int Zoltan_PHG_Coarsening
   }    
 
   /* Create comm plan. */
-  Zoltan_Comm_Create( &comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
-                      &nrecv);
-  
+  Zoltan_Comm_Create( comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
+   &i);
+
   /* call Comm_Resize since we have variable-size messages */
-  Zoltan_Comm_Resize( comm_plan, msg_size, PLAN_TAG+1, &size); 
+  Zoltan_Comm_Resize( *comm_plan, msg_size, PLAN_TAG+1, &size); 
 
   /* Allocate receive buffer. */
   /* size is the size of the received data, measured in #ints */
@@ -169,23 +164,23 @@ int Zoltan_PHG_Coarsening
   }
 
   /* Comm_Do sends personalized messages of variable sizes */
-  Zoltan_Comm_Do(comm_plan, PLAN_TAG+2, buffer, sizeof(int), rbuffer);
-
-  /* For now, destroy the plan. It would be better to save it and use
-     it in the reverse for uncoarsening. */
-  Zoltan_Comm_Destroy(&comm_plan);
+  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+2, buffer, sizeof(int), rbuffer);
 
   /* index all received data for rapid lookup */
-  /* EBEB Not clear if this still works with comm plan! */
   ip = (int*) rbuffer;
+  *LevelCnt = 0;
   for (i = 0; i < size; i++)  {
-    if (VTX_TO_PROC_X (hg, ip[i]) == me)
-      cmatch [VTX_GNO_TO_LNO (hg, ip[i])] = i;     
-    i++;                    /* destination gno */
+    int source_lno = ip[i++];
+    int lno = VTX_GNO_TO_LNO (hg, ip[i]);
+    (*LevelData)[(*LevelCnt)++] = source_lno;
+    (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
+    
+    cmatch [lno] = i;       /* place index into buffer into "match" */
+    i++;                    /* skip destination gno */
     i += hg->VtxWeightDim;  /* skip vertex weights */
     i += ip[i];             /* skip hyperedges */
   }
-  
+   
   if (hg->nEdge>0 && !(used_edges = (int*)ZOLTAN_CALLOC(hg->nEdge,sizeof(int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
@@ -222,8 +217,7 @@ int Zoltan_PHG_Coarsening
   /* Construct the LevelMap; match[vertex] is changed back to original value */
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
   /* EBEB This code constructs the vertex-based arrays. It might be
-     bette to construct the edge-based arrays so we can easily remove edges. */
-
+     better to construct the edge-based arrays so we can easily remove edges. */
   c_hg->nPins = 0;                      /* count of coarsened pins */
   c_hg->nVtx  = 0;                      /* count of coarsened vertices */
   for (i = 0; i < hg->nVtx; i++)  {
@@ -335,10 +329,6 @@ int Zoltan_PHG_Coarsening
     c_hg->vedge   = c_vedge;
   }
 
-  /*
-  c_hg->vmap    = (int *) ZOLTAN_MALLOC(hg->nVtx * sizeof(int));
-  for (i = 0; i < hg->nVtx; i++) c_hg->vmap[i] = hg->vmap[i];
-  */
   c_hg->vmap = NULL; /* UVC: we don't need vmap in the coarser graphs, it is only
                         needed in recursive bisection; and hence at level 0 */
   

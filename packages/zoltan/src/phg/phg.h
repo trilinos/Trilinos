@@ -179,8 +179,9 @@ int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int**);
-
+int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int*,
+ int**, struct Zoltan_Comm_Obj**);
+ 
 /*********************************/
 /* Coarse Partitioning functions */
 /*********************************/

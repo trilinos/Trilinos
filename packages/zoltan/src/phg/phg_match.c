@@ -509,9 +509,9 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   nSend = nRec = nEdgebuf                  = 1 + MAX(nPins, nVtx+2);
   
   if (hg->nVtx)  
-    if (!(cmatch = (int*)   ZOLTAN_MALLOC ((hg->nVtx) * sizeof (int)))
-     || !(visit  = (int*)   ZOLTAN_MALLOC ((hg->nVtx) * sizeof (int)))
-     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,    sizeof (float))))  {
+    if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
+     || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float))))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
        err = ZOLTAN_MEMERR;
        goto fini;

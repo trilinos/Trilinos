@@ -426,8 +426,7 @@ void Zoltan_PHG_HGraph_Print(
     ZOLTAN_PRINT_LID(zz, &zoltan_hg->LIDs [i * num_lid]);
     fprintf(fp, ", %d)\n", i);
   }
-
-  Zoltan_HG_Print(zz, hg, parts, fp, "Build");
+  Zoltan_HG_Print(zz, hg, parts, fp, "Build");  
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 
