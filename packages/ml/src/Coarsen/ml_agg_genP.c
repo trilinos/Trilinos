@@ -314,6 +314,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 
      ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
 
+#ifdef SYMMETRIZE
+     if (t3 != NULL) ML_Operator_Destroy(t3);
+     if (t2 != NULL) ML_Operator_Destroy(t2);
+#endif
      ML_Operator_Destroy(Pmatrix);
      ML_Operator_Destroy(AGGsmoother);
    }

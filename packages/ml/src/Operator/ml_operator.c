@@ -1246,10 +1246,13 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   ML_Operator_Set_Getrow(C, ML_EXTERNAL, A->outvec_leng, CSR_getrows);
   ML_Operator_Set_ApplyFunc (C, ML_INTERNAL, CSR_matvec);
   ML_globalcsr2localcsr(C, max_per_proc);
+  C->data_destroy = ML_CSR_MSRdata_Destroy;
 
   C->max_nz_per_row = max_nz_per_row;
   C->N_nonzeros     = nz_ptr;
 
+  ML_free(A_gids);
+  ML_free(B_gids);
   ML_free(hashed_vals);
   ML_free(hashed_inds);
   ML_free(A_val);
