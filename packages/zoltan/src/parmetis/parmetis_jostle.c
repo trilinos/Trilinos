@@ -1038,8 +1038,12 @@ static int LB_ParMetis_Jostle(
 
   /* Verify that graph is correct */
   if (get_graph_data){
+    if (lb->Debug_Level >= LB_DEBUG_ALL) 
+      jj = 2; /* Maximum output level */
+    else
+      jj = 1; /* Medium output level */
     ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
-              adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, 1);
+              adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, jj);
   
     /* Special error checks to avoid certain death in ParMETIS */
     if (xadj[tmp_num_obj] == 0){
