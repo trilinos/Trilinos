@@ -31,6 +31,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_adaptive \
                   ml_test_bench
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
@@ -43,6 +44,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_adaptive  \
                   ml_test_bench
 
 endif
@@ -57,6 +59,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_adaptive  \
                   ml_test_bench
 
 endif
@@ -90,6 +93,7 @@ ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
 ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
 ml_example_epetra_preconditioner_2level_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_2level.cpp
 ml_example_epetra_operator_SOURCES = $(srcdir)/ml_example_epetra_operator.cpp
+ml_adaptive_SOURCES = $(srcdir)/ml_adaptive.cpp
 ml_test_bench_SOURCES = $(srcdir)/ml_test_bench.cpp
 
 if ML_BENCHMARKING
@@ -276,6 +280,11 @@ ml_example_epetra_operator_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_operator_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_operator_LDADD = ${ml_libs}
 ml_example_epetra_operator_LINK = ${mllink}
+
+ml_adaptive_CPPFLAGS = ${ml_common_include_locations}
+ml_adaptive_CXXFLAGS = ${ml_common_include_locations}
+ml_adaptive_LDADD = ${ml_libs}
+ml_adaptive_LINK = ${mllink}
 
 ml_test_bench_CPPFLAGS = ${ml_common_include_locations}
 ml_test_bench_CXXFLAGS = ${ml_common_include_locations}
