@@ -2568,8 +2568,8 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        }
        
        fprintf( fid,
-		"\%Writing data for processor %d\n"
-		"\%N_update = %d\n",
+		"%%Writing data for processor %d\n"
+		"%%N_update = %d\n",
 		iproc,
 		Nrows );
               
@@ -2588,7 +2588,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 	   
 	 }
 	 if (row_length == 0) {
-	   fprintf(fid, "\%no nodes on line %d\n",
+	   fprintf(fid, "%%no nodes on line %d\n",
 		   global_ordering[i]+1);
 	 }
        }
