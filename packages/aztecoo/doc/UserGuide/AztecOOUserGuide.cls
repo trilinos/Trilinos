@@ -930,5 +930,5 @@
 \renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
 \lhead[\fancyplain{}{\AztecOOTM{} Users Guide}]%
 {\fancyplain{}{\rightmark}}
-\rhead[\fancyplain{}{\leftmark}]
+\rhead[\fancyplain{}{\rightmark}]
 {\fancyplain{}{\AztecOOTM{} Users Guide}}

@@ -16,7 +16,7 @@
 
 
 \SANDnum{SAND2003-xxxx}
-\SANDprintDate{Printed September 2003}
+\SANDprintDate{Printed October 2003}
 \SANDauthor{Michael A. Heroux \\
 	Computational Mathematics and Algorithms Department \\
 	 Sandia National Laboratories \\
@@ -32,7 +32,8 @@
 \newcommand\R     {{\rm \bf R}}
 \newcommand\I     {{\rm \bf I}}
 \newcommand\C     {{\rm \bf C}}
-
+\newcommand{\sign}{{\it sign}}
+\newcommand{\diag}{{\it diag}}
 %
 % define boxes for describing variables, etc
 %
@@ -112,25 +113,27 @@ Hutchinson and John Shadid.
 \clearpage
 \tableofcontents
 \listoffigures
-\listoftables
+%\listoftables
 
 \clearpage
-
-
-NOTE: Add section on repeated use of AztecOO objects.
-
 
 \section{Introduction}
 \label{Section:Introduction}
 
 AztecOO is a collection of C++ classes that support the construction
-and use of objects for solving linear systems of equations via
+and use of objects for solving linear systems of equations of the form
+\begin{equation}
+\label{e:axb}
+Ax = b
+\end{equation}
+via
 preconditioned Krylov methods, as provided in Aztec.
 
-This user guide is intended to (i) introduce a new
-user to the basic features of AztecOO, (ii) discuss the details of AztecOO
-constructors, and (iii) illustrate the use of
-AztecOO's advanced uses.  This document is not intended as a reference
+This user guide is intended to introduce a new user to the basic features of AztecOO.
+%(i) introduce a new user to the basic features of AztecOO, 
+%(ii) discuss the details of AztecOO constructors, and 
+%(iii) illustrate the use of AztecOO's advanced uses.  
+This document is not intended as a reference
 manual.  Detailed descriptions of AztecOO classes and methods can be
 found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
 
@@ -375,7 +378,7 @@ instantiated.  Our matrix is tridiagonal with a value of 2 at each
 diagonal and -1 on the immediate off-diagonals.  We do not go into
 detail about the methods called here.  The reader should look at the
 Epetra User Guide~\cite{Epetra-User-Guide} or the online reference
-material at the Trilinos home page~\cite{trilinos-home-page}.
+material at the Trilinos home page~\cite{Trilinos-home-page}.
 \paragraph{Lines 45--48}
 Once the matrix is constructed, we create our vectors b and x using
 the same map that determined the layout of the matrix rows.  We also
@@ -387,14 +390,14 @@ instance.  Note that it is possible to construct AztecOO objects in
 other ways, but we strongly recommend use of the constructor shown in
 line 53.  Note that when the AztecOO object is constructed, the
 parameter and option values listed in
-Section~\ref{sect:OptionsAndParams} will be set to their default
+Section~\ref{Section:OptionsAndParams} will be set to their default
 values.  These defaults can be changed by calling the SetAztecOption()
 and SetAztecParam() methods.
 \paragraph{Lines 55--56}
 Once the solver object is instantiated, we change the value of
 AZ\_precond to AZ\_Jacobi.  Note that the key/value pairs passed in to
 this method can be any valid pair as defined in
-Section~\ref{sect:OptionsAndParams}.  Next we call the Iterate()
+Section~\ref{Section:OptionsAndParams}.  Next we call the Iterate()
 method, passing in the maximum number of iterations that can be
 performed and a tolerance that should be used to test for
 convergence.  Depending on the values of the Aztec parameters and
@@ -412,19 +415,21 @@ If our code was compile in MPI mode, we need to call MPI\_Finalize()
 for proper clean up.
 \paragraph{Line 64} Program exit.
 
-\section{Aztec Options and Parameters}
+\section{Aztec Options and Parameters\label{Section:OptionsAndParams}}
 
-Because AztecOO is fundamentally a wrapper around Aztec, much of the
+Because AztecOO is partly a wrapper around Aztec, much of the
 control and selection of solver options and parameters is done via two
 method calls that set Aztec options and parameters, namely
 SetAztecOption() and SetAztecParam().  Most of the
 options and parameters are identical to those found in Aztec 2.1.
-However, there are a number of new options and parameters.  Below we
+However, there are a few new options and parameters.  Below we
 list all options and parameters, including the default value and
 description of each.
 
 \subsection{Aztec Options\label{optionI}}
 
+The following list of key/value pairs can be used with the
+SetAztecOption() method to change the behavior of the Iterate() method:
 \vspace{2em}
 {\flushleft{\bf Specifications} \hrulefill}
 \nopagebreak \\[0.5em]
@@ -438,30 +443,32 @@ description of each.
 \choicebox{AZ\_tfqmr}{Transpose-free quasi-minimal residual.}
 \choicebox{AZ\_bicgstab}{Bi-conjugate gradient with
   stabilization.}
-\choicebox{AZ\_lu}{Sparse direct solver (single processor only).}
+\choicebox{AZ\_lu}{Sparse direct solver (single processor only).
+{\bf Note: This option is available only when --enable-y12m is
+specified on the AztecOO configure script invocation command}}
 %
-\optionbox{options[{\sf AZ\_scaling}]}{Specifies scaling algorithm.
-  The entire matrix is scaled (overwriting the old
-  matrix). Additionally, the right hand side, the initial guess and
-  the final computed solution are scaled if necessary. For 
-  symmetric scaling, this transforms $ A x = b$ into
-  $ S A S y = S b $ as opposed to $ S A x = S b $ when symmetric
-  scaling is not used. NOTE: The residual within \Az{} is now 
-  given by $ S (b - A x) $. Thus, residual printing and convergence
-  checking are effected by scaling.  DEFAULT: \sf
-  AZ\_none.}
-%
-\choicebox{AZ\_none}{No scaling.}
-\choicebox{AZ\_Jacobi}{Point Jacobi scaling.}
-\choicebox{AZ\_BJacobi}{Block Jacobi scaling where the block
-  size corresponds to the VBR blocks.  Point Jacobi scaling is
-  performed when using the MSR format.}
-\choicebox{AZ\_row\_sum}{Scale each row so the magnitude of its
-  elements sum to 1.}
-\choicebox{AZ\_sym\_diag}{Symmetric scaling so diagonal elements
-  are 1.}
-\choicebox{AZ\_sym\_row\_sum}{Symmetric scaling using the matrix
-  row sums.}
+%\optionbox{options[{\sf AZ\_scaling}]}{Specifies scaling algorithm.
+%  The entire matrix is scaled (overwriting the old
+%  matrix). Additionally, the right hand side, the initial guess and
+%  the final computed solution are scaled if necessary. For 
+%  symmetric scaling, this transforms $ A x = b$ into
+%  $ S A S y = S b $ as opposed to $ S A x = S b $ when symmetric
+%  scaling is not used. NOTE: The residual within \Az{} is now 
+%  given by $ S (b - A x) $. Thus, residual printing and convergence
+%  checking are effected by scaling.  DEFAULT: \sf
+%  AZ\_none.}
+%%
+%\choicebox{AZ\_none}{No scaling.}
+%\choicebox{AZ\_Jacobi}{Point Jacobi scaling.}
+%\choicebox{AZ\_BJacobi}{Block Jacobi scaling where the block
+%  size corresponds to the VBR blocks.  Point Jacobi scaling is
+%  performed when using the MSR format.}
+%\choicebox{AZ\_row\_sum}{Scale each row so the magnitude of its
+%  elements sum to 1.}
+%\choicebox{AZ\_sym\_diag}{Symmetric scaling so diagonal elements
+%  are 1.}
+%\choicebox{AZ\_sym\_row\_sum}{Symmetric scaling using the matrix
+%  row sums.}
 %
 \optionbox{options[{\sf AZ\_precond}]}{Specifies preconditioner.
   DEFAULT: \sf AZ\_none.}
@@ -494,13 +501,15 @@ description of each.
   {\it options}[{\sf AZ\_subdomain\_solve}].\\
   Note: {\it options}[{\sf AZ\_reorder}] determines whether
   matrix equations are reordered (RCM) before ``solving'' submatrix problem.}
-\optionbox{options[{\sf AZ\_subdomain\_solve}]}{Specifies the solver
+\optionbox{options[{\sf\small AZ\_subdomain\_solve}]}{Specifies the solver
   to use on each subdomain when {\it options}[{\sf AZ\_precond}] is set
   to {\sf AZ\_dom\_decomp} DEFAULT: \sf AZ\_ilut.}
 \choicebox{AZ\_lu}{Approximately solve processor's submatrix via
   a sparse LU factorization in conjunction with a drop tolerance 
   {\it params}[{\sf AZ\_drop}]. The current sparse
-  lu factorization is provided by the package y12m~\cite{y12m}.}
+  lu factorization is provided by the package y12m~\cite{y12m}.
+  {\bf Note: This option is available only when --enable-y12m is
+specified on the AztecOO configure script invocation command}}
 \choicebox{AZ\_ilut}{Similar to {\sf AZ\_lu} using
   Saad's {\sf ILUT} instead of LU \cite{ilut}. The drop 
   tolerance is given by {\it params}[{\sf AZ\_drop}]
@@ -519,7 +528,9 @@ description of each.
   {\sf icc(k)} instead of {\sf ilu(k)} \cite{icc}.}
 %
 \optionbox{options[{\sf AZ\_conv}]}{Determines the residual expression used
-  in convergence checks and printing.  DEFAULT: {\sf AZ\_r0}.
+  in convergence checks and printing.  DEFAULT: {\sf AZ\_r0}. Note
+that this feature is overridden if the user registers an
+AztecOO\_StatusTest object with the AztecOO solver instance.  
   The iterative solver terminates if the corresponding residual expression
   is less than {\it params}[{\sf AZ\_tol}]:}
 \choicebox{AZ\_r0}{$\|r\|_2 / \|r^{(0)}\|_2 $}
@@ -533,7 +544,8 @@ description of each.
   $n$ is the total number of unknowns, $w$ is a weight
   vector provided by the
   user  via {\it params}[{\sf AZ\_weights}] and
-  $r^{(0)}$ is the initial residual.}
+  $r^{(0)}$ is the initial residual. {\bf Note:  AZ\_weighted is not
+available in AztecOO.}}
 %
 \optionbox{options[{\sf AZ\_output}]}{Specifies information (residual
   expressions - see {\it options}[{\sf AZ\_conv}]) to be printed.
@@ -546,17 +558,20 @@ description of each.
 \choicebox{$>$ 0}{Print residual expression every {\it
     options[{\sf AZ\_output}]\/} iterations.}
 %
-\optionbox{options[{\sf AZ\_pre\_calc}]}{Indicates whether to use
-  factorization information from previous calls to {\sf AZ\_solve}.
-  DEFAULT: {\sf AZ\_calc}.}
-\choicebox{AZ\_calc}{Use no information from previous {\sf
-    AZ\_solve} calls.}
+\optionbox{options[{\sf AZ\_pre\_calc}]} {Indicates whether to use
+  factorization information from previous calls to Iterate().
+  DEFAULT: {\sf AZ\_calc} if the user is using the native Aztec
+preconditioners selected via options[{\sf AZ\_precond}].  If the user has
+registered an \operator{} object using the SetPrecOperator()
+method, then this operator will be used as the preconditioner and it
+is assumed that the preconditioner is already constructed.}
+\choicebox{AZ\_calc}{Use no information from previous Iterate() calls.}
 \choicebox{AZ\_recalc}{Use preprocessing information from a
   previous call but recalculate preconditioning factors. This is
   primarily intended for factorization software which performs a
   symbolic stage.}
 \choicebox{AZ\_reuse}{Use preconditioner from a previous
-  {\sf AZ\_solve} call, do not recalculate preconditioning factors.
+  Iterate() call, do not recalculate preconditioning factors.
   Also, use scaling factors from previous call to scale the
   right hand side, initial guess and the final solution.}
 %
@@ -566,11 +581,13 @@ description of each.
   DEFAULT: 0}
 %
 \optionbox{options[{\sf AZ\_max\_iter}]}{Maximum number of iterations. DEFAULT:
-  500.}
+  500, unless an statustest{} object has been registered using the
+SetStatusTest() method in which case this option is ignored.}
 %
 \optionbox{options[{\sf AZ\_poly\_ord}]}{The polynomial order when using
   polynomial preconditioning.  Also, the number of steps when using Jacobi or
-  symmetric Gauss-Seidel preconditioning.  DEFAULT: 3.}
+  symmetric Gauss-Seidel preconditioning.  DEFAULT: 3 for polynomial
+preconditioners, 1 for Jacobi and Gauss-Seidel preconditioners.}
 %
 \optionbox{options[{\sf AZ\_overlap}]}{Determines the submatrices factored with
   the domain decomposition algorithms (see {\it options}[{\sf AZ\_precond}]).
@@ -641,14 +658,15 @@ description of each.
   iterates obtained with y processors if x $\ne$ y).}  $\hphantom{h}$
 \subsection{\Az{} parameters\label{optionD}}
 
-The double precision array {\it params\/} set by the user and normally of
-length {\sf AZ\_PARAMS\_SIZE}. However, when a weight vector is needed for the
-convergence check (i.e. {\it options}[{\sf AZ\_conv}] = {\sf AZ\_weighted}), it
-is embedded in {\it params\/} whose length must now be {\sf AZ\_PARAMS\_SIZE} +
-\# of elements updated on this processor.  In either case, the contents of {\it
-  params\/} are used (but not altered) by the function {\sf AZ\_solve} to
-control the behavior of the iterative methods.  The array elements are
-specified as follows: \vspace{2em}
+The double precision array {\it params\/} is set up by the AztecOO
+solver instance and is of
+length {\sf AZ\_PARAMS\_SIZE}. Because of this, we do not support 
+{\it options}[{\sf AZ\_conv}] = {\sf AZ\_weighted}).  This type of
+functionality is still possible by defining an implementation of the
+AztecOO\_StatusTest abstract class.  
+
+Below we list the key/value pairs that can be used with the
+SetAztecParam() method: \vspace{2em}
 {\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
 %
 \optionbox{params[{\sf AZ\_tol}]}{Specifies tolerance value used in
@@ -677,51 +695,24 @@ specified as follows: \vspace{2em}
    When {\it options}[{\sf AZ\_conv}] = AZ\_weighted, the {\it i\/}'th local
    component of the weight vector is stored in the location
    {\it params}[{\sf AZ\_weights}+i].}
-Figure \ref{init_options} illustrates a sample user function {\sf choose\_solver\_options} that chooses specific solver options 
-(by overwriting default values set with {\sf AZ\_defaults}).
-
-\begin{figure}[Htbp]
-  \shadowbox{
-%    \begin{minipage}{\textwidth}
-    \begin{minipage}{6.2in}
-      \vspace{0.5em}
-      {\large \flushleft{\bf Example}} \hrulefill %
-      \vspace{0.5em}
-%%%
-\begin{verbatim}
-void choose_solver_options(int options[AZ_OPTIONS_SIZE],
-                  double params[AZ_PARAMS_SIZE])
-{
-  options[AZ_solver]     = AZ_cgs;
-  options[AZ_scaling]    = AZ_none;
-  options[AZ_precond]    = AZ_ls;
-  options[AZ_output]     = 1;
-  options[AZ_max_iter]   = 640;
-  options[AZ_poly_ord]   = 7;
-  params[AZ_tol]         = 0.0000001;
-  params[AZ_drop]        = 0.;
-  params[AZ_omega]        = 1.;
-
-}
-\end{verbatim}
-%%%
-      \vspace{0.1em}
-    \end{minipage}}
-  \caption{Example option initialization routine (\/{\sf
-      choose\_solver\_options}).} \label{init_options}
- \end{figure}
+\optionbox{params[{\sf AZ\_rthresh}]}{Parameter used to modify the
+diagonal entries of the matrix that is used to compute any of the
+incomplete factorization preconditioners. When {\it params}[{\sf AZ\_omega}] is set to zero, RILU
+   corresponds to ILU(k). When it is set to one, RILU corresponds to
+   MILU(k) where k is given by {\it options}[{\sf AZ\_graph\_fill}]. 
+   \cite{milu}\\ DEFAULT: 1.}
 
 \subsection{Return status\label{status}}
 
 The double precision array {\it status} of length {\sf AZ\_STATUS\_SIZE}
-returned from {\sf AZ\_solve}\footnote{ All integer information returned from
-  {\sf AZ\_solve} is cast into double precision and stored in {\it status}.}.
+returned from Iterate()\footnote{ All integer information returned from
+  Iterate() is cast into double precision and stored in {\it status}.}.
 The contents of {\it status} are described below.  \vspace{2em}
 {\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
 %
 \optionbox{status[{\sf AZ\_its}]}{Number of iterations taken by the
    iterative method.}
-\optionbox{status[{\sf AZ\_why}]}{Reason why {\sf AZ\_solve} terminated.}
+\optionbox{status[{\sf AZ\_why}]}{Reason why Iterate() terminated.}
       \choicebox{AZ\_normal}{User requested convergence criteria is
                  satisfied.}
       \choicebox{AZ\_param}{User requested option is not available.}
@@ -748,38 +739,217 @@ The contents of {\it status} are described below.  \vspace{2em}
 \optionbox{status[{\sf AZ\_solve\_time}]}{Utilization time in Aztec to solve system.}
 \optionbox{status[{\sf AZ\_Aztec\_version}]}{Version number of Aztec.}
 %
- When {\sf AZ\_solve} returns abnormally, the user may elect to restart using
+ When AztecOO returns abnormally, the user may elect to restart using
  the current computed solution as an initial guess.
 
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: "az_ug_20"
-%%% End:
+\section{Diagonal Perturbations and Incomplete Factorizations}
+
+One of the new features in AztecOO that was not part of Aztec 2.1 is
+the ability compute incomplete factorizations of perturbed systems.
+One attribute of coupled multi-physics problems is
+that incomplete factorizations can be difficult to compute,
+even if the original matrix $A$ is well-conditioned.  A few sources of
+difficulty are:
+\begin{enumerate}
+\item Zero diagonal entries.  In this case, unless fill-in occurs prior
+to dividing by the zero diagonal, or we perform some type of pivoting, the
+factorization will fail or produce unusable factors.  In some
+instances even when fill-in does occur, the diagonal value may be 
+too small to produce a usable factorization.
+\item Singular principle sub-matrices.  In this case, boundary
+conditions are missing or insufficient to determine a nonsingular
+upper left sub-matrix.
+\item Singularity due to domain partitioning.  When executing in
+parallel using additive Schwarz methods, we observe situations where
+an incomplete factorization for the entire domain exists but one or
+more factorizations for the subdomains do not.
+\end{enumerate}
+
+One straightforward technique to address poorly conditioned factors
+is to introduce diagonal perturbations.  In this
+situation, the incomplete factorization is performed on a matrix that
+is identical to $A$ except that diagonal entries 
+are perturbed, usually to increase diagonal dominance.
+This idea was introduced by
+Manteuffel~\cite{Manteuffel:80} as a means for computing incomplete
+Cholesky decompositions for symmetric positive definite systems 
+and extended to nonsymmetric matrices by van der
+Vorst~\cite{vanderVorst:81},
+Saad~\cite{Saad:94a} and Chow~\cite{Chow:97}.  It is used for 
+block entry matrices in a package called BPKIT~\cite{ChowHeroux:98}.
+
+Since Krylov methods such as GMRES are invariant under scaling, and 
+a very large diagonal 
+perturbation essentially makes the off-diagonal elements irrelevant,
+one way to view diagonal perturbation is as establishing a continuum
+between an accurate but poorly conditioned incomplete factorization
+and less accurate but perfectly conditioned Jacobi diagonal scaling.
+Given this continuum, the strategy is then to choose a minimal perturbation
+that sufficiently stabilizes the factorization.
 
 
+\subsection{Perturbation Strategies}
 
-\section{ Advanced topics}
-\subsection {Using \crsmatrix{} Objects as Column Matrices}
+As mentioned above, we often have difficulty computing usable incomplete
+factorizations for our problems.  The most common source of problems
+is that the factorization may encounter a small or zero pivot,
+in which case the factorization can fail, or even if the factorization
+succeeds, the factors may be so poorly conditioned that use of them in
+the iterative phase produces meaningless results.  Before we can fix
+this problem, we must be able to detect it.  To this end, we use a
+simple but effective condition number estimate for $(LU)^{-1}$.
+
+\subsubsection{Estimating Preconditioner Condition Numbers}
+
+The condition of a matrix $B$, called $cond_p(B)$, is defined as
+$cond_p(B)
+= \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$.  $cond_p(B)$
+gives some indication of how many accurate floating point
+digits can be expected from operations involving the matrix and its
+inverse.  A condition number approaching the accuracy of a given
+floating point number system, about 15 decimal digits in IEEE double
+precision, means that any results involving $B$ or $B^{-1}$ may be 
+meaningless.
+
+The $\infty$-norm of a vector $y$ is defined as the maximum of the 
+absolute values of the vector entries, and the $\infty$-norm of a 
+matrix C is defined as 
+$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.  
+A crude lower bound for the $cond_\infty(C)$ is
+$\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
+lower bound because $cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
+\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$.
+
+For our purposes, we want to estimate $cond_\infty(LU)$, where $L$ and
+$U$ are our incomplete factors.  Chow~\cite{Chow:97} demonstrates that
+$\|(LU)^{-1}e\|_\infty$ provides an effective estimate for
+$cond_\infty(LU)$.  Furthermore, since finding $z$ such that $LUz = y$
+is a basic kernel for applying the preconditioner, computing this
+estimate of $cond_\infty(LU)$ is performed by setting $y = e$, calling
+the solve kernel to compute $z$ and then
+computing $\|z\|_\infty$.
+
+
+\subsubsection{{\it A priori} Diagonal Perturbations}
+
+Given the above method to estimate the conditioning of the incomplete factors,
+if we detect that our factorization is too ill-conditioned
+we can improve the conditioning by perturbing the matrix diagonal and
+restarting the factorization using
+this more diagonally dominant matrix.  In order to apply perturbation, 
+prior to starting
+the factorization, we compute a diagonal perturbation of our matrix
+$A$ in Eq.~\ref{e:axb} and perform the factorization on this perturbed
+matrix.  The overhead cost of perturbing the diagonal is minimal since
+the first step in computing the incomplete factors is to copy the
+matrix $A$ into the memory space for the incomplete factors.  We
+simply compute the perturbed diagonal at this point.  The actual
+perturbation values we use are discussed below.
+
+
+\subsection{Strategies for Managing Preconditioner Condition Numbers}
+
+Without any prior knowledge of a problem, the first step to take when
+computing a preconditioner is to compute the original factors without
+any diagonal perturbation.  This usually gives the most accurate
+factorization and, if the condition estimate of the factors is not too
+big, will lead to the best convergence.  If the condition estimate of
+the original factors is larger than machine precision, say greater
+than 1.0e15, then it is possible that the factorization will destroy
+convergence of the iterative solver.  This will be evident if the
+iterative solver starts to diverge, stagnates, or aborts because
+it detects ill-conditioning.  In these cases, diagonal perturbations 
+may be effective.  If the condition estimate of the preconditioner is 
+well below machine precision (less than 1.0e13) and one is not achieving
+convergence, then diagonal perturbation will probably not be useful.  
+Instead, one should try to construct a more accurate factorization by
+increasing fill.
+
+\subsubsection{Strategies for {\bf\it a priori} Diagonal Perturbations}
+
+The goal when applying {\it a priori} perturbations is to find a close to minimal
+perturbation that reduces the condition estimate below machine
+precision (roughly 1.0e16).  For the results presented in
+Section~\ref{s:test_problems} we use the strategy outlined in
+Figure~\ref{f:aprioristrategy}.
+{\small
+\begin{figure}
+\vspace{.05in}
+\hrule
+\vspace{.1in}
+\begin{enumerate}
+\item Set the absolute threshold $\alpha = 0.0$ and the relative
+threshold $\rho = 1.0$ (equivalent to no perturbation).
+\item Define perturbed diagonal entries as $d_{i} = \sign(d_i)\alpha +
+d_i\rho$ and compute the incomplete factors $L$ and $U$.
+\item Compute $condest = \|(LU)^{-1}e\|_\infty$ where $e = (1, 1,
+\ldots, 1)^T$.
+\item If failure ($condest > 10^{15}$ or convergence is poor), set $\alpha =
+10^{-5}$, $\rho = 1.0$.  Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-5}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 1.0$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+\item If still failing, continue alternate increases in
+   the two threshold values.
+\end{enumerate}
+\vspace{.1in}
+\hrule
+\caption{Simple {\it a priori} Threshold Strategy}
+\label{f:aprioristrategy}
+\end{figure}
+}
+Essentially, we replace the diagonal values $(d_1, d_2, \ldots, d_n)$
+with $d_i = \sign(d_i)\alpha + d_i\rho$, $i=1, 2, \ldots, n$, where
+$n$ is the matrix dimension and $\sign(d_i)$ returns
+the sign of the diagonal entry.  This has the effect of
+forcing the diagonal values to have minimal magnitude of $\alpha$ and
+to increase each by an amount proportional to $\rho$, and still keep
+the sign of the original diagonal entry.
+
+
+\section {Optimal reuse of AztecOO for Repeated Solves}
+
+In many practical situations, a linear solver is being called
+repeatedly to solve problems that have similar numeric properties and
+similar or identical nonzero structure.  In these cases, it is often
+beneficial to reuse in later solves some or all of the work performed
+in formulating the preconditioner for an earlier solve.  The Aztec
+option options[{\sf AZ\_pre\_calc}] allows the user to specify that the
+preconditioner from the previous solve should be retained for
+subsequent solves.  
+
+\subsection{Reuse and the SetPrecOperator() Method}
+
+A user can overrides the Aztec preconditioner options by
+forming their own preconditioner that conforms to the \operator{}
+interface.  In particular, users may construct ML and Ifpack
+preconditioners for use with AztecOO.  Once an \operator{}-compliant
+preconditioner is constructed, it can be registered with an AztecOO
+object as the preconditioner.  In this situation, the preconditioner
+will never be reset by AztecOO.  Instead, the user has this responsibility.
 
 \clearpage
 \bibliographystyle{plain}
-\bibliography{AztecOOUserGuide}
+\bibliography{../../../../doc/CommonFiles/TrilinosBibliography}
 \addcontentsline{toc}{section}{References}
 
-\appendix
-\section{Troubleshooting}
-\label{Section:Troubleshooting}
-\subsection{Conditional Code, Incorrect Results and Stalled Programs}
-Many methods in AztecOO distributed classes (those derive from the
-\distobject{} class) require all processors to
-participate in the method call.  For example, to compute the update of
-an \vector{}, all processors that own a portion of the vector must
-call the Update() method.  When calling a Norm2() method or something
-similar, all processors, regardless of whether they own any portion of
-a vector, must participate in the Norm2() call.  
-Figure~\ref{Figure:HungCode} illustrates
-several versions of a code segment that computes the 2-norm of a residual
-and prints it from processor 0.  Only the final version is correct.
+%\appendix
+%\section{Troubleshooting}
+%\label{Section:Troubleshooting}
+%\subsection{Conditional Code, Incorrect Results and Stalled Programs}
+%Many methods in AztecOO distributed classes (those derive from the
+%\distobject{} class) require all processors to
+%participate in the method call.  For example, to compute the update of
+%an \vector{}, all processors that own a portion of the vector must
+%call the Update() method.  When calling a Norm2() method or something
+%similar, all processors, regardless of whether they own any portion of
+%a vector, must participate in the Norm2() call.  
+%Figure~\ref{Figure:HungCode} illustrates
+%several versions of a code segment that computes the 2-norm of a residual
+%and prints it from processor 0.  Only the final version is correct.
 
 \end{document}
 
