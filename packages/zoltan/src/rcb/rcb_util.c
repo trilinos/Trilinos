@@ -56,7 +56,8 @@ int i;
   if (lb->Data_Structure == NULL) {
     rcb = (RCB_STRUCT *) LB_smalloc(sizeof(RCB_STRUCT));
     lb->Data_Structure = (void *) rcb;
-    rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(1, LB_Num_Proc, 
+    rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__, __LINE__,
+                                                       1, LB_Num_Proc, 
                                                        sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_smalloc(sizeof(struct rcb_box));
   }
@@ -72,7 +73,7 @@ int i;
 
   *num_obj = lb->Get_Num_Local_Obj(object_type);
   *max_obj = 1.5 * *num_obj;
-  rcb->Dots = (struct rcb_dot *) LB_array_alloc(1, *max_obj,
+  rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1, *max_obj,
                                                 sizeof(struct rcb_dot));
 
 
@@ -99,7 +100,8 @@ int i;
      *  dot for each object.
      */
 
-    objs = (LB_ID *) LB_array_alloc(1, *num_obj, sizeof(LB_ID));
+    objs = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+                                    sizeof(LB_ID));
     lb->Get_All_Local_Objs(object_type, objs);
 
     for (i = 0; i < *num_obj; i++) {
@@ -146,6 +148,7 @@ int object_type = lb->Object_Type;
   dot->Tag.Proc = LB_Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Obj_Geom(global_id, object_type, dot->X);
-  if (lb->Get_Obj_Weight != NULL)
+  if (lb->Get_Obj_Weight != NULL) {
     dot->Weight = lb->Get_Obj_Weight(global_id, object_type);
+  }
 }

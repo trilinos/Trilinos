@@ -59,11 +59,11 @@ void compute_destinations(
  *  decomposition.
  */
 
-int *proc_list;          /* List of processors from which objs are to be 
+int *proc_list = NULL;      /* List of processors from which objs are to be 
                             imported.                                       */
-COMM_OBJ *comm_plan;     /* Communication object returned
+COMM_OBJ *comm_plan;        /* Communication object returned
                             by Bruce and Steve's communication routines     */
-LB_TAG *import_objs;     /* Array of import objects used to request the objs
+LB_TAG *import_objs = NULL; /* Array of import objects used to request the objs
                             from other processors.                          */
 int i;
 
@@ -71,15 +71,19 @@ int i;
    *  Build processor's list of requests for non-local objs.
    */
 
-  proc_list = (int *) LB_array_alloc(1, num_non_local, sizeof(int));
-  import_objs = (LB_TAG *) LB_array_alloc(1, num_non_local, sizeof(LB_TAG));
+  if (num_non_local > 0) {
+    proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                       num_non_local, sizeof(int));
+    import_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                            num_non_local, sizeof(LB_TAG));
 
-  for (i = 0; i < num_non_local; i++) {
-    proc_list[i] = non_local_objs[i].Proc;
+    for (i = 0; i < num_non_local; i++) {
+      proc_list[i] = non_local_objs[i].Proc;
 
-    import_objs[i].Global_ID = non_local_objs[i].Global_ID;
-    import_objs[i].Local_ID  = non_local_objs[i].Local_ID;
-    import_objs[i].Proc      = LB_Proc;
+      import_objs[i].Global_ID = non_local_objs[i].Global_ID;
+      import_objs[i].Local_ID  = non_local_objs[i].Local_ID;
+      import_objs[i].Proc      = LB_Proc;
+    }
   }
 
   /*
@@ -94,7 +98,11 @@ int i;
    *  to get the list of objects to be exported.
    */
 
-  *export_objs = (LB_TAG *) LB_array_alloc(1, *num_export, sizeof(LB_TAG));
+  if (*num_export > 0)
+    *export_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                             *num_export, sizeof(LB_TAG));
+  else
+    *export_objs = NULL;
   comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
           (char *) *export_objs);
 
@@ -113,12 +121,12 @@ void help_migrate(LB *lb, int num_import, LB_TAG *import_objs,
 {
 char *yo = "help_migrate";
 int size;                /* size (in bytes) of the object data for export.  */
-char *export_buf;        /* buffer for packing export data.                 */
-char *import_buf;        /* buffer for receiving imported data.             */
+char *export_buf = NULL; /* buffer for packing export data.                 */
+char *import_buf = NULL; /* buffer for receiving imported data.             */
 char *tmp;               /* temporary pointer into buffers.                 */
 int i;                   /* loop counter.                                   */
 int tmp_import;          /* number of objects to be imported.               */
-int *proc_list;          /* list of processors to which this proc exports.  */
+int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 COMM_OBJ *comm_plan;     /* Communication object returned
                             by Bruce and Steve's communication routines     */
 
@@ -134,19 +142,24 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
 
   size = lb->Migrate.Get_Obj_Data_Size(lb->Object_Type);
-  export_buf = (char *) LB_array_alloc(1, num_export, size);
 
-  proc_list = (int *) LB_array_alloc(1, num_export, sizeof(int));
+  if (num_export > 0) {
+    export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
+                                         size);
 
-  /*
-   *  Pack the proc_list (to create the map) and the objects for export.
-   */
+    proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
+                                       sizeof(int));
+
+    /*
+     *  Pack the proc_list (to create the map) and the objects for export.
+     */
   
-  tmp = export_buf;
-  for (i = 0; i < num_export; i++) {
-    proc_list[i] = export_objs[i].Proc;
-    lb->Migrate.Pack_Obj_Data(&(export_objs[i]), lb->Object_Type, size, tmp);
-    tmp += size;
+    tmp = export_buf;
+    for (i = 0; i < num_export; i++) {
+      proc_list[i] = export_objs[i].Proc;
+      lb->Migrate.Pack_Obj_Data(&(export_objs[i]), lb->Object_Type, size, tmp);
+      tmp += size;
+    }
   }
 
   /*
@@ -160,7 +173,9 @@ COMM_OBJ *comm_plan;     /* Communication object returned
             LB_Proc, yo, tmp_import, num_import);
   }
 
-  import_buf = (char *) LB_array_alloc(1, num_import, size);
+  if (num_import > 0)
+    import_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_import,
+                                         size);
 
   /*
    *  Send the export data using the communication plan.

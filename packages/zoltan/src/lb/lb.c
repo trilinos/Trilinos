@@ -374,6 +374,10 @@ int num_objs;                  /* Set to the new number of objects on
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
                                   keeps from the old decomposition.         */
+double LB_start_time, LB_end_time;
+double LB_time[2], LB_max_time[2];
+
+  LB_start_time = MPI_Wtime();
 
   perform_error_checking(lb);
 
@@ -381,6 +385,9 @@ int num_keep;                  /* Set to the number of objects the processor
 
   compute_destinations(lb, *num_import_objs, *import_objs, 
                        num_export_objs, export_objs);
+
+  LB_end_time = MPI_Wtime();
+  LB_time[0] = LB_end_time - LB_start_time;
 
   if (LB_Debug > 6) {
     int i;
@@ -394,10 +401,20 @@ int num_keep;                  /* Set to the number of objects the processor
   }
 
   if (lb->Migrate.Help_Migrate) {
+    LB_start_time = MPI_Wtime();
     help_migrate(lb, *num_import_objs, *import_objs, 
                  *num_export_objs, *export_objs);
+    LB_end_time = MPI_Wtime();
+    LB_time[1] = LB_end_time - LB_start_time;
   }
   
+  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  if (LB_Proc == 0) {
+    printf("DLBLIB LB  Times:  \n");
+    printf("DLBLIB     Balance:        %f\n", LB_max_time[0]);
+    printf("DLBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
+  }
+
   clean_up(lb);
 }
 

@@ -126,6 +126,10 @@ void lb_rcb(
   struct rcb_box *rcbbox;          /* bounding box of final RCB sub-domain */
   struct rcb_tree *treept;         /* tree of RCB cuts - only single cut on 
                                       exit */
+
+  double LB_start_time, LB_end_time;
+  double LB_time[2], LB_max_time[2];
+
   /* function prototypes */
 
   void rcb_error(int);
@@ -157,6 +161,7 @@ void lb_rcb(
    *  set pointers to information in it.
    */
 
+  LB_start_time = MPI_Wtime();
   rcb_build_data_structure(lb, pdotnum, &dotmax);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
@@ -166,6 +171,10 @@ void lb_rcb(
   treept = rcb->Tree_Ptr;
   wtflag = (lb->Get_Obj_Weight != NULL);   /* Use weights if application 
                                              specified a weight function  */
+  LB_end_time = MPI_Wtime();
+  LB_time[0] = LB_end_time - LB_start_time;
+  LB_start_time = LB_end_time;
+
   if (lb->Params == NULL) {
     /* 
      *  No application-specified parameters; use defaults.
@@ -696,6 +705,9 @@ void lb_rcb(
   free(dotlist);
   free(dotmark);
 
+  LB_end_time = MPI_Wtime();
+  LB_time[1] = LB_end_time - LB_start_time;
+
   if (RCB_STATS) {
     MPI_Barrier(MPI_COMM_WORLD);
     timestop = time1 = MPI_Wtime();
@@ -709,18 +721,31 @@ void lb_rcb(
 
   /* update calling routine parameters */
   
+  LB_start_time = MPI_Wtime();
+
   *pdotnum = dotnum;
   *pdottop = dottop;
 
   /*  build return arguments */
 
   *num_non_local = dotnum - dottop;
-  *non_local_objs = (LB_TAG *) LB_array_alloc(1, *num_non_local,
-                                              sizeof(LB_TAG));
+  if (*num_non_local > 0) {
+    *non_local_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                *num_non_local, sizeof(LB_TAG));
 
-  for (i = 0; i < *num_non_local; i++) {
-    memcpy((char *) &((*non_local_objs)[i]), (char *) &(dotpt[i+dottop].Tag),
-            sizeof(LB_TAG));
+    for (i = 0; i < *num_non_local; i++) {
+      memcpy((char *) &((*non_local_objs)[i]), (char *) &(dotpt[i+dottop].Tag),
+              sizeof(LB_TAG));
+    }
+  }
+  LB_end_time = MPI_Wtime();
+  LB_time[0] += (LB_end_time - LB_start_time);
+
+  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  if (LB_Proc == 0) {
+    printf("DLBLIB RCB Times:  \n");
+    printf("DLBLIB     Build:  %f\n", LB_max_time[0]);
+    printf("DLBLIB     RCB:    %f\n", LB_max_time[1]);
   }
 
   if (LB_Debug > 6) {
