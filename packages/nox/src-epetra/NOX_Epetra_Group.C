@@ -649,7 +649,7 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
   // We still may want to use the vector even it it just missed it's 
   isValidNewton = true;
 
-  // Compute the 2-norm of the Newton solve residual ||Js+f||
+  // Compute the 2-norm of the linear solve residual ||Js+f||
   computeNormNewtonSolveResidual();
 
   // return status of the linear solver
@@ -1079,23 +1079,24 @@ const Abstract::Vector& Group::getNewton() const
   return NewtonVector;
 }
 
-double NOX::Epetra::Group::getNormNewtonSolveResidual() const
+Abstract::Group::ReturnType NOX::Epetra::Group::getNormLastLinearSolveResidual(double& residual) const
 {
   // Make sure value is not already calculated
-  if (isValidNormNewtonSolveResidual) 
-    return normNewtonSolveResidual;
-
-  // Otherwise throw an error since a Newton direction has not been calculated
+  if (isValidNormNewtonSolveResidual) {
+    residual = normNewtonSolveResidual;
+    return NOX::Abstract::Group::Ok;
+  }
+  
+  // Otherwise give warning since a Newton direction has not been calculated
   // wrt this solution group
-  /*
-  cout << "ERROR: NOX::Epetra::Group::getNormNewtonSolveResidual() - Group has "
-       << "not performed a Newton solve corresponding to this solution vector!"
-       << endl;
-  throw "NOX Error";
-  */
-  return -1.0;
+  if (utils.isPrintProcessAndType(Utils::Warning)) {
+    cout << "ERROR: NOX::Epetra::Group::getNormLastLinearSolveResidual() - "
+	 << "Group has not performed a Newton solve corresponding to this "
+	 << "solution vector!" << endl;
+  }
+  return NOX::Abstract::Group::BadDependency;
 }  
-
+  
 SharedOperator& Group::getSharedJacobian()
 {
   return sharedJacobian;

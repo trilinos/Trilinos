@@ -358,7 +358,8 @@ public:
   virtual const Abstract::Vector& getNewton() const;
 
   //! Returns the 2-norm of the residual of the linear model used in the Newton solve computation, ||Js+f||.  This does not account for line search adjustments to the step length!
-  double getNormNewtonSolveResidual() const;
+  virtual Abstract::Group::ReturnType 
+  getNormLastLinearSolveResidual(double & residual) const;
 
   //@}
 
