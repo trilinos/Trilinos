@@ -111,10 +111,12 @@ int main()
     stepperList.setParameter("Min Value", 0.24);
     stepperList.setParameter("Max Steps", 2);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.setParameter("Goal g", 0.5);
-    stepperList.setParameter("Max g", 0.7);
+    stepperList.setParameter("Enable Arc Length Scaling", true);
+    stepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+    stepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
     stepperList.setParameter("Initial Scale Factor", 1.0);
     stepperList.setParameter("Min Scale Factor", 1.0e-8);
+    stepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",true);
@@ -131,6 +133,11 @@ int main()
     firstStepPredictor.setParameter("Method", "Random");
     firstStepPredictor.setParameter("Epsilon", 1.0e-3);
 
+    NOX::Parameter::List& lastStepPredictor 
+      = predictorList.sublist("Last Step Predictor");
+    lastStepPredictor.setParameter("Method", "Random");
+    lastStepPredictor.setParameter("Epsilon", 1.0e-3);
+
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
     stepSizeList.setParameter("Method", "Adaptive");
@@ -138,6 +145,8 @@ int main()
     stepSizeList.setParameter("Min Step Size", 1.0e-3);
     stepSizeList.setParameter("Max Step Size", 0.02);
     stepSizeList.setParameter("Aggressiveness", 0.5);
+    stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
+    stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
