@@ -620,18 +620,6 @@ AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${ADDON_epetra} = Xyes)
 AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${ADDON_epetra_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
-# NOX-EpetraExt support
-# ------------------------------------------------------------------------
-
-AC_ARG_WITH(nox-epetraext,
-[AC_HELP_STRING([--with-nox-epetraext],[compile epetraext support into libnoxepetra])],
-[BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
-[BUILD_NOX_EPETRAEXT_SUPPORT=no]
-)
-AC_MSG_CHECKING(whether we should build epetraext support into noxepetra library)
-AC_MSG_RESULT([${BUILD_NOX_EPETRAEXT_SUPPORT}])
-
-# ------------------------------------------------------------------------
 # NOX-PETSC library?
 # ------------------------------------------------------------------------
 
@@ -644,11 +632,11 @@ AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${ADDON_petsc_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca,
-[AC_HELP_STRING([--enable-loca],[compile the loca library])],
+[AC_HELP_STRING([--enable-loca],[compile the loca libraries])],
 [BUILD_LIBLOCA=${enableval}],
 [BUILD_LIBLOCA=no]
 )
-AC_MSG_CHECKING(whether we should build the loca library)
+AC_MSG_CHECKING(whether we should build the loca libraries)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
 AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
@@ -710,12 +698,13 @@ fi
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(loca-anasazi,
-[AC_HELP_STRING([--with-loca-anasazi],[compile anasazi support into liblocaepetra])],
+dnl [AC_HELP_STRING([--with-loca-anasazi],[compile anasazi support into liblocaepetra])],
+[],
 [BUILD_LOCA_ANASAZI_SUPPORT=${withval}],
 [BUILD_LOCA_ANASAZI_SUPPORT=no]
 )
-AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
-AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
+#AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
+#AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
 
 # ------------------------------------------------------------------------
 # Check for MPI library
@@ -795,54 +784,61 @@ AC_ARG_WITH(epetra-incdir,
 [AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
 [epetra_INCDIR=$withval])
 
-AC_ARG_WITH(epetraext-incdir,
-[AC_HELP_STRING([--with-epetraext-incdir],[specify location of epetraext header files])],
-[epetraext_INCDIR=$withval])
-
-AC_ARG_WITH(aztecoo-incdir,
-[AC_HELP_STRING([--with-aztecoo-incdir],[specify location of all aztecoo header files])],
-[aztecoo_INCDIR=$withval])
-
-AC_ARG_WITH(ifpack-incdir,
-[AC_HELP_STRING([--with-ifpack-incdir],[specify location of all ifpack header files])],
-[ifpack_INCDIR=$withval])
-
-AC_ARG_WITH(anasazi-incdir,
-[AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
-[anasazi_INCDIR=$withval])
-
-AC_ARG_WITH(anasaziutils-incdir,
-[AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasaziutils header files])],
-[anasaziutils_INCDIR=$withval])
-
 AC_ARG_WITH(epetra-libdir,
 [AC_HELP_STRING([--with-epetra-libdir],[specify location of epetra library])],
 [epetra_LIBDIR=$withval])
+
+AC_ARG_WITH(nox-epetraext,
+[AC_HELP_STRING([--with-epetraext],[compile epetraext support into the noxepetra library])],
+[BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
+[BUILD_NOX_EPETRAEXT_SUPPORT=no]
+)
+AC_MSG_CHECKING(whether we should build epetraext support into the noxepetra library)
+AC_MSG_RESULT([${BUILD_NOX_EPETRAEXT_SUPPORT}])
+
+AC_ARG_WITH(epetraext-incdir,
+[AC_HELP_STRING([--with-epetraext-incdir],[specify location of epetraext header files])],
+[epetraext_INCDIR=$withval])
 
 AC_ARG_WITH(epetraext-libdir,
 [AC_HELP_STRING([--with-epetraext-libdir],[specify location of epetraext library])],
 [epetraext_LIBDIR=$withval])
 
+AC_ARG_WITH(aztecoo-incdir,
+[AC_HELP_STRING([--with-aztecoo-incdir],[specify location of all aztecoo header files])],
+[aztecoo_INCDIR=$withval])
+
 AC_ARG_WITH(aztecoo-libdir,
 [AC_HELP_STRING([--with-aztecoo-libdir],[specify location of aztecoo library])],
 [aztecoo_LIBDIR=$withval])
+
+AC_ARG_WITH(ifpack-incdir,
+[AC_HELP_STRING([--with-ifpack-incdir],[specify location of all ifpack header files])],
+[ifpack_INCDIR=$withval])
 
 AC_ARG_WITH(ifpack-libdir,
 [AC_HELP_STRING([--with-ifpack-libdir],[specify location of ifpack library])],
 [ifpack_LIBDIR=$withval])
 
+AC_ARG_WITH(anasazi-incdir,
+dnl [AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
+[],
+[anasazi_INCDIR=$withval])
+
 AC_ARG_WITH(anasazi-libdir,
-[AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
+dnl [AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
+[],
 [anasazi_LIBDIR=$withval])
 
+AC_ARG_WITH(anasaziutils-incdir,
+dnl [AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasaziutils header files])],
+[],
+[anasaziutils_INCDIR=$withval])
+
 AC_ARG_WITH(anasaziutils-libdir,
-[AC_HELP_STRING([--with-anasaziutils-libdir],[specify location of anasaziutils library])],
+dnl [AC_HELP_STRING([--with-anasaziutils-libdir],[specify location of anasaziutils library])],
+[],
 [anasaziutils_LIBDIR=$withval])
-
-AC_ARG_WITH(y12m-libdir,
-[AC_HELP_STRING([--with-y12m-libdir],[specify location of y12m library])],
-[y12m_LIBDIR=$withval])
-
 
 # Relative path to Trilinos include files, to be used in Makefiles
 REL_TRILINOS_CPPFLAGS=
@@ -1037,88 +1033,6 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
-  # Find the dreaded y12 library if required
-  # NOTE: The y12m library is only needed if aztecoo is built 
-  # with the flag --enable-aztecoo-azlu.
-  # Leaving this out means the az_lu preconditioner is disabled
-  AC_ARG_WITH(nox-epetra-azlu,
-  [AC_HELP_STRING([--with-nox-epetra-azlu],
-  [includes az_lu preconditioner in the epetra interface - requires y12m library])],
-  [REQUIRE_Y12M=$withval],
-  [REQUIRE_Y12M=no]
-  )
-
-  # If we are in trilinos and the user builds aztecoo with the flag
-  # --enable-aztecoo-azlu they should build nox with the equivalent flag
-  # --enable-nox-epetra-azlu, but if they forget, we will automatically 
-  # check and set the y12m requirement.  This overrides the 
-  # --enable-nox-epetra-azlu argument above, but without this check, the 
-  # epetra/aztecoo and nox libraries will be incompatible and 
-  # the example/test problems in the nox epetra support will not link.
-  if test X$INSIDE_TRILINOS = Xyes; then
-    AC_ARG_ENABLE(aztecoo-azlu,
-    [],
-    [REQUIRE_Y12M=$enableval],
-    [REQUIRE_Y12M=no]
-    )
-  fi
-
-  if test X${REQUIRE_Y12M} = Xyes; then 
-
-    LIBS="-ly12m ${LIBS}"
-    save_LDFLAGS=$LDFLAGS
-    done=no
-
-    # First, see if we can link without doing anything
-    AC_LANG([C++])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[])
-    LDFLAGS=$save_LDFLAGS
-
-    # Next try the specified libdir (if any)
-     if test $done = no && test -n "${y12m_LIBDIR}"; then
-       LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
-     fi   
-
-    # Next try the Trilinos build dir for reference y12m
-    # this works only if y12m is already built.
-    if test $done = no; then	
-     PWD=`pwd`
-     LDFLAGS="-L$PWD/../../external/y12m $save_LDFLAGS"
-     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
-    fi   
-
-    # See if Trilinos will build y12m at the same time it builds nox. 
-    # This happens if --enable-referencey12m is enabled and we are in
-    # the trilinos configure script. 
-    if test $done = no && test X$INSIDE_TRILINOS = Xyes; then
-      AC_ARG_ENABLE(referencey12m,,
-      [TRILINOS_BUILDS_Y12M=$enableval],
-      [TRILINOS_BUILDS_Y12M=no]
-      )
-      if test TRILINOS_BUILDS_Y12M=yes; then
-        PWD=`pwd`
-        LDFLAGS="-L$PWD/../../external/y12m $save_LDFLAGS"
-        done=auto
-      fi
-    fi
-
-    AC_MSG_CHECKING([for y12m library])
-  
-    if test $done = auto; then
-      AC_MSG_RESULT(no check - assuming library will be built by Trilinos)
-    elif test $done = yes; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      echo "---"
-      echo "Cannot find y12m library."
-      echo "Try --with-y12m-libdir=<dir> to specify the library location."
-      echo "---"
-      AC_MSG_ERROR([Cannot find y12m library])
-    fi  
-  fi
-
   TRILINOS_LIB_CHECK(epetra,epetra,src)
   TRILINOS_LIB_CHECK(ifpack,ifpack,src)
   TRILINOS_LIB_CHECK(aztecoo,aztecoo,src)
@@ -1135,9 +1049,6 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   fi
 
 fi
-
-AM_CONDITIONAL(HAVE_Y12M, test X${REQUIRE_Y12M} = Xyes)
-
 
 # ------------------------------------------------------------------------
 # Petsc include file check for building noxpetsc library
