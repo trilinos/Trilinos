@@ -43,8 +43,9 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        int vwgt_dim, int ewgt_dim, int check_graph)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
-  int global_i, global_j, flag, cross_edges, mesg_size;
+  int flag, cross_edges, mesg_size;
   int nprocs, proc, *proclist;
+  idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
   struct Comm_Obj *comm_plan;
@@ -158,7 +159,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 
   if ((check_graph >= 2) && cross_edges) {
     /* Allocate space for off-proc data */
-    mesg_size = (2+ewgt_dim)*sizeof(int);
+    mesg_size = (2+ewgt_dim)*sizeof(idxtype);
     sendbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
     recvbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
     proclist = (int *) LB_MALLOC(cross_edges*sizeof(int));
@@ -170,7 +171,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
     }
 
     /* Second pass: Copy data to send buffer */
-    kk = 0;
+    nedges = 0;
     ptr1 = (idxtype *) sendbuf;
     for (i=0; i<num_obj; i++){
       global_i = vtxdist[proc]+i;
@@ -179,16 +180,14 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         /* Is global_j off-proc? */
         if ((global_j < vtxdist[proc]) || (global_j >= vtxdist[proc+1])){
            /* Add to list */
-           for (k=0; global_j < vtxdist[k+1]; k++)
-           proclist[kk] = k;
+           k=0; 
+           while (global_j >= vtxdist[k+1]) k++;
+           proclist[nedges++] = k;
            /* Copy (global_i, global_j) and corresponding weights to sendbuf */
-           memcpy((char *) ptr1, (char *) &global_i, sizeof(idxtype)); 
-           ptr1++;
-           memcpy((char *) ptr1, (char *) &global_j, sizeof(idxtype)); 
-           ptr1++;
+           *ptr1++ = global_i;
+           *ptr1++ = global_j;
            for (k=0; k<ewgt_dim; k++){
-             memcpy((char *) ptr1, (char *) &adjwgt[ii*ewgt_dim+k], sizeof(idxtype)); 
-             ptr1++;
+             *ptr1++ = adjwgt[ii*ewgt_dim+k];
            }
         }
       }
@@ -238,9 +237,9 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 
 error:
     /* Free memory */
-    LB_FREE(sendbuf);
-    LB_FREE(recvbuf);
-    LB_FREE(proclist);
+    LB_FREE(&sendbuf);
+    LB_FREE(&recvbuf);
+    LB_FREE(&proclist);
   }
 
   /* Return error code */
