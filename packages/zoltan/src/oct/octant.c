@@ -635,7 +635,7 @@ void POC_setCpid(pOctant octant, int i, int cpid) {
 /*
  * int POC_delTree(pOctant root)
  *
- * recursivly traverses down root's subtree deleting all the octant
+ * recursivly traverses down root's subtree deleting all the octants
  */
 int POC_delTree(pOctant root) {
   int i;                                               /* index counter */

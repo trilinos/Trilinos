@@ -2,10 +2,6 @@
 #include "hilbert_const.h"
 #include "comm.h"
 
-/* static int dimension = 3; */
-/* static int GRAY = 0; */
-/* static int HILBERT = 1; */
-
 typedef double Coord[3];
 
 /*
@@ -16,7 +12,8 @@ typedef double Coord[3];
  * the local subtree.
  */
 
-void migreg_migrate_regions(Region *regions, int *npids, int nregions) {
+void migreg_migrate_regions(Region *regions, int *npids, 
+			    int nregions, int *c2) {
   int i;                         /* index counter */
   int nreceives,                 /* number of messages received */
       from;                      /* from whom the message originated */
@@ -29,6 +26,7 @@ void migreg_migrate_regions(Region *regions, int *npids, int nregions) {
 				    the objs from other processors. */
 
   comm_plan = comm_create(nregions, npids, MPI_COMM_WORLD, &n_import);
+  *c2 = n_import;
   import_objs = (Region *)malloc(n_import * sizeof(Region));
 
   if((n_import != 0) && (import_objs == NULL)) {
@@ -110,7 +108,7 @@ void insert_orphan(Region reg) {
  * the octant where their centroid is.
  */
 void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
-			    Map *array) {
+			    Map *array, int *c1, int *c2) {
   int     i, j, k;                    /* index counters */
   pRegion ptr;                        /* region in the mesh */
   double  origin[3];                  /* centroid coordinate information */
@@ -209,8 +207,9 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
     regions2[i].attached = 0;
   }
 
+  *c1 = n;
   /* migrate the orphan regions according to the message array */
-  migreg_migrate_regions(regions2, npids2, n);
+  migreg_migrate_regions(regions2, npids2, n, c2);
   
   free(regions);
   free(npids);

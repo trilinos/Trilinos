@@ -20,7 +20,7 @@ static int IDcount = 0;                            /* renumbering of octants */
 /* static int dimension = 3; */             /* number of dimensions (2 or 3) */
 
 extern void print_stats(double timetotal, double *timers, int *counters, 
-			int STAT_TYPE);
+			float *c, int STAT_TYPE);
 
 /*
  * void oct_init(LB *load_balancing_structure, int *number_of_objects,
@@ -39,8 +39,10 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
                                  new decomposition.                          */
 ) {
   LB_TAG *export_tags;             /* array of LB_TAGS being exported */
+  pRegion export_regs;             /* */
   int nsentags;                    /* number of tags being sent */
   LB_TAG *import_tags;             /* array of LB_TAGS being imported */
+  pRegion import_regs;             /* */
   int nrectags;                    /* number of tags received */
   pOctant ptr;                     /* pointer to an octant */
   pRList root;                     
@@ -53,14 +55,13 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
 				      1 = time before median iterations
 				      2 = time in median iterations
 				      3 = communication time */
-  int    counters[7];              /* diagnostic counts
+  int    counters[6];              /* diagnostic counts
 			              0 = # of median iterations
 				      1 = # of objects sent
 				      2 = # of objects received
 				      3 = most objects this proc ever owns
-				      4 = most objects this proc ever allocs
-				      5 = # of times a previous cut is re-used
-				      6 = # of reallocs of dot array */
+				      */
+  float  c[4];
 
   MPI_Barrier(MPI_COMM_WORLD);
   timestart = MPI_Wtime();
@@ -72,7 +73,10 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   counters[3] = 0;
   counters[4] = 0;
   counters[5] = 0;
-  counters[6] = 0;
+  c[0] = 0;
+  c[1] = 0;
+  c[2] = 0;
+  c[3] = 0;
   timers[1] = 0.0;
   timers[2] = 0.0;
   timers[3] = 0.0;
@@ -82,6 +86,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   count = nsentags = nrectags = 0;
 
   msg_init();
+  msg_endBuffer();
 
   if(lb->Params != NULL) {
     POC_init(msg_mypid, lb->Params[0]);
@@ -95,28 +100,31 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   /* create the octree structure */
   time1 = MPI_Wtime();
 
-  oct_gen_tree_from_input_data(lb, &counters[3], &counters[4]);
+  oct_gen_tree_from_input_data(lb, &counters[1], &counters[2], 
+			       &counters[3], &c[0]);
   time2 = MPI_Wtime();
   timers[0] = time2 - time1;                 /* time took to create octree */
   
   /* partition the octree structure */
   time1 = MPI_Wtime();
-  dfs_partition(&counters[0]);
+  dfs_partition(&counters[0], &c[1]);
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
-#if 0
-  for(i=0; i<msg_nprocs; i++) {
-    if(msg_mypid == i)
-      POC_printResults();
-    msg_sync();
-  }
-#endif
+  /*  for(i=0; i<msg_nprocs; i++) {
+   *    if(msg_mypid == i)
+   *      POC_printResults();
+   *    msg_sync();
+   *  }
+   */
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
-  dfs_migrate(&export_tags, &nsentags, &import_tags, &nrectags);
+  dfs_migrate(&export_regs, &nsentags, &import_regs, &nrectags, 
+	      &c[2], &c[3], &counters[3], &counters[4]);
+  fix_tags(&export_tags, &nsentags, &import_tags, &nrectags, 
+	   import_regs, export_regs);
   time2 = MPI_Wtime();
   timers[2] = time2 - time1;               /* time took to setup migration */
 
@@ -138,26 +146,27 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   *pobjtop = count - nsentags;
   *pobjnum = *pobjtop + nrectags;
 
-  counters[1] = nsentags;
-  counters[2] = nrectags;
+  counters[5] = nrectags;
   MPI_Barrier(MPI_COMM_WORLD);
   timestop = MPI_Wtime();
-  
-  print_stats(timestop - timestart, timers, counters, 1);
- 
+
+  if(lb->Params != NULL)
+    print_stats(timestop - timestart, timers, counters, c, lb->Params[2]);
+  else
+    print_stats(timestop - timestart, timers, counters, c, 1);
   /*
    * fprintf(stderr, "%d) non_local %d, count %d, nsent %d, top %d, num %d\n",
    *	  msg_mypid, *num_non_local, count, nsentags, *pobjtop, *pobjnum);
    */
 
+  free(export_regs);
+  free(import_regs);
   root = POC_localroots();
   while(root != NULL) {
     root2 = root->next;
     POC_delTree(root->oct);
     root = root2;
   }
-
-  msg_endBuffer();
 }
 
 /*
@@ -168,7 +177,8 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
  * tree will then be balanced and the output used to balance "mesh regions"
  * on several processors.
  */
-void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
+void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2, 
+				  int *c3, float *c0) {
   double min[3],          /* min coord bounds of objects */
          max[3];          /* max coord bounds of objects */
   int num_extra;          /* number of orphaned objects */
@@ -205,7 +215,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
   ptr1 = NULL;
   if(num_objs > 0) {
     /* Need A Function To Get The Bounds Of The Local Objects */
-    get_bounds(lb, &ptr1, &num_objs, min, max, c4);
+    get_bounds(lb, &ptr1, &num_objs, min, max, c0);
 
     vector_set(gmin, min);
     vector_set(gmax, max);
@@ -345,7 +355,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
 /* 
  * fprintf(stderr,"(%d) number of extra regions %d\n", msg_mypid, num_extra);
  */
-  migreg_migrate_orphans(ptr1, num_extra, level, array);
+  migreg_migrate_orphans(ptr1, num_extra, level, array, c1, c2);
   
   free(array);
   while(ptr1 != NULL) {
@@ -356,7 +366,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
 }
 
 void get_bounds(LB *lb, pRegion *ptr1, int *num_objs, 
-		double min[3], double max[3], int *c4) {
+		double min[3], double max[3], float *c0) {
   int max_num_objs;
   LB_ID *obj_ids;
   int i;
@@ -368,7 +378,7 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   *num_objs = lb->Get_Num_Local_Obj(lb->Object_Type);
 
   /* ATTN: an arbitrary choice, is this necessary? */
-  *c4 = max_num_objs = 2 * (*num_objs); 
+  max_num_objs = 2 * (*num_objs); 
 
   obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, (*num_objs),
                                      sizeof(LB_ID));
@@ -380,12 +390,14 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
   if((*num_objs) > 0) {
     initialize(lb, &tmp, 0, obj_ids[0]);
+    *c0 = (float)tmp->Weight;
     vector_set(min, tmp->Coord);
     vector_set(max, tmp->Coord);
   }
   *ptr1 = tmp;
   for (i = 1; i < (*num_objs); i++) {
     initialize(lb, &(ptr), i, obj_ids[i]);
+    *c0 += (float)tmp->Weight;
     /* the following is really a hack, since it has no real basis 
        in vector mathematics.... */
     if(ptr->Coord[0] < min[0])

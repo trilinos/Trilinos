@@ -1,7 +1,7 @@
 #include "octupdate_const.h"
 
 void    get_bounds(LB *lb, pRegion *ptr1, int *num_objs, 
-		   double min[3], double max[3], int *c4);
+		   double min[3], double max[3], float *c4);
 void    initialize(LB *lb, pRegion *ret, int local_id, LB_ID global_id);
 int     oct_fix(LB *lb, pRegion Region_array, int num_objs);
 int     oct_global_insert_object(pRegion Region_array, int num_objs);

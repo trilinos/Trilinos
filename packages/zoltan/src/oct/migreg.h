@@ -11,6 +11,7 @@ typedef struct
   int npid;
 } Message;
 
-void migreg_migrate_regions(Region *regions, int *npids, int nregions);
+void migreg_migrate_regions(Region *regions, int *npids, 
+			    int nregions, int *c2);
 void insert_orphan(Region reg);
 void copy_info(pRegion src, pRegion *dest);

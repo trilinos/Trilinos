@@ -7,7 +7,7 @@
  *
  * Prints out statistic on the octree load balancing partitioner 
  */
-void print_stats(double timetotal, double *timers, int *counters, 
+void print_stats(double timetotal, double *timers, int *counters, float *c,
 		 int STATS_TYPE)
 {
   LB_ID *obj_ids;                          /* pointer to all the objects ids */
@@ -17,6 +17,9 @@ void print_stats(double timetotal, double *timers, int *counters,
       sum,                                 /* the sum of the counters */
       min,                                 /* minimum value */
       max;                                 /* maximum value */
+  float sum1,
+        min1,
+        max1;
   double ave,                              /* average of the timers */
          rsum,                             /* the sum of the timers */
          rmin,                             /* minimum timer value */
@@ -91,18 +94,19 @@ void print_stats(double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
-    printf(" Number of parition iters: ave = %g, min = %d, max = %d\n", ave, min, max);
+    printf(" Number of parition iters: ave = %g, min = %d, max = %d\n", 
+	   ave, min, max);
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2) 
     printf("    Proc %d iteration count = %d\n", proc, counters[0]);
-  /* ATTN: Will, all load balancing schemes be able to use these counters? */
 
   MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
   MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
-    printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
+    printf(" Objs sent during gen tree: ave = %g, min = %d, max = %d\n",
+	   ave,min,max);
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d send count = %d\n",proc,counters[1]);
@@ -112,10 +116,33 @@ void print_stats(double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
-    printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
+    printf(" Objs recv during gen tree: ave = %g, min = %d, max = %d\n",
+	   ave,min,max);
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d recv count = %d\n",proc,counters[2]);
+  
+  MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  ave = ((double) sum)/nprocs;
+  if (proc == 0) 
+    printf(" Objs sent during balancing: ave = %g, min = %d, max = %d\n",
+	   ave,min,max);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (STATS_TYPE == 2)
+    printf("    Proc %d send count = %d\n",proc,counters[4]);
+  
+  MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  ave = ((double) sum)/nprocs;
+  if (proc == 0) 
+    printf(" Objs recv during balancing: ave = %g, min = %d, max = %d\n",
+	   ave,min,max);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (STATS_TYPE == 2)
+    printf("    Proc %d recv count = %d\n",proc,counters[5]);
   
   MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
@@ -127,43 +154,38 @@ void print_stats(double timetotal, double *timers, int *counters,
   if (STATS_TYPE == 2)
     printf("    Proc %d max objs = %d\n",proc,counters[3]);
 
-#if 0  
-  MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-  ave = ((double) sum)/nprocs;
+  MPI_Allreduce(&c[0],&sum1,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[0],&min1,1,MPI_FLOAT,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[0],&max1,1,MPI_FLOAT,MPI_MAX,MPI_COMM_WORLD);
+  ave = ((double) sum1)/nprocs;
   if (proc == 0) 
-    printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
+    printf(" Initial Load: ave = %g, min = %f, max = %f\n",ave,min1,max1);
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
-    printf("    Proc %d max memory = %d\n",proc,counters[4]);
+    printf("    Proc %d intial load = %f\n",proc,c[0]);
   
-  /* ATTN: Not sure what this "reuse" is, used in the RCB code */
-  if (0) {
-    MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-    MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-    MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-    ave = ((double) sum)/nprocs;
-    if (proc == 0) 
-      printf(" # of Reuse: ave = %g, min = %d, max = %d\n", ave, min, max);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (STATS_TYPE == 2)
-      printf("    Proc %d # of Reuse = %d\n", proc, counters[5]);
-  }
-  
-  if(counters[4] > counters[3])
-    counters[6] = counters[4] - counters[3];
-
-  MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-  ave = ((double) sum)/nprocs;
+  MPI_Allreduce(&c[1],&sum1,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[1],&min1,1,MPI_FLOAT,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[1],&max1,1,MPI_FLOAT,MPI_MAX,MPI_COMM_WORLD);
+  ave = ((double) sum1)/nprocs;
   if (proc == 0) 
-    printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n", ave, min, max);
+    printf(" Load Before Balancing: ave = %g, min = %f, max = %f\n", 
+	   ave, min1, max1);
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
-    printf("    Proc %d # of OverAlloc = %d\n", proc, counters[6]);
-#endif
+    printf("    Proc %d load before balancing = %f\n", proc, c[1]);
+  
+  c[3] += (c[1] - c[2]);
+  MPI_Allreduce(&c[3],&sum1,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[3],&min1,1,MPI_FLOAT,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(&c[3],&max1,1,MPI_FLOAT,MPI_MAX,MPI_COMM_WORLD);
+  ave = ((double) sum1)/nprocs;
+  if (proc == 0) 
+    printf(" Load After Balancing: ave = %g, min = %f, max = %f\n", 
+	   ave, min1, max1);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (STATS_TYPE == 2)
+    printf("    Proc %d load after balancing = %f\n", proc, c[3]);
 
   /* timer info */
   MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);

@@ -35,7 +35,7 @@ void dfs_set_visit_criterion(int visit) {
  * 
  * This function calls the different subfunctions to partition the octree 
  */
-void dfs_partition(int *counter) {
+void dfs_partition(int *counter, float *c1) {
   float mycost,                     /* cost of the octant */
         globalcost,                 /* costs of all the octants */
         prefcost;                   /* sum of costs from previous processors */
@@ -48,7 +48,8 @@ void dfs_partition(int *counter) {
 
   count = 0;
   /* Note: set root oct id's first so costs_global_compute() can know order */
-  mycost=costs_global_compute();                 /* sets ids in order from 0 */
+  *c1 = mycost = costs_global_compute();         /* sets ids in order from 0 */
+ 
   /* gets the number of octants from the previous processors */
   nprevoct=msg_int_scan(POC_nOctants());
 
@@ -77,7 +78,7 @@ void dfs_partition(int *counter) {
   pmass=0.0;                            /* initialize octant volume variable */
   vector_set_comp(pcoord,0,0,0);
 
-#ifdef DEBUG 
+#if 0 
   PRINT_IN_ORDER()
     printf("Global %6.1f  Pref %6.1f  Opt %6.1f  Pnum %2d  Pcost %8.2f\n",
 	   globalcost,prefcost,optcost,partition,pcost);
@@ -259,8 +260,9 @@ void tag_subtree(pOctant octant, int partition) {
  * sets up information so the migrate octant routines can create the
  * proper export_tags and import_tags arrays
  */
-void dfs_migrate(LB_TAG **export_tags, int *nsentags,
-		 LB_TAG **import_tags, int *nrectags) 
+void dfs_migrate(pRegion *export_regs, int *nsentags,
+		 pRegion *import_regs, int *nrectags, 
+		 float *c2, float *c3, int *counter3, int *counter4) 
 {
   pRList lroots;                              /* list of all local roots */
   pOctant root;                               /* root of a subtree */
@@ -304,9 +306,9 @@ void dfs_migrate(LB_TAG **export_tags, int *nsentags,
     abort();
   }
 
-  /* setup the import_tags and export_tags */
-  Migrate_Objects(docts, dpids, dcount, export_tags, nsentags, 
-		  import_tags, nrectags);
+  /* setup the import_regs and export_regs */
+  Migrate_Objects(docts, dpids, dcount, export_regs, nsentags, 
+		  import_regs, nrectags, c2, c3, counter3, counter4);
 
   free(docts);
   free(dpids);
