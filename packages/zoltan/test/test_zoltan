@@ -5,7 +5,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {solaris, gcc, smos, tflop, cplant}.
+# where arch-type is one of {generic, solaris, gcc, smos, tflop, cplant}.
 # Alternatively, give a run command with the -cmd option.
 #
 # Initial version by Erik Boman, SNL 9226, 99/09/15.
@@ -30,6 +30,9 @@ set outdir = output
 unset run
 
 # Check for environment variables.
+if ($?ZOLTAN_ARCH) then
+   set arch = $ZOLTAN_ARCH
+endif
 if ($?NO_NEMESIS) then
    set no_nemesis = $NO_NEMESIS
 endif
@@ -62,7 +65,6 @@ while ( $#argv )
     
   else if ( $1 == "-arch" ) then
   
-    # Determine what command to use to launch a parallel program
     if ( $#argv < 2 ) then
       echo "Error: No argument for -arch"
       goto usage
@@ -71,22 +73,6 @@ while ( $#argv )
     shift argv
     set arch = $1
     
-    switch ( $arch )
-    case gcc:
-    case solaris:
-      set run = "mpirun -np"
-      breaksw
-    case smos:
-    case tflop:
-    case cplant:
-      set run = "yod -sz"
-      breaksw
-    default:
-      echo "Unknown arch-type. Please use -cmd to specify the run command."
-      exit -2
-      breaksw
-    endsw
-  
   else if ( $1 == "-cmd" ) then
     if ( $#argv < 2 ) then
       echo "Error: No argument for -cmd"
@@ -102,11 +88,31 @@ while ( $#argv )
 
 end # while ( $#argv )
 
-# Check if we have a run command
+# Determine what command to use to launch a parallel program based on $arch
 if (! $?run ) then
-  echo "Error: No run command. Either -arch or -cmd must be used"
-  goto usage
+  if ( $?arch ) then
+    switch ( $arch )
+    case generic:
+    case gcc:
+    case solaris:
+      set run = "mpirun -np"
+      breaksw
+    case smos:
+    case tflop:
+    case cplant:
+      set run = "yod -sz"
+      breaksw
+    default:
+      echo "Unknown arch-type. Please use -cmd to specify the run command."
+      exit -2
+      breaksw
+    endsw
+  else # !$?run and !$?arch
+    echo "Error: No run command. Either -arch or -cmd must be specified."
+    goto usage
+  endif
 endif
+  
 
 # Check if we have zdrive
 if ( $?arch ) then
@@ -182,6 +188,7 @@ if (! $no_chaco ) then
           /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
     
           # Run the driver
+          which $run
           $run $np ../$zdrive
     
           # Save and compare output files 
@@ -332,7 +339,8 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {gcc, solaris, smos, tflop, cplant}."
+  echo "where arch-type is one of {generic, gcc, solaris, smos, tflop, cplant}."
+  echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."
   echo "Other options:"
