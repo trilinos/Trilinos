@@ -380,7 +380,14 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 Epetra_CrsMatrix * Trilinos_Util_MatrixGallery::GetMatrix(void) 
 {
   if( matrix_ == NULL ) CreateMatrix();
-  return matrix_;
+  return( matrix_ );
+}
+
+// ================================================ ====== ==== ==== == =  
+Epetra_CrsMatrix & Trilinos_Util_MatrixGallery::GetMatrixRef(void) 
+{
+  if( matrix_ == NULL ) CreateMatrix();
+  return( *matrix_ );
 }
   
 // ================================================ ====== ==== ==== == =
@@ -426,7 +433,15 @@ Epetra_Vector * Trilinos_Util_MatrixGallery::GetVbrStartingSolution(void)
 }
 
 // ================================================ ====== ==== ==== == =
-const Epetra_Map & Trilinos_Util_MatrixGallery::GetMap(void)
+const Epetra_Map * Trilinos_Util_MatrixGallery::GetMap(void)
+{
+  if( map_ == NULL ) CreateMap();
+    
+  return map_;
+}
+
+// ================================================ ====== ==== ==== == =
+const Epetra_Map & Trilinos_Util_MatrixGallery::GetMapRef(void)
 {
   if( map_ == NULL ) CreateMap();
     
@@ -434,7 +449,15 @@ const Epetra_Map & Trilinos_Util_MatrixGallery::GetMap(void)
 }
 
 // ================================================ ====== ==== ==== == =
-const Epetra_BlockMap & Trilinos_Util_MatrixGallery::GetBlockMap(void)
+const Epetra_BlockMap * Trilinos_Util_MatrixGallery::GetBlockMap(void)
+{
+  if( BlockMap_ == NULL ) CreateBlockMap();
+    
+  return BlockMap_;
+}
+
+// ================================================ ====== ==== ==== == =
+const Epetra_BlockMap & Trilinos_Util_MatrixGallery::GetBlockMapRef(void)
 {
   if( BlockMap_ == NULL ) CreateBlockMap();
     
@@ -465,6 +488,16 @@ Epetra_VbrMatrix * Trilinos_Util_MatrixGallery::GetVbrMatrix(void)
   if( VbrMatrix_ == NULL ) CreateVbrMatrix();
 
   return VbrMatrix_;
+    
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_VbrMatrix & Trilinos_Util_MatrixGallery::GetVbrMatrixRef(void)
+{
+    
+  if( VbrMatrix_ == NULL ) CreateVbrMatrix();
+
+  return *VbrMatrix_;
     
 }
 
@@ -549,7 +582,7 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
   Epetra_Time Time(*comm_);
 
   if( verbose_ == true ) {
-    cout << OutputMsg << "Creating Map...\n";
+    cout << OutputMsg << "Creating Map `" << MapType_ << "'...\n";
   }
 
   // first get the problem size. For some problems. the user can
@@ -612,152 +645,152 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
   // If yes, creation of map is straightforward. Then return.
   
   if( comm_->NumProc() == 1 ) {
+
     map_ = new Epetra_Map(NumGlobalElements_,0,*comm_);
-    return 0;
-  }
 
-  // Here below more than one processor.
+  } else {
+
+    // Here below more than one processor.
   
-  if( MapType_ == "linear" ) {
+    if( MapType_ == "linear" ) {
       
-    map_ = new Epetra_Map (NumGlobalElements_,0,*comm_);
+      map_ = new Epetra_Map (NumGlobalElements_,0,*comm_);
       
-  } else if( MapType_ == "box" ) {
+    } else if( MapType_ == "box" ) {
 
-    if( mx_ == -1 || my_ == -1 ) {
-      mx_ = (int)sqrt((double)(comm_->NumProc()));
-      my_ = mx_;
-      if( mx_ * my_ != comm_->NumProc() ) {
-	cerr << ErrorMsg << "number of processes must be square number\n"
-	     << ErrorMsg << "otherwise set mx and my\n";
-	return -1;
+      if( mx_ == -1 || my_ == -1 ) {
+	mx_ = (int)sqrt((double)(comm_->NumProc()));
+	my_ = mx_;
+	if( mx_ * my_ != comm_->NumProc() ) {
+	  cerr << ErrorMsg << "number of processes must be square number\n"
+	       << ErrorMsg << "otherwise set mx and my\n";
+	  return -1;
+	}
       }
-    }
-
-    if( nx_ == -1 || ny_ == -1 ) {
-      nx_ = (int)sqrt((double)NumGlobalElements_);
-      ny_ = nx_;
-      if( nx_ * ny_ != NumGlobalElements_ ) {
-	cerr << ErrorMsg << "number of elements must be square number\n"
-	     << ErrorMsg << "otherwise set mx and my\n";
-	return -1;
+      
+      if( nx_ == -1 || ny_ == -1 ) {
+	nx_ = (int)sqrt((double)NumGlobalElements_);
+	ny_ = nx_;
+	if( nx_ * ny_ != NumGlobalElements_ ) {
+	  cerr << ErrorMsg << "number of elements must be square number\n"
+	       << ErrorMsg << "otherwise set mx and my\n";
+	  return -1;
+	}
       }
-    }
-
-    // how to divide the axis
-
-    int modx = (nx_+(nx_%mx_))/mx_;
-    int mody = (ny_+(ny_%my_))/my_;
-
-    int MyPID = comm_->MyPID(), startx, starty, endx, endy;
-    int xpid = MyPID/mx_;
-    int ypid = MyPID%my_;
-
-    startx = xpid*modx;
-    if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
-    else endx = nx_;
-    starty = ypid*mody;
-    if( (ypid+1)*mody < ny_ ) endy = (ypid+1)*mody;
-    else endy = ny_;
-
-    int NumMyElements = (endx-startx)*(endy-starty);
-    int * MyGlobalElements = new int[NumMyElements];
-    int count = 0;
       
-    for( int i=startx ; i<endx ; ++i ) {
-      for( int j=starty ; j<endy ; ++j ) {
-	MyGlobalElements[count++] = i+j*nx_;
+      // how to divide the axis
+      
+      int modx = (nx_+(nx_%mx_))/mx_;
+      int mody = (ny_+(ny_%my_))/my_;
+      
+      int MyPID = comm_->MyPID(), startx, starty, endx, endy;
+      int xpid = MyPID/mx_;
+      int ypid = MyPID%my_;
+      
+      startx = xpid*modx;
+      if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
+      else endx = nx_;
+      starty = ypid*mody;
+      if( (ypid+1)*mody < ny_ ) endy = (ypid+1)*mody;
+      else endy = ny_;
+      
+      int NumMyElements = (endx-startx)*(endy-starty);
+      int * MyGlobalElements = new int[NumMyElements];
+      int count = 0;
+      
+      for( int i=startx ; i<endx ; ++i ) {
+	for( int j=starty ; j<endy ; ++j ) {
+	  MyGlobalElements[count++] = i+j*nx_;
+	}
       }
-    }
       
-    map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
-
-    // I delete this guy to that this case is not different from the
-    // others, and I don't have to clean up this mess while
-    // destroying the object.
+      map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
       
-    delete MyGlobalElements;
+      // I delete this guy to that this case is not different from the
+      // others, and I don't have to clean up this mess while
+      // destroying the object.
       
-  } else if( MapType_ == "interlaced" ) {
-
-    // this is the first funky map. Nodes are assigned so that
-    // node 0 is given to proc 0, node 1 to proc 1, and
-    // node i to proc i%NumProcs. Probably not the best, but it
-    // results in decompositions with lots of boundary nodes.
-    
-    int NumProcs = comm_->NumProc();
-    int MyPID = comm_->MyPID();
+      delete [] MyGlobalElements;
       
-    int NumMyElements = NumGlobalElements_/NumProcs;
-    if( MyPID < NumGlobalElements_%NumProcs ) NumMyElements++;
+    } else if( MapType_ == "interlaced" ) {
       
-    int count = 0;
-    int * MyGlobalElements = new int[NumMyElements];
+      // this is the first funky map. Nodes are assigned so that
+      // node 0 is given to proc 0, node 1 to proc 1, and
+      // node i to proc i%NumProcs. Probably not the best, but it
+      // results in decompositions with lots of boundary nodes.
       
-    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
-      if( i%NumProcs == MyPID ) 
-	MyGlobalElements[count++] = i;
-    }
-
-    if( count != NumMyElements ) {
-      cerr << ErrorMsg << "something went wrong in CreateMap\n";
-      cerr << ErrorMsg << "count = " << count << ", NumMyElements = "
-	   << NumMyElements << endl;
-      exit( EXIT_FAILURE);
-    }
-    
-    map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
-    delete MyGlobalElements;
-    
-  } else if( MapType_ == "random" ) {
-
-    // this is even funkier. Random decomposition of nodes into procs.
-    // It should result in a more ordered decomposition than "interlaced"
-    // This is the idea: I create the map on proc 0, then I broadcast
-    // it to all procs. This is not very efficient, but saves some
-    // MPI calls.
-
-    int * part = new int[NumGlobalElements_];
-    
-    if( comm_->MyPID() == 0 ) {
-      Epetra_Util Util;
+      int NumProcs = comm_->NumProc();
+      int MyPID = comm_->MyPID();
+      
+      int NumMyElements = NumGlobalElements_/NumProcs;
+      if( MyPID < NumGlobalElements_%NumProcs ) NumMyElements++;
+      
+      int count = 0;
+      int * MyGlobalElements = new int[NumMyElements];
       
       for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
-	unsigned int r = Util.RandomInt();	
-	part[i] = r%(comm_->NumProc());
+	if( i%NumProcs == MyPID ) 
+	  MyGlobalElements[count++] = i;
       }
+      
+      if( count != NumMyElements ) {
+	cerr << ErrorMsg << "something went wrong in CreateMap\n";
+	cerr << ErrorMsg << "count = " << count << ", NumMyElements = "
+	     << NumMyElements << endl;
+	exit( EXIT_FAILURE);
+      }
+      
+      map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
+      delete [] MyGlobalElements;
+      
+    } else if( MapType_ == "random" ) {
+      
+      // this is even funkier. Random decomposition of nodes into procs.
+      // It should result in a more ordered decomposition than "interlaced"
+      // This is the idea: I create the map on proc 0, then I broadcast
+      // it to all procs. This is not very efficient, but saves some
+      // MPI calls.
+      
+      int * part = new int[NumGlobalElements_];
+      
+      if( comm_->MyPID() == 0 ) {
+	Epetra_Util Util;
+	
+	for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	  unsigned int r = Util.RandomInt();	
+	  part[i] = r%(comm_->NumProc());
+	}
+      }
+      
+      comm_->Broadcast(part,NumGlobalElements_,0);
+      
+      // count the elements assigned to this proc
+      int NumMyElements = 0;
+      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	if( part[i] == comm_->MyPID() ) NumMyElements++;
+      }
+      
+      // get the loc2global list
+      int * MyGlobalElements = new int[NumMyElements];
+      int count = 0;
+      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
+      }
+      
+      map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
+			     0,*comm_);
+      
+      delete [] MyGlobalElements;
+      delete [] part;
+      
+    } else {
+      
+      cerr << ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")\n";
+      return -1;
+      
     }
-
-    comm_->Broadcast(part,NumGlobalElements_,0);
-
-    // count the elements assigned to this proc
-    int NumMyElements = 0;
-    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
-      if( part[i] == comm_->MyPID() ) NumMyElements++;
-    }
-
-    cout << NumMyElements << endl;
-    
-    // get the loc2global list
-    int * MyGlobalElements = new int[NumMyElements];
-    int count = 0;
-    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
-      if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
-    }
-    
-    map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
-			   0,*comm_);
-
-    delete MyGlobalElements;
-    delete part;
-    
-  } else {
-    
-    cerr << ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")\n";
-    return -1;
-    
   }
-    
+
   // local number of rows
   NumMyElements_ = map_->NumMyElements();
   // get update list
@@ -950,13 +983,20 @@ void Trilinos_Util_MatrixGallery::CreateRHS(void)
 
   if( rhs_ != NULL ) delete rhs_;
   
+  Epetra_Time Time(*comm_);
+    
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating RHS...\n";
   }
   
   rhs_ = new Epetra_Vector(*map_);
   matrix_->Multiply(false,*ExactSolution_,*rhs_);
-      
+    
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Time to create RHS (matvec): "
+         << Time.ElapsedTime() << " (s)\n";
+  }
+
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1069,8 +1109,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixTriDiag(void)
   // to optimize data transfert during matrix-vector products
   assert(matrix_->FillComplete()==0);
 
-  delete Values;
-  delete Indices;
+  delete [] Values;
+  delete [] Indices;
 
   return 0;
     
@@ -1217,12 +1257,12 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil3d(void)
   }
   
   if( nx_ == -1 || ny_ == -1 || nz_ == -1 ) {
-    nx_ = (int)pow((double)NumGlobalElements_,0.333333333);
+    nx_ = (int)pow(1.0*NumGlobalElements_,0.333334);
     ny_ = nx_;
-    nz_ = nz_;
+    nz_ = nx_;
       
     if( nx_ * ny_ *nz_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a cubical number\n"
+      cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
 	   << ErrorMsg << "(now is " << NumGlobalElements_ << "). Returning...\n";
     }
   }
@@ -1244,8 +1284,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil3d(void)
     
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
-    GetNeighboursCartesian3d(  MyGlobalElements_[i], nx_, ny_, nz_,
-			       left, right, lower, upper, below, above);
+    GetNeighboursCartesian3d(MyGlobalElements_[i], nx_, ny_, nz_,
+			     left, right, lower, upper, below, above);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       if( VectorB_ == NULL ) Values[NumEntries] = b_;
@@ -1324,8 +1364,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLehmer(void)
       
   }
     
-  delete Indices;
-  delete Values;
+  delete [] Indices;
+  delete [] Values;
 
   assert(matrix_->FillComplete()==0);
   
@@ -1358,8 +1398,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixMinij(void)
       
   }
     
-  delete Indices;
-  delete Values;
+  delete [] Indices;
+  delete [] Values;
 
   assert(matrix_->FillComplete()==0);
   
@@ -1392,8 +1432,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixRis(void)
       
   }
     
-  delete Indices;
-  delete Values;
+  delete [] Indices;
+  delete [] Values;
 
   assert(matrix_->FillComplete()==0);
   
@@ -1425,8 +1465,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixHilbert(void)
       
   }
     
-  delete Indices;
-  delete Values;
+  delete [] Indices;
+  delete [] Values;
 
   assert(matrix_->FillComplete()==0);
   
@@ -1578,7 +1618,8 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
 	      
       }
 
-      delete ElementsPerDomain, count;
+      delete [] ElementsPerDomain;
+      delete [] count;
 	
     }
 
@@ -1607,8 +1648,8 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
     map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
 			   0,*comm_);
     
-    delete MyGlobalElements;
-    delete part;
+    delete [] MyGlobalElements;
+    delete [] part;
 
   } else {    
     assert(CreateMap()==0);
@@ -1652,6 +1693,8 @@ void Trilinos_Util_MatrixGallery::CreateBlockMap(void)
 
   if( map_ == NULL ) CreateMap();
 
+  Epetra_Time Time(*comm_);
+    
   if( NumPDEEqns_ <= 0 ) {
     cerr << ErrorMsg << "NumPDEEqns not correct (" << NumPDEEqns_ << "(\n";
     cerr << ErrorMsg << "Set it to 1\n";
@@ -1661,9 +1704,13 @@ void Trilinos_Util_MatrixGallery::CreateBlockMap(void)
   MaxBlkSize_ = NumPDEEqns_;
   
   BlockMap_ = new Epetra_BlockMap(NumGlobalElements_,NumMyElements_,
-				  map_->MyGlobalElements(), 
+				  MyGlobalElements_, 
 				  NumPDEEqns_,0,*comm_);
 
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Time to create BlockMap: "
+	 << Time.ElapsedTime() << " (s)\n";
+  }
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1694,8 +1741,8 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
   int * CrsIndices;
   double * CrsValues;
     
-  int * Indices = new int[MaxNnzPerRow];
-  double * Values = new double[MaxBlockSize];
+  int * VbrIndices = new int[MaxNnzPerRow];
+  double * VbrValues = new double[MaxBlockSize];
   int BlockRows = NumPDEEqns_;
   int ierr;
     
@@ -1712,33 +1759,33 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
 
     // matrix_ is in local form. Need global indices
     for( int kk=0 ; kk<CrsNumEntries ; ++kk) 
-      CrsIndices[kk] = matrix_->GCID(CrsIndices[kk]);
+      VbrIndices[kk] = matrix_->GCID(CrsIndices[kk]);
     
     // with VBR matrices, we have to insert one block at time.
     // This required two more instructions, one to start this
     // process (BeginInsertGlobalValues), and another one to
     // commit the end of submissions (EndSubmitEntries).
     
-    VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, CrsIndices);
+    VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
 
     for( int i=0 ; i<CrsNumEntries ; ++i ) {
 	
       for( int k=0 ; k<BlockRows ; ++k ) { // rows
 	for( int h=0 ; h<BlockRows ; ++h ) { // cols
-	  if( k == h ) Values[k+h*BlockRows] = CrsValues[i];
-	  else Values[k+h*BlockRows] = 0.0;
+	  if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[i];
+	  else VbrValues[k+h*BlockRows] = 0.0;
 	}
       }
 	  
-      VbrMatrix_->SubmitBlockEntry(Values,BlockRows,BlockRows,BlockRows);
+      VbrMatrix_->SubmitBlockEntry(VbrValues,BlockRows,BlockRows,BlockRows);
 	
     }
 
     VbrMatrix_->EndSubmitEntries();
   }
     
-  delete Indices;
-  delete Values;
+  delete [] VbrIndices;
+  delete [] VbrValues;
 
   VbrMatrix_->FillComplete();
 
@@ -1829,8 +1876,13 @@ void Trilinos_Util_MatrixGallery::GetNeighboursCartesian3d( const int i, const i
   else
     above = i+nx*ny;
 
-  GetNeighboursCartesian2d( ixy, nx_, ny_, left, right, lower, upper);
+  GetNeighboursCartesian2d( ixy, nx, ny, left, right, lower, upper);
     
+  if( left != -1 ) left += iz*(nx*ny);
+  if( right != -1 ) right += iz*(nx*ny);
+  if( lower != -1 ) lower += iz*(nx*ny);
+  if( upper != -1 ) upper += iz*(nx*ny);
+
   return;
 
 }
@@ -1878,3 +1930,49 @@ void Trilinos_Util_MatrixGallery::ZeroOutData()
   VbrLinearProblem_ = NULL;
     
 }
+
+void Trilinos_Util_MatrixGallery::Print() 
+{
+  Print(cout);
+}
+
+void Trilinos_Util_MatrixGallery::Print(ostream & os) 
+{
+
+  if( comm_->MyPID() == 0 ) {
+    os << "*** MATRIX ***\n";
+  }
+
+  os << *matrix_;
+
+  if( comm_->MyPID() == 0 ) {
+    os << "*** RHS ***\n";
+  }
+  
+  os << *rhs_;
+
+  return;
+
+}
+
+void Trilinos_Util_MatrixGallery::PrintVbr(ostream & os)
+{
+
+  if( comm_->MyPID() == 0 ) {
+    os << "*** MATRIX (VBR) ***\n";
+  }
+
+  os << *VbrMatrix_;
+
+  if( comm_->MyPID() == 0 ) {
+    os << "*** RHS (VBR) ***\n";
+  }
+
+  os << *VbrRhs_;
+
+  return;
+
+}
+
+
+

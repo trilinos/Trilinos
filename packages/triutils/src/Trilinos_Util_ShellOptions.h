@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 // if STL cannot be used, undefine the line below
-#define TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
+//#define TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
 #ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
 #include <map>
 #endif

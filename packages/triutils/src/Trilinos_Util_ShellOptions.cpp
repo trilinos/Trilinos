@@ -124,34 +124,34 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
   NumOptions = 0;
 #endif
 
-  string param;
-  string value;
-  param = "_PROGRAM_NAME_";  value = argv[0];
-  SetOption(param,value);
+  char str[80];
+  string value, param;
 
-  param = "_N_ARGS_"; value = argc;
-  SetOption(param,value);
-  
+  SetOption("PROGRAM_NAME_",argv[0]);
+
+  sprintf(str,"%d",argc);
+  SetOption("_N_ARGS_",str);
+
   // first, manage possible arguments without specifier
   // (e.g., a.out 12 -nx 10 -ny 20)
   // Those arguments are called _ARGV_1_, ... , _ARGV_N_
   // and the value of N is given by _N_UNNAMED_ARGS_
 
   int N_args = 0;
-  char str[80];
   int i=1;
   
   for( i=1 ; i<argc ; ++i ) {
     if( *(argv[i]) == '-' ) break;
     N_args++;
     sprintf( str, "ARGV_%d", N_args );
-    param = argv[i];
-    SetOption(param,value);
+    string param3;
+    param3 = argv[i];
+    SetOption(param3,value);
   }
 
-  param = "_N_UNNAMED_ARGS_", value = N_args;
-  SetOption(param,value);
-  
+  sprintf(str,"%d%",N_args);
+  SetOption("_N_UNNAMED_ARGS_",str);
+
   // now only arguments with a dash (possibly followed by one
   // other specifier)
   

@@ -240,6 +240,8 @@ return 0 ;
   //! Returns a pointer to the CrsMatrix.
   Epetra_CrsMatrix * GetMatrix();
 
+  Epetra_CrsMatrix & GetMatrixRef();
+
   //! Returns a pointer to the exact solution.
   /*! Returns a pointer to the exact solution.
     
@@ -268,18 +270,22 @@ return 0 ;
   Epetra_Vector * GetRHS();
 
   //! Returns a pointer the internally stored Map.
-  const Epetra_Map & GetMap();
+  const Epetra_Map * GetMap();
+
+  const Epetra_Map & GetMapRef();
   
   // ========= //
   // VBR STUFF //
   // ========= //
   
   //! Returns a pointer the internally stored BlockMap.
-  const Epetra_BlockMap & GetBlockMap();
+  const Epetra_BlockMap * GetBlockMap();
+
+  const Epetra_BlockMap & GetBlockMapRef();
   
   //! Returns a VbrMatrix, starting from the CsrMatrix.
   /*! Returns a VbrMatrix, starting from the CsrMatrix. This vbr matrix
-    is formally equivalent to the CrsMatrix returned bu
+    is formally equivalent to the CrsMatrix returned by
     GetMatrix(). However, each node of the CrsMatrix is replicated
     num_PDE_eqns times (this value is passed in input, or set via Set("num pde
     eqns",IntValue)).
@@ -288,6 +294,8 @@ return 0 ;
 
   //! Returns a VbrMatrix, starting from the CsrMatrix.
   Epetra_VbrMatrix * GetVbrMatrix();
+
+  Epetra_VbrMatrix & GetVbrMatrixRef();
 
   //! Returns a pointer to the RHS for the selected Vbr exact solution
   /*!  Returns a pointer to the RHS  corresponding to the selected exact solution to the linear systems defined by the Epetra_VbrMatrix.
@@ -318,6 +326,14 @@ return 0 ;
 
   //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
   int ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
+
+  //! Print out matrix and vectors
+  void Print(ostream & os);
+
+  void Print();
+
+  //! Print out Vbr matrix and vectors
+  void PrintVbr(ostream & os);
 
   //@}
 
