@@ -1471,7 +1471,6 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    original = &(ml_edges->Amat[mesh_level]);
    blockmat = &(block_ml->Amat[mesh_level]);
    ML_Operator_Gen_blockmat(blockmat, original , originalM );
-   blockmat->sub_matrix1 = originalM;
 
    lastM = originalM;
    while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {
@@ -1523,7 +1522,6 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      blockmat->lambda_max = 5.5*2.49357;
      blockmat->lambda_max_img = 5.5*.0142284;
 #endif
-     blockmat->sub_matrix1 = newM;
      blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
               /* ugh. The superlu interface seems to not work */
               /* with an empty communication object */
