@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
   bifurcationList.setParameter("Initial Null Vector",
 			       dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
 
-  // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
+  // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",false);
   NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
   aList.setParameter("Block Size", 1);

@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
       locaParamsList.sublist("Bifurcation");
     bifurcationList.setParameter("Method", "None");
 
-  // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
+  // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",true);
   NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
   aList.setParameter("Block Size", 1);
@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
   aList.setParameter("Tol", 2.0e-7);
   aList.setParameter("Convergence Check", 1);
   aList.setParameter("Restarts",2);
-  aList.setParameter("Frequency",2);
-  aList.setParameter("Debug Level",1);
+  aList.setParameter("Frequency",1);
+  aList.setParameter("Debug Level",0);
   
   // Create predictor sublist
   NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
