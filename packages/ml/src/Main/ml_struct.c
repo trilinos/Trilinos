@@ -1536,12 +1536,11 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 #include "Matrix.h"
 #include "ParaSails.h"
 
-extern int    parasails_factorized;
-extern double parasails_loadbal;
 #endif
 
 int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
-   int sym, double thresh, int num_levels, double filter)
+   int sym, double thresh, int num_levels, double filter, int parasails_loadbal,
+   int parasails_factorized)
 {
 #ifdef PARASAILS
    int            (*fun1)(void *, int, double *, int, double *);
@@ -1550,6 +1549,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    int            row, start_row, end_row, row_length;
 
    Matrix *mat;
+   struct widget { int parasails_factorized; ParaSails *ps;} *widget;
    ParaSails *ps;
    int j;
 
@@ -1613,6 +1613,7 @@ for (j = 0; j < row_length; j++)
 
 	 /* nonsymmetric preconditioner */
 
+         widget = (struct widget *) ML_allocate(sizeof(struct widget));
 	 ps  = ParaSailsCreate(ml->comm->USR_comm, start_row, end_row, 
 	    parasails_factorized);
          ps->loadbal_beta = parasails_loadbal;
@@ -1627,11 +1628,14 @@ for (j = 0; j < row_length; j++)
 	 /* ml->post_smoother[i].data_destroy = ML_Smoother_Clean_ParaSails; */
 
 /* Turn on temporarily */
+         widget->parasails_factorized = parasails_factorized;
+         widget->ps                   = ps;
+         
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-			      (void *) ps, fun1, NULL, ntimes, 0.0);
+			      (void *) widget, fun1, NULL, ntimes, 0.0);
 
 	 status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-			      (void *) ps, fun2, NULL, ntimes, 0.0);
+			      (void *) widget, fun2, NULL, ntimes, 0.0);
 
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
