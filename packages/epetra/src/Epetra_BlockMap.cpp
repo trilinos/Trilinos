@@ -363,7 +363,8 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
 {
   BlockMapData_->IncrementReferenceCount();
   
-  GlobalToLocalSetup(); // Setup any information for making global index to local index translation fast.
+  // This call appears to be unnecessary overhead.  Removed 10-Aug-2004 maherou.
+  // GlobalToLocalSetup(); // Setup any information for making global index to local index translation fast.
 }
 
 //==============================================================================
