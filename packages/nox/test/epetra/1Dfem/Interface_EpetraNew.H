@@ -94,7 +94,7 @@ public:
   Epetra_CrsMatrix& getJacobian();
 
   // Set PDE factor
-  bool setPDEfactor(double value) { factor = value; };
+  bool setPDEfactor(double value) { factor = value; return true; };
 
 protected:
 
