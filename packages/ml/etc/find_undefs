@@ -1,24 +1,29 @@
 #!/bin/sh
 
-\rm -f capper /tmp/undefs /tmp/undefs2 /tmp/thedefs
+\rm -f capper .undefs .undefs2 .thedefs
 cc -o capper capper.c
 pwd
+echo $1 
+echo $2
+echo $3
+echo $4
 $1 $2 -I ../Obj -c lapack_driver.c
-$3 $2 lapack_driver.o $4 2> /tmp/undefs
-cat /tmp/undefs |  grep reference | sed "s/^.*: //" > /tmp/undefs2
+$3 $2 lapack_driver.o $4 2> .undefs
+cat .undefs |  grep reference | sed "s/^.*: //" > .undefs2
 tt=`grep MLFORTRAN lapack_driver.c | grep void | sed "s/^.*MLFORTRAN(//"| \
    sed "s/).*//"`
 echo $tt
 for i in $tt
 do
-bb=`grep -i $i /tmp/undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
+bb=`grep -i $i .undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
 echo $i $bb
 if test $bb -eq 0
 then
 NAME=`echo $i | capper`
-${echo} "\\" >> /tmp/thedefs
-${echo} -n "-DML_${NAME}_FUNC ">> /tmp/thedefs
+${echo} "\\" >> .thedefs
+${echo} -n "-DML_${NAME}_FUNC ">> .thedefs
 fi
 done
-${echo} -DML_NOTHING >> /tmp/thedefs
+${echo} -DML_NOTHING >> .thedefs
 
+#\rm -f capper .undefs .undefs2 

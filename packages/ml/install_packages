@@ -151,9 +151,13 @@ then
       read directory
       LIBRARIES=`${echo} ${LIBRARIES} -L$directory`
       ${echo}
-      ${echo} "Enter library name (e.g. mpich)"
+      ${echo} "Enter library name (e.g. mpich), type <enter> if no library needs to be given"
       read directory
+      tdirect=`${echo} ${directory}s`
+      if test `expr $tdirect` != 's'
+      then
       LIBRARIES=`${echo} ${LIBRARIES} -l$directory`
+      fi
    else
       ${echo} "Enter any compiler flag needed for mpi (e.g. -lmpi)."
       read directory
@@ -441,7 +445,7 @@ ${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
 cd etc
 find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES"
 cd ..
-cat /tmp/thedefs >>  make_${ARCH}.variables
+cat etc/.thedefs >>  make_${ARCH}.variables
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables
 ${echo} LIBRARIES=$LIBRARIES          >> make_${ARCH}.variables
 

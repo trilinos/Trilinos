@@ -7,11 +7,14 @@ if test $# -le 1
 then
 USE_MPI=no
 fi
-if test `expr ${USE_MPI}` = 'yes'
+if test $# -le 2
 then
-echo hiiiiiiiiiiiiiiiiiiii
+BLAS_LIB=no
 fi
-exit
+if test $# -le 3
+then
+LAPACK_LIB=no
+fi
 if test $# -ge 5
 then
   echo "Usage: compile_check architecture [use_mpi blas_lib lapack_lib]"
@@ -22,30 +25,187 @@ then
   echo "Usage: compile_check architecture [use_mpi blas_lib lapack_lib]"
   exit
 fi
-echo hi
 cd ..
+pwd
+###############################################################3
+if test `expr ${LAPACK_LIB}` != 'no'
+then
+#
+#  no Aztec with superlu and blas and lapack
+#
+echo "testing with Superlu and aztec and blas"
+etc/clean_all
+cd Obj
+make clean
+cd ..
+\rm -f .compile_input
+echo $ARCH  >> .compile_input
+echo yes >> .compile_input
+TEMP=`echo ${LAPACK_LIB}x | sed "s/ /x/g"`
+if test `expr ${TEMP}` = 'xx'
+then
+   echo NA >> .compile_input
+   echo NA >> .compile_input
+else
+   T3=`echo ${LAPACK_LIB} | grep ":::"`
+   T4=`echo ${T3}x`
+   if test `expr ${T4}` != 'x'
+   then
+      echo ${LAPACK_LIB} | sed s"/:::.*//" >> .compile_input
+      echo ${LAPACK_LIB} | sed s"/.*::://" >> .compile_input
+   else
+    echo >> .compile_input
+    echo ${LAPACK_LIB} >> .compile_input
+   fi
+fi
+echo yes >> .compile_input
+TEMP=`echo ${BLAS_LIB}x | sed "s/ /x/g"`
+if test `expr ${TEMP}` = 'xx'
+then
+   echo NA >> .compile_input
+   echo NA >> .compile_input
+else
+   T3=`echo ${BLAS_LIB} | grep ":::"`
+   T4=`echo ${T3}x`
+   if test `expr ${T4}` != 'x'
+   then
+      echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
+      echo ${BLAS_LIB} | sed s"/.*::://" >> .compile_input
+   else
+    echo >> .compile_input
+    echo ${BLAS_LIB} >> .compile_input
+   fi
+fi
+echo no >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide superlapack
+fi
+###############################################################3
+if test `expr ${BLAS_LIB}` != 'no'
+then
+#
+#  Aztec with superlu and blas
+#
+echo "testing with Superlu and aztec and blas"
+etc/clean_all
+cd Obj
+make clean
+cd ..
+\rm -f .compile_input
+echo $ARCH  >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+TEMP=`echo ${BLAS_LIB}x | sed "s/ /x/g"`
+if test `expr ${TEMP}` = 'xx'
+then
+   echo NA >> .compile_input
+   echo NA >> .compile_input
+else
+   T3=`echo ${BLAS_LIB} | grep ":::"`
+   T4=`echo ${T3}x`
+   if test `expr ${T4}` != 'x'
+   then
+      echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
+      echo ${BLAS_LIB} | sed s"/.*::://" >> .compile_input
+   else
+    echo >> .compile_input
+    echo ${BLAS_LIB} >> .compile_input
+   fi
+fi
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide aztecsuperblas
+fi
+###############################################################3
+if test `expr ${USE_MPI}` = 'yes'
+then
+#
+#  Aztec with superlu and MPI
+#
+echo "testing with Superlu and aztec and mpi"
+etc/clean_all
+cd Obj
+make clean
+cd ..
+\rm -f .compile_input
+echo $ARCH  >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+TEMP=`echo $MPI_INC_PATH x | sed "s/ /x/g"`
+if test `expr ${TEMP}` != 'x'
+then
+echo yes >> .compile_input
+echo $MPI_INC_PATH | sed "s/-I//" >> .compile_input
+echo x >> .compile_input
+else
+echo no >> .compile_input
+fi
+TEMP=`echo $MPI_LIB_PATH x | sed "s/ /x/g"`
+if test `expr ${TEMP}` != 'x'
+then
+echo yes >> .compile_input
+echo $MPI_LIB_PATH | sed "s/-L//" >> .compile_input
+else
+echo no >> .compile_input
+fi
+echo >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide aztecsupermpi
+fi
+###############################################################3
 #
 #  Aztec but no superlu
 #
 echo "testing with Aztec but no superlu"
 etc/clean_all
-cd Obj
-make clean
-cd ..
-\rm -f /tmp/compile_input
-echo $ARCH >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo  >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-./installer < /tmp/compile_input
+pwd
+if test -d Obj
+then
+   cd Obj
+   make clean
+   cd ..
+fi
+\rm -f .compile_input
+echo $ARCH >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide aztecnosuper
 #
 # SuperLU no aztec
 #
@@ -54,19 +214,19 @@ etc/clean_all
 cd Obj
 make clean
 cd ..
-\rm -f /tmp/compile_input
-echo $ARCH >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo  >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-./installer < /tmp/compile_input
-exit
+\rm -f .compile_input
+echo $ARCH >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide noaztecsuper
 #
 #  Aztec with superlu
 #
@@ -75,21 +235,22 @@ etc/clean_all
 cd Obj
 make clean
 cd ..
-\rm -f /tmp/compile_input
-echo $ARCH  >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo  >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo  >> /tmp/compile_input
-echo yes >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-./installer < /tmp/compile_input
+\rm -f .compile_input
+echo $ARCH  >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo no >> .compile_input
+echo yes >> .compile_input
+echo yes >> .compile_input
+echo  >> .compile_input
+echo yes >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide aztecsuper
 #
 #  no Aztec no superlu
 #
@@ -98,14 +259,15 @@ etc/clean_all
 cd Obj
 make clean
 cd ..
-\rm -f /tmp/compile_input
-echo $ARCH >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-echo no >> /tmp/compile_input
-./installer < /tmp/compile_input
+\rm -f .compile_input
+echo $ARCH >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
+./installer < .compile_input
+mv Obj/mlguide noaztecnosuper
