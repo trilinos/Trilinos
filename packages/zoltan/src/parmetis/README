@@ -25,3 +25,6 @@ parmetis_jostle.c         --  Routines to build ParMETIS and Jostle
                               libraries.
 
 verify_graph.c            --  Routines to verify the correctness of a graph.
+
+scatter_graph.c           --  Routines to scatter a ParMetis-style graph to all 
+                              processors.
