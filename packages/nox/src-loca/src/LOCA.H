@@ -27,9 +27,21 @@
 // ************************************************************************
 //@HEADER
 
+// This file should include ALL objects that the user
+// is required to instantiate to call LOCA!
+
 // Primary LOCA Objects
 #include "NOX.H"
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Utils.H"
+
+// Bifurcation groups
+#include "LOCA_Bifurcation_PitchforkBordVector.H"
+#include "LOCA_Bifurcation_PitchforkBordGroup.H"
+#include "LOCA_Bifurcation_TPBordVector.H"
+#include "LOCA_Bifurcation_TPBordGroup.H"
+
+// Homotopy group
+#include "LOCA_HomotopyGroup.H"

@@ -33,7 +33,6 @@
 #include <iomanip>
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
-#include "LOCA_Bifurcation_TPBordGroup.H"
 #include "ChanProblemInterface.H"
 
 int main()
