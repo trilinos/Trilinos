@@ -29,7 +29,6 @@ extern "C" {
 #endif
 #include "parmetis_jostle_const.h"
 #include "reftree_const.h"
-#include "timer_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
 #include "hsfc_const.h"
