@@ -309,8 +309,8 @@ static int LB_ParMetis_Jostle(
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part, *part2;
-  int nonint_wgt, tmp_num_obj;
-  float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local, *imb_tols; 
+  int tmp_num_obj;
+  float *float_vwgt, *xyz, *imb_tols; 
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -754,11 +754,11 @@ static int LB_ParMetis_Jostle(
 
     ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, 
                            lb->Deterministic, &nrecv);
-    if (ierr){
+    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return (ierr);
+      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     /* Allocate recv buffer */
@@ -775,11 +775,11 @@ static int LB_ParMetis_Jostle(
 
     /* Do the communication */
     ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
-    if (ierr){
+    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return (ierr);
+      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     /* Destroy the comm. plan */
@@ -1096,10 +1096,10 @@ static int LB_ParMetis_Jostle(
     }
     /* Use reverse communication to compute the partition array under the original distribution */
     ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), (char *) part2);
-    if ((ierr == LB_FATAL) || (ierr == LB_MEMERR)){
+    if ((ierr == LB_COMM_FATAL) || (ierr == LB_COMM_MEMERR)){
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return ierr;
+      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     LB_FREE(&part); /* We don't need the partition array with the scattered distribution any more */

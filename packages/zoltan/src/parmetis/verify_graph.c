@@ -13,7 +13,6 @@
 
 #include "lb_const.h"
 #include "lb_util_const.h"
-#include "all_allo_const.h"
 #include "comm_const.h"
 #include "parmetis_jostle_const.h"
 
@@ -223,8 +222,10 @@ barrier1:
     /* Do the irregular communication */
     ierr = LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, TAG1, 
                           TRUE, &k);
-    if (ierr != LB_OK && ierr != LB_WARN) {
-      fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+      fprintf(stderr, "%s Error %s returned from LB_Comm_Create\n", yo, 
+              (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+      ierr = (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
     else {
       if (k != cross_edges){
@@ -235,8 +236,10 @@ barrier1:
 
       ierr = LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
       LB_Comm_Destroy(&comm_plan);
-      if (ierr != LB_OK && ierr != LB_WARN) {
-        fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+      if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+        fprintf(stderr, "%s Error %s returned from LB_Comm_Do\n", yo, 
+                (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+        ierr = (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
       }
       else {
 
