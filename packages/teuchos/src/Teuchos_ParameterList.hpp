@@ -120,13 +120,14 @@ T& ParameterList::getParameter(const string& name, T def_value)
 {
   ConstIterator i = params_.find(name);
 
+  // The parameter was not found, add it to the list
   if (i == params_.end()) {
     params_[name].setValue(def_value, true);
     i = params_.find(name);
   }
 
-  if ( i != params_.end() )
-    return getValue<T>(entry(i));
+  // Return the value of the parameter
+  return getValue<T>(entry(i));
 }
 
 template<typename T>
@@ -134,14 +135,14 @@ const T& ParameterList::getParameter(const string& name, T def_value) const
 {
   ConstIterator i = params_.find(name);
 
+  // This parameter was not found, add it to the list
   if (i == params_.end()) {
     params_[name].setValue(def_value, true);
     i = params_.find(name);
   }
 
-  if ( i != params.end() )
-    //return entry(i).getValue(def_value);
-    return getValue<T>(entry(i));
+  // Return the value of the parameter
+  return getValue<T>(entry(i));
 }
 
 inline ostream& operator<<(ostream& os, const ParameterList& l)
