@@ -552,8 +552,8 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 		       CrsMatrixStruct& Bview,
 		       Epetra_CrsMatrix& C)
 {
-  int C_firstCol = Aview.colMap->MinLID();
-  int C_lastCol = Aview.colMap->MaxLID();
+  int C_firstCol = Aview.rowMap->MinLID();
+  int C_lastCol = Aview.rowMap->MaxLID();
 
   int C_firstCol_import = 0;
   int C_lastCol_import = -1;
@@ -1214,14 +1214,22 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   if (transposeA && !transposeB) scenario = 3;//A^T*B
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
+  //now check size compatibility
+  int Ainner = transposeA ? A.NumGlobalRows() : A.NumGlobalCols();
+  int Binner = transposeB ? B.NumGlobalCols() : B.NumGlobalRows();
+  if (Ainner != Binner) {
+    cerr << "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
+         << "must match for matrix-matrix product."<<endl;
+    return(-1);
+  }
 
   //We're going to need to import remotely-owned sections of A and/or B
-  //depending on the scenario. So next we'll create maps that describe
-  //which rows of A and B we'll need to access during the calculations.
+  //if more than 1 processor is performing this run, depending on the scenario.
+  //So next we'll create maps that describe which rows of A and B we'll need to
+  //access during the calculations.
 
-  //The functions 'find_trans_import_rows' and 'find_transtrans_import_rows'
-  //are potentially expensive.
-  //They will skip most of their work if this is a serial run.
+  const Epetra_Map* targetMap_A = NULL;
+  const Epetra_Map* targetMap_B = NULL;
 
   Epetra_Map* colmap_A_transpose = NULL;
   Epetra_Map* colmap_B_transpose = NULL;
@@ -1229,48 +1237,55 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   const Epetra_Map* colmap_A = &(A.ColMap());
   const Epetra_Map* colmap_B = &(B.ColMap());
 
-  const Epetra_Map* targetMap_A = NULL;
-  const Epetra_Map* targetMap_B = NULL;
-
   const Epetra_Map* mapunion1 = NULL;
   const Epetra_Map* mapunion2 = NULL;
   const Epetra_Map* import_rows = NULL;
 
-  switch(scenario) {
-  case 1://A*B
+  //The functions 'find_trans_import_rows' and 'find_transtrans_import_rows'
+  //are potentially expensive.
+  //We will skip them if this is a serial run.
+
+  int numProcs = A.Comm().NumProc();
+  if (numProcs < 2) {
     targetMap_A = &(A.RowMap());
-    targetMap_B = colmap_A;
-    break;
-
-  case 2://A*B^T
-    targetMap_A = &(A.RowMap());
-    EPETRA_CHK_ERR( find_trans_import_rows(B, colmap_B_transpose) );
-    EPETRA_CHK_ERR( form_map_union(colmap_B_transpose, colmap_A, mapunion1) );
-    targetMap_B = mapunion1;
-    break;
-
-  case 3://A^T*B
-    EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
-    EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
-    EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_B, mapunion2) );
-    targetMap_A = mapunion1;
-    targetMap_B = mapunion2;
-    break;
-
-  case 4://A^T*B^T
-    EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
-    EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
-    targetMap_A = mapunion1;
-    EPETRA_CHK_ERR( find_transtrans_import_rows(A, B, import_rows) );
-    EPETRA_CHK_ERR( form_map_union(import_rows, colmap_B, mapunion2) );
-    targetMap_B = mapunion2;
-    break;
-
-  default:
-    cerr << "MatrixMatrix::Multiply ERROR invalid scenario."<<endl;
-    EPETRA_CHK_ERR( -1 );
+    targetMap_B = &(B.RowMap());
   }
+  else {
+    switch(scenario) {
+    case 1://A*B
+      targetMap_A = &(A.RowMap());
+      targetMap_B = colmap_A;
+      break;
 
+    case 2://A*B^T
+      targetMap_A = &(A.RowMap());
+      EPETRA_CHK_ERR( find_trans_import_rows(B, colmap_B_transpose) );
+      EPETRA_CHK_ERR( form_map_union(colmap_B_transpose, colmap_A, mapunion1) );
+      targetMap_B = mapunion1;
+      break;
+
+    case 3://A^T*B
+      EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
+      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
+      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_B, mapunion2) );
+      targetMap_A = mapunion1;
+      targetMap_B = mapunion2;
+      break;
+
+    case 4://A^T*B^T
+      EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
+      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
+      targetMap_A = mapunion1;
+      EPETRA_CHK_ERR( find_transtrans_import_rows(A, B, import_rows) );
+      EPETRA_CHK_ERR( form_map_union(import_rows, colmap_B, mapunion2) );
+      targetMap_B = mapunion2;
+      break;
+
+    default:
+      cerr << "MatrixMatrix::Multiply ERROR invalid scenario."<<endl;
+      EPETRA_CHK_ERR( -1 );
+    }
+  }
 
   //Now we can import the necessary sections of A and B, and extract views of
   //their contents for fast access during the calculations. The struct

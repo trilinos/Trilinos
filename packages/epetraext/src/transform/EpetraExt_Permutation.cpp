@@ -76,7 +76,7 @@ struct Perm_traits {
 		  Epetra_DataAccess CV,
 		  const Epetra_BlockMap& map,
 		  int int_argument)
-  { return( NULL ); }
+  {  return( NULL ); }
 
   /** replace the object's row-map (or if it's not a matrix, replace its only
       map)
@@ -364,7 +364,8 @@ Permutation<T>::Permutation(Epetra_DataAccess CV,
                          const Epetra_BlockMap& map,
                          int* permutation)
   : Epetra_IntVector(CV, map, permutation),
-    newObj_(NULL)
+    newObj_(NULL),
+    origObj_(NULL)
 {
   if (!isTypeSupported()) {
     cerr << "unsupported type for permutation, aborting" << endl;
@@ -375,7 +376,8 @@ Permutation<T>::Permutation(Epetra_DataAccess CV,
 template<typename T>
 Permutation<T>::Permutation(const Epetra_BlockMap& map)
   : Epetra_IntVector(map),
-    newObj_(NULL)
+    newObj_(NULL),
+    origObj_(NULL)
 {
   if (!isTypeSupported()) {
     cerr << "unsupported type for permutation, aborting" << endl;
@@ -386,7 +388,8 @@ Permutation<T>::Permutation(const Epetra_BlockMap& map)
 template<typename T>
 Permutation<T>::Permutation(const Permutation& src)
   : Epetra_IntVector((const Epetra_IntVector&)src),
-    newObj_(NULL)
+    newObj_(NULL),
+    origObj_(NULL)
 {
   if (!isTypeSupported()) {
     cerr << "unsupported type for permutation, aborting" << endl;

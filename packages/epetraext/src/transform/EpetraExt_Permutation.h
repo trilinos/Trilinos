@@ -172,6 +172,13 @@ class Permutation : public Epetra_IntVector,
 		      bool column_permutation );
 
  private:
+  Permutation<T>& operator=(const Permutation<T>& src)
+    {
+      //not currently supported
+      abort();
+      return(*this);
+    }
+
   bool isTypeSupported();
 
   OutputPtr newObj_;
