@@ -105,6 +105,7 @@ am__objects_3 = libloca_a-LOCA_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_AbstractGroup.$(OBJEXT)
 am__objects_4 = libloca_a-LOCA_Continuation_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_AbstractGroup.$(OBJEXT) \
+	libloca_a-LOCA_Continuation_AnasaziGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_Manager.$(OBJEXT) \
@@ -187,6 +188,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedVector.Po \
@@ -236,6 +238,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Continuation_AnasaziGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
@@ -463,6 +466,7 @@ LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Continuation_AnasaziGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
@@ -471,6 +475,7 @@ LOCA_CONTINUATION_H = \
 LOCA_CONTINUATION = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
+	$(srcdir)/LOCA_Continuation_AnasaziGroup.C \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_Continuation_Manager.C \
@@ -774,6 +779,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedVector.Po@am__quote@
@@ -886,6 +892,22 @@ libloca_a-LOCA_Continuation_AbstractGroup.obj: $(srcdir)/LOCA_Continuation_Abstr
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_AbstractGroup.obj `if test -f '$(srcdir)/LOCA_Continuation_AbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Continuation_AbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Continuation_AbstractGroup.C'; fi`
+
+libloca_a-LOCA_Continuation_AnasaziGroup.o: $(srcdir)/LOCA_Continuation_AnasaziGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Continuation_AnasaziGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo" -c -o libloca_a-LOCA_Continuation_AnasaziGroup.o `test -f '$(srcdir)/LOCA_Continuation_AnasaziGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_AnasaziGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Continuation_AnasaziGroup.C' object='libloca_a-LOCA_Continuation_AnasaziGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_AnasaziGroup.o `test -f '$(srcdir)/LOCA_Continuation_AnasaziGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_AnasaziGroup.C
+
+libloca_a-LOCA_Continuation_AnasaziGroup.obj: $(srcdir)/LOCA_Continuation_AnasaziGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Continuation_AnasaziGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo" -c -o libloca_a-LOCA_Continuation_AnasaziGroup.obj `if test -f '$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Continuation_AnasaziGroup.C' object='libloca_a-LOCA_Continuation_AnasaziGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_AnasaziGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_AnasaziGroup.obj `if test -f '$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Continuation_AnasaziGroup.C'; fi`
 
 libloca_a-LOCA_Continuation_FiniteDifferenceGroup.o: $(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Continuation_FiniteDifferenceGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Continuation_FiniteDifferenceGroup.Tpo" -c -o libloca_a-LOCA_Continuation_FiniteDifferenceGroup.o `test -f '$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C; \
