@@ -50,7 +50,7 @@ line.  With this class, it is easy to handle
 input line arguments and shell variables. For instance, the user can
 write
 \begin{verbatim}
-$ ./ex2.exe -nx 10 -tol 1e-6 -solver=cg
+[msala:triutils]> ./ex2.exe -nx 10 -tol 1e-6 -solver=cg
 \end{verbatim}
 and then easily retrieve the value of {\tt nx}, {\tt tol}, and {\tt solver}.
  
@@ -105,11 +105,12 @@ File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
 
 \verb!Trilinos_Util_CrsMatrixGallery! is a class to Epetra\_CrsMatrix
 and Epetra\_LinearProblem. It is meant to provide functionalities
-similar to the MATLAB's \verb!gallery! function. Many of the matrices
-that can be created using Trilinos\_Util\_CrsMatrixGallery are indeed
-equivalent to those provided by MATLAB\copyright. In these cases, the
-reader is referred to the MATLAB documentation for more details about
-the matrices' properties. 
+similar to the MATLAB's \verb!gallery! function\footnote{Many of the
+  matrices that can be created using Trilinos\_Util\_CrsMatrixGallery
+  are equivalent or simiilar to those provided by the MATLAB\copyright
+  function {\tt gallery}. In these cases, the reader is referred to the
+  MATLAB documentation for more details about the matrices'
+  properties.}.
 
 A typical constructor requires the problem type and an Epetra\_Comm, and
 it is followed by a set of instructions to specify the problem. For
@@ -128,7 +129,7 @@ Alternatively, it is possible to read a matrix stored in Harwell/Boeing
 format as follows:
 \begin{verbatim}
 Trilinos_Util_CrsMatrixGallery Gallery("hb", Comm);
-Gallery.set("matrix_name",''bcsstk14.rsa'');
+Gallery.set("matrix_name","bcsstk14.rsa");
 Gallery.set("map_type","greedy");
 \end{verbatim}
 This snipper will read matrix (and, if available, solution and
@@ -141,7 +142,10 @@ A list of currently avaialble problems is reported below. By notation,
 defined on the map \verb!Gallery.GetMap()!. In the latter case, vector
 elements {\tt i} will be use to define the specified coefficient for row
 {\tt i}.  Note that some matrices are dense, but still stored as
-Epetra\_CrsMatrix. $i$ and $j$ are supposed to start from 0 (C-style).
+Epetra\_CrsMatrix. The generic $(i,j)$ element of a given matrix is
+$A_{i,j}$ (for simplicity, we suppose that indices start from
+1\footnote{It is understood that, in the actual implementation, indices
+  start from 0.}). $n$ represents the matrix size.
 
 \vskip .1 in
 
@@ -149,25 +153,12 @@ Epetra\_CrsMatrix. $i$ and $j$ are supposed to start from 0 (C-style).
   problem is set using {\tt Set("problem size", IntValue)}, or,
   alternatively, by {\tt Set("nx", IntValue)}.}
 
-\choicebox{\tt diag}{Creates a diagonal matrix. The elements on the
-  diagonal can be set using {\tt Set("a",value)}. The problem size is
-  set as for {\tt eye}.}
 
-\choicebox{\tt tridiag}{Creates a tridiagonal matrix. The diagonal
-  element is set using {\tt Set("a", a)}, the subdiagonal using {\tt
-    Set("b",b)}, and the superdiagonal using {\tt Set("c",c)}. The
-  problem size is specified as for {\tt eye}.}
-
-\choicebox{\tt laplace\_1d}{Creates the classical tridiagonal matrix
-  with stencil [-1, 2, -1].  The problem size is specified as for {\tt
-    eye}.}
-
-\choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the
-  stencil of a 2D Laplacian operator on a structured Cartesian grid.
-  The problem size is specified using {\tt Set("problem size",
-    IntValue)}.  In this case, IntValue must be a square number.
-  Alternatively, one can set the number of nodes along the x-axis and
-  y-axis, using {\tt Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
+\choicebox{\tt cauchy}{Creates a particular instance of a Cauchy matrix
+  with elements $A_{i,j} = 1/(i+j)$ Explicit formulas are known for the
+  inverse and determinand of a Cauchy matrix. For this particular Cauchy
+  matrix, the determinant is nonzero and the matrix is totally
+  positive.}
 
 \choicebox{\tt cross\_stencil\_2d}{Creates a matrix with the same stencil of
   {\tt laplace\_2d}, but with arbitrary values. The stencil is
@@ -180,7 +171,74 @@ Epetra\_CrsMatrix. $i$ and $j$ are supposed to start from 0 (C-style).
   \end{tabular}
   \right] .
   \]
+  The default values are {\tt a=5, b=c=d=e=1}.
   The problem size is specified as in {\tt laplace\_2d}.}
+
+\choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix
+  stencil correspond to that of a 3D Laplace operator on a structured
+  grid. On a given x-y plane, the stencil is as in {\tt laplace 2d}. The
+  value on the plane below is set using {\tt Set("f",F)}, and in the
+  plane above with {\tt Set("g",G")}.  The default values are {\tt
+    a=7,b=c=d=e=f=g=1}. The problem size is specified as in {\tt
+    laplace3d}.}
+
+\choicebox{\tt diag}{Creates a diagonal matrix. The elements on the
+  diagonal can be set using {\tt Set("a",value)}. Default value is {\tt
+    a = 1}. The problem size is set as for {\tt eye}.}
+
+\choicebox{\tt fiedler}{Creates a matrix whose element are $A_{i,j} = |
+  i - j |$.  The matrix is symmetric, and has a dominant positive
+  eigenvalue, and all the other eigenvalues are negative.}
+
+\choicebox{\tt hanowa}{Creates a matrix whose eigenvalues lie on a
+  vertical line in the complex plane. The matrix has the 2x2 block
+  structure (in MATLAB's notation)
+  \[
+  A = \left[
+    \begin{tabular}{cc} a * eye(n/2) & -diag(1:m) \\
+        diag(1:m) &     a * eye(n/2) \\
+\end{tabular}
+      \right].
+      \]
+      The complex eigenvalues are of the form a $k \sqrt{-1}$ and $-k
+      \sqrt{-1}$, for $1 \leq k \leq n/2$.  The default value for {\tt
+        a} is -1.}
+
+\choicebox{\tt hb}{The matrix is read from file. File name is specified
+  by {\tt Set("file name", FileName)}. {\tt FileName} is a C++ string.
+  The problem size is automatically determined.}
+
+
+
+\choicebox{\tt hilbert}{This is a famous example of a badly conditioned
+  matrix. The elements are defined as $A_{i,j} = 1/(i+j)$.}
+
+\choicebox{\tt jordblock}{Creates a Jordan block with eigenvalue set via
+  {\tt Set("a",DoubleVal)}. The default value is 0.1. The problem size
+  is specified as for {\tt eye}.}
+    
+\choicebox{\tt kms}{Create the $n \times n$ Kac-Murdock-Szego
+  Toepliz matrix such that $A_{i,j} = \rho^{|i-j|}$ (for real $\rho$
+  only).  Default value is $\rho= 0.5$, or can be set as {\tt
+    Set("a",value)}. The inverse of this matrix is tridiagonal, and
+  the matrix is positive definite if and only if $0 < |\rho| < 1$.}
+
+\choicebox{\tt laplace\_1d}{Creates the classical tridiagonal matrix
+  with stencil [-1, 2, -1].  The problem size is specified as for {\tt
+    eye}.}
+
+\choicebox{\tt laplace\_1d}{As for {\tt laplace\_1d}, but with Neumann
+  boundary condition. The matrix is singular. }
+
+\choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the
+  stencil of a 2D Laplacian operator on a structured Cartesian grid.
+  The problem size is specified using {\tt Set("problem size",
+    IntValue)}.  In this case, IntValue must be a square number.
+  Alternatively, one can set the number of nodes along the x-axis and
+  y-axis, using {\tt Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
+
+\choicebox{\tt laplace\_2d\_n}{As for {\tt laplace\_2d}, but with Neumann
+  boundary condition. The matrix is singular.}
 
 \choicebox{\tt laplace\_3d}{Creates a matrix corresponding to the
   stencil of a 3D Laplacian operator on a structured Cartesian grid. The
@@ -189,84 +247,96 @@ Epetra\_CrsMatrix. $i$ and $j$ are supposed to start from 0 (C-style).
   number of nodes along the axis, using {\tt Set("nx",IntValue),
     Set("ny",IntValue)}, and {\tt Set("nz",IntValue)}.}
 
-\choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix
-  stencil correspond to that of a 3D Laplace operator on a structured
-  grid. On a given x-y plane, the stencil is as in {\tt laplace 2d}. The
-  value on the plane below is set using {\tt Set("f",F)}, and in the
-  plane above with {\tt Set("g",G")}. The problem size is specifed as in
-  {\tt laplace3d}.}
-
-\choicebox{\tt hb}{The matrix is read from file. File name is specified
-  by {\tt Set("file name", FileName)}. {\tt FileName} is a C++ string.
-  Problem size is automatically determined.}
-
 \choicebox{\tt lehmer}{Returns a symmetric positive definite matrix, such
   that
   \[
   A_{i,j} = 
   \left\{
     \begin{array}{ll}
-      \frac{i+1}{j+1} & if  j \ge i \\
-      \frac{j+1}{i+1} & otherwise \\
+      \frac{i}{j} & \mbox{ if } j \ge i \\
+      \frac{j}{i} & \mbox{ otherwise } \\
     \end{array}
   \right. .
   \]
-  This
-  matrix has three properties: is totally nonnegative, the inverse
+  This matrix has three properties: is totally nonnegative, the inverse
   is tridiagonal and esplicitly known, The condition number is bounded
-  as $ n \le cond(A) \le 4*n$ (where $n$ is the problem size).}
+  as $ n \le cond(A) \le 4*n$. The problem size is set as for {\tt
+    eye}.}
+
+
 
 \choicebox{\tt minij}{Returns the symmetric positive definite matrix
-  defined as $A_{i,j} = \min(i+1,j+1)$. More information can be found in the
-  help of MATLAB's gallery function.}
+  defined as $A_{i,j} = \min(i,j)$. The problem size is set as for {\tt
+    eye}.}
+
+\choicebox{\tt ones}{Creates a matrix with equal elements. The default
+  value is 1, and cab be changed using {\tt Set("a",a)}.}
+
+\choicebox{\tt parter}{Creates a matrix $A_{i,j} = 1/(i-j+0.5)$.  This
+  matrix is a Cauchy and a Toepliz matrix. Most of the singular values
+  of A are very close to $\pi$. The problem size is set as for {\tt
+    eye}.}
+
+\choicebox{\tt pei}{Creates the matrix 
+\[
+A_{i,j} = \left\{ \begin{array}{cc}
+\alpha + 1 & \mbox{ if } i \neq j \\
+1  & \mbox{ if } i = j.
+\end{array}
+\right. .
+\]
+The value of $\alpha$ can be set as {\tt Set("a",value)}, and it is
+defaulted to 1. This matrix is singular for $\alpha = 0$ or $-n$.}
+
+
+\choicebox{\tt recirc\_2d}{Returns a matrix corresponding to the
+  finite-difference discretization of the problem
+  \[
+- \mu \Delta u + (v_x,v_y) \cdot \nabla u = f
+\]
+on the unitary square, with homogeneous Dirichlet boundary
+conditions. A standard 5-pt formula is used to discretize the diffusive
+term, and a simple upwind for the convective term. Here,
+\[
+v_x = ( y - 1/2 ) V, \quad \quad \quad v_y = ( 1/2 - x ) V
+\]
+The value of $\mu$ can be specified using {\tt Set("b", b)}, and that of
+$V$ using {\tt Set("a", a)}. The default values are {\tt a=1, b=1e-5}.
+The problem size is specified as in {\tt laplace\_3d}.}
+
 
 \choicebox{\tt ris}{Returns a symmetric Hankel matrix with elements
-  $A_{i,j} = 0.5/(n-(i+1)-(j+1)+1.5)$, where $n$ is problem size. The
+  $A_{i,j} = 0.5/(n-i-j+1.5)$, where $n$ is problem size. The
   eigenvalues of A cluster around $-\pi/2$ and $\pi/2$.}
 
-\choicebox{\tt hilbert}{This is a famous example of a badly conditioned
-  matrix. The elements are defined as $1/((i+1)+(j+1)-1)$.}
+\choicebox{\tt tridiag}{Creates a tridiagonal matrix. The diagonal
+  element is set using {\tt Set("a", a)}, the subdiagonal using {\tt
+    Set("b",b)}, and the superdiagonal using {\tt Set("c",c)}. The
+  default values are {\tt a=2, b=c=1}. The problem size is specified as
+  for {\tt eye}.}
 
-\choicebox{\tt jordblock}{Creates a Jordan block with eigenvalue set via
-  {\tt Set("a",DoubleVal)}.}
-
-\choicebox{\tt cauchy}{Creates a particular instance of a Cauchy matrix
-  with elements $A(i,j) = 1/(i+j+2)$ Explicit formulas are known for the
-  inverse and determinand of a Cauchy matrix. For this particular Cauchy
-  matrix, the determinant is nonzero and the matrix is totally
-  positive.}
-
-\choicebox{\tt fiedler}{Creates a matrix whose element are $A_{i,j} = |
-  i - j |$.  The matrix is symmetric, and has a dominant positive
-  eigenvalue, and all the other eigenvalues are negative.}
-
-\choicebox{\tt hanowa}{Creates a matrix whoe eigenvalues lie on a vertical line
-  in the complex plane. The matrix has the 2x2 block structure
+\choicebox{\tt unidir\_flow\_2d}{Returns a matrix corresponding to the
+  finite-difference discretization of the problem
   \[
-  A = \left[
-    \begin{tabular}{cc} a * eye(n/2) & -diag(1:m) \\
-        diag(1:m) &     a * eye(n/2) \\
-\end{tabular}
-      \right].
-      \]
-      The complex eigenvalues are of the form a $+- k*i$, for $1 \leq
-      k \leq n/2$.  The default value for a is -1.}
-    
-    \choicebox{\tt kms}{Create the n-by-n Kac-Murdock-Szego Toepliz
-      matrix such that $A_{i,j} = \rho^{|i-j|}$ (for real $\rho$ only).
-      Default value is $\rho= 0.5.$  The inverse of this matrix is
-      tridiagonal, and it is positive definite if and only if $0 <
-      |\rho| < 1$.}
-    
-    \choicebox{\tt parter}{Creates a matrix $A_{i,j} = 1/(i-j+0.5)$.
-      This matrix is a Cauchy and a Toepliz matrix. Most of the singular
-      values of A are very close to $\pi$.}
+- \mu \Delta u + (v_x,v_y) \cdot \nabla u = f
+\]
+on the unitary square, with homogeneous Dirichlet boundary
+conditions. A standard 5-pt formula is used to discretize the diffusive
+term, and a simple upwind for the convective term. Here,
+\[
+v_x = cos(\alpha) V, \quad \quad \quad v_y =  sin(\alpha) V 
+\]
+that corresponds to an unidirectional 2D flow.  The value of $\mu$ can
+be specified using {\tt Set("b", b)}, and that of $V$ using {\tt
+  Set("a", a)}, and that of $\alpha$ using {\tt Set("c", c)}. The
+default values are {\tt a=1, b=1e-5, c=0}. The problem size is specified
+as in {\tt laplace3d}.}
 
-\choicebox{\tt pei}{Creates the matrix $\alpha$ * eye(n) + ones(n). This
-  matrix is singular for $\alpha = 0$ or $-n$.}
+%\choicebox{\tt vander}{Create the Vandermonde matrix whose second last
+%  column is the vector c. The j-th column is given by $A(:,j) =
+%  \alpha^{(n-j)}$. The value of $\alpha$ can be set as {\tt
+%    Set("a",value)}, and it is defaulted to 0.5. }
 
-\choicebox{\tt vander}{Create the Vandermonde matrix whose second last
-  column is the vector c. The j-th column is given by $A(:,j) = C^{(n-j)}$.}
 
 \medskip
 
@@ -276,7 +346,8 @@ values:
 
 \vskip .1 in
 
-\choicebox{\tt constant}{The exact solution vector is made up of 1's.}
+\choicebox{\tt constant}{The exact solution vector is made up of
+  1's. This is the default value.}
 
 \choicebox{\tt random}{Create a random solution vector}
 
@@ -292,7 +363,7 @@ reported below.
 \vskip .1 in
 
 \choicebox{\tt linear}{Create a linear map. Elements are divided into
-  continuous chunks among the processors.}
+  continuous chunks among the processors. This is the default value.}
 
 \choicebox{\tt box}{Used for problems defined on Cartesian grids over a
   square. The domain subdivided into {\tt mx x my} subdomains.  {\tt
@@ -336,6 +407,17 @@ G.ComputeResidual(residual);
   
 G.ComputeDiffBetweenStartingAndExactSolutions(residual);
 \end{verbatim}
+
+The matrix can be written on a file in MATLAB format, using
+\begin{verbatim}
+string FileName = "matrix.m";
+bool UseSparse = false;
+Gallert.WriteMatrix(FileName,UseSparse);
+\end{verbatim}
+If \verb!UseSparse! is true, the matrix is created in sparse format
+(using the MATLAB command \verb!spalloc!).
+
+\medskip
 
 %An Epetra\_VrbMatrix pointer is returned by calling
 %\verb!GetVbrMatrix()!.  This matrix is formed starting from the
