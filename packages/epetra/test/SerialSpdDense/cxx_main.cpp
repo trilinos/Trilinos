@@ -148,6 +148,50 @@ int main(int argc, char *argv[])
   delete [] B1;
 
   /////////////////////////////////////////////////////////////////////
+  // Now test norms and scaling functions
+  /////////////////////////////////////////////////////////////////////
+
+  Epetra_SerialSymDenseMatrix D;
+  double ScalarA = 2.0;
+
+  int DM = 10;
+  int DN = 10;
+  D.Shape(DM);
+  for (j=0; j<DN; j++)
+    for (i=0; i<DM; i++) D[j][i] = (double) (1+i+j*DM) ;
+
+  cout << D << endl;
+
+  double NormInfD_ref = (double)(DM*(DN*(DN+1))/2);
+  double NormOneD_ref = NormInfD_ref;
+
+  double NormInfD = D.NormInf();
+  double NormOneD = D.NormOne(); 
+
+  if (verbose) {
+    cout << " *** Before scaling *** " << endl
+	 << " Computed one-norm of test matrix = " << NormOneD << endl
+	 << " Expected one-norm                = " << NormOneD_ref << endl
+	 << " Computed inf-norm of test matrix = " << NormInfD << endl
+	 << " Expected inf-norm                = " << NormInfD_ref << endl;
+  }
+  D.Scale(ScalarA); // Scale entire D matrix by this value
+
+  cout << D << endl;
+
+  NormInfD = D.NormInf();
+  NormOneD = D.NormOne();
+  if (verbose) {
+    cout << " *** After scaling *** " << endl
+	 << " Computed one-norm of test matrix = " << NormOneD << endl
+	 << " Expected one-norm                = " << NormOneD_ref*ScalarA << endl
+	 << " Computed inf-norm of test matrix = " << NormInfD << endl
+	 << " Expected inf-norm                = " << NormInfD_ref*ScalarA << endl;
+  }
+
+  
+
+  /////////////////////////////////////////////////////////////////////
   // Now test for larger system, both correctness and performance.
   /////////////////////////////////////////////////////////////////////
 

@@ -191,32 +191,58 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   //@{ \name Query methods
 
   //! Returns true if upper triangle of \e this matrix has and will be used.
-  bool Upper() {return(Upper_);};
+  bool Upper() const {return(Upper_);};
 
   //! Returns character value of UPLO used by LAPACK routines.
   char UPLO() const {return(UPLO_);};
   //@}
 
-  //@{ \name Data Accessor methods
+  //@{ \name Mathematical Methods
+
+  //! Inplace scalar-matrix product A = \e a A.
+  /*! Scale a matrix, entry-by-entry using the value ScalarA.  This method is sensitive to 
+      the UPLO() parameter.
+
+
+  \param ScalarA (In) Scalar to multiply with A.
+
+   \return Integer error code, set to 0 if successful.
+	 
+  */
+  int  Scale ( double ScalarA );
+
 
   //! Computes the 1-Norm of the \e this matrix.
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  double OneNorm();
+  double NormOne() const;
 
   //! Computes the Infinity-Norm of the \e this matrix.
-  double InfNorm();
+  double NormInf() const;
 
   //@}
 
   void CopyUPLOMat(bool Upper, double * A, int LDA, int NumRows);
+
+  //@{ \name Deprecated methods (will be removed in later versions of this class).
+
+  //! Computes the 1-Norm of the \e this matrix (identical to NormOne() method).
+  /*!
+    \return Integer error code, set to 0 if successful.
+  */
+  double OneNorm() const {return(Epetra_SerialSymDenseMatrix::NormOne());};
+
+  //! Computes the Infinity-Norm of the \e this matrix (identical to NormInf() method).
+  double InfNorm() const {return(Epetra_SerialSymDenseMatrix::NormInf());};
+  //@}
 
  private:
 
   bool Upper_;
 
   char UPLO_;
+
 
 };
 

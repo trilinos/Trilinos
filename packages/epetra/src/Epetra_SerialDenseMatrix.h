@@ -206,6 +206,7 @@ This function performs a variety of matrix-matrix multiply operations.
                  const Epetra_SerialSymDenseMatrix& A, 
                  const Epetra_SerialDenseMatrix& B,
                  double ScalarThis );
+
   //! Inplace scalar-matrix product A = \e a A.
   /*! Scale a matrix, entry-by-entry using the value ScalarA.
 
@@ -221,10 +222,10 @@ This function performs a variety of matrix-matrix multiply operations.
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  double NormOne() const;
+  virtual double NormOne() const;
 
   //! Computes the Infinity-Norm of the \e this matrix.
-  double NormInf() const;
+  virtual double NormInf() const;
 
   //@}
 
@@ -320,10 +321,10 @@ This function performs a variety of matrix-matrix multiply operations.
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  double OneNorm() const {return(NormOne());};
+  virtual double OneNorm() const {return(NormOne());};
 
   //! Computes the Infinity-Norm of the \e this matrix (identical to NormInf() method).
-  double InfNorm() const {return(NormInf());};
+  virtual double InfNorm() const {return(NormInf());};
   //@}
 
  protected:

@@ -80,12 +80,12 @@ void Epetra_SerialSymDenseMatrix::CopyUPLOMat(bool Upper, double * A, int LDA, i
   }
 }
 //=============================================================================
-double Epetra_SerialSymDenseMatrix::OneNorm(void) {
+double Epetra_SerialSymDenseMatrix::NormOne(void) const{
 
-    return(InfNorm());
+    return(Epetra_SerialSymDenseMatrix::NormInf());
 }
 //=============================================================================
-double Epetra_SerialSymDenseMatrix::InfNorm(void) {
+double Epetra_SerialSymDenseMatrix::NormInf(void) const {
 
   int i, j;
 
@@ -120,5 +120,28 @@ double Epetra_SerialSymDenseMatrix::InfNorm(void) {
   }
   UpdateFlops(N_*N_);
   return(anorm);
+}
+
+//=============================================================================
+int Epetra_SerialSymDenseMatrix::Scale(double ScalarA) {
+
+  int i, j;
+
+  double * ptr;
+
+  if (!Upper()) {
+    for (j=0; j<N_; j++) {
+      ptr = A_ + j + j*LDA_;
+      for (i=j; i<N_; i++) {*ptr = *ptr * ScalarA; ptr++;}
+    }
+  }
+  else {
+    for (j=0; j<N_; j++) {
+      ptr = A_ + j*LDA_;
+      for (i=0; i<j; i++) {*ptr = *ptr * ScalarA; ptr++;}
+    }
+  }
+  UpdateFlops(N_*(N_+1)/2);
+  return(0);
 }
 
