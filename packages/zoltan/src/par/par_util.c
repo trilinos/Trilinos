@@ -102,34 +102,35 @@ int LB_find_median(
 
 /***************************** BEGIN EXECUTION ******************************/
 
-
-  /* allocate memory */
-  dotlist = (int *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
-                                    sizeof(int));
-  if (!dotlist) {
-    fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
-            proc, yo);
-    return 0;
-  }
-
-  /*
-   * Check to see if the user supplied weights. If not, allocate
-   * memory and set the weights to 1.0.
-   * NOTE: it will be much more efficient if weights are allocated
-   * and set before calling this routine.
-   */
-  wtflag = 0;
-  if (!wgts) {
-    wtflag = 1;
-    wgts = (double *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
-                                      sizeof(double));
-    if (!wgts) {
+  if (dotnum > 0) {
+    /* allocate memory */
+    dotlist = (int *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
+                                      sizeof(int));
+    if (!dotlist) {
       fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
               proc, yo);
-      LB_safe_free((void **) &dotlist);
       return 0;
     }
-  }
+
+    /*
+     * Check to see if the user supplied weights. If not, allocate
+     * memory and set the weights to 1.0.
+     * NOTE: it will be much more efficient if weights are allocated
+     * and set before calling this routine.
+     */
+    wtflag = 0;
+    if (!wgts) {
+      wtflag = 1;
+      wgts = (double *) LB_array_alloc (__FILE__, __LINE__, 1, dotnum,
+                                        sizeof(double));
+      if (!wgts) {
+        fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
+                proc, yo);
+        LB_safe_free((void **) &dotlist);
+        return 0;
+      }
+    }
+  } /* if (dotnum > 0) */
 
   /* create MPI data and function types for box and median */
 
@@ -151,8 +152,8 @@ int LB_find_median(
    * targetlo = desired weight in lower half of partition
    * targethi = desired weight in upper half of partition
    */
-  localmax = dots[0];
-  localmin = dots[0];
+  localmax = -MYHUGE;
+  localmin =  MYHUGE;
   wtsum = wtmax = 0.0;
   numlist = dotnum;
   for (i = 0; i < dotnum;i++) {
