@@ -81,7 +81,7 @@ int read_cmd_file (
       sscanf(original_line, "%*[^=]= %s", pio_info->pexo_fname); /*save case*/
 
     else if (sscanf(line, " file type" LASTARG "%n", value, &n) == 1) {
-      if (!strcmp(value, "chaco"))  {
+      if ((!strcmp(value, "chaco")) || (!strcmp(value, "graph")))  {
         pio_info->file_type       = CHACO_FILE;
         pio_info->init_dist_type  = INITIAL_LINEAR;
         pio_info->init_dist_procs = -1;
