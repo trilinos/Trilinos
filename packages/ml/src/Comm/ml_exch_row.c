@@ -152,7 +152,12 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   allocated_space = Pmatrix->max_nz_per_row+2;
   dummy1 = (double *) ML_allocate(allocated_space*sizeof(double));
   dummy2 = (int    *) ML_allocate(allocated_space*sizeof(   int));
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+  dtemp  = (double *) ML_allocate(2*(Nrows+Nghost + 1)*sizeof(double));
+#else
   dtemp  = (double *) ML_allocate((Nrows+Nghost + 1)*sizeof(double));
+#endif
+  
   if (dtemp == NULL) 
   {
      printf("out of space in ML_exchange_rows\n");
@@ -428,9 +433,15 @@ example (with nonutilized ghost variables still works
 
   if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 0)) 
   {
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+    j = (*Pappended)->getrow->Nrows;
+     newmap = (int *) ML_allocate( j * sizeof(int));
+     for (i = Nrows; i < j; i++) newmap[i] = -1;
+#else
      newmap = (int *) ML_allocate( (Nrows + Nghost) * sizeof(int));
      for (i = Nrows; i < Nrows + Nghost; i++) newmap[i] = -1;
-
+#endif
+     
      orig_map = (*Pappended)->getrow->row_map;
      if (orig_map == NULL) 
      {
