@@ -273,6 +273,7 @@ ac_subdirs_all="$ac_subdirs_all packages/TSFCore"
 ac_subdirs_all="$ac_subdirs_all packages/TSFCoreUtils"
 ac_subdirs_all="$ac_subdirs_all packages/amesos"
 ac_subdirs_all="$ac_subdirs_all packages/epetraext"
+ac_subdirs_all="$ac_subdirs_all packages/belos"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
 
 # Initialize some variables set by options.
@@ -800,6 +801,7 @@ Optional Features:
   --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
   --enable-komplex        Build komplex (default is yes)
   --enable-aztecoo        Build aztecoo (default is yes)
+  --enable-belos          Build belos (default is no)
   --enable-ifpack         Build ifpack (default is yes)
   --enable-oldifpack      Build ifpack and old ifpack (default is no)
   --enable-triutils       Build triutils (default is yes)
@@ -1840,6 +1842,41 @@ else
 fi
 
 
+# Check whether --enable-belos or --disable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval="$enable_belos"
+  ac_cv_use_belos=$enableval
+else
+  ac_cv_use_belos=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use belos" >&5
+echo $ECHO_N "checking whether to use belos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  BUILD_BELOS_TRUE=
+  BUILD_BELOS_FALSE='#'
+else
+  BUILD_BELOS_TRUE='#'
+  BUILD_BELOS_FALSE=
+fi
+
+
 # Check whether --enable-ifpack or --disable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
@@ -1892,6 +1929,7 @@ fi
 
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno"; then
   BUILD_IFPACK_TRUE=
   BUILD_IFPACK_FALSE='#'
@@ -1927,7 +1965,8 @@ fi
 
 
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
   BUILD_TRIUTILS_TRUE=
   BUILD_TRIUTILS_FALSE='#'
 else
@@ -2050,6 +2089,7 @@ if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" ||
         test "X$ac_cv_use_epetraext" != "Xno"; then
   BUILD_EPETRA_TRUE=
@@ -2074,6 +2114,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" ||
         test "X$ac_cv_use_epetraext" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
 
 
@@ -2081,7 +2122,8 @@ subdirs="$subdirs packages/epetra"
 
 fi
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
 
 
 subdirs="$subdirs packages/triutils"
@@ -2089,6 +2131,7 @@ subdirs="$subdirs packages/triutils"
 fi
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno"; then
 
 
@@ -2151,6 +2194,13 @@ if test "X$ac_cv_use_epetraext" != "Xno"; then
 
 
 subdirs="$subdirs packages/epetraext"
+
+fi
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+
+
+subdirs="$subdirs packages/belos"
 
 fi
 
@@ -2761,6 +2811,8 @@ s,@BUILD_KOMPLEX_TRUE@,$BUILD_KOMPLEX_TRUE,;t t
 s,@BUILD_KOMPLEX_FALSE@,$BUILD_KOMPLEX_FALSE,;t t
 s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t
 s,@BUILD_AZTECOO_FALSE@,$BUILD_AZTECOO_FALSE,;t t
+s,@BUILD_BELOS_TRUE@,$BUILD_BELOS_TRUE,;t t
+s,@BUILD_BELOS_FALSE@,$BUILD_BELOS_FALSE,;t t
 s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
 s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t

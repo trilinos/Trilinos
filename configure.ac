@@ -63,13 +63,18 @@ TAC_ARG_ENABLE_FEATURE(aztecoo, [Build aztecoo], AZTECOO, yes)
 AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
+AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
 TAC_ARG_ENABLE_FEATURE(oldifpack, [Build ifpack and old ifpack ], OLDIFPACK, no)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
+	test "X$ac_cv_use_belos" != "Xno")
 
 # After building EpetraExt from the Trilinos level is stabilized, the 
 #default could be changed to yes.
@@ -96,6 +101,7 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno")
 
@@ -111,15 +117,18 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_new_package" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
 fi
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/triutils])
 fi
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
 fi
@@ -156,6 +165,10 @@ fi
 
 if test "X$ac_cv_use_epetraext" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetraext])
+fi
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/belos])
 fi
 
 # REQUIRED CHANGE 
