@@ -34,7 +34,7 @@
 
 #include "NOX_Common.H"
 
-#include "NOX_Direction_Broyden.H" 
+#include "NOX_Direction_Broyden.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
@@ -109,10 +109,10 @@ void NOX::Direction::Broyden::BroydenMemory::reset(int m)
 {
   mMax = m;
 
-  if (memory.size() < mMax)
+  if (memory.size() < (unsigned int) mMax)
     memory.resize(mMax);
 
-  if (index.capacity() < mMax)
+  if (index.capacity() < (unsigned int) mMax)
     index.reserve(mMax);
 
   index.resize(0);
@@ -171,7 +171,8 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 NOX::Direction::Broyden::Broyden(const NOX::Utils& u, Parameter::List& p) :
   utils(u),
   lsParamsPtr(NULL),
-  oldJacobianGrpPtr(NULL)
+  oldJacobianGrpPtr(NULL),
+  inexactNewtonUtils(u, p)
 {
   reset(p);
 }
@@ -189,8 +190,11 @@ bool NOX::Direction::Broyden::reset(Parameter::List& params)
   lsParamsPtr = &p.sublist("Linear Solver"); 
 
   // Set the default linear solver tolerance
-  if (!lsParamsPtr->isParameter("Tolerance"))
-    lsParamsPtr->getParameter("Tolerance", 1.0e-4);
+  //if (!lsParamsPtr->isParameter("Tolerance"))
+  //lsParamsPtr->getParameter("Tolerance", 1.0e-4);
+
+  // Reset the inexact Newton Utilities (including linear solve tolerance)
+  inexactNewtonUtils.reset(utils, params);
 
   // Get the restart frequency
   cntMax = p.getParameter("Restart Frequency", 10);
@@ -243,7 +247,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
       *oldJacobianGrpPtr = soln;
 
     // Calcuate new Jacobian
-    if (utils.isPrintProcessAndType(Utils::Details))
+    if (utils.isPrintProcessAndType(NOX::Utils::Details))
       cout << "        Recomputing Jacobian" << endl;
  
     status = oldJacobianGrpPtr->computeJacobian();
@@ -254,7 +258,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     cnt = 0;
   }
 
-  // In necesary, scale the s-vector from the last iteration
+  // If necesary, scale the s-vector from the last iteration
   if (!memory.empty()) 
   {
     double step = solver.getStepSize();
@@ -263,9 +267,17 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
   // --- Calculate the Broyden direction ---
 
+  // Compute inexact forcing term if requested.
+  inexactNewtonUtils.computeForcingTerm(soln, 
+					*oldJacobianGrpPtr,
+					solver.getNumIterations(),
+					solver);
+
   // dir = - J_old^{-1} * F
   cnt ++;
-  status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr, soln.getF(), dir);
+  status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr, 
+						   soln.getF(), 
+						   dir);
   if (status != NOX::Abstract::Group::Ok) 
     throwError("compute", "Unable to apply Jacobian inverse");
   dir.scale(-1.0);
@@ -345,7 +357,7 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
 
 void NOX::Direction::Broyden::throwError(const string& functionName, const string& errorMsg)
 {
-    if (utils.isPrintProcessAndType(Utils::Error))
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
       cerr << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }

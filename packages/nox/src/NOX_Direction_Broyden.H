@@ -38,14 +38,15 @@
 #include "NOX_Common.H"		   
 
 #include "NOX_Direction_Generic.H" // base class
+#include "NOX_Direction_Utils_InexactNewton.H" // class data element
 #include "NOX_Parameter_List.H"	   // class data element 
 
 // Forward declaration
 namespace NOX {
-class Utils;
-namespace Solver {
-class LineSearchBased;
-}
+  class Utils;
+  namespace Solver {
+    class LineSearchBased;
+  }
 }
 
 namespace NOX {
@@ -103,7 +104,9 @@ namespace Direction {
   <li>"Linear Solver" - optional SUBLIST of linear solver parameters.
 
   <li>"Linear Solver"/"Tolerance" - Desired tolerance for linear
-      solve. Defaults to 1.0e-4.  
+      solve. Defaults to 1.0e-4. The tolerance can be computed using
+      adaptive forcing terms. See NOX::Direction::Utils::InexactNewton 
+      for additional options.
 
   </ul>
 
@@ -394,6 +397,9 @@ private:
 
   //! Storage of update vectors and related attributes
   BroydenMemory memory;
+
+  //! Inexact Newton solve utilities
+  NOX::Direction::Utils::InexactNewton inexactNewtonUtils;
 
 };
 } // namespace Direction
