@@ -64,7 +64,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   char *yo = "run_zoltan";
   struct LB_Struct *lb_obj;
 
-  /* Variables returned by the load balancer */
+  /* Variables returned by Zoltan */
   LB_GID *import_gids = NULL;    /* Global node nums of nodes to be imported */
   LB_LID *import_lids = NULL;    /* Pointers to nodes to be imported         */
   int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
@@ -89,10 +89,10 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   LB_Set_Param(NULL, "DEBUG_MEMORY", "1");
 
   /*
-   *  Create a load-balancing object.
+   *  Create a load-balancing structure.
    */
   if ((lb_obj = LB_Create(MPI_COMM_WORLD)) == NULL) {
-    Gen_Error(0, "fatal:  NULL object returned from LB_Create_Object()\n");
+    Gen_Error(0, "fatal:  NULL returned from LB_Create()\n");
     return 0;
   }
 
@@ -101,7 +101,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   for (i = 0; i < prob->num_params; i++) {
     ierr = LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
     if (!((ierr == 0) || (ierr == 3))) {
-      sprintf(errmsg, "fatal: error in LB_Set_Param when setting parameter %s\n", prob->params[i][0]);
+      sprintf(errmsg,"fatal: error in LB_Set_Param when setting parameter %s\n",
+              prob->params[i][0]);
       Gen_Error(0, errmsg);
       return 0;
     }
@@ -171,7 +172,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   }
 
   /*
-   * Call the load balancer
+   * Call Zoltan
    */
   if (LB_Balance(lb_obj, &new_decomp, &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,

@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   }
 
   /*
-   * now run zoltan to get a new load balance and perform
+   * now run Zoltan to get a new load balance and perform
    * the migration
    */
   if (!run_zoltan(Proc, &prob, &mesh)) {
