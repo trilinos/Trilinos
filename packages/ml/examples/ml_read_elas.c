@@ -52,7 +52,7 @@ double *scaling_vect = NULL;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=8, nsmooth=4;
+	int num_PDE_eqns=3, N_levels=4, nsmooth=4;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -149,7 +149,7 @@ double max_diag, min_diag, max_sum, sum;
 
   AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
 
-  AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
+  AZ_transform_norowreordering(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
 	       AZ_MSR_MATRIX);
 	
@@ -265,6 +265,7 @@ double max_diag, min_diag, max_sum, sum;
        if (which_filename == 1) sprintf(filename,"rigid_body_mode%02d",i+1);
        else sprintf(filename,"rigid_body_mode%d",i+1);
        AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
+       AZ_reorder_vec(mode, data_org, update_index, NULL);
 
        /* here is something to stick a rigid body mode as the initial */
        /* The idea is to solve A x = 0 without smoothing with a two   */
@@ -338,7 +339,7 @@ double max_diag, min_diag, max_sum, sum;
            daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one);
         }
 #endif
-   
+
         for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
         free(mode);
         free(garbage); garbage = NULL;
@@ -439,11 +440,11 @@ double max_diag, min_diag, max_sum, sum;
 
    /*
    ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 30., nsmooth); 	   
-   */
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+   */
    /*
    ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
-
+   */
 
    old_prec = options[AZ_precond];
    old_sol  = options[AZ_solver];
@@ -463,7 +464,7 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_precond] = old_prec;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
-   */
+   /*   */
 
 
 #ifdef RST_MODIF
@@ -476,7 +477,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
 #endif
 	
-   options[AZ_solver]   = AZ_cg;
+   options[AZ_solver]   = AZ_gmres;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
@@ -496,7 +497,7 @@ double max_diag, min_diag, max_sum, sum;
    if (fp == NULL) {
       AZ_random_vector(rhs, data_org, proc_config);
       if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
-      for (i = 0; i < N_update; i++) {
+      for (i = 0; i < -N_update; i++) {
         rhs[i] = (double) update[i]; rhs[i] = 7.;
       }
    }
@@ -534,6 +535,8 @@ printf("hey .... should we do something here?\n");
    fp = fopen("AZ_no_multilevel.dat","r");
    scaling = AZ_scaling_create();
    start_time = AZ_second();
+
+
    if (fp != NULL) {
       fclose(fp);
       options[AZ_precond] = AZ_none;
@@ -558,7 +561,7 @@ printf("hey .... should we do something here?\n");
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
       options[AZ_conv] = AZ_r0;
-      params[AZ_tol] = 1.0e-8;
+      params[AZ_tol] = 1.0e-6;
       /* ML_Iterate(ml, xxx, rhs); */
 alpha = sqrt(AZ_gdot(N_update, xxx, xxx, proc_config));
 printf("init guess = %e\n",alpha);
@@ -605,6 +608,29 @@ max_diag, min_diag, max_sum);
 
    if (proc_config[AZ_node] == 0) 
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
+   if (proc_config[AZ_node] == 0)
+     printf("Printing out a few entries of the solution ...\n");
+
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 7) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],xxx[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 23) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],xxx[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 47) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],xxx[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 101) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],xxx[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 171) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],xxx[update_index[j]]); fflush(stdout);}
+
 
    ML_Aggregate_Destroy(&ag);
    ML_Destroy(&ml);

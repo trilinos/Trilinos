@@ -69,7 +69,7 @@ int coarse_iterations = 0, use_cg = 0, num_levels = 2;
 
 int main(int argc, char *argv[])
 {
-  int    i, input_option, precon_flag, N_elements_coarse;
+  int    i, j, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
 
   /* See Aztec User's Guide for more information on the */
@@ -294,18 +294,29 @@ int main(int argc, char *argv[])
                x[update_index[i]], (double) update[i]);
   }
   */
-   if (proc_config[AZ_node] == 0) {
+   if (proc_config[AZ_node] == 0)
      printf("Printing out a few entries of the solution ...\n");
-     for (i = 0; i < Amat->data_org[AZ_N_internal] +
-	    Amat->data_org[AZ_N_border]; i++) {
-       if ((update[i] == 7) || (update[i] == 23) || (update[i] == 47) ||
-	   (update[i] == 101) || (update[i] == 171))
-       {
-	 printf("solution(gid = %d) = %10.4e\n",
-		update[i],x[update_index[i]]);
-       }
-     }
-   }
+
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 7) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 23) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 47) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 101) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 171) {printf("solution(gid = %d) = %10.4e\n",
+			      update[j],x[update_index[j]]); fflush(stdout);}
+
 
 
 ML_Aggregate_Destroy(&ml_ag);
