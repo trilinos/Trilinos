@@ -24,6 +24,11 @@
 
 /* #define LB_DEBUG */   /* turn on debug print statements? */
 
+/************************  prototypes ************************/
+
+static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
+  LB_LID **imp_lids, int **imp_procs, int *num_exp, LB_GID **exp_gids,
+  LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
 
 /**********************************************************/
 /* Interface routine for ParMetis. This is just a simple  */
@@ -143,8 +148,8 @@ int LB_Jostle(
    */
   if (lb != lb_obj){
      lb_obj = lb;
-     pjostle_init(&(lb->Num_Proc), &(lb->Proc));
-     pjostle_comm(&(lb->Communicator));
+     pjostle_init(&num_proc, &proc);
+     pjostle_comm(&comm);
   }
 
   /* Blank string */
@@ -225,7 +230,7 @@ int LB_Jostle(
   LB_FREE(&proc_nodes); LB_FREE(&proc_list); \
   }
 
-int LB_ParMetis_Jostle(
+static int LB_ParMetis_Jostle(
   LB *lb,             /* load balancing object */
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
@@ -256,6 +261,10 @@ int LB_ParMetis_Jostle(
   MPI_Request *request;
   MPI_Status *status;
   double times[5];
+  int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
+  int proc = lb->Proc;             /* passed to Jostle and ParMETIS.  Don't   */
+  MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
+                                   /* change our lb struct.                   */
 
 #ifdef LB_DEBUG
   int i99, *p99;
@@ -785,35 +794,35 @@ int LB_ParMetis_Jostle(
   }
   else if (strcmp(alg, "PARTKWAY") == 0){
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, &(lb->Num_Proc), options, &edgecut, part, &(lb->Communicator));
+      &numflag, &num_proc, options, &edgecut, part, &comm);
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-      &numflag, &ndims, xyz, &(lb->Num_Proc), options, &edgecut, 
-      part, &(lb->Communicator));
+      &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
+      part, &comm);
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
-    ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &(lb->Communicator));
+    ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &comm);
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &(lb->Communicator));
+      &numflag, options, &edgecut, part, &comm);
   }
   else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &(lb->Communicator));
+      &numflag, options, &edgecut, part, &comm);
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
     ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &(lb->Communicator));
+      &numflag, options, &edgecut, part, &comm);
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &(lb->Communicator));
+      &numflag, options, &edgecut, part, &comm);
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &(lb->Communicator));
+      &numflag, options, &edgecut, part, &comm);
   }
   else {
     /* This should never happen! */
