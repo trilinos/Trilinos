@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_loadbal = "$Id$";
-#endif
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */

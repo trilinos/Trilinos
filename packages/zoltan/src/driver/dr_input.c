@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_input_id = "$Id$";
-#endif
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Determine file types for command files and read in the parallel */
@@ -131,7 +128,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
             }
           }
           else {
-            sprintf(cmesg, "fatal: unknown file type, %s", cptr);
+            sprintf(cmesg, "fatal(%s): unknown file type, %s", yo, cptr);
             Gen_Error(0, cmesg);
             return 0;
           }
@@ -334,8 +331,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           else
           {
             sprintf(cmesg,
-                    "fatal: unknown LB method \"%s\" specified in command"
-                    " file", cptr);
+                    "fatal(%s): unknown LB method \"%s\" specified in command"
+                    " file", yo, cptr);
             Gen_Error(0, cmesg);
             return 0;
           }
@@ -384,15 +381,15 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           cptr2 = strchr(cptr, '=');
           if(cptr2 == NULL)
           {
-            sprintf(cmesg, "fatal: must specify value for parameter %s", 
-                            prob->params[param_index][0]);
+            sprintf(cmesg, "fatal(%s): must specify value for parameter %s", 
+                            yo, prob->params[param_index][0]);
             Gen_Error(0, cmesg);
             return 0;
           }
           cptr2++;
           if (strlen(cptr2) == 0) {
-            sprintf(cmesg, "fatal: must specify value for parameter %s", 
-                            prob->params[param_index][0]);
+            sprintf(cmesg, "fatal(%s): must specify value for parameter %s", 
+                            yo, prob->params[param_index][0]);
             Gen_Error(0, cmesg);
             return 0;
           }

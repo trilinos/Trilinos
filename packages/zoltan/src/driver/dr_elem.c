@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_elem_id = "$Id$";
-#endif
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s):	Gary L. Hennigan (SNL 9221)
@@ -38,6 +35,8 @@ static char *cvs_elem_id = "$Id$";
 #include "dr_util_const.h"
 #include "dr_err_const.h"
 
+extern int strncasecmp(char *, char *, int);
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -49,7 +48,7 @@ static char *cvs_elem_id = "$Id$";
  * Need the number of dimensions in order to distinguish between
  * TRI elements in a 2d mesh from TRI elements in a 3d mesh.
  *****************************************************************************/
-E_Type get_elem_type(const char *elem_name, const int num_nodes,
+E_Type get_elem_type(char *elem_name, const int num_nodes,
                      const int num_dim)
 {
 
@@ -798,7 +797,7 @@ int get_elem_info(const int req, const E_Type etype, const int sid)
  *
  * Now supoports degenrate faces in HEX elements.
  *****************************************************************************/
-int get_side_id(const E_Type etype, const int *connect, const int nsnodes,
+int get_side_id(E_Type etype, const int *connect, const int nsnodes,
                 int side_nodes[])
 {
   char *func_name="get_side_id";
@@ -1097,7 +1096,7 @@ int get_side_id(const E_Type etype, const int *connect, const int nsnodes,
   case TSHELL2:
 
     /* 2D sides */
-    if(nsnodes == 2 || (etype == TSHELL2 && nsnodes == 3)) {
+    if(nsnodes == 2 || ((etype == TSHELL2) && (nsnodes == 3))) {
       /* SIDE 3 */
       if (side_nodes[0] == connect[0] &&
           side_nodes[1] == connect[1]) return 3;
