@@ -199,7 +199,7 @@ ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_LDADD = ${ml_libs}
 ml_example_epetra_preconditioner_LINK = ${mllink}
 
