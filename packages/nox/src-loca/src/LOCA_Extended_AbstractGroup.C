@@ -30,38 +30,49 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "LOCA_Extended_AbstractGroup.H"
 #include "LOCA_Continuation_AbstractGroup.H"
 
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
-			    NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const
+const LOCA::Continuation::AbstractGroup&
+LOCA::Extended::AbstractGroup::getBaseLevelUnderlyingGroup() const
 {
-  NOX::Abstract::Group::ReturnType res;
+  // First get the underlying group
+  const LOCA::Continuation::AbstractGroup& ulg = getUnderlyingGroup();
 
-  for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+  // Cast underlying group to an extended group
+  const LOCA::Extended::AbstractGroup* ulgPtr = 
+    dynamic_cast<const LOCA::Extended::AbstractGroup*>(&ulg);
+
+  if (ulgPtr == NULL) {
+    // Underlying group is not extended, therefore return it
+    return ulg;       
   }
 
-  return res;
+  else {
+    // Underlying group is extended, therefore return its baselevel group
+    return ulgPtr->getBaseLevelUnderlyingGroup(); 
+  }
+
 }
 
-double
-LOCA::Continuation::AbstractGroup::computeScaledDotProduct(
-					 const NOX::Abstract::Vector& a,
-					 const NOX::Abstract::Vector& b) const
+LOCA::Continuation::AbstractGroup&
+LOCA::Extended::AbstractGroup::getBaseLevelUnderlyingGroup()
 {
-  return a.dot(b);
-}
+  // First get the underlying group
+  LOCA::Continuation::AbstractGroup& ulg = getUnderlyingGroup();
 
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::computeEigenvalues(
-					        NOX::Parameter::List& params)
-{
-  cerr << "Error:  No eigensolver defined for group" << endl;
-  return NOX::Abstract::Group::Failed;
+  // Cast underlying group to an extended group
+  LOCA::Extended::AbstractGroup* ulgPtr = 
+    dynamic_cast<LOCA::Extended::AbstractGroup*>(&ulg);
+
+  if (ulgPtr == NULL) {
+    // Underlying group is not extended, therefore return it
+    return ulg;       
+  }
+
+  else {
+    // Underlying group is extended, therefore return its baselevel group
+    return ulgPtr->getBaseLevelUnderlyingGroup(); 
+  }
+
 }

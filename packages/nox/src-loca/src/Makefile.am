@@ -45,18 +45,24 @@ LOCA_ABSTRACT = \
         $(srcdir)/LOCA_Abstract_Group.C \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
-LOCA_CONTINUATION_H = \
+LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Extended_AbstractGroup.H
+
+LOCA_EXTENDED = \
+	$(srcdir)/LOCA_ExtendedVector.C \
+	$(srcdir)/LOCA_Extended_AbstractGroup.C
+
+LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H 
 
 LOCA_CONTINUATION = \
-	$(srcdir)/LOCA_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
@@ -166,8 +172,25 @@ LOCA_STEPPER_H = \
 LOCA_STEPPER = \
 	$(srcdir)/LOCA_Stepper.C 
 
+LOCA_STATUSTEST_H = \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H
+
+LOCA_STATUSTEST = \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
+
 LOCA_H = \
         $(srcdir)/LOCA.H \
+	$(LOCA_EXTENDED_H) \
 	$(LOCA_CONTINUATION_H) \
 	$(LOCA_SINGULARSOLVE_H) \
 	$(LOCA_BIFURCATION_H) \
@@ -178,9 +201,11 @@ LOCA_H = \
 	$(LOCA_PREDICTOR_H) \
 	$(LOCA_STEPSIZE_H) \
 	$(LOCA_STEPPER_H) \
-	$(LOCA_ABSTRACT_H)
+	$(LOCA_ABSTRACT_H) \
+	$(LOCA_STATUSTEST_H)
 
 LOCA = \
+	$(LOCA_EXTENDED) \
 	$(LOCA_CONTINUATION) \
 	$(LOCA_SINGULARSOLVE) \
 	$(LOCA_BIFURCATION) \
@@ -191,7 +216,8 @@ LOCA = \
 	$(LOCA_PREDICTOR) \
 	$(LOCA_STEPSIZE) \
 	$(LOCA_STEPPER) \
-	$(LOCA_ABSTRACT)
+	$(LOCA_ABSTRACT) \
+	$(LOCA_STATUSTEST)
 
 # ------------------------------------------------------------------------
 # Loca library specifications

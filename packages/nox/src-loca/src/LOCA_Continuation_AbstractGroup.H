@@ -143,30 +143,6 @@ namespace LOCA {
       computeScaledDotProduct(const NOX::Abstract::Vector& a,
 			      const NOX::Abstract::Vector& b) const;
 
-      //! Return underlying group
-      /*!
-       * Default implementation is to return *this.  This method is intended
-       * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method is supposed 
-       * to return the base level group and therefore any extended group
-       * should return the result of calling this method on its underlying
-       * group data member.
-       */
-      virtual const LOCA::Continuation::AbstractGroup& 
-      getUnderlyingGroup() const;
-      
-      //! Return underlying group
-       /*!
-       * Default implementation is to return *this.  This method is intended
-       * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method is supposed 
-       * to return the base level group and therefore any extended group
-       * should return the result of calling this method on its underlying
-       * group data member.
-       */
-      virtual LOCA::Continuation::AbstractGroup& 
-      getUnderlyingGroup();
-
       //@}
 
       /*! 

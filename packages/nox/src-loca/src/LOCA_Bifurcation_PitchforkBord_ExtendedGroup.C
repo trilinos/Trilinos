@@ -115,6 +115,14 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
     dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(source);
 }
 
+LOCA::Extended::AbstractGroup&
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
+                             const LOCA::Extended::AbstractGroup& source)
+{
+  return *this = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(source);
+}
+
 NOX::Abstract::Group&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
                                            const NOX::Abstract::Group& source)
@@ -712,13 +720,13 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(const double conP
 const  LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getUnderlyingGroup() const
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
  LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getUnderlyingGroup()
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 void

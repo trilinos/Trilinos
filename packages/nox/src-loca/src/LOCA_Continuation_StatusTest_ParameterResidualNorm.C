@@ -1,0 +1,124 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H" 
+#include "LOCA_Continuation_ExtendedGroup.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
+
+LOCA::Continuation::StatusTest::ParameterResidualNorm::ParameterResidualNorm(
+							      double rtol_, 
+							      double atol_,
+							      double tol_) :
+  rtol(rtol_),
+  atol(atol_),
+  tol(tol_),
+  paramResidualNorm(0.0),
+  status(NOX::StatusTest::Unconverged)
+{
+}
+
+
+LOCA::Continuation::StatusTest::ParameterResidualNorm::~ParameterResidualNorm()
+{
+}
+
+NOX::StatusTest::StatusType 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::checkStatus(
+					 const NOX::Solver::Generic& problem)
+{
+  // Get solution groups from solver
+  const NOX::Abstract::Group& soln = problem.getSolutionGroup();
+
+  // Get residual vector
+  const LOCA::Continuation::ExtendedVector& f = 
+    dynamic_cast<const LOCA::Continuation::ExtendedVector&>(soln.getF());
+
+  // Cast soln group to continuation group (for parameter step)
+  const LOCA::Continuation::ExtendedGroup& conGroup = 
+    dynamic_cast<const LOCA::Continuation::ExtendedGroup&>(soln);
+  
+  paramResidualNorm = 
+    fabs(f.getParam()) / (rtol*fabs(conGroup.getStepSize()) + atol);
+
+  if (paramResidualNorm < tol) 
+    status = NOX::StatusTest::Converged;
+  else
+    status = NOX::StatusTest::Unconverged;
+  
+  return status;
+}
+
+NOX::StatusTest::StatusType 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getStatus() const
+{
+  return status;
+}
+
+
+ostream& 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::print(ostream& stream, 
+							   int indent) const
+{
+  for (int j = 0; j < indent; j++)
+    stream << ' ';
+  stream << status;
+  stream << " Scaled Parameter Residual = " << NOX::Utils::sciformat(paramResidualNorm, 3) << " < " << tol;
+  stream << endl;
+
+  return stream;
+} 
+
+double 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getParameterResidualNorm() const
+{
+  return paramResidualNorm;
+}
+
+double 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getRTOL() const
+{
+  return rtol;
+}
+
+double 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getATOL() const
+{
+  return atol;
+}
+
+double 
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getTOL() const
+{
+  return tol;
+}
+

@@ -34,6 +34,7 @@
 #define LOCA_HOMOTOPY_GROUP_H
 
 #include "LOCA_Continuation_AbstractGroup.H"    // base class
+#include "LOCA_Extended_AbstractGroup.H"        // base class
 #include "LOCA_Homotopy_AbstractGroup.H"        // class data element
 
 #include "LOCA_ErrorCheck.H"        // class data member
@@ -70,7 +71,9 @@ namespace LOCA {
 
     */
 
-    class Group : public virtual LOCA::Continuation::AbstractGroup {
+    class Group : 
+      public LOCA::Continuation::AbstractGroup,
+      public LOCA::Extended::AbstractGroup {
 
     public:
   
@@ -111,6 +114,10 @@ namespace LOCA {
       //! Assignment operator
       virtual LOCA::Continuation::AbstractGroup& 
       operator=(const LOCA::Continuation::AbstractGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Extended::AbstractGroup& 
+      operator=(const LOCA::Extended::AbstractGroup& source);
 
       //! Assignment operator
       virtual NOX::Abstract::Group& 

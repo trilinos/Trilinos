@@ -138,19 +138,27 @@ LOCA_ABSTRACT = \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
 
-LOCA_CONTINUATION_H = \
+LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Extended_AbstractGroup.H
+
+
+LOCA_EXTENDED = \
+	$(srcdir)/LOCA_ExtendedVector.C \
+	$(srcdir)/LOCA_Extended_AbstractGroup.C
+
+
+LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
 	$(srcdir)/LOCA_Continuation_Manager.H \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H 
 
 
 LOCA_CONTINUATION = \
-	$(srcdir)/LOCA_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
 	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
@@ -279,8 +287,27 @@ LOCA_STEPPER = \
 	$(srcdir)/LOCA_Stepper.C 
 
 
+LOCA_STATUSTEST_H = \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H
+
+
+LOCA_STATUSTEST = \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
+
+
 LOCA_H = \
         $(srcdir)/LOCA.H \
+	$(LOCA_EXTENDED_H) \
 	$(LOCA_CONTINUATION_H) \
 	$(LOCA_SINGULARSOLVE_H) \
 	$(LOCA_BIFURCATION_H) \
@@ -291,10 +318,12 @@ LOCA_H = \
 	$(LOCA_PREDICTOR_H) \
 	$(LOCA_STEPSIZE_H) \
 	$(LOCA_STEPPER_H) \
-	$(LOCA_ABSTRACT_H)
+	$(LOCA_ABSTRACT_H) \
+	$(LOCA_STATUSTEST_H)
 
 
 LOCA = \
+	$(LOCA_EXTENDED) \
 	$(LOCA_CONTINUATION) \
 	$(LOCA_SINGULARSOLVE) \
 	$(LOCA_BIFURCATION) \
@@ -305,7 +334,8 @@ LOCA = \
 	$(LOCA_PREDICTOR) \
 	$(LOCA_STEPSIZE) \
 	$(LOCA_STEPPER) \
-	$(LOCA_ABSTRACT)
+	$(LOCA_ABSTRACT) \
+	$(LOCA_STATUSTEST)
 
 
 
@@ -368,21 +398,23 @@ am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1)
+	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
+	$(am__objects_1)
 am__objects_3 = libloca_a-LOCA_ExtendedVector.$(OBJEXT) \
-	libloca_a-LOCA_Continuation_ExtendedVector.$(OBJEXT) \
+	libloca_a-LOCA_Extended_AbstractGroup.$(OBJEXT)
+am__objects_4 = libloca_a-LOCA_Continuation_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_Manager.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_NaturalGroup.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_ArcLengthGroup.$(OBJEXT)
-am__objects_4 = libloca_a-LOCA_SingularJacobianSolve_Manager.$(OBJEXT) \
+am__objects_5 = libloca_a-LOCA_SingularJacobianSolve_Manager.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_Default.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_Nic.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_NicDay.$(OBJEXT) \
 	libloca_a-LOCA_SingularJacobianSolve_ItRef.$(OBJEXT)
-am__objects_5 = \
+am__objects_6 = \
 	libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.$(OBJEXT) \
@@ -394,27 +426,34 @@ am__objects_5 = \
 	libloca_a-LOCA_Bifurcation_HopfBord_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.$(OBJEXT)
-am__objects_6 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
-am__objects_7 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
-am__objects_8 = libloca_a-LOCA_Utils.$(OBJEXT) \
+am__objects_7 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
+am__objects_8 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
+am__objects_9 = libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_ErrorCheck.$(OBJEXT)
-am__objects_9 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT)
-am__objects_10 = libloca_a-LOCA_Predictor_Manager.$(OBJEXT) \
+am__objects_10 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT)
+am__objects_11 = libloca_a-LOCA_Predictor_Manager.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Tangent.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Secant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Random.$(OBJEXT)
-am__objects_11 = libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
+am__objects_12 = libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT)
-am__objects_12 = libloca_a-LOCA_Stepper.$(OBJEXT)
-am__objects_13 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
+am__objects_13 = libloca_a-LOCA_Stepper.$(OBJEXT)
+am__objects_14 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT)
-am__objects_14 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+am__objects_15 = libloca_a-LOCA_Solver_Wrapper.$(OBJEXT) \
+	libloca_a-LOCA_StatusTest_Wrapper.$(OBJEXT) \
+	libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.$(OBJEXT) \
+	libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.$(OBJEXT)
+am__objects_16 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
-	$(am__objects_12) $(am__objects_13)
-am_libloca_a_OBJECTS = $(am__objects_2) $(am__objects_14)
+	$(am__objects_12) $(am__objects_13) $(am__objects_14) \
+	$(am__objects_15)
+am_libloca_a_OBJECTS = $(am__objects_2) $(am__objects_16)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -437,6 +476,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_SingularSolveGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedGroup.Po \
@@ -444,9 +485,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_FiniteDifferenceGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_NaturalGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_ErrorCheck.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po \
@@ -459,6 +503,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Nic.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_NicDay.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Manager.Po \
@@ -523,6 +569,8 @@ uninstall-libLIBRARIES:
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 libloca_a-LOCA_ExtendedVector.$(OBJEXT): $(srcdir)/LOCA_ExtendedVector.C
+libloca_a-LOCA_Extended_AbstractGroup.$(OBJEXT): \
+	$(srcdir)/LOCA_Extended_AbstractGroup.C
 libloca_a-LOCA_Continuation_ExtendedVector.$(OBJEXT): \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.C
 libloca_a-LOCA_Continuation_AbstractGroup.$(OBJEXT): \
@@ -595,6 +643,17 @@ libloca_a-LOCA_Stepper.$(OBJEXT): $(srcdir)/LOCA_Stepper.C
 libloca_a-LOCA_Abstract_Group.$(OBJEXT): $(srcdir)/LOCA_Abstract_Group.C
 libloca_a-LOCA_Abstract_Iterator.$(OBJEXT): \
 	$(srcdir)/LOCA_Abstract_Iterator.C
+libloca_a-LOCA_Solver_Wrapper.$(OBJEXT): $(srcdir)/LOCA_Solver_Wrapper.C
+libloca_a-LOCA_StatusTest_Wrapper.$(OBJEXT): \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C
+libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.$(OBJEXT): \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C
+libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.$(OBJEXT): \
+	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
 libloca.a: $(libloca_a_OBJECTS) $(libloca_a_DEPENDENCIES) 
 	-rm -f libloca.a
 	$(libloca_a_AR) libloca.a $(libloca_a_OBJECTS) $(libloca_a_LIBADD)
@@ -619,6 +678,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_SingularSolveGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_ExtendedGroup.Po@am__quote@
@@ -626,9 +687,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_FiniteDifferenceGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_NaturalGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_ErrorCheck.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po@am__quote@
@@ -641,6 +705,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Nic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_NicDay.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Manager.Po@am__quote@
@@ -673,6 +739,18 @@ libloca_a-LOCA_ExtendedVector.obj: $(srcdir)/LOCA_ExtendedVector.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_ExtendedVector.obj `cygpath -w $(srcdir)/LOCA_ExtendedVector.C`
+
+libloca_a-LOCA_Extended_AbstractGroup.o: $(srcdir)/LOCA_Extended_AbstractGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Extended_AbstractGroup.C' object='libloca_a-LOCA_Extended_AbstractGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_AbstractGroup.o `test -f '$(srcdir)/LOCA_Extended_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_AbstractGroup.C
+
+libloca_a-LOCA_Extended_AbstractGroup.obj: $(srcdir)/LOCA_Extended_AbstractGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Extended_AbstractGroup.C' object='libloca_a-LOCA_Extended_AbstractGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_AbstractGroup.obj `cygpath -w $(srcdir)/LOCA_Extended_AbstractGroup.C`
 
 libloca_a-LOCA_Continuation_ExtendedVector.o: $(srcdir)/LOCA_Continuation_ExtendedVector.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Continuation_ExtendedVector.C' object='libloca_a-LOCA_Continuation_ExtendedVector.o' libtool=no @AMDEPBACKSLASH@
@@ -1141,6 +1219,78 @@ libloca_a-LOCA_Abstract_Iterator.obj: $(srcdir)/LOCA_Abstract_Iterator.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Iterator.obj `cygpath -w $(srcdir)/LOCA_Abstract_Iterator.C`
+
+libloca_a-LOCA_Solver_Wrapper.o: $(srcdir)/LOCA_Solver_Wrapper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_Wrapper.C' object='libloca_a-LOCA_Solver_Wrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Wrapper.o `test -f '$(srcdir)/LOCA_Solver_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Solver_Wrapper.C
+
+libloca_a-LOCA_Solver_Wrapper.obj: $(srcdir)/LOCA_Solver_Wrapper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Solver_Wrapper.C' object='libloca_a-LOCA_Solver_Wrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Wrapper.obj `cygpath -w $(srcdir)/LOCA_Solver_Wrapper.C`
+
+libloca_a-LOCA_StatusTest_Wrapper.o: $(srcdir)/LOCA_StatusTest_Wrapper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_StatusTest_Wrapper.C' object='libloca_a-LOCA_StatusTest_Wrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StatusTest_Wrapper.o `test -f '$(srcdir)/LOCA_StatusTest_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_StatusTest_Wrapper.C
+
+libloca_a-LOCA_StatusTest_Wrapper.obj: $(srcdir)/LOCA_StatusTest_Wrapper.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_StatusTest_Wrapper.C' object='libloca_a-LOCA_StatusTest_Wrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StatusTest_Wrapper.obj `cygpath -w $(srcdir)/LOCA_StatusTest_Wrapper.C`
+
+libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.o: $(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C' object='libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C
+
+libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.obj: $(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C' object='libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.obj `cygpath -w $(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C`
+
+libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.o: $(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C' object='libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.o `test -f '$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C
+
+libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.obj: $(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C' object='libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Continuation_StatusTest_ParameterResidualNorm.obj `cygpath -w $(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C`
+
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.o: $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C' object='libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C
+
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.obj: $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C' object='libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C`
+
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.o: $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C' object='libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.o `test -f '$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
+
+libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.obj: $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C' object='libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)

@@ -1,5 +1,5 @@
-// $Id$
-// $Source$
+// $Id$ 
+// $Source$ 
 
 //@HEADER
 // ************************************************************************
@@ -30,38 +30,54 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
-#include "LOCA_Continuation_AbstractGroup.H"
+#include "LOCA_StatusTest_Wrapper.H"
+#include "LOCA_Solver_Wrapper.H"
 
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
-			    NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const
+LOCA::StatusTest::Wrapper::Wrapper(NOX::StatusTest::Generic& s) :
+  statusTestPtr(&s)
 {
-  NOX::Abstract::Group::ReturnType res;
-
-  for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
-  }
-
-  return res;
 }
 
-double
-LOCA::Continuation::AbstractGroup::computeScaledDotProduct(
-					 const NOX::Abstract::Vector& a,
-					 const NOX::Abstract::Vector& b) const
+LOCA::StatusTest::Wrapper::~Wrapper()
 {
-  return a.dot(b);
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::computeEigenvalues(
-					        NOX::Parameter::List& params)
+NOX::StatusTest::StatusType 
+LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem)
 {
-  cerr << "Error:  No eigensolver defined for group" << endl;
-  return NOX::Abstract::Group::Failed;
+  LOCA::Solver::Wrapper problemWrapper(problem);
+
+  return statusTestPtr->checkStatus(problemWrapper);
+}
+
+NOX::StatusTest::StatusType 
+LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem, 
+				       NOX::StatusTest::CheckType checkType)
+{
+  LOCA::Solver::Wrapper problemWrapper(problem);
+
+  return statusTestPtr->checkStatus(problemWrapper, checkType);
+}
+
+NOX::StatusTest::StatusType 
+LOCA::StatusTest::Wrapper::getStatus() const
+{
+  return statusTestPtr->getStatus();
+}
+
+ostream& LOCA::StatusTest::Wrapper::print(ostream& stream, int indent) const
+{
+  return statusTestPtr->print(stream, indent);
+}
+
+NOX::StatusTest::Generic&
+LOCA::StatusTest::Wrapper::getUnderlyingStatusTest() 
+{
+  return *statusTestPtr;
+}
+
+const NOX::StatusTest::Generic&
+LOCA::StatusTest::Wrapper::getUnderlyingStatusTest() const
+{
+  return *statusTestPtr;
 }

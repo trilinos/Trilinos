@@ -34,6 +34,7 @@
 #define LOCA_BIFURCATION_TPBORD_EXTENDEDGROUP_H
 
 #include "LOCA_Continuation_AbstractGroup.H"         // base class
+#include "LOCA_Extended_AbstractGroup.H"             // base class
 #include "LOCA_Bifurcation_TPBord_ExtendedVector.H"  // class data element
 
 namespace LOCA {
@@ -77,7 +78,9 @@ namespace LOCA {
 	%Newton solves are computed by the bordering algorithm.
       */
 
-      class ExtendedGroup : public LOCA::Continuation::AbstractGroup {
+      class ExtendedGroup 
+	: public LOCA::Continuation::AbstractGroup,
+	  public LOCA::Extended::AbstractGroup {
 
       public:
   
@@ -102,6 +105,10 @@ namespace LOCA {
 	//! Assignment operator
 	virtual LOCA::Continuation::AbstractGroup& 
 	operator=(const LOCA::Continuation::AbstractGroup& source);
+
+	//! Assignment operator
+	virtual LOCA::Extended::AbstractGroup& 
+	operator=(const LOCA::Extended::AbstractGroup& source);
 
 	//! Assignment operator
 	virtual ExtendedGroup& operator=(const ExtendedGroup& source);
@@ -187,6 +194,13 @@ namespace LOCA {
 	applyJacobianInverse(NOX::Parameter::List& params, 
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
+
+	//! Applies the extended right preconditioner using the bordering algorithm
+	virtual NOX::Abstract::Group::ReturnType 
+	applyRightPreconditioning(bool useTranspose,
+				  NOX::Parameter::List& params,
+				  const NOX::Abstract::Vector& input, 
+				  NOX::Abstract::Vector& result) const;
 
 	//! Applies the inverse of the extended Jacobian matrix using the bordering algorithm for multiple right-hand sides
 	virtual NOX::Abstract::Group::ReturnType 

@@ -34,7 +34,7 @@
 #define LOCA_CONTINUATION_EXTENDEDGROUP_H
 
 #include "NOX_Parameter_List.H"
-#include "NOX_Abstract_Group.H"                    // base class
+#include "LOCA_Extended_AbstractGroup.H"           // base class
 #include "LOCA_Continuation_AbstractGroup.H"       // class data element
 #include "LOCA_Continuation_ExtendedVector.H"      // class data element
 #include "NOX_Common.H"                            // for string 
@@ -82,7 +82,7 @@ namespace LOCA {
      *      componenet scaling (defaults to 1.0).
      * </ul>
      */
-    class ExtendedGroup : public virtual NOX::Abstract::Group {
+    class ExtendedGroup : public virtual LOCA::Extended::AbstractGroup {
 
     public:
   
@@ -151,6 +151,10 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Assignment operator
+      virtual LOCA::Extended::AbstractGroup& 
+      operator=(const LOCA::Extended::AbstractGroup& source);
+
+      //! Assignment operator
       virtual ExtendedGroup& 
       operator=(const ExtendedGroup& source);
 
@@ -170,7 +174,7 @@ namespace LOCA {
       virtual void setStepSize(double deltaS) = 0;
 
       //! Get step size for continuation constraint equation
-      virtual double getStepSize() = 0;
+      virtual double getStepSize() const = 0;
 
       //! Compute tangent direction of continuation curve
       virtual NOX::Abstract::Group::ReturnType
@@ -213,7 +217,7 @@ namespace LOCA {
       virtual void recalculateScaleFactor(double dpds) {}
 
       //! Returns step size scale factor
-      virtual double getStepSizeScaleFactor()const;
+      virtual double getStepSizeScaleFactor() const;
 
       //! Prints the group
       virtual void printSolution() const;

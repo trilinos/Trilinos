@@ -114,6 +114,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(
   return *this = dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup&>(source);
 }
 
+LOCA::Extended::AbstractGroup&
+LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(
+			const LOCA::Extended::AbstractGroup& source)
+{
+  return *this = dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup&>(source);
+}
+
 LOCA::Bifurcation::TPBord::ExtendedGroup&
 LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(
 		      const LOCA::Bifurcation::TPBord::ExtendedGroup& source) 
@@ -460,6 +467,95 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverse(
   return res;
 }
 
+NOX::Abstract::Group::ReturnType 
+LOCA::Bifurcation::TPBord::ExtendedGroup::applyRightPreconditioning(
+					 bool useTranspose,
+					 NOX::Parameter::List& params,
+					 const NOX::Abstract::Vector& input, 
+					 NOX::Abstract::Vector& result) const
+{
+  if (useTranspose) {
+    cerr << "Cannot apply transpose of TPBord::ExtendedGroup right preconditioner" << endl;
+    return NOX::Abstract::Group::Failed;
+  }
+
+  // Return type
+  NOX::Abstract::Group::ReturnType res;
+
+  // cast vectors to turning point vectors
+  const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
+    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(input);
+  LOCA::Bifurcation::TPBord::ExtendedVector& tp_result = 
+    dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector&>(result);
+
+  // Get componenets of input vector
+  const NOX::Abstract::Vector& input_x = tp_input.getXVec();
+  const NOX::Abstract::Vector& input_y = tp_input.getNullVec();
+  double input_p = tp_input.getBifParam();
+
+  // Get components of result vector.  Note these are references.
+  NOX::Abstract::Vector& result_x = tp_result.getXVec();
+  NOX::Abstract::Vector& result_y = tp_result.getNullVec();
+  double& result_p = tp_result.getBifParam();
+
+  // Temporary vectors
+  NOX::Abstract::Vector* a = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* b = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* c = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* d = input_x.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector* tmp = input_x.clone(NOX::ShapeCopy);
+
+  // Solve P*a = input_x
+  res = grpPtr->applyRightPreconditioning(useTranspose, params, input_x,
+					  *a);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Solve P*b = dF/dp
+  res = grpPtr->applyRightPreconditioning(useTranspose, params, 
+					  *derivResidualParamPtr, *b);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  // Compute (dJy/dx)*a - input_y
+  res = grpPtr->computeDJnDxa(tpXVec.getNullVec(), *a, tpFVec.getNullVec(), 
+			      *tmp);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  tmp->update(-1.0, input_y, 1.0);
+
+  // Solve P*c = (dJy/dx)*a - input_y
+  res = grpPtr->applyRightPreconditioning(useTranspose, params, *tmp, *c);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute (dJy/dx)*b - dJy/dp
+  res = grpPtr->computeDJnDxa(tpXVec.getNullVec(), *b, tpFVec.getNullVec(),
+			      *tmp);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  tmp->update(-1.0, *derivNullResidualParamPtr, 1.0);
+
+  // Solve P*d = (dJy/dx)*b - dJy/dp
+  res = grpPtr->applyRightPreconditioning(useTranspose, params, *tmp, *d);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  double w = (input_p + lengthVecPtr->dot(*c))/lengthVecPtr->dot(*d);
+  
+  result_x.update(1.0, *a, -w, *b, 0.0);
+  result_y.update(-1.0, *c, w, *d, 0.0);
+  result_p = w;
+
+  delete a;
+  delete b;
+  delete c;
+  delete d;
+  delete tmp;
+
+  return res;
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
 			    NOX::Parameter::List& params,
@@ -470,7 +566,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
   int m = nVecs; 
 
   // Return type
-   NOX::Abstract::Group::ReturnType res;
+  NOX::Abstract::Group::ReturnType res;
   
   // Build arrays of solution, null vector and parameter components
   const NOX::Abstract::Vector** inputs_x = 
@@ -641,6 +737,9 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution(const double conParam) c
 {
   cout << "LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution\n";
 
+  cout << "Turning Point located at: " << conParam << "   " << getBifParam()
+       << endl;
+
   cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
   grpPtr->printSolution(conParam);
 
@@ -651,13 +750,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution(const double conParam) c
 const LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup() const
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup()
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 void

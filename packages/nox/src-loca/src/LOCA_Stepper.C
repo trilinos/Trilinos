@@ -31,6 +31,8 @@
 //@HEADER
 #include "LOCA_Stepper.H"    // class definition
 #include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_Combo.H"
+#include "LOCA_StatusTest_Wrapper.H"
 
 // LOCA Includes
 #include "LOCA_Utils.H"		                // for static function doPrint
@@ -61,7 +63,10 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  statusTestPtr(NULL),
+  solStatusTestPtr(NULL),
+  paramStatusTestPtr(NULL),
+  comboStatusTestPtr(NULL),
+  haveSeparateStatusTests(false),
   paramListPtr(NULL),
   solverPtr(NULL),
   predictorManagerPtr(NULL),
@@ -70,9 +75,30 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
   stepSizeManagerPtr(NULL)
   
 {
-  // Initialize the utilities
-  Utils::setUtils(p.sublist("LOCA").sublist("Utilities"));
   reset(initialGuess, t, p);
+}
+
+LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess, 
+		       NOX::StatusTest::Generic& tSol,
+		       NOX::StatusTest::Generic& tParam,
+		       NOX::Parameter::List& p) :
+  LOCA::Abstract::Iterator(),
+  conGroupManagerPtr(NULL),
+  curGroupPtr(NULL),
+  prevGroupPtr(NULL),
+  solStatusTestPtr(NULL),
+  paramStatusTestPtr(NULL),
+  comboStatusTestPtr(NULL),
+  haveSeparateStatusTests(true),
+  paramListPtr(NULL),
+  solverPtr(NULL),
+  predictorManagerPtr(NULL),
+  curPredictorPtr(NULL),
+  prevPredictorPtr(NULL),
+  stepSizeManagerPtr(NULL)
+  
+{
+  reset(initialGuess, tSol, tParam, p);
 }
 
 LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
@@ -80,7 +106,10 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  statusTestPtr(s.statusTestPtr),
+  solStatusTestPtr(NULL),
+  paramStatusTestPtr(s.paramStatusTestPtr),
+  comboStatusTestPtr(NULL),
+  haveSeparateStatusTests(s.haveSeparateStatusTests),
   paramListPtr(s.paramListPtr),
   solverPtr(NULL),
   predictorManagerPtr(NULL),
@@ -114,6 +143,16 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
     dynamic_cast<LOCA::Continuation::ExtendedVector*>(s.prevPredictorPtr->clone());
   stepSizeManagerPtr = 
     new LOCA::StepSize::Manager(*s.stepSizeManagerPtr);
+
+  if (haveSeparateStatusTests) {
+    solStatusTestPtr = 
+      &(dynamic_cast<LOCA::StatusTest::Wrapper*>(s.solStatusTestPtr)->
+	getUnderlyingStatusTest());
+    comboStatusTestPtr = 
+      new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
+				 *solStatusTestPtr, *paramStatusTestPtr);
+  }
+
   // Right now this doesn't work because we can't copy the solver
 }
 
@@ -129,6 +168,11 @@ LOCA::Stepper::~Stepper()
   delete prevPredictorPtr;
   delete stepSizeManagerPtr;
   delete solverPtr;
+
+  if (haveSeparateStatusTests) {
+    delete solStatusTestPtr;
+    delete comboStatusTestPtr;
+  }
 }
 
 bool 
@@ -136,6 +180,44 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 		     NOX::StatusTest::Generic& t,
 		     NOX::Parameter::List& p) 
 {
+  if (comboStatusTestPtr != NULL && haveSeparateStatusTests) 
+    delete comboStatusTestPtr;
+  if (solStatusTestPtr != NULL && haveSeparateStatusTests) 
+    delete solStatusTestPtr;
+
+  haveSeparateStatusTests = false;
+  solStatusTestPtr = NULL;
+  paramStatusTestPtr = NULL;
+  comboStatusTestPtr = &t;
+
+  return resetCommon(initialGuess, *comboStatusTestPtr, p);
+}
+
+bool 
+LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
+		     NOX::StatusTest::Generic& tSol,
+		     NOX::StatusTest::Generic& tParam,
+		     NOX::Parameter::List& p) 
+{
+  if (comboStatusTestPtr != NULL && haveSeparateStatusTests)
+    delete comboStatusTestPtr;
+  if (solStatusTestPtr != NULL && haveSeparateStatusTests) 
+    delete solStatusTestPtr;
+
+  haveSeparateStatusTests = true;
+  solStatusTestPtr = new LOCA::StatusTest::Wrapper(tSol);
+  paramStatusTestPtr = &tParam;
+  comboStatusTestPtr = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
+						  *solStatusTestPtr,
+						  *paramStatusTestPtr);
+
+  return resetCommon(initialGuess, tSol, p);
+}
+
+bool
+LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
+			   NOX::StatusTest::Generic& initialStatusTest,
+			   NOX::Parameter::List& p) {
   delete curGroupPtr;
   delete prevGroupPtr;
   delete curPredictorPtr;
@@ -145,8 +227,10 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   delete stepSizeManagerPtr;
   delete solverPtr;
 
-  statusTestPtr = &t;
   paramListPtr = &p;
+
+  // Initialize the utilities
+  Utils::setUtils(paramListPtr->sublist("LOCA").sublist("Utilities"));
 
   // Get LOCA sublist
   NOX::Parameter::List& locaList = paramListPtr->sublist("LOCA");
@@ -205,14 +289,14 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   calcEigenvalues = stepperList.getParameter("Compute Eigenvalues",false);
 
   // Create solver using initial conditions
-  solverPtr = new NOX::Solver::Manager(initialGuess, *statusTestPtr, 
+  solverPtr = new NOX::Solver::Manager(initialGuess, initialStatusTest, 
 				       paramListPtr->sublist("NOX"));
 
   printInitializationInfo();
 
   //  if (Utils::doPrint(Utils::Parameters))
-    paramListPtr->print(cout);
-
+  paramListPtr->print(cout);
+  
   return true;
 }
 
@@ -262,9 +346,9 @@ LOCA::Stepper::start() {
   prevPredictorPtr = 
     dynamic_cast<LOCA::Continuation::ExtendedVector*>(curPredictorPtr->clone());
 
-  // Create new solver using new continuation groups
+  // Create new solver using new continuation groups and combo status test
   delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *comboStatusTestPtr, 
 				       paramListPtr->sublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
@@ -290,7 +374,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
   // Do one additional step using natural continuation to hit target value
   double value = curGroupPtr->getContinuationParameter();
 
-  if (abs(value-targetValue) > 1.0e-15*(1.0 + targetValue)) {
+  if (fabs(value-targetValue) > 1.0e-15*(1.0 + fabs(targetValue))) {
       
     isTargetStep = true;
 
@@ -339,7 +423,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
       
     // Create new solver
     delete solverPtr;
-    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *comboStatusTestPtr, 
 					 lastStepParams.sublist("NOX"));
 
     // Solve step
@@ -390,7 +474,8 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
 
   // Reset solver to compute new solution
-  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramListPtr->sublist("NOX"));
+  solverPtr->reset(*curGroupPtr, *comboStatusTestPtr, 
+		   paramListPtr->sublist("NOX"));
 
   return stepStatus;
 }
@@ -454,7 +539,7 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Compute eigenvalues/eigenvectors
   if (calcEigenvalues)
-    curGroupPtr->getUnderlyingGroup().computeEigenvalues(*paramListPtr);
+    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
 
   return stepStatus;
 }

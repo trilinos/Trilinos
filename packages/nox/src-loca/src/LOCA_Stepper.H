@@ -71,12 +71,24 @@ namespace LOCA {
 	    NOX::StatusTest::Generic& t,
 	    NOX::Parameter::List& p);
 
+    //! Constructor with separate status tests for solution and parameter comp.
+    Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
+	    NOX::StatusTest::Generic& tSol,
+	    NOX::StatusTest::Generic& tParam,
+	    NOX::Parameter::List& p);
+
     //! Destructor
     virtual ~Stepper();
 
     //! Reset the Stepper to start a new continuation run
     virtual bool reset(LOCA::Continuation::AbstractGroup& initialGuess,
 		       NOX::StatusTest::Generic& t,
+		       NOX::Parameter::List& p);
+
+    //! Reset the Stepper to start a new continuation run, separte status tests
+    virtual bool reset(LOCA::Continuation::AbstractGroup& initialGuess,
+		       NOX::StatusTest::Generic& tSol,
+		       NOX::StatusTest::Generic& tParam,
 		       NOX::Parameter::List& p);
 
     //! Return the current solution group.
@@ -118,6 +130,11 @@ namespace LOCA {
     computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus, 
 		    double& stepSize);
 
+    //! Does steps in common between both versions of reset
+    bool resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
+		     NOX::StatusTest::Generic& initialStatusTest,
+		     NOX::Parameter::List& p);
+
     //! Print to the screen the initialization information
     virtual void printInitializationInfo();
 
@@ -141,8 +158,17 @@ namespace LOCA {
     //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
     LOCA::Continuation::ExtendedGroup* prevGroupPtr;
 
-    //! Pointer to the status test.  This is used for resetting the nonlinear solver in between steps.
-    NOX::StatusTest::Generic* statusTestPtr;
+    //! Pointer to the solution component status test.  
+    NOX::StatusTest::Generic* solStatusTestPtr;
+
+    //! Pointer to the parameter component status test.  
+    NOX::StatusTest::Generic* paramStatusTestPtr;
+
+    //! Pointer to the combined status 
+    NOX::StatusTest::Generic* comboStatusTestPtr;
+
+    //! Flag indicating whether separate status tests were passed
+    bool haveSeparateStatusTests;
 
     //! Pointer to parameter list passed in constructor/reset method
     NOX::Parameter::List* paramListPtr;

@@ -147,7 +147,7 @@ LOCA::Continuation::NaturalGroup::setStepSize(double deltaS)
 }
 
 double
-LOCA::Continuation::NaturalGroup::getStepSize() 
+LOCA::Continuation::NaturalGroup::getStepSize() const 
 {
   return stepSize;
 }

@@ -98,7 +98,7 @@ namespace LOCA {
       virtual void setStepSize(double deltaS);
 
       //! Get step size for continuation constraint equation
-      virtual double getStepSize();
+      virtual double getStepSize() const;
 
       //@{ \name "Compute" functions.
 

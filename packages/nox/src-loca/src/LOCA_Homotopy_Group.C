@@ -156,6 +156,13 @@ LOCA::Homotopy::Group::operator=(
   return *this = dynamic_cast<const LOCA::Homotopy::Group&>(source);
 }
 
+LOCA::Extended::AbstractGroup&
+LOCA::Homotopy::Group::operator=(
+			     const LOCA::Extended::AbstractGroup& source)
+{
+  return *this = dynamic_cast<const LOCA::Homotopy::Group&>(source);
+}
+
 NOX::Abstract::Group&
 LOCA::Homotopy::Group::operator=(const NOX::Abstract::Group& source)
 {
@@ -531,11 +538,11 @@ LOCA::Homotopy::Group::setStepperParameters(NOX::Parameter::List& params)
 const LOCA::Continuation::AbstractGroup&
 LOCA::Homotopy::Group::getUnderlyingGroup() const
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 LOCA::Continuation::AbstractGroup&
 LOCA::Homotopy::Group::getUnderlyingGroup()
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }

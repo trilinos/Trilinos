@@ -1,5 +1,5 @@
-// $Id$
-// $Source$
+// $Id$ 
+// $Source$ 
 
 //@HEADER
 // ************************************************************************
@@ -30,38 +30,61 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
-#include "LOCA_Continuation_AbstractGroup.H"
+#ifndef LOCA_SOLVER_WRAPPER_H
+#define LOCA_SOLVER_WRAPPER_H
 
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
-			    NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const
-{
-  NOX::Abstract::Group::ReturnType res;
+#include "NOX_Solver_Generic.H"	// base class
 
-  for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+namespace LOCA {
+
+  namespace Solver{
+
+    class Wrapper : public NOX::Solver::Generic {
+
+    public:
+
+      Wrapper(NOX::Solver::Generic& solver);
+
+      Wrapper(const NOX::Solver::Generic& solver);
+
+      ~Wrapper();
+
+      bool reset(NOX::Abstract::Group& grp, 
+		 NOX::StatusTest::Generic& tests, 
+		 NOX::Parameter::List& params);
+  
+      bool reset();
+      
+      NOX::StatusTest::StatusType getStatus();
+      
+      NOX::StatusTest::StatusType iterate();
+      
+      NOX::StatusTest::StatusType solve();
+      
+      const NOX::Abstract::Group& getSolutionGroup() const;
+      
+      const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+      
+      int getNumIterations() const;
+      
+      const NOX::Parameter::List& getParameterList() const;
+
+    protected:
+
+      void resetWrapper();
+
+    protected:
+      
+      //! Pointer to the solver object
+      NOX::Solver::Generic* solverPtr;
+
+      //! Pointer to solution group
+      const NOX::Abstract::Group* solnGrpPtr;
+
+      //! Pointer to previous solution group
+      const NOX::Abstract::Group* oldSolnGrpPtr;
+
+    };
   }
-
-  return res;
 }
-
-double
-LOCA::Continuation::AbstractGroup::computeScaledDotProduct(
-					 const NOX::Abstract::Vector& a,
-					 const NOX::Abstract::Vector& b) const
-{
-  return a.dot(b);
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AbstractGroup::computeEigenvalues(
-					        NOX::Parameter::List& params)
-{
-  cerr << "Error:  No eigensolver defined for group" << endl;
-  return NOX::Abstract::Group::Failed;
-}
+#endif

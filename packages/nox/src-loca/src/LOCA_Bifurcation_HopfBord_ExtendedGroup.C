@@ -125,6 +125,13 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
   return *this = dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
 }
 
+LOCA::Extended::AbstractGroup&
+LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
+			     const LOCA::Extended::AbstractGroup& source)
+{
+  return *this = dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
+}
+
 NOX::Abstract::Group&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
 				         const NOX::Abstract::Group& source)
@@ -919,13 +926,13 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution(const double conParam)
 const LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getUnderlyingGroup() const
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getUnderlyingGroup()
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 void

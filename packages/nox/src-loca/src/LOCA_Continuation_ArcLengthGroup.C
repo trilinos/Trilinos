@@ -159,7 +159,7 @@ LOCA::Continuation::ArcLengthGroup::setStepSize(double deltaS)
 }
 
 double
-LOCA::Continuation::ArcLengthGroup::getStepSize() 
+LOCA::Continuation::ArcLengthGroup::getStepSize() const 
 {
   return arclengthStep;
 }

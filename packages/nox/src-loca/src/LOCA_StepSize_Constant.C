@@ -67,6 +67,7 @@ LOCA::StepSize::Constant::compute(
 			const LOCA::Stepper& stepper,
 			double& stepSize) 
 {
+
   // If this is the first step, set step size to initial value adjusted 
   // to predicted change in parameter
   if (isFirstStep) {
@@ -80,7 +81,7 @@ LOCA::StepSize::Constant::compute(
   }
   else {
     double ds_ratio = curGroup.getStepSizeScaleFactor();
-  startStepSize *= ds_ratio;
+    startStepSize *= ds_ratio;
     maxStepSize *= ds_ratio;
     minStepSize *= ds_ratio;
 
@@ -105,7 +106,7 @@ LOCA::StepSize::Constant::compute(
           stepSize = min(stepSize, startStepSize);
         else
           stepSize = max(stepSize, startStepSize);
-      }
+     }
     }
   }
 

@@ -129,6 +129,13 @@ LOCA::Continuation::ExtendedGroup::operator=(
   return operator=(dynamic_cast<const LOCA::Continuation::ExtendedGroup&>(source));
 }
 
+LOCA::Extended::AbstractGroup&
+LOCA::Continuation::ExtendedGroup::operator=(
+				 const LOCA::Extended::AbstractGroup& source) 
+{
+  return operator=(dynamic_cast<const LOCA::Continuation::ExtendedGroup&>(source));
+}
+
 LOCA::Continuation::ExtendedGroup&
 LOCA::Continuation::ExtendedGroup::operator=(
 			     const LOCA::Continuation::ExtendedGroup& source)
@@ -310,11 +317,11 @@ LOCA::Continuation::ExtendedGroup::printSolution() const
 const LOCA::Continuation::AbstractGroup&
 LOCA::Continuation::ExtendedGroup::getUnderlyingGroup() const
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
 
 LOCA::Continuation::AbstractGroup&
 LOCA::Continuation::ExtendedGroup::getUnderlyingGroup()
 {
-  return grpPtr->getUnderlyingGroup();
+  return *grpPtr;
 }
