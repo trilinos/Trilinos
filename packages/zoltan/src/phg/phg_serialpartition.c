@@ -139,6 +139,12 @@ static int seq_part (
 
 /****************************************************************************/
 /* Linear partitioning. Sequence partitioning with vertices in linear order. */
+
+/* UVC: each column group does independent partitioning; each tries to balance
+   local vertex weights; our hope is that this will give somewhat balanced result.
+   Once the hypergraph-gather operation is implemented one can use the original
+   serial version to partition the coarse hypergraph sequentially.
+*/
 static int coarse_part_lin (
   ZZ *zz, 
   PHGraph *hg, 
@@ -147,8 +153,17 @@ static int coarse_part_lin (
   PHGPartParams *hgp
 )
 {
-  /* Call sequence partitioning with no order array. */
-  return seq_part( zz, hg, NULL, p, part, hgp);
+    PHGComm *hgc = hg->comm;
+    int err=0;
+
+    if (!hgc->myProc_y)  /* only first row */
+        err = seq_part( zz, hg, NULL, p, part, hgp);     /* Call sequence partitioning with no order array. */
+
+    MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
+    if (!err)
+        MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    
+    return err;
 }
 
 
@@ -163,25 +178,33 @@ static int coarse_part_ran (
   PHGPartParams *hgp
 )
 {
-  int i, err, *order=NULL;
-  char *yo = "coarse_part_ran";
+    PHGComm *hgc = hg->comm;    
+    int i, err=0, *order=NULL;
+    char *yo = "coarse_part_ran";
 
-  if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
-    ZOLTAN_FREE ((void**) &order);
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-  for (i=0; i<hg->nVtx; i++)
-    order[i] = i;
+    if (!hgc->myProc_y) { /* only first row */
+        if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
+            ZOLTAN_FREE ((void**) &order);
+            ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
+        for (i=0; i<hg->nVtx; i++)
+            order[i] = i;
 
-  /* Randomly permute order array */
-  Zoltan_PHG_Rand_Perm_Int (order, hg->nVtx);
+        /* Randomly permute order array */
+        Zoltan_PHG_Rand_Perm_Int (order, hg->nVtx);
+        
+        /* Call sequence partitioning with random order array. */
+        err = seq_part (zz, hg, order, p, part, hgp);
+    }
 
-  /* Call sequence partitioning with random order array. */
-  err = seq_part (zz, hg, order, p, part, hgp);
+    MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
+    if (!err)
+        MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
 
-  ZOLTAN_FREE ((void**) &order);
-  return (err);
+    if (!hgc->myProc_y)  /* only first row */
+        ZOLTAN_FREE ((void**) &order);
+    return err;
 }
 
 
