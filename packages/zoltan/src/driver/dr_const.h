@@ -15,15 +15,14 @@
 #define _DR_CONST_H
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "zoltan.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include "zoltan.h"
 
 /*****************************************************************************
  *  Definitions for the LB library driver program.
@@ -50,7 +49,7 @@ enum LISTS {  /* NULL lists to pass to Zoltan_Migrate */
 
 enum DATA_TYPE {
   MESH = 0,
-  GRAPH,
+  ZOLTAN_GRAPH,
   HYPERGRAPH
 };
 
@@ -226,7 +225,6 @@ extern double Total_Partition_Time;
 #define DEBUG_TRACE_DETAIL(proc,yo,str) \
   if (Debug_Driver > 2) \
     printf("%d DRIVER %s: %s\n", proc,yo, str);
-
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -11,13 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
+#include <mpi.h>
 /*--------------------------------------------------------------------------*/
 /* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */
 /*                                                                          */
@@ -36,8 +30,6 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 
-#include <mpi.h>
-
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_loadbal_const.h"
@@ -45,6 +37,12 @@ extern "C" {
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
 #include "dr_dd.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 int Debug_Driver = 1;
 int Number_Iterations = 1;
@@ -59,6 +57,8 @@ double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
 static void initialize_mesh(MESH_INFO_PTR);
+
+#include <unistd.h>
 
 /****************************************************************************/
 /****************************************************************************/
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
       float tmp;
       float twiddle = 0.01;
       /* Perturb coordinates of mesh */
-      if (mesh.data_type == GRAPH)
+      if (mesh.data_type == ZOLTAN_GRAPH)
         for (i = 0; i < mesh.num_elems; i++) {
           for (j = 0; j < mesh.num_dims; j++) {
             /* tmp = ((float) rand())/RAND_MAX; *//* Equiv. to sjplimp's test */

@@ -11,18 +11,10 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
+#include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mpi.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -34,6 +26,12 @@ extern "C" {
 #include "dr_maps_const.h"
 #include "ch_input_const.h"
 #include "ch_init_dist_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #ifndef MAX_STR_LENGTH
 #define MAX_STR_LENGTH 80
@@ -198,7 +196,7 @@ int i;
   DEBUG_TRACE_START(Proc, yo);
 
   /* Initialize mesh structure for Chaco mesh. */
-  mesh->data_type = GRAPH;
+  mesh->data_type = ZOLTAN_GRAPH;
   mesh->vwgt_dim = vwgt_dim;
   mesh->ewgt_dim = ewgt_dim;
   mesh->num_elems = nvtxs;

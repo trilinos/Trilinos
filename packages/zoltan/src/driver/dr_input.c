@@ -11,18 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
+#include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <mpi.h>
 #include <ctype.h>
 
 #include "dr_const.h"
@@ -30,6 +23,11 @@ extern "C" {
 #include "dr_util_const.h"
 #include "dr_err_const.h"
 #include "ch_init_dist_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 
 #define SKIPW    "%*[,\t ]"         /* eat up white space amd comma */
@@ -39,7 +37,6 @@ extern "C" {
 #define LASTARG  SKIPEQ "%[^,=\t\n ]" /* last arg w/o comma, whitespace */
 #define NEXTLIST BIGSKIP "%[^,)}=\t\n ]"
   
-
 /* Purpose: Determine file types for command files and read in the parallel
  * ExodusII command file. Taken from nemesis utilites nem_spread and nem_join. 
  */
@@ -542,7 +539,7 @@ void brdcst_cmd_info (
   switch (pio_info->file_type) {
   case CHACO_FILE:
   case NO_FILE:
-    mesh->data_type = GRAPH;
+    mesh->data_type = ZOLTAN_GRAPH;
     break;
   case NEMESIS_FILE:
     mesh->data_type = MESH;
