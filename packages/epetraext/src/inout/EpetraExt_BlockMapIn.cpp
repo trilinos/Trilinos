@@ -138,6 +138,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
     }
   }
   if (fclose(handle)) return(-1);
+
   comm.Barrier();
 
   if (MinElementSize==1 && MaxElementSize==1)
