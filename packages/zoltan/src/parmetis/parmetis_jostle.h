@@ -71,6 +71,7 @@ typedef int idxtype;
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
 #define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
+#define INT_EPSILON (1e-5) /* How close we need to be to say it's an integer */
 
 /* ParMETIS data types and definitions. */
 
@@ -111,6 +112,9 @@ struct Hash_Node {
   struct Hash_Node * next;
 };
 
+/* Macro for error handling */
+#define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto free ;}
 
 /* Extern function prototypes. Should be in a separate header file? */
 extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,

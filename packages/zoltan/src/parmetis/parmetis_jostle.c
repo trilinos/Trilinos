@@ -322,18 +322,6 @@ int Zoltan_Jostle(
 
 #if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
-/* Macro to free all allocated memory */
-#define FREE_MY_MEMORY \
-  { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParMETIS/Jostle error."); \
-  ZOLTAN_FREE(&vtxdist); ZOLTAN_FREE(&xadj); ZOLTAN_FREE(&adjncy); \
-  ZOLTAN_FREE(&vwgt); ZOLTAN_FREE(&adjwgt); ZOLTAN_FREE(&part); \
-  ZOLTAN_FREE(&float_vwgt); ZOLTAN_FREE(&ewgts); ZOLTAN_FREE(&xyz); \
-  ZOLTAN_FREE(&local_ids); ZOLTAN_FREE(&global_ids); \
-  ZOLTAN_FREE(&tmp_ewgts); ZOLTAN_FREE(&imb_tols);\
-  ZOLTAN_FREE(&vsize); ZOLTAN_FREE(&tpwgt);\
-  }
-
 static int Zoltan_ParMetis_Jostle(
   ZZ *zz,               /* Zoltan structure */
   int *num_imp,         /* number of objects to be imported */
@@ -357,7 +345,7 @@ static int Zoltan_ParMetis_Jostle(
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   int tmp_num_obj, ncon;
-  float *float_vwgt, *ewgts, *xyz, *imb_tols, *tmp_ewgts, *tpwgt; 
+  float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;     /* Do not deallocate while still using the hash
@@ -462,9 +450,7 @@ static int Zoltan_ParMetis_Jostle(
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
   if (ierr){
     /* Return error code */
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
+    ZOLTAN_PARMETIS_ERROR(ierr, "Get_Num_Obj returned error.");
   }
   
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -477,16 +463,12 @@ static int Zoltan_ParMetis_Jostle(
       float_vwgt = (float *) ZOLTAN_MALLOC(obj_wgt_dim*num_obj*sizeof(float));
     if (!global_ids || (num_lid_entries && !local_ids)){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     Zoltan_Get_Obj_List(zz, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_FATAL;
+      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
   
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
@@ -503,10 +485,8 @@ static int Zoltan_ParMetis_Jostle(
   ierr = Zoltan_Build_Graph(zz, get_graph_data, check_graph,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts);
-  if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ierr;
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
 
   /* ParMetis 2 and 3 require integer weights. Convert from float. */
@@ -518,9 +498,7 @@ static int Zoltan_ParMetis_Jostle(
                                  (int) MAX_WGT_SUM, zz->Debug_Level, zz->Communicator);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ierr;
+        ZOLTAN_PARMETIS_ERROR(ierr, "Error in scaling of weights.");
       }
 
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -544,9 +522,7 @@ static int Zoltan_ParMetis_Jostle(
                  * sizeof(idxtype));
       if (num_edges && (!adjwgt)){
         /* Not enough memory */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
       }
   
 
@@ -560,7 +536,7 @@ static int Zoltan_ParMetis_Jostle(
                                  (int) MAX_WGT_SUM, zz->Debug_Level, zz->Communicator);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
-        FREE_MY_MEMORY;
+        ZOLTAN_PARMETIS_ERROR(ierr, "Error in scaling of weights.");
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ierr;
       }
@@ -580,17 +556,13 @@ static int Zoltan_ParMetis_Jostle(
     ndims = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
     if (ierr){
       /* Return error */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Num_Geom returned error.");
     }
     /* Allocate space for the geometry data */
     xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj * sizeof(float));
     if (ndims && num_obj && !xyz){
       /* Not enough space */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     /* Get the geometry data */
     for (i=0; i<num_obj; i++){
@@ -601,9 +573,7 @@ static int Zoltan_ParMetis_Jostle(
                    lid, geom_vec, &ierr);
       if (ierr) {
         /* Return error code */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return (ierr);
+        ZOLTAN_PARMETIS_ERROR(ierr, "Get_Geom returned error.");
       }
       for (j=0; j<ndims; j++)
         xyz[i*ndims+j] = geom_vec[j];
@@ -616,9 +586,7 @@ static int Zoltan_ParMetis_Jostle(
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
     if (num_obj && !vsize){
       /* Not enough space */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     for (i=0; i<num_obj; i++){
       lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
@@ -655,9 +623,7 @@ static int Zoltan_ParMetis_Jostle(
     ierr = Zoltan_Scatter_Graph(&vtxdist, &xadj, &adjncy, &vwgt, &vsize,
               &adjwgt, &xyz, ndims, zz, &comm_plan);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ierr;
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");
     }
     tmp_num_obj = vtxdist[zz->Proc+1]-vtxdist[zz->Proc];
   }
@@ -669,9 +635,7 @@ static int Zoltan_ParMetis_Jostle(
   part = (idxtype *)ZOLTAN_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_MEMERR;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   ncon = (obj_wgt_dim > 0 ? obj_wgt_dim : 1);
 
@@ -679,9 +643,7 @@ static int Zoltan_ParMetis_Jostle(
   imb_tols = (float *) ZOLTAN_MALLOC(ncon * sizeof(float));
   if (!imb_tols){
     /* Not enough memory */
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_MEMERR;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   for (i=0; i<ncon; i++)
     imb_tols[i] = zz->LB.Imbalance_Tol;
@@ -702,18 +664,10 @@ static int Zoltan_ParMetis_Jostle(
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No edges on this processor; "
-                      "Jostle will likely crash. "
-                      "Please use a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will fail. Please try a different load balancing method.");
       } else { /* ParMETIS */
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No edges on this processor; "
-                      "ParMETIS will likely crash. "
-                      "Please use a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS will fail. Please try a different load balancing method.");
       }
-      ierr = ZOLTAN_FATAL;
-      FREE_MY_MEMORY; 
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
     }
   }
   
@@ -726,9 +680,7 @@ static int Zoltan_ParMetis_Jostle(
   tpwgt = (float *) ZOLTAN_MALLOC(ncon*num_proc * sizeof(float));
   if (!tpwgt){
     /* Not enough memory */
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_MEMERR;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   /* For now, all desired partition sizes are equal */
   for (i=0; i<ncon*num_proc; i++)
@@ -739,9 +691,7 @@ static int Zoltan_ParMetis_Jostle(
       "You need ParMETIS version 3.0 or higher to use multi-weights.\n"
       "If you have this installed, please make sure you include the appropriate\n"
       "version of parmetis.h and recompile Zoltan.");
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_FATAL;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Multi-constraint error.");
   }
 #endif 
   if (strcmp(alg, "JOSTLE") == 0){
@@ -775,9 +725,7 @@ static int Zoltan_ParMetis_Jostle(
       "If you have Jostle, please set the JOSTLE_XXXPATHs appropriately "
       "in the Zoltan configuration files and recompile Zoltan. Otherwise, "
       "use a different method, for example ParMETIS.");
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_FATAL;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Jostle not available.");
 #endif /* ZOLTAN_JOSTLE */
   }
 #if PARMETIS_MAJOR_VERSION >= 3
@@ -868,10 +816,7 @@ static int Zoltan_ParMetis_Jostle(
   else {
     /* Sanity check: This should never happen! */
     sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_FATAL;
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, msg);
   }
 
   /* Get a time here */
@@ -901,9 +846,8 @@ static int Zoltan_ParMetis_Jostle(
     /* Allocate space for partition array under original distribution */
     part2 = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype)); 
     if (num_obj && !part2){
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      /* Not enough memory */
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
     }
     /* Use reverse communication to compute the partition array under the 
      * original distribution 
@@ -911,9 +855,7 @@ static int Zoltan_ParMetis_Jostle(
     ierr = Zoltan_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
                               NULL, (char *) part2);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Comm_Do_Reverse returned error.");
     }
     Zoltan_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     /* We don't need the partition array with the scattered distribution 
@@ -933,22 +875,16 @@ static int Zoltan_ParMetis_Jostle(
     (*num_exp) = nsend;
     if (nsend > 0) {
       if (!Zoltan_Special_Malloc(zz,(void **)exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       if (!Zoltan_Special_Malloc(zz,(void **)exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
         Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       if (!Zoltan_Special_Malloc(zz,(void **)exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
         Zoltan_Special_Free(zz,(void **)exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
         Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       j = 0;
       for (i=0; i<num_obj; i++){
@@ -965,14 +901,27 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
-  /* Free space */
-  ZOLTAN_FREE(&part);
+  /* Successful finish */
+  ierr = ZOLTAN_OK;
+
+free:
+  /* If an error was encountered, the following data may need to be freed */
+  if (vwgt)      ZOLTAN_FREE(&vwgt); 
+  if (adjwgt)    ZOLTAN_FREE(&adjwgt); 
+  if (float_vwgt)ZOLTAN_FREE(&float_vwgt); 
+  if (ewgts)     ZOLTAN_FREE(&ewgts); 
+  if (imb_tols)  ZOLTAN_FREE(&imb_tols);
+  if (vsize)     ZOLTAN_FREE(&vsize); 
+  if (tpwgt)     ZOLTAN_FREE(&tpwgt);
+
+  /* Always free these arrays */
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&vtxdist);
   ZOLTAN_FREE(&xadj);
   ZOLTAN_FREE(&adjncy);
   ZOLTAN_FREE(&xyz);
+  ZOLTAN_FREE(&part);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -992,7 +941,7 @@ static int Zoltan_ParMetis_Jostle(
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
+  return (ierr);
 }
 
 
@@ -1055,12 +1004,11 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 
       /* Compute local sums of the weights */
       /* Check if all weights are integers */
-#define EPSILON (1e-5)
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
           if (!nonint_local[j]){ 
             tmp = fwgts[i*dim+j]; /* Converts to nearest int */
-            if (fabs((double)tmp-fwgts[i*dim+j]) > EPSILON){
+            if (fabs((double)tmp-fwgts[i*dim+j]) > INT_EPSILON){
               nonint_local[j] = 1;
             }
           }
@@ -1081,7 +1029,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       for (j=0; j<dim; j++){
         scale[j] = 1.;
         /* Scale unless all weights are integers (not all zero) */
-        if (nonint[j] || (max_wgt[j] <= EPSILON) || (sum_wgt[j] > max_wgt_sum)){
+        if (nonint[j] || (max_wgt[j] <= INT_EPSILON) || (sum_wgt[j] > max_wgt_sum)){
           if (sum_wgt[j] == 0){
             ierr = ZOLTAN_WARN;
             if (proc == 0){
@@ -1132,7 +1080,6 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
   }
   return ierr;
 }
-#undef EPSILON
 
 #endif /* defined (ZOLTAN_JOSTLE) || defined (ZOLTAN_PARMETIS) */
 

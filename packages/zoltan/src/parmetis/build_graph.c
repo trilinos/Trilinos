@@ -33,18 +33,6 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
  * they are typically obtained together with the gids.
  */
 
-/* Macro to free all allocated memory */
-#define FREE_MY_MEMORY \
-  { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParMETIS/Jostle error."); \
-  ZOLTAN_FREE(vtxdist); ZOLTAN_FREE(xadj); ZOLTAN_FREE(adjncy); \
-  ZOLTAN_FREE(ewgts); \
-  ZOLTAN_FREE(&nbors_proc); ZOLTAN_FREE(&nbors_global); \
-  ZOLTAN_FREE(&proc_list); ZOLTAN_FREE(&proc_list_nbor); \
-  ZOLTAN_FREE(&tmp_ewgts); \
-  }
-
-
 int Zoltan_Build_Graph(
     ZZ *zz, int get_graph, int check_graph,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
@@ -53,10 +41,9 @@ int Zoltan_Build_Graph(
     float **ewgts)
 {
   /* Local variables */
-  int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
+  int num_obj, nedges, num_edges, cross_edges, max_edges;
   int *nbors_proc, *plist;
-  int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
-  int tmp_num_obj, nself, ncon;
+  int nsend, nrecv, nself, num_border, max_proc_list_len;
   int i, i99, j, jj, k, ierr, packet_size, offset, tmp, flag;
   float *tmp_ewgts;
   char *sendbuf, *recvbuf;
@@ -91,9 +78,7 @@ int Zoltan_Build_Graph(
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
   if (ierr){
     /* Return error code */
-    FREE_MY_MEMORY;
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
+    ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Num_Obj.");
   }
   
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -104,9 +89,7 @@ int Zoltan_Build_Graph(
   if (num_obj>0){
     if (!(*vtxdist)){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
   }
   
@@ -140,9 +123,7 @@ int Zoltan_Build_Graph(
                                  lid, &ierr);
       if (ierr){
         /* Return error */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return (ierr);
+        ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Num_Edges.");
       }
       num_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
@@ -156,9 +137,7 @@ int Zoltan_Build_Graph(
   
     if (!(*xadj) || (num_edges && !(*adjncy))){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: Successfully allocated ParMetis space\n", zz->Proc);
@@ -173,9 +152,7 @@ int Zoltan_Build_Graph(
       sizeof(struct Hash_Node *) );
     if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     
     for (i=0; i< num_obj; i++){
@@ -222,9 +199,7 @@ int Zoltan_Build_Graph(
                        (edge_wgt_dim && !(*ewgts)) || 
                        (edge_wgt_dim && !tmp_ewgts))) || (!plist)){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     for (i=0; i<zz->Num_Proc; i++)
       plist[i] = -1;
@@ -250,9 +225,7 @@ int Zoltan_Build_Graph(
       }
       if (!proc_list || !proc_list_nbor){
         /* Not enough memory */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
       }
     }
 
@@ -295,9 +268,7 @@ int Zoltan_Build_Graph(
                         tmp_ewgts, &ierr);
       if (ierr){
         /* Return error */
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return (ierr);
+        ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Edge_List.");
       }
   
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
@@ -352,9 +323,7 @@ int Zoltan_Build_Graph(
                               max_proc_list_len);
             if (!proc_list){
               /* Not enough memory */
-              FREE_MY_MEMORY;
-              ZOLTAN_TRACE_EXIT(zz, yo);
-              return ZOLTAN_MEMERR;
+              ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
             }
           }
           ptr = &proc_list[offset];
@@ -407,12 +376,10 @@ int Zoltan_Build_Graph(
 
     /* Sanity check */
     if ((check_graph >= 1) && ((*xadj)[num_obj] + nself != num_edges)){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid graph. "
-              "Something may be wrong with the edges in the graph, "
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid input graph. "
+              "Something may be wrong with your graph query functions, "
               "or perhaps you found a bug in Zoltan.\n"); 
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_FATAL;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Invalid input graph.");
     }
   
     /* Exchange info between processors to resolve global number 
@@ -426,9 +393,7 @@ int Zoltan_Build_Graph(
 
     if (nsend && (!sendbuf || !plist) ){
       /* Not enough space */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
 
     /* Pack the data to send */
@@ -460,18 +425,14 @@ int Zoltan_Build_Graph(
     ierr = Zoltan_Comm_Create(&comm_plan, nsend, plist, comm, TAG1, &nrecv);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Comm_Create returned error.");
     }
 
     /* Allocate recv buffer */
     recvbuf = (char *) ZOLTAN_MALLOC(nrecv * packet_size);
     if (nrecv && (!sendbuf || !plist) ){
       /* Not enough space */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: Ready to receive %d packets.\n", 
@@ -481,9 +442,7 @@ int Zoltan_Build_Graph(
     ierr = Zoltan_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
+      ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Comm_Do returned error.");
     }
 
     /* Destroy the comm. plan */
@@ -504,9 +463,7 @@ int Zoltan_Build_Graph(
       nrecv * sizeof(struct Hash_Node *) );
     if (nrecv && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
-      FREE_MY_MEMORY;
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     
     /* Copy data from recvbuf into hash table nodes */
@@ -537,9 +494,7 @@ int Zoltan_Build_Graph(
            This only happens if the graph is invalid. */
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Invalid graph. Please check that "
            "your graph query functions are correct.\n");
-        FREE_MY_MEMORY;
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_FATAL;
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Internal error.");
       }
       else{
         /* Insert the global number into adjncy vector */
@@ -553,7 +508,11 @@ int Zoltan_Build_Graph(
       
     }
 
-    /* Free space */
+    /* Successful finish */
+    ierr = ZOLTAN_OK; 
+
+free:
+    /* Free all local arrays */
     ZOLTAN_FREE(&sendbuf);
     ZOLTAN_FREE(&recvbuf);
     ZOLTAN_FREE(&proc_list);
@@ -562,6 +521,10 @@ int Zoltan_Build_Graph(
     ZOLTAN_FREE(&hash_nodes);
     ZOLTAN_FREE(&hashtab);
 
+    /* Free tmp_ewgts if they haven't been freed already (error occurred) */
+    if (tmp_ewgts) ZOLTAN_FREE(ewgts); 
+
+    return (ierr);
 }
 
 
