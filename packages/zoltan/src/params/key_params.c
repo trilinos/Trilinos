@@ -360,7 +360,7 @@ void Zoltan_Print_Key_Params(ZZ *zz)
          zz->LB.Num_Global_Parts_Param);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[15].name, 
          zz->LB.Num_Local_Parts_Param);
-  printf("ZOLTAN Parameter %s = %d", Key_params[17].name, 
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[17].name, 
          zz->LB.Remap_Flag);
 }
 
