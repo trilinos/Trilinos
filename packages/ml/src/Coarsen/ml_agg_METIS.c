@@ -57,6 +57,26 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 
 /* ======================================================================== */
 /*!
+ \brief Used to set the flag (used in Decompose_with_METIS) to compute
+ the radius (based on graph information only) of each aggregate.
+
+*/
+/* ------------------------------------------------------------------------ */
+
+int COMPUTE_GRAPH_RADIUS = ML_NO;
+
+int ML_Get_Compute_GraphRadiusFlag() 
+{
+  return COMPUTE_GRAPH_RADIUS ;
+}
+
+int ML_Set_Compute_GraphRadiusFlag(int i) 
+{
+  COMPUTE_GRAPH_RADIUS = i;
+}
+
+/* ======================================================================== */
+/*!
  \brief Set the number of nodes for each aggregate (for graph-based
  decompositions).
 
@@ -721,7 +741,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int current_level )
 {
 
-  int i, j,jj,  count;
+  int i, j,jj,  count, col;
   int Nrows;
   int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
@@ -736,6 +756,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int * nodes_per_aggre = NULL;
   double t0;
   int start, end, freeptr, nextptr;
+  int * dep = NULL;
+  int radius, NcenterNodes;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -1056,6 +1078,42 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      
   if( local_or_global == ML_GLOBAL_INDICES ) {
     ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs);
+  }
+
+  /* ********************************************************************** */
+  /* Compute the number of edges one has to walk though to move from the    */
+  /* "center" of each aggregate up to the boundaries. This is done by the   */
+  /* function `ML_Compute_AggregateGraphRadius'. This works on CSR format   */
+  /* (as METIS). I look for nodes on the boundaries of all the aggreates,   */
+  /* and mark them in the `dep' vector with 0. All the other nodes (in the  */
+  /* interior) will be marked -7). I will give                              */
+  /* the entire graph in input; in output, we will have the max radius.     */
+  /* ********************************************************************** */
+
+  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES &&
+      5 < ML_Get_PrintLevel() ) {
+  
+    dep = (int *) malloc(sizeof(int) * Nrows );
+    for( i=0 ; i<Nrows ; i++ ) dep[i] = -7;
+    
+    for( i=0 ; i<Nrows ; i++ ) {
+      jj = graph_decomposition[i];
+      ok = 0;
+      for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
+	col = adjncy[j];
+	if( graph_decomposition[col] != jj ) {
+	  dep[i] = 0;
+	  break;
+	}
+      }
+    }
+        
+    ML_Compute_AggregateGraphRadius( Nrows, xadj, adjncy, dep,
+				     &radius, &NcenterNodes );
+    printf("Max radius of aggregates (based on graph): %d\n", radius );
+    
+    free((void *) dep );
+    
   }
   
   /* ------------------- that's all folks --------------------------------- */
