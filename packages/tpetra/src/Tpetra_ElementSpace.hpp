@@ -4,7 +4,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Directory.hpp"
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <Teuchos_RefCountPtr.hpp>
 
 namespace Tpetra {
 
@@ -154,7 +154,7 @@ Platform<OrdinalType, OrdinalType> const& platform() const {return(*ElementSpace
 
 private:
 // private data members
-boost::shared_ptr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Boost shared pointer
+Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuchos smart pointer
 
 // private functions
 void directorySetup();

@@ -1,7 +1,7 @@
 #ifndef _TPETRA_VECTORSPACE_HPP_
 #define _TPETRA_VECTORSPACE_HPP_
 
-#include <boost/shared_ptr.hpp>
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 //#include "Tpetra_Vector.hpp"
 
@@ -109,10 +109,10 @@ bool const blockspace_;
 OrdinalType const indexBase_;
 OrdinalType const numMyEntries_;
 OrdinalType const numGlobalEntries_;
-boost::shared_ptr< ElementSpace<OrdinalType> const > const ElementSpace_;
-boost::shared_ptr< BlockElementSpace<OrdinalType> const > const BlockElementSpace_;
-boost::shared_ptr< Platform<OrdinalType, ScalarType> const > const Platform_;
-boost::shared_ptr< Comm<ScalarType, OrdinalType> const > const Comm_;
+Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > const ElementSpace_;
+Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > const BlockElementSpace_;
+Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > const Platform_;
+Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > const Comm_;
 
 }; // VectorSpace class
 } // Tpetra namespace

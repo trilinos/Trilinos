@@ -33,9 +33,9 @@ BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& Ele
   OrdinalType numMyPoints = elementSize * numMyElements;
 
 	// call BESData constructor
-	BlockElementSpaceData_.reset(new BlockElementSpaceData<OrdinalType>(ElementSpace, true, elementSize, numMyPoints, 
-																																			numGlobalPoints, minMySize, maxMySize, 
-																																			minGlobalSize, maxGlobalSize, elementSizeList));
+	BlockElementSpaceData_ = Teuchos::rcp(new BlockElementSpaceData<OrdinalType>(ElementSpace, true, elementSize, numMyPoints, 
+																																							 numGlobalPoints, minMySize, maxMySize, 
+																																							 minGlobalSize, maxGlobalSize, elementSizeList));
 }
 
 //=======================================================================
@@ -83,9 +83,9 @@ BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& Ele
   }
 
 	// call BESData constructor
-	BlockElementSpaceData_.reset(new BlockElementSpaceData<OrdinalType>(ElementSpace, false, 0, numMyPoints, 
-																																			numGlobalPoints, minMySize, maxMySize, 
-																																			minGlobalSize, maxGlobalSize, myElementSizeList));
+	BlockElementSpaceData_ = Teuchos::rcp(new BlockElementSpaceData<OrdinalType>(ElementSpace, false, 0, numMyPoints, 
+																																							 numGlobalPoints, minMySize, maxMySize, 
+																																							 minGlobalSize, maxGlobalSize, myElementSizeList));
 }
 
 //=======================================================================

@@ -3,7 +3,7 @@
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
-#include <boost/shared_ptr.hpp>
+#include <Teuchos_RefCountPtr.hpp>
 
 namespace Tpetra {
 
@@ -128,7 +128,7 @@ ElementSpace<OrdinalType> const& elementSpace() const {return(*BlockElementSpace
 //@}
 
 private:
-boost::shared_ptr<BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; // Boost shared pointer
+Teuchos::RefCountPtr< BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; // Teuchos smart pointer
 
 }; // BlockElementSpace class
 

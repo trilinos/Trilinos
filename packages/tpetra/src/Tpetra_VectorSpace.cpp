@@ -14,12 +14,14 @@ VectorSpace<OrdinalType, ScalarType>::VectorSpace(ElementSpace<OrdinalType> cons
 	, indexBase_(elementSpace.getIndexBase())
 	, numMyEntries_(elementSpace.getNumMyElements())
 	, numGlobalEntries_(elementSpace.getNumGlobalElements())
-	, ElementSpace_(&elementSpace)
-	, BlockElementSpace_()
-	, Platform_(&platform)
-	, Comm_(platform.createScalarComm())
+	, ElementSpace_(0)
+	, BlockElementSpace_(0)
+	, Platform_(0)
+	, Comm_(0)
 {
-
+	ElementSpace_ = Teuchos::rcp(&elementSpace);
+	Platform_ = Teuchos::rcp(&platform);
+	Comm_ = Teuchos::rcp(platform.createScalarComm());
 }
 
 // BlockElementSpace constructor

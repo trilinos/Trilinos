@@ -34,21 +34,14 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/Tpetra_BlockElementSpace.hpp \
-	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
 	$(srcdir)/Tpetra_Directory.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
 	$(srcdir)/Tpetra_ElementSpaceData.hpp \
-	$(srcdir)/Tpetra_Platform.hpp \
-	$(srcdir)/Tpetra_Vector.hpp \
-	$(srcdir)/Tpetra_VectorSpace.hpp
+	$(srcdir)/Tpetra_Platform.hpp 
 
 CORE = \
-	$(srcdir)/Tpetra_BlockElementSpace.cpp \
-	$(srcdir)/Tpetra_ElementSpace.cpp \
-	$(srcdir)/Tpetra_Vector.cpp \
-	$(srcdir)/Tpetra_VectorSpace.cpp
+	$(srcdir)/Tpetra_ElementSpace.cpp 
 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp
@@ -57,9 +50,14 @@ UTIL =
 
 ENUM_H = 
 
-UNIPROC_H = 
+UNIPROC_H = \
+	$(srcdir)/Tpetra_Object.hpp \
+	$(srcdir)/Tpetra_Comm.hpp \
+	$(srcdir)/Tpetra_SerialComm.hpp
 
-UNIPROC = 
+UNIPROC = \
+	$(srcdir)/Tpetra_Object.cpp \
+	$(srcdir)/Tpetra_SerialComm.cpp
 
 SERIAL_H = \
 	$(srcdir)/Tpetra_SerialDirectory.hpp \

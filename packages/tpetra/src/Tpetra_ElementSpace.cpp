@@ -39,8 +39,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   OrdinalType maxMyGID = minMyGID + numMyElements - 1;
 	
 	// call ESData constructor
-	ElementSpaceData_.reset(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
-																														minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
+	ElementSpaceData_ = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
+																																		 minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
   
 	// initialize directory
   directorySetup();
@@ -91,8 +91,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	OrdinalType maxMyGID = minMyGID + numMyElements - 1;
 
 	// call ESData constructor
-	ElementSpaceData_.reset(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
-																														minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
+	ElementSpaceData = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
+																																		minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
   
 	// initialize directory
   directorySetup();
@@ -153,8 +153,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 											" is less than index base = " + toString(indexBase) +".", -4);
 	
 	// call ESData constructor
-	ElementSpaceData_.reset(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
-																														minMyGID, maxMyGID, lgMap, glMap, false, Platform, comm));
+	ElementSpaceData_ = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
+																																		 minMyGID, maxMyGID, lgMap, glMap, false, Platform, comm));
 
 	// initialize directory
   directorySetup();
