@@ -140,7 +140,13 @@ class Epetra_IntVector : public Epetra_DistObject {
   Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, int *V);
 
   //! Epetra_IntVector destructor.  
-    virtual ~Epetra_IntVector ();
+  virtual ~Epetra_IntVector ();
+  //@}
+  
+
+  //@{ \name Post-construction modification methods
+  //! Set all elements of the vector to Value
+  int PutValue(int Value);
   //@}
   
 
@@ -166,6 +172,21 @@ class Epetra_IntVector : public Epetra_DistObject {
   int ExtractView(int **V) const;
   //@}
 
+  //@{ \name Mathematical methods
+  //! Find maximum value
+  /*!
+    \return Maximum value across all processors.
+  */
+  int MaxValue();
+ 
+  //! Find minimum value
+  /*!
+    \return Minimum value across all processors.
+  */
+  int MinValue();
+
+  //@}
+  
   //@{ \name Overloaded operators
 
   //! = Operator.

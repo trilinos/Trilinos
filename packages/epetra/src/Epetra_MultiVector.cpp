@@ -1387,18 +1387,21 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
   
   // Minimum value of each vector in MultiVector 
   
-  int i, j;
+  int i, j, ierr = 0;
   for (i=0; i < NumVectors_; i++) 
     {
-      double MinVal = Pointers_[i][0];
-      for (j=1; j< MyLength_; j++) MinVal = EPETRA_MIN(MinVal,Pointers_[i][j]); 
+      double MinVal = Epetra_MaxDouble;
+      for (j=0; j< MyLength_; j++) MinVal = EPETRA_MIN(MinVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MinVal;
     }
   Comm_->MinAll(DoubleTemp_, Result, NumVectors_);
+
+  for (i=0; i < NumVectors_; i++) 
+    if (Result[i]==Epetra_MaxDouble) ierr = -1; // Report a problem, numbers are too small
   
   // UpdateFlops(0);  Strictly speaking there are not FLOPS in this routine
   
-  return(0);
+  return(ierr);
 }
 
 //=========================================================================
@@ -1406,19 +1409,22 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
   
   // Maximum value of each vector in MultiVector 
   
-  int i, j;
+  int i, j, ierr = 0;
   for (i=0; i < NumVectors_; i++) 
     {
-      double MaxVal = Pointers_[i][0];
-      for (j=1; j< MyLength_; j++) MaxVal = EPETRA_MAX(MaxVal,Pointers_[i][j]); 
+      double MaxVal = Epetra_MinDouble;
+      for (j=0; j< MyLength_; j++) MaxVal = EPETRA_MAX(MaxVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MaxVal;
     }
   Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
+
+  for (i=0; i < NumVectors_; i++) 
+    if (Result[i]==Epetra_MinDouble) ierr = -1; // Report a problem, numbers are too small
   
   
   // UpdateFlops(0);  Strictly speaking there are not FLOPS in this routine
   
-  return(0);
+  return(ierr);
 }
 
 //=========================================================================

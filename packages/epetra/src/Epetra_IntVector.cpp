@@ -105,8 +105,7 @@ int Epetra_IntVector::DoView(int * V)
   return(0);
 }
 //=============================================================================
-int Epetra_IntVector::ExtractCopy(int *V) const
-{
+int Epetra_IntVector::ExtractCopy(int *V) const {
   
   int iend = MyLength();
   for (int i=0; i<iend; i++) V[i] = Values_[i];
@@ -118,6 +117,30 @@ int Epetra_IntVector::ExtractView(int **V) const
 {
   *V = Values_;
   return(0);
+}
+
+//=============================================================================
+int Epetra_IntVector::PutValue(int Value) {
+  for (int i=0; i<MyLength_; i++) Values_[i] = Value;
+  return(0);
+}
+//=============================================================================
+int Epetra_IntVector::MaxValue() {
+
+  int result = -2000000000; // Negative 2 billion is close to smallest 32 bit int
+  for (int i=0; i<MyLength_; i++) result = EPETRA_MAX(result, Values_[i]);
+  int globalResult;
+  this->Comm().MaxAll(&result, &globalResult, 1);
+  return(globalResult);
+}
+//=============================================================================
+int Epetra_IntVector::MinValue() {
+
+  int result = 2000000000; // 2 billion is close to largest 32 bit int
+  for (int i=0; i<MyLength_; i++) result = EPETRA_MIN(result, Values_[i]);
+  int globalResult;
+  this->Comm().MinAll(&result, &globalResult, 1);
+  return(globalResult);
 }
 //========================================================================
 Epetra_IntVector& Epetra_IntVector::operator = (const Epetra_IntVector& V) {
