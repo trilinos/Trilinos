@@ -134,8 +134,10 @@
 
 #ifdef HAVE_MAP
 #include <map>
+#include <list> // ToDo: Test for this!
 #elif defined(HAVE_MAP_H)
 #include <map.h>
+#include <list.h> // ToDo: Test for this!
 #endif
 
 #ifdef HAVE_STRING
@@ -149,9 +151,6 @@
 #ifdef HAVE_TYPEINFO
 #include <typeinfo>
 #endif
-
-
-
 
 /******************************************************************************
  * Choose string stream type: preferably std::ostringstream, otherwise
@@ -202,7 +201,6 @@ using std::endl;
 #ifdef HAVE_COMPLEX
 using std::complex;
 #endif
-
 #endif /* TFLOP */
 
 // RAB: 20031002: Added this for all platforms in addition to TFLOPS?

@@ -3,6 +3,7 @@
 #define TEUCHOS_PARAMETER_LIST_H
 
 #include "Teuchos_ParameterEntry.hpp" // class data element 
+#include "Teuchos_map.hpp"
 
 namespace Teuchos {
 
@@ -10,7 +11,8 @@ namespace Teuchos {
 class ParameterList {
 
   //! Parameter container typedef
-  typedef map<string, ParameterEntry> Map;
+//  typedef map<string, ParameterEntry> Map;
+  typedef Teuchos::map<string, ParameterEntry> Map;
 
   //! Parameter container const iterator typedef
   typedef Map::const_iterator ConstIterator;

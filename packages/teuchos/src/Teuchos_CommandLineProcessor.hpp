@@ -5,6 +5,7 @@
 #define TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+#include "Teuchos_map.hpp"
 
 namespace Teuchos {
 
@@ -220,7 +221,8 @@ private:
 	};
 
 	//
-	typedef std::map<std::string,opt_val_val_t>   options_list_t;
+//	typedef std::map<std::string,opt_val_val_t>   options_list_t;
+	typedef Teuchos::map<std::string,opt_val_val_t>   options_list_t;
 
 	//
 	struct opt_doc_t {
