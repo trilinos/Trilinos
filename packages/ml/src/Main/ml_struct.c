@@ -5343,7 +5343,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 int ML_build_ggb(ML *ml, void *data)
 {
   ML *ml_ggb;
-  int Nrows, Ncols, Nnz, Nnz_per_row, i;
+  int Nrows, Ncols, Nnz;
   ML_Operator *Pmat;
   struct ML_CSR_MSRdata *csr_data, *mydata;
 
