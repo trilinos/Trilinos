@@ -361,7 +361,6 @@ public:
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner();
   }
 
-  //! Destroyes all structures allocated in \c ComputePreconditioner().   
   void Destroy_ML_Preconditioner();
 
   //!  Returns a reference to RowMatrix->Map().
@@ -537,7 +536,7 @@ public:
 
   //! Analyze the effect of each level's smoother on a random vector.
   int AnalyzeSmoothersSparse(const int NumPreCycles = 1,
-		       const int NumPostCycles = 1);
+			     const int NumPostCycles = 1);
 
   //! Analyze the effect of each level's smoother on a random vector.
   int AnalyzeSmoothersDense(const int NumPreCycles = 1,
@@ -557,8 +556,41 @@ public:
   int AnalyzeCycle(const int NumCycles = 1);
 
   //! Test several smoothers on fine-level matrix.
-  int TestSmoothers(Teuchos::ParameterList InputList,
+  int TestSmoothers(Teuchos::ParameterList& InputList,
 		    const bool IsSymmetric = false);
+
+  //! Test several smoothers on fine-level matrix using the current parameters.
+  int TestSmoothers(const bool IsSymmetric = false) {
+    return(TestSmoothers(List_,IsSymmetric));
+  }
+
+  //! Returns a pointer to the internally stored ml pointer
+  const ML* GetML() const
+  {
+    return ml_;
+  }
+
+  //! Returns a pointer to the internally stored agg pointer
+  const ML_Aggregate* GetML_Aggregate() const 
+  {
+    return agg_;
+  }
+
+  int Visualize(bool VizAggre, bool VizPreSmoother,
+		bool VizPostSmoother, bool VizCycle,
+		int NumApplPreSmoother, int NumApplPostSmoother,
+		int NumCycleSmoother);
+
+  //! Visualizes the shape of the aggregates.
+  int VisualizeAggregates();
+
+  //! Visualizes the effect of smoothers on a random vector.
+  int VisualizeSmoothers(int NumPrecCycles = 1,
+			 int NumPostCycles = 1);
+
+  //! Visualizes the effect of the ML cycle on a random vector.
+  int VisualizeCycle(int NumCycles = 1);
+
 //@}
 
 private:
@@ -621,8 +653,8 @@ private:
 
   int SetFiltering();
 
-  void VizMePleaze();
-  
+  void SetScaling();
+
   void RandomAndZero(double *, double *, int);
   
   //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
@@ -751,7 +783,6 @@ private:
   int memory_[ML_MEM_SIZE];
 
   // filtering stuff
-
   Epetra_MultiVector * flt_R_;
   mutable Epetra_SerialDenseMatrix flt_A_;
   mutable Epetra_SerialDenseVector flt_rhs_, flt_lhs_;
@@ -766,6 +797,10 @@ private:
   Epetra_SerialDenseMatrix SchurMatrix_;
   Epetra_SerialDenseSolver SchurSolver_;
   double RateOfConvergence_;
+
+  // scaling
+  Epetra_Vector* Scaling_;
+  Epetra_Vector* InvScaling_;
 
 }; // class MultiLevelPreconditioner
  
