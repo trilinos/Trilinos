@@ -414,6 +414,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
 #ifdef EPETRA_MPI
   AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
   AZ_set_comm(proc_config, MPI_COMM_WORLD);
+#else
+  AZ_set_proc_config(proc_config, 0);
 #endif
 
   //We're going to create 2 Aztec matrices, one MSR and one VBR. We're going
@@ -603,6 +605,8 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 #ifdef EPETRA_MPI
   AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
   AZ_set_comm(proc_config, MPI_COMM_WORLD);
+#else
+  AZ_set_proc_config(proc_config, 0);
 #endif
 
   int *external, *update_index, *external_index;
