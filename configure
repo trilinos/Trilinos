@@ -811,21 +811,21 @@ Optional Features:
   --enable-maintainer-mode enable make rules and dependencies not useful
                           (and sometimes confusing) to the casual installer
   --enable-amesos         Build amesos (default is no)
-  --enable-nox            Build nox (default is no)
+  --enable-nox            Build nox (default is yes)
   --enable-meros          Build meros (default is no)
   --enable-tsf            Build TSF (default is no)
   --enable-tsfcore        Build TSFCore (default is no)
   --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
-  --enable-komplex        Build komplex (default is yes)
+  --enable-komplex        Build komplex (default is no)
   --enable-aztecoo        Build aztecoo (default is yes)
   --enable-belos          Build belos (default is no)
   --enable-anasazi        Build anasazi (default is no)
   --enable-ifpack         Build ifpack (default is yes)
-  --enable-triutils       Build triutils (default is yes)
-  --enable-epetraext      Build epetraext (default is no)
+  --enable-triutils       Build triutils (default is no)
+  --enable-epetraext      Build epetraext (default is yes)
   --enable-teuchos        Build teuchos (default is no)
-  --enable-ml             Build ml (default is no)
-  --enable-new_package    Build new_package (default is no)
+  --enable-ml             Build ml (default is yes)
+  --enable-new_package    Build new_package (default is yes)
   --enable-epetra         Build epetra (default is yes)
 
 
@@ -1742,7 +1742,7 @@ if test "${enable_nox+set}" = set; then
   enableval="$enable_nox"
   ac_cv_use_nox=$enableval
 else
-  ac_cv_use_nox=no
+  ac_cv_use_nox=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use nox" >&5
@@ -1924,7 +1924,7 @@ if test "${enable_komplex+set}" = set; then
   enableval="$enable_komplex"
   ac_cv_use_komplex=$enableval
 else
-  ac_cv_use_komplex=yes
+  ac_cv_use_komplex=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use komplex" >&5
@@ -2106,7 +2106,7 @@ if test "${enable_triutils+set}" = set; then
   enableval="$enable_triutils"
   ac_cv_use_triutils=$enableval
 else
-  ac_cv_use_triutils=yes
+  ac_cv_use_triutils=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use triutils" >&5
@@ -2143,7 +2143,7 @@ if test "${enable_epetraext+set}" = set; then
   enableval="$enable_epetraext"
   ac_cv_use_epetraext=$enableval
 else
-  ac_cv_use_epetraext=no
+  ac_cv_use_epetraext=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use epetraext" >&5
@@ -2215,7 +2215,7 @@ if test "${enable_ml+set}" = set; then
   enableval="$enable_ml"
   ac_cv_use_ml=$enableval
 else
-  ac_cv_use_ml=no
+  ac_cv_use_ml=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ml" >&5
@@ -2252,7 +2252,7 @@ if test "${enable_new_package+set}" = set; then
   enableval="$enable_new_package"
   ac_cv_use_new_package=$enableval
 else
-  ac_cv_use_new_package=no
+  ac_cv_use_new_package=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use new_package" >&5

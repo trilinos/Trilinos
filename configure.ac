@@ -41,7 +41,7 @@ echo "the list below does not indicate so."
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
+TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, yes)
 AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(meros, [Build meros], MEROS, no)
@@ -58,7 +58,7 @@ TAC_ARG_ENABLE_FEATURE(tsfcoreutils, [Build TSFCoreUtils], TSFCOREUTILS, no)
 AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, yes)
+TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, no)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(aztecoo, [Build aztecoo], AZTECOO, yes)
@@ -75,21 +75,21 @@ TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
+TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, no)
+TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, yes)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(ml, [Build ml], ML, no)
+TAC_ARG_ENABLE_FEATURE(ml, [Build ml], ML, yes)
 AM_CONDITIONAL(BUILD_ML, test "X$ac_cv_use_ml" != "Xno")
 
 ## #np# - Copy the next two lines, and change the name
-TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
+TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, yes)
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 
