@@ -261,6 +261,32 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_building_coarse_T_state);
 #endif
+   
+     /* Check that coarsest Ke that exists is larger than 1x1, globally.
+        If not, clean up & break from main loop. */
+     i = ml_edges->Amat[grid_level+1].outvec_leng;
+     ML_gsum_scalar_int(&i,&j,ml_edges->comm);
+     if (i==1)
+     {
+        if (ml_edges->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) Bailing from AMG hierarchy build on level %d of levels %d down to %d because coarsest Ke only 1x1....\n",
+                 ml_edges->comm->ML_mypid,grid_level,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        /* Current level "grid_level" cannot be used b/c Tcoarse_trans
+           would be used in Hiptmair smoother generation, but Tcoarse_trans
+           hasn't been calculated. Hence no "+1".*/
+        Nlevels_nodal = fine_level - grid_level;
+        coarsest_level = grid_level + 1;
+        if (ml_edges->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, Nlevels_nodal = %di, fine_level = %d, coarsest_level = %d\n",
+              ml_edges->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        break; /* from main loop */
+     }
+
+
      Kn_coarse = &(ml_nodes->Amat[grid_level]);
      ML_Operator_ChangeToSinglePrecision(Kn_coarse);
 
