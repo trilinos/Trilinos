@@ -1,5 +1,5 @@
 #include "Teuchos_MPIComm.hpp"
-#include "Teuchos_Out.hpp"
+
 
 using namespace Teuchos;
 
@@ -35,9 +35,9 @@ void MPIComm::init(int* argc, void*** argv)
 	errCheck(::MPI_Get_processor_name(procName,&nameLen),
 					 "Get_processor_name");
 	machineName_ = procName;
-	Out::println("started processor " + machineName_);
+	cerr << "started processor " << machineName_ << endl;
 #else
-  Out::println("started serial job");
+  cerr << "started serial job" << endl;
 #endif
 }
 

@@ -2,7 +2,6 @@
 #define HASHUTILS_H
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Error.hpp"
 #include <string>
 
 namespace Teuchos

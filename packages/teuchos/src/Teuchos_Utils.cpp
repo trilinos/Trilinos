@@ -1,5 +1,4 @@
 #include "Teuchos_Utils.hpp"
-#include "Teuchos_Out.hpp"
 
 namespace Teuchos
 {

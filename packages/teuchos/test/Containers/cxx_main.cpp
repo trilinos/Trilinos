@@ -1,7 +1,6 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Hashtable.hpp"
 #include "Teuchos_HashSet.hpp"
-#include "Teuchos_Out.hpp"
 #include "Teuchos_StrUtils.hpp"
 
 using namespace Teuchos;
@@ -24,7 +23,7 @@ int main(int argc, char** argv)
 
       /* there is a toString() method of Array that writes a list bounded by
        * curly braces */
-      Out::println("x = " + x.toString());
+      cerr << "x = " << x.toString() << endl;
 
 
       /* You can create an array of a specified size */
@@ -38,7 +37,7 @@ int main(int argc, char** argv)
       /* Array elements can be read using the const [] indexing operator */
       for (int i=0; i<y.length(); i++)
         {
-          Out::printf("%d %g\n", i, y[i]);
+          fprintf(stderr, "%d %g\n", i, y[i]);
         }
 
       /* If compiled with boundschecking, Array will catch bounds violations. */
@@ -52,16 +51,16 @@ int main(int argc, char** argv)
           catch(std::exception& eb)
             {
               caughtBoundsError = true;
-              Out::println(string("caught bounds error: \n") + eb.what());
+              cerr << "caught bounds error: \n" <<  eb.what() << endl;
             }
           if (!caughtBoundsError)
             {
-              Out::println("FAILED TO CATCH BOUNDS ERROR");
+              cerr << "FAILED TO CATCH BOUNDS ERROR" << endl;
             }
         }
       else
         {
-          Out::println("Teuchos compiled w/o array boundschecking");
+          cerr << "Teuchos compiled w/o array boundschecking" << endl;
         }
       
 
@@ -76,29 +75,29 @@ int main(int argc, char** argv)
       trilinosPackages.put("meros");
       
       /* count entries using the size() method */
-      Out::printf("trilinos has %d packages\n", trilinosPackages.size());
+      fprintf(stderr, "trilinos has %d packages\n", trilinosPackages.size());
 
       /* write to a string using the toString() method */
-      Out::println("trilinos packages are: " + trilinosPackages.toString());
+      cerr << "trilinos packages are: " << trilinosPackages.toString() << endl;
 
       /* test for the presence of a member using the containsKey() method */
       
       if (trilinosPackages.containsKey("epetra"))
         {
-          Out::println("epetra is in the list of trilinos packages");
+          cerr << "epetra is in the list of trilinos packages" << endl;
         }
       else
         {
-          Out::println("epetra is not in the list of trilinos packages");
+          cerr << "epetra is not in the list of trilinos packages" << endl;
         }
 
       if (trilinosPackages.containsKey("Space Invaders"))
         {
-          Out::println("Space Invaders is in the list of trilinos packages");
+          cerr << "Space Invaders is in the list of trilinos packages" << endl;
         }
       else
         {
-          Out::println("Space Invaders is not in the list of trilinos packages");
+          cerr << "Space Invaders is not in the list of trilinos packages" << endl;
         }
 
       /*-------------- do several tests of the Hashtable class ------------------- */
@@ -114,26 +113,26 @@ int main(int argc, char** argv)
       battles.put("normandy",    1944);
 
       /* write to a string using the toString() method */
-      Out::println("hashtable is: " + battles.toString());
+      cerr << "hashtable is: " << battles.toString() << endl;
       
       /* test for the presence of a key using the containsKey() method */
       if (battles.containsKey("cannae"))
         {
-          Out::printf("the battle of cannae occured in %d\n", battles.get("cannae"));
+          fprintf(stderr, "the battle of cannae occured in %d\n", battles.get("cannae"));
         }
       else
         {
-          Out::println("cannae is not in our hashtable");
+          cerr << "cannae is not in our hashtable" << endl;
         }
 
       /* test for the presence of a key using the containsKey() method */
       if (battles.containsKey("verdun"))
         {
-          Out::printf("the battle of verdun occured in %d\n", battles.get("verdun"));
+          fprintf(stderr, "the battle of verdun occured in %d\n", battles.get("verdun"));
         }
       else
         {
-          Out::println("verdun is not in our hashtable");
+          cerr << "verdun is not in our hashtable" << endl;
         }
 
       
@@ -145,18 +144,18 @@ int main(int argc, char** argv)
 
       Array<string> tokens = StrUtils::stringTokenizer(test);
 
-      Out::println("tokens = " + tokens.toString());
+      cerr << "tokens = " << tokens.toString() << endl;
 
       /* atof() converts a string to its double value */
       double pi = StrUtils::atof("3.14159265358");
-      Out::printf("pi = %g, tan(pi/4)=%g\n", pi, tan(pi/4.0));
+      fprintf(stderr, "pi = %g, tan(pi/4)=%g\n", pi, tan(pi/4.0));
 
       /* atoi() converts a string to its integer value */
       int a = StrUtils::atoi("-101");
-      Out::printf("a = %d\n", a);
+      fprintf(stderr, "a = %d\n", a);
 
       /* allCaps() converts to upper case */
-      Out::println("all caps: " + StrUtils::allCaps(test));
+      cerr << "all caps: " << StrUtils::allCaps(test) << endl;
       
       return 0;
     }

@@ -53,12 +53,7 @@ CORE = \
 
 EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_Array.hpp \
-	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
-	$(srcdir)/Teuchos_DefaultRaiseHandler.hpp \
-	$(srcdir)/Teuchos_DefaultWriter.hpp \
-	$(srcdir)/Teuchos_DLARAN.hpp \
-	$(srcdir)/Teuchos_Error.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
@@ -68,16 +63,12 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
-	$(srcdir)/Teuchos_Out.hpp \
-	$(srcdir)/Teuchos_RaiseHandlerBase.hpp \
-	$(srcdir)/Teuchos_RandomNumberGeneratorBase.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
 	$(srcdir)/Teuchos_StrUtils.hpp \
-	$(srcdir)/Teuchos_SystemRand.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
 	$(srcdir)/Teuchos_WriterBase.hpp\
@@ -87,25 +78,17 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp
 
 EXTRA_EXPERIMENTAL = \
-	$(srcdir)/Teuchos_CommandLine.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
-	$(srcdir)/Teuchos_DefaultRaiseHandler.cpp \
-	$(srcdir)/Teuchos_DefaultWriter.cpp \
-	$(srcdir)/Teuchos_DLARAN.cpp \
-	$(srcdir)/Teuchos_Error.cpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
 	$(srcdir)/Teuchos_HashUtils.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
-	$(srcdir)/Teuchos_Out.cpp \
-	$(srcdir)/Teuchos_RandomNumberGeneratorBase.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_StrUtils.cpp \
 	$(srcdir)/Teuchos_StringInputSource.cpp \
 	$(srcdir)/Teuchos_StringInputStream.cpp \
-	$(srcdir)/Teuchos_SystemRand.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \

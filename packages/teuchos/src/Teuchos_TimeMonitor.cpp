@@ -1,6 +1,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_MPISession.hpp"
-#include "Teuchos_Out.hpp"
+
 
 using namespace Teuchos;
 
@@ -35,7 +35,7 @@ void TimeMonitor::summarize()
 		{
 			for (int i=0; i<names.length(); i++)
 				{
-					Out::printf("%-40s: %g\n", names[i].c_str(), timings[i]);
+					fprintf(stderr, "%-40s: %g\n", names[i].c_str(), timings[i]);
 				}
 		}
 	else
@@ -48,8 +48,8 @@ void TimeMonitor::summarize()
 				{
 					for (int i=0; i<names.length(); i++)
 						{
-							Out::printf("%-30s: %-12g %-12g %-12g\n", names[i].c_str(), 
-                          minTime[i], avgTime[i], maxTime[i]);
+							fprintf(stderr, "%-30s: %-12g %-12g %-12g\n", names[i].c_str(), 
+                      minTime[i], avgTime[i], maxTime[i]);
 						}
 				}
 		}

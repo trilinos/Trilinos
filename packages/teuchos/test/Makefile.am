@@ -9,7 +9,7 @@
 
 if HAVE_TEUCHOS_EXPERIMENTAL
 
-SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList Containers Time Random RefCountPtr XML
+SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList Containers Time RefCountPtr XML
 
 else
 

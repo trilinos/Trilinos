@@ -1,6 +1,5 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_Out.hpp"
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
@@ -52,7 +51,7 @@ int main(int argc, void** argv)
     }
   catch(std::exception& e)
     {
-      Out::println("caught exception");
+      cerr << "caught exception " << e.what() << endl;
     }
 
   /* summarize timings. This must be done before finalizing MPI  */

@@ -463,7 +463,6 @@ AC_CONFIG_FILES([
 		test/ParameterList/Makefile
 		test/Containers/Makefile
 		test/Time/Makefile
-		test/Random/Makefile
 		test/RefCountPtr/Makefile
 		test/XML/Makefile
 		test/scripts/Makefile
