@@ -42,14 +42,43 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      Epetra_CrsMatrix *& A, 
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
-				      Epetra_Vector *&xexact ) {
+				      Epetra_Vector *&xexact,
+				      bool NonUniformMap=false ) {
   FILE *in_file ;
   int N_rows, nnz ; 
 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
   vector<int> non_zeros;   // Number of non-zeros in each row
-  Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm ) ; 
+  Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm ) ;
+
+#if 0
+  cout << " Trilinos_Util_ReadTriples2Epetra.cpp:58 N_rows = " << N_rows << endl << "non_zeros = " ; 
+  for (int i= 0; i<N_rows; i++ )  cout << non_zeros[i] ; 
+  cout << endl ; 
+  comm.Barrier();
+#endif
+ 
+  int NumNonZeroRows=0;
+  vector<int> MapIndices;
+  if(comm.MyPID() == 0)  { 
+    if ( NonUniformMap ) {
+      for (int i= 0; i<N_rows; i++ )  if( non_zeros[i] > 0 ) NumNonZeroRows++;
+      MapIndices.resize(NumNonZeroRows);
+      int IndexNumber =0;
+      for (int i= 0; i<N_rows; i++ ) if( non_zeros[i] > 0 ) MapIndices[IndexNumber++]=i;
+    }
+  }
+  //
+  //  Copy MapIndices[] to all processes
+  //
+  if ( NonUniformMap ) {
+    //    int value[1];
+    //    values[0] = 
+    comm.Broadcast( &NumNonZeroRows, 1, 0 ) ; 
+    MapIndices.resize(NumNonZeroRows);
+    comm.Broadcast( &MapIndices[0], NumNonZeroRows, 0 ) ; 
+  }
 
   vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
   vector<int> inds(nnz);     //  Column Indices
@@ -73,8 +102,6 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
       int i, j; 
       double val ; 
       sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
-      //      if ( i == j && i%100 == 0 ) cout << " i,j = " << i << " val = " << val << endl ; 
-      //      if ( i == j && i%100 == 0 ) val *= 1.00001 ;
       int iptr = iptrs[i-1] ; 
       iptrs[i-1]++ ;
       vals[iptr] = val ; 
@@ -94,13 +121,20 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
   }
 
   int nlocal = 0;
-  if (comm.MyPID()==0) nlocal = N_rows;
-  map = new Epetra_Map(N_rows, nlocal, 0, comm); // Create map with all elements on PE 0
+  if ( NonUniformMap ) {
+    if (comm.MyPID()==0) nlocal = NumNonZeroRows;
+    map = new Epetra_Map(NumNonZeroRows, nlocal, &MapIndices[0], 0, comm); // Create map with all elements on PE 0
+  } else { 
+    if (comm.MyPID()==0) nlocal = N_rows;
+    map = new Epetra_Map(N_rows, nlocal, 0, comm); // Create map with all elements on PE 0
+  }
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
+
   if (comm.MyPID()==0)
-    for (int i=0; i<N_rows; i++)
-      A->InsertGlobalValues(i, ptrs[i+1]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    for (int i=0; i<N_rows; i++) {
+      if ( ptrs[i+1]>ptrs[i]) A->InsertGlobalValues(i, ptrs[i+1]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    }
   A->TransformToLocal();
 
   vector<double> hbx(N_rows);

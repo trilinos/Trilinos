@@ -43,6 +43,8 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
 #include "Trilinos_Util.h"
 #include <string>
 
@@ -253,13 +255,18 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const string va
   else if( parameter == "rhs_type" ) {
     RhsType_ = value;
   }
+  else if( parameter == "noncontiguos_map" ) {
+    ContiguousMap_ = false;
+  }
   else if( parameter == "output" ) {
     if( value == "none" ) verbose_ = false;
-    if( value == "proc 0" ) {
-      if( comm_->MyPID()==0 ) verbose_ = true;
-      else verbose_ = false;
-    } else {
-      verbose_ = true;
+    else { 
+      if( value == "proc 0" ) {
+	if( comm_->MyPID()==0 ) verbose_ = true;
+	else verbose_ = false;
+      } else {
+	verbose_ = true;
+      }
     }
   } else if( parameter == "expand_type" ) {
     ExpandType_ = value;
@@ -634,12 +641,43 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 
   }
 
+  if (! ContiguousMap_ ) { 
+    //
+    //  Populate MapMap_[] with NumGlobalElements_ numbers randomly 
+    //  chosen from the set of integers ranging from 0 to 2*NumGlobalElements-1
+    //
+    MapMap_.resize( NumGlobalElements_ ) ; 
+    Epetra_IntSerialDenseVector sortable_values(2*NumGlobalElements_) ;
+    sortable_values.Random();
+    Epetra_IntSerialDenseVector sortable_positions(2*NumGlobalElements_) ;
+    for( int i =0 ; i < 2*NumGlobalElements_; i++ ) { 
+      sortable_positions[i] = i;
+    }
+    Epetra_Util Utils;
+    int *ArrayOfIntPointers[1];
+    double *ArrayOfDoublePointers[1];
+    ArrayOfIntPointers[0] =  &sortable_positions[0];
+    //    ArrayOfDoublePointers[0] =  &sortable_values[0];
+    Utils.Sort( true, NumGlobalElements_*2, &sortable_values[0], 
+		0, 0, 1, &ArrayOfIntPointers[0] );
+
+    for( int i =0 ; i < NumGlobalElements_; i++ ) { 
+      MapMap_[i] = sortable_positions[i];
+    }
+    //
+    //  Make sure that all processes have the same indices in MapMap_
+    //
+      comm_->Broadcast( &MapMap_[0], NumGlobalElements_, 0 ) ; 
+  }
   // check out whether one is using only one proc or not.
   // If yes, creation of map is straightforward. Then return.
   
   if( comm_->NumProc() == 1 ) {
 
-    map_ = new Epetra_Map(NumGlobalElements_,0,*comm_);
+    if (ContiguousMap_ ) 
+      map_ = new Epetra_Map(NumGlobalElements_,0,*comm_);
+    else
+      map_ = new Epetra_Map(NumGlobalElements_,NumMyElements_,&MapMap_[0], 0,*comm_);
 
   } else {
 
@@ -648,6 +686,16 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
     if( MapType_ == "linear" ) {
       
       map_ = new Epetra_Map (NumGlobalElements_,0,*comm_);
+      if ( ! ContiguousMap_ ) { 
+	//
+	//  map_ gives us NumMyElements and MyFirstElement;
+	//
+	int NumMyElements = map_->NumMyElements();
+	int MyFirstElement = map_->MinMyGID();
+	assert( MyFirstElement+NumMyElements ==  map_->MaxMyGID());
+	delete map_;
+	map_ = new Epetra_Map( NumGlobalElements_, NumMyElements, &MapMap_[MyFirstElement], 0, *comm_);
+      }
       
     } else if( MapType_ == "box" ) {
 
@@ -3041,6 +3089,7 @@ void Trilinos_Util::CrsMatrixGallery::ZeroOutData()
   rhs_ = NULL;
 
   MapType_ = "linear";
+  ContiguousMap_ = true ; 
   ExactSolutionType_ = "constant";
   StartingSolutionType_ = "zero";
   ExpandType_ = "zero_off_diagonal";

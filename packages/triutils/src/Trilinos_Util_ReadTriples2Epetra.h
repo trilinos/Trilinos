@@ -25,6 +25,7 @@
 // 
 // ***********************************************************************
 // @HEADER
+#if 0
 
 #include <vector>
 #include "Epetra_Comm.h"
@@ -38,4 +39,6 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				 Epetra_CrsMatrix *& A, 
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
-				 Epetra_Vector *&xexact ) ;
+				 Epetra_Vector *&xexact,
+				 bool NonUniformMap=false ) ;
+#endif

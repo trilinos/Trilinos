@@ -38,6 +38,7 @@ class Vector;
 class Epetra_Export;
 class Epetra_LinearProblem;
 #include <string>
+#include <vector>
 #include "Trilinos_Util_CommandLineParser.h"
 
 namespace Trilinos_Util {
@@ -393,6 +394,8 @@ protected:
   int NumMyElements_;
   int * MyGlobalElements_;
   string MapType_;
+  bool ContiguousMap_;
+  vector<int> MapMap_;
   string ExactSolutionType_;
   string StartingSolutionType_;
   string ExpandType_;
