@@ -240,15 +240,27 @@ bool Problem_Manager::solveMF()
   for (int i=0; i<problemB.getSolution().MyLength(); i++)
     compositeSoln[i+solnAlength] = problemB.getSolution()[i];
 
+  // Now create a composite matrix graph needed for preconditioning
+  AA = new Epetra_CrsGraph(Copy, compositeMap, 0);
+  generateGraph();
+
+  // Create a preconditioning matrix using the graph just created - this 
+  // creates a static graph so we can refill the new matirx after
+  // TransformToLocal()  is called.  
+  A = new Epetra_CrsMatrix(Copy, *AA); 
+  A->TransformToLocal();
+
   Problem_Interface interface(*this);
 
-  NOX::Epetra::MatrixFree A(interface, compositeSoln);
+  NOX::Epetra::MatrixFree Jac(interface, compositeSoln);
+  Epetra_CrsMatrix& Prec = *A;
 
   NOX::Parameter::List& lsParams = 
     nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
-  lsParams.setParameter("Preconditioning", "None");
+//  lsParams.setParameter("Preconditioning", "None");
+  lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix");
   NOX::Epetra::Group grp(nlParams->sublist("Printing"), lsParams,
-    interface, compositeSoln, A);
+    interface, compositeSoln, Jac, Prec);
   grp.computeF();
 
   NOX::Solver::Manager solver(grp, *statusTest, *nlParams);
@@ -299,19 +311,120 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
   problemB.setAuxillarySolution(solnA);
   grpA.setX(solnA);
   grpB.setX(solnB);
-  grpA.computeF();
-  grpB.computeF();
 
-  for (int i=0; i<solnA.MyLength(); i++)
-    (*rhsVector)[i] = dynamic_cast<const NOX::Epetra::Vector&>(grpA.getF()).
-                      getEpetraVector()[i];
-  for (int i=0; i<solnB.MyLength(); i++)
-    (*rhsVector)[i+solnA.MyLength()] = 
-                      dynamic_cast<const NOX::Epetra::Vector&>(grpB.getF()).
-                      getEpetraVector()[i];
+  if (f == F_ONLY || f == ALL)
+  {
+    grpA.computeF();
+    grpB.computeF();
 
-  // More is still needed to fill each problem's jacobian which will
-  // provide block contributions for a preconditioner.
+    for (int i=0; i<solnA.MyLength(); i++)
+      (*rhsVector)[i] = dynamic_cast<const NOX::Epetra::Vector&>(grpA.getF()).
+                        getEpetraVector()[i];
+    for (int i=0; i<solnB.MyLength(); i++)
+      (*rhsVector)[i+solnA.MyLength()] = 
+                        dynamic_cast<const NOX::Epetra::Vector&>(grpB.getF()).
+                        getEpetraVector()[i];
+  }
+
+  if (f == MATRIX_ONLY || f == ALL)
+  {
+    
+    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(matrix);
+    Matrix->PutScalar(0.0);
+    
+    grpA.computeJacobian();
+    grpB.computeJacobian();
+
+    Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
+                    &graphB = (*Problems[1]).getGraph();
+
+    Epetra_CrsMatrix &matrixA = (*Problems[0]).getJacobian(),
+                     &matrixB = (*Problems[1]).getJacobian();
+  
+    int maxAllAGID = matrixA.Map().MaxAllGID();
+    int* indices = new int[maxAllAGID];
+    double* values = new double[maxAllAGID];
+    int i, row, numCols, numValues;
+    for (i=0; i<matrixA.NumMyRows(); i++)
+    { 
+      row = matrixA.Map().GID(i);
+      graphA.ExtractGlobalRowCopy(row, maxAllAGID, numCols, indices);
+      matrixA.ExtractGlobalRowCopy(row, maxAllAGID, numValues, values);
+      //printf("MatrixA, row --> %d\tnumValues --> %d\n",row,numValues);
+      //for (int j=0; j<numValues; j++)
+      //  cout << "\t[" << indices[j] << "]  " << values[j];
+      //cout << endl;
+      int ierr = Matrix->ReplaceGlobalValues(row, numValues, values, indices);
+      //printf("\nAfter insertion, ierr --> %d\n\n",ierr);
+    }
+    delete [] values; values = 0;
+    delete [] indices; indices = 0;
+
+    int maxAllBGID = graphB.Map().MaxAllGID();
+    indices = new int[maxAllBGID];
+    values = new double[maxAllBGID];
+    for (i=0; i<matrixB.NumMyRows(); i++)
+    { 
+      row = matrixB.Map().GID(i);
+      graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
+      matrixB.ExtractGlobalRowCopy(row, maxAllBGID, numValues, values);
+      for (int j=0; j<numCols; j++)
+        indices[j] += maxAllAGID + 1;
+      row += maxAllAGID + 1;
+      Matrix->ReplaceGlobalValues(row, numValues, values, indices);
+    }
+  
+    // Sync up processors to be safe
+    Comm->Barrier();
+  
+    Matrix->TransformToLocal();
+
+    //matrixA.Print(cout);
+    //matrixB.Print(cout);
+    //Matrix->Print(cout);
+  }
 
   return true;
 }
+
+void Problem_Manager::generateGraph()
+{ 
+
+  // Here again, a general capability has been specialized to 2 problems
+  
+  Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
+                  &graphB = (*Problems[1]).getGraph();
+
+  int maxAllAGID = graphA.Map().MaxAllGID();
+  int* indices = new int[maxAllAGID];
+  int i, row, numCols;
+  for (i=0; i<graphA.NumMyRows(); i++)
+  {
+    row = graphA.Map().GID(i);
+    graphA.ExtractGlobalRowCopy(row, maxAllAGID, numCols, indices);
+    AA->InsertGlobalIndices(row, numCols, indices);
+  }
+  delete [] indices; indices = 0;
+
+  int maxAllBGID = graphB.Map().MaxAllGID();
+  indices = new int[maxAllBGID];
+  for (i=0; i<graphB.NumMyRows(); i++)
+  {
+    row = graphB.Map().GID(i);
+    graphA.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
+    for (int j=0; j<numCols; j++)
+      indices[j] += maxAllAGID + 1;
+    row += maxAllAGID + 1;
+    AA->InsertGlobalIndices(row, numCols, indices);
+  }
+  delete [] indices; indices = 0;
+
+  AA->TransformToLocal();
+  AA->SortIndices();
+  AA->RemoveRedundantIndices();
+
+  //AA->Print(cout);
+
+  return;
+}
+

@@ -53,6 +53,11 @@ public:
 
 private:
 
+  // Creates a composite graph from existing graphs of registered problems
+  void generateGraph();
+
+private:
+
   vector<GenericEpetraProblem*> Problems;   // Problem container
   vector<NOX::Epetra::Group*> Groups;       // Groups container
   vector<Problem_Interface*> Interfaces;    // Interfaces container
