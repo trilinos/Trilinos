@@ -280,7 +280,7 @@ namespace LOCA {
       //! Stores the random Vector, \f$ a \f$.
       NOX::Abstract::Vector* randomVecPtr;
 
-      //! Stores the homotopy Newton vector, \f$ \frac{\patrial r}{\partial x} \f$.
+      //! Stores the homotopy Newton vector, \f$ \frac{\partial r}{\partial x} \f$.
       NOX::Abstract::Vector* newtonVecPtr;
 
       //! Stores the homotopy gradient vector if needed, \f$ \frac{\partial r}{\partial x} \f$.
