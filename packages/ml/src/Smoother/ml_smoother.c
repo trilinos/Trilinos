@@ -1,4 +1,3 @@
-#define PRINTITNOW
 #define MatrixProductHiptmair
 /*
 #define NoDampingFactor
@@ -3440,11 +3439,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->Tmat = Tmat;
    dataptr->output_level = 2.0;
    dataptr->omega = 1.0;
-   if ((edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
-       (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
-       (edge_smoother == (void *) ML_Gen_Smoother_MLS))
-      dataptr->reduced_smoother =
-                        *((int *) ML_Smoother_Arglist_Get(edge_args,2));
 
    /* Get maximum eigenvalue for damping parameter. */
 
@@ -6836,12 +6830,12 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
-     if (ML_Smoother_Arglist_Nargs(args) != 4) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 2) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 2 arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
-     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 3);    /* poly degree   */
+     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* poly degree   */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
         printf("Generating subsmoother MLS\n");
      ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
@@ -6865,8 +6859,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    }
    else if (smoother == (void *) ML_Gen_Smoother_GaussSeidel) {
      printf("Entering ML_Smoother_Gen_Hiptmair_Data (GS)\n");
-     if (ML_Smoother_Arglist_Nargs(args) != 3) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need three arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 2) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need two arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6880,8 +6874,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 			    omega);
    }
    else if (smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) {
-     if (ML_Smoother_Arglist_Nargs(args) != 3) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need three arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 2) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need two arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6913,16 +6907,16 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 				  *int_arg1, omega, *int_arg2,int_arg3);
    }
    else if (smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) {
-     if (ML_Smoother_Arglist_Nargs(args) != 5) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 5 arguments for ML_Gen_Smoother_VBlockSymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 4) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_VBlockSymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1);
      omega = dbl_arg1[0];
      if ( ((int) omega) == ML_DEFAULT) omega= default_omega;
-     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 3);
-     int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 4);
+     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 2);
+     int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 3);
      
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
        printf("Generating subsmoother variable block symmetric Gauss Seidel\n");
