@@ -65,8 +65,9 @@ interior nodes (for example, to represent work on coarse grids of a multigrid
 algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
 interior nodes, which equidistributes the number elements over the
 partitions.  An initial tree traversal is used to sum the weights, and a second traversal
-to cut the space-filling curve into equal sized pieces and assign elements to
-partitions.
+to cut the space-filling curve into appropriately-sized pieces and assign
+elements to partitions.  The number of partitions is not necessarily equal
+to the number of processors.
 
 <P>The Refinement Tree Partitioning code is
 still under development.  The following restrictions should be removed in
@@ -77,7 +78,10 @@ is provided are bisection of triangles and quadrasection of quadrilaterals.
 Some other special cases may be added in the future.
 <LI>For multicomponent weights, only the first component is used.
 <LI>Heterogeneous architectures are not supported, in the sense that the
-computational load is equally divided over the processors.
+computational load is equally divided over the processors.  A vector of
+relative partition sizes is used to determine the weight assigned to each
+partition, but they are currently all equal.  In the future they should
+be input to reflect heterogeneity.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
