@@ -175,6 +175,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     }
 
     dense_comm = (hg->nVtx < 2*MAX_NNZ);
+    /* dense_comm = 1;  EBEB */
 
     if (!dense_comm){
 
@@ -229,8 +230,10 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
         /* to do: 1) ignore vertices already matched 
                   2) use sparse communication for a chunk of vertices */
 
-        /* printf("[%1d] Debug: %d out of %d entries are nonzero\n", 
-          zz->Proc, nadj, hg->nVtx); */
+#ifdef DEBUG_EB
+        printf("[%1d] Debug: %d out of %d entries are nonzero\n", 
+          zz->Proc, nadj, hg->nVtx);
+#endif
 
         if (dense_comm){
           /* dense communication */
@@ -247,20 +250,36 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 
           /* pack data into send buffer */
           ptr = (float *) sendbuf;
+#ifdef DEBUG_EB
+          printf("Debug: Send data; myProc_y=%d, v1=%d\n", hgc->myProc_y, v1);
+#endif
           if (nadj <= MAX_NNZ){
             for (i=0; i<MIN(nadj,MAX_NNZ); i++){
               *ptr++ = (float) adj[i];
               *ptr++ = lips[adj[i]];
+#ifdef DEBUG_EB
+              printf("%d %4.2f, ", adj[i], *(ptr-1));
+#endif
             }
-            if (i<MAX_NNZ-1)
-              *ptr++ = -1.0;
+            if (i<MAX_NNZ-1){
+              /* marker to say there is no more data */
+              *ptr++ = -1.;
+              *ptr++ = -1.;
+#ifdef DEBUG_EB
+              printf("%d %d, ", -1, -1);
+#endif
+            }
+#ifdef DEBUG_EB
+            printf("\n");
+#endif
           }
           else {
             /* pick highest values if too many nonzeros */
             /* naive algorithm to find top MAX_NNZ values */ 
-            if (0) /* (hgp->output_level >= PHG_DEBUG_ALL) */
-              printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
+#ifdef DEBUG_EB
+            printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
                 nadj, MAX_NNZ);
+#endif
             for (i=0; i<MAX_NNZ; i++){
               maxip = 0.0;
               for (j=0; j<nadj; j++){
@@ -276,21 +295,32 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
           }
 
           /* send partial inner product values to root row */
+          /* use fixed size, probably faster than variable sized Gatherv */
           MPI_Gather (sendbuf, 2*MAX_NNZ, MPI_FLOAT, recvbuf,
            2*MAX_NNZ, MPI_FLOAT, 0, hgc->col_comm);
 
           /* root unpacks data into gips array */
           if (hgc->myProc_y==0){
             nadj = 0;
-            ptr = (float *) recvbuf;
             for (i=0; i<hgc->nProc_y; i++){
+#ifdef DEBUG_EB
+              printf("Debug: Received data, v1=%d, i=%d\n", v1, i);
+#endif
+              ptr = (float *) recvbuf;
+              ptr += i*2*MAX_NNZ;
               for (j=0; j<MAX_NNZ; j++){
                 v2 = *ptr++;
                 if (v2<0) break; /* skip to data from next proc */
+#ifdef DEBUG_EB
+                printf(" %d %4.2f, ", v2, *ptr);
+#endif
                 if (gips[v2]==0.0)
                   adj[nadj++] = v2;
                 gips[v2] += *ptr++;
               }
+#ifdef DEBUG_EB
+              printf("\n");
+#endif
             }
           }
         }
@@ -301,23 +331,41 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
           maxip = 0;
           best_vertex = -1;
           if (dense_comm){
+#ifdef DEBUG_EB
+            printf("Debug: v1=%d, gips=\n", v1);
+#endif
             for (i = 0; i < hg->nVtx; i++) {
               v2 = i;
+#ifdef DEBUG_EB
+              if (gips[v2]>0) printf(" %d=%4.2f, ", v2, gips[v2]);
+#endif
               if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
                   maxip = gips[v2];
                   best_vertex = v2;
               }
             }
+#ifdef DEBUG_EB
+            printf("\n");
+#endif
           }
           else { /* sparse */
+#ifdef DEBUG_EB
+            printf("Debug: v1=%d, gips=\n", v1);
+#endif
             for (i = 0; i < nadj; i++) {
               v2 = adj[i];
+#ifdef DEBUG_EB
+              if (gips[v2]>0) printf(" %d=%4.2f, ", v2, gips[v2]);
+#endif
               if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
                   maxip = gips[v2];
                   best_vertex = v2;
               }
               lips[v2] = gips[v2] = .0; /* clear arrays for next iter */
             }
+#ifdef DEBUG_EB
+            printf("\n");
+#endif
           }
         } 
 
