@@ -135,10 +135,11 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 	$(srcdir)/klu_btf/klu_btf_free_symbolic.c \
 	$(srcdir)/klu_btf/klu_btf_refactor.c \
 	$(srcdir)/klu_btf/klu_btf_scale.c \
-	$(srcdir)/klu_btf/klu_btf_solve.c $(srcdir)/klu_btf/klu_dump.c \
-	$(srcdir)/klu_kernel/klu.c $(srcdir)/klu_kernel/klu_kernel.c \
-	$(srcdir)/Amesos_Umfpack.cpp $(srcdir)/Amesos_Scalapack.cpp \
-	$(srcdir)/Amesos_Mumps.cpp \
+	$(srcdir)/klu_btf/klu_btf_solve.c \
+	$(srcdir)/klu_btf/klu_btf_tsolve.c \
+	$(srcdir)/klu_btf/klu_dump.c $(srcdir)/klu_kernel/klu.c \
+	$(srcdir)/klu_kernel/klu_kernel.c $(srcdir)/Amesos_Umfpack.cpp \
+	$(srcdir)/Amesos_Scalapack.cpp $(srcdir)/Amesos_Mumps.cpp \
 	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
 	$(srcdir)/EpetraExt_Redistor.cpp $(srcdir)/Amesos.cpp \
 	$(srcdir)/Amesos_Superlu.cpp $(srcdir)/Amesos_Superludist.cpp \
@@ -173,6 +174,7 @@ am__objects_1 =
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_refactor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_scale.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_solve.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_btf_tsolve.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT)
 @HAVE_AMESOS_UMFPACK_TRUE@am__objects_4 = Amesos_Umfpack.$(OBJEXT)
@@ -235,6 +237,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_refactor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_scale.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_solve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_btf_tsolve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_dump.Po ./$(DEPDIR)/klu_kernel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/maxtrans.Po ./$(DEPDIR)/smplinkrows.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/spalloc.Po ./$(DEPDIR)/spbuild.Po \
@@ -312,6 +315,8 @@ HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
 HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
+HAVE_AMESOS_SMUMPS_FALSE = @HAVE_AMESOS_SMUMPS_FALSE@
+HAVE_AMESOS_SMUMPS_TRUE = @HAVE_AMESOS_SMUMPS_TRUE@
 HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
@@ -504,6 +509,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_refactor.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_scale.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_solve.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_tsolve.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_dump.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu_kernel.c
@@ -796,6 +802,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_refactor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_scale.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_solve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_tsolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_kernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maxtrans.Po@am__quote@
@@ -1224,6 +1231,22 @@ klu_btf_solve.obj: $(srcdir)/klu_btf/klu_btf_solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_solve.Po' tmpdepfile='$(DEPDIR)/klu_btf_solve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_solve.obj `if test -f '$(srcdir)/klu_btf/klu_btf_solve.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_solve.c'; fi`
+
+klu_btf_tsolve.o: $(srcdir)/klu_btf/klu_btf_tsolve.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_tsolve.o -MD -MP -MF "$(DEPDIR)/klu_btf_tsolve.Tpo" -c -o klu_btf_tsolve.o `test -f '$(srcdir)/klu_btf/klu_btf_tsolve.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_tsolve.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_tsolve.Tpo" "$(DEPDIR)/klu_btf_tsolve.Po"; else rm -f "$(DEPDIR)/klu_btf_tsolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_tsolve.c' object='klu_btf_tsolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_tsolve.Po' tmpdepfile='$(DEPDIR)/klu_btf_tsolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_tsolve.o `test -f '$(srcdir)/klu_btf/klu_btf_tsolve.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_tsolve.c
+
+klu_btf_tsolve.obj: $(srcdir)/klu_btf/klu_btf_tsolve.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_tsolve.obj -MD -MP -MF "$(DEPDIR)/klu_btf_tsolve.Tpo" -c -o klu_btf_tsolve.obj `if test -f '$(srcdir)/klu_btf/klu_btf_tsolve.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_tsolve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_tsolve.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_tsolve.Tpo" "$(DEPDIR)/klu_btf_tsolve.Po"; else rm -f "$(DEPDIR)/klu_btf_tsolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_tsolve.c' object='klu_btf_tsolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_tsolve.Po' tmpdepfile='$(DEPDIR)/klu_btf_tsolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_tsolve.obj `if test -f '$(srcdir)/klu_btf/klu_btf_tsolve.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_tsolve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_tsolve.c'; fi`
 
 klu_dump.o: $(srcdir)/klu_btf/klu_dump.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_dump.o -MD -MP -MF "$(DEPDIR)/klu_dump.Tpo" -c -o klu_dump.o `test -f '$(srcdir)/klu_btf/klu_dump.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_dump.c; \

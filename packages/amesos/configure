@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE FLIBS BLAS_LIBS LAPACK_LIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE CPP HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE FLIBS BLAS_LIBS LAPACK_LIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE CPP HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -902,7 +902,21 @@ Optional Features:
                           is no)
   --enable-amesos-klu     Enable Amesos interface support for KLU (default is
                           yes)
-  --enable-amesos-mumps   Enable Amesos interface support for MUMPS (default
+  --enable-amesos-mumps   Enable Amesos interface support for the
+                          double-precision version of MUMPS (default is no)
+  --enable-amesos-smumps  Enable Amesos interface support for the
+                          single-precision version of MUMPS. This is intended
+                          for use in conjuction with multilevel
+                          preconditioners (in particular ML). Users may decide
+                          to use single-precision solves of the coarse problem
+                          to save memory and computational time. Note: As
+                          Amesos is based on the Epetra_LinearProblem class
+                          (defined for double precision only), this interface
+                          still requires double-precision matrix and vectors.
+                          After the solver phase, the single precision vector
+                          is copied into the double-precision solution vector
+                          of the given Epetra_LinearProblem. If enabled,
+                          disabled double-precision version of MUMPS. (default
                           is no)
   --enable-amesos-mumps_mpi_c2f
                           Enable conversion from C++ MPI commnicator to
@@ -954,6 +968,12 @@ Optional Packages:
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinos3pldir   Set Trilinos3PL directory (default is
                           trilinos3pldir_not_specified, )
+  --with-amesos-libdir    Set location for all 3PL libraries (at present only
+                          MUMPS supports this feature) (default is
+                          specify_amesos_libdir)
+  --with-amesos-incdir    Set location for all 3PL include files (at present
+                          only MUMPS supports this feature) (default is
+                          specify_amesos_incdir)
   --with-amesos-superludistdir
                           Set SuperLU dist directory (default is
                           ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0, )
@@ -993,16 +1013,16 @@ Optional Packages:
   --with-amesos-scalapacklib
                           Set SCALAPACK library (default is
                           ${tac_with_amesos_scalapackdir}/libscalapack.a, )
-  --with-amesos-mumpsdir  Set MUMPS directory (default is
-                          ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/, )
-  --with-amesos-mumpslib  Set MUMPS library (default is
-                          ${tac_with_amesos_mumpsdir}/lib/libdmumps.a, )
   --with-amesos-mumpspordlib
-                          Set MUMPS PORD library (default is
-                          ${tac_with_amesos_mumpsdir}/lib/libpord.a, )
+                          Set MUMPS PORD library. (default is
+                          amesos_libdir/libpord.a, )
   --with-amesos-mumpsincdir
-                          Set MUMPS include directory (default is
-                          ${tac_with_amesos_mumpsdir}/include, )
+                          Set MUMPS include directory. (default is
+                          amesos_incdir, )
+  --with-amesos-mumpslib  Set MUMPS library (default is
+                          amesos_libdir/libmumps.a, )
+  --with-amesos-smumpslib Set single-precision MUMPS library (default is
+                          amesos_libdir/libsmumps.a, )
   --with-amesos-superludir
                           Set SuperLU serial directory (default is
                           ${tac_with_trilinos3pldir}/SuperLU_3.0, )
@@ -3839,7 +3859,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3842:" \
+echo "$as_me:3862:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6674,7 +6694,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6677: \"$ac_link\") >&5
+(eval echo $as_me:6697: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6752,7 +6772,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6755: \"$ac_link\") >&5
+(eval echo $as_me:6775: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7489,12 +7509,7 @@ fi
 
 
 
-# ------------------------------  A7
-
-
 acx_blas_ok=no
-
-# ------------------------------  A8
 
 
 # Check whether --with-blas or --without-blas was given.
@@ -7549,7 +7564,6 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-# ------------------------------  A9
 acx_blas_save_LIBS="$LIBS"
 LIBS="$LIBS $FLIBS"
 
@@ -7557,8 +7571,8 @@ LIBS="$LIBS $FLIBS"
 if test $acx_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-	echo "$as_me:$LINENO: checking for $sgemm in $BLAS_LIBS" >&5
-echo $ECHO_N "checking for $sgemm in $BLAS_LIBS... $ECHO_C" >&6
+	echo "$as_me:$LINENO: checking for $dgemm in $BLAS_LIBS" >&5
+echo $ECHO_N "checking for $dgemm in $BLAS_LIBS... $ECHO_C" >&6
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -7572,7 +7586,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7584,7 +7598,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7626,13 +7640,12 @@ echo "${ECHO_T}$acx_blas_ok" >&6
 fi
 fi
 
-# ------------------------------  ABCDEF
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
 	save_LIBS="$LIBS"; LIBS="$LIBS"
-	as_ac_var=`echo "ac_cv_func_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm" >&5
-echo $ECHO_N "checking for $sgemm... $ECHO_C" >&6
+	as_ac_var=`echo "ac_cv_func_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm" >&5
+echo $ECHO_N "checking for $dgemm... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7642,12 +7655,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgemm to an innocuous variant, in case <limits.h> declares $sgemm.
+/* Define $dgemm to an innocuous variant, in case <limits.h> declares $dgemm.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgemm innocuous_$sgemm
+#define $dgemm innocuous_$dgemm
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgemm (); below.
+    which can conflict with char $dgemm (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -7657,7 +7670,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgemm
+#undef $dgemm
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -7666,14 +7679,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgemm) || defined (__stub___$sgemm)
+#if defined (__stub_$dgemm) || defined (__stub___$dgemm)
 choke me
 #else
-char (*f) () = $sgemm;
+char (*f) () = $dgemm;
 #endif
 #ifdef __cplusplus
 }
@@ -7690,7 +7703,7 @@ char (*f) () = $sgemm;
 int
 main ()
 {
-return f != $sgemm;
+return f != $dgemm;
   ;
   return 0;
 }
@@ -7811,9 +7824,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_atlas_ATL_xerbla" >&5
 echo "${ECHO_T}$ac_cv_lib_atlas_ATL_xerbla" >&6
 if test $ac_cv_lib_atlas_ATL_xerbla = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_f77blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lf77blas" >&5
-echo $ECHO_N "checking for $sgemm in -lf77blas... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_f77blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lf77blas" >&5
+echo $ECHO_N "checking for $dgemm in -lf77blas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7832,7 +7845,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7844,7 +7857,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7970,9 +7983,9 @@ fi
 
 # BLAS in PhiPACK libraries? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7991,7 +8004,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8003,7 +8016,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8203,9 +8216,9 @@ fi
 
 # BLAS in Alpha CXML library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_cxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcxml" >&5
-echo $ECHO_N "checking for $sgemm in -lcxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_cxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcxml" >&5
+echo $ECHO_N "checking for $dgemm in -lcxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8224,7 +8237,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8236,7 +8249,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8284,9 +8297,9 @@ fi
 
 # BLAS in Alpha DXML library? (now called CXML, see above)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_dxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -ldxml" >&5
-echo $ECHO_N "checking for $sgemm in -ldxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_dxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -ldxml" >&5
+echo $ECHO_N "checking for $dgemm in -ldxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8305,7 +8318,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8317,7 +8330,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8439,9 +8452,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_sunmath_acosp" >&5
 echo "${ECHO_T}$ac_cv_lib_sunmath_acosp" >&6
 if test $ac_cv_lib_sunmath_acosp = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_sunperf_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lsunperf" >&5
-echo $ECHO_N "checking for $sgemm in -lsunperf... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_sunperf_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lsunperf" >&5
+echo $ECHO_N "checking for $dgemm in -lsunperf... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8460,7 +8473,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8472,7 +8485,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8524,9 +8537,9 @@ fi
 
 # BLAS in SCSL library?  (SGI/Cray Scientific Library)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_scs_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lscs" >&5
-echo $ECHO_N "checking for $sgemm in -lscs... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_scs_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lscs" >&5
+echo $ECHO_N "checking for $dgemm in -lscs... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8545,7 +8558,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8557,7 +8570,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8605,9 +8618,9 @@ fi
 
 # BLAS in SGIMATH library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcomplib.sgimath" >&5
-echo $ECHO_N "checking for $sgemm in -lcomplib.sgimath... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcomplib.sgimath" >&5
+echo $ECHO_N "checking for $dgemm in -lcomplib.sgimath... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8626,7 +8639,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8638,7 +8651,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8686,9 +8699,9 @@ fi
 
 # BLAS in IBM ESSL library? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8707,7 +8720,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8719,7 +8732,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8760,9 +8773,9 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Lib'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_Lib'}'`" >&6
 if test `eval echo '${'$as_ac_Lib'}'` = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_essl_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lessl" >&5
-echo $ECHO_N "checking for $sgemm in -lessl... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_essl_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lessl" >&5
+echo $ECHO_N "checking for $dgemm in -lessl... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8781,7 +8794,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8793,7 +8806,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8843,9 +8856,9 @@ fi
 
 # Generic BLAS library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8864,7 +8877,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8876,7 +8889,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8946,7 +8959,6 @@ fi
 
 acx_lapack_ok=no
 
-# --------------  ABCDEFG
 
 # Check whether --with-lapack or --without-lapack was given.
 if test "${with_lapack+set}" = set; then
@@ -8966,13 +8978,13 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 case $ac_cv_f77_mangling in
-  upper*) ac_val="SGECON" ;;
-  lower*) ac_val="sgecon" ;;
+  upper*) ac_val="DGECON" ;;
+  lower*) ac_val="dgecon" ;;
   *)      ac_val="unknown" ;;
 esac
 case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
 
-sgecon="$ac_val"
+dgecon="$ac_val"
 
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -8989,8 +9001,8 @@ fi
 # First, check LAPACK_LIBS environment variable
 if test "x$LAPACK_LIBS" != x; then
         save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
-        echo "$as_me:$LINENO: checking for $sgecon in $LAPACK_LIBS" >&5
-echo $ECHO_N "checking for $sgecon in $LAPACK_LIBS... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking for $dgecon in $LAPACK_LIBS" >&5
+echo $ECHO_N "checking for $dgecon in $LAPACK_LIBS... $ECHO_C" >&6
         cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -9004,7 +9016,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -9016,7 +9028,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
@@ -9063,9 +9075,9 @@ fi
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
         save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
-        as_ac_var=`echo "ac_cv_func_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon" >&5
-echo $ECHO_N "checking for $sgecon... $ECHO_C" >&6
+        as_ac_var=`echo "ac_cv_func_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon" >&5
+echo $ECHO_N "checking for $dgecon... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -9075,12 +9087,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgecon to an innocuous variant, in case <limits.h> declares $sgecon.
+/* Define $dgecon to an innocuous variant, in case <limits.h> declares $dgecon.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgecon innocuous_$sgecon
+#define $dgecon innocuous_$dgecon
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgecon (); below.
+    which can conflict with char $dgecon (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -9090,7 +9102,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgecon
+#undef $dgecon
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -9099,14 +9111,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgecon) || defined (__stub___$sgecon)
+#if defined (__stub_$dgecon) || defined (__stub___$dgecon)
 choke me
 #else
-char (*f) () = $sgecon;
+char (*f) () = $dgecon;
 #endif
 #ifdef __cplusplus
 }
@@ -9123,7 +9135,7 @@ char (*f) () = $sgecon;
 int
 main ()
 {
-return f != $sgecon;
+return f != $dgecon;
   ;
   return 0;
 }
@@ -9173,9 +9185,9 @@ fi
 for lapack in lapack lapack_rs6k; do
         if test $acx_lapack_ok = no; then
                 save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon in -l$lapack" >&5
-echo $ECHO_N "checking for $sgecon in -l$lapack... $ECHO_C" >&6
+                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon in -l$lapack" >&5
+echo $ECHO_N "checking for $dgecon in -l$lapack... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -9194,7 +9206,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -9206,7 +9218,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
@@ -9500,6 +9512,32 @@ fi
 
 
 
+# Check whether --enable-amesos-smumps or --disable-amesos-smumps was given.
+if test "${enable_amesos_smumps+set}" = set; then
+  enableval="$enable_amesos_smumps"
+  ac_cv_use_amesos_smumps=$enableval
+else
+  ac_cv_use_amesos_smumps=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-smumps" >&5
+echo $ECHO_N "checking whether to use amesos-smumps... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_SMUMPS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
 # Check whether --enable-amesos-mumps_mpi_c2f or --disable-amesos-mumps_mpi_c2f was given.
 if test "${enable_amesos_mumps_mpi_c2f+set}" = set; then
   enableval="$enable_amesos_mumps_mpi_c2f"
@@ -9604,6 +9642,76 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+# // MS // specify location of all lib files
+
+
+# Check whether --with-amesos-libdir or --without-amesos-libdir was given.
+if test "${with_amesos_libdir+set}" = set; then
+  withval="$with_amesos_libdir"
+  tac_with_amesos_libdir=$withval
+else
+  tac_with_amesos_libdir=specify_amesos_libdir
+fi;
+
+
+  if test "X$cross_compiling" != "Xyes"; then
+    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_libdir}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_libdir}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_libdir}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_libdir}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+ }
+  fi
+
+
+# // MS // specify location of all include files
+
+
+# Check whether --with-amesos-incdir or --without-amesos-incdir was given.
+if test "${with_amesos_incdir+set}" = set; then
+  withval="$with_amesos_incdir"
+  tac_with_amesos_incdir=$withval
+else
+  tac_with_amesos_incdir=specify_amesos_incdir
+fi;
+
+
+  if test "X$cross_compiling" != "Xyes"; then
+    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_incdir}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_incdir}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_incdir}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_incdir}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+ }
+  fi
 
 
 if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
@@ -12674,96 +12782,21 @@ fi
 
 fi
 
+#########
+# MUMPS #
+#########
 
+# ================================== #
+# Check for PORD (required by MUMPS) #
+# ================================== #
 
-
-
-#
-#  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib,
-#    --with-amesos-mumpspordlib,
-#    --with-amesos-mumpsincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that umfmain.h is in the directory pointed to by amesos-mumpsincdic
-#    Make sure that umfpack_di_default is in the library pointed to by amesos-mumpslib
-#    Make sure that amd_default is in the library pointed to by amesos-mumpspordlib
-#
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-
-  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-
-#
-#  We don't check do as thorough a check for Mumps at this point.  In fact, we don't do much of a check
-#  at all.
-#
-
-
-# Check whether --with-amesos-mumpsdir or --without-amesos-mumpsdir was given.
-if test "${with_amesos_mumpsdir+set}" = set; then
-  withval="$with_amesos_mumpsdir"
-  tac_with_amesos_mumpsdir=$withval
-else
-  tac_with_amesos_mumpsdir=${tac_with_trilinos3pldir}/MUMPS_4.2_beta/
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpsdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpsdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpsdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpsdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
+if test "X$ac_cv_use_amesos_mumps" != "Xno" && test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
+  echo "WARNING: your configure script has both --enable-ameso-smumps and"
+  echo "WARNING: --enable-amesos-smumps. We proceed with the single precision"
+  echo "WARNING: version of MUMPS only..."
 fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
 
-
-
-
-# Check whether --with-amesos-mumpslib or --without-amesos-mumpslib was given.
-if test "${with_amesos_mumpslib+set}" = set; then
-  withval="$with_amesos_mumpslib"
-  tac_with_amesos_mumpslib=$withval
-else
-  tac_with_amesos_mumpslib=${tac_with_amesos_mumpsdir}/lib/libdmumps.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpslib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpslib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpslib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpslib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
+if test "X$ac_cv_use_amesos_mumps" != "Xno" || test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
 
 
 
@@ -12772,9 +12805,12 @@ if test "${with_amesos_mumpspordlib+set}" = set; then
   withval="$with_amesos_mumpspordlib"
   tac_with_amesos_mumpspordlib=$withval
 else
-  tac_with_amesos_mumpspordlib=${tac_with_amesos_mumpsdir}/lib/libpord.a
+  tac_with_amesos_mumpspordlib=amesos_libdir/libpord.a
 fi;
 
+  if test "X$tac_with_amesos_mumpspordlib" == "Xamesos_libdir/libpord.a"; then
+    tac_with_amesos_mumpspordlib=${tac_with_amesos_libdir}/libpord.a
+  fi
 
   if test "X$cross_compiling" != "Xyes"; then
     { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpspordlib}" | $as_tr_sh`
@@ -12806,9 +12842,12 @@ if test "${with_amesos_mumpsincdir+set}" = set; then
   withval="$with_amesos_mumpsincdir"
   tac_with_amesos_mumpsincdir=$withval
 else
-  tac_with_amesos_mumpsincdir=${tac_with_amesos_mumpsdir}/include
+  tac_with_amesos_mumpsincdir=amesos_incdir
 fi;
 
+  if test "X$tac_with_amesos_mumpsinclib" == "Xamesos_incdir"; then
+    tac_cv_use_amesos_mumpsinclib=${tac_with_amesos_incdir}
+  fi
 
   if test "X$cross_compiling" != "Xyes"; then
     { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpsincdir}" | $as_tr_sh`
@@ -12836,10 +12875,6 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 #
 # This is a bad way to check for dmumps_c.h, it won't pick dmumps_c.h up if
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
-#
-
-#
-#  First try to find amd.h without using the UMFPACK AMD incude directory
 #
 
 for ac_header in dmumps_c.h
@@ -12994,9 +13029,6 @@ done
 
   if test "X$ac_cv_header_dmumps_c_h" != "Xyes"; then
 #
-#   if we can't find dmumps_c.h in the include search path, look for it in mumpsincdir
-#   which defaults to Trilinos3PL/MUMPS_4.2_beta/include
-#
 
   if test "X$cross_compiling" != "Xyes"; then
     { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpsincdir}/dmumps_c.h" | $as_tr_sh`
@@ -13020,8 +13052,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&5
-echo "$as_me: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsincdir or --with-amesos-incdir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&5
+echo "$as_me: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsincdir or --with-amesos-incdir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
  }
@@ -13072,7 +13104,6 @@ else
   NEED_PARAMETER_LIST_FALSE=
 fi
 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_mumpslib} ${tac_with_amesos_scalapacklib}"
 else
 
 
@@ -13086,16 +13117,134 @@ fi
 
 fi
 
+# ================ #
+# Check for DMUMPS #
+# ================ #
 
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+
+
+
+# Check whether --with-amesos-mumpslib or --without-amesos-mumpslib was given.
+if test "${with_amesos_mumpslib+set}" = set; then
+  withval="$with_amesos_mumpslib"
+  tac_with_amesos_mumpslib=$withval
+else
+  tac_with_amesos_mumpslib=amesos_libdir/libmumps.a
+fi;
+
+
+  if test "X$tac_with_amesos_mumpslib" == "Xamesos_libdir/libdmumps.a"; then
+    tac_with_amesos_mumpslib=${tac_with_amesos_libdir}/libdmumps.a
+  fi
+
+
+  if test "X$cross_compiling" != "Xyes"; then
+    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpslib}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpslib}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_mumpslib}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_mumpslib}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+ }
+  fi
+
+fi
+
+# ================ #
+# Check for SMUMPS #
+# ================ #
+
+# SMUMPS overwrites DMUMPS if specified
+if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 #
-#  --enable-amesos-superlu, --with-amesos-superludir, --with-amesos-superlulib,
-#    --with-amesos-superluincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU serial include directory
-#    Make sure that SuperLU_timer is in the SuperLU serial library
-#
+
+
+# Check whether --with-amesos-smumpslib or --without-amesos-smumpslib was given.
+if test "${with_amesos_smumpslib+set}" = set; then
+  withval="$with_amesos_smumpslib"
+  tac_with_amesos_smumpslib=$withval
+else
+  tac_with_amesos_smumpslib=amesos_libdir/libsmumps.a
+fi;
+
+
+  if test "X$tac_with_amesos_smumpslib" == "Xamesos_libdir/libsmumps.a"; then
+    tac_with_amesos_mumpslib="${tac_with_amesos_libdir}/libsmumps.a"
+  fi
+
+
+  if test "X$cross_compiling" != "Xyes"; then
+    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_smumpslib}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_smumpslib}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_smumpslib}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${tac_with_amesos_smumpslib}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+ }
+  fi
+
+
+# SMUMPS still requires HAVE_AMESOS_MUMPS to work. But now the dmumps
+# library is no longer needed.
+
+
+if true ; then
+  HAVE_AMESOS_SMUMPS_TRUE=
+  HAVE_AMESOS_SMUMPS_FALSE='#'
+else
+  HAVE_AMESOS_SMUMPS_TRUE='#'
+  HAVE_AMESOS_SMUMPS_FALSE=
+fi
+
+else
+
+
+if false ; then
+  HAVE_AMESOS_SMUMPS_TRUE=
+  HAVE_AMESOS_SMUMPS_FALSE='#'
+else
+  HAVE_AMESOS_SMUMPS_TRUE='#'
+  HAVE_AMESOS_SMUMPS_FALSE=
+fi
+
+fi
+
+# finally specify the MUMPS library. `tac_with_amesos_mumpslib' contains either dmumps or
+# smumps. At this stage, the code cannot handle both dmumps and smumps simultaneously.
+amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_scalapacklib}"
+
+# ======= #
+# SuperLU #
+# ======= #
 
 if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
 
@@ -13490,7 +13639,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13493: \"$ac_link\") >&5
+(eval echo $as_me:13642: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13568,7 +13717,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13571: \"$ac_link\") >&5
+(eval echo $as_me:13720: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14076,6 +14225,20 @@ if test -z "${HAVE_AMESOS_MUMPS_TRUE}" && test -z "${HAVE_AMESOS_MUMPS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_MUMPS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SMUMPS_TRUE}" && test -z "${HAVE_AMESOS_SMUMPS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SMUMPS_TRUE}" && test -z "${HAVE_AMESOS_SMUMPS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14748,6 +14911,8 @@ s,@HAVE_AMESOS_SCALAPACK_TRUE@,$HAVE_AMESOS_SCALAPACK_TRUE,;t t
 s,@HAVE_AMESOS_SCALAPACK_FALSE@,$HAVE_AMESOS_SCALAPACK_FALSE,;t t
 s,@HAVE_AMESOS_MUMPS_TRUE@,$HAVE_AMESOS_MUMPS_TRUE,;t t
 s,@HAVE_AMESOS_MUMPS_FALSE@,$HAVE_AMESOS_MUMPS_FALSE,;t t
+s,@HAVE_AMESOS_SMUMPS_TRUE@,$HAVE_AMESOS_SMUMPS_TRUE,;t t
+s,@HAVE_AMESOS_SMUMPS_FALSE@,$HAVE_AMESOS_SMUMPS_FALSE,;t t
 s,@HAVE_AMESOS_SUPERLU_TRUE@,$HAVE_AMESOS_SUPERLU_TRUE,;t t
 s,@HAVE_AMESOS_SUPERLU_FALSE@,$HAVE_AMESOS_SUPERLU_FALSE,;t t
 s,@HAVE_AMESOS_KUNDERT_TRUE@,$HAVE_AMESOS_KUNDERT_TRUE,;t t

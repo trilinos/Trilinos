@@ -32,6 +32,9 @@
 /* Define if want to build amesos-scalapack */
 #undef HAVE_AMESOS_SCALAPACK
 
+/* Define if want to build amesos-smumps */
+#undef HAVE_AMESOS_SMUMPS
+
 /* Define if want to build amesos-superlu */
 #undef HAVE_AMESOS_SUPERLU
 
