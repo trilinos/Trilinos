@@ -55,9 +55,9 @@ namespace EpetraExt {
              B are not already Filled, or if errors occur in putting values
              into C, etc.
      */
-    static int Product(const Epetra_CrsMatrix& A,
-		       const Epetra_CrsMatrix& B,
-		       Epetra_CrsMatrix& C);
+    static int Multiply(const Epetra_CrsMatrix& A,
+			const Epetra_CrsMatrix& B,
+			Epetra_CrsMatrix& C);
 
   };//class MatrixMatrix
 }//namespace EpetraExt

@@ -143,7 +143,7 @@ int check_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose)
   EPETRA_CHK_ERR( A.FillComplete() );
   EPETRA_CHK_ERR( B.FillComplete() );
 
-  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Product(A, B, C) );
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, B, C) );
 
   //For these simple operands, the result C should have a simple form which
   //we can check as follows.

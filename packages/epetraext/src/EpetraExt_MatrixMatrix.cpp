@@ -37,9 +37,9 @@
 
 namespace EpetraExt {
 
-int MatrixMatrix::Product(const Epetra_CrsMatrix& A,
-			  const Epetra_CrsMatrix& B,
-			  Epetra_CrsMatrix& C)
+int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
+			   const Epetra_CrsMatrix& B,
+			   Epetra_CrsMatrix& C)
 {
   //
   //This function forms the matrix-matrix product C = A * B.
