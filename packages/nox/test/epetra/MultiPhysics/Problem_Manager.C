@@ -360,8 +360,10 @@ void Problem_Manager::registerComplete()
     Epetra_Time fillTime(*Comm);
 
     bool verbose = false;
+    EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
+      EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
     TmpMapColorings.insert( pair<int, EpetraExt::CrsGraph_MapColoring*>
-      (probId, new EpetraExt::CrsGraph_MapColoring(verbose)));
+      (probId, new EpetraExt::CrsGraph_MapColoring(algType, verbose)));
     ColorMaps.insert( pair<int, Epetra_MapColoring*>
       (probId, &((*TmpMapColorings.find(probId)->second)(problem.getGraph()))) );
     ColorMapIndexSets.insert( pair<int, EpetraExt::CrsGraph_MapColoringIndex*>

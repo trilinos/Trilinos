@@ -157,7 +157,10 @@ void Problem_Manager::registerComplete()
     Epetra_Time fillTime(*Comm);
 
     bool verbose = false;
-    TmpMapColorings.push_back(new EpetraExt::CrsGraph_MapColoring(verbose));
+    EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
+      EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
+    TmpMapColorings.push_back(new 
+      EpetraExt::CrsGraph_MapColoring(algType, verbose));
     ColorMaps.push_back(&((*TmpMapColorings.back())((*iter)->getGraph())));
     ColorMapIndexSets.push_back(new 
       EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.back()));
