@@ -1,4 +1,5 @@
-ZOD = $(ZOLTAN_OBJ_DIR)
+ZOD = ../$(ZOLTAN_OBJ_DIR)
+ZOM = $(F90_MODULE_PREFIX)$(ZOD)
 
 all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
 			$(ZOD)/lb_user_const.o $(ZOD)/fwrap.o
@@ -6,7 +7,7 @@ all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
 $(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
 			$(ZOD)/ztypes.o  \
 			$(ZOD)/lb_user_const.o
-	$(F90) -c $(ZOLTAN_MOD_DIR) $(ZOD)/fwrap.f90
+	$(F90) -c $(ZOM) $(ZOD)/fwrap.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fwrap.f90: 	fwrap.fpp $(ZOD)/sppr $(ZOD)/sppr_header
@@ -14,11 +15,11 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp $(ZOD)/sppr $(ZOD)/sppr_header
 
 $(ZOD)/lb_user_const.o:	lb_user_const.f90 \
 			$(ZOD)/ztypes.o
-	$(F90) -c  $(ZOLTAN_MOD_DIR) lb_user_const.f90
+	$(F90) -c  $(ZOM) lb_user_const.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/ztypes.o: 	$(ZOD)/ztypes.f90
-	$(F90) -c  $(ZOLTAN_MOD_DIR) $(ZOD)/ztypes.f90
+	$(F90) -c  $(ZOM) $(ZOD)/ztypes.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr $(ZOD)/sppr_header
