@@ -971,8 +971,15 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   
   // construct the FiniteDifferenceColoring-Matrix
   if (ml_printlevel_>0 && comm_.MyPID()==0)
+  {
      cout << "matrixfreeML (level 0): Entering Construction FD-Operator on level 0\n";
+     fflush(stdout);
+  }
+  
   t0 = GetClock();
+  int ncalls = interface_.getnumcallscomputeF();
+  interface_.setnumcallscomputeF(0);
+  
   NOX::EpetraNew::FiniteDifferenceColoring* FD = 
            new NOX::EpetraNew::FiniteDifferenceColoring(interface_,x,*graph,
                                                         *colorMap,*colorcolumns,
@@ -991,7 +998,14 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
 
   t1 = GetClock();
   if (ml_printlevel_>0 && comm_.MyPID()==0)
-     cout << "matrixfreeML (level 0): Proc " << comm_.MyPID() <<" colored Finite Differencing time is " << (t1-t0) << " sec\n";
+  {
+     cout << "matrixfreeML (level 0): colored Finite Differencing time :" << (t1-t0) << " sec\n";
+     cout << "matrixfreeML (level 0): colored Finite Differencing number of calls to computeF : " 
+          << interface_.getnumcallscomputeF() << endl;
+     fflush(stdout);
+  }
+  
+  interface_.setnumcallscomputeF(ncalls);
 
   Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
