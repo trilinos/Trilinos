@@ -12,11 +12,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +19,11 @@ extern "C" {
 #include "DD.h"
 
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 

@@ -12,11 +12,6 @@
  ****************************************************************************/
 
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +19,11 @@ extern "C" {
 #include "zoltan_mem.h"
 #include "comm.h"
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 /******************************************************************************/
 

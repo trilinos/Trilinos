@@ -12,16 +12,16 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
 #include "comm.h"
 #include "zoltan_mem.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 void gen_comm_data(), extract_comm_answer(), free_comm_data();
 void set_up_comm_from_send(), check_comm_answer(), print_data();

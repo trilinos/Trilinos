@@ -12,17 +12,17 @@
  ****************************************************************************/
 
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 #include <stdio.h>
 #include <memory.h>
 #include <mpi.h>
 #include "comm.h"
 #include "zoltan_mem.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 
 /* Given the communication object, perform a communication operation as

@@ -12,11 +12,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 /*  Program tests the Zoltan Distributed Directory software (stand-alone mode).
 */
@@ -29,6 +24,11 @@ extern "C" {
 #include "zoltan_util.h"
 #include "zoltan_id.h"
 #include "zoltan_align.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 
 #define DD_TEST_NAME_NUMERIC 100  /* arbitrary starting value for defines */

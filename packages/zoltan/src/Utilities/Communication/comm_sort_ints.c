@@ -12,14 +12,14 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <string.h>
+#include "comm.h"
+#include "zoltan_mem.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include <string.h>
-#include "comm.h"
-#include "zoltan_mem.h"
 
 
 /* Given a list of processors & message data, sort them by proc ID            */

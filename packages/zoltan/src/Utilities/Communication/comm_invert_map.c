@@ -12,15 +12,16 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <stdio.h>
+#include <mpi.h>
+#include "comm.h"
+#include "zoltan_mem.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <mpi.h>
-#include "comm.h"
-#include "zoltan_mem.h"
 
 /* Knowing who I send to, determine how many messages I'll receive, */
 /* and their lengths.  Upon entry, the arrays "lengths_to" and "procs_to" */
