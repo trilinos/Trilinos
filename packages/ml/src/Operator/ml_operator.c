@@ -1102,15 +1102,12 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   int i, A_length, B_length, *hashed_inds;
   int max_nz_per_row = 0, j;
   int hash_val, index_length;
-  int *columns, *rowptr, nz_ptr, hash_used;
+  int *columns, *rowptr, nz_ptr, hash_used, global_col;
   double *values;
   struct ML_CSR_MSRdata *temp;
+  int *A_gids, *B_gids;
+  int max_per_proc;
 
-
-  if (A->comm->ML_nprocs != 1) {
-     printf("ML_Operator_Add: does not work in paralelle\n");
-     exit(1);
-  }
   if (A->getrow == NULL) 
     pr_error("ML_Operator_Add: A does not have a getrow function.\n");
 
@@ -1130,13 +1127,27 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   }
 
   /* let's just count some things */
+  index_length = A->invec_leng + 1;
+  if (A->getrow->pre_comm != NULL) {
+    ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+    index_length += A->getrow->pre_comm->total_rcv_length;
+  }
+  if (B->getrow->pre_comm != NULL) {
+    ML_CommInfoOP_Compute_TotalRcvLength(B->getrow->pre_comm);
+    index_length += B->getrow->pre_comm->total_rcv_length;
+  }
 
-  hashed_inds = (int *) ML_allocate(sizeof(int)*(A->invec_leng+1));
-  hashed_vals = (double *) ML_allocate(sizeof(double)*(A->invec_leng+1));
+  ML_create_unique_col_id(A->invec_leng, &A_gids, A->getrow->pre_comm,
+			  &max_per_proc,A->comm);
+  ML_create_unique_col_id(B->invec_leng, &B_gids, B->getrow->pre_comm,
+			  &max_per_proc,B->comm);
 
-  index_length = A->invec_leng;
-  for (i = 0; i < A->invec_leng; i++) hashed_inds[i] = -1;
-  for (i = 0; i < A->invec_leng; i++) hashed_vals[i] = 0.;
+
+  hashed_inds = (int *) ML_allocate(sizeof(int)*index_length);
+  hashed_vals = (double *) ML_allocate(sizeof(double)*index_length);
+
+  for (i = 0; i < index_length; i++) hashed_inds[i] = -1;
+  for (i = 0; i < index_length; i++) hashed_vals[i] = 0.;
 
   nz_ptr = 0;
   for (i = 0 ; i < A->getrow->Nrows; i++) {
@@ -1144,8 +1155,9 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
       ML_get_matrix_row(A, 1, &i, &A_allocated, &A_bindx, &A_val,
                         &A_length, 0);
       for (j = 0; j < A_length; j++) {
-	hash_val = ML_hash_it(A_bindx[j], hashed_inds, index_length,&hash_used);
-        hashed_inds[hash_val] = A_bindx[j];
+	global_col = A_gids[A_bindx[j]];
+	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+        hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += A_val[j];
 	A_bindx[j] = hash_val;
       }
@@ -1153,8 +1165,9 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
       ML_get_matrix_row(B, 1, &i, &B_allocated, &B_bindx, &B_val,
                         &B_length, 0);
       for (j = 0; j < B_length; j++) {
-	hash_val = ML_hash_it(B_bindx[j], hashed_inds, index_length,&hash_used);
-        hashed_inds[hash_val] = B_bindx[j];
+	global_col = B_gids[B_bindx[j]];
+	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+        hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += B_val[j];
         B_bindx[j] = hash_val;
       }
@@ -1186,8 +1199,9 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
       ML_get_matrix_row(A, 1, &i, &A_allocated, &A_bindx, &A_val,
                         &A_length, 0);
       for (j = 0; j < A_length; j++) {
-	hash_val = ML_hash_it(A_bindx[j], hashed_inds, index_length,&hash_used);
-        hashed_inds[hash_val] = A_bindx[j];
+	global_col = A_gids[A_bindx[j]];
+	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+        hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += A_val[j];
 	A_bindx[j] = hash_val;
       }
@@ -1195,8 +1209,9 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
       ML_get_matrix_row(B, 1, &i, &B_allocated, &B_bindx, &B_val,
                         &B_length, 0);
       for (j = 0; j < B_length; j++) {
-	hash_val = ML_hash_it(B_bindx[j], hashed_inds, index_length,&hash_used);
-        hashed_inds[hash_val] = B_bindx[j];
+	global_col = B_gids[B_bindx[j]];
+	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+        hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += B_val[j];
         B_bindx[j] = hash_val;
       }
@@ -1229,8 +1244,8 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, ML_EMPTY,
 				temp,A->outvec_leng, NULL,0);
   ML_Operator_Set_Getrow(C, ML_EXTERNAL, A->outvec_leng, CSR_getrows);
-  ML_CommInfoOP_Clone(&(C->getrow->pre_comm), A->getrow->pre_comm);
   ML_Operator_Set_ApplyFunc (C, ML_INTERNAL, CSR_matvec);
+  ML_globalcsr2localcsr(C, max_per_proc);
 
   C->max_nz_per_row = max_nz_per_row;
   C->N_nonzeros     = nz_ptr;
