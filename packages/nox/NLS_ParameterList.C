@@ -140,6 +140,47 @@ bool NLS_ParameterList::isParameter(const string& name) const
   return (params.find(name) != params.end());
 }
 
+bool NLS_ParameterList::isParameterEqual(const string& name, bool value) const
+{
+  PCIterator i = params.find(name);
+  if ((i != params.end()) && (i->second.isBool()))
+    return (i->second.getBoolValue() == value);
+  return false;
+}
+
+bool NLS_ParameterList::isParameterEqual(const string& name, int value) const
+{
+  PCIterator i = params.find(name);
+  if ((i != params.end()) && (i->second.isInt()))
+    return (i->second.getIntValue() == value);
+  return false;
+}
+
+bool NLS_ParameterList::isParameterEqual(const string& name, double value) const
+{
+  PCIterator i = params.find(name);
+  if ((i != params.end()) && (i->second.isDouble()))
+    return (i->second.getDoubleValue() == value);
+  return false;
+}
+
+bool NLS_ParameterList::isParameterEqual(const string& name, const char* value) const
+{
+  PCIterator i = params.find(name);
+  if ((i != params.end()) && (i->second.isString()))
+    return (i->second.getStringValue() == value);
+  return false;
+}
+
+bool NLS_ParameterList::isParameterEqual(const string& name, const string& value) const
+{
+  PCIterator i = params.find(name);
+  if ((i != params.end()) && (i->second.isString()))
+    return (i->second.getStringValue() == value);
+  return false;
+}
+
+
 ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
 {
   for (PCIterator i = params.begin(); i != params.end(); ++i) {

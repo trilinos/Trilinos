@@ -75,6 +75,19 @@ public:
   bool isParameter(const string& name) const;
 
 
+  /** @name Is Parameter Equal Value?
+   *
+   * Returns true if the specified parameter exists AND is equal to
+   * the specified value.  (Not value for NLS_ParameterList
+   * parameters.) */
+  //@{
+  bool isParameterEqual(const string& name, bool value) const;
+  bool isParameterEqual(const string& name, int value) const;
+  bool isParameterEqual(const string& name, double value) const;
+  bool isParameterEqual(const string& name, const char* value) const;
+  bool isParameterEqual(const string& name, const string& value) const;
+  //@}
+
   //! Printing 
   ostream& print(ostream& stream, int indent = 0) const;
 
