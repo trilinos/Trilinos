@@ -4,8 +4,7 @@
 
 ../configure \
     --enable-mpi \
-    --disable-nox --disable-loca --disable-epetraext --disable-aztecoo --disable-ml \
-    --disable-new_package --disable-ifpack --disable-epetra --enable-tpetra \    
+    --disable-default-packages --enable-tpetra \    
     CC=mpicc CXX=mpic++ F77=mpif77 \
     FLIBS="-L/sw/lib/ -lg2c" \
     LDFLAGS="-framework vecLib"
