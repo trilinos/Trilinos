@@ -965,10 +965,10 @@ int main(int argc, char *argv[])
   /* Here is the stuff to set the subsmoothers within the Hiptmair */
   /* smoother.                                                     */
 
-  nodal_smoother = ML_Gen_Smoother_SymGaussSeidel;
-  edge_smoother  = ML_Gen_Smoother_SymGaussSeidel;
-  edge_smoother  = ML_Gen_Smoother_MLS;
-  nodal_smoother = ML_Gen_Smoother_MLS;
+  nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
+  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
+  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
+  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 
   nodal_its      = 1;
   edge_its       = 1;
