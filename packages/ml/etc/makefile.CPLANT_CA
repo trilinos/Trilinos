@@ -1,0 +1,12 @@
+OPT_FLAGS=-O3
+ARCH_FLAGS=$(OPT_FLAGS)
+CC=gcc
+FC=g77
+RANLIB=ranlib
+LINKER=$(CC)
+#-mb: ARCH_LIBS=/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a
+# ARCH_LIBS=/home/local/lib/gcc-lib/i686-pc-linux-gnu/2.95.2/libg2c.a
+# ARCH_LIBS=/usr/lib/gcc-lib/i386-redhat-linux/2.96/libg2c.a
+ARCH_LIBS=-lg2c -lm -lgm
+AR=ar
+#ARCH_FLAGS=-Wall -Wtraditional -Wpointer-arith -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wlong-long@
