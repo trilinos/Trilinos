@@ -216,8 +216,6 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   int *displs, *each_size;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
-      
-uprintf (hgc, "starting ipm matching\n");
   
   /* compute NLOOP as 1/2 * total vertices/total columns */
   NDO   = 100;           /* later, it should be say 10% of vertices on processor */  
@@ -497,14 +495,7 @@ uprintf (hgc, "starting ipm matching\n");
         }
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                       
      } /* end of large loop over LOOP */
-     
-count = 0;
-for (i = 0; i < hg->nVtx; i++)
-   if (match[i] != i)
-      count++;
-           
-uprintf (hgc, "exiting ipm matching, loop = %d, count %d of %d\n", loop, count, hg->nVtx);     
-     
+          
   Zoltan_Multifree (__FILE__, __LINE__, 4, &psums, &tsums, &select, &cmatch); 
   Zoltan_Multifree (__FILE__, __LINE__, 5, &m_vindex, &m_vedge, &m_gno,
    &m_bestsum, &m_bestv);
