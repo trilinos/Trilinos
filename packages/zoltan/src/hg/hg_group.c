@@ -69,7 +69,7 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 { int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
-  float *old_ewgt, *new_ewgt;
+  float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
   ZOLTAN_TRACE_ENTER(zz, yo);

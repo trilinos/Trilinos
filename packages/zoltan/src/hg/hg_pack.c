@@ -73,7 +73,7 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 {
   int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
-  float *old_ewgt, *new_ewgt;
+  float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Packing";
 
   ZOLTAN_TRACE_ENTER(zz, yo);

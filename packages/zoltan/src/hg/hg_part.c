@@ -103,12 +103,10 @@ int Zoltan_HG_HPart_Lib (
   if (p == 1)             /* everything goes in the one partition */
   { for (i=0; i<hg->nVtx; i++)
       part[i] = 0 ;
-    return ZOLTAN_OK;
   }
   else if (p >= hg->nVtx) /* more partitions than vertices, trivial answer */
   { for (i=0; i<hg->nVtx; i++)
       part[i] = i;
-    return ZOLTAN_OK;
   }
   else if (hg->nVtx <= hgp->redl) /* fewer vertices than desired */
   { ierr = Zoltan_HG_Global (zz, hg, p, part, hgp);

@@ -74,7 +74,7 @@ int Zoltan_HG_Matching (
   int limit)
 { int ierr;
   char *yo = "Zoltan_HG_Matching";
-  float *old_ewgt, *new_ewgt;
+  float *old_ewgt=NULL, *new_ewgt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 

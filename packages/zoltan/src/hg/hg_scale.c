@@ -22,7 +22,6 @@ extern "C" {
 
 int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt)
 { int   i, j;
-  char *yo = "Zoltan_HG_Scale_Graph_Weight";
 
   if (!g->vwgt)
     return ZOLTAN_FATAL;
