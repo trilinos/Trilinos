@@ -422,7 +422,7 @@ int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    val    = &(val[itemp]);
 
    for (j = 0 ; j < *row_lengths; j++) {
-     *values++ = sgn[ (int) *val++ ]; //val++; 
+     *values++ = sgn[ (int) *val++ ]; 
    }
    return(1);
 }

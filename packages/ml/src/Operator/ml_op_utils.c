@@ -988,6 +988,7 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
   struct ML_CSR_MSRdata *temp;
 
   return 1;
+
   /* Do not do anything if there is no destroy function for    */
   /* this matrix as we have no way to destroy the old data.    */
   if ((matrix->data_destroy == NULL) || (matrix->data == NULL))
@@ -1047,9 +1048,79 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 
    return 0;
 }
+int ML_Operator_ChangeToChar(ML_Operator *matrix)
+{
+  int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
+  int *row_ptr, *col_ptr;
+  double *values = NULL;
+  char  *val_ptr;
+  struct ML_CSR_MSRdata *temp;
+
+  return 1;
+
+  /* Do not do anything if there is no destroy function for    */
+  /* this matrix as we have no way to destroy the old data.    */
+  if ((matrix->data_destroy == NULL) || (matrix->data == NULL))
+    return 1;
+
+  /* first count how many nonzeros are in the old matrix */
+
+  Nnz = 0;
+  if (matrix->getrow == NULL) return(1);
+  Nrows = matrix->getrow->Nrows;
+
+  for (i = 0 ; i < Nrows; i++) {
+    ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+                        &row_length, 0);
+    Nnz += row_length;
+  }
+
+  /* allocate space */
+
+  row_ptr = (int   *) ML_allocate(sizeof(int  )*(Nrows + 1));
+  col_ptr = (int   *) ML_allocate(sizeof(int  )*(Nnz + 1));
+  val_ptr = (char  *) ML_allocate(sizeof(char)*(Nnz + 1));
+  temp    = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  
+  /* getrow everything and copy it to single precision */
+
+   row_ptr[0] = 0;
+   Nnz = 0;
+   for (i = 0 ; i < Nrows; i++) {
+     ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+		       &row_length, 0);
+     for (k = 0; k < row_length; k++) {
+       if      (values[k] < 0) val_ptr[Nnz] = (int) 2;
+       else if (values[k] > 0) val_ptr[Nnz] = (int) 1;
+       else                    val_ptr[Nnz] = (int) 0;
+         col_ptr[Nnz++] = columns[k];
+     }
+     row_ptr[i+1] = Nnz;
+   }
+   temp->rowptr = row_ptr;
+   temp->columns = col_ptr;
+   temp->values = (double *) val_ptr;
+
+   /* Get rid of the old data pointer */
+
+   if ((matrix->data_destroy != NULL) && (matrix->data != NULL)) {
+      matrix->data_destroy(matrix->data);
+      matrix->data = NULL;
+   }
+
+   ML_Operator_Set_ApplyFuncData(matrix,matrix->invec_leng, 
+				 matrix->outvec_leng,ML_INTERNAL,temp,
+				 matrix->matvec->Nrows, cCSR_matvec,
+				 matrix->from_an_ml_operator);
+
+   ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,cCSR_getrows);
+   matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
+
+   return 0;
+}
 
 /*******************************************************************
- *  Take an ML_Operator single precision CSR matrix in Pmat and use it 
+ *  Take an ML_Operator single precision or char CSR matrix in Pmat and use it 
  *  to implicitly define a transpose matvec that is stored in Rmat. This 
  *  implies that Rmat will not have a getrow() function ... so it is important
  *  that this function only be called on matrices where getrow() is
@@ -1072,7 +1143,8 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 
   if ( Pmat->getrow == NULL) return 1;
 
-  if (Pmat->getrow->external != sCSR_getrows) return 1;
+  if ( (Pmat->getrow->external != sCSR_getrows) &&
+       (Pmat->getrow->external != cCSR_getrows)) return 1;
 
   if (PostCommAlreadySet == ML_FALSE) {
     if (Rmat->getrow->post_comm != NULL)
@@ -1081,14 +1153,17 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 			    Pmat->invec_leng);
   }
 
+  if (Pmat->getrow->external == sCSR_getrows)
+    ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
+				Pmat->invec_leng, ML_INTERNAL,
+				Pmat->data, -1, sCSR_trans_matvec, 0);
+  else
+    ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
+				Pmat->invec_leng, ML_INTERNAL,
+				Pmat->data, -1, cCSR_trans_matvec, 0);
 
-
-  ML_Operator_Set_ApplyFuncData(Rmat,
-				Pmat->outvec_leng,
-				Pmat->invec_leng,
-				ML_INTERNAL,
-				Pmat->data, -1, 
-				sCSR_trans_matvec, 0);
+  Rmat->getrow->internal = NULL;
+  Rmat->getrow->external = NULL;
   Rmat->data_destroy = NULL;
   return 0;
 }
