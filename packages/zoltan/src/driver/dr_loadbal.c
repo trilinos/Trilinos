@@ -155,11 +155,6 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     }
   }
 
-  /* 
-   * If you want to change some parameter values, call LB_Set_Param here.
-   */
-
-
   /*
    * call the load balancer
    */
