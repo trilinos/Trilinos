@@ -102,9 +102,11 @@ typedef struct ML_AMG_Struct
 /* functions to manipulate the AMG data structure                            */
 /* ------------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -202,8 +204,10 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
 int ML_AMG_CompatibleRelaxation(int *CF_array,
            ML_Operator *Amat, int *Ncoarse, int limit);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -20,8 +20,10 @@
 /* functions defined here                                               */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 /* ******************************************************************** */
@@ -46,8 +48,10 @@ extern int ML_AMG_Identity_Getrows(void *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

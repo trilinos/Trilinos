@@ -29,10 +29,10 @@ struct ml_linked_list {
   int duplicate_row;
 };
 
-
-
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
@@ -74,8 +74,10 @@ extern int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
 			   ML_Operator *Pe_mat, int);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

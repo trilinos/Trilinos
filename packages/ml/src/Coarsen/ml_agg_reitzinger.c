@@ -1413,14 +1413,26 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 
   /* pull out a bunch of pointers */
 
+#ifdef ML_CPP
+  Pn            = (ML_CSR_MSRdata *)Pn_mat->data;
+#else
   Pn            = Pn_mat->data;
+#endif
   Pn_columns    = Pn->columns;
   Pn_rowptr     = Pn->rowptr;
+#ifdef ML_CPP
+  Tfine         = (ML_CSR_MSRdata *)Tfine_mat->data;
+#else
   Tfine         = Tfine_mat->data;
+#endif
   Tfine_columns = Tfine->columns;
   Tfine_values  = Tfine->values;
   Tfine_rowptr  = Tfine->rowptr;
+#ifdef ML_CPP
+  SPn           = (ML_CSR_MSRdata *)SPn_mat->data;
+#else
   SPn           = SPn_mat->data;
+#endif
   SPn_columns   = SPn->columns;
   SPn_values    = SPn->values;
   SPn_rowptr    = SPn->rowptr;

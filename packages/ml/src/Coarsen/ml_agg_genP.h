@@ -33,8 +33,10 @@ struct ML_AGG_Matrix_Context
 /* functions defined here                                                    */
 /* ************************************************************************* */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 /* ************************************************************************* */
@@ -85,8 +87,10 @@ extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows,
                double values[], int row_lengths[]);
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -470,9 +470,17 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *ag, int level )
       exit(-1);
    }
    ag->max_levels = level;
+#ifdef ML_CPP
+   ML_memory_alloc((void**) &(ag->aggr_info), level*sizeof(int*),"AGu");
+#else
    ML_memory_alloc((void*) &(ag->aggr_info), level*sizeof(int*),"AGu");
+#endif
    for ( i = 0; i < level; i++ ) ag->aggr_info[i] = NULL;
+#ifdef ML_CPP
+   ML_memory_alloc((void**) &(ag->aggr_count), level*sizeof(int),"AGx");
+#else
    ML_memory_alloc((void*) &(ag->aggr_count), level*sizeof(int),"AGx");
+#endif
    return 0;
 }
 
@@ -959,7 +967,11 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
       comm->USR_irecvbytes(&recvbuf[offset*typeleng],length,&fromproc,
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
                         &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    offset = 0;
@@ -978,7 +990,11 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
       comm->USR_waitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+#ifdef ML_CPP
+                          &msgtype, comm->USR_comm, &Request[i] );
+#else
                           &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    if ( Request != NULL ) ML_memory_free((void**) &Request);

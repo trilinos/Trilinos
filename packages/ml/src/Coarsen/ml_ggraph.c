@@ -521,7 +521,11 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          fromproc = -1;
          comm->USR_irecvbytes((char*) &intarray[i], sizeof(int), &fromproc,
-                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                     &msgtype, comm->USR_comm, &Request[i] );
+#else
+                     &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       }
       for ( i = 0; i < send_cnt; i++ )
       {
@@ -532,7 +536,11 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          fromproc = -1;
          comm->USR_waitbytes((char*) &intarray[i], sizeof(int), &fromproc,
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i] );
+#else
                            &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
          inttmp[fromproc] = intarray[i];
       }
       if ( recv_cnt > 0 )
@@ -570,7 +578,11 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          fromproc = recv_proc[i];
          nbytes = recv_leng[i] * sizeof( int );
          comm->USR_irecvbytes((char*) recv_list[i], nbytes, &fromproc,
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
                         &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       }
       for ( i = 0; i < send_cnt; i++ )
       {
@@ -583,7 +595,11 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          fromproc = recv_proc[i];
          nbytes = recv_leng[i] * sizeof( int );
          comm->USR_waitbytes((char*) recv_list[i], nbytes, &fromproc,
-                       &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
+                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       }
 
       /* ---------------------------------------------------------- */
@@ -823,7 +839,11 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
       comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
                         &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    for ( i = 0; i < send_cnt; i++ )
@@ -845,7 +865,11 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
       comm->USR_waitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
-                      &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
+                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       for ( j = 0; j < recv_leng[i]; j++ )
       {
          index = recv_list[i][j];
@@ -1267,7 +1291,11 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
             comm->USR_irecvbytes((char*) recv_buf[j], nbytes, &fproc,
-                    &msgtype, comm->USR_comm, (void *) &Request[j] );
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
+                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
          }
       }
       for ( j = 0; j < send_cnt; j++ )
@@ -1284,7 +1312,11 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
             comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
-                     &msgtype, comm->USR_comm, (void *) &Request[j] );
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
+                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
             for ( k = 0; k < recv_leng[j]; k++ )
             {
                index = recv_list[j][k];
@@ -1408,7 +1440,11 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
       comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
                         &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    for ( i = 0; i < send_cnt; i++ )
@@ -1430,7 +1466,11 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
       comm->USR_waitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
-                      &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                        &msgtype, comm->USR_comm, &Request[i] );
+#else
+                        &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       for ( j = 0; j < recv_leng[i]; j++ )
       {
          index = recv_list[i][j];

@@ -1558,7 +1558,11 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
       length = recv_leng[i] * typeleng;
       if ( length > 0 )
          comm->USR_irecvbytes(&recvbuf[offset*typeleng],length,&fromproc,
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i] );
+#else
                            &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    offset = 0;
@@ -1579,7 +1583,11 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
       msgtype = msgid;
       if ( length > 0 )
          comm->USR_waitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+#ifdef ML_CPP
+                             &msgtype, comm->USR_comm, &Request[i] );
+#else
                              &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
       offset += recv_leng[i];
    }
    if ( Request != NULL ) ML_free( Request );
@@ -1804,7 +1812,11 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    {
       fromproc = new_neighbors[i];
       comm->USR_irecvbytes(&new_recv_leng[i],sizeof(int),&fromproc,
+#ifdef ML_CPP
+                &msgtype, comm->USR_comm, &Request[i] );
+#else
                 &msgtype, comm->USR_comm, (void *) &Request[i] );
+#endif
    }
    for ( i = 0; i < new_N_neighbors; i++ ) 
    {
@@ -1816,7 +1828,11 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    {
       fromproc = new_neighbors[i];
       comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
-               &fromproc,&msgtype,comm->USR_comm,(void *) &Request[i]);
+#ifdef ML_CPP
+               &fromproc,&msgtype,comm->USR_comm,&Request[i]);
+#else
+               &fromproc,&msgtype,comm->USR_comm,(void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */
@@ -1893,7 +1909,11 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
       {
          fromproc = -1;
          comm->USR_irecvbytes(&new_recv_leng[i],sizeof(int),&fromproc,
-                   &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                   &msgtype, comm->USR_comm, &Request[i] );
+#else
+                   &msgtype, comm->USR_comm, (void *)&Request[i] );
+#endif
       }
       for ( i = 0; i < new_N_send; i++ ) 
       {
@@ -1904,7 +1924,11 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
       {
          fromproc = -1;
          comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
-                  &fromproc,&msgtype,comm->USR_comm,(void *) &Request[i]);
+#ifdef ML_CPP
+                  &fromproc,&msgtype,comm->USR_comm,&Request[i]);
+#else
+                  &fromproc,&msgtype,comm->USR_comm,(void *)&Request[i]);
+#endif
          new_recv_neighbors[i] = fromproc;
       }
       ML_az_sort( new_recv_neighbors, new_N_rcv, new_recv_leng, NULL);

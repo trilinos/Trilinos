@@ -118,9 +118,11 @@ typedef struct ML_agg_indx_comm_struct {
 /* functions to manipulate the aggregate data structure                      */
 /* ------------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -323,8 +325,10 @@ int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
 
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

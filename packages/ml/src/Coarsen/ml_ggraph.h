@@ -45,9 +45,11 @@ typedef struct ML_GGraph_Struct
 /* functions to manipulate the grid graph data structure                */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 extern int  ML_GGraph_Create( ML_GGraph ** );
@@ -66,9 +68,10 @@ extern int ML_GGraph_LabelVertices(int, int *, char, char *, char *, int,
                      int *, int *, int, int **, int, int **, int *, int *,
                      int, int **, int *, int *, int **, int, ML_Comm *);
 
-
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

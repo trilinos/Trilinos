@@ -6,8 +6,10 @@
 #ifndef __MLCHECK__
 #define __MLCHECK__
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern void ML_check_it(double sol[], double rhs[], ML *ml);
@@ -18,8 +20,10 @@ extern int  ML_Check(ML *ml);
 
 extern int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int incr_or_decr);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif
 
