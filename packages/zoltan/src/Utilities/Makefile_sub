@@ -33,7 +33,7 @@ include $(OBJ_FILES:.o=.d)
 
 %.d:	%.c
 	@echo "(Re)Building dependency for $<..."
-	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*.o/& $@/g'\'' > $@'
+	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*\.o/& $@/g'\'' > $@'
 
 $(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) 
 		@echo "creating library "$(LIB_NAME)

@@ -37,7 +37,7 @@ endif
 
 %.d:	%.c
 	@echo "(Re)Building dependency for $<..."
-	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*.o/& $@/g'\'' > $@'
+	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*\.o/& $@/g'\'' > $@'
 
 inc_fortran:
 	@cd ../fort; $(MAKE) "CC=$(CC)" "F90=$(F90)" \
