@@ -4,11 +4,9 @@
 #ifdef GREG
 #define ML_NEW_T_PE
 #endif
-
 #if defined(ML_NEW_ENRICH)
 double checkit(ML_Operator *A, double *v);
 #endif
-
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
@@ -124,7 +122,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
   coarsest_level = fine_level - Nlevels_nodal + 1; 
   i = ml_nodes->Amat[coarsest_level].invec_leng;
-  ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
+  ML_gsum_scalar_int(&i,&j,ml_edges->comm);
   if (i <= 1) {  /* no edges so cut out last level */
     Nlevels_nodal--;
     coarsest_level = fine_level - Nlevels_nodal + 1; 
@@ -824,7 +822,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* Check that both dimensions of T are strictly greater than 0. 
         If not, clean up & break from main loop. */
      i = Tcoarse->outvec_leng;
-     ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
+     ML_gsum_scalar_int(&i,&j,ml_edges->comm);
      if (i==0)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
@@ -844,7 +842,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         coarsest_level = grid_level + 1;
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
            printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, Nlevels_nodal = %di, fine_level = %d, coarsest_level = %d\n",
-              ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
+              ml_edges->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
            fflush(stdout);
         }
         break; /* from main loop */
@@ -956,7 +954,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         }
      }
      /* If check has failed, clean up current level & break from main loop. */
-     ML_gsum_scalar_int(&bail_flag,&j,ml_nodes->comm);
+     ML_gsum_scalar_int(&bail_flag,&j,ml_edges->comm);
      if (bail_flag)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
@@ -976,7 +974,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         coarsest_level = grid_level + 1;
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
            printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, Nlevels_nodal = %d fine_level = %d  coarsest_level = %d\n",
-              ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
+              ml_edges->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
            fflush(stdout);
         }
         break; /* from main loop */
@@ -1093,7 +1091,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Pe->matvec->ML_id = ML_INTERNAL;
 
 #ifdef LEASTSQ_SERIAL
-     if (ml_nodes->comm->ML_mypid == 0)
+     if (ml_edges->comm->ML_mypid == 0)
         { printf("\n\nDoing LS prolongator\n\n");fflush(stdout);}
      SPn_mat = ML_Operator_Create(Pn_coarse->comm);
      ML_Gen_SmoothPnodal(ml_nodes,grid_level+1, grid_level, 
@@ -1130,6 +1128,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_build_Pe_state);
 #endif
    
+     ML_Operator_Clean(Pn_coarse);
+
       /***************************
       * Smooth edge prolongator. *
       ***************************/
@@ -1198,13 +1198,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* --------------------------------------------------------------------- */
 #if !defined(ML_NEW_ENRICH)
      if (beta != 0.0) {
-       if (ml_nodes->comm->ML_mypid == 0) {
+       if (ml_edges->comm->ML_mypid == 0) {
          printf("\n\nDoing old enriched prolongator");
          printf("    *******  beta = %e *******\n\n",beta);
          fflush(stdout);
        }
 
-       TTtransPe = ML_Operator_Create(Pn_coarse->comm);
+       TTtransPe = ML_Operator_Create(ml_edges->comm);
        ML_rap((*Tmat_array)[grid_level+1], (*Tmat_trans_array)[grid_level+1], 
           Pe,TTtransPe,ML_CSR_MATRIX);
 
@@ -1224,10 +1224,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                             &(ml_edges->Pmat[grid_level]));
      }
      else
-       if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+       if (ml_edges->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
          printf("\n\nnot compiled with enriched prolongator option\n\n");fflush(stdout);}
 #else
-       if (ml_nodes->comm->ML_mypid == 0) {
+       if (ml_edges->comm->ML_mypid == 0) {
          printf("\n\nDoing new enriched prolongator\n\n");
          fflush(stdout);
        }
@@ -1285,7 +1285,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /*
      printf("||D_n' \\ T'*M*w||^2 = %10.6e\n",checkit(tmpmat,randvec));
      */
-     W = ML_Operator_Create(Pn_coarse->comm);
+     W = ML_Operator_Create(ml_edges->comm);
      /* T * (Dn' \ (T'*M)) */
      ML_2matmult(Tfine, tmpmat, W, ML_CSR_MATRIX );
      ML_Operator_Destroy(&tmpmat);
@@ -1315,7 +1315,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      printf("\n\nbeta = %lf   (numer=%lf, denom = %lf)\n\n",beta,numer,denom);
 
      /* (T * Dn' \ T'*M) * Pe */
-     TTtransPe = ML_Operator_Create(Pn_coarse->comm);
+     TTtransPe = ML_Operator_Create(ml_edges->comm);
      ML_2matmult(W, Pe, TTtransPe, ML_CSR_MATRIX );
      /* scale new term by beta */
      csr_data = (struct ML_CSR_MSRdata *) TTtransPe->data;
@@ -1338,7 +1338,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_enrich_Pe_state);
 #endif
 #else
-     if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+     if (ml_edges->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
        printf("\n\nnot compiled with enriched prolongator option\n\n");fflush(stdout);}
 #endif /*if defined(ML_ENRICH) ... */
 
@@ -1411,7 +1411,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         Pe = &(ml_edges->Amat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         i = Pe->outvec_leng;
-        ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
+        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
         if (Tfine->comm->ML_mypid==0)
            printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n", grid_level, nz_ptr,i);
      }
@@ -1431,8 +1431,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
   if (ML_Get_PrintLevel() > 0)
   {
-    ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_nodes->comm);
-    ML_gsum_scalar_int(&Nnz_finegrid,&j,ml_nodes->comm);
+    ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_edges->comm);
+    ML_gsum_scalar_int(&Nnz_finegrid,&j,ml_edges->comm);
 
     if (Tfine->comm->ML_mypid==0 )
     {
@@ -1450,8 +1450,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
 
   t0 = GetClock() - t0;
-  t0 = ML_gsum_double(t0, ml_nodes->comm);
-  t0 = t0/((double) ml_nodes->comm->ML_nprocs);
+  t0 = ML_gsum_double(t0, ml_edges->comm);
+  t0 = t0/((double) ml_edges->comm->ML_nprocs);
   if (ML_Get_PrintLevel() > 0)
     if (Tfine->comm->ML_mypid==0)
       printf("AMG setup time \t= %e seconds\n",t0);
