@@ -14,7 +14,12 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "ml_include.h"
-extern "C" {
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
   
 extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
                                      double *x, double *y, double *z, int Ndimensions,
@@ -26,7 +31,12 @@ extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 			    double * vector, char * base_filename, int level);
 extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 
-}
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
