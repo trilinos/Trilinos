@@ -952,7 +952,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   k = 0;
   for (i=0; i<ncols2; i++) {
     for (j=0; j<ncols1; j++) {  
-      B[k] =  ddot_(&m, &A[j*m], &one, &A1[i*m], &one);   
+      B[k] =  DDOT_F77(&m, &A[j*m], &one, &A1[i*m], &one);   
       k = k + 1;      
     }
   } 
