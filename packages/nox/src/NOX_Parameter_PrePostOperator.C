@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,21 +30,33 @@
 // ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Manager.H"
-#include "NOX_Parameter_List.H"
-#include "NOX_Parameter_UserNorm.H"
-#include "NOX_Parameter_MeritFunction.H"
-#include "NOX_Parameter_PrePostOperator.H"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_Utils.H"
+#include "NOX_Parameter_PrePostOperator.H" // class definition
+
+#include "NOX_Solver_Generic.H"
+
+NOX::Parameter::PrePostOperator::PrePostOperator() { }
+
+NOX::Parameter::PrePostOperator::
+PrePostOperator(const NOX::Parameter::PrePostOperator&source) { }
+
+NOX::Parameter::PrePostOperator::~PrePostOperator() { }
+
+void NOX::Parameter::PrePostOperator::
+runPreIterate(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+void NOX::Parameter::PrePostOperator::
+runPostIterate(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+void NOX::Parameter::PrePostOperator::
+runPreSolve(const NOX::Solver::Generic& solver) {
+  return;
+}
+
+void NOX::Parameter::PrePostOperator::
+runPostSolve(const NOX::Solver::Generic& solver) {
+  return;
+}

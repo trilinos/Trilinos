@@ -47,6 +47,13 @@
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 
+//Forward Declarations
+namespace NOX {
+  namespace Parameter {
+    class PrePostOperator;
+  }
+}
+
 namespace NOX {
 namespace Solver {
 
@@ -172,6 +179,11 @@ namespace Solver {
 
        <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
 
+       </ul>
+
+  <li>"Solver Options" - Sublist of general solver options.  
+       <ul>
+       <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
        </ul>
 
   </ul>
@@ -478,6 +490,12 @@ protected:
 
   //! Counter for number of "double" Jacobian-vector products
   mutable int mults2Jv;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+
+  //! True if a PrePostOperator was registered with the solver.
+  bool havePrePostOperator;
 
 };
 } // namespace Solver

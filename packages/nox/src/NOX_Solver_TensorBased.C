@@ -66,6 +66,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
@@ -87,7 +88,9 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xgrp,
   paramsPtr(&p),			// copy p
   utils(paramsPtr->sublist("Printing")),               // initialize utils
   lineSearch(utils, paramsPtr->sublist("Line Search")),// initialize linesearch
-  direction(utils, paramsPtr->sublist("Direction"))    // initialize direction
+  direction(utils, paramsPtr->sublist("Direction")),   // initialize direction
+  prePostOperatorPtr(0),
+  havePrePostOperator(false)
 {
   init();
 }
@@ -99,6 +102,31 @@ void NOX::Solver::TensorBased::init()
   step = 0;
   niter = 0;
   status = NOX::StatusTest::Unconverged;
+
+  // Check for a user defined Pre/Post Operator
+  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
+  havePrePostOperator = false;
+  prePostOperatorPtr = 0;
+  if (p.isParameter("User Defined Pre/Post Operator")) {
+    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
+      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
+	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
+      if (prePostOperatorPtr != 0)
+	havePrePostOperator = true;
+      else
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
+	       << "\"User Defined Pre/Post Operator\" not derived from " 
+	       << "NOX::Parameter::PrePostOperator class!\n" 
+	       << "Ignoring this flag!"<< endl;
+    }
+    else {
+      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+	   << "\"User Defined Pre/Post Operator\" must be derived from an"
+	   << "arbitrary parameter!" << endl;
+      throw "NOX Error";
+    }
+  }
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -161,6 +189,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xgrp,
 
 NOX::Solver::TensorBased::~TensorBased() 
 {
+  delete prePostOperatorPtr;
   delete oldsolnptr;
   delete dirptr;
 }
@@ -173,9 +202,15 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreIterate(*this);
+
   // First check status
-  if (status != NOX::StatusTest::Unconverged) 
+  if (status != NOX::StatusTest::Unconverged) { 
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
+  }
 
   // Copy pointers into temporary references
   NOX::Abstract::Group& soln = *solnptr;
@@ -188,6 +223,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     cout << "NOX::Solver::TensorBased::iterate - "
 	 << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
@@ -204,6 +241,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     if (step == 0) {
       cout << "NOX::Solver::TensorBased::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
+      if (havePrePostOperator)
+	prePostOperatorPtr->runPostIterate(*this);
       return status;
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
@@ -218,6 +257,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     cout << "NOX::Solver::LineSearchBased::iterate - "
 	 << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
@@ -225,6 +266,9 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   // Evaluate the current status.
   status = test.checkStatus(*this);
  
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostIterate(*this);
+
   // Return status.
   return status;
 }
@@ -232,6 +276,9 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreSolve(*this);
+
   printUpdate();
 
   // Iterate until converged or failed
@@ -243,6 +290,9 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
   NOX::Parameter::List& outputParams = paramsPtr->sublist("Output");
   outputParams.setParameter("Nonlinear Iterations", niter);
   outputParams.setParameter("2-Norm of Residual", solnptr->getNormF());
+
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostSolve(*this);
 
   return status;
 }
@@ -275,7 +325,6 @@ NOX::Solver::TensorBased::getDirection() const
 {
   return direction;
 }
-
 
 // protected
 void NOX::Solver::TensorBased::printUpdate() 

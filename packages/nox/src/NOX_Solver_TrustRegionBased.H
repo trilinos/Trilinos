@@ -43,6 +43,7 @@ namespace NOX {
   namespace Parameter {
     class UserNorm;
     class MeritFunction;
+    class PrePostOperator;
   }
 }
 
@@ -206,6 +207,11 @@ sublist based to the solver.
   Walker, SIAM Journal on Optimization V4 no. 2 (1994) pp 393-422):
   - \f$\rho = \frac{\|F(x) \| - \| F(x + d) \| }
                    {\| F(x) \| - \| F(x) + Jd \| } \f$
+
+  - "Solver Options" - Sublist of general solver options.  
+     <ul>
+     <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
+     </ul>
 
 
 <B>Output Paramters</B>
@@ -378,6 +384,12 @@ protected:
 
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
   bool useAredPredRatio;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+
+  //! True if a PrePostOperator was registered with the solver.
+  bool havePrePostOperator;
 
 };
 } // namespace Solver

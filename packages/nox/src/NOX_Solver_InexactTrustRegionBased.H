@@ -48,6 +48,7 @@ namespace NOX {
   namespace Parameter {
     class UserNorm;
     class MeritFunction;
+    class PrePostOperator;
   }
 }
 
@@ -232,6 +233,11 @@ sublist based to the solver.
 - "Use Counters" - Boolean.  If set to true, solver statistics will be stored.  Defaults to true.
 
 - "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the relevant "Output" sublists (see Output Parameters).  Defaults to true.  
+
+- "Solver Options" - Sublist of general solver options.  
+   <ul>
+   <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
+   </ul>
 
 <B>Output Paramters</B>
 
@@ -519,6 +525,12 @@ protected:
 
   //! If set to true, the \f$ \tau \f$ parameter is minimized over the dogleg line segments instead of being computed at the trust regioin radius.
   bool useDoglegMinimization;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+
+  //! True if a PrePostOperator was registered with the solver.
+  bool havePrePostOperator;
 
 };
 } // namespace Solver

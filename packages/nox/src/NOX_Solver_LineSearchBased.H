@@ -39,6 +39,13 @@
 #include "NOX_Parameter_List.H"	    // class data element
 #include "NOX_Utils.H"		    // class data element
 
+//Forward Declarations
+namespace NOX {
+  namespace Parameter {
+    class PrePostOperator;
+  }
+}
+
 namespace NOX {
 namespace Solver {
 
@@ -67,12 +74,18 @@ namespace Solver {
   <B>Input Parameters</B>
 
   The following parameter list entries are valid for this solver:
-
+ 
   - "Line Search" - Sublist of the line search parameters, passed to
     the NOX::LineSearch::Manager constructor. Defaults to an empty list.
 
   - "Direction" - Sublist of the direction parameters, passed to
     the NOX::Direction::Manager constructor. Defaults to an empty list.
+
+  - "Solver Options" - Sublist of general solver options.  
+     <ul>
+     <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
+     </ul>
+
 
   <B>Output Parameters</B>
 
@@ -167,6 +180,12 @@ protected:
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+
+  //! True if a PrePostOperator was registered with the solver.
+  bool havePrePostOperator;
 
 };
 } // namespace Solver

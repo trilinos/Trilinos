@@ -1561,6 +1561,20 @@ immediately before the word that is causing the link. For example,
 
      </ul>
 
+<li> "Solver Options" sublist used by all solvers for basic options that all solvers should support (see individual solvers to make sure the option is supported).  
+     <ul>
+
+     <li> "User Defined Pre/Post Operator" - a
+     NOX::Parameter::PrePostOperator derived object that allows users
+     to insert pre and post method calls into nox's solvers (before
+     and after the NOX::Solver::Generic::iterate() and before and
+     after the NOX::Solver::Generic::solve() methods).  This object
+     can be set in the parameter list since it is derived from
+     NOX::Parameter::Arbitrary.  See NOX::Parameter::PrePostOperator
+     for details on how to implement this object.
+
+     </ul>
+
 <li> "Printing" sublist - used by NOX::Utils, see class documentation
      for details
 

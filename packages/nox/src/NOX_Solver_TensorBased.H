@@ -46,6 +46,12 @@
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
+//Forward Declarations
+namespace NOX {
+  namespace Parameter {
+    class PrePostOperator;
+  }
+}
 
 namespace NOX {
 namespace LineSearch { 
@@ -206,6 +212,10 @@ namespace Solver {
      (defaults to value for "Default Step")
 <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
 </ul>
+<li> "Solver Options" - Sublist of general solver options.  
+     <ul>
+     <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
+     </ul>
 </ul>
 
     \author Brett W. Bader (CU-Boulder) bader&nbsp;\@&nbsp;cs.colorado.edu 
@@ -290,6 +300,13 @@ protected:
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Parameter::PrePostOperator* prePostOperatorPtr;
+
+  //! True if a PrePostOperator was registered with the solver.
+  bool havePrePostOperator;
+
 };
 } // namespace Solver
 } // namespace NOX

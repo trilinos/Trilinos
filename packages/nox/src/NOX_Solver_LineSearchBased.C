@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
@@ -65,7 +66,9 @@ NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp,
   paramsPtr(&p),		// pointer to p
   utils(paramsPtr->sublist("Printing")),                // intialize the utils
   lineSearch(utils, paramsPtr->sublist("Line Search")), // initialize the line search
-  direction(utils, paramsPtr->sublist("Direction"))     // initialize the direction
+  direction(utils, paramsPtr->sublist("Direction")),     // initialize the direction
+  prePostOperatorPtr(0),
+  havePrePostOperator(false)
 {
   init();
 }
@@ -78,6 +81,31 @@ void NOX::Solver::LineSearchBased::init()
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
 
+  // Check for a user defined Pre/Post Operator
+  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
+  havePrePostOperator = false;
+  prePostOperatorPtr = 0;
+  if (p.isParameter("User Defined Pre/Post Operator")) {
+    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
+      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
+	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
+      if (prePostOperatorPtr != 0)
+	havePrePostOperator = true;
+      else
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
+	       << "\"User Defined Pre/Post Operator\" not derived from " 
+	       << "NOX::Parameter::PrePostOperator class!\n" 
+	       << "Ignoring this flag!"<< endl;
+    }
+    else {
+      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+	   << "\"User Defined Pre/Post Operator\" must be derived from an"
+	   << "arbitrary parameter!" << endl;
+      throw "NOX Error";
+    }
+  }
+  
   // Print out parameters
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) 
   {
@@ -141,6 +169,7 @@ bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp,
 
 NOX::Solver::LineSearchBased::~LineSearchBased() 
 {
+  delete prePostOperatorPtr;
   delete oldSolnPtr;
   delete dirPtr;
 }
@@ -153,9 +182,15 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus()
 
 NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreIterate(*this);
+
   // First check status
-  if (status != NOX::StatusTest::Unconverged) 
+  if (status != NOX::StatusTest::Unconverged) {
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
+  }
 
   // Copy pointers into temporary references
   NOX::Abstract::Group& soln = *solnPtr;
@@ -168,6 +203,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
   {
     cout << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
@@ -185,6 +222,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
     {
       cout << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
+      if (havePrePostOperator)
+	prePostOperatorPtr->runPostIterate(*this);
       return status;
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
@@ -197,18 +236,26 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
   {
     cout << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
   // Evaluate the current status.
   status = test.checkStatus(*this);
  
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostIterate(*this);
+
   // Return status.
   return status;
 }
 
 NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreSolve(*this);
+
   printUpdate();
 
   // Iterate until converged or failed
@@ -221,6 +268,9 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
   NOX::Parameter::List& outputParams = paramsPtr->sublist("Output");
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostSolve(*this);
 
   return status;
 }
@@ -297,9 +347,7 @@ void NOX::Solver::LineSearchBased::printUpdate()
   }
 }
 
-
 double NOX::Solver::LineSearchBased::getStepSize() const
 {
   return step;
 }
-

@@ -39,6 +39,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 #include "NOX_Parameter_MeritFunction.H"
+#include "NOX_Parameter_PrePostOperator.H"
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -100,7 +101,9 @@ InexactTrustRegionBased(Abstract::Group& grp,
   sumDoglegFracCauchyToNewton(0.0),
   sumDoglegFracNewtonLength(0.0),
   useAredPredRatio(false),
-  useDoglegMinimization(false)
+  useDoglegMinimization(false),
+  prePostOperatorPtr(0),
+  havePrePostOperator(false)
 {
   init();
 }
@@ -110,6 +113,7 @@ InexactTrustRegionBased(Abstract::Group& grp,
 //*************************************************************************
 NOX::Solver::InexactTrustRegionBased::~InexactTrustRegionBased() 
 {
+  delete prePostOperatorPtr;
   delete oldSolnPtr;
   delete cauchyVecPtr;
   delete newtonVecPtr;
@@ -129,6 +133,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
   nIter = 0;
   dx = 0.0;
   status = StatusTest::Unconverged;
+  havePrePostOperator = false;
   if (useCounters)
     resetCounters();
 
@@ -252,6 +257,31 @@ void NOX::Solver::InexactTrustRegionBased::init()
     userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
   }
 
+  // Check for a user defined Pre/Post Operator
+  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
+  havePrePostOperator = false;
+  prePostOperatorPtr = 0;
+  if (p.isParameter("User Defined Pre/Post Operator")) {
+    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
+      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
+	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
+      if (prePostOperatorPtr != 0)
+	havePrePostOperator = true;
+      else
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
+	       << "\"User Defined Pre/Post Operator\" not derived from " 
+	       << "NOX::Parameter::PrePostOperator class!\n" 
+	       << "Ignoring this flag!"<< endl;
+    }
+    else {
+      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+	   << "\"User Defined Pre/Post Operator\" must be derived from an"
+	   << "arbitrary parameter!" << endl;
+      throw "NOX Error";
+    }
+  }
+
   // Compute F of initital guess
   solnPtr->computeF();
   if (userMeritFuncPtr != 0) {
@@ -365,6 +395,9 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::getStatus()
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::iterate()
 {
 
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreIterate(*this);
+
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
   switch(method) {
@@ -381,6 +414,9 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::iterate()
     break;
   }
   
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostIterate(*this);
+
   return status;
 }
 
@@ -997,6 +1033,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // Adjust the eta when taking a cauchy or dogleg step
   // This is equivalent to accounting for backtracking in inexact Newton
   // line searches.  Have to check theory w/ Homer Walker on this.
+  // 3/10/04 This is the correct theory according to Homer!
   if (stepType == InexactTrustRegionBased::Cauchy)
     eta = 1.0 - (computeNorm(*dirPtr) / computeNorm(cauchyVec))*(1.0-etaCauchy);
   else if (stepType == InexactTrustRegionBased::Dogleg)
@@ -1044,6 +1081,9 @@ NOX::Solver::InexactTrustRegionBased::checkStep(const NOX::Abstract::Vector& ste
 //*************************************************************************
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreSolve(*this);
+
   printUpdate();
 
   // Iterate until converged or failed
@@ -1071,6 +1111,9 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
 
     }
   }
+
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostSolve(*this);
 
   return status;
 }

@@ -37,6 +37,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 #include "NOX_Parameter_MeritFunction.H"
+#include "NOX_Parameter_PrePostOperator.H"
 #include "NOX_Utils.H"
 
 using namespace NOX;
@@ -77,7 +78,9 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   cauchy(utils),       		// initialize direction
   userNormPtr(0),
   userMeritFuncPtr(0),
-  useAredPredRatio(false)
+  useAredPredRatio(false),
+  prePostOperatorPtr(0),
+  havePrePostOperator(false)
 {
   init();
 }
@@ -89,6 +92,7 @@ void TrustRegionBased::init()
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
+  havePrePostOperator = false;
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -162,6 +166,31 @@ void TrustRegionBased::init()
       (paramsPtr->sublist("Trust Region").
        getArbitraryParameter("User Defined Merit Function"));
     userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
+  }
+
+  // Check for a user defined Pre/Post Operator
+  NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
+  havePrePostOperator = false;
+  prePostOperatorPtr = 0;
+  if (p.isParameter("User Defined Pre/Post Operator")) {
+    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
+      prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
+	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
+      if (prePostOperatorPtr != 0)
+	havePrePostOperator = true;
+      else
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
+	       << "\"User Defined Pre/Post Operator\" not derived from " 
+	       << "NOX::Parameter::PrePostOperator class!\n" 
+	       << "Ignoring this flag!"<< endl;
+    }
+    else {
+      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+	   << "\"User Defined Pre/Post Operator\" must be derived from an"
+	   << "arbitrary parameter!" << endl;
+      throw "NOX Error";
+    }
   }
 
   // Check for the using Homer Walker's Ared/Pred ratio calculation
@@ -246,6 +275,7 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t)
 
 TrustRegionBased::~TrustRegionBased() 
 {
+  delete prePostOperatorPtr;
   delete oldSolnPtr;
 }
 
@@ -257,6 +287,9 @@ NOX::StatusTest::StatusType TrustRegionBased::getStatus()
 
 NOX::StatusTest::StatusType TrustRegionBased::iterate()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreIterate(*this);
+
   // First check status
   if (status != StatusTest::Unconverged) 
     return status;
@@ -272,6 +305,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   {
     cout << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
@@ -280,6 +315,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   {
     cerr << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
+    if (havePrePostOperator)
+      prePostOperatorPtr->runPostIterate(*this);
     return status;
   }
 
@@ -570,12 +607,18 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
     cout << NOX::Utils::fill(72) << endl;
 
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostIterate(*this);
+
   // Return status.
   return status;
 }
 
 NOX::StatusTest::StatusType TrustRegionBased::solve()
 {
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreSolve(*this);
+
   printUpdate();
 
   // Iterate until converged or failed
@@ -587,6 +630,9 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
   Parameter::List& outputParams = paramsPtr->sublist("Output");
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostSolve(*this);
 
   return status;
 }
