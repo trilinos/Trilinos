@@ -45,7 +45,7 @@
 \title{Amesos 1.0 Reference Guide}
 \SANDnum{SAND2004-2188}
 \SANDauthor{
-Marzio Sala, Ken Stanley
+Marzio Sala
 }
 
 \SANDprintDate{May 2004}
@@ -67,10 +67,10 @@ Computational Math \& Algorithms \\
 Sandia National Laboratories\\
 P.O.~Box 5800 \\
 Albuquerque, NM 87185-1110
-\\[30pt]
-Ken Stanley\\
-322 W. College St.\\
-Oberlin OH 44074
+%\\[30pt]
+%Ken Stanley\\
+%322 W. College St.\\
+%Oberlin OH 44074
 \end{center}
 
 \vspace{20pt}
@@ -185,6 +185,7 @@ Amesos.
     \tt  Amesos\_Superludist  & parallel & general & SuperLU\_DIST 2.0 \\
     \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
     \tt Amesos\_Scalapack    & parallel & general & ScaLAPACK \\
+    \tt Amesos\_Dscpack    & parallel & symmetric & DSCPACK 1.0 \\
     \hline
   \end{tabular}
   \caption{Supported interfaces. ``serial'' means that the supported
@@ -321,6 +322,7 @@ Epetra\_CrsMatrix)\footnote{Some solvers can take advantage if the
     Amesos\_Superludist  & $\bullet$& $\bullet$ & -- \\
     Amesos\_Mumps        & $\bullet$ & $\bullet$ & $\bullet$ \\
     Amesos\_Scalapack    & $\bullet$& $\bullet$ & -- \\
+    Amesos\_Dscpack    &  -- & $\bullet$ & -- \\
     \hline
   \end{tabular}
   \caption{Supported matrix formats. `$\bullet$' means that the interface
@@ -505,37 +507,40 @@ means to use its 2nd alternative method, and so on.}
 \begin{sidewaystable}[tbhp]
   \centering
   \begin{tabular}{| p{5cm} | p{2cm} | p{2cm} | c | c | c
-      | c | c |}
+      | c | c | c |}
     \hline
-    option & type & default value & KLU & UMFPACK & SuperLU\_DIST &  MUMPS & ScaLAPACK \\
+    option & type & default value & \rotatebox{90}{KLU } &
+    \rotatebox{90}{UMFPACK } & \rotatebox{90}{SuperLU\_DIST } &
+    \rotatebox{90}{MUMPS } & \rotatebox{90}{ScaLAPACK  }&
+    \rotatebox{90}{DSCPACK } \\    
     \hline
-    \tt UseTranspose & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$
-    & $\bullet$ \\
-    \tt MatrixType & \tt string & \tt \tt general & -- & -- & -- & $\bullet$
-    & -- \\
-    \tt Threshold & \tt double & \tt 0.0 & -- & -- & -- & $\bullet$ & --
-    \\
-    \tt AddZeroToDiag & \tt bool & \tt false & -- & -- & $\bullet$ &
-    $\bullet$ & -- \\
-    \tt PrintTiming & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$ &
-    $\bullet$ \\
+     \tt UseTranspose & \tt bool & \tt false & $\bullet$ & $\bullet$ & --
+    & $\bullet$  & $\bullet$ & -- \\
+     \tt MatrixType & \tt string & \tt \tt general & -- & -- & -- & $\bullet$
+    & -- & -- \\
+     \tt Threshold & \tt double & \tt 0.0 & -- & -- & -- & $\bullet$ & --
+    & --  \\
+     \tt AddZeroToDiag & \tt bool & \tt false & -- & -- & $\bullet$ &
+    $\bullet$ & -- & -- \\
+     \tt PrintTiming & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$ &
+    $\bullet$ & $\bullet$ \\
     \tt PrintStatus & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$  &
-    $\bullet$ & $\bullet$ \\
+    $\bullet$ & $\bullet$ & $\bullet$ \\
     \tt MaxProcs & \tt int & -1 & -- & -- & $\bullet$  & $\bullet$  &
-    $\bullet$  \\
-    \tt MaxProcsMatrix & \tt int & -4 & -- & -- & -- & $\bullet$  & --
-    \\
+    $\bullet$ & $\bullet$  \\
+    \tt MaxProcsMatrix & \tt int & -4 & -- & -- & -- & $\bullet$  & -- &   --    \\
     \tt ComputeVectorNorms & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$
-    & $\bullet$ \\
+    & $\bullet$ & $\bullet$ \\
     \tt ComputeTrueResidual & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$ &
-    $\bullet$ & $\bullet$ \\
+    $\bullet$ & $\bullet$  & $\bullet$\\
     \tt OutputLevel & \tt int & \tt 1 & $\bullet$ & $\bullet$ & $\bullet$ &
-    $\bullet$ & $\bullet$ \\
-    \tt DebugLevel & \tt int & \tt 0 & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
+    $\bullet$ & $\bullet$  & $\bullet$\\
+    \tt DebugLevel & \tt int & \tt 0 & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
 %---- added by Tim Davis:
-    \tt Refactorize    & \tt bool   & \tt false  & $\bullet$ & -- & -- & -- & -- \\
-    \tt RcondThreshold & \tt double & $10^{-12}$ & $\bullet$ & -- & -- & -- & -- \\
-    \tt ScaleMethod    & \tt int    & 1          & $\bullet$ & -- & -- & -- & -- \\
+    \tt Refactorize    & \tt bool   & \tt false  & $\bullet$ & -- & -- &
+    -- & -- & -- \\
+    \tt RcondThreshold & \tt double & $10^{-12}$ & $\bullet$ & -- & -- & -- & -- &--\\
+    \tt ScaleMethod    & \tt int    & 1          & $\bullet$ & -- & -- & -- & -- &--\\
 %----
     \hline
   \end{tabular}
@@ -584,7 +589,7 @@ In order to use KLU, Amesos must be configured with the options
 \begin{verbatim}
 --enable-amesos-klu
 \end{verbatim}
-The KLU souces are distributed with the Amesos package.
+The KLU sources are distributed with the Amesos package.
 
 %%%
 %%%
