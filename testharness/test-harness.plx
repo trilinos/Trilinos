@@ -25,21 +25,22 @@ my %dependencies;           # package dependencies
 my %dirNames;               # lowercaseName/directoryName pairs
 my %emails;                 # packageDirName/regressionEmailPrefix pairs
 my %codes;                  # strings corresponding to error code constants
+my $exitCode = 0;           # exit code
 
-# Error constants
-my $SUCCESS = 0;                    # success/no error
-my $UNKNOWN = 1;                    # unknown
-my $FILE_SYSTEM_ERROR = 2;          # files absent or have incorrect permissions
-my $SYSTEM_COMMAND_ERROR = 4;       # system command failed or doesn't exist
-my $TEST_HARNESS_CONFIG_ERROR = 8;  # test-harness configure file isn't valid
-my $UPDATE_ERROR = 16;              # cvs update failed
-my $CONFIGURE_ERROR = 32;  # configure failed
-my $BUILD_ERROR = 64;      # build failed
-my $IC_FIX_FAIL_NO_DETECT = 128;    # fixing invoke-configure failed: can't detect broken package
-my $IC_FIX_FAIL_NO_CHANGE = 256;    # fixing invoke-configure failed: no changes made
-my $TEST_FAILED = 512;              # test failed
-my $TEST_PASSED = 1024;             # test passed
-my $SUMMARY = 2048;                 # test-harness summary
+# Constants
+my $SUCCESS = "0000";                    # success/no error
+my $UNKNOWN = "0001";                    # unknown
+my $FILE_SYSTEM_ERROR = "0002";          # files absent or have incorrect permissions
+my $SYSTEM_COMMAND_ERROR = "0004";       # system command failed or doesn't exist
+my $TEST_HARNESS_CONFIG_ERROR = "0008";  # test-harness configure file isn't valid
+my $UPDATE_ERROR = "0016";               # cvs update failed
+my $CONFIGURE_ERROR = "0032";            # configure failed
+my $BUILD_ERROR = "0064";                # build failed
+my $IC_FIX_FAIL_NO_DETECT = "0128";      # fixing i-c failed: can't detect broken package
+my $IC_FIX_FAIL_NO_CHANGE = "0256";      # fixing i-c failed: no changes made
+my $TEST_FAILED = "0512";                # test failed
+my $TEST_PASSED = "1024";                # test passed
+my $SUMMARY = "2048";                    # test-harness summary
 
 # Host Operating System Variable
 chomp (my $hostOS=`uname`);
@@ -235,7 +236,7 @@ report($SUMMARY);
 
         # grab flabs
         use Getopt::Std;
-        getopts("f:p:g:snthu", \%flags);
+        getopts("f:p:g:snthue", \%flags);
         
         # parse config file and exit
         if ($flags{p}) {                         
@@ -248,17 +249,13 @@ report($SUMMARY);
         if ($flags{g}) { 
             generateConfig($flags{g}, $flags{s}); 
             exit;            
-        } 
-        
-        # fill optionsOrder array for correctly ordered output of options
-        else {
-            generateConfig(0, 1, 1);
         }
         
         # print help and exit
         if ($flags{h}) { 
             printHelp();
-            exit; 
+            $exitCode = 7;
+            exit;
         }
         
         # nonsensical flags passed ---------------------------------------------
@@ -519,10 +516,19 @@ report($SUMMARY);
                         
                         # send email
                         report($CONFIGURE_ERROR, $brokenPackage, $comm);
+                        
+                        # running in short-circuit mode
+                        # configure failed, exit with non-zero exit code
+                        if ($flags{e}) {
+                            printEvent("short-circuit mode: configure failure, quitting.\n");
+                            report($SUMMARY);
+                            exit 1;
+                        }
+                        
                     } 
                     
                     # configure succeeded
-                    else {     
+                    else {
                         $configurePassed = 1;
                         printEvent("$comm - Trilinos configured successfully\n");                      
                     }
@@ -597,7 +603,16 @@ report($SUMMARY);
                             $configurePassed = 0;
                             
                             # send email
-                            report($BUILD_ERROR, $brokenPackage, $comm); 
+                            report($BUILD_ERROR, $brokenPackage, $comm);
+                        
+                            # running in short-circuit mode
+                            # build failed, exit with non-zero exit code
+                            if ($flags{e}) {
+                                printEvent("short-circuit mode: build failure, quitting.\n");
+                                report($SUMMARY);
+                                exit 1;
+                            }
+                            
                         } 
                         
                         # build succeeded
@@ -664,6 +679,15 @@ report($SUMMARY);
                                     if ($testFailed) {                                               
                                         printEvent("$testNameOnly - Test failed\n");  
                                         report($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
+                                                
+                                        # running in short-circuit mode
+                                        # test failed, exit with non-zero exit code
+                                        if ($flags{e}) {
+                                            printEvent("short-circuit mode: test failure, quitting.\n");
+                                            report($SUMMARY);
+                                            exit 1;
+                                        }
+                                        
                                     } else {                                    
                                         printEvent("$testNameOnly - Test passed\n");  
                                         report($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
@@ -1383,7 +1407,7 @@ report($SUMMARY);
             $body .= "Summary: \n";
             $body .= "\n";        
             
-            for my $id (reverse sort keys %summary) { 
+            for my $id (sort keys %summary) { 
                 my $lastElementIndex = $#{$summary{$id}}; 
                 $body .= "- $codes{$id} (".($lastElementIndex+1)."): \n";
                 $body .= "\n";
@@ -1825,16 +1849,25 @@ report($SUMMARY);
         print "Usage:  ./testharness.plx -f FILENAME\n";
         print "\n";
         print "Options:\n";
-        print "  -f FILE  : Run test harness normally with given test-harness-config file\n";
+        print "  -f FILE  : Run test harness normally with given test harness config file\n";
         print "\n";
-        print "  -nf FILE : Run test harness with given test-harness-config file, but\n";
+        print "  -ef FILE : Run test harness in short-circuit (early-fail) mode.\n";
+        print "             When run this way, if there is any error, the test harness\n";
+        print "             will exit with a non-zero exit code. If everything\n";
+        print "             successfully configures, builds, and tests, the test harness\n";
+        print "             will return an exit code of 0. No special reporting will be\n";
+        print "             done--most likely, you will want to set REPORT_METHOD to\n";
+        print "             LOCAL_FILESYSTEM, in which case you will see reports in\n";
+        print "             Trilinos/testharness/results.\n";
+        print "\n";
+        print "  -nf FILE : Run test harness with given test harness config file, but\n";
         print "             don't run tests (for cross-compiling machines)\n";
         print "\n";
-        print "  -tf FILE : Run test harness with given test-harness-config file, but\n";
+        print "  -tf FILE : Run test harness with given test harness config file, but\n";
         print "             don't configure and build--only run tests (for cross-\n";
         print "             compiling machines)\n";
         print "\n";
-        print "  -p FILE  : Parse given test-harness-config file and exit. This is useful\n";
+        print "  -p FILE  : Parse given test harness config file and exit. This is useful\n";
         print "             for catching errors and inconsistencies without running the\n";
         print "             entire test-harness\n";
         print "\n";
@@ -2442,7 +2475,7 @@ report($SUMMARY);
     ############################################################################
     # generateConfig()
     #
-    # Generates Test-Harness template config file named in current directory
+    # Generates Test-Harness template config file in current directory
     # named "test-harness-config" and exits.
     #   - global variables used: no
     #   - sends mail: no
