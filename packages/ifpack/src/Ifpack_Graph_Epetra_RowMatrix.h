@@ -7,6 +7,17 @@
 class Epetra_Comm;
 class Epetra_RowMatrix;
 
+//! Ifpack_Graph_Epetra_RowMatrix: a class to define Ifpack_Graph as a light-weight conversion of Epetra_RowMatrix's.
+
+/*! 
+Class Ifpack_Graph_Epetra_RowMatrix enables the construction of an
+Ifpack_Graph based on the input Epetra_RowMatrix. Note that data are
+not copied to \e this object; instead, wrappers are furnished.
+
+\author Marzio Sala, SNL 9214
+
+\date Set-04.
+*/
 class Ifpack_Graph_Epetra_RowMatrix : public Ifpack_Graph {
 
 public:

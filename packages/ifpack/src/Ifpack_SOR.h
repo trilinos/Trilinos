@@ -20,7 +20,7 @@ public:
 
   //@{ \name Constructor/Destructor
   //! Constructs a SOR preconditioner object for the input Epetra_RowMatrix.
-  Ifpack_SOR(const Epetra_RowMatrix* Matrix) :
+  Ifpack_SOR(Epetra_RowMatrix* Matrix) :
     Ifpack_PointPreconditioner(Matrix),
     FirstTime_(true)
   {}

@@ -35,7 +35,7 @@ class Epetra_RowMatrix;
  * Given an starting solution \f$x_0\f$, an iteration of the Jacobi 
  * method can be written in matrix form as follows:
  * \f[
- * x_{k+1} = \omega D^{-1}(E + F) x_k + D{-1}b,
+ * x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
  * \f]
  * for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter. 
  * 
@@ -44,7 +44,13 @@ class Epetra_RowMatrix;
  * the class simply applies the inverse of the diagonal of A to the input
  * vector.
  *
- * An example of use of Ifpack_Jacobi is the following.
+ * \note
+ * Ifpack_Jacobi is \e not supposed to be used as stand-alone
+ * preconditioner, but only through Ifpack_AdditiveSchwarz. The following
+ * examples work properly only for serial problems.
+ *
+ * An example of use of Ifpack_Jacobi is the following. 
+ *
  \code
  #include "Ifpack_Jacobi.h"
 
@@ -105,7 +111,7 @@ public:
    *          diagonal of \c Matrix will not change during the 
    *          application of the preconditioner.
    */
-  Ifpack_Jacobi(const Epetra_RowMatrix* Matrix) :
+  Ifpack_Jacobi(Epetra_RowMatrix* Matrix) :
     Ifpack_PointPreconditioner(Matrix),
     FirstTime_(true)
   {

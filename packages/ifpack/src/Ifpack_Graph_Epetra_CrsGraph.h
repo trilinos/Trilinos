@@ -5,7 +5,7 @@
 class Epetra_Comm;
 class Epetra_CrsGraph;
 
-//! Ifpack_Graph_Epetra_CrsGraph: a class to define Ifpack_Graph as a light-weight conversion of Epetra_CrsGraph.
+//! Ifpack_Graph_Epetra_CrsGraph: a class to define Ifpack_Graph as a light-weight conversion of Epetra_CrsGraph's.
 
 /*! 
 Class Ifpack_Graph_Epetra_CrsGraph enables the construction of an

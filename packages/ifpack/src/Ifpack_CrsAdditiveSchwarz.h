@@ -10,6 +10,7 @@
 #include "Ifpack_EquationPartitioner.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Graph_Epetra_CrsGraph.h"
+#include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
 //! Ifpack_CrsAdditiveSchwarz: a class to define overlapping Schwarz preconditioner for Epetra_CrsMatrix's.
@@ -46,7 +47,7 @@ public:
    * \param 
    * OverlapLevel - (In) level of overlap (any positive number or zero).
    */
-  Ifpack_CrsAdditiveSchwarz(Epetra_CrsMatrix* Matrix, int OverlapLevel);
+  Ifpack_CrsAdditiveSchwarz(Epetra_RowMatrix* Matrix, int OverlapLevel);
 
   //! Destructor.
   ~Ifpack_CrsAdditiveSchwarz();
@@ -65,7 +66,7 @@ private:
   int Setup();
 
   //! Pointer to the matrix to be preconditioned.
-  Epetra_CrsMatrix* CrsMatrix_;
+  Epetra_RowMatrix* RowMatrix_;
   //! Pointer to the graph of \c Matrix_.
   Ifpack_Graph* Graph_;
   //! Pointer to the graph of \c OverlappingMatrix_.
@@ -80,10 +81,10 @@ private:
 //==============================================================================
 template<class T>
 Ifpack_CrsAdditiveSchwarz<T>::
-Ifpack_CrsAdditiveSchwarz(Epetra_CrsMatrix* CrsMatrix,
+Ifpack_CrsAdditiveSchwarz(Epetra_RowMatrix* RowMatrix,
 			  const int OverlapLevel) :
-  Ifpack_AdditiveSchwarz<T>(CrsMatrix),
-  CrsMatrix_(CrsMatrix),
+  Ifpack_AdditiveSchwarz<T>(RowMatrix),
+  RowMatrix_(RowMatrix),
   Graph_(0),
   OverlappingGraph_(0),
   Partitioner_(0),
@@ -91,7 +92,7 @@ Ifpack_CrsAdditiveSchwarz(Epetra_CrsMatrix* CrsMatrix,
 {
   Label_ = "Ifpack_CrsAdditiveSchwarz";
 
-  if (CrsMatrix_->Comm().NumProc() == 1)
+  if (RowMatrix_->Comm().NumProc() == 1)
     OverlapLevel_ = 0;
 
   if (OverlapLevel_)
@@ -154,7 +155,7 @@ int Ifpack_CrsAdditiveSchwarz<T>::Setup()
   if (OverlapLevel_ > 0) {
 
     Epetra_CrsMatrix* CrsOverlappingMatrix;
-    CrsOverlappingMatrix = Ifpack_CreateOverlappingCrsMatrix(CrsMatrix_,
+    CrsOverlappingMatrix = Ifpack_CreateOverlappingCrsMatrix(RowMatrix_,
 							     OverlapLevel_);
     if (CrsOverlappingMatrix == 0)
       IFPACK_CHK_ERR(-1);
@@ -183,7 +184,7 @@ int Ifpack_CrsAdditiveSchwarz<T>::Setup()
   }
   else {
 
-    Graph_ = new Ifpack_Graph_Epetra_CrsGraph(&(CrsMatrix_->Graph()));
+    Graph_ = new Ifpack_Graph_Epetra_RowMatrix(RowMatrix_);
 
     if (Type == "metis") 
       Partitioner_ = new Ifpack_METISPartitioner(Graph_);

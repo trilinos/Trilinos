@@ -19,7 +19,7 @@ public:
 
   //@{ \name Constructor/Destructor
   //! Constructs a Gauss-Seidel preconditioner object for the input Epetra_RowMatrix.
-  Ifpack_SSOR(const Epetra_RowMatrix* Matrix) :
+  Ifpack_SSOR(Epetra_RowMatrix* Matrix) :
     Ifpack_PointPreconditioner(Matrix),
     FirstTime_(true)
   {}

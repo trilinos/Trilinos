@@ -51,6 +51,11 @@ class Epetra_RowMatrix;
  * the class simply applies the inverse of the diagonal of A to the input
  * vector.
  *
+ * \note
+ * Ifpack_Jacobi is \e not supposed to be used as stand-alone
+ * preconditioner, but only through Ifpack_AdditiveSchwarz. The following
+ * examples work properly only for serial problems.
+ *
  * An example of use of Ifpack_GaussSeidel is the following.
  \code
  #include "Ifpack_GaussSeidel.h"
@@ -92,7 +97,7 @@ public:
 
   //@{ \name Constructor/Destructor
   //! Constructs a Gauss-Seidel preconditioner object for the input Epetra_RowMatrix.
-  Ifpack_GaussSeidel(const Epetra_RowMatrix* Matrix) :
+  Ifpack_GaussSeidel(Epetra_RowMatrix* Matrix) :
     Ifpack_PointPreconditioner(Matrix),
     FirstTime_(true)
   {}

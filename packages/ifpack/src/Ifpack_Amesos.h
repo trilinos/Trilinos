@@ -33,22 +33,9 @@ required by this class is \c "amesos: solver type" (defaulted to \c
 "Amesos_Klu"), which defined the Amesos solver. However, the \e same
 list is used to set Amesos parameters.
 
-An example of use is as follows.
+\author Marzio Sala, SNL 9214
 
-\code
-#include "Ifpack_Amesos.h"
-...
-
-Epetra_RowMatrix* A;
-// here A is filled as necessary
-Ifpack_Preconditioner* Prec = new Ifpack_Amesos(A);
-Teuchos::ParameterList List.
-List.set("amesos: solver type", "Amesos_Klu");
-Prec->SetParameters(List);
-Prec->Compute();
-\endcode
-
-\date Sep-04
+\date First development Sep-04, last update Oct-04
 
 */
 class Ifpack_Amesos : public Ifpack_Preconditioner {
@@ -129,6 +116,13 @@ public:
     virtual const Epetra_Map & OperatorRangeMap() const;
   //@}
 
+  virtual bool IsInitialized() const
+  {
+    return(IsInitialized_);
+  }
+
+  virtual int Initialize();
+
   //! Returns \c true if the preconditioner has been successfully computed.
   virtual bool IsComputed() const
   {
@@ -152,26 +146,32 @@ public:
    */   
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  //! Not implemented, as Amesos requires Teuchos.
+  //! Sets integer parameters.
   virtual int SetParameter(const string Name, const int value)
   {
-    return(-1);
+    return(0);
   }
 
-  //! Not implemented, as Amesos requires Teuchos.
+  //! Sets double parameters.
   virtual int SetParameter(const string Name, const double value)
   {
-    return(-1);
+    return(0);
   }
-
   //! Returns a reference to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
 
+  //! Returns a reference to the internally stored matrix.
+  virtual Epetra_RowMatrix& Matrix()
+  {
+    return(*Matrix_);
+  }
+
   //! Returns the estimated condition number (if computed).
-  virtual double Condest() const
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix= 0)
   {
     return(Condest_);
   }
@@ -188,6 +188,8 @@ private:
   Epetra_LinearProblem* Problem_;
   //! Contains the label of \c this object.
   string Label_;
+  //! If true, the preconditioner has been successfully initialized.
+  bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
   //! Contains the estimated condition number.

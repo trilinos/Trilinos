@@ -50,35 +50,54 @@ public:
     if (X.NumVectors() != Y.NumVectors())
       IFPACK_CHK_ERR(-1); // not valid
 
-    // this is not the best we can do if blocks to not overlap,
-    // but it is required by the more general case.
+    // need an additional vector for AztecOO preconditioning
+    // (as X and Y both point to the same memory space)
+    // FIXME: is overlap between blocks is zero, I can save
+    // a vector
     Epetra_MultiVector Xtmp(X);
+
     if (ZeroStartingSolution_)
       Y.PutScalar(0.0);
 
-    if (NumSweeps() == 1) {
+    // ------------ //
+    // single sweep //
+    // ------------ //
+
+    if (NumSweeps() == 1 && ZeroStartingSolution_
+	&& (PrintFrequency() == 0)) {
       IFPACK_CHK_ERR(ApplyBJ(Xtmp,Y));
+      return(0);
     }
-    else {
 
-      // starting solution
-      Epetra_MultiVector AX(Y);
+    // --------------------- //
+    // general case (solver) //
+    // --------------------- //
 
-      for (int j = 0; j < NumSweeps() ; j++) {
+    if (PrintFrequency())
+      Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
 
-	// compute the residual
-	IFPACK_CHK_ERR(Apply(Y,AX));
+    // starting solution
+    Epetra_MultiVector AX(Y);
 
-	AX.Update(1.0,Xtmp,-1.0);
+    for (int j = 0; j < NumSweeps() ; j++) {
 
-	// apply the lower block triangular part of A
-	ApplyBJ(Xtmp,AX);
+      // compute the residual
+      IFPACK_CHK_ERR(Apply(Y,AX));
 
-	// update the residual
-	Y.Update(DampingFactor(), AX, 1.0);
+      AX.Update(1.0,Xtmp,-1.0);
 
-      }
+      // apply the block diagonal of A and update
+      // the residual
+      ApplyBJ(AX,Y);
+
+      if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
+	Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
+
     }
+
+    if (PrintFrequency())
+      Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
+
     return(0);
   }
 
@@ -106,7 +125,7 @@ public:
       for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
 	LID = Containers_[i]->ID(j);
 	for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-	  Y[k][LID] = Y[k][LID] + Containers_[i]->LHS(j,k);
+	  Y[k][LID] = Y[k][LID] + DampingFactor() * (*W_)[LID] * Containers_[i]->LHS(j,k);
 	}
       }
     }
@@ -116,10 +135,10 @@ public:
   //! Sets label.
   virtual int SetLabel()
   {
-    Label_ = "Amesos_BlockJacobi, # blocks = "
+    Label_ = "Ifpack_BlockJacobi, # blocks = "
       + Ifpack_toString(NumLocalBlocks());
     return(0);
-   }
+  }
 
 };
 

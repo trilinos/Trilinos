@@ -5,7 +5,11 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
-#include "Ifpack_LocalRowMatrix.h"
+#include "Ifpack_Reordering.h"
+#include "Ifpack_RCMReordering.h"
+#include "Ifpack_LocalFilter.h"
+#include "Ifpack_ReorderFilter.h"
+#include "Ifpack_Utils.h"
 #include "Epetra_CombineMode.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
@@ -14,6 +18,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
 //! Ifpack_AdditiveSchwarz: a class to define Additive Schwarz preconditioners.
@@ -58,48 +63,6 @@
   from Ifpack_Preconditioner. This can be easily accomplished, as
   Ifpack_AdditiveSchwarz is templated with the solver for each subdomain.
 
-  The following example shows how to define an additive Schwarz
-  preconditioner, that use Amesos to solve the local subproblems.
-
-  \code
-#include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_Amesos.h"
-
-Teuchos::ParameterList List;
-List.set("schwarz: combine mode", Add);
-List.set("amesos: solver type", "Amesos_Klu");
-
-Ifpack_Preconditioner* Prec = new
-  Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A);
-
-assert(Prec != 0);
-
-IFPACK_CHK_ERR(Prec->SetParameters(List));
-IFPACK_CHK_ERR(Prec->Compute());
-  \endcode
-  
-  Note that the same \c List is used by \c Prec and, internally,
-  by the Ifpack_Amesos \c Compute() method.
-
-  At this point, \c Prec can be used, for instance, by an AztecOO solver.
-
-  Another example is as follows. Suppose that \c A is the matrix to be 
-  preconditioned, and \c OverlappingA is the matrix with overlap,
-  built by the user. The preconditioner can be constructed as
-
-  \code
-Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,OverlappingCrsA);
-  IFPACK_CHK_ERR(Prec->SetParameters(List));
-IFPACK_CHK_ERR(Prec->Compute());
-  \endcode
-
-  In this case, Ifpack_Amesos will compute the LU factorization of
-  the local rows and columns of \c OverlappingA. Components in
-  the overlapping zone of fhe vector to be preconditioned will 
-  be imported, then exported as necessary. Values corresponding
-  to overlapping nodes can be added, or off-process values can be
-  simply ignored, or any other Epetra_CombineMode can be used as well.
-
 */
 
 template<typename T>
@@ -121,7 +84,7 @@ public:
    *                     desired level of overlap.
    */
   Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
-			 Epetra_RowMatrix* OverlappingMatrix = 0);
+			 int OverlapLevel = 0);
   
   //@{ \name Destructor.
   //! Destructor
@@ -197,6 +160,12 @@ public:
     virtual const Epetra_Map & OperatorRangeMap() const;
   //@}
 
+  //! Returns \c true if the preconditioner has been successfully initialized.
+  virtual bool IsInitialized() const
+  {
+    return(IsInitialized_);
+  }
+
   //! Returns \c true if the preconditioner has been successfully computed.
   virtual bool IsComputed() const
   {
@@ -237,24 +206,24 @@ public:
     return(-1);
   }
 
+  //! Initialized the preconditioner.
+  virtual int Initialize();
+
   //! Computes the preconditioner.
-  /*! Computes the preconditioner: 
-   *
-   * \return
-   * 0 if successful, 1 if a zero element has been found on the
-   * diagonal. In this latter case, the preconditioner can still be
-   * applied, as the inverse of zero elements is replaced by 1.0.
-   */
   virtual int Compute();
 
   //! Returns the estimated condition number (if computed).
-  virtual double Condest() const
-  {
-    return(-1.0);
-  }
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix = 0);
 
   //! Returns a refernence to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
+  {
+    return(*Matrix_);
+  }
+
+  //! Returns a refernence to the internally stored matrix.
+  virtual Epetra_RowMatrix& Matrix()
   {
     return(*Matrix_);
   }
@@ -272,21 +241,27 @@ protected:
 
   //! Sets up LocalizedMatrix_, Importer and Exporter_.
   int Setup();
+  
+  //! Destroys all allocated data
+  void Destroy();
 
   //! Pointers to the matrix to be preconditioned.
   Epetra_RowMatrix* Matrix_;
   //! Pointers to the overlapping matrix.
-  Epetra_RowMatrix* OverlappingMatrix_;
+  Epetra_CrsMatrix* OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
-  Ifpack_LocalRowMatrix* LocalizedMatrix_;
+  Ifpack_LocalFilter* LocalizedMatrix_;
   //! Contains the label of \c this object.
   string Label_;
+  //! If true, the preconditioner has been successfully initialized.
+  bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
   //! Pointer to the local solver.
   T* Inverse_;
   //! If true, overlapping is used
   bool IsOverlapping_;
+  int OverlapLevel_;
   Epetra_Import* Importer_;
   Epetra_Export* Exporter_;
   //! Stores a copy of the list given in SetParameters()
@@ -295,8 +270,14 @@ protected:
   Epetra_CombineMode CombineMode_;
   //! Contains the estimated condition number.
   double Condest_;
-  //! If true, Compute() will evaluate the condition number.
-  bool ComputeCondest_;
+  //! Maximum number of iterations for condest
+  int CondestMaxIters_;
+  //! Tolerance for condest
+  double CondestTol_;
+  
+  bool UseReordering_;
+  Ifpack_Reordering* Reordering_;
+  Ifpack_ReorderFilter* ReorderedLocalizedMatrix_;
 
 };
 
@@ -304,20 +285,29 @@ protected:
 template<typename T>
 Ifpack_AdditiveSchwarz<T>::
 Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
-		       Epetra_RowMatrix* OverlappingMatrix) :
+		       int OverlapLevel) :
   Matrix_(Matrix),
-  OverlappingMatrix_(OverlappingMatrix),
+  OverlappingMatrix_(0),
   LocalizedMatrix_(0),
+  IsInitialized_(false),
   IsComputed_(false),
   Inverse_(0),
+  OverlapLevel_(OverlapLevel),
   IsOverlapping_(false),
   Importer_(0),
   Exporter_(0),
   CombineMode_(Add),
   Condest_(-1.0),
-  ComputeCondest_(false)
+  CondestMaxIters_(1550),
+  CondestTol_(1e-12),
+  UseReordering_(false),
+  ReorderedLocalizedMatrix_(0),
+  Reordering_(0)
 {
-  if ((OverlappingMatrix_ != 0) && (Matrix_->Comm().NumProc() > 1))
+  if (Matrix_->Comm().NumProc() == 1)
+    OverlapLevel_ = 0;
+
+  if ((OverlapLevel_ != 0) && (Matrix_->Comm().NumProc() > 1))
     IsOverlapping_ = true;
   // Sets parameters to default values
   Teuchos::ParameterList List;
@@ -328,18 +318,40 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
 template<typename T>
 Ifpack_AdditiveSchwarz<T>::~Ifpack_AdditiveSchwarz()
 {
+  Destroy();
+}
+
+//==============================================================================
+template<typename T>
+void Ifpack_AdditiveSchwarz<T>::Destroy() 
+{
+  if (OverlappingMatrix_)
+    delete OverlappingMatrix_;
+  OverlappingMatrix_ = 0;
+
   if (Inverse_)
     delete Inverse_;
+  Inverse_ = 0;
 
   if (LocalizedMatrix_)
     delete LocalizedMatrix_;
+  LocalizedMatrix_ = 0;
 
   if (Importer_)
     delete Importer_;
+  Importer_ = 0;
 
   if (Exporter_)
     delete Exporter_;
+  Exporter_ = 0;
 
+  if (ReorderedLocalizedMatrix_)
+    delete ReorderedLocalizedMatrix_;
+  ReorderedLocalizedMatrix_ = 0;
+
+  if (Reordering_)
+    delete Reordering_;
+  Reordering_ = 0;
 }
 
 //==============================================================================
@@ -348,14 +360,31 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 {
 
   if (OverlappingMatrix_)
-    LocalizedMatrix_ = new Ifpack_LocalRowMatrix(OverlappingMatrix_);
+    LocalizedMatrix_ = new Ifpack_LocalFilter(OverlappingMatrix_);
   else
-    LocalizedMatrix_ = new Ifpack_LocalRowMatrix(Matrix_);
+    LocalizedMatrix_ = new Ifpack_LocalFilter(Matrix_);
 
   if (LocalizedMatrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
-  Inverse_ = new T(LocalizedMatrix_);
+  // may need to reorder local matrix
+  if (UseReordering_) {
+    // create reordeing and compute it
+    Reordering_ = new Ifpack_RCMReordering();
+    IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
+    IFPACK_CHK_ERR(Reordering_->Compute(*LocalizedMatrix_));
+    // now create reordered localized matrix
+    ReorderedLocalizedMatrix_ = 
+      new Ifpack_ReorderFilter(LocalizedMatrix_,Reordering_);
+    assert(ReorderedLocalizedMatrix_ != 0);
+    // create the inverse based on reordered matrix
+    Inverse_ = new T(ReorderedLocalizedMatrix_);
+
+  }
+  else
+    // create the inverse based on original (non-reordered) matrix
+    Inverse_ = new T(LocalizedMatrix_);
+
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-1);
 
@@ -376,8 +405,11 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
 {
  
-  ComputeCondest_ = List_.get("schwarz: compute condest", ComputeCondest_);
   CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
+  UseReordering_ = List.get("schwarz: use RCM reordering", UseReordering_);
+  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
+  CondestTol_ = List.get("condest: tolerance", CondestTol_);
+
   // This copy may be needed by Amesos or other preconditioners.
   List_ = List;
 
@@ -386,8 +418,22 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
 
 //==============================================================================
 template<typename T>
-int Ifpack_AdditiveSchwarz<T>::Compute()
+int Ifpack_AdditiveSchwarz<T>::Initialize()
 {
+
+  IsInitialized_ = false;
+  IsComputed_ = false; // values required
+  Condest_ = -1.0; // zero-out condest
+
+  Destroy();
+
+  // compute the overlapping matrix if necessary
+  if (IsOverlapping_) {
+    OverlappingMatrix_ = Ifpack_CreateOverlappingCrsMatrix(Matrix_,
+							   OverlapLevel_);
+    if (OverlappingMatrix_ == 0)
+      IFPACK_CHK_ERR(-1);
+  }
 
   IFPACK_CHK_ERR(Setup());
 
@@ -398,16 +444,40 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
     IFPACK_CHK_ERR(-1);
 
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
+  IFPACK_CHK_ERR(Inverse_->Initialize());
+
+  // Label is for Aztec-like solvers
+  Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
+    + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'";
+
+  IsInitialized_ = true;
+
+  return(0);
+}
+//==============================================================================
+template<typename T>
+int Ifpack_AdditiveSchwarz<T>::Compute()
+{
+
+  if (IsInitialized() == false)
+    IFPACK_CHK_ERR(Initialize());
+
+  IsComputed_ = false;
+  Condest_ = -1.0;
+  
   IFPACK_CHK_ERR(Inverse_->Compute());
 
-  Label_ = "Ifpack_AdditiveSchwarz ("
-    + string(Inverse_->Label()) + ")";
-
-  // Condition number estimate. FIXME
-  if (ComputeCondest_)
-    Condest_ = -1.0;
-
   IsComputed_ = true;
+
+  string R = "";
+  if (UseReordering_)
+    R = "RCM reord, ";
+
+  // reset lavel with condest()
+  Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
+    + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
+    + "\n\t\t***** " + R + "Condition number estimate = "
+    + Ifpack_toString(Condest());
 
   return(0);
 }
@@ -489,8 +559,15 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // check for maps??
 
   if (IsOverlapping() == false) {
-    // fairly easy without overlap
-    Inverse_->ApplyInverse(X,Y);
+    if (!UseReordering_)
+      Inverse_->ApplyInverse(X,Y);
+    else {
+      Epetra_MultiVector Xtilde(X);
+      Epetra_MultiVector Ytilde(Y);
+      Reordering_->P(X,Xtilde);
+      Inverse_->ApplyInverse(Xtilde,Ytilde);
+      Reordering_->Pinv(Ytilde,Y);
+    }
   }
   else {
     // a bit more with overlap
@@ -533,18 +610,29 @@ Print(std::ostream& os) const
     os << "*** Combine mode              = Average" << endl;
   else if (CombineMode_ == AbsMax)
     os << "*** Combine mode              = AbsMax" << endl;
-  if (OverlappingMatrix_)
-    os << "*** Overlapping               = user-defined" << endl;
-  else
-    os << "*** Overlapping               = minimal" << endl;
-  if (ComputeCondest_)
-    os << "*** No condition number estimate required" << endl;
-  else
-    os << "*** Condition number estimate = " << Condest_ << endl;
+  os << "*** Overlap Level               = " << OverlapLevel_ << endl;
+  os << "*** Condition number estimate = " << Condest_ << endl;
 
   os << "*** Inverse label             = `" 
      << Inverse_->Label() << "'" << endl;
 
   return(os);
+}
+
+#include "Ifpack_Condest.h"
+//==============================================================================
+template<typename T>
+double Ifpack_AdditiveSchwarz<T>::
+Condest(const Ifpack_CondestType CT, 
+	Epetra_RowMatrix* Matrix)
+{
+  if (!IsComputed()) // cannot compute right now
+    return(-1.0);
+
+  if (Condest_ == -1.0)
+    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
+			      Matrix);
+
+  return(Condest_);
 }
 #endif // IFPACK_ADDITIVESCHWARZ_H

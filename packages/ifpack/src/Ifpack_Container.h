@@ -10,19 +10,19 @@ namespace Teuchos {
 //! Ifpack_Container: a pure virtual class for creating and solving local linear systems.
 
 /*!
-Class Ifpack_Containers provides the abstract interfaces for 
+Class Ifpack_Container provides the abstract interfaces for 
 containers. A "container" is an object that hosts all it is necessary
 to create, populate, and solve local linear system.
 
 A container should be used in the following manner:
-1 create an container object.
-2 set the number of rows using Shape(). All rows are local.
-3 set matrix elements using SetMatrixElement(),
+- create an container object.
+- set the number of rows using Shape(). All rows are local.
+- set matrix elements using SetMatrixElement(),
    and LHS and/or RHS elements using LHS() and  RHS().
-4 if necessary, set parameters for the solution using
+- if necessary, set parameters for the solution using
   SetParameters().
-5 prepare the linear system solver using Compute().
-6 Solve the linear system using ApplyInverse().
+- prepare the linear system solver using Compute().
+- Solve the linear system using ApplyInverse().
 
 The number of vectors can be set using SetNumVectors().
 
@@ -34,10 +34,12 @@ in the container (typically, ID can be set as restriction operator
 from the matrix to be preconditioned, to the sub-block in the container).
 
 Two concrete implementations are provided in classes
-SparseContainer (that stores matrices in sparse the format
-Epetra_CrsMatrix) and DenseContainer
+Ifpack_SparseContainer (that stores matrices in sparse the format
+Epetra_CrsMatrix) and Ifpack_DenseContainer
 (for relatively small matrices, as matrices are stored as
 Epetra_SerialDenseMatrix's).
+
+\author Marzio Sala, SNL 9214.
 
 \date Sep-04
   

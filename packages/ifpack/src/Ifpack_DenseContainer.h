@@ -67,7 +67,8 @@ public:
     NumRows_(-1),
     NumVectors_(1),
     IsComputed_(false),
-    IsShaped_(false)
+    IsShaped_(false),
+    KeepNonFactoredMatrix_(false)
   {}
 
   //! Destructor.
@@ -136,6 +137,9 @@ public:
       IFPACK_CHK_ERR(-6); // already computed
     }
 
+    if (KeepNonFactoredMatrix_)
+      NonFactoredMatrix_ = Matrix_;
+
     // factorize the matrix using LAPACK
     IFPACK_CHK_ERR(Solver_.Factor());
 
@@ -159,7 +163,11 @@ public:
   //! Apply the matrix to RHS, results are stored in LHS.
   virtual int Apply()
   {
-    IFPACK_CHK_ERR(-1);
+    if (KeepNonFactoredMatrix_) {
+      IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,RHS_,0.0));
+    }
+    else
+      IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,Matrix_,RHS_,0.0));
   }
 
   //! Apply the inverse of the matrix to RHS, results are stored in LHS.
@@ -179,12 +187,20 @@ public:
     return(Label_.c_str());
   }
 
+  virtual int KeepNonFactoredMatrix(const bool flag)
+  {
+    KeepNonFactoredMatrix_ = flag;
+    return(0);
+  }
+
 private:
   
   //! Number of rows in the container.
   int NumRows_; 
   //! Number of vectors in the container.
   int NumVectors_;
+  //! Dense matrix, that contains the non-factored matrix.
+  Epetra_SerialDenseMatrix NonFactoredMatrix_;
   //! Dense matrix.
   Epetra_SerialDenseMatrix Matrix_;
   //! Dense vector representing the LHS.
@@ -195,6 +211,8 @@ private:
   Epetra_SerialDenseSolver Solver_;
   //! Sets of local rows.
   Epetra_IntSerialDenseVector ID_;
+  //! If \c true, keeps a copy of the non-factored matrix.
+  bool KeepNonFactoredMatrix_;
   //! If \c true, the container has been shaped.
   bool IsShaped_;
   //! If \c true, the container has been computed.

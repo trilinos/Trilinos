@@ -10,7 +10,7 @@
 
 //==============================================================================
 Ifpack_PointPreconditioner::
-Ifpack_PointPreconditioner(const Epetra_RowMatrix* Matrix) :
+Ifpack_PointPreconditioner(Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
   UseTranspose_(false),
   NumSweeps_(1),
@@ -18,8 +18,9 @@ Ifpack_PointPreconditioner(const Epetra_RowMatrix* Matrix) :
   PrintFrequency_(0),
   Diagonal_(0),
   IsComputed_(false),
-  ComputeCondest_(true),
   Condest_(-1.0),
+  CondestMaxIters_(1550),
+  CondestTol_(1e-9),
   ZeroStartingSolution_(true)
 {
 }
@@ -39,9 +40,11 @@ int Ifpack_PointPreconditioner::SetParameters(Teuchos::ParameterList& List)
   SetNumSweeps(List.get("point: sweeps",NumSweeps()));
   SetDampingFactor(List.get("point: damping factor", DampingFactor()));
   SetPrintFrequency(List.get("point: print frequency", PrintFrequency()));
-  ComputeCondest_ = List.get("point: compute condest", ComputeCondest_);
   ZeroStartingSolution_ = List.get("point: zero starting solution", 
 				   ZeroStartingSolution_);
+
+  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
+  CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
   SetLabel();
 
@@ -86,6 +89,11 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 //==============================================================================
 int Ifpack_PointPreconditioner::Compute()
 {
+  if (!IsInitialized())
+    IFPACK_CHK_ERR(Initialize());
+
+  if (Matrix_ == 0)
+    IFPACK_CHK_ERR(-1);
 
   if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
     IFPACK_CHK_ERR(-3); // only square matrices
@@ -100,10 +108,6 @@ int Ifpack_PointPreconditioner::Compute()
 
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*Diagonal_));
 
-  // compute the condition number estimate
-  if (ComputeCondest_)
-    Condest_ = -1.0;
-  
   IsComputed_ = true;
 
   return(0);
@@ -144,4 +148,20 @@ ostream& Ifpack_PointPreconditioner::Print(ostream & os) const
   os << endl;
 
   return(os);
+}
+
+#include "Ifpack_Condest.h"
+//==============================================================================
+double Ifpack_PointPreconditioner::
+Condest(const Ifpack_CondestType CT, 
+	Epetra_RowMatrix* Matrix)
+{
+  if (!IsComputed()) // cannot compute right now
+    return(-1.0);
+
+  if (Condest_ == -1.0)
+    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
+			      Matrix);
+
+  return(Condest_);
 }

@@ -15,6 +15,7 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
   Solver_(0),
   Problem_(0),
+  IsInitialized_(false),
   IsComputed_(false),
   Condest_(-1.0),
   ComputeCondest_(false)
@@ -49,10 +50,12 @@ int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List)
   return(0);
 }
 
-
 //==============================================================================
-int Ifpack_Amesos::Compute()
+int Ifpack_Amesos::Initialize()
 {
+
+  IsInitialized_ = false;
+  IsComputed_ = false;
 
   if (Matrix_ == 0)
     IFPACK_CHK_ERR(-1);
@@ -68,21 +71,32 @@ int Ifpack_Amesos::Compute()
   if (Solver_ == 0) {
     // try to create KLU, it is generally enabled
     Solver_ = Factory.Create("Amesos_Klu",*Problem_);
-
-    if (Solver_ == 0) {
-      IFPACK_CHK_ERR(-1);
-    }
   }
   if (Solver_ == 0)
     IFPACK_CHK_ERR(-1);
 
   Solver_->SetParameters(List_);
-
   IFPACK_CHK_ERR(Solver_->SymbolicFactorization());
+
+  IsInitialized_ = true;
+  return(0);
+}
+
+//==============================================================================
+int Ifpack_Amesos::Compute()
+{
+
+  if (!IsInitialized())
+    IFPACK_CHK_ERR(Initialize());
+
+  IsComputed_ = false;
+
+  if (Matrix_ == 0)
+    IFPACK_CHK_ERR(-1);
+
   IFPACK_CHK_ERR(Solver_->NumericFactorization());
 
   IsComputed_ = true;
-
   return(0);
 }
 

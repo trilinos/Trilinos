@@ -42,7 +42,7 @@ public:
    * \param In
    * Matrix - Pointer to matrix to precondition.
    */
-  Ifpack_PointPreconditioner(const Epetra_RowMatrix* Matrix);
+  Ifpack_PointPreconditioner(Epetra_RowMatrix* Matrix);
 
   //! Destructor.
   virtual ~Ifpack_PointPreconditioner();
@@ -128,6 +128,16 @@ public:
   //! Returns the Epetra_Map object associated with the range of this operator.
   virtual const Epetra_Map & OperatorRangeMap() const;
 
+  virtual int Initialize() 
+  {
+    return(0);
+  }
+  
+  virtual bool IsInitialized() const
+  {
+    return(true);
+  }
+
   //! Returns \c true if the preconditioner has been successfully computed.
   virtual bool IsComputed() const
   {
@@ -143,15 +153,19 @@ public:
     return(*Matrix_);
   }
 
+  //! Returns a pointer to the matrix.
+  virtual Epetra_RowMatrix& Matrix()
+  {
+    return(*Matrix_);
+  }
+
   //@}
 
   //@{ \name Miscellaneous
 
   //! Returns the condition number estimate.
-  virtual double Condest() const
-  {
-    return(Condest_);
-  }
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix = 0);
 
 #ifdef HAVE_IFPACK_TEUCHOS
   //! Sets all the parameters for the preconditioner
@@ -265,13 +279,15 @@ private:
   //! Number of local rows.
   int NumMyRows_;
   //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
+  Epetra_RowMatrix* Matrix_;
   //! If true, use the tranpose of \c Matrix_.
   bool UseTranspose_;
   //! Toggles the frequency, 0 means no output.
   int PrintFrequency_;
   //! Contains the estimated condition number
   double Condest_;
+  int CondestMaxIters_;
+  double CondestTol_;
   //! If true, Compute() also computed the condition number estimate.
   bool ComputeCondest_;
 

@@ -41,7 +41,7 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 }
 
 //============================================================================
-Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_CrsMatrix* Matrix,
+Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_RowMatrix* Matrix,
 						    const int OverlappingLevel)
 {
 
@@ -51,20 +51,23 @@ Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_CrsMatrix* Matrix,
     return(0); // All done
 
   Epetra_CrsMatrix* OverlappingMatrix;
-  OverlappingMatrix = const_cast<Epetra_CrsMatrix*>(Matrix);
+  OverlappingMatrix = 0;
   Epetra_Map* OverlappingMap;
-  OverlappingMap = const_cast<Epetra_Map*>(&(Matrix->RowMap()));
+  OverlappingMap = (Epetra_Map*)&(Matrix->RowMatrixRowMap());
 
-  Epetra_CrsMatrix* OldMatrix;
-  const Epetra_Map* DomainMap = &(Matrix->DomainMap());
-  const Epetra_Map* RangeMap = &(Matrix->RangeMap());
+  Epetra_RowMatrix* OldMatrix;
+  const Epetra_Map* DomainMap = &(Matrix->OperatorDomainMap());
+  const Epetra_Map* RangeMap = &(Matrix->OperatorRangeMap());
 
   for (int level = 1; level <= OverlappingLevel ; ++level) {
 
-    OldMatrix = OverlappingMatrix;
+    if (OverlappingMatrix)
+      OldMatrix = OverlappingMatrix;
+    else
+      OldMatrix = Matrix;
 
     Epetra_Import* OverlappingImporter;
-    OverlappingImporter = const_cast<Epetra_Import*>(OldMatrix->Importer());
+    OverlappingImporter = (Epetra_Import*)OldMatrix->RowMatrixImporter();
     int NumMyElements = OverlappingImporter->TargetMap().NumMyElements();
     int* MyGlobalElements = OverlappingImporter->TargetMap().MyGlobalElements();
 
@@ -209,24 +212,5 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
          << Norm2[0] << endl;
   }
 
-  return(0);
-}
-
-//=============================================================================
-int Ifpack_ComputeCondest(Ifpack_Preconditioner& Prec, 
-			  double & ConditionNumberEstimate) 
-{
-
-  // Create a vector with all values equal to one
-  Epetra_Vector Ones(Prec.OperatorDomainMap());
-  Epetra_Vector OnesResult(Prec.OperatorRangeMap());
-  Ones.PutScalar(1.0);
-
-  // Compute the effect of the solve on the vector of ones
-  IFPACK_CHK_ERR(Prec.ApplyInverse(Ones, OnesResult)); 
-  // Make all values non-negative
-  IFPACK_CHK_ERR(OnesResult.Abs(OnesResult)); 
-  // Get the maximum value across all processors
-  IFPACK_CHK_ERR(OnesResult.MaxValue(&ConditionNumberEstimate)); 
   return(0);
 }

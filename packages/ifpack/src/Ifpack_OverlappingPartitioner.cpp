@@ -12,7 +12,7 @@
 //==============================================================================
 Ifpack_OverlappingPartitioner::
 Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph) :
-  NumLocalParts_(0),
+  NumLocalParts_(1),
   Graph_(Graph),
   OverlappingLevel_(0),
   IsComputed_(false),

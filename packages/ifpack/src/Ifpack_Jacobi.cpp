@@ -24,6 +24,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-3);
 
+  // FIXME: put in Compute()
   // first time this method is called, compute the inverse of 
   // each diagonal element
   if (FirstTime_) {
@@ -37,12 +38,12 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     FirstTime_ = false;
   }
 
-  // ---------------- //
-  // single sweep can //
-  // ---------------- //
+  // ------------ //
+  // single sweep //
+  // ------------ //
 
   if (NumSweeps() == 1 && ZeroStartingSolution_
-      && (PrintFrequency() != 0)) {
+      && (PrintFrequency() == 0)) {
     IFPACK_CHK_ERR(Y.Multiply(DampingFactor(),Y,*Diagonal_,0.0));
     return(0);
   }
