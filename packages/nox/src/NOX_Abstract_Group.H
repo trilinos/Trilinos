@@ -173,9 +173,6 @@ public:
   /*!
     \brief Applies general preconditioing to the given input vector.
   */
-  /*! In other words, compute  --> to do RHooper
-    \f[ \mbox{result}_i = \frac{1}{J_{ii}} \; \mbox{input}_i \quad \mbox{for } i = 1,\dots,n. \f]
-  */
   virtual bool preconditionVector(const Vector& input, Vector& result) const = 0;
     
 
