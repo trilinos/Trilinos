@@ -55,9 +55,9 @@ Quadratic::~Quadratic()
 
 bool Quadratic::reset(Parameter::List& params)
 { 
-  if (params.isParameter("Convergence Criteria")) {
+  if (params.isParameterString("Convergence Criteria")) {
     string choice = params.getParameter("Convergence Criteria", "AredPred");
-    if (choice == "AredPred") {
+    if (choice == "Ared/Pred") {
       convCriteria = AredPred;
     }
     else if (choice == "Armijo-Goldstein") {
@@ -65,12 +65,12 @@ bool Quadratic::reset(Parameter::List& params)
     }
     else {
       cout << "ERROR: NOX::LineSearch::Quadratic::reset() - the choice of "
-	   << "\"Convergence Criteria\" is invalid." << endl;
+	   << "\"Convergence Criteria\" parameter is invalid." << endl;
       throw "NOX Error";
     }
   }
   else {
-    // default to "Armijo-Goldstein"
+    // default to "Armijo-Goldstein" if "Convergence Criteria" is not set
     convCriteria = ArmijoGoldstein;
   } 
 
@@ -120,30 +120,35 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
    cout << "\n" << Utils::fill(72) << "\n" << "-- Quadratic Line Search -- \n";
   }
   
-  // Get the Linear solver tolerance used in the Newton 
-  const NOX::Parameter::List& const_p = s.getParameterList();
-  NOX::Parameter::List& p = const_cast <NOX::Parameter::List&>(const_p);
-  double eta_original = p.sublist("Linear Solver").getParameter("Tolerance", 0.0);
-  double eta = eta_original;
+  // Get the main parameter list
+  const NOX::Parameter::List& p = s.getParameterList();
+
+  double eta_original = 0.0;
+  double eta = 0.0;
+
+  // Get the linear solve tolerance if doing ared/pred
+  if (convCriteria == AredPred) {
+    double eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+    double eta = eta_original;
+  }
 
   // Compute the convergence criteria for the line search 
   double convergence = 0.0;
   if (convCriteria == ArmijoGoldstein) {
     convergence = oldf + alpha*step*oldfprime;
-    if (newf >= convergence)
-      totalNumLSSteps += 1;
   }
   else if (convCriteria == AredPred) {
-    convergence = oldf*(1.0-alpha*(1-eta));
-    if (newf >= convergence)
-      totalNumLSSteps += 1;
+    convergence = oldf*(1.0-alpha*(1.0-eta));
   }
   
+  // Increment the number of newton steps requiring a line search
+  if (newf >= convergence)
+    totalNumLSSteps += 1;
+
   // Iterate until convergence criteria is satisfied
   while (newf >= convergence) {  
 
-    cout << "Top NewF = " << newf << " >=  convergence = " << convergence << endl;
-
+    // Print out the line search iteration results
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
@@ -155,7 +160,6 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     // Compute a new step length
     tempStep = -oldfprime/(2.0*(newf - oldf - oldfprime));
 
-    
     //   Enforce bounds on minimum step size
     if(tempStep < minBoundFactor) 
       tempStep = minBoundFactor;
@@ -164,9 +168,9 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     if(tempStep > maxBoundFactor) 
       tempStep = maxBoundFactor;
 
-    // Safeguard while loop termination for "Ared/Pred" by adjusting eta
-    // the direction also needs to use this eta in the next computation
-    // if using "Type 1" or Type 2" computation.
+    // Safeguard while loop termination for by adjusting eta during "Ared/Pred".
+    // The "Direction" also needs to use this eta in the next computation
+    // if using inexact Newton with "Type 1" or Type 2" eta computation.
     eta = 1.0-tempStep*(1.0-eta);
 
     tempStep *= step;
@@ -187,14 +191,10 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
       // (i.e. we are using either "Type 1" or "Type 2") then we must adjust
       // the old tolerance to be used in the next computation of eta in the 
       // direction object based on these linesearch results
-      string forcingTermMethod = 
-	p.sublist("Direction").getParameter("Forcing Term Method", "");
-      if ((forcingTermMethod == "Type 1") ||
-	  (forcingTermMethod == "Type 2")) {
-	eta = 1.0-step*(1.0-eta_original);
-	p.sublist("Linear Solver").setParameter("Tolerance", eta);
-      }
-
+      eta = 1.0-step*(1.0-eta_original);
+      inputList->setParameter("Adjusted Tolerance", eta);
+      
+      // Update the group, and exit compute()
       newgrp.computeX(oldgrp, dir, step);
       newgrp.computeF();    
       newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
@@ -214,14 +214,13 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
 
     // Compute the convergence criteria for the line search 
-    if (convCriteria == ArmijoGoldstein) {
+    if (convCriteria == AredPred) {
+      convergence = oldf*(1.0-alpha*(1.0-eta));
+    } 
+    else {
+      // defaults to Armijo-Goldstein
       convergence = oldf + alpha*step*oldfprime;
     }
-    else if (convCriteria == AredPred) {
-      convergence = oldf*(1.0-alpha*(11.0-eta));
-    }
-
-    cout << "Bottom NewF = " << newf << " >=  convergence = " << convergence << endl;
 
   } // end while loop
 
@@ -229,14 +228,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   // (i.e. we are using either "Type 1" or "Type 2") then we must adjust
   // the old tolerance to be used in the next computation of eta in the 
   // direction object based on these linesearch results
-  string forcingTermMethod = 
-    p.sublist("Direction").getParameter("Forcing Term Method", "");
-  if ((forcingTermMethod == "Type 1") ||
-      (forcingTermMethod == "Type 2")) {
-    eta = 1.0-step*(1.0-eta_original);
-    p.sublist("Linear Solver").setParameter("Tolerance", eta);
-  }
-
+  inputList->setParameter("Adjusted Tolerance", eta);
+  
   if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);

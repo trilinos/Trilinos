@@ -86,8 +86,8 @@ namespace Direction {
   the solver parameters.
 
   - "Forcing Term Method" - Method to compute the forcing term, i.e.,
-    the tolerance for the linear solver. Defaults to ""
-    (nothing). Choices are "Constant", "Type 1", and "Type 2".
+    the tolerance for the linear solver. Choices are "Constant", 
+    "Type 1", and "Type 2".  Defaults to "Constant". 
 
   - "Forcing Term Initial Tolerance" - Initial linear
     solver tolerance (\f$\eta_0\f$). Defaults to 1.0e-1.
@@ -138,7 +138,7 @@ protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual bool resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter);
+  virtual bool resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter, const Parameter::List& solverParams);
 
 
 private:

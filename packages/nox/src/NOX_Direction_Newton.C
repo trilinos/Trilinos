@@ -71,7 +71,7 @@ bool Newton::compute(Abstract::Vector& dir,
   }
 
   // Reset the linear solver tolerance
-  ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations());
+  ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations(), solver.getParameterList());
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
       cout << "NOX::Direction::Newton::compute - Unable to set Forcing term." << endl;
@@ -128,7 +128,8 @@ bool Newton::compute(Abstract::Vector& dir,
 // protected
 bool Newton::resetForcingTerm(const Abstract::Group& soln, 
 			      const Abstract::Group& oldsoln, 
-			      int niter)
+			      int niter,
+			      const Parameter::List& solverParams)
 {
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
@@ -138,12 +139,27 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln,
     return true;
 
   // Get forcing term parameters.
-  const string method = paramsPtr->getParameter("Forcing Term Method", "");
-  const double eta_min = paramsPtr->getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-  const double eta_max = paramsPtr->getParameter("Forcing Term Maximum Tolerance", 0.01);
+  const string method = paramsPtr->getParameter("Forcing Term Method", "Constant");
+  const double eta_min = paramsPtr->getParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+  const double eta_max = paramsPtr->getParameter("Forcing Term Maximum Tolerance", 0.9);
 
-  // Get linear solver parameter list and current tolerance.
-  const double eta_km1 = paramsPtr->sublist("Linear Solver").getParameter("Tolerance", 0.0);
+  // Get linear solver current tolerance.
+
+  double eta_km1 = 0.0;
+  if (((method == "Type 1") || (method == "Type 2")) 
+	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {
+    
+    // Tolerance may have been adjusted in a line search algorithm   
+    eta_km1 = solverParams.sublist("Line Search")
+      .getParameter("Adjusted Tolerance", 0.0);
+    
+  }
+  else {
+    // Default to the old tolerance
+    eta_km1 = paramsPtr->sublist("Linear Solver")
+      .getParameter("Tolerance", 0.0);
+    
+  }
 
   // New forcing term.
   double eta_k;
