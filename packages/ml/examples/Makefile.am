@@ -134,25 +134,59 @@ endif # !ML_STANDALONE_MODE
 #mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
 #endif
 
+if ML_USING_AZTECOO
+aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
+else
+aztecoo_incdir = 
+endif
+if ML_USING_AMESOS
+amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
+else
+amesos_incdir = 
+endif
+if ML_USING_IFPACK
+ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src 
+else
+ifpack_incdir = 
+endif
+if ML_USING_TEUCHOS
+teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+else
+teucho_incdir =
+endif
+if ML_USING_ANASAZI
+anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
+else
+anasazi_incdir =
+endif
+if ML_USING_TRIUTILS
+triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+else
+triutils_incdir =
+endif
+if ML_USING_EPETRA
+epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+else
+epetra_incdir =
+endif
 
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
-                   -I$(top_srcdir)/../teuchos/src            \
-                   -I$(top_builddir)/../teuchos/src \
-                   -I$(top_srcdir)/../triutils/src            \
-                   -I$(top_builddir)/../triutils/src
+ml_common_include_locations = -I$(top_srcdir)/src/Include \
+                   -I$(top_srcdir)/src/Coarsen            \
+                   -I$(top_srcdir)/src/Comm               \
+                   -I$(top_srcdir)/src/FEGrid             \
+                   -I$(top_srcdir)/src/Include            \
+                   -I$(top_srcdir)/src/Krylov             \
+                   -I$(top_srcdir)/src/Main               \
+                   -I$(top_srcdir)/src/Operator           \
+                   -I$(top_srcdir)/src/Smoother           \
+                   -I$(top_srcdir)/src/Utils              \
+	           $(aztecoo_incdir) \
+	           $(ifpack_incdir) \
+	           $(amesos_incdir) \
+	           $(teuchos_incdir) \
+	           $(anasazi_incdir) \
+	           $(triutils_incdir) \
+	           $(epetra_incdir)
 
 if ML_STANDALONE_MODE
 #I'm defining the linker in this way, rather than
