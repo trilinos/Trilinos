@@ -28,19 +28,27 @@
 // @HEADER
 */
 
+#ifndef __XLUSOLVEH__
+#define __XLUSOLVEH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
+
+
 void XLU_SOLVE_ (DATA_TYPE *, int *, int *,
-    DATA_TYPE *, int *, double *);
-void colsum_(int *, double *, int *);
+                 DATA_TYPE *, int *, double *);
+
 void perm1_(DATA_TYPE *, int *);
+
 double seconds_(double *);
-void distmat_(
-                int *,
-                int *,
-                int *,
-                int *,
-                int *,
-                int *,
-                int *,
-                int *,
-                int *,
-                int *) ;
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  
