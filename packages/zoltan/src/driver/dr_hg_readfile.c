@@ -49,6 +49,7 @@ int HG_readfile (
 {
   char string[BUF_LEN];
   const char *yo = "HG_readfile";
+  int i, code;
 
   /* Initialize return values in case of error. */
   *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = *base = 0;
@@ -57,27 +58,59 @@ int HG_readfile (
   
   /* Skip comments. */
   while (1) {
-     fgets (string, BUF_LEN-1, f);
-     
-     if (*string != '%')
-        break;
+    fgets (string, BUF_LEN-1, f);
+    
+    if (*string != '%')
+      break;
   }
      
   /* Extended format: nVtx nEdge nPins NM where both N&M are [0,9]. N is the
    * number of dimension for vertex weights and M is number of dimensions for
    * the edge weights. */   
-  if (sscanf(string, "%d %d %d %1d%1d", nVtx,nEdge,nPins,vwgt_dim,ewgt_dim) != 5)
-    ERROR (Proc, yo, "Unrecognized file format.", ZOLTAN_FATAL);
+  if (sscanf(string, "%d %d %d %d", nVtx,nEdge,nPins,&code) != 4)
+    ERROR(Proc, yo, "Unrecognized file format.", ZOLTAN_FATAL);
 
   if (*nVtx <= 1) {                  /* wrong guess if nVtx really is one! */
-     sscanf (string, "%d %d %d %d %d", base, nVtx, nEdge, nPins, vwgt_dim);
-     return readfile (Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim, 
-      vwgt, ewgt_dim, ewgt, base);                         /* patoh format */
+    i = sscanf(string, "%d %d %d %d %d %d", 
+                       base, nVtx, nEdge, nPins, &code, vwgt_dim);
+    if (i == 4) 
+      code = 0;
+    else if (i < 4) 
+      ERROR(Proc, yo, "Error in PaToH file format.", ZOLTAN_FATAL);
+
+    switch (code) {
+    case 0:    /* No weights */
+      *vwgt_dim = 0; 
+      *ewgt_dim = 0; 
+      break;
+    case 1: /* Vwgts only; default is 1 vwgt unless 6 ints on input line */
+      if (i == 5) *vwgt_dim = 1;
+      *ewgt_dim = 0;
+      break;
+    case 2: /* Ewgts only; PaToH supports only one ewgt. */
+      *vwgt_dim = 0; 
+      *ewgt_dim = 1;
+      break;
+    case 3: /* Ewgts & vwgts; default is 1 vwgt unless 6 ints on input line */
+      if (i == 5) *vwgt_dim = 1;
+      *ewgt_dim = 1;
+      break;
+    default: /* Invalid code */
+      ERROR(Proc, yo, "Error in PaToH file format:  Illegal PaToH code.",
+            ZOLTAN_FATAL);
+      break;
+    }
+
+    return readfile(Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim, 
+                    vwgt, ewgt_dim, ewgt, base);          /* patoh format */
   }
   else {
-     *base = 1;
-     return readfile (Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim,
-      vwgt, ewgt_dim, ewgt, base);                         /* IBM format */
+    *base = 1;
+    if (sscanf(string, "%d %d %d %1d%1d", 
+                        nVtx,nEdge,nPins,vwgt_dim,ewgt_dim) != 5)
+      ERROR(Proc, yo, "Error in HG file format.", ZOLTAN_FATAL);
+    return readfile(Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim,
+                     vwgt, ewgt_dim, ewgt, base);          /* IBM format */
   }
 }
 

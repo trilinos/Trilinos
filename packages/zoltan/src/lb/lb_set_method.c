@@ -157,6 +157,21 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
 #endif
   }
+  else if (strcmp(method_upper, "PATOH") == 0) {
+#ifdef ZOLTAN_HG
+    zz->LB.Method = PATOH;
+    zz->LB.LB_Fn = Zoltan_HG;
+    zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "PaToH method selected but HG not compiled into Zoltan; "
+                       "Compile with ZOLTAN_HG=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     zz->LB.Method = NONE;
     zz->LB.LB_Fn = NULL;

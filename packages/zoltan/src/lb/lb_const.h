@@ -61,6 +61,7 @@ typedef enum Zoltan_LB_Method {
   HSFC,
   HG,
   PHG,
+  PATOH,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
 

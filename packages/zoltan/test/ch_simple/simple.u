@@ -1,6 +1,6 @@
 % Hypergraph built from 5x5 grid ch_simple.
 % PaToH format, 1-based
-1 25 25 105 00
+1 25 25 105
 1 2 6
 2 1 3 7
 3 2 8 4

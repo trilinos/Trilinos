@@ -48,8 +48,6 @@ static PARAM_VARS HG_params[] = {
 
 /* prototypes for static functions: */
 static int Zoltan_HG_Initialize_Params(ZZ*, HGPartParams*);
-static int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
- ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
 
 /*****************************************************************************/
 
@@ -142,7 +140,13 @@ hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
 */
 hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);
 
-  if (hgp.kway) {
+  if (zz->LB.Method == PATOH) {
+    ierr = Zoltan_HG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+                           output_parts);
+    if (ierr != ZOLTAN_OK) 
+      goto End;
+  }
+  else if (hgp.kway) {
     ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, 
                                output_parts, &hgp, 0);
     if (ierr != ZOLTAN_OK)
@@ -212,7 +216,6 @@ for (i = 0; i < temp; i++)
    printf ("%4.2f  ", subtotal[i]);
 printf ("\n");
 }
-
 
   /* Build Zoltan's return arguments. */
   Zoltan_HG_Return_Lists(zz, zoltan_hg, output_parts, num_exp, exp_gids,
@@ -320,7 +323,7 @@ int Zoltan_HG_Set_Param(
 
 
 
-static int Zoltan_HG_Return_Lists(
+int Zoltan_HG_Return_Lists(
   ZZ *zz,
   ZHG *zoltan_hg,
   Partition output_parts,

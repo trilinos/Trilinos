@@ -200,13 +200,15 @@ int Zoltan_HG_Local (ZZ*, HGraph*, int, Partition, HGPartParams*);
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char*);
 
 
-int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
+int Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 /* Prototypes */
 extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
 extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, FILE*);
-
+extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
+  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
+extern int Zoltan_HG_PaToH(ZZ *, HGraph *, int, int *);
 
 
 #ifdef __cplusplus

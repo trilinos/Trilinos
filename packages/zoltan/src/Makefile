@@ -122,6 +122,16 @@ ifdef JOSTLE_LIBPATH
   THIRD_PARTY_VPATH += $(JOSTLE_SRCPATH)
 endif
 
+# If PATOH_LIBPATH is defined, compile the PaToH interface and 
+# link PaToH into zdrive.
+# KDD -- does not work with zscript yet.
+ifdef PATOH_LIBPATH
+  GDEFINES     += -DZOLTAN_PATOH
+  THIRD_PARTY_LIBS += -lpatoh 
+  THIRD_PARTY_LIBPATH += $(PATOH_LIBPATH)
+  THIRD_PARTY_INCPATH += $(PATOH_INCPATH)
+endif
+
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
   GDEFINES += -DZOLTAN_NEMESIS
@@ -219,7 +229,7 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c hg_scale.c \
 		  hg_match.c hg_pack.c hg_rdivide.c \
-		  hg_part.c hg_plot.c hg_hypergraph.c 
+		  hg_part.c hg_plot.c hg_hypergraph.c hg_patoh.c
 HG_INC 		= hg.h hg_hypergraph.h 
 GDEFINES       += -DZOLTAN_HG
 endif

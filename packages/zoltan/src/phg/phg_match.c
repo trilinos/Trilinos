@@ -692,7 +692,7 @@ int bobcount=0;
        b_bestsum[i] = -2.0;            /* any negative value < -1.0 will work */
                  
      /* read each message (candidate id, best match id, and best i.p.) */  
-     for (ip = (int*) rbuffer; ip < ((int*) rbuffer) + size * hgc->nProc_x; )   {
+     for (ip = (int*) rbuffer; ip < ((int*) rbuffer) + size * hgc->nProc_x; ) {
        vertex  = *ip++;
        bestv   = *ip++;
        bestsum = * (float*)ip++;
@@ -750,7 +750,7 @@ if (b_bestsum[select[i]] > THRESHOLD)  {
      
      /* extract messages. If I own either gno, process it. */
      /* Note: -gno-1 designates an external match as a negative number */ 
-     for (ip = (int*) rbuffer; ip < (int*) rbuffer + (PHASE4 * total_count); )  {
+     for (ip = (int*) rbuffer; ip < (int*) rbuffer + (PHASE4 * total_count); ) {
        bestv  = *ip++;
        vertex = *ip++; 
                 

@@ -70,6 +70,7 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
     }
+    hgraph->VtxWeightDim = zz->Obj_Weight_Dim;
 
     ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
