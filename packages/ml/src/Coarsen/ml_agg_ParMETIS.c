@@ -235,7 +235,7 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
       fprintf( stderr,
 	       "*ML*ERR* not enough space to allocate %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
+	       (int)sizeof(int)*Nlevels,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -448,7 +448,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 {
 
   int i, j,jj,  count;
-  int Nrows, Nghosts;
+  int Nrows;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
 #if defined(ML_MPI)
@@ -501,7 +501,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   /* ********************************************************************** */
   
   Nrows = Amatrix->getrow->Nrows;
-  Nghosts = Amatrix->getrow->pre_comm->total_rcv_length;
+  /* Nghosts = Amatrix->getrow->pre_comm->total_rcv_length; */
 #ifdef ML_MPI
   orig_comm = Amatrix->comm->USR_comm;
 #endif
@@ -872,7 +872,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    unsigned int nbytes, length;
    int     i, j, jj, k, Nrows, exp_Nrows,  N_bdry_nodes;
    int     diff_level, Nrows_global;
-   double  printflag;
    int     aggr_count, index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
@@ -889,11 +888,10 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   Nghost;
    int                   allocated = 0, *rowi_col = NULL, rowi_N;
    double                *rowi_val = NULL;
-   int Nnonzeros = 0, Nnonzeros2 = 0;
+   int Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
    
-   int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef CLEAN_DEBUG
    char tlabel[80];
@@ -925,8 +923,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
    double debug_starting_time;
-   int exp_Ncoarse;
-   
    
    /* ------------------- execution begins --------------------------------- */
 
@@ -948,7 +944,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nullspace_dim           = ml_ag->nullspace_dim;
    nullspace_vect          = ml_ag->nullspace_vect;
    Nrows                   = Amatrix->outvec_leng;
-   printflag               = ml_ag->print_flag;
 
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
      printf("%s num_PDE_eqns = %d\n",
@@ -975,7 +970,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
    Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
-   Nnonzeros = Amatrix->N_nonzeros;
    
    /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
@@ -1170,7 +1164,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        
      } /* switch */
 
-     reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag;
+     /* reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag; */
 
      desired_aggre_per_proc = aggr_options[ml_ag->cur_level].desired_aggre_per_proc;
 
@@ -1262,7 +1256,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
 		"*ML*ERR* (file %s, line %d)\n",
-		sizeof(int)*Nrows,
+		(int)sizeof(int)*Nrows,
 		__FILE__,
 	      __LINE__ );
        exit( EXIT_FAILURE );
@@ -1355,7 +1349,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      fprintf( stderr,
 	      "*ML*ERR* Not enough memory to allocate %d bytes\n"
 	      "*ML*ERR* (file %s, line %d)\n",
-	      sizeof(int) * (Nrows+1),
+	      (int)sizeof(int) * (Nrows+1),
 	      __FILE__,
 	      __LINE__ );
      exit( EXIT_FAILURE );
@@ -1528,7 +1522,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ============================================================= */
    
    Ncoarse = aggr_count;
-   exp_Ncoarse = aggr_count;
    
    /* ============================================================= */
    /* check and copy aggr_index                                     */
@@ -1966,7 +1959,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
     fprintf( stderr,
 	     "*ML*ERR* Not enough memory to allocate %d bytes\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(int) * (Naggre),
+	     (int)sizeof(int) * (Naggre),
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );

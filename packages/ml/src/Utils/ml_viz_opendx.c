@@ -133,7 +133,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   double * rowi_val = NULL;
   int offset;
   int *values;
-  int max_Naggregates, ok;
+  int ok;
   int shuffle, * reorder = NULL;
   
   /* ------------------- execution begins --------------------------------- */
@@ -253,7 +253,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
     fprintf( stderr,
 	     "*ML*ERR* not enough memory for %d bytes\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(int) * Nrows,
+	     Nrows * (int)sizeof(int),
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
@@ -289,7 +289,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
       fprintf( stderr,
 	       "*ML*ERR* not enough memory for %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int) * Naggregates,
+	       (int)sizeof(int) * Naggregates,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -322,7 +322,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
   if( local_or_global == ML_LOCAL_INDICES ) {
     
-    max_Naggregates = ML_gmax_int( Naggregates, comm);
+    /* max_Naggregates = ML_gmax_int( Naggregates, comm); */
 
     for( i=0 ; i<Nrows ; i++ ) {
       values[i] = mypid +  nprocs * reorder[graph_decomposition[i]];

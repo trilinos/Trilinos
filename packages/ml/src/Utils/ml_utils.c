@@ -2840,7 +2840,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
     fprintf( stderr,
 	     "*ML*ERR* not enough memory to allocated %d bytes\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(double) * (Nrows+Nghosts),
+	     (Nrows+Nghosts) * (int)sizeof(double),
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
@@ -2879,7 +2879,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
     fprintf( stderr,
 	     "*ML*ERR* not enough memory to allocated %d bytes\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(int) * (Nrows+Nghosts),
+	     (Nrows+Nghosts) * (int)sizeof(int),
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );

@@ -53,7 +53,7 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
     fprintf( stderr,
 	     "*ML*ERR* not enough memory for %d bytes\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(ML_Aggregate_Viz_Stats)*MaxLevels,
+	     MaxLevels*(int)sizeof(ML_Aggregate_Viz_Stats),
 	     __FILE__,
 	     __LINE__ );
   }
@@ -333,7 +333,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
 
   int i,j,iaggre;
   int N_coarser = finer_level.Naggregates, N_coarser_global;
-  int N_finer = finer_level.Nlocal, N_finer_global;
+  int N_finer = finer_level.Nlocal/*, N_finer_global*/;
   int *graph_decomposition = finer_level.graph_decomposition;
   double *x = finer_level.x;
   double *y = finer_level.y;
@@ -353,7 +353,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
   
   switch( finer_level.local_or_global ) {
   case ML_LOCAL_INDICES:
-    N_finer_global = ML_gsum_int(N_finer,comm); 
+    /* N_finer_global = ML_gsum_int(N_finer,comm);  */
     N_coarser_global = ML_gsum_int(N_coarser,comm);
 #ifdef ML_MPI
     MPI_Scan(&N_coarser, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
@@ -363,7 +363,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
 #endif
     break;
   case ML_GLOBAL_INDICES:
-    N_finer_global = N_finer;
+    /*    N_finer_global = N_finer; */
     N_coarser_global = N_coarser;
     offset = 0;
     break;
@@ -724,7 +724,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int Nlocal, Naggregates;
   char graphfile[132];
   ML_Aggregate_Viz_Stats * info;
-  int dim;
+  int dim, diff;
   double dmin, davg, dmax, dstd;
   int  imin, iavg, imax;
   ML_Comm *comm;
@@ -733,7 +733,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int incr_or_decr;
   int num_PDE_eqns  = ag->num_PDE_eqns;
   double h, H;
-  int begin, end, diff;
+  int begin, end;
   int radius;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;

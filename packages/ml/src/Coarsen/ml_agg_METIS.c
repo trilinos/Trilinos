@@ -199,7 +199,7 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
       fprintf( stderr,
 	       "*ML*ERR* not enough space to allocate %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
+	       (int)sizeof(int)*Nlevels,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -284,7 +284,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
       fprintf( stderr,
 	       "*ML*ERR* not enough space to allocate %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
+	       (int)sizeof(int)*Nlevels,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -354,7 +354,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
       fprintf( stderr,
 	       "*ML*ERR* not enough space to allocate %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
+	       (int)sizeof(int)*Nlevels,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -431,7 +431,7 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
       fprintf( stderr,
 	       "*ML*ERR* not enough space to allocate %d bytes\n"
 	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
+	       (int)sizeof(int)*Nlevels,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -531,8 +531,8 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     fprintf( stderr,
 	     "*ML*ERR* not nough memory to allocated %d and %d bytex\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(idxtype) * Nparts,
-	     sizeof(idxtype) * MaxNnzRow,
+	     (int)sizeof(idxtype) * Nparts,
+	     (int)sizeof(idxtype) * MaxNnzRow,
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
@@ -637,7 +637,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     fprintf( stderr,
 	     "*ML*ERR* not nough memory to allocated %d bytex\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(idxtype) * Nparts,
+	     (int)sizeof(idxtype) * Nparts,
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
@@ -1246,7 +1246,6 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   double  printflag;
    int     aggr_count, index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
@@ -1307,7 +1306,6 @@ int agg_offset, vertex_offset;
  nullspace_dim           = ml_ag->nullspace_dim;
  nullspace_vect          = ml_ag->nullspace_vect;
  Nrows                   = Amatrix->outvec_leng;
- printflag               = ml_ag->print_flag;
  
  if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
      printf("%s num PDE eqns = %d\n",
@@ -1579,7 +1577,7 @@ int agg_offset, vertex_offset;
 	      "*ML*ERR* on proc %d, not enough space for %d bytes\n"
 	      "*ML*ERR* (file %s, line %d)\n",
 	      mypid,
-	      sizeof(char) * Nrows,
+	      (int)sizeof(char) * Nrows,
 	      __FILE__,
 	      __LINE__ );
      exit( EXIT_FAILURE );
@@ -1647,7 +1645,7 @@ int agg_offset, vertex_offset;
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
 		"*ML*ERR* (file %s, line %d)\n",
-		sizeof(int)*Nrows,
+		(int)sizeof(int)*Nrows,
 		__FILE__,
 	      __LINE__ );
        exit( EXIT_FAILURE );

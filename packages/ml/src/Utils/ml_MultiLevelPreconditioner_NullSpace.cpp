@@ -176,9 +176,11 @@ void ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     double * RealEigenvalues = new double[NullSpaceDim];
     double * ImagEigenvalues = new double[NullSpaceDim];
 
+    /*
     int offset;
     if( UseDefaultVectors ) offset = NumPDEEqns_;
     else                    offset = 0;
+    */
 
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
     ParameterList AnasaziList;

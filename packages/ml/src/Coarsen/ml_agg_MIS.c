@@ -1560,7 +1560,7 @@ Here is how we do all this:
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
 		"*ML*ERR* (file %s, line %d)\n",
-		sizeof(int)*Nrows/num_PDE_eqns,
+		(int)sizeof(int)*Nrows/num_PDE_eqns,
 		__FILE__,
 	      __LINE__ );
        exit( EXIT_FAILURE );

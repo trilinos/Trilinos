@@ -540,7 +540,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        fprintf( stderr,
         "*ML*ERR* Not enough memory for %d bytes\n"
         "*ML*ERR* (file %s, line %d)\n",
-        sizeof(int)*NumBlockRows,
+        (int)sizeof(int)*NumBlockRows,
         __FILE__,
           __LINE__ );
        exit( EXIT_FAILURE );
