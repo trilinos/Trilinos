@@ -1,7 +1,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#     EpetraExt: Epetra Extended - Linear Algebra Services Package 
+
 #                 Copyright (2001) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -30,15 +30,15 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = matlab_test
 
-inout_test_SOURCES = \
+matlab_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
   $(top_srcdir)/test/epetra_test_err.h
 
-inout_test_DEPENDENCIES = \
+matlab_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-inout_test_CXXFLAGS = -I$(top_srcdir)/src/matlab \
+matlab_test_CXXFLAGS = -I$(top_srcdir)/src/matlab \
                       -I$(top_srcdir)/src \
                       -I$(top_builddir)/src \
                       -I$(top_srcdir)/../epetra/src \
@@ -46,7 +46,7 @@ inout_test_CXXFLAGS = -I$(top_srcdir)/src/matlab \
                       -I$(top_srcdir)/../triutils/src \
                       -I$(top_builddir)/../triutils/src
 
-inout_test_LDADD = \
+matlab_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
