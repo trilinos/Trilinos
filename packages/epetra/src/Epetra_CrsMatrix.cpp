@@ -125,6 +125,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & Matrix)
     NormOne_(-1.0),
     NumMyRows_(Matrix.NumMyRows_),
     ImportVector_(0),
+    ExportVector_(0),
     CV_(Copy)
 {
   Graph_ = new Epetra_CrsGraph(Matrix.Graph());
@@ -144,6 +145,7 @@ void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that 
   NormInf_ = -1.0;
   NormOne_ = -1.0;
   ImportVector_ = 0;
+  ExportVector_ = 0;
 
   NumEntriesPerRow_  = 0;
   NumAllocatedEntriesPerRow_ = 0;
@@ -196,6 +198,9 @@ Epetra_CrsMatrix::~Epetra_CrsMatrix(){
 
   if (ImportVector_!=0) delete ImportVector_;
   ImportVector_=0;
+    
+  if (ExportVector_!=0) delete ExportVector_;
+  ExportVector_=0;
     
     
   delete [] Values_;
