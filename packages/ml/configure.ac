@@ -416,7 +416,17 @@ TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-m
 #
 TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
 #
-TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. See notes for --with-ml_metis.], ML_ZOLTAN, no) 
+  TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires
+that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
+#this works
+if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+#if test "X${HAVE_MPI}" != "Xyes"; then
+   #issue an error message and abort if the user has configured with
+   #the zoltan interface enabled but without mpi enabled
+   if test "X$ac_cv_use_ml_zoltan" = "Xyes"; then
+     AC_MSG_ERROR([[Zoltan support in ML requires enabling MPI.]])
+   fi
+fi
 #
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
