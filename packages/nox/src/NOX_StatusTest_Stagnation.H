@@ -75,7 +75,7 @@ namespace StatusTest {
   <ul>
   <li> For Newton solves:  n = 50, tolerance = 1.0<br>
   <li> For Newton solves with a line search: n = 15, tolerance = 0.99
-  <\ul>
+  </ul>
 */
 class Stagnation : public Generic {
 
