@@ -22,7 +22,6 @@ extern "C" {
 
 /****************************************************************************/
 
-
 /* Scaling the weight of hypergraph edges. 
    This changes the inner product used in matching,
    hopefully to the better! 
@@ -73,10 +72,15 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
     MPI_Allreduce(lsize, size, hg->nEdge, MPI_INT, MPI_SUM, 
                   hg->comm->row_comm);
 
+#ifdef DEBUG_EB
+  printf("DEBUG: hyperedge sizes =\n");
+#endif
+
     /* scale edge weights */
     for (i = 0; i < hg->nEdge; i++) {
-      /* printf("[%1d] Debug: Hyperedge %d has size %d\n", 
-         zz->Proc, i, size[i]); */
+#ifdef DEBUG_EB
+      printf(" %1d,", size[i]);
+#endif
       if (size[i]>1) {
         if (hgp->edge_scaling==1)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / (size[i]-1.0);
@@ -87,6 +91,9 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
       else /* size[i] == 1 */
         new_ewgt[i] = 0.0;
     }
+#ifdef DEBUG_EB
+    printf("\n");
+#endif
     break;
 
   default:
@@ -140,6 +147,14 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   /* Sum up along columns for global degrees. */
   MPI_Allreduce(ldegree, gdegree, hg->nVtx, MPI_INT, MPI_SUM,
         hg->comm->col_comm);
+
+#ifdef DEBUG_EB
+  /* Debug */
+  printf("DEBUG: vertex degrees =\n");
+  for (i=0; i<hg->nVtx; i++)
+    printf(" %1d,", gdegree[i]);
+  printf("\n");
+#endif
 
   /* Compute scale factor from degrees. */
   if (hgp->vtx_scaling==1){ /* cosine metric, scale by sqrt of degree */

@@ -32,7 +32,7 @@ int Zoltan_PHG_Coarsening
 ( ZZ     *zz,         /* the Zoltan data structure */
   HGraph *hg,         /* information about hypergraph, weights, etc. */
   int    *match,      /* Matching, Packing or Grouping array */
-  HGraph *c_hg,       /* points to a working copy of hg structure */
+  HGraph *c_hg,       /* output: the coarse hypergraph */
   int    *LevelMap,
   int    *LevelCnt,
   int   **LevelData)   /* information to reverse coarsenings later */
@@ -48,7 +48,7 @@ int Zoltan_PHG_Coarsening
   ZOLTAN_TRACE_ENTER (zz, yo);  
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   
-  /* (over) estimate number of external matches that we to send data to */
+  /* (over) estimate number of external matches that we need to send data to */
   count = 0;
   for (i = 0; i < hg->nVtx; i++)
     if (match[i] < 0)
@@ -71,6 +71,8 @@ int Zoltan_PHG_Coarsening
      return ZOLTAN_MEMERR;
   }        
  
+  /* EBEB the weight array need only be size of coarse nVtx?! */
+  /* EBEB allocate later when coarse nVtx is known. */
   if (hg->nVtx > 0 && hg->VtxWeightDim > 0) 
      c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
       sizeof(float));   
@@ -123,6 +125,10 @@ int Zoltan_PHG_Coarsening
     ZOLTAN_TRACE_EXIT (zz, yo);
     return ZOLTAN_MEMERR;
   }
+
+  /* EBEB The communication below is based on Allgather and not scalable.
+     We should use the comm plan instead. Perhaps we can save the plan
+     and reuse it in the uncoarsening? (Comm_Do_Reverse) */     
         
   /* Message is list of <gno, gno's edge count, list of edge lno's> */
   ip = (int*) buffer;
@@ -285,6 +291,7 @@ int Zoltan_PHG_Coarsening
 
   /* Assuming that we do not collapse Edges, dist_y for the coarse hgraph
    * is the same as dist_y for the fine hgraph */
+  /* EBEB We should remove hyperedges of size 1; then dist_y will change.  */
   if (!(c_hg->dist_y = (int*)ZOLTAN_MALLOC ((hgc->nProc_y+1) * sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_TRACE_EXIT (zz, yo);
@@ -293,8 +300,9 @@ int Zoltan_PHG_Coarsening
   for (i = 0; i < hgc->nProc_y+1; i++)
     c_hg->dist_y[i] = hg->dist_y[i];
 
-  /* Done if there are no remaining vertices */
+  /* Done if there are no remaining vertices (on this proc) */
   if (c_hg->nVtx == 0)  {
+    /* EBEB c_hg->vindex and vedge not properly initialized? */
     if (!(c_hg->vindex = (int*) ZOLTAN_CALLOC (1, sizeof(int))))  {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
@@ -313,10 +321,9 @@ int Zoltan_PHG_Coarsening
   c_hg->vmap = NULL; /* UVC: we don't need vmap in the coarser graphs, it is only
                         needed in recursive bisection; and hence at level 0 */
   
-  c_hg->hindex  = NULL;
-  c_hg->hvertex = NULL;
-  c_hg->coor    = hg->coor;     /* ??? needs to be fixed -- YES!! size of 
-                                coor should be proportional to c_hg->nVtx */
+  c_hg->hindex  = NULL;             /* is computed later by HG_Create_Mirror */
+  c_hg->hvertex = NULL;             /* is computed later by HG_Create_Mirror */
+  c_hg->coor    = NULL;             /* currently we don't use coordinates */
   c_hg->nDim    = hg->nDim;    
   c_hg->nEdge   = hg->nEdge;
   c_hg->comm    = hg->comm;
