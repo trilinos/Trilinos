@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
 
-  for (int i = 0 ; i < SolverType.size() ; ++i) {
+  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
       {

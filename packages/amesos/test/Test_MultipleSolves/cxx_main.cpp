@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
   bool TestPassed = true;
 
-  for (int i = 0 ; i < SolverType.size() ; ++i) {
+  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
       if(TestAmesos((char*)Solver.c_str(), *A, NumVectors) == false)
