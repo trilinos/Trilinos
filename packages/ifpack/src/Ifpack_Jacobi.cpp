@@ -1,118 +1,88 @@
-/*@HEADER
-// ***********************************************************************
-// 
-//       Ifpack: Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2002) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ***********************************************************************
-//@HEADER
-*/
-
+#include "Ifpack_ConfigDefs.h"
+#include "Ifpack_Preconditioner.h"
+#include "Ifpack_PointPreconditioner.h"
 #include "Ifpack_Jacobi.h"
+#include "Ifpack_Utils.h"
+#include "Epetra_Operator.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
-
-#ifdef HAVE_IFPACK_TEUCHOS
-#include <Teuchos_ParameterList.hpp>
-#include <ifp_parameters.h>
-#endif
+#include "Epetra_Vector.h"
 
 //==============================================================================
-Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_OverlapGraph * OverlapGraph, bool UseReciprocal, 
-			       int NumSteps) 
-  : Epetra_Object("Ifpack::Jacobi"),
-    Epetra_CompObject(),
-    Ifpack_OverlapFactorObject(OverlapGraph),
-    Ifpack_OverlapSolveObject(Epetra_Object::Label(), OverlapGraph->OverlapGraph().Comm()),
-    UseReciprocal_(UseReciprocal),
-    NumSteps_(NumSteps),
-    DiagValues_(0)
+int Ifpack_Jacobi::SetLabel()
 {
-}
-//==============================================================================
-Ifpack_Jacobi::Ifpack_Jacobi(const Epetra_RowMatrix * UserMatrix, bool UseReciprocal, 
-			       int NumSteps) 
-  : Epetra_Object("Ifpack::Jacobi"),
-    Epetra_CompObject(),
-    Ifpack_OverlapFactorObject(UserMatrix),
-    Ifpack_OverlapSolveObject(Epetra_Object::Label(), UserMatrix->Comm()),
-    UseReciprocal_(UseReciprocal),
-    NumSteps_(NumSteps),
-    DiagValues_(0)
-{
-}
-//==============================================================================
-Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_Jacobi & Source) 
-  : Epetra_Object(Source),
-    Epetra_CompObject(Source),
-    Ifpack_OverlapFactorObject(Source),
-    Ifpack_OverlapSolveObject(Source),
-    UseReciprocal_(Source.UseReciprocal_),
-    NumSteps_(Source.NumSteps_),
-    DiagValues_(Source.DiagValues_)
-{
-  if (DiagValues_!=0) DiagValues_ = new Epetra_Vector(*DiagValues_);
-}
 
-#ifdef HAVE_IFPACK_TEUCHOS
-//==========================================================================
-int Ifpack_Jacobi::SetParameters(const Teuchos::ParameterList& parameterlist,
-				  bool cerr_warning_if_unused)
-{
-  Ifpack::param_struct params;
-  params.use_reciprocal = UseReciprocal_;
-  params.int_params[Ifpack::num_steps-FIRST_INT_PARAM] = NumSteps_;
-
-  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
-
-  UseReciprocal_ = params.use_reciprocal;
-  NumSteps_ = params.int_params[Ifpack::num_steps-FIRST_INT_PARAM];
+  sprintf(Label_,"Ifpack Jacobi, sweeps = %d, damping = %e",
+	  NumSweeps(), DampingFactor());
 
   return(0);
 }
-#endif
 
 //==============================================================================
-int Ifpack_Jacobi::ProcessOverlapMatrix(const Epetra_RowMatrix &A)
+int Ifpack_Jacobi::
+ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  if (DiagValues_=0) DiagValues_ = new Epetra_Vector(A.RowMap()); // Allocate if necessary
-  EPETRA_CHK_ERR(A.ExtraMyDiagonalCopy(*DiagValues_)); // Get Diagonal Values of A
+  if (IsComputed() == false)
+    IFPACK_CHK_ERR(-4);
 
-  // Compute inverse of diagonal if specified
-  if (UseReciprocal()) {EPETRA_CHK_ERR(DiagValues().Reciprocal(DiagValues()));}
+  if (X.NumVectors() != Y.NumVectors())
+    IFPACK_CHK_ERR(-3);
 
-  if (NumSteps!=1) EPETRA_CHK_ERR(-1); // NumSteps != 1 not supported yet.
+  // first time this method is called, compute the inverse of 
+  // each diagonal element
+  if (FirstTime_) {
+    for (int i = 0 ; i < Matrix()->NumMyRows() ; ++i) {
+      double diag = (*Diagonal_)[i];
+      if (diag != 0.0)
+	(*Diagonal_)[i] = 1.0 / diag;
+      else
+	(*Diagonal_)[i] = 0.0;
+    }
+    FirstTime_ = false;
+  }
+
+  // single sweep, easy to do. No output,
+  // as I wanne be efficient and clean
+
+  if (NumSweeps() == 1) {
+    
+    IFPACK_CHK_ERR(Y.Multiply(DampingFactor(),Y,*Diagonal_,0.0));
+    return(0);
+  }
+
+  Epetra_MultiVector Xtmp(X);
+
+  // general case (solver)
+  // need an additional vector for AztecOO preconditioning
+  // (as X and Y both point to the same memory space)
+
+  Epetra_MultiVector AX(X);
+  Y.PutScalar(0.0);
+  
+  if (PrintLevel() > 5)
+    Ifpack_PrintResidual(Label(),*Matrix(),Y,Xtmp);
+
+  for (int j = 0; j < NumSweeps() ; j++) {
+
+    // compute the residual
+    IFPACK_CHK_ERR(Apply(Y,AX));
+    AX.Update(1.0,Xtmp,-1.0);
+
+    // apply the inverse of the diagonal
+    AX.Multiply(1.0, AX, *Diagonal_, 0.0);
+
+    // update the solution at step `j'
+    Y.Update(DampingFactor(), AX, 1.0);
+
+    if (PrintLevel() > 5)
+      Ifpack_PrintResidual(j + 1,*Matrix(),Y,Xtmp);
+
+  }
+
   return(0);
-}
-//==============================================================================
-int Ifpack_Jacobi::DerivedFactor()
-{
 
-  return(0);
 }
+
