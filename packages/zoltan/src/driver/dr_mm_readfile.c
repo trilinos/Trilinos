@@ -52,7 +52,6 @@ int MM_readfile (
 int err = ZOLTAN_OK;
 int prev_edge;
 const char *yo = "MM_readfile";
-int ret_code;
 MM_typecode matcode;
 int M, N, nz;   
 int j, k, tmp;
@@ -104,7 +103,7 @@ struct ijv *mat;
 
     /* find out size of sparse matrix .... */
 
-    if ((ret_code = mm_read_mtx_crd_size(f, &M, &N, &nz)) !=0)
+    if (mm_read_mtx_crd_size(f, &M, &N, &nz) !=0)
         exit(1);
 
 
