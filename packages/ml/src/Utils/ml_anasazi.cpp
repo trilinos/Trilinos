@@ -583,8 +583,8 @@ extern "C" {
 					double * LambdaMax )
   {
     
-    puts("You must configure with options --with-ml_epetra and ");
-    puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
+    puts("You must configure with options --enable-epetra and ");
+    puts("--eanble-anasazi to estimate lambda max with Anasazi.");
 
     exit( EXIT_FAILURE );
 
@@ -595,8 +595,8 @@ extern "C" {
 int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 					      struct ML_Field_Of_Values * fov )
 {
-    puts("You must configure with options --with-ml_epetra and ");
-    puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
+    puts("You must configure with options --enable-epetra and ");
+    puts("--enable-anasazi to estimate lambda max with Anasazi.");
 
     exit( EXIT_FAILURE );
 
@@ -607,8 +607,8 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
 						       struct ML_Field_Of_Values * fov )
 {
   
-    puts("You must configure with options --with-ml_epetra and ");
-    puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
+    puts("You must configure with options --enable-epetra and ");
+    puts("--enable-anasazi to estimate lambda max with Anasazi.");
 
     exit( EXIT_FAILURE );
 

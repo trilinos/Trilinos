@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
   
   return 0;
 }
