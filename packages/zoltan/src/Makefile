@@ -345,6 +345,107 @@ CPLANT_DR_IPATH	= -I$(CPLANT_ARCHD)/include
 CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
 	          $(CPLANT_PAR_LPATH) $(PARMETIS_LIBS) $(CPLANT_MPI_LIBS) -lm
 
+##############################################################################
+# NIST SUN defines (Solaris)
+##############################################################################
+NISTSUN_CC		= gcc
+NISTSUN_DBG_FLAGS	= -g 
+NISTSUN_OPT_FLAGS	= -O
+NISTSUN_RANLIB		= ranlib
+NISTSUN_AR		= ar r
+
+NISTSUN_CSRC		= $(LIB_SRC_C)
+NISTSUN_INC		= $(INC)
+NISTSUN_OBJ		= $(NISTSUN_CSRC:.c=.o)
+
+NISTSUN_INC_PATH	= -I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/include \
+			-I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
+		  	$(SUBINCPATH)
+
+#NISTSUN_INC_PATH	= -I/itl/apps/lam-6.3-b2/SunOS-sun4u-5.7/include \
+#		  	$(SUBINCPATH)
+
+NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) $(NISTSUN_DBG_FLAGS)
+
+NISTSUN_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
+
+# Hard code NO_NEMESIS and NO_PARMETIS to make the make command easier
+# and blank out their libraries
+NISTSUN_DEFS		= $(GDEFINES) -DLB_NO_NEMESIS -DLB_NO_PARMETIS
+NEM_LIBS =
+PARMETIS_LIBS =
+
+# driver stuff
+NISTSUN_ARCHD		=
+
+NISTSUN_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
+		  	-lpmpich -lmpich -lsocket -lnsl -laio \
+		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
+
+#NISTSUN_MPI_LIBS	= -L/itl/apps/lam-6.3-b2/SunOS-sun4u-5.7/lib \
+#		  	-lmpi -largs -ltrillium -ltstdio -lt \
+#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
+
+NISTSUN_DR_CSRC		= $(DR_CSRC) $(CH_CSRC)
+NISTSUN_DR_OBJ		= $(NISTSUN_DR_CSRC:.c=.o)
+NISTSUN_DR_IPATH	= -I$(NISTSUN_ARCHD)/include
+
+NISTSUN_DR_LIBS		= -L. -l$(LIB_TARGET) -L$(NISTSUN_ARCHD)/lib \
+			 $(NEM_LIBS) $(NISTSUN_PAR_LPATH) $(PARMETIS_LIBS) \
+			 $(NISTSUN_MPI_LIBS) -lm 
+
+##############################################################################
+# NIST Linux defines
+##############################################################################
+
+# Standard definitions for this section
+
+NISTLINUX_CC		= gcc
+NISTLINUX_DBG_FLAGS	= -g 
+NISTLINUX_OPT_FLAGS	= -O
+NISTLINUX_RANLIB	= ranlib
+NISTLINUX_AR		= ar r
+
+NISTLINUX_CSRC		= $(LIB_SRC_C)
+NISTLINUX_INC		= $(INC)
+NISTLINUX_OBJ		= $(NISTLINUX_CSRC:.c=.o)
+
+#NISTLINUX_INC_PATH	= -I$(LAMHOME)/include \
+#		  	$(SUBINCPATH)
+
+NISTLINUX_INC_PATH	= -I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/include \
+			-I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
+		  	$(SUBINCPATH)
+
+NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) $(NISTLINUX_DBG_FLAGS)
+
+NISTLINUX_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
+
+# Hard code NO_NEMESIS and NO_PARMETIS to make the make command easier
+# and blank out their libraries
+NISTLINUX_DEFS		= $(GDEFINES) -DLB_NO_NEMESIS -DLB_NO_PARMETIS
+NEM_LIBS =
+PARMETIS_LIBS =
+
+# driver stuff
+NISTLINUX_ARCHD		=
+
+#NISTLINUX_MPI_LIBS	= -L$(LAMHOME)/lib \
+#		  	-lmpi -largs -ltrillium -ltstdio -lt \
+#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
+
+NISTLINUX_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
+		  	-lpmpich -lmpich \
+		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
+
+NISTLINUX_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
+NISTLINUX_DR_OBJ	= $(NISTLINUX_DR_CSRC:.c=.o)
+NISTLINUX_DR_IPATH	= -I$(NISTLINUX_ARCHD)/include
+
+NISTLINUX_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(NISTLINUX_ARCHD)/lib \
+			 $(NEM_LIBS) $(NISTLINUX_PAR_LPATH) $(PARMETIS_LIBS) \
+			 $(NISTLINUX_MPI_LIBS) -lm 
+
 ###########################################################################
 #      HELP HELP HELP HELP HELP
 ###########################################################################
@@ -525,6 +626,69 @@ cplant-dr:
 	@if [ ! -f test/$(TARGET).cplant ]; \
 	then ln -s ../Obj_cplant/$(TARGET) test/$(TARGET).cplant; \
 	fi
+
+nistsun:
+	@if [ ! -d Obj_nistsun ]; \
+	then mkdir Obj_nistsun; \
+	fi
+	@rm -f Obj_nistsun/Makefile
+	@cp Makefile_sub Obj_nistsun/Makefile
+	@cd Obj_nistsun; \
+	$(MAKE) $(LIB_NAME) "CC=$(NISTSUN_CCOMP)"\
+	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
+	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
+	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(NISTSUN_RANLIB)"
+#	@cscope -b $(MAIN) $(NISTSUN_CSRC) $(NISTSUN_INC)
+
+nistsun-dr:
+	@if [ ! -d Obj_nistsun ]; \
+	then mkdir Obj_nistsun; \
+	fi
+	@rm -f Obj_nistsun/Makefile
+	@cp Makefile_sub Obj_nistsun/Makefile
+	@cd Obj_nistsun; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(NISTSUN_CCOMP) $(NISTSUN_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
+	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(NISTSUN_RANLIB)" "MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
+	"LNK_LIBS=$(NISTSUN_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).nistsun ]; \
+	then ln -s ../Obj_nistsun/$(TARGET) test/$(TARGET).nistsun; \
+	fi
+
+nistlinux:
+	@if [ ! -d Obj_nistlinux ]; \
+	then mkdir Obj_nistlinux; \
+	fi
+	@rm -f Obj_nistlinux/Makefile
+	@cp Makefile_sub Obj_nistlinux/Makefile
+	@cd Obj_nistlinux; \
+	$(MAKE) $(LIB_NAME) "CC=$(NISTLINUX_CCOMP)"\
+	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTLINUX_INC)"\
+	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
+	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(NISTLINUX_RANLIB)"
+#	@cscope -b $(MAIN) $(NISTLINUX_CSRC) $(NISTLINUX_INC)
+
+nistlinux-dr:
+	@if [ ! -d Obj_nistlinux ]; \
+	then mkdir Obj_nistlinux; \
+	fi
+	@rm -f Obj_nistlinux/Makefile
+	@cp Makefile_sub Obj_nistlinux/Makefile
+	@cd Obj_nistlinux; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
+	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(NISTLINUX_RANLIB)" "MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
+	"LNK_LIBS=$(NISTLINUX_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).nistlinux ]; \
+	then ln -s ../Obj_nistlinux/$(TARGET) test/$(TARGET).nistlinux; \
+	fi
+
 #
 ############################################################################
 #          UTILITY TARGETS
