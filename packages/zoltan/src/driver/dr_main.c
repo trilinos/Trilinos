@@ -37,6 +37,7 @@
 #include "dr_output_const.h"
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
+#include "mem_const.h"
 
 int Debug_Driver = 1;
 int Number_Iterations = 1;
@@ -63,7 +64,6 @@ int main(int argc, char *argv[])
   int    Proc, Num_Proc;
   int    iteration;
   int    error;
-  int    i;
 
   MESH_INFO  mesh;             /* mesh information struct */
   PARIO_INFO pio_info;

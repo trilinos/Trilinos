@@ -20,7 +20,6 @@
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
-#include "mem_const.h"
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
