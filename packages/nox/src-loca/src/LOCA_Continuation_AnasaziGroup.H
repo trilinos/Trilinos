@@ -89,7 +89,10 @@ namespace LOCA {
        */
       int eigenvalCounter;
       bool hasMassMatrix;
-
+      bool cayley;
+      double sigma;
+      double mu;
+      double shift_;
     };
   } // namespace Continuation
 } // namespace LOCA
