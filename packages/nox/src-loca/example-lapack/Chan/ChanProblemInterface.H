@@ -46,7 +46,7 @@
   \f[
       \frac{d^2 T}{d x^2} + \alpha s \left(1 + \frac{x + 0.5 x^2}{1 + 0.01 x^2}\right) = 0
   \f]
-   subject to the boundar conditions \f$T(0) = T(1) = \beta\f$.  The parameters
+   subject to the boundary conditions \f$T(0) = T(1) = \beta\f$.  The parameters
    are \f$\alpha\f$, \f$\beta\f$, \f$s\f$, and \f$n\f$, the size of the 
    discretization.  The scaling factor \f$s\f$ is used to test continuation
    at different scales of \f$\alpha\f$.

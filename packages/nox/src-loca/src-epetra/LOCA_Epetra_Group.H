@@ -54,20 +54,29 @@ namespace LOCA {
 }
 
 namespace LOCA {
+
+  //! %LOCA %Epetra support
   namespace Epetra {
 
-    //! Concrete implementation of LOCA::Abstract::Group for %Trilinos/%Epetra.
-    /*! 
-      This group is set up to use the linear algebra services provided 
-      through the Trilinos/Epetra package with AztecOO for the linear %solver. 
-
+    //! Extension of the NOX::Epetra::Group to %LOCA.  
+    /*!
       This class is derived both from the NOX::Epetra::Group and
       LOCA::Abstract::Group classes and therefore inherits the implementation
       of the NOX::Abstract::Group interface provided by NOX::Epetra::Group.
-      
-      This class additionally stores a ParameterVector params and a scaling
-      vector (NOX::Epetra::Vector) scaleVec and implements the pure virtual
-      methods of the LOCA::Abstract::Group class.  
+
+      This class provides implementations of %LOCA AbstractGroup virtual 
+      methods specific to the %Epetra group.  It stores a parameter vector
+      for setting/retrieving parameter values 
+      (LOCA::Continuation::AbstractGroup), provides a facility for computing
+      eigenvalues (LOCA::Continuation::AbstractGroup) using the Anasazi 
+      package, and augements the Jacobian matrix for homotopy
+      (LOCA::Homotopy::AbstractGroup), It currently has no support for
+      storing a mass matrix and therefore cannot be used in Hopf or 
+      generalized eigenvalue computations.  Since it is
+      derived from the LOCA::Abstract::Group (which is in-turn derived
+      from all FiniteDifference groups), this group implicitly uses the
+      finite-difference implementations of parameter and second derivatives
+      provided by the FiniteDifference groups.  
 
       The computeF() and computeJacobian() methods of the NOX::Epetra::Group
       parent class are overloaded here.  They both set the entire contents
@@ -112,11 +121,13 @@ namespace LOCA {
       //! Assignment operator
       virtual Group& operator=(const Group& source);
 
-      //! See above.
-      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      /*! 
+       * @name Overloaded NOX::Epetra::Group  methods.
+       */
+      //@{
 
-      //! See above.
-      virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+      //! Assignment operator.
+      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
 
       //! Cloning function
       virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
@@ -134,6 +145,24 @@ namespace LOCA {
       */
       virtual NOX::Abstract::Group::ReturnType 
       computeJacobian();
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Abstract::Group virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
+       */
+      //@{
+      
 
       //! Set the parameters
       virtual void setParams(const ParameterVector& p);
@@ -153,11 +182,35 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
-      //! Return the userInterface.
-      virtual NOX::Epetra::Interface& getUserInterface();
-
       //! Call the user interface print() routine, solution vector
       virtual void printSolution(const double conParam) const;
+
+      //! Computes leading eigenvalues/eigenvectors using Anasazi package
+      /*!
+       * To use Anasazi for computing eigenvalues, NOX/LOCA must be
+       * configured with --enable-loca-anasazi
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeEigenvalues(NOX::Parameter::List& params);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*! 
+       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
+       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+
+      //! Return the userInterface.
+      virtual NOX::Epetra::Interface& getUserInterface();
 
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Epetra::Vector& x,
@@ -166,11 +219,6 @@ namespace LOCA {
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
-      virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Parameter::List& params);
-
-      virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
 
     protected:
 
