@@ -172,7 +172,9 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  //
+  //!  Amesos_Superludist does not support transpose at this time.
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(13);};
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};

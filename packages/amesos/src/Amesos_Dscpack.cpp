@@ -69,6 +69,7 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
 
 int Amesos_Dscpack::PerformSymbolicFactorization() {
 
+
   vector <int> Replicates;
   vector <int> Ap;
   vector <int> Ai;
@@ -105,6 +106,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
   EPETRA_CHK_ERR( ReplicatedGraph.Import( (CastCrsMatrixA->Graph()), importer, Insert) );
   EPETRA_CHK_ERR( ReplicatedGraph.TransformToLocal() ) ; 
 
+
     //
     //  Convert the matrix to Ap, Ai
     //
@@ -126,6 +128,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
     }
     assert( Ai_index == numentries ) ; 
     Ap[ numrows ] = Ai_index ; 
+
 
   //
   //  Call Dscpack Symbolic Factorization
@@ -174,7 +177,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
 
     } 
 
-    A_and_LU_built = true; 
+
+  //    A_and_LU_built = true; 
 
   SymbolicFactorizationOK_ = true ; 
   return 0;
@@ -215,6 +219,8 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, ImportToDsc, Insert) );
     EPETRA_CHK_ERR( DscMat.TransformToLocal() ) ; 
 
+
+    assert( DscGraph_ == 0 ) ; 
     if ( DscGraph_ ) delete DscGraph_ ; 
     DscGraph_ = new Epetra_CrsGraph ( DscMat.Graph() ); 
 
@@ -223,6 +229,7 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     assert( MyDscRank >= 0 || NumGlobalCols == 0  ) ; 
     MyANonZ.resize( NumLocalNonz ) ; 
     int NonZIndex = 0 ; 
+
 
     int max_num_entries = DscMat.MaxNumEntries() ; 
     vector<int> col_indices( max_num_entries ) ; 
