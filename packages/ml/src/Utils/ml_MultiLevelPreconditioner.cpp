@@ -484,16 +484,20 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
   // some sanity checks
   bool ok = true;
   if( ! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap() ) ) {
-    cerr << ErrorMsg_ << "T.DomainMap != N.RangeMap()..." << endl;
+    cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap()..." << endl;
     ok = false;
   }
   if( ! TMatrix.OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap() ) ) {
-    cerr << ErrorMsg_ << "T.RangeMap != E.DomainMap()..." << endl;
+    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap()..." <<endl;
     ok = false;
   }
 
   if( ok == false ) {
+#ifdef ML_MPI
+    MPI_Abort(MPI_COMM_WORLD,1);
+#else
     exit( EXIT_FAILURE );
+#endif
   }
 
   sprintf(Prefix_,"%s",Prefix);
