@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "all_allo_const.h"
 #include "ch_input_const.h"
 #include "dr_const.h"
 
