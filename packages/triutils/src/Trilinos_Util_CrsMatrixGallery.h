@@ -33,8 +33,8 @@ class Epetra_Comm;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Vector;
-class Epetra_CrsMatrix;
-class Epetra_VbrMatrix;
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 class Epetra_Export;
 class Epetra_LinearProblem;
 #include <string>
