@@ -52,17 +52,14 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 		Engine_ = engOpen(NULL);
     }
 } 
-
+ 
 //=============================================================================
 MatlabEngine::~MatlabEngine (void) {
 
     // MATLAB engClose, to destruct the MATLAB engine
 
     if (Comm_.MyPID() == 0) {
-		int result = engClose(Engine_);
-		if (result != 0) {
-	    	// need to handle a nonzero result somehow
-		}
+		engClose(Engine_);
     }
 }
 
@@ -102,7 +99,7 @@ int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * varia
 	}
 
 	if (Comm_.MyPID() == 0)
-	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
@@ -172,7 +169,7 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 		}
 	  }
 
-	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
@@ -230,7 +227,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 		}
 	  }
 
-	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
@@ -297,7 +294,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 	}
   }
 
-  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+  if (PutIntoMatlab(variableName, matlabA)) {
 	mxDestroyArray(matlabA);
 	return(-1);
   }
@@ -311,14 +308,14 @@ int MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* varia
 	return(-1);
 }
 
-int MatlabEngine::PutIntoMatlab(Engine* engine, const char* variableName, mxArray* matlabA) {
+int MatlabEngine::PutIntoMatlab(const char* variableName, mxArray* matlabA) {
   if (Comm_.MyPID() != 0)
     return(0);
 #ifdef USE_ENGPUTVARIABLE
-    return engPutVariable(engine, variableName, matlabA);
+    return engPutVariable(Engine_, variableName, matlabA);
 #else
     mxSetName(matlabA, variableName);
-    return engPutArray(engine, matlabA);
+    return engPutArray(Engine_, matlabA);
 #endif
 }
 
