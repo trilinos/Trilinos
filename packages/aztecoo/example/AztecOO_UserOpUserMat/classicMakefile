@@ -35,8 +35,8 @@ TEST_INC =
 
 TEST_OBJ          =  $(TEST_CC:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT))  $(TEST_F:.f=.$(OBJ_EXT))
 
-TARGET_MPI = poisson2d_mpi.exe
-TARGET_SERIAL = poisson2d_serial.exe
+TARGET_MPI = Poisson2d.exe
+TARGET_SERIAL = Poisson2d.exe
 TARGET = $(TARGET_$(TRILINOS_COMM))
 
 
