@@ -140,10 +140,22 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+
+#ifdef __GNUC__ /* standard Epetra implementation */ 
+
 #define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
 #define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
 #define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
 #define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
+
+#else /* MSE: 3/17/05 - patch for Solaris/OSF/IRIX */ 
+
+#define EPETRA_DCRSMV_F77   F77_FUNC(epetra_dcrsmv,EPETRA_DCRSMV) 
+#define EPETRA_DCRSMM_F77   F77_FUNC(epetra_dcrsmm,EPETRA_DCRSMM) 
+#define EPETRA_DCRSSV_F77   F77_FUNC(epetra_dcrssv,EPETRA_DCRSSV) 
+#define EPETRA_DCRSSM_F77   F77_FUNC(epetra_dcrssm,EPETRA_DCRSSM) 
+#endif /* __GNUC__ */ 
+
 
 /* End of defines for double precision when not on a T3X */
 
