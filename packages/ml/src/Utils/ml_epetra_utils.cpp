@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /************************************************************************/
@@ -11,7 +11,6 @@
 /*           Ray Tuminaro (SNL)                                         */
 /*           Marzio Sala (SNL)                                          */
 /************************************************************************/
-
 
 #include "ml_common.h"
 
@@ -33,7 +32,7 @@
 #endif
 
 
-/******************************************************************************/
+// ====================================================================== 
 
 int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 {
@@ -63,37 +62,12 @@ int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
   return 1;
 }
 
-/******************************************************************************/
+// ====================================================================== 
 
 int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
-/*
- * GetRow function for matrix of type Epetra_RowMatrix.
- * Supply local matrix (without ghost node columns) for rows given by
- * requested_rows[0 ... N_requested_rows-1].  Return this information in
- * 'row_lengths, columns, values'.  If there is not enough space to complete
- * this operation, return 0. Otherwise, return 1.
- *
- * Parameters
- * ==========
- * data             On input, points to user's data containing matrix values.
- * N_requested_rows On input, number of rows for which nonzero are to be
- *                  returned.
- * requested_rows   On input, requested_rows[0...N_requested_rows-1] give the
- *                  row indices of the rows for which nonzero values are
- *                  returned.
- * row_lengths      On output, row_lengths[i] is the number of nonzeros in the
- *                  row 'requested_rows[i]'
- * columns,values   On output, columns[k] and values[k] contains the column
- *                  number and value of a matrix nonzero where all nonzeros for
- *                  requested_rows[i] appear before requested_rows[i+1]'s
- *                  nonzeros.  NOTE: Arrays are of size 'allocated_space'.
- * allocated_space  On input, indicates the space available in 'columns' and
- *                  'values' for storing nonzeros. If more space is needed,
- *                  return 0.
- */
   int nz_ptr = 0;
   int NumEntries;
   int MaxPerRow;
@@ -184,27 +158,10 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   return(1);
 }
 
-/******************************************************************************/
+// ====================================================================== 
 
 int Epetra_ML_comm_wrapper(double vec[], void *data)
 {
-  /*
-   * Update vec's ghost node via communication. Note: the length of vec is
-   * given by N_local + N_ghost where Amat was created via
-   *                 AZ_matrix_create(N_local);
-   * and a 'getrow' function was supplied via
-   *                 AZ_set_MATFREE_getrow(Amat, , , , N_ghost, );
- *
- * Parameters
- * ==========
- * vec              On input, vec contains data. On output, ghost values
- *                  are updated.
- *
- * data             On input, points to user's data containing matrix values.
- *                  and communication information.
- */
-
-
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
@@ -224,7 +181,8 @@ int Epetra_ML_comm_wrapper(double vec[], void *data)
   
   return(1);
 }
-/******************************************************************************/
+
+// ======================================================================
 
 int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 {
@@ -253,6 +211,8 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
   return 0;
 }
 
+// ======================================================================
+
 int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
                          Epetra_RowMatrix * A)
 {
@@ -272,6 +232,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 
   return 1;
 }
+
 int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result, 
 			 ML_Operator *Mat1, ML_Operator *Mat2)
 {
@@ -311,6 +272,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   return 1;
 }
 
+// ======================================================================
 
 Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt_crs)
 {
@@ -341,6 +303,7 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
    
 }
 
+// ====================================================================== 
 
 Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt_crs, double scalar)
 {
@@ -391,6 +354,7 @@ extern "C" {
 Epetra_CrsMatrix * Q  = NULL;
 Epetra_FECrsMatrix *  Qt = NULL; 
 
+// ======================================================================
 ML_Operator * ML_BuildQ( int StartingNumElements,
 			 int ReorderedNumElements,
 			 int NumPDEEqns, int NullSpaceDim,
@@ -590,7 +554,7 @@ void ML_DestroyQt( void )
 
 } /* extern "C" */
 
-
+// ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double & CPUTime)
@@ -721,6 +685,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   
 } /* ML_Operator2EpetraCrsMatrix for rectangular matrices*/
 
+// FIXME: delete me ???
 int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double & CPUTime)
