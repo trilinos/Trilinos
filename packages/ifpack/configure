@@ -10090,7 +10090,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/Container/Makefile test/Container/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include example/Makefile example/Makefile.include test/Makefile test/PreconditionerFactory/Makefile test/PreconditionerFactory/Makefile.include test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/BlockPreconditioner/Makefile test/BlockPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/Container/Makefile test/Container/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10723,7 +10723,11 @@ do
   "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES src/Makefile.include" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/Makefile.include" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "test/PreconditionerFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/PreconditionerFactory/Makefile" ;;
+  "test/PreconditionerFactory/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/PreconditionerFactory/Makefile.include" ;;
   "test/CrsRiluk/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile" ;;
   "test/CrsRiluk/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile.include" ;;
   "test/IlukGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile" ;;
@@ -10732,10 +10736,10 @@ do
   "test/SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile.include" ;;
   "test/PointPreconditioner/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/PointPreconditioner/Makefile" ;;
   "test/PointPreconditioner/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/PointPreconditioner/Makefile.include" ;;
+  "test/BlockPreconditioner/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockPreconditioner/Makefile" ;;
+  "test/BlockPreconditioner/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/BlockPreconditioner/Makefile.include" ;;
   "test/AdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile" ;;
   "test/AdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile.include" ;;
-  "test/CrsAdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile" ;;
-  "test/CrsAdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile.include" ;;
   "test/Container/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile" ;;
   "test/Container/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;

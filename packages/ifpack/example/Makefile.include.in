@@ -67,8 +67,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = example
-DIST_COMMON = README $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.include.am $(srcdir)/Makefile.include.in
+DIST_COMMON = README $(srcdir)/Makefile.include.am \
+	$(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -80,12 +80,10 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
-	$(top_srcdir)/config/tac_arg_enable_default_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
-	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -98,7 +96,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
-CONFIG_CLEAN_FILES = Makefile
+CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = Ifpack_ex_Factory$(EXEEXT) Ifpack_ex_Amesos$(EXEEXT) \
 	Ifpack_ex_Ict$(EXEEXT) Ifpack_ex_BlockPrec$(EXEEXT) \
 	Ifpack_ex_Reordering$(EXEEXT)
@@ -406,8 +404,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)

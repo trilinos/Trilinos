@@ -96,64 +96,86 @@ DIST_H =
 DIST = 
 
 COMP_H = \
-	$(srcdir)/Ifpack_IlukGraph.h \
-	$(srcdir)/Ifpack_CrsRiluk.h \
-	$(srcdir)/Ifpack_OverlapGraph.h \
-	$(srcdir)/Ifpack_ScalingType.h \
-	$(srcdir)/Ifpack_CrsIct.h \
-	$(srcdir)/icrout_cholesky_mex.h \
-	$(srcdir)/Ifpack_Preconditioner.h \
-	$(srcdir)/Ifpack_Jacobi.h \
-	$(srcdir)/Ifpack_GaussSeidel.h \
-	$(srcdir)/Ifpack_SOR.h \
-	$(srcdir)/Ifpack_SSOR.h \
+	$(srcdir)/Ifpack_IlukGraph.h          \
+	$(srcdir)/Ifpack_CrsRiluk.h           \
+	$(srcdir)/Ifpack_Riluk.h              \
+	$(srcdir)/Ifpack_OverlapGraph.h       \
+	$(srcdir)/Ifpack_ScalingType.h        \
+	$(srcdir)/Ifpack_CrsIct.h             \
+	$(srcdir)/Ifpack_Ict.h                \
+	$(srcdir)/Ifpack_Ict_Utils.h          \
+	$(srcdir)/icrout_cholesky_mex.h       \
+	$(srcdir)/Ifpack_Preconditioner.h     \
+	$(srcdir)/Ifpack_CondestType.h        \
+	$(srcdir)/Ifpack_Condest.h            \
+	$(srcdir)/Ifpack.h                    \
+	$(srcdir)/Ifpack_Jacobi.h             \
+	$(srcdir)/Ifpack_GaussSeidel.h        \
+	$(srcdir)/Ifpack_SymGaussSeidel.h     \
+	$(srcdir)/Ifpack_SOR.h                \
+	$(srcdir)/Ifpack_SSOR.h               \
 	$(srcdir)/Ifpack_PointPreconditioner.h \
 	$(srcdir)/Ifpack_BlockPreconditioner.h \
-	$(srcdir)/Ifpack_BlockJacobi.h \
-	$(srcdir)/Ifpack_BlockGaussSeidel.h \
-	$(srcdir)/Ifpack_Container.h \
-	$(srcdir)/Ifpack_SparseContainer.h \
-	$(srcdir)/Ifpack_AdditiveSchwarz.h \
-	$(srcdir)/Ifpack_LocalRowMatrix.h \
-	$(srcdir)/Ifpack_Graph.h \
-	$(srcdir)/Ifpack_Container.h \
-	$(srcdir)/Ifpack_SparseContainer.h \
+	$(srcdir)/Ifpack_BlockJacobi.h         \
+	$(srcdir)/Ifpack_BlockGaussSeidel.h    \
+	$(srcdir)/Ifpack_BlockSymGaussSeidel.h \
+	$(srcdir)/Ifpack_Container.h           \
+	$(srcdir)/Ifpack_SparseContainer.h     \
+	$(srcdir)/Ifpack_AdditiveSchwarz.h     \
+	$(srcdir)/Ifpack_LocalFilter.h         \
+	$(srcdir)/Ifpack_DropFilter.h          \
+	$(srcdir)/Ifpack_SparsityFilter.h      \
+	$(srcdir)/Ifpack_ReorderFilter.h       \
+	$(srcdir)/Ifpack_Graph.h               \
+	$(srcdir)/Ifpack_Container.h           \
+	$(srcdir)/Ifpack_SparseContainer.h     \
         $(srcdir)/Ifpack_Graph_Epetra_RowMatrix.h \
-	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h \
-	$(srcdir)/Ifpack_Partitioner.h \
+	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h  \
+	$(srcdir)/Ifpack_Partitioner.h            \
 	$(srcdir)/Ifpack_OverlappingPartitioner.h \
-	$(srcdir)/Ifpack_LinearPartitioner.h \
-	$(srcdir)/Ifpack_GreedyPartitioner.h \
-	$(srcdir)/Ifpack_METISPartitioner.h \
-	$(srcdir)/Ifpack_EquationPartitioner.h \
-	$(srcdir)/Ifpack_Amesos.h \
-	$(srcdir)/Ifpack_Utils.h \
-	$(srcdir)/Ifpack_AztecOO.h
+	$(srcdir)/Ifpack_LinearPartitioner.h      \
+	$(srcdir)/Ifpack_GreedyPartitioner.h      \
+	$(srcdir)/Ifpack_METISPartitioner.h       \
+	$(srcdir)/Ifpack_EquationPartitioner.h    \
+	$(srcdir)/Ifpack_Amesos.h                 \
+	$(srcdir)/Ifpack_Utils.h                  \
+	$(srcdir)/Ifpack_Reordering.h             \
+	$(srcdir)/Ifpack_RCMReordering.h
 
 
 COMP = \
-	$(srcdir)/Ifpack_IlukGraph.cpp \
-	$(srcdir)/Ifpack_CrsRiluk.cpp \
-	$(srcdir)/Ifpack_CrsIct.cpp \
-	$(srcdir)/Ifpack_OverlapGraph.cpp \
-	$(srcdir)/icrout_cholesky_mex.c \
-	$(srcdir)/icrout_quicksort.c \
-	$(srcdir)/ifp_parameters.cpp \
+	$(srcdir)/Ifpack_IlukGraph.cpp           \
+	$(srcdir)/Ifpack_CrsRiluk.cpp            \
+	$(srcdir)/Ifpack_Riluk.cpp               \
+	$(srcdir)/Ifpack_CrsIct.cpp              \
+	$(srcdir)/Ifpack_Ict.cpp                 \
+	$(srcdir)/Ifpack_Ict_Utils.cpp           \
+	$(srcdir)/Ifpack_OverlapGraph.cpp        \
+	$(srcdir)/icrout_cholesky_mex.c          \
+	$(srcdir)/icrout_quicksort.c             \
+	$(srcdir)/ifp_parameters.cpp             \
 	$(srcdir)/Ifpack_PointPreconditioner.cpp \
-	$(srcdir)/Ifpack_Jacobi.cpp \
-	$(srcdir)/Ifpack_GaussSeidel.cpp\
-	$(srcdir)/Ifpack_SOR.cpp \
-	$(srcdir)/Ifpack_SSOR.cpp \
-	$(srcdir)/Ifpack_LocalRowMatrix.cpp \
+	$(srcdir)/Ifpack_Condest.cpp         \
+	$(srcdir)/Ifpack.cpp                 \
+	$(srcdir)/Ifpack_Jacobi.cpp          \
+	$(srcdir)/Ifpack_GaussSeidel.cpp     \
+	$(srcdir)/Ifpack_SymGaussSeidel.cpp  \
+	$(srcdir)/Ifpack_SOR.cpp             \
+	$(srcdir)/Ifpack_SSOR.cpp            \
+	$(srcdir)/Ifpack_LocalFilter.cpp     \
+	$(srcdir)/Ifpack_DropFilter.cpp             \
+	$(srcdir)/Ifpack_SparsityFilter.cpp         \
+	$(srcdir)/Ifpack_ReorderFilter.cpp          \
 	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
-	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp \
-	$(srcdir)/Ifpack_Amesos.cpp \
-	$(srcdir)/Ifpack_Utils.cpp \
+	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
+	$(srcdir)/Ifpack_Amesos.cpp                 \
+	$(srcdir)/Ifpack_Utils.cpp                  \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
-	$(srcdir)/Ifpack_LinearPartitioner.cpp \
-	$(srcdir)/Ifpack_GreedyPartitioner.cpp \
-	$(srcdir)/Ifpack_METISPartitioner.cpp \
-	$(srcdir)/Ifpack_EquationPartitioner.cpp
+	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
+	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \
+	$(srcdir)/Ifpack_METISPartitioner.cpp       \
+	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
+	$(srcdir)/Ifpack_RCMReordering.cpp
 
 
 # ------------------------------------------------------------------------

@@ -401,7 +401,11 @@ AC_CONFIG_FILES([
                 Makefile.export
 		src/Makefile
 		src/Makefile.include
+		example/Makefile
+		example/Makefile.include
 		test/Makefile
+		test/PreconditionerFactory/Makefile
+		test/PreconditionerFactory/Makefile.include
 		test/CrsRiluk/Makefile
 		test/CrsRiluk/Makefile.include
 		test/IlukGraph/Makefile
@@ -410,10 +414,10 @@ AC_CONFIG_FILES([
 		test/SetParameters/Makefile.include
 		test/PointPreconditioner/Makefile
 		test/PointPreconditioner/Makefile.include
+		test/BlockPreconditioner/Makefile
+		test/BlockPreconditioner/Makefile.include
 		test/AdditiveSchwarz/Makefile
 		test/AdditiveSchwarz/Makefile.include
-		test/CrsAdditiveSchwarz/Makefile
-		test/CrsAdditiveSchwarz/Makefile.include
 		test/Container/Makefile
 		test/Container/Makefile.include
 		test/scripts/Makefile
