@@ -57,26 +57,58 @@ LOCA_PARAMETER_VECTOR = \
         $(srcdir)/LOCA_Parameter_Vector.C
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper.H \
-	$(srcdir)/LOCA_StepperArclength.H
+	$(srcdir)/LOCA_Stepper.H 
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper.C \
-	$(srcdir)/LOCA_StepperArclength.C
+	$(srcdir)/LOCA_Stepper.C 
+
+LOCA_CONTINUATION_H = \
+	$(srcdir)/LOCA_MultiVector.H \
+	$(srcdir)/LOCA_Continuation_Vector.H \
+	$(srcdir)/LOCA_Continuation_Group.H \
+	$(srcdir)/LOCA_Continuation_Manager.H \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H
+
+LOCA_CONTINUATION = \
+	$(srcdir)/LOCA_MultiVector.C \
+	$(srcdir)/LOCA_Continuation_Vector.C \
+	$(srcdir)/LOCA_Continuation_Group.C \
+	$(srcdir)/LOCA_Continuation_Manager.C \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C
+
+LOCA_PREDICTOR_H = \
+	$(srcdir)/LOCA_Predictor_Generic.H \
+	$(srcdir)/LOCA_Predictor_Manager.H \
+	$(srcdir)/LOCA_Predictor_Constant.H \
+	$(srcdir)/LOCA_Predictor_Tangent.H \
+	$(srcdir)/LOCA_Predictor_Secant.H 
+
+LOCA_PREDICTOR = \
+	$(srcdir)/LOCA_Predictor_Manager.C \
+	$(srcdir)/LOCA_Predictor_Constant.C \
+	$(srcdir)/LOCA_Predictor_Tangent.C \
+	$(srcdir)/LOCA_Predictor_Secant.C 
+
+LOCA_STEPSIZE_H = \
+	$(srcdir)/LOCA_StepSize_Generic.H \
+	$(srcdir)/LOCA_StepSize_Manager.H \
+	$(srcdir)/LOCA_StepSize_Constant.H \
+	$(srcdir)/LOCA_StepSize_Adaptive.H 
+
+LOCA_STEPSIZE = \
+	$(srcdir)/LOCA_StepSize_Manager.C \
+	$(srcdir)/LOCA_StepSize_Constant.C \
+	$(srcdir)/LOCA_StepSize_Adaptive.C 
 
 LOCA_BIFURCATION_H = \
-	$(srcdir)/LOCA_MultiVector.H \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
-        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.H \
-        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.H
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H 
 
 LOCA_BIFURCATION = \
-	$(srcdir)/LOCA_MultiVector.C \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
-        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C \
-        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C 
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H
@@ -88,19 +120,23 @@ LOCA_H = \
         $(LOCA_ABSTRACT_H) \
 	$(LOCA_UTILS_H) \
 	$(LOCA_PARAMETER_VECTOR_H) \
-	$(LOCA_STEPPER_H) \
-        $(LOCA_SOLVER_H) \
+        $(LOCA_CONTINUATION_H) \
+	$(LOCA_PREDICTOR_H) \
+	$(LOCA_STEPSIZE_H) \
 	$(LOCA_BIFURCATION_H) \
-	$(LOCA_DERIVUTILS_H)
+	$(LOCA_DERIVUTILS_H) \
+	$(LOCA_STEPPER_H)
 
 LOCA = \
 	$(LOCA_ABSTRACT) \
 	$(LOCA_UTILS) \
 	$(LOCA_PARAMETER_VECTOR) \
-	$(LOCA_STEPPER) \
-        $(LOCA_SOLVER) \
+        $(LOCA_CONTINUATION) \
+	$(LOCA_PREDICTOR) \
+	$(LOCA_STEPSIZE) \
 	$(LOCA_BIFURCATION) \
-	$(LOCA_DERIVUTILS)
+	$(LOCA_DERIVUTILS) \
+	$(LOCA_STEPPER)
 
 # ------------------------------------------------------------------------
 # Loca library specifications
