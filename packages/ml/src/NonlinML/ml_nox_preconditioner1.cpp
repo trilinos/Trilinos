@@ -65,6 +65,8 @@ ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
                      double                           fd_beta,
                      bool                             fd_centered,
                      bool                             linearPrec,
+                     bool                             isnlnCG,
+                     int                              nitersCG,
                      double                           FAS_normF,      
                      double                           FAS_nupdate,    
                      int                              FAS_prefinesmooth,    
@@ -99,6 +101,7 @@ comm_(comm)
   ismatrixfree_ = matrixfree;
   matfreelev0_  = matfreelev0;
   islinearPrec_ = linearPrec;
+  isnlnCG_      = isnlnCG;
 
   // default values (some of them derived and not supported)
   usetranspose_        = false;
@@ -121,6 +124,7 @@ comm_(comm)
   FAS_postfinesmooth_  = 0;
   FAS_maxcycle_        = 0;
   noxsolver_           = 0;
+  nitersCG_            = nitersCG;
 
   // ML handles
   ml_              = 0;

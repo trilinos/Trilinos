@@ -70,6 +70,7 @@
 #include "NOX_EpetraNew_Interface_Preconditioner.H"
 #include "NOX_EpetraNew_FiniteDifference.H"
 #include "NOX_EpetraNew_FiniteDifferenceColoring.H"
+#include "NOX_EpetraNew_LinearSystemAztecOO.H"
 
 // ML-headers
 #include "ml_common.h"
@@ -103,7 +104,8 @@ class Epetra_IntVector;
 
 namespace ML_NOX
 {
-class  ML_Nox_NonlinearLevel : public NOX::EpetraNew::Interface::Preconditioner
+class  ML_Nox_NonlinearLevel : public NOX::EpetraNew::Interface::Preconditioner,
+                               public NOX::EpetraNew::Interface::Jacobian
 {
 
 public:
@@ -113,7 +115,7 @@ public:
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
-       bool matfreelev0, Epetra_CrsMatrix* Jac,
+       bool matfreelev0, bool isnlnCG, int nitersCG, Epetra_CrsMatrix* Jac,
        string fsmoothertype, string smoothertype, 
        string coarsesolvetype, int *nsmooth, double conv_normF, 
        double conv_nupdate, int conv_maxiter, int numPDE, int nullspdim);
@@ -122,7 +124,7 @@ public:
   explicit ML_Nox_NonlinearLevel(
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
-       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
+       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, bool isnlnCG, 
        string fsmoothertype, string smoothertype, string coarsesolvetype, 
        int *nsmooth, double conv_normF, double conv_nupdate, int conv_maxiter,
        int numPDE, int nullspdim, Epetra_CrsMatrix* Mat, 
@@ -163,6 +165,9 @@ public:
                 NOX::EpetraNew::Interface::Required::FillType fillFlag)
   { return coarseinterface_->computeF(x,F,fillFlag);}
   
+  // Compute Jacobian (derived from NOX::EpetraNew::Interface::Jacobian)
+  bool computeJacobian(const Epetra_Vector& x);
+
 private:
   // don't want copy-ctor and = operator
   ML_Nox_NonlinearLevel(ML_NOX::ML_Nox_NonlinearLevel& old);
@@ -209,7 +214,11 @@ private:
   // --- for the matrixfree method ---
   bool                                         ismatrixfree_;    // flag to indicate whether this level is matrixfree or not
   
-  
+  // -- for the Newton method
+  bool                                         isnlnCG_;          // flag to switch nlnCG/Neweton's method
+  int                                          nitersCG_;         // number of Aztec-CG iterations as linear solve in mod. Newton's method
+  NOX::EpetraNew::LinearSystemAztecOO*         azlinSys_;         // the aztec linear system to be used with mod. Newton's method  
+  Epetra_Vector*                               clone_;
 }; // class  ML_Nox_NonlinearLevel 
 }  // namespace ML_NOX
 

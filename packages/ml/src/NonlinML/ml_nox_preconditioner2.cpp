@@ -104,7 +104,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_,
-                                     matfreelev0_,fineJac_,ml_fsmoothertype_,
+                                     matfreelev0_,isnlnCG_,nitersCG_,
+                                     fineJac_,ml_fsmoothertype_,
                                      ml_smoothertype_,ml_coarsesolve_,
                                      ml_nsmooth_,FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim);
@@ -259,7 +260,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
-                                     interface_,comm_,xfine,ismatrixfree_,
+                                     interface_,comm_,xfine,ismatrixfree_, isnlnCG_, 
                                      ml_fsmoothertype_,ml_smoothertype_,ml_coarsesolve_,
                                      ml_nsmooth_,FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim,tmpMat,
@@ -390,7 +391,6 @@ int ML_NOX::ML_Nox_Preconditioner::solve()
    nlnLevel_[0]->setModifiedSystem(false, NULL, NULL);
    nlnLevel_[0]->computeF(*x,*f,NOX::EpetraNew::Interface::Required::Residual);
 
-#if 1
    double t1 = GetClock();
    {   
    for (i=1; i<=FAS_maxcycle_; i++)
@@ -415,7 +415,6 @@ int ML_NOX::ML_Nox_Preconditioner::solve()
    }
    return(-1);
    }
-#endif   
 }
 
 

@@ -105,6 +105,8 @@ public:
                                  double                           fd_beta,
                                  bool                             fd_centered,
                                  bool                             linearPrec,
+                                 bool                             isnlnCG,
+                                 int                              nitersCG,
                                  double                           FAS_normF,      
                                  double                           FAS_nupdate,
                                  int                              FAS_prefinesmooth,    
@@ -212,6 +214,8 @@ private:
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
   bool                                  matfreelev0_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
+  bool                                  isnlnCG_;          // switch between nlnCG and Newton's method
+
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
   Epetra_Comm&                          comm_;             // the communicator;
@@ -265,6 +269,7 @@ private:
   int                                   FAS_postfinesmooth_;
   int                                   FAS_maxcycle_; 
   NOX::Solver::Manager*                 noxsolver_;
+  int                                   nitersCG_;
 }; // class  ML_Nox_Preconditioner : public virtual Epetra_Operator
 }  // namespace ML_NOX
 
