@@ -1,7 +1,11 @@
 #include "ml_common.h"
 #include "ml_include.h"
 
+#ifndef ML_CPP
+#ifdef __cplusplus
 extern "C" {
+#endif
+#endif
 
 double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
 			int approx_all_zeros, ML_Comm *comm,
@@ -176,4 +180,9 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
   return 0.0;
 }
 
+
+#ifndef ML_CPP
+#ifdef __cplusplus
 } // extern "C"
+#endif
+#endif

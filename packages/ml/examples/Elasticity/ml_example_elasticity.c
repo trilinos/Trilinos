@@ -32,6 +32,7 @@
 #include <string.h>
 #include <math.h>
 #include "ml_include.h"
+#include "ml_agg_VBMETIS.h"
 #include "ml_read_utils.h"
 #include "ml_lapack.h"
 #include <math.h>

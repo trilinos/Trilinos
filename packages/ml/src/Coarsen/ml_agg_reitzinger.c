@@ -315,7 +315,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      encoded_dir_edge = (int *) ML_allocate(Tfine->outvec_leng *
                                                sizeof(int));
-     for (j=0; j<Tfine->outvec_leng; j++) encoded_dir_edge[j] = 0.0;
+     for (j=0; j<Tfine->outvec_leng; j++) encoded_dir_edge[j] = 0;
 
      for (i = 0 ; i < Tfine->getrow->Nrows; i++)
      {
@@ -1231,9 +1231,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_Aggregate_Set_CurrentLevel( ag_edge, grid_level+1);
        Pe = &(ml_edges->Pmat[grid_level]);
        if (Pe->comm->ML_mypid == 0 && 4 < ML_Get_PrintLevel() )
-         printf("projecting edge coordinates for repartitioning, relative level %d\n", fabs(fine_level-grid_level-1));
+         printf("projecting edge coordinates for repartitioning, relative level %d\n",
+(int) fabs((double)(fine_level-grid_level-1)));
        ML_Aggregate_ProjectCoordinates(Pe, ag_edge, 1,
-                                       fabs(fine_level-grid_level-1));
+                  (int) fabs((double)(fine_level-grid_level-1)));
      }
 
       /***************************
