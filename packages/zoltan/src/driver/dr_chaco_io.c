@@ -167,6 +167,7 @@ int read_chaco_mesh(int Proc,
   mesh->eb_etypes[0] = -1;
   mesh->eb_ids[0] = 1;
   mesh->eb_cnts[0] = nvtxs;
+  mesh->eb_nattrs[0] = 0;
   /*
    * Each element has one set of coordinates (i.e., node) if a coords file
    * was provided; zero otherwise. 

@@ -40,6 +40,7 @@
 #include "mem_const.h"
 
 int Debug_Driver = 1;
+int DDirectory_Test = 1;  /* Flag indicating whether to exercise DDirectory */
 int Gnuplot_Output = 0;
 int Number_Iterations = 1;
 int Debug_Chaco_Input = 0;

@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 
 #include <mpi.h>
 
@@ -21,10 +22,12 @@
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
 
+#ifdef OLD_DD_TEST
 #include "DD_Const.h"             /* rthrth */
-#include "lb_const.h"             /* rthrth */
-
 static Zoltan_DD_Directory *dd ;  /* rthrth */
+#endif /* OLD_DD_TEST */
+
+static int Num_GID = 1, Num_LID = 1;
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -74,6 +77,10 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, errmsg);
       return 0;
     }
+    if (strcasecmp(prob->params[i][0], "NUM_GID_ENTRIES") == 0) 
+      Num_GID = atoi(prob->params[i][1]);
+    else if (strcasecmp(prob->params[i][0], "NUM_LID_ENTRIES") == 0) 
+      Num_LID = atoi(prob->params[i][1]);
   }
 
   /* Set the method */
@@ -131,8 +138,6 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
   }
 
 
-Zoltan_DD_Create (&dd, lb->Communicator, lb->Num_GID, lb->Num_LID, 0, 0, 1) ;
-
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -188,15 +193,18 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+#ifdef OLD_DD_TEST
 {
 int ii ;
 for (ii = 0 ; ii < num_imported ; ii++)
-   printf ("ZOLTAN_DEBUG(%d): GID %3u\n", dd->my_proc, import_gids[ii]) ;
+   printf ("ZOLTAN_DEBUG(%d): GID %3u\n", Proc, import_gids[ii]) ;
 }
 
 
+Zoltan_DD_Create (&dd, MPI_COMM_WORLD, Num_GID, Num_LID, 0, 0, 1) ;
 Zoltan_DD_Update (dd, import_gids, import_lids, NULL, NULL, num_imported) ; /* rthrth */
 Zoltan_DD_Stats (dd) ;  /* rthrth */
+#endif /* OLD_DD_TEST */
 
   /*
    * Call another routine to perform the migration
@@ -219,30 +227,31 @@ Zoltan_DD_Stats (dd) ;  /* rthrth */
   }
 
 
+#ifdef OLD_DD_TEST
 {
-int *ownerlist ;
+int *ownerlist=NULL ;
 int ii ;
 
-ownerlist = (int *) LB_MALLOC (sizeof (int) * num_imported) ;
+ownerlist = (int *) malloc (sizeof (int) * num_exported) ;
 
 Zoltan_DD_Find (dd, export_gids, NULL, NULL, NULL, num_exported, ownerlist) ;
 
 for (ii = 0 ; ii < num_exported ; ii++)
-   printf ("ZOLTAN_FIND_DEBUG(%d): GID %3u, Owner %3d\n", dd->my_proc, export_gids[ii], ownerlist[ii]) ;
+   printf ("ZOLTAN_FIND_DEBUG(%d): GID %3u, Owner %3d\n", Proc, export_gids[ii], ownerlist[ii]) ;
 
-LB_FREE (&ownerlist) ;
+free (ownerlist) ;
 }
 
 
 Zoltan_DD_Remove (dd, export_gids, num_exported) ;
 Zoltan_DD_Stats (dd) ;
+Zoltan_DD_Destroy (dd) ;
+#endif /* OLD_DD_TEST */
 
 
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
-
-Zoltan_DD_Destroy (dd) ;
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;

@@ -160,6 +160,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** DDirectory testing flag ******/
+      else if (token_compare(cptr, "test ddirectory")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &DDirectory_Test) != 1) {
+          Gen_Error(0, "fatal: test ddirectory must be an integer.");
+          return 0;
+        }
+      }
+
       /****** Generate GNUplot output? ******/
       else if (token_compare(cptr, "gnuplot output")) {
         cptr = strtok(NULL, "\t=");
@@ -499,6 +509,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /***************************** BEGIN EXECUTION ******************************/
 
   MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&DDirectory_Test, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&Gnuplot_Output, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
