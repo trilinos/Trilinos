@@ -1,12 +1,29 @@
 Problems existing in Zoltan.
 
 -------------------------------------------------------------------------------
-On failure, OCTREE, ParMETIS and Jostle methods abort rather than return 
-error codes.
+ERROR CONDITIONS IN ZOLTAN
+When a processor returns from Zoltan to the application due to an error
+condition, other processors do not necessarily return the same condition.
+In fact, other processors may not know that the processor has quit Zoltan,
+and may hang in a communication (waiting for a message that is not sent 
+due to the error condition).  The parallel error-handling capabilities of
+Zoltan will be improved in future releases.
 -------------------------------------------------------------------------------
+ERROR CONDITIONS IN OCTREE, PARMETIS AND JOSTLE
+On failure, OCTREE, ParMETIS and Jostle methods abort rather than return 
+error codes.  
+-------------------------------------------------------------------------------
+F90 ISSUES
+Pacific Sierra Research (PSR) Vastf90 is not currently supported due to bugs 
+in the compiler with no known workarounds. It is not known when or if this 
+compiler will be supported. 
 
-Problems existing in ParMETIS and reported to ParMETIS development team
-at the University of Minnesota:
+N.A.Software FortranPlus is not currently supported due to problems with the 
+query functions. We anticipate that this problem can be overcome, and support 
+will be added soon. 
+-------------------------------------------------------------------------------
+PROBLEMS EXISTING IN PARMETIS 
+(reported to ParMETIS development team at the University of Minnesota)
 
 Name: load imbalance tolerance
 Version: ParMETIS 2.0
