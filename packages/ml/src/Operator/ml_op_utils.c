@@ -1106,7 +1106,7 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 				 matrix->matvec->Nrows, sCSR_matvec,
 				 matrix->from_an_ml_operator);
 
-   ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,sCSR_getrows);
+   ML_Operator_Set_Getrow(matrix,ML_INTERNAL,matrix->getrow->Nrows,sCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
    if (values  != NULL) ML_free(values);
    if (columns != NULL) ML_free(columns);
@@ -1179,7 +1179,7 @@ int ML_Operator_ChangeToChar(ML_Operator *matrix)
 				 matrix->matvec->Nrows, cCSR_matvec,
 				 matrix->from_an_ml_operator);
 
-   ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,cCSR_getrows);
+   ML_Operator_Set_Getrow(matrix,ML_INTERNAL,matrix->getrow->Nrows,cCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
    if (values  != NULL) ML_free(values);
    if (columns != NULL) ML_free(columns);

@@ -806,7 +806,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
 	 if (csr_data->values[i] != 0) csr_data->values[i] = 1.;
      }
-     else if (Pn_coarse->getrow->external == sCSR_getrows) {
+     else if (Pn_coarse->getrow->internal == sCSR_getrows) {
        ftemp = (float *) csr_data->values;
        for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
 	 if (ftemp[i] != 0) ftemp[i] = 1.;

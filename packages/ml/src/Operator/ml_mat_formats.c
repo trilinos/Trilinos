@@ -325,9 +325,11 @@ int sCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int     *rowptr,  row, itemp;
    register float *val;
    struct ML_CSR_MSRdata *input_matrix;
+   ML_Operator *mat_in;
 
+   mat_in = (ML_Operator *) data;
    row            = *requested_rows;
-   input_matrix = (struct ML_CSR_MSRdata *) data;
+   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
    rowptr = input_matrix->rowptr;
    itemp = rowptr[row];
    *row_lengths = rowptr[row+1] - itemp;
@@ -360,9 +362,11 @@ int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    register char    *val;
    struct ML_CSR_MSRdata *input_matrix;
    double sgn[3] = {0.,1.,-1.};
+   ML_Operator *mat_in;
 
+   mat_in = (ML_Operator *) data;
    row            = *requested_rows;
-   input_matrix = (struct ML_CSR_MSRdata *) data;
+   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
    rowptr = input_matrix->rowptr;
    itemp = rowptr[row];
    *row_lengths = rowptr[row+1] - itemp;
