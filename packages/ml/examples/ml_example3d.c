@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
      scanf("%d", &nsmooth);
      printf("number of smoothing step = %d\n", nsmooth);
 
+/*
      printf("ParaSails factorized, (1=true or 0=false) : \n");
      scanf("%d",  &parasails_factorized);
      printf("ParaSails symmetric smoother, (1=true or 0=false) : \n");
@@ -129,6 +130,7 @@ int main(int argc, char *argv[])
      scanf("%lf", &parasails_filter);
      printf("ParaSails loadbal param, (0. or 0.9) : \n");
      scanf("%lf", &parasails_loadbal);
+*/
   }
   AZ_broadcast((char *) &coarse_iterations,  sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &use_cg,  sizeof(int), proc_config, AZ_PACK);
@@ -139,12 +141,14 @@ int main(int argc, char *argv[])
   AZ_broadcast((char *) &refine_factor, sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &choice       , sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &nsmooth      , sizeof(int), proc_config, AZ_PACK);
+/*
   AZ_broadcast((char *) &parasails_factorized, sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &parasails_sym,     sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &parasails_thresh,  sizeof(double), proc_config, AZ_PACK);
   AZ_broadcast((char *) &parasails_nlevels, sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &parasails_filter,  sizeof(double), proc_config, AZ_PACK);
   AZ_broadcast((char *) &parasails_loadbal, sizeof(double), proc_config, AZ_PACK);
+*/
   AZ_broadcast((char *) NULL        ,   0          , proc_config, AZ_SEND);
   i = proc_config[AZ_N_procs];
   i = (int) pow( (double) i, 0.50001 );
