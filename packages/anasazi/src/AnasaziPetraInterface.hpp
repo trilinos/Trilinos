@@ -578,6 +578,76 @@ ReturnType PetraSymOp<TYPE>::Apply ( const MultiVec<TYPE>& x,
 		return Failed; 
 }
 
+///////////////////////////////////////////////////////////////
+//--------template class AnasaziPetraSymOp---------------------
+template <class TYPE> 
+class PetraSymMVOp : public virtual Operator<TYPE> {
+public:
+  PetraSymMVOp(const Epetra_MultiVector& MV, const bool isTrans = false );
+  ~PetraSymMVOp();
+  ReturnType Apply ( const MultiVec<TYPE>& x, 
+		     MultiVec<TYPE>& y ) const;
+private:
+  const Epetra_MultiVector& Epetra_MV;
+  bool isTrans_;
+};
+//-------------------------------------------------------------
+//
+// implementation of the Anasazi::PetraSymMVOp class.
+//
+////////////////////////////////////////////////////////////////////
+//
+// Anasazi::Operator constructors
+//
+template <class TYPE>
+PetraSymMVOp<TYPE>::PetraSymMVOp(const Epetra_MultiVector& MV, const bool isTrans) 
+  : Epetra_MV(MV), isTrans_(isTrans)
+{
+}
+
+template <class TYPE>
+PetraSymMVOp<TYPE>::~PetraSymMVOp() 
+{
+}
+//
+// AnasaziOperator applications
+//
+template <class TYPE>
+ReturnType PetraSymMVOp<TYPE>::Apply ( const MultiVec<TYPE>& x, 
+				       MultiVec<TYPE>& y ) const 
+{
+  int info=0;
+  MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+  Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+  Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+  
+  if (isTrans_) {
+    const int izero=0;
+    Epetra_LocalMap localMap( Epetra_MV.NumVectors(), 0, Epetra_MV.Map().Comm() );
+    Epetra_MultiVector Pvec( localMap, temp_x.GetNumberVecs() );
+
+    /* A'*x */
+    info = Pvec.Multiply( 'T', 'N', 1.0, Epetra_MV, *vec_x, 0.0 );
+
+    /* A*(A'*x) */
+    info = vec_y->Multiply( 'N', 'N', 1.0, Epetra_MV, Pvec, 0.0 );
+
+  } 
+  else {
+    Epetra_MultiVector temp( Epetra_MV.Map(), temp_x.GetNumberVecs() );
+
+    /* A*x */
+    info = temp.Multiply( 'N', 'N', 1.0, Epetra_MV, *vec_x, 0.0 );
+
+    /* A'*(A*x) */
+    info = vec_y->Multiply( 'T', 'N', 1.0, Epetra_MV, temp, 0.0 );
+  }
+
+  if (info==0)
+    return Ok; 
+  else
+    return Failed; 
+}
 
 } // end of Anasazi namespace 
 
