@@ -97,7 +97,8 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   isTargetStep(s.isTargetStep),
   tangentFactor(s.tangentFactor),
   minTangentFactor(s.minTangentFactor),
-  tangentFactorExponent(s.tangentFactorExponent)
+  tangentFactorExponent(s.tangentFactorExponent),
+  calcEigenvalues(s.calcEigenvalues)
 { 
   conGroupManagerPtr = 
     new LOCA::Continuation::Manager(*s.conGroupManagerPtr);
@@ -201,6 +202,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   minTangentFactor = stepperList.getParameter("Min Tangent Factor",0.1);
   tangentFactorExponent = 
     stepperList.getParameter("Tangent Factor Exponent",1.0);
+  calcEigenvalues = stepperList.getParameter("Compute Eigenvalues",false);
 
   // Create solver using initial conditions
   solverPtr = new NOX::Solver::Manager(initialGuess, *statusTestPtr, 
@@ -451,7 +453,8 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   }
 
   // Compute eigenvalues/eigenvectors
-  //curGroupPtr->getUnderlyingGroup().computeEigenvalues(*paramListPtr);
+  if (calcEigenvalues)
+    curGroupPtr->getUnderlyingGroup().computeEigenvalues(*paramListPtr);
 
   return stepStatus;
 }

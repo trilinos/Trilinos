@@ -194,6 +194,9 @@ namespace LOCA {
 
     //! Tangent factor exponent
     double tangentFactorExponent;
+
+    //! Flag indicating whether to compute eigenvalues after eachs step
+    bool calcEigenvalues;
   };
 } // end namespace LOCA
 
