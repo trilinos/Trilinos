@@ -29,9 +29,9 @@ typedef struct
    int old_owner ;
    int new_owner ;      /* old != new ==> simultated data move    */
    int partition ;
-   LB_ID_TYPE id[1] ;   /* malloc'd beyond end of struct          */
-                        /* LB_ID_TYPE lid[]  at gid + glen        */
-                        /* LB_ID_TYPE user[] at gid + glen + llen */
+   ZOLTAN_ID_TYPE id[1] ;   /* malloc'd beyond end of struct              */
+                            /* ZOLTAN_ID_TYPE lid[]  at gid + glen        */
+                            /* ZOLTAN_ID_TYPE user[] at gid + glen + llen */
    } Data ;
 
 
@@ -71,9 +71,10 @@ int main (int argc, char *argv[])
 
    int        myproc ;         /* MPI rank, my processor's MPI ID      */
    int        nproc ;          /* MPI size, number of processors       */
-   LB_ID_PTR  glist = NULL ;   /* list of GIDs                         */
-   LB_ID_PTR  llist = NULL ;   /* list of LIDs                         */
-   LB_ID_PTR  ulist = NULL ;   /* list of user data of type LB_ID_TYPE */
+   ZOLTAN_ID_PTR  glist = NULL ;   /* list of GIDs                     */
+   ZOLTAN_ID_PTR  llist = NULL ;   /* list of LIDs                     */
+   ZOLTAN_ID_PTR  ulist = NULL ;   /* list of user data of type 
+                                      ZOLTAN_ID_TYPE                   */
    int       *plist = NULL ;   /* list of partitions                   */
    int       *olist = NULL;    /* list of owners                       */
    Param      param ;          /* program's adjustable parameters      */
@@ -82,9 +83,8 @@ int main (int argc, char *argv[])
 
    /* these are all temporary variables:  */
    int   new_owner ;
-   int   rand1, rand2 ;
    int   count ;
-   int   i,j ;
+   int   i ;
    char *p ;
    int   err ;
    int   errcount ;
@@ -113,13 +113,16 @@ int main (int argc, char *argv[])
    store = (char *) LB_MALLOC (param.count * param.slen) ;
 
    /* allocate storage for various lists */
-   glist = (LB_ID_PTR) LB_MALLOC (sizeof (LB_ID_TYPE) * param.count * param.glen) ;
+   glist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof(ZOLTAN_ID_TYPE) * param.count
+                                                             * param.glen) ;
    plist = (int *)     LB_MALLOC (sizeof (int)        * param.count) ;
    olist = (int *)     LB_MALLOC (sizeof (int)        * param.count) ;
    if (param.llen != 0)
-      llist = (LB_ID_PTR) LB_MALLOC (sizeof (LB_ID_TYPE) * param.count * param.llen) ;
+      llist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
+                                                                 * param.llen) ;
    if (param.ulen != 0)
-      ulist = (LB_ID_PTR) LB_MALLOC (sizeof (LB_ID_TYPE) * param.count * param.ulen) ;
+      ulist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
+                                                                 * param.ulen) ;
 
 
    if (store == NULL || glist == NULL
@@ -138,12 +141,15 @@ int main (int argc, char *argv[])
    for (p = store ; p < store + param.count * param.slen ; p += param.slen)
       if (((Data *)p)->new_owner == myproc)
          {
-         LB_SET_ID (param.glen, glist + count * param.glen, ((Data *)p)->id) ;
+         ZOLTAN_SET_ID (param.glen, glist + count * param.glen, 
+                        ((Data *)p)->id) ;
          if (param.llen)
-            LB_SET_ID (param.llen, llist + count * param.llen, ((Data *)p)->id
+            ZOLTAN_SET_ID (param.llen, llist + count * param.llen, 
+                           ((Data *)p)->id
              + param.glen) ;
          if (param.ulen)
-            LB_SET_ID (param.ulen, ulist + count * param.ulen, ((Data *)p)->id
+            ZOLTAN_SET_ID (param.ulen, ulist + count * param.ulen, 
+                           ((Data *)p)->id
              + (param.glen + param.llen)) ;
          plist [count] = ((Data *)p)->partition ;
          count++ ;
@@ -155,7 +161,7 @@ int main (int argc, char *argv[])
    i = 0 ;
    for (p = store ; p < store + param.count * param.slen ; p += param.slen)
       {
-      LB_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id) ;
+      ZOLTAN_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id) ;
       i++ ;
       }
    err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, olist) ;
@@ -199,12 +205,15 @@ int main (int argc, char *argv[])
            if (((Data *)p)->new_owner == myproc)
               {
               ((Data *)p)->id[param.glen] = count ;  /* set LID */
-              LB_SET_ID (param.glen, glist + count * param.glen, ((Data *)p)->id) ;
+              ZOLTAN_SET_ID (param.glen, glist + count * param.glen, 
+                             ((Data *)p)->id) ;
               if (param.llen)
-                 LB_SET_ID (param.llen, llist + count * param.llen, ((Data *)p)->id
+                 ZOLTAN_SET_ID (param.llen, llist + count * param.llen, 
+                                ((Data *)p)->id
                  + param.glen) ;
               if (param.ulen)
-                  LB_SET_ID (param.ulen, ulist + count * param.ulen, ((Data *)p)->id
+                  ZOLTAN_SET_ID (param.ulen, ulist + count * param.ulen, 
+                                 ((Data *)p)->id
                    + (param.glen + param.llen)) ;
               plist [count] = ((Data *)p)->partition ;
               count++ ;
@@ -217,7 +226,7 @@ int main (int argc, char *argv[])
        i = 0 ;
        for (p = store ; p < store + param.count * param.slen ; p += param.slen)
           {
-          LB_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id) ;
+          ZOLTAN_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id) ;
            i++ ;
           }
         err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, olist) ;
@@ -243,7 +252,7 @@ int main (int argc, char *argv[])
 
           if (data->new_owner == myproc)
              {
-             LB_SET_ID (param.glen, glist + count * param.glen, data->id)  ;
+             ZOLTAN_SET_ID (param.glen, glist + count * param.glen, data->id)  ;
              count++ ;
              }
           data->new_owner = ZOLTAN_DD_NO_PROC ;
@@ -262,12 +271,15 @@ int main (int argc, char *argv[])
        for (p = store ; p < store + param.count * param.slen ; p += param.slen)
           if (((Data *)p)->new_owner == myproc)
               {
-              LB_SET_ID (param.glen, glist + count * param.glen, ((Data *)p)->id) ;
+              ZOLTAN_SET_ID (param.glen, glist + count * param.glen, 
+                             ((Data *)p)->id) ;
               if (param.llen)
-                 LB_SET_ID (param.llen, llist + count * param.llen, ((Data *)p)->id
+                 ZOLTAN_SET_ID (param.llen, llist + count * param.llen, 
+                                ((Data *)p)->id
                   + param.glen) ;
               if (param.ulen)
-                  LB_SET_ID (param.ulen, ulist + count * param.ulen, ((Data *)p)->id
+                  ZOLTAN_SET_ID (param.ulen, ulist + count * param.ulen, 
+                                 ((Data *)p)->id
                    + (param.glen + param.llen)) ;
               plist [count] = ((Data *)p)->partition ;
               count++ ;
@@ -284,7 +296,7 @@ int main (int argc, char *argv[])
       data = (Data *) (store + i * param.slen) ;
       if (data->new_owner == myproc)
          {
-         LB_SET_ID (param.glen, glist + count * param.glen, data->id) ;
+         ZOLTAN_SET_ID (param.glen, glist + count * param.glen, data->id) ;
          count++ ;
          }
       }
@@ -329,7 +341,6 @@ ZOLTAN_PRINT_INFO (myproc, yo, "Completing program") ;
 
 static int initialize_data (Param *param, char *store, int nproc)
    {
-   int n ;
    int i ;
    int j ;
    Data *data ;
@@ -340,13 +351,14 @@ static int initialize_data (Param *param, char *store, int nproc)
         {
         data = (Data *) (store + i * param->slen) ;
         for (j = 0 ; j < param->glen ; j++)
-           data->id[j] = (LB_ID_TYPE) i ;
+           data->id[j] = (ZOLTAN_ID_TYPE) i ;
 
         for (j = 0 ; j < param->llen ; j++)
-           data->id[j + param->glen] = (LB_ID_TYPE) (i % nproc) ;
+           data->id[j + param->glen] = (ZOLTAN_ID_TYPE) (i % nproc) ;
 
         for (j = 0 ; j < param->ulen ; j++)
-           data->id[j + param->glen + param->llen] = (LB_ID_TYPE) (i % nproc) ;
+           data->id[j + param->glen + param->llen] = 
+              (ZOLTAN_ID_TYPE) (i % nproc) ;
 
         data->partition = i % 7 ;
         data->new_owner = i % nproc ;
