@@ -30,17 +30,16 @@
 #ifndef TEUCHOS_PARAMETER_LIST_H
 #define TEUCHOS_PARAMETER_LIST_H
 
+/*! \file Teuchos_ParameterList.hpp
+    \brief Templated Parameter List class
+*/  
+
 #include "Teuchos_ParameterEntry.hpp" // class data element 
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_map.hpp"
 #include <typeinfo>
 
-/*! \file Teuchos_ParameterList.hpp
-    \brief Templated Parameter List class
-*/  
-namespace Teuchos {
-
-/*! \class ParameterList
+/*! \class Teuchos::ParameterList
     \brief The Teuchos::ParameterList class provides a templated parameter list.
   
     Parameters can be added and retreived with the templated "get" and "set" methods.
@@ -53,6 +52,8 @@ namespace Teuchos {
           <li> Both char* and string map to are stored as strings internally. 
 	  </ul>
 */
+
+namespace Teuchos {
 
 class ParameterList {
 
@@ -163,7 +164,7 @@ public:
   const ParameterList& sublist(const string& name) const;
   //@}
   
-  //@{ \name Attibute Methods
+  //@{ \name Attribute Methods
   /*! \brief Query the existence of a parameter.
     \return "true" if a parameter with this \c name exists, else "false".
   */
@@ -180,7 +181,8 @@ public:
   */
   template<typename T>
   bool isType(const string& name) const;
-  
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS  
   /*! \brief Query the existence and type of a parameter.
     \return "true" is a parameter with this \c name exists and is of type \c T, else "false".
     \note <b>It is not recommended that this method be used directly!</b>  
@@ -188,6 +190,7 @@ public:
   */
   template<typename T>
   bool isType(const string& name, T* ptr) const;
+#endif
   //@}
   
   //@{ \name I/O Methods
@@ -266,6 +269,7 @@ private:
     return getValue<T>(entry(i));
   }
   
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   template<typename T>
   bool ParameterList::isType(const string& name, T* ptr) const
   {
@@ -284,6 +288,7 @@ private:
     // If no exception was thrown, we should be OK.
     return true;
   }
+#endif
   
   template<typename T>
   bool ParameterList::isType(const string& name) const

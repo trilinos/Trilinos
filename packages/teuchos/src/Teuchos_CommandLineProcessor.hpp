@@ -32,60 +32,48 @@
 #ifndef TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 #define TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 
-#include "Teuchos_StandardMemberCompositionMacros.hpp"
+/*! \file Teuchos_CommandLineProcessor.hpp
+	\brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
+*/
 #include "Teuchos_map.hpp"
 
 namespace Teuchos {
 
 ///
-/** Class that helps parse command line input arguments from <tt>(argc,argv[])</tt>
- * and set options.
+/** \class CommandLineProcessor
+ *
+ *   \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.
  *
  * This class will process command-line arguments in the form of <tt>(argc,argv[])</tt>
  * and set user-defined options.  This class can also work in a number of modes.
- * This processor can require that all options be recognised or not.
+ * This processor can require that all options be recognized or not.
  *
- * ToDo: RAB: 2003/10/02: Add support for required options as per KRL's suggestion
+*/
+
+/* ToDo: RAB: 2003/10/02: Add support for required options as per KRL's suggestion
  *
  * ToDo:  Finish documentation.
  */
+
 class CommandLineProcessor {
 public:
 
-	/** @name Exception classes */
-	//@{
-
-	/// Thrown if a parse exception occurs and  throwExceptions==true
-	class ParseError : public std::logic_error
-	{public: ParseError(const std::string& what_arg) : std::logic_error(what_arg) {}};
-
-	/// Thrown if --help was specified and throwExceptions==true
-	class HelpPrinted : public ParseError
-	{public: HelpPrinted(const std::string& what_arg) : ParseError(what_arg) {}};
-
-	/// Thrown if an unrecognised option was found and throwExceptions==true
-	class UnrecognisedOption : public ParseError
-	{public: UnrecognisedOption(const std::string& what_arg) : ParseError(what_arg) {}};
-
-	//@}
-
-	/** @name Behavior modes */
-	//@{
-
-	/// Set if an exception is thrown if there is a parse error or help is printed
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, throwExceptions )
-
-	/// Set if all options must be recognised or not.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, recogniseAllOptions )
-
-	//@}
+	/** \enum EParseCommandLineReturn
+            \brief Return value for <tt>CommandLineProcessor::parse()</tt>.
+	 */
+	enum EParseCommandLineReturn {
+		PARSE_SUCCESSFUL              =  0 /*!< Parsing the command line was successful. */
+		,PARSE_HELP_PRINTED            =  1 /*!< The help statement was printed for the command line parser. */
+		,PARSE_UNRECOGNIZED_OPTION     = -1 /*!< The command line parser encountered an unrecognized option. */
+	};
 
 	///
-	/** Constructor
+	//@{ \name Constructors
+	/** \brief Default Constructor
 	 *
 	 * @param  throwExceptions
 	 *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with throw
-	 *               exceptions instead of returning <tt>!=PARSE_SUCCESSFULL</tt>.
+	 *               exceptions instead of returning <tt>!=PARSE_SUCCESSFUL</tt>.
 	 * @param  recogniseAllOptions
 	 *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with simply
 	 *               ignore options that it does not recognize.
@@ -95,20 +83,21 @@ public:
 		,bool   recogniseAllOptions  = true
 		);
 
-	/** @name Set up options */
-	//@{
+	//@}
+
+	//@{ \name Set up options
 
 	///
-	/** Set a boolean option.
+	/** \brief Set a boolean option.
 	 *
 	 * @param  option_true    [in] (null terminated string) If this option is found then
 	 *                        <tt>*option_val = true</tt> will be set.
 	 * @param  option_false   [in] (null terminated string) If this option is found then
 	 *                        <tt>*option_val = false</tt> will be set.
-	 * @param  option         [in/out] On input, <tt>*option</tt> gives the default value
+	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
-	 *                        will be set accoring to <tt>(argc,argv[])</tt>.
-	 * @param  documentaiton  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 *                        will be set according to <tt>(argc,argv[])</tt>.
+	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -119,14 +108,14 @@ public:
 		);
 
 	///
-	/** Set an integer option.
+	/** \brief Set an integer option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option         [in/out] On input, <tt>*option</tt> gives the default value
+	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
-	 *                        will be set accoring to <tt>(argc,argv[])</tt>.
-	 * @param  documentaiton  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 *                        will be set according to <tt>(argc,argv[])</tt>.
+	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -136,14 +125,14 @@ public:
 		);
 
 	///
-	/** Set an floating-point option.
+	/** \brief Set a floating-point option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option         [in/out] On input, <tt>*option</tt> gives the default value
+	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
-	 *                        will be set accoring to <tt>(argc,argv[])</tt>.
-	 * @param  documentaiton  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 *                        will be set according to <tt>(argc,argv[])</tt>.
+	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -153,14 +142,14 @@ public:
 		);
 
 	///
-	/** Set an string option.
+	/** \brief Set a string option.
 	 *
 	 * @param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option         [in/out] On input, <tt>*option</tt> gives the default value
+	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
-	 *                        will be set accoring to <tt>(argc,argv[])</tt>.
-	 * @param  documentaiton  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 *                        will be set according to <tt>(argc,argv[])</tt>.
+	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -171,22 +160,10 @@ public:
 
 	//@}
 
-	/** @name Parse command line */
-	//@{
+	//@{ \name Parse methods
 
 	///
-	/** Return value for <tt>CommandLineProcessor::parse()</tt>.
-	 */
-	enum EParseCommandLineReturn {
-		PARSE_SUCCESSFULL              =  0
-		,PARSE_HELP_PRINTED            =  1
-		,PARSE_UNRECOGNISED_OPTION     = -1
-	};
-
-	///
-	/** Parse a command line.
-	 *
-	 * ToDo: Finish documentation!
+	/** \brief Parse a command line.
 	 *
 	 * @param  argc    [in] number of entries in argv[]
 	 * @param  argv    [in/out] array (length argc) of command line arguments.
@@ -195,12 +172,12 @@ public:
 	 *                 The default is set to <tt>&std::cerr</tt>.
 	 *
 	 * Postconditions:<ul>
-	 * <li>If an unrecognised option if found
+	 * <li>If an unrecognized option if found
 	 *     <ul>
 	 *     <li>If <tt>this->throwExceptions()==true</tt>
-	 *         <ul><li>This method will throw an <tt>UnrecognisedOption</tt> exception</ul>
+	 *         <ul><li>This method will throw an <tt>UnrecognizedOption</tt> exception</ul>
 	 *     <li>else
-	 *         <ul><li>This method will return <tt>PARSE_UNRECOGNISED_OPTION</tt>
+	 *         <ul><li>This method will return <tt>PARSE_UNRECOGNIZED_OPTION</tt></ul>
 	 *     <li>endif
 	 *     </ul>
 	 * <li>Else if the option <tt>--help</tt> is found
@@ -208,11 +185,11 @@ public:
 	 *     <li>If <tt>this->throwExceptions()==true</tt>
 	 *         <ul><li>This method will throw a <tt>HelpPrinted</tt> exception</ul>
 	 *     <li>else
-	 *         <ul><li>This method will return <tt>PARSE_HELP_PRINTED</tt>
+	 *         <ul><li>This method will return <tt>PARSE_HELP_PRINTED</tt></ul>
 	 *     <li>endif
 	 *     </ul>
 	 * <li>Else
-	 *     <ul><li>This method will return <tt>PARSE_SUCCESSFULL</tt>
+	 *     <ul><li>This method will return <tt>PARSE_SUCCESSFUL</tt></ul>
 	 * </ul>
 	 */
 	EParseCommandLineReturn  parse(
@@ -220,6 +197,38 @@ public:
 		,char*          argv[]
 		,std::ostream   *errout    = &std::cerr
 		) const;
+
+	//@}
+
+	//@{ \name Behavior modes
+
+	/// Set if an exception is thrown, there is a parse error, or help is printed.
+	void throwExceptions ( const bool & throwExceptions ) { throwExceptions_ = throwExceptions; };
+	
+	/// Return true if an exception is thrown, there is a parse error, or help is printed.
+	const bool& throwExceptions() const { return throwExceptions_; };
+
+	/// Set if all options must be recognized or not.
+	void recogniseAllOptions ( const bool & recogniseAllOptions ) { recogniseAllOptions_ = recogniseAllOptions; };
+
+	/// Return true if all options are being recognized by the parser.
+	const bool& recogniseAllOptions() const { return recogniseAllOptions_; };
+
+	//@}
+
+	//@{ \name Exception classes
+
+	/// Thrown if a parse exception occurs and  throwExceptions==true
+	class ParseError : public std::logic_error
+	{public: ParseError(const std::string& what_arg) : std::logic_error(what_arg) {}};
+
+	/// Thrown if --help was specified and throwExceptions==true
+	class HelpPrinted : public ParseError
+	{public: HelpPrinted(const std::string& what_arg) : ParseError(what_arg) {}};
+
+	/// Thrown if an unrecognized option was found and throwExceptions==true
+	class UnrecognizedOption : public ParseError
+	{public: UnrecognizedOption(const std::string& what_arg) : ParseError(what_arg) {}};
 
 	//@}
 
@@ -249,7 +258,6 @@ private:
 	};
 
 	//
-//	typedef std::map<std::string,opt_val_val_t>   options_list_t;
 	typedef Teuchos::map<std::string,opt_val_val_t>   options_list_t;
 
 	//
@@ -275,6 +283,8 @@ private:
 	// /////////////////////////////////
 	// Private data members
 
+	bool 				throwExceptions_;
+	bool				recogniseAllOptions_;
 	options_list_t                   options_list_;
 	options_documentation_list_t     options_documentation_list_;
 
@@ -296,7 +306,7 @@ private:
 		,std::ostream   *errout
 		) const;
 
-	// Stirng for option type
+	// String for option type
 	std::string opt_type_str( EOptType ) const;
 
 	// Print bad option

@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_ARRAY_H
 #define TEUCHOS_ARRAY_H
 
+/*! \file Teuchos_Array.hpp
+    \brief Templated array class derived from the STL vector
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Utils.hpp"
@@ -37,48 +41,40 @@ namespace Teuchos
 {
 
   /**
-   * Array is a templated array class derived from the STL vector, but with
+   * \brief Array is a templated array class derived from the STL vector, but with
    * index boundschecking and an extended interface.
    */
   template<class T>
   class Array : public std::vector<T>
   {
   public:
-    /** Empty ctor */
+    //! Empty constructor
     Array();
 
-    /** Allocate an array with n elements */
+    //! Allocate an array with n elements 
     Array(int n);
 
-    /** Allocate n elements, and fill with value */
+    //! Allocate n elements, and fill with value \c t
     Array(int n, const T& t);
 
-    /** Stick a new entry at the end of the array. Resize to allow
-     * space for the new entry
-     */
+    //! Add a new entry at the end of the array. Resize to allow space for the new entry.
     inline Array<T>& append(const T& entry) {push_back(entry); return *this;}
 
-    /**
-     * Return number of elements in the array. Equivalent to size(), but
-     * included for backwards compatibiity.
+    /*! \brief Return number of elements in the array. 
+     *	Equivalent to size(), but included for backwards compatibility.
      */
     int length() const {return size();}
 
-    /**
-     * Read/Write access to a the i-th element, with optional bounsdchecking.
-     */
+    //! Read/Write access to a the i-th element, with optional boundschecking.
     inline T& operator[](int i);
-    /**
-     * Read-only access to a the i-th element, with optional boundschecking.
-     */
+
+    //! Read-only access to a the i-th element, with optional boundschecking.
     inline const T& operator[](int i) const;
 
-    /** Write as a string */
+    //! Write Array as a string
     std::string toString() const ;
 
-    /** 
-     * indicate whether Array has been compiled with boundschecking on 
-     */
+    //! Return true if Array has been compiled with boundschecking on 
     static bool hasBoundsChecking();
 
   private:
@@ -88,7 +84,9 @@ namespace Teuchos
     void indexCheckCrash(int i) const;
   };
 
-  /** \relates Array */
+  /** \relates Array 
+      \brief Write an Array to a stream
+  */
   template<class T> std::ostream& operator<<(std::ostream& os, 
                                              const Array<T>& array);
 
@@ -182,7 +180,9 @@ namespace Teuchos
   }
 
 
-  /** \relates Array create an array with one entry */
+  /** \relates Array 
+      \brief Create an array with one entry 
+  */
   template<class T> inline
   Array<T> tuple(const T& a)
   {
@@ -190,7 +190,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with two entries */
+  /** \relates Array 
+      \brief Create an array with two entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b)
   {
@@ -200,7 +202,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with three entries */
+  /** \relates Array 
+      \brief Create an array with three entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c)
   {
@@ -211,7 +215,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with four entries */
+  /** \relates Array 
+      \brief Create an array with four entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d)
   {
@@ -223,7 +229,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with five entries */
+  /** \relates Array 
+      \brief Create an array with five entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e)
   {
@@ -237,7 +245,9 @@ namespace Teuchos
   }
 
 
-  /** \relates Array create an array with six entries */
+  /** \relates Array 
+      \brief Create an array with six entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
                  const T& f)
@@ -252,7 +262,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with seven entries */
+  /** \relates Array 
+      \brief Create an array with seven entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
                  const T& f, const T& g)
@@ -268,7 +280,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with eight entries */
+  /** \relates Array 
+      \brief Create an array with eight entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
                  const T& f, const T& g, const T& h)
@@ -285,7 +299,9 @@ namespace Teuchos
     return rtn;
   }
 
-  /** \relates Array create an array with nine entries */
+  /** \relates Array 
+      \brief Create an array with nine entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
                  const T& f, const T& g, const T& h, const T& i)
@@ -304,7 +320,9 @@ namespace Teuchos
   }
 
 
-  /** \relates Array create an array with ten entries */
+  /** \relates Array 
+      \brief Create an array with ten entries 
+  */
   template<class T> inline
   Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
                  const T& f, const T& g, const T& h, const T& i, const T& j)

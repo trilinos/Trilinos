@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_TIMEMONITOR_H
 #define TEUCHOS_TIMEMONITOR_H
 
+/*! \file Teuchos_TimeMonitor.hpp
+    \brief Timer class that starts when constructed and stops when the destructor is called
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -40,32 +44,37 @@ namespace Teuchos
   using std::string;
 
   /** 
-   * Teuchos::TimeMonitor is a timer that starts when constructed and stops when the 
-   * destructor is called. Termination upon destruction lets this timer behave
+   * \brief A timer class that starts when constructed and stops when the 
+   * destructor is called. 
+   *
+   * Termination upon destruction lets this timer behave
    * correctly even if scope is exited because of an exception. 
+   *
+   * \note Teuchos::TimeMonitor uses the Teuchos::Time class internally.
    */
   class TimeMonitor
     {
     public:
-      /** Constructor starts timer */
+ 
+      /** \brief Constructor starts timer */
       TimeMonitor(Time& timer)
         : timer_(timer), isRoot_(!timer.isRunning())
         {
           if (isRoot_) timer_.start();
         }
 
-      /** Destructor causes timer to stop */
+      /** \brief Destructor causes timer to stop */
       inline ~TimeMonitor()
         {
           if (isRoot_) timer_.stop();
         }
 
-      /** Print summary statistics for a group of timers. Timings are gathered
+      /** \brief Print summary statistics for a group of timers. Timings are gathered
        * from all processors */
       static void summarize();
 
-      /** Create a new timer with the given name, and append it to the list of
-       * timers to be  */
+      /** \brief Create a new timer with the given name, and append it to the list of
+       * timers to be used */
       static RefCountPtr<Time> getNewTimer(const string& name);
     private:
       

@@ -36,6 +36,10 @@
 #ifndef _TEUCHOS_CONFIGDEFS_HPP_
 #define _TEUCHOS_CONFIGDEFS_HPP_
 
+/*! \file Teuchos_ConfigDefs.hpp
+    \brief Teuchos header file which uses auto-configuration information 
+	to include necessary C++ headers.
+*/
 #ifdef HAVE_CONFIG_H
 
 /*

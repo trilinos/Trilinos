@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_REFCOUNTPTR_H
 #define TEUCHOS_REFCOUNTPTR_H
 
+/*! \file Teuchos_RefCountPtr.hpp
+    \brief Reference-counted pointer class and non-member templated function implementations.
+*/
+
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_map.hpp"
@@ -37,6 +41,8 @@
 // Inline implementations below, not for the client to look at.
 
 namespace Teuchos {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 namespace PrivateUtilityPack {
 
@@ -117,6 +123,8 @@ private:
 }; // end class RefCountPtr_node_tmpl<T>
 
 }	// end namespace PrivateUtilityPack 
+
+#endif
 
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline member functions for RefCountPtr<...>.

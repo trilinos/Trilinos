@@ -32,41 +32,60 @@
 #ifndef TEUCHOS_ARRAY_ARG_HPP
 #define TEUCHOS_ARRAY_ARG_HPP
 
+/*! \file Teuchos_arrayArg.hpp
+    \brief Utility class that allows arrays to be passed into argument list
+*/
+
 #include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
 
-/** \defgroup Teuchos_Array_Arguments
+/** \defgroup Teuchos_Array_Arguments Utility class for passing arrays into argument lists.
 
-Are tired of having to declare arrays outside of a function just to
-pass a (small) list of values into a function?  Well if you are, then
-do we have a neat little C++ utility for you.  Introducing the
-templated function <tt>arrayArg()</tt>.
+\brief The purpose of this utility is to make passing arrays into argument lists easier.
 
-ToDo: Finish documentation.
+Declaring arrays outside of a function just to pass a (small) list of values into a function
+can be tiresome.  This class allows you to pass in an array into an argument list using
+the \c arrayArg helper functions.  For example, an integer Teuchos::ArrayArg object can be 
+passed to a function \c g like:
+\verbatim
 
+	int a, b, c;
+	...
+	g(arrayArg(a,b,c));
+\endverbatim
+where the function \c g is prototyped to receive a Teuchos::ArrayArg object:
+\verbatim
+
+	void g(Teuchos::ArrayArg<3,int>& input_array);
+\endverbatim
 */
 
+//ToDo: Finish documentation.
+
 ///
-/** Utility class that allows arrays to be passed into argument list.
+/** \brief Utility class that allows arrays to be passed into argument list.
  *
  * \ingroup Teuchos_Array_Arguments
  */
 template<int N, class T>
 class ArrayArg {
 public:
-  ///
+  /// Basic constructor taking a copy of the \c array of length \c N
   ArrayArg( const T array[] ) { std::copy( array, array+N, array_ ); }
-  ///
+
+  /// Return a \c const pointer to the internal array
   const T* operator()() { return array_; }
-  ///
+
+  /// Return a \c const pointer to the internal array
   operator const T* () { return array_; }
+
 private:
   T array_[N]; //  Can't be a const array!
 }; // class Array1DArg
 
 ///
-/** Return an array with 1 member.
+/** \brief Return an array with 1 member.
  *
  * \ingroup Teuchos_Array_Arguments
  */
@@ -78,7 +97,7 @@ inline ArrayArg<1,T> arrayArg( const T &t1 )
 }
 
 ///
-/** Return an array with 2 members.
+/** \brief Return an array with 2 members.
  *
  * \ingroup Teuchos_Array_Arguments
  */
@@ -90,7 +109,7 @@ inline ArrayArg<2,T> arrayArg( const T &t1, const T &t2 )
 }
 
 ///
-/** Return an array with 3 members.
+/** \brief Return an array with 3 members.
  *
  * \ingroup Teuchos_Array_Arguments
  */
@@ -102,7 +121,7 @@ inline ArrayArg<3,T> arrayArg( const T &t1, const T &t2, const T &t3 )
 }
 
 ///
-/** Return an array with 4 members.
+/** \brief Return an array with 4 members.
  *
  * \ingroup Teuchos_Array_Arguments
  */
@@ -114,7 +133,7 @@ inline ArrayArg<4,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t
 }
 
 ///
-/** Return an array with 5 members.
+/** \brief Return an array with 5 members.
  *
  * \ingroup Teuchos_Array_Arguments
  */
@@ -126,7 +145,7 @@ inline ArrayArg<5,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t
 }
 
 ///
-/** Return an array with 6 members.
+/** \brief Return an array with 6 members.
  *
  * \ingroup Teuchos_Array_Arguments
  */

@@ -38,7 +38,7 @@
 #define _TEUCHOS_SCALARTRAITS_HPP_
 
 /*! \file Teuchos_ScalarTraits.hpp
-    \brief Defines basic traits for the scalar field type
+    \brief Defines basic traits for the scalar field type.
 */
 
 #include "Teuchos_LAPACK.hpp"
@@ -69,12 +69,17 @@
      </ol>
 */
 
+/*! \struct Teuchos::UndefinedScalarTraits
+    \brief This is the default structure used by ScalarTraits<T> to produce a compile time
+	error when the specialization does not exist for type <tt>T</tt>.
+*/
+
 namespace Teuchos {
 
   template<class T>
   struct UndefinedScalarTraits
   {
-    // This function should not compile if there is an attempt to instantiate!
+    //! This function should not compile if there is an attempt to instantiate!
     static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
   };
 

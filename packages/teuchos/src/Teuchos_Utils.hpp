@@ -29,16 +29,20 @@
 #ifndef TEUCHOS_UTILS_H
 #define TEUCHOS_UTILS_H
 
+/*! \file Teuchos_Utils.hpp
+    \brief A utilities class for Teuchos
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
+
+/*! \class Teuchos::Utils
+    \brief This class provides some basic string and floating-point utilities for Teuchos
+*/
 
 namespace Teuchos
 {
   using std::string;
 
-  /**\ingroup Utilities
-   *
-   * Numerical constants, etc.
-   */
   class Utils
     {
     public:
@@ -99,7 +103,7 @@ namespace Teuchos
   /** \relates Utils */
   inline string toString(const string& x) {return x;}
 
-}
+} // end namespace Teuchos
 
 #endif
 

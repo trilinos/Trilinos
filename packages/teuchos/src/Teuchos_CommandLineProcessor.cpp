@@ -144,7 +144,7 @@ CommandLineProcessor::parse(
 		bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
 		if( !gov_return && recogniseAllOptions() ) {
 			print_bad_opt(i,argv,errout);
-			return PARSE_UNRECOGNISED_OPTION;
+			return PARSE_UNRECOGNIZED_OPTION;
 		}
 		if( opt_name == help_opt ) {
 			print_help_msg( argc, argv, errout );
@@ -167,7 +167,7 @@ CommandLineProcessor::parse(
 		options_list_t::const_iterator  itr = options_list_.find(opt_name);
 		if( itr == options_list_.end() && recogniseAllOptions() ) {
  			print_bad_opt(i,argv,errout);
-			return PARSE_UNRECOGNISED_OPTION;
+			return PARSE_UNRECOGNIZED_OPTION;
 		}
 		// Changed access to second value of map to not use overloaded arrow operator, 
 		// otherwise this code will not compile on Janus (HKT, 12/01/2003) 
@@ -192,7 +192,7 @@ CommandLineProcessor::parse(
 				assert(0); // Local programming error only
 		} 
 	}
-	return PARSE_SUCCESSFULL;
+	return PARSE_SUCCESSFUL;
 }
 
 // private
@@ -341,11 +341,11 @@ void CommandLineProcessor::print_bad_opt(
 	,std::ostream   *errout
 	) const
 {
-#   define CLP_ERR_MSG "Error, option " << argv_i-1 << " \'" << argv[argv_i] << "\' is not recognised (use --help)!"
+#   define CLP_ERR_MSG "Error, option " << argv_i-1 << " \'" << argv[argv_i] << "\' is not recognized (use --help)!"
 	if(errout)
 		*errout << argv[0] << " : " << CLP_ERR_MSG << std::endl;
 	if(throwExceptions_)
-		TEST_FOR_EXCEPTION( true, UnrecognisedOption, CLP_ERR_MSG );
+		TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
 #   undef CLP_ERR_MSG
 }
 
