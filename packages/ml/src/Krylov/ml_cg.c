@@ -138,9 +138,12 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
 
 /* ******************************************************************** */
 /* ML_CG_ComputeEigenvalues                                             */
+/*                                                                      */
+/* NOTE: if scale_by_diag == ML_TRUE compute lambda (D^{1/2} A D^{1/2}) */
+/*       if scale_by_diag == ML_FALSE compute  lambda ( A )             */
 /* ******************************************************************** */
 
-int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length)
+int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 {
    int         i, j, k, its, maxiter, ncnt, *colInd, allocated, print_freq;
    int         *offset_array, myoffset, *itmp_array, nprocs, mypid, totallength;
@@ -287,6 +290,9 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length)
          diag[i] = 1.0 / sqrt(dabs(diag[i]));
          /*diag[i] = 1.0 / diag[i];*/
       }
+   }
+   if (scale_by_diag == ML_FALSE) {
+     for (i = 0; i < length; i++) diag[i] = 1.;
    }
 #ifdef PRINTMAT
    fclose(fp);

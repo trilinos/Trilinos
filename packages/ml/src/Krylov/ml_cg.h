@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 extern int ML_CG_Solve(ML_Krylov *, int, double *, double *);
-extern int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length);
+extern int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int);
 
 
 #ifdef __cplusplus

@@ -347,7 +347,7 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    }
    if ( data->ML_eigen == 1 )
    {
-      ML_CG_ComputeEigenvalues(data, leng);
+      ML_CG_ComputeEigenvalues(data, leng, ML_TRUE);
       data->ML_eigen = 0;
       return 0;
    }
