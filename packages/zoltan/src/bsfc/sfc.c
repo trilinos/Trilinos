@@ -46,11 +46,6 @@ extern "C" {
 #define MAX_CUTS_IN_BIN 10 /* maximum amount of cuts in a coarse level bin */
 #define SUBBINS_PER_BIN 20 /* amount of subbins a bin is divided into */
 #define MAX_REFINEMENT_LEVEL 20 /* amount of refinement of the bins */
-#define BIN_REFINEMENT_METHOD 1 /* flag to specify whether all bins with a cut in them are
-				 refined or just the bins with a cut that are imbalanced 
-				 1 is to refine all partitions with a cut,
-				 0 is to refine only the imbalanced partitions with a cut */
-
 #define BSFC_BOUNDING_BOX_EPSILON 0.0000001 /* used to increase the bounding
 					      box slightly so that no objects
 					      are on the boundary of the box */
@@ -80,7 +75,6 @@ static PARAM_VARS BSFC_params[] = {
   { "BSFC_MAX_CUTS_IN_BIN", NULL, "INT" },
   { "BSFC_SUBBINS_PER_BIN", NULL, "INT" },
   { "BSFC_MAX_REFINEMENT_LEVEL", NULL, "INT" },
-  { "BSFC_BIN_REFINEMENT_METHOD", NULL, "INT" },
   { NULL, NULL, NULL } };
 
 /*---------------------------------------------------------------------------*/
@@ -165,7 +159,6 @@ int Zoltan_BSFC(
   int comm_tag = 8765;                /* randomly chosen communication tag */
   int num_vert_sent;                  /* the number of sfc objects that this processor 
 					 sent to other processors */
-  int local_balanced_flag = BSFC_BALANCED; /* balanced_flag for this processor */
   int refinement_level_counter = 0;   /* counter to keep track of how many 
 					 levels of bin refinement have been performed */
   int max_cuts_in_bin, bin_refinement_method, max_refinement_level,
@@ -180,13 +173,11 @@ int Zoltan_BSFC(
   Zoltan_Bind_Param(BSFC_params,"BSFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
   Zoltan_Bind_Param(BSFC_params,"BSFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
   Zoltan_Bind_Param(BSFC_params,"BSFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
-  Zoltan_Bind_Param(BSFC_params,"BSFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
   bins_per_proc = BINS_PER_PROC;
   hashtable_divider = HASHTABLE_DIVIDER; 
   max_cuts_in_bin = MAX_CUTS_IN_BIN;
   subbins_per_bin = SUBBINS_PER_BIN;
   max_refinement_level = MAX_REFINEMENT_LEVEL;
-  bin_refinement_method = BIN_REFINEMENT_METHOD;
 
   Zoltan_Assign_Param_Vals(zz->Params, BSFC_params, zz->Debug_Level, zz->Proc,
 		       zz->Debug_Proc);
@@ -211,11 +202,6 @@ int Zoltan_BSFC(
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "BSFC_SUBBINS_PER_BIN parameter must be greater than 1.");
     subbins_per_bin = BINS_PER_PROC;
-  }
-  if(bin_refinement_method != 0 && bin_refinement_method != 1) {
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "BSFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
-    bin_refinement_method = BIN_REFINEMENT_METHOD;
   }
 
   /* Initializations in case of early exit. */
@@ -400,12 +386,9 @@ int Zoltan_BSFC(
     int* ll_bins_head; /* used to indicate the beginning of the linklist */
     float* work_prev_allocated = NULL; /* stores the weights of all 
 					  objects before a cut */
-    local_balanced_flag = BSFC_NOT_BALANCED; /* assume that if coarse bin 
-					       partition is not balanced
-					       that all partitions need 
-					       to be rebalanced */
+
     if(num_vert_in_cut == 0 || zz->Proc == 0) 
-      local_balanced_flag = BSFC_BALANCED;
+      balanced_flag = BSFC_BALANCED;
     ierr = Zoltan_BSFC_create_refinement_info(zz, &number_of_cuts, 
 				      global_actual_work_allocated, wgt_dim,
 				      total_weight_array, work_percent_array,
@@ -423,7 +406,7 @@ int Zoltan_BSFC(
     }
     max_cuts_in_bin= number_of_cuts;
     if(number_of_cuts == 0)
-      local_balanced_flag = BSFC_BALANCED;
+      balanced_flag = BSFC_BALANCED;
 
     if(ll_bins_head != NULL)
       ll_bins_head[number_of_cuts] = 0;  /* the first link list starts off
@@ -438,38 +421,26 @@ int Zoltan_BSFC(
     }
     for(i=0;i<number_of_cuts;i++)
       local_balanced_flag_array[i] = BSFC_BALANCED;
-    local_balanced_flag_array[number_of_cuts] = local_balanced_flag;
+    local_balanced_flag_array[number_of_cuts] = balanced_flag;
 
     /* refine bins until a satisfactory partition tolerance is attained */
     while(balanced_flag != BSFC_BALANCED &&
 	  refinement_level_counter < max_refinement_level) { 
-      /* if this partition is balanced, we do not need to refine the
-	 partition unless we decide to refine all partitions */
-      if((local_balanced_flag == BSFC_NOT_BALANCED ||
-	  bin_refinement_method == 1) &&
-	 vert_in_cut_ptr != NULL) {
-	ierr = Zoltan_BSFC_refine_partition(zz, &local_balanced_flag, 
-				    &amount_of_bits_used, num_vert_in_cut,
-				    vert_in_cut_ptr, size_of_unsigned, 
-				    wgt_dim, wgts_in_cut_ptr, 
-				    work_percent_array, total_weight_array,
-				    global_actual_work_allocated, 
-				    number_of_cuts, &max_cuts_in_bin,
-				    ll_bins_head, work_prev_allocated, 
-				    subbins_per_bin, local_balanced_flag_array,
-				    bin_refinement_method);
-	if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_BSFC_refine_partition_level function.");
-	  return(ierr);
-	}
+      ierr = Zoltan_BSFC_refine_partition(zz, &balanced_flag, 
+					  &amount_of_bits_used, num_vert_in_cut,
+					  vert_in_cut_ptr, size_of_unsigned, 
+					  wgt_dim, wgts_in_cut_ptr, 
+					  work_percent_array, total_weight_array,
+					  global_actual_work_allocated, 
+					  number_of_cuts, &max_cuts_in_bin,
+					  ll_bins_head, work_prev_allocated, 
+					  subbins_per_bin, local_balanced_flag_array,
+					  bin_refinement_method);
+      if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_BSFC_refine_partition_level function.");
+	return(ierr);
       }
-      /* check if any partition does not meet the imbalance tolerance */
-      j = local_balanced_flag;
-      i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT,
-			MPI_MAX, zz->Communicator);
-      
       refinement_level_counter++;
-
     }
     ZOLTAN_FREE(&local_balanced_flag_array);
     ZOLTAN_FREE(&work_prev_allocated);
