@@ -25,11 +25,11 @@ int TestOtherClasses(AmesosClassType AmesosClass,
 
 {
    Teuchos::ParameterList ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
+   ParamList.set( "Redistribute", true );
+   ParamList.set( "AddZeroToDiag", true );
    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
+   SuperludistParams.set( "ReuseSymbolic", true );
+   SuperludistParams.set( "MaxProcesses", 2 );
    //  ParamList.print( cerr, 10 ) ; 
 
    double relerror;

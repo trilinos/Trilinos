@@ -233,7 +233,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
 
 int Amesos_Klu::ReadParameterList() {
-  if (ParameterList_->isParameterSublist("Klu") ) {
+  if (ParameterList_->isSublist("Klu") ) {
     Teuchos::ParameterList KluParams = ParameterList_->sublist("Klu") ;
   }  
   return 0;

@@ -218,7 +218,7 @@ amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolv
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
 	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teucho/src \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
 
 amesos_test_DEPENDENCIES = \
