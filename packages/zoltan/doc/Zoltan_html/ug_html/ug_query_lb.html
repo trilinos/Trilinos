@@ -55,6 +55,7 @@ functions are required by individual algorithms.
 <br><b><a href="#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</a></b></blockquote>
 </blockquote>
 
+<hr><hr>
 <h2>
 <a NAME="General Functions"></a>General Functions</h2>
 
@@ -126,6 +127,7 @@ of objects to be balanced that are currently assigned to the processor.
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -134,8 +136,8 @@ of objects to be balanced that are currently assigned to the processor.
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>obj_wgts</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -147,15 +149,13 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -245,6 +245,7 @@ may be NULL.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -253,8 +254,8 @@ may be NULL.</td>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>first_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -267,15 +268,13 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: first_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -387,6 +386,7 @@ of the first object.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -395,10 +395,10 @@ of the first object.</td>
 (void&nbsp;*<i>&nbsp;data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
 int&nbsp;<i>wgt_dim,</i>
 float&nbsp;*<i>next_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -411,17 +411,15 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -544,6 +542,7 @@ of the next object.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -622,6 +621,7 @@ should be returned.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -631,8 +631,8 @@ should be returned.</td>
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>obj_wgts</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -645,15 +645,13 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -753,6 +751,7 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -762,8 +761,8 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>first_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -777,15 +776,13 @@ first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Border_Obj
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: first_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -906,6 +903,7 @@ of the first object along the processor border.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -914,11 +912,11 @@ of the first object along the processor border.</td>
 (void&nbsp;*<i>data</i>, 
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>next_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -931,18 +929,16 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1072,9 +1068,11 @@ of the next object along the processor border.</td>
 </tr>
 </table>
 
+<hr><hr>
 <h2>
 <a NAME="Geometry-based Functions"></a>Geometry-based Functions</h2>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -1147,6 +1145,7 @@ application, the return value should be three.
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -1155,8 +1154,8 @@ application, the return value should be three.
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<b>LB_GID</b> <i>global_id</i>, 
-<b>LB_LID</b> <i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 double&nbsp;*<i>geom_vec</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1164,16 +1163,15 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Geom</i></b>(<i>data, global_id, local_id, geom_vec,
+<td>SUBROUTINE <b><i>Get_Geom</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, geom_vec,
 ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1205,6 +1203,22 @@ query function.
 <td>Pointer to user-defined data.</td>
 </tr>
 
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
@@ -1231,32 +1245,37 @@ query function.
 </table>
 
 <br>&nbsp;
+<hr><hr>
 <h2>
 <a NAME="Graph-based Functions"></a>Graph-based Functions</h2>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_EDGES"></a>typedef int <b>LB_NUM_EDGES_FN</b>(void
-*<i> data</i>, <b>LB_GID </b><i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
-int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NUM_EDGES"></a>typedef int <b>LB_NUM_EDGES_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Num_Edges</i></b>(<i>data, global_id, local_id,
+<td>FUNCTION <b><i>Get_Num_Edges</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1285,6 +1304,22 @@ of edges for a given object in the communication graph of the application
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -1323,33 +1358,39 @@ returned.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_EDGE_LIST_FN"></a>typedef void <b>LB_EDGE_LIST_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
-<b>LB_GID</b>
-*<i> nbor_global_id</i>, int * <i>nbor_procs</i>, int <i>wgt_dim</i>, float
-* <i>ewgts,</i> int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_EDGE_LIST_FN"></a>typedef void <b>LB_EDGE_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
+int&nbsp;*<i>nbor_procs</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>ewgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Edge_List</i></b>(<i>data, global_id, local_id,
+<td>SUBROUTINE <b><i>Get_Edge_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_INT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1381,6 +1422,22 @@ call to an <b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b> query function.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -1432,16 +1489,19 @@ return value of <i>ewgts </i>is undefined and may be NULL.</td>
 </table>
 
 <br>&nbsp;
+<hr><hr>
 <h2>
 <a NAME="Tree-based Functions"></a>Tree-based Functions</h2>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_COARSE_OBJ_FN"></a>typedef int <b>LB_NUM_COARSE_OBJ_FN</b>(void
-*<i> data</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NUM_COARSE_OBJ_FN"></a>typedef int <b>LB_NUM_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -1502,30 +1562,39 @@ the number of objects (elements) in the initial coarse grid.
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_COARSE_OBJ_LIST_FN"></a>typedef void <b>LB_COARSE_OBJ_LIST_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_ids</i>, <b>LB_LID </b><i>local_ids</i>,
-int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_order</i>,
-int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_COARSE_OBJ_LIST_FN"></a>typedef void <b>LB_COARSE_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+int&nbsp;*<i>vertices</i>,
+int&nbsp;*<i>in_order</i>,
+int&nbsp;*<i>in_vertex</i>,
+int&nbsp;*<i>out_vertex</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Coarse_Obj_List</i></b>(<i>data, global_ids, local_ids,
+<td>SUBROUTINE <b><i>Get_Coarse_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
 in_vertex, out_vertex&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: in_order, ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1562,6 +1631,22 @@ query function.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -1635,31 +1720,40 @@ element in the user provided traversal. The same provisions hold as for
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef void <b>LB_FIRST_COARSE_OBJ_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> *<i>global_id</i>, <b>LB_LID </b>*<i>local_id</i>,
-int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_order</i>,
-int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef void <b>LB_FIRST_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+int&nbsp;*<i>vertices</i>,
+int&nbsp;*<i>in_order</i>,
+int&nbsp;*<i>in_vertex</i>,
+int&nbsp;*<i>out_vertex</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_First_Coarse_Obj</i></b>(<i>data, global_id, local_id,
+<td>FUNCTION <b><i>Get_First_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
 out_vertex, ierr&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1696,6 +1790,22 @@ may also be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -1785,31 +1895,39 @@ object in the coarse grid.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef void <b>LB_NEXT_COARSE_OBJ_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> *<i>global_id</i>, <b>LB_LID *</b><i>local_id</i>,
-int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_vertex</i>,
-int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef void <b>LB_NEXT_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+int&nbsp;*<i>vertices</i>,
+int&nbsp;*<i>in_vertex</i>,
+int&nbsp;*<i>out_vertex</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, global_id, local_id,
+<td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
 ierr&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1840,6 +1958,22 @@ query function.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -1922,28 +2056,32 @@ object in the coarse grid.</td>
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_CHILD_FN"></a>typedef int <b>LB_NUM_CHILD_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
-int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NUM_CHILD_FN"></a>typedef int <b>LB_NUM_CHILD_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Num_Child</i></b>(<i>data, global_id, local_id,
+<td>FUNCTION <b><i>Get_Num_Child</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Num_Child&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -1972,6 +2110,22 @@ element has not been refined, the number of children is 0.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -2007,17 +2161,26 @@ element has not been refined, the number of children is 0.
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_CHILD_LIST_FN"></a>typedef void <b>LB_CHILD_LIST_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>parent_gid</i>, <b>LB_LID </b><i>parent_lid</i>,
-<b>LB_GID</b>
-*<i>child_gids</i>, <b>LB_LID *</b><i>child_lids</i>, int *<i>assigned</i>,
-int *<i>num_vert</i>, int *<i>vertices</i>,
-<b>LB_REF_TYPE</b> *<i>ref_type</i>,
-int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_CHILD_LIST_FN"></a>typedef void <b>LB_CHILD_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>parent_gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>parent_lid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>child_gids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>child_lids</i>,
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+int&nbsp;*<i>vertices</i>,
+<b>LB_REF_TYPE</b>&nbsp;*<i>ref_type</i>,
+int&nbsp;*<i>in_vertex</i>,
+int&nbsp;*<i>out_vertex</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -2027,16 +2190,15 @@ int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
 child_gids, child_lids, assigned, num_vert, vertices, ref_type, in_vertex,
 out_vertex, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: parent_gid&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: parent_lid&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: parent_gid&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: parent_lid&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
 in_vertex, out_vertex&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -2074,6 +2236,22 @@ query function.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -2186,29 +2364,35 @@ element in the user provided traversal. The same provisions hold as for
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_CHILD_WEIGHT_FN"></a>typedef void<b> LB_CHILD_WEIGHT_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
-int <i>wgt_dim</i>, float * <i>obj_wgt,</i> int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_CHILD_WEIGHT_FN"></a>typedef void<b> LB_CHILD_WEIGHT_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Child_Weight</i></b>(<i>data, global_id, local_id,
+<td>SUBROUTINE <b><i>Get_Child_Weight</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 wgt_dim, obj_wgt, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
-<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
@@ -2237,6 +2421,22 @@ leaves are allowed to have weights.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
