@@ -285,12 +285,14 @@ endif
 EXTRA_MATLAB_H = \
     $(srcdir)/matlab/EpetraExt_MatlabEngine.h \
     $(srcdir)/matlab/EpetraExt_PutMultiVector.h \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.h
+    $(srcdir)/matlab/EpetraExt_PutRowMatrix.h \
+    $(srcdir)/matlab/EpetraExt_PutBlockMap.h
 
 EXTRA_MATLAB = \
     $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp \
     $(srcdir)/matlab/EpetraExt_PutMultiVector.cpp \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp
+    $(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp \
+    $(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
 
 if BUILD_MATLAB
 

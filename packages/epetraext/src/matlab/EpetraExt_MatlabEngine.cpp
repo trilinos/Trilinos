@@ -67,17 +67,17 @@ EpetraExt_MatlabEngine::~EpetraExt_MatlabEngine (void) {
 
 //=============================================================================
 int EpetraExt_MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
-    // send a string command to the MATLAB engine
-    if (Comm_.MyPID() == 0) {
-		if (outputBuffer != NULL) {
-		  if (engOutputBuffer(Engine_, outputBuffer, outputBufferSize))
-			return(-4);
-		}
-		if (engEvalString(Engine_, command))
-		  return(-3);
+  // send a string command to the MATLAB engine
+  if (Comm_.MyPID() == 0) {
+    if (outputBuffer != NULL) {
+      if (engOutputBuffer(Engine_, outputBuffer, outputBufferSize))
+	return(-4);
     }
+    if (engEvalString(Engine_, command))
+    return(-3);
+  }
 	
-	return(0);
+  return(0);
 }
 
 //=============================================================================
@@ -320,7 +320,53 @@ int EpetraExt_MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseM
 
 //=============================================================================
 int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName) {
-	return(-1);
+  mxArray* matlabA = 0;
+  if (Comm_.MyPID() == 0) {		 
+    int M = blockMap.NumGlobalElements();
+    int N = 1;
+  
+    if (blockMap.MaxElementSize()>1) N = 2; // Non-trivial block map, store element sizes in second column
+  
+    matlabA = mxCreateSparse(N, M, M*N, mxREAL);
+  }
+  
+  cout << "calling CopyBlockMap\n";
+  if (Matlab::CopyBlockMap(matlabA, blockMap)) {
+    mxDestroyArray(matlabA);
+    return(-2);
+  }
+
+  cout << "done doing CopyBlockMap\n";
+  if (Comm_.MyPID() == 0) {
+
+	  /*cout << "printing matlabA pointers\n";
+		double* matlabAvaluesPtr = mxGetPr(matlabA);
+		int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+		int* matlabArowIndicesPtr = mxGetIr(matlabA);
+		for(int i=0; i < A.NumGlobalNonzeros(); i++) {
+		  cout << "*matlabAvaluesPtr: " << *matlabAvaluesPtr++ << " *matlabAcolumnIndicesPtr: " << *matlabAcolumnIndicesPtr++ << " *matlabArowIndicesPtr" << *matlabArowIndicesPtr++ << "\n";
+		}
+		cout << "done printing matlabA pointers\n";
+	  */
+    if (PutIntoMatlab(variableName, matlabA)) {
+      mxDestroyArray(matlabA);
+      return(-1);
+    }
+
+    if (!transA) {
+      char* buff = new char[128];;
+      sprintf(buff, "%s = %s'", variableName, variableName);
+      if (EvalString(buff)) {
+        mxDestroyArray(matlabA);
+        return(-3);
+      }
+    }
+  }
+
+  cout << "done with everything in PutBlockMap, going to destroy matlabA\n" << "matlabA=" << matlabA << "\n";
+  mxDestroyArray(matlabA);
+  cout << "done destroying matlabA\n";
+  return(0);
 }
 
 int EpetraExt_MatlabEngine::PutIntoMatlab(const char* variableName, mxArray* matlabA) {
