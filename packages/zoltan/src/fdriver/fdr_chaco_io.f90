@@ -58,7 +58,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
   real(Zoltan_FLOAT), pointer, dimension(:) :: vwgts, ewgts, x, y, z
 
-  integer(Zoltan_INT), parameter :: fp=12
+  integer(Zoltan_INT) :: fp
 !/***************************** BEGIN EXECUTION ******************************/
 
   nullify(start, adj, vwgts, vtxdist, ewgts, x, y, z)
@@ -66,7 +66,8 @@ type(ELEM_INFO), pointer :: elements(:)
   if (Proc == 0) then
 
 !    /* Open and read the Chaco graph file. */
-    chaco_fname = trim(pio_info%pexo_fname)//".graph"
+    fp = 12
+    chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".graph"
     open(unit=fp,file=chaco_fname,action='read',iostat=iostat)
     if (iostat /= 0) then
       print *, "fatal:  Could not open Chaco graph file ", chaco_fname
@@ -83,7 +84,8 @@ type(ELEM_INFO), pointer :: elements(:)
     endif
 
 !    /* Read Chaco geometry file, if provided. */
-    chaco_fname = trim(pio_info%pexo_fname)//".coords"
+    fp = 12
+    chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".coords"
     open(unit=fp,file=chaco_fname,action='read',iostat=iostat)
     if (iostat /= 0) then
       print *, "fatal:  Could not open Chaco graph file ", chaco_fname
@@ -219,6 +221,8 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
     endif
     elem(i)%elem_blk = 0        !/* only one element block for all vertices */
     elem(i)%my_part = Proc
+    elem(i)%perm_value = -1
+    elem(i)%invperm_value = -1
     if (Mesh%num_dims > 0) then
 !      /* One set of coords per element. */
       allocate(elem(i)%connect(0:0))
@@ -1115,6 +1119,8 @@ type(ELEM_INFO) :: elem
   elem%my_part = -1
   elem%elem_blk = -1
   elem%cpu_wgt = 0
+  elem%perm_value = -1
+  elem%invperm_value = -1
   elem%mem_wgt = 0
   elem%nadj = 0
   elem%adj_len = 0
@@ -1142,6 +1148,8 @@ type(ELEM_INFO) :: elem
   elem%adj_len = 0
   elem%elem_blk = -1
   elem%cpu_wgt = 0
+  elem%perm_value = -1
+  elem%invperm_value = -1
   elem%mem_wgt = 0
 end subroutine free_element_arrays
 

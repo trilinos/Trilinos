@@ -1,0 +1,48 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Config.mac  
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= mpicc
+INCLUDE_PATH		= 
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS = $(DBG_FLAGS)
+
+F90			= mpif90
+LOCAL_F90		= f90
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS    		= 
+SPPR_HEAD 		= spprinc.most
+F90_MODULE_PREFIX 	= -I
+FARG      		= farg_typical
+
+MPI_LIB			= 
+MPI_LIBPATH		=
+
+PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
+PARMETIS_INCPATH        = -I../../ParMETIS3_1
+
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH	= -L/Net/local/proj/zoltan/arch/solaris/lib
+#NEMESIS_INCPATH	= -I/Net/local/proj/zoltan/arch/solaris/include

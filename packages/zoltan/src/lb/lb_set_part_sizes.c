@@ -56,7 +56,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
  */
 
   char *yo = "Zoltan_LB_Set_Part_Sizes";
-  int i, j, maxlen;
+  int i, j, maxlen=0;
   int error = ZOLTAN_OK;
   const int INIT_NUM_PART = 16; /* Initial allocation for Part_Info array. */
 
@@ -68,20 +68,24 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
     goto End;
   }
 
-  /* Do we need more space? */
-  if (zz->LB.Part_Info_Len==0)
-    maxlen = INIT_NUM_PART;           /* Start with space for 16 elements */
-  else if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len)
-    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Increase by 50% */
-  else
-    maxlen = 0;
+  /* Verify input. */
+  if ((part_ids==NULL) || (part_sizes==NULL)){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid input argument NULL.");
+    error = ZOLTAN_FATAL;
+    goto End;
+  }
 
-  if (maxlen==INIT_NUM_PART)
+  /* Do we need more space? */
+  if ((!zz->LB.Part_Info) || (zz->LB.Part_Info_Max_Len==0)){
+    maxlen = INIT_NUM_PART;           /* Start with space for 16 elements */
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(maxlen *
       sizeof(struct Zoltan_part_info));
-  else if (maxlen>0)
+  }
+  else if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len){
+    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Increase by 50% */
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_REALLOC(
       zz->LB.Part_Info, maxlen * sizeof(struct Zoltan_part_info));
+  }
 
   if (zz->LB.Part_Info == NULL){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
@@ -93,12 +97,14 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
   for (i=0,j=zz->LB.Part_Info_Len; i<len; i++,j++){
     zz->LB.Part_Info[j].Size = part_sizes[i];
     zz->LB.Part_Info[j].Part_id = part_ids[i]; 
-    zz->LB.Part_Info[j].Idx = wgt_idx[i]; 
+    zz->LB.Part_Info[j].Idx = (wgt_idx ? wgt_idx[i] : 0); 
     zz->LB.Part_Info[j].Global_num = global_num;
   }
 
+  /* Update values in LB. */
   zz->LB.Part_Info_Len += len;
-  zz->LB.Part_Info_Max_Len = maxlen;
+  if (maxlen > zz->LB.Part_Info_Max_Len)
+    zz->LB.Part_Info_Max_Len = maxlen;
 
 End:
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -178,16 +184,23 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       temp_part_sizes[i] = -1.0;
     }
     for (i = 0; i < zz->LB.Part_Info_Len; i++){
-      /* Only assemble partition sizes for partitions in the requested range. */
-      if ((zz->LB.Part_Info[i].Part_id < num_global_parts) && 
-          (zz->LB.Part_Info[i].Idx < part_dim)){
+      /* Only assemble partition sizes for partitions and weights
+         in the requested range. */
+      if (zz->LB.Part_Info[i].Idx < part_dim){
         j = zz->LB.Part_Info[i].Part_id;
         if (zz->LB.Part_Info[i].Global_num == 0) {
           Zoltan_LB_Proc_To_Part(zz, zz->Proc, &nparts, &fpart);
           j += fpart;
         }
-        temp_part_sizes[j*part_dim + zz->LB.Part_Info[i].Idx] 
-          = zz->LB.Part_Info[i].Size;
+        if (j >= num_global_parts){
+          sprintf(msg, "Partition number %d is >= num_global_parts %d.",
+            j, num_global_parts);
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+          error = ZOLTAN_WARN;
+        }
+        else
+          temp_part_sizes[j*part_dim + zz->LB.Part_Info[i].Idx] 
+            = zz->LB.Part_Info[i].Size;
       }
     }
 
@@ -200,21 +213,18 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       sum[j] = 0.0;
 
     for (i = 0; i < num_global_parts; i++){
+      for (j = 0; j < part_dim; j++){
+        if (part_sizes[i*part_dim+j]<0)
+          part_sizes[i*part_dim+j] = 1.0; /* default value if not set */
+        sum[j] += part_sizes[i*part_dim+j];
+      }
+
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
         printf("[%1d] In %s: Partition size %1d (before scaling) = ",  
             zz->Proc, yo, i);
         for (j = 0; j < part_dim; j++)
           printf("%f, ",  part_sizes[i*part_dim+j]);
         printf("\n");
-      }
-      for (j = 0; j < part_dim; j++){
-        if (part_sizes[i*part_dim+j]<0){
-          sprintf(msg, "Partition size (%1d,%1d) has not been set.", i, j); 
-	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-          error = ZOLTAN_FATAL;
-          goto End;
-        }
-        sum[j] += part_sizes[i*part_dim+j];
       }
     }
 

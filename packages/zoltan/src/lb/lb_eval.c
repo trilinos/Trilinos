@@ -120,6 +120,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
   nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
   edges_per_obj = NULL;
+  part_sizes = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
                              zz->Obj_Weight_Dim, &vwgts, &part);

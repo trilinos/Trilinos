@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 #include "zoltan_types.h"
-#include "mpi.h"
+#include <mpi.h>
 
 struct Zoltan_DD_Struct;
 typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;

@@ -18,16 +18,17 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "zz_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
 #include "par_tflops_special_const.h"
+#include "par_average_const.h"
 
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
 
 /* #define DEBUG_BISECT  Turns on extra debugging in this file. */
-#define MYHUGE 1.0e30
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
                                  either side of cut */
 #define ALMOST_ONE 0.99       /* For scaling, should be slightly < 1.0 */
@@ -112,7 +113,8 @@ int Zoltan_RB_find_bisector(
   double *weighthi,     /* weight of upper partition (output) */
   double *quality,      /* quality of the cut (output) */
   int    *dotlist,      /* list of active dots. */
-  int rectilinear       /* if 1, all dots with same value on same side of cut*/
+  int rectilinear,      /* if 1, all dots with same value on same side of cut*/
+  int average_cuts      /* force cut to be halfway between two closest dots. */
 )
 {
 /* Local declarations. */
@@ -297,6 +299,8 @@ int Zoltan_RB_find_bisector(
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
+
+
   
   /* Allocate space for various weight arrays in a single malloc */
   localsum = (double *) ZOLTAN_CALLOC(5*nwgts, sizeof(double));
@@ -345,8 +349,8 @@ int Zoltan_RB_find_bisector(
    *
    * wtsum = summed weight of entire partition
    */
-  localmax = -MYHUGE;
-  localmin =  MYHUGE;
+  localmax = -DBL_MAX;
+  localmin =  DBL_MAX;
   for (j=0; j<nwgts; j++)
     localsum[j] =  0.0;
   numlist = dotnum;
@@ -560,6 +564,17 @@ int Zoltan_RB_find_bisector(
 
       /* combine bisector data struct across current subset of procs */
       
+      med->valuelo = -DBL_MAX;
+      med->valuehi = DBL_MAX;
+      med->countlo = med->counthi = 0;
+      med->proclo = med->prochi = proc;
+      med->nwgts = nwgts;
+      for (j=0; j<nwgts; j++){
+        med->totallo[j] = 0.;
+        med->totalhi[j] = 0.;
+        med->wtlo[j] = 0.;
+        med->wthi[j] = 0.;
+      }
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
@@ -950,6 +965,11 @@ int Zoltan_RB_find_bisector(
 #ifdef DEBUG_BISECT
   printf("[%2d] Final bisector valuehalf = %lf\n", proc, *valuehalf);
 #endif
+
+  if (average_cuts)
+    *valuehalf = Zoltan_RB_Average_Cut(Tflops_Special, dots, dotmark, dotnum,
+                                       num_procs, rank, proc, local_comm,
+                                       *valuehalf);
 
 End:
   /* Recompute weightlo/hi. This is only necessary because

@@ -1,0 +1,16 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= tflops_special=1
+Zoltan Parameters	= average_cuts=1
+Zoltan Parameters	= keep_cuts=1
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Test Drops		= 1
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+3	0	-1	-1
+4	0	-1	-1
+5	0	-1	-1
+8	0	-1	-1
+9	0	-1	-1
+10	0	-1	-1

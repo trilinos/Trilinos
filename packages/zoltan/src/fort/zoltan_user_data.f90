@@ -35,6 +35,8 @@ type ELEM_INFO
                                   ! position in the array of elements
   integer(Zoltan_INT) :: elem_blk ! elem block number which this element is in
   integer(Zoltan_INT) :: my_part  ! partition to which this element is assigned
+  integer(Zoltan_INT) :: perm_value  ! permutation value
+  integer(Zoltan_INT) :: invperm_value  ! inverse permutation value
   real(Zoltan_FLOAT)  :: cpu_wgt  ! computational weight associated with elem
   real(Zoltan_FLOAT)  :: mem_wgt  ! the memory weight associated with the elem
   real(Zoltan_FLOAT), pointer ::  coord(:,:) ! array for the coordinates of the

@@ -70,7 +70,7 @@ int proc;
   if (proc != 0) {
     from = proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, communicator, &st)
-        != 0) {
+        != MPI_SUCCESS) {
       sprintf(msg, "MPI_Recv failed, message type %d.", type);
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
       exit (-1);
@@ -135,7 +135,8 @@ char msg[256];
     }
   }
 
-  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, communicator) != 0 ) {
+  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, communicator) 
+      != MPI_SUCCESS ) {
     sprintf(msg, "MPI_Send failed, message type %d.", type);
     ZOLTAN_PRINT_ERROR(proc, yo, msg);
     exit (-1);
@@ -143,7 +144,7 @@ char msg[256];
   if (proc == 0) {
     from = num_proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, communicator, &st)
-        != 0) {
+        != MPI_SUCCESS) {
       sprintf(msg, "MPI_Recv failed, message type %d.", type);
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
       exit (-1);

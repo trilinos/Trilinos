@@ -64,7 +64,7 @@ typedef struct RCB_Struct {
   struct Dot_Struct *Dots;     
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
-  int Input_Dim;             /* Dimension of the problem input */
+  int Num_Dim;               /* Number of dimensions in the input geometry. */
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, int);

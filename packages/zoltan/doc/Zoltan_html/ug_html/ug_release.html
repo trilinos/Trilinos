@@ -32,11 +32,42 @@
 </h2>
 Release notes are available for the following releases of Zoltan:
 <blockquote>
-<a href="#Release1.52">Zoltan Release v1.52</a>
+<a href="#Release1.53">Zoltan Release v1.53</a>
+<br><a href="#Release1.52">Zoltan Release v1.52</a>
 <br><a href="#Release1.5">Zoltan Release v1.5</a>
 <br><a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
 
+<hr>
+<h2><a NAME="Release1.53"></a>Zoltan Release Notes v1.53</h2>
+Zoltan v1.53 includes the following new capabilities:
+<ul>
+<li> 
+Portability to BSD Unix and Mac OS X was added.
+</li>
+<li> 
+Averaging of RCB and RIB cuts was added; see Zoltan parameter
+<a href="ug_alg_rcb.html#AVERAGE_CUTS">AVERAGE_CUTS</a>.
+</li>
+<li> 
+A new function 
+<a href="ug_alg_rcb.html#Zoltan_RCB_Box"><b>Zoltan_RCB_Box</b></a> 
+returns information about subdomain bounding
+boxes in RCB decompositions.
+</li>
+<li>
+F90 interface to
+<a href="ug_interface_order.html#Zoltan_Order"><b>Zoltan_Order</b></a> 
+was added.
+</li>
+<li>
+Warnings that load-imbalance tolerance was not met are no longer printed
+when <a href="ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a> == 0.
+</li>
+<li>
+Minor bugs were addressed.
+</li>
+</ul>
 
 <hr>
 <h2><a NAME="Release1.52"></a>Zoltan Release Notes v1.52</h2>

@@ -317,7 +317,7 @@ typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_id</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_id</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>dest_proc</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>dest</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>size</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
@@ -328,12 +328,12 @@ typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>SUBROUTINE <b><i>Pack_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries,
-global_id, local_id, dest_proc, size, buf, ierr</i>)&nbsp;
+global_id, local_id, dest, size, buf, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: dest_proc, size&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: dest, size&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
@@ -400,9 +400,9 @@ communication buffer.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest_proc</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest</i></td>
 
-<td>The destination processor ID (i.e., the processor to which the object
+<td>The destination partition (i.e., the partition to which the object
 is being sent)</td>
 </tr>
 
@@ -446,7 +446,7 @@ typedef void <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*dest_proc</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*dest</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*sizes</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*idx</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>,
@@ -458,12 +458,12 @@ typedef void <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> (
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>SUBROUTINE <b><i>Pack_Obj_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries,
-num_ids, global_ids, local_ids, dest_proc, sizes, idx, buf, ierr</i>)&nbsp;
+num_ids, global_ids, local_ids, dest, sizes, idx, buf, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_ids&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: dest_proc
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: dest
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: sizes&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: idx&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
@@ -536,9 +536,9 @@ object begins in <i>local_ids[i*num_lid_entries]</i>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest_proc</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest</i></td>
 
-<td>An array of destination processor IDs (i.e., the processors to which the objects
+<td>An array of destination partition numbers (i.e., the partitions to which the objects
 are being sent)</td>
 </tr>
 

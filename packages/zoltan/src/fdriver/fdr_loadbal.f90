@@ -81,7 +81,12 @@ type(PARIO_INFO) :: pio_info
   real(Zoltan_FLOAT), allocatable :: psize(:)
   integer(Zoltan_INT), allocatable :: partid(:)
   integer(Zoltan_INT), allocatable :: idx(:)
+  integer(Zoltan_INT), allocatable :: order(:), iperm(:)
+  integer(Zoltan_INT), allocatable :: order_gids(:), order_lids(:)
   integer(Zoltan_INT) :: nprocs
+  integer(Zoltan_INT) :: ndim, lid
+  character(len=FILENAME_MAX+1) :: fname
+  real(Zoltan_DOUBLE) :: xmin, ymin, zmin, xmax, ymax, zmax
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -301,65 +306,119 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
-!  /* Evaluate the old balance */
-!  if (Debug_Driver > 0) {
+  if (IAND(Driver_Action,1).gt.0) then
     if (Proc == 0) then
-       print *,"BEFORE load balancing"
+      print *,"BEFORE load balancing"
     endif
-!    driver_eval()
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
-!  }
+
+    if (Test_Gen_Files .ne. 0) then
+!     /* Write output files. */
+      fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".before"
+      ierr = Zoltan_Generate_Files(zz_obj, fname, 1, 1, 1, 0);
+    endif
 
 !  /*
 !   * Call the load balancer
 !   */
-  if (Zoltan_LB_Partition(zz_obj, new_decomp, &
-                 num_gid_entries, num_lid_entries, &
-                 num_imported, import_gids, import_lids, &
-                 import_procs, import_to_part,  &
-                 num_exported, export_gids, export_lids, &
-                 export_procs, export_to_part) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_LB_Partition()"
-    run_zoltan = .false.
-    goto 9999
-  endif
+    if (Zoltan_LB_Partition(zz_obj, new_decomp, &
+                   num_gid_entries, num_lid_entries, &
+                   num_imported, import_gids, import_lids, &
+                   import_procs, import_to_part,  &
+                   num_exported, export_gids, export_lids, &
+                   export_procs, export_to_part) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_LB_Partition()"
+      run_zoltan = .false.
+      goto 9996
+    endif
 
 !  /*
 !   * Call another routine to perform the migration
 !   */
-  if (new_decomp) then
-    if (.not.migrate_elements(Proc,zz_obj, &
-                          num_gid_entries, num_lid_entries, &
-                          num_imported,import_gids, &
-                          import_lids,import_procs,import_to_part, &
-                          num_exported,export_gids, &
-                          export_lids,export_procs,export_to_part)) then
-      print *, "fatal:  error returned from migrate_elements()"
-      run_zoltan = .false.
-      goto 9999
+    if (new_decomp) then
+      if (.not.migrate_elements(Proc,zz_obj, &
+                            num_gid_entries, num_lid_entries, &
+                            num_imported,import_gids, &
+                            import_lids,import_procs,import_to_part, &
+                            num_exported,export_gids, &
+                            export_lids,export_procs,export_to_part)) then
+        print *, "fatal:  error returned from migrate_elements()"
+        run_zoltan = .false.
+        goto 9996
+      endif
     endif
-  endif
 
 !  /* Evaluate the new balance */
-!  if (Debug_Driver > 0) {
     if (Proc == 0) then
       print *,"AFTER load balancing"
     endif
-!    driver_eval()
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
-!  }
 
-  if (Test_Drops.eq.1) then
-    call test_drops_rtn(Proc, mesh, pio_info, zz_obj)
-  endif 
+    if (Test_Gen_Files .ne. 0) then
+!     /* Write output files. */
+      fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".after"
+      ierr = Zoltan_Generate_Files(zz_obj, fname, 1, 1, 1, 0);
+    endif
+
+    if (Test_Drops.eq.1) then
+      call test_drops_rtn(Proc, mesh, pio_info, zz_obj)
+    endif 
+  
+    if ((prob%method .eq. "RCB").or.(prob%method .eq. "rcb")) then
+      ierr = Zoltan_RCB_Box(zz_obj,Proc,ndim,xmin,ymin,zmin,xmax,ymax,zmax)
+      print *, "DRIVER ", Proc, " DIM: ", ndim, " BOX: (", &
+             xmin, ",", ymin, ",", zmin, ") (", xmax, ",", ymax, ",", zmax, ")"
+    endif
 
 !  /* Clean up */
-9999 continue
-  ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
-                             import_procs, import_to_part) 
-  ierr = Zoltan_LB_Free_Part(export_gids,  export_lids, &
-                             export_procs, export_to_part) 
+9996 continue
+    ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
+                               import_procs, import_to_part) 
+    ierr = Zoltan_LB_Free_Part(export_gids,  export_lids, &
+                               export_procs, export_to_part) 
+  
+  endif  ! End Driver_Action ==> Do balancing
 
+  if (IAND(Driver_Action,2).gt.0) then
+!   /* Do only ordering if this was specified in the driver input file */
+
+    allocate(order(mesh%num_elems));
+    allocate(iperm(mesh%num_elems));
+    allocate(order_gids(mesh%num_elems));
+    allocate(order_lids(mesh%num_elems));
+
+    if (Proc .eq. 0) print *, "BEFORE ordering"
+
+    ierr = Zoltan_Order(zz_obj, num_gid_entries, num_lid_entries, &
+        mesh%num_elems, order_gids, order_lids, &
+        order, iperm)
+    if (ierr .ne. ZOLTAN_OK) then
+      print *, "fatal:  error returned from Zoltan_Order()"
+      run_zoltan = .false.
+      goto 9998
+    endif
+
+!   /* Evaluate the new ordering */
+    if (Proc == 0) print *, "AFTER ordering"
+
+!   /* Copy ordering permutation into mesh structure */
+    do i = 0, mesh%num_elems-1
+      lid = order_lids(num_lid_entries * i + 1)
+      mesh%elements(lid)%perm_value = order(i+1);
+      mesh%elements(lid)%invperm_value = iperm(i+1);
+    enddo
+
+9998 continue
+!   /* Free order data */
+    deallocate(order);
+    deallocate(iperm);
+    deallocate(order_gids);
+    deallocate(order_lids);
+
+
+  endif  ! End Driver_Action ==> Do ordering
+
+9999 continue
   call Zoltan_Destroy(zz_obj)
 
 
@@ -956,8 +1015,9 @@ integer(Zoltan_INT) :: test_both
   endif
 
   !/* generate the parallel filename for this processor */
-  ctemp = trim(pio_info%pexo_fname)//".drops"
+  ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".drops"
   call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
+  fp = 12
   open(unit=fp,file=par_out_fname,action="write")
 
   !/* Test unit box */

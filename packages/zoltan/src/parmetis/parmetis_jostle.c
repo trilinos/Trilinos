@@ -643,6 +643,7 @@ static int Zoltan_ParMetis_Jostle(
   else if (strcmp(alg, "PARTGEOM") == 0){
     get_graph_data = 0;
     get_geom_data = 1;
+    graph_type = NO_GRAPH;
   }
 
   /* For ordering, the ids are passed in through the *imp_ids

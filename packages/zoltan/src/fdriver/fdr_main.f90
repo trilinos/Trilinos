@@ -309,6 +309,7 @@ type(ELEM_INFO), pointer :: elements(:)
   character(len=FILENAME_MAX+1) :: par_out_fname, ctemp
 
   integer(Zoltan_INT), allocatable :: global_ids(:), parts(:), index(:)
+  integer(Zoltan_INT), allocatable :: orders(:), iperms(:)
   integer(Zoltan_INT) ::    i, j, alloc_stat
 
   integer ::  fp=21
@@ -347,12 +348,26 @@ type(ELEM_INFO), pointer :: elements(:)
     output_results = .false.
     return
   endif
+  allocate(orders(0:Mesh%num_elems),stat=alloc_stat)
+  if (alloc_stat /= 0) then
+    print *, "fatal: insufficient memory"
+    output_results = .false.
+    return
+  endif
+  allocate(iperms(0:Mesh%num_elems),stat=alloc_stat)
+  if (alloc_stat /= 0) then
+    print *, "fatal: insufficient memory"
+    output_results = .false.
+    return
+  endif
 
   j = 0
   do i = 0, Mesh%elem_array_len-1
     if (elements(i)%globalID >= 0) then
       global_ids(j) = elements(i)%globalID
       parts(j) = elements(i)%my_part
+      orders(j) = elements(i)%perm_value;
+      iperms(j) = elements(i)%invperm_value;
       index(j) = j
       j = j+1
     endif
@@ -361,7 +376,7 @@ type(ELEM_INFO), pointer :: elements(:)
   call sort_index(Mesh%num_elems, global_ids, index)
 
 !  /* generate the parallel filename for this processor */
-  ctemp = trim(pio_info%pexo_fname)//".fout"
+  ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".fout"
   call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
 
   open(unit=fp,file=par_out_fname,action="write")
@@ -373,13 +388,15 @@ type(ELEM_INFO), pointer :: elements(:)
   write(fp,*) "GID	Part	Perm	IPerm"
   do i = 0, Mesh%num_elems-1
     j = index(i)
-    write(fp,*) global_ids(j),"	", parts(j), "	", -1, "	", -1
+    write(fp,*) global_ids(j),"	", parts(j), "	", orders(j), "	", iperms(j) 
   end do
 
   close(fp)
   deallocate(global_ids)
   deallocate(parts)
   deallocate(index)
+  deallocate(orders)
+  deallocate(iperms)
 
   output_results = .true.
 end function output_results

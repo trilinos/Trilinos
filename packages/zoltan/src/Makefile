@@ -173,7 +173,7 @@ LB_INC		= lb_const.h lb_init_const.h
 ORDER_CSRC	= order.c order_struct.c perm.c
 ORDER_INC	= order_const.h 
 
-RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
+RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
                   inertial1d.c inertial2d.c inertial3d.c shared.c
 RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
@@ -211,9 +211,11 @@ PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
 PARAMS_INC	= params_const.h
 
-PAR_CSRC	= par_median.c par_sync.c par_stats.c par_bisect.c \
+PAR_CSRC	= par_average.c par_bisect.c par_median.c \
+		  par_sync.c par_stats.c \
                   par_tflops_special.c
-PAR_INC		= par_const.h par_median_const.h par_bisect_const.h \
+PAR_INC		= par_const.h par_average_const.h par_median_const.h \
+		  par_bisect_const.h \
                   par_tflops_special_const.c
 
 PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \

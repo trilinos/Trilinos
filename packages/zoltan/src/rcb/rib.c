@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
+#include <float.h>
 #include "zz_const.h"
 #include "rib.h"
 #include "params_const.h"
@@ -38,7 +39,6 @@ extern "C" {
    can extend "Dot_Struct" data structure in calling program, see shared_const.h
    returned tree only contains one cut on each proc,
    need to do MPI_Allgather if wish to collect it on all procs */
-#define MYHUGE 1.0e30
 
 /*  RIB_OUTPUT_LEVEL = 0  No statistics logging */
 /*  RIB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
@@ -49,14 +49,14 @@ extern "C" {
 
 /*---------------------------------------------------------------------------*/
 static int rib_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                  double, int, int, int, int, float *);
+                  double, int, int, int, int, int, float *);
 static void print_rib_tree(ZZ *, int, int, struct rib_tree *);
 static int compute_rib_direction(ZZ *, int, int, double *, double *,
   struct Dot_Struct *, int *, int, int, double *, double *, double *,
   MPI_Comm, int, int, int);
 static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
-  int, double, int, int, int *, int *, int, int, int, int, int, int *, 
-  struct rib_tree *, double *, double *, float *);
+  int, double, int, int, int *, int *, int, int, int, int, int, int, int,
+  int *, struct rib_tree *, double *, double *, float *);
 
 /* for Tflops_Special */
 static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
@@ -68,6 +68,7 @@ static PARAM_VARS RIB_params[] = {
                { "RIB_OVERALLOC", NULL, "DOUBLE", 0 },
                { "CHECK_GEOM", NULL, "INT", 0 },
                { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
+               { "AVERAGE_CUTS", NULL, "INT", 0 },
                { "KEEP_CUTS", NULL, "INT", 0 },
                { NULL, NULL, NULL, 0 } };
 
@@ -125,17 +126,21 @@ int Zoltan_RIB(
   int stats;                  /* Print timing & count summary? */
   int gen_tree;               /* (0) don't (1) generate whole treept to use
                               later for point and box drop. */
+  int average_cuts;           /* (0) don't (1) compute the cut to be the
+                              average of the closest dots. */
   int ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
   Zoltan_Bind_Param(RIB_params, "CHECK_GEOM", (void *) &check_geom);
   Zoltan_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
+  Zoltan_Bind_Param(RIB_params, "AVERAGE_CUTS", (void *) &average_cuts);
   Zoltan_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
 
   overalloc = RIB_DEFAULT_OVERALLOC;
   check_geom = DEFAULT_CHECK_GEOM;
   stats = RIB_DEFAULT_OUTPUT_LEVEL;
   gen_tree = 0;
+  average_cuts = 0;
   wgtflag = zz->Obj_Weight_Dim;
 
   Zoltan_Assign_Param_Vals(zz->Params, RIB_params, zz->Debug_Level, zz->Proc,
@@ -147,7 +152,8 @@ int Zoltan_RIB(
 
   ierr = rib_fn(zz, num_import, import_global_ids, import_local_ids,
                 import_procs, import_to_part,
-                overalloc, wgtflag, check_geom, stats, gen_tree, part_sizes);
+                overalloc, wgtflag, check_geom, stats, gen_tree, average_cuts,
+                part_sizes);
 
   return(ierr);
 
@@ -178,6 +184,8 @@ static int rib_fn(
   int check_geom,               /* Check input & output for consistency? */
   int stats,                    /* Print timing & count summary? */
   int gen_tree,                 /* (0) do not (1) do generate full treept */
+  int average_cuts,             /* (0) don't (1) compute the cut to be the
+                                average of the closest dots. */
   float *part_sizes             /* Input:  Array of size zz->Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each partition.               */
@@ -465,7 +473,7 @@ static int rib_fn(
                    fractionlo, local_comm, &valuehalf, first_guess,
                    &(counters[0]), nprocs, old_nprocs, proclower, old_nparts,
                    wgtflag, valuelo, valuehi, weight[0], weightlo,
-                   weighthi, dotlist, rectilinear_blocks)) {
+                   weighthi, dotlist, rectilinear_blocks, average_cuts)) {
       ZOLTAN_PRINT_ERROR(proc, yo,
         "Error returned from Zoltan_RB_find_median.");
       ierr = ZOLTAN_FATAL;
@@ -598,6 +606,7 @@ static int rib_fn(
                       rib->Num_Geom, weight[0], dotnum, num_parts,
                       &(dindx[0]), &(tmpdindx[0]), partlower,
                       proc, wgtflag, stats, gen_tree,
+                      rectilinear_blocks, average_cuts,
                       counters, treept, value, wgts, part_sizes);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
@@ -874,8 +883,8 @@ double tmp;
                                  cm, evec, value);
     break;
   }
-  *valuelo = MYHUGE;
-  *valuehi = -MYHUGE;
+  *valuelo = DBL_MAX;
+  *valuehi = -DBL_MAX;
   for (i = 0; i < dotnum; i++) {
     if (value[i] < *valuelo) *valuelo = value[i];
     if (value[i] > *valuehi) *valuehi = value[i];
@@ -919,6 +928,9 @@ static int serial_rib(
   int wgtflag,               /* No. of weights per dot. */
   int stats,                 /* Print timing & count summary?             */
   int gen_tree,              /* (0) do not (1) do generate full treept    */
+  int rectilinear_blocks,    /* parameter for find_median (not used by rib) */
+  int average_cuts,          /* (0) don't (1) compute the cut to be the
+                                average of the closest dots. */
   int counters[],            /* diagnostic counts */
   struct rib_tree *treept,   /* tree of RCB cuts */
   double *value,              /* temp array for median_find; rotated coords */
@@ -968,7 +980,8 @@ int i;
                                fractionlo, MPI_COMM_SELF, &valuehalf, 0,
                                &(counters[0]), 1, 1, proc, num_parts,
                                wgtflag, valuelo, valuehi, weight, &weightlo,
-                               &weighthi, dotlist, 0)) {
+                               &weighthi, dotlist, rectilinear_blocks, 
+                               average_cuts)) {
       ZOLTAN_PRINT_ERROR(proc, yo, 
         "Error returned from Zoltan_RB_find_median.");
       ierr = ZOLTAN_FATAL;
@@ -1005,7 +1018,8 @@ int i;
       ierr = serial_rib(zz, dotpt, dotmark, dotlist, 0, root, num_geom,
                         weightlo, set0, new_nparts,
                         &(dindx[0]), &(tmpdindx[0]), partlower,
-                        proc, wgtflag, stats, gen_tree,
+                        proc, wgtflag, stats, gen_tree, 
+                        rectilinear_blocks, average_cuts,
                         counters, treept, value, wgts, part_sizes);
       if (ierr < 0) {
         goto End;
@@ -1020,6 +1034,7 @@ int i;
                         weighthi, dotnum-set0, new_nparts,
                         &(dindx[set1]), &(tmpdindx[set1]), partmid,
                         proc, wgtflag, stats, gen_tree,
+                        rectilinear_blocks, average_cuts,
                         counters, treept, value, wgts, part_sizes);
       if (ierr < 0) {
         goto End;

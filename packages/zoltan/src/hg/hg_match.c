@@ -701,9 +701,9 @@ char *yo = "matching_lhm";
 /* path growing matching, hypergraph version */
 static int matching_pgm (ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-int i, j, k, side = 0, edge, vertex, *Match[2], limits[2], neighbor,
- next_vertex, pins;
-double w[2]={0.0,0.0}, weight, max_weight, *sims;
+int i, j, k, side = 0, edge, vertex, *Match[2] = {NULL, NULL};
+int limits[2], neighbor, next_vertex, pins;
+double w[2]={0.0,0.0}, weight, max_weight, *sims = NULL;
 char  *yo = "matching_pgm";
 
   limits[0] = limits[1] = *limit;

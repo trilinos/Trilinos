@@ -33,7 +33,7 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int check_invert_input(ZZ *, int *, int *, int *, int *, int *);
+static int check_invert_input(ZZ *, int, int *, int *, int *, int *, int *);
 
 
 /*****************************************************************************/
@@ -95,7 +95,7 @@ int ierr, ret_ierr = ZOLTAN_OK;
    *  Check that all procs use the same id types.
    */
 
-  ierr = check_invert_input(zz, in_procs, in_to_part, 
+  ierr = check_invert_input(zz, num_in, in_procs, in_to_part, 
                             &num_gid_entries, &num_lid_entries, &include_parts);
   if (ierr != ZOLTAN_OK) {
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -228,6 +228,7 @@ End:
 
 static int check_invert_input(
   ZZ *zz, 
+  int in_num,
   int *in_procs, 
   int *in_to_part, 
   int *num_gid_entries,
@@ -242,9 +243,10 @@ static int check_invert_input(
  */
 char *yo = "check_invert_input";
 char msg[256];
-int loc_tmp[3];
-int glob_min[3] = {0,0,0};
-int glob_max[3] = {0,0,0};
+int loc_tmp[5];
+int glob_min[5] = {0,0,0,0,0};
+int glob_max[5] = {0,0,0,0,0};
+int do_not_include_parts;
 int ierr = ZOLTAN_OK;
 
   loc_tmp[0] = zz->Num_GID;
@@ -255,22 +257,21 @@ int ierr = ZOLTAN_OK;
    * return the same error code.
    */
 
-  /* 
-   * For MPI_MIN operation:
-   * locally, include_parts == 1 if in_procs == NULL or in_to_part != NULL;
-   * otherwise, include_parts == 0. 
-   */
-  loc_tmp[2] = (in_procs == NULL || in_to_part != NULL);
-  MPI_Allreduce(loc_tmp, glob_min, 3,
+  MPI_Allreduce(loc_tmp, glob_min, 2,
                 MPI_INT, MPI_MIN, zz->Communicator);
 
   /* 
    * For MPI_MAX operation:
-   * locally, include_parts == 1 if in_procs != NULL and in_to_part != NULL.
-   * otherwise, include_parts == 0. 
+   * include_parts == if any proc has in_num > 0 and specifies in_to_part.
+   * do_not_include_parts == if any proc has in_num > 0 and does not specify
+   *                         in_to_part.
+   * Error:  if include_parts && do_not_include_parts
+   * Error:  if any processor has in_num > 0 && in_procs == NULL.
    */
-  loc_tmp[2] = (in_procs != NULL && in_to_part != NULL);
-  MPI_Allreduce(loc_tmp, glob_max, 3,
+  loc_tmp[2] = (in_num > 0 && in_procs == NULL);
+  loc_tmp[3] = (in_num > 0 && in_to_part != NULL);
+  loc_tmp[4] = (in_num > 0 && in_to_part == NULL);
+  MPI_Allreduce(loc_tmp, glob_max, 5,
                 MPI_INT, MPI_MAX, zz->Communicator);
 
   if (glob_min[0] == glob_max[0])
@@ -295,9 +296,19 @@ int ierr = ZOLTAN_OK;
     }
   }
 
-  if (glob_min[2] == glob_max[2]) 
-    *include_parts = glob_max[2];
-  else {
+  if (glob_max[2]) {
+    ierr = ZOLTAN_FATAL;
+    if (loc_tmp[2] == glob_max[2]) {
+      sprintf(msg, 
+              "Inconsistent input: # objects = %d but proc array is NULL\n", 
+              in_num);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+    }
+  }
+
+  *include_parts = glob_max[3];
+  do_not_include_parts = glob_max[4];
+  if (*include_parts && do_not_include_parts) {
     ierr = ZOLTAN_FATAL;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Inconsistent input; some processors "
       "include partition arrays while others do not.");

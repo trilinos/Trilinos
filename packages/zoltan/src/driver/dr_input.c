@@ -53,7 +53,7 @@ int read_cmd_file (
   char  line[MAX_INPUT_STR_LN + 1], *pline, *pmax;
   char  original_line[MAX_INPUT_STR_LN + 1];  /* preserved upper/lower cases */
   char  string[100], value[100], dummy[100];
-  int   i, n;
+  int   i, n, nv;
 
   
   /* Open the file */
@@ -107,7 +107,7 @@ int read_cmd_file (
             pio_info->init_dist_type = i;
           }
           else if (!strcmp(string, "procs"))  {
-            if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &n) != 1) {
+            if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1) {
               Gen_Error(0, "fatal: initial procs value must be integal");
               return 0;
             }
@@ -136,18 +136,19 @@ int read_cmd_file (
         pio_info->init_size     = 100;       /* default */
         pio_info->init_dim      = 3;         /* default */
         pio_info->init_vwgt_dim = 1;     /* default */
-
         strcpy(pio_info->pexo_fname, "random");
+
+        pline = line;
         while (pline+n < pmax && 
                sscanf(pline += n, NEXTARG LASTARG "%n", string, value, &n)==2) {
           if (!strcmp(string, "dimension")
-              && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
+              && sscanf(value, "%d%n", &pio_info->init_dim, &nv) == 1)
             continue;
           else if (!strcmp(string, "obj_weight_dim")
-                   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
+                   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &nv) == 1)
             continue;
           else if (!strcmp(string, "size")
-                   && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
+                   && sscanf(value, "%d%n", &pio_info->init_size, &nv) == 1)
             continue;
           else  {
             Gen_Error(0, "fatal: bad file type = random file parameters");

@@ -1924,7 +1924,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
   vert = 0;
   for (i=0; i<64; i++) {
     found = -1;
-    for (j=0; j<vert-1 && found==-1; j++) {
+    for (j=0; j<vert && found==-1; j++) {
       if (ZOLTAN_EQ_GID(zz,&vertices[i*ngid_ent],&lvertices_gid[j*ngid_ent])) {
         found = j;
       }
@@ -2147,7 +2147,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
         count[vert] == 8) {
        vcoord[vert][0] = (vcoord[vert][0]*2)/count[vert];
        vcoord[vert][1] = (vcoord[vert][1]*2)/count[vert];
-       vcoord[vert][1] = (vcoord[vert][1]*2)/count[vert];
+       vcoord[vert][2] = (vcoord[vert][2]*2)/count[vert];
     }
     else {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "A vertex did not appear the right number of times in hexahedral children.");

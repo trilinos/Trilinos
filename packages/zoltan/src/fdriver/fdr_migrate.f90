@@ -538,6 +538,8 @@ type(MESH_INFO), pointer :: mesh_data
     mesh_data%elements(last)%adj_len = 0
     mesh_data%elements(last)%elem_blk = -1
     mesh_data%elements(last)%cpu_wgt = 0
+    mesh_data%elements(last)%perm_value = -1 
+    mesh_data%elements(last)%invperm_value = -1 
     mesh_data%elements(last)%mem_wgt = 0
     nullify(mesh_data%elements(last)%coord)
     nullify(mesh_data%elements(last)%connect)
@@ -593,7 +595,7 @@ integer(Zoltan_INT) :: lid
 !   * Compute size of one element's data.
 !   */
 
-  size = 6 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
+  size = 8 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
   num_nodes =  mesh_data%eb_nnodes(current_elem%elem_blk)
  
 !  /* Add space for connect table. */
@@ -694,12 +696,14 @@ integer(Zoltan_INT), intent(out) :: ierr
   buf(6) = current_elem%nadj
   buf(7) = current_elem%adj_len
   buf(8) = current_elem%my_part
+  buf(9) = current_elem%perm_value
+  buf(10) = current_elem%invperm_value
 
 !  /*
 !   * copy the allocated integer fields for this element.
 !   */
 
-  size = 8
+  size = 10
 
 !  /* copy the connect table */
   if (Mesh%num_dims > 0) then
@@ -843,8 +847,10 @@ integer(Zoltan_INT), intent(out) :: ierr
   current_elem%adj_len = buf(7)
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
   current_elem%my_part = buf(8)
+  current_elem%perm_value = buf(9)
+  current_elem%invperm_value = buf(10)
 
-  size = 8
+  size = 10
 
 !  /*
 !   * copy the allocated integer fields for this element.

@@ -58,15 +58,13 @@ library; their descriptions are included below.
 
 <td>FUNCTION <b>Zoltan_Order</b>(<i>zz, num_gid_entries, num_lid_entries</i>,
 <i>num_obj,
-global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>,
-<i>order_info</i>)
+global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
 <br>INTEGER(Zoltan_INT) :: Zoltan_Order
-<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
-<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: global_ids, local_ids&nbsp;
-<br>INTEGER(Zoltan_INT), DIMENSION(:) :: rank, iperm
-<br>TYPE(Zoltan_Order_Struct), INTENT(INOUT) :: order_info</td>
+<br>INTEGER(Zoltan_INT) :: global_ids(*), local_ids(*)
+<br>INTEGER(Zoltan_INT) :: rank(*), iperm(*)
 </tr>
 </table>
 
@@ -178,7 +176,7 @@ called.</td>
 
 <td>Upon return,&nbsp; this struct contains additional information about
 the ordering produced. This parameter is currently not used and should
-always be set to NULL.</td>
+always be set to NULL.  It is not included in the FORTRAN interface.</td>
 </tr>
 
 <tr>

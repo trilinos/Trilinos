@@ -44,10 +44,10 @@ FARG                    = farg_typical
 MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib 
 
-PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS2
-PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
-#PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS3
-#PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+#PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS2
+#PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS3
+PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
 JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src

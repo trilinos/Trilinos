@@ -59,7 +59,7 @@ void print_sync_start(int proc, int do_print_line)
   MPI_Barrier(MPI_COMM_WORLD);
   if ( proc != 0) {
     from = proc - 1;
-    MPI_Recv(NULL, 0, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
   }
   else {
     if (do_print_line) {
@@ -118,10 +118,10 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
     }
   }
 
-  MPI_Send(NULL, 0, MPI_INT, to, 0, MPI_COMM_WORLD);
+  MPI_Send((void *) &flag, 1, MPI_INT, to, 0, MPI_COMM_WORLD);
   if (proc == 0) {
     from = nprocs - 1;
-    MPI_Recv(NULL, 0, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
 
 #ifdef DEBUG_PSYNC
     (void) printf("\t\t\t Proc 0 received message from %5d\n", from);

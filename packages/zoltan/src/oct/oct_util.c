@@ -17,7 +17,7 @@ extern "C" {
 #include "octant_const.h"
 #include "oct_util_const.h"
 #include "dfs_const.h"
-#include <values.h>
+#include <float.h>
 
 int Zoltan_Oct_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum) {
   if(OCT_info->HILBERT) {
@@ -205,8 +205,8 @@ void Zoltan_Oct_child_bounds_wrapper(OCT_Global_Info *OCT_info,
     }  
     for(i=4; i<8; i++) {
       for(j=0;j<3;j++) {
-        cmin[i][j] = MAXDOUBLE;
-        cmax[i][j] = -MAXDOUBLE;
+        cmin[i][j] = DBL_MAX;
+        cmax[i][j] = -DBL_MAX;
       }
     }
   }

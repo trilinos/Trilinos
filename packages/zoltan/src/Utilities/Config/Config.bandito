@@ -1,0 +1,53 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    Revision: 1.1.4.1 $
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers for
+#  solaris on Sandia's 980 LAN. 
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= /opt/mpich-intel/bin/mpicc
+INCLUDE_PATH		= -I/opt/mpich-intel/include
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS = $(DBG_FLAGS)
+
+F90                     = ifc
+LOCAL_F90               = ifc
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS                  = -Vaxlib
+SPPR_HEAD               = spprinc.most
+F90_MODULE_PREFIX       = -I
+FARG                    = farg_typical
+
+#MPI_LIB         = -lpmpich -lmpich -lg2c
+#MPI_LIBPATH     = -L$(MPIR_HOME)/lib -L/usr/lib/gcc-lib/i386-redhat-linux/3.2
+
+MPI_LIB         = -lpmpich -lmpich 
+MPI_LIBPATH     = -L$(MPIR_HOME)/lib 
+
+PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
+PARMETIS_INCPATH 	= -I../../ParMETIS3_1
+
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include

@@ -22,7 +22,7 @@ extern "C" {
 #include "migoct_const.h"
 #include "migtags_const.h"
 #include "params_const.h"
-#include <values.h>
+#include <float.h>
 #define POW(a,b) pow((double)(a),(double)(b))
 
 /*test*/
@@ -247,7 +247,6 @@ static int lb_oct_init(
 				      3 = most objects this proc ever owns
 				      */
   float  c[4];
-  int excount=0;
   int createpartree = 0;
   /*int num_gid_entries = zz->Num_GID;*/
   /*int num_lid_entries = zz->Num_LID;*/
@@ -443,7 +442,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag,
   int ierr = 0;
 
 #ifdef KDDKDD_NEW_BOUNDS_GEOM_QUERY_FN
-  double bounds[6] = {MAXDOUBLE,MAXDOUBLE,MAXDOUBLE,-MAXDOUBLE,-MAXDOUBLE,-MAXDOUBLE};
+  double bounds[6] = {DBL_MAX,DBL_MAX,DBL_MAX,-DBL_MAX,-DBL_MAX,-DBL_MAX};
   COORD global_min, global_max;
 #endif /* KDDKDD_NEW_BOUNDS_GEOM_QUERY_FN */
   int nroots = 0;
@@ -694,8 +693,8 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
   int num_lid_entries = zz->Num_LID;
 
   /* Initialization */
-  max[0] = max[1] = max[2] = -MAXDOUBLE;
-  min[0] = min[1] = min[2] =  MAXDOUBLE;
+  max[0] = max[1] = max[2] = -DBL_MAX;
+  min[0] = min[1] = min[2] =  DBL_MAX;
 
   ierr = Zoltan_Get_Obj_List(zz, num_objs, &obj_global_ids, &obj_local_ids,
                              wgtflag, &obj_wgts, &parts);

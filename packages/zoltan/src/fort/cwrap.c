@@ -73,6 +73,9 @@ extern "C" {
 #define Zfw_Compute_Destinations       zfw_compute_destinations
 #define Zfw_Migrate                    zfw_migrate  
 #define Zfw_Help_Migrate               zfw_help_migrate  
+#define Zfw_Order                      zfw_order  
+#define Zfw_Generate_Files             zfw_generate_files  
+#define Zfw_RCB_Box                    zfw_rcb_box  
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc
 #define Zfw_Get_Address_int            zfw_get_address_int
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim
@@ -124,6 +127,9 @@ extern "C" {
 #define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
 #define Zfw_Migrate                    ZFW_MIGRATE  
 #define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
+#define Zfw_Order                      ZFW_ORDER  
+#define Zfw_Generate_Files             ZFW_GENERATE_FILES  
+#define Zfw_RCB_Box                    ZFW_RCB_BOX  
 #define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
 #define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
 #define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
@@ -174,6 +180,9 @@ extern "C" {
 #define Zfw_Compute_Destinations       zfw_compute_destinations_
 #define Zfw_Migrate                    zfw_migrate_
 #define Zfw_Help_Migrate               zfw_help_migrate_  
+#define Zfw_Order                      zfw_order_  
+#define Zfw_Generate_Files             zfw_generate_files_ 
+#define Zfw_RCB_Box                    zfw_rcb_box_
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc_
 #define Zfw_Get_Address_int            zfw_get_address_int_
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim_
@@ -225,6 +234,9 @@ extern "C" {
 #define Zfw_Compute_Destinations       zfw_compute_destinations__
 #define Zfw_Migrate                    zfw_migrate__
 #define Zfw_Help_Migrate               zfw_help_migrate__
+#define Zfw_Order                      zfw_order__
+#define Zfw_Generate_Files             zfw_generate_files__
+#define Zfw_RCB_Box                    zfw_rcb_box__
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc__
 #define Zfw_Get_Address_int            zfw_get_address_int__
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim__
@@ -1707,6 +1719,61 @@ int Zfw_Help_Migrate(int *addr_lb, int *nbytes,
                           export_local_ids,export_procs);
 }
 
+/*****************************************************************************/
+int Zfw_Order(
+ int *addr_lb, int *nbytes,
+ int *num_gid_entries, int *num_lid_entries,
+ int *num_obj,
+ ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ int *rank, int *iperm)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   int ierr;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+   ierr = Zoltan_Order(lb,num_gid_entries,num_lid_entries,*num_obj,
+                       gids, lids, rank, iperm, NULL);
+   return ierr;
+}
+
+/*****************************************************************************/
+int Zfw_Generate_Files(int *addr_lb, int *nbytes, int *int_filename,
+                   int *filename_len, int *base_index, int *gen_geom,
+                   int *gen_graph, int *gen_hg)
+{
+   struct Zoltan_Struct *lb;
+   char *filename;
+   unsigned char *p;
+   int i, result;
+   filename = (char *)ZOLTAN_MALLOC(*filename_len+1);
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+   for (i=0; i<(*filename_len); i++) filename[i] = (char)int_filename[i];
+   filename[*filename_len] = '\0';
+   result = Zoltan_Generate_Files(lb, filename, *base_index, *gen_geom,
+                                  *gen_graph, *gen_hg);
+   ZOLTAN_FREE(&filename);
+   return result;
+}
+
+/*****************************************************************************/
+int Zfw_RCB_Box(int *addr_lb, int *nbytes, int *part, int *ndim,
+                double *xmin, double *ymin, double *zmin, 
+                double *xmax, double *ymax, double *zmax)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+
+   return Zoltan_RCB_Box(lb, *part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+}
 /*****************************************************************************/
 void Zfw_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
                                     ZOLTAN_FORT_FREE_INT_FN *fort_free_int)

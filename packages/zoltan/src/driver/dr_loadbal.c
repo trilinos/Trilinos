@@ -443,6 +443,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
+  int ierr;
   int *order;			 /* Ordering vector(s) */
   ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
   ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
@@ -554,8 +555,19 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 0);
     }
   
-    if (Test.Drops) 
+    if (Test.Drops)
       test_drops(Proc, mesh, pio_info, zz);
+
+    if (!(strcasecmp(prob->method, "RCB"))) {
+      double xmin, ymin, zmin;
+      double xmax, ymax, zmax;
+      int ndim;
+      ierr = Zoltan_RCB_Box(zz, Proc, &ndim, &xmin, &ymin, &zmin,
+                            &xmax, &ymax, &zmax);
+      if (!ierr) 
+        printf("DRIVER %d DIM: %d BOX: (%e,%e,%e) -- (%e,%e,%e)\n",
+               Proc, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+    }
 
     /* Clean up */
     Zoltan_LB_Free_Part(&import_gids, &import_lids,
@@ -591,8 +603,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     /* Copy ordering permutation into mesh structure */
     for (i = 0; i < mesh->num_elems; i++){
-      mesh->elements[i].perm_value = order[i];
-      mesh->elements[i].invperm_value = order[(mesh->num_elems)+i];
+      int lid = order_lids[num_lid_entries * i + (num_lid_entries - 1)];
+      mesh->elements[lid].perm_value = order[i];
+      mesh->elements[lid].invperm_value = order[(mesh->num_elems)+i];
     }
 
     /* Free order data */

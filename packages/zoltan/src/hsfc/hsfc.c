@@ -192,9 +192,12 @@ int Zoltan_HSFC(
       }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
-   for (i =  0;              i <   d->ndimension; i++)   in[i] =  0.0;
-   for (i =   d->ndimension; i < 2*d->ndimension; i++)   in[i] = -HUGE_VAL;
-   for (i = 2*d->ndimension; i < 3*d->ndimension; i++)   in[i] =  HUGE_VAL;
+   for (i =  0;              i <   d->ndimension; i++) 
+      out[i] = in[i] =  0.0;
+   for (i =   d->ndimension; i < 2*d->ndimension; i++) 
+      out[i] = in[i] = -HUGE_VAL;
+   for (i = 2*d->ndimension; i < 3*d->ndimension; i++) 
+      out[i] = in[i] =  HUGE_VAL;
    for (i = 0; i < ndots; i++)
      for (j = 0; j < d->ndimension; j++) {
        /* get maximum and minimum bound box coordinates: */
@@ -202,7 +205,7 @@ int Zoltan_HSFC(
        if(dots[i].x[j]<in[j+2*d->ndimension]) in[j+2*d->ndimension]=dots[i].x[j];
        }
    err = MPI_Allreduce(in,out,3*d->ndimension,MPI_DOUBLE,mpi_op,zz->Communicator);
-   if (err != 0)
+   if (err != MPI_SUCCESS)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Bounding box MPI_Allreduce error");
 
    /* Enlarge bounding box to make points on faces become interior (Andy) */
@@ -242,9 +245,12 @@ int Zoltan_HSFC(
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
       /* initialize bins, DEFAULT_BIN_MAX is less than any possible max,... */
-      for (i = 0;        i <   pcount; i++) temp_weight[i] = 0.0; /* SUM */
-      for (i =   pcount; i < 2*pcount; i++) temp_weight[i] = DEFAULT_BIN_MAX;
-      for (i = 2*pcount; i < 3*pcount; i++) temp_weight[i] = DEFAULT_BIN_MIN;
+      for (i = 0;        i <   pcount; i++) 
+         grand_weight[i] = temp_weight[i] = 0.0; /* SUM */
+      for (i =   pcount; i < 2*pcount; i++) 
+         grand_weight[i] = temp_weight[i] = DEFAULT_BIN_MAX;
+      for (i = 2*pcount; i < 3*pcount; i++) 
+         grand_weight[i] = temp_weight[i] = DEFAULT_BIN_MIN;
 
       /* bin weights, max, min for all dots using current grand partition */
       for (i = 0; i < ndots; i++) {
@@ -267,7 +273,7 @@ int Zoltan_HSFC(
          }
       err = MPI_Allreduce(temp_weight, grand_weight, 3 * pcount, MPI_DOUBLE,
        mpi_op, zz->Communicator);
-      if (err != 0)
+      if (err != MPI_SUCCESS)
          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "MPI_Allreduce returned error");
       ZOLTAN_TRACE_DETAIL (zz, yo, "Complete main loop MPI_Allreduce");
 
@@ -316,7 +322,7 @@ int Zoltan_HSFC(
 
             /* max - min test if current bin is capable of further refinement */
             temp = grand_weight[i+pcount] - grand_weight[i+2*pcount];
-            if (i < pcount-1  &&  temp > REFINEMENT_LIMIT)
+            if (i < pcount  &&  temp > REFINEMENT_LIMIT)
                done = 0;         /* not done, at least this bin is refinable */
 
             /* get ready for next loop */

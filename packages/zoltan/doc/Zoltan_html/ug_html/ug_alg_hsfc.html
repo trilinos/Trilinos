@@ -28,21 +28,12 @@
 
 <h2>
 <a NAME="HSFC"></a>Hilbert Space Filling Curve (HSFC)</h2>
-This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in the Octree
-partitioner and on the BSFC partitioning implementation by Andrew C. Bauer, Department
-of Engineering, State University of New York at Buffalo, as his summer project at SNL
-in 2001.  The box assign algorithm is loosely based on the papers by Lawder referenced both
-in the developers guide and the code itself.  NOTE: This code can be trivially extended to
-any space filling curve by providing the tables implimenting the curve's state transition
-diagram.  The only dependance on the curve is through the tables and the box assign
-algorithm will work for all space filling curves (if we have their tables.)
-<p>
 The Inverse Hilbert Space-Filling Curve functions map a point in one, two or three dimensions
 into the interval [0,1].  The Hilbert functions that map [0, 1] to normal spatial
 coordinates are also provided. (The one-dimensional inverse Hilbert curve is defined here
 as the identity function, f(x)=x for all x.)
 <p>
-The algorithm seeks to divide [0,1] into P intervals each containing
+The HSFC partitioning algorithm seeks to divide [0,1] into P intervals each containing
 the same weight of objects associated to these intervals by their inverse Hilbert
 coordinates. N bins are created (where N > P) to partition [0,1].  The weights in
 each bin are summed across all processors.
@@ -52,7 +43,7 @@ This process is repeated as needed to improve partitioning tolerance by
 a technique that maintains the same total number of bins but refines the bins previously
 containing a cut.
 <p>
-This code returns an warning if the final imbalance exceeds the user specified tolerance.
+HSFC returns an warning if the final imbalance exceeds the user specified tolerance.
 <p>
 This code implements both the point assign and box assign functionality.  The point
 assign determines an appropriate partition (associated with a specific group of processors)
@@ -68,6 +59,15 @@ may have missed partitions.  This version is both rigorous and fast.
 The Zoltan implementation of HSFC has one parameter that can be modified
 by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 function.
+<p>
+This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in the Octree
+partitioner and on the BSFC partitioning implementation by Andrew C. Bauer, Department
+of Engineering, State University of New York at Buffalo, as his summer project at SNL
+in 2001.  The box assign algorithm is loosely based on the papers by Lawder referenced both
+in the developers guide and the code itself.  NOTE: This code can be trivially extended to
+any space filling curve by providing the tables implementing the curve's state transition
+diagram.  The only dependance on the curve is through the tables and the box assign
+algorithm will work for all space filling curves (if we have their tables.)
 <p>
 Please refer to the Zoltan Developers Guide,
  <b><a href="../dev_html/dev_hsfc.html">Appendix: Hilbert Space Filling Curve (HSFC)</a></b>

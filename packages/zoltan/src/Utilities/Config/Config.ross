@@ -8,7 +8,7 @@
 #    $RCSfile$
 #    $Author$
 #    $Date$
-#    $Revision$
+#    Revision: 1.3.8.2 $
 ##############################################################################
 
 ##############################################################################
@@ -30,18 +30,18 @@ OPT_FLAGS		= -O
 CFLAGS = $(DBG_FLAGS)
 
 F90			= /usr/local/cplant/ross/current/bin/f90
-LOCAL_F90		= /usr/local/cplant/ross/current/bin/f90
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
+LOCAL_F90		= /usr/bin/f90
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE2 -DNO_MPI2
 FFLAGS    		= 
-SPPR_HEAD 		= spprinc.most
-F90_MODULE_PREFIX 	= -M
+SPPR_HEAD 		= spprinc.64bit
+F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
 MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/local/cplant/ross/current/lib
 
-#PARMETIS_LIBPATH 	= -L../../ParMETIS
-#PARMETIS_INCPATH 	= -I../../ParMETIS
+PARMETIS_LIBPATH 	= -L../../../ParMETIS3_1
+PARMETIS_INCPATH 	= -I../../../ParMETIS3_1
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src

@@ -22,15 +22,6 @@
 # Alternatively, give a run command with the -cmd option.
 #
 
-# Chaco problems to run
-set ch_name = (simple nograph vwgt ewgt bug onedbug grid20x19 film hammond)
-set ch_nproc = (4 4 3 4 3 3 5 6 8) # no. of procs
-
-# Nemesis problems to run  
-set nem_name = (box_064 ti_300 ti_4k)
-set nem_nproc = (5 6 9) # no. of procs
-set nem_pdisk = (1 2 2) # parallel disk info
-
 # Set default options
 set out_tag = out
 set logfile = test_zoltan.log
@@ -56,6 +47,7 @@ set no_order = $?ZOLTAN_NO_ORDER
 set no_reftree = $?ZOLTAN_NO_REFTREE
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
+set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
 
 # Parse command-line options. 
@@ -87,6 +79,9 @@ while ( $#argv )
      @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
+  else if ( "$1" == "-yes_serial" ) then
+     @ yes_serial = 1
+     @ no_nemesis = 1   # Nemesis input files require multiple processors
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
@@ -133,6 +128,20 @@ while ( $#argv )
 
 end # while ( $#argv )
 
+# Chaco problems to run
+set ch_name = (simple nograph vwgt ewgt bug onedbug grid20x19 film hammond)
+if ( $yes_serial ) then
+  set ch_nproc = (1 1 1 1 1 1 1 1 1) # no. of procs
+else
+  set ch_nproc = (4 4 3 4 3 3 5 6 8) # no. of procs
+endif
+
+# Nemesis problems to run  
+set nem_name = (box_064 ti_300 ti_4k)
+set nem_nproc = (5 6 9) # no. of procs
+set nem_pdisk = (1 2 2) # parallel disk info
+
+
 # Determine what command to use to launch a parallel program based on $arch
 if (! $?run ) then
   if ( $?arch ) then
@@ -149,6 +158,12 @@ if (! $?run ) then
     case sgi64:
       set run = "mpirun -np"
       breaksw
+    case bandito:
+      set run = "/opt/mpich-intel/bin/mpirun -np"
+      breaksw
+    case siMPIgcc:
+      set run = "/home/u/kddevin/code/siMPI/current/mpirun -np "
+      breaksw
     case mpi125:
       set run = "/Net/local/proj/zoltan/arch/solaris-mpi125/mpich-1.2.5/bin/mpirun -np"
       breaksw
@@ -163,7 +178,8 @@ if (! $?run ) then
       set run = "yod -sz"
       breaksw
     case stratus:
-      set run = "mpirun -np"
+    case stratus_siMPI:
+      set run = "prun -n"
       breaksw
     case dec:
       set run = "dmpirun -np"
@@ -270,6 +286,9 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
       set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
       set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set ch_methods = ( $ch_methods rcb-avg rcb-avg-ts )
+      set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
     endif
   endif
   if (! $no_rib) then
@@ -281,6 +300,8 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
       set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
       set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+      set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
     endif
   endif
   if (! $no_hsfc) then
@@ -311,6 +332,10 @@ if ( $yes_fortran ) then
           adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
           adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
           adaptive-partlocal5-v$pmversion )
+        if (! $no_order) then
+          set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+            order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+        endif
       endif
     endif
   endif
@@ -319,8 +344,13 @@ else
 
   # These Chaco problems are run only for C driver; F90 driver does not
   # read assignment input files or multiple weights.
-  set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
-  set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
+  if ( $yes_serial ) then
+    set ch_name = ($ch_name vwgt2 hammond2)
+    set ch_nproc = ($ch_nproc 1 1) # no. of procs
+  else
+    set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
+    set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
+  endif
 
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
@@ -337,6 +367,9 @@ else
       set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
       set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
       set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set ch_methods = ( $ch_methods rcb-avg rcb-avg-ts )
+      set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
       set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
     endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
@@ -364,6 +397,9 @@ else
       set nem_methods = ( $nem_methods rcb2-partlocal4 rcb2-partlocal4-ts )
       set nem_methods = ( $nem_methods rcb2-partmore rcb2-partmore-ts )
       set nem_methods = ( $nem_methods rcb2-set1 rcb2-set1-ts )
+      set nem_methods = ( $nem_methods rcb-avg rcb-avg-ts )
+      set nem_methods = ( $nem_methods rcb-rect-avg rcb-rect-avg-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
     endif
   endif
   if (! $no_rib) then
@@ -375,6 +411,8 @@ else
       set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
       set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
       set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+      set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
     endif
     set nem_methods = ( $nem_methods rib rib-ts )
     if (! $old_interface) then
@@ -384,6 +422,8 @@ else
       set nem_methods = ( $nem_methods rib-partlocal2 rib-partlocal2-ts )
       set nem_methods = ( $nem_methods rib-partlocal3 rib-partlocal3-ts )
       set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
+      set nem_methods = ( $nem_methods rib-avg rib-avg-ts )
+      set nem_methods = ( $nem_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
     endif
   endif
   if (! $no_hsfc) then

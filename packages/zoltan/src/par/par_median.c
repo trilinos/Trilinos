@@ -20,10 +20,11 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "par_median_const.h"
 #include "par_tflops_special_const.h"
+#include "par_average_const.h"
 
-#define MYHUGE 1.0e30
 #define TINY   1.0e-6
 
 /* Data structure for parallel find median routine */
@@ -81,7 +82,8 @@ int Zoltan_RB_find_median(
   double *wgtlo,        /* weight of lower partition (output) */
   double *wgthi,        /* weight of upper partition (output) */
   int    *dotlist,      /* list of active dots */
-  int rectilinear_blocks/* if set all dots with same value on same side of cut*/
+  int rectilinear_blocks,/*if set all dots with same value on same side of cut*/
+  int average_cuts      /* force cut to be halfway between two closest dots. */
 )
 {
 /* Local declarations. */
@@ -209,8 +211,8 @@ int Zoltan_RB_find_median(
       /* initialize local median data structure */
 
       medme.totallo = medme.totalhi = 0.0;
-      medme.valuelo = -MYHUGE;
-      medme.valuehi = MYHUGE;
+      medme.valuelo = -DBL_MAX;
+      medme.valuehi = DBL_MAX;
       medme.wtlo = medme.wthi = 0.0;
       medme.countlo = medme.counthi = 0;
       medme.proclo = medme.prochi = proc;
@@ -251,15 +253,24 @@ int Zoltan_RB_find_median(
         }
       }
 
+      med.totallo = med.totalhi = 0.0;
+      med.valuelo = -DBL_MAX;
+      med.valuehi = DBL_MAX;
+      med.wtlo = med.wthi = 0.0;
+      med.countlo = med.counthi = 0;
+      med.proclo = med.prochi = proc;
+
       /* combine median data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
-         Zoltan_RB_reduce_median(num_procs, rank, proc, &medme, &med, &i, med_type,
-                   local_comm);
+         Zoltan_RB_reduce_median(num_procs, rank, proc, &medme, &med, &i, 
+                                 med_type, local_comm);
       }
-      else
+      else {
+        
          MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
+      }
 
       /* test median guess for convergence */
       /* move additional dots that are next to cut across it */
@@ -314,7 +325,8 @@ int Zoltan_RB_find_median(
           if (breakflag) {                        /* done if moved enough */
             if (Tflops_Special) {
               wtok = wtsum;
-              Zoltan_RB_sum_double(&wtok, 1, proclower, rank, num_procs, local_comm);
+              Zoltan_RB_sum_double(&wtok, 1, proclower, rank, num_procs, 
+                                   local_comm);
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -431,6 +443,12 @@ int Zoltan_RB_find_median(
 
   /* found median */
   *valuehalf = tmp_half;
+
+  if (average_cuts) 
+    *valuehalf = Zoltan_RB_Average_Cut(Tflops_Special, dots, dotmark, dotnum,
+                                       num_procs, rank, proc, local_comm,
+                                       *valuehalf);
+
   *wgtlo = weightlo;
   *wgthi = weighthi;
 

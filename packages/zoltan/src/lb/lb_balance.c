@@ -357,8 +357,10 @@ int part_dim;
     return (error);
   }
   else if (error){
-    sprintf(msg, "Partitioning routine returned code %d.", error);
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+    if (zz->Debug_Level >ZOLTAN_DEBUG_NONE) {
+      sprintf(msg, "Partitioning routine returned code %d.", error);
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+    }
   }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done partitioning");

@@ -29,9 +29,10 @@
 <h2>
 <a NAME="RIB"></a>Recursive Inertial Bisection (RIB)</h2>
 An implementation of Recursive Inertial Bisection (RIB) is included in
-Zoltan. RIB was first proposed as a static
-load-balancing algorithm by <a href="ug_refs.html#taylor">Taylor and
-Nour-Omid</a>.  RIB is similar to RCB in that it divides the domain based on
+Zoltan. RIB was proposed as a load-balancing algorithm by 
+<a href="ug_refs.html#williams">Williams</a> and later studied 
+by <a href="ug_refs.html#taylor">Taylor and Nour-Omid</a>, but its 
+origin is unclear.  RIB is similar to RCB in that it divides the domain based on
 the location of the objects being partitioned by use of cutting planes.
 In RIB, the computational domain is first divided into two regions by a
 cutting plane orthogonal to the longest direction of the domain so that half
@@ -96,6 +97,16 @@ or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_B
 </tr>
 
 <tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> AVERAGE_CUTS</i></td>
+
+<td>When set to one, coordinates of RIB cutting planes are computed to be the
+average of the coordinates of the closest object on each side of the cut.
+Otherwise, coordinates of cutting planes may equal those of one of the
+closest objects.
+<br>0 = don't average cuts; 1 = average cuts.</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP><b>Default:</b></td>
 
 <td></td>
@@ -123,6 +134,12 @@ or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_B
 <td></td>
 
 <td><i>KEEP_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>AVERAGE_CUTS</i> = 0</td>
 </tr>
 
 <tr>

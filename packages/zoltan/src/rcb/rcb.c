@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
+#include <float.h>
 #include "zz_const.h"
 #include "rcb.h"
 #include "params_const.h"
@@ -50,7 +51,6 @@ extern "C" {
      need to do MPI_Allgather if wish to collect it on all procs
 */
 /*****************************************************************************/
-#define MYHUGE 1.0e30
 
 /*  RCB_DEFAULT_OUTPUT_LEVEL = 0  No statistics logging */
 /*  RCB_DEFAULT_OUTPUT_LEVEL = 1  Log times and counts, print summary */
@@ -63,14 +63,15 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-  double, int, int, int, int, int, int, int, int, int, int, double, float *);
+  double, int, int, int, int, int, int, int, int, int, int, double, int, 
+  float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
   struct rcb_box *);
 static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
-  int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
+  int, int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
   double *, double *, float *);
 
 /*****************************************************************************/
@@ -88,6 +89,7 @@ static PARAM_VARS RCB_params[] = {
                   { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
                   { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
+                  { "AVERAGE_CUTS", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -161,6 +163,8 @@ int Zoltan_RCB(
                                  have same units, 0 otherwise. */
     int mcnorm;               /* norm (1,2,3) to use in multicriteria alg. */
     double max_aspect_ratio;  /* maximum allowed ratio of box dimensions */
+    int average_cuts;         /* Flag forcing median line to be drawn halfway
+                                 between two closest objects. */
     int ierr;
 
 
@@ -179,6 +183,8 @@ int Zoltan_RCB(
                               (void *) &mcnorm);
     Zoltan_Bind_Param(RCB_params, "RCB_MAX_ASPECT_RATIO",
                               (void *) &max_aspect_ratio);
+    Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
+                              (void *) &average_cuts);
 
     /* Set default values. */
     overalloc = RCB_DEFAULT_OVERALLOC;
@@ -193,6 +199,7 @@ int Zoltan_RCB(
     obj_wgt_comp = 0;     
     mcnorm = 1; 
     max_aspect_ratio = 10.;
+    average_cuts = 0;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -205,7 +212,7 @@ int Zoltan_RCB(
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks, obj_wgt_comp, mcnorm, 
-                 max_aspect_ratio, part_sizes);
+                 max_aspect_ratio, average_cuts, part_sizes);
 
     return(ierr);
 }
@@ -246,6 +253,8 @@ static int rcb_fn(
   int obj_wgt_comp,             /* (1) obj wgts have same units, no scaling */
   int mcnorm,                   /* norm for multicriteria bisection */
   double max_aspect_ratio,      /* max allowed ratio of box dimensions */
+  int average_cuts,             /* Flag forcing median line to be drawn halfway
+                                   between two closest objects. */
   float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
                                    * wgtflag containing the percentage of work 
                                    to be assigned to each partition.    */
@@ -548,8 +557,10 @@ static int rcb_fn(
 
   /* initialize sub-domain bounding box to entire domain */
 
-  boxtmp.lo[0] = boxtmp.lo[1] = boxtmp.lo[2] = MYHUGE;
-  boxtmp.hi[0] = boxtmp.hi[1] = boxtmp.hi[2] = -MYHUGE;
+  rcbbox->lo[0] = rcbbox->lo[1] = rcbbox->lo[2] = DBL_MAX;
+  rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = -DBL_MAX;
+  boxtmp.lo[0] = boxtmp.lo[1] = boxtmp.lo[2] = DBL_MAX;
+  boxtmp.hi[0] = boxtmp.hi[1] = boxtmp.hi[2] = -DBL_MAX;
   
   for (i = 0; i < dotnum; i++) {
     for (j = 0; j < 3; j++) {
@@ -682,7 +693,7 @@ static int rcb_fn(
         dotmark0[j] = dotmark[j];
     }
 
-    for (dim=0; dim<rcb->Input_Dim; dim++){
+    for (dim=0; dim<rcb->Num_Dim; dim++){
 
       /* One cut direction only */
       if (one_cut_dir){
@@ -736,7 +747,7 @@ static int rcb_fn(
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
-               dotlist, rectilinear_blocks)) {
+               dotlist, rectilinear_blocks, average_cuts)) {
           ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
           ierr = ZOLTAN_FATAL;
           goto End;
@@ -750,7 +761,7 @@ static int rcb_fn(
                old_nprocs, proclower, old_nparts, 
                rcbbox->lo[dim], rcbbox->hi[dim], 
                weight, weightlo, weighthi, &norm_max,
-               dotlist, rectilinear_blocks)
+               dotlist, rectilinear_blocks, average_cuts)
           != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
           ierr = ZOLTAN_FATAL;
@@ -778,7 +789,6 @@ static int rcb_fn(
             printf("[%1d] Debug: weightlo=(%f,%f), weighthi=(%f,%f)\n",
               proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
         }
-
       }
       if (breakflag) break; /* if one_cut_dir is true */
     }
@@ -786,7 +796,8 @@ static int rcb_fn(
     if (!one_cut_dir){
       /* We have tried all cut directions. Restore best result. */
       if (dim_best<0){
-        ZOLTAN_PRINT_ERROR(proc, yo, "Zoltan could not find any valid RCB cut.");
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+                           "Zoltan could not find any valid RCB cut.");
         ierr = ZOLTAN_FATAL;
         goto End;
       }
@@ -939,7 +950,7 @@ static int rcb_fn(
                &(dindx[0]), &(tmpdindx[0]), partlower, 
                proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                preset_dir, 
-               rectilinear_blocks, obj_wgt_comp, mcnorm,
+               rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
                counters, treept, dim_spec, level,
                coord, wgts, part_sizes);
     ZOLTAN_FREE(&dindx);
@@ -1310,6 +1321,8 @@ static int serial_rcb(
   int rectilinear_blocks,    /* (0) do (1) don't break ties in find_median*/
   int obj_wgt_comp,          /* (1) obj wgts have same units, no scaling */
   int mcnorm,                /* norm for multicriteria bisection */
+  int average_cuts,          /* Flag forcing median line to be drawn halfway
+                                between two closest objects. */
   int counters[],            /* diagnostic counts */
   struct rcb_tree *treept,   /* tree of RCB cuts */
   int *dim_spec,             /* specified direction for preset_dir */
@@ -1319,7 +1332,6 @@ static int serial_rcb(
   float *part_sizes          /* Array of size zz->LB.Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each partition.               */
-
 )
 {
 char *yo = "serial_rcb";
@@ -1368,13 +1380,14 @@ double norm_max;
                                  first_guess, counters, 1, 1, 0, 
                                  num_parts, wgtflag, rcbbox->lo[dim], 
                                  rcbbox->hi[dim], weight[0], weightlo, weighthi,
-                                 dotlist, rectilinear_blocks)) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median");
+                                 dotlist, rectilinear_blocks, average_cuts)) {
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+                           "Error returned from Zoltan_RB_find_median");
         ierr = ZOLTAN_FATAL;
         goto End;
       }
     }
-    else{
+    else {
       /* Call find_bisector with Tflops_Special == 0; avoids communication */
       if (Zoltan_RB_find_bisector(
              zz, 0, coord, wgts, dotmark, dotnum, 
@@ -1383,9 +1396,10 @@ double norm_max;
              1, 0, num_parts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi, &norm_max,
-             dotlist, rectilinear_blocks)
+             dotlist, rectilinear_blocks, average_cuts)
         != ZOLTAN_OK) {
-        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+        ZOLTAN_PRINT_ERROR(proc, yo,
+                           "Error returned from Zoltan_RB_find_bisector.");
         ierr = ZOLTAN_FATAL;
         goto End;
       }
@@ -1421,7 +1435,7 @@ double norm_max;
                         &(dindx[0]), &(tmpdindx[0]), partlower, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, 
-                        rectilinear_blocks, obj_wgt_comp, mcnorm,
+                        rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
                         counters, treept, dim_spec, level,
                         coord, wgts, part_sizes);
       if (ierr < 0) {
@@ -1440,7 +1454,7 @@ double norm_max;
                         &(dindx[set1]), &(tmpdindx[set1]), partmid, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, rectilinear_blocks, obj_wgt_comp, mcnorm,
-                        counters, treept, dim_spec, level,
+                        average_cuts, counters, treept, dim_spec, level,
                         coord, wgts, part_sizes);
       if (ierr < 0) {
         goto End;

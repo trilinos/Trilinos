@@ -753,7 +753,7 @@ char   *yo="local_fmkway";
 
   do 
   { int step=0, no_better_steps=0, number_locked=0, best_locked=0;
-    int sour, dest, best_safe, safe, max_part, best_heap;
+    int sour, dest, best_safe, safe, best_heap;
     double akt_cutsize=best_cutsize, best_gain;
     double wgt_i, part_weight_i, part_weight_k, max_part_weight;
  
@@ -900,8 +900,6 @@ typedef struct
    int   destination;
    } Vdata;
 
-static int isabove (int origin, int test, int p);
-static int isbelow (int origin, int test, int p);
 static int comparison (const void*, const void*);
 static int comparison2 (const void*, const void*);
 
@@ -1020,7 +1018,6 @@ for (i = 0; i < p; i++)
 
   /* algorithm loops to create interprocessor communication sections */
   for (loop = 0; loop < MAX_LOOP; loop++)   {
-     int oddloop = loop & 1;         /* determines direction of legal moves */
      memset (listend, 0, p * sizeof (int));
 
      /* Calculate the total weights (local vertices weight) */
@@ -1062,7 +1059,6 @@ for (i = 0; i < p; i++)
            }
 
         /* save best move, if any, for each vertex */
-        /* oddloop, isabove, isbelow control move direction each pass */
         bestpart = -1;                            /* arbitrary illegal value */
         tgain    = -1.0;                          /* arbitrary small value */
         for (ipart = 0; ipart < p; ipart++)

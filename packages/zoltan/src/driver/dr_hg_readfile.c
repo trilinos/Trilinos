@@ -29,7 +29,6 @@ extern "C" {
 #define BUF_LEN 1000000
 
 
-
 static int old_readfile  (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
@@ -60,7 +59,7 @@ char *yo = "Zoltan_HG_Readfile";
 
   /* Initialize return values in case of error. */
   *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
-  *hindex  = *hvertex = NULL;
+  *hindex = *hvertex = NULL;
   *vwgt   = *ewgt    = NULL;
   *base   = 0;
 
@@ -96,13 +95,13 @@ static int old_readfile (
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
  int *base)
-    {
-    int count, check, err = ZOLTAN_OK;
-    char errstr[200];
-    int Hedge=0, code=0, pin, i;
-    char string[BUF_LEN], ch;
-    int vdim=0, edim=0;
-    char *yo = "old_readfile";
+{
+int count, check, err = ZOLTAN_OK;
+char errstr[200];
+int Hedge=0, code=0, pin, i;
+char string[BUF_LEN];
+int vdim=0, edim=0;
+char *yo = "old_readfile";
           
     *base = 1;   /* IBM-format files are assumed to be 1-based. */
     rewind(f);       /* need to read first line again! */
@@ -115,8 +114,9 @@ static int old_readfile (
     } while (string[0] == '%');  /* Skip leading comment lines. */
 
     /* read input command line, note final variables are optional */
-    if (sscanf (string, "%d %d %d %d %d %d", nVtx, nEdge, nInput, &code, &vdim, &edim) < 4) {
-       fprintf(stderr, "%s ERROR, first line of file must be: |V| |E| |I| (code)"
+    if (sscanf (string, "%d %d %d %d %d %d", nVtx, nEdge, nInput, &code, &vdim,
+                &edim) < 4) {
+       fprintf(stderr, "%s ERROR first line of file must be: |V| |E| |I| (code)"
         "\n", yo);
        err = ZOLTAN_FATAL;
        goto End;
@@ -151,7 +151,8 @@ static int old_readfile (
        if (code == 1 || code == 11) {
           for (count = 0; count < *ewgt_dim; count++)
              if (nextstr (f, string) != 1)  {
-                sprintf(errstr, "%s ERROR...reading hyperedge weight %d\n", yo, i);
+                sprintf(errstr, "%s ERROR...reading hyperedge weight %d\n", 
+                        yo, i);
                 fprintf(stderr,  errstr);
                 err = ZOLTAN_FATAL;
                 goto End;
@@ -164,8 +165,8 @@ static int old_readfile (
           ++check;
           pin = atoi(string);
           if (pin <= 0 || pin > *nEdge) {
-              sprintf(errstr,  "%s ERROR...pin %d of hyperedge %d is out of range "
-               "[%d,%d]!\n", yo, pin, i, 1, *nVtx);
+              sprintf(errstr,  "%s ERROR pin %d of hyperedge %d is out of range"
+               " [%d,%d]!\n", yo, pin, i, 1, *nVtx);
               fprintf(stderr, errstr);
               err = ZOLTAN_FATAL;
               goto End;
@@ -189,7 +190,7 @@ static int old_readfile (
           fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
           err = ZOLTAN_MEMERR;
           goto End;
-          }
+       }
        for (i = 0; i < *nVtx; i++) {
           for (count = 0; count < *vwgt_dim; count++) {
              if (nextstr(f, string) != 1) {
@@ -280,67 +281,67 @@ char *yo = "patoh_readfile";
       fprintf(stderr, "%s Insufficient memory.", yo);
        err = ZOLTAN_MEMERR;
        goto End;
-       }
     }
+  }
              
-    /* nEdge HYPEREDGE LINES */
-    /* KDD -- This logic is wrong if no pins are specified. */
-    if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-     || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
-           fprintf(stderr, "%s Insufficient memory.", yo);
-           err = ZOLTAN_MEMERR;
-           goto End;
-           }
+  /* nEdge HYPEREDGE LINES */
+  /* KDD -- This logic is wrong if no pins are specified. */
+  if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
+   || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+    fprintf(stderr, "%s Insufficient memory.", yo);
+    err = ZOLTAN_MEMERR;
+    goto End;
+  }
+  if (code == 10 || code == 11) {
+    /* KDD -- This logic is wrong if no edges are specified. */
+    *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
+    if (*ewgt == NULL) {
+      fprintf(stderr, "%s Insufficient memory.", yo);
+      err = ZOLTAN_MEMERR;
+      goto End;
+    }
+  }
+
+  Hedge = 0;
+  j = 0;
+  for (i = 0; i < *nEdge; i++) {
+    (*index)[i] = Hedge;
+
+    if (!(fgets (string, BUF_LEN, f))) {
+      sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
+      fprintf(stderr, errstr);
+      err = ZOLTAN_FATAL;
+      goto End;
+    }
+
+    s = strtok(string," \n");
+    if (s == NULL)
+      continue;
+    if (*s == '%') {
+      i--;       /* don't count comment line in data file */
+      continue;
+    }
     if (code == 10 || code == 11) {
-       /* KDD -- This logic is wrong if no edges are specified. */
-       *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
-       if (*ewgt == NULL) {
-          fprintf(stderr, "%s Insufficient memory.", yo);
-          err = ZOLTAN_MEMERR;
-          goto End;
-          }
-       }
+      (*ewgt)[j++] = (float) atoi(s);
+      s = strtok (NULL, " \t\n");
+    }
+    while (s != NULL) {
+      pin = atoi(s);
+      if (pin < 0 + *base || pin >= *nVtx + *base) {
+        sprintf(errstr, "%s ERROR...pin %d of edge %d is out of range "
+                "[%d,%d]!\n",yo, pin,i,0+*base, *nVtx-1+*base);
+        fprintf(stderr, errstr);
+        err = ZOLTAN_FATAL;
+        goto End;
+      }
+      (*vertex)[Hedge++] = pin;
+      s = strtok(NULL," \n\t");
+    }
+  }
+  (*index)[*nEdge] = Hedge;
 
-    Hedge = 0;
-    j = 0;
-    for (i = 0; i < *nEdge; i++) {
-       (*index)[i] = Hedge;
-
-       if (!(fgets (string, BUF_LEN, f))) {
-          sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
-          fprintf(stderr, errstr);
-          err = ZOLTAN_FATAL;
-          goto End;
-          }
-
-       s = strtok(string," \n");
-       if (s == NULL)
-          continue;
-       if (*s == '%') {
-          i--;       /* don't count comment line in data file */
-          continue;
-          }
-       if (code == 10 || code == 11) {
-          (*ewgt)[j++] = (float) atoi(s);
-          s = strtok (NULL, " \t\n");
-          }
-       while (s != NULL) {
-          pin = atoi(s);
-          if (pin < 0 + *base || pin >= *nVtx + *base) {
-              sprintf(errstr, "%s ERROR...pin %d of edge %d is out of range "
-               "[%d,%d]!\n",yo, pin,i,0+*base, *nVtx-1+*base);
-              fprintf(stderr, errstr);
-              err = ZOLTAN_FATAL;
-              goto End;
-              }
-          (*vertex)[Hedge++] = pin;
-          s = strtok(NULL," \n\t");
-          }
-       }
-    (*index)[*nEdge] = Hedge;
-
-    if (code == 0  || code == 10)
-       goto End;
+  if (code == 0  || code == 10)
+    goto End;
 
   /* nVtx vertex weights */
   /* KDD -- shouldn't this code use dims in some way? */
@@ -383,28 +384,26 @@ int i = 0;
 char ch;
   
   string[0] = 0;
-  while (1)  {
+  while (1) {
     ch = fgetc(f);    
     if (ch == EOF)
-       return 0;
+      return 0;
     if (ch == '\n')
-       return -1;       
+      return -1;       
     if (isspace(ch) == 0)
-       break;
+      break;
   }
     
   while (1)  {
-     if (ch == EOF || isspace(ch))  {
-        string[i] = 0;
-        ungetc (ch, f);
-        return 1;
-     }
-     string[i++] = ch; 
-     ch = fgetc(f);
+    if (ch == EOF || isspace(ch)) {
+      string[i] = 0;
+      ungetc (ch, f);
+      return 1;
+    }
+    string[i++] = ch; 
+    ch = fgetc(f);
   }
 }
-
-
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

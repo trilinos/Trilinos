@@ -82,10 +82,11 @@ int i, ierr = 0;
 
   ierr = Zoltan_RB_Build_Structure(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), num_obj, max_obj,
-                               &(rcb->Input_Dim),
+                               &(rcb->Num_Dim),
                                wgtflag, use_ids);
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_RB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Error returned from Zoltan_RB_Build_Structure.");
     Zoltan_RCB_Free_Structure(zz);
     return(ierr);
   }

@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <memory.h>
-#include "mpi.h"
+#include <mpi.h>
 #include "comm.h"
 #include "zoltan_mem.h"
 

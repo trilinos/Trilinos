@@ -222,9 +222,19 @@ type(PARIO_INFO) :: pio_info
         Test_Local_Partitions = iachar(trim(inp_line(index(inp_line,"=")+2:))) - iachar('0')
     endif
 
+    if (lowercase(trim(command)) == "test generate files") then
+!       assumes there is one blank between "=" and the input value
+        Test_Gen_Files = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
+    endif
+
     if (lowercase(trim(command)) == "test drops") then
 !       assumes there is one blank between "=" and the input value
         Test_Drops = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
+    endif
+
+    if (lowercase(trim(command)) == "zdrive action") then
+!       assumes there is one blank between "=" and the input value
+        Driver_Action = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
     endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -348,6 +358,8 @@ type(PARIO_INFO) :: pio_info
   call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(Test_Drops, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(Test_Gen_Files, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(Driver_Action, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%rdisk, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%num_dsk_ctrlrs, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)

@@ -427,6 +427,14 @@ int Zoltan_Build_Graph(
       /* Return error code */
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Comm_Create returned error.");
     }
+    /* nrecv should be <= cross_edges. */
+    /* fatal error if nrecv==0, cross_edges>0. */
+    if (nrecv==0 && cross_edges>0){
+      /* Return error code and msg  */
+      sprintf(msg, "cross_edges=%d but received no edge data from comm plan. "
+        "Possible error in the graph query functions.\n", cross_edges);
+      ZOLTAN_PARMETIS_ERROR(ierr, msg);
+    }
 
     /* Allocate recv buffer */
     recvbuf = (char *) ZOLTAN_MALLOC(nrecv * packet_size);
@@ -492,9 +500,12 @@ int Zoltan_Build_Graph(
                            nrecv)) <0){
         /* Error: Global ID is not in hash table. 
            This only happens if the graph is invalid. */
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Invalid graph. Please check that "
-           "your graph query functions are correct.\n");
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Internal error.");
+        sprintf(msg, "Debug info: cross_edges = %d, global id not found: ",
+           cross_edges); 
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+        ZOLTAN_PRINT_GID(zz, &(proc_list_nbor[i*num_gid_entries]));
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Invalid or nonsymmetric graph. "
+           "Possible error in the graph query functions.\n");
       }
       else{
         /* Insert the global number into adjncy vector */

@@ -486,8 +486,9 @@ int Zoltan_RB_Send_Dots(
         ZOLTAN_SET_LID(zz, &((*lidpt)[keep*num_lid_entries]), 
                        &((*lidpt)[i*num_lid_entries]));
       }
-      memcpy((char *) &((*dotpt)[keep]), (char *) &((*dotpt)[i]), 
-             sizeof(struct Dot_Struct));
+      if (keep != i)
+        memcpy((char *) &((*dotpt)[keep]), (char *) &((*dotpt)[i]), 
+               sizeof(struct Dot_Struct));
       keep++;
     }
   }
@@ -932,9 +933,11 @@ int Zoltan_RB_check_geom_output(
   for (i = fp; i < fp + np; i++) {
     tolerance = part_sizes[i] * wtsum[ngp] * zz->LB.Imbalance_Tol[0];
     if (wtsum[i] > tolerance) {
-      sprintf(msg, "Weight of partition %d = %f > tolerance %f.", 
-                    i, wtsum[i], tolerance);
-      ZOLTAN_PRINT_WARN(proc, yo, msg);
+      if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) {
+        sprintf(msg, "Weight of partition %d = %f > tolerance %f.", 
+                      i, wtsum[i], tolerance);
+        ZOLTAN_PRINT_WARN(proc, yo, msg);
+      }
       ierr = ZOLTAN_WARN;
     }
   }

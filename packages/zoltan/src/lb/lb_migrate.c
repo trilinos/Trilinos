@@ -266,7 +266,7 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
     }
 
     Zoltan_Comm_Info(imp_plan, NULL, NULL, NULL, NULL, NULL, NULL,
-                     NULL, NULL, NULL, NULL, actual_exp_procs, NULL, NULL);
+                     NULL, NULL, NULL, NULL, NULL, actual_exp_procs, NULL);
  
     if (include_parts) {
       msgtag2--;
@@ -675,7 +675,7 @@ End:
   }
 
   if (ierr < 0) {
-    Zoltan_Comm_Destroy(&exp_plan);
+    if (exp_plan) Zoltan_Comm_Destroy(&exp_plan);
     Zoltan_Multifree(__FILE__, __LINE__, 5,
                      &import_buf, &tmp_id, &sizes, &idx, &export_buf);
   }

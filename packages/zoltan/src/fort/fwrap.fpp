@@ -125,7 +125,10 @@ public :: &
    Zoltan_Invert_Lists, &
    Zoltan_Compute_Destinations, &
    Zoltan_Migrate, &
-   Zoltan_Help_Migrate
+   Zoltan_Help_Migrate, &
+   Zoltan_Order, &
+   Zoltan_Generate_Files, &
+   Zoltan_RCB_Box
 
 ! Registration functions with strict type checking.
 public :: &
@@ -933,6 +936,54 @@ end function Zfw_Help_Migrate
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_order"
+function Zfw_Order(zz,nbytes,num_gid_entries,num_lid_entries,num_obj, &
+                   gids,lids,rank,iperm)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Order
+INTEGER(Zoltan_INT), dimension(*), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+end function Zfw_Order
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_generate_files"
+function Zfw_Generate_Files(zz,nbytes,filename,filename_len, &
+                          base_index, gen_geom, gen_graph, gen_hg)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Generate_Files
+integer(Zoltan_INT), dimension(*) INTENT_IN zz, filename
+integer(Zoltan_INT) INTENT_IN nbytes, filename_len, base_index
+integer(Zoltan_INT) INTENT_IN gen_geom, gen_graph, gen_hg
+end function Zfw_Generate_Files
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_rcb_box"
+function Zfw_RCB_Box(zz,nbytes,part,ndim,xmin,ymin,zmin,xmax,ymax,zmax)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_RCB_Box
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+integer(Zoltan_INT) INTENT_IN part
+integer(Zoltan_INT), intent(out) :: ndim
+real(Zoltan_DOUBLE), intent(out) :: xmin,ymin,zmin,xmax,ymax,zmax
+end function Zfw_RCB_Box
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_register_fort_malloc"
 subroutine Zfw_Register_Fort_Malloc(malloc_int,free_int)
 use zoltan_types
@@ -1090,6 +1141,18 @@ end interface
 
 interface Zoltan_Help_Migrate
    module procedure Zf90_Help_Migrate
+end interface
+
+interface Zoltan_RCB_Box
+   module procedure Zf90_RCB_Box
+end interface
+
+interface Zoltan_Order
+   module procedure Zf90_Order
+end interface
+
+interface Zoltan_Generate_Files
+   module procedure Zf90_Generate_Files
 end interface
 
 ! TEMP child_order
@@ -2182,6 +2245,62 @@ if (free_export_local_ids) deallocate(export_local_ids)
 if (free_export_procs) deallocate(export_procs)
 
 end function Zf90_Help_Migrate
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Order(zz,num_gid_entries,num_lid_entries,num_obj,gids,lids,rank,iperm)
+integer(Zoltan_INT) :: Zf90_Order
+TYPE(Zoltan_Struct), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_Order = Zfw_Order(zz_addr,nbytes,num_gid_entries,num_lid_entries,num_obj,&
+                       gids,lids,rank,iperm)
+end function Zf90_Order
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Generate_Files(zz,filename,base_index,gen_geom,gen_graph,gen_hg)
+integer(Zoltan_INT) :: Zf90_Generate_Files
+type(Zoltan_Struct) INTENT_IN zz
+character(len=*) INTENT_IN filename
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT), dimension(len_trim(filename)) :: int_filename
+integer(Zoltan_INT) :: nbytes, filename_len,base_index,gen_geom,gen_graph,gen_hg
+integer(Zoltan_INT) :: i
+nbytes = Zoltan_PTR_LENGTH
+filename_len = len_trim(filename)
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+do i=1,filename_len
+   int_filename(i) = ichar(filename(i:i))
+end do
+Zf90_Generate_Files = Zfw_Generate_Files(zz_addr,nbytes,int_filename, &
+                          filename_len,base_index,gen_geom,gen_graph,gen_hg)
+end function Zf90_Generate_Files
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_RCB_Box(zz,part,ndim,xmin,ymin,zmin,xmax,ymax,zmax)
+integer(Zoltan_INT) :: Zf90_RCB_Box
+type(Zoltan_Struct) INTENT_IN zz
+integer(Zoltan_INT), intent(in) :: part
+integer(Zoltan_INT), intent(out) :: ndim
+real(Zoltan_DOUBLE), intent(out) :: xmin,ymin,zmin,xmax,ymax,zmax
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_RCB_Box = Zfw_RCB_Box(zz_addr,nbytes,part,ndim,xmin,ymin,zmin,xmax,ymax, &
+                           zmax)
+end function Zf90_RCB_Box
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! TEMP child_order

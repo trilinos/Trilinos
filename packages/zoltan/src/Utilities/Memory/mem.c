@@ -20,7 +20,6 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 #include "zoltan_mem.h"
 
@@ -43,7 +42,7 @@ static int nfree = 0;           /* number of calls to free */
 #ifdef ZOLTAN_NO_MPI
 #define GET_RANK(a) *(a)=0
 #else
-#include "mpi.h"
+#include <mpi.h>
 #define GET_RANK(a) MPI_Comm_rank(MPI_COMM_WORLD, (a))
 #endif
 
