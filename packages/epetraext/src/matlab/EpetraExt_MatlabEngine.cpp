@@ -110,7 +110,7 @@ int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * varia
 
 //=============================================================================
 int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
-    /*mxArray* matlabA = 0;
+    mxArray* matlabA = 0;
     if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
 	  matlabA = mxCreateSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
@@ -133,7 +133,7 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 		}
 	}
 
-	mxDestroyArray(matlabA);*/
+	mxDestroyArray(matlabA);
 	return(0);
 }
 

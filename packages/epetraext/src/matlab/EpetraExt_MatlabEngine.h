@@ -149,7 +149,7 @@ class MatlabEngine {
 	\param proc
 	       for serial environment set to 0
 		   for a parallel environment set to the process ID that owns the SerialDenseMatrix
-		   WARNING: the same parameters must be passed to each process
+		   \warning The same parameters must be passed to each process.
 
 	\return Error Codes, see Detailed Description for more information
   */
@@ -167,7 +167,7 @@ class MatlabEngine {
 	\param proc
 	       for serial environment set to 0
 		   for a parallel environment set to the process ID that owns the IntSerialDenseMatrix
-		   WARNING: the same parameters must be passed to each process
+		   \warning The same parameters must be passed to each process.
 
 	\return Error Codes, see Detailed Description for more information
   */

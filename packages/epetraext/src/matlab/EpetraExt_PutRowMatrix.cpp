@@ -36,17 +36,22 @@
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "mex.h"
+#undef printf
+
 using namespace Matlab;
 namespace Matlab {
 
 int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
+  int valueCount = 0;
+  //int* valueCount = &temp;
 
   Epetra_Map map = A.RowMatrixRowMap();
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
 
   if (numProc==1)
-    DoCopyRowMatrix(matlabA, A);
+    DoCopyRowMatrix(matlabA, valueCount, A);
   else {
     int numRows = map.NumMyElements();
     
@@ -89,13 +94,17 @@ int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
       if (importA.FillComplete()) return(-1);
 
       // Finally we are ready to write this strip of the matrix to ostream
-      if (DoCopyRowMatrix(handle, importA)) return(-1);
+      if (DoCopyRowMatrix(matlabA, valueCount, importA)) return(-1);
     }
   }
+
+  // set max cap
+  int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+  
   return(0);
 }
 
-int writeRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
+int DoCopyRowMatrix(mxArray* matlabA, int& valueCount, const Epetra_RowMatrix& A) {
 
   int ierr = 0;
   int numRows = A.NumGlobalRows();
@@ -107,18 +116,35 @@ int writeRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
     if (A.NumMyCols()!=0) ierr = -1;
   }
   else {
+	// declare and get initial values of all matlabA pointers
+	double* matlabAvaluesPtr = mxGetPr(matlabA);
+	int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+	int* matlabArowIndicesPtr = mxGetIr(matlabA);
+
+	// set all matlabA pointers to the proper offset
+	matlabAvaluesPtr += sizeof(*matlabAvaluesPtr) * valueCount;
+	matlabArowIndicesPtr += sizeof(*matlabArowIndicesPtr) * valueCount;
+
     if (numRows!=A.NumMyRows()) ierr = -1;
     Epetra_SerialDenseVector values(A.MaxNumEntries());
     Epetra_IntSerialDenseVector indices(A.MaxNumEntries());
     for (int i=0; i<numRows; i++) {
-      int I = rowMap.GID(i) + 1;
+      //int I = rowMap.GID(i) + 1;
+	  int I = rowMap.GID(i);
       int numEntries;
       if (A.ExtractMyRowCopy(i, values.Length(), numEntries, 
 			     values.Values(), indices.Values())) return(-1);
+	  matlabAcolumnIndicesPtr[I] = valueCount;  // set the starting index of column I
       for (int j=0; j<numEntries; j++) {
-	int J = colMap.GID(indices[j]) + 1;
-	double val = values[j];
-	fprintf(handle, "%d %d %22.16e\n", I, J, val);
+		//int J = colMap.GID(indices[j]) + 1;
+		int J = colMap.GID(indices[j]);
+		*matlabAvaluesPtr = values[j];
+		*matlabArowIndicesPtr = J;
+		// increment all matlabA pointers
+		mablabAvaluesPtr++;
+		matlabArowIndicesPtr++;
+		valueCount++;
+	//fprintf(handle, "%d %d %22.16e\n", I, J, val);
       }
     }
   }
