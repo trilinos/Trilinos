@@ -134,7 +134,7 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) $(LAPACK_LIBS) \
-	$(FLIBS) $(BLAS_LIBS) 
+	$(BLAS_LIBS) $(FLIBS) 
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

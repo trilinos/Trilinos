@@ -774,6 +774,8 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		example/Makefile
+		example/AmesosDscpack/Makefile
 		test/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile

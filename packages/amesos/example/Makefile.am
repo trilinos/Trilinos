@@ -1,0 +1,5 @@
+#@HEADER
+#@HEADER
+
+SUBDIRS = AmesosDscpack
+
