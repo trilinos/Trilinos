@@ -111,8 +111,7 @@ int ml_pdneupc__(int *comm,
 	     &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
 	     lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
        
-    printf("\n\t\t Parallel arpack iterations\n"); 
-    
+       
 #else
 #ifdef HAVE_ML_ARPACK    
     
