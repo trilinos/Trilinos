@@ -128,6 +128,7 @@ int Epetra_IntVector::PutValue(int Value) {
 int Epetra_IntVector::MaxValue() {
 
   int result = -2000000000; // Negative 2 billion is close to smallest 32 bit int
+  if (MyLength_>0) result = Values_[0];
   for (int i=0; i<MyLength_; i++) result = EPETRA_MAX(result, Values_[i]);
   int globalResult;
   this->Comm().MaxAll(&result, &globalResult, 1);
@@ -137,6 +138,7 @@ int Epetra_IntVector::MaxValue() {
 int Epetra_IntVector::MinValue() {
 
   int result = 2000000000; // 2 billion is close to largest 32 bit int
+  if (MyLength_>0) result = Values_[0];
   for (int i=0; i<MyLength_; i++) result = EPETRA_MIN(result, Values_[i]);
   int globalResult;
   this->Comm().MinAll(&result, &globalResult, 1);

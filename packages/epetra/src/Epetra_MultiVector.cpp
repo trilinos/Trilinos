@@ -1388,9 +1388,11 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
   // Minimum value of each vector in MultiVector 
   
   int i, j, ierr = 0;
+
   for (i=0; i < NumVectors_; i++) 
     {
       double MinVal = Epetra_MaxDouble;
+      if (MyLength_>0) MinVal = Pointers_[i][0];
       for (j=0; j< MyLength_; j++) MinVal = EPETRA_MIN(MinVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MinVal;
     }
@@ -1412,7 +1414,8 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
   int i, j, ierr = 0;
   for (i=0; i < NumVectors_; i++) 
     {
-      double MaxVal = Epetra_MinDouble;
+      double MaxVal = - Epetra_MaxDouble;
+      if (MyLength_>0) MaxVal = Pointers_[i][0];
       for (j=0; j< MyLength_; j++) MaxVal = EPETRA_MAX(MaxVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MaxVal;
     }
