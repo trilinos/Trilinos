@@ -229,9 +229,6 @@ AC_CXX_STD_SPRINTF
 # Checks if tests should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, experimental, [enable Teuchos experimental code], TEUCHOS_EXPERIMENTAL, no)
-AM_CONDITIONAL(HAVE_TEUCHOS_EXPERIMENTAL, [test "X$ac_cv_use_teuchos_experimental" != "Xno"])
-
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
@@ -299,6 +296,14 @@ TAC_ARG_WITH_INCDIRS
 # ------------------------------------------------------------------------
 # Checks for addons 
 # ------------------------------------------------------------------------
+
+#
+#  --enable-teuchos-experimental
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, experimental, [enable Teuchos experimental code], TEUCHOS_EXPERIMENTAL, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_EXPERIMENTAL, [test "X$ac_cv_use_teuchos_experimental" != "Xno"])
+
 #
 #  --enable-teuchos-arprec --with-teuchos-arprecdir 
 #  --with-teuchos-arpreclib --with-teuchos-arprecincdir
@@ -382,22 +387,22 @@ AC_F77_LIBRARY_LDFLAGS
 #         DEC/CPLANT and see if template-related errors occur)
 
 # -- DEC CXX --
-#case $target in
-#  alpha*)
-#    if test $CXX = cxx; then
-#      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-#    fi
-#  ;;
-#esac
+case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+esac
 
-#AC_MSG_CHECKING([for template-specific object files to be linked])
-#if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
-# AC_MSG_RESULT(none)
-#else
-# AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
-#fi
+AC_MSG_CHECKING([for template-specific object files to be linked])
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ AC_MSG_RESULT(none)
+else
+ AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+fi
 
-#AC_SUBST(TRILINOS_TEMPLATE_OBJS)
+AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
 # ------------------------------------------------------------------------
 # Checks for library functions
@@ -444,6 +449,7 @@ AC_CONFIG_FILES([
 		test/Containers/Makefile
 		test/Time/Makefile
 		test/Random/Makefile
+		test/RefCountPtr/Makefile
 		test/XML/Makefile
 		])
 

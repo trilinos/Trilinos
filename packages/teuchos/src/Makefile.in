@@ -95,6 +95,7 @@ MPI_F77_EXISTS = @MPI_F77_EXISTS@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 STRIP = @STRIP@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
@@ -329,7 +330,7 @@ EXTRA_libteuchos_a_SOURCES = \
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libteuchos_a_LIBADD = $(XTRALDADD) 
+libteuchos_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD) 
 
 
 # ------------------------------------------------------------------------
