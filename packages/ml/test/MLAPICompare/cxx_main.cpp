@@ -85,12 +85,14 @@ int main(int argc, char *argv[])
     ProblemSize = atoi(argv[1]);
   }
     
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  int NumPDEEqns = 4;
+
+  VbrMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", ProblemSize);
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
-  Epetra_MultiVector* LHS = Gallery.GetStartingSolution();
-  Epetra_MultiVector* RHS = Gallery.GetRHS();
+  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
+  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
+  Epetra_MultiVector* LHS = Gallery.GetVbrStartingSolution();
+  Epetra_MultiVector* RHS = Gallery.GetVbrRHS();
 
   AztecOO solver(*Problem);
 
@@ -178,6 +180,7 @@ int main(int argc, char *argv[])
   IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
   IFPACKList.set("relaxation: zero starting solution", false);
   MLList.set("smoother: ifpack list", IFPACKList);
+  MLList.set("PDE equations", NumPDEEqns);
   
   // ======================================================== //
   // build the MultiLevelPreconditioner first, and track down //
