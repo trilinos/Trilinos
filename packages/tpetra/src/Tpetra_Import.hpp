@@ -64,8 +64,9 @@ namespace Tpetra {
       ImportData_ = Teuchos::rcp(new ImportData<OrdinalType>(source, target));
       
       // call subfunctions
-      setupIDLists();
-      setupLIDs();
+      setupSamePermuteRemote();
+      if(source.isGlobal())
+        setupExport();
     }
     
     //! copy constructor. 
@@ -85,6 +86,7 @@ namespace Tpetra {
 
   	//! List of elements in the source space that are permuted.
   	std::vector<OrdinalType> const& getPermuteFromLIDs() const {return(data().permuteFromLIDs_);};
+
   	//! List of elements in the target space that are permuted.
   	std::vector<OrdinalType> const& getPermuteToLIDs() const {return(data().permuteToLIDs_);};
 
@@ -95,19 +97,13 @@ namespace Tpetra {
   	std::vector<OrdinalType> const& getRemoteLIDs() const {return(data().remoteLIDs_);};
 
   	//! Returns the number of elements that must be sent by the calling image to other images.
-  	std::vector<OrdinalType> const& getNumExportIDs() const {return(&data().numExportIDs_);};
+  	OrdinalType getNumExportIDs() const {return(data().numExportIDs_);};
 
-  	//! List of elements that will be sent to other images.
-  	std::vector<OrdinalType> const& getExportLIDs() const {return(&data().exportLIDs_);};
+  	//! List of elements in the source space that will be sent to other images.
+  	std::vector<OrdinalType> const& getExportLIDs() const {return(data().exportLIDs_);};
 
   	//! List of images to which elements will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
-  	std::vector<OrdinalType> const& getExportImageIDs() const {return(&data().exportImageIDs_);};
-
-  	//! Total number of elements to be sent.
-  	OrdinalType getNumSend() const {return(data().numSend_);};
-
-  	//! Total number of elements to be received.
-  	OrdinalType getNumRecv() const {return(data().numRecv_);};
+  	std::vector<OrdinalType> const& getExportImageIDs() const {return(data().exportImageIDs_);};
 
   	//! Returns the Source ElementSpace used to construct this importer.
   	ElementSpace<OrdinalType> const& getSourceSpace() const {return(data().source_);};
@@ -115,7 +111,7 @@ namespace Tpetra {
     //! Returns the Target ElementSpace used to construct this importer.
     ElementSpace<OrdinalType> const& getTargetSpace() const {return(data().target_);};
     
-    //Distributor<ScalarType, OrdinalType>const& getDistributor() const {return(*Distributor_);}; // ST is PT
+    //Distributor<ScalarType, OrdinalType>const& getDistributor() const {return(data().distributor_);}; // ST is PT
   	
   	//! Assignment operator
     Import<OrdinalType>& operator = (Import<OrdinalType> const& Source) {
@@ -127,19 +123,18 @@ namespace Tpetra {
     //! print method inherited from Object
   	virtual void print(ostream& os) const {
       os << "Import Data Members:" << endl;
-      os << "permuteToLIDs_: "; printVector(os, data().permuteToLIDs_);
-      os << "permuteFromLIDs_: "; printVector(os, getPermuteFromLIDs());
-      os << "remoteLIDs_: "; printVector(os, getRemoteLIDs());
-      //os << "exportLIDs_: " << endl;
-      //os << "exportImageIDs_: " << endl;
+      os << "permuteToLIDs_: " << getPermuteToLIDs() << endl;;
+      os << "permuteFromLIDs_: " << getPermuteFromLIDs() << endl;
+      os << "remoteLIDs_: " << getRemoteLIDs() << endl;
+      //os << "exportLIDs_: N/A" << endl;
+      //os << "exportImageIDs_: N/A" << endl;
       os << "numSameIDs_: " << getNumSameIDs() << endl;
       os << "numPermuteIDs_: " << getNumPermuteIDs() << endl;
       os << "numRemoteIDs_: " << getNumRemoteIDs() << endl;
-      //os << "numExportIDs_: " << endl;
-      //os << "numSend_: " << endl;
-      //os << "numRecv_: " << endl;
+      //os << "numExportIDs_: N/A" << endl;
       os << "\nsource_: " << endl << getSourceSpace();
       os << "\ntarget_: " << endl << getTargetSpace();
+      //os << "distributor_: N/A" << endl;
     };
   	//@}
     
@@ -155,11 +150,10 @@ namespace Tpetra {
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and numRemoteIDs_
     // these variables are already initialized to 0 by the ImportData ctr.
-    void setupIDLists() {
+    // also sets up permuteToLIDs_, permuteFromLIDs_, and remoteLIDs_
+    void setupSamePermuteRemote() {
       ElementSpace<OrdinalType> const& source = getSourceSpace();
       ElementSpace<OrdinalType> const& target = getTargetSpace();
-      OrdinalType const sourceLength = source.getNumMyElements();
-      OrdinalType const targetLength = target.getNumMyElements();
       std::vector<OrdinalType> const& sourceGIDs = source.getMyGlobalElements();
       std::vector<OrdinalType> const& targetGIDs = target.getMyGlobalElements();
       
@@ -179,82 +173,57 @@ namespace Tpetra {
       // targetIter should now point to the GID of the first non-same entry
       
       // -- compute numPermuteIDs and numRemoteIDs --
+      // -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
       // go through remaining entries in targetGIDs. if source owns that GID, 
-      // increment numPermuteIDs_, otherwise increment numRemoteIDs_.
+      // increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
+      // otherwise increment numRemoteIDs_ and add entries to remoteLIDs_ and remoteGIDs_.
       for(; targetIter != targetGIDs.end(); targetIter++) {
-        if(source.isMyGID(*targetIter))
+        if(source.isMyGID(*targetIter)) {
           data().numPermuteIDs_++;
-        else
-          data().numRemoteIDs_++;
-      }
-    };
-
-    //==============================================================================
-    // sets up permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, and numRecv_
-    // numRecv_ has been initialized to 0, others are uninitialized
-    // ifGlobal section = ???
-    void setupLIDs() {
-      ElementSpace<OrdinalType> const& source = getSourceSpace();
-      ElementSpace<OrdinalType> const& target = getTargetSpace();
-      OrdinalType const targetLength = target.getNumMyElements();
-
-      // go through non-same elements. if that GID is owned by source, add entries to
-      // permuteToLIDs_ and permuteFromLIDs_. otherwise add entries to remoteGIDs and remoteLIDs_.
-      std::vector<OrdinalType> remoteGIDs(data().numRemoteIDs_);
-      for(OrdinalType i = data().numSameIDs_; i < targetLength; i++) {
-        if(source.isMyGID(target.getGID(i))) {
-          data().permuteToLIDs_.push_back(i);
-          data().permuteFromLIDs_.push_back(source.getLID(target.getGID(i)));
+          data().permuteToLIDs_.push_back(target.getLID(*targetIter));
+          data().permuteFromLIDs_.push_back(source.getLID(*targetIter));
         }
         else {
-          data().numRecv_++;
-          remoteGIDs.push_back(target.getGID(i));
-          data().remoteLIDs_.push_back(i);
+          data().numRemoteIDs_++;
+          data().remoteLIDs_.push_back(target.getLID(*targetIter));
+          data().remoteGIDs_.push_back(*targetIter);
         }
       }
 
       if((data().numRemoteIDs_ > 0) && (!source.isGlobal()))
-        throw reportError("Serial Import has remote IDs. (Importing to Subset of Target ElementSpace)", 1);
+        throw reportError("Target has remote LIDs but Source is not distributed globally.", 1); //*** what do we do here??? ***
     };
 
     //==============================================================================
-    /*void setupIfGlobal() {
-      if(source.isGlobal()) {
-        // create remoteImageID list: for each entry remoteGIDs[i],
-        // remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
-        std::vector<OrdinalType> remoteImageIDs(remoteGIDs.size());
-        source.getRemoteIDList(data().numRemoteIDs_, remoteGIDs, remoteImageIDs);
-        
-        // remove IDs that don't exist in source
-        if(data().numRemoteIDs_ > 0) {
-          OrdinalType const negOne = Teuchos::OrdinalTraits<OrdinalType>::zero() - Teuchos::OrdinalTraits<OrdinalType>::one();
-          OrdinalType cnt = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne); // cnt = number of occurances of -1 in remoteImageIDs
-          if(cnt > 0 && cnt < data().numRemoteIDs_) {
-            std::vector<OrdinalType> newRemoteGIDs(data().numRemoteIDs_ - cnt);
-            std::vector<OrdinalType> newRemoteImageIDs(data().numRemoteIDs_ - cnt);
-            cnt = 0;
-            for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < data().numRemoteIDs_; i++) {
-              if(remoteImageIDs[i] == negOne) {
-                newRemoteGIDs[cnt] = remoteGIDs[i];
-                newRemoteImageIDs[cnt] = remoteImageIDs[i];
-                cnt++;
-              }
-            }
-            data().numRemoteIDs_ = cnt;
-            remoteGIDs.assign(newRemoteGIDs.begin(), newRemoteGIDs.end());
-            remoteImageIDs.assign(newRemoteImageIDs.begin(), newRemoteImageIDs.end());
-            throw reportError("Target IDs not found in Source ElementSpace (Do you want to import to subset of Target ElementSpace?", 1);
-          }
-          if(cnt >= data().numRemoteIDs_) {
-            data().numRemoteIDs_ = Teuchos::OrdinalTraits<OrdinalType>::zero();
-            remoteGIDs.clear();
-            remoteImageIDs.clear();
-          }
-        } 
+    void setupExport() {/*
+      ElementSpace<OrdinalType> const& source = getSourceSpace();
 
-        // sort remote IDs by ImageID
+      // create remoteImageID list: for each entry remoteGIDs[i],
+      // remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
+      std::vector<OrdinalType> remoteImageIDs(data().remoteGIDs_.size());
+      source.getRemoteIDList(data().numRemoteIDs_, data().remoteGIDs_, remoteImageIDs);
+      
+      // check for GIDs that exist in target but not in source
+      // getRemoteIDList will return -1 for the ImageID for any GIDs where this is the case
+      if(data().numRemoteIDs_ > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
+        OrdinalType const negOne = Teuchos::OrdinalTraits<OrdinalType>::zero() - Teuchos::OrdinalTraits<OrdinalType>::one();
+        OrdinalType count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne); // cnt = number of occurances of -1 in remoteImageIDs
+        if(count > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
+          throw reportError("Target has GIDs not found in Source.", 1);
+        }
       }
-    };*/
+
+      // sort remoteImageIDs in ascending order ( needed? )
+      // apply same permutation to remoteGIDs_  ( needed? )
+      
+
+      // create Distributor instance
+      // call Distributor.createFromRecvs()
+      // takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
+      // returns numExportIDs_, exportLIDs_, and exportImageIDs_
+
+      // convert exportLIDs_ from GIDs to their LIDs in target
+      */};
     
     //==============================================================================
   };

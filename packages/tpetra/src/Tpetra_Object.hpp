@@ -58,7 +58,7 @@ class Object
   //! Object Constructor.
   /*! Creates an Object with the given label.
   */
-  Object(string const label, int tracebackModeIn = -1)
+  Object(std::string const& label, int tracebackModeIn = -1)
 		: label_(label)
 	{
 		tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
@@ -67,7 +67,7 @@ class Object
   //! Object Copy Constructor.
   /*! Makes an exact copy of an existing Object instance.
   */
-  Object(const Object& obj)
+  Object(Object const& obj)
 		: label_(obj.label_)
 	{
 	};
@@ -85,7 +85,7 @@ class Object
   //! Object Label definition using string.
   /*! Defines the label used to describe the \e this object.  
   */
-  virtual void setLabel(string const label)
+  virtual void setLabel(std::string const label)
 	{ 
 		label_ = label;
   }
@@ -93,7 +93,7 @@ class Object
   //! Object Label access funtion.
   /*! Returns the string used to define this object.  
   */
-  virtual string label() const
+  virtual std::string label() const
 	{
 		return(label_);
 	};
@@ -113,7 +113,7 @@ class Object
   */
   static void setTracebackMode(int tracebackModeValue)
 	{
-		if (tracebackModeValue < 0)
+		if(tracebackModeValue < 0)
 			tracebackModeValue = 0;
 		Object tempObject(tracebackModeValue);
 	};
@@ -122,7 +122,7 @@ class Object
   static int getTracebackMode()
 	{
 		int temp = Object::tracebackMode;
-		if (temp == -1)
+		if(temp == -1)
 			temp = Tpetra_DefaultTracebackMode;
 		return(temp);
 	};
@@ -139,12 +139,9 @@ class Object
 	};
 
 	//! Error reporting method.
-	virtual int reportError(string const message, int errorCode) const {
-  // NOTE:  We are extracting a C-style string from Message because 
-  //        the SGI compiler does not have a real string class with 
-  //        the << operator.  Some day we should get rid of ".c_str()"
+	virtual int reportError(std::string const message, int errorCode) const {
 		cerr << endl << "Error in Tpetra Object with label: " << label_ << endl 
-				 << "Tpetra Error:  " << message << "  Error Code:  " << errorCode << endl;
+				 << "Error Message:  " << message << "  Error Code:  " << errorCode << endl;
 		return(errorCode);
 	}
   
@@ -157,45 +154,27 @@ class Object
 // Default is set to 2.  Can be set to different value using setTracebackMode() method in
 // Object class
   static int tracebackMode;
-
-
-protected:
-  string toString(const int& x) const
-	{
-		char s[100];
-		sprintf(s, "%d", x);
-		return string(s);
-	}
-	
-  string toString(const double& x) const {
-		char s[100];
-		sprintf(s, "%g", x);
-		return string(s);
-  }
-  
 	
 private:
 	
-  string label_;
+  std::string label_;
 
 	//! Assignment operator (declared but not defined, do not use)
 	Object& operator = (Object const& Source);
 	
 }; // class Object
 
-
 // Set TracebackMode value to default
 int Object::tracebackMode(-1);
 
-} // namespace Tpetra
-
-inline ostream& operator<<(ostream& os, const Tpetra::Object& Obj)
+inline ostream& operator<<(ostream& os, Tpetra::Object const& Obj)
 {
   os << Obj.label() << endl;
-  Obj.print(os);
- 
-  return os;
+  Obj.print(os); 
+  return(os);
 }
+
+} // namespace Tpetra
 
 
 #endif // TPETRA_OBJECT_HPP

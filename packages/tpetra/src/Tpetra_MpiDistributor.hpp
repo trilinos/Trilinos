@@ -89,70 +89,111 @@ namespace Tpetra {
     ~MpiDistributor() {};
     //@}
     
+
     //@{ \name Gather/Scatter Constructors
+
     //! Create Distributor object using list of Image IDs to send to
-    void createFromSends(OrdinalType const& numExportIDs, OrdinalType const* exportImageIDs,
-                         bool const& deterministic, OrdinalType& numRemoteIDs ) 
-		{throw reportError("This method is not implemented yet.", -1);};
+    void createFromSends(OrdinalType const& numExportIDs, 
+                         OrdinalType const* exportImageIDs,
+                         bool const& deterministic, 
+                         OrdinalType& numRemoteIDs ) 
+		{
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! Create Distributor object using list of Image IDs to receive from
-    void createFromRecvs(OrdinalType const& numRemoteIDs, OrdinalType const* remoteGIDs, 
-                         OrdinalType const* remoteImageIDs, bool const& deterministic, 
-                         OrdinalType& numExportIDs, OrdinalType*& exportGIDs, 
+    void createFromRecvs(OrdinalType const& numRemoteIDs, 
+                         OrdinalType const* remoteGIDs, 
+                         OrdinalType const* remoteImageIDs, 
+                         bool const& deterministic, 
+                         OrdinalType& numExportIDs, 
+                         OrdinalType*& exportGIDs, 
                          OrdinalType*& exportImageIDs)
-		{throw reportError("This method is not implemented yet.", -1);};
+		{
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //@}
     
+
     //@{ \name Constant Size
+
     //! do
-    void doPostsAndWaits       (PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) 
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doPostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doReverse
-    void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     
     //! doPosts
-    void doPosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doPosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doWaits
-    void doWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     
     //! doReversePosts
-    void doReversePosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReversePosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doReverseWaits
-    void doReverseWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReverseWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //@}
     
+
     //@{ \name Non-Constant Size
-    //! do
-    void doPostsAndWaits       (PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+ 
+   //! do
+    void doPostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doReverse
-    void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     
     //! doPosts
-    void doPosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doPosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doWaits
-    void doWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     
     //! doReversePosts
-    void doReversePosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReversePosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //! doReverseWaits
-    void doReverseWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method is not implemented yet.", -1);};
+    void doReverseWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+
     //@}
     
+
     //@{ \name I/O Methods
+
     //! print method inherited from Object
     void print(ostream& os) const {};
+
     //! printInfo method inherited from Distributor
     void printInfo(ostream& os) const {os << *this;};
+
     //@}
     
   private:
@@ -162,6 +203,8 @@ namespace Tpetra {
     // convenience functions for returning inner data class, both const and nonconst versions.
     MpiData& data() {return(*MpiData_);}
     MpiData const& data() const {return(*MpiData_);}
+
+
     
   }; // class MpiDistributor
   

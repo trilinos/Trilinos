@@ -29,12 +29,161 @@
 #ifndef TPETRA_TEST_UTIL_HPP
 #define TPETRA_TEST_UTIL_HPP
 
+#include "Tpetra_ConfigDefs.hpp" // for iostream, etc.
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_basic_oblackholestream.hpp>
+#include "Tpetra_Version.hpp"
+
 /*! \file tpetra_test_util.hpp
     \brief This file contains utility functions used by the Tpetra Tests.
+    
+    <ol>
+    <li> convenience functions for building up values using only 
+    one() and zero() from OrdinalTraits/ScalarTraits.
+    <li> output functions that provide style sheet-like functionality
+    <li> generator for producing non-contiguous values in an arbitrary type
+    </ol>
 */
 
-namespace TpetraTestUtil {
+//======================================================================
+// convenience functions for building up values in test suites.
+// this way we don't have to use any literals.
+//======================================================================
+
+template <typename T>
+T intToOrdinal(int n) {
+  T result = Teuchos::OrdinalTraits<T>::zero();
+  while(n > 0) {
+    result += Teuchos::OrdinalTraits<T>::one();
+    n--;
+  }
+  while(n < 0) {
+    result -= Teuchos::OrdinalTraits<T>::one();
+    n++;
+  }
+  return(result);
+};
+
+template <typename T>
+T intToScalar(int n) {
+  T result = Teuchos::ScalarTraits<T>::zero();
+  while(n > 0) {
+    result += Teuchos::ScalarTraits<T>::one();
+    n--;
+  }
+  while(n < 0) {
+    result -= Teuchos::ScalarTraits<T>::one();
+    n++;
+  }
+  return(result);
+};
+
+/*template<typename T>
+  int toInt(T n) {
+  return(static_cast<int>(n));
+  };*/
+
+//======================================================================
+// functions for outputting nicely formatted text
+//======================================================================
+
+void outputStartMessage(std::string const className) {
+  cout << "\n************************************************************" << endl;
+  cout << "Starting " << className << "Test..." << endl;
+  cout << Tpetra::Tpetra_Version() << endl;
+  cout << "************************************************************" << endl;
+};
+
+void outputEndMessage(std::string const className, bool passed) {
+  cout << "************************************************************" << endl;
+  cout << className << " test ";
+  if(passed)
+    cout << "passed." << endl;
+  else
+    cout << "failed." << endl;
+  cout << "************************************************************\n" << endl;
+};
+
+void outputHeading(std::string const message) {
+  cout << "**************************************************" << endl;
+  cout << message << endl;
+  cout << "**************************************************" << endl;
+};
+
+void outputSubHeading(std::string const message) {
+  cout << message << endl;
+};
+
+//======================================================================
+// functions for generator
+//======================================================================
+
+template <typename T>
+T generateValue(T const x, T const y) {
+  T const two = intToScalar<T>(2);
+
+  // formula for z(x,y) = 0.5(x^2 + y^2 + 3x + y) + xy
+  return(((x*x + y*y + x+x+x + y) / two) + (x*y));
+}
+
+// specialization for complex so that both real and imaginary portions get written to
+// the real portion gets generateValue(x, y), and the imaginary portion gets generateValue(x, y+1)
+template <typename T>
+complex<T> generateValue(complex<T> const x, complex<T> const y) {
+  T real = generateValue(x.real(), y.real());
+  T imag = generateValue(x.real(), (y.real() + Teuchos::ScalarTraits<T>::one()));
+  return(complex<T>(real, imag));
+}
+
+template <typename T>
+void generateColumn(std::vector<T>& vector, int const x, int const length) {
+  vector.resize(length);
+  for(int y = 0; y < length; y++)
+    vector[y] = generateValue(intToScalar<T>(x), intToScalar<T>(y));
+}
+
+template <typename T>
+void generateMultipleColumns(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
+  vector.resize(length * (lastx - firstx + 1));
+  typename std::vector<T>::iterator i = vector.begin();
+  for(int x = firstx; x <= lastx; x++)
+    for(int y = 0; y < length; y++) {
+      *i = generateValue(intToScalar<T>(x), intToScalar<T>(y));
+      i++;
+    }
+}
+
+/*
+// generator tester function - kept around just in case
+template <typename T>
+void testGenerator() {
+  int length = 10;
+  int length2 = 4;
   
-} // namespace TpetraTestUtil
+  cout << "\nTesting generateValue..." << endl;
+  T tlength = intToScalar(length);
+  for(T y = Teuchos::ScalarTraits<T>::zero(); y < tlength; y++) {
+    for(T x = Teuchos::ScalarTraits<T>::zero(); x < tlength; x++)
+      cout << generateValue<T>(x,y) << "\t";
+    cout << endl;
+  }
+  
+  cout << "\nTesting generateColumn..." << endl;
+  std::vector< std::vector<T> > columns(length);
+  for(int i = 0; i < length; i++) {
+    generateColumn(columns[i], i, length);
+    cout << "Column " << i << ": " << columns[i] << endl;
+  }
+
+  cout << "\nTesting generateMultipleColumns..." << endl;
+  std::vector<T> multColumns;
+  generateMultipleColumns(multColumns, 0, length2, length2);
+  cout << "array bounds = (0,0) to (" << length2 << "," << length2 << ")"  << endl;
+  cout << "array contents = " << multColumns << endl;
+  
+  cout << endl;
+}
+*/
 
 #endif // TPETRA_TEST_UTIL_HPP

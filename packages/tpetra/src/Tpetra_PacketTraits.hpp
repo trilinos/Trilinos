@@ -32,29 +32,49 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
-  /** The Tpetra PacketTraits file.
+  /*! The Tpetra PacketTraits file.
 			
-	For the most general type 'class T', we define aborting functions, 
-	which should restrict implementations from using traits other than the
-	specializations defined below.
+    For the general type, or default implementation, an aborting function
+    is defined which should restrict implementations from using ordinal traits other than
+    the defined specializations.
   */	
 
-  template<class T>
+  template<typename T>
   struct UndefinedPacketTraits {
     //! This function should not compile if there is an attempt to instantiate!
     static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
   };
   
-	template<class T>
+	template<typename T>
 	struct PacketTraits {
 		static inline int packetSize()              {return UndefinedPacketTraits<T>::notDefined();};
 		static inline std::string name()            {return UndefinedPacketTraits<T>::notDefined();};
 	};
 	
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 	template<>
 	struct PacketTraits<int> {
 		static inline int packetSize()              {return(sizeof(int));};
 		static inline std::string name()            {return("int");};
+	};
+
+	template<>
+	struct PacketTraits<unsigned int> {
+		static inline int packetSize()              {return(sizeof(unsigned int));};
+		static inline std::string name()            {return("unsigned int");};
+	};
+
+	template<>
+	struct PacketTraits<long int> {
+		static inline int packetSize()              {return(sizeof(long int));};
+		static inline std::string name()            {return("long int");};
+	};
+
+	template<>
+	struct PacketTraits<unsigned long int> {
+		static inline int packetSize()              {return(sizeof(unsigned long int));};
+		static inline std::string name()            {return("unsigned long int");};
 	};
 
 	template<>
@@ -68,23 +88,21 @@ namespace Tpetra {
 		static inline int packetSize()              {return(sizeof(double));};
 		static inline std::string name()            {return("double");};
 	};
- 
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H))
 
 	template<>
-	struct PacketTraits<complex<float> > {
-		static inline int packetSize()             {return(sizeof(complex<float>));};
-		static inline const char* name()           {return("complex<float>");};
+	struct PacketTraits<long double> {
+		static inline int packetSize()              {return(sizeof(long double));};
+		static inline std::string name()            {return("long double");};
 	};
 
-	template<>
-	struct PacketTraits<complex<double> > {
-		static inline int packetSize()             {return(sizeof(complex<double>));};
-		static inline const char* name()           {return("complex<double>");};
+  template<typename T>
+	struct PacketTraits< complex<T> > {
+		static inline int packetSize()              {return(sizeof(complex<T>));};
+		static inline std::string name()            {return("complex<" + PacketTraits<T>::name() + ">");};
 	};
+  
 
-#endif // HAVE_COMPLEX || HAVE_COMPLEX_H
-
+#endif // DOXYGEN_SHOULD_SKIP_THIS
    
 } // namespace Tpetra
 

@@ -35,6 +35,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Directory.hpp"
+#include "Tpetra_Util.hpp" // for toString
 
 namespace Tpetra {
 
@@ -242,11 +243,11 @@ namespace Tpetra {
     
     //! Returns the image IDs and corresponding local IDs for a given list of global IDs.
     void getRemoteIDList(OrdinalType numIDs, std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList, std::vector<OrdinalType>& LIDList) const {
-      data().Directory_->getDirectoryEntries(numIDs, &GIDList[0], &imageIDList[0], &LIDList[0]);
+      data().Directory_->getDirectoryEntries(numIDs, &GIDList.front(), &imageIDList.front(), &LIDList.front());
     };
     //! Returns only the image IDs for a given list of global IDs.
     void getRemoteIDList(OrdinalType numIDs, std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList) const {
-      data().Directory_->getDirectoryEntries(numIDs, &GIDList[0], &imageIDList[0], 0);
+      data().Directory_->getDirectoryEntries(numIDs, &GIDList.front(), &imageIDList.front(), 0);
     };
     
     //! Returns local ID of global ID passed in, throws exception -1 if not found on this image.
@@ -424,7 +425,6 @@ namespace Tpetra {
       getMyGlobalElements(); // throw away output, we call this to make sure list is generated
       int myImageID = platform().getMyImageID();
       int numImages = platform().getNumImages();
-      OrdinalType minLID = getMinLID();
       
       for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
         if(myImageID == imageCtr) {

@@ -29,13 +29,14 @@
 #ifndef TPETRA_UTIL_HPP
 #define TPETRA_UTIL_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
+#include <Teuchos_Utils.hpp>
 
 namespace Tpetra {
 
-	// this will contain utility functions, such as efficientAddOrUpdate
-
   // efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
+  // if m already contains an entry with key k, use operator [].
+  // if it doesn't, insert is used.
 	template<typename MapType, typename KeyArgType, typename ValueArgType>
   typename MapType::iterator efficientAddOrUpdate(MapType& m, KeyArgType const& k, ValueArgType const& v) {
     typename MapType::iterator lb = m.lower_bound(k);
@@ -59,18 +60,49 @@ namespace Tpetra {
     dest = static_cast<OrdinalType>(source);
   }
 
-  // print contents of std::vector object
-  template<typename T>
-  void printVector(ostream& os, std::vector<T> const& vector) {
-    os << "{";
-    if(!vector.empty()) {
-      os << vector[0];
-      for(int i = 1; i < vector.size(); i++)
-        os << "," << vector[i];
-    }
-    os << "}" << endl;
+  // functions for converting types to strings
+  // mainly used for doing output
+  template <typename T>
+  std::string toString(T const& x)
+  {
+    return(Teuchos::toString(x));
   }
- 
+
+template<typename T>
+inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
+{
+  os << "{";
+  if(!vector.empty()) {
+    typename std::vector<T>::const_iterator i = vector.begin();
+    os << *i;
+    i++;
+    for(; i != vector.end(); i++)
+      os << "," << *i;
+  }
+  os << "}";
+  return(os);
+};
+
 } // namespace Tpetra
+
+
+// this function works much the way Teuchos::Array::toString works.
+// it allows std::vector to be used with an ostream.
+// The contents of the vector are printed in the following format:
+// "{4, 7, 18, 23, 6, 2}"
+template<typename T>
+inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
+{
+  os << "{";
+  if(!vector.empty()) {
+    typename std::vector<T>::const_iterator i = vector.begin();
+    os << *i;
+    i++;
+    for(; i != vector.end(); i++)
+      os << "," << *i;
+  }
+  os << "}";
+  return(os);
+};
 
 #endif // TPETRA_UTIL_HPP

@@ -26,25 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include "Tpetra_Import.hpp"
+#include "../tpetra_test_util.hpp"
 #include "Tpetra_ElementSpace.hpp"
-#include "Tpetra_Version.hpp"
+#include "Tpetra_Import.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #include "Tpetra_MpiPlatform.hpp"
+#include "Tpetra_MpiComm.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
-#endif
+#include "Tpetra_SerialComm.hpp"
+#endif // TPETRA_MPI
 
-// function prototype
-template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug);
+template <typename OrdinalType>
+int unitTests(bool verbose, bool debug, int rank, int size);
+template <typename OrdinalType>
+void codeCoverage(bool verbose, bool debug, int rank, int size);
 
 int main(int argc, char* argv[]) {
-	// initialize verbose & debug flags
+  // initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -56,46 +56,175 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-	// call test routine
-	int ierr = 0;
-	if(verbose) cout << "Starting ImportExportTest..." << endl;
-	ierr += unitTests<int, double>(verbose, debug);
-
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0
+  // if debug is enabled, it will still output on all nodes
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) outputStartMessage("ImportExport");
+  int ierr = 0;
+  
+  // call the actual test routines
+	ierr += unitTests<int>(verbose, debug, rank, size);
+  
 	// finish up
-	if(verbose) {
-		if(ierr == 0)
-			cout << "ImportExport test successful." << endl;
-		else
-			cout << "ImportExport test failed." << endl;
-  }
-
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif
+	if(verbose) outputEndMessage("ImportExport", (ierr == 0));
 	return(ierr);
-};
+}
 
 //======================================================================
-template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug) {
-  std::string OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-  std::string STName = Teuchos::ScalarTraits<ScalarType>::name();
+template <typename OrdinalType>
+int unitTests(bool verbose, bool debug, int rank, int size) {
+  std::string className = "Import<" + Teuchos::OrdinalTraits<OrdinalType>::name() + ">";
+  if(verbose) outputHeading("Stating unit tests for " + className);
 
-	if(verbose) cout << "Starting code coverage for Import<" << OTName << "," << STName << ">." << endl;
+  int ierr = 0;
+  int returnierr = 0;
 
-	// have to create ElementSpaces first
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+  codeCoverage<OrdinalType>((verbose && debug), rank, size);
+	
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+
+  if(verbose && debug) outputSubHeading("Starting actual testing section... ");
+
 #ifdef TPETRA_MPI
   Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
+  Tpetra::MpiComm<OrdinalType, OrdinalType> comm(MPI_COMM_WORLD);
 #else
   Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
+  Tpetra::SerialComm<OrdinalType, OrdinalType> comm;
 #endif
 
-	Tpetra::ElementSpace<OrdinalType> source(10, 0, platform);
-  Tpetra::ElementSpace<OrdinalType> target(10, 0, platform);
-
+  OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+  OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
+  Tpetra::ElementSpace<OrdinalType> source(negOne, intToOrdinal<OrdinalType>(10), zero, platform);
+  Tpetra::ElementSpace<OrdinalType> target(negOne, intToOrdinal<OrdinalType>(5), zero, platform);
   Tpetra::Import<OrdinalType> importer(source, target);
-  if(debug) cout << importer << endl;
 
-	if(verbose) cout << "Code coverage <" << OTName << ", " << STName << "> section finished." << endl;
+  // test that numSame + numPermute + numRemote = target.getNumMyElements()
+  if(verbose) cout << "Testing same/permute/remote sum... ";
 
-	return(0);
+  OrdinalType same = importer.getNumSameIDs();
+  OrdinalType permute = importer.getNumPermuteIDs();
+  OrdinalType remote = importer.getNumRemoteIDs();
+  OrdinalType sum = same + permute + remote;
+  OrdinalType expectedSum = target.getNumMyElements();
+  if(debug) {
+    if(verbose) cout << endl;
+    comm.barrier();
+    cout << "[Image " << rank << "] NumSameIDs:    " << same << endl;
+    cout << "[Image " << rank << "] NumPermuteIDs: " << permute << endl;
+    cout << "[Image " << rank << "] NumRemoteIDs:  " << remote << endl;
+    cout << "[Image " << rank << "] Expected Sum:  " << expectedSum << endl;
+    comm.barrier();
+    if(verbose) cout << "same/permute/remote sum test ";
+  }
+  if(sum != expectedSum) {
+    if(verbose) cout << "failed" << endl;
+    ierr++;
+  }
+  else
+    if(verbose) cout << "passed" << endl;
+  returnierr += ierr;
+  ierr = 0;
+
+	// ======================================================================
+	// finish up
+	// ======================================================================
+  
+  comm.barrier();
+	if(verbose) {
+		if(returnierr == 0)
+      outputHeading("Unit tests for " + className + " passed.");
+		else
+      outputHeading("Unit tests for " + className + " failed.");
+  }
+	return(returnierr);
 }
+
+//======================================================================
+template <typename OrdinalType>
+void codeCoverage(bool verbose, int rank, int size) { 
+  if(verbose) outputSubHeading("Starting code coverage section...");
+
+  if(verbose) cout << "Creating Platform and Comm..." << endl;
+#ifdef TPETRA_MPI
+  Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
+  Tpetra::MpiComm<OrdinalType, OrdinalType> comm(MPI_COMM_WORLD);
+#else
+  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
+  Tpetra::SerialComm<OrdinalType, OrdinalType> comm;
+#endif
+
+  OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+  OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
+  OrdinalType const five = intToOrdinal<OrdinalType>(5);
+  OrdinalType const ten = intToOrdinal<OrdinalType>(10);
+
+  if(verbose) cout << "Creating ElementSpaces..." << endl;
+  Tpetra::ElementSpace<OrdinalType> source(negOne, ten, zero, platform);
+  Tpetra::ElementSpace<OrdinalType> target(negOne, five, zero, platform);
+
+  if(verbose) cout << "Import constructor..." << endl;
+  Tpetra::Import<OrdinalType> importer(source, target);
+
+  if(verbose) cout << "Import copy constructor..." << endl;
+  Tpetra::Import<OrdinalType> importer2(importer);
+
+  if(verbose) cout << "getNumSameIDs..." << endl;
+  importer.getNumSameIDs();
+
+  if(verbose) cout << "getNumPermuteIDs..." << endl;
+  importer.getNumPermuteIDs();
+
+  if(verbose) cout << "getPermuteFromLIDs..." << endl;
+  importer.getPermuteFromLIDs();
+
+  if(verbose) cout << "getPermuteToLIDs..." << endl;
+  importer.getPermuteToLIDs();
+
+  if(verbose) cout << "getNumRemoteIDs..." << endl;
+  importer.getNumRemoteIDs();
+
+  if(verbose) cout << "getRemoteIDs..." << endl;
+  importer.getRemoteLIDs();
+
+  if(verbose) cout << "getNumExportIDs..." << endl;
+  importer.getNumExportIDs();
+
+  if(verbose) cout << "getExportLIDs..." << endl;
+  importer.getExportLIDs();
+
+  if(verbose) cout << "getExportImageIDs..." << endl;
+  importer.getExportImageIDs();
+
+  if(verbose) cout << "getSourceSpace..." << endl;
+  importer.getSourceSpace();
+
+  if(verbose) cout << "getTargetSpace..." << endl;
+  importer.getTargetSpace();
+
+  if(verbose) cout << "assignment operator..." << endl;
+  importer2 = importer;
+}
+

@@ -32,6 +32,7 @@
 #include "Tpetra_Directory.hpp"
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_Util.hpp" // for toString method
 
 namespace Tpetra {
 
