@@ -420,14 +420,26 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
    }
 
 #ifdef ML_DEBUG_SMOOTHER
-   if (res2 != NULL) res2  = (double *) ML_allocate(n*sizeof(double));
-   printf("    ML_Jacobi, omega = %e\n", omega);
+   if (res2 == NULL) res2  = (double *) ML_allocate(n*sizeof(double));
+   if (comm->ML_mypid == 0)
+     printf("    ML_Jacobi, omega = %e\n", omega);
+   res_norm = sqrt(ML_gdot(n, rhs, rhs, comm));
+   if (comm->ML_mypid == 0)
+     printf("       entering:  |rhs| = %e\n", res_norm);
+   res_norm = sqrt(ML_gdot(n, diagonal, diagonal, comm));
+   if (comm->ML_mypid == 0)
+     printf("       entering: |diag| = %e\n", res_norm);
 #endif
 
    for (j = 0; j < smooth_ptr->ntimes; j++) 
    {
       ML_Operator_Apply(Amat, n, x, n, res);
       for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+#ifdef ML_DEBUG_SMOOTHER
+      res_norm = sqrt(ML_gdot(n, res, res, comm));
+      if (comm->ML_mypid == 0)
+        printf("               %d: |res| = %e\n", j, res_norm);
+#endif
       for (i = 0; i < n; i++) res[i] /= diagonal[i];
 
       if (smooth_ptr->omega == ML_ONE_STEP_CG) {
@@ -446,7 +458,8 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
       ML_Operator_Apply(Amat, n, x, n, res2);
       for ( i = 0; i < n; i++ ) res2[i] = rhs[i] - res2[i];
       res_norm = sqrt(ML_gdot(n, res2, res2, comm));
-      printf("      Jacobi : iter = %2d, rnorm = %e\n", j, res_norm);
+      if (comm->ML_mypid == 0)
+        printf("              %d: rnorm = %e\n", j, res_norm);
 #endif
    }
    if (res2 != NULL) free(res2);
@@ -812,6 +825,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Smoother  *smooth_ptr;
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Comm_Envelope *envelope;
+   int reduced_smoother_flag;
 #ifdef ML_DEBUG_SMOOTHER
    int i,j;
    double *res2, res_norm;
@@ -828,6 +842,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    Tmat = (ML_Operator *) dataptr->Tmat;
    Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
    TtATmat = (ML_Operator *) dataptr->TtATmat;
+   /*
+      If true, do cheaper smoothing by smoothing (edges/nodes) on the pre
+      smooth and smoothing (nodes/edges) on the post smooth.
+   */
+   reduced_smoother_flag = (int) dataptr->reduced_smoother;
 
    res_edge = (double *) dataptr->res_edge;
    edge_update = (double *) dataptr->edge_update;
@@ -850,10 +869,18 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Comm_Envelope_Create(&envelope);
    smooth_ptr->envelope = envelope;
 
+   /*
    if (smooth_ptr->pre_or_post != ML_TAG_PRESM)
       smooth_ptr->pre_or_post = ML_TAG_PRESM;
    else
       smooth_ptr->pre_or_post = ML_TAG_POSTSM;
+   */
+
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+   printf("Coming into Hiptmair: pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
 
    ML_Comm_Envelope_Set_Tag(envelope, smooth_ptr->my_level->levelnum,
                             smooth_ptr->pre_or_post); 
@@ -861,8 +888,29 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    init_guess = smooth_ptr->init_guess;
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
-      ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
-			inlen, x, outlen, rhs, init_guess);
+      if (reduced_smoother_flag)
+      {
+         if (smooth_ptr->pre_or_post == ML_TAG_PRESM)
+         {
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+            printf("Hiptmair: pre edge smoothing\n");
+#endif
+#endif
+            ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			                  inlen, x, outlen, rhs, init_guess);
+         }
+      }
+      else
+      {
+         ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, init_guess);
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+         printf("\t(1) smooth_ptr->pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
+      }
       init_guess = ML_NONZERO;
 
       for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
@@ -924,9 +972,30 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    
       for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
 
-      ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
-			inlen, x, outlen, rhs, ML_NONZERO);
- 
+      if (reduced_smoother_flag)
+      {
+         if (smooth_ptr->pre_or_post == ML_TAG_POSTSM)
+         {
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+            printf("Hiptmair: post edge smoothing\n");
+#endif
+#endif
+            ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, ML_NONZERO);
+         }
+      }
+      else 
+      {
+         ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, ML_NONZERO);
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+         printf("\t(2) smooth_ptr->pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
+      }
+
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -2672,6 +2741,7 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->output_level = 2;
    ml_data->ml_nodal = NULL;
    ml_data->ml_edge = NULL;
+   ml_data->reduced_smoother = 0;
    return(0);
 }
  
@@ -3006,6 +3076,11 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->Tmat = Tmat;
    dataptr->output_level = 2.0;
    dataptr->omega = 1.0;
+   if ((edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_MLS))
+      dataptr->reduced_smoother =
+                        *((int *) ML_Smoother_Arglist_Get(edge_args,2));
 
    /* Get maximum eigenvalue for damping parameter. */
 
@@ -3016,19 +3091,22 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
-    if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1)) {
+    if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1))
+    {
       dataptr->max_eig = ML_Operator_GetMaxEig(Amat);
       dataptr->omega = 1.0 / dataptr->max_eig;
       if (Amat->comm->ML_mypid == 0
           && dataptr->output_level < ML_Get_PrintLevel())
-	{
-	  printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
-		 Amat->invec_leng);
-	  printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
-	  printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
-	  fflush(stdout);
-	}  
+        printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
     }
+    if (Amat->comm->ML_mypid == 0
+        && dataptr->output_level < ML_Get_PrintLevel())
+    {
+	     printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
+		    Amat->invec_leng);
+         printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
+         fflush(stdout);
+    }  
   }
 
    /* Check matrix dimensions. */
@@ -6189,24 +6267,25 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 					   ML_Operator *Amat, void *smoother, 
 					   void **args, double default_omega)
 {
-  double omega, *dbl_arg1;
+  double omega, *dbl_arg1, *dbl_arg2;
   int *int_arg1, *int_arg2, *int_arg3;
 
    ML_Create(ml_subproblem,1);
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
-     if (ML_Smoother_Arglist_Nargs(args) != 3) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 5) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 5 nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
-     int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
-     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1);
-     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 2);
+     int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* its           */
+     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
+     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 4);    /* poly degree   */
+     dbl_arg2 = (double *) ML_Smoother_Arglist_Get(args, 3); /* eig ratio tol */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
         printf("Generating subsmoother MLS\n");
      ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,*dbl_arg1,
-                         *int_arg2);
+                         *int_arg2, *dbl_arg2);
    }
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
@@ -6226,8 +6305,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    }
    else if (smoother == (void *) ML_Gen_Smoother_GaussSeidel) {
      printf("Entering ML_Smoother_Gen_Hiptmair_Data (GS)\n");
-     if (ML_Smoother_Arglist_Nargs(args) != 2) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 3) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need three nodal arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6241,8 +6320,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 			    omega);
    }
    else if (smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) {
-     if (ML_Smoother_Arglist_Nargs(args) != 2) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 3) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need three nodal arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6309,7 +6388,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    double          *pAux, *dk;
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
-   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
+   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2, dtemp3;
 
 
    n = outlen;
@@ -6475,15 +6554,15 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
       for (i = 0; i < Nrows; i++) {
 #else
 #ifdef fastrb
-	if (iter == 0) {
-      for (i = 0; i < Nrows; i += 2) 
-	if (val[i] != 0.0) x2[i] = rhs[i]/val[i];
-	}
-	else {
+    if (iter == 0) {
+      for (i = 0; i < Nrows; i += 2)
+    if (val[i] != 0.0) x2[i] = rhs[i]/val[i];
+    }
+    else {
 #endif
       for (i = 0; i < Nrows; i += 2) {
-	j = bindx[i];              // added for redblack
-	bindx_ptr = &bindx[j];    // added for redblack
+    j = bindx[i];             /* added for redblack */
+    bindx_ptr = &bindx[j];    /* added for redblack */
 #endif
 	sum =  rhs[i];
 	while (j+10 < bindx[i+1]) {
@@ -6507,30 +6586,30 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
       }
 #ifdef rblack
 #ifdef fastrb
-	}
+    }
 #endif
       for (i = 1; i < Nrows; i += 2) {
-	j = bindx[i];
-	bindx_ptr = &bindx[j];
-	sum =  rhs[i];
-	while (j+10 < bindx[i+1]) {
-	  sum -= (val[j+9]*x2[bindx_ptr[9]] +
-		  val[j+8]*x2[bindx_ptr[8]] +
-		  val[j+7]*x2[bindx_ptr[7]] +
-		  val[j+6]*x2[bindx_ptr[6]] +
-		  val[j+5]*x2[bindx_ptr[5]] +
-		  val[j+4]*x2[bindx_ptr[4]] +
-		  val[j+3]*x2[bindx_ptr[3]] +
-		  val[j+2]*x2[bindx_ptr[2]] +
-		  val[j+1]*x2[bindx_ptr[1]] +
-		  val[j]*x2[*bindx_ptr]);
-	  bindx_ptr += 10;
-	  j += 10;
-	}
-	while (j < bindx[i+1]) {
-	  sum -= val[j++] * x2[*bindx_ptr++];
-	}
-	if (val[i] != 0.0) x2[i] = sum/val[i];
+    j = bindx[i];
+    bindx_ptr = &bindx[j];
+    sum =  rhs[i];
+    while (j+10 < bindx[i+1]) {
+      sum -= (val[j+9]*x2[bindx_ptr[9]] +
+          val[j+8]*x2[bindx_ptr[8]] +
+          val[j+7]*x2[bindx_ptr[7]] +
+          val[j+6]*x2[bindx_ptr[6]] +
+          val[j+5]*x2[bindx_ptr[5]] +
+          val[j+4]*x2[bindx_ptr[4]] +
+          val[j+3]*x2[bindx_ptr[3]] +
+          val[j+2]*x2[bindx_ptr[2]] +
+          val[j+1]*x2[bindx_ptr[1]] +
+          val[j]*x2[*bindx_ptr]);
+      bindx_ptr += 10;
+      j += 10;
+    }
+    while (j < bindx[i+1]) {
+      sum -= val[j++] * x2[*bindx_ptr++];
+    }
+    if (val[i] != 0.0) x2[i] = sum/val[i];
       }
 #endif
    }
