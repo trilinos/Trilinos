@@ -23,7 +23,8 @@ extern "C" {
 
 /* For a detailed description of the following algorithm, please see the
    Developers Guide.  For instructions on use, please see the Users
-   Guide.  This code assumes a 32 bit integer length!!!  */
+   Guide.  This code assumes a 32 bit integer length!!! For a note on
+   increasing the precision see the end of this file. */
 
 static double next_query_2d (ZZ*, double *lquerybox, double *hquerybox, double);
 static double next_query_3d (ZZ*, double *lquerybox, double *hquerybox, double);
@@ -487,6 +488,38 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
       }
    return ldexp ((double) start[0], -22) + ldexp((double) start[1], -54);
    }
+
+
+/* Maintenance Note:  Per the review 04.15.03, the following section addresses
+increasing the precision of this box assign.
+
+The next_query_xx() routines can be extended to arbitrary precision. Currently
+they reflect the precision limitation of using a double for the starting
+Hilbert coordinate and the returned value:
+   static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
+    double s)
+Change this to:
+   static int* next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
+    int *start).
+Represent the Hilbert coordinate as an array of ints (2 for 2d, 3 for 3d) rather
+than the double representation currently used.
+Change the declaration:
+   static const int MAXLEVEL = 18; (3d or 28 in 2d)
+to
+   static const int MAXLEVEL = 32;
+Change the return statement:
+   return ldexp ((double) start[0], -22) + ldexp((double) start[1], -54);
+to
+   return start;
+
+Please see the related remarks in the file hsfc_hilbert.c.
+
+The last change is to replace the criteria for the binary lookup of a hilbert
+coordinate to find its partition to use the int arrays rather than double.
+This requires a trivial change to hsfc.c to use int arrays for the hilbert
+coordinate as well.
+*/
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -19,7 +19,8 @@ extern "C" {
 #include "hsfc_hilbert_const.h"  /* contains state tables and documentation */
 #include "hsfc.h"
 
-
+/* see maintenance note at the end of this file for information about extending
+the precision of these routines. */
 
 /* Given a 1-d coordinate in [0,1], returns it as the Hilbert key) */
 double Zoltan_HSFC_InvHilbert1d (ZZ *zz, double *coord)
@@ -122,7 +123,13 @@ double Zoltan_HSFC_InvHilbert3d (ZZ *zz, double *coord)
    }
 
 
-
+   
+/* Note: the following code has been tested and is fine.  It was necessary
+during the testing for the new box assign algorithm.  Since it is potentially
+useful, I am leaving this code intact, but ifdef'ing it out because of the
+SQA coverage requirement. */
+   
+#ifdef RTHRTH
 /* Given the Hilbert key, returns it as the coordinate in [0,1] */
 void Zoltan_HSFC_Hilbert1d (ZZ *zz, double *coord, double key)
    {
@@ -224,7 +231,48 @@ void Zoltan_HSFC_Hilbert3d (ZZ *zz, double *coord, double key)
    coord[1] = (double) c[1] / (double) IMAX;     /* y in [0,1] */
    coord[2] = (double) c[2] / (double) IMAX;     /* z in [0,1] */
    }
+#endif
 
+/* MAINTENANCE NOTE:  Per the design review 04/15/03, this section discusses
+how to increase the precision of the routines in this file. The table driven
+logic can be extended to arbitrary precision.  Currently, these routines only
+take or return the precision of a double.
+
+First, consider how to extend the Zoltan_HSFC_InvHilbertxx() routines to return
+the full precision for the 2 or 3 dimensional input:
+The statement
+      c[0] = (unsigned int) (coord[0] * (double) IMAX); (etc. for each dimension)
+returns about 32 bits of usable information per dimension.
+Change the declaration:
+   const int MAXLEVEL = 28;
+to
+   const int MAXLEVEL = 32;
+Then the key array contains 64 bits in 2d or 96 bits in 3d. Change its
+declaration to either 2 or 3 ints as appropriate.
+The easiest thing is to modify the routine to return the key array itself to
+preserve the maximum precision.  This requires changing the function definition:
+   double Zoltan_HSFC_InvHilbert2d (ZZ *zz, double *coord)
+to
+   int *Zoltan_HSFC_InvHilbert2d (ZZ *zz, double *coord).
+and changing the return statement:
+   return ldexp ((double) key[0], -24)  +  ldexp ((double) key[1], -56);
+to
+   return key;
+
+
+Second, consider how to extend the Zoltan_HSFC_Hilbertxx() routines. If the key
+array is used as the return argument above, then these Hilbertxx routines should
+be modified to accept the key array as the Hilbert coordinate rather than the
+current double.  This requires changing the function definition:
+   void Zoltan_HSFC_Hilbert2d (ZZ *zz, double *coord, double key)
+to
+   void Zoltan_HSFC_Hilbert2d (ZZ *zz, double *coord, int* ikey)
+Change the declaration
+   static const int MAXLEVEL = 28; (2d or 19 in 3d)
+to
+   static const int MAXLEVEL = 32;
+Eliminate the lines that convert the orginal double arguement of key to ikey.
+*/   
 
 
 #ifdef __cplusplus
