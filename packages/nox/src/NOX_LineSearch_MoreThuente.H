@@ -33,7 +33,10 @@
 #ifndef NOX_MORETHUENTE_H
 #define NOX_MORETHUENTE_H
 
-#include "NOX_LineSearch_Common.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
+
+#include "NOX_LineSearch_Utils_Printing.H"
+#include "NOX_LineSearch_Utils_Slope.H"
 
 namespace NOX {
 namespace LineSearch {
@@ -118,7 +121,7 @@ namespace LineSearch {
 
 */
 
-class MoreThuente : public Common {
+class MoreThuente : public Generic {
 
 public:
 
@@ -371,6 +374,11 @@ private:
 
 
 private:
+
+  //! Common line search printing utilities.
+  NOX::LineSearch::Utils::Printing utils;
+  //! Common slope calculations for line searches.
+  NOX::LineSearch::Utils::Slope slope;
 
   //! Sufficient decrease parameter
   double ftol;

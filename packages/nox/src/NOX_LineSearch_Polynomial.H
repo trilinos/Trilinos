@@ -33,7 +33,11 @@
 #ifndef NOX_LINESEARCH_POLYNOMIAL_H
 #define NOX_LINESEARCH_POLYNOMIAL_H
 
-#include "NOX_LineSearch_Common.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
+
+#include "NOX_LineSearch_Utils_Printing.H"  // class data member
+#include "NOX_LineSearch_Utils_Counters.H"  // class data member
+#include "NOX_LineSearch_Utils_Slope.H"  // class data member
 
 namespace NOX {
 namespace LineSearch {
@@ -217,7 +221,7 @@ Line searches typically allow steps to be accepted only if they meet sufficient 
   \author Russ Hooper, Org. 9233, Sandia National Labs
 */
 
-class Polynomial : public Common {
+class Polynomial : public Generic {
 
 public:
 
@@ -257,9 +261,6 @@ protected:
   //! Provides a check to see if a step leading to an increase in the residual is allowed
   bool isIncreaseAllowed(double newf, double oldf, int nOuterIters) const;
 
-  //! sets the output parameters for the linesearch in an "Output" sublist of the "Line Search" sublist. 
-  bool setOutputParameters();  
-  
 protected:
 
   //! Algorithms used to determine convergence of the line search
@@ -307,7 +308,7 @@ protected:
   //! Default step for linesearch failure
   double recoveryStep;
 
-  //! Maximum itersions
+  //! Maximum iterations
   int maxIters;
 
   //! Scaling factor for the Armijo-Goldstein condition
@@ -319,20 +320,17 @@ protected:
   //! Factor that limits the maximum size of the new step based on the previous step.
   double maxBoundFactor;
 
-  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
+  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
   NOX::Parameter::List* paramsPtr;
 
-  //! Counter for the total number of times the compute() method was called on this object. 
-  int totalNumLineSearchCalls;
+  //! Common line search printing utilities.
+  NOX::LineSearch::Utils::Printing print;
 
-  //! Counter for number of times line searching was needed (i.e. number of Newton steps where we could not take a full step length).
-  int totalNumNonTrivialLineSearches;
+  //! Common common counters for line searches.
+  NOX::LineSearch::Utils::Counters counter;
 
-  //! Counter for the number of failed line searches.
-  int totalNumFailedLineSearches;
-
-  //! Counter for the total number of inner iterations performed.
-  int totalNumIterations;
+  //! Common slope calculations for line searches.
+  NOX::LineSearch::Utils::Slope slopeObj;
 
 };
 } // namespace LineSearch

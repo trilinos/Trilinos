@@ -44,8 +44,8 @@ using namespace NOX;
 using namespace NOX::LineSearch;
 
 Quadratic::Quadratic(const NOX::Utils& u, Parameter::List& params) :
-  Common(u, params),
-  paramsPtr(NULL)
+  utils(u),
+  paramsPtr(0)
 {
   reset(params);
 }
@@ -100,7 +100,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   double oldfprime = tmpvecptr->dot(oldgrp.getF());
   delete tmpvecptr;
 
-  double oldfprime2 = computeSlope(oldgrp.getNewton(), oldgrp);
+  double oldfprime2 = slope.computeSlope(oldgrp.getNewton(), oldgrp);
 
   cout << "fTJs = " << oldfprime << "   newfprime = " << oldfprime2 << endl; 
 
@@ -119,8 +119,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
   int niters = 1;
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- Quadratic Line Search -- \n";
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Quadratic Line Search -- \n";
   }
   
   // Get the linear solve tolerance if doing ared/pred for conv criteria
@@ -149,11 +149,11 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   while (newf >= convergence) {  
 
     // Print out the line search iteration results
-    if (Utils::doPrint(Utils::InnerIteration)) {
+    if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
-      cout << " newf = " << Utils::sci(sqrt(2. * newf));
+      cout << " step = " << NOX::Utils::sci(step);
+      cout << " oldf = " << NOX::Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << NOX::Utils::sci(sqrt(2. * newf));
       cout << endl;
     }
 
@@ -206,12 +206,12 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
       newgrp.computeX(oldgrp, dir, step);
       newgrp.computeF();    
       newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();
-      if (Utils::doPrint(Utils::InnerIteration)) {
-	cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-	cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2. * oldf));
-	cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2. * newf));
+      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+	cout << NOX::Utils::fill(5,' ') << "step = " << NOX::Utils::sci(step);
+	cout << NOX::Utils::fill(1,' ') << "oldf = " << NOX::Utils::sci(sqrt(2. * oldf));
+	cout << NOX::Utils::fill(1,' ') << "newf = " << NOX::Utils::sci(sqrt(2. * newf));
 	cout << " (USING RECOVERY STEP!)" << endl;
-	cout << Utils::fill(72) << "\n" << endl;
+	cout << NOX::Utils::fill(72) << "\n" << endl;
       }
       isfailed = true;
       setOutputParameters();
@@ -242,13 +242,13 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   // linesearch results
   paramsPtr->setParameter("Adjusted Tolerance", eta);
   
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
-      cout << " newf = " << Utils::sci(sqrt(2. * newf));
+      cout << " step = " << NOX::Utils::sci(step);
+      cout << " oldf = " << NOX::Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << NOX::Utils::sci(sqrt(2. * newf));
       cout << " (STEP ACCEPTED!)" << endl;
-      cout << Utils::fill(72) << "\n" << endl;
+      cout << NOX::Utils::fill(72) << "\n" << endl;
   }
 
   setOutputParameters();

@@ -40,7 +40,7 @@
 #include "NOX_Utils.H"
 
 NOX::LineSearch::MoreThuente::MoreThuente(const NOX::Utils& u, Parameter::List& params) :
-  Common(u, params)
+  utils(u)
 {
   reset(params);
 }
@@ -90,9 +90,9 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
 int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
+   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
 
   // Set default step
@@ -104,11 +104,11 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
 
-  double dginit = computeSlope(dir, oldgrp);
+  double dginit = slope.computeSlope(dir, oldgrp);
 
   if (dginit >= 0.0) 
   {
-    if (utils.isPrintProcessAndType(Utils::Warning)) 
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning)) 
     {
       cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
@@ -209,7 +209,7 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     nfev ++;
     string message = "";
 
-    double dg = computeSlope(dir, newgrp);
+    double dg = slope.computeSlope(dir, newgrp);
 
     double ftest1 = finit + stp * dgtest;
 
@@ -257,14 +257,14 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 	message = "(STEP ACCEPTED!)";
       }
       
-      printStep(nfev, stp, finit, f, message);
+      utils.printStep(nfev, stp, finit, f, message);
 
       // Returning the line search flag
       return info;
 
     } // info != 0
     
-    printStep(nfev, stp, finit, f, message);
+    utils.printStep(nfev, stp, finit, f, message);
 
 
     // In the first stage we seek a step for which the modified

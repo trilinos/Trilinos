@@ -34,7 +34,6 @@
 
 #include "NOX_LineSearch_MoreThuente2.H"	// class definition
 
-#include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
@@ -42,7 +41,8 @@
 #include "NOX_Utils.H"
 
 NOX::LineSearch::MoreThuente2::MoreThuente2(const NOX::Utils& u, Parameter::List& params) :
-  Common(u, params)
+  print(u),
+  paramsPtr(0)
 {
   reset(params);
 }
@@ -53,6 +53,7 @@ NOX::LineSearch::MoreThuente2::~MoreThuente2()
 
 bool NOX::LineSearch::MoreThuente2::reset(Parameter::List& params)
 { 
+  paramsPtr = &params;
   NOX::Parameter::List& p = params.sublist("More'-Thuente2");
   ftol = p.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = p.getParameter("Curvature Condition", 0.9999);
@@ -76,7 +77,7 @@ bool NOX::LineSearch::MoreThuente2::reset(Parameter::List& params)
     throw "NOX Error";
   }
 
-  Common::reset(params);
+  counter.reset();
 
   string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
@@ -98,14 +99,14 @@ bool NOX::LineSearch::MoreThuente2::compute(Abstract::Group& grp, double& step,
 			  const Abstract::Vector& dir,
 			  const Solver::Generic& s) 
 {
-  totalNumLineSearchCalls += 1;
+  counter.increaseNumLineSearches();
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   int info = cvsrch(grp, step, oldGrp, dir, s);
 
   if (step != 1.0)
-    totalNumNonTrivialLineSearches += 1;    
+    counter.increaseNumNonTrivialLineSearches();    
 
-  setCommonDataValues();
+  counter.setValues(*paramsPtr);
 
   return (info == 1);
 }
@@ -113,9 +114,9 @@ bool NOX::LineSearch::MoreThuente2::compute(Abstract::Group& grp, double& step,
 int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir, const Solver::Generic& s)
 {
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
+   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
 
   // Set default step
@@ -127,11 +128,11 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
 
-  double dginit = computeSlope(dir, oldgrp);
+  double dginit = slope.computeSlope(dir, oldgrp);
 
   if (dginit >= 0.0) 
   {
-    if (utils.isPrintProcessAndType(Utils::Warning)) 
+    if (print.isPrintProcessAndType(NOX::Utils::Warning)) 
     {
       cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
@@ -248,9 +249,9 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 
     double dg = 0.0;
     if (useOptimizedSlopeCalc)
-      dg = computeSlopeWithOutJac(dir, newgrp);
+      dg = slope.computeSlopeWithOutJac(dir, newgrp);
     else 
-      dg = computeSlope(dir, newgrp);
+      dg = slope.computeSlope(dir, newgrp);
 
     // Armijo-Goldstein sufficient decrease
     double ftest1 = finit + stp * dgtest;
@@ -294,7 +295,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       if (info != 1) 		// Line search failed 
       {
 	// RPP add
-	totalNumFailedLineSearches += 1;
+	counter.increaseNumFailedLineSearches();
 
 	stp = recoverystep;
 	newgrp.computeX(oldgrp, dir, stp);
@@ -302,7 +303,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 	message = "(USING RECOVERY STEP!)";
 	
 	/*
-	if (utils.isPrintProcessAndType(Utils::Details))
+	if (print.isPrintProcessAndType(Utils::Details))
 	  message += "[Failure info flag = " + info + "]";
 	*/
 	    
@@ -312,7 +313,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 	message = "(STEP ACCEPTED!)";
       }
       
-      printStep(nfev, stp, finit, f, message);
+      print.printStep(nfev, stp, finit, f, message);
 
       // Set the adjusted tolerance if using AredPred sufficient decr criteria
       if (suffDecrCond == AredPred) {
@@ -325,10 +326,10 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 
     } // info != 0
     
-    printStep(nfev, stp, finit, f, message);
+    print.printStep(nfev, stp, finit, f, message);
 
     // RPP add
-    totalNumIterations += 1;
+    counter.increaseNumIterations();
 
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.

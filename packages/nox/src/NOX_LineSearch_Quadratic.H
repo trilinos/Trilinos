@@ -34,7 +34,10 @@
 #ifndef NOX_LINESEARCH_QUADRATIC_H
 #define NOX_LINESEARCH_QUADRATIC_H
 
-#include "NOX_LineSearch_Common.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
+
+#include "NOX_LineSearch_Utils_Printing.H" 
+#include "NOX_LineSearch_Utils_Slope.H" 
 
 namespace NOX {
 namespace LineSearch {
@@ -112,7 +115,7 @@ A sublist for output parameters will be created called "Output" in the parameter
   \author Roger Pawlowski, Org. 9233, Sandia National Labs
 */
 
-class Quadratic : public Common {
+class Quadratic : public Generic {
 
 public:
 
@@ -144,6 +147,9 @@ protected:
     AredPred
   };
 
+  //! Common line search printing utilities.
+  NOX::LineSearch::Utils::Printing utils;
+
   //! Choice of convergence criteria
   convergenceCriteriaType convCriteria;
 
@@ -170,6 +176,9 @@ protected:
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
   NOX::Parameter::List* paramsPtr;
+
+  //! Common slope calculations for line searches.
+  NOX::LineSearch::Utils::Slope slope;
 
   //! Counter for the total number of times the compute() method was called on this object. 
   int totalNumLineSearchCalls;

@@ -35,7 +35,11 @@
 #ifndef NOX_MORETHUENTE2_H
 #define NOX_MORETHUENTE2_H
 
-#include "NOX_LineSearch_Common.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
+
+#include "NOX_LineSearch_Utils_Printing.H"  // data class member
+#include "NOX_LineSearch_Utils_Counters.H"  // data class member
+#include "NOX_LineSearch_Utils_Slope.H"  // data class member
 
 namespace NOX {
 namespace LineSearch {
@@ -145,7 +149,7 @@ A sublist for output parameters will be created called "Output" in the parameter
 
 */
 
-class MoreThuente2 : public Common {
+class MoreThuente2 : public Generic {
 
 public:
 
@@ -398,6 +402,16 @@ private:
 
 
 private:
+
+  //! Common line search printing utilities.
+  NOX::LineSearch::Utils::Printing print;
+  //! Common common counters for line searches.
+  NOX::LineSearch::Utils::Counters counter;
+  //! Common slope calculations for line searches.
+  NOX::LineSearch::Utils::Slope slope;
+
+  //! Pointer to the input parameter list.  This is saved so data stored in the counter object can be written to the "Output" parameter list.
+  NOX::Parameter::List* paramsPtr;
 
   //! Sufficient decrease parameter
   double ftol;

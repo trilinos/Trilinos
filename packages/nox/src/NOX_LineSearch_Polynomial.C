@@ -32,16 +32,16 @@
 
 #include "NOX_LineSearch_Polynomial.H"
 
-#include "NOX_Common.H"
+#include "NOX_LineSearch_Utils_Printing.H"
+#include "NOX_LineSearch_Utils_Slope.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_Utils.H"
 
 NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
-  Common(u, params),
-  paramsPtr(NULL)
+  paramsPtr(0),
+  print(u)
 {
   reset(params);
 }
@@ -55,7 +55,6 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
 { 
   NOX::Parameter::List& p = params.sublist("Polynomial");
   
-
   string choice = p.getParameter("Convergence Criteria", "Armijo-Goldstein");
 
   if (choice == "Ared/Pred") 
@@ -85,10 +84,8 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   maxBoundFactor = p.getParameter("Max Bounds Factor", 0.9);
   doForceInterpolation = p.getParameter("Force Interpolation", false);
   paramsPtr = &params;
-  totalNumLineSearchCalls = 0;
-  totalNumNonTrivialLineSearches = 0;
-  totalNumFailedLineSearches = 0;
-  totalNumIterations = 0;
+
+  counter.reset();
 
   allowIncrease = p.isParameter("Allowed Relative Increase");
   if(allowIncrease) {
@@ -108,13 +105,13 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 			 const Solver::Generic& s) 
 {
 
-  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
+   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
   int nIters = 1;
-  totalNumLineSearchCalls += 1;
+  counter.increaseNumLineSearches();
 
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   double oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
@@ -138,7 +135,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   bool isConverged = false;
   bool isFailed = false;
-  double slope = computeSlope(dir, oldGrp);
+  double slope = slopeObj.computeSlope(dir, oldGrp);
 
   if (slope >= 0)
     isFailed = true;
@@ -148,12 +145,12 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
     if(allowIncrease)
       isConverged = (isConverged || 
-                     isIncreaseAllowed(newf, oldf, totalNumLineSearchCalls) );
+                     isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
   }
 
   // Increment the number of newton steps requiring a line search
   if (!isConverged)
-    totalNumNonTrivialLineSearches += 1;
+    counter.increaseNumNonTrivialLineSearches();
 
   double prevf = 0;
   double previousStep = 0;
@@ -166,9 +163,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       break;
     }
 	
-    printStep(nIters, step, oldf, newf);
+    print.printStep(nIters, step, oldf, newf);
     
-    totalNumIterations += 1;
+    counter.increaseNumIterations();
     nIters ++;
     
     if ((isFirstPass) || (interpolationType == Quadratic)) 
@@ -242,7 +239,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
     if(allowIncrease)
       isConverged = (isConverged || 
-                     isIncreaseAllowed(newf, oldf, totalNumLineSearchCalls) );
+                     isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
     
   } // End while loop 
 
@@ -250,7 +247,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   if (isFailed) {
 
-    totalNumFailedLineSearches += 1;
+    counter.increaseNumFailedLineSearches();
     step = recoveryStep;
     newGrp.computeX(oldGrp, dir, step);
     newGrp.computeF();    
@@ -262,9 +259,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     message = "(USING RECOVERY STEP!)";
   }
 
-  printStep(nIters, step, oldf, newf, message);
+  print.printStep(nIters, step, oldf, newf, message);
   paramsPtr->setParameter("Adjusted Tolerance", eta);
-  setOutputParameters();
+  counter.setValues(*paramsPtr);
   return (!isFailed);
 }
 
@@ -295,14 +292,5 @@ bool NOX::LineSearch::Polynomial::isIncreaseAllowed(double newf, double oldf, in
   double increase = sqrt(newf / oldf);
 
   return ( (increase <= relIncrease) && (nOuterIters <= numAllowed) );
-}
-
-bool NOX::LineSearch::Polynomial::setOutputParameters() {
-  NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
-  outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
-  outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
-  outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
-  outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
-  return true;
 }
 
