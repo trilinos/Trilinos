@@ -44,7 +44,7 @@ in the path.
 
 <P>The user may allow Zoltan to determine the order of the coarse grid
 elements, or may specify the order, which might be faster.  If the user
-gives the order, the in/out vertices may also be supplied.  Similarly, the
+gives the order, the in/out vertices must also be supplied.  Similarly, the
 user may specify the order and in/out vertices of the child elements, or
 allow Zoltan to determine them.  If the user knows how to provide a good
 ordering for the children, this may be significantly faster than the default
@@ -52,8 +52,8 @@ general algorithm.  However, accelerated forms of the ordering algorithm
 are provided for certain types of refinement schemes and should be used in
 those cases.
 See <B><A HREF="ug_query_lb.html#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>.
-If the user always specifies the order, then the in/out vertices are not
-used.
+If the user always specifies the order, then the vertices and in/out vertices
+are not used and do not have to be provided.
 
 <P>Weights are assigned to the nodes of the tree.  These weights need not be
 only on the leaves (the elements of the final grid), but can also be on
@@ -71,7 +71,6 @@ the future.
 <LI>The only refinement type for which accelerated ordering of the children
 is provided is bisection of triangles.  Some other special cases may be
 added in the future.
-<LI>The code does not automatically select the in/out vertices when requested.
 <LI>For multicomponent weights, only the first component is used.
 <LI>Heterogeneous architectures are not supported, in the sense that the
 computational load is equally divided over the processors.

@@ -37,6 +37,7 @@ int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
                           int *solved);
 int find_inout(int level, int num_child, int *num_vert, int *vert1,
                int *vertices, int *in_vertex, int *out_vertex, int *order);
+int LB_Reftree_Reinit_Coarse(LB *lb);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -268,26 +269,6 @@ PARAM_VARS params[] = {    /* parameter values */
         return(ierr);
       }
 
-      for (i=0; i<num_obj; i++) {
-        if (num_vert[i] == 0) {
-/* TEMP if the user always provides the order of the initial elements and
-        children, then vertices are not needed, so using num_vert==0 is
-        not a good test for an initial element being unknown to this
-        processor.  Currently we require vertices always be provided, but
-        this can be relaxed. */
-          fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
-                          "Vertices must be provided.\n", lb->Proc, yo);
-          LB_FREE(&local_gids);
-          LB_FREE(&local_lids);
-          LB_FREE(&assigned);
-          LB_FREE(&num_vert);
-          LB_FREE(&vertices);
-          LB_FREE(&in_vertex);
-          LB_FREE(&out_vertex);
-          LB_Reftree_Free_Structure(lb);
-          return(LB_FATAL);
-        }
-      }
     }
 
     else if (lb->Get_First_Coarse_Obj != NULL &&
@@ -319,24 +300,11 @@ PARAM_VARS params[] = {    /* parameter values */
         LB_Reftree_Free_Structure(lb);
         return(ierr);
       }
-      if (num_vert[count] == 0) {
-        fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
-                        "Vertices must be provided.\n", lb->Proc, yo);
-        LB_FREE(&local_gids);
-        LB_FREE(&local_lids);
-        LB_FREE(&assigned);
-        LB_FREE(&num_vert);
-        LB_FREE(&vertices);
-        LB_FREE(&in_vertex);
-        LB_FREE(&out_vertex);
-        LB_Reftree_Free_Structure(lb);
-        return(LB_FATAL);
-      }
 
       while (found && count <= num_obj) {
         sum_vert += num_vert[count];
         count += 1;
-        found = lb->Get_Next_Coarse_Obj(lb->Get_First_Coarse_Obj_Data,
+        found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
                                         &local_gids[count], &local_lids[count],
                                         &assigned[count],
                                         &num_vert[count], &vertices[sum_vert],
@@ -354,19 +322,6 @@ PARAM_VARS params[] = {    /* parameter values */
           LB_FREE(&out_vertex);
           LB_Reftree_Free_Structure(lb);
           return(ierr);
-        }
-        if (found && num_vert[count] == 0) {
-          fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
-                          "Vertices must be provided.\n", lb->Proc, yo);
-          LB_FREE(&local_gids);
-          LB_FREE(&local_lids);
-          LB_FREE(&assigned);
-          LB_FREE(&num_vert);
-          LB_FREE(&vertices);
-          LB_FREE(&in_vertex);
-          LB_FREE(&out_vertex);
-          LB_Reftree_Free_Structure(lb);
-          return(LB_FATAL);
         }
       }
       if (count != num_obj) {
@@ -537,7 +492,7 @@ PARAM_VARS params[] = {    /* parameter values */
     return(LB_MEMERR);
   }
 
-  for (i=num_obj; i<total_num_obj; i++) num_vert[i] = 0;
+  for (i=num_obj; i<total_num_obj; i++) num_vert[i] = -1;
 
   /*
    * Determine the order of the coarse grid elements.
@@ -616,7 +571,7 @@ PARAM_VARS params[] = {    /* parameter values */
     root->children[order[i]].weight = (float *) LB_MALLOC(wdim*sizeof(float));
     root->children[order[i]].summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
     root->children[order[i]].my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    if (num_vert[i] == 0)
+    if (num_vert[i] <= 0)
       root->children[order[i]].vertices = (int *) LB_MALLOC(sizeof(int));
     else
       root->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
@@ -646,7 +601,7 @@ PARAM_VARS params[] = {    /* parameter values */
   /* if an initial element is a leaf, the weight gets set to 1 later */
        *(root->children[order[i]].weight) = 0.0;
     }
-    else if (num_vert[i] == 0) {
+    else if (num_vert[i] == -1) {
   /* if the element is not known to this processor, the weight is 0 */
        *(root->children[order[i]].weight) = 0.0;
     }
@@ -666,13 +621,13 @@ PARAM_VARS params[] = {    /* parameter values */
 
     for (j=0; j<num_vert[i]; j++) 
       root->children[order[i]].vertices[j] = vertices[sum_vert+j];
-    sum_vert += num_vert[i];
+    if (num_vert[i] > 0) sum_vert += num_vert[i];
 
   /*
    * Copy from temporary arrays and set empty defaults
    */
 
-    if (num_vert[i] == 0) {
+    if (num_vert[i] == -1) {
   /* elements not known to this processor have more empty entries */
       LB_SET_GID(root->children[order[i]].global_id,local_gids[i]);
       p = (unsigned char *)&(root->children[order[i]].local_id);
@@ -737,7 +692,8 @@ int ierr;                  /* Error code returned by called functions */
 int i;                     /* loop counter */
 
   /*
-   * Initialize the tree, if not already there, and set the root
+   * Initialize the tree, if not already there, and set the root.  If already
+   * there, reinitialize coarse grid.
    */
 
   if (lb->Data_Structure == NULL) {
@@ -748,8 +704,9 @@ int i;                     /* loop counter */
       return(ierr);
     }
   }
-/* TEMP if the tree did already exist, need to check initial grid in case
-        any coarse grid elements migrated, so num_vert should change */
+  else {
+    LB_Reftree_Reinit_Coarse(lb);
+  }
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
 
   /*
@@ -770,7 +727,7 @@ int i;                     /* loop counter */
    */
 
   for (i=0; i<root->num_child; i++) {
-    if ( (root->children[i]).num_vertex != 0 ) {
+    if ( (root->children[i]).num_vertex != -1 ) {
       ierr = LB_Reftree_Build_Recursive(lb,&(root->children[i]));
       if (ierr==LB_FATAL || ierr==LB_MEMERR) {
         fprintf(stderr, "[%d] Error in %s:  Error returned from LB_Reftree"
@@ -896,22 +853,6 @@ int hashsize;              /* size of the hash table */
     LB_Reftree_Free_Structure(lb);
     return(ierr);
   }
-  for (i=0; i<num_obj; i++) {
-    if (num_vert[i] == 0) {
-      fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
-                      "Vertices must be provided.\n", lb->Proc, yo);
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
-      LB_FREE(&vert1);
-      LB_Reftree_Free_Structure(lb);
-      return(LB_FATAL);
-    }
-  }
 
   /*
    * Set the start of the list of vertices for each child
@@ -977,11 +918,6 @@ int hashsize;              /* size of the hash table */
   switch (ref_type) {
 
   case LB_IN_ORDER:
-  /*
-   * If provided in order, order is the identity permutation and
-   * in_vertex and out_vertex were provided by the user or not needed.
-   * TEMP not quite -- I said I would pick in/out if -1 is returned
-   */
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_TRI_BISECT:
@@ -1062,7 +998,10 @@ int hashsize;              /* size of the hash table */
     subroot->children[order[i]].weight = (float *) LB_MALLOC(wdim*sizeof(float));
     subroot->children[order[i]].summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
     subroot->children[order[i]].my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    subroot->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
+    if (num_vert[i] <= 0)
+      subroot->children[order[i]].vertices = (int *) LB_MALLOC(sizeof(int));
+    else
+      subroot->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
     if (subroot->children[order[i]].weight        == NULL ||
         subroot->children[order[i]].summed_weight == NULL ||
         subroot->children[order[i]].my_sum_weight == NULL ||
@@ -1105,7 +1044,7 @@ int hashsize;              /* size of the hash table */
 
     for (j=0; j<num_vert[i]; j++)
       subroot->children[order[i]].vertices[j] = vertices[sum_vert+j];
-    sum_vert += num_vert[i];
+    if (num_vert[i] > 0) sum_vert += num_vert[i];
 
   /*
    * Copy from temporary arrays and set empty defaults
@@ -1766,6 +1705,231 @@ int i, j;                                    /* loop counters */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
+int LB_Reftree_Reinit_Coarse(LB *lb)
+
+{
+/*
+ *  Function to reestablish which coarse grid elements are known to this proc
+ */
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+char *yo = "LB_Reftree_Reinit_Coarse";
+LB_REFTREE *root;     /* Root of the refinement tree */
+struct LB_reftree_hash_node **hashtab; /* hash table */
+int hashsize;         /* dimension of hash table */
+int i, j;             /* loop counter */
+LB_GID *local_gids;   /* coarse element Global IDs from user */
+LB_LID *local_lids;   /* coarse element Local IDs from user */
+int *assigned;        /* 1 if the element is assigned to this proc */
+int *num_vert;        /* number of vertices for each coarse element */
+int *vertices;        /* vertices for the coarse elements */
+int *in_vertex;       /* "in" vertex for each coarse element */
+int *out_vertex;      /* "out" vertex for each coarse element */
+LB_GID slocal_gids;   /* coarse element Global IDs from user */
+LB_LID slocal_lids;   /* coarse element Local IDs from user */
+int sassigned;        /* 1 if the element is assigned to this proc */
+int snum_vert;        /* number of vertices for a coarse element */
+int sin_vertex;       /* "in" vertex for a coarse element */
+int sout_vertex;      /* "out" vertex for a coarse element */
+int in_order;         /* 1 if user is supplying order of the elements */
+int num_obj;          /* number of coarse objects known to this proc */
+int ierr;             /* error flag */
+LB_REFTREE *tree_node;/* pointer to an initial grid element in the tree */
+int final_ierr;       /* error code returned */
+int sum_vert;         /* running total of number of vertices */
+int found;            /* flag for another coarse grid element */
+
+  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
+  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+  final_ierr = LB_OK;
+
+  /*
+   * Mark all coarse elements as unknown
+   */
+
+  for (i=0; i<root->num_child; i++) {
+    ((root->children)[i]).num_vertex = -1;
+  }
+
+  /*
+   * Get the coarse grid objects and update the vertices, whether the element
+   * is assigned to this processor, weight and, if not already set, in/out vert
+   */
+
+  if (lb->Get_Coarse_Obj_List != NULL) {
+
+  /*
+   * Get objects via list
+   */
+
+    num_obj = lb->Get_Num_Coarse_Obj(lb->Get_Num_Coarse_Obj_Data, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
+                      "Get_Num_Coarse_Obj.\n", lb->Proc, yo);
+      return(ierr);
+    }
+
+    if (num_obj > 0) {
+      local_gids = (LB_GID *) LB_MALLOC(num_obj*sizeof(LB_GID));
+      local_lids = (LB_LID *) LB_MALLOC(num_obj*sizeof(LB_LID));
+      assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
+      num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
+      vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
+      in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
+      out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
+
+      if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
+          num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
+          out_vertex == NULL) {
+        fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+                lb->Proc, yo);
+        LB_FREE(&local_gids);
+        LB_FREE(&local_lids);
+        LB_FREE(&assigned);
+        LB_FREE(&num_vert);
+        LB_FREE(&vertices);
+        LB_FREE(&in_vertex);
+        LB_FREE(&out_vertex);
+        return(LB_MEMERR);
+      }
+
+      lb->Get_Coarse_Obj_List(lb->Get_Coarse_Obj_List_Data, local_gids,
+                              local_lids, assigned, num_vert, vertices,
+                              &in_order, in_vertex, out_vertex, &ierr);
+      if (ierr) {
+        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
+                        "Get_Coarse_Obj_List.\n", lb->Proc, yo);
+        LB_FREE(&local_gids);
+        LB_FREE(&local_lids);
+        LB_FREE(&assigned);
+        LB_FREE(&num_vert);
+        LB_FREE(&vertices);
+        LB_FREE(&in_vertex);
+        LB_FREE(&out_vertex);
+        return(ierr);
+      }
+
+      sum_vert = 0;
+      for (i=0; i<num_obj; i++) {
+
+        tree_node = LB_Reftree_hash_lookup(hashtab,local_gids[i],hashsize);
+        if (tree_node == NULL) {
+          fprintf(stderr, "[%d] Warning in %s: coarse grid element not"
+                          " previously seen.\n", lb->Proc, yo);
+          final_ierr = LB_WARN;
+        }
+        else {
+          tree_node->num_vertex = num_vert[i];
+          LB_FREE(&(tree_node->vertices));
+          if (num_vert[i] <= 0)
+            tree_node->vertices = (int *) LB_MALLOC(sizeof(int));
+          else
+            tree_node->vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
+          if (tree_node->vertices == NULL) {
+            fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+                    lb->Proc, yo);
+            LB_FREE(&local_gids);
+            LB_FREE(&local_lids);
+            LB_FREE(&assigned);
+            LB_FREE(&num_vert);
+            LB_FREE(&vertices);
+            LB_FREE(&in_vertex);
+            LB_FREE(&out_vertex);
+            return(LB_MEMERR);
+          }
+
+          for (j=0; j<num_vert[i]; j++)
+            tree_node->vertices[j] = vertices[sum_vert+j];
+          if (num_vert[i] > 0) sum_vert += num_vert[i];
+
+          tree_node->assigned_to_me = assigned[i];
+/* TEMP if not provided in_order, then in/out are not returned and must be
+        determined */
+          if (tree_node->in_vertex == 0) tree_node->in_vertex = in_vertex[i];
+          if (tree_node->out_vertex == 0) tree_node->out_vertex = out_vertex[i];
+          lb->Get_Child_Weight(lb->Get_Child_Weight_Data, local_gids[i],
+                               local_lids[i], lb->Obj_Weight_Dim,
+                               tree_node->weight, &ierr);
+        }
+      }
+      LB_FREE(&local_gids);
+      LB_FREE(&local_lids);
+      LB_FREE(&assigned);
+      LB_FREE(&num_vert);
+      LB_FREE(&vertices);
+      LB_FREE(&in_vertex);
+      LB_FREE(&out_vertex);
+    }
+
+  }
+  else {
+
+  /*
+   * Get objects via first/next
+   */
+
+    vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
+    if (tree_node->vertices == NULL) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      return(LB_MEMERR);
+    }
+
+    found = lb->Get_First_Coarse_Obj(lb->Get_First_Coarse_Obj_Data,
+                                     &slocal_gids, &slocal_lids, &sassigned,
+                                     &snum_vert, vertices, &in_order,
+                                     &sin_vertex, &sout_vertex, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
+                      "Get_First_Coarse_Obj.\n", lb->Proc, yo);
+      LB_FREE(&vertices);
+      return(ierr);
+    }
+    while (found) {
+      tree_node = LB_Reftree_hash_lookup(hashtab,slocal_gids,hashsize);
+      if (tree_node == NULL) {
+        fprintf(stderr, "[%d] Warning in %s: coarse grid element not"
+                        " previously seen.\n", lb->Proc, yo);
+        final_ierr = LB_WARN;
+      }
+      else {
+        tree_node->num_vertex = snum_vert;
+        LB_FREE(&(tree_node->vertices));
+        if (snum_vert <= 0)
+          tree_node->vertices = (int *) LB_MALLOC(sizeof(int));
+        else
+          tree_node->vertices = (int *) LB_MALLOC(snum_vert*sizeof(int));
+        if (tree_node->vertices == NULL) {
+          fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+                  lb->Proc, yo);
+          return(LB_MEMERR);
+        }
+  
+        for (j=0; j<snum_vert; j++)
+          tree_node->vertices[j] = vertices[j];
+  
+        tree_node->assigned_to_me = sassigned;
+/* TEMP if not provided in_order, then in/out are not returned and must be
+        determined */
+        if (tree_node->in_vertex == 0) tree_node->in_vertex = sin_vertex;
+        if (tree_node->out_vertex == 0) tree_node->out_vertex = sout_vertex;
+        lb->Get_Child_Weight(lb->Get_Child_Weight_Data, slocal_gids,
+                             slocal_lids, lb->Obj_Weight_Dim,
+                             tree_node->weight, &ierr);
+      }
+
+      found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
+                                       &slocal_gids, &slocal_lids, &sassigned,
+                                       &snum_vert, vertices,
+                                       &sin_vertex, &sout_vertex, &ierr);
+    }
+  }
+  return(final_ierr);
+}
 
 void LB_Reftree_Print(LB *lb, LB_REFTREE *subroot, int level)
 {
