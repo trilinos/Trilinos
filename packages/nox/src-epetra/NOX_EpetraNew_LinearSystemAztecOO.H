@@ -230,6 +230,8 @@ below (See the Aztec 2.1 manual for more information):
 
   </ul>
 
+<li> "Reuse Preconditioner" - (boolean) If set to true, the group/linear solver will not refactor the preconditioner even if the group's solution vector changes.  This flag tells the group an dlinear system to turn off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
+
 <li> "RCM Reordering" - Enables RCM reordering in conjunction with
 domain decomp incomplete factorization preconditioning.  The following
 options are valid:

@@ -384,10 +384,14 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
 
-  if (!isPreconditioner()) {
+  if (!isPreconditioner()  && 
+      !(p.getParameter("Reuse Preconditioner", false))) {
+
     sharedLinearSystem.getObject(this).destroyPreconditioner();
-    sharedLinearSystem.getObject(this).createPreconditioner(xVector.getEpetraVector(), p, false);
+    sharedLinearSystem.getObject(this)
+      .createPreconditioner(xVector.getEpetraVector(), p, false);
     isValidPreconditioner = true;
+
   }
 
   sharedLinearSystem.getObject(this).applyJacobianInverse(p, input, result);

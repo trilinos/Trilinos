@@ -556,7 +556,11 @@ applyJacobianInverse(Parameter::List &p,
   // Get linear solver convergence parameters
   int maxit = p.getParameter("Max Iterations", 400);
   double tol = p.getParameter("Tolerance", 1.0e-6);
+  bool reusePrec = p.getParameter("Reuse Preconditioner", false);
   
+  if ((reusePrec) && (precAlgorithm == AztecOO_))
+    aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_reuse);
+
   int aztecStatus = -1;
 
   aztecStatus = aztecSolverPtr->Iterate(maxit, tol);

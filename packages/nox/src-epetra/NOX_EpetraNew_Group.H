@@ -138,7 +138,38 @@ public:
   applyJacobianTranspose(const NOX::Epetra::Vector& input, NOX::Epetra::Vector& result) const;
   virtual NOX::Abstract::Group::ReturnType 
   applyJacobianTranspose(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const;
-  
+
+     /*!
+     \brief Applies the inverse of the Jacobian matrix to the given
+     input vector and puts the answer in result.
+ 
+     Computes
+     \f[ v = J^{-1} u, \f]
+     where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is
+the result vector.
+ 
+     The "Tolerance" parameter specifies that the
+     solution should be such that
+     \f[
+     \frac{\| J v - u \|_2}{\max \{ 1, \|u\|_2\} } < \mbox{Tolerance}
+     \f]
+ 
+     \return
+     <ul>
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+     <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed     <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance"
+          specified in \c params
+     <li> NOX::Abstract::Group::Failed - If the computation fails
+     <li> NOX::Abstract::Group::Ok - Otherwise
+     </ul>
+ 
+     The parameter "Tolerance" may be added/modified in the list of
+     parameters - this is the ideal solution tolerance for an iterative
+     linear solve.
+
+     The parameter "Reuse Preconditioner" is a boolean that tells the group to turn off control of preconditioner recalculation.  This is a dangerous flag but can really speed the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
+   */
   virtual NOX::Abstract::Group::ReturnType 
   applyJacobianInverse(NOX::Parameter::List &params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) 
     const;
