@@ -1321,8 +1321,10 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
       EPETRA_CHK_ERR( A.ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices ) );
       if( scalarA != 1.0 )
         for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
-      if( B.Filled() ) //Sum In Values
-        assert( B.SumIntoGlobalValues( Row, NumEntries, Values, Indices ) == 0 );
+      if( B.Filled() ) {//Sum In Values
+        err = B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+        assert( err == 0 );
+      }
       else {
         err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
         assert( err == 0 || err == 1 );
