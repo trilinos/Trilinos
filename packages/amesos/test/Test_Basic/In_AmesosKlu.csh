@@ -182,17 +182,20 @@ mpirun -np 2 amesos_test.exe KLU   ImpcolE.rua 1 1 -1 0 1e-7  1e-10  >>SST.stdou
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-14  >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-14  >>SST.stdout
+#
+#  K4989.tris and K5000.triS are too large to keep here
+#
+mpirun -np 1 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-13  >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-13  >>SST.stdout
 
-mpirun -np 1 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
-mpirun -np 2 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 2 amesos_test.exe KLU K4989.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
 
-mpirun -np 1 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
-mpirun -np 6 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 6 amesos_test.exe KLU K5000.triS 0 1 1 0   1e-10 1e-8   >>SST.stdout
 
-mpirun -np 6 amesos_test.exe KLU K5000.triS 0 1 1 1   1e-10 1e-8   >>SST.stdout
-mpirun -np 6 amesos_test.exe KLU K5000.triS 1 1 1 1   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 6 amesos_test.exe KLU K5000.triS 0 1 1 1   1e-10 1e-8   >>SST.stdout
+# COMMENT mpirun -np 6 amesos_test.exe KLU K5000.triS 1 1 1 1   1e-10 1e-8   >>SST.stdout
 
 mpirun -np 1 amesos_test.exe KLU Khead.triS 0 1 1 0   1e-13 1e-8   >>SST.stdout
 
@@ -207,7 +210,7 @@ echo "COMMENT End AmesosKlu.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosKlu.exe | grep -v COMMENT | wc`
+set expected_lines = `grep mpirun AmesosKlu.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

@@ -54,6 +54,7 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
 	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
+	cp  $(srcdir)/In_AmesosKlu.csh AmesosKlu.csh 
 
 Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa                              
@@ -77,15 +78,12 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx                              
 	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx                              
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
-	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
-	cp  $(srcdir)/In_nos5.mtx nos5.mtx                                      
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx                                      
 	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx                          
-	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx                          
-	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx                              
 	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx                              
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
-	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
+	cp  $(srcdir)/In_KheadSorted.mtx  KheadSorted.mtx
+	cp  $(srcdir)/In_Khead.triS Khead.triS  
 
 SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp \
            $(srcdir)/SparseDirectTimingVars.h \
@@ -137,6 +135,7 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
         $(srcdir)/In_bcsstk01.mtx \
         $(srcdir)/In_bcsstk02.mtx \
         $(srcdir)/In_bcsstk04.mtx \
+        $(srcdir)/In_bcsstk08.mtx \
         $(srcdir)/In_nos1.mtx \
         $(srcdir)/In_nos5.mtx \
         $(srcdir)/In_FourByFour.mtx \

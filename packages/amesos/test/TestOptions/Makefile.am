@@ -8,8 +8,12 @@ TEST = TestOptions
 noinst_PROGRAMS = $(TEST) Suppressions
 
 #Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
-  -I$(top_builddir)/../epetra/src -I$(top_builddir)/../triutils/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src \
+-I$(top_srcdir)/../epetra/src  -I$(top_builddir)/../epetra/src \
+-I$(top_srcdir)/../epetraext/src/transform  \
+-I$(top_srcdir)/../epetraext/src  \
+-I$(top_builddir)/../epetraext/src \
+-I$(top_builddir)/../triutils/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
 Suppressions_SOURCES =  $(srcdir)/Suppressions
@@ -32,6 +36,7 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 
 TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../epetraext/src/libepetraext.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
@@ -43,6 +48,7 @@ TestOptions_CXXFLAGS = -I$(top_srcdir)/src
 #  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
 #
 TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../epetraext/src/libepetraext.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \

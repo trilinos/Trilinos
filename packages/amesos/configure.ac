@@ -716,6 +716,7 @@ AC_CONFIG_FILES([
 		test/Test_SuperLU/Makefile
 		test/Test_SuperLU_DIST/Makefile
 		test/Test_DSCPACK/Makefile
+		test/TestOptions/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile

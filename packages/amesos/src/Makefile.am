@@ -250,7 +250,9 @@ else
 KUNDERT_CPPFLAGS = 
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
+	-I$(top_srcdir)/../epetraext/src \
+	-I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/src/AMD/Include \
 	-I$(top_srcdir)/src/AMD/Source \
 	-I$(top_srcdir)/src/colamd \
@@ -258,6 +260,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/src/klu_btf \
 	-I$(top_srcdir)/src/klu_kernel \
 	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
+	-I$(top_builddir)/../epetraext/src \
 	-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 

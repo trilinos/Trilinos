@@ -175,7 +175,7 @@ echo "COMMENT End AmesosDscpack.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosDscpack.exe | grep -v COMMENT | wc`
+set expected_lines = `grep mpirun AmesosDscpack.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

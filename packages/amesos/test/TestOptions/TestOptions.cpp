@@ -2,6 +2,9 @@
 //  To run this under valgrind, try:
 //  valgrind --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
+//  To run this with valgrind under mpirun, 
+//  mpirun -np 2 valgrind --log_file=TestOpt.logfile --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
+//
 //  test/scripts/daily/serial/TestMemoryLeaks[.exe] performs an automated test for memory leaks
 //  using valgrind and this code.  To run TestMemoryLeaks, cd to test/TestOptions in the
 //  build directory and type ../scripts/daily/serial/TestMemoryLeaks.exe.  The output is stored
@@ -246,6 +249,7 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   double Rcond1 = Rcond ;
   double Rcond2 = Rcond ;
 #endif
+
   for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
@@ -449,7 +453,8 @@ int NextMain( int argc, char *argv[] ) {
 
     if ( ! Short) { 
       //  result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      assert( false ) ; 
 
     }
 #ifdef HAVE_VALGRIND 

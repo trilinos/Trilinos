@@ -12891,7 +12891,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #
-                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile example/Makefile test/Test_Basic/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_Epetra_VbrMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile example/Makefile test/Test_Basic/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_Epetra_VbrMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13719,6 +13719,7 @@ do
   "test/Test_SuperLU/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_SuperLU/Makefile" ;;
   "test/Test_SuperLU_DIST/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_SuperLU_DIST/Makefile" ;;
   "test/Test_DSCPACK/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_DSCPACK/Makefile" ;;
+  "test/TestOptions/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestOptions/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
