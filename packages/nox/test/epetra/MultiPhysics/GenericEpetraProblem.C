@@ -184,6 +184,7 @@ void GenericEpetraProblem::setdt( double dt )
 double GenericEpetraProblem::getdt() const
 {
   cout << "No-op : Implement time dependence in inherited problem !!" << endl;
+  return 0.0;
 }
 
 Epetra_Vector& GenericEpetraProblem::getMesh()
