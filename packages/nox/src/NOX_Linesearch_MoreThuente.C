@@ -67,7 +67,7 @@ bool MoreThuente::reset(Parameter::List& params)
   if ((ftol < 0.0) || (gtol < 0.0) || 
       (xtol < 0.0) || (stpmin < 0.0) || (stpmax < stpmin) || 
       (maxfev <= 0) || (defaultstep <= 0)) {
-    cout << "More'-Thuente Line Search: Error in Input Parameter!" << endl;
+    cout << "NOX::Linesearch::MoreThuente::reset - Error in Input Parameter!" << endl;
     throw "NOX Error";
   }
 
@@ -96,16 +96,16 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
   bool flag = grp.applyJacobian(dir,*tmpvecptr);
   
   if (!flag) {
-    cout << "ERROR: Unable to apply Jacobian!" << endl;
-    throw;
+    cout << "NOX::Linesearch::MoreThuente::dgcompute -  Unable to apply Jacobian!" << endl;
+    throw "NOX Error";
   }
 
   if (!grp.isRHS()) {
-    cout << "ERROR: Invalid RHS" << endl;
-    throw;
+    cout << "NOX::Linesearch::MoreThuente::dgcompute - Invalid RHS" << endl;
+    throw "NOX Error";
   }
 
-  return tmpvecptr->dot(grp.getRHS());
+  return (-1.0 * tmpvecptr->dot(grp.getRHS()));
 }
 
 int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
@@ -126,8 +126,8 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   double dginit = dgcompute(dir, oldgrp);
 
   if (dginit >= 0.0) {
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "-- Linesearch Failed! -- (dginit = " << dginit << ")" << endl;
+    if (Utils::doPrint(Utils::Warning)) {
+      cout << "NOX::Linesearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
     stp = defaultstep;
     newgrp.computeX(oldgrp, dir, stp);
