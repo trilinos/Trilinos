@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* Factor the matrix, after ordering and analyzing it with klu_btf_analyze
- * or klu_btf_analyze_given
+ * or klu_btf_analyze_given.
  *
  * TODO: provide a user switch to control scaling (none, row-sum, max row).
  * TODO: error checking of inputs.
@@ -28,14 +28,14 @@ static int klu_btf_factor2
     double growth,
     double initmem_amd,
     double initmem_colamd,
+    int scale,
     klu_symbolic *Symbolic,
 
-    /* outputs, not defined on input */
-    klu_numeric *Numeric,
-    double Info [ ]
+    /* input,  modified on output: */
+    klu_numeric *Numeric
 )
 {
-    double klu_Control [KLU_CONTROL], umin, umax, umin2, umax2,
+    double klu_kernel_Control [KLU_CONTROL], umin, umax, umin2, umax2,
 	*Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, *X ;
     int k1, k2, nk, k, block, oldcol, pend, oldrow, n, lnz, unz,
 	result, p, newrow, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
@@ -94,9 +94,9 @@ static int klu_btf_factor2
     {
 	Singleton [block] = 0 ;
     }
-    klu_defaults (klu_Control) ;
-    klu_Control [KLU_TOL] = tol ;
-    klu_Control [KLU_GROWTH] = growth ;
+    klu_defaults (klu_kernel_Control) ;
+    klu_kernel_Control [KLU_TOL] = tol ;
+    klu_kernel_Control [KLU_GROWTH] = growth ;
     lnz = 0 ;
     unz = 0 ;
     noffdiag = 0 ;
@@ -109,8 +109,7 @@ static int klu_btf_factor2
     /* ---------------------------------------------------------------------- */
 
     /* use Pnum as workspace */
-    result = klu_btf_scale (n, Ap, Ai, Ax, Rs, Pnum) ;
-    Info [KLU_BTF_INFO_STATUS] = result ;
+    result = klu_btf_scale (scale, n, Ap, Ai, Ax, Rs, Pnum) ;
     if (result != KLU_OK)
     {
 	/* matrix is invalid */
@@ -147,23 +146,50 @@ static int klu_btf_factor2
 	    poff = Offp [k1] ;
 	    oldcol = Q [k1] ;
 	    pend = Ap [oldcol+1] ;
-	    for (p = Ap [oldcol] ; p < pend ; p++)
+
+	    if (scale == 0)
 	    {
-		oldrow = Ai [p] ;
-		newrow = Pinv [oldrow] ;
-		if (newrow < k1)
+		/* no scaling */
+		for (p = Ap [oldcol] ; p < pend ; p++)
 		{
-		    Offi [poff] = oldrow ;
-		    Offx [poff] = Ax [p] / Rs [oldrow] ;
-		    poff++ ;
-		}
-		else
-		{
-		    ASSERT (newrow == k1) ;
-		    PRINTF (("Singleton block %d value %g\n", block, Ax [p])) ;
-		    Singleton [block] = Ax [p] / Rs [oldrow] ;
+		    oldrow = Ai [p] ;
+		    newrow = Pinv [oldrow] ;
+		    if (newrow < k1)
+		    {
+			Offi [poff] = oldrow ;
+			Offx [poff] = Ax [p] ;
+			poff++ ;
+		    }
+		    else
+		    {
+			ASSERT (newrow == k1) ;
+			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
+			Singleton [block] = Ax [p] ;
+		    }
 		}
 	    }
+	    else
+	    {
+		/* row scaling */
+		for (p = Ap [oldcol] ; p < pend ; p++)
+		{
+		    oldrow = Ai [p] ;
+		    newrow = Pinv [oldrow] ;
+		    if (newrow < k1)
+		    {
+			Offi [poff] = oldrow ;
+			Offx [poff] = Ax [p] / Rs [oldrow] ;
+			poff++ ;
+		    }
+		    else
+		    {
+			ASSERT (newrow == k1) ;
+			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
+			Singleton [block] = Ax [p] / Rs [oldrow] ;
+		    }
+		}
+	    }
+
 	    Offp [k1+1] = poff ;
 	    Pnum [k1] = P [k1] ;
 	    lnz++ ;
@@ -185,30 +211,29 @@ static int klu_btf_factor2
 	    {
 		/* COLAMD was used - no estimate of fill-in */
 		/* use 10 times the nnz in A, plus n */
-		klu_Control [KLU_LSIZE] = -initmem_colamd ;
-		klu_Control [KLU_USIZE] = klu_Control [KLU_LSIZE] ;
+		klu_kernel_Control [KLU_LSIZE] = -initmem_colamd ;
+		klu_kernel_Control [KLU_USIZE] = klu_kernel_Control [KLU_LSIZE];
 	    }
 	    else
 	    {
-		klu_Control [KLU_LSIZE] = initmem_amd * Lnz [block] + nk ;
-		klu_Control [KLU_USIZE] = klu_Control [KLU_LSIZE] ;
+		klu_kernel_Control [KLU_LSIZE] = initmem_amd * Lnz [block] + nk;
+		klu_kernel_Control [KLU_USIZE] = klu_kernel_Control [KLU_LSIZE];
 	    }
 
 	    /* allocates 4 arrays:
 	     * Lbi [block], Lbx [block], Ubi [block], Ubx [block] */
-	    result = klu_factor (nk, Ap, Ai, Ax, Q, klu_Control,
+	    result = klu_factor (nk, Ap, Ai, Ax, Q, klu_kernel_Control,
 		    Lbp [block], &Lbi [block], &Lbx [block],
 		    Ubp [block], &Ubi [block], &Ubx [block], Pblock,
 		    &noffdiag2, &umin2, &umax2, X, Iwork,
-		    /* BTF-related arguments: */
-		    k1, Pinv, Rs, Offp, Offi, Offx) ;
+		    /* BTF and scale-related arguments: */
+		    k1, Pinv, Rs, scale, Offp, Offi, Offx) ;
 
 	    PRINTF (("klu done\n")) ;
 	    if (result != KLU_OK)
 	    {
 		/* The 4 arrays (Li,Lx,Ui,Ux) are in the Numeric object and
 		 * will be free'd later in klu_btf_free_numeric. */
-		Info [KLU_BTF_INFO_STATUS] = result ;
 		return (result) ;
 	    }
 	    PRINTF (("\n----------------------- L %d:\n", block)) ;
@@ -263,13 +288,11 @@ static int klu_btf_factor2
     Numeric->unz = unz ;
     Numeric->noffdiag = noffdiag ;
 
-    Info [KLU_BTF_INFO_UMIN] = umin ;
-    Info [KLU_BTF_INFO_UMAX] = umax ;
-    Info [KLU_BTF_INFO_LNZ] = lnz ;
-    Info [KLU_BTF_INFO_UNZ] = unz ;
-    Info [KLU_BTF_INFO_FLOPS] = EMPTY ;		/* TODO not yet computed */
-    Info [KLU_BTF_INFO_REALLOC] = EMPTY ;	/* TODO not yet computed */
-    Info [KLU_BTF_INFO_NOFFDIAG] = noffdiag ;
+    Numeric->umin = umin ;
+    Numeric->umax = umax ;
+    /* Numeric->flops = EMPTY ;		TODO not yet computed */
+    /* Numeric->nrealloc = EMPTY ;	TODO not yet computed */
+    Numeric->noffdiag = noffdiag ;
 
     /* compute the inverse of Pnum */
 #ifndef NDEBUG
@@ -288,14 +311,17 @@ static int klu_btf_factor2
 #endif
 
     /* permute scale factors Rs according to pivotal row order */
-    for (k = 0 ; k < n ; k++)
+    if (scale != 0)
     {
-	oldrow = Pnum [k] ;
-	X [k] = Rs [oldrow] ;
-    }
-    for (k = 0 ; k < n ; k++)
-    {
-	Rs [k] = X [k] ;
+	for (k = 0 ; k < n ; k++)
+	{
+	    oldrow = Pnum [k] ;
+	    X [k] = Rs [oldrow] ;
+	}
+	for (k = 0 ; k < n ; k++)
+	{
+	    Rs [k] = X [k] ;
+	}
     }
 
     PRINTF (("\n------------------- Off diagonal entries, old:\n")) ;
@@ -339,25 +365,15 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     double Ax [ ],
     klu_symbolic *Symbolic,
 
-    double Control [KLU_BTF_CONTROL],	/* optional; may be NULL */
-    double User_Info [KLU_BTF_INFO]	/* optional; may be NULL */
+    klu_control *user_control		/* optional; may be NULL */
 )
 {
-    double *Info, Info2 [KLU_BTF_INFO], tol, growth, initmem_amd,
-	initmem_colamd ;
-    int n, nzoff, nblocks, maxblock, result, i, *R, block, k1, k2, nk,
-	**Lbp, **Ubp ;
+    double tol, growth, initmem_amd, initmem_colamd ;
+    int n, nzoff, nblocks, maxblock, result, block, k1, k2, nk, scale ;
+    int *R ;
+    int **Lbp, **Ubp ;
     klu_numeric *Numeric ;
-
-    /* ---------------------------------------------------------------------- */
-    /* get Info array, and clear the parts used by klu_btf_factor */
-    /* ---------------------------------------------------------------------- */
-
-    Info = (User_Info != (double *) NULL) ? User_Info : Info2 ;
-    for (i = KLU_BTF_INFO_LNZ ; i <= KLU_BTF_INFO_REALLOC ; i++)
-    {
-	Info [i] = EMPTY ;
-    }
+    klu_control *control, default_control ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */
@@ -377,27 +393,29 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     /* get control parameters and make sure they are in the proper range */
     /* ---------------------------------------------------------------------- */
 
-    tol = GET_CONTROL (
-	    KLU_BTF_CONTROL_TOL,
-	    KLU_BTF_CONTROL_TOL_DEFAULT) ;
+    if (user_control == (klu_control *) NULL)
+    {
+	control = &default_control ;
+	klu_btf_defaults (control) ;
+    }
+    else
+    {
+	control = user_control ;
+    }
 
-    growth = GET_CONTROL (
-	    KLU_BTF_CONTROL_GROWTH,
-	    KLU_BTF_CONTROL_GROWTH_DEFAULT) ;
-
-    initmem_amd = GET_CONTROL (
-	    KLU_BTF_CONTROL_INITMEM_AMD,
-	    KLU_BTF_CONTROL_INITMEM_AMD_DEFAULT) ;
-
-    initmem_colamd = GET_CONTROL (
-	    KLU_BTF_CONTROL_INITMEM_COLAMD,
-	    KLU_BTF_CONTROL_INITMEM_COLAMD_DEFAULT) ;
+    tol = control->tol ;
+    growth = control->growth ;
+    initmem_amd = control->initmem_amd ;
+    initmem_colamd = control->initmem ;
+    scale = control->scale ;
 
     initmem_amd    = MAX (1.0, initmem_amd) ;
     initmem_colamd = MAX (1.0, initmem_colamd) ;
     tol    = MIN (tol, 1.0) ;
     tol    = MAX (0.0, tol) ;
     growth = MAX (1.0, growth) ;
+    scale = MAX (0, scale) ;
+    scale = MIN (2, scale) ;
 
     /* ---------------------------------------------------------------------- */
     /* allocate the Numeric object (except Li,Lx,Ui,Ux) */
@@ -406,7 +424,7 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     Numeric = (klu_numeric *) ALLOCATE (sizeof (klu_numeric)) ;
     if (Numeric == (klu_numeric *) NULL)
     {
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
+	/* out of memory */
 	return ((klu_numeric *) NULL) ;
     }
     Numeric->nblocks = nblocks ;
@@ -451,8 +469,8 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
 	(Numeric->Ubi == (int **) NULL) || (Numeric->Ubx == (double **) NULL) ||
 	(Numeric->Pinv == (int *) NULL))
     {
+	/* out of memory */
 	klu_btf_free_numeric (&Numeric) ;
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_numeric *) NULL) ;
     }
 
@@ -470,8 +488,8 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
 	    Ubp [block] = (int *) ALLOCATE ((nk+1) * sizeof (int)) ;
 	    if ((Lbp [block] == (int *) NULL) || (Ubp [block] == (int *) NULL))
 	    {
+		/* out of memory */
 		klu_btf_free_numeric (&Numeric) ;
-		Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 		return ((klu_numeric *) NULL) ;
 	    }
 	}
@@ -483,9 +501,8 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
 
     PRINTF (("calling klu_btf_factor2\n")) ;
     result = klu_btf_factor2 (Ap, Ai, Ax, tol, growth,
-	    initmem_amd, initmem_colamd, Symbolic, Numeric, Info) ;
+	    initmem_amd, initmem_colamd, scale, Symbolic, Numeric) ;
     PRINTF (("klu_btf_factor2 done\n")) ;
-    Info [KLU_BTF_INFO_STATUS] = result ;
 
     /* ---------------------------------------------------------------------- */
     /* return the numeric object */

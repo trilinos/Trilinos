@@ -143,7 +143,7 @@ void klu_btf_solve
 		{
 		case 4:
 
-		    for (k = k1 ; k < k2 ; k++)	/* order is not relevant */
+		    for (k = k1 ; k < k2 ; k++)
 		    {
 			pend = Offp [k+1] ;
 			x [0] = X [k     ] ;

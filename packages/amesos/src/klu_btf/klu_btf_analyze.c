@@ -2,19 +2,17 @@
 /* === klu_btf_analyze ====================================================== */
 /* ========================================================================== */
 
-/* Order the matrix using BTF (or not), and then AMD or COLAMD on the blocks.
- * Does not support using the given ordering (use klu_btf_analyze_given
- * for that case). */
+/* Order the matrix using BTF (or not), and then AMD, COLAMD, or the natural
+ * ordering on the blocks.  Does not support using a given ordering (use
+ * klu_btf_analyze_given for that case). */
 
 #include "klu_btf_internal.h"
 
 /* ========================================================================== */
-/* === klu_btf_analyze_worker =============================================== */
+/* === worker =============================================================== */
 /* ========================================================================== */
 
-/* klu_btf_analyze_worker is not-user callable.  See klu_btf_analyze below */
-
-static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
+static int worker	/* returns KLU_OK or < 0 if error */
 (
     /* inputs, not modified */
     int n,		/* A is n-by-n */
@@ -30,8 +28,6 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
     int P [ ],		/* size n */
     int Q [ ],		/* size n */
     double Lnz [ ],	/* size n, but only Lnz [0..nblocks-1] is used */
-    int *p_nzoff,
-    double *p_lnz,
 
     /* workspace, not defined on input or output */
     int Pamd [ ],	/* size maxblock */
@@ -41,7 +37,7 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
     int Ei [ ],		/* size nz */
     int Pinv [ ],	/* size maxblock */
 
-    double Info [ ]	/* output statistics */ 
+    klu_symbolic *Symbolic
 )
 {
     int *RowCount, *W, k1, k2, nk, k, block, oldcol, pend, row, oldrow, newcol,
@@ -169,7 +165,7 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
 	    /* order the block C */
 	    /* -------------------------------------------------------------- */
 
-	    if (ordering == KLU_BTF_CONTROL_USE_AMD)
+	    if (ordering == 0)
 	    {
 
 		/* ---------------------------------------------------------- */
@@ -198,6 +194,7 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
 		}
 		ASSERT (klu_valid (nk, Ep, Ei, (double *) NULL)) ;
 
+		/* TODO: add options for AMD parameters */
 		PRINTF (("calling AMD\n")) ;
 		result = amd_order (nk, Ep, Ei, Pamd, (double *)NULL, amd_Info);
 		PRINTF (("AMD done\n")) ;
@@ -219,7 +216,7 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
 		if (pc == maxnz)
 		{
 		    /* get the symmetry of the biggest block */
-		    Info [KLU_BTF_INFO_SYMMETRY] = amd_Info [AMD_SYMMETRY] ;
+		    Symbolic->symmetry = amd_Info [AMD_SYMMETRY] ;
 		}
 		flops += 2 * amd_Info [AMD_NMULTSUBS_LU] + amd_Info [AMD_NDIV] ;
 
@@ -306,44 +303,36 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
     ASSERT (nzoff >= 0 && nzoff <= Ap [n]) ;
 
     /* return estimates of # of nonzeros in L including diagonal */
-    *p_lnz = lnz ;				/* EMPTY if COLAMD used */
-    *p_nzoff = nzoff ;
-    Info [KLU_BTF_INFO_EST_FLOPS] = flops ;	/* EMPTY if COLAMD used */
+    Symbolic->lnz = lnz ;		/* EMPTY if COLAMD used */
+    Symbolic->unz = lnz ;
+    Symbolic->nzoff = nzoff ;
+    Symbolic->est_flops = flops ;	/* EMPTY if COLAMD used */
     return (KLU_OK) ;
 }
 
 /* ========================================================================== */
-/* === klu_btf_analyze ====================================================== */
+/* === order_and_analyze ==================================================== */
 /* ========================================================================== */
 
-klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
-				   klu_symbolic object if successful */
+/* Orders the matrix with or with BTF, then orders each block with AMD or
+ * COLAMD.  Does not handle the natural or given ordering cases. */
+
+static klu_symbolic *order_and_analyze	/* returns NULL if error, or a valid
+					   klu_symbolic object if successful */
 (
     /* inputs, not modified */
     int n,		/* A is n-by-n */
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
 
-    double Control [KLU_BTF_CONTROL],	/* optional; may be NULL */
-    double User_Info [KLU_BTF_INFO]	/* optional; may be NULL */
+    klu_control *control
 )
 {
     int nblocks, *Qbtf, nz, *Cp, *Ci, *Pinv, *Pamd, *Ep, *Ei, *Pbtf,
-	block, maxblock, k1, k2, nk, *P, *Q, *R, nzoff, result, j, i, p,
+	block, maxblock, k1, k2, nk, *P, *Q, *R, result, j, i, p,
 	pend, do_btf, nzdiag, ordering, k, nfound ;
     klu_symbolic *Symbolic ;
-    double *Lnz, lnz, Info2 [KLU_BTF_INFO], *Info ;
-
-    /* ---------------------------------------------------------------------- */
-    /* get Info array for statistics, and clear it */
-    /* ---------------------------------------------------------------------- */
-
-    Info = (User_Info != (double *) NULL) ? User_Info : Info2 ;
-    for (i = 0 ; i < KLU_BTF_INFO ; i++)
-    {
-	Info [i] = EMPTY ;
-    }
-    Info [KLU_BTF_INFO_N] = n ;
+    double *Lnz ;
 
     /* ---------------------------------------------------------------------- */
     /* determine if input matrix is valid, and get # of nonzeros */
@@ -358,15 +347,12 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     if (n <= 0 || (Ap == (int *) NULL) || (Ai == (int *) NULL))
     {
 	/* Ap and Ai must be present, and n must be > 0 */
-	Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	return ((klu_symbolic *) NULL) ;
     }
     nz = Ap [n] ;
-    Info [KLU_BTF_INFO_NZ] = nz ;
     if (Ap [0] != 0 || nz < 0)
     {
 	/* nz must be >= 0 and Ap [0] must equal zero */
-	Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	return ((klu_symbolic *) NULL) ;
     }
     for (j = 0 ; j < n ; j++)
@@ -374,7 +360,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	if (Ap [j] > Ap [j+1])
 	{
 	    /* column pointers must be non-decreasing */
-	    Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	    return ((klu_symbolic *) NULL) ;
 	}
     }
@@ -382,7 +367,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     if (P == (int *) NULL)
     {
 	/* out of memory */
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_symbolic *) NULL) ;
     }
     for (i = 0 ; i < n ; i++)
@@ -400,7 +384,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    {
 		/* row index out of range, or duplicate entry */
 		FREE (P, int) ;
-		Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 		return ((klu_symbolic *) NULL) ;
 	    }
 	    if (i == j)
@@ -422,7 +405,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     if (Symbolic == (klu_symbolic *) NULL)
     {
 	FREE (P, int) ;
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_symbolic *) NULL) ;
     }
 
@@ -431,6 +413,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     Lnz = (double *) ALLOCATE (n * sizeof (double)) ;
 
     Symbolic->n = n ;
+    Symbolic->nz = nz ; 
     Symbolic->P = P ;
     Symbolic->Q = Q ;
     Symbolic->R = R ;
@@ -439,7 +422,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     if ((P == (int *) NULL) || (Q == (int *) NULL) || (R == (int *) NULL) ||
 	(Lnz == (double *) NULL))
     {
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	klu_btf_free_symbolic (&Symbolic) ;
 	return ((klu_symbolic *) NULL) ;
     }
@@ -455,19 +437,18 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	FREE (Pbtf, int) ; 
 	FREE (Qbtf, int) ; 
 	klu_btf_free_symbolic (&Symbolic) ;
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_symbolic *) NULL) ;
     }
 
     /* ---------------------------------------------------------------------- */
-    /* get the Control parameters for BTF and ordering method */
+    /* get the control parameters for BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
-    do_btf   = (int) GET_CONTROL (KLU_BTF_CONTROL_BTF, TRUE) ;
-    ordering = (int) GET_CONTROL (KLU_BTF_CONTROL_ORDERING, KLU_BTF_CONTROL_USE_AMD) ;
+    do_btf   = control->btf ;
+    ordering = control->ordering ;
     do_btf   = (do_btf) ? TRUE : FALSE ;
-    ordering = MAX (ordering, KLU_BTF_CONTROL_USE_AMD) ;	/* 0 */
-    ordering = MIN (ordering, KLU_BTF_CONTROL_USE_COLAMD) ;	/* 1 */
+    ordering = MAX (ordering, 0) ;	    /* 0: AMD */
+    ordering = MIN (ordering, 1) ;	    /* 1: COLAMD */
     Symbolic->ordering = ordering ;
     Symbolic->do_btf = do_btf ;
 
@@ -489,13 +470,12 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    FREE (Pbtf, int) ; 
 	    FREE (Qbtf, int) ; 
 	    klu_btf_free_symbolic (&Symbolic) ;
-	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	    return ((klu_symbolic *) NULL) ;
 	}
 
 	nblocks = btf_order (n, Ap, Ai, Pbtf, Qbtf, R, &nfound, Work) ;
 
-	/* TODO: add nfound to Symbolic, and to Info */
+	/* TODO: add nfound to Symbolic */
 
 	FREE (Work, int) ; 
 
@@ -518,7 +498,6 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    FREE (Pbtf, int) ; 
 	    FREE (Qbtf, int) ; 
 	    klu_btf_free_symbolic (&Symbolic) ;
-	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	    return ((klu_symbolic *) NULL) ;
 	}
 
@@ -550,11 +529,9 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     }
 
     Symbolic->nblocks = nblocks ;
-    Info [KLU_BTF_INFO_NBLOCKS] = nblocks ;
 
     PRINTF (("maxblock size %d\n", maxblock)) ;
     Symbolic->maxblock = maxblock ;
-    Info [KLU_BTF_INFO_MAXBLOCK] = maxblock ;
 
     /* TODO: merge adjacent 1-by-1 blocks into an upper triangular block */
 
@@ -583,13 +560,10 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     if (result == KLU_OK)
     {
 	PRINTF (("calling klu_btf_analyze_worker\n")) ;
-	result = klu_btf_analyze_worker (n, Ap, Ai, nblocks, Pbtf, Qbtf, R,
-	    ordering, P, Q, Lnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei,
-	    Pinv, Info) ;
+	result = worker (n, Ap, Ai, nblocks, Pbtf, Qbtf, R,
+	    ordering, P, Q, Lnz, Pamd, Cp, Ci, Ep, Ei, Pinv, Symbolic) ;
 	PRINTF (("klu_btf_analyze_worker done\n")) ;
-	if (!do_btf) ASSERT (nzoff == 0) ;
     }
-    Info [KLU_BTF_INFO_STATUS] = result ;
 
     /* ---------------------------------------------------------------------- */
     /* free all workspace */
@@ -617,11 +591,55 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     }
     else
     {
-	Symbolic->lnz = lnz ;
-	Symbolic->unz = lnz ;	/* estimated fill-in is symmetric, currently */
-	Symbolic->nzoff = nzoff ;
-	Info [KLU_BTF_INFO_EST_LNZ] = lnz ;
-	Info [KLU_BTF_INFO_NZOFF] = nzoff ;
 	return (Symbolic) ;
+    }
+}
+
+
+/* ========================================================================== */
+/* === klu_btf_analyze ====================================================== */
+/* ========================================================================== */
+
+klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
+				   klu_symbolic object if successful */
+(
+    /* inputs, not modified */
+    int n,		/* A is n-by-n */
+    int Ap [ ],		/* size n+1, column pointers */
+    int Ai [ ],		/* size nz, row indices */
+
+    klu_control *user_control		/* optional; may be NULL */
+)
+{
+    klu_control *control, default_control ;
+
+    /* ---------------------------------------------------------------------- */
+    /* get the control parameters for BTF and ordering method */
+    /* ---------------------------------------------------------------------- */
+
+    if (user_control == (klu_control *) NULL)
+    {
+	control = &default_control ;
+	klu_btf_defaults (control) ;
+    }
+    else
+    {
+	control = user_control ;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* order and analyze */
+    /* ---------------------------------------------------------------------- */
+
+    if (control->ordering == 2)
+    {
+	/* natural ordering */
+	return (klu_btf_analyze_given (n, Ap, Ai,
+		(int *) NULL, (int *) NULL, control)) ;
+    }
+    else
+    {
+	/* order with P and Q */
+	return (order_and_analyze (n, Ap, Ai, control)) ;
     }
 }

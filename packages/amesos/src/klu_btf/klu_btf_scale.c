@@ -14,6 +14,7 @@
 int klu_btf_scale
 (
     /* inputs, not modified */
+    int scale,		/* 0: none, 1: sum, 2: max */
     int n,
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
@@ -24,6 +25,7 @@ int klu_btf_scale
     int W [ ]		/* size n, can be NULL */
 )
 {
+    double a ;
     int row, col, p, pend, check_duplicates ;
 
     if (n <= 0 || (Ap == (int *) NULL) || (Ai == (int *) NULL)
@@ -46,10 +48,25 @@ int klu_btf_scale
 	}
     }
 
-    /* initialize row sum and workspace */
-    for (row = 0 ; row < n ; row++)
+    /* make sure scale is equal to 0, 1, or 2 */
+    scale = MAX (0, scale) ;
+    scale = MIN (2, scale) ;
+
+    if (scale == 0)
     {
-	Rs [row] = 0.0 ;
+	/* no scaling */
+	for (row = 0 ; row < n ; row++)
+	{
+	    Rs [row] = 1 ;
+	}
+    }
+    else
+    {
+	/* initialize row sum or row max */
+	for (row = 0 ; row < n ; row++)
+	{
+	    Rs [row] = 0 ;
+	}
     }
 
     /* check for duplicates only if W is present */
@@ -62,7 +79,12 @@ int klu_btf_scale
 	}
     }
 
-    /* the scale factor for row i is sum (abs (A (i,:))) */
+    /* scaling methods:
+     * 0: no scaling
+     * 1: the scale factor for row i is sum (abs (A (i,:)))
+     * 2: the scale factor for row i is max (abs (A (i,:)))
+     * */
+
     for (col = 0 ; col < n ; col++)
     {
 	pend = Ap [col+1] ;
@@ -84,21 +106,34 @@ int klu_btf_scale
 		/* flag row i as appearing in column col */
 		W [row] = col ;
 	    }
-	    /* accumulate the row sum */
-	    Rs [row] += ABS (Ax [p]) ;
+	    a = ABS (Ax [p]) ;
+	    if (scale == 1)
+	    {
+		/* accumulate the abs. row sum */
+		Rs [row] += a ;
+	    }
+	    else if (scale == 2)
+	    {
+		/* find the max abs. value in the row */
+		Rs [row] = MAX (Rs [row], a) ;
+	    }
 	}
     }
 
-    /* do not scale empty rows */
-    for (row = 0 ; row < n ; row++)
+    if (scale != 0)
     {
-	/* matrix is singular */
-	PRINTF (("Rs [%d] = %g\n", row, Rs [row])) ;
-	if (Rs [row] == 0.0)
+	/* do not scale empty rows */
+	for (row = 0 ; row < n ; row++)
 	{
-	    PRINTF (("Row %d of A is all zero\n", row)) ;
-	    Rs [row] = 1.0 ;
+	    /* matrix is singular */
+	    PRINTF (("Rs [%d] = %g\n", row, Rs [row])) ;
+	    if (Rs [row] == 0.0)
+	    {
+		PRINTF (("Row %d of A is all zero\n", row)) ;
+		Rs [row] = 1.0 ;
+	    }
 	}
     }
+
     return (KLU_OK) ;
 }

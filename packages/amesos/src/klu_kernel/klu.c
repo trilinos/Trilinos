@@ -159,6 +159,7 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int k1,	    /* the block of A is from k1 to k2-1 */
     int PSinv [ ],  /* inverse of P from symbolic factorization */
     double Rs [ ],  /* scale factors for A */
+    int scale,	    /* 0: no scaling, nonzero: scale the rows with Rs */
 
     /* inputs, modified on output */
     int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
@@ -166,7 +167,7 @@ int klu_factor	/* returns 0 if OK, negative if error */
     double Offx [ ]
 )
 {
-    double tol, s, *Lx, *Ux, umin, umax, growth, maxlnz ;
+    double tol, sl, su, *Lx, *Ux, umin, umax, growth, maxlnz ;
     int *Pinv, lsize, usize, result, anz, *Li, *Ui, *Lpend, *Stack, *Flag,
 	noffdiag, *Ap_pos, get_work, get_X, *W, no_btf ;
 
@@ -186,34 +187,43 @@ int klu_factor	/* returns 0 if OK, negative if error */
 	anz = Ap [n+k1] - Ap [k1] ;
     }
 
-    s = GET_CONTROL (KLU_LSIZE, -10.0) ;
-    if (s <= 0)
+    if (Control == (double *) NULL)
     {
-	s = -s ;
-	s = MAX (s, 1.0) ;
-	lsize = s * anz + n ;
+	sl = -10.0 ;
+	su = -10.0 ;
+	tol = 1.0 ;
+	growth = 1.5 ;
     }
     else
     {
-	lsize = s ;
+	sl = Control [KLU_LSIZE] ;
+	su = Control [KLU_USIZE] ;
+	tol = Control [KLU_TOL] ;
+	growth = Control [KLU_GROWTH] ;
     }
 
-    s = GET_CONTROL (KLU_USIZE, -10.0) ;
-    if (s <= 0)
+    if (sl <= 0)
     {
-	s = -s ;
-	s = MAX (s, 1.0) ;
-	usize = s * anz + n ;
+	sl = -sl ;
+	sl = MAX (sl, 1.0) ;
+	lsize = sl * anz + n ;
     }
     else
     {
-	usize = s ;
+	lsize = sl ;
     }
 
-    tol = GET_CONTROL (KLU_TOL, 1.0) ;
-    growth = GET_CONTROL (KLU_GROWTH, 1.2) ;
+    if (su <= 0)
+    {
+	su = -su ;
+	su = MAX (su, 1.0) ;
+	usize = su * anz + n ;
+    }
+    else
+    {
+	usize = su ;
+    }
 
-    /* make sure control parameters are in legal range */
     lsize  = MAX (n+1, lsize) ;
     usize  = MAX (n+1, usize) ;
 
@@ -292,8 +302,8 @@ int klu_factor	/* returns 0 if OK, negative if error */
     result = klu_kernel (n, Ap, Ai, Ax, Q, tol, growth, lsize, usize,
 	    Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, &noffdiag, &umin, &umax,
 	    X, Stack, Flag, Ap_pos, Lpend,
-	    /* BTF case: */
-	    no_btf, k1, PSinv, Rs, Offp, Offi, Offx) ;
+	    /* BTF and scaling case: */
+	    no_btf, k1, PSinv, Rs, scale, Offp, Offi, Offx) ;
 
     /* ---------------------------------------------------------------------- */
     /* free workspace */
@@ -711,5 +721,5 @@ void klu_defaults
     Control [KLU_TOL] = 1.0 ;	    /* partial pivoting tolerance */
     Control [KLU_LSIZE] = -10 ;	    /* L starts out as size 10*nnz(A) */
     Control [KLU_USIZE] = -10 ;	    /* U starts out as size 10*nnz(A) */
-    Control [KLU_GROWTH] = 1.2 ;    /* memory growth factor */
+    Control [KLU_GROWTH] = 1.5 ;    /* memory growth factor */
 }

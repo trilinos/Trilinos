@@ -6,6 +6,8 @@
  * and factoring it once with klu_btf_factor.  This routine cannot do any
  * numerical pivoting.  The pattern of the input matrix (Ap, Ai) must be
  * identical to the pattern given to klu_btf_factor.
+ *
+ * TODO: compute Numeric->umin and Numeric->umax in refactor!
  */
 
 #include "klu_btf_internal.h"
@@ -19,22 +21,24 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     int Ai [ ],		/* size nz, row indices */
     double Ax [ ],
     klu_symbolic *Symbolic,
+    klu_control *user_control,
 
-    /* defined on input, numerical values modified on output */
+    /* input, values (Rs, Lx, Ux, Offx, umin, umax) modified on output */
     klu_numeric *Numeric
 )
 {
-    double *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, ukk, ujk, *Lx, *Ux, *X ;
-    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, p, newrow, *P, *Q, *R,
-	nblocks, poff, *Pnum, *Lp, *Up, *Offp, *Offi, **Lbp, **Lbi, **Ubp,
-	**Ubi, result, i, j, up, upend, upstart, *Ui, *Li, *Pinv,
-	maxblock ;
+    double ukk, ujk, umin, umax ;
+    double *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, *Lx, *Ux, *X ;
+    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, p, newrow, scale,
+	nblocks, poff, result, i, j, up, upend, upstart, maxblock ;
+    int *P, *Q, *R, *Pnum, *Lp, *Up, *Offp, *Offi, *Ui, *Li, *Pinv ;
+    int **Lbp, **Lbi, **Ubp, **Ubi ;
+    klu_control *control, default_control ;
 
     /* ---------------------------------------------------------------------- */
-    /* initializations */
-    /* ---------------------------------------------------------------------- */
-
     /* get the contents of the Symbolic object */
+    /* ---------------------------------------------------------------------- */
+
     n = Symbolic->n ;
     P = Symbolic->P ;
     Q = Symbolic->Q ;
@@ -43,7 +47,10 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     nblocks = Symbolic->nblocks ;
     maxblock = Symbolic->maxblock ;
 
+    /* ---------------------------------------------------------------------- */
     /* get the contents of the Numeric object */
+    /* ---------------------------------------------------------------------- */
+
     Pnum = Numeric->Pnum ;
     Offp = Numeric->Offp ;
     Offi = Numeric->Offi ;
@@ -59,8 +66,26 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     Pinv = Numeric->Pinv ;
     X = Numeric->Xwork ;
 
-    PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
-	n, Symbolic->nzoff, nblocks, maxblock)) ;
+    /* ---------------------------------------------------------------------- */
+    /* get control parameters and make sure they are in the proper range */
+    /* ---------------------------------------------------------------------- */
+
+    if (user_control == (klu_control *) NULL)
+    {
+	control = &default_control ;
+	klu_btf_defaults (control) ;
+    }
+    else
+    {
+	control = user_control ;
+    }
+
+    scale = control->scale ;
+    scale = MAX (0, scale) ;
+    scale = MIN (2, scale) ;
+
+    PRINTF (("klu_btf_factor scale %d:  n %d nzoff %d nblocks %d maxblock %d\n",
+	scale, n, Symbolic->nzoff, nblocks, maxblock)) ;
 
 #ifdef TESTING
     /* randomly mangle the numerical values to test the refactor code */
@@ -98,7 +123,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     /* ---------------------------------------------------------------------- */
 
     /* check for out-of-range indices, but do not check for duplicates */
-    result = klu_btf_scale (n, Ap, Ai, Ax, Rs, (int *) NULL) ;
+    result = klu_btf_scale (scale, n, Ap, Ai, Ax, Rs, (int *) NULL) ;
     if (result != KLU_OK)
     {
 	return (result) ;
@@ -111,6 +136,9 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     {
 	X [k] = 0 ;
     }
+
+    umin = 0 ;
+    umax = 0 ;
 
     /* ---------------------------------------------------------------------- */
     /* factor each block */
@@ -142,28 +170,76 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	    }
 	    oldcol = Q [k1] ;
 	    pend = Ap [oldcol+1] ;
-	    for (p = Ap [oldcol] ; p < pend ; p++)
+
+	    if (scale == 0)
 	    {
-		oldrow = Ai [p] ;
-		newrow = Pinv [oldrow] ;
-		if (newrow < k1)
+		/* no scaling */
+		for (p = Ap [oldcol] ; p < pend ; p++)
 		{
-		    ASSERT (poff < Symbolic->nzoff) ; 
-		    if (Offi [poff] != newrow)
+		    oldrow = Ai [p] ;
+		    newrow = Pinv [oldrow] ;
+		    if (newrow < k1)
 		    {
-			return (KLU_INVALID) ;
+			ASSERT (poff < Symbolic->nzoff) ; 
+			if (Offi [poff] != newrow)
+			{
+			    return (KLU_INVALID) ;
+			}
+			Offx [poff++] = Ax [p] ;
 		    }
-		    Offx [poff++] = Ax [p] / Rs [oldrow] ;
+		    else
+		    {
+			if (newrow != k1)
+			{
+			    return (KLU_INVALID) ;
+			}
+			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
+			Singleton [block] = Ax [p] ;
+		    }
 		}
-		else
+	    }
+	    else
+	    {
+		/* row scaling */
+		for (p = Ap [oldcol] ; p < pend ; p++)
 		{
-		    if (newrow != k1)
+		    oldrow = Ai [p] ;
+		    newrow = Pinv [oldrow] ;
+		    if (newrow < k1)
 		    {
-			return (KLU_INVALID) ;
+			ASSERT (poff < Symbolic->nzoff) ; 
+			if (Offi [poff] != newrow)
+			{
+			    return (KLU_INVALID) ;
+			}
+			Offx [poff++] = Ax [p] / Rs [oldrow] ;
 		    }
-		    PRINTF (("Singleton block %d value %g\n", block, Ax [p])) ;
-		    Singleton [block] = Ax [p] / Rs [oldrow] ;
+		    else
+		    {
+			if (newrow != k1)
+			{
+			    return (KLU_INVALID) ;
+			}
+			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
+			Singleton [block] = Ax [p] / Rs [oldrow] ;
+		    }
 		}
+	    }
+
+	    /* keep track of the smallest and largest diagonal entry */
+	    ukk = fabs (Singleton [block]) ;
+	    if (block == 0)
+	    {
+		umin = ukk ;
+		umax = ukk ;
+	    }
+	    else if (ukk < umin)
+	    {
+		umin = ukk ;
+	    }
+	    else if (ukk > umax)
+	    {
+		umax = ukk ;
 	    }
 
 	}
@@ -192,30 +268,65 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		}
 		oldcol = Q [k+k1] ;
 		pend = Ap [oldcol+1] ;
-		for (p = Ap [oldcol] ; p < pend ; p++)
+
+		if (scale == 0)
 		{
-		    oldrow = Ai [p] ;
-		    newrow = Pinv [oldrow] ;
-		    if (newrow < k1)
+		    /* no scaling */
+		    for (p = Ap [oldcol] ; p < pend ; p++)
 		    {
-			/* this is an entry in the off-diagonal part */
-			ASSERT (poff < Symbolic->nzoff) ; 
-			if (Offi [poff] != newrow)
+			oldrow = Ai [p] ;
+			newrow = Pinv [oldrow] ;
+			if (newrow < k1)
 			{
-			    return (KLU_INVALID) ;
+			    /* this is an entry in the off-diagonal part */
+			    ASSERT (poff < Symbolic->nzoff) ; 
+			    if (Offi [poff] != newrow)
+			    {
+				return (KLU_INVALID) ;
+			    }
+			    Offx [poff++] = Ax [p] ;
 			}
-			Offx [poff++] = Ax [p] / Rs [oldrow] ;
+			else
+			{
+			    /* (newrow,k) is an entry in the block */
+			    ASSERT (newrow < k2) ;
+			    newrow -= k1 ;
+			    if (newrow >= nk)
+			    {
+				return (KLU_INVALID) ;
+			    }
+			    X [newrow] = Ax [p] ;
+			}
 		    }
-		    else
+		}
+		else
+		{
+		    /* row scaling */
+		    for (p = Ap [oldcol] ; p < pend ; p++)
 		    {
-			/* (newrow,k) is an entry in the block */
-			ASSERT (newrow < k2) ;
-			newrow -= k1 ;
-			if (newrow >= nk)
+			oldrow = Ai [p] ;
+			newrow = Pinv [oldrow] ;
+			if (newrow < k1)
 			{
-			    return (KLU_INVALID) ;
+			    /* this is an entry in the off-diagonal part */
+			    ASSERT (poff < Symbolic->nzoff) ; 
+			    if (Offi [poff] != newrow)
+			    {
+				return (KLU_INVALID) ;
+			    }
+			    Offx [poff++] = Ax [p] / Rs [oldrow] ;
 			}
-			X [newrow] = Ax [p] / Rs [oldrow] ;
+			else
+			{
+			    /* (newrow,k) is an entry in the block */
+			    ASSERT (newrow < k2) ;
+			    newrow -= k1 ;
+			    if (newrow >= nk)
+			    {
+				return (KLU_INVALID) ;
+			    }
+			    X [newrow] = Ax [p] / Rs [oldrow] ;
+			}
 		    }
 		}
 
@@ -257,6 +368,23 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 #ifndef NDEBUG
 		for (i = 0 ; i < nk ; i++) ASSERT (X [i] == 0) ;
 #endif
+
+		/* keep track of the smallest and largest diagonal entry */
+		ukk = fabs (ukk) ;
+		if (k == 0 && block == 0)
+		{
+		    umin = ukk ;
+		    umax = ukk ;
+		}
+		else if (ukk < umin)
+		{
+		    umin = ukk ;
+		}
+		else if (ukk > umax)
+		{
+		    umax = ukk ;
+		}
+
 	    }
 
 	    PRINTF (("lufact done\n")) ;
@@ -268,17 +396,23 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	}
     }
 
+    Numeric->umin = umin ;
+    Numeric->umax = umax ;
+
     /* ---------------------------------------------------------------------- */
     /* permute scale factors Rs according to pivotal row order */
     /* ---------------------------------------------------------------------- */
 
-    for (k = 0 ; k < n ; k++)
+    if (scale != 0)
     {
-	X [k] = Rs [Pnum [k]] ;
-    }
-    for (k = 0 ; k < n ; k++)
-    {
-	Rs [k] = X [k] ;
+	for (k = 0 ; k < n ; k++)
+	{
+	    X [k] = Rs [Pnum [k]] ;
+	}
+	for (k = 0 ; k < n ; k++)
+	{
+	    Rs [k] = X [k] ;
+	}
     }
 
     ASSERT (Offp [n] == poff) ;

@@ -32,9 +32,14 @@ typedef struct
 	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
 	do_btf ;	/* whether or not BTF preordering was requested */
 
-    /* this info is stored as double, to avoid integer overflow: */
+    /* stored as double, to avoid integer overflow: */
     double lnz, unz ;	/* estimated nz in L and U, including diagonals */
     double *Lnz ;	/* size n, but only Lnz [0..nblocks-1] is used */
+
+    /* statistics determined in klu_btf_analyze or klu_btf_analyze_given: */
+    int nz ;		/* # entries in input matrix */
+    double symmetry ;	/* symmetry of largest block */
+    double est_flops ;	/* est. factorization flop count */
 
 } klu_symbolic ;
 
@@ -78,11 +83,38 @@ typedef struct
     int *Offp, *Offi ;
     double *Offx ;
 
+    /* statistics determined in klu_btf_factor: */
+    /* double flops ;	   TODO: actual factorization flop count */
+    /* int nrealloc ;	   TODO: # of reallocations of L and/or U */
+
+    /* determined in klu_btf_factor and klu_btf_refactor: */
+    double umin ;	/* min abs diagonal entry in U */
+    double umax ;	/* max abs diagonal entry in U */
+
 } klu_numeric ;
+
+/* -------------------------------------------------------------------------- */
+/* KLU control parameters */
+/* -------------------------------------------------------------------------- */
+
+typedef struct
+{
+    double tol ;		/* pivot tolerance for diagonal preference */
+    double growth ;		/* realloc growth size */
+    double initmem_amd ;	/* init. memory size with AMD: c*nnz(L) + n */
+    double initmem ;		/* init. memory size: c*nnz(A) + n */
+    int btf ;			/* use BTF pre-ordering, or not */
+    int ordering ;		/* 0: AMD, 1: COLAMD, 2: user P and Q */
+    int scale ;			/* row scaling: 0: none, 1: sum, 2: max */
+
+} klu_control ;
 
 /* -------------------------------------------------------------------------- */
 /* klu_btf_analyze:  pre-orderings and analyzes a matrix with BTF and AMD */
 /* -------------------------------------------------------------------------- */
+
+/* Order the matrix with BTF (or not), then AMD, COLAMD, or natural ordering
+ * on the blocks. */
 
 klu_symbolic *klu_btf_analyze
 (
@@ -90,16 +122,16 @@ klu_symbolic *klu_btf_analyze
     int n,		/* A is n-by-n */
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
-    double Control [ ],
-    /* output: */
-    double Info [ ]
+    klu_control *control    /* optional; may be NULL */
 ) ;
 
 /* -------------------------------------------------------------------------- */
 /* klu_btf_analyze_given: analyzes a matrix using given P and Q */
 /* -------------------------------------------------------------------------- */
 
-/* NULL array for Puser or Quser interpreted as the identity permutation */
+/* Order the matrix with BTF (or not), then use natural or given ordering
+ * Puser and Quser on the blocks.  Puser and Quser are interpretted as identity
+ * if NULL. */
 
 klu_symbolic *klu_btf_analyze_given
 (
@@ -109,9 +141,7 @@ klu_symbolic *klu_btf_analyze_given
     int Ai [ ],		/* size nz, row indices */
     int Puser [ ],	/* size n, user's row permutation (may be NULL) */
     int Quser [ ],	/* size n, user's column permutation (may be NULL) */
-    double Control [ ],	/* optional; may be NULL */
-    /* output: */
-    double User_Info [ ]	/* optional; may be NULL */
+    klu_control *control    /* optional; may be NULL */
 ) ;
 
 /* -------------------------------------------------------------------------- */
@@ -125,9 +155,7 @@ klu_numeric *klu_btf_factor
     int Ai [ ],		/* size nz, row indices */
     double Ax [ ],
     klu_symbolic *Symbolic,
-    double Control [ ],
-    /* output: */
-    double Info [ ]
+    klu_control *control    /* optional; may be NULL */
 ) ;
 
 /* -------------------------------------------------------------------------- */
@@ -171,6 +199,7 @@ void klu_btf_solve
 int klu_btf_scale
 (
     /* inputs, not modified */
+    int scale,		/* row scaling method: 0: none, 1: sum, 2: max */
     int n,
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
@@ -192,45 +221,10 @@ int klu_btf_refactor	/* returns KLU_OK if OK, < 0 if error */
     int Ai [ ],		/* size nz, row indices */
     double Ax [ ],
     klu_symbolic *Symbolic,
+    klu_control *control,	/* optional; may be NULL */
     /* input, and numerical values modified on output */
     klu_numeric *Numeric
 ) ;
-
-/* -------------------------------------------------------------------------- */
-/* KLU Control array */
-/* -------------------------------------------------------------------------- */
-
-#define KLU_BTF_CONTROL 20	    /* size of Control array */
-
-/* contents of Control */
-#define KLU_BTF_CONTROL_PRL 0		    /* print level */
-#define KLU_BTF_CONTROL_PRL_DEFAULT 0
-
-/* used in klu_btf_analyze */
-#define KLU_BTF_CONTROL_BTF 1		    /* selecting BTF */
-#define KLU_BTF_CONTROL_BTF_DEFAULT 1	    /* (default is to use BTF) */
-
-#define KLU_BTF_CONTROL_AMD_DENSE 2	    /* AMD dense control parameter */
-#define KLU_BTF_CONTROL_AMD_DENSE_DEFAULT AMD_DEFAULT_DENSE
-
-#define KLU_BTF_CONTROL_ORDERING 3	    /* AMD: 0, COLAMD: 1. default: AMD*/
-#define KLU_BTF_CONTROL_USE_AMD 0
-#define KLU_BTF_CONTROL_USE_COLAMD 1
-#define KLU_BTF_CONTROL_USE_GIVEN 2
-#define KLU_BTF_CONTROL_ORDERING_DEFAULT KLU_BTF_CONTROL_USE_AMD
-
-/* used in klu_btf_factor */
-#define KLU_BTF_CONTROL_TOL 4		    /* default pivot tolerance */
-#define KLU_BTF_CONTROL_TOL_DEFAULT 0.001
-
-#define KLU_BTF_CONTROL_GROWTH 5	    /* realloc growth size */
-#define KLU_BTF_CONTROL_GROWTH_DEFAULT 1.5  /* default realloc growth size */
-
-#define KLU_BTF_CONTROL_INITMEM_AMD 6	    /* initial memory size (w/ AMD) */
-#define KLU_BTF_CONTROL_INITMEM_AMD_DEFAULT 1.2	/* 1.2 times nnz(L) + n */
-
-#define KLU_BTF_CONTROL_INITMEM_COLAMD 7    /* initial memory size (w/ COLAMD)*/
-#define KLU_BTF_CONTROL_INITMEM_COLAMD_DEFAULT 10	/* 10 times nnz(A) + n*/
 
 /* -------------------------------------------------------------------------- */
 /* klu_btf_defaults: sets default control parameters */
@@ -238,47 +232,7 @@ int klu_btf_refactor	/* returns KLU_OK if OK, < 0 if error */
 
 void klu_btf_defaults
 (
-    double Control [KLU_BTF_CONTROL]
+    klu_control *control	/* optional; may be NULL */
 ) ;
-
-/* -------------------------------------------------------------------------- */
-/* KLU Info array */
-/* -------------------------------------------------------------------------- */
-
-#define KLU_BTF_INFO 90		    /* size of Info array */
-
-/* returned by all klu_btf_* routines: */
-#define KLU_BTF_INFO_STATUS 0	    /* KLU_OK, KLU_OUT_OF_MEMORY, ... */
-
-/* determined in klu_btf_analyze: */
-#define KLU_BTF_INFO_N 1	    /* n, dimension of input matrix */
-#define KLU_BTF_INFO_NZ 2	    /* # entries in input matrix */
-#define KLU_BTF_INFO_NBLOCKS 3	    /* # of blocks in BTF form */
-#define KLU_BTF_INFO_MAXBLOCK 4	    /* dimension of largest block */
-#define KLU_BTF_INFO_MAXNZ 6	    /* max nz in any block of A */
-#define KLU_BTF_INFO_NZOFF 7	    /* nz in off-diagonal blocks of A */
-#define KLU_BTF_INFO_SYMMETRY 8	    /* symmetry of largest block */
-#define KLU_BTF_INFO_ATIME 9	    /* analyze time */
-#define KLU_BTF_INFO_EST_LNZ 10	    /* nz in L, estimated (incl. diagonal) */
-#define KLU_BTF_INFO_EST_UNZ 11	    /* nz in U, estimated (incl. diagonal) */
-#define KLU_BTF_INFO_EST_FLOPS 12   /* est. factorization flop count */
-
-/* 10..30 unused */
-
-/* determined in klu_btf_factor: */
-#define KLU_BTF_INFO_LNZ 30	    /* nz in L, actual (incl. diagonal) */
-#define KLU_BTF_INFO_UNZ 31	    /* nz in U, actual (incl. diagonal) */
-#define KLU_BTF_INFO_FLOPS 32	    /* actual factorization flop count */
-#define KLU_BTF_INFO_UMIN 33	    /* min abs diagonal entry in U */
-#define KLU_BTF_INFO_UMAX 34	    /* max abs diagonal entry in U */
-#define KLU_BTF_INFO_REALLOC 35	    /* # of reallocations of L and/or U */
-#define KLU_BTF_INFO_NOFFDIAG 36    /* number of off-diagonal pivots */
-#define KLU_BTF_INFO_FTIME 37	    /* factorize time */
-
-#define KLU_BTF_INFO_F2TIME 60	    /* refactorize time */
-
-#define KLU_BTF_INFO_STIME 80	    /* solve time */
-
-/* 37..89 unused */
 
 #endif

@@ -1,28 +1,28 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                Amesos: Direct Sparse Solver Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -51,7 +51,7 @@ public:
     Symbolic_(0),
     Numeric_(0)
   {}
-  
+
   ~Amesos_Klu_Pimpl(void){
 
     if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
@@ -64,19 +64,21 @@ public:
 //=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
-  SerialMap_(0), 
-  SerialCrsMatrixA_(0), 
-  SerialMatrix_(0), 
+  SerialMap_(0),
+  SerialCrsMatrixA_(0),
+  SerialMatrix_(0),
   TransposeMatrix_(0),
   Matrix_(0),
   UseTranspose_(false),
-  Problem_(&prob), 
+  Problem_(&prob),
   PrintTiming_(false),
   PrintStatus_(false),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
   debug_(0),
+  refactorize_(false),
+  rcond_threshold_(1e-12),
   ConTime_(0.0),
   SymTime_(0.0),
   NumTime_(0.0),
@@ -98,127 +100,136 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
 //=============================================================================
 Amesos_Klu::~Amesos_Klu(void) {
 
-  if ( SerialMap_ ) delete SerialMap_ ; 
-  if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
-  if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
-  delete PrivateKluData_; 
+  if ( SerialMap_ ) delete SerialMap_ ;
+  if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ;
+  if ( TransposeMatrix_ ) delete TransposeMatrix_ ;
+  delete PrivateKluData_;
 
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 
   if( Time_ ) { delete Time_; Time_ = 0; }
-  
-}
-//  See  pre and post conditions in Amesos_Klu.h
 
-int Amesos_Klu::ConvertToSerial() { 
+}
+
+//=============================================================================
+//  See  pre and post conditions in Amesos_Klu.h
+int Amesos_Klu::ConvertToSerial() {
 
   if( debug_ == 1 ) cout << "Entering `ConvertToSerial()'" << endl;
 
   Time_->ResetStartTime();
-  
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
 
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
+  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
+  EPETRA_CHK_ERR( RowMatrixA == 0 ) ;
+
+  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ;
+  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ;
 
   iam = Comm().MyPID() ;
 
-  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
 
   NumGlobalElements_ = CastCrsMatrixA->NumGlobalRows();
   numentries_ = CastCrsMatrixA->NumGlobalNonzeros();
   assert( NumGlobalElements_ == CastCrsMatrixA->NumGlobalCols() );
 
   //
-  //  Create a serial matrix 
+  //  Create a serial matrix
   //
   assert( NumGlobalElements_ == OriginalMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
   if (iam==0) NumMyElements_ = NumGlobalElements_;
 
 
-  IsLocal_ = ( OriginalMap.NumMyElements() == 
+  IsLocal_ = ( OriginalMap.NumMyElements() ==
 	       OriginalMap.NumGlobalElements() )?1:0;
-  Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
+  Comm().Broadcast( &IsLocal_, 1, 0 ) ;
 
   //
   //  KEN:  Consider giving Epetra_RowMatrix_Transposer a shot
-  //  I am not confident that  Epetra_RowMatrix_Transposer works, 
-  //  but it is worth a try.  
+  //  I am not confident that  Epetra_RowMatrix_Transposer works,
+  //  but it is worth a try.
   //
-  //  Convert Original Matrix to Serial (if it is not already) 
+  //  Convert Original Matrix to Serial (if it is not already)
   //
-  if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
-  if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
+  if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; }
+  if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; }
   if ( IsLocal_==1 ) {
      SerialMatrix_ = CastCrsMatrixA ;
   } else {
-    if ( SerialMap_ ) delete SerialMap_ ; 
+    if ( SerialMap_ ) delete SerialMap_ ;
     SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
 
     Epetra_Export export_to_serial( OriginalMap, *SerialMap_);
 
-    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
+    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ;
     SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialCrsMatrixA_->Export( *RowMatrixA, export_to_serial, Add ); 
-    
-    SerialCrsMatrixA_->TransformToLocal() ; 
+    SerialCrsMatrixA_->Export( *RowMatrixA, export_to_serial, Add );
+
+    SerialCrsMatrixA_->TransformToLocal() ;
     SerialMatrix_ = SerialCrsMatrixA_ ;
   }
 
   MatTime_ += Time_->ElapsedTime();
 
   return 0;
-} 
+}
 
+//=============================================================================
 //
 //  See also pre and post conditions in Amesos_Klu.h
-//  Preconditions:  
+//  Preconditions:
 //    SerialMatrix_ points to the matrix to be factored and solved
 //    NumGlobalElements_ has been set to the dimension of the matrix
 //    numentries_ has been set to the number of non-zeros in the matrix
-//      (i.e. ConvertToSerial() has been callded) 
+//      (i.e. ConvertToSerial() has been callded)
 //
 //  Postconditions:
-//    Ap, Ai, Aval contain the matrix as Klu needs it (transposed 
+//    Ap, Ai, Aval contain the matrix as Klu needs it (transposed
 //     iff UseTranspose() is NOT true)
 //
 //  Issues:
 //    Is there a way to avoid deleting and recreating TransposeMatrix_?
-//    The straight forward attempt at a solution, i.e. re-using 
+//    The straight forward attempt at a solution, i.e. re-using
 //    TransposeMatrix_, fails in the call to CrsMatrixTranspose.
 //    However, since we own CrsMatrixTranspose, we can fix it.
 //
 //    Mike has mentioned a desire to have a Matrix Transpose operation
 //    in epetra (or epetraext).
 //
+//    Comment by Tim:  If KLU could solve A'x=b after factorizaing A, then
+//    you would not need to compute the transpose, right?  You could then
+//    factorize your matrix A (in row form).  KLU would think it is in column
+//    form, and thus factorize A'.  You would then use the transpose-solve to
+//    solve Ax=b.  The only issue is that the partial pivoting direction
+//    would change.
+//
 int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
   if( debug_ == 1 ) cout << "Entering `ConvertToKluCRSt()'" << endl;
 
   Time_->ResetStartTime();
-  
-  if ( UseTranspose() ) { 
-    Matrix_ = SerialMatrix_ ; 
-  } else { 
+
+  if ( UseTranspose() ) {
+    Matrix_ = SerialMatrix_ ;
+  } else {
 #if 1
-    if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
+    if ( TransposeMatrix_ ) delete TransposeMatrix_ ;
     TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
 #else
     //
     //  This fails in CrsMatrixTranspose
     //
-    if ( firsttime && TransposeMatrix_ ) delete TransposeMatrix_ ; 
+    if ( firsttime && TransposeMatrix_ ) delete TransposeMatrix_ ;
     if ( firsttime ) TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
 #endif
-    EPETRA_CHK_ERR( CrsMatrixTranspose( SerialMatrix_, TransposeMatrix_ ) ) ; 
-    Matrix_ = TransposeMatrix_ ; 
+    EPETRA_CHK_ERR( CrsMatrixTranspose( SerialMatrix_, TransposeMatrix_ ) ) ;
+    Matrix_ = TransposeMatrix_ ;
   }
   //
-  //  Convert matrix to the form that Klu expects (Ap, Ai, Aval) 
+  //  Convert matrix to the form that Klu expects (Ap, Ai, Aval)
   //
 
   if ( iam==0 ) {
@@ -226,11 +237,11 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
     assert( NumGlobalElements_ == Matrix_->NumGlobalCols());
     assert( numentries_ == Matrix_->NumGlobalNonzeros());
     Ap.resize( NumGlobalElements_+1 );
-    Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-    Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
+    Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
+    Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
 
     int NumEntriesThisRow;
-    int Ai_index = 0 ; 
+    int Ai_index = 0 ;
     int MyRow;
 #ifdef USE_VIEW
     double *RowValues;
@@ -243,42 +254,43 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
     for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
 #ifdef USE_VIEW
       EPETRA_CHK_ERR( Matrix_->
-		      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, 
+		      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
 					ColIndices ) != 0 ) ;
 #else
       EPETRA_CHK_ERR( Matrix_->
-		      ExtractMyRowCopy( MyRow, MaxNumEntries_, 
-					NumEntriesThisRow, &RowValues[0], 
+		      ExtractMyRowCopy( MyRow, MaxNumEntries_,
+					NumEntriesThisRow, &RowValues[0],
 					&ColIndices[0] ) != 0 ) ;
 #endif
-      Ap[MyRow] = Ai_index ; 
-      for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
-	Ai[Ai_index] = ColIndices[j] ; 
-	Aval[Ai_index] = RowValues[j] ; 
+      Ap[MyRow] = Ai_index ;
+      for ( int j = 0; j < NumEntriesThisRow; j++ ) {
+	Ai[Ai_index] = ColIndices[j] ;
+	Aval[Ai_index] = RowValues[j] ;
 	Ai_index++;
       }
     }
-    Ap[MyRow] = Ai_index ; 
+    Ap[MyRow] = Ai_index ;
   }
 
-  ConTime_ += Time_->ElapsedTime(); 
+  ConTime_ += Time_->ElapsedTime();
 
   return 0;
-}   
+}
 
 
+//=============================================================================
 int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   //  Some compilers reject the following cast:
   //  if( &ParameterList == 0 ) return 0;
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
-  
+
   // ========================================= //
   // retrive KLU's parameters from list.       //
   // default values defined in the constructor //
   // ========================================= //
-  
+
   // retrive general parameters
 
   // solve problem with transpose
@@ -313,7 +325,15 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // 1 - debug
   if( ParameterList.isParameter("DebugLevel") )
     debug_ = ParameterList.get("DebugLevel",0);
-  
+
+  // refactorize
+  if( ParameterList.isParameter("Refactorize") )
+    refactorize_ = ParameterList.get("Refactorize", false);
+
+  // threshold for determining if refactorize worked OK
+  if( ParameterList.isParameter("RcondThreshold") )
+    rcond_threshold_ = ParameterList.get("RcondThreshold", 1e-12);
+
   // MS // now comment it out, if we have parameters for KLU sublist
   // MS // uncomment it
   /*
@@ -321,23 +341,26 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
     Teuchos::ParameterList KluParams = ParameterList.sublist("Klu") ;
   }
   */
-  
+
   return 0;
 }
 
 
+//=============================================================================
 int Amesos_Klu::PerformSymbolicFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
 
-  Time_->ResetStartTime();  
+  Time_->ResetStartTime();
 
-  if ( iam == 0 ) { 
-    if ( PrivateKluData_->Symbolic_ ) klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
+  if ( iam == 0 ) {
+    if ( PrivateKluData_->Symbolic_ ) {
+	klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
+    }
 
-    PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0],
-	    (double *) 0, (double *) 0) ;
-    if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
+    PrivateKluData_->Symbolic_ =
+	klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0], (klu_control *) 0);
+    if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ;
   }
 
   SymTime_ += Time_->ElapsedTime();
@@ -345,18 +368,65 @@ int Amesos_Klu::PerformSymbolicFactorization() {
   return 0;
 }
 
+//=============================================================================
 int Amesos_Klu::PerformNumericFactorization( ) {
-  
+
   if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
 
   Time_->ResetStartTime();
-  
+
   if ( iam == 0 ) {
 
-    if ( PrivateKluData_->Numeric_ ) klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
-    PrivateKluData_->Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], PrivateKluData_->Symbolic_, (double *) 0, (double *) 0) ;
-    if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
-    
+    bool factor_with_pivoting = true ;
+
+    // see if we can "refactorize"
+    if ( refactorize_ && PrivateKluData_->Numeric_ ) {
+
+	// refactorize using the existing Symbolic and Numeric objects, and
+	// using the identical pivot ordering as the prior klu_btf_factor.
+	// No partial pivoting is done.
+	int result = klu_btf_refactor (&Ap[0], &Ai[0], &Aval[0],
+		    PrivateKluData_->Symbolic_, (klu_control *) 0,
+		    PrivateKluData_->Numeric_) ;
+
+	// Did it work?
+	if ( result == KLU_OK) {
+
+	    // Get the largest and smallest entry on the diagonal of U
+	    double umin = (PrivateKluData_->Numeric_)->umin ;
+	    double umax = (PrivateKluData_->Numeric_)->umax ;
+
+	    // compute a crude estimate of the reciprocal of
+	    // the condition number
+	    double rcond = umin / umax ;
+
+	    if ( rcond > rcond_threshold_ ) {
+		// factorizing without pivot worked fine.  We are done.
+		factor_with_pivoting = false ;
+	    }
+	}
+
+    }
+
+    if ( factor_with_pivoting ) {
+
+	// factor with partial pivoting:
+	// either this is the first time we are factoring the matrix, or the
+	// refactorize parameter is false, or we tried to refactorize and
+	// found it to be too inaccurate.
+
+	// destroy the existing Numeric object, if it exists
+	if ( PrivateKluData_->Numeric_ ) {
+	    klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
+	}
+
+	// factor the matrix using partial pivoting
+	PrivateKluData_->Numeric_ =
+	    klu_btf_factor (&Ap[0], &Ai[0], &Aval[0],
+		    PrivateKluData_->Symbolic_, (klu_control *) 0) ;
+	if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ;
+    }
+
   }
 
   NumTime_ += Time_->ElapsedTime();
@@ -367,39 +437,47 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 
 
 
-bool Amesos_Klu::MatrixShapeOK() const { 
+//=============================================================================
+bool Amesos_Klu::MatrixShapeOK() const {
   bool OK ;
 
-  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
-       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
-  return OK; 
+  // Comment by Tim:  The following code seems suspect.  The variable "OK"
+  // is not set if the condition is true.
+  // Does the variable "OK" default to true?
+  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() !=
+       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) {
+    OK = false;
+  }
+  return OK;
 }
 
 
+//=============================================================================
 int Amesos_Klu::SymbolicFactorization() {
-  
+
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  
-  NumSymbolicFact_++;  
-  
-  ConvertToSerial() ; 
-  
+
+  NumSymbolicFact_++;
+
+  ConvertToSerial() ;
+
   ConvertToKluCRS(true);
-  
+
   PerformSymbolicFactorization();
 
   return 0;
 }
 
+//=============================================================================
 int Amesos_Klu::NumericFactorization() {
-  
+
   if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  
+
   NumNumericFact_++;
 
-  ConvertToSerial() ; 
+  ConvertToSerial() ;
   ConvertToKluCRS(false);
 
   PerformNumericFactorization( );
@@ -407,37 +485,38 @@ int Amesos_Klu::NumericFactorization() {
 }
 
 
-int Amesos_Klu::Solve() { 
+//=============================================================================
+int Amesos_Klu::Solve() {
 
   if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  
+
   NumSolve_++;
-  
-  Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
-  Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
+
+  Epetra_MultiVector   *vecX = Problem_->GetLHS() ;
+  Epetra_MultiVector   *vecB = Problem_->GetRHS() ;
 
   //
-  //  Compute the number of right hands sides (and check that X and B have the same shape) 
+  //  Compute the number of right hands sides (and check that X and B have the same shape)
   //
-  int nrhs; 
-  if ( vecX == 0 ) { 
+  int nrhs;
+  if ( vecX == 0 ) {
     nrhs = 0 ;
-    EPETRA_CHK_ERR( vecB != 0 ) ; 
-  } else { 
-    nrhs = vecX->NumVectors() ; 
-    EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
+    EPETRA_CHK_ERR( vecB != 0 ) ;
+  } else {
+    nrhs = vecX->NumVectors() ;
+    EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ;
   }
 
   Epetra_MultiVector *SerialB =0;
   Epetra_MultiVector *SerialX =0;
   //
-  //  Extract Serial versions of X and B 
+  //  Extract Serial versions of X and B
   //
   double *SerialXvalues ;
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
+  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ;
   Epetra_MultiVector *SerialXextract = 0;
   Epetra_MultiVector *SerialBextract = 0;
 
@@ -445,23 +524,23 @@ int Amesos_Klu::Solve() {
   //
   //  Copy B to the serial version of B
   //
-  if ( IsLocal_ ==1 ) { 
-    SerialB = vecB ; 
-    SerialX = vecX ; 
-  } else { 
+  if ( IsLocal_ ==1 ) {
+    SerialB = vecB ;
+    SerialX = vecX ;
+  } else {
     assert( IsLocal_ == 0 ) ;
     const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap();
-    Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
-    Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
+    Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
+    Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
 
     Epetra_Import ImportToSerial( *SerialMap_, OriginalMap );
     SerialBextract->Import( *vecB, ImportToSerial, Insert ) ;
-    SerialB = SerialBextract ; 
-    SerialX = SerialXextract ; 
-  } 
+    SerialB = SerialBextract ;
+    SerialX = SerialXextract ;
+  }
 
   VecTime_ += Time_->ElapsedTime();
-    
+
   //
   //  Call KLU to perform the solve
   //
@@ -469,28 +548,27 @@ int Amesos_Klu::Solve() {
   SerialX->Scale(1.0, *SerialB) ;
 
   Time_->ResetStartTime(); // tract time to solve
-  
-  int SerialXlda ; 
-  if ( iam == 0 ) {
-    assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
 
-    assert( SerialXlda == NumGlobalElements_ ) ; 
+  int SerialXlda ;
+  if ( iam == 0 ) {
+    assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ;
+
+    assert( SerialXlda == NumGlobalElements_ ) ;
 
     klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     SerialXlda, nrhs, &SerialXvalues[0] );
   }
-    
+
   SolTime_ += Time_->ElapsedTime();
-    
-   
+
   //
   //  Copy X back to the original vector
-  // 
+  //
 
   Time_->ResetStartTime();  // track time to broadcast vectors
 
-  if ( IsLocal_ == 0 ) { 
-    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+  if ( IsLocal_ == 0 ) {
+    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
     Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
     vecX->Import( *SerialX, ImportFromSerial, Insert ) ;
     delete SerialBextract ;
@@ -514,7 +592,7 @@ int Amesos_Klu::Solve() {
       }
     }
   }
-  
+
   // MS // compute true residual
   if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
     double Norm;
@@ -523,19 +601,19 @@ int Amesos_Klu::Solve() {
       (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
       (Ax.Update(1.0, *((*vecB)(i)), -1.0));
       (Ax.Norm2(&Norm));
-      
+
       if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Klu : vector " << i << ", ||Ax - b|| = " << Norm << endl;
       }
     }
   }
 
-  return(0) ; 
+  return(0) ;
 }
 
 // ================================================ ====== ==== ==== == =
 
-void Amesos_Klu::PrintStatus() 
+void Amesos_Klu::PrintStatus()
 {
 
   if( iam != 0  ) return;
@@ -548,10 +626,12 @@ void Amesos_Klu::PrintStatus()
   cout << "Amesos_Klu : Percentage of nonzero elements = "
        << 100.0*numentries_/(pow(NumGlobalElements_,2.0)) << endl;
   cout << "Amesos_Klu : Use transpose = " << UseTranspose_ << endl;
+  // TODO ...
+  // cout << "NZ in LU" << Numeric->lnz << endl;
   cout << "----------------------------------------------------------------------------" << endl;
 
   return;
-  
+
 }
 
 // ================================================ ====== ==== ==== == =
@@ -559,7 +639,7 @@ void Amesos_Klu::PrintStatus()
 void Amesos_Klu::PrintTiming()
 {
   if( iam ) return;
-  
+
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Klu : Time to convert matrix to KLU format = "
        << ConTime_ << " (s)" << endl;
@@ -583,6 +663,6 @@ void Amesos_Klu::PrintTiming()
        << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
        << " (s)" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
-   
+
   return;
 }

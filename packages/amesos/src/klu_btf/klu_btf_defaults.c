@@ -6,38 +6,17 @@
 
 void klu_btf_defaults
 (
-    double Control [KLU_BTF_CONTROL]
+    klu_control *control
 )
 {
-    int i ;
-
-    if (Control == (double *) NULL)
+    if (control != (klu_control *) NULL)
     {
-	/* silently return if no Control array */
-	return ;
+	control->tol = 0.001 ;		/* pivot tolerance for diagonal */
+	control->growth = 1.5 ;		/* realloc growth size */
+	control->initmem_amd = 1.2 ;	/* init. mem with AMD:  c*nnz(L) + n */
+	control->initmem = 10 ;		/* init. mem otherwise: c*nnz(A) + n */
+	control->btf = TRUE ;		/* use BTF pre-ordering, or not */
+	control->ordering = 0 ;		/* 0: AMD, 1: COLAMD, 2: user P and Q */
+	control->scale = 1 ;		/* scale: 0: none, 1: sum, 2: max */
     }
-
-    for (i = 0 ; i < KLU_BTF_CONTROL ; i++)
-    {
-	Control [i] = 0 ;
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* default control settings: can be modified at run-time */
-    /* ---------------------------------------------------------------------- */
-
-    /* TODO used by printing routines */
-    Control [KLU_BTF_CONTROL_PRL] = KLU_BTF_CONTROL_PRL_DEFAULT ;
-
-    /* used in klu_btf_analyze */
-    Control [KLU_BTF_CONTROL_BTF] = KLU_BTF_CONTROL_BTF_DEFAULT ;
-    Control [KLU_BTF_CONTROL_AMD_DENSE] = KLU_BTF_CONTROL_AMD_DENSE_DEFAULT ;
-    Control [KLU_BTF_CONTROL_ORDERING] = KLU_BTF_CONTROL_ORDERING_DEFAULT ;
-
-    /* used in klu_btf_factor */
-    Control [KLU_BTF_CONTROL_TOL] = KLU_BTF_CONTROL_TOL_DEFAULT ;
-    Control [KLU_BTF_CONTROL_GROWTH] = KLU_BTF_CONTROL_GROWTH_DEFAULT ;
-    Control [KLU_BTF_CONTROL_INITMEM_AMD] = KLU_BTF_CONTROL_INITMEM_AMD_DEFAULT;
-    Control [KLU_BTF_CONTROL_INITMEM_COLAMD] =
-	KLU_BTF_CONTROL_INITMEM_COLAMD_DEFAULT ;
 }

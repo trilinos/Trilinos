@@ -52,6 +52,7 @@ int klu_kernel
     int k1,	    /* the block of A is from k1 to k2-1 */
     int PSinv [ ],  /* inverse of P from symbolic factorization */
     double Rs [ ],  /* scale factors for A */
+    int scale,	    /* 0: no scaling, nonzero: scale the rows with Rs */
 
     /* inputs, modified on output */
     int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
@@ -150,11 +151,5 @@ int klu_kernel
 #define EMPTY (-1)
 #define FLIP(i) (-(i)-2)
 #define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
-
-/* get a parameter from the Control array */ 
-#define GET_CONTROL(i,default) \
-    ((Control != (double *) NULL) ? \
-	(SCALAR_IS_NAN (Control [i]) ? default : Control [i]) \
-	: default)
 
 #endif

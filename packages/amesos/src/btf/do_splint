@@ -1,0 +1,14 @@
+#!/bin/csh
+
+foreach file ( "maxtrans.c"  "strongcomp.c" )
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo splint $file
+    echo "--------------------------------------------------------------------------------"
+    splint -boolops +boolint -predboolint -usedef $file
+    echo "--------------------------------------------------------------------------------"
+    echo "with -DRECURSIVE:"
+    echo "--------------------------------------------------------------------------------"
+    splint -boolops +boolint -predboolint -usedef -globstate -DRECURSIVE $file
+end
+

@@ -41,6 +41,7 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int k1,	    /* the block of A is from k1 to k2-1 */
     int PSinv [ ],  /* inverse of P from symbolic factorization */
     double Rs [ ],  /* scale factors for A */
+    int scale,	    /* 0: no scaling, nonzero: scale the rows with Rs */
 
     /* inputs, modified on output */
     int Offp [ ],   /* off-diagonal matrix (modified by this routine) */

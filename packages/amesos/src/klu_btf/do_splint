@@ -1,0 +1,17 @@
+#!/bin/csh
+
+foreach file ("klu_btf_analyze.c" "klu_btf_analyze_given.c" \
+    "klu_btf_defaults.c" "klu_btf_factor.c" \
+    "klu_btf_free_numeric.c" "klu_btf_free_symbolic.c" "klu_btf_refactor.c" \
+    "klu_btf_scale.c" "klu_btf_solve.c" "klu_dump.c")
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo splint $file
+    echo "--------------------------------------------------------------------------------"
+    splint -predboolint -realcompare +boolint +relaxtypes -nullstate \
+	-branchstate -temptrans -compdef -nullpass -usedef -unqualifiedtrans \
+	-nullderef -exportlocal -fixedformalarray -mustfreefresh -nullret \
+	-dependenttrans -compmempass -usereleased -casebreak \
+	-I../klu_kernel -I../AMD/Include -I../AMD/Source -I../colamd -I../btf \
+	$file
+end

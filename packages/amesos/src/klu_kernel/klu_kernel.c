@@ -256,6 +256,7 @@ static void construct_column
     int k1,	    /* the block of A is from k1 to k2-1 */
     int PSinv [ ],  /* inverse of P from symbolic factorization */
     double Rs [ ],  /* scale factors for A */
+    int scale,	    /* 0: no scaling, nonzero: scale the rows with Rs */
 
     /* inputs, modified on output */
     int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
@@ -292,24 +293,52 @@ static void construct_column
 	poff = Offp [kglobal] ;	/* start of off-diagonal column */
 	oldcol = Q [kglobal] ;
 	pend = Ap [oldcol+1] ;
-	for (p = Ap [oldcol] ; p < pend ; p++)
+
+	if (scale == 0)
 	{
-	    oldrow = Ai [p] ;
-	    i = PSinv [oldrow] - k1 ;
-	    aik = Ax [p] / Rs [oldrow] ;
-	    if (i < 0)
+	    /* no scaling */
+	    for (p = Ap [oldcol] ; p < pend ; p++)
 	    {
-		/* this is an entry in the off-diagonal part */
-		Offi [poff] = oldrow ;
-		Offx [poff] = aik ;
-		poff++ ;
-	    }
-	    else
-	    {
-		/* (i,k) is an entry in the block.  scatter into X */
-		X [i] = aik ;
+		oldrow = Ai [p] ;
+		i = PSinv [oldrow] - k1 ;
+		aik = Ax [p] ;
+		if (i < 0)
+		{
+		    /* this is an entry in the off-diagonal part */
+		    Offi [poff] = oldrow ;
+		    Offx [poff] = aik ;
+		    poff++ ;
+		}
+		else
+		{
+		    /* (i,k) is an entry in the block.  scatter into X */
+		    X [i] = aik ;
+		}
 	    }
 	}
+	else
+	{
+	    /* row scaling */
+	    for (p = Ap [oldcol] ; p < pend ; p++)
+	    {
+		oldrow = Ai [p] ;
+		i = PSinv [oldrow] - k1 ;
+		aik = Ax [p] / Rs [oldrow] ;
+		if (i < 0)
+		{
+		    /* this is an entry in the off-diagonal part */
+		    Offi [poff] = oldrow ;
+		    Offx [poff] = aik ;
+		    poff++ ;
+		}
+		else
+		{
+		    /* (i,k) is an entry in the block.  scatter into X */
+		    X [i] = aik ;
+		}
+	    }
+	}
+
 	Offp [kglobal+1] = poff ;   /* start of the next col of off-diag part */
     }
 }
@@ -401,7 +430,6 @@ static void lpivot
     /* find the diagonal */
     pdiag = (i == diagrow) ? p : EMPTY ;
 
-
     /* find the partial-pivoting choice */
     abs_pivot = x ;
     ppivrow = p ;
@@ -450,9 +478,24 @@ static void lpivot
     Lx [lp1] = 1.0 ;
 
     /* divide L by the pivot value */
-    for (p = lp1 + 1 ; p < lp ; p++)
+    if (pivot == 0)
     {
-	Lx [p] /= pivot ;
+	/* if the pivot is zero, don't divide 0/0 */
+	for (p = lp1 + 1 ; p < lp ; p++)
+	{
+	    if (Lx [p] != 0)
+	    {
+		/* note that this statement is an intentional divide-by-zero */
+		Lx [p] /= pivot ;
+	    }
+	}
+    }
+    else
+    {
+	for (p = lp1 + 1 ; p < lp ; p++)
+	{
+	    Lx [p] /= pivot ;
+	}
     }
 
     *p_pivrow = pivrow ;
@@ -617,6 +660,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     int k1,	    /* the block of A is from k1 to k2-1 */
     int PSinv [ ],  /* inverse of P from symbolic factorization */
     double Rs [ ],  /* scale factors for A */
+    int scale,	    /* 0: no scaling, nonzero: scale the rows with Rs */
 
     /* inputs, modified on output */
     int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
@@ -829,7 +873,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 
 	construct_column (no_btf,			/* BTF flag */
 	    k, Ap, Ai, Ax, Q, X,
-	    k1, PSinv, Rs, Offp, Offi, Offx) ;		/* BTF-only args */
+	    k1, PSinv, Rs, scale, Offp, Offi, Offx) ;	/* BTF,scale-only args*/
 
 	/* ------------------------------------------------------------------ */
 	/* compute the numerical values of the kth column (s = L \ A (:,k)) */

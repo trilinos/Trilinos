@@ -17,27 +17,14 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     int Puser [ ],	/* size n, user's row permutation (may be NULL) */
     int Quser [ ],	/* size n, user's column permutation (may be NULL) */
 
-    double Control [KLU_BTF_CONTROL],	/* optional; may be NULL */
-    double User_Info [KLU_BTF_INFO]	/* optional; may be NULL */
+    klu_control *user_control		/* optional; may be NULL */
 )
 {
     int nblocks, nz, block, maxblock, *P, *Q, *R, nzoff, j,
 	i, p, pend, do_btf, nzdiag, k ;
     klu_symbolic *Symbolic ;
-    double *Lnz, Info2 [KLU_BTF_INFO], *Info ;
-
-    PRINTF (("in klu_btf_analyze_given\n")) ;
-
-    /* ---------------------------------------------------------------------- */
-    /* get Info array for statistics, and clear it */
-    /* ---------------------------------------------------------------------- */
-
-    Info = (User_Info != (double *) NULL) ? User_Info : Info2 ;
-    for (i = 0 ; i < KLU_BTF_INFO ; i++)
-    {
-	Info [i] = EMPTY ;
-    }
-    Info [KLU_BTF_INFO_N] = n ;
+    double *Lnz ;
+    klu_control *control, default_control ;
 
     /* ---------------------------------------------------------------------- */
     /* determine if input matrix is valid, and get # of nonzeros */
@@ -54,15 +41,12 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     if (n <= 0 || (Ap == (int *) NULL) || (Ai == (int *) NULL))
     {
 	/* Ap and Ai must be present, and n must be > 0 */
-	Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	return ((klu_symbolic *) NULL) ;
     }
     nz = Ap [n] ;
-    Info [KLU_BTF_INFO_NZ] = nz ;
     if (Ap [0] != 0 || nz < 0)
     {
 	/* nz must be >= 0 and Ap [0] must equal zero */
-	Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	return ((klu_symbolic *) NULL) ;
     }
     for (j = 0 ; j < n ; j++)
@@ -70,7 +54,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
 	if (Ap [j] > Ap [j+1])
 	{
 	    /* column pointers must be non-decreasing */
-	    Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 	    return ((klu_symbolic *) NULL) ;
 	}
     }
@@ -78,7 +61,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     if (P == (int *) NULL)
     {
 	/* out of memory */
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_symbolic *) NULL) ;
     }
     for (i = 0 ; i < n ; i++)
@@ -96,7 +78,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
 	    {
 		/* row index out of range, or duplicate entry */
 		FREE (P, int) ;
-		Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
 		return ((klu_symbolic *) NULL) ;
 	    }
 	    if (i == j)
@@ -120,7 +101,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     {
 	/* out of memory */
 	FREE (P, int) ;
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	return ((klu_symbolic *) NULL) ;
     }
 
@@ -129,6 +109,7 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     Lnz = (double *) ALLOCATE (n * sizeof (double)) ;
 
     Symbolic->n = n ;
+    Symbolic->nz = nz ;
     Symbolic->P = P ;
     Symbolic->Q = Q ;
     Symbolic->R = R ;
@@ -137,7 +118,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     if ((Q == (int *) NULL) || (R == (int *) NULL) || (Lnz == (double *) NULL))
     {
 	/* out of memory */
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	klu_btf_free_symbolic (&Symbolic) ;
 	return ((klu_symbolic *) NULL) ;
     }
@@ -162,12 +142,22 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     }
 
     /* ---------------------------------------------------------------------- */
-    /* get the Control parameters for BTF and ordering method */
+    /* get the control parameters for BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
-    do_btf = (int) GET_CONTROL (KLU_BTF_CONTROL_BTF, TRUE) ;
-    do_btf = (do_btf) ? TRUE : FALSE ;
-    Symbolic->ordering = KLU_BTF_CONTROL_USE_GIVEN ;
+    if (user_control == (klu_control *) NULL)
+    {
+	control = &default_control ;
+	klu_btf_defaults (control) ;
+    }
+    else
+    {
+	control = user_control ;
+    }
+
+    do_btf   = control->btf ;
+    do_btf   = (do_btf) ? TRUE : FALSE ;
+    Symbolic->ordering = 2 ;
     Symbolic->do_btf = do_btf ;
 
     /* ---------------------------------------------------------------------- */
@@ -204,7 +194,6 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
 	    {
 		FREE (Bi, int) ;
 	    }
-	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	    klu_btf_free_symbolic (&Symbolic) ;
 	    return ((klu_symbolic *) NULL) ;
 	}
@@ -352,19 +341,11 @@ klu_symbolic *klu_btf_analyze_given	/* returns NULL if error, or a valid
     /* return the symbolic object */
     /* ---------------------------------------------------------------------- */
 
-    Info [KLU_BTF_INFO_STATUS] = KLU_OK ;
-
     Symbolic->nblocks = nblocks ;
-    Info [KLU_BTF_INFO_NBLOCKS] = nblocks ;
-
     Symbolic->maxblock = maxblock ;
-    Info [KLU_BTF_INFO_MAXBLOCK] = maxblock ;
-
     Symbolic->lnz = EMPTY ;
     Symbolic->unz = EMPTY ;
     Symbolic->nzoff = nzoff ;
-    Info [KLU_BTF_INFO_EST_LNZ] = EMPTY ;
-    Info [KLU_BTF_INFO_NZOFF] = nzoff ;
 
     return (Symbolic) ;
 }
