@@ -11,11 +11,17 @@
    E. Hillstrom, Testing Unconstrained Optimization Software, ACM
    TOMS, Vol. 7, No. 1, March 1981, pp. 14-41.
 
+   The parameter "lambda" is a continuation-type parameter that
+   may be varied from 0 to 1 for adjusting the ill-conditioning of
+   the problem.  A value of 0 is the original, unmodified problem,
+   while a value of 1 is that problem with the last equation 
+   squared.
 */
 
 
 #include "NOX.H"
 #include "NOX_Common.H"
+#include "NOX_Utils.H"
 #include "NOX_Example_Group.H"
 
 #include "../src/NOX_Solver_TensorBased.H"  // bwb - because not in NOX.H
@@ -31,7 +37,7 @@ public:
     n = m;
     lambda = lambdaVal;
 
-    cout << "Lambda = " << lambda << "\n"; 
+    cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
       initialGuess(i) = -1;
@@ -147,9 +153,13 @@ int main()
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
 
+  // Print the parameters
+  cout << "\n" << "-- Parameter List Used in Solver --" << "\n";
+  solver.getParameterList().print(cout);
+
   // Get the answer
   grp = solver.getSolutionGroup();
-  
+
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
   cout << "|| F(x*) || = " << NOX::Utils::sci(grp.getNormF()) << endl;
