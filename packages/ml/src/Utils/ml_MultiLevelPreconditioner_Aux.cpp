@@ -15,6 +15,7 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_memory.h"
 #include "ml_DD_prec.h"
+#include <iostream>
 #include <iomanip>
 
 #include "Epetra_Map.h"
