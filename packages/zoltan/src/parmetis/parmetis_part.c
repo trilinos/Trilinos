@@ -74,7 +74,7 @@ int LB_ParMetis_Part(
 
   /* Get options. */
 /* BAH: This stuff is now obsolete.  Need to replace it. */
-/*
+#if 0
   if (lb->Params == NULL) { 
     /*  No application-specified parameters; use defaults. */ 
     pmethod = 0;
@@ -95,7 +95,9 @@ int LB_ParMetis_Part(
     else
       ewgt_dim = lb->Params[2];
   }
-*/
+#endif
+pmethod = 0; /* temporary hack */
+
   /* Convert pmethod from integer to a string. Rationale: 
      We want the user to set the string alg directly with 
      LB_Set_Param() in future versions. */
