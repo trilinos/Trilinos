@@ -856,9 +856,12 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
    return(status);
 }
 
+/* ------------------------------------------------------------------------- */
+/* generate some other Gauss Seidel smoother (Ray, what is it ?)             */
+/* ------------------------------------------------------------------------- */
 
-int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, 
-int ntimes, double omega, int Nextra, int extra[])
+int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes, 
+                            double omega, int Nextra, int extra[])
 {
    int (*fun)(void *, int, double *, int, double *);
    int start_level, end_level, i, status, Nrows, count;
@@ -1219,6 +1222,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
 
+   Amat = &(ml->Amat[nl]);
    if ( length != 0 && length != Amat->outvec_leng )
    {
       printf("ML_Gen_Smoother_VBlockAdditiveSchwarz ERROR : invalid length.\n");
@@ -1232,7 +1236,6 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    fun = ML_Smoother_VBlockAdditiveSchwarz;
 	
    comm = ml->comm;
-   Amat = &(ml->Amat[nl]);
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
    data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
@@ -1304,6 +1307,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
 
+   Amat = &(ml->Amat[nl]);
    if ( length != 0 && length != Amat->outvec_leng )
    {
       printf("ML_Gen_Smoother_VBlockMultiplicativeSchwarz : invalid length.\n");
@@ -1317,7 +1321,6 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    fun = ML_Smoother_VBlockMultiplicativeSchwarz;
 	
    comm = ml->comm;
-   Amat = &(ml->Amat[nl]);
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
    data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
