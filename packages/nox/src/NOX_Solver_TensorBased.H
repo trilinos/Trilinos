@@ -6,7 +6,7 @@
 
 #include "NOX_Solver_Generic.H"	    // base class
 #include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Direction_Manager.H"  // class data element
+#include "NOX_Direction_Tensor.H"   // class data element
 #include "NOX_Parameter_List.H"	    // class data element
 #include "NOX_Abstract_Vector.H"    // for NOX::Abstract::Vector::NormType
 
@@ -14,40 +14,58 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief Basic line search based solver
+  \brief Linesearch-based solver that uses tensor methods.
   
   The following parameters are valid for this solver:
-  [bwb: These need to be corrected]
-
   
+  - "%Direction" - Sublist of the direction parameters, passed to the
+    NOX::Direction::Tensor constructor. Defaults to an empty list.
+
+  - "Linear %Solver" - Sublist of "Direction" and contains the linear
+    solver parameters, passed to NOX::Abstract::Group::computeNewton()
+    and to NOX::Direction::Tensor::compute().  Valid choices used in
+    tensor step calculation are listed below.  More valid choices are
+    available for the first step when the Newton step is computed by
+    computeNewton().
+
+<ul>
+<li>    "Max Iterations" - Maximum number of Arnoldi iterations (also 
+        max Krylov space dimension)
+<li>    "Output Frequency" - Print output at every number of iterations
+        [default = 20]
+<li>    "Preconditioning" - Name of preconditioning type.
+<li>    "PreconditioningSide" - Side to apply preconditioning 
+        [None, Left, Right]
+<li>    "Reorthogonalize" - When to reorthogonalize Krylov basis vectors
+        [None, As Needed, Always]
+<li>    "Tolerance" - Relative tolerance for solving local model 
+        [default = 1e-4]
+</ul>
+
+
   - "Line Search" - Sublist of the line search parameters, passed to
     the NOX::LineSearch::Manager constructor. Defaults to an empty list.
-
-  - "%Direction" - Sublist of the direction parameters, passed to
-    the NOX::Direction::Manager constructor. Defaults to an empty list.
-
-  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
-    to NOX::Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
-    within this list may be modified by the
-    resetForcingTerm(). Defaults to an empty list.
 
     The following parameters can be specified for this line search:
 
 <ul>
-<li> "Default Step" - starting step length (defaults to 1.0)
-<li> "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
-<li> "Recovery Step" - step to take when the line search fails
+<li> "Method" - Name of the line search available to tensor methods
+     Valid choices are
+   <ul> 
+   <li> "Standard" - Backtrack along tensor direction unless it is not a 
+   descent direction, in which case backtrack along Newton direction.
+   <li> "Curvilinear" - Backtrack along the "curvilinear" path that 
+   spans the tensor direction and the Newton direction and that maintains
+   monotonicity on the tensor model. [Default]
+   </ul>
+<li> "Default Step" - starting step parameter (defaults to 1.0)
+<li> "Minimum Step" - minimum acceptable step parameter (defaults to 1.0e-12)
+<li> "Recovery Step" - step parameter to take when the line search fails
      (defaults to value for "Default Step")
-<li> "Max Iters" - maximum number of iterations (i.e., RHS computations)
-<li> "Decrease Condition" - choices are the following:
-     <ul>
-     <li> "Max Norm" - simple decrease using the infinity norm of the RHS (default)
-     <li> "Two Norm" - simple decrease using the Euclidean norm of the RHS
-     </ul>
+<li> "Max Iters" - maximum number of iterations (i.e., backtracks)
 </ul>
 
-    \author Brett Bader (CU-Boulder)
-*/
+    \author Brett Bader (CU-Boulder) */
 
 class TensorBased : public Generic {
 
@@ -79,6 +97,12 @@ protected:
   //! Sets the output parameters for the solver in an "Output" sublist
   bool setOutputParameters(); 
 
+  //! Performs a standard tensor linesearch (tensor or Newton direction)
+  bool performStandardLinesearch();
+
+  //! Performs a curvilinear linesearch (like a trust region method)
+  bool performCurvilinearLinesearch();
+
 protected:
   
   //! Current solution.
@@ -105,7 +129,7 @@ protected:
   Parameter::List params;	
 
   //! %Search %Direction. 
-  Direction::Manager direction; 
+  Direction::Tensor direction; 
 
   //! Current step.
   double step;			
@@ -113,13 +137,13 @@ protected:
   //! Number of nonlinear iterations.
   int niter;
 
-  //! Number of linesearch iterations.
+  //! Number of linesearch iterations (i.e., backtracks).
   int totalNumLSIterations;
 
-  //! Number of failed linesearches.
+  //! Number of times that a linesearch failed.
   int totalNumFailedLineSearches;
 
-  //! Number of failed linesearches.
+  //! Number of Newton/tensor steps that required a linesearch.
   int totalNumLSSteps;
 
   //! %Status of nonlinear solver.
@@ -141,11 +165,8 @@ private:
   double recoveryStep;
 
   //! Maximum number of iterations
-  int maxiters;
+  int maxIters;
   
-  //! Norm used in simple decrease condition
-  NOX::Abstract::Vector::NormType normtype;
-
 };
 } // namespace Solver
 } // namespace NOX
