@@ -114,26 +114,35 @@ public:
 
   //! Compute Jacobian.
   /*! In other words, compute \f$  J_{ij} = \frac{\partial F_i}{\partial x_j} (x)\f$.
+    \note If not defined in derived object, returns \c false.
   */
-  virtual bool computeJacobian() = 0;
+  virtual bool computeJacobian();
 
   //! Compute and return gradient.
   //! Returns \c false if either F or the Jacobian have not been computed.
-  /*! In other words, compute \f$g = J^T F\f$. */
-  virtual bool computeGradient() = 0;
+  /*! In other words, compute \f$g = J^T F\f$. 
+    \note If not defined in derived object, returns \c false.
+  */
+  virtual bool computeGradient();
 
   //! Compute and return Newton direction, using parameters for nonlinear solve.
   //! Returns \c false if F and/or the Jacobian have not been computed.
   /*! Solve \f$Js = -F\f$ for \f$s\f$.  
 
-    \note The parameter "Tolerance" may be included in the list of
-    parameters - this is the ideal solution tolerance. 
+    The parameter "Tolerance" may be included in the list of
+    parameters - this is the ideal solution tolerance for the linear
+    solve.
+
+    \note If not defined in derived object, returns \c false.
   */
   virtual bool computeNewton(Parameter::List& params) = 0;
 
   //! Compute the Preconditioning matrix, \f$ M \f$,  based on the current solution vector.
-  //! Returns true if successfully computed. 
-  virtual bool computePrecMatrix() = 0;
+  //! Returns true if \f$ M \f$ is successfully computed. 
+  /*!
+    \note If not defined in derived object, returns \c false.
+  */
+  virtual bool computePreconditioner();
 
   //@}
 
@@ -145,34 +154,58 @@ public:
 
   //@{
   
+  //! Applies Jacobian to the given input vector and puts the answer in the result.
   /*! 
-    \brief If supported, returns \c true and calculates 
-    result = Jacobian * input.  Otherwise, returns \c false.  
-    Returns \c false if any errors occur, such as the Jacobian not being
-    computed.
-  */
-  /*! In other words, compute 
-    \f[ \mbox{result} = J \; \mbox{input}. \f]
-  */
-  virtual bool applyJacobian(const Vector& input, Vector& result) const = 0;
+    Computes 
+    \f[ \mbox{result} = J \; \mbox{input}, \f]
+    and returns \c true.
 
+    Returns \c false if any errors are encountered.
+
+    \note If not defined in derived object, returns \c false.
+  */
+  virtual bool applyJacobian(const Vector& input, Vector& result) const;
+
+  //! Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
+
+  /*!  
+    Computes 
+    \f[ \mbox{result} = J^T \; \mbox{input}, \f]
+    and returns \c true.
+
+    Returns \c false if any errors are encountered.
+
+    \note If not defined in derived object, returns \c false.
+  */
+  virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const;
+
+  /*!
+    \brief Applies the inverse of the Jacobian matrix to the given input vector.
+  */
   /*! 
-    \brief If supported, returns \c true and calculates result =
-    Jacobian^T * input.  Otherwise, returns \c false.  Throws an error if
-    the Jacobian has not been computed. 
+    Computes 
+    \f[ \mbox{result} = J^{-1} \; \mbox{input}, \f]
+    and returns \c true.
+
+    Returns \c false if any errors are encountered.
+
+    \note If not defined in derived object, returns \c false.
   */
-  /*! In other words, compute 
-    \f[ \mbox{result} = J^T \; \mbox{input}. \f]
-  */
-  virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const = 0;
-    
+  virtual bool applyJacobianInverse(const Vector& input, Vector& result) const;
+
   /*!
     \brief Applies the inverse of the preconditioning matrix to the given input vector.
   */
-  /*! In other words, compute:
-    \f[ \mbox{result} = M^{-1} \mbox{input} \f]
+  /*! 
+    Computes 
+    \f[ \mbox{result} = M^{-1} \; \mbox{input}, \f]
+    and returns \c true.
+
+    Returns \c false if any errors are encountered.
+
+    \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyPrecMatrixInverse(const Vector& input, Vector& result) const = 0;
+  virtual bool applyPreconditionerInverse(const Vector& input, Vector& result) const;
 
   //@}
 
@@ -189,13 +222,17 @@ public:
   //! Return \c true if F is valid.
   virtual bool isF() const = 0;
   //! Return \c true if the Jacobian is valid.
-  virtual bool isJacobian() const = 0;
+  /*! \note If not defined in derived object, returns \c false. */
+  virtual bool isJacobian() const;
   //! Return \c true if the gradient is valid.
-  virtual bool isGradient() const = 0;
+  /*! \note If not defined in derived object, returns \c false. */
+  virtual bool isGradient() const;
   //! Return \c true if the Newton direction is valid.
-  virtual bool isNewton() const = 0;
+  /*! \note If not defined in derived object, returns \c false. */
+  virtual bool isNewton() const;
   //! Return \c true if the Preconditioning Matrix is valid.
-  virtual bool isPrecMatrix() const = 0;
+  /*! \note If not defined in derived object, returns \c false. */
+  virtual bool isPreconditioner() const;
   //@}
 
   /** @name "Get" functions.
