@@ -109,11 +109,13 @@ int main(int argc, char *argv[]) {
   ML *ml_handle;
   ML_Create(&ml_handle, AMG_NLevels);
 
+  ML_Set_PrintLevel(10);
+
   EpetraMatrix2MLMatrix(ml_handle, 0, &A);
 
   ML_Aggregate *agg_object;
   ML_Aggregate_Create(&agg_object);
-  ML_Aggregate_Set_MaxCoarseSize(agg_object, 1);
+  ML_Aggregate_Set_MaxCoarseSize(agg_object, 10);
   ML_Aggregate_Set_Threshold(agg_object, 0.0);
   ML_Aggregate_Set_Threshold(agg_object, 0.0);
   AMG_NLevels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);

@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_MultiLevelOperator_SOURCES) $(ml_example_MultiLevelPreconditioner_SOURCES) $(ml_example_MultiLevelPreconditioner_2level_SOURCES) $(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) $(ml_example_MultiLevelPreconditioner_analyze_SOURCES) $(ml_example_MultiLevelPreconditioner_filtering_SOURCES) $(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) $(ml_example_MultiLevelPreconditioner_vbr_SOURCES) $(ml_example_MultiLevelPreconditioner_viz_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_aztecoo_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_MultiLevelOperator_SOURCES) $(ml_example_MultiLevelPreconditioner_SOURCES) $(ml_example_MultiLevelPreconditioner_2level_SOURCES) $(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) $(ml_example_MultiLevelPreconditioner_analyze_SOURCES) $(ml_example_MultiLevelPreconditioner_filtering_SOURCES) $(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) $(ml_example_MultiLevelPreconditioner_vbr_SOURCES) $(ml_example_MultiLevelPreconditioner_viz_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -70,7 +70,8 @@ host_triplet = @host@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztecoo$(EXEEXT)
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
@@ -98,7 +99,8 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztecoo$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
@@ -204,6 +206,12 @@ am__ml_aztec_simple_ParMETIS_SOURCES_DIST =  \
 ml_aztec_simple_ParMETIS_OBJECTS =  \
 	$(am_ml_aztec_simple_ParMETIS_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_aztecoo_SOURCES_DIST = $(srcdir)/ml_aztecoo.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_aztecoo_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_aztecoo-ml_aztecoo.$(OBJEXT)
+ml_aztecoo_OBJECTS = $(am_ml_aztecoo_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example1d_SOURCES_DIST = $(srcdir)/ml_example1d.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example1d_OBJECTS =  \
@@ -352,6 +360,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1d-ml_example1d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
@@ -386,9 +395,9 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) \
-	$(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) \
-	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
-	$(ml_example3d_SOURCES) \
+	$(ml_aztec_simple_ParMETIS_SOURCES) $(ml_aztecoo_SOURCES) \
+	$(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) \
+	$(ml_example2d_SOURCES) $(ml_example3d_SOURCES) \
 	$(ml_example_MultiLevelOperator_SOURCES) \
 	$(ml_example_MultiLevelPreconditioner_SOURCES) \
 	$(ml_example_MultiLevelPreconditioner_2level_SOURCES) \
@@ -407,6 +416,7 @@ SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) \
 DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_aztec_simple_METIS_SOURCES_DIST) \
 	$(am__ml_aztec_simple_ParMETIS_SOURCES_DIST) \
+	$(am__ml_aztecoo_SOURCES_DIST) \
 	$(am__ml_example1d_SOURCES_DIST) \
 	$(am__ml_example1dGS_SOURCES_DIST) \
 	$(am__ml_example2d_SOURCES_DIST) \
@@ -595,6 +605,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -763,6 +774,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_aztecoo_LINK = ${mllink}
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LDADD = ${ml_libs}
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LINK = ${mllink}
@@ -811,6 +826,9 @@ ml_aztec_simple_METIS$(EXEEXT): $(ml_aztec_simple_METIS_OBJECTS) $(ml_aztec_simp
 ml_aztec_simple_ParMETIS$(EXEEXT): $(ml_aztec_simple_ParMETIS_OBJECTS) $(ml_aztec_simple_ParMETIS_DEPENDENCIES) 
 	@rm -f ml_aztec_simple_ParMETIS$(EXEEXT)
 	$(ml_aztec_simple_ParMETIS_LINK) $(ml_aztec_simple_ParMETIS_LDFLAGS) $(ml_aztec_simple_ParMETIS_OBJECTS) $(ml_aztec_simple_ParMETIS_LDADD) $(LIBS)
+ml_aztecoo$(EXEEXT): $(ml_aztecoo_OBJECTS) $(ml_aztecoo_DEPENDENCIES) 
+	@rm -f ml_aztecoo$(EXEEXT)
+	$(ml_aztecoo_LINK) $(ml_aztecoo_LDFLAGS) $(ml_aztecoo_OBJECTS) $(ml_aztecoo_LDADD) $(LIBS)
 ml_example1d$(EXEEXT): $(ml_example1d_OBJECTS) $(ml_example1d_DEPENDENCIES) 
 	@rm -f ml_example1d$(EXEEXT)
 	$(ml_example1d_LINK) $(ml_example1d_LDFLAGS) $(ml_example1d_OBJECTS) $(ml_example1d_LDADD) $(LIBS)
@@ -893,6 +911,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1d-ml_example1d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
@@ -1221,6 +1240,22 @@ mlguide_par-mlguide_par.obj: $(srcdir)/mlguide_par.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ml_aztecoo-ml_aztecoo.o: $(srcdir)/ml_aztecoo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_aztecoo_CPPFLAGS) $(CPPFLAGS) $(ml_aztecoo_CXXFLAGS) $(CXXFLAGS) -MT ml_aztecoo-ml_aztecoo.o -MD -MP -MF "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo" -c -o ml_aztecoo-ml_aztecoo.o `test -f '$(srcdir)/ml_aztecoo.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_aztecoo.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo" "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po"; else rm -f "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_aztecoo.cpp' object='ml_aztecoo-ml_aztecoo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po' tmpdepfile='$(DEPDIR)/ml_aztecoo-ml_aztecoo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_aztecoo_CPPFLAGS) $(CPPFLAGS) $(ml_aztecoo_CXXFLAGS) $(CXXFLAGS) -c -o ml_aztecoo-ml_aztecoo.o `test -f '$(srcdir)/ml_aztecoo.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_aztecoo.cpp
+
+ml_aztecoo-ml_aztecoo.obj: $(srcdir)/ml_aztecoo.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_aztecoo_CPPFLAGS) $(CPPFLAGS) $(ml_aztecoo_CXXFLAGS) $(CXXFLAGS) -MT ml_aztecoo-ml_aztecoo.obj -MD -MP -MF "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo" -c -o ml_aztecoo-ml_aztecoo.obj `if test -f '$(srcdir)/ml_aztecoo.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_aztecoo.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztecoo.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo" "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po"; else rm -f "$(DEPDIR)/ml_aztecoo-ml_aztecoo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_aztecoo.cpp' object='ml_aztecoo-ml_aztecoo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_aztecoo-ml_aztecoo.Po' tmpdepfile='$(DEPDIR)/ml_aztecoo-ml_aztecoo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_aztecoo_CPPFLAGS) $(CPPFLAGS) $(ml_aztecoo_CXXFLAGS) $(CXXFLAGS) -c -o ml_aztecoo-ml_aztecoo.obj `if test -f '$(srcdir)/ml_aztecoo.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_aztecoo.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztecoo.cpp'; fi`
 
 ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o: $(srcdir)/ml_example_MultiLevelOperator.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelOperator_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelOperator_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo" -c -o ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o `test -f '$(srcdir)/ml_example_MultiLevelOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelOperator.cpp; \

@@ -54,7 +54,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
-          ml_multiple_rhs
+          ml_multiple_rhs ml_aztecoo
 
 endif #ML_BENCHMARKING
 else #no mpi
@@ -74,7 +74,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
-          ml_multiple_rhs
+          ml_multiple_rhs ml_aztecoo
 
 endif #HAVE_MPI
 
@@ -114,6 +114,7 @@ ml_example_MultiLevelPreconditioner_viz_SOURCES= $(srcdir)/ml_example_MultiLevel
 ml_example_MultiLevelPreconditioner_analyze_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
 ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
+ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -343,6 +344,11 @@ ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
 ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
 ml_multiple_rhs_LDADD = ${ml_libs}
 ml_multiple_rhs_LINK = ${mllink}
+
+ml_aztecoo_CPPFLAGS = ${ml_common_include_locations}
+ml_aztecoo_CXXFLAGS = ${ml_common_include_locations}
+ml_aztecoo_LDADD = ${ml_libs}
+ml_aztecoo_LINK = ${mllink}
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
