@@ -32,7 +32,7 @@
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = 
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -43,7 +43,6 @@ MAINTAINERCLEANFILES = Makefile.in
 if BUILD_LIBLOCA
 
 dox: 
-	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
 
 else
 

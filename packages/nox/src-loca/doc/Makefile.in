@@ -123,7 +123,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = 
 
 
 # ------------------------------------------------------------------------
@@ -251,7 +251,6 @@ uninstall-am: uninstall-info-am
 
 
 @BUILD_LIBLOCA_TRUE@dox: 
-@BUILD_LIBLOCA_TRUE@	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
 
 @BUILD_LIBLOCA_FALSE@dox:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
