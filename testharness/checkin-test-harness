@@ -54,7 +54,7 @@
 
 # location of the top-level "Trilinos" directory
 # default location is just below user's home directory
-my $homedir="$ENV{'HOME'}/temp/rework-merge/Trilinos";
+my $homedir="$ENV{'HOME'}/Trilinos";
 
 #
 # Determine host os
