@@ -112,8 +112,8 @@ extern int LB_Comm_Invert_Map(int *, int *, int, int, int **, int **, int *,
 
 extern int LB_Comm_Sort_Ints(int *, int *, int);
 
-extern int LB_Comm_Exchange_Sizes(int *, int, int, int *, int, int *, int *,
-    int *, int, int, MPI_Comm);
+extern int LB_Comm_Exchange_Sizes(int *, int *, int, int, int , int, * int *,
+    int, int *, int, int, MPI_Comm);
 
 extern int LB_Comm_Resize(COMM_OBJ *, int *, int);
 

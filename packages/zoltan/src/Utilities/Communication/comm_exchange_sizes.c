@@ -8,13 +8,13 @@
 /*****************************************************************************/
 
 int       LB_Comm_Exchange_Sizes(
+int      *sizes_to,		/* value I need to exchange (size of true msg) */
 int      *procs_to,		/* procs I send to */
 int       nsends,		/* number of messages I'll send */
 int       self_msg,		/* do I copy data to myself? */
+int      *sizes_from,		/* (returned) size of all my receives */
 int      *procs_from,		/* procs I recv from */
 int       nrecvs,		/* number of messages I receive */
-int      *sizes_to,		/* value I need to exchange (size of true msg) */
-int      *sizes_from,		/* (returned) size of all my receives */
 int      *total_recv_size,	/* (returned) sum of all incoming sizes */
 int       my_proc,		/* my processor number */
 int       tag,			/* message tag I can use */

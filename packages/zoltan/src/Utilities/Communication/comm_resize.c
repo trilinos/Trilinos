@@ -182,8 +182,8 @@ int       tag)			/* message tag I can use */
 	/*	Anything requiring item sizes requires more code */
 	/*      Should such functionality reside here? */
 
-	LB_Comm_Exchange_Sizes(plan->procs_to, nsends, self_msg,
-	    plan->procs_from, nrecvs, sizes_to, sizes_from,
+	LB_Comm_Exchange_Sizes(sizes_to, plan->procs_to, nsends, self_msg,
+	    sizes_from, plan->procs_from, nrecvs, 
 	    &plan->total_recv_size, my_proc, tag, plan->comm);
 
 	starts_from_ptr = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
