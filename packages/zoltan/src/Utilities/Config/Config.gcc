@@ -26,17 +26,18 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= gcc
+CC			= gcc -Wall
 CCPP			= g++
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
+			  -I/Net/proj/zoltan/arch/solaris/include \
 			  -I/Net/local/mpi/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
-DBG_FLAGS		= -g -Wall
+DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
 CFLAGS = $(DBG_FLAGS)
 
-F90			= mpif90
+F90			= f90
 LOCAL_F90		= f90
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
 FFLAGS    		= 
