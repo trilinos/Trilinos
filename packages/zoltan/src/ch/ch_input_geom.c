@@ -33,7 +33,6 @@ float   **y,
 float   **z
 )
 {
-    extern int CHECK_INPUT;	/* print any warning messages? */
     char     *yo = "chaco_input_geom";
     float     xc, yc, zc;	/* first x, y, z coordinate */
     int       nread;		/* number of lines of coordinates read */
@@ -126,7 +125,7 @@ float   **z
 	if (!end_flag)
 	    flag = 1;
     }
-    if (flag && CHECK_INPUT) {
+    if (flag && Debug_Input) {
 	printf("Warning: possible error in geometry file `%s'\n", geomname);
 	printf(" Numerical data found after expected end of file\n");
     }

@@ -16,14 +16,11 @@
 CH DIRECTORY -- code for reading Chaco input files.
 ---------------------------------------------------
 
-Note:  This code is not currently compiled in Zoltan.
-Most of it was written by Hendrickson and Leland for reading
-Chaco input files.  At one time, I thought I'd use the existing
-Chaco examples for testing; I'm not convinced of the value of
-that approach anymore.
+Note:  This code is not compiled into the Zoltan library,
+but is used by the test driver (zdrive).
+Most of this code was written by Hendrickson and Leland for reading
+Chaco input files. 
 
-ch_input.h        -- Declarations of global variables DEBUG_TRACE,
-                     CHECK_INPUT and DEBUG_INPUT.
 ch_input_const.h  -- Prototypes for chaco_input_graph and chaco_input_geom.
                      External declarations of global variables.
 

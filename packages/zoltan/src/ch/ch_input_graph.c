@@ -29,12 +29,11 @@ char     *inname,		/* name of input file */
 int     **start,		/* start of edge list for each vertex */
 int     **adjacency,		/* edge list data */
 int      *nvtxs,		/* number of vertices in graph */
-int     **vweights,		/* vertex weight list data */
+float   **vweights,		/* vertex weight list data */
 float   **eweights 		/* edge weight list data */
 )
 {
     char     *yo = "chaco_input_graph";
-    extern int CHECK_INPUT;	/* print warnings or not? */
     int      *adjptr;		/* loops through adjacency data */
     float    *ewptr;		/* loops through edge weight data */
     int       narcs;		/* number of edges expected in graph */
@@ -53,7 +52,7 @@ float   **eweights 		/* edge weight list data */
     int       vtxnums;		/* are vertex numbers in input file? */
     int       vertex;		/* current vertex being read */
     int       new_vertex;	/* new vertex being read */
-    int       weight;		/* weight being read */
+    float     weight;		/* weight being read */
     float     eweight;		/* edge weight being read */
     int       neighbor;		/* neighbor of current vertex */
     int       self_edge;	/* is a self edge encountered? */
@@ -118,7 +117,7 @@ float   **eweights 		/* edge weight list data */
 	*adjacency = NULL;
 
     if (using_vwgts)
-	*vweights = (int *) malloc((unsigned) (*nvtxs) * sizeof(int));
+	*vweights = (float *) malloc((unsigned) (*nvtxs) * sizeof(float));
     else
 	*vweights = NULL;
 
@@ -174,14 +173,14 @@ float   **eweights 		/* edge weight list data */
 
 	/* If vertices are weighted, read vertex weight. */
 	if (using_vwgts && new_vertex) {
-	    weight = read_int(fin, &end_flag);
+	    weight = read_val(fin, &end_flag);
 	    if (end_flag) {
 		printf("ERROR in graph file `%s':", inname);
 		printf(" no weight for vertex %d.\n", vertex);
 		fclose(fin);
 		return (1);
 	    }
-	    if (weight <= 0) {
+	    if ((weight <= 0) && Debug_Input) {
 		printf("ERROR in graph file `%s':", inname);
 		printf(" zero or negative weight entered for vertex %d.\n", vertex);
 		fclose(fin);
@@ -199,47 +198,50 @@ float   **eweights 		/* edge weight list data */
 	    skip_flag = FALSE;
 	    ignore_me = FALSE;
 
-	    if (neighbor > *nvtxs) {
-		printf("ERROR in graph file `%s':", inname);
-		printf(" nvtxs=%d, but edge (%d,%d) was input.\n",
-		       *nvtxs, vertex, neighbor);
-		fclose(fin);
-		return (1);
-	    }
-	    if (neighbor <= 0) {
-		printf("ERROR in graph file `%s':", inname);
-		printf(" zero or negative vertex in edge (%d,%d).\n",
-		       vertex, neighbor);
-		fclose(fin);
-		return (1);
-	    }
+            if (Debug_Input){ 
 
-	    if (neighbor == vertex) {
-		if (!self_edge && CHECK_INPUT) {
-		    printf("WARNING: Self edge (%d, %d) being ignored.\n",
-			   vertex, vertex);
-		}
-		skip_flag = TRUE;
-		++self_edge;
-	    }
-
-	    /* Check if adjacency is repeated. */
-	    if (!skip_flag) {
-		found_flag = FALSE;
-		for (j = (*start)[vertex - 1]; !found_flag && j < sum_edges + nedge; j++) {
-		    if ((*adjacency)[j] == neighbor)
-			found_flag = TRUE;
-		}
-		if (found_flag) {
-		    printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n",
-			vertex, neighbor);
-		    skip_flag = TRUE;
-		    if (!ignore_me) {
-			ignore_me = TRUE;
-			++ignored;
-		    }
-		}
-	    }
+    	    if (neighbor > *nvtxs) {
+    		printf("ERROR in graph file `%s':", inname);
+    		printf(" nvtxs=%d, but edge (%d,%d) was input.\n",
+    		       *nvtxs, vertex, neighbor);
+    		fclose(fin);
+    		return (1);
+    	    }
+    	    if (neighbor <= 0) {
+    		printf("ERROR in graph file `%s':", inname);
+    		printf(" zero or negative vertex in edge (%d,%d).\n",
+    		       vertex, neighbor);
+    		fclose(fin);
+    		return (1);
+    	    }
+    
+    	    if (neighbor == vertex) {
+    		if (!self_edge && Debug_Input) {
+    		    printf("WARNING: Self edge (%d, %d) being ignored.\n",
+    			   vertex, vertex);
+    		}
+    		skip_flag = TRUE;
+    		++self_edge;
+    	    }
+    
+    	    /* Check if adjacency is repeated. */
+    	    if (!skip_flag) {
+    		found_flag = FALSE;
+    		for (j = (*start)[vertex - 1]; !found_flag && j < sum_edges + nedge; j++) {
+    		    if ((*adjacency)[j] == neighbor)
+    			found_flag = TRUE;
+    		}
+    		if (found_flag) {
+    		    printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n",
+    			vertex, neighbor);
+    		    skip_flag = TRUE;
+    		    if (!ignore_me) {
+    			ignore_me = TRUE;
+    			++ignored;
+    		    }
+    		}
+    	    }
+            }
 
 	    if (using_ewgts) {	/* Read edge weight if it's being input. */
 		eweight = read_val(fin, &end_flag);
@@ -251,7 +253,7 @@ float   **eweights 		/* edge weight list data */
 		    return (1);
 		}
 
-		if (eweight <= 0 && CHECK_INPUT) {
+		if (eweight <= 0 && Debug_Input) {
 		    printf("WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
 			   vertex, neighbor);
 		    skip_flag = TRUE;
@@ -265,19 +267,22 @@ float   **eweights 		/* edge weight list data */
 		}
 	    }
 
-	    /* Check for edge only entered once. */
-	    if (neighbor < vertex && !skip_flag) {
-		found_flag = FALSE;
-		for (j = (*start)[neighbor - 1]; !found_flag && j < (*start)[neighbor]; j++) {
-		    if ((*adjacency)[j] == vertex)
-			found_flag = TRUE;
-		}
-		if (!found_flag) {
-		    printf("ERROR in graph file `%s':", inname);
-		    printf(" Edge (%d, %d) entered but not (%d, %d)\n",
-			   vertex, neighbor, neighbor, vertex);
-		    error_flag = 1;
-		}
+            if (Debug_Input){
+
+	        /* Check for edge only entered once. */
+	        if (neighbor < vertex && !skip_flag) {
+		    found_flag = FALSE;
+		    for (j = (*start)[neighbor - 1]; !found_flag && j < (*start)[neighbor]; j++) {
+		        if ((*adjacency)[j] == vertex)
+			    found_flag = TRUE;
+		    }
+		    if (!found_flag) {
+		        printf("ERROR in graph file `%s':", inname);
+		        printf(" Edge (%d, %d) entered but not (%d, %d)\n",
+			       vertex, neighbor, neighbor, vertex);
+		        error_flag = 1;
+		    }
+	        }
 	    }
 
 	    /* Add edge to data structure. */
@@ -308,14 +313,14 @@ float   **eweights 		/* edge weight list data */
 	if (!end_flag)
 	    flag = TRUE;
     }
-    if (flag && CHECK_INPUT) {
+    if (flag && Debug_Input) {
 	printf("WARNING: Possible error in graph file `%s'\n", inname);
 	printf("         Data found after expected end of file\n");
     }
 
     (*start)[*nvtxs] = sum_edges;
 
-    if (self_edge > 1 && CHECK_INPUT) {
+    if (self_edge > 1 && Debug_Input) {
 	printf("WARNING: %d self edges were read and ignored.\n", self_edge);
     }
 
@@ -327,14 +332,14 @@ float   **eweights 		/* edge weight list data */
 		nedges + self_edge + ignored != 2 * narcs && 
 		nedges != 2 * narcs &&
 		nedges + ignored != 2 * narcs &&
-		CHECK_INPUT) {
+		Debug_Input) {
 	    printf("WARNING: I expected %d edges entered twice, but I only count %d.\n",
 	        narcs, nedges);
 	}
     }
 
     else {
-	/* Graph was empty => must be using inertial method. */
+	/* Graph was empty */
 	LB_FREE(start);
 	if (*adjacency != NULL)
 	    LB_FREE(*adjacency);

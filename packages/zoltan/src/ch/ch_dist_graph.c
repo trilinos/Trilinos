@@ -38,7 +38,7 @@ int chaco_dist_graph(
   int     *nvtxs,		/* number of vertices in local graph */
   int     **xadj,		/* start of edge list for each vertex */
   int     **adjncy,		/* edge list data */
-  int     **vwgts,		/* vertex weight list data */
+  float   **vwgts,		/* vertex weight list data */
   float   **ewgts,		/* edge weight list data */
   int     *ndim,                /* dimension of the geometry */
   float   **x,                  /* x-coordinates of the vertices */
@@ -49,13 +49,13 @@ int chaco_dist_graph(
   char *yo = "chaco_dist_graph";
   int nprocs, myproc, i, j, n, p, nedges, nsend, max_nvtxs, v, adj_cnt;
   int offset, use_vwgts, use_ewgts, use_graph, nvtx_edges;
-  int *old_xadj = NULL, *old_adjncy = NULL, *old_vwgts = NULL, *size = NULL;
-  int *send_xadj = NULL, *send_adjncy = NULL, *send_vwgts = NULL;
+  int *old_xadj = NULL, *old_adjncy = NULL, *size = NULL;
+  int *send_xadj = NULL, *send_adjncy = NULL;
   int *vtx_list = NULL;
   float *old_x = NULL, *old_y = NULL, *old_z = NULL;
   float *send_x = NULL, *send_y = NULL, *send_z = NULL;
-  float *old_ewgts = NULL;
-  float *send_ewgts = NULL;
+  float *old_vwgts = NULL, *old_ewgts = NULL;
+  float *send_vwgts = NULL, *send_ewgts = NULL;
   MPI_Status status;
 
   /* Determine number of processors and my rank. */
@@ -102,7 +102,7 @@ int chaco_dist_graph(
   if (use_vwgts){
     old_vwgts = *vwgts;
     if (n > 0) {
-      *vwgts = (int *) malloc(n*sizeof(int));
+      *vwgts = (float *) malloc(n*sizeof(float));
       if (*vwgts == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
         return 0;
@@ -136,7 +136,7 @@ int chaco_dist_graph(
       }
     }
     if (use_vwgts) {
-      send_vwgts = (int *) malloc(max_nvtxs*sizeof(int));
+      send_vwgts = (float *) malloc(max_nvtxs*sizeof(float));
       if (send_vwgts == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
         return 0;
@@ -243,7 +243,7 @@ int chaco_dist_graph(
         if (use_graph)
           MPI_Send(send_xadj, nsend+1, MPI_INT, p, 1, comm);
         if (use_vwgts)
-          MPI_Send(send_vwgts, nsend, MPI_INT, p, 2, comm);
+          MPI_Send(send_vwgts, nsend, MPI_FLOAT, p, 2, comm);
         if (*ndim > 0) {
           MPI_Send(send_x, nsend, MPI_FLOAT, p, 3, comm);
           if (*ndim > 1) {
@@ -266,7 +266,7 @@ int chaco_dist_graph(
     if (use_graph)
       MPI_Recv (*xadj, (*nvtxs)+1, MPI_INT, host_proc, 1, comm, &status);
     if (use_vwgts)
-      MPI_Recv (*vwgts, *nvtxs, MPI_INT, host_proc, 2, comm, &status);
+      MPI_Recv (*vwgts, *nvtxs, MPI_FLOAT, host_proc, 2, comm, &status);
     if (*ndim > 0) {
       MPI_Recv(*x, *nvtxs,  MPI_FLOAT, host_proc, 3, comm, &status);
       if (*ndim > 1) {
