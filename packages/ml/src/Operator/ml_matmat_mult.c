@@ -1039,8 +1039,7 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
     /* --JJH */
 #ifdef charles
     if (origindex == index)
-       fprintf(stderr,"ML_hash_it: looped around"
-       " original index = %d, new_val = %d, hash_length = %d, hash_used = %d\n");
+       fprintf(stderr,"ML_hash_it: looped around original index = %d, new_val = %d, hash_length = %d, hash_used = %d\n");
 #endif
   }
 
