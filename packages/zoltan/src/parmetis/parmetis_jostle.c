@@ -337,6 +337,7 @@ static int LB_ParMetis_Jostle(
    */
   nbors_proc = NULL;
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  local_ids = global_ids = NULL;
   float_vwgt = xyz = NULL;
   ptr = proc_list = NULL;
   hashtab = NULL;
