@@ -1444,13 +1444,6 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
         numblk = bptr[blkrow+1] - bptr[blkrow];
         for (row = 0; row < rblksz; row++) {
           i = rptr[blkrow] + row;
-/*        
-          Debugging tool
-          if( i >= N  ){
-            printf("i %d > N %d   m %d > blkrow %d  and  %d > %d\n",
-                    i, N, m, blkrow, rblksz, row);
-          }
-*/
           for (blkcol = 0; blkcol < numblk; blkcol++) {
             locblk = bindx[iblk];
             indx_ptr = indx[iblk++];
@@ -1458,26 +1451,10 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
             for (col = 0; col < cblksz; col++) {
               index = indx_ptr + col*rblksz + row;
               row_sum += fabs(val[index]);
-/*        
-              Debugging tool
-              if( index >= nnzers ){
-                printf("N_nz %d < index %d\n", nnzers, index);
-              }
-*/
-
-
-
-
             }
           }
-          if (fabs(row_sum) < DBL_MIN){ 
-/*        
-              Debugging tool
-              printf("Zed: i= %d   %d > %d  and  %d > %d\n",
-                      i, numblk, blkcol, rblksz, row);
-*/
+          if (fabs(row_sum) < DBL_MIN)
             row_sum = one;
-          }
           sc_vec[i]   = one/ row_sum;
           row_sum     = 0.0;
           iblk -= numblk;

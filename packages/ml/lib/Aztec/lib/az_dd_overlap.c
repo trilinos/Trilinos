@@ -287,6 +287,10 @@ char str[80];
        if (comm_buffer != NULL) { BV_FREE(comm_buffer); comm_buffer = NULL; }
        comm_size = k+1;
        comm_buffer = (double *) BV_ALLOC( comm_size * sizeof(double));
+       if (comm_buffer == NULL) {
+	 printf("AZ_setup_dd_olap_msr: Not enough memory for comm_buff\n");
+	 exit(1);
+       }
        iptr = (int *) comm_buffer;
        dptr = (double *) comm_buffer;
     }
