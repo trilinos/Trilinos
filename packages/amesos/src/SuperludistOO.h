@@ -69,6 +69,7 @@ class Epetra_RowMatrix;
   permutation can be considered static pivoting and equilibration is akin
   to left and right scaling.  
 
+  NO MECHANISM EXISTS TODAY TO SET OPTIONS OR PARAMETERS.  
 
   The following parameters are generic, i.e. potentially applicable 
   to all direct solvers.  The ints are passed as options.  The doubles 
@@ -179,19 +180,6 @@ class SuperludistOO {
   void SetTrans( bool trans ) { Transpose_ = trans ;} ; 
 
 
-  //! SuperludistOO Options Set
-  /*! Adds these options to the set of options used to control SuperLUdist
-
-      Not supported in release 0.1 - interface may be revised in the near future
-   */
-  int SetOptions( map< string, int > Options ) ; 
-
-  //! SuperludistOO Parameters Set
-  /*! Adds these parameters to the set of parameters used to control SuperLUdist
-
-      Not supported in release 0.1 - interface may be revised in the near future
-   */
-  int SetParameters( map< string, double > Parameters ) ; 
   //@}
   //@{ \name Check/Attribute Access Methods.
     
@@ -203,18 +191,6 @@ class SuperludistOO {
     Not supported in release 0.1;
    */
   int CheckInput() const ;
-
-  //! Get a copy of the Parameters
-  /*!
-    Not supported in release 0.1 - interface may be revised in the near future
-   */
-  map< string, double > GetParameters( ) const { return(Parameters_); } ; 
-
-  //! Get a copy of the Options
-  /*!
-    Not supported in release 0.1 - interface may be revised in the near future
-   */
-  map< string, int > GetOptions( ) const { return(Options_); } ; 
 
   //@}
 
@@ -264,7 +240,7 @@ class SuperludistOO {
 
   //@{ \name Solve method
   //!  All computation is performed during the call to Solve() 
-  /*!  Factor controls whether or not the matrix should be factored prior to the solve
+  /*!  Factor controls whether or not the matrix should be factored prior to the solve.
        Default is true.
    */
   int Solve(bool Factor) ;
@@ -309,10 +285,7 @@ class SuperludistOO {
   bool A_and_LU_built ;            // Tells us whether to free them 
 
 
-  map< string, int > Options_;
-  map< string, double > Parameters_;
-
-  //  This is neede by the old SuperludistOO.cpp
+  //  This is needed by the old SuperludistOO.cpp
   int numrows ; 
 
 };
