@@ -53,7 +53,7 @@
   \section bugs Reporting Bugs and Making Enhancement Requests
 
   To reports bugs or make enhancement reuqests, visit 
-  <A HREF="http://csmr.ca.sandia.gov/bugzilla/">NOX's Bugzilla (Bug Tracking) Database</A>,
+  <A HREF="http://software.sandia.gov/bugzilla/">NOX's Bugzilla (Bug Tracking) Database</A>,
   and use the following instructions.
       <UL>
       <LI>Click on "Enter a new bug report"
@@ -66,12 +66,12 @@
   \section email Mailing Lists
 
   <p>We recommend that all %NOX users subscribe to the 
-  <a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a>.
+  <a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a>.
   This mailing list is used to keep users informed of new releases and patches. 
   Developers should subscribe to both the 
-  <a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a>
+  <a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a>
   and the 
-  <a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-cvs">NOX-CVS Mailing List</a>.
+  <a href="http://software.sandia.gov/mailman/listinfo/nox-cvs">NOX-CVS Mailing List</a>.
   The first is a mailing list dedicated to discussion of the
   development of %NOX and is archived; the second is the mailing list
   to which all CVS commit messages are sent.
