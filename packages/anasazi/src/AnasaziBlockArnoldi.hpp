@@ -60,7 +60,7 @@ public:
 	the number of eigenvalues it has approximations to.  On exit, \c num will be the
 	number of eigenvalue approximations that were returned 
 	*/
-	TYPE * getEvals( int num );
+	TYPE * getEvals( int& num );
 
 	//! This method returns the imaginary part of the computed eigenvalues.
 	TYPE * getiEvals();
@@ -70,7 +70,7 @@ public:
 	the number of eigenvalues it has approximations to.  On exit, \c num will be the
 	number of eigenvalue approximations that were returned 
 	*/
-	TYPE * getiEvals( int num );
+	TYPE * getiEvals( int& num );
 
 	//! This method returns the residuals for the computed eigenpairs.
 	TYPE * getResiduals();
@@ -264,11 +264,29 @@ TYPE * BlockArnoldi<TYPE>::getEvals() {
 }
 
 template <class TYPE>
-TYPE * BlockArnoldi<TYPE>::getEvals( int num ) {
+TYPE * BlockArnoldi<TYPE>::getEvals( int& num ) {
 	int i;
+
 	// Correct the value of num if it's greater than the number of eigenvalue
-	// approximations available.
-	if ( num > _jstart*_block ) { num = _jstart*_block; }
+	// approximations available.  If there was a restart recently, then there
+	// may be more eigenvalue approximations than _jstart would lead you to
+	// believe.
+	switch ( _restarts ) {
+	    case 0 :
+		cout<<"I'm not restarted"<<endl;
+		if ( num > _jstart*_block ) {
+		    num = _jstart*_block;
+		}
+		break;
+	    default :
+		if ( _jstart==_nevblock && num > _length*_block ) {
+		    num = _length*_block;
+		}
+		else if ( _jstart!=_nevblock && num > _jstart*_block ) {
+		    num = _jstart*_block;
+		}
+		break;
+	}
 
 	// Now copy the eigenvalues.
 	TYPE *temp_evals = new TYPE[ num ];
@@ -289,11 +307,28 @@ TYPE * BlockArnoldi<TYPE>::getiEvals() {
 }
 
 template <class TYPE>
-TYPE * BlockArnoldi<TYPE>::getiEvals( int num ) {
+TYPE * BlockArnoldi<TYPE>::getiEvals( int& num ) {
 	int i;
 	// Correct the value of num if it's greater than the number of eigenvalue
-	// approximations available.
-	if ( num > _jstart*_block ) { num = _jstart*_block; }
+	// approximations available.  If there was a restart recently, then there
+	// may be more eigenvalue approximations than _jstart would lead you to
+	// believe.
+	switch ( _restarts ) {
+	    case 0 :
+		cout<<"I'm not restarted"<<endl;
+		if ( num > _jstart*_block ) {
+		    num = _jstart*_block;
+		}
+		break;
+	    default :
+		if ( _jstart==_nevblock && num > _length*_block ) {
+		    num = _length*_block;
+		}
+		else if ( _jstart!=_nevblock && num > _jstart*_block ) {
+		    num = _jstart*_block;
+		}
+		break;
+	}
 
 	// Now copy the eigenvalues.
 	TYPE *temp_evals = new TYPE[ num ];
@@ -1300,8 +1335,8 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 		_evecr->SetBlock( *evecstemp, index, _nev );
 	} else {  // Right now only the real part of the eigenvector is being set!
 		int conjprs=0;
-		int * indexr = new int [ _nev ];
-		int * indexi = new int [ _nev ];
+		int * indexr = new int [ _nev+1 ];
+		int * indexi = new int [ _nev+1 ];
 		i = 0;
 		while ( i<_nev ) {	
 			if (_evali[i] != zero) {
@@ -1328,10 +1363,18 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 		_evecr->SetBlock( *evecstemp2, index, _nev );
 	
 		// Set the imaginary part of the eigenvectors if conjugate pairs exist.
+		// If the last eigenvector has a split conjugate pair, don't set negative imaginary
+		// part.
 		if (conjprs) {	
 			// Set conjugate part of imaginary eigenvectors first.
-			AnasaziMultiVec<TYPE>* evecstempi = evecstemp->CloneView( indexi, conjprs );
-			AnasaziMultiVec<TYPE>* eveci1 = _eveci->CloneView( indexi, conjprs );
+			AnasaziMultiVec<TYPE>  *evecstempi, *eveci1;
+			if (indexi[conjprs-1]=_nev) {
+			    evecstempi = evecstemp->CloneView( indexi, conjprs-1 );
+			    eveci1 = _eveci->CloneView( indexi, conjprs-1 );
+			} else {
+			    evecstempi = evecstemp->CloneView( indexi, conjprs );
+			    eveci1 = _eveci->CloneView( indexi, conjprs );
+			}		
 			eveci1->MvAddMv( -one, *evecstempi, zero, *evecstempi );
 
 			// Change indexi to obtain previous eigenvectors imaginary part.

@@ -376,7 +376,7 @@ void AnasaziLOCAVec<TYPE>::MvPrint() {
 template<class TYPE>
 void AnasaziLOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index ) 
 {
-	if (index < mvPtrs.size()) { Vec = *(mvPtrs[index]->clone(NOX::DeepCopy)); }
+	if (index < mvPtrs.size()) { Vec = *(mvPtrs[index]); }
 }
 
 ///////////////////////////////////////////////////////////////
