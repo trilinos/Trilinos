@@ -45,28 +45,39 @@ class Epetra_Comm;
 
 //! Amesos_Component: A pure virtual class for direct solvers to be used within Amesos_Merikos to form a parallel direct solver.
 
-/*! The Amesos_Component class is a pure virtual class specifying what Amesos_Merikos needs.   Every Amesos class named 
-    Amesos_Comp_<i>SolverName</i> implements Amesos_Component.
+/*! 
+    <p>The Amesos_Component interface specifies what Amesos_Merikos needs.
+Any Amesos class that implements Amesos_Component can be used by 
+Amesos_Merikos to perform partial solves on subblocks of the matrix. 
 
 
-    <H1>Differences betweeen Amesos_BaseSolver and  Amesos_Component.</H1> 
+    <H1>Member functions added by Amesos_Component.</H1> 
 
     <ul>
-    <li>Amesos_Component performs minimal reordering.  
+    <li>PartialFactorization()
     <ul>
-      <li>Amesos_Component expects row and coloumn ordering on input.
-      <li>Amesos_Component performs LUx=b (not PLUQx = b).
-    </ul>
-    <li>Amesos_Component performs the forward solve (Lsolve) and 
-the backward solve (Usolve) separately.
-    <li>Amesos_Component performs a partial factorization.  
-    <ul>
-       <li>Amesos_Component performs factors at most the 
+       <li>PartialFactorization performs factors at most the 
 first SubMatrixSize_ rows and columns.  
-       <li>Amesos_Component delays the factorization of any columns which generate zero pivots. 
-       <li>Amesos_Component computes and returns the schur complement for the 
-       <li>Lsolve and Usolve perform partial solves, treating the unfactored rows and columns as the identity.
+       <li>PartialFactorization delays the factorization of any columns which generate unstable (i.e. too small) pivots. 
+       <li>PartialFactorization computes and returns the schur complement.
+       <li>PartialFactorization does not need a symbolic factorization phase. 
+It uses the permutation given by SetRowPermutation.
     </ul>
+    <li>Lsolve performs a raw partial solve, treating the unfactored rows and 
+columns as the identity without row or column permutation.  
+    <li>Usolve performs a raw partial solve, treating the unfactored rows and 
+columns as the identity without row or column permutation.  
+    <li>SetRowPermutation - sets the row permutation
+    <li>GetRowPermutation - gets the row permutation
+    <li>SetColumnPermutation - sets the column permutation
+    <li>GetColumnPermutation - gets the column permutation
+    <li>SetSubMatrixSize - Sets the maximum number of rows (and columns)
+to factor.
+    <li>GetSubMatrixSize - Returns the number of rows (and columns) 
+actually factored. 
+    <li>SchurComplement - Returns the Schur complement, i.e. 
+L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
+U12(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
     </ul>
 
 
@@ -155,7 +166,7 @@ class Amesos_Component {
       includes the RowPermuation upon input or whether it returns
       only the row permuations performed by the most recent 
       call to PartialFactorization().  In other words, in the 
-      absence of pivoting, RowPerumation might be identical to 
+      absence of pivoting, RowPermutation might be identical to 
       that given by SetRowPermutation() or it might be the 
       identity permutation.
      */
@@ -169,7 +180,7 @@ class Amesos_Component {
       includes the ColumnPermuation upon input or whether it returns
       only the row permuations performed by the most recent 
       call to PartialFactorization().  In other words, in the 
-      absence of pivoting, ColumnPerumation might be identical to 
+      absence of pivoting, ColumnPermutation might be identical to 
       that given by SetColumnPermutation() or it might be the 
       identity permutation.
      */
@@ -188,8 +199,8 @@ class Amesos_Component {
       SchurComplement is a square matrix with each side having size
       MatrixSize-SubMatrixSize which contains the Schur 
       complement based on the matrices L and U, i.e.
-        U(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)^T *
-        L(SubMatrixSize+1:MatrixSize,1:SubMatrixSize)
+        L(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
+        U(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
      */ 
     virtual int GetSchurComplement( Epetra_CrsMatrix* SchurComplement ) = 0;
 

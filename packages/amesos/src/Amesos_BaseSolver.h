@@ -83,6 +83,24 @@ class Epetra_Comm;
     Solver.Solve() ; 
 </pre>
     
+    <H2>Pivot-less refactorization</H2> The following 
+    calling sequence performs multiple solves of A x = b or A<SUP>T</SUP> x = b 
+    provided that the change to A is small. 
+
+
+<pre>
+    Epetra_LinearProblem Problem(A,X,B);
+    Amesos_SolverName Solver(Problem);
+    Problem.SetTranspose( false ); 
+    Solver.NumericFactorization() ; 
+    while( ... ) { 
+
+      Code which may change A slightly
+
+    Solver.PivotlessRefactorization() ; 
+    Solver.Solve() ; 
+</pre>
+
     <H2>Re-using the numeric factorization</H2> The following 
     calling sequence performs multiple solves of A x = b or A<SUP>T</SUP> x = b 
     provided that A remains unchanged between each call to Solve().
@@ -100,18 +118,16 @@ class Epetra_Comm;
 </pre>
     
 
+    
+
     <H2>Constructor requirements</H2>
     Every Amesos_SolverName class should accept an
     Epetra_LinearProblem 
 
-    <H2>Mathematical methods</H2> Three mathematical methods are
+    <H2>Mathematical methods</H2> Four mathematical methods are
     defined in the base class Amesos_BaseSolver:
-    SymbolicFactorization(), NumericFactorization() and Solve().  A
-    call to NumericFactorization() without a previous call to
-    SymbolicFactorization() will perform both numeric and symbolic
-    Factorization.  A call to Solve() without a previous call to
-    NumericFactorization() will perform both a numeric factorization
-    (including a symbolic factorization if necessary) and a solve.  
+    SymbolicFactorization(), NumericFactorization(),
+    PivotelssRefactorization() and Solve().  
 
     <H2>Switching concrete classes</H2>
     Different concrete
@@ -127,7 +143,7 @@ class Epetra_Comm;
     interface must perform the solve based on the values in the matrix
     at the time that Solve() is called.  
 
-    Once SymbolicFactorization() has been called, classes implementing
+    <p>Once SymbolicFactorization() has been called, classes implementing
     this interface may assume that any change made to the non-zero
     structure of the underlying matrix will be accompanied by a call
     to SymbolicFactorization() prior to a subsequent call to
@@ -282,9 +298,12 @@ revert to their default values.
   */
     virtual int SymbolicFactorization() = 0;
 
+
+
+
     //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
+    /*!  In addition to performing numeric factorization on the 
+      matrix A, the call to
       NumericFactorization() implies that no change will be made to
       the underlying matrix without a subsequent call to
       NumericFactorization().  
@@ -307,6 +326,58 @@ revert to their default values.
      \return Integer error code, set to 0 if successful.
   */
     virtual int NumericFactorization() = 0;
+
+
+    //! Performs Pivotless Numeric Factorization on the matrix A.
+    /*! PivotlessReFactorization() performs the same functionality 
+as NumericFactorization() except that typically 
+pivoting is performed.
+
+<p>PivotlessFactorization() should compare the ratio of the largest pivot 
+to the smallest pivot against the ratio after the most recent call to 
+NumericFactorization(), if pivot growth in pivot-less factorization 
+is too large, NumericFactorization() should be called by 
+PivotlessFactorization().  Such calls to NumericFactorization()
+are controlled by two parameters, either of which can be set to -1 to indicate no maximum.  
+<ul>
+  <li>"Maximum Relative Pivot Growth", default=10 
+  <li>"Maximum Pivot Growth", default=-1 
+</ul>
+
+<p>In solvers which do not offer pivot-less factorization, 
+PivotlessFactorization() defaults to a call to NumericFactorization().
+
+<p>If no previous cal to NumericFactorization() has been made, 
+PivotlessFactorization() defaults to a call to NumericFactorization().
+
+<p>Ideally, a call to PivotlessFactorization() should not involve 
+any memory allocation or re-allocation.
+
+
+      <br \>Preconditions:<ul>
+      <li>GetProblem().GetOperator() != 0 (return -1)
+      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
+      <li>The non-zero structure of the matrix should not have changed
+          since the last call to SymbolicFactorization().  
+      <li>The distribution of the matrix should not have changed 
+          since the last call to SymbolicFactorization()
+      <li>The change in the values in the matrix since the last call
+          to NumericFactorization() should be small enough that 
+	  pivot-less factorization is sufficiently accurate. 
+          (Or, expected to be sufficiently accurate.)
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>Numeric Factorization will be performed
+      allowing Solve() to be performed correctly despite a 
+      potential change in 
+      in the matrix values (though not in the non-zero structure).
+      </ul>
+
+     \return Integer error code, set to 0 if successful.
+
+    virtual int PivotlessFactorization() = 0;
+  */
 
     //! Solves A X = B (or A<SUP>T</SUP> x = B) 
     /*! 
