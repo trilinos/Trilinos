@@ -75,22 +75,22 @@ namespace Anasazi {
 
       //! Constructor
       MultiVec(Anasazi::DataAccess type, const MultiVec& source, 
-	      int index[], int NumVecs); 
+	      const std::vector<int>& index); 
     
       //! Destructor
       ~MultiVec();
       
       //! Create a new MultiVec with \em n columns
-      virtual Anasazi::MultiVec<double>* Clone(const int n);
+      virtual Anasazi::MultiVec<double>* Clone(const int n) const;
       
       //! Create a new MultiVec as a copy of \em this
-      virtual Anasazi::MultiVec<double>* CloneCopy();
+      virtual Anasazi::MultiVec<double>* CloneCopy() const;
       
       //! Create a new MultiVec as a copy of selected columns
-      virtual Anasazi::MultiVec<double>* CloneCopy(int index[], int n);
+      virtual Anasazi::MultiVec<double>* CloneCopy( const std::vector<int>& index ) const;
       
       //! Create a new MultiVec as a view of selected columns
-      virtual Anasazi::MultiVec<double>* CloneView(int index[], int n);
+      virtual Anasazi::MultiVec<double>* CloneView( const std::vector<int>& index );
       
       //! Returns number of vectors
       virtual int GetNumberVecs () const;
@@ -102,33 +102,35 @@ namespace Anasazi {
        * \brief Set a block of this multivec with the multivecs specified by
        *the index.
        */
-      virtual void SetBlock(Anasazi::MultiVec<double>& A, int index[], 
-			    int NumVecs); 
+      virtual void SetBlock(const Anasazi::MultiVec<double>& A, const std::vector<int>& index);
 
       //! *this <- alpha * A * B + beta * (*this)
-      virtual void MvTimesMatAddMv(double alpha, Anasazi::MultiVec<double>& A, 
-				   Teuchos::SerialDenseMatrix<int,double>& B,
-				   double beta);
+      virtual void MvTimesMatAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+				   const Teuchos::SerialDenseMatrix<int,double>& B,
+				   const double beta);
 
       //!*this <- alpha * A + beta * B
-      virtual void MvAddMv(double alpha, Anasazi::MultiVec<double>& A, 
-			   double beta, Anasazi::MultiVec<double>& B);
+      virtual void MvAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+			   const double beta, const Anasazi::MultiVec<double>& B);
       
       //! B <- alpha * A^T * (*this)
-      virtual void MvTransMv(double alpha, Anasazi::MultiVec<double>& A, 
-			     Teuchos::SerialDenseMatrix<int,double>& B);
+      virtual void MvTransMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+			     Teuchos::SerialDenseMatrix<int,double>& B) const;
+      
+      //! b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+      virtual void MvDot ( const Anasazi::MultiVec<double>& A, std::vector<double>* b ) const;
 
       //! alpha[i] = norm of i-th column of (*this)
-      virtual void MvNorm(double* normvec);
+      virtual void MvNorm(std::vector<double>* normvec) const;
       
       //! random vectors in i-th column of (*this)
       virtual void MvRandom();
 
       //! initializes each element of (*this) with alpha
-      virtual void MvInit (double alpha);
+      virtual void MvInit (const double alpha);
 
       //! print (*this)
-      virtual void MvPrint();
+      virtual void MvPrint() const;
 
       //! Return a reference to NOX::Abstract::Vector
       virtual NOX::Abstract::Vector& GetNOXVector(int index);

@@ -34,7 +34,7 @@
 #define ANASAZI_LOCA_MATRIX_H
 
 // Anasazi includes
-#include "AnasaziMatrix.hpp"
+#include "AnasaziOperator.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziReturnType.hpp"
@@ -57,7 +57,7 @@ namespace Anasazi {
      * for many different types of operators, including shift-invert and
      * Generalized Cayley transformations.
      */
-    class Matrix : public Anasazi::Matrix<double> {
+    class Matrix : public Anasazi::Operator<double> {
     public:
 
       //! Constructor
@@ -67,8 +67,8 @@ namespace Anasazi {
       ~Matrix();
 
       //! Apply operator
-      Anasazi::ReturnType ApplyMatrix(const Anasazi::MultiVec<double>& x, 
-				      Anasazi::MultiVec<double>& y ) const;
+      Anasazi::ReturnType Apply(const Anasazi::MultiVec<double>& x, 
+				Anasazi::MultiVec<double>& y ) const;
     protected:
 
       //! Reference to LOCA operator

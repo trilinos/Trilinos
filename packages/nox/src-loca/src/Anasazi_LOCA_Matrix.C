@@ -44,8 +44,8 @@ Anasazi::LOCA::Matrix::~Matrix()
 }
 
 Anasazi::ReturnType 
-Anasazi::LOCA::Matrix::ApplyMatrix (const Anasazi::MultiVec<double>& x, 
-				    Anasazi::MultiVec<double>& y) const 
+Anasazi::LOCA::Matrix::Apply (const Anasazi::MultiVec<double>& x, 
+			      Anasazi::MultiVec<double>& y) const 
 {
   string callingFunction = "Anasazi::LOCA::Matrix::ApplyMatrix()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;

@@ -43,8 +43,11 @@
 #ifdef HAVE_LOCA_ANASAZI
 #include "Anasazi_LOCA_MultiVec.H"
 #include "Anasazi_LOCA_Matrix.H"
+#include "Anasazi_LOCA_Sort.H"
 #include "LOCA_AnasaziOperator_Manager.H"
-#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziOutputManager.hpp"
 #endif
 
 LOCA::Continuation::AnasaziGroup::AnasaziGroup() :
@@ -148,46 +151,70 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
    // Get reference to solution vector to clone
   const NOX::Abstract::Vector& xVector = getX();
 
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList LOCA_PL;
+  LOCA_PL.set( "Block Size", blksz );
+  LOCA_PL.set( "Max Blocks", length );
+  LOCA_PL.set( "Max Restarts", restart );
+  LOCA_PL.set( "Step Size", step );
+  LOCA_PL.set( "Tol", tol );
+  
+  typedef Anasazi::MultiVec<double> MV;
+  typedef Anasazi::Operator<double> OP;
+
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > LOCA_OM =
+    Teuchos::rcp( new Anasazi::OutputManager<double>() );
+  LOCA_OM->SetVerbosity( debug );  
+
+  // Create a sorting manager to handle the sorting of eigenvalues in the solver
+  Teuchos::RefCountPtr<Anasazi::LOCA::Sort<double, MV, OP> > LOCASort =
+    Teuchos::rcp( new Anasazi::LOCA::Sort<double, MV, OP>(which, 
+							  aList.getParameter("Cayley Pole",0.0),
+							  aList.getParameter("Cayley Zero",0.0)));
+
   // Create the operator and initial vector
   LOCA::AnasaziOperator::Manager anasaziOperator(aList, solverList, *this);
-  Anasazi::LOCA::Matrix Amat(anasaziOperator);
-  Anasazi::LOCA::MultiVec ivec(xVector, blksz);
-  ivec.MvRandom();
-
+  Teuchos::RefCountPtr<Anasazi::LOCA::Matrix> Amat = 
+    Teuchos::rcp( new Anasazi::LOCA::Matrix(anasaziOperator) );
+  Teuchos::RefCountPtr<Anasazi::LOCA::MultiVec> ivec =
+    Teuchos::rcp( new Anasazi::LOCA::MultiVec(xVector, blksz) );
+  ivec->MvRandom();
+  
   // Create an instance of the eigenproblem
-  Anasazi::Eigenproblem<double> LOCAProblem(&Amat, &ivec);
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > LOCAProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
+
+  // Set the number of eigenvalues requested
+  LOCAProblem->SetNEV( nev );
+ 
+  // Inform the eigenproblem that you are finishing passing it information        
+  assert( LOCAProblem->SetProblem() == 0 );
 
   // Initialize the solver
-  Anasazi::BlockArnoldi<double> LOCABlockArnoldi(LOCAProblem, tol, nev, length,
-						 blksz, which, step, restart,
-                                                 aList.getParameter("Cayley Pole",0.0),
-                                                 aList.getParameter("Cayley Zero",0.0));
-
-
-  // Print out debugging information on single proc
-  LOCABlockArnoldi.setDebugLevel(debug);
+  Anasazi::BlockKrylovSchur<double, MV, OP> LOCABlockKrylovSchur(LOCAProblem, LOCASort, LOCA_OM, LOCA_PL);
 
   // Solve the problem to the specified tolerance
-  LOCABlockArnoldi.solve();
+  LOCABlockKrylovSchur.solve();
 
   // Look at the solutions once if debug=0
   if (Utils::doPrint(Utils::StepperIteration)) 
-    if (debug == 0) LOCABlockArnoldi.currentStatus();
-
+    if (debug == 0) LOCABlockKrylovSchur.currentStatus();
+  
   // Obtain the eigenvalues / eigenvectors
-  int narn =  length; 
-  double * evalr = LOCABlockArnoldi.getEvals(narn);  // narn modified
-  double * evali = LOCABlockArnoldi.getiEvals(narn); // to within [nev,length]
+  // If the matrix is non-symmetric the real part of the eigenvalues are
+  // stored in the first "narn" entries of "evals", the imaginary part is 
+  // stored in the second "narn" entries of "evals".
+  int narn = LOCABlockKrylovSchur.GetKrylovFactLength();
+  std::vector<double> evals( *(LOCABlockKrylovSchur.GetRitzValues()) );
 
   if (Utils::doPrint(Utils::StepperIteration)) 
     cout << "Untransformed eigenvalues (since the operator was " 
 	 << anasaziOperator.label() << ")" <<endl;
   
   // Obtain the eigenvectors
-  Anasazi::LOCA::MultiVec evecR(xVector, nev);
-  LOCABlockArnoldi.getEvecs(evecR);
-  Anasazi::LOCA::MultiVec evecI(xVector, nev);
-  LOCABlockArnoldi.getiEvecs(evecI);
+  // The real part is stored in the first "nev" vectors and the imaginary in the second "nev" vectors.
+  Anasazi::LOCA::MultiVec evecs( *dynamic_cast<Anasazi::LOCA::MultiVec *>(LOCAProblem->GetEvecs().get()) );
 
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
@@ -195,20 +222,20 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
   for (int i=0; i<nev; i++) {
 
     // Un-transform eigenvalues
-    anasaziOperator.transformEigenvalue(evalr[i], evali[i]);
+    anasaziOperator.transformEigenvalue(evals[i], evals[narn+i]);
 
     // Compute Rayleigh quotient
-    anasaziOperator.rayleighQuotient(evecR.GetNOXVector(i),
-				     evecI.GetNOXVector(i), 
+    anasaziOperator.rayleighQuotient(evecs.GetNOXVector(i),
+				     evecs.GetNOXVector(nev+i), 
 				     rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual
     if (Utils::doPrint(Utils::StepperIteration)) {
       cout << "Eigenvalue " << i << " : " 
-	   << LOCA::Utils::sci(evalr[i]) <<"  "
-	   << LOCA::Utils::sci(evali[i]) << " i    :  RQresid "
-	   << LOCA::Utils::sci(fabs(evalr[i] - rq_r)) << "  "
-	   << LOCA::Utils::sci(fabs(evali[i] - rq_i)) << " i" << endl;
+	   << LOCA::Utils::sci(evals[i]) <<"  "
+	   << LOCA::Utils::sci(evals[narn+i]) << " i    :  RQresid "
+	   << LOCA::Utils::sci(fabs(evals[i] - rq_r)) << "  "
+	   << LOCA::Utils::sci(fabs(evals[narn+i] - rq_i)) << " i" << endl;
     }
 
   }  
@@ -222,27 +249,25 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
   for (int i=nev; i<narn; i++) {
 
       // Un-transform eigenvalues
-      anasaziOperator.transformEigenvalue(evalr[i], evali[i]);
+      anasaziOperator.transformEigenvalue(evals[i], evals[narn+i]);
 
       if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
 	cout << "Eigenvalue " << i << " : " 
-	     << LOCA::Utils::sci(evalr[i]) << "  "
-	     << LOCA::Utils::sci(evali[i]) << " i" <<endl;
+	     << LOCA::Utils::sci(evals[i]) << "  "
+	     << LOCA::Utils::sci(evals[narn+i]) << " i" <<endl;
       }
 
   }
 
   // Save eigenvectors/eigenvalues
   if (saveEV > 0)
-    saveEigenVectors(saveEV, evalr, evali, evecR, evecI);
+    saveEigenVectors(saveEV, evals, evecs);
 
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\nAnasazi Eigensolver finished.\n" 
          << Utils::fill(64,'=') << "\n" << endl;
   }
 
-  delete [] evalr;
-  delete [] evali;
 
   return NOX::Abstract::Group::Ok;
 #else
@@ -258,9 +283,8 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
 #ifdef HAVE_LOCA_ANASAZI
 void
 LOCA::Continuation::AnasaziGroup::saveEigenVectors(
-				  int nev, double *ev_r, double *ev_i, 
-				  const Anasazi::LOCA::MultiVec& evec_r,
-				  const Anasazi::LOCA::MultiVec& evec_i) const
+				  int nev, const std::vector<double>& evals,
+				  const Anasazi::LOCA::MultiVec& evecs ) const
 {
 }
 #endif
@@ -338,23 +362,23 @@ LOCA::Continuation::AnasaziGroup::saveEigenVectors(
 //   Anasazi::Eigenproblem<double> LOCAProblem( &Amat, &ivec );
 
 //   // Initialize the solver
-//   Anasazi::BlockArnoldi<double> LOCABlockArnoldi(LOCAProblem, tol, nev, length,
+//   Anasazi::BlockKrylovSchur<double> LOCABlockKrylovSchur(LOCAProblem, tol, nev, length,
 // 						 blksz, which, step, restart );
 
 //   // Print out debugging information on single proc
-//   LOCABlockArnoldi.setDebugLevel(debug);
+//   LOCABlockKrylovSchur.setDebugLevel(debug);
 
 //   // Solve the problem to the specified tolerance
-//   LOCABlockArnoldi.solve();
+//   LOCABlockKrylovSchur.solve();
 
 //   // Look at the solutions once if debug=0
 //   if (Utils::doPrint(Utils::StepperIteration)) 
-//     if (debug == 0) LOCABlockArnoldi.currentStatus();
+//     if (debug == 0) LOCABlockKrylovSchur.currentStatus();
 
 //   // Obtain the eigenvalues / eigenvectors
 //   int narn =  length; 
-//   double * evalr = LOCABlockArnoldi.getEvals(narn);  // narn modified
-//   double * evali = LOCABlockArnoldi.getiEvals(narn); // to within [nev,length]
+//   double * evalr = LOCABlockKrylovSchur.getEvals(narn);  // narn modified
+//   double * evali = LOCABlockKrylovSchur.getiEvals(narn); // to within [nev,length]
 
 //   if (Utils::doPrint(Utils::StepperIteration)) {
 //     if(cayley){
@@ -372,9 +396,9 @@ LOCA::Continuation::AnasaziGroup::saveEigenVectors(
   
 //   // Obtain the eigenvectors
 //   Anasazi::LOCAVec<double> evecR( xVector, nev );
-//   LOCABlockArnoldi.getEvecs( evecR );
+//   LOCABlockKrylovSchur.getEvecs( evecR );
 //   Anasazi::LOCAVec<double> evecI( xVector, nev );
-//   LOCABlockArnoldi.getiEvecs( evecI );
+//   LOCABlockKrylovSchur.getiEvecs( evecI );
 
 //   // Create updated Jacobian matrix
 //   computeJacobian();

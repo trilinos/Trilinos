@@ -105,9 +105,8 @@ namespace LOCA {
        * The default implementation here does nothing.
        */
       virtual void
-      saveEigenVectors(int nev, double *ev_r, double *ev_i, 
-		       const Anasazi::LOCA::MultiVec& evec_r,
-		       const Anasazi::LOCA::MultiVec& evec_i) const;
+      saveEigenVectors(int nev, const std::vector<double>& evals, 
+		       const Anasazi::LOCA::MultiVec& evecs ) const;
 #endif
 
     protected:
