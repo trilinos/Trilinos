@@ -1190,9 +1190,10 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
     double Scalar_local = ScalarThis; // local copy of Scalar
 
-    if (MyLength_        != A_nrows     ||
-	A_ncols        != B_nrows     ||
-	NumVectors_    != B_ncols  ) EPETRA_CHK_ERR(-2); // Return error
+    if( MyLength_      != A_nrows     ||   // RAB: 2002/01/25: Minor reformat to allow
+		A_ncols        != B_nrows     ||   //   setting breakpoint at error return.
+		NumVectors_    != B_ncols  )
+		EPETRA_CHK_ERR(-2); // Return error
 
     bool A_is_local = (!A.DistributedGlobal());
     bool B_is_local = (!B.DistributedGlobal());
