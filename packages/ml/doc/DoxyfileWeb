@@ -52,6 +52,21 @@
 #
 ############################################################################
 
-INPUT                  = ../../../../Trilinos/packages/ml/src
+INPUT                  = ../../../../Trilinos/packages/ml/doc/mainpage.doxygen 
+INPUT                 += ../../../../Trilinos/packages/ml/src/Operator 
+INPUT                 += ../../../../Trilinos/packages/ml/src/Utils 
+INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
+INPUT                 += ../../../../Trilinos/packages/ml/src/Main
 
-EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/example
+FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp 
+FILE_PATTERNS         += ml_epetra_utils.h 
+FILE_PATTERNS         += ml_epetra_preconditioner.h 
+FILE_PATTERNS         += ml_epetra_operator.h 
+FILE_PATTERNS         += ml_amesos_wrap.h 
+FILE_PATTERNS         += ml_anasazi.h 
+FILE_PATTERNS         += ml_ifpack_wrap.h
+FILE_PATTERNS         += ml_operator.h 
+FILE_PATTERNS         += ml_struct.h 
+FILE_PATTERNS         += ml_aggregate.h
+
+EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples
