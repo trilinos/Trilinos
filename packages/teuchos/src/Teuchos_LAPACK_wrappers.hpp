@@ -9,7 +9,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 /*! \file Teuchos_LAPACK_wrappers.hpp
-    \brief Document this!
+    \brief The Templated LAPACK wrappers
 */
 /* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
 

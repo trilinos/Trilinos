@@ -6,11 +6,8 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-/*! \file Teuchos_BLAS_wrappers.h  
-    \brief The Templated Petra BLAS Class.
-
-    Lots of cryptic Fortranish #defines here.  More info on how and why 
-    to be added at a later date when Paul gets around to it.
+/*! \file Teuchos_BLAS_wrappers.hpp  
+    \brief The Templated BLAS wrappers.
 */
 
 /* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
