@@ -539,13 +539,13 @@ void LB_Print_Stats (LB *lb, double x, char *msg)
 {
   double sum, max;
 
-  MPI_Reduce((void *)&x, (void *)&sum, 1, MPI_DOUBLE, MPI_SUM, 0, 
+  MPI_Reduce((void *)&x, (void *)&sum, 1, MPI_DOUBLE, MPI_SUM, lb->Debug_Proc, 
              lb->Communicator);
 
-  MPI_Reduce((void *)&x, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, 0, 
+  MPI_Reduce((void *)&x, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, lb->Debug_Proc, 
              lb->Communicator);
 
-  if (lb->Proc == 0 && sum != 0.0)
+  if (lb->Proc == lb->Debug_Proc && sum != 0.0)
     printf("%s: Max: %g, Sum: %g, Imbal.: %g\n",
             msg, max, sum, max*(lb->Num_Proc)/sum);
 

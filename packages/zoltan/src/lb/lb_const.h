@@ -241,13 +241,16 @@ struct LB_Struct {
                                       Communicator.                          */
   int Debug_Level;                /*  Debug level for this instance of
                                       load balancing.                        */
+  int Debug_Proc;                 /*  Print from this processor any debugging 
+                                      info that is printed from only one 
+                                      processor.                             */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
-  MachineType *Machine_Desc;      /*  Machine description for hetero. arch. */
+  MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  LB_PARAM *Params;               /*  List of parameter names & new vals */
+  LB_PARAM *Params;               /*  List of parameter names & new vals     */
   double Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     */
@@ -255,9 +258,9 @@ struct LB_Struct {
                                       should be forced to be deterministic.
                                       Default = TRUE.                        */
   int Obj_Weight_Dim;             /*  Dimension of the object weights, 
-                                      usually 0 (no weights) or 1 */
+                                      usually 0 (no weights) or 1            */
   int Comm_Weight_Dim;            /*  Dimension of the communication weights, 
-                                      usually 0 (no weights) or 1 */
+                                      usually 0 (no weights) or 1            */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
@@ -405,12 +408,14 @@ struct LB_Struct {
  */
 #define LB_TRACE_ENTER(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
-     ((lb)->Debug_Level == LB_DEBUG_TRACE_ZERO && (lb)->Proc == 0)) \
+     ((lb)->Proc == (lb)->Debug_Proc && \
+      (lb)->Debug_Level == LB_DEBUG_TRACE_ZERO)) \
     printf("ZOLTAN (Processor %d) Entering %s\n", (lb)->Proc, (yo));
 
 #define LB_TRACE_EXIT(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
-     ((lb)->Debug_Level == LB_DEBUG_TRACE_ZERO && (lb)->Proc == 0)) \
+     ((lb)->Proc == (lb)->Debug_Proc && \
+      (lb)->Debug_Level == LB_DEBUG_TRACE_ZERO)) \
     printf("ZOLTAN (Processor %d) Leaving %s\n", (lb)->Proc, (yo));
 
 #define LB_TRACE_DETAIL(lb,yo,string) \
