@@ -460,8 +460,10 @@ void ML_precondition(double ff[], int options[], int proc_config[],
   ffout = (double*) ML_allocate(lenf * sizeof(double));
   if (ml->ML_scheme == ML_MGFULLV)    ML_Solve_MGFull( ml, ff, ffout );
 #ifdef        MB_MODIF
-   else if (ml->ML_scheme == ML_SAAMG) ML_Solve_AMGV( ml, ff, ffout);
+  else if (ml->ML_scheme == ML_SAAMG) ML_Solve_AMGV( ml, ff, ffout);
 #endif
+  /* pre- and post-processing projection step */
+  else if (ml->ML_scheme == ML_PAMGV) ML_Solve_ProjectedAMGV( ml, ff, ffout);
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
   free(ffout);
@@ -470,6 +472,7 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 #endif
 }
 
+/*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
