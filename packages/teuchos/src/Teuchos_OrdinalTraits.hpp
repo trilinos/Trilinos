@@ -49,30 +49,34 @@
     \note The defined specializations for OrdinalTraits are: \c int and \c long \c int.
 */
 
+/*! \struct Teuchos::UndefinedOrdinalTraits
+    \brief This is the default structure used by OrdinalTraits<T> to produce a compile time
+	error when the specialization does not exist for type <tt>T</tt>.
+*/
+
 namespace Teuchos {
+
+  template<class T>
+  struct UndefinedOrdinalTraits
+  {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
+  };
 	
 	template<class T>
 	struct OrdinalTraits {
-
-		//! Aborting function to restrict non-supported implementations of OrdinalTraits.
-		static inline int unsupportedType() {
-#ifndef TEUCHOS_NO_ERROR_REPORTS
-			cerr << endl << "Teuchos::OrdinalTraits: unsupported ordinal type." << endl;
-#endif
-			return(-1);
-		}
 
 		//! Allows testing to see if ordinal traits machine parameters are defined.
 		static inline bool haveMachineParameters() {return(false);}; 
 		
 		//! Returns representation of zero for this ordinal type.
-		static inline T zero()                     {throw(unsupportedType());};
+		static inline T zero()                     { return UndefinedOrdinalTraits<T>::notDefined(); };
 
 		//! Returns representation of one for this ordinal type.
-		static inline T one()                      {throw(unsupportedType());};
+		static inline T one()                      { return UndefinedOrdinalTraits<T>::notDefined(); };
 
 		//! Returns name of this ordinal type.
-		static inline std::string name()           {throw(unsupportedType());};
+		static inline std::string name()           { return UndefinedOrdinalTraits<T>::notDefined(); };
 	};
 	
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -90,8 +94,8 @@ namespace Teuchos {
 	struct OrdinalTraits<long int> {
 
 		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
-		static inline long int zero()                   {return((long int)0);};
-		static inline long int one()                    {return((long int)1);};
+		static inline long int zero()              {return(static_cast<long int>(0));};
+		static inline long int one()               {return(static_cast<long int>(1));};
 		static inline std::string name()           {return("long int");};
 	};
 
