@@ -229,6 +229,7 @@ bool FiniteElementProblem::setParameter(string label, double value)
 	 << "for this problem!" << endl;
     exit(-1);
   }
+  return true;
 }
 
 Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
