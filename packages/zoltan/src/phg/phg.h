@@ -35,13 +35,18 @@ extern "C" {
 
 struct Zoltan_PHGraph {
   int nObj;                 /* Number of on-processor objects. */
-  ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
-  ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
+  ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
+  ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
   int *Parts;               /* Initial partition #s for on-processor objects */
                             /* KDD In parallel version Part may be in HG */
   ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
                                within row communicators. */
-  HGraph PHG;              /* Hypergraph for initial objects.       */
+  int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
+                               received from other processors in row.
+                               Used to fill buffer for Comm_Do_Reverse
+                               with VtxPlan in building return lists. */
+  int nRecv_GNOs;           /* Number of GNOs in Receive_GNOs. */
+  HGraph PHG;               /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_PHGraph ZPHG;
 

@@ -314,7 +314,7 @@ static int refine_fm2 (
     for (i = 0; i < hg->nVtx; ++i)
         fprintf(fp, "%d ", part[i]);
     fprintf(fp, "\n\n");
-    Zoltan_HG_Print(zz, hg, fp);
+    Zoltan_HG_Print(zz, hg, fp, "Refinement");
     fclose(fp);
 #endif
 

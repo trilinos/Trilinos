@@ -55,9 +55,11 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   if (zhg == NULL) MEMORY_ERROR;
 
   /* Initialize the Zoltan hypergraph data fields. */
-  zhg->Global_IDs = NULL;
-  zhg->Local_IDs = NULL;
+  zhg->GIDs = NULL;
+  zhg->LIDs = NULL;
   zhg->VtxPlan = NULL;
+  zhg->Recv_GNOs = NULL;
+  zhg->nRecv_GNOs = 0;
 
   phgraph = &(zhg->PHG);
   Zoltan_HG_HGraph_Init(phgraph);
@@ -94,8 +96,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
                       "CORRECT IN PARALLEL YET -- KDD KDDKDD");
 
     Zoltan_HG_Graph_Init(&graph);
-    ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
+    ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->GIDs),
+     &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       Zoltan_HG_Graph_Free(&graph);
@@ -103,7 +105,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
     }
 
     ierr = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
-     zhg->Global_IDs, zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
+     zhg->GIDs, zhg->LIDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
      &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
@@ -129,8 +131,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      /* Geometric callbacks are registered;       */
      /* get coordinates for hypergraph objects.   */
      ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
-     ierr = Zoltan_Get_Coordinates(zz, phgraph->nVtx, zhg->Global_IDs,
-      zhg->Local_IDs, &(phgraph->nDim), &(phgraph->coor));
+     ierr = Zoltan_Get_Coordinates(zz, phgraph->nVtx, zhg->GIDs,
+      zhg->LIDs, &(phgraph->nDim), &(phgraph->coor));
   }
 #endif
 
@@ -156,8 +158,8 @@ End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
     Zoltan_HG_HGraph_Free(&(zhg->PHG));
-    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
-     &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->GIDs),
+     &(zhg->LIDs), &(zhg->Parts), zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -273,8 +275,7 @@ float *tmpwgts = NULL;
   app.vwgt = NULL;
   app.ewgt = NULL;
 
-  ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->Global_IDs),
-                             &(zhg->Local_IDs), 
+  ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs), &(zhg->LIDs), 
                              zz->Obj_Weight_Dim, &app.vwgt, 
                              &(zhg->Parts));
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -306,7 +307,7 @@ float *tmpwgts = NULL;
   /* 
    * Correlate GIDs in edge_verts with local indexing in zhg to build the
    * input HG.
-   * Use hash table to map global IDs to local position in zhg->Global_IDs.
+   * Use hash table to map global IDs to local position in zhg->GIDs.
    * Based on hashing code in Zoltan_Build_Graph.
    * KDD -- This approach is serial for now; look more closely at 
    * KDD -- Zoltan_Build_Graph when move to parallel.
@@ -321,7 +322,7 @@ float *tmpwgts = NULL;
     app.vtx_gno = (int *) ZOLTAN_MALLOC(app.nVtx * sizeof(int));
     if (!hash_nodes || !hash_tab || !app.vtx_gno) MEMORY_ERROR;
 
-    global_ids = zhg->Global_IDs;
+    global_ids = zhg->GIDs;
 
     /* Assign consecutive numbers based on the order of the ids */
     /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
@@ -562,21 +563,38 @@ float *tmpwgts = NULL;
 
   /* Send vertex weights, if any. */
 
-  if (phg->comm->nProc_x > 1 &&  
-      (phg->VtxWeightDim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS)) {
+  if (phg->VtxWeightDim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS) {
+    if (phg->comm->nProc_x > 1) {
 
-    /* Need a communication plan maping GIDs to their GNOs processors
-     * within a row communicator.  The plan is used to send vertex weights
-     * to the 2D distribution and/or to create return lists after partitioning
-     */
+      /* Need a communication plan mapping GIDs to their GNOs processors
+       * within a row communicator.  The plan is used to send vertex weights
+       * to the 2D distribution and/or to create return lists after partitioning
+       */
+  
+      for (i = 0; i < app.nVtx; i++)
+        proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
+        
+      msg_tag++;
+      ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
+                                phg->comm->row_comm, msg_tag, &nrecv);
+      zhg->nRecv_GNOs = nrecv;
 
-    for (i = 0; i < app.nVtx; i++)
-      proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
-      
-    msg_tag++;
-    ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
-                              phg->comm->row_comm, msg_tag, &nrecv);
+      zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+      if (nrecv && !recv_gno) MEMORY_ERROR;
+
+      /* Use plan to send weights to the appropriate proc_x. */
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
+                            sizeof(int), (char *) recv_gno);
+
+    }
+    else {
+      /* Save map of what needed. */
+      zhg->nRecv_GNOs = nrecv = app.nVtx;
+      zhg->Recv_GNOs = recv_gno = app.vtx_gno;
+    }
   }
+  
 
   if (phg->VtxWeightDim || phg->EdgeWeightDim) {
     nwgt = MAX(phg->nVtx * phg->VtxWeightDim, phg->nEdge * phg->EdgeWeightDim);
@@ -601,14 +619,8 @@ float *tmpwgts = NULL;
     }
     else {
       
-      recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
       recv_wgts = (float *) ZOLTAN_MALLOC(nrecv * dim * sizeof(float));
-      if (nrecv && (!recv_gno || !recv_wgts)) MEMORY_ERROR;
-
-      /* Use plan to send weights to the appropriate proc_x. */
-      msg_tag++;
-      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
-                            sizeof(int), (char *) recv_gno);
+      if (nrecv && !recv_wgts) MEMORY_ERROR;
 
       msg_tag++;
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt, 
@@ -620,11 +632,10 @@ float *tmpwgts = NULL;
           tmpwgts[idx * dim + j] = recv_wgts[i * dim + j];
       }
 
-      ZOLTAN_FREE(&recv_gno); 
       ZOLTAN_FREE(&recv_wgts);
     }
 
-    /* Need to gather weights for all vertices within column 
+    /* Reduce weights for all vertices within column 
      * to all processors within column.
      */
 
@@ -632,9 +643,12 @@ float *tmpwgts = NULL;
                   phg->comm->col_comm);
   }
 
-  if (zhg->VtxPlan && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
+  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     /* Don't need the plan long-term; destroy it now. */
     Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+    ZOLTAN_FREE(&(zhg->Recv_GNOs));
+    zhg->nRecv_GNOs = 0;
+  }
 
   /*  Send edge weights, if any */
 
@@ -697,17 +711,18 @@ End:
     Zoltan_HG_HGraph_Free(phg);
   }
   
-  Zoltan_Multifree(__FILE__, __LINE__, 11,  &app.pins, 
+  Zoltan_Multifree(__FILE__, __LINE__, 10,  &app.pins, 
                                             &app.edge_sizes, 
                                             &app.pin_procs, 
                                             &app.pin_gno, 
                                             &app.vwgt,
                                             &app.ewgt,
                                             &app.vtxdist,
-                                            &app.vtx_gno,
                                             &app.edge_gno,
                                             &hash_nodes,
                                             &hash_tab);
+  if (zhg->Recv_GNOs != app.vtx_gno) 
+    ZOLTAN_FREE(&app.vtx_gno);
   ZOLTAN_FREE(&tmp);
   ZOLTAN_FREE(&tmpwgts);
   ZOLTAN_FREE(&nonzeros);

@@ -115,9 +115,9 @@ static VCycle *newVCycle(HGraph *hg, Partition part, int *levmap, VCycle *finer)
 /*  Main partitioning function for hypergraph partitioning. */
 int Zoltan_PHG_Partition (
     ZZ *zz,               /* Zoltan data structure */
-    HGraph *hg,          /* Input hypergraph to be partitioned */
+    HGraph *hg,           /* Input hypergraph to be partitioned */
     int p,                /* Input:  number partitions to be generated */
-    Partition Parts,      /* Output:  partition #s; aligned with vertex arrays. */
+    Partition Parts,      /* Output:  partition #s; aligned with vtx arrays. */
     PHGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
     int level
     )
@@ -226,6 +226,7 @@ int Zoltan_PHG_Partition (
                     hgp->coarsepartition_str, hgp->refinement_str, p,
                     Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
                     Zoltan_PHG_hcut_size_links(&hgp->comm, hg, vcycle->part, p));
+
         if (hgp->output_level >= PHG_DEBUG_PLOT)
             Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, Parts,
                             "partitioned plot");
@@ -253,7 +254,7 @@ int Zoltan_PHG_Partition (
         vcycle = vcycle->finer;
         ZOLTAN_FREE(&del);
     }
-    
+
     ZOLTAN_TRACE_EXIT(zz, yo) ;
     return err;
 }

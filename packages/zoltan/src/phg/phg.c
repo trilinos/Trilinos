@@ -195,8 +195,8 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
   ZPHG *zoltan_hg = (ZPHG*) zz->LB.Data_Structure;
 
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
-     &zoltan_hg->Local_IDs, &zoltan_hg->Parts);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->GIDs,
+     &zoltan_hg->LIDs, &zoltan_hg->Parts);
     Zoltan_HG_HGraph_Free(&zoltan_hg->PHG);
     ZOLTAN_FREE ((void**) &zz->LB.Data_Structure);
   }
@@ -288,7 +288,7 @@ int Zoltan_PHG_Set_Param(
 
 static int Zoltan_PHG_Return_Lists(
   ZZ *zz,
-  ZPHG *zoltan_hg,
+  ZPHG *zhg,
   Partition output_parts,
   int *num_exp,
   ZOLTAN_ID_PTR *exp_gids,
@@ -304,31 +304,41 @@ int ierr = ZOLTAN_OK;
 int eproc;
 int num_gid_entries   = zz->Num_GID;
 int num_lid_entries   = zz->Num_LID;
-int nObj              = zoltan_hg->nObj;
-Partition input_parts = zoltan_hg->Parts;
-ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
-ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
+int nObj              = zhg->nObj;
+Partition input_parts = zhg->Parts;
+ZOLTAN_ID_PTR gids    = zhg->GIDs;
+ZOLTAN_ID_PTR lids    = zhg->LIDs;
+HGraph *phg           = &(zhg->PHG);
 int *outparts = NULL;     /* Pointers to output partitions. */
+int *sendbuf = NULL;  
 char *yo = "Zoltan_PHG_Return_Lists";
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
     goto End;
 
-  if (zoltan_hg->VtxPlan != NULL) {
+  outparts = (int *) ZOLTAN_MALLOC(nObj * sizeof(int));
+  if (zhg->VtxPlan != NULL) {
     /* Get the partition information from the 2D decomposition back to the
      * original owning processor for each GID.
      */
-    outparts = (int *) ZOLTAN_MALLOC(nObj * sizeof(int));
-    ierr = Zoltan_Comm_Do_Reverse(zoltan_hg->VtxPlan, msg_tag, 
-                                  (char *) output_parts, 
+    sendbuf = (int *) ZOLTAN_MALLOC(zhg->nRecv_GNOs * sizeof(int));
+    for (i = 0; i < zhg->nRecv_GNOs; i++)
+      sendbuf[i] = output_parts[VTX_GNO_TO_LNO(phg, zhg->Recv_GNOs[i])];
+    ierr = Zoltan_Comm_Do_Reverse(zhg->VtxPlan, msg_tag, 
+                                  (char *) sendbuf, 
                                   sizeof(int), NULL, (char *) outparts);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error from Zoltan_Comm_Do_Reverse");
       goto End;
     }
+
+    ZOLTAN_FREE(&sendbuf);
+    Zoltan_Comm_Destroy(&(zhg->VtxPlan));
   }
-  else
-    outparts = output_parts;
+  else {
+    for (i = 0; i < zhg->nRecv_GNOs; i++)
+      outparts[i] = output_parts[zhg->Recv_GNOs[i]];
+  }
 
   /* Count number of objects with new partitions or new processors. */
   *num_exp = 0;
@@ -376,10 +386,9 @@ char *yo = "Zoltan_PHG_Return_Lists";
 
 End:
 
-  if (zoltan_hg->VtxPlan != NULL) {
-    ZOLTAN_FREE(&outparts);
-    Zoltan_Comm_Destroy(&(zoltan_hg->VtxPlan));
-  }
+  ZOLTAN_FREE(&outparts);
+  if (zhg->Recv_GNOs) ZOLTAN_FREE(&(zhg->Recv_GNOs));
+  zhg->nRecv_GNOs = 0;
 
   return ierr;
 }
@@ -414,13 +423,13 @@ void Zoltan_PHG_HGraph_Print(
   fprintf (fp, "Vertices (GID, LID, index)\n");
   for (i = 0; i < zoltan_hg->nObj; i++) {
     fprintf(fp, "(");
-    ZOLTAN_PRINT_GID(zz, &zoltan_hg->Global_IDs[i * num_gid]);
+    ZOLTAN_PRINT_GID(zz, &zoltan_hg->GIDs[i * num_gid]);
     fprintf(fp, ", ");
-    ZOLTAN_PRINT_LID(zz, &zoltan_hg->Local_IDs [i * num_lid]);
+    ZOLTAN_PRINT_LID(zz, &zoltan_hg->LIDs [i * num_lid]);
     fprintf(fp, ", %d)\n", i);
   }
 
-  Zoltan_HG_Print(zz, hg, fp);
+  Zoltan_HG_Print(zz, hg, fp, "Build");
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 

@@ -88,6 +88,15 @@ static int first_time = 1;
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
+  else if (phg->comm->nProc == 1) {
+    /* Only one processor; no gather needed. */
+    ierr = hgp->CoarsePartition(zz, phg, numPart, part, hgp);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from CoarsePartition.");
+      goto End;
+    }
+  }
   else {
 #ifdef KDDKDD_NOT_READY_YET
     ierr = hgp->CoarsePartition(zz, phg, numPart, part, hgp);
@@ -145,14 +154,14 @@ static int first_time = 1;
         part[i] = spart[si];
       }
     } 
+    Zoltan_HG_HGraph_Free(shg);
+    ZOLTAN_FREE(&shg);
+    ZOLTAN_FREE(&spart);
 #endif  /* KDDKDD_NOT_READY_YET */
   }
   
 End:
 
-  Zoltan_HG_HGraph_Free(shg);
-  ZOLTAN_FREE(&shg);
-  ZOLTAN_FREE(&spart);
   return ierr;
 }
 
