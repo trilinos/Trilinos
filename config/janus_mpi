@@ -2,8 +2,10 @@
 	--with-blas=$TFLOPS_XDEV/tflops/lib/libcsmath.a \
 	--with-lapack=$TFLOPS_XDEV/tflops/lib/scalapack/liblapack.a \
 	--enable-referencey12m \
-	CXX=iCC CC=icc F77=if77 \
-	--with-cxxflags="-cougar -Wc,-tlocal -DTFLOP" \
-	--with-fflags=-cougar --with-cflags=-cougar \
-	CPPFLAGS=-I$TFLOPS_XDEV/tflops/include/CC/RW \
-	LDFLAGS="-L$TFLOPS_XDEV/tflops/lib/RW -lstd -lmpi -lm"
+	CXX=ciCC CC=cicc F77=cif77 \
+	--with-cxxflags="-g -rwstl -Wc,-tlocal" \
+	--enable-mpi --with-mpi-cxx=ciCC \
+	--with-mpi-cc=cicc --with-mpi-f77=cif77 \
+     --with-mpi-include=-I. --with-mpi-libdir=-L. --with-mpi-libs=-lmpi \
+     CPPFLAGS=-DTFLOP 
+
