@@ -1,4 +1,4 @@
-% @HEADER
+% HEADER
 % ***********************************************************************
 % 
 %            Trilinos: An Object-Oriented Solver Framework
@@ -407,7 +407,7 @@ Epetra_LinearProblem* Problem;
 \end{verbatim}
 We suppose that \verb!A! and 
 \verb!Problem! are properly set, and
-method \verb~FillComplete()~ has been called. At this point, we can create teh
+method \verb~FillComplete()~ has been called. At this point, we can create the
 preconditioner as
 \begin{verbatim}
 Teuchos::ParameterList List;
@@ -427,6 +427,63 @@ as call \verb!AztecOO.Iterate()! as required.
 Macro \verb!IFPACK_CHK_ERR()! can be used to check return values. If the
 return value if different from 0, the macro prints out a warning message on
 \verb!cerr!, and returns.
+
+\smallskip
+
+For more details about the \teuchos\ parameters list we refer to the
+\teuchos\ documentation.  Table~\ref{tab:teuchos} briefly reports the most
+important methods of this class.
+\ifpack\ requires just a very basic usage of parameters list.
+Input parameters are set via method \verb!set(Name,Value)!, where
+\verb!Name! is a string containing the parameter name, and \verb!Value! is the
+specified parameter value, whose type can be any C++ object or pointer. 
+
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+    \verb!set(Name,Value)! & Add entry \verb!Name! with value and type
+    specified by \verb!Value!. Any C++ type (like int, double, a
+    pointer, etc.) is valid. \\
+    \verb!get(Name,DefValue)! & Get value (whose type is automatically
+    specified by \verb!DefValue!). If not present, return
+    \verb!DefValue!. \\
+    \verb!subList(Name)! & Get a reference to sublist \verb!List!. If not
+    present, create the sublist. \\
+    \hline
+  \end{tabular}
+  \caption{Some methods of Teuchos::ParameterList class.}
+  \label{tab:teuchos}
+\end{table}
+
+\smallskip
+
+Note that \ifpack's preconditioners can be used to mimic the behavior
+of the corresponding method as a solver. For example, the following code uses
+Jacobi to solve the linear system, with a starting solution {\tt X} and
+right-hand side {\tt Y}. The computed solution will be returned in {\tt X}.
+The residual is computed and printed on screen every 50
+iterations\footnote{Note that the computation of the residual is expensive, as
+requires a distributed matrix-vector product. For these reasons, it is
+supposed that the \ifpack's preconditioners will be used as solvers only for
+debugging purposes.}
+\begin{verbatim}
+Epetra_RowMatrix* A;   // this is the linear system matrix
+Epetra_MultiVector* X; // this is the solution
+Epetra_MultiVector* Y; // this is the rhs
+
+Ifpack_PointPreconditioner Jacobi(A);
+Teuchos::ParameterList List;
+List.set("point: sweeps", 1550);
+List.set("point: zero starting solution", false);
+List.set("point: print frequency", 50);
+
+Jacobi.SetParameters(List);
+Jacobi.Compute();
+
+Jacobi.Apply(X,Y);
+\end{verbatim}
 
 %-----------------------------------------------------------------------------
 \section{Block Preconditioners}
@@ -603,7 +660,7 @@ Partitioner->Compute();
 The list of parameters accepted by \verb!Ifpack_Partitioner! objects is
 reported below.
 
-\smallskip
+\medskip
 
 \choicebox{\tt partitioner: local blocks}{[{\tt int}] Number of local blocks.
   Default: {\tt 1}.}
@@ -655,8 +712,8 @@ data to solve the linear system with any given $A_{i,i}$.
   preconditioner has to be used to apply the inverse of each sparse block.
 
 The following fragment of code illustrates how to use the direct factorization
-of Amesos (through class \verb!Ifpack_Amesos!) with sparse containers. The
-preconditioner will be a block Gauss-Seidel one.
+of Amesos (through class \verb!Ifpack_Amesos!\footnote{This requires \ifpack\
+	   to be configured with option {\tt --enable-amesos}.}) with sparse containers. The preconditioner will be a block Gauss-Seidel one.
 
 \begin{verbatim}
 #include "Ifpack_GaussSeidel.h"
@@ -672,10 +729,16 @@ Ifpack_Preconditioner* Prec =
 
 Teuchos::ParameterList List;
 List.set("block: sweeps", 2);
+List.set("amesos: solver type", "Amesos_Klu");
 Prec->SetParameters(List);
 Prec->Compute();
 \end{verbatim}
 
+Option \verb!amesos: solver type! specifies the \amesos\ solver that
+has to be adopted. If the selected solver is not available, then
+\verb!Ifpack_Amesos! will create an \verb!Amesos_Klu! solver\footnote{KLU is
+  compiled by default with \amesos. Please consult the \amesos\ documentation
+    for more details.}
 As {\sl any} \ifpack\ preconditioner can be used, one can also adopt, for
 instance, a point Gauss-Seidel algorithm in each block:
 \begin{verbatim}
@@ -686,6 +749,29 @@ Ifpack_Preconditioner* Prec =
 A call to \verb!SetParameters(List)! will set the parameters for the block
 Jacobi preconditioner, and for all the point Gauss-Seidel preconditioners as
 well.
+
+\medskip
+
+The list of all the parameters recognized by block preconditioner is reported
+below.
+
+\medskip
+
+\choicebox{\tt block: sweeps}{[{\tt int}] Number of sweeps (or steps) of the
+  preconditioner. Default: {\tt 1}.}
+
+\choicebox{\tt block: damping factor}{[{\tt double}] This is the value for $\omega$ 
+  in the block counterpart of formulae (\ref{eq:jacobi}), (\ref{eq:gs}), (\ref{eq:sor}) and
+    (\ref{eq:ssor}). Default: {\tt 1.0}.}
+
+\choicebox{\tt block: zero starting solution}{[{\tt bool}] If {\tt true},
+  the starting solution is always the zero vector. If {\tt false} and 
+   {\tt point: sweeps} is greater than one, the starting solution is
+  as specified by the user in method {\tt ApplyInverse()}.
+    Default: {\tt true}.}
+
+\choicebox{\tt block: print level}{[{\tt int}] Level of print, from 0 (silent)
+  to 10 (verbose). Default: {\tt 0}.}
 
 %-----------------------------------------------------------------------------
 \section{Incomplete Factorization Preconditioners}
@@ -943,6 +1029,27 @@ see for example the documentation of the ML
 package~\cite{ml-guide}.
 \end{remark}
 
+The parameters recognized by \verb~Ifpack_AdditiveSchwarz~ are reported below.
+
+\smallskip
+
+\choicebox{\tt schwarz: combine mode}{[{\tt Epetra\_CombineMode}].
+Default: \c Insert.
+It Can be assume of the following values:
+{\tt Add}: Components on the receiving processor will be added together;
+{\tt Zero}: Off-processor components will be ignored;
+{\tt Insert}: Off-processor components will be inserted into locations on
+receiving processor replacing existing values.
+{\tt Average}: Off-processor components will be averaged with existing;
+{\tt AbsMax}: Magnitudes of Off-processor components will be
+maxed with magnitudes of existing components on the receiving
+processor.}
+
+\choicebox{\tt schwarz: compute condest}{[{\tt bool}]. If {\tt true}, 
+  method {\tt Compute()} will
+  estimate the condition number of the preconditioner.
+  Default: {\tt false}.}
+
 %-----------------------------------------------------------------------------
 \subsection{Additive Schwarz with Exact Local Solves}
 \label{sec:as_amesos}
@@ -1012,7 +1119,7 @@ The following code reports an example of use.
 \begin{verbatim}
 int OverlapLevel = 2;
 Teuchos::ParameterList List;
-List.set("partitioner: overlap level", OverlapLevel);
+List.set("partitioner: overlap", OverlapLevel);
 
 Epetra_CrsMatrix* CrsA; // CrsA is FillComplete()'d.
 
@@ -1023,9 +1130,20 @@ Ifpack_Preconditioner* Prec =
   IFPACK_CHK_ERR(Prec->Compute());
 \end{verbatim}
 
-Note that \verb~partitioner: overlap level~ refers to the overlap among the
-{\sl blocks}, while \verb~OverlapLevel~ to the overlap among the subdomains.
-These two parameters can differ.
+The parameters that can influence class \verb!Ifpack_CrsAdditiveSchwarz! are
+reported below\footnote{Also all parameters for class \tt
+  Ifpack\_AdditiveSchwarz are recognized.}.
+
+\choicebox{\tt partitioner: overlap level}{[{\tt int}]. Specifies the
+  level of overlap among the
+{\sl blocks}. The overlap among the subdomains (or processes) is defined
+in the constructor phase (value \verb~OverlapLevel~ in the previous examples).
+These two parameters can differ. Default: {\tt 0}.}.
+
+\choicebox{\tt partitioner: type}{[{\tt string}]. Specifies the
+  \ifpack\ partitioner to use to decompose the local graph. It can be:
+  {\tt linear}, {\tt greedy}, {\tt metis}, {\tt equation}. Default:
+  {\tt metis}.}
 
 %-----------------------------------------------------------------------------
 \subsection{Additive Schwarz with Inexact Local Solves}
@@ -1097,7 +1215,8 @@ need to create a graph, and then a partitioner:
 Ifpack_Graph* Graph = 
   new Ifpack_Graph_Epetra_RowMatrix(A);
 
-Ifpack_Partitioner* Partitioner = 
+. Default:
+{\tt metis}.}Ifpack_Partitioner* Partitioner = 
   new Ifpack_METISPartitioner(Graph);
 
 IFPACK_CHK_ERR(Partitioner->SetParameters(List));
@@ -1182,7 +1301,7 @@ A general block Jacobi iteration can be defined as follows:
 \begin{eqnarray}
 && \mbox{On each processor, for each block $i$, Do} \\
 && \label{eq:gen_b_jacobi}
-x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k-1)}.
+x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k-1)}).
 \end{eqnarray}
 In Equation (\ref{eq:gen_b_jacobi}), it is understood that the $x$ vectors
 refer to the local components.
@@ -1203,7 +1322,7 @@ compute the residual. The algorithm is as follows:
 \begin{eqnarray}
 && \mbox{On each processor, for each block $i$, Do} \\
 && \label{eq:gen_b_gs}
-x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}.
+x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}).
 \end{eqnarray}
 
 %-----------------------------------------------------------------------------
