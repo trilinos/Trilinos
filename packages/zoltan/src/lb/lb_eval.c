@@ -39,7 +39,7 @@ extern "C" {
 /*****************************************************************************/
 
 #define NUM_STATS 5 /* Number of graph stats other than vertex/edge weights */
-#define NUM_STATS_PART 4 /* Number of graph stats for partitions. */
+#define NUM_STATS_PART 3 /* Number of graph stats for partitions. */
 
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
   int *, float *, int, int, int, int *, int *, int *, int *, float *,
@@ -85,7 +85,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
-  int *proc_count, *nbors_proc;
+  int *proc_count, *part_count, *nbors_proc;
   float imbal[NUM_STATS];
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, *part_sizes, temp;
   int *edges_per_obj;
@@ -117,7 +117,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   tmp_vwgt = tmp_cutwgt = NULL;
   vwgts = ewgts = NULL;
   nbors_global = NULL;
-  nbors_proc = proc_count = NULL;
+  nbors_proc = proc_count = part_count = NULL;
   vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
   nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
   edges_per_obj = NULL;
@@ -254,7 +254,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
 
     for (i=0; i<zz->Num_Proc; i++)
-      proc_count[i] = 0;
+      proc_count[i] = -1;
     for (i=0; i<zz->Edge_Weight_Dim; i++)
       tmp_cutwgt[i] = 0;
 
@@ -315,7 +315,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
     /* Compute the number of adjacent procs */
     for (j=0; j<zz->Num_Proc; j++)
-      if (proc_count[j]>0) num_adj++;
+      if (proc_count[j]>=0) num_adj++;
   }
   else{
     /* No graph query functions available */
@@ -640,7 +640,8 @@ static int eval_edge_list(
   int *cut_arr,               /* # of partition cut edges. */
   float *cutwgt_arr,          /* weights of partition cut edges */
   int *bndry_arr,             /* # of partition boundary objs */
-  int *commvol_arr            /* communication volume (for partitions) */
+  int *commvol_arr           /* communication volume (for partitions) */
+  /* int *part_count            TODO:  # edges to each partition  */
 )
 {
 /* Function to evaluate edge cuts, etc., for an object's edge list. */
@@ -663,7 +664,8 @@ int proc_flag, part_flag;
         (*num_boundary)++;
         proc_flag = 1;
       }
-      proc_count[nbors_proc[j]]++;
+      proc_count[nbors_proc[j]] = k;  /* overwrite proc_count with 
+                                         current object number */
     }
     if (compute_part){
       if (nbors_proc[j] == zz->Proc){
@@ -693,8 +695,9 @@ int proc_flag, part_flag;
       }
       else
         p = -1; /* Assume remote data belong to different partition. */
-                /* EBEB: This is not necessarily true! */
-                /* Answers may be incorrect. Fix: Use Ddirectory. */
+                /* TODO: This is not necessarily true! */
+                /* Answers may be incorrect. We need to get */
+                /* the remote partition numbers, perhaps via DDirectory */
 
       if (p != part[k]){
         cut_arr[part[k]]++;
@@ -708,6 +711,11 @@ int proc_flag, part_flag;
       }
     }
   }
+  /* compute comm. vol. as number of procs there are edges to */
+  for (i=0; i<zz->Num_Proc; i++){
+    if (proc_count[i]==k) (*comm_vol)++;
+  }
+  /* TODO: also compute comm_vol wrt partitions here */
 End:
   return ierr;
 }
