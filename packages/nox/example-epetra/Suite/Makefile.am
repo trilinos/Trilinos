@@ -36,7 +36,8 @@ noinst_PROGRAMS = $(EXAMPLE)
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/DennisSchnabel.C $(srcdir)/DennisSchnabel.H \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Problem_Interface.H $(srcdir)/GenericProblem.H
+	$(srcdir)/Problem_Interface.H \
+	$(srcdir)/GenericProblem.C $(srcdir)/GenericProblem.H
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a

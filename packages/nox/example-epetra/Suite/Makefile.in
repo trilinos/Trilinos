@@ -112,7 +112,6 @@ MPI_F77_EXISTS = @MPI_F77_EXISTS@
 PACKAGE = @PACKAGE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 RANLIB = @RANLIB@
-STRIP = @STRIP@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
@@ -128,7 +127,8 @@ noinst_PROGRAMS = $(EXAMPLE)
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/DennisSchnabel.C $(srcdir)/DennisSchnabel.H \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Problem_Interface.H $(srcdir)/GenericProblem.H
+	$(srcdir)/Problem_Interface.H \
+	$(srcdir)/GenericProblem.C $(srcdir)/GenericProblem.H
 
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
@@ -153,7 +153,8 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-DennisSchnabel.$(OBJEXT) \
-	example-FiniteElementProblem.$(OBJEXT)
+	example-FiniteElementProblem.$(OBJEXT) \
+	example-GenericProblem.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
 
@@ -166,7 +167,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-DennisSchnabel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po
+@AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example-GenericProblem.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -197,6 +199,7 @@ clean-noinstPROGRAMS:
 example-Example.$(OBJEXT): $(srcdir)/Example.C
 example-DennisSchnabel.$(OBJEXT): $(srcdir)/DennisSchnabel.C
 example-FiniteElementProblem.$(OBJEXT): $(srcdir)/FiniteElementProblem.C
+example-GenericProblem.$(OBJEXT): $(srcdir)/GenericProblem.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
@@ -210,6 +213,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-DennisSchnabel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-GenericProblem.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -261,6 +265,18 @@ example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+example-GenericProblem.o: $(srcdir)/GenericProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/GenericProblem.C' object='example-GenericProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-GenericProblem.Po' tmpdepfile='$(DEPDIR)/example-GenericProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-GenericProblem.o `test -f '$(srcdir)/GenericProblem.C' || echo '$(srcdir)/'`$(srcdir)/GenericProblem.C
+
+example-GenericProblem.obj: $(srcdir)/GenericProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/GenericProblem.C' object='example-GenericProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-GenericProblem.Po' tmpdepfile='$(DEPDIR)/example-GenericProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-GenericProblem.obj `cygpath -w $(srcdir)/GenericProblem.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
