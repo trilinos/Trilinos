@@ -318,6 +318,32 @@ int unitTests(bool verbose, bool debug) {
 	returnierr += ierr;
 	ierr = 0;
 
+	// check updates
+	Tpetra::Vector<OrdinalType, ScalarType> u1(vectorspace);
+	Tpetra::Vector<OrdinalType, ScalarType> u2(vectorspace);
+	Tpetra::Vector<OrdinalType, ScalarType> u3(vectorspace);
+
+	u1[0] = -1; u1[1] = 2; u1[2] = -1;
+	u1[3] = -1; u1[4] = 2; u1[5] = -1;
+	u1[6] = -1; u1[7] = 2; u1[8] = -1;
+	u1[9] = 2;
+
+	u2[0] = 2; u2[1] = 3; u2[2] = 4; u2[3] = 5;
+	u2[4] = 4; u2[5] = 3; u2[6] = 2; u2[7] = 1;
+	u2[8] = 8; u2[9] = 9;
+
+	cout << "before update:" << endl;
+	cout << "u1:" << endl << u1 << endl;
+	cout << "u2:" << endl << u2 << endl;
+	cout << "u3:" << endl << u3 << endl << endl;
+
+	u3.update(1.0, u1, 2.0, u2, 0.0);
+
+	cout << "after update:" << endl;
+	cout << "u1:" << endl << u1 << endl;
+	cout << "u2:" << endl << u2 << endl;
+	cout << "u3:" << endl << u3 << endl << endl;
+
 	// finish up
 	if(verbose)
 		if(returnierr == 0)

@@ -156,15 +156,6 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 	// should be identical to b
 	Tpetra::Vector<int, double> b_t(b->Values(), b->GlobalLength(), vectorspace);
 
-	/*cout << "=============================================================" << endl;
-	cout << "map:" << endl << *map << endl; 
-	cout << "vectorspace:" << endl << vectorspace << endl; 
-	cout << "xexact:" << endl << *xexact << endl; 
-	cout << "xexact_t:" << endl << xexact_t << endl; 
-	cout << "b:" << endl << *b << endl; 
-	cout << "b_t:" << endl << b_t << endl; 
-	cout << "=============================================================" << endl;*/
-
 	// ------------------------------------------------------------------
 	// other initialization stuff
 	// ------------------------------------------------------------------
@@ -206,12 +197,6 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 	At.fillComplete();
 	double tpetraFillCompleteTime = timer.ElapsedTime() - epetraFillCompleteTime;
 
-	/*cout << "=============================================================" << endl;
-	cout << "A:" << endl << *A << endl;
-	cout << "Ae:" << endl << Ae << endl;
-	cout << "At:" << endl << At << endl; 
-	cout << "=============================================================" << endl;*/
-
 	// ------------------------------------------------------------------
 	// measure time to do multiply/apply
 	// ------------------------------------------------------------------
@@ -233,7 +218,7 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
   At.setFlopCounter(flops);
   tstart = timer.ElapsedTime();
   for(int i = 0; i < niters; i++) 
-		At.apply(xexact_t, bcomp_t);
+		At.apply(xexact_t, bcomp_t); // At * xexact_t = bcomp_t
   double tpetraMatvecTime = timer.ElapsedTime() - tstart;
   double tpetraNumFlops = At.getFlops(); // Total number of Tpetra FLOPS in Multiplies
 

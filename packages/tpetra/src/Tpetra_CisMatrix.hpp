@@ -323,11 +323,21 @@ public:
     axy.initializeStructure(data().HbMatrix_);
     axy.initializeValues(data().HbMatrix_);
 
+		/*cout << "=BEFORE APPLY================================================" << endl;
+		cout << "x:" << endl << x << endl;
+		cout << "y:" << endl << y << endl;
+		cout << "=============================================================" << endl;*/
+
     // do Kokkos apply operation
     axy.apply(kx, ky);
 
+		/*cout << "=AFTER APPLY=================================================" << endl;
+		cout << "x:" << endl << x << endl;
+		cout << "y:" << endl << y << endl;
+		cout << "=============================================================" << endl;*/
+
     // update flops counter: 2 * nnz
-    updateFlops(data().numMyNonzeros_);
+    updateFlops(data().numMyNonzeros_ + data().numMyNonzeros_);
   }
   
   //! Returns the global one norm of the matrix
