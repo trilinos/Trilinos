@@ -36,4 +36,10 @@ extern int chaco_dist_graph(MPI_Comm, int, int *, int **, int **, int **,
 extern int DEBUG_TRACE;
 extern int CHECK_INPUT;
 extern int DEBUG_INPUT;
+
+#ifndef TRUE
+#define FALSE (0)
+#define TRUE  (1)
+#endif /* !TRUE */
+
 #endif
