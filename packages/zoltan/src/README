@@ -1,0 +1,67 @@
+
+Top-Level Zoltan Library Directory
+
+
+DOCUMENTATION
+-------------
+docs            -- Documentation for the Zoltan library.
+docs/octree     -- Documentation for RPI's octree/SFC partitioner.  (Luis'
+                   final report).
+docs/user_guide -- Framemaker files containing the user's guide and 
+                   developer's guide.
+
+ZOLTAN LIBRARY FILES
+--------------------
+
+Makefile        -- Top-level Zoltan Makefile.  Contains targets for compilation
+                   on the 980 LAN.
+
+Makefile_sub    -- Lower-level Makefile template.  Copied to Obj_target
+                   directories when targets are compiled.
+
+lb              -- Interface definitions, user data type definitions,
+                   load-balancing data structure definitions, interface
+                   functions, and functions related to the load-balancing
+                   interface and migration-help tools.
+
+comm            -- Routines from Hendrickson and Plimpton's unstructured
+                   communication package.
+
+all             -- Memory allocation functions.
+
+par             -- Parallel computing utilities.
+
+rcb             -- Steve Plimpton's implementation of Recursive Coordinate
+                   Bisection.
+
+oct             -- RPI's octree partitioning and space-filling curves 
+                   algorithms.
+
+OTHER CODE (not compiled into the Zoltan library)
+-------------------------------------------------
+
+gr              -- Some graph manipulation routines using tree-based and
+                   hash-table based implementations of graphs.  These 
+                   routines were written before the load-balancing interface,
+                   and, thus, have some outdated features (e.g., IDs should
+                   be replaced by LB_GIDs).  These tools are only partially
+                   developed.
+
+vx              -- Some vertex manipulation routines that work with the 
+                   graph routines in the gr directory.  These tools are only
+                   partially developed.
+
+id              -- Some object ID manipulation routines that work with the
+                   graph routines in the gr directory.  These routines are
+                   probably all outdated and should be replaced by the
+                   LB_GID and LB_LID manipulation macros.  I'll keep them
+                   around only because the graph routines may currently use
+                   them.  Otherwise, they could be cvs removed.
+
+ch              -- Routines developed by Hendrickson and Leland to read Chaco
+                   input files and build graphs using the graph routines in
+                   the gr directory.  They were developed in a (later 
+                   discarded) attempt to read Chaco input files and balance
+                   them with Zoltan.  The routines are only partially 
+                   developed.
+

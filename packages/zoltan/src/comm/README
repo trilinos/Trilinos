@@ -1,0 +1,12 @@
+
+COMM DIRECTORY -- Hendrickson and Plimpton's unstructured communication package.
+--------------------------------------------------------------------------------
+
+comm_const.h   -- Comm_Obj data structure definition and prototypes for 
+                  communication package functions.
+
+comm.c         -- Communication package routines comm_create, comm_do, and 
+                  comm_destroy.  FORTRAN wrappers for these routines.
+                  Sorting routine (debug_sort2_int_int) to give deterministic
+                  order to messages (for debugging only).
+
