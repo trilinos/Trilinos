@@ -532,7 +532,7 @@ int       LB_Malloc_Num()
  * int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
  *                       LB_SPECIAL_MALLOC_TYPE type)
  *
- *   lb    -- the load balancing object in use
+ *   lb    -- the load balancing structure in use
  *   array -- int**, struct LB_GID**, or struct LB_LID**; returned as a
  *            pointer to the allocated space
  *   size  -- number of elements to be allocated in the array

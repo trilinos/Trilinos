@@ -24,7 +24,7 @@
 
 
 void LB_Free_Structure(
-LB *lb)				/* load balance object */
+LB *lb)				/* load balance structure */
 {
 /*
  * Free any persistent memory associated with a method.
