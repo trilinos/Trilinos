@@ -45,9 +45,6 @@ extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 // ============================================================================
 void ML_Epetra::MultiLevelPreconditioner::RandomAndZero(double * tmp_rhs, double * tmp_sol, int size)
 {
-  // does not work with Maxwell
-  if( ml_ == 0 ) exit( EXIT_FAILURE );
-
   // create random numbers between 0.5 and 1.0
   ML_random_vec(tmp_rhs, size, ml_->comm);
   for( int i=0 ; i<size ; ++i ) tmp_rhs[i] = 0.5+0.25*tmp_rhs[i];
@@ -58,6 +55,12 @@ void ML_Epetra::MultiLevelPreconditioner::RandomAndZero(double * tmp_rhs, double
 // Visualize aggregates and (for XYZ format) also plot vectors
 void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 {
+
+  // does not work with Maxwell
+  if( ml_ == 0 ) {
+    cerr << ErrorMsg_ << "Visualization does not work (yet) with Maxwell..." << endl;
+    return;
+  }
 
   string Prefix = Prefix_;
 
@@ -72,12 +75,33 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 
   assert( NumDimensions != 0 );
 
+  // stats about level matrix sizes
+  if( verbose_ ) 
+    cout << endl << "- number of rows for each level's matrix:" << endl << endl;
+
+  for( int ilevel=0 ; ilevel < NumLevels_ ; ++ilevel ) {
+    int imin, iavg, imax;
+    int Nrows = ml_->Amat[LevelID_[ilevel]].outvec_leng/NumPDEEqns_;
+    Comm().MinAll(&Nrows,&imin,1);
+    Comm().MaxAll(&Nrows,&imax,1);
+    Comm().SumAll(&Nrows,&iavg,1); iavg /= Comm().NumProc();
+  
+    if( verbose_ ) {
+      printf( "\t(level %d) rows per process (min) = %d\n", ilevel, imin);
+      printf( "\t(level %d) rows per process (avg) = %d\n", ilevel, iavg);
+      printf( "\t(level %d) rows per process (max) = %d\n", ilevel, imax);
+      cout << endl;
+    }
+  } 
+ 
   // compute the coordinates for each level (that is, the
   // center of gravity, as no mesh is really available for
   // coarser levels)
   ML_Aggregate_Stats_ComputeCoordinates(ml_, agg_,
 					x_coord, y_coord, z_coord);
-  // few stats
+  if( verbose_ ) 
+    cout << endl << "- analysis of the computational domain (finest level):" 
+         << endl << endl;
   ML_Aggregate_Stats_Analyze(ml_,agg_);
 
   // prepare output format. Now it can be:
@@ -124,6 +148,9 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
     VizPostSmoother = false;
     VizCycle = false;
   }
+
+  if( verbose_ ) 
+    cout << endl << "- visualization:" << endl << endl;
 
   // cycle over all levels
 
@@ -177,7 +204,7 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 
       // increase the number of applications of the smoother
       int old_ntimes = ptr->ntimes;
-      ptr->ntimes = 10;
+      ptr->ntimes = NumAggrSmoother;
       ML_Smoother_Apply(ptr, 
 			ml_->Amat[ilevel].outvec_leng,
 			tmp_sol,

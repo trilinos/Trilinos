@@ -1585,29 +1585,19 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
 
   Nrows = ml->Amat[finest_level].outvec_leng/num_PDE_eqns;
 
-  imin = ML_gmin_int(Nrows,comm);
-  iavg = ML_gsum_int(Nrows,comm)/(comm->ML_nprocs);
-  imax = ML_gmax_int(Nrows,comm);
-  
-  if(  comm->ML_mypid == 0 ) {
-    printf( "(level %d) rows per process (min) = %d\n", finest_level, imin);
-    printf( "(level %d) rows per process (avg) = %d\n", finest_level, iavg);
-    printf( "(level %d) rows per process (max) = %d\n", finest_level, imax);
-  }
-  
   ML_Info_DomainDecomp( info[finest_level], comm, &H, &h );
     
   ML_Aggregate_AnalyzeVector( 1, &H,
 			     &dmin, &dmax, &davg, &dstd, comm );
 
   if(  comm->ML_mypid == 0 ) {
-    printf( "(level %d) Stats : subdomain linear dimension (min) = %f\n",
+    printf( "\t(level %d) Subdomain linear dimension (min) = %f\n",
 	   finest_level,
 	   dmin );
-    printf( "(level %d) Stats : subdomain linear dimension (avg) = %f\n",
+    printf( "\t(level %d) Subdomain linear dimension (avg) = %f\n",
 	   finest_level,
 	   davg );
-    printf( "(level %d) Stats : subdomain linear dimension (max) = %f\n",
+    printf( "\t(level %d) Subdomain linear dimension (max) = %f\n",
 	   finest_level,
 	   dmax );
     puts("");
@@ -1617,13 +1607,13 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
 			     &dmin, &dmax, &davg, &dstd, comm );
 
   if(  comm->ML_mypid == 0 ) {
-    printf( "(level %d) Stats : element linear dimension (min) = %f\n",
+    printf( "\t(level %d) Element linear dimension (min) = %f\n",
 	   finest_level,
 	   dmin );
-    printf( "(level %d) Stats : element linear dimension (avg) = %f\n",
+    printf( "\t(level %d) Element linear dimension (avg) = %f\n",
 	   finest_level,
 	   davg );
-    printf( "(level %d) Stats : element linear dimension (max) = %f\n",
+    printf( "\t(level %d) Element linear dimension (max) = %f\n",
 	   finest_level,
 	   dmax );
     puts("");
@@ -1632,6 +1622,9 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   /* ********************************************************************** */
   /* Statistics about the ratio aggregates/nodes for each level (globally)  */
   /* ********************************************************************** */
+
+  if( ml->comm->ML_mypid == 0 ) 
+    printf("\n- aggregates for each level:\n\n");
 
   for( ilevel=begin ; ilevel<end ; ilevel+=diff ) {
 
@@ -1699,21 +1692,22 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
 	    if( itemp2[i] < imin ) imin =  itemp2[i];
 	  }
 		 
-	  printf( "(level %d) : NumAggr = %5d, NumNodes = %d\n",
+	  printf( "\t(level %d) : NumAggr = %5d, NumNodes = %d\n",
 		  ilevel,
 		  Naggregates_global,Nrows_global);
-	  printf( "(level %d) : NumAggr/NumNodes  (avg)   = %7.5f %%\n",
+	  printf( "\t(level %d) : NumAggr/NumNodes  (avg)   = %7.5f %%\n",
 		  ilevel,
 		  100.0*Naggregates_global/Nrows_global );
-	  printf( "(level %d) : NumNodes per aggr (min)   = %d\n",
+	  printf( "\t(level %d) : NumNodes per aggr (min)   = %d\n",
 		  ilevel,
 		  imin);
-	  printf( "(level %d) : NumNodes per aggr (avg)   = %d\n",
+	  printf( "\t(level %d) : NumNodes per aggr (avg)   = %d\n",
 		  ilevel,
 		  Nrows_global/Naggregates_global);
-	  printf( "(level %d) : NumNodes per aggr (max)   = %d\n",
+	  printf( "\t(level %d) : NumNodes per aggr (max)   = %d\n",
 		  ilevel,
 		  imax);
+	  puts("");
 	}
     }
 	
@@ -1775,14 +1769,15 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
 	  dsum += dtemp[i];
 	}
 
-	printf( "(level %d) : aggregate linear dimension (min) = %f\n",
+	printf( "\t(level %d) : aggregate linear dimension (min) = %f\n",
 	       ilevel, dmin );
-	printf( "(level %d) : aggregate linear dimension (avg) = %f\n",
+	printf( "\t(level %d) : aggregate linear dimension (avg) = %f\n",
 	       ilevel,
 	       dsum/Naggregates_global );
-	printf( "(level %d) : aggregate linear dimension (max) = %f\n",
+	printf( "\t(level %d) : aggregate linear dimension (max) = %f\n",
 	       ilevel,
 	       dmax );
+	puts("");
       }
       ML_free(dtemp);
     }
@@ -1849,7 +1844,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 		level );
 
       if( comm->ML_mypid == 0 ) {
-	printf("(level %d) : Writing OpenDX file `%s'\n",
+	printf("\t(level %d) : Writing OpenDX file `%s'\n",
 	       level, graphfile );
       }
       ML_Aggregate_VisualizeWithOpenDX( info[level], graphfile,
@@ -1871,7 +1866,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 		level );
 
       if( comm->ML_mypid == 0 ) 
-	printf("(level %d) : Writing XYZ file `%s'\n",
+	printf("\t(level %d) : Writing XYZ file `%s'\n",
 	       level, graphfile );
 
       ML_Aggregate_VisualizeXYZ(info[level], graphfile, comm, values);

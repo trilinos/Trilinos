@@ -385,7 +385,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   ML_Operator *Amatrix = (ML_Operator *)(info.Amatrix);
   double *x = info.x;
   double *y = info.y;
-  int local_or_global = info.local_or_global;
+  double *z = info.z;
   int *graph_decomposition = info.graph_decomposition;
   int Naggregates = info.Naggregates;
   int mypid = comm->ML_mypid;
@@ -397,6 +397,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   char * str;
   char filemode[2];
   int Nlocal = info.Nlocal;
+  int * reorder = NULL, ok;
 
   /* ------------------- execution begins --------------------------------- */
 
@@ -419,6 +420,54 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   str = getenv("ML_VIZ_AGGR");
   if( str != NULL ) AggrToVisualize = atoi(str);
 
+  /* may need to reshuffle the aggregate ordering */
+  if( vector == NULL && str == NULL ) {
+
+    reorder = (int *) malloc( sizeof(int) * Naggregates );
+
+    if( reorder == NULL ) {
+      fprintf( stderr,
+	       "*ML*ERR* not enough memory for %d bytes\n"
+	       "*ML*ERR* (file %s, line %d)\n",
+	       (int)sizeof(int) * Naggregates,
+	       __FILE__,
+	       __LINE__ );
+      exit( EXIT_FAILURE );
+    }
+    for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
+
+    srand(0); /* Initialize random seed */
+    
+    for( i=0 ; i<Naggregates ; ++i ) {
+
+      do {
+
+	ok = 0;
+	
+	j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
+
+	if( reorder[j] == -1 && j<Naggregates ) {
+	  reorder[j] = i;
+	  ok = 1;
+	}
+      } while( ok == 0 );
+
+    }
+
+    for( i=0 ; i<Naggregates ; ++i ) {
+      if( reorder[i] < 0 || reorder[i] >= Naggregates ) {
+	fprintf( stderr,
+		"*ML*ERR* reorder failed.\n"
+		"*ML*ERR* (file %s, line %d)\n",
+	       __FILE__,
+	       __LINE__ );
+	exit( EXIT_FAILURE );
+      }
+    }
+  }
+
+  /* cycle over all local rows, plot corresponding value on file */
+
   for( ipid=0 ; ipid<nprocs ; ++ipid ) {
     if( ipid == mypid ) {
       if( (fp = fopen( base_filename, filemode )) == NULL ) {
@@ -434,10 +483,17 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	  if( graph_decomposition[irow] == AggrToVisualize ) val = 1.0;
 	  else                                               val = 0.0;
 	} else 
-	  val = 1.0*graph_decomposition[irow];
-	fprintf( fp,
-		"%f %f %f\n",
-		x[irow], y[irow], val );
+	  val = 1.0*reorder[graph_decomposition[irow]];
+	/* XD3D does not work in 3D, but maybe other codes will */
+	if( z == NULL ) 
+	  fprintf( fp,
+		  "%f %f %f\n",
+		  x[irow], y[irow], val );
+	else
+	  fprintf( fp,
+		  "%f %f %%f f\n",
+		  x[irow], y[irow], z[irow], val );
+
       }
       fclose(fp);
     }
@@ -447,6 +503,8 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 #endif
   }
   
+  if( reorder != NULL ) free(reorder);
+
   return 0;
   
 } /* ML_VisualizeWithXYZ */
