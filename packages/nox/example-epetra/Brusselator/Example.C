@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
   // 5. Finite Difference with Coloring......uncomment the following
-// -------------- Uncomment this block to use coloring --------------- //
+/* -------------- Uncomment this block to use coloring --------------- //
 #ifdef HAVE_NOX_EPETRAEXT 
   bool verbose = false; 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose ); 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   cout << "Cannot use Coloring without package epetraext !!!!" << endl;
   exit(0);
 #endif 
-// -------------- End of block needed to use coloring --------------- //
+// -------------- End of block needed to use coloring --------------- */
 
   // Create the Group
   NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
