@@ -6049,8 +6049,11 @@ int ML_Smoother_Arglist_Delete(void ***arglist)
 {
   int *itmp;
   if (*arglist == NULL) {
+    /*
     printf("ML_Smoother_Arglist_Delete: arglist not allocated via ML_Smoother_Arglist_Create\n");
     exit(1);
+    */
+    return 0;
   }
   itmp = (int *) *arglist;
   if (itmp[0] != ML_Set) {
