@@ -2,12 +2,10 @@
 # NOTE: You will need to have Fink installed (as well as the g77 
 # and lammpi packages) for this script to work properly.
 
-../configure \
-    --enable-mpi \
-    --disable-default-packages --enable-tpetra \    
-    CC=mpicc CXX=mpic++ F77=mpif77 \
+../configure --with-mpi-compilers \  
     FLIBS="-L/sw/lib/ -lg2c" \
-    LDFLAGS="-framework vecLib"
+    LDFLAGS="-framework vecLib" \
+    --disable-default-packages --enable-tpetra
 
 # The LDFLAGS line tells it to use Apple's Altivec-optimized versions of BLAS and LAPACK.
 # This is customized for my work on Tpetra, so I have most packages turned off.
