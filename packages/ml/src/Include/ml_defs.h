@@ -133,20 +133,8 @@
 /* maximum dimension of the subspace associated with an ML_Operator type */
 #define ML_MAX_SUBSPACE_DIM 3
 
-
-#if defined(ML_GLOBAL_ELEMENT_NUM64)
-
-#if defined(ML_LINUX) || defined(ML_TFLOP) || defined(ML_IRIX) || defined(ML_IRIXN32)
-typedef long long ml_big_int;
-#elif defined(ML_IRIX64) || defined(ML_ALPHA)
-typedef long ml_big_int;
-#else
-typedef int ml_big_int;
-#endif
-
-#else
-typedef int ml_big_int;
-#endif
-
+/* Allow 64-bit integer support.  This is needed when the ML library is used
+ * with MPSalsa.  MPSalsa requires 64-bit global element numbers. */
+typedef ML_BIG_INT ml_big_int;
 
 #endif

@@ -76,10 +76,6 @@
 #define DSUPERLU
 #endif
  
-#ifdef HAVE_ML_ELEMENT_NUM64
-#define ML_GLOBAL_ELEMENT_NUM64
-#endif
-
 #ifdef HAVE_MPI
 #define ML_MPI
 #endif
@@ -122,34 +118,6 @@
 
 #ifdef HAVE_ML_BENCHMARKING
 #define ML_BENCHMARK
-#endif
-
-#ifdef LINUX
-#define ML_LINUX
-#endif
- 
-#ifdef TFLOP
-#define ML_TFLOP
-#endif
- 
-#ifdef IRIX
-#define ML_IRIX
-#endif
- 
-#ifdef IRIXN32
-#define ML_IRIXN32
-#endif
- 
-#ifdef IRIX32
-#define ML_IRIXN32
-#endif
- 
-#ifdef IRIX64
-#define ML_IRIX64
-#endif
- 
-#ifdef ALPHA
-#define ML_ALPHA
 #endif
 
 #endif /*ifdef HAVE_CONFIG_H*/

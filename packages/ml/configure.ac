@@ -287,8 +287,6 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 #
  TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
 #
- TAC_ARG_WITH_PACKAGE(ml_element_number64, [Enable 64-bit global element numbers.  This is required if ML is intended to be used with MPSalsa because MPSalsa uses 64-bit global element numbers.], ML_ELEMENT_NUM64, no)
- #
  TAC_ARG_ENABLE_OPTION(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  #
 #
@@ -313,6 +311,23 @@ TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable PaMETIS support, version 3.x.  Note
 1: PasMETIS is a third party library.  As such, configure assumes that it has
 already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries via the configure options --with-ldflags="-L<METIS-library-path> -l<library-name>" and --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) #
 #
+
+AC_ARG_WITH(ml-64bit-integer,
+[AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used
+with MPSalsa.  Examples: --with-ml-64bit-integer="long long" for LINUX, TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for IRIX64, ALPHA (Cplant)])],
+[ML_BIG_INT_SUPPORT=${withval}],
+[ML_BIG_INT_SUPPORT="int"]
+)
+AC_DEFINE_UNQUOTED(ML_BIG_INT, $ML_BIG_INT_SUPPORT,
+   [Support for 64-bit integers])
+
+if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X"; then
+  echo "ERROR: An argument to --with-ml-64bit-integer must be specified!"
+  echo "  For example:"
+  echo "    --with-ml-64bit-integer=\"long long\" for LINUX, TFLOP, IRIXN32"
+  echo "    --with-ml-64bit-integer=\"long\"      for IRIX64, ALPHA (Cplant)"
+  exit 1
+fi
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

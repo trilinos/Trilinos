@@ -68,9 +68,6 @@
 /* Define if want to build with ml_complex_maxwell enabled */
 #undef HAVE_ML_COMPLEX_MAXWELL
 
-/* Define if want to build with ml_element_number64 enabled */
-#undef HAVE_ML_ELEMENT_NUM64
-
 /* Define if want to build with ml_enrich enabled */
 #undef HAVE_ML_ENRICH
 
@@ -151,6 +148,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Support for 64-bit integers */
+#undef ML_BIG_INT
 
 /* Name of package */
 #undef PACKAGE

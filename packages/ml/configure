@@ -934,11 +934,6 @@ Optional Packages:
                           --with-ldflags=<SuperLU_DIST-library-path/library-name>
                           and --with-incdirs=SuperLU_DIST-include-directory.
                           (default is no)
-  --with-ml_element_number64
-                          Enable 64-bit global element numbers. This is
-                          required if ML is intended to be used with MPSalsa
-                          because MPSalsa uses 64-bit global element numbers.
-                          (default is no)
   --with-ml_metis         Enable METIS support. Note 1: METIS is a third party
                           library. As such, configure assumes that it has
                           already been built. Note 2: You must also specify
@@ -967,6 +962,11 @@ Optional Packages:
                           Note 3: You need to specify --with-ml_metis, and the
                           location of the METIS library (after that of the
                           ParMETIS one). (default is no)
+  --with-ml-64bit-integer Support for 64-bit integers; required if ML used
+                          with MPSalsa. Examples:
+                          --with-ml-64bit-integer="long long" for LINUX,
+                          TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for
+                          IRIX64, ALPHA (Cplant)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -5932,33 +5932,6 @@ fi
 
 #
 
-
-# Check whether --with-ml_element_number64 or --without-ml_element_number64 was given.
-if test "${with_ml_element_number64+set}" = set; then
-  withval="$with_ml_element_number64"
-  ac_cv_use_ml_element_number64=$withval
-else
-  ac_cv_use_ml_element_number64=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use ml_element_number64" >&5
-echo $ECHO_N "checking whether to use ml_element_number64... $ECHO_C" >&6
-
-if test "X$ac_cv_use_ml_element_number64" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_ELEMENT_NUM64
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
- #
-
 # Check whether --enable-ml_complex_maxwell or --disable-ml_complex_maxwell was given.
 if test "${enable_ml_complex_maxwell+set}" = set; then
   enableval="$enable_ml_complex_maxwell"
@@ -6159,6 +6132,29 @@ fi
  #
 #
 
+
+# Check whether --with-ml-64bit-integer or --without-ml-64bit-integer was given.
+if test "${with_ml_64bit_integer+set}" = set; then
+  withval="$with_ml_64bit_integer"
+  ML_BIG_INT_SUPPORT=${withval}
+else
+  ML_BIG_INT_SUPPORT="int"
+
+fi;
+
+cat >>confdefs.h <<_ACEOF
+#define ML_BIG_INT $ML_BIG_INT_SUPPORT
+_ACEOF
+
+
+if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X"; then
+  echo "ERROR: An argument to --with-ml-64bit-integer must be specified!"
+  echo "  For example:"
+  echo "    --with-ml-64bit-integer=\"long long\" for LINUX, TFLOP, IRIXN32"
+  echo "    --with-ml-64bit-integer=\"long\"      for IRIX64, ALPHA (Cplant)"
+  exit 1
+fi
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -6296,7 +6292,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6299: \"$ac_link\") >&5
+(eval echo $as_me:6295: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6376,7 +6372,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6379: \"$ac_link\") >&5
+(eval echo $as_me:6375: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8807,7 +8803,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8810: \"$ac_link\") >&5
+(eval echo $as_me:8806: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8887,7 +8883,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8890: \"$ac_link\") >&5
+(eval echo $as_me:8886: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
