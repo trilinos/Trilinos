@@ -539,7 +539,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
-         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0.0, 1, 0.0);
+         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0,0.0, 1, 0.0,0,0);
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
          ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
@@ -572,7 +572,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
       else if ( coarse_iterations == 1 )
-         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0.0, 1, 0.0);
+         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0,0.0, 1, 0.0,0,0);
 /*
          ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
                                         coarse_iterations,1.);
