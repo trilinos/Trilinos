@@ -79,15 +79,12 @@ Superludist2_OO::~Superludist2_OO(void) {
     //    Destroy_CompRowLoc_Matrix_dist(&A);
     SUPERLU_FREE( A.Store );
     ScalePermstructFree(&ScalePermstruct);
-    cout << " Superludist2_OO.cpp:82  numrows = " << numrows << endl ; 
     Destroy_LU(numrows, &grid, &LUstruct);
-#if 1
     LUstructFree(&LUstruct);
     if ( options.SolveInitialized ) {
       dSolveFinalize(&options, &SOLVEstruct ) ; 
     }
     superlu_gridexit(&grid);
-#endif
   }
 
 }

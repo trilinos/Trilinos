@@ -25,19 +25,11 @@
 #ifndef _EPETRA_DSCPACK_H_
 #define _EPETRA_DSCPACK_H_
 
-#if 0
-#include "Epetra_DistObject.h" 
-#include "Epetra_CompObject.h" 
-#include "Epetra_BLAS.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsGraph.h"
-#endif
-
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MpiComm.h"
+#include "Epetra_CrsGraph.h"
 
 //
 //  dscmain.h does not check to make sure that it is not called twice,
@@ -48,15 +40,6 @@
 extern "C" {
 #include "dscmain.h"
 }
-#endif
-
-
-#if 0
-class Epetra_Map;
-class Epetra_Import;
-class Epetra_Export;
-class Epetra_Vector;
-class Epetra_MultiVector;
 #endif
 
 //! Amesos_Dscpack:  An object-oriented wrapper for Dscpack.
@@ -200,6 +183,14 @@ public:
   int PerformNumericFactorization();
 
  protected:
+
+  //  vector<int> PermuteNewNumToDscmat ;
+  //  vector<int> PermuteDscmatToNewNum ; 
+
+  bool SymbolicFactorizationOK_; 
+  bool NumericFactorizationOK_; 
+
+  Epetra_CrsGraph * DscGraph_ ; //  Distribution specified by DscOrder
 
   bool UseTranspose_;
   const Epetra_LinearProblem * Problem_;
