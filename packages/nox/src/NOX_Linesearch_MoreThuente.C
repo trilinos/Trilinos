@@ -87,12 +87,12 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
   if (grp.isGrad()) {
     return dir.dot(grp.getGrad());
   }
-  
+
   if (tmpvecptr == NULL) {
     tmpvecptr = grp.getX().clone(CopyShape);
   }
 
-  // tmpvec = J'*dir
+  // tmpvec = J * dir
   bool flag = grp.applyJacobian(dir,*tmpvecptr);
   
   if (!flag) {
@@ -105,7 +105,7 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
     throw "NOX Error";
   }
 
-  return (-1.0 * tmpvecptr->dot(grp.getRHS()));
+  return (tmpvecptr->dot(grp.getRHS()));
 }
 
 int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
@@ -129,7 +129,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     if (Utils::doPrint(Utils::Warning)) {
       cout << "NOX::Linesearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
-    stp = defaultstep;
+    stp = recoverystep;
     newgrp.computeX(oldgrp, dir, stp);
     return 7;
   }
