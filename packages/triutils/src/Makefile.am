@@ -43,8 +43,8 @@ CORE_H = \
 	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.h \
 	$(srcdir)/Trilinos_Util_CountMatrixMarket.h \
 	$(srcdir)/Trilinos_Util_CountTriples.h \
-	$(srcdir)/Trilinos_Util_MatrixGallery.h \
-	$(srcdir)/Trilinos_Util_ShellOptions.h
+	$(srcdir)/Trilinos_Util_CrsMatrixGallery.h \
+	$(srcdir)/Trilinos_Util_CommandLineParser.h
 
 CORE = \
 	$(srcdir)/Trilinos_Util_duscr_vbr.cpp \
@@ -74,8 +74,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
 	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp \
 	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp \
-	$(srcdir)/Trilinos_Util_ShellOptions.cpp \
-	$(srcdir)/Trilinos_Util_MatrixGallery.cpp
+	$(srcdir)/Trilinos_Util_CommandLineParser.cpp \
+	$(srcdir)/Trilinos_Util_CrsMatrixGallery.cpp
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
