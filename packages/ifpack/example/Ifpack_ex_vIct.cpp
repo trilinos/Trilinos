@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO)  && defined(HAVE_IFPACK_TEUCHOS)
+#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -36,18 +36,19 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Time.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
-#include "Ifpack.h"
-#include "Ifpack_vIct.h"
 #include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_vIct.h"
 
 using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
 
+  // initialize MPI and Epetra communicator
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -56,11 +57,11 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix (must be a square number)
-  const int NumPoints = 10000;
+  const int NumPoints = 90000;
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d_bc", Comm);
   Gallery.Set("problem_size", NumPoints);
   // for simplicity, linear map.
   Gallery.Set("map_type", "linear");
@@ -74,33 +75,31 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList List;
 
-  // allocates an IFPACK factory. No data is associated 
-  // to this object (only method Create()).
-  Ifpack Factory;
+  // builds an Ifpack_AdditiveSchwarz. This is templated with
+  // the local solvers, in this case Ifpack_Ict. Note that any
+  // other Ifpack_Preconditioner-derived class can be used
+  // instead of Ifpack_Ict.
 
-  // create the preconditioner. For valid PrecType values,
-  // please check the documentation
-  string PrecType = "vICT"; // incomplete Cholesky, level-of-fill
-                            // based on values 
-  int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
-                        // it is ignored.
+  // In this example the overlap is zero. Use
+  // Prec(A,OverlapLevel) for the general case.
+  Ifpack_AdditiveSchwarz<Ifpack_vIct> Prec(A);
 
-  Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
-  assert(Prec != 0);
-
-  // specify parameters for ICT
-  List.set("fact: level-of-fill", 0);
+  List.set("fact: level-of-fill", 5);
+  List.set("fact: absolute threshold", 0.0);
+  List.set("fact: relative threshold", 0.0);
 
   // sets the parameters
-  IFPACK_CHK_ERR(Prec->SetParameters(List));
+  IFPACK_CHK_ERR(Prec.SetParameters(List));
 
   // initialize the preconditioner. At this point the matrix must
   // have been FillComplete()'d, but actual values are ignored.
-  IFPACK_CHK_ERR(Prec->Initialize());
+  // At this call, Amesos will perform the symbolic factorization.
+  IFPACK_CHK_ERR(Prec.Initialize());
 
   // Builds the preconditioners, by looking for the values of 
-  // the matrix.
-  IFPACK_CHK_ERR(Prec->Compute());
+  // the matrix. At this call, Amesos will perform the
+  // numeric factorization.
+  IFPACK_CHK_ERR(Prec.Compute());
 
   // =================================================== //
   // E N D   O F   I F P A C K   C O N S T R U C T I O N //
@@ -113,12 +112,7 @@ int main(int argc, char *argv[])
   Epetra_Vector LHS(A->OperatorDomainMap());
   Epetra_Vector RHS(A->OperatorDomainMap());
 
-  // solution is constant
-  LHS.PutScalar(1.0);
-  // now build corresponding RHS
-  A->Apply(LHS,RHS);
-
-  // now randomize the solution
+  LHS.PutScalar(0.0);
   RHS.Random();
 
   // need an Epetra_LinearProblem to define AztecOO solver
@@ -128,18 +122,24 @@ int main(int argc, char *argv[])
   AztecOO Solver(Problem);
 
   // specify solver
-  Solver.SetAztecOption(AZ_solver,AZ_gmres);
+  Solver.SetAztecOption(AZ_solver,AZ_cg);
   Solver.SetAztecOption(AZ_output,32);
 
   // HERE WE SET THE IFPACK PRECONDITIONER
-  Solver.SetPrecOperator(Prec);
+  Solver.SetPrecOperator(&Prec);
 
   // .. and here we solve
+  // NOTE: with one process, the solver must converge in
+  // one iteration.
   Solver.Iterate(1550,1e-8);
 
-  // delete the preconditioner
-  delete Prec;
-  
+  // Prints out several information about the preconditioner
+  // Note that methods NumInitialize(), NumCompute(),
+  // NumApplyInverse(), InitializeTime(), ComputeTime(),
+  // ApplyInverseTime() can be used to extract information
+  // from the Prec object.
+  cout << *(Prec.Inverse());
+
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 #endif
 
   puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("to run this test");
+  puts("--enable-amesos to run this test");
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
