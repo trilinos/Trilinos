@@ -16,7 +16,7 @@
 #ifndef REFCOUNTPTR_DECL_H
 #define REFCOUNTPTR_DECL_H
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_any.hpp"
 
 #ifdef REFCOUNTPTR_INLINE_FUNCS
 #define REFCOUNTPTR_INLINE inline
@@ -40,17 +40,20 @@ namespace PrivateUtilityPack {
  */
 //@{
 
-/// Used to initialize a \c RefCountPtr object to NULL using an implicit conversion!
+/// Used to initialize a <tt>RefCountPtr</tt> object to NULL using an implicit conversion!
 enum ENull { null };
 
 ///
-/** Function class for deallocator that uses \c delete to delete a pointer which is used by \c RefCountPtr.
+/** Policy class for deallocator that uses <tt>delete</tt> to delete a
+ * pointer which is used by <tt>RefCountPtr</tt>.
  */
 template<class T>
 class DeallocDelete
 {
 public:
-	/// Deallocates a pointer \c ptr using \c delete ptr.
+	/// Gives the type (required)
+	typedef T ptr_t;
+	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
 	void free( T* ptr ) { if(ptr) delete ptr; }
 }; // end class DeallocDelete
 
@@ -392,6 +395,89 @@ RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+
+///
+/** Set extra data associated with a <tt>RefCountPtr</tt> object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * ToDo: finish documentation!
+ *
+ * Note, this function is made a non-member function to be consistent
+ * with the non-member <tt>get_extra_data()</tt> functions.
+ */
+template<class T1, class T2>
+void set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p );
+
+///
+/** Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * ToDo: finish documentation!
+ *
+ * Note, this function must be a non-member function since the client
+ * must manually select the first template argument.
+ */
+template<class T1, class T2>
+T1& get_extra_data( RefCountPtr<T2>& p );
+
+///
+/** Get a const reference to extra data associated with a <tt>RefCountPtr</tt> object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ * ToDo: finish documentation!
+ *
+ * Note, this function must be a non-member function since the client
+ * must manually select the first template argument.
+ *
+ * Also note that this const version is a false since of security
+ * since a client can always copy a const <tt>RefCountPtr</tt> object
+ * into a non-const object and then use the non-const version to
+ * change the data.  However, its presence will help to avoid some
+ * types of accidental changes to this extra data.
+ */
+template<class T1, class T2>
+const T1& get_extra_data( const RefCountPtr<T2>& p );
+
+///
+/** Return a non-const reference to the underlying deallocator object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ */
+template<class Dealloc_T, class T>
+Dealloc_T& get_dealloc( RefCountPtr<T>& p );
+
+///
+/** Return a const reference to the underlying deallocator object.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>std::logic_error</tt>)
+ * </ul>
+ *
+ */
+template<class Dealloc_T, class T>
+const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
 
 //@}
 

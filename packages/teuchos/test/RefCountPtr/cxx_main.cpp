@@ -13,10 +13,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // above mentioned "Artistic License" for more details.
 
-#include <assert.h>
-
-#include <iostream>
-
 #include "Teuchos_RefCountPtr.hpp"
 
 // Return constants from class functions
@@ -138,6 +134,8 @@ public:
 //#define SHOW_RUN_TIME_ERROR_2
 //#define SHOW_RUN_TIME_ERROR_3
 //#define SHOW_RUN_TIME_ERROR_4
+//#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
+//#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 //#define SHOW_MEMORY_LEAK_1
 
 //
@@ -146,10 +144,15 @@ public:
 int main() {
 
 	using Teuchos::RefCountPtr;
+	using Teuchos::DeallocDelete;
+	using Teuchos::rcp;
 	using Teuchos::rcp_implicit_cast;
 	using Teuchos::rcp_const_cast;
 	using Teuchos::rcp_static_cast;
 	using Teuchos::rcp_dynamic_cast;
+	using Teuchos::set_extra_data;
+	using Teuchos::get_extra_data;
+	using Teuchos::get_dealloc;
 	
 	try {
 
@@ -288,7 +291,7 @@ int main() {
 #ifdef SHOW_MEMORY_LEAK_1
 		a_ptr1.release(); // If we release but do not delete manually then this is a memory leak!
 #endif
-
+		
 		// Here at the end of the block, all of the other smart pointers are deleted!
 	}
 	// Check that all of the other references where removed but these
@@ -334,7 +337,35 @@ int main() {
 #ifndef SHOW_RUN_TIME_ERROR_4
 	// Release ownership so that d_ptr1 will not try to delete &e when a_ptr1 goes out of scope
 	d_ptr1.release();
-#endif	
+#endif
+
+#ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
+	// Allocate an using new and then store the non-base address in in
+	// a RefCountPtr and then try to delete (this is a no-no usually).
+	C *c_ptr5 = new C;      // Okay, no type info lost and address should be same as returned from malloc(...)
+#ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
+	const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
+	std::cout << "\nSize of C = " << sizeof(C) << std::endl;
+	std::cout << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
+	std::cout << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
+	std::cout << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+	std::cout << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+	std::cout << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
+#endif
+	A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
+	a_ptr1 = rcp(a_rptr5);  // This is a no-no and could cause trouble!
+	a_ptr1 = Teuchos::null; // This will cause a segmentation fault in free(...) on many platforms
+#endif
+	
+	// Test out getting the deallocator object
+	a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
+	DeallocDelete<C> &a_ptr1_dealloc = get_dealloc<DeallocDelete<C> >(a_ptr1);
+
+	// Test storing extra data and then getting it out again
+	set_extra_data( int(-5), &a_ptr1 );
+	assert( get_extra_data<int>(a_ptr1) == -5 );
+	set_extra_data( rcp(new B1), &a_ptr1 );
+	assert( get_extra_data<RefCountPtr<B1> >(a_ptr1)->B1_f() == B1_f_return );
 
 	// Set pointers to null to force releasing any owned memory
 	a_ptr1 = Teuchos::null;

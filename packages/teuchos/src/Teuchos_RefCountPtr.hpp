@@ -17,6 +17,7 @@
 #define TEUCHOS_REFCOUNTPTR_H
 
 #include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_ThrowException.hpp"
 
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
@@ -52,6 +53,7 @@ public:
 	bool has_ownership() const {
 		return has_ownership_;
 	}
+	any extra_data;
 private:
 	int         count_;
 	bool        has_ownership_;
@@ -71,7 +73,9 @@ public:
 		: RefCountPtr_node(has_ownership), ptr_(p), dealloc_(dealloc)
 	{}
 	//
-	const Dealloc_T& dealloc() const { return dealloc_; }
+	Dealloc_T& get_dealloc() { return dealloc_; }
+	//
+	const Dealloc_T& get_dealloc() const { return dealloc_; }
 	//
 	~RefCountPtr_node_tmpl() {
 		if( has_ownership() )
@@ -336,6 +340,54 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
 		}
 	}
 	return p2;
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+void Teuchos::set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p )
+{
+	*(*p); // Assert not NULL
+	p->access_node()->extra_data = extra_data;
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+T1& Teuchos::get_extra_data( RefCountPtr<T2>& p )
+{
+	*p; // Assert not NULL
+	return any_cast<T1>(p.access_node()->extra_data);
+}
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p )
+{
+	return get_extra_data(const_cast<RefCountPtr<T2>&>(p));
+}
+
+template<class Dealloc_T, class T>
+REFCOUNTPTR_INLINE
+Dealloc_T&
+Teuchos::get_dealloc( Teuchos::RefCountPtr<T>& p )
+{
+	*p; // Assert not NULL
+	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+	THROW_EXCEPTION(
+		dnode==NULL, std::logic_error
+		,"get_dealloc<" << typeid(Dealloc_T).name() << "," << typeid(T).name() << ">(p): "
+		<< "Error, requested type \'" << typeid(PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>).name()
+		<< "\' does not match actual type of the node \'" << typeid(*p.access_node()).name() << "!"
+		);
+	return dnode->get_dealloc();
+}
+
+template<class Dealloc_T, class T>
+inline
+const Dealloc_T& 
+Teuchos::get_dealloc( const Teuchos::RefCountPtr<T>& p )
+{
+	return get_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
 }
 
 #endif	// REFCOUNTPTR_H
