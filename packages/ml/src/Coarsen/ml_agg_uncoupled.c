@@ -56,7 +56,7 @@
 int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     mypid, Nrows, nvblocks, *vblock_info, *vblock_info2;
+   int     mypid, Nrows, nvblocks, *vblock_info = NULL, *vblock_info2 = NULL;
    int     i, j, k, m, nullspace_dim, *col_ind, aggr_count, nvblockflag;
    int     nbytes, Ncoarse, *mat_indx=NULL,*aggr_index,nz_cnt, diff_level;
    int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500;
@@ -255,7 +255,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = ml_ag->num_PDE_eqns;
        nvblockflag = 1;
      }    
-   nbytes = nvblocks * sizeof(int);
+   nbytes = (nvblocks + 1)* sizeof(int);
    if (nbytes > 0) ML_memory_alloc((void**) &vblock_info2,nbytes,"AVC");
    vblock_info2[0] = vblock_info[0]; 
    for ( i = 1; i < nvblocks; i++ )

@@ -204,7 +204,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         ml->symmetrize_matrix = ML_TRUE;
         ag->keep_P_tentative = ML_YES;
         ag->use_transpose = ML_TRUE;
-	if (1 == 1) {  // rst: new new stuff
+	if (1 == 1) {  
 	  ml->symmetrize_matrix = ML_FALSE;
 	  printf(" what is this %e\n",ml->Amat[level].lambda_max);
 	  ml->Amat[level].lambda_max = 2.;
@@ -557,7 +557,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
      else Ncoarse = Pmatrix->invec_leng;
    }
-
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
@@ -664,6 +663,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
       widget.omega  = 0.0;
    }
 #endif
+
 
    if ( ag->smoothP_damping_factor != 0.0 ) {
      widget.drop_tol = ag->drop_tol_for_smoothing;
