@@ -138,6 +138,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
@@ -269,14 +270,22 @@ AC_CXX_STD_SPRINTF
 
 TAC_ARG_ENABLE_FEATURE_SUB( anasazi, examples, [Build anasazi examples], ANASAZI_EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_ANASAZI_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
-#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
-TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
+
+TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use Belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
-TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, yes)
+
+#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra,EPETRA)
+#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
+
+TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+
+#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
 
 # ------------------------------------------------------------------------
 # Specify other directories 

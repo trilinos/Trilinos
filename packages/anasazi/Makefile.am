@@ -85,9 +85,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 # SUBDIRS = src example test 
 
 if BUILD_EXAMPLES
-if BUILD_ANASAZI_EXAMPLES
 EXAMPLE_SUBDIR=example
-endif
 endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR)

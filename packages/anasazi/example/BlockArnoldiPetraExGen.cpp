@@ -40,7 +40,12 @@
 #include "AnasaziConfigDefs.hpp"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
+
 #include "BelosEpetraOperator.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestCombo.hpp"
+
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 #ifdef EPETRA_MPI
@@ -199,23 +204,45 @@ int main(int argc, char *argv[]) {
                 cout << endl;
         } 
         Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
-        //
-        // call the ctor for the preconditioning object
-        //
-	Belos::PetraMat<double> BelosMat(A);
-        Belos::PetraPrec<double> EpetraOpPrec(prec);
-
+	//
 	//*******************************************************
 	// Set up Belos Block GMRES operator for inner iteration
 	//*******************************************************
-
-        int block = 3;  // blocksize used by solver
-        int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-	int debuglevel = 0; // debuglevel of solver; how much information should be displayed.
+	//
+	int block = 3;  // blocksize used by linear solver and eigensolver [ not required to be the same ]
+        int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
         double btol = 1.0e-7;  // relative residual tolerance
-
-	Belos::EpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, 0 );
-
+        //
+        // Create the Belos::LinearProblemManager
+        //
+	Belos::PetraMat<double> BelosMat(&A);
+        Belos::PetraPrec<double> BelosPrec(&prec);
+	Belos::LinearProblemManager<double> My_LP;
+	My_LP.SetOperator( &BelosMat );
+	My_LP.SetLeftPrec( &BelosPrec );
+	My_LP.SetBlockSize( block );
+	//
+	// Create the Belos::StatusTest
+	//
+	Belos::StatusTestMaxIters<double> test1( maxits );
+	Belos::StatusTestResNorm<double> test2( btol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	//
+	// Create the Belos::OutputManager
+	//
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 2 );
+	//
+	// Create the ParameterList for the Belos Operator
+	// 
+	Teuchos::ParameterList My_List;
+	My_List.set( "Solver", "BlockCG" );
+	My_List.set( "MaxIters", maxits );
+	//
+	// Create the Belos::EpetraOperator
+	//
+	Belos::EpetraOperator<double> BelosOp( My_LP, My_Test, My_OM, My_List );
+	//
 	//************************************
 	// Start the block Arnoldi iteration
 	//************************************
@@ -235,7 +262,7 @@ int main(int argc, char *argv[]) {
 
 	Anasazi::PetraVec<double> ivec(Map, block);
 	ivec.MvRandom();
-
+    
 	// call the ctor that calls the petra ctor for a matrix
 
 	Anasazi::PetraMat<double> Amat(A);
@@ -249,8 +276,8 @@ int main(int argc, char *argv[]) {
 	
 	// inform the solver that the problem is symmetric
 	MyBlockArnoldi.setSymmetric(true);
-	MyBlockArnoldi.setDebugLevel(0);
-
+	//MyBlockArnoldi.setDebugLevel(3);
+	
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
 #endif
@@ -297,7 +324,8 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-	delete [] resids, evalr;
+        if (resids) delete [] resids;
+	if (evalr) delete [] evalr;
 
 	delete &A, &B;
 	delete &Map;
