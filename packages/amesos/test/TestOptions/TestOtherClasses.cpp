@@ -70,6 +70,102 @@ int TestOtherClasses(char* AmesosClass,
       cout << AmesosClass << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
-    return NumErrors; 
+
+
   }
+  //
+  //     2)  Refactorize = true 
+  {
+    Teuchos::ParameterList ParamList ;
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    ParamList.set( "Refactorize", true );
+      
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
+
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+      
+    if (Errors < 0 ) {
+      if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      return 0 ; 
+    } else { 
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << AmesosClass << "  relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << AmesosClass << "  relerror = " << relerror << endl ; 
+      if (verbose) cout << AmesosClass << "  maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
+	
+    }
+    if (verbose)  cout << "  NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors > 0 ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
+  //
+  //     4)  ComputeTrueResidual==true
+  {
+    Teuchos::ParameterList ParamList ;
+    if ( verbose ) ParamList.set( "DebugLevel", 1 );
+    if ( ! verbose ) ParamList.set( "OutputLevel", 0 );
+    ParamList.set( "ComputeTrueResidual", true );
+      
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout << " Test 2) no fail yet " << endl ; 
+
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+      
+    if (Errors < 0 ) {
+      if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      return 0 ; 
+    } else { 
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << AmesosClass << "  relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << AmesosClass << "  relerror = " << relerror << endl ; 
+      if (verbose) cout << AmesosClass << "  maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << AmesosClass << "  maxrelerror = " << maxrelerror << endl ; 
+	
+    }
+    if (verbose)  cout << "  NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors > 0 ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
+
+
+  return NumErrors; 
 }
