@@ -27,7 +27,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
     PHGComm *hgc=hg->comm;
     char *yo = "Zoltan_PHG_rdivide";
     
-/*   hg->redl = 2;    */  /* this seems to be the right thing to do, but trying to match previous answers today. */
+    pins[0] = lpins[0] = NULL; /* just precaution */
     hg->redl = hgp->redl;
 
     /* only one part remaining, record results and exit */
@@ -66,9 +66,9 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
 
     if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int))) ) {
-         Zoltan_Multifree(__FILE__,__LINE__, 2, &pins[0], &lpins[0]);
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
+        Zoltan_Multifree(__FILE__,__LINE__, 3, &part, &pins[0], &lpins[0]);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
     }
     pins[1] = &(pins[0][hg->nEdge]);
     lpins[1] = &(lpins[0][hg->nEdge]);
@@ -81,36 +81,40 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
     MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
     ZOLTAN_FREE (&lpins[0]); /* we don't need lpins */
     
-    new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph));
-    if (new == NULL)  {
+    if (!(new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph))))  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
+        Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
         return ZOLTAN_MEMERR;
     }
     Zoltan_PHG_PHGraph_Init (new);
     
     /* recursively divide in two parts and repartition hypergraph */
     err = split_hypergraph (pins, hg, new, part, 0, zz);
-    if (err != ZOLTAN_OK)
+    if (err != ZOLTAN_OK) {
+        Zoltan_Multifree (__FILE__, __LINE__, 3, &pins[0], &part, &new);
         return err;
+    }
     err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
     Zoltan_PHG_HGraph_Free (new);
-    if (err != ZOLTAN_OK)
+    if (err != ZOLTAN_OK) {
+        Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
         return err;
+    }
 
     err = split_hypergraph (pins, hg, new, part, 1, zz);
     ZOLTAN_FREE (&pins[0]); /* we don't need pins */
-    if (err != ZOLTAN_OK)
+    if (err != ZOLTAN_OK) {
+        Zoltan_Multifree (__FILE__, __LINE__, 2, &part, &new);
         return err;
+    }
     err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
     Zoltan_PHG_HGraph_Free (new);
-    if (err != ZOLTAN_OK)
-      return err;
     
     /* remove alloc'ed structs */
     ZOLTAN_FREE (&part);
     ZOLTAN_FREE (&new);
     
-    return ZOLTAN_OK;
+    return err;
 }
 
 
@@ -121,6 +125,7 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     int *tmap;        /* temporary array mapping from old HGraph info to new */
     int edge, i;                                            /* loop counters */
     char *yo = "split_hypergraph";
+    PHGComm *hgc = old->comm;
     
     /* allocate memory for dynamic arrays in new HGraph and for tmap array */
     new->vmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
@@ -185,7 +190,21 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     new->info = old->info;
     new->VtxWeightDim = old->VtxWeightDim;
     new->EdgeWeightDim   = old->EdgeWeightDim;
-    /* UVCUVC: BUGBUG TODO CHECK we need to compute dist_x, dist_y */
+
+    /* We need to compute dist_x, dist_y */
+    if (!(new->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
+	|| !(new->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        ZOLTAN_TRACE_EXIT (zz, yo);
+        return ZOLTAN_MEMERR;
+    }
+    MPI_Scan(&new->nVtx, new->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+    MPI_Allgather(new->dist_x, 1, MPI_INT, &(new->dist_x[1]), 1, MPI_INT, hgc->row_comm);
+    new->dist_x[0] = 0;
+    
+    MPI_Scan(&new->nEdge, new->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
+    MPI_Allgather(new->dist_y, 1, MPI_INT, &(new->dist_y[1]), 1, MPI_INT, hgc->col_comm);
+    new->dist_y[0] = 0;
     
     /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
     new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nNonZero);

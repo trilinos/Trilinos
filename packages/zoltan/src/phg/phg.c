@@ -81,26 +81,26 @@ int Zoltan_PHG(
                                 are assigned. */
 )
 {
-  ZPHG *zoltan_hg = NULL;
-  int nVtx;                        /* Temporary variable for base graph. */
-  PHGPartParams hgp;               /* Hypergraph parameters. */
-  Partition output_parts = NULL;   /* Output partition from HG partitioner. */
-  int err = ZOLTAN_OK;
-  char *yo = "Zoltan_PHG";
-
+    ZPHG *zoltan_hg = NULL;
+    int nVtx;                        /* Temporary variable for base graph. */
+    PHGPartParams hgp;               /* Hypergraph parameters. */
+    Partition output_parts = NULL;   /* Output partition from HG partitioner. */
+    int err = ZOLTAN_OK;
+    char *yo = "Zoltan_PHG";
+    
     ZOLTAN_TRACE_ENTER(zz, yo);
-
+    
     /* Initialization of return arguments. */
     *num_imp   = *num_exp   = -1;
     *imp_gids  = *exp_gids  = NULL;
     *imp_lids  = *exp_lids  = NULL;
     *imp_procs = *exp_procs = NULL;
-
+    
     /* Initialize HG parameters. */
     err = Zoltan_PHG_Initialize_Params (zz, &hgp);
     if (err != ZOLTAN_OK)
         goto End;
-
+    
     /* build initial Zoltan hypergraph from callback functions. */
     err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
@@ -137,27 +137,34 @@ int Zoltan_PHG(
         }
     }
     else {
-        int i;
-        
+        int i, p=zz->LB.Num_Global_Parts;
+        PHGraph *hg = &zoltan_hg->PHG;
+
         /* vmap associates original vertices to sub hypergraphs */
-        zoltan_hg->PHG.vmap = (int*) ZOLTAN_MALLOC(zoltan_hg->PHG.nVtx*sizeof (int));
-        if (zoltan_hg->PHG.vmap == NULL)  {
+        if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
             err = ZOLTAN_MEMERR;
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
             goto End;
         }
-        for (i = 0; i < zoltan_hg->PHG.nVtx; i++)
-            zoltan_hg->PHG.vmap[i] = i;
+        for (i = 0; i < hg->nVtx; i++)
+            hg->vmap[i] = i;
 
 #if 0
         /* tighten balance tolerance for recursive bisection process */
-        if (zz->LB.Num_Global_Parts > 2)
-            hgp.bal_tol = pow (hgp.bal_tol,
-                               1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
+        hgp.bal_tol = pow (hgp.bal_tol,
+                           1.0 / ceil (log((double)p) / log(2.0)));
 #endif
         /* partition hypergraph */
-        err = Zoltan_PHG_rdivide(1, zz->LB.Num_Global_Parts, output_parts, zz, 
-                                &zoltan_hg->PHG, &hgp, 0);
+        err = Zoltan_PHG_rdivide(1, p, output_parts, zz, 
+                                 hg, &hgp, 0);
+
+        if (hgp.output_level >= PHG_DEBUG_LIST)     
+            uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
+                    hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hgp.redm_str,
+                    hgp.coarsepartition_str, hgp.refinement_str, p,
+                    Zoltan_PHG_HPart_balance(zz, hg, p, output_parts),
+                    Zoltan_PHG_hcut_size_links(hg->comm, hg, output_parts, p));
+        
         if (err != ZOLTAN_OK)  {
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
             goto End;

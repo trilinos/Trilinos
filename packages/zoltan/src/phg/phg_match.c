@@ -96,7 +96,7 @@ End:
  */
 static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
 {
-    int i, j, *eweight, *adj, *visit, degzero=0;
+    int i, j, *eweight, *adj, *visit, degzero=0, matchcnt=0;
     char *yo = "matching_loc";
     PHGComm *hgc=hg->comm;
     struct {
@@ -156,6 +156,7 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
                         //match the maximally connected one with the current vertex
                         match[v] = maxu;
                         match[maxu] = v;
+                        ++matchcnt;
                     }
                 }
             }
@@ -173,9 +174,11 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
                         match[i] = v;
                         match[v] = i;
                         v = -1;
+                        ++matchcnt;
                     }                
                 }
         }
+        uprintf(hgc, "there are %d matches\n", matchcnt);
     }
     MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
 
