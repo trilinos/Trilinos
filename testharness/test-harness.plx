@@ -41,8 +41,7 @@ my $SUMMARY = 8;                      # test-harness summary
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
 
-print "\nTEST - UPDATED VERSION 003\n\n";
-print "\@ARGV: \n@ARGV\n\n\$0: \n$0\n\n";
+print "\nTEST - UPDATED VERSION 004\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -66,7 +65,7 @@ parseConfig($flags{f});
 validateOptions();
 
 # Update Trilinos from CVS Repository
-cvsUpdate();
+cvsUpdate(@ARGV);
 
 # Start up MPI implementation if any tests are parallel
 mpiStartup();
@@ -277,6 +276,7 @@ report($SUMMARY);
     #   - returns: 
 
     sub cvsUpdate {
+        my @programArguments = $_[0]
         
         # If -u flag is not set and CVS_UPDATE is set to YES, continue to update...
         # If -u flag is set, we've already updated and we've been replaced by
@@ -301,8 +301,8 @@ report($SUMMARY);
                 chdir "$options{'TRILINOS_DIR'}[0]/testharness";
                 $command = "";
                 $command .= "perl $0 -u ";
-                print "\@ARGV: \n@ARGV\n\n\$0: \n$0\n\n";
-                foreach (@ARGV) {
+                print "\@programArguments: \n@programArguments\n\n";
+                foreach (@programArguments) {
                     print "    \$_: $_\n";
                     $command .= "$_ ";
                 }
