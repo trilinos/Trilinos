@@ -1604,17 +1604,25 @@ The value of the ``Sticky Tag:'' field should begin with ``branch\_name''.
 
 \item Update the Trilinos release version number
 
-When creating a new Trilinos release branch, the release version number needs 
-to be incremented in the \InlineDirectory{Trilinos/configure.ac} file.  First, 
-open the file and search and replace the old version number for the new 
-version number.  The number will need to be updated in two places.  Next, 
-remain in the top Trilinos directory and type
+When creating a new Trilinos release branch, the Trilinos version number needs 
+to be incremented in the \InlineDirectory{Trilinos/configure.ac} file.  The 
+version number of individual packages can also be updated at this time.  Note 
+that not all packages will have the same version number as Trilinos.  Package 
+version numbers do not have to be updated at this time.  Permission must be 
+obtained from package developers before the version number for a package can 
+be updated.  To update a version number, open the configure.ac file and 
+search and replace the old version number with the new 
+version number.  The number will need to be updated in one or two places.  
+Next, remain in the top level Trilinos directory (or the top level directory 
+of the package) and type
 
 \DisplayCommand{./bootstrap}
 
 to update the generated Autotools files to reflect the new version number.  
 Finally, follow the commit process listed in Section~\ref{Section:CVS} to 
-commit the changes.  In the commit message, note that branch\_name is listed.
+commit the changes.  Remember to update before committing so that generated 
+files are not committed just because the timestamp changed.  In the commit 
+message, note that branch\_name is listed.
 
 \item Tag the new branch
 
