@@ -30,18 +30,20 @@
 noinst_PROGRAMS = rosenbrock
 
 rosenbrock_SOURCES = \
-	$(srcdir)/Rosenbrock.C \
-	$(srcdir)/Utils.C
+	$(srcdir)/Rosenbrock.C 
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a \
-			  $(top_builddir)/src-lapack/libnoxlapack.a
+			  $(top_builddir)/src-lapack/libnoxlapack.a \
+			  $(top_builddir)/test/utils/libnoxtestutils.a
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
 		      -I$(top_srcdir)/src-lapack \
+		      -I$(top_srcdir)/test/utils
                       $(TRILINOS_CXXFLAGS)
 
 rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
 		   $(top_builddir)/src/libnox.a \
+		   $(top_builddir)/test/utils/libnoxtestutils.a \
 		   $(LIBS) 
 
 
