@@ -104,10 +104,10 @@ struct LB_Struct;
  *  Output:
  *    int *ierr                 --  error code
  *  Returned value:
- *    double                    --  the weight for the object.
+ *    float                     --  the weight for the object.
  */
 
-typedef double LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
+typedef float LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
                                 int *ierr);
 
 /*****************************************************************************/
@@ -137,15 +137,17 @@ typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id,
  *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
+ *    int    get_ewgts          --  1 if one wants edge weights, 0 otherwise
  *  Output:
  *    LB_GID *nbor_global_ids   --  Array of Global IDs of neighboring objects.
- *    LB_LID *nbor_local_ids    --  Array of Local IDs of neighboring objects.
+ *    int    *nbor_procs        --  Array of neighboring procs.
+ *    int    *nbor_ewgts        --  If get_ewgts==1, an array of edge weights
  *    int *ierr                 --  error code
  */
 
 typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
-                             LB_GID *nbor_global_id, LB_LID *nbor_local_id,
-                             int *ierr);
+                             LB_GID *nbor_global_id, int *nbor_procs,
+                             int get_ewgts, int *nbor_ewgts, int *ierr);
 
 /*****************************************************************************/
 /*
