@@ -40,6 +40,8 @@ testNonContiguous:
 	@echo "Test non-contiguous to contiguous NumPy array translation" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
+	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
+	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
 testEpetra:
@@ -49,6 +51,8 @@ testEpetra:
 	@echo "Test Epetra interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
+	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
+	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
 testSerialDense:
@@ -58,6 +62,8 @@ testSerialDense:
 	@echo "Test the SerialDense interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
+	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
+	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
 testParameter:
@@ -67,6 +73,8 @@ testParameter:
 	@echo "Test Parameter.List interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
+	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
+	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
 testStatusTest:
@@ -76,6 +84,8 @@ testStatusTest:
 	@echo "Test the StatusTest interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
+	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
+	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
 testExample:

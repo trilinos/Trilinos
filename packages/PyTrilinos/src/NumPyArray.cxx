@@ -1,8 +1,5 @@
 #include "NumPyArray.h"
-
-#ifndef NumPyWrapper_h
-# include "NumPyWrapper.h"
-#endif
+#include "NumPyWrapper.h"
 
 #include <iostream>
 #include <string>
@@ -87,6 +84,11 @@ const double * NumPyArrayBase::getDataArray () const
 }
 
 const PyArrayObject * NumPyArrayBase::getArrayObject() const
+{
+  return mp_pyArrayObject;
+}
+
+PyArrayObject * NumPyArrayBase::getArrayObject()
 {
   return mp_pyArrayObject;
 }

@@ -1,9 +1,7 @@
 #ifndef NumPyWrapper_h
 #define NumPyWrapper_h
 
-#ifndef numeric_include_h
-#  include <numeric_include.h>
-#endif
+#include "numeric_include.h"
 
 // Singleton class that wraps the various Numeric C interface.
 // Important step is the calling of the function import_array() in the constructor.

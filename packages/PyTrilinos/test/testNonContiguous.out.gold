@@ -130,19 +130,7 @@ Strides for each dimension = (1)
 [10] (10) = 10
 [11] (11) = 11
 epetraVector1DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       3
-         0             4                       4
-         0             5                       5
-         0             6                       6
-         0             7                       7
-         0             8                       8
-         0             9                       9
-         0            10                      10
-         0            11                      11
+[  0.   1.   2.   3.   4.   5.   6.   7.   8.   9.  10.  11.]
 
 -- 2-D Contiguous ----------------------
 numPyArray2DCon     = 
@@ -164,19 +152,8 @@ Strides for each dimension = (6, 1)
 [1,4] (10) = 10
 [1,5] (11) = 11
 epetraVector2DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       3
-         0             4                       4
-         0             5                       5
-         0             6                       6
-         0             7                       7
-         0             8                       8
-         0             9                       9
-         0            10                      10
-         0            11                      11
+[[  0.   1.   2.   3.   4.   5.]
+ [  6.   7.   8.   9.  10.  11.]]
 
 -- 2-D Non-Contiguous ------------------
 numPyArray2DNonCon  = 
@@ -198,19 +175,12 @@ Strides for each dimension = (1, 6)
 [5,0] (10) = 5
 [5,1] (11) = 11
 epetraVector2DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       6
-         0             2                       1
-         0             3                       7
-         0             4                       2
-         0             5                       8
-         0             6                       3
-         0             7                       9
-         0             8                       4
-         0             9                      10
-         0            10                       5
-         0            11                      11
+[[  0.   6.]
+ [  1.   7.]
+ [  2.   8.]
+ [  3.   9.]
+ [  4.  10.]
+ [  5.  11.]]
 
 -- 3-D Contiguous ----------------------
 numPyArray3DCon     = 
@@ -232,19 +202,10 @@ Strides for each dimension = (6, 3, 1)
 [1,1,1] (10) = 10
 [1,1,2] (11) = 11
 epetraVector3DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       3
-         0             4                       4
-         0             5                       5
-         0             6                       6
-         0             7                       7
-         0             8                       8
-         0             9                       9
-         0            10                      10
-         0            11                      11
+[[[  0.   1.   2.]
+  [  3.   4.   5.]]
+ [[  6.   7.   8.]
+  [  9.  10.  11.]]]
 
 -- 3-D Non-Contiguous ------------------
 numPyArray3DNonCon  = 
@@ -266,19 +227,12 @@ Strides for each dimension = (1, 3, 6)
 [2,1,0] (10) = 5
 [2,1,1] (11) = 11
 epetraVector3DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       6
-         0             2                       3
-         0             3                       9
-         0             4                       1
-         0             5                       7
-         0             6                       4
-         0             7                      10
-         0             8                       2
-         0             9                       8
-         0            10                       5
-         0            11                      11
+[[[  0.   6.]
+  [  3.   9.]]
+ [[  1.   7.]
+  [  4.  10.]]
+ [[  2.   8.]
+  [  5.  11.]]]
 
 -- 3-D Non-Contiguous Stride 1 ---------
 numPyArray3DNonCon Stride 1= 
@@ -300,19 +254,10 @@ Strides for each dimension = (3, 6, 1)
 [1,1,1] (10) = 10
 [1,1,2] (11) = 11
 epetraVector3DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       6
-         0             4                       7
-         0             5                       8
-         0             6                       3
-         0             7                       4
-         0             8                       5
-         0             9                       9
-         0            10                      10
-         0            11                      11
+[[[  0.   1.   2.]
+  [  6.   7.   8.]]
+ [[  3.   4.   5.]
+  [  9.  10.  11.]]]
 
 -- 4-D Contiguous ----------------------
 numPyArray4DCon     = 
@@ -346,31 +291,14 @@ Strides for each dimension = (12, 6, 3, 1)
 [1,1,1,1] (22) = 22
 [1,1,1,2] (23) = 23
 epetraVector4DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       3
-         0             4                       4
-         0             5                       5
-         0             6                       6
-         0             7                       7
-         0             8                       8
-         0             9                       9
-         0            10                      10
-         0            11                      11
-         0            12                      12
-         0            13                      13
-         0            14                      14
-         0            15                      15
-         0            16                      16
-         0            17                      17
-         0            18                      18
-         0            19                      19
-         0            20                      20
-         0            21                      21
-         0            22                      22
-         0            23                      23
+[[[[  0.   1.   2.]
+   [  3.   4.   5.]]
+  [[  6.   7.   8.]
+   [  9.  10.  11.]]]
+ [[[ 12.  13.  14.]
+   [ 15.  16.  17.]]
+  [[ 18.  19.  20.]
+   [ 21.  22.  23.]]]]
 
 -- 4-D Non-Contiguous ------------------
 numPyArray4DNonCon  = 
@@ -404,31 +332,18 @@ Strides for each dimension = (1, 6, 3, 12)
 [2,1,1,0] (22) = 11
 [2,1,1,1] (23) = 23
 epetraVector4DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      12
-         0             2                       3
-         0             3                      15
-         0             4                       6
-         0             5                      18
-         0             6                       9
-         0             7                      21
-         0             8                       1
-         0             9                      13
-         0            10                       4
-         0            11                      16
-         0            12                       7
-         0            13                      19
-         0            14                      10
-         0            15                      22
-         0            16                       2
-         0            17                      14
-         0            18                       5
-         0            19                      17
-         0            20                       8
-         0            21                      20
-         0            22                      11
-         0            23                      23
+[[[[  0.  12.]
+   [  3.  15.]]
+  [[  6.  18.]
+   [  9.  21.]]]
+ [[[  1.  13.]
+   [  4.  16.]]
+  [[  7.  19.]
+   [ 10.  22.]]]
+ [[[  2.  14.]
+   [  5.  17.]]
+  [[  8.  20.]
+   [ 11.  23.]]]]
 
 -- 4-D Non-Contiguous Stride 1 ---------
 numPyArray4DNonCon Stride 1 = 
@@ -462,31 +377,14 @@ Strides for each dimension = (6, 12, 3, 1)
 [1,1,1,1] (22) = 22
 [1,1,1,2] (23) = 23
 epetraVector4DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       1
-         0             2                       2
-         0             3                       3
-         0             4                       4
-         0             5                       5
-         0             6                      12
-         0             7                      13
-         0             8                      14
-         0             9                      15
-         0            10                      16
-         0            11                      17
-         0            12                       6
-         0            13                       7
-         0            14                       8
-         0            15                       9
-         0            16                      10
-         0            17                      11
-         0            18                      18
-         0            19                      19
-         0            20                      20
-         0            21                      21
-         0            22                      22
-         0            23                      23
+[[[[  0.   1.   2.]
+   [  3.   4.   5.]]
+  [[ 12.  13.  14.]
+   [ 15.  16.  17.]]]
+ [[[  6.   7.   8.]
+   [  9.  10.  11.]]
+  [[ 18.  19.  20.]
+   [ 21.  22.  23.]]]]
 
 ----------------------------------------
 -- Unload Tests ------------------------
@@ -494,19 +392,7 @@ epetraVector4DNonCon=
 
 -- 1-D Contiguous ----------------------
 epetraVector1DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       3
-         0             2                       6
-         0             3                       9
-         0             4                      12
-         0             5                      15
-         0             6                      18
-         0             7                      21
-         0             8                      24
-         0             9                      27
-         0            10                      30
-         0            11                      33
+[  0.   3.   6.   9.  12.  15.  18.  21.  24.  27.  30.  33.]
 numPyArray1DCon     = 
 Total length               = 12
 Number of dimensions       = 1
@@ -528,19 +414,8 @@ Strides for each dimension = (1)
 
 -- 2-D Contiguous ----------------------
 epetraVector2DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                       5
-         0             2                      10
-         0             3                      15
-         0             4                      20
-         0             5                      25
-         0             6                      30
-         0             7                      35
-         0             8                      40
-         0             9                      45
-         0            10                      50
-         0            11                      55
+[[  0.   5.  10.  15.  20.  25.]
+ [ 30.  35.  40.  45.  50.  55.]]
 numPyArray2DCon     = 
 Total length               = 12
 Number of dimensions       = 2
@@ -562,19 +437,12 @@ Strides for each dimension = (6, 1)
 
 -- 2-D Non-Contiguous ------------------
 epetraVector2DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      42
-         0             2                       7
-         0             3                      49
-         0             4                      14
-         0             5                      56
-         0             6                      21
-         0             7                      63
-         0             8                      28
-         0             9                      70
-         0            10                      35
-         0            11                      77
+[[  0.  42.]
+ [  7.  49.]
+ [ 14.  56.]
+ [ 21.  63.]
+ [ 28.  70.]
+ [ 35.  77.]]
 numPyArray2DNonCon  = 
 Total length               = 12
 Number of dimensions       = 2
@@ -596,19 +464,10 @@ Strides for each dimension = (1, 6)
 
 -- 3-D Contiguous ----------------------
 epetraVector3DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      11
-         0             2                      22
-         0             3                      33
-         0             4                      44
-         0             5                      55
-         0             6                      66
-         0             7                      77
-         0             8                      88
-         0             9                      99
-         0            10                     110
-         0            11                     121
+[[[   0.   11.   22.]
+  [  33.   44.   55.]]
+ [[  66.   77.   88.]
+  [  99.  110.  121.]]]
 numPyArray3DCon     = 
 Total length               = 12
 Number of dimensions       = 3
@@ -630,19 +489,12 @@ Strides for each dimension = (6, 3, 1)
 
 -- 3-D Non-Contiguous ------------------
 epetraVector3DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      78
-         0             2                      39
-         0             3                     117
-         0             4                      13
-         0             5                      91
-         0             6                      52
-         0             7                     130
-         0             8                      26
-         0             9                     104
-         0            10                      65
-         0            11                     143
+[[[   0.   78.]
+  [  39.  117.]]
+ [[  13.   91.]
+  [  52.  130.]]
+ [[  26.  104.]
+  [  65.  143.]]]
 numPyArray3DNonCon  = 
 Total length               = 12
 Number of dimensions       = 3
@@ -664,19 +516,10 @@ Strides for each dimension = (1, 3, 6)
 
 -- 3-D Non-Contiguous Stride 1 ---------
 epetraVector3DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      17
-         0             2                      34
-         0             3                     102
-         0             4                     119
-         0             5                     136
-         0             6                      51
-         0             7                      68
-         0             8                      85
-         0             9                     153
-         0            10                     170
-         0            11                     187
+[[[   0.   17.   34.]
+  [ 102.  119.  136.]]
+ [[  51.   68.   85.]
+  [ 153.  170.  187.]]]
 numPyArray3DNonCon Stride 1= 
 Total length               = 12
 Number of dimensions       = 3
@@ -698,31 +541,14 @@ Strides for each dimension = (3, 6, 1)
 
 -- 4-D Contiguous ----------------------
 epetraVector4DCon   = 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      19
-         0             2                      38
-         0             3                      57
-         0             4                      76
-         0             5                      95
-         0             6                     114
-         0             7                     133
-         0             8                     152
-         0             9                     171
-         0            10                     190
-         0            11                     209
-         0            12                     228
-         0            13                     247
-         0            14                     266
-         0            15                     285
-         0            16                     304
-         0            17                     323
-         0            18                     342
-         0            19                     361
-         0            20                     380
-         0            21                     399
-         0            22                     418
-         0            23                     437
+[[[[   0.   19.   38.]
+   [  57.   76.   95.]]
+  [[ 114.  133.  152.]
+   [ 171.  190.  209.]]]
+ [[[ 228.  247.  266.]
+   [ 285.  304.  323.]]
+  [[ 342.  361.  380.]
+   [ 399.  418.  437.]]]]
 numPyArray4DCon     = 
 Total length               = 24
 Number of dimensions       = 4
@@ -756,31 +582,18 @@ Strides for each dimension = (12, 6, 3, 1)
 
 -- 4-D Non-Contiguous ------------------
 epetraVector4DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                     276
-         0             2                      69
-         0             3                     345
-         0             4                     138
-         0             5                     414
-         0             6                     207
-         0             7                     483
-         0             8                      23
-         0             9                     299
-         0            10                      92
-         0            11                     368
-         0            12                     161
-         0            13                     437
-         0            14                     230
-         0            15                     506
-         0            16                      46
-         0            17                     322
-         0            18                     115
-         0            19                     391
-         0            20                     184
-         0            21                     460
-         0            22                     253
-         0            23                     529
+[[[[   0.  276.]
+   [  69.  345.]]
+  [[ 138.  414.]
+   [ 207.  483.]]]
+ [[[  23.  299.]
+   [  92.  368.]]
+  [[ 161.  437.]
+   [ 230.  506.]]]
+ [[[  46.  322.]
+   [ 115.  391.]]
+  [[ 184.  460.]
+   [ 253.  529.]]]]
 numPyArray4DNonCon  = 
 Total length               = 24
 Number of dimensions       = 4
@@ -814,31 +627,14 @@ Strides for each dimension = (1, 6, 3, 12)
 
 -- 4-D Non-Contiguous Stride 1 ---------
 epetraVector4DNonCon= 
-     MyPID           GID               Value  
-         0             0                       0
-         0             1                      27
-         0             2                      54
-         0             3                      81
-         0             4                     108
-         0             5                     135
-         0             6                     324
-         0             7                     351
-         0             8                     378
-         0             9                     405
-         0            10                     432
-         0            11                     459
-         0            12                     162
-         0            13                     189
-         0            14                     216
-         0            15                     243
-         0            16                     270
-         0            17                     297
-         0            18                     486
-         0            19                     513
-         0            20                     540
-         0            21                     567
-         0            22                     594
-         0            23                     621
+[[[[   0.   27.   54.]
+   [  81.  108.  135.]]
+  [[ 324.  351.  378.]
+   [ 405.  432.  459.]]]
+ [[[ 162.  189.  216.]
+   [ 243.  270.  297.]]
+  [[ 486.  513.  540.]
+   [ 567.  594.  621.]]]]
 numPyArray4DNonCon Stride 1 = 
 Total length               = 24
 Number of dimensions       = 4

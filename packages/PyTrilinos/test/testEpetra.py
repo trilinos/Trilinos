@@ -1,137 +1,289 @@
 #! /usr/bin/env python
 
+# Imports
 import setpath
-from PyTrilinos import Epetra
+import unittest
+from   Numeric    import *
+from   PyTrilinos import Epetra
 
-# Create a communicator object
-comm = Epetra.SerialComm()
-assert(comm.MyPID()   == 0)
-assert(comm.NumProc() == 1)
-print "comm = {", comm, "}"
+class EpetraObjectTestCase(unittest.TestCase):
+    "TestCase for Epetra_Objects"
 
-# Create a map
-pm  = Epetra.Map(4,0,comm)
-# assert(pm.Comm()                == comm            )
-assert(pm.NumGlobalElements()   == 4               )
-assert(pm.NumMyElements()       == 4               )
-assert(pm.ElementSize()         == 1               )
-assert(pm.IndexBase()           == 0               )
-assert(pm.NumGlobalPoints()     == 4               )
-assert(pm.NumMyPoints()         == 4               )
-assert(pm.MinMyElementSize()    == pm.ElementSize())
-assert(pm.MaxMyElementSize()    == pm.ElementSize())
-assert(pm.MinElementSize()      == pm.ElementSize())
-assert(pm.MaxElementSize()      == pm.ElementSize())
-assert(pm.ConstantElementSize() == True            )
-assert(pm.SameAs(pm)            == True            )
-assert(pm.DistributedGlobal()   == False           )
-assert(pm.MinAllGID()           == 0               )
-assert(pm.MaxAllGID()           == 3               )
-assert(pm.MinMyGID()            == 0               )
-assert(pm.MaxMyGID()            == 3               )
-assert(pm.MinLID()              == 0               )
-assert(pm.MaxLID()              == 3               )
-for i in range(pm.NumMyElements()):
-    assert(pm.LID(i)   == pm.GID(i))
-    assert(pm.MyGID(i) == True     )
-    assert(pm.MyLID(i) == True     )
-print "pm = {", pm, "}"
+    def setUp(self):
+        self.object = Epetra.Object()
 
-# Create a block map
-pbm = Epetra.BlockMap(2,2,0,comm)
-# assert(pbm.Comm()                == comm             )
-assert(pbm.NumGlobalElements()   == 2                )
-assert(pbm.NumMyElements()       == 2                )
-assert(pbm.ElementSize()         == 2                )
-assert(pbm.IndexBase()           == 0                )
-assert(pbm.NumGlobalPoints()     == 4                )
-assert(pbm.NumMyPoints()         == 4                )
-assert(pbm.MinMyElementSize()    == pbm.ElementSize())
-assert(pbm.MaxMyElementSize()    == pbm.ElementSize())
-assert(pbm.MinElementSize()      == pbm.ElementSize())
-assert(pbm.MaxElementSize()      == pbm.ElementSize())
-assert(pbm.ConstantElementSize() == True             )
-assert(pbm.SameAs(pm)            == False            )
-assert(pbm.DistributedGlobal()   == False            )
-assert(pbm.MinAllGID()           == 0                )
-assert(pbm.MaxAllGID()           == 1                )
-assert(pbm.MinMyGID()            == 0                )
-assert(pbm.MaxMyGID()            == 1                )
-assert(pbm.MinLID()              == 0                )
-assert(pbm.MaxLID()              == 1                )
-for i in range(pbm.NumMyElements()):
-    assert(pbm.LID(i)   == pbm.GID(i))
-    assert(pbm.MyGID(i) == True      )
-    assert(pbm.MyLID(i) == True      )
-print "pbm = {", pbm, "}"
+    def testLabel(self):
+        "Test the Object Label method"
+        self.assertEqual(self.object.Label(), 'Epetra::Object')
 
-# Create a single vector from a non-blocked map
-pv1 = Epetra.Vector(pm)
-pv1.PutScalar(1.0)
-print "pv1 = {\n", pv1, "}"
+    def testSetLabel(self):
+        "Test the Object SetLabel method"
+        label = 'New Label'
+        self.object.SetLabel(label)
+        self.assertEqual(self.object.Label(), label)
 
-# Create a single vector from a blocked map
-pv2 = Epetra.Vector(pbm)
-pv2.PutScalar(2.0)
-print "pv2 = {\n", pv2, "}"
+    def testGetTracebackMode(self):
+        "Test the Object GetTracebackMode method"
+        self.assertEqual(self.object.GetTracebackMode(), 1)
 
-# Create a multi-vector from a non-blocked map
-pv3 = Epetra.MultiVector(pm,2)
-pv3.PutScalar(3.0)
-print "pv3 = {\n", pv3, "}"
+    def testSetTracebackMode(self):
+        "Test the Object SetTracebackMode method"
+        tracebackMode = 2
+        self.object.SetTracebackMode(tracebackMode)
+        self.assertEqual(self.object.GetTracebackMode(), tracebackMode)
 
-# Create a multi-vector from a blocked map
-pv4 = Epetra.MultiVector(pbm,2)
-pv4.PutScalar(4.0)
-print "pv4 = {\n", pv4, "}"
+class EpetraSerialCommTestCase(unittest.TestCase):
+    "TestCase class for SerialComm communicator objects"
 
-#-------------------------------------------------------------
-# NumPy Array to Epetra.Vector testing
-#-------------------------------------------------------------
+    def setUp(self):
+        self.comm = Epetra.SerialComm()
 
-from Numeric import *
+    def testMyPID(self):
+        "Test the SerialComm MyPID method"
+        self.assertEqual(self.comm.MyPID()  , 0)
 
-# Create a NumPy array
-length = 10
-# Create a block map for the Epetra Vector
-pbm2 = Epetra.BlockMap(length,1,0,comm)
+    def testNumProc(self):
+        "Test the SerialComm NumProc method"
+        self.assertEqual(self.comm.NumProc(), 1)
 
-nparray =  arange(length,typecode=Float64)
-nparray *= 11.0
-print "Created nparray =", nparray
+class EpetraBlockMapTestCase(unittest.TestCase):
+    "TestCase class for BlockMap objects"
 
-# Create an empty Vector using just the BlockMap
-pvector_1 = Epetra.Vector(pbm2)
-print "Using nparray, created pvector_1 = {\n", pvector_1, "}"
+    def setUp(self):
+        self.comm = Epetra.SerialComm()
+        self.map  = Epetra.BlockMap(2,2,0,self.comm)
 
-# Create a Vector using the NumPy array
-nparray /= 11.0
-print "Scaled nparray by 1/11.0"
-pvector_2 = Epetra.Vector(pbm2, nparray)
-print "Using nparray, created pvector_2 = {\n", pvector_2, "}"
+    def testNumGlobalElements(self):
+        "Test the BlockMap NumGlobalElements method"
+        self.assertEqual(self.map.NumGlobalElements(), 2)
 
-## # Create a Vector using the NumPy array
-## pvector_3 = Epetra.Vector(pbm2, Epetra.PyObjectHolder(nparray))
-## print "pvector_3 = {\n", pvector_3, "}"
+    def testNumMyElements(self):
+        "Test the BlockMap NumMyElements method"
+        self.assertEqual(self.map.NumMyElements(), 2)
 
-# Create a Vector using the NumPy array
-nparray *= 11.0
-print "Scaled nparray by 11.0"
-## pvector_2 = Epetra.Vector(pbm2, Epetra.PyObjectHolder(nparray))
-pvector_2 = Epetra.Vector(pbm2, nparray)
-print "Using nparray, created pvector_2 = {\n", pvector_2, "}"
+    def testElementSize(self):
+        "Test the BlockMap ElementSize method"
+        self.assertEqual(self.map.ElementSize(), 2)
 
-# Load Vector using loadViaCopy
-nparray /= 11.0
-print "Scaled nparray by 1/11.0"
-## pvector_2.loadViaCopy(Epetra.PyObjectHolder(nparray))
-pvector_2.loadViaCopy(nparray)
-print "Using nparray, loaded pvector_2 = {\n", pvector_2, "}"
+    def testIndexBase(self):
+        "Test the BlockMap IndexBase method"
+        self.assertEqual(self.map.IndexBase(), 0)
 
-# Unload Vector using loadViaCopy
-pvector_2.Scale(11.0) # Mulitply Epetra_Vector by 11.0
-print "Scaled pvector_2 in place by 11.0"
-print "pvector_2 = {", pvector_2, "}"
-## pvector_2.unloadViaCopy(Epetra.PyObjectHolder(nparray))
-pvector_2.unloadViaCopy(nparray)
-print "Unloaded nparray from modified pvector_2 =", nparray
+    def testNumGlobalPoints(self):
+        "Test the BlockMap NumGlobalPoints method"
+        self.assertEqual(self.map.NumGlobalPoints(), 4)
+
+    def testNumMyPoints(self):
+        "Test the BlockMap NumMyPoints method"
+        self.assertEqual(self.map.NumMyPoints(), 4)
+
+    def testMinMyElementSize(self):
+        "Test the BlockMap MinMyElementSize method"
+        self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
+
+    def testMaxMyElementSize(self):
+        "Test the BlockMap MaxMyElementSize method"
+        self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
+
+    def testMinElementSize(self):
+        "Test the BlockMap MinElementSize method"
+        self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
+
+    def testMaxElementSize(self):
+        "Test the BlockMap MaxElementSize method"
+        self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
+
+    def testConstantElementSize(self):
+        "Test the BlockMap ConstantElementSize method"
+        self.assertEqual(self.map.ConstantElementSize(), True)
+
+    def testDistributedGlobal(self):
+        "Test the BlockMap DistributedGlobal method"
+        self.assertEqual(self.map.DistributedGlobal(), False)
+
+    def testMinAllGID(self):
+        "Test the BlockMap MinAllGID method"
+        self.assertEqual(self.map.MinAllGID(), 0)
+
+    def testMaxAllGID(self):
+        "Test the BlockMap MaxAllGID method"
+        self.assertEqual(self.map.MaxAllGID(), 1)
+
+    def testMinMyGID(self):
+        "Test the BlockMap MinMyGID method"
+        self.assertEqual(self.map.MinMyGID(), 0)
+
+    def testMaxMyGID(self):
+        "Test the BlockMap MaxMyGID method"
+        self.assertEqual(self.map.MaxMyGID(), 1)
+
+    def testMinLID(self):
+        "Test the BlockMap MinLID method"
+        self.assertEqual(self.map.MinLID(), 0)
+
+    def testMaxLID(self):
+        "Test the BlockMap MaxLID method"
+        self.assertEqual(self.map.MaxLID(), 1)
+
+    def testIDs(self):
+        "Test the BlockMap local and global IDs"
+        for i in range(self.map.NumMyElements()):
+            self.assertEqual(self.map.LID(i)  , self.map.GID(i))
+            self.assertEqual(self.map.MyGID(i), True           )
+            self.assertEqual(self.map.MyLID(i), True           )
+
+class EpetraMapTestCase(unittest.TestCase):
+    "TestCase class for Map objects"
+
+    def setUp(self):
+        self.comm = Epetra.SerialComm()
+        self.map  = Epetra.Map(4,0,self.comm)
+
+    def testNumGlobalElements(self):
+        "Test the Map NumGlobalElements method"
+        self.assertEqual(self.map.NumGlobalElements(), 4)
+
+    def testNumMyElements(self):
+        "Test the Map NumMyElements method"
+        self.assertEqual(self.map.NumMyElements(), 4)
+
+    def testElementSize(self):
+        "Test the Map ElementSize method"
+        self.assertEqual(self.map.ElementSize(), 1)
+
+    def testIndexBase(self):
+        "Test the Map IndexBase method"
+        self.assertEqual(self.map.IndexBase(), 0)
+
+    def testNumGlobalPoints(self):
+        "Test the Map NumGlobalPoints method"
+        self.assertEqual(self.map.NumGlobalPoints(), 4)
+
+    def testNumMyPoints(self):
+        "Test the Map NumMyPoints method"
+        self.assertEqual(self.map.NumMyPoints(), 4)
+
+    def testMinMyElementSize(self):
+        "Test the Map MinMyElementSize method"
+        self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
+
+    def testMaxMyElementSize(self):
+        "Test the Map MaxMyElementSize method"
+        self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
+
+    def testMinElementSize(self):
+        "Test the Map MinElementSize method"
+        self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
+
+    def testMaxElementSize(self):
+        "Test the Map MaxElementSize method"
+        self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
+
+    def testConstantElementSize(self):
+        "Test the Map ConstantElementSize method"
+        self.assertEqual(self.map.ConstantElementSize(), True)
+
+    def testSameAs(self):
+        "Test the Map SameAs method"
+        self.assertEqual(self.map.SameAs(self.map), True)
+
+    def testDistributedGlobal(self):
+        "Test the Map DistributedGlobal method"
+        self.assertEqual(self.map.DistributedGlobal(), False)
+
+    def testMinAllGID(self):
+        "Test the Map MinAllGID method"
+        self.assertEqual(self.map.MinAllGID(), 0)
+
+    def testMaxAllGID(self):
+        "Test the Map MaxAllGID method"
+        self.assertEqual(self.map.MaxAllGID(), 3)
+
+    def testMinMyGID(self):
+        "Test the Map MinMyGID method"
+        self.assertEqual(self.map.MinMyGID(), 0)
+
+    def testMaxMyGID(self):
+        "Test the Map MaxMyGID method"
+        self.assertEqual(self.map.MaxMyGID(), 3)
+
+    def testMinLID(self):
+        "Test the Map MinLID method"
+        self.assertEqual(self.map.MinLID(), 0)
+
+    def testMaxLID(self):
+        "Test the Map MaxLID method"
+        self.assertEqual(self.map.MaxLID(), 3)
+
+    def testIDs(self):
+        "Test the Map global and local IDs"
+        for i in range(self.map.NumMyElements()):
+            self.assertEqual(self.map.LID(i)  , self.map.GID(i))
+            self.assertEqual(self.map.MyGID(i), True           )
+            self.assertEqual(self.map.MyLID(i), True           )
+
+## class EpetraCompObjectTestCase(unittest.TestCase):
+##     "TestCase class for ComObjects"
+
+##     def setUp(self):
+##         self.compObject = Epetra.CompObject()
+
+##     def test(self):
+
+class EpetraVectorTestCase(unittest.TestCase):
+    "TestCase class for Vector objects"
+
+    def setUp(self):
+        self.length     = 3 * 3
+        self.scale      = 1.0 / (self.length-1)
+        self.comm       = Epetra.SerialComm()
+        self.map        = Epetra.Map(self.length,0,self.comm)
+        self.numPyArray = arange(self.length) * self.scale
+        self.numPyArray.shape = (3,self.length/3)
+        
+    def testBlockMap(self):
+        "Test the Vector BlockMap constructor"
+        epetraVector = Epetra.Vector(self.map)
+        self.assertEqual(len(epetraVector), self.length)
+        for i in range(self.length):
+            self.assertEqual(epetraVector[i], 0.0)
+        epetraVector[:] = self.numPyArray.flat
+        for i in range(self.length):
+            self.assertEqual(epetraVector[i], i*self.scale)
+
+    def testBlockMap_Numeric(self):
+        "Test the Vector BlockMap, Numeric array constructor"
+        epetraVector = Epetra.Vector(self.map, self.numPyArray)
+        self.assertEqual(epetraVector.MyLength(), self.length)
+        (ni,nj) = epetraVector.shape
+        for i in range(ni):
+            for j in range(nj):
+                self.assertEqual(epetraVector[i,j], self.numPyArray[i,j])
+
+    def testNumeric(self):
+        "Test the Vector Numeric array constructor"
+        epetraVector = Epetra.Vector(self.numPyArray)
+        self.assertEqual(epetraVector.MyLength(), self.length)
+        (ni,nj) = epetraVector.shape
+        for i in range(ni):
+            for j in range(nj):
+                self.assertEqual(epetraVector[i,j], self.numPyArray[i,j])
+
+    def testPyObject(self):
+        "Test the Vector PyObject constructor"
+        epetraVector = Epetra.Vector([[0,1],[2,3]])
+        self.assertEqual(epetraVector.MyLength(), 4)
+        (ni,nj) = epetraVector.shape
+        for i in range(ni):
+            for j in range(nj):
+                k = nj*i + j
+                self.assertEqual(epetraVector[i,j], float(k))
+
+if __name__ == "__main__":
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(EpetraObjectTestCase    ))
+    suite.addTest(unittest.makeSuite(EpetraSerialCommTestCase))
+    suite.addTest(unittest.makeSuite(EpetraBlockMapTestCase  ))
+    suite.addTest(unittest.makeSuite(EpetraMapTestCase       ))
+    suite.addTest(unittest.makeSuite(EpetraVectorTestCase    ))
+    unittest.TextTestRunner(verbosity=2).run(suite)

@@ -1,5 +1,5 @@
-#ifndef numeric_include_h
-#define numeric_include_h
+#ifndef NUMERIC_INCLUDE_H
+#define NUMERIC_INCLUDE_H
 
 // When including arrayobject.h to use Numeric objects,
 // care must be taken w.r.t the PY_ARRAY_UNIQUE_SYMBOL
@@ -9,7 +9,7 @@
 
 #include <Python.h>
 
-//#define PY_ARRAY_UNIQUE_SYMBOL Py_Array_API_NumPyWrapper
+//#define PY_ARRAY_UNIQUE_SYMBOL Py_Array_PyTrilinos
 #include <Numeric/arrayobject.h>
 
 #endif // numeric_include

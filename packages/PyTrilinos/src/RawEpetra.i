@@ -1,6 +1,6 @@
 // -*- c++ -*-
 
-%module Epetra
+%module RawEpetra
 
 %{
 // System includes
@@ -35,17 +35,20 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 // Local includes
+#include "Callback.h"
+#include "CallbackVectorLoadTest.h"
+#include "Epetra_NumPyVector.h"
+#include "Epetra_VectorHelper.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
 #include "PyObjectHolder.h"
-#include "Epetra_VectorHelper.h"
-#include "CallbackVectorLoadTest.h"
 %}
 
 // Ignore directives
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use print
 %ignore Epetra_Object::Print(ostream &) const;       // faciltated by __str__
 %ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
+%ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
 %ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
 %ignore Epetra_BlockMap::operator=(const Epetra_BlockMap &);
@@ -99,7 +102,7 @@
 %rename(BLAS                ) Epetra_BLAS;
 %rename(LAPACK              ) Epetra_LAPACK;
 %rename(MultiVector         ) Epetra_MultiVector;
-%rename(Vector              ) Epetra_Vector;
+//%rename(Vector              ) Epetra_Vector;
 %rename(IntVector           ) Epetra_IntVector;
 %rename(CrsGraph            ) Epetra_CrsGraph;
 %rename(MapColoring         ) Epetra_MapColoring;
@@ -112,6 +115,7 @@
 %rename(SerialDenseMatrix   ) Epetra_SerialDenseMatrix;
 %rename(SerialDenseVector   ) Epetra_SerialDenseVector;
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
+%rename(NumPyVector         ) Epetra_NumPyVector;
 
 // Typemap directives
 %typemap(in) (int * Indices)
@@ -181,6 +185,7 @@
 // Local interface includes
 %include "PyObjectHolder.h"
 %include "NumPyArray.h"
+%include "Epetra_NumPyVector.h"
 
 // Extensions
 %extend Epetra_Object {

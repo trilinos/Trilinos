@@ -1,9 +1,7 @@
-#ifndef NumPyArray_h
-#define NumPyArray_h
+#ifndef NUMPYARRAY_H
+#define NUMPYARRAY_H
 
-#ifndef numeric_include_h
-#  include <numeric_include.h>
-#endif
+#include "numeric_include.h"
 
 #include <iostream>
 
@@ -22,6 +20,7 @@ public:
   const double        * getDataArray  () const;
   const int           * getStrides    () const;
   const PyArrayObject * getArrayObject() const;
+  PyArrayObject       * getArrayObject()      ;
   
   // Reports if wrapped array is contiguous
   bool isContiguous() const;

@@ -1,13 +1,19 @@
 #include "NumPyWrapper.h"
 
+#define DEBUG 0
+#if DEBUG
 #include <iostream>
+using namespace std;
+#endif
 
 // Static initialization
 NumPyWrapper         NumPyWrapper::m_singleton;
 
 NumPyWrapper::NumPyWrapper()
 {
-  //std::cerr << "Calling import_array() to initialize Numeric C interface." << std::endl;
+#if DEBUG
+  cerr << "Calling import_array() to initialize Numeric C interface." << endl;
+#endif
   import_array();
 }
 

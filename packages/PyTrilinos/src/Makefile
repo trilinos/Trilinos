@@ -2,7 +2,7 @@
 ROOT       := ../
 
 # Library name
-LIBRARY    := libcommon.a
+#LIBRARY    := libcommon.a
 
 # Source Files
 SRC        := Callback.cxx            \
@@ -13,7 +13,7 @@ SRC        := Callback.cxx            \
 	      PyObjectHolder.cxx
 
 # The interface files
-INTERFACES := Epetra.i EpetraExt.i NOX_Epetra.i
+INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i
 
 # Sub-directories
 SUBDIRS    := NOX
@@ -34,12 +34,12 @@ TARGET     := $(WRAPPERS) NOX_Wrappers
 all: $(TARGET)
 
 # Target dependency on common library
-$(TARGET): $(LIBRARY)
+$(TARGET): $(SRC)
 
 # Library target
-$(LIBRARY): $(OBJECTS)
-	ar -r $@ $^
-	ranlib $@
+# $(LIBRARY): $(OBJECTS)
+# 	ar -r $@ $^
+# 	ranlib $@
 
 # NOX Wrapper target
 NOX_Wrappers:
@@ -51,4 +51,5 @@ clean:
 
 # Remove dependency files, proxies, static library and proxies
 clobber: clean
-	rm -f $(DEPDIR)*.d $(LIBRARY) $(PROXIES)
+	rm -f $(DEPDIR)*.d $(PROXIES)
+#	rm -f $(DEPDIR)*.d $(LIBRARY) $(PROXIES)

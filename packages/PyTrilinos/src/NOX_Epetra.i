@@ -22,6 +22,7 @@
 
 // Local includes
 #include "Callback.h"
+#include "Epetra_NumPyVector.h"
 #include "Epetra_VectorHelper.h"
 #include "NumPyWrapper.h"
 #include "PyInterface.h"
@@ -34,6 +35,7 @@ using namespace NOX::Epetra  ;
 
 // Ignore directives
 %ignore *::print(ostream &, int) const;
+%ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore NOX::Abstract::Group;
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
 %ignore NOX::Abstract::Group::operator=(const NOX::Epetra::Group&);
@@ -51,7 +53,7 @@ using namespace NOX::Epetra  ;
 %rename(Group_None) NOX::Epetra::Group::None;
 
 // Epetra interface import
-%import "Epetra.i"
+%import "RawEpetra.i"
 
 // NOX interface includes
 using namespace std;

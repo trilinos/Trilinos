@@ -10,6 +10,32 @@
 
 ****** Clean up interface between Numeric arrays, double *'s and Epetra
        objects.
+    [Done] Write Epetra_NumPyVector class, that inherits from
+           Epetra_Vector, but also has a PyArrayObject pointer, and
+           both point to same contiguous data
+    [Done] Move Epetra module to RawEpetra
+    [Done] Write new Epetra module that redefines Vector class to
+    	   inherit from UserArray and Epetra_NumPyVector classes
+        ++++++ Epetra_MultiVector
+        [Done] Epetra_Vector
+        ++++++ Epetra_SerialDenseVector
+        ++++++ Epetra_SerialDenseMatrix
+        ++++++ Epetra_IntVector
+        ++++++ Epetra_IntSerialDenseVector
+        ++++++ Epetra_IntSerialDenseMatrix
+    ------ Protect Epetra.{Vector,...} against changing array attribute
+    ------ Use typemaps to change (double *) or (int *) arguments to
+           Numeric arrays
+
+****** Get rid of extraneous C++ code
+    ------ Epetra_VectorHelper
+    ------ PyObjectHolder
+    ------ NumPyWrapper
+    ------ NumPyArray
+
+****** Move NOX_Epetra into NOX directory
+
+****** Inside setup.py, change NOX Extensions to have NOX_ prefix
 
 ****** Have PyInterface automatically set the associated attribute in the
        Problem class, or come up with a cleaner solution.

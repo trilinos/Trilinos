@@ -45,10 +45,6 @@ else:
     lapackFwk = [ ]
     lapackLib = ["blas", "lapack", "g2c"]
 
-# Common routines
-commonDir = ["src"]
-commonLib = ["common"]
-
 # SWIG Python library
 swigStrings = commands.getoutput("swig -python -ldflags").split()
 swigDir     = [swigStrings[0][2:]]
@@ -59,14 +55,19 @@ else:
     swigPath = [ ]
 
 # Standard extension data
-stdIncDirs = commonDir + trilIncDir
-stdLibDirs = commonDir + trilLibDir + swigDir
-stdLibs    = commonLib + swigLib
+stdIncDirs = trilIncDir
+stdLibDirs = trilLibDir + swigDir
+stdLibs    = swigLib
 stdArgs    = swigPath
 
 # Epetra extension module
-Epetra     = Extension("PyTrilinos._Epetra",
-                       ["src/Epetra_wrap.cxx"],
+RawEpetra  = Extension("PyTrilinos._RawEpetra",
+                       ["src/RawEpetra_wrap.cxx",
+                        "src/Epetra_NumPyVector.cxx",
+                        "src/Epetra_VectorHelper.cxx",
+                        "src/NumPyArray.cxx",
+                        "src/NumPyWrapper.cxx",
+                        "src/PyObjectHolder.cxx"], 
                        include_dirs    = stdIncDirs,
                        library_dirs    = stdLibDirs + pythonDir,
                        libraries       = stdLibs + epetraLib + lapackLib + pythonLib,
@@ -85,7 +86,13 @@ EpetraExt  = Extension("PyTrilinos._EpetraExt",
 
 # NOX_Epetra extension module
 NOX_Epetra = Extension("PyTrilinos._NOX_Epetra",
-                       ["src/NOX_Epetra_wrap.cxx"],
+                       ["src/NOX_Epetra_wrap.cxx",
+                        "src/Callback.cxx",
+                        "src/Epetra_NumPyVector.cxx",
+                        "src/Epetra_VectorHelper.cxx",
+                        "src/NumPyArray.cxx",
+                        "src/NumPyWrapper.cxx",
+                        "src/PyInterface.cxx"],
                        include_dirs    = stdIncDirs,
                        library_dirs    = stdLibDirs,
                        libraries       = stdLibs + noxEpetraLib + noxLib +     \
@@ -138,6 +145,6 @@ setup(name         = "PyTrilinos",
       author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "src"},
       packages     = ["PyTrilinos", "PyTrilinos.NOX"],
-      ext_modules  = [ Epetra,    EpetraExt, NOX_Epetra, Abstract,
+      ext_modules  = [ RawEpetra, EpetraExt, NOX_Epetra, Abstract,
                        Parameter, Solver,    StatusTest            ]
       )

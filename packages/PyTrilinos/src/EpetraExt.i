@@ -15,11 +15,14 @@
 #include "EpetraExt_MapColoringIndex.h"
 %}
 
+// Ignore directives
+%ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
+
 // SWIG library includes
 %include "std_vector.i"
 
 // Epetra interface import
-%import "Epetra.i"
+%import "RawEpetra.i"
 
 // Epetra interface includes
 %include "EpetraExt_Transform.h"
