@@ -37,18 +37,31 @@
   \f[
   F(x)=0.
   \f]
+  Here \f$F:\Re^n \rightarrow \Re^n\f$.
 
   \section started Getting Started
 
-  See the \ref configuration.
+  See \ref configuration.
 
   \section classes Class Overview
 
-  See the \ref overview.
+  See \ref overview.
 
   \section params Parameter Specifications
 
-  See the \ref parameters.
+  See \ref parameters.
+
+  \section license License
+
+  Our intention is to make NOX available for download under the terms
+  of the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser
+  General Public License</a>.
+
+  \section download Downloads
+
+  Downloadable versions of NOX will be posted shortly. Until then,
+  please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+  (rppawlo@sandia.gov) for a copy.
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -65,16 +78,38 @@
 
   \section email Mailing Lists
 
-  <p>We recommend that all %NOX users subscribe to the 
-  <a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a>.
-  This mailing list is used to keep users informed of new releases and patches. 
-  Developers should subscribe to both the 
-  <a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a>
-  and the 
-  <a href="http://software.sandia.gov/mailman/listinfo/nox-cvs">NOX-CVS Mailing List</a>.
-  The first is a mailing list dedicated to discussion of the
-  development of %NOX and is archived; the second is the mailing list
-  to which all CVS commit messages are sent.
+<p>We recommend that users and developers subscribe to the following mailing lists as appropriate.
+<ul>
+<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
+Low-volume, primarily for release announcements. (Highly Recommended)
+<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
+Discussion forum for users of NOX. (Recommended)
+<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
+Discussion forum for NOX developers. (Developers)
+<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
+CVS Commit Message (Active  Developers)
+</ul>
+
+\section contributors APPSPACK Contributors
+
+The following people have contributed code to APPSPACK:
+
+<ul>
+<li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
+<li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
+     Sandia National Labs, 
+     tgkolda@sandia.gov
+<li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov
+<li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov
+<li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov
+<li> Brett Bader (Visiting researcher, Summer 2002)
+</ul>
+
+
+
+\section questions For All Other Questions and Comments...
+
+Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
 
 */
 
