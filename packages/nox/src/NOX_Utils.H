@@ -118,7 +118,9 @@ public:				// types
     //! 2^5
     OuterIterationStatusTest = 0x20, 
     //! 2^6
-    LinearSolverDetails = 0x40        
+    LinearSolverDetails = 0x40,   
+    //! 2^7
+    TestDetails = 0x80
   };
 
 
