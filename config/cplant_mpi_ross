@@ -1,5 +1,6 @@
-../configure --enable-nox --enable-nox-epetra \
---enable-referencey12m \
+../configure --enable-nox --enable-loca --enable-nox-epetra \
+--enable-nox-lapack --enable-nox-lapack-examples \
+--enable-nox-epetra-examples \
 CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
 TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
