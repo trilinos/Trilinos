@@ -45,8 +45,8 @@ int proc;
 int *parray = zz->LB.PartDist;    /* Temporary variable */
 
   if (zz->LB.Num_Global_Parts == zz->Num_Proc) {
-    /*  number of parts == number of procs. return processor number. */
-    proc = zz->Proc;
+    /*  number of parts == number of procs. return input part. */
+    proc = part;
   }
   else {
     /*  number of parts != number of procs */
