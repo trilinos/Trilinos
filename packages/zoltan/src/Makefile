@@ -74,18 +74,6 @@ SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer
 
-#source code from SCCS projects
-
-GR_CSRC		= gr.c gr_hash.c gr_list.c gr_tree.c gr_type.c gr_util.c
-GR_INC		= gr_type.h gr_const.h gr_hash_const.h gr_list_const.h \
-		  gr_tree_const.h gr_type_const.h \
-		  gr_util_const.h
-
-ID_CSRC		= id.c id_util.c
-ID_INC		= id_const.h id_util.h id_util_const.h
-
-VX_CSRC		= vx.c
-VX_INC		= vx_const.h
 
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
@@ -96,7 +84,7 @@ LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c
 RCB_INC		= rcb_const.h
 
-OCT_CSRC	= msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c \
+OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c
 OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
