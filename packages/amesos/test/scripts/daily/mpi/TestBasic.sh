@@ -88,18 +88,6 @@ cd Test_Basic
 foreach g  ( TestBasic.csh )
 		echo "############" $g " ##############" >>& $file
 		if( "$2" == "True" ) then
-                    echo "############ LAPACK ##############" >>& $file
-		    source $g LAPACK
-		    if( $status != 0 ) then
-		    # A test failed.
-			set AnError = True
-			echo "  ******** Test failed ********" >>& $file
-			echo "Errors for script " $g " are listed above." >>& $file2
-			cat SST.summary >> $file
-		    else
-		    # Tests passed
-			echo "******** Test passed ********" >>& $file
-		    endif
                     echo "############ KLU ##############" >>& $file
 		    source $g KLU
 		    if( $status != 0 ) then

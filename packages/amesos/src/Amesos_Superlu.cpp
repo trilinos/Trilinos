@@ -94,23 +94,23 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
 }
 
 //=============================================================================
-Amesos_Superlu::~Amesos_Superlu(void) {
+Amesos_Superlu::~Amesos_Superlu(void) 
+{
 
   using namespace SLU;
 
-  if ( SerialMap_ ) delete SerialMap_ ; 
-  if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
+  if (SerialMap_) delete SerialMap_ ; 
+  if (SerialCrsMatrixA_) delete SerialCrsMatrixA_ ; 
 
   Destroy_SuperMatrix_Store(&data_->B);
   Destroy_SuperMatrix_Store(&data_->X);
-  if ( iam_ == 0 ) { 
-    if ( FactorizationDone_ ) { 
+  if (iam_ == 0) { 
+    if (FactorizationDone_) { 
       Destroy_SuperMatrix_Store(&data_->A);
       Destroy_SuperNode_Matrix(&data_->L);
       Destroy_CompCol_Matrix(&data_->U);
     }
   }
-      
 
   delete data_; 
 
@@ -146,7 +146,7 @@ int Amesos_Superlu::ConvertToSerial() {
   //  Convert Original Matrix to Serial (if it is not already) 
   //
   if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
-  if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
+  if (SerialCrsMatrixA_) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
   if ( false && IsLocal_==1 ) {  //FIXME - remove the false here
 //     SerialMatrix_ = CastCrsMatrixA ;
   } else {
@@ -260,7 +260,8 @@ int Amesos_Superlu::ReFactor(){
 //  Issues:
 //
 //
-int Amesos_Superlu::Factor(){
+int Amesos_Superlu::Factor()
+{
   
   using namespace SLU;
   //
@@ -373,6 +374,15 @@ int Amesos_Superlu::SymbolicFactorization() {
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() {
   
+  if (SerialMap_) {
+    delete SerialMap_ ; 
+    SerialMap_ = 0;
+  }
+  if (SerialCrsMatrixA_) {
+    delete SerialCrsMatrixA_ ; 
+    SerialCrsMatrixA_ = 0;
+  }
+
   using namespace SLU;
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
@@ -475,9 +485,8 @@ int Amesos_Superlu::NumericFactorization() {
 #endif
 
 
-    FactorizationDone_ = true ; 
   }
-  
+  FactorizationDone_ = true ; 
 
   return 0;
 }
@@ -659,6 +668,7 @@ int Amesos_Superlu::Solve()
     assert( SerialBextract == 0 ) ;
     assert( SerialXextract == 0 ) ;
   }  
+
   //  All processes should return the same error code
   if ( 1 < Comm().NumProc() ) {
     Comm().Broadcast( Ierr, 1, 0 ) ; 

@@ -106,7 +106,7 @@ extern "C" {
 //  #include "TSF.h"
 //  using std::exception ;
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 
   vector <double> BBval ; 
@@ -270,6 +270,45 @@ main(int argc, char **argv)
     if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
     exit_value = -1 ; 
   }
+
+  // return ok because I don't want to break the tests
+  // if the solver is not avaiable
+#ifndef HAVE_AMESOS_KLU
+  if (SparseSolver == KLU) {
+    cerr << "KLU is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_UMFPACK
+  if (SparseSolver == UMFPACK) {
+    cerr << "UMFPACK is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_SUPERLU
+  if (SparseSolver == SUPERLU) {
+    cerr << "SUPERLU is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_SUPERLUDIST
+  if (SparseSolver == SUPERLUDIST) {
+    cerr << "SUPERLUDIST is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_MUMPS
+  if (SparseSolver == MUMPS) {
+    cerr << "MUMPS is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
+#ifndef HAVE_AMESOS_DSCPACK
+  if (SparseSolver == DSCPACK) {
+    cerr << "DSCPACK is not installed..." << endl;
+    exit(EXIT_SUCCESS);
+  }
+#endif
 
   SuperLU_permc = 1 ;    // Set the default to MMD on A'*A
   if ( argc == NUM_SUPERLU_PARAMS && 
