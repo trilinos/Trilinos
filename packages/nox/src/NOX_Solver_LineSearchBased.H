@@ -95,7 +95,7 @@ public:
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
+  virtual bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();

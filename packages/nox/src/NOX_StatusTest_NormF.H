@@ -71,7 +71,7 @@ namespace StatusTest {
   - If the Abstract::Vector::NormType is \c INF, then
     \f[ \alpha = \gamma \max_{i} | F_i |  \f]
 
-  We set $\beta$ as follows. 
+  We set \f$\beta\f$ as follows. 
 
   - If an initial guess is provided, we use a relative tolerance
   defined by \f[ \beta = \frac{\mbox{tolerance}}{\alpha_0} \f] Here

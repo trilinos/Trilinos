@@ -46,32 +46,37 @@ namespace Direction {
 
 //! %Newton direction computation
 /*! 
-  Computes the Newton direction by solving
-  \f[ Js = -F. \f]
-  
-  To use this direction, specify that the "Method" is "Newton" in the
-  "Direction" sublist of the parameters that are passed to the solver
-  (see NOX::Direction::Manager for more information on choosing the
-  search direction).
+  Computes the %Newton direction by solving the %Newton system.
+  \f[ 
+  Js = -F 
+  \f]
 
-  If the underlying linear solver for this comupation is an iterative method, 
-  this direction computation becomes an inexact %Newton method.  The 
-  tolerance used in terminating the linear solve (called a \b Forcing \b Term) 
-  may be constant or it can be adjusted for each successive linear solve.
-  Adjustable Forcing Terms are implemented as described in [1] and
-  originally introduced in [2]. In this case, we choose a convergence
-  tolerance for the linear solve. In other words, at nonlinear iteration 
-  \f$k\f$ we choose \f$\eta_k \in \left[ \eta_{\min}, \eta_{\max} \right] \f$
-  and solve for \f$s_k\f$ such that
+  Here \f$J\f$ is the n x n Jacobian matrix at the current
+  iterate, \f$F\f$ is the n-vector representing the nonlinear
+  function at the current iterate, and \f$s\f$ is the n-vector
+  that we are solving for.
+
+  If we use an iterative linear solver for the %Newton system, then
+  this is called an <b>inexact %Newton method</b>.  The tolerance used
+  to terminate the linear solve is called the <b>forcing term</b>.
+  The forcing term may be constant, or it may be <b>adjustable</b>.
+  Adjustable forcing terms were introduced by Eisenstat and Walker
+  (1982). Here they are implemented as described in Pernice and Walker
+  (1998). In this case, we choose a convergence tolerance for the
+  linear solve. 
+
+  Mathematically speaking, at nonlinear iteration \f$k\f$ we
+  choose \f$\eta_k \in \left[ \eta_{\min}, \eta_{\max} \right] \f$ and
+  solve for \f$s_k\f$ such that
 
   \f[
-  \frac{\|F_k + J_k s_k \|}{\|F_k\|} \leq \eta_k
+  \frac{\|J_k s_k - (-F_k)\|}{\|F_k\|} \leq \eta_k
   \f]
 
   The \b Type \b 1 method sets the forcing term as follows:
 
   \f[
-  \eta_k = \left\vert \frac{\| F_k \| - \|F_{k-1} + J_{k-1} s_{k-1} \| }
+  \eta_k = \left\vert \frac{\| F_k \| - \|J_{k-1} s_{k-1} - (-F_{k-1}) \| }
   {\|F_{k-1}\|} \right\vert
   \f]
 
@@ -91,35 +96,69 @@ namespace Direction {
   \max\{\gamma \eta_{k-1}^{\alpha}, \eta_{\min} \} \leq \eta_k \leq \eta_{\max}
   \f]
 
+  <B>Parameters to Specify the %Newton %Direction</B>
+
+  The choice of direction object is specified in the "Direction"
+  sublist of the nonlinear solver. Set the "Method" to "Newton".
+  See NOX::Direction::Manager for more information on choosing the
+  search direction.
+
+  <B>Input Parameters</B>
+
   The following options may be specified in the "Newton" sublist of
   the "Direction" sublist of the solver parameters.
 
-  - "Rescue Bad Newton Solve" (Boolean) - Says whether or not we should
-    try to use the solution from a bad linear solve. If set to true, 
-    we will accept the solution regardless of the status of the linear
-    solver. Defaults to true.
+<ul>
+<li>"Rescue Bad %Newton Solve" (Boolean) - True if we even if the
+    linear solve does not meet the tolerance specified by the forcing
+    term. Defaults to true.
 
-  - "Forcing Term Method" - Method to compute the forcing term, i.e.,
-    the tolerance for the linear solver. Choices are "Constant", 
-    "Type 1", and "Type 2".  Defaults to "Constant". 
+<li>"Forcing Term Method" - Method to compute the forcing term, i.e.,
+    the tolerance for the linear solver. Choices are:
+    <ul>
+    <li>"Constant", 
+    <li>"Type 1"
+    <li>"Type 2".  
+    </ul>
+    Defaults to "Constant". 
 
-  - "Forcing Term Initial Tolerance" - Initial linear
-    solver tolerance (\f$\eta_0\f$). Defaults to 1.0e-1.
+<li>"Forcing Term Initial Tolerance" - \f$\eta_0\f$ (initial linear
+    solver tolerance). Defaults to 0.1.
 
-  - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
-    solver tolerance (\f$\eta_{\min}\f$). Defaults to 1.0e-6.
+<li>"Forcing Term Minimum Tolerance" - \f$\eta_{\min}\f$. Defaults to 1.0e-6.
 
-  - "Forcing Term Maximum Tolerance" = Maximum acceptable linear
-    solver tolerance (\f$\eta_{\max}\f$). Default to 0.01.
+<li>"Forcing Term Maximum Tolerance" - \f$\eta_{\max}\f$. Defaults to 0.01.
 
-  - "Forcing Term Alpha" - Alpha (\f$\alpha\f$) used for the "Type 2"
-    forcing term calcuation. Defaults to 1.5.
+<li>"Forcing Term Alpha" - \f$\alpha\f$ (used only by "Type 2"). Defaults to 1.5.
 
-  - "Forcing Term Gamma" - Gamma (\f$\gamma\f$) used for the "Type 2"
-    forcing term calcuation. Defaults to 0.9.
+<li>"Forcing Term Gamma" - \f$\gamma\f$ (used only by "Type 2"). Defaults to 0.9.
+</ul>
 
-  <B> Important Note: Using inexact %Newton methods with adjustable forcing terms </B> <br>
-The performance of adjustable forcing terms can be affected if the linear solver solves a linear system that is scaled.  The forcing term algorithm assumes that the linear solver achieves the following tolerance:
+\note
+When using a forcing term, it's critically important the the residual
+of the original system is used in the comparison. This can be an issue
+if scaling or left preconditioning is applied to the linear system.
+
+<b>References</b>
+
+  <ul>
+
+  <li>Michael Pernice and Homer F. Walker, NITSOL: A %Newton Iterative
+  %Solver for Nonlinear Systems, SISC 19(Jan 1998):302-318.
+
+  <li> S. C. Eisenstat and H. F. Walker, Globally convergent inexact
+  %Newton methods, SINUM 19(1982):400-408
+
+  </ul>
+*/
+
+
+/*
+  <B> Important Note: Using inexact %Newton methods with adjustable
+forcing terms </B> <br> The performance of adjustable forcing terms
+can be affected if the linear solver solves a linear system that is
+scaled.  The forcing term algorithm assumes that the linear solver
+achieves the following tolerance:
 
   \f[
   \frac{\|F_k + J_k s_k \|}{\|F_k\|} \leq \eta_k
@@ -131,25 +170,33 @@ However, if we are solving a scaled linear system we are actually solving to the
   \frac{\|D_k^{-1}F_k + D_k^{-1}J_k s_k \|}{\|D_k^{-1}F_k\|} \leq \eta_k
   \f]
 
-Where \f$ D_k \f$ is the scaling matrix (typically a diagonal row sum matrix is used).  This is a different tolerance than the one expected in the adjustable forcing term algorithm.  To account for this, one would have to have the NOX::Direction::Newton compute \f$ D \f$-norms in the direction computations.  This breaks the abstract design (and bloats the NOX::Abstract::Group) since now NOX::Direction::Newton would have to know details about the linear solver and then access scaling objects to compute these special norms.  Alternatively, we have chosen to change the convergence test in the linear solver to achieve the same goal.  The linear solver must now account for scaling in the termination criteria.  In %NOX, if an adjustable forcing term is used in conjunction with scaling of the linear system by a scaling matrix \f$ D \f$, the following convergence criteria should instead be used to terminate the linear solve:
+Where \f$ D_k \f$ is the scaling matrix (typically a diagonal row sum
+matrix is used).  This is a different tolerance than the one expected
+in the adjustable forcing term algorithm.  To account for this, one
+would have to have the NOX::Direction::Newton compute \f$ D \f$-norms
+in the direction computations.  This breaks the abstract design (and
+bloats the NOX::Abstract::Group) since now NOX::Direction::Newton
+would have to know details about the linear solver and then access
+scaling objects to compute these special norms.  Alternatively, we
+have chosen to change the convergence test in the linear solver to
+achieve the same goal.  The linear solver must now account for scaling
+in the termination criteria.  In %NOX, if an adjustable forcing term
+is used in conjunction with scaling of the linear system by a scaling
+matrix \f$ D \f$, the following convergence criteria should instead be
+used to terminate the linear solve:
 
   \f[
   \frac{\| D\left[D^{-1}F_k + D^{-1}J_k s_k \right] \|}{\|F_k\|} \leq \eta_k
   \f]
 
-NOX::Direction::Newton will set a boolean parameter called "Using Adjustable Forcing Term" in the "%Linear %Solver" sublist of the "%Newton" direction sublist.  This parameter will be set to \b true if the "Forcing Term Method" is set to "Type 1" or "Type 2".  It is set to \b false if the "Forcing Term Method" is set to "Constant".  A linear solver can check this parameter and thus adjust it's convergence criteria accordingly.
+NOX::Direction::Newton will set a boolean parameter called "Using
+Adjustable Forcing Term" in the "%Linear %Solver" sublist of the
+"%Newton" direction sublist.  This parameter will be set to \b true if
+the "Forcing Term Method" is set to "Type 1" or "Type 2".  It is set
+to \b false if the "Forcing Term Method" is set to "Constant".  A
+linear solver can check this parameter and thus adjust it's
+convergence criteria accordingly.
 
-  \b References
-
-  <ol>
-
-  <li>Michael Pernice and Homer F. Walker, NITSOL: A %Newton Iterative
-  %Solver for Nonlinear Systems, SISC 19(Jan 1998):302-318.
-
-  <li> S. C. Eisenstat and H. F. Walker, Globally convergent inexact
-  %Newton methods, SINUM 19(1982):400-408
-
-  </ol>
  */  
 class Newton : public Generic {
 
@@ -196,7 +243,7 @@ private:
    */
   NOX::Parameter::List* paramsPtr;
 
-  //! Determined based on "Rescue Bad Newton Solve". 
+  //! Determined based on "Rescue Bad %Newton Solve". 
   bool doRescue;
 
   //! Vector containing the predicted RHS

@@ -225,14 +225,16 @@ library and related examples do depend on MPI.
   <li> \c --with-mpi-incdir=DIR
     <ul>
       <li> Specify the MPI include files location. 
-           Defaults to \c MPIROOT/include if \c --with-mpi is specified. 
-	   If multiple directories must be specified, try \c --with-cppflags="-I<dir1> \c -I<dir2>" instead.
+           Defaults to <tt>MPIROOT/include</tt> if <tt>--with-mpi</tt> is specified. 
+	   If multiple directories must be specified, 
+	   try <tt>--with-cppflags="-I\<dir1\> -I\<dir2\>"</tt> instead.
     </ul>
   <li> \c --with-mpi-libdir=DIR
     <ul>
       <li> Specify the MPI libraries location. 
-           Defaults to \c MPIROOT/lib if \c --with-mpi is specified.
-	   If multiple directories must be specified, try \c --with-ldflags="-L<dir1> \c -L<dir2>" instead.
+           Defaults to <tt>MPIROOT/lib</tt> if <tt>--with-mpi</tt> is specified.
+	   If multiple directories must be specified, 
+	   try <tt>--with-ldflags="-L\<dir1\>  -L\<dir2\></tt>" instead.
     </ul>
 
 

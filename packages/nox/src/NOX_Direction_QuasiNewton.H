@@ -68,7 +68,7 @@ namespace Direction {
   The \f$H_k\f$ for L-BFGS is only stored implicitly using information
   from the \f$m\f$ most recent changes in \f$x\f$ and changes in
   \f$g\f$. Specifically, we store pairs \f$(s_i, y_i)\f$ for
-  \f$i=0,\dots,m-1\f$.  Here \f$(s_0,y_0)\f$ denotes the \i oldest
+  \f$i=0,\dots,m-1\f$.  Here \f$(s_0,y_0)\f$ denotes the <em>oldest</em>
   information, i.e.,
 
   &nbsp;&nbsp; 
@@ -78,7 +78,7 @@ namespace Direction {
   y_0 = g_{k+1-m} - g_{k-m}.
   \f$
 
-  Likewise, \f$(s_m,y_m)\f$ denotes the \i newest information, i.e.,
+  Likewise, \f$(s_m,y_m)\f$ denotes the <em>newest</em> information, i.e.,
 
   &nbsp;&nbsp; 
   \f$

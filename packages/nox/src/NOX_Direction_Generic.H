@@ -50,6 +50,11 @@ class List;
 namespace NOX {
 
 //! Search direction strategies
+/*!
+  The Generic class spells out the interface. The Manager class can
+  instantiate any other concrete implementation. The remaining classes
+  are concrete implementations.
+*/
 namespace Direction {
 
 //! %Generic direction interface
@@ -60,9 +65,9 @@ class Generic {
 
 public:
 
-  //! Default constructor. 
+  //! Constructor. 
   /*! 
-    Constructors of derived objects should look like reset.
+    Constructors of derived objects should look like reset().
    */
   Generic() {};
 
@@ -77,7 +82,7 @@ public:
     the current group, \c grp. 
 
     The \c grp is not const so that we can compute the F vector, the
-    Jacobian matrix, the Newton vector, and so on.
+    Jacobian matrix, the %Newton vector, and so on.
 
     Const access to the solver is used for getting additional
     information such as the past solution, the iteration number, and

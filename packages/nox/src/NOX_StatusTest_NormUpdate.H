@@ -77,7 +77,7 @@ where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
   - If the Abstract::Vector::NormType is \c INF, then
     \f[ \alpha = \gamma \max_{i} | \Delta x_i |  \f]
 
-  $\beta$ is a scalar set by the user in the constructor. 
+  \f$\beta\f$ is a scalar set by the user in the constructor. 
 
   \f[  \beta  = \mbox{tolerance} \f]
 

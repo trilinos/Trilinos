@@ -49,6 +49,10 @@ namespace NOX {
 
 /*! 
   \brief %NOX nonlinear solvers namespace.
+
+  The Generic class spells out the interface. The Manager class can
+  instantiate any other concrete implementation. The remaining classes
+  are concrete implementations.
 */
 namespace Solver {
 
@@ -65,6 +69,7 @@ namespace Solver {
       getNumIterations(), and getParameterList() --- particularily
       useful for NOX::StatusTest methods.
   <li>Get the current status of the solver via getStatus().
+  </ul>
  */
 class Generic {
 

@@ -137,8 +137,8 @@ public:
   //! Output the parameter to the given stream. 
   /*! 
     Formats the output as "<type,value>", except in the case of a
-    list which just outputs "<sublist>". If the parameter has not yet
-    been set, it outputs "<NONE>". This is the function called by the
+    list which just outputs "\<sublist\>". If the parameter has not yet
+    been set, it outputs "\<NONE\>". This is the function called by the
     ostream operator<<. 
   */
   ostream& leftshift(ostream& stream) const;
