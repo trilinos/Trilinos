@@ -2098,8 +2098,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   int NcenterNodes;
   int * perm = NULL;
   char str[80];
-  struct amalg_drop * temp = 0;
-  double * scaled_diag = 0;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -2109,22 +2107,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   
   comm = Amatrix->comm;
 
-  /* forget dropping for a moment */
-  /* ??? mgee */
-  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
-    
-    if( comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() ) {
-      printf( "%s Warning : Dropping is not used\n", str);
-    }
-    
-    temp = (struct amalg_drop *) Amatrix->data;
-    scaled_diag  = temp->scaled_diag;
-    if (temp->scaled_diag != NULL) 
-      ML_free(temp->scaled_diag); /* what is going on here ???? mgee*/
-    temp->scaled_diag = NULL;
-    
-  }
-  
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
@@ -2230,13 +2212,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   }
 
   *total_nz = count;
-  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
-    if( temp == 0 ) {
-      fprintf( stderr, "**ERR** Something wrong here...\n" );
-      exit( EXIT_FAILURE );
-    }
-    temp->scaled_diag = scaled_diag;
-  }
 
 #ifdef DUMP_MATLAB_FILE
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
