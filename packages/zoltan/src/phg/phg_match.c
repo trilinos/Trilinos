@@ -41,9 +41,6 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
             exist = 0;
             hgp->matching = NULL;
         } else {   
-            /* just to make sure that coarsening will continue. We'll not call
-             * this code for global matching. Actually, we'll pick the best 
-             * local, but code structure doesn't allow us to use a function */
             hgp->matching = matching_local; 
             hgp->locmatching = hp.matching;
             hgp->matching_opt = hp.matching_opt;
@@ -93,28 +90,8 @@ char  *yo = "Zoltan_PHG_Matching";
      Zoltan_PHG_Scale_Vtx (zz, hg, hgp);
   }
 
-
   /* Do the matching */
-  if (hgp->locmatching) {  /* run local matching */
-      int limit=hg->nVtx;
-      PHGComm *hgc=hg->comm;
-      int root_matchcnt, root_rank;
-                
-      if (hgp->matching)
-          err = hgp->locmatching (zz, hg, match, &limit);
-
-      /* Optimization */
-      if (hgp->matching_opt) 
-          err = hgp->matching_opt (zz, hg, match, &limit);
-
-      /* find the index of the proc in column group with the best match
-         (max #matches); it will be our root proc */
-      Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
-                           &root_matchcnt, &root_rank);
-
-      MPI_Bcast(match, hg->nVtx, MPI_INT, root_rank, hgc->col_comm);
-
-  } else if (hgp->matching) /* run global or column/row matching algorithms */
+  if (hgp->matching) 
      err = hgp->matching (zz, hg, match, hgp);
 
 End: 
@@ -131,15 +108,24 @@ End:
 
 static int matching_local(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
 {
-    uprintf(hg->comm, "Something wrong! This function should not be called!\n");
-    /* UVC: NOTE:
-       The reason that we're not doing local matchin in this function, we don't
-       have access to parameter structure. So there is no way to figure
-       out which "local" matching needs to be called. Hence we do it
-       in Zoltan_PHG_Matching */
-    /* EBEB: Added the parameter struct as an input argument, so now we 
-       could change the structure.  */
-    return ZOLTAN_OK;
+    int limit=hg->nVtx, err=ZOLTAN_OK;
+    PHGComm *hgc=hg->comm;
+    int root_matchcnt, root_rank;
+    
+    err = hgp->locmatching (zz, hg, match, &limit);
+    
+    /* Optimization */
+    if (hgp->matching_opt) 
+        err = hgp->matching_opt (zz, hg, match, &limit);
+    
+    /* find the index of the proc in column group with the best match
+       (max #matches); it will be our root proc */
+    Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
+                         &root_matchcnt, &root_rank);
+    
+    MPI_Bcast(match, hg->nVtx, MPI_INT, root_rank, hgc->col_comm);
+    
+    return err;
 }
 
 
