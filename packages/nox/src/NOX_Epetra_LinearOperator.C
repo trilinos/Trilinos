@@ -146,6 +146,11 @@ SharedJacobian& LinearOperator::getSharedJacobian()
   return *sharedJacobian;
 }
 
+Interface& LinearOperator::getuserInterface()
+{
+  return userInterface;
+}
+
  
 bool LinearOperator::computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS)
 {
