@@ -374,6 +374,8 @@ using namespace std;
 // objects and UserArrays, to give users additional functionality.
 %pythoncode %{
 
+__version__ = Version()
+
 from UserArray import *
 
 class Vector(UserArray,NumPyVector):

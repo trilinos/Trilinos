@@ -35,7 +35,7 @@ all-am: build
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
-tempdir = $(shell $(top_srcdir)/../PyTrilinos/pyLocate --temp)
+tempdir = $(shell $(PYTHON) $(top_srcdir)/../PyTrilinos/pyLocate --temp)
 
 $(tempdir):
 	@echo "Creating directory $@"
@@ -57,18 +57,19 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
 	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
+	@echo "  'PYTHON'      : '$(PYTHON)',"      >> $@
 	@echo "}"                                   >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
-	$(srcdir)/setup.py build
+	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
-	$(srcdir)/setup.py install
+	$(PYTHON) $(srcdir)/setup.py install
 
 clean:
-	$(srcdir)/setup.py clean
-	rm -f setup.txt
-	rm -f $(WRAPPERS)
+	$(PYTHON) $(srcdir)/setup.py clean
+	$(RM) setup.txt
+	$(RM) $(WRAPPERS)
 
 test:
 	cd test && make test

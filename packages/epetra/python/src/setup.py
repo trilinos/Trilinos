@@ -36,10 +36,6 @@ import os
 import string
 import sys
 
-# Define the python library directory name and library name.
-pythonDir = sysconfig.get_config_var("LIBPL"  )
-pythonLib = sysconfig.get_config_var("LIBRARY")[3:-2]
-
 # Any information that needs to be transferred from the autotooled Makefile is
 # written to file setup.txt using python syntax to define a dictionary.  The
 # keys of this 'makeInfo' dictionary are variable names and the corresponding
@@ -99,8 +95,8 @@ _Epetra = Extension("PyTrilinos._Epetra",
                      numPyArray,
                      numPyWrapper      ],
                     include_dirs    = [epetraInc],
-                    library_dirs    = [epetraLibDir, pythonDir],
-                    libraries       = [epetraLib, pythonLib] + stdLibs,
+                    library_dirs    = [epetraLibDir],
+                    libraries       = [epetraLib] + stdLibs,
                     extra_link_args = extraArgs
                     )
 

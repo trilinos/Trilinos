@@ -47,7 +47,8 @@ except IOError:
     makeInfo = { }
 
 # Build the command to get the build library name
-cmd = "%s/../PyTrilinos/pyLocate --build" % makeInfo.get("top_srcdir","")
+cmd = "%s %s/../PyTrilinos/pyLocate --build" % (makeInfo.get("PYTHON"    ,""),
+                                                makeInfo.get("top_srcdir",""))
 (status,output) = commands.getstatusoutput(cmd)
 if status != 0:
     raise RuntimeError, "\n\tUNIX command '%s' gives\n\t%s" % (cmd,output)

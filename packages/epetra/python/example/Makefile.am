@@ -44,8 +44,7 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py testEpetraExt.py testEpetra.py testExample.py \
-	testNOX.py
+	setpath.py exSimple.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -60,4 +59,9 @@ check-am: $(EXAMPLE_SUITE)
 # Run the example script
 ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
 	cp $^ .
-	./$@.py
+	$(PYTHON) $@.py
+
+# Clean target
+clean:
+	$(RM) $(patsubst %, %.py, $(EXAMPLE_SUITE))
+	$(RM) setpath.py setpath.pyc

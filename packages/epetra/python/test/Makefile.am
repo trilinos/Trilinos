@@ -61,4 +61,9 @@ check-am: $(TEST_SUITE)
 # Run the test script
 test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	cp $^ .
-	./$@.py
+	$(PYTHON) $@.py
+
+# Clean target
+clean:
+	$(RM) $(patsubst %, %.py, $(TEST_SUITE))
+	$(RM) setpath.py setpath.pyc
