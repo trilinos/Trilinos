@@ -111,16 +111,18 @@ void TrustRegion::init()
   newton.reset(iparams.sublist("Direction"));
   cauchy.reset(iparams.sublist("Cauchy Direction"));
 
-  initRadius = iparams.getParameter("Initial Radius", 1.0);
+  initRadius = iparams.getParameter("Initial Radius", 0);
   radius = initRadius;
 
+  /*
   if (radius <= 0) {
     cerr << "NOX::Solver::TrustRegion::init - Invalid \"Initial Radius\" (" 
 	 << radius << ")" << endl;
     throw "NOX Error";
   }
+  */
 
-  minRadius = iparams.getParameter("Minimum Trust Region Radius", 1.0e-3);
+  minRadius = iparams.getParameter("Minimum Trust Region Radius", 1.0e-6);
 
   if (minRadius <= 0) {
     cerr << "NOX::Solver::TrustRegion::init - Invalid \"Minimum Trust Region Radius\" (" 
@@ -144,7 +146,7 @@ void TrustRegion::init()
     throw "NOX Error";
   }
 
-  contractTriggerRatio = iparams.getParameter("Contraction Trigger Ratio", 0.25);
+  contractTriggerRatio = iparams.getParameter("Contraction Trigger Ratio", 0.1);
 
   if (contractTriggerRatio < minRatio) {
     cerr << "NOX::Solver::TrustRegion::init - Invalid \"Contraction Trigger Ratio\" (" 
@@ -169,7 +171,7 @@ void TrustRegion::init()
     throw "NOX Error";
   }
 
-  expandFactor = iparams.getParameter("Expansion Factor", 2.0);
+  expandFactor = iparams.getParameter("Expansion Factor", 4.0);
 
   if (expandFactor <= 1) {
     cerr << "NOX::Solver::TrustRegion::init - Invalid \"Expansion Factor\" (" 
@@ -241,6 +243,12 @@ Status::StatusType TrustRegion::iterate()
     cerr << "NOX::Solver::TrustRegion::iterate - unable to calculate Cauchy direction" << endl;
     status = Status::Failed;
     return status;
+  }
+
+  if (niter == 0) {
+    radius = newtonVec.norm();
+    if (radius < minRadius)
+      radius = 2 * minRadius;
   }
 
   // Copy current soln to the old soln.
@@ -337,7 +345,13 @@ Status::StatusType TrustRegion::iterate()
 	cerr << "NOX::Solver::TrustRegion::iterate - unable to compute RHS" << endl;
 	throw "NOX Error";
       }
-      ratio = (fnew - fold) / (dir.dot(oldSoln.getGrad()) + 0.5 * bVec.dot(bVec));
+      double numerator = fold - fnew;
+      double denominator = abs(dir.dot(oldSoln.getGrad()) + 0.5 * bVec.dot(bVec));
+      ratio = numerator / denominator;
+      cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
+	   << Utils::sci(denominator) << "=" << ratio << endl;
+      if ((denominator < 1.0e-12) && ((fnew / fold) >= 0.5))
+	ratio = -1;
     }
 
 
@@ -365,6 +379,8 @@ Status::StatusType TrustRegion::iterate()
 
     // Update trust region
     if (ratio < contractTriggerRatio) {
+      if (stepType == TrustRegion::Newton)
+	radius = newtonVec.norm();
       radius = max(contractFactor * radius, minRadius);
     }
     else if ((ratio > expandTriggerRatio) && (dx == radius)) {
@@ -383,7 +399,9 @@ Status::StatusType TrustRegion::iterate()
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
     soln.computeRHS();
-    radius = initRadius;
+    radius = newtonVec.norm();
+    /*if (radius < minRadius)
+      radius = 2 * minRadius;*/
   }
 
   status = test(*this);
