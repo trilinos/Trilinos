@@ -134,7 +134,6 @@ public :: &
    Zoltan_Set_Post_Migrate_PP_Fn, &
    Zoltan_Set_Pre_Migrate_Fn, Zoltan_Set_Mid_Migrate_Fn, &
    Zoltan_Set_Post_Migrate_Fn, &
-   Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn, &
    Zoltan_Set_Obj_Size_Multi_Fn, &
    Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn 
 
