@@ -238,6 +238,8 @@ int Trilinos_Util_MatrixGallery::Set(const string parameter, const string value 
     } else {
       verbose_ = true;
     }
+  } else if( parameter == "expand_type" ) {
+    ExpandType_ = value;
   } else {
     cerr << ErrorMsg << "wrong input parameter (" << parameter << ")\n";
     return -1;
@@ -322,17 +324,21 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   // However, on some Sandia computers, STL is not that simple
   // to use. For this reason, I prefered this ugliest way
 
+  int count;
+  
   string Options[10];
   
   // all options with strings
-  Options[0] = "problem_type";
-  Options[1] = "map_type";
-  Options[2] = "exact_solution";
-  Options[3] = "matrix_name";
-  Options[4] = "starting_solution";
-  Options[5] = "output";
+  count = 0;
+  Options[count++] = "problem_type";
+  Options[count++] = "map_type";
+  Options[count++] = "exact_solution";
+  Options[count++] = "matrix_name";
+  Options[count++] = "starting_solution";
+  Options[count++] = "output";
+  Options[count++] = "expand_type";
   
-  for( int i=0 ; i<6 ; i++ ) {
+  for( int i=0 ; i<count ; i++ ) {
     string parameter = "-"+Options[i];    
     if( S.HaveOption(parameter) == true ) {
       string value = S.GetStringOption(parameter);
@@ -1870,12 +1876,39 @@ int Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
     
     VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
 
+    int ExpandTypeInt;
+
+    cout << ExpandType_ << endl;
+    
+    if( ExpandType_ == "zero_off_diagonal" ) ExpandTypeInt=0;
+    else if( ExpandType_ == "random_off_diagonal" ) ExpandTypeInt=1;
+    else {
+      cerr << ErrorMsg << "ExpandType not correct (" << ExpandType_ << "\n";
+      exit( EXIT_FAILURE );
+    }
+    Epetra_Util Util;
+    double r;
+    
     for( int i=0 ; i<CrsNumEntries ; ++i ) {
 	
       for( int k=0 ; k<BlockRows ; ++k ) { // rows
 	for( int h=0 ; h<BlockRows ; ++h ) { // cols
 	  if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[i];
-	  else VbrValues[k+h*BlockRows] = 0.0;
+	  else {
+	    switch( ExpandTypeInt ) {
+	    case 0:
+	      r = 0.0;
+	      break;
+	    case 1:
+	      // get a double between -1 and 1
+	      r = Util.RandomDouble();
+	      // scale it so that the sum of the block off-diagonal
+	      // is not greater than the block diangonal
+	      r /= (1.5*CrsValues[i]*BlockRows);
+	      break;
+	    }
+	    VbrValues[k+h*BlockRows] = r; 
+	  }
 	}
       }
 	  
@@ -2026,7 +2059,8 @@ void Trilinos_Util_MatrixGallery::ZeroOutData()
   MapType_ = "linear";
   ExactSolutionType_ = "constant";
   StartingSolutionType_ = "zero";
-    
+  ExpandType_ = "zero_off_diagonal";
+
   NumPDEEqns_= 1;
 
   LinearProblem_ = NULL;
@@ -2109,6 +2143,7 @@ ostream & operator << (ostream& os,
     // VBR stuff
     if( G.VbrMatrix_ != NULL ) {
       os << " * VBR matrix has been created " << endl;
+      os << " * VBR Expanded as : " << G.MapType_ << endl;
       os << " * VbrMatrix->OperatorDomainMap().NumGlobalElements() = "
 	 << G.VbrMatrix_->OperatorDomainMap().NumGlobalElements() << endl;
     }

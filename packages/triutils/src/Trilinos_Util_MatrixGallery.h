@@ -484,6 +484,7 @@ private:
   string MapType_;
   string ExactSolutionType_;
   string StartingSolutionType_;
+  string ExpandType_;
   
   // parameters
   int nx_, ny_, nz_;
