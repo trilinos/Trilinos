@@ -74,8 +74,9 @@ files for more details.  Instructions for customizing are listed behind
 
 2. Create generated Autoconf and Automake files.
 
-Before starting this phase, please see Trilinos/config/AutotoolsVersionInfo,
-obtain the correct version of both Autoconf and Automake.
+IMPORTANT: Before starting this phase, please see 
+Trilinos/config/AutotoolsVersionInfo, obtain the correct version of both 
+Autoconf and Automake.
 
 If you change Trilinos/configure.ac or Trilinos/packages/Makefile.am,
 run bootstrap in the Trilinos directory.  If you change

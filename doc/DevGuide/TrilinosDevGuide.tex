@@ -190,324 +190,10 @@ that Trilinos has been ported to.
 For a higher-level view of the Trilinos project, please see **(Cite An Overview
 of the Trilinos Project by Mike Heroux). 
 
-% start reading Mike's stuff at 243
-
-\section{Package Requirements}
-	**(Req's and how to satisfy them - break into subsections)**
-
-Stages of integration:
-\begin{enumerate}
-\item Put the package in the Trilinos repository.
-\item Package should respond to all relevant configure options.
-\item Package should have a process in place to port to all supported platforms and respond to bug
-reports in timely manner.
-\end{enumerate}
-
-
-\section{Suggested Practices}
-	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
-
-There are many ways to define an effective software process.  As a result, the Trilinos project
-specifies very few {\it requirements}.  At the same time, many software packages do not have
-well-defined practices to support good software engineering.  In this section, we discuss
-suggested practices based on our experience with some common tools and process for software
-engineering.  We want to strongly emphasize that these are {\it suggested} practices only and we
-discuss them here in order to facilitate adoption of practices for packages that have few existing
-practices in place.
-
-\subsection{Preliminary Steps}
-
-\begin{enumerate}
-\item Set up necessary accounts on software.sandia.gov.
-\item Establish Bugzilla Product and Component Definitions.
-Discussion of how to define bugzilla pieces.  Should discuss common component definitions.  List
-Heroux or Kolda or Sery as contacts.
-\item Establish Email Lists
-\item Others?
-\end{enumerate}
-
-\subsection{Practices to Support Software Lifecycle}
-
-One common view of software engineering processes breaks the process down into seven phases:
-\begin{enumerate}
-\item Requirements.
-\item Specification.
-\item Design.
-\item Implementation.
-\item Integration.
-\item Maintenance.
-\item Retirement/Replacement.
-\end{enumerate}
-In this section we discuss suggested practices to address most of these phases.  The value of 
-adopting these practices is that they are commonly used or planned for use in a number of existing
-Trilinos packages.  It is worth noting that testing is not a phase, but should be done at each of
-the above phases in the process as appropriate for that phase.
-
-\subsection{Requirements}
-The majority of requirements for Trilinos packages come either directly or indirectly from funded
-research proposals and plans.  Although these requirements are sometimes difficult to elicit from
-the proposals and plans, we assume that a package is satisfying requirements by virtue of being
-funded.  Therefore we only suggest that package developers track their requirements as part of the
-communication with funding sponsors.
-
-\subsection{Specification/Design}
-Package specifications can be done in many ways.  An effective way for object-oriented, e.g., C++
-packages is to use documented header files and a documentation tool such as Doxygen~\cite{doxyen},
-and then communicate the generated HTML output to the package development team via the {\it
-package-developers@software.sandia.gov} email list.  This both
-
-\subsection{Implementation}
-Nothing suggested.
-
-\subsection{Integration}
-Mention Epetra/TSF. Autotools.
-
-\subsection{Maintenance}
-Say something about bugzilla, bonzai, mailman (checkins list), CVS (release branches) the test harness.
-
-\subsection{Retirement/Replacement}
-To the extent possible checkins to a release branch should not force interface changes for users.
-Even on the development branch, users should be notified (via the package-users mail list) that
-checkins are about to happen that would require an interface change to user code.
-
-In general, we will be very slow to omit a package, or version of a package, that is in use unless
-there is equivalent interface and functionality support from a new package.
-
-	\section{Services Available to Trilinos Packages}
-	A number of services exist for Trilinos packages.
-	\subsection{Configuration Management}
-	**(See Overview Doc pg 12)**
-Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
-Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
-building software across a broad set of platforms (see also the ``Goat
-Book''~\cite{GoatBook}).  Although these
-tools are not official standards, they are commonly used in many
-packages.  Many existing
-Trilinos packages use Autoconf and Automake (and will use
-Libtool in the future).  However, use of these tools is not required.
-
-Package developers who are not currently using autotools, but would like
-to, can get a jump start by using a Trilinos package called 
-``new\_package''.  This trivial package exists for one primary purpose.  
-It walks a developer through the process of setting up a package to 
-configure and build using autotools.  General instructions for how to get 
-started can be found in Trilinos/packages/new\_package/README.  Please note 
-that new\_package is a work in progess, suggestions and contributions are 
-welcome, especially for FAQ's.
-
-Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
-package that wants to use Autoconf and Automake for configuring and
-building libraries.  These macros perform common configuration tasks such as
-locating a valid LAPACK~\cite{lapack} library, or checking for a user-
-defined MPI C compiler.  The macros can be found in the Trilinos CVS 
-repository in Trilinos/config.  These macros minimize the amount of redudant
- effort in using Autotools, and make it easier to apply a general change to 
-the configure process for all packages.
-	\subsection{Regression Testing}
-Trilinos provides a variety of regression
-testing capabilities.  Within a number of Trilinos packages, we employ
-``white box'' testing where detailed information about the software is
-used and probed.  In addition, Trilinos performs ``black box'' testing
-of packages via the Trilinos Solver Framework (TSF) virtual class
-interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
-test environment.  ({\bf NOTE: Black box testing via TSF is not in
-place at this time}
-	\subsection{Periodic Testing}
-Trilinos Packages that configure and build using Autotools can easily 
-utilize the the Trilinos testharness.  The testharness performs a CVS update
-(gets the most recent source code) every night and then builds the libraries
-and runs any tests that have been integrated into the testharness.  
-Currently the testharness only runs on a Linux platform, but it will 
-eventually run on 5-8 platforms.  Packages that have not ported to a 
-particular platform can be excluded from the testing process on that 
-platform.  Packages that do not have any tests integrated into the 
-testharness can still benefit by ensuring that libraries build without 
-errors.  Integrating existing tests into the testharness is not difficult.  
-The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
-Please note that this document is a work in progress.
-
-\subsection{CVS Repository}
-Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
-very easy to add new packages to the repository.  Packages that already use 
-CVS can even rettain their CVS history!  To access the repository, one must 
-have an account on software.sandia.gov.  Once an account has been granted, 
-set the following two environment variables (replace ``your\_user\_name'' 
-with your user name on software):
-
-\begin{verbatim}
-CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS
-CVS\_RSH ssh
-\end{verbatim}
-
-For those not familiar with CVS, below is a brief discussion covering some 
-of the most common CVS commands.  For more information, see the Gnu CVS Home
-Page~\cite{CVS}.
-
-Checking Out a Working Copy
-
-To get started, checkout a copy of the development branch of the repository.
-(Releases branches can be obtained by by checking out the appropriate 
-tagged version of the repository.)
-
-\begin{verbatim}
-cvs checkout Trilinos
-\end{verbatim}
-
-Updating a Woring Copy
-To update after a version has been obtained use the ``update'' command.  
-First, cd to the directory that is to be updated (usually the Trilinos root 
-directory).  Then type:
-
-\begin{verbatim}
-cvs -q update -dP
-\end{verbatim}
-
-The ``-q'' option means ``be somewhat quiet''.  Try the command without this
-option to see what it does.  
-
-The ``-d'' option means to get any new directories.  For example, if a new 
-package is added to the repository, but the ``-d'' option is not used, that 
-new package will never appear in the working copy.  However, the first time 
-that the ``-d'' option is used, all of the new package directories will be 
-downloaded, and from that time on, all CVS updates will update the 
-directories that were downloaded.  It is good practice to include this 
-option for every CVS update.
-
-... Decide if this subsection is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
-
-\subsection{Bonsai}
-A lot of useful information related to CVS history is accessible via a
-web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
-found on the web at ``http://software.sandia.gov/bonsai''.  Bonsai gives a 
-developer the ability to view the changes made to the files in the 
-repository.  The tool can be especially useful when trying to figure out which 
-changes may have introduced bugs into a piece of code.  Developers can search 
-for changes based on filename, directory, branch, date, user who made the 
-change, or any combination of these criteria.  The entire revision histories of
-individual files returned in a search can be utilized in finding the source of 
-bugs.  The differences between any two versions of a file may be viewed.  
-
-\subsection{Bugzilla}
-
-Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
-can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
-Bugzilla account is necessary for submitting bugs.  Those interested can sign 
-up at the website.  All bugs related to any package of Trilnos that uses 
-Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
-one developer diagnoses and fixes a bug within a short period of time.  A bug 
-report is still very valuable in this case because it provides an artifact 
-that outlines the problem and explains how the problem was fixed.  A bug 
-report should be filled out with as much detail as possible.  Likewise, after 
-a bug has been resolved, the developer should also provide a detailed 
-description of the solution that was used.
-
-**explain how this is truly useful, and not just busy work.**
-
-NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
-existing code, but also to a desired enhancement.  For example, a bug report 
-should be submitted to Bugzilla to report a segmentation fault that occurs 
-when using an existing Ifpack preconditioner, and a bug report should also be
-submitted to request a new Ifpack preconditioner.
-
-\subsection{Mailman}
-
-Email lists are maintained for Trilinos as a whole and for each package 
-through Mailman~\cite{Mailman}.  This tool can be found on the web at 
-``http://software.sandia.gov/mailman/listinfo''.  Those interested in signing 
-up for one or more lists may do so at the website.  Non-Sandians are able to 
-sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this 
-in mind when posting to these lists.
-
-Lists for new packages can be set up very easily.  Each package usually has 
-five mailing lists.  The example mailing lists mentioned below are to be used 
-for issues relating to all of Trilinos.  The names for the lists pertaining to 
-individual packages follow the same naming scheme, simply replace ``Trilinos'' 
-with the name of the package.  For example the list for Trilnos users is 
-called Trilinos-Users and the email address is 
-\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}.  The list 
-for Epetra users is called Epetra-Users and the associated email address is 
-\begin{verbatim}epetra-users@software.sandia.gov\end{verbatim}.
-
-TIP: While those who use Epetra (or any other Trilinos package) are also
-``Trilinos users'', the lists are not set up to recognize this.  In other 
-words, those who subscribe to the Epetra-Users mailing list do not necessarily 
-form a subset of those who subscribe to the Trilinos-Users mailing list.  This 
-is also true of all other list types.  Keep this in mind when subscribing and 
-posting to lists.
-\begin{itemize}
-\item Trilinos-Announce 
-\begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
-
-All Trilinos release announcements and other major news.
-
-\item Trilinos-Checkins 
-\begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
-
-CVS commit log messages that are releated to Trilinos in general or packages 
-that have not had separate lists established.
-
-\item Trilinos-Developers 
-\begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
-
-All discussions releated to Trilinos-specific development (not specific to a 
-Trilinos package) are conducted via this list.  Important development 
-decisions that originate in other places (regular email, discussions, etc) 
-should also be posted to this list (or to the appropriate package list).  
-By doing this, the list archive can provide a record explaining why various 
-changes were made over time.
-
-\item Trilinos-regression 
-\begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
-
-All regression test output that is not specific to a package. 
-
-\item Trilinos-Users 
-\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
-
-List for Trilinos Users.  General discussions about the use of Trilinos.
-
-\item Trilinos-Leaders
-\begin{verbatim}trilinos-leaders@software.sandia.gov\end{verbatim}
-
-Mailing list for representatives for each Trilinos package.  There are no 
-leaders lists for individual packages.
-\end{itemize}
-
-All 
-tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
-
-**Consider an example showing how tools can work together to fix bugs.**
-**(Break this down and talk about how to use the various tools)**
-
-	\section{Tools Available to Trilinos Packages}
-	**(Maybe break up by category and then by tool - reword title, this section for software that doesn't need to be duplicated)**
-	\subsection{Portable Interface to BLAS and LAPACK}
-	**(See Overview Doc pg 12)**
-
-Portable interface to BLAS and LAPACK: The Basic Linear Algebra
-Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
-provide a large repository of robust, high-performance mathematical
-software for serial and shared memory parallel dense linear algebra
-computations.  However, the BLAS and LAPACK interfaces are Fortran
-specifications, and the mechanism for calling Fortran interfaces from
-C and C++ varies across computing platforms.  Epetra (and Tpetra)
-provide a set of simple, portable interfaces to the BLAS and LAPACK
-that provide uniform access to the BLAS and LAPACK across a broad
-set of platforms.  These interfaces are accessible to
-other packages.
-**(Expand on this)**
-
-
-	\section{Integrating a Package into Trilinos}
-	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
-
-
-
-
 	\section{Getting Started}
 	**(How to configure and build Trilinos)**
 	**(Need intro! - also include examples!)**
+
 \subsection{Trilinos Configuration Options}
 
 The following options apply to all Trilinos packages unless 
@@ -638,6 +324,335 @@ the casual installer.
 \item Any code that links to Trilinos should define 'HAVE\_CONFIG\_H' (without
 quotes).
 \end{itemize}
+
+\subsection{Adding and Removing Source Files}
+
+**(bootstrapping, correct AC/AM versions)**
+% start reading Mike's stuff at 243
+
+\section{Package Requirements}
+	**(Req's and how to satisfy them - break into subsections)**
+
+Stages of integration:
+\begin{enumerate}
+\item Put the package in the Trilinos repository.
+This is a minimum requrirement for any package wanting to become a part of 
+Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
+add a new package to Trilinos, there are no prerequisites for adding a new 
+package to the Trilinos repository.  **(Not distributed at this point, should not conflict or even interact with the existing configure/build process.)**
+\item Package should respond to all relevant configure options.
+\item Package should have a process in place to port to all supported 
+platforms and respond to bug reports in timely manner.
+\end{enumerate}
+
+
+\section{Suggested Practices}
+	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
+
+There are many ways to define an effective software process.  As a result, the 
+Trilinos project specifies very few {\it requirements}.  At the same time, 
+many software packages do not have well-defined practices to support good 
+software engineering.  In this section, we discuss suggested practices based 
+on our experience with some common tools and process for software 
+engineering.  We want to strongly emphasize that these are {\it suggested} 
+practices only and we discuss them here in order to facilitate adoption of 
+practices for packages that have few existing practices in place.
+
+\subsection{Preliminary Steps}
+
+\begin{enumerate}
+\item Set up necessary accounts on software.sandia.gov.
+\item Establish Bugzilla Product and Component Definitions.
+Discussion of how to define bugzilla pieces.  Should discuss common component 
+definitions.  List Heroux or Kolda or Sery as contacts.
+\item Establish Email Lists
+\item Others?
+\end{enumerate}
+
+\subsection{Practices to Support Software Lifecycle}
+
+One common view of software engineering processes breaks the process down into 
+seven phases:
+\begin{enumerate}
+\item Requirements.
+\item Specification.
+\item Design.
+\item Implementation.
+\item Integration.
+\item Maintenance.
+\item Retirement/Replacement.
+\end{enumerate}
+In this section we discuss suggested practices to address most of these 
+phases.  The value of adopting these practices is that they are commonly used 
+or planned for use in a number of existing Trilinos packages.  It is worth 
+noting that testing is not a phase, but should be done at each of the above 
+phases in the process as appropriate for that phase.
+
+\subsection{Requirements}
+The majority of requirements for Trilinos packages come either directly or 
+indirectly from funded research proposals and plans.  Although these 
+requirements are sometimes difficult to elicit from the proposals and plans, 
+we assume that a package is satisfying requirements by virtue of being 
+funded.  Therefore we only suggest that package developers track their 
+requirements as part of the communication with funding sponsors.
+
+\subsection{Specification/Design}
+Package specifications can be done in many ways.  An effective way for 
+object-oriented, e.g., C++ packages is to use documented header files and a 
+documentation tool such as Doxygen~\cite{doxyen}, and then communicate the 
+generated HTML output to the package development team via the 
+{\it package-developers@software.sandia.gov} email list.  This both
+
+\subsection{Implementation}
+Nothing suggested.
+
+\subsection{Integration}
+Mention Epetra/TSF. Autotools.
+
+\subsection{Maintenance}
+Say something about bugzilla, bonzai, mailman (checkins list), CVS (release 
+branches) the test harness.
+
+\subsection{Retirement/Replacement}
+To the extent possible checkins to a release branch should not force interface 
+changes for users.  Even on the development branch, users should be notified 
+(via the package-users mail list) that checkins are about to happen that would 
+require an interface change to user code.
+
+In general, we will be very slow to omit a package, or version of a package, 
+that is in use unless there is equivalent interface and functionality support 
+from a new package.
+
+	\section{Services Available to Trilinos Packages}
+	A number of services exist for Trilinos packages.
+	\subsection{Configuration Management}
+	**(See Overview Doc pg 12)**
+Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
+Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
+building software across a broad set of platforms (see also the ``Goat
+Book''~\cite{GoatBook}).  Although these
+tools are not official standards, they are commonly used in many
+packages.  Many existing
+Trilinos packages use Autoconf and Automake (and will use
+Libtool in the future).  However, use of these tools is not required.
+
+Package developers who are not currently using autotools, but would like
+to, can get a jump start by using a Trilinos package called 
+``new\_package''.  This trivial package exists for one primary purpose.  
+It walks a developer through the process of setting up a package to 
+configure and build using autotools.  General instructions for how to get 
+started can be found in Trilinos/packages/new\_package/README.  Please note 
+that new\_package is a work in progess, suggestions and contributions are 
+welcome, especially for FAQ's.
+
+Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
+package that wants to use Autoconf and Automake for configuring and
+building libraries.  These macros perform common configuration tasks such as
+locating a valid LAPACK~\cite{lapack} library, or checking for a user-
+defined MPI C compiler.  The macros can be found in the Trilinos CVS 
+repository in Trilinos/config.  These macros minimize the amount of redudant
+ effort in using Autotools, and make it easier to apply a general change to 
+the configure process for all packages.
+	\subsection{Regression Testing}
+Trilinos provides a variety of regression
+testing capabilities.  Within a number of Trilinos packages, we employ
+``white box'' testing where detailed information about the software is
+used and probed.  In addition, Trilinos performs ``black box'' testing
+of packages via the Trilinos Solver Framework (TSF) virtual class
+interfaces.  Any package that implements the TSF interfaces (see
+Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
+test environment.  ({\bf NOTE: Black box testing via TSF is not in
+place at this time}
+	\subsection{Periodic Testing}
+Trilinos Packages that configure and build using Autotools can easily 
+utilize the the Trilinos testharness.  The testharness performs a CVS update
+(gets the most recent source code) every night and then builds the libraries
+and runs any tests that have been integrated into the testharness.  
+Currently the testharness only runs on a Linux platform, but it will 
+eventually run on 5-8 platforms.  Packages that have not ported to a 
+particular platform can be excluded from the testing process on that 
+platform.  Packages that do not have any tests integrated into the 
+testharness can still benefit by ensuring that libraries build without 
+errors.  Integrating existing tests into the testharness is not difficult.  
+The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
+Please note that this document is a work in progress.
+
+\subsection{CVS Repository}
+**Add an appendix for a lot of this info.**
+Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
+very easy to add new packages to the repository.  Packages that already use 
+CVS can even rettain their CVS history!  To access the repository, one must 
+have an account on software.sandia.gov.  Once an account has been granted, 
+set the following two environment variables (replace ``your\_user\_name'' 
+with your user name on software):
+
+\begin{verbatim}
+CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS
+CVS\_RSH ssh
+\end{verbatim}
+
+For those not familiar with CVS, below is a brief discussion covering some 
+of the most common CVS commands.  For more information, see the Gnu CVS Home
+Page~\cite{CVS}.
+
+Checking Out a Working Copy
+
+To get started, checkout a copy of the development branch of the repository.
+(Releases branches can be obtained by by checking out the appropriate 
+tagged version of the repository.)
+
+\begin{verbatim}
+cvs checkout Trilinos
+\end{verbatim}
+
+Updating a Woring Copy
+To update after a version has been obtained use the ``update'' command.  
+First, cd to the directory that is to be updated (usually the Trilinos root 
+directory).  Then type:
+
+\begin{verbatim}
+cvs -q update -dP
+\end{verbatim}
+
+The ``-q'' option means ``be somewhat quiet''.  Try the command without this
+option to see what it does.  
+
+The ``-d'' option means to get any new directories.  For example, if a new 
+package is added to the repository, but the ``-d'' option is not used, that 
+new package will never appear in the working copy.  However, the first time 
+that the ``-d'' option is used, all of the new package directories will be 
+downloaded, and from that time on, all CVS updates will update the 
+directories that were downloaded.  It is good practice to include this 
+option for every CVS update.
+
+... Decide if this subsection is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
+
+\subsection{Bonsai}
+A lot of useful information related to CVS history is accessible via a
+web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
+found on the web at ``http://software.sandia.gov/bonsai''.  Bonsai gives a 
+developer the ability to view the changes made to the files in the 
+repository.  The tool can be especially useful when trying to figure out which 
+changes may have introduced bugs into a piece of code.  Developers can search 
+for changes based on filename, directory, branch, date, user who made the 
+change, or any combination of these criteria.  The entire revision histories of
+individual files returned in a search can be utilized in finding the source of 
+bugs.  The differences between any two versions of a file may be viewed.  
+
+\subsection{Bugzilla}
+
+Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
+can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
+Bugzilla account is necessary for submitting bugs.  Those interested can sign 
+up at the website.  All bugs related to any package of Trilnos that uses 
+Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
+one developer diagnoses and fixes a bug within a short period of time.  A bug 
+report is still very valuable in this case because it provides an artifact 
+that outlines the problem and explains how the problem was fixed.  A bug 
+report should be filled out with as much detail as possible.  Likewise, after 
+a bug has been resolved, the developer should also provide a detailed 
+description of the solution that was used.
+
+**explain how this is truly useful, and not just busy work.**
+
+NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
+existing code, but also to a desired enhancement.  For example, a bug report 
+should be submitted to Bugzilla to report a segmentation fault that occurs 
+when using an existing Ifpack preconditioner, and a bug report should also be
+submitted to request a new Ifpack preconditioner.
+
+\subsection{Mailman}
+
+Email lists are maintained for Trilinos as a whole and for each package 
+through Mailman~\cite{Mailman}.  This tool can be found on the web at 
+``http://software.sandia.gov/mailman/listinfo''.  Those interested in signing 
+up for one or more lists may do so at the website.  Non-Sandians are able to 
+sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this 
+in mind when posting to these lists.
+
+Lists for new packages can be set up very easily.  Each package usually has 
+five mailing lists.  The example mailing lists mentioned below are to be used 
+for issues relating to all of Trilinos.  The names for the lists pertaining to 
+individual packages follow the same naming scheme, simply replace ``Trilinos'' 
+with the name of the package.  For example the list for Trilnos users is 
+called Trilinos-Users and the email address is 
+\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}  The list 
+for Epetra users is called Epetra-Users and the associated email address is 
+\begin{verbatim}epetra-users@software.sandia.gov\end{verbatim}
+
+TIP: While those who use Epetra (or any other Trilinos package) are also
+``Trilinos users'', the lists are not set up to recognize this.  In other 
+words, those who subscribe to the Epetra-Users mailing list do not necessarily 
+form a subset of those who subscribe to the Trilinos-Users mailing list.  This 
+is also true of all other list types.  Keep this in mind when subscribing and 
+posting to lists.
+\begin{itemize}
+\item Trilinos-Announce 
+\begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
+
+All Trilinos release announcements and other major news.
+
+\item Trilinos-Checkins 
+\begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
+
+CVS commit log messages that are releated to Trilinos in general or packages 
+that have not had separate lists established.
+
+\item Trilinos-Developers 
+\begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
+
+All discussions releated to Trilinos-specific development (not specific to a 
+Trilinos package) are conducted via this list.  Important development 
+decisions that originate in other places (regular email, discussions, etc) 
+should also be posted to this list (or to the appropriate package list).  
+By doing this, the list archive can provide a record explaining why various 
+changes were made over time.
+
+\item Trilinos-regression 
+\begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
+
+All regression test output that is not specific to a package. 
+
+\item Trilinos-Users 
+\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
+
+List for Trilinos Users.  General discussions about the use of Trilinos.
+
+\item Trilinos-Leaders
+\begin{verbatim}trilinos-leaders@software.sandia.gov\end{verbatim}
+
+Mailing list for representatives for each Trilinos package.  There are no 
+leaders lists for individual packages.
+\end{itemize}
+
+All 
+tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
+
+**Consider an example showing how tools can work together to fix bugs.**
+
+	**(Add a section comp to Epetra and TSF: Two special packages - minimixe redundant work.)**
+	\subsection{Portable Interface to BLAS and LAPACK}
+	**(See Overview Doc pg 12)**
+
+Portable interface to BLAS and LAPACK: The Basic Linear Algebra
+Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
+provide a large repository of robust, high-performance mathematical
+software for serial and shared memory parallel dense linear algebra
+computations.  However, the BLAS and LAPACK interfaces are Fortran
+specifications, and the mechanism for calling Fortran interfaces from
+C and C++ varies across computing platforms.  Epetra (and Tpetra)
+provide a set of simple, portable interfaces to the BLAS and LAPACK
+that provide uniform access to the BLAS and LAPACK across a broad
+set of platforms.  These interfaces are accessible to
+other packages.
+**(Expand on this)**
+
+
+	\section{Integrating a Package into Trilinos}
+	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
+
+
+
 
 	\section{Interoperability Status for Existing Trilinos Packages}
 
