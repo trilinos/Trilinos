@@ -144,10 +144,6 @@ if test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/komplex])
 fi
 
-if test "X$ac_cv_use_nox" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/nox])
-fi
-
 if test "X$ac_cv_use_tsf" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSF])
@@ -180,6 +176,10 @@ fi
 
 if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
+fi
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/nox])
 fi
 
 if test "X$ac_cv_use_new_package" != "Xno"; then
