@@ -186,8 +186,8 @@ dgstrf (char *refact, SuperMatrix *A, double diag_pivot_thresh,
  */
     /* Local working arrays */
     NCPformat *Astore;
-    int       *iperm_r; /* inverse of perm_r; not used if refact = 'N' */
-    int       *iperm_c; /* inverse of perm_c */
+    int       *iperm_r=NULL; /* inverse of perm_r; not used if refact = 'N' */
+    int       *iperm_c=NULL; /* inverse of perm_c */
     int       *iwork;
     double    *dwork;
     int	      *segrep, *repfnz, *parent, *xplore;
