@@ -32,33 +32,26 @@ void assert_not_null(const void *);
 // the reference count for RefCountPtr<...>
 class RefCountPtr_node {
 public:
-	//
 	RefCountPtr_node(bool has_ownership)
 		: count_(1), has_ownership_(has_ownership)
 	{}
-	//
-	virtual ~RefCountPtr_node() {}
-	//
+	virtual ~RefCountPtr_node()
+	{}
 	int count() const {
 		return count_;	
 	}
-	//
 	int incr_count() {
 		return ++count_;
 	}
-	//
 	int deincr_count() {
 		return --count_;
 	}
-	//
 	void has_ownership(bool has_ownership) {
 		has_ownership_ = has_ownership;
 	}
-	//
 	bool has_ownership() const {
 		return has_ownership_;
 	}
-
 private:
 	int         count_;
 	bool        has_ownership_;
@@ -109,38 +102,19 @@ RefCountPtr<T>::RefCountPtr( ENull )
 {}
 
 template<class T>
-inline
-RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
-	: ptr_(p)
-	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
-{}
-
-#ifdef REFCOUNTPTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-template<class T>
 REFCOUNTPTR_INLINE
-template<class Dealloc_T>
-RefCountPtr<T>::RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership )
-	: ptr_(p)
-	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
-{}
-#endif
+RefCountPtr<T>::RefCountPtr(const RefCountPtr<T>& r_ptr)
+	: ptr_(r_ptr.ptr_), node_(r_ptr.node_)
+{
+	if(node_) node_->incr_count();
+}
 
-#ifdef REFCOUNTPTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
 template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
 RefCountPtr<T>::RefCountPtr(const RefCountPtr<T2>& r_ptr)
 	: ptr_(const_cast<T2*>(r_ptr.get()))                 // will not compile if T1 is not an ancestor of T2
 	, node_(const_cast<node_t*>(r_ptr.access_node()))
-{
-	if(node_) node_->incr_count();
-}
-#endif
-
-template<class T>
-REFCOUNTPTR_INLINE
-RefCountPtr<T>::RefCountPtr(const RefCountPtr<T>& r_ptr)
-	: ptr_(r_ptr.ptr_), node_(r_ptr.node_)
 {
 	if(node_) node_->incr_count();
 }
@@ -237,6 +211,21 @@ void RefCountPtr<T>::assert_not_null() const {
 
 template<class T>
 inline
+RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
+	: ptr_(p)
+	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
+{}
+
+template<class T>
+REFCOUNTPTR_INLINE
+template<class Dealloc_T>
+RefCountPtr<T>::RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership )
+	: ptr_(p)
+	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+{}
+
+template<class T>
+inline
 RefCountPtr<T>::RefCountPtr( T* p, node_t* node)
 	: ptr_(p), node_(node)
 {
@@ -266,20 +255,19 @@ typename RefCountPtr<T>::node_t* RefCountPtr<T>::access_node() const
 template<class T>
 inline
 Teuchos::RefCountPtr<T>
-Teuchos::rcp( T* p, bool owns_mem )
-{
-	return RefCountPtr<T>(p,owns_mem);
-}
-
-template<class T>
-inline
-Teuchos::RefCountPtr<T>
 Teuchos::rcp( T* p )
 {
 	return RefCountPtr<T>(p,true);
 }
 
-#ifdef REFCOUNTPTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
+template<class T>
+inline
+Teuchos::RefCountPtr<T>
+Teuchos::rcp( T* p, bool owns_mem )
+{
+	return RefCountPtr<T>(p,owns_mem);
+}
+
 template<class T, class Dealloc_T>
 inline
 Teuchos::RefCountPtr<T>
@@ -287,7 +275,6 @@ Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 {
 	return RefCountPtr<T>(p,dealloc,owns_mem);
 }
-#endif
 
 template<class T2, class T1>
 REFCOUNTPTR_INLINE

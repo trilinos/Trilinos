@@ -18,7 +18,7 @@ namespace Teuchos
 			/** Constructors */
 			//@{
 			/** Empty ctor */
-			XMLObject() : ptr_(0) {;}
+			XMLObject() : ptr_(null) {;}
 			/** Create a node labeled by tag */
 			XMLObject(const string& tag);
 

@@ -6,13 +6,13 @@ using namespace Teuchos;
 
 
 XMLObject::XMLObject(const string& tag)
-	: ptr_(new XMLObjectImplem(tag))
+	: ptr_(rcp(new XMLObjectImplem(tag)))
 {
 	if (ptr_.get()==0) Error::raise("XMLObject ctor");
 }
 
 XMLObject::XMLObject(XMLObjectImplem* ptr)
-	: ptr_(ptr)
+	: ptr_(rcp(ptr))
 {
 	if (ptr_.get()==0) Error::raise("XMLObject ctor");
 }
