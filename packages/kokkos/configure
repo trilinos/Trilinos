@@ -8717,7 +8717,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile example/Makefile"
+                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile test/Permutation/Makefile example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9325,6 +9325,7 @@ do
   "test/BaseSparseSolve/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BaseSparseSolve/Makefile" ;;
   "test/DenseMultiVector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/DenseMultiVector/Makefile" ;;
   "test/HbMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/HbMatrix/Makefile" ;;
+  "test/Permutation/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Permutation/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Kokkos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Kokkos_config.h:src/Kokkos_config.h.in" ;;
