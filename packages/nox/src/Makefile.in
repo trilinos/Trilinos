@@ -183,8 +183,7 @@ STATUS_H = \
 	$(srcdir)/NOX_Status_RelResid.H \
 	$(srcdir)/NOX_Status_MaxIters.H \
 	$(srcdir)/NOX_Status_RelUpdate.H \
-        $(srcdir)/NOX_Status_WRMS.H \
-        $(srcdir)/NOX_Status_SizeIndAbsResid.H 
+        $(srcdir)/NOX_Status_WRMS.H 
 
 
 STATUS = \
@@ -195,8 +194,7 @@ STATUS = \
 	$(srcdir)/NOX_Status_RelResid.C \
 	$(srcdir)/NOX_Status_MaxIters.C \
 	$(srcdir)/NOX_Status_RelUpdate.C \
-        $(srcdir)/NOX_Status_WRMS.C \
-        $(srcdir)/NOX_Status_SizeIndAbsResid.C 
+        $(srcdir)/NOX_Status_WRMS.C  
 
 
 UTILS_H = \
@@ -304,8 +302,7 @@ am_libnox_a_OBJECTS = NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_Status_AbsResid.$(OBJEXT) NOX_Status_Combo.$(OBJEXT) \
 	NOX_Status_MaxResid.$(OBJEXT) NOX_Status_RelResid.$(OBJEXT) \
 	NOX_Status_MaxIters.$(OBJEXT) NOX_Status_RelUpdate.$(OBJEXT) \
-	NOX_Status_WRMS.$(OBJEXT) NOX_Status_SizeIndAbsResid.$(OBJEXT) \
-	NOX_Utils.$(OBJEXT)
+	NOX_Status_WRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -335,7 +332,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelUpdate.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_SizeIndAbsResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_WRMS.Po $(DEPDIR)/NOX_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -444,8 +440,6 @@ NOX_Status_RelResid.$(OBJEXT): $(srcdir)/NOX_Status_RelResid.C
 NOX_Status_MaxIters.$(OBJEXT): $(srcdir)/NOX_Status_MaxIters.C
 NOX_Status_RelUpdate.$(OBJEXT): $(srcdir)/NOX_Status_RelUpdate.C
 NOX_Status_WRMS.$(OBJEXT): $(srcdir)/NOX_Status_WRMS.C
-NOX_Status_SizeIndAbsResid.$(OBJEXT): \
-	$(srcdir)/NOX_Status_SizeIndAbsResid.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
@@ -479,7 +473,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelUpdate.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_SizeIndAbsResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_WRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
@@ -774,18 +767,6 @@ NOX_Status_WRMS.obj: $(srcdir)/NOX_Status_WRMS.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_Status_WRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_WRMS.obj `cygpath -w $(srcdir)/NOX_Status_WRMS.C`
-
-NOX_Status_SizeIndAbsResid.o: $(srcdir)/NOX_Status_SizeIndAbsResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_SizeIndAbsResid.C' object='NOX_Status_SizeIndAbsResid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_SizeIndAbsResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_SizeIndAbsResid.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_SizeIndAbsResid.o `test -f $(srcdir)/NOX_Status_SizeIndAbsResid.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_SizeIndAbsResid.C
-
-NOX_Status_SizeIndAbsResid.obj: $(srcdir)/NOX_Status_SizeIndAbsResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_SizeIndAbsResid.C' object='NOX_Status_SizeIndAbsResid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_SizeIndAbsResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_SizeIndAbsResid.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_SizeIndAbsResid.obj `cygpath -w $(srcdir)/NOX_Status_SizeIndAbsResid.C`
 
 NOX_Utils.o: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Utils.C' object='NOX_Utils.o' libtool=no @AMDEPBACKSLASH@

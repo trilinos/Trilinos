@@ -39,13 +39,35 @@ namespace NOX {
 
 namespace Status {
 
-//! Convergence test based on the absolute norm of the RHS.
+//! Convergence test based on the norm of the residual.
+/*! The norm is computed by a call to the method NOX::Abstract::Group::getNormRHS().  Typically, this computes the 2-norm although the user is free to implement any norm they require in the getNormRHS() method.  For convergence, the tolerance must be below the value of "tolerance" specified in the constructor.   
+
+The second argument to the constructor, "norm" allows the user to scale the norm by \f$ \sqrt{\frac{1}{N}} \f$ where \f$ N \f$ is the number of unknowns in the problem.  For simulations where a mesh is involved (i.e. PDEs) this is a better norm to use than the usual L-2 norm of the residual.  This modification makes the convergence criteria independent of mesh/problem size (a property that is critical for scaling studies).  For example, if the 2-norm is the norm being used, the following equations are solved based on the "normScalingType" flag:
+
+if "norm" is set to "UnscaledNorm":
+  \f[
+  AbsResid = \sqrt{ \sum_{i=1}^N f_i^2 } 
+  \f]
+
+if "norm" is set to "ScaledNorm":
+  \f[
+  ScaledAbsResid = \sqrt{ \frac{1}{N}\sum_{i=1}^N f_i^2 } 
+  \f]
+*/
 class AbsResid : public Test {
 
 public:
 
+  //! Type that determines whether to scale the norm (computed via a call to NOX::Abstract::Group::getNormRHS()) by the problem size.  
+  enum NormType {UnscaledNorm, ScaledNorm};
+
   //! Constructor.
-  AbsResid(double tolerance);
+  /*! <ul>
+     <li> tolerance - required residual norm tolerance for convergence.
+     <li> norm - If set to "UnscaledNorm" the norm from the NOX::Abstract::Group::getNormRHS() method is used "as is". If set to "ScaledNorm" the norm from NOX::Abstract::Group::getNormRHS() is scaled by \f$ \sqrt{\frac{1}{N}} \f$ where \f$ N \f$ is the number of unknowns in the problem.
+     </ul> 
+   */
+  AbsResid(double tolerance, NormType norm = UnscaledNorm);
 
   //! Destructor.
   virtual ~AbsResid();
@@ -56,11 +78,14 @@ public:
 
 private:
 
-  //! Tolerance for convergence.
+  //! Tolerance required for convergence.
   double tol;
 
   //! %Status
   StatusType status;
+
+  //! Flag that determines if the norm will be scaled by the problem size.
+  NormType normType;
 
 };
 

@@ -39,9 +39,10 @@
 
 using namespace NOX::Status;
 
-AbsResid::AbsResid(double tolerance)
+AbsResid::AbsResid(double tolerance, NormType n)
 {
   tol = tolerance;
+  normType = n;
   status = Unconverged;
 }
 
@@ -54,6 +55,13 @@ StatusType AbsResid::operator()(const Solver::Generic& problem)
   status = Unconverged;
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();
+
+  if (normType == ScaledNorm)
+    normrhs /= sqrt( (double) tmp.getRHS().length() );
+
+  //cout << "length = " << tmp.getRHS().length() << endl;
+  //cout << "AbsResid Norm = " << normrhs << endl; 
+
   if (normrhs < tol)
     status = Converged;
   return status;
