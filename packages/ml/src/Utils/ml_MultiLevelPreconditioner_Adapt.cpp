@@ -30,6 +30,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                               double* TentativeNullSpace)
 {
 
+  if ((TentativeNullSpaceSize == 0) || (TentativeNullSpace == 0))
+    ML_CHK_ERR(-1);
+   
   // ================================== //
   // get parameters from the input list //
   // ================================== //
@@ -85,45 +88,33 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
     }
   }
 
-  // drop all vectors whose \infty norm is below the specified threshold
-  int count = 0;
+  // scaling vectors
   for (int i = 0 ; i < NumAdaptiveVectors ; ++i) {
-    double Norm1;
-    LHS(i)->Norm1(&Norm1);
-    cout << Norm1 << endl;
-    if (Norm1 >= threshold) {
-      if (verbose_)
-        cout << PrintMsg_ << "*** scaling vector " << i
-             << " by " << Norm1 << endl;
-      LHS(i)->Scale(1.0 / Norm1);
-      ++count;
-    }
+    double NormInf;
+    LHS(i)->NormInf(&NormInf);
+    LHS(i)->Scale(1.0 / NormInf);
   }
-  if (verbose_)
-    cout << PrintMsg_ << "*** dropping " << NumAdaptiveVectors - count 
-         << " vectors" << endl;
 
   // ========================================================= //
   // copy tentative and computed null space into NewNullSpace, //
   // which now becomes the standard null space                 //
   // ========================================================= //
   
-  int NewNullSpaceSize = count + TentativeNullSpaceSize;
+  int NewNullSpaceSize = NumAdaptiveVectors + TentativeNullSpaceSize;
   double* NewNullSpace = new double[NumMyRows() * NewNullSpaceSize];
   assert (NewNullSpace != 0);
   int itmp = TentativeNullSpaceSize * NumMyRows();
   for (int i = 0 ; i < itmp ; ++i) {
       NewNullSpace[i] = TentativeNullSpace[i];
   }
-  count = 0;
+
   for (int i = 0 ; i < NumAdaptiveVectors ; ++i) {
     double Norm1;
     LHS(i)->Norm1(&Norm1);
     if (Norm1 >= threshold) {
       for (int j = 0 ; j < NumMyRows() ; ++j) {
-        NewNullSpace[itmp + count * NumMyRows() + j] = LHS[count][j];
+        NewNullSpace[itmp + i * NumMyRows() + j] = LHS[i][j];
       }
-      ++count;
     }
   }
    
@@ -159,7 +150,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
     info.x = x_coord;
     info.y = y_coord;
     info.z = z_coord;
-    info.Nlocal = NumMyRows();
+    info.Nlocal = NumMyRows() / NumPDEEqns_;
     info.Naggregates = 1;
     
     for (int ieqn = 0 ; ieqn < NumPDEEqns_ ; ++ieqn) {
@@ -175,7 +166,6 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
     }
   }
 
-  exit(0);
   return(0);
 
 }
