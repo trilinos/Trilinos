@@ -1,8 +1,8 @@
 #@HEADER
 # ************************************************************************
 # 
-#        AztecOO: An Object-Oriented Aztec Linear Solver Package 
-#                 Copyright (2002) Sandia Corporation
+#               Epetra: Linear Algebra Services Package 
+#                 Copyright (2001) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -26,4 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = AztecOO_UserOpUserMat AztecOO_SetParameters scripts
+EXEEXT = .exe
+
+noinst_PROGRAMS = AztecOO_SetParameters
+
+AztecOO_SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
+
+AztecOO_SetParameters_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
+
+AztecOO_SetParameters_CXXFLAGS = -I$(top_srcdir)/src
+#Unsure why this test need to link to the BLAS on an IBM.
+AztecOO_SetParameters_LDADD = $(top_builddir)/src/libaztecoo.a \
+	$(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
