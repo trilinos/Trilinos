@@ -11,7 +11,7 @@
 #ifndef _NLS_PETRA_GROUP_H
 #define _NLS_PETRA_GROUP_H
 
-#include "NLS_Group.H"		// Base Class
+#include "NLS_Group.H"		// base class
 #include "NLS_ParameterList.H"
 #include "NLS_PetraVector.H"
 #include "NLS_PetraGroupInterface.H"
