@@ -163,7 +163,7 @@ TSFCoreVec<TYPE>::TSFCoreVec( DataAccess type, TSFCoreVec<TYPE>& source,
 //
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::Clone ( const int NumVecs ) {
-	TSFCoreVec *ptr_alv = new TSFCoreVec( TSFCoreMV->domain(), NumVecs);
+	TSFCoreVec *ptr_alv = new TSFCoreVec<TYPE>( TSFCoreMV->domain(), NumVecs);
 	return ptr_alv; // safe upcast.
 }
 	//
@@ -173,21 +173,21 @@ MultiVec<TYPE>* TSFCoreVec<TYPE>::Clone ( const int NumVecs ) {
 	//
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneCopy() {
-	TSFCoreVec *ptr_alv = new TSFCoreVec(*this);
+	TSFCoreVec *ptr_alv = new TSFCoreVec<TYPE>(*this);
 	return ptr_alv; // safe upcast
 }
 
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
 	
-	TSFCoreVec *ptr_alv = new TSFCoreVec( Copy, *this, index, NumVecs );
+	TSFCoreVec *ptr_alv = new TSFCoreVec<TYPE>( Copy, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneView ( int index[], int NumVecs ) {
 	
-	TSFCoreVec *ptr_alv = new TSFCoreVec( View, *this, index, NumVecs );
+	TSFCoreVec *ptr_alv = new TSFCoreVec<TYPE>( View, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
@@ -204,7 +204,7 @@ int TSFCoreVec<TYPE>::GetVecLength () const {
 template<class TYPE>
 void TSFCoreVec<TYPE>::SetBlock( MultiVec<TYPE>& A, int index[], int NumVecs ) {
 
-	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
+	TSFCoreVec<TYPE> *A_vec = dynamic_cast<TSFCoreVec<TYPE> *>(&A); assert(A_vec!=NULL);
 	Teuchos::RefCountPtr<TSFCore::MultiVector<TYPE> > tempMV = TSFCoreMV->subView( NumVecs, index );
 	TSFCore::assign( tempMV.get(), *(A_vec->TSFCoreMV->subView( TSFCore::Range1D( 1, NumVecs ) )) );
 	delete &tempMV;
@@ -216,7 +216,7 @@ template<class TYPE>
 void TSFCoreVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
 						   Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) 
 {
-	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
+	TSFCoreVec<TYPE> *A_vec = dynamic_cast<TSFCoreVec<TYPE>*>(&A); assert(A_vec!=NULL);
 }
 //
 // *this <- alpha * A + beta * B
@@ -224,8 +224,8 @@ void TSFCoreVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A,
 template<class TYPE>
 void TSFCoreVec<TYPE>::MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, 
 						   TYPE beta, MultiVec<TYPE>& B) {
-	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
-	TSFCoreVec *B_vec = dynamic_cast<TSFCoreVec *>(&B); assert(B_vec!=NULL);
+	TSFCoreVec<TYPE> *A_vec = dynamic_cast<TSFCoreVec<TYPE>*>(&A); assert(A_vec!=NULL);
+	TSFCoreVec<TYPE> *B_vec = dynamic_cast<TSFCoreVec<TYPE>*>(&B); assert(B_vec!=NULL);
 }
 //
 // dense B <- alpha * A^T * (*this)
@@ -234,7 +234,7 @@ template<class TYPE>
 void TSFCoreVec<TYPE>::MvTransMv ( TYPE alpha, MultiVec<TYPE>& A,
 						   Teuchos::SerialDenseMatrix<int,TYPE>& B) {
 
-	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
+	TSFCoreVec<TYPE> *A_vec = dynamic_cast<TSFCoreVec<TYPE>*>(&A); assert(A_vec!=NULL);
 	TSFCore::dot( *(A_vec->TSFCoreMV), *TSFCoreMV, B.values() );
 	B.scale( alpha );
 }
