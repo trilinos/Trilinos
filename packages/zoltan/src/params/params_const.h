@@ -45,7 +45,9 @@ typedef struct Param_Vars {
 /* string length limit for param val. Allocate space of this + 1 */
 #define MAX_PARAM_STRING_LEN 50
 
+/* Universal parameter value struct */
 typedef struct Param_Utype {
+  int def;   /* default flag */
   int ival;
   double dval;
   long lval;

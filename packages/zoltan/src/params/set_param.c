@@ -32,6 +32,7 @@
 #include "ha_const.h"
 
 static int add_param(LB *, char *, char *);
+static int remove_param(LB *, char *);
 
 /* List of set_parameter functions to be called */
 static LB_SET_PARAM_FN * Param_func[] = {
@@ -43,8 +44,8 @@ static LB_SET_PARAM_FN * Param_func[] = {
         LB_Set_Reftree_Param,
         LB_Set_Timer_Param,
      /* LB_Set_Machine_Param, */
-        /*** Add your new parameter setting function here! ***/
-        NULL /* Last entry must be NULL! */
+   /*** Add your new parameter setting function here! ***/
+        NULL /* Last entry _must_ be NULL! */
 };
 
 int       LB_Set_Param(
@@ -87,9 +88,8 @@ char *val1)			/* value to set this parameter to */
     status = LB_Set_Key_Param(lb, name, val);
 
     /* Now call all the other parameter setting routines. */
-    for (func = Param_func; *func != NULL; func++) {
-        if (status == 1)
-            status = (**func)(name, val);
+    for (func = Param_func; (status == 1) && (*func != NULL); func++) {
+        status = (**func)(name, val);
     }
 
     /* All parameter setting routines have been called, now finish up. */
@@ -97,15 +97,23 @@ char *val1)			/* value to set this parameter to */
     if (status == 1)		/* Parameter name never found */
 	fprintf(stderr, "Warning: parameter `%s' not found;"
                         " not reset to `%s'.\n", name, val);
-
-    if (status == 0)		/* Parameter OK, add it to list */
-	add_param(lb, name, val);
     else {
-	LB_FREE(&name);
-	LB_FREE(&val);
+        if (!strcmp(val, "DEFAULT")){
+	    remove_param(lb, name);	/* Remove parameter from list */
+            status = 0; 		/* "DEFAULT" is always valid */
+    	    LB_FREE(&name);
+    	    LB_FREE(&val);
+        }
+        else if (status == 0){		/* Parameter OK */
+    	    add_param(lb, name, val); 	/* Add parameter to list */
+        }
+        else { 				/* Parameter not OK. Don't add. */
+    	    LB_FREE(&name);
+    	    LB_FREE(&val);
+        }
     }
 
-    if (status == 0)
+    if (status == 0 || status == 3)
 	flag = LB_OK;
     else if (status == 1 || status == 2)
 	flag = LB_WARN;
@@ -125,19 +133,18 @@ char *val)			/* value to set this parameter to */
  * Search through existing list to replace value if its there.
  * Otherwise, add it to the end of the list.
  */
-    LB_PARAM *ptr, **pptr;	/* loops through parameter list */
+    LB_PARAM *ptr;             	/* loops through parameter list */
     LB_PARAM *param;		/* parameter entry in list */
 
 
-    pptr = &(lb->Params);
-    while (*pptr != NULL) {
-	ptr = *pptr;
+    ptr = lb->Params;
+    while (ptr != NULL) {
 	if (!strcmp(name, ptr->name)) {	/* string match */
 	    LB_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
 	    return (LB_OK);
 	}
-	pptr = &(ptr->next);
+	ptr = ptr->next;
     }
 
     /* This is a new parameter, add it to list. */
@@ -147,10 +154,49 @@ char *val)			/* value to set this parameter to */
 	LB_FREE(&val);
 	return (LB_MEMERR);
     }
-    *pptr = param;
-    param->next = NULL;
+    ptr = lb->Params;
+    lb->Params = param;
+    param->next = ptr;
     param->name = name;
     param->new_val = val;
 
     return (LB_OK);
 }
+
+static int remove_param(
+LB *lb,				/* load balance structure */
+char *name 			/* parameter name */
+)
+{
+/*
+ * Parameter checked out OK.  Remove it from linked list of param values.
+ * If it is not in the list, do nothing.
+ */
+    LB_PARAM *ptr, *oldptr;	/* loops through parameter list */
+    LB_PARAM *param;		/* parameter entry in list */
+
+
+    oldptr = NULL;
+    ptr = lb->Params;
+    while (ptr != NULL) {
+	if (!strcmp(name, ptr->name)) {	/* string match */
+            /* Remove parameter from list */
+            if (oldptr == NULL)
+               lb->Params = ptr->next;
+            else
+               oldptr->next = ptr->next;
+            /* Free parameter */
+            LB_FREE(&(ptr->name));
+            LB_FREE(&(ptr->new_val));
+            LB_FREE(&ptr);
+            /* Return OK */
+	    return (LB_OK);
+	}
+        oldptr = ptr;
+	ptr = ptr->next;
+    }
+
+    /* Parameter was not in list */
+    return (LB_OK);
+}
+

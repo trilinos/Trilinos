@@ -49,8 +49,13 @@ int *matched_index)		/* where in struct the match occurs */
     }
 
     if (status == 0) {		/* name found */
-	*matched_index = i;
+      *matched_index = i;
+      if (!strcmp(val, "DEFAULT")){
+         result->def = 1;
+      }
+      else {
 	/* Figure out what type it is and read value. */
+        result->def = 0;
 	if (!strcmp(params->type, "INT") || !strcmp(params->type, "INTEGER")) {
 	    /* First special case if True or False */
 	    if (*val == 'T')
@@ -114,7 +119,7 @@ int *matched_index)		/* where in struct the match occurs */
                     params->name);
 	    status = 2;
 	}
-
+      }
     }
     else {			/* name not matched */
 	*matched_index = -1;

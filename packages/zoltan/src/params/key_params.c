@@ -52,21 +52,27 @@ char *val)			/* value of variable */
       switch (index) {
 
       case 0:  		/* Imbalance_Tol */
+        if (result.def) 
+            result.dval = LB_IMBALANCE_TOL_DEF;
 	if (result.dval < 1.0) {
 	    fprintf(stderr, "WARNING: Invalid Imbalance_Tol value (%g) "
-		"being set to 1.0\n", result.dval);
-	    result.dval = 1.0;
+		"being set to %g\n", result.dval, LB_IMBALANCE_TOL_DEF);
+	    result.dval = LB_IMBALANCE_TOL_DEF;
 	}
 	lb->Imbalance_Tol = result.dval;
 	status = 3;		/* Don't add to Params field of LB */
         break;
 
       case 1:		/* Help_Migrate */
+        if (result.def)
+            result.ival = LB_AUTO_MIGRATE_DEF;
 	lb->Migrate.Auto_Migrate = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
         break;
 
       case 2:		/* Object weight dim.  */
+        if (result.def)
+            result.ival = LB_OBJ_WEIGHT_DEF;
 	if (result.ival < 0) {
 	    fprintf(stderr, "WARNING: Invalid Obj_Weight_Dim value (%d) "
 		"being set to 0\n", result.ival);
@@ -77,6 +83,8 @@ char *val)			/* value of variable */
         break;
 
       case 3:		/* Communication weight dim.  */
+        if (result.def)
+            result.ival = LB_COMM_WEIGHT_DEF;
 	if (result.ival < 0) {
 	    fprintf(stderr, "WARNING: Invalid Comm_Weight_Dim value (%d) "
 		"being set to 0\n", result.ival);
@@ -87,6 +95,8 @@ char *val)			/* value of variable */
         break;
 
       case 4: 		/* Debug level  */
+        if (result.def)
+            result.ival = LB_DEBUG_LEVEL_DEF;
 	if (result.ival < 0) {
 	    fprintf(stderr, "WARNING: Invalid Debug_Level value (%d) "
 		"being set to 0\n", result.ival);
@@ -97,6 +107,8 @@ char *val)			/* value of variable */
         break;
 
       case 5: 		/* Debug processor  */
+        if (result.def)
+            result.ival = LB_DEBUG_PROC_DEF;
 	if (result.ival < 0 || result.ival > lb->Num_Proc) {
 	    fprintf(stderr, "WARNING: Invalid Debug_Processor value (%d) "
 		"being set to 0\n", result.ival);
@@ -107,6 +119,8 @@ char *val)			/* value of variable */
         break;
        
       case 6: 		/* Deterministic flag */
+        if (result.def)
+            result.ival = LB_DETERMINISTIC_DEF;
 	if (result.ival < 0) {
 	    fprintf(stderr, "WARNING: Invalid Deterministic value (%d) "
 		"being set to TRUE\n", result.ival);
