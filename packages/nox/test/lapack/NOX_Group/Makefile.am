@@ -38,7 +38,8 @@ NOX_Group_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 
 NOX_Group_CXXFLAGS = -I$(top_srcdir)/src \
                      -I$(top_srcdir)/src-lapack \
-                     -I$(top_srcdir)/test/utils
+                     -I$(top_srcdir)/test/utils \
+                     $(TRILINOS_CXXFLAGS)
 
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_Group_LDADD = \

@@ -139,7 +139,8 @@ LOCA_NewTest_CXXFLAGS = \
                       -I$(top_srcdir)/src-lapack \
                       -I$(top_srcdir)/src-loca/src \
                       -I$(top_srcdir)/src-loca/src-lapack \
-                      -I$(top_srcdir)/test/utils
+                      -I$(top_srcdir)/test/utils \
+                      $(TRILINOS_CXXFLAGS)
 
 
 #Unsure why this test need to link to the BLAS on an IBM.

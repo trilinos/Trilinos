@@ -57,14 +57,16 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-lapack \
-                   -I$(top_srcdir)/test/utils
+                   -I$(top_srcdir)/test/utils \
+	           $(TRILINOS_CXXFLAGS)
 
 chanContinuation_LDADD = \
 		-L$(top_builddir)/src \
 		-L$(top_builddir)/src-lapack \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-lapack \
-                -llocalapack -lloca -lnoxlapack -lnox
+                -llocalapack -lloca -lnoxlapack -lnox \
+                $(LIBS) $(FLIBS)
 
 chanTP_SOURCES = \
                 $(srcdir)/ChanTP.C \
