@@ -14,7 +14,10 @@ class Epetra_RowMatrix;
 #include "Epetra_Comm.h"
 #include "Epetra_Import.h"
 
-#ifdef PETRA_MPI
+#ifdef ML_MPI
+#ifndef EPETRA_MPI
+#define EPETRA_MPI
+#endif
 #include "mpi.h"
 #endif
 #include "ml_include.h"
