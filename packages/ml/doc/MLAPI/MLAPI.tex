@@ -35,9 +35,9 @@
 \newcommand{\zoltan}  {{\sc Zoltan}}
 \newcommand{\nox}  {{\sc NOX}}
 \newcommand{\loca}  {{\sc Loca}}
-\newcommand{\MLAPI}  {{\sc mlapi }}
-\newcommand{\mlapi}  {{\sc mlapi }}
-\newcommand{\MLAPIns}  {{\sc mlapi}}
+\newcommand{\MLAPI}  {{\sc MLAPI }}
+\newcommand{\mlapi}  {{\sc MLAPI }}
+\newcommand{\MLAPIns}  {{\sc MLAPI}}
 \newcommand{\hypre}  {{\sc hypre}}
 \newcommand{\petsc}  {{\sc PETSc}}
 \newcommand{\be}  {\begin{enumerate}}
@@ -112,8 +112,8 @@ Printed February 2005
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf An Object-Oriented Framework 
-  for Scalable Parallel Multilevel Preconditioners}}
+{\Large {\bf \MLAPIns: an Object-Oriented Framework 
+  for the Development of Scalable Parallel Multilevel Preconditioners}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -138,15 +138,13 @@ Albuquerque, NM 87185-1110
 \begin{abstract}
 We discuss the design of \MLAPIns, an object oriented framework that enables 
 the development and usage of efficient,
-  scalable and portable implementations of multilevel preconditioners for
-  general distributed sparse matrices, in
-both serial and (massively) parallel environments. The design of \MLAPI allows
-it to be used as both a solver package and a framework for algorithm
-development.
+scalable and portable implementations of multilevel preconditioners for
+general distributed sparse matrices, in
+both serial and (massively) parallel environments. 
 
- The main feature of this framework is the use of several programming
+The main feature of this framework is the use of several programming
  paradigms for the different implementation layes, with a strong emphasis on
- object oriented (OO) classes and operator overloading for the top layer, and optimized
+ object oriented classes and operator overloading for the top layer, and optimized
  FORTRAN and C code for the layers underneath. In particular, \MLAPI takes advantage
  of \ML~\cite{ml-guide}, 
 the algebraic multilevel preconditioning
@@ -154,13 +152,12 @@ package of Trilinos~\cite{Trilinos-home-page}.
 
 \smallskip
 
-Using a carefully designed set of classes, we will show that one can
-write a code that is intuitive to write
-and {\sl at the same time} efficient and scalable.  \MLAPI is not based on any
-particular matrix format. Rather, its matrix interface basically requires only
-a capability to query for the nonzero elements in a given local row.
-Therefore, it is easy to interface a given application with \MLAPIns.
-
+We report several numerical experiments, obtained on serial and parallel
+computers, to show that the overload required by the object-oriented approach
+is very modest, therefore allowing developers of new algorithms to focus on
+the method itself, rather than the implementation details, yet obtaining a
+code whose efficiency and scalability is comparable with that of C or FORTRAN
+codes.
 
 %\smallskip
 
@@ -225,7 +222,8 @@ called {\sl preconditioner}. $P^{-1}$ represents a sequence of operations
 that somehow approximates the effect of $A^{-1}$ on a vector. 
 Loosely stated, a preconditioner is any
 kind of transformation applied to (\ref{eq:lin_sys}) which makes it
-easier to solve, in terms of iterations and CPU time. More precisely,
+easier to solve, in terms of iterations and CPU time; see for
+instance~\cite{greenbaum97iterative,golub97closer,vorst95parallel}. More precisely,
 the general (and challenging) problem of finding an efficient
 preconditioner is to identify a linear operator $P$ with the following
 properties:
@@ -233,8 +231,7 @@ properties:
 \item {\bf $P$ is a good approximation of $A$ is some sense}. Although no
   general theory is available, we can say that $P$ should act so that
   $P^{-1} A$ is near to being the identity matrix and its eigenvalues
-  are clustered within a sufficiently small region of the complex plane 
-  (see for instance~\cite{greenbaum97iterative});
+  are clustered within a sufficiently small region of the complex plane;
 \item {\bf $P$ is efficient}, in the sense that the iteration method converges
   much faster, in terms of CPU time, for the preconditioned system.  In
   other words, preconditioners must be selected in such a way that the
@@ -243,10 +240,10 @@ properties:
 \item {\bf $P$ or $P^{-1}$ can be constructed in parallel}, to take advantage of the architecture of modern supercomputers.
 \end{enumerate}
 
-It is easy to see that the definition of $P$ is driven by many conflicting
-objectives, such as its efficiency in terms of iterations to converge and in
-terms of CPU time, its storage requirements, and its robustness; see for
-instance~\cite{golub97closer,vorst95parallel}. 
+%It is easy to see that the definition of $P$ is driven by many conflicting
+%objectives, such as its efficiency in terms of iterations to converge and in
+%terms of CPU time, its storage requirements, and its robustness; see for
+%instance~\cite{golub97closer,vorst95parallel}. 
 %The situation
 %is significantly complex for non-symmetric problems, as no general
 %theory can clearly explain the converge of GMRES-type methods, and therefore
@@ -276,7 +273,7 @@ to coarsen on each level by grouping the nodes into contiguous subsets,
 called aggregates, as done in smoothed 
 aggregation~\cite{vanek1,vanek2,vanek3}.
 Multilevel methods are well understood on model problems, while their
-application to more general, non-symmetric, problems, still requires
+application to more general, non-symmetric, problems still requires
 further developments.
 
 \smallskip
@@ -384,21 +381,18 @@ Our aim is to simply the coding of a multilevel algorithm, by allowing
 an intuitive syntax for all operations in group (1), and by condensing
 operations in group (2) in well defined functions (or classes). 
 
-Ideally, the
-code should not look too different from what we have just presented, which
-in turn is just a modest change with respect to the mathematical standpoint
-to define a multilevel method. Unfortunately, this is not what happens in most
-codes.
-Traditionally, coding is made complex by ``details'' that are 
-clearly necessary to the code itself, tough inessential to the algorithm. 
-These details are, for
-example, the dimension of the input and output vector, of flags for the
-smoother or the matrix-matrix product, or the parallel data layout.
+Ideally, the code should not look too different from what we have just
+presented, which in turn is just a modest change with respect to the
+mathematical standpoint to define a multilevel method. Unfortunately, this is
+not what happens in most codes.  Traditionally, coding is made complex by
+``details'' inessential to the algorithm.  These details are, for example, the
+dimension of the input and output vector, of flags for the smoother or the
+matrix-matrix product, or the parallel data layout.
 
 Since there ``details'' are necessary to compile and run the program, 
   our aim is the following: {\em let the
 compiler take care of the details, and let the programmer-developer to
-focus on the algorithm}. In fact, any well designed implementation of a linear
+focus on the algorithm}. For example, any well designed implementation of a linear
 operator already contains the number of rows and columns, and the
 implementation of a vector contains the number of elements in the vector.
 By using operator C++ overloading (see, for example, \cite{stroustrup91cpp}), 
@@ -413,19 +407,21 @@ OO programming (OOP) to make them easier to use and more flexible. An
 incomplete list of 
 such libraries includes are Diffpack~\cite{bruaset97object}, 
 ISIS++~\cite{isis-guide}, BPKIT~\cite{bpkit}, \petsc\cite{petsc-guide},
-  \hypre \cite{hypre}, and almost all \trilinos\ packages, like \ifpack~\cite{ifpack-guide}, \ML~\cite{ml-guide}.
-  Perhaps \hypre and \ML~are the best suited framework to use and develop
+  \hypre~\cite{hypre}, and almost all \trilinos\ packages, like \ifpack~\cite{ifpack-guide}, \ML~\cite{ml-guide}.
+  Perhaps \hypre~and \ML~are the best suited framework to use and develop
   multilevel preconditioners, the former somehow more focused on geometric and
   classic AMG, while the latter with a strong focus on smoothed aggregation.
   We believe that none of these libraries allows the developer to focus on the
-  high-level view of the algorithm as \mlapi does. 
+  high-level view of the algorithm as the library presented in this paper,
+  \mlapi, does. 
 
 \smallskip
 
 In this paper, we want to show
 that it is possible to take advantage of OOP to obtain intuitive,
 easy-to-read and easy-to-develop codes, that are {\sl at the same time}
-efficient and scalable. The approach we have followed is the following:
+efficient and scalable. The approach we have followed in the development of
+the \mlapi library is the following:
 first, a set of C structures and functions has been developed for all 
 required operations. Then, few classes have been defined, to define
 operators, smoothers and coarse solvers, and operators \verb!*!, \verb!-! and
@@ -448,7 +444,9 @@ we will outline why an object-oriented interface can be useful to develop
 multilevel preconditioners (and, more general, multilevel solvers).
 Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
 usage is presented in Section~\ref{sec:usage}. The MATLAB~\copyright~interface is
-detailed in Section~\ref{sec:matlab}.  Section~\ref{sec:conclusions} outlines the conclusions.
+detailed in Section~\ref{sec:matlab}. Numerical results are reported
+in Section~\ref{sec:results}.
+Section~\ref{sec:conclusions} outlines the conclusions.
 
 %-----------------------------------------------------------------------------%
 \section{Software Design}
@@ -470,7 +468,9 @@ directly portable across machine platforms.
 \MLAPI is written in ANSI C++. The STL library is
 employed to increase efficiency. For message
 passing, we adopted MPI, which is the {\em de-facto} standard, and as such
-widely available and accepted by users of parallel applications.
+widely available and accepted by users of parallel applications. As a result,
+  \mlapi has been successfully compiled on Linux, SGI Origin, DEC-alpha, SUN,
+  and MAC OS X.
 
 \bigskip
 
@@ -480,7 +480,7 @@ the mathematical algorithm on which they are based. This is in contrast to
 FORTRAN and C, which can require complicated subroutines or function calls,
   with a long parameter list.
 A key design for \MLAPI was a user interface that is
-intuitive and flexible. Our intention is that it should be possible for this
+intuitive. Our intention is that it should be possible for this
 library to be used by those who have only a basic knowledge of MPI and C++.
 Ideally, the structure of all \MLAPI kernels should be as close as possible to
 the that of MATLAB. We have developed two types of C++ interfaces to basic
@@ -493,12 +493,12 @@ kernels. The first type utilizes the binary operators {\tt *, +, -},
 
 \noindent
 {\bf Flexibility.} \MLAPI is not based on any particular matrix format. This
-is particularly convenient as several matrix formats are currently in used.
+is particularly convenient since several matrix formats are currently in used.
 \MLAPI supports any data format that can offer a {\tt getrow()} function,
-  which basically returns the column ID and the value of all nonzero elements for any
+  which returns the column ID and the value of all nonzero elements for any
   locally hosted row. C users can provide this using the {\tt ML\_Operator}
   structure, while C++ users can derive a class from the pure virtual {\tt
-    Epetra\_RowMatrix} class. Similarly, all operators defined by \MLAPI are
+    Epetra\_RowMatrix} class of the \epetra\ package.  Similarly, all operators defined by \MLAPI are
     wrapped as {\tt Epetra\_RowMatrix} and {\tt ML\_Operator}, so that users
     can access their nonzero elements without worrying about the actual data
     storage used by \MLAPI.
@@ -512,8 +512,8 @@ encapsulation is used to hide details in
 specific classes. Besides, a set of function based on abstract interfaces
 is provided, to generate the necessary multilevel operators. Polymorphism
 allows the user to derive classes to implement new features.
-All \MLAPI classes and methods automatically uses a set of
-default parameters. However, these parameters can be tuned by specifying the
+All \MLAPI classes and methods automatically use a set of
+default parameters, that can be tuned by specifying the
 desired parameters in a parameter list.
 
 \bigskip
@@ -562,7 +562,8 @@ At a first glance, this may appear as a major limitation for optimal
 performances. Dealing with an instance of an object, and not with pointers or
 references, signifies that the new instances have to be created and copied,
 usually an expensive operation. This is {\sl not} what happens with \MLAPIns. In
-fact, all \MLAPI objects are defined as light containers of pointers. 
+fact, all \MLAPI objects are defined as light containers of pointers,
+  automatically allocated and managed as necessary. 
 %  For
 %example, a {\tt MultiVector} (introduced in Section~\ref{sec:multivector})
 %  needs to store a pointer to the double array
@@ -592,27 +593,24 @@ partially used in the scientific computing community. We do not adopt expression
 templates (see for instance~\cite{vandevoorde03cpp}); instead, we
 create temporary vectors, then perform vector operations (like updates,
 scaling, or DAXPY operations) using optimized BLAS routines 
-(which use would not be possible using expressions templates). These temporary vectors
-can be avoided by replacing, in an optimization phase, the overloaded
-operators with the {\tt Update()} methods of the {\tt MultiVector} class.
-Operations involving {\tt Operator}'s (like {\tt C = A + B}, or {\tt C = A *
-B}, where {\tt A, B} and {\tt C} are {\tt Operator}'s) are always resolved by creating
-temporary vectors. If the programmer is only interested in computing the
-action of a composed operator on a vector, he or she would rather write
-something like {\tt A * x + B * x}, therefore avoiding the creation of
-temporary operators. 
+(which use would not be possible using expressions templates). 
+However, each overloaded operator can be replaced by class methods, therefore
+avoiding the creation of temporary objects, at the price of a more
+``conventional'' coding. For example, the operation {\tt x = a + b} can be
+replaced by method {\tt Update()} of vector {\tt x}.
 
 %-----------------------------------------------------------------------------%
 \section{\MLAPI Classes}
 \label{sec:basic}
 %-----------------------------------------------------------------------------%
 
-The most important classes of \MLAPI are the {\tt Space} 
+Int this section we introduce the
+most important classes of \MLAPI: {\tt Space} 
 (analyzed in Section~\ref{sec:space}), {\tt MultiVector}
 (analyzed in Section~\ref{sec:multivector}),
 {\tt Operator} (described in Section~\ref{sec:operator}) and 
 {\tt InverseOperator} (in Section~\ref{sec:inverseoperator}). Furthermore,
-\MLAPI furnishes two matrices classes, {\tt SerialMatrix} and \\
+\MLAPI furnishes two matrices classes, {\tt SerialMatrix} and 
 {\tt
   DistributedMatrix}, to set the matrix elements in a very intuitive 
   way.
@@ -696,7 +694,7 @@ Clearly, object {\tt S} will go out of scope after returning from {\tt
   foo}. However, the code will do the following:
 as {\tt V} is created, a {\tt Space} object, say {\tt V2}, is defined
 within {\tt V}, so that {\tt V2 = V}. All smart pointers in {\tt V} are copied
-within {\tt V2}, so that now {\tt V} can go out of scope without damaging the
+within {\tt V2}, and {\tt V} can go out of scope without damaging the
 returned vector (and without memory leaks).
 
 %-----------------------------------------------------------------------------%
@@ -791,6 +789,13 @@ can be defined, for example, as {\tt C = A
 triple matrix-matrix product, one can write {\tt D = GetRAP (A, B, C)}.
 %
 
+As \ML, \MLAPI is not based on any
+particular matrix format. Rather, its matrix interface basically requires only
+a capability to query for the nonzero elements in a given local row.
+Therefore, it is easy to interface a given application with \MLAPIns.
+
+\smallskip
+
 An {\tt Operator} can be applied to a {\tt MultiVector},
 \begin{verbatim}
 Space DomainSpace(5);
@@ -817,7 +822,7 @@ Operator D = GetDiagonal(z);
 Function {\tt Eig()} can be used to compute the eigenvalues of an
 {\tt Operator}
 (for serial runs only). This function calls LAPACK, therefore the
-{\tt Operator} should be "small".
+{\tt Operator} should be ``small''.
 \begin{verbatim}    
 MultiVector ER, EI, V;
 Eig(A, ER, EI, V);
@@ -837,7 +842,7 @@ domain space and the range space, whose application to a given {\tt
   MultiVector} is meant to approximate the action of a given {\tt Operator}.
 The most important difference between an {\tt Operator} and an {\tt
   InverseOperator} is that the latter has no definition of nonzero
-  structure of matrix elements. The only mathematical method implemented
+  structure of matrix elements, while {\tt Operator} does. The only mathematical method implemented
   by {\tt InverseOperator} is {\tt Apply()}.
 
 {\tt InverseOperator}'s usually define smoothers and coarse solvers in a
@@ -876,9 +881,9 @@ double NormX = sqrt(x * x);
 %-----------------------------------------------------------------------------%
 
 \MLAPI offers a very simple and convenient matrix class, derived from
- the \verb!Epetra_RowMatrix! class and implements most of its methods. 
+ the \verb!Epetra_RowMatrix! class.
  Using this class, the insertion of a new
- element is just \verb!A(row, col) = val!. Note that this class
+ element is just \verb!A(row, col) = val!. This class
 can be used for serial computations only, and it is not meant to be efficient,
 just easy-to-use. Users should consider
 other \verb!Epetra_RowMatrix! derived classes
@@ -940,9 +945,8 @@ to {\tt FillComplete()}.
 %-----------------------------------------------------------------------------%
 
 This section briefly explain how to use \MLAPIns\footnote{Compilable codes
-can be found in {\tt ml/examples/MLAPI}.}. This Section is not meant to be a
-reference guide for the usage of \MLAPIns. To that aim, we refer to the
-Doxygen documentation.
+can be found in {\tt ml/examples/MLAPI}.}. We also refer to the Doxygen
+documentation for more details.
 
 %-----------------------------------------------------------------------------%
 \subsection{Initialize and Finalize the \MLAPI Workspace}
@@ -953,7 +957,7 @@ First, we need to initialize the \MLAPI workspace, using {\tt Init()}
 (which is automatically called by \MLAPI is the user forgets to do so). The
 workspace should be cleaned using {\tt Finalize()} to avoid memory leaks.
 
-Besides, all \MLAPI commands should be inserted
+All \MLAPI commands should be inserted
 in a {\tt try/catch} block:
 \begin{verbatim}
 try {
@@ -1011,7 +1015,7 @@ void foo(MultiVector& b_f, MultiVector& x_f)
 \label{sec:matlab}
 %-----------------------------------------------------------------------------%
 
-Often, it is convenient to use MATLAB to analyze matrices and
+It is often convenient to use MATLAB to analyze matrices and
 vectors. Distributed \MLAPI objects can dumped to a single, MATLAB compatible
 ASCII file, by using class {\tt MATLABStream}.
 Note that both serial and distributed objects 
@@ -1019,20 +1023,21 @@ can be save in just one file, which will contain the global object
 (for example, a distributed matrix will be dumped using global row and
  column ordering). {\tt MATLABStream} behaves like a ``normal'' 
 stream.  Objects can be saved in file by using the operator \verb!<<!.
-First, we have to define a {\tt MATLABStream} object by specifying the
+
+Let {\tt S, V}, and {\tt A} be a {\tt Space}, a {\tt MultiVector}
+and an {\tt Operator}. First, we have to define a {\tt MATLABStream} object by specifying the
 file name,
 \begin{verbatim}
 MATLABStream matlab("mlapi.m");
 \end{verbatim}
-Now, let {\tt S, V}, and {\tt A} be a {\tt Space}, a {\tt MultiVector}
-and an {\tt Operator}. We first specify the label of each operator, as this
+Then, we specify the label of each operator, as this
 label will be used to define the name of the object in the output file,
 \begin{verbatim}
 S.SetLabel("S");
 V.SetLabel("V");
 A.SetLabel("A");
 \end{verbatim}
-Now, we can simply write
+Finally, we can simply write
 \begin{verbatim}
 matlab << "% a string comment is allowed\n";
 matlab << S;
@@ -1048,14 +1053,288 @@ on file an {\tt InverseOperator} object, as this class only defines the
 action of the inverse of an operator on a given vector.
 
 %-----------------------------------------------------------------------------%
+\section{Numerical Results}
+\label{sec:results}
+%-----------------------------------------------------------------------------%
+
+We now report some numerical results to compare the \mlapi implementation with
+a more ``standard'' C code based on the \ML\ library. The matrix arises from a 2D
+or 3D Laplacian, discretized with a classical 5-point or 7-point formula.
+The multilevel hierarchy is constructed using classical smoothed aggregation
+for symmetric problems, with symmetric Gauss-Seidel smoother, and LU solver on
+the coarsest level.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| p{2cm}  p{10cm} |}
+\hline
+symbol & meaning \\
+\hline
+$n$          & Size of the linear system matrix \\
+$p$          & Number of processors used in the computation \\
+\tt constr   & Time in seconds to construct the preconditioner \\
+\tt appl     & Time in seconds to solve the linear system using PCG\\
+\tt iter     & Time in seconds for each iteration of PCG \\
+\tt total    & \tt constr + appl \\
+\tt diff     & Additional total time required by \mlapi with respect to the
+\ML\ total time.\\
+\hline
+\end{tabular}
+\caption{List of symbols used in the Tables.}
+\label{tab:symbol}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| p{2cm}  p{10cm} |}
+\hline
+computer & description \\
+\hline
+LINUX  & Pentium M 1.7GHz, using gcc version 3.2.2 20030222 (Red Hat Linux
+                                                             3.2.2-5) \\
+DEC    & Compaq C V6.4-009 on Compaq Tru64 UNIX V5.1A (Rev. 1885) \\
+SUN    & SPARC Sun using Solaris compilers \\
+SGI    & 195 MHz MIPS R10000, using MIPSpro Compilers, Version 7.4.2m \\
+CPLANT & 500 MHz DEC Alpha processor, using Compaq C V65-001 \\
+\hline
+\end{tabular}
+\caption{List of computers used in the numerical tests.}
+\label{tab:machines}
+\end{center}
+\end{table}
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c |}
+\hline
+$n$ & \ML & \MLAPI & \MLAPIns-opt \\
+\hline
+$256^3$  & 0.008 & 0.013 & 0.011 \\
+$512^3$  & 0.035 & 0.053 & 0.038 \\
+$768^3$  & 0.079 & 0.122 & 0.087 \\ 
+$1024^3$ & 0.137 & 0.217 & 0.154 \\ 
+\hline
+\end{tabular}
+\caption{LINUX: Time in seconds for the computation of $r = b - A x$ using \ML\ directly, or \MLAPI, or the optimized \MLAPI code.}
+\label{tab:linux-res}
+\end{center}
+\end{table}
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c |}
+\hline
+$p$ & \ML & \MLAPI & \MLAPIns-opt \\
+\hline
+ 1 & 0.089 &  0.11  &  0.093 \\
+ 4 & 0.096 &  0.12  &  0.098 \\
+16 & 0.098 &  0.12  &  0.099 \\
+\hline
+\end{tabular}
+\caption{CPLANT: Time in seconds for the computation of $r = b - A x$ using
+  \ML\ directly, or \MLAPI, or the optimized \MLAPI code. 
+  The matrix has size $512^2 \times p$.}
+\label{tab:cplant-res}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c |}
+\hline
+$p$ & \ML & \MLAPI & \MLAPIns-opt \\
+\hline
+ 1 & 0.22 &  0.28  &  0.22 \\
+ 4 & 0.27 &  0.34  &  0.41 \\
+16 & 0.42 &  0.50  &  0.47 \\
+\hline
+\end{tabular}
+\caption{SGI: Time in seconds for the computation of $r = b - A x$ using
+  \ML\ directly, or \MLAPI, or the optimized \MLAPI code. 
+  The matrix has size $512^2 \times p$.}
+\label{tab:sgi-res}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c | c c c | c |}
+\hline
+    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
+$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
+    & {\tt appl}   & {\tt total} & {\tt diff}  \\
+\hline
+$256^2$  &   0.92 &   3.05 & 3.97   &  1.02 &   3.09 & 4.11  & 3.52  \\
+$512^2$  &   2.92 &  11.72 & 14.64  &  3.13 &  12.43 & 15.56 & 6.28  \\
+$768^2$  &   5.59 &  32.32 & 37.91  &  6.69 &  34.10 & 40.79 & 7.59  \\
+$1024^2$ &   9.16 &  64.55 & 73.71  & 11.12 &  68.49 & 79.61 & 8.00  \\
+\hline
+\end{tabular}
+\caption{LINUX: 2D-Laplacian.}
+\label{tab:linux-2d}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c | c c c | c |}
+\hline
+    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
+$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
+    & {\tt appl}   & {\tt total} & {\tt diff}  \\
+\hline
+$32^3$ &   0.74 &   1.21 &  1.86  &  0.79 &   1.23 &  1.91 & 2.68  \\
+$64^3$ &   3.76 &  12.03 & 15.79  &  4.28 &  12.92 & 17.20 & 8.92  \\
+$96^3$ &  11.73 &  53.20 & 64.93  & 13.53 &  56.02 & 69.55 & 7.11  \\
+\hline
+\end{tabular}
+\caption{LINUX: 3D-Laplacian on LINUX.}
+\label{tab:linux-3d}
+\end{center}
+\end{table}
+
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c | c c c | c |}
+\hline
+    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
+$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
+    & {\tt appl}   & {\tt total} & {\tt diff}  \\
+\hline
+$256^2$  &   4.95 &  33.17 & 38.12  &  6.53 &  36.48 & 43.01 &12.82  \\
+$512^2$  &  19.94 & 137.64 &157.58  & 26.50 & 148.98 &175.48 &11.36  \\
+$768^2$  &  44.94 & 379.09 &424.03  & 59.08 & 408.17 &467.25 &10.19  \\
+$1024^2$ &  79.06 & 746.16 &815.22  &105.11 & 812.26 &917.37 &11.16  \\
+\hline
+\end{tabular}
+\caption{SUN: 2D-Laplacian on SUN.}
+\label{tab:sun-2d}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c c | c c c | c |}
+\hline
+    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
+$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
+    & {\tt appl}   & {\tt total} & {\tt diff}  \\
+\hline
+$256^2$  &   3.09 &  17.38 & 20.47  &  3.74 &  17.66 & 21.40 & 4.54  \\
+$512^2$  &  12.43 &  70.57 & 83.00  & 15.21 &  71.57 & 86.78 & 4.55  \\
+$768^2$  &  28.04 & 193.01 &221.05  & 34.49 & 198.88 &233.37 & 5.57  \\
+$1024^2$ &  49.95 & 388.99 &438.94  & 60.78 & 397.13 &457.92 & 4.23  \\
+\hline
+\end{tabular}
+\caption{DEC: 2D-Laplacian.}
+\label{tab:dec-2d}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c | c c |}
+\hline
+    & \multicolumn{2}{ c |}{\ML} & \multicolumn{2}{ c |}{\MLAPI} \\
+$p$ & {\tt const}  & {\tt iter}  & {\tt constr}  
+    & {\tt iter}   \\
+\hline
+ 1  &   7.53 &  3.16  & 10.49 &   3.20  \\
+ 4  &   9.06 &  3.35  & 13.13 &   3.45  \\
+16  &   9.45 &  3.38  & 14.12 &   3.34  \\
+\hline
+\end{tabular}
+\caption{CPLANT: 2D-Laplacian problem.  The matrix has size $512^2 \times p$.}
+\label{tab:cplant-2d}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| c | c c | c c |}
+\hline
+    & \multicolumn{2}{ c |}{\ML} & \multicolumn{2}{ c |}{\MLAPI} \\
+$p$ & {\tt const}  & {\tt iter}  & {\tt constr}  
+    & {\tt iter}   \\
+\hline
+ 1  &  15.79 &  6.94  & 19.06 &   7.11  \\
+ 4  &  16.57 &  7.29  & 20.40 &   7.46  \\
+16  &  19.45 &  8.40  & 23.78 &   8.59  \\
+\hline
+\end{tabular}
+\caption{SGI: 2D-Laplacian problem.  The matrix has size $512^2 \times p$.}
+\label{tab:sgi-2d}
+\end{center}
+\end{table}
+
+
+
+
+
+A list of symbols used in this Section in reported in Table~\ref{tab:symbol},
+and the computers used in the numerical experiments are described in
+Table~\ref{tab:machines}. 
+
+\smallskip
+
+Tables~\ref{tab:linux-res}, \ref{tab:cplant-res}  and \ref{tab:sgi-res}
+compares the \ML\ and \MLAPI approach for a basic kernel: the computation of
+the $r = b - A x$, using the \ML\ library, \MLAPI with 
+operator overloading, and without operator overloading 
+(indicated in the table as \MLAPIns-opt). The \MLAPI code simply reads
+{\tt r = b - A * x}, where {\tt r, x, b} are {\tt MultiVector}'s 
+and {\tt A} is an {\tt Operator}. The \MLAPIns-opt codes reads
+as follows:
+\begin{verbatim}
+A.Apply(x, r);
+r.Update(1.0, b, -1.0);
+\end{verbatim}
+therefore being more efficient, but somehow less obvious to understand.
+We can note that the \MLAPI with operator overloading is slower than the
+original \ML\ version of about 50\%, because of some
+additional checks performed by \MLAPI and of required wrappers for different vector
+formats, but mainly because of the creation of temporary objects. The
+optimize \MLAPI is only slightly slower that the C code. 
+
+\smallskip
+
+Tables~\ref{tab:linux-2d}, \ref{tab:linux-3d},
+\ref{tab:sun-2d} and \ref{tab:dec-2d} compare the time required by \ML\ and
+\MLAPI for serial computations. The difference between the \ML\ and \MLAPI time
+can vary considerably on different architectures, the C++ code being slower on
+order machines (like SUN). 
+Tables~\ref{tab:cplant-2d} and
+\ref{tab:sgi-2d} investigate how the two approaches compare in parallel
+environments, using a Linux cluster (CPLANT) or an SGI Origin 3800. We
+keep constant the size of the local matrix, by storing $512 \times 512$ rows
+on each processor. 
+
+We note that the time per iteration is almost equivalent, while the
+\mlapi construction time can be up to 50\% larger than the \ML\ time. This is
+due to the design requirements of \MLAPI: in order to extend flexibility, all
+\MLAPI operators are wrapped as {\tt Epetra\_RowMatrix}, and the global ID of
+all local rows and columns in computed, while \ML\ avoids this step for some the
+operators in the hierarchy. Finally, we note that the overhead of \mlapi 
+can be quantified in about 10\%
+of the \ML\ time. This holds for both serial and parallel computations. This
+difference could be reduced by optimizing the creation of the multilevel
+hierarchy, as well as the application of the preconditioner.
+
+%-----------------------------------------------------------------------------%
 \section{Concluding Remarks}
 \label{sec:conclusions}
 %-----------------------------------------------------------------------------%
 
-Using C++ for numerical computations can greatly enhance clarity, reuse, and
-portability. In our C++  library, \MLAPI, the details are completely hidden at
+Using C++ can greatly enhance clarity, reuse, and
+portability of numerical libraries. In our C++  library, \MLAPIns, 
+  the implementation details are completely hidden at
 the algorithm level, so that the resulting code greatly resemble the 
-underlying multilevel algorithm. This object oriented framework is based on a
+algorithm itself. This object oriented framework is based on a
 carefully designed set of classes and operator overloading, and allows the
 algorithm developer to write a parallel, efficient (C++) code in a MATLAB-like
 style. Operations on \MLAPI classes are then automatically translated by a
@@ -1063,7 +1342,12 @@ style. Operations on \MLAPI classes are then automatically translated by a
 that the developer can focus on the algorithm itself, without spending time on
 details that can be fixed by the compiler. This reduces the time spent in
 writing and debugging the algorithm, at the only expense of a minimal increase
-in the CPU time.
+in the CPU time, that can be quantified in about 10\% of increase with respect
+to optimize C code. We believe that 10\% is a negligible 
+factor in the development and testing of new
+ideas, especially considering the time saved by the developer to write the
+code itself. Besides, reported results show that the \MLAPI code can be
+improved in a secondary optimization phase.
 
 \smallskip
 
@@ -1075,18 +1359,17 @@ Trilinos 6.0.
 \label{sec:acks}
 %-----------------------------------------------------------------------------%
 
-\MLAPI could not exist without \ML, and could not be efficient and flexible if 
-\ML\ would not be so. \MLAPI also relies of several other
-\trilinos~\cite{Trilinos-home-page} packages:
-\epetra~\cite{epetra-guide}, \ifpack~\cite{ifpack-guide}, 
-\amesos~\cite{amesos-guide}, \teuchos, \aztecoo\ and \triutils. 
-
-%-----------------------------------------------------------------------------%
-%%% self-explanatory?
-%-----------------------------------------------------------------------------%
+We thank all the \ML\ developers, since \MLAPI could not exist without \ML, and
+could not be efficient and flexible if \ML\ would not be so. \MLAPI also
+relies of several other \trilinos~\cite{Trilinos-home-page} packages:
+\epetra~\cite{epetra-guide}, \ifpack~\cite{ifpack-guide},
+  \amesos~\cite{amesos-guide}, \teuchos, \aztecoo\ and \triutils. 
 
 %-----------------------------------------------------------------------------%
 \bibliography{MLAPI}
 %-----------------------------------------------------------------------------%
 
 \end{document}
+Using a carefully designed set of classes, we will show that one can
+write a code that is intuitive to write
+and {\sl at the same time} efficient and scalable.  
