@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
    else sscanf(argv[1],"%d",&nblocks);
    if (nblocks == -1) {
      printf("Usage: ml_readfile num_processors\n");
-     ereader_context xit(1);
+     exit(1);
    }
 
 #endif
