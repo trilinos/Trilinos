@@ -213,7 +213,7 @@ extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
 extern int ML_Gen_Smoother_BlockHiptmair(ML*,int nl,int pre_post,int ntimes,
                      ML_Operator**, ML_Operator**, ML_Operator*,
 				    void *, void **,
-				    void *, void **);
+				    void *, void **, int);
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
