@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Arnoldi Method
 	//
 	int block = 5;
-	int length = 10;
+	int length = 50;
 	int nev = 4;
 	double tol = 1.0e-4;
 	string which="SR";
@@ -149,6 +149,9 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// iterate a few steps (if you wish)
+	MyBlockArnoldi.iterate(5);
+	MyBlockArnoldi.iterate(5);
+	MyBlockArnoldi.iterate(5);
 	MyBlockArnoldi.iterate(5);
 
 	// solve the problem to the specified tolerances or length

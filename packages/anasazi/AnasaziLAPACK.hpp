@@ -17,6 +17,8 @@
   
     AnasaziLAPACK is a serial interface only.  This is appropriate since the standard 
     LAPACK are only specified for serial execution (or shared memory parallel).
+
+    This wrapper class originated from Epetra, and was adapted for Anasazi.
 */
 
 class AnasaziLAPACK {
@@ -189,12 +191,12 @@ class AnasaziLAPACK {
 
   //@{ \name Triangular matrix routines
 
-  //! AnasaziLAPACK wrapper for computing eigenvectors of a quasi-triangular/triagnular matrix (STREVC)
+  //! AnasaziLAPACK wrapper for computing eigenvectors of a quasi-triangular matrix (STREVC)
   /*! \warning HOWMNY = 'S" is not supported.
    */
   void TREVC( char SIDE, char HOWMNY, int * SELECT, int N, float * T, int LDT, float *VL, int LDVL,
 	      float * VR, int LDVR, int MM, int * M, float * WORK, int * INFO) const;
-  //! AnasaziLAPACK wrapper for computing eigenvectors of a quasi-triangular/triagnular matrix (DTREVC)
+  //! AnasaziLAPACK wrapper for computing eigenvectors of a quasi-triangular matrix (DTREVC)
   /*! \warning HOWMNY = 'S" is not supported.
    */
   void TREVC( char SIDE, char HOWMNY, int * SELECT, int N, double * T, int LDT, double *VL, int LDVL,
@@ -230,6 +232,7 @@ class AnasaziLAPACK {
   double LAPY2( double X, double Y ) const;
   //! AnasaziLAPACK wrapper for SLAPY2 routine that returns sqrt(x**2 + y**2), taking care not to cause unnecessary overflow.
   float LAPY2( float X, float Y ) const;  
+  //@}
 };
 
 // AnasaziLAPACK constructor

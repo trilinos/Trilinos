@@ -3,6 +3,9 @@ Date:  April 16, 2003
 FIRST CHECK-IN OF ANASAZI
 --------------------------------------------
 
+NOTE:  	HTML Documentation for Anasazi can be created through doxygen using the doxygen_config file.  
+	This is only partially completed right now.
+
 Source files:
 -----------------------------
 AnasaziBlockArnoldi.hpp	

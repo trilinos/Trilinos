@@ -19,6 +19,8 @@
   
     AnasaziBLAS is a serial interface only.  This is appropriate since the standard 
     BLAS are only specified for serial execution (or shared memory parallel).
+
+    This wrapper class originated from Epetra, and was adapted for Anasazi.
 */
 
 

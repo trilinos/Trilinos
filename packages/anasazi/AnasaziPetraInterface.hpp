@@ -35,7 +35,7 @@ public:
 	//  not copied; instead a new MultiVec is created containing
 	//  a non-zero amount of columns.
 	//
-	AnasaziMultiVec<TYPE> * Clone ( const int );
+	AnasaziMultiVec<TYPE> * Clone ( const int numvecs );
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
@@ -49,18 +49,18 @@ public:
 	//  copied and a new stand-alone MultiVector is created
 	//  where only selected columns are chosen.  (deep copy).
 	//
-	AnasaziMultiVec<TYPE> * CloneCopy ( int [], int );
+	AnasaziMultiVec<TYPE> * CloneCopy ( int index[], int numvecs );
 	//
 	//  the following is a virtual view constructor returning
 	//  a pointer to the pure virtual class. vector values are 
 	//  shared and hence no memory is allocated for the columns.
 	//
-	AnasaziMultiVec<TYPE> * CloneView ( int [], int );
+	AnasaziMultiVec<TYPE> * CloneView ( int index[], int numvecs);
 	//
 	//  this routine sets a subblock of the multivector, which
 	//  need not be contiguous, and is given by the indices.
 	//
-	void SetBlock ( AnasaziMultiVec<TYPE>& A, int index[], int NumVecs );
+	void SetBlock ( AnasaziMultiVec<TYPE>& A, int index[], int numvecs );
 	//
 	int GetNumberVecs () const;
 	int GetVecLength () const;
@@ -81,11 +81,15 @@ public:
 	//
 	// alpha[i] = norm of i-th column of (*this)
 	//
-	void MvNorm ( TYPE* );
+	void MvNorm ( TYPE* normvec);
 	//
 	// random vectors in i-th column of (*this)
 	//
 	void MvRandom();
+        //
+        // initializes each element of (*this) with alpha
+        //
+        void MvInit ( TYPE alpha );
 	//
 	// print (*this)
 	//
@@ -153,19 +157,19 @@ AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneCopy() {
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
-	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(Copy, *this, index, NumVecs );
+AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneCopy ( int index[], int numvecs ) {
+	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(Copy, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneView ( int index[], int NumVecs ) {
-	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(View, *this, index, NumVecs );
+AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneView ( int index[], int numvecs ) {
+	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(View, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int NumVecs ) 
+void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
 	int i,j,ind;
 	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
@@ -174,7 +178,7 @@ void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int 
 
 	// Set the vector values in the right order, careful that the index
 	// doesn't go beyond the bounds of the multivector
-	for ( j=0; j< NumVecs; j++) {
+	for ( j=0; j< numvecs; j++) {
 		ind = index[j];
 		if (ind < MyNumVecs) {
 			for ( i=0; i<VecLength; i++) {
@@ -254,10 +258,10 @@ void AnasaziPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 // alpha[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvNorm ( TYPE * array ) {
+void AnasaziPetraVec<TYPE>::MvNorm ( TYPE * normvec ) {
 	int info=0;
-	if (array) {
-		info = Norm2(array);
+	if (normvec) {
+		info = Norm2(normvec);
 		assert(info==0);
 	}
 }
@@ -270,6 +274,25 @@ void AnasaziPetraVec<TYPE>::MvRandom () {
 	info = Random();
 	assert(info==0);
 }
+//
+// initializes each element of (*this) with alpha
+//
+
+template<class TYPE>
+void AnasaziPetraVec<TYPE>::MvInit( TYPE alpha )
+{	
+	int i,j;
+	int MyNumVecs = (*this).GetNumberVecs();
+	int MyVecLength = (*this).GetVecLength();
+
+	// Set the vector values in the right order, careful that the index
+	// doesn't go beyond the bounds of the multivector
+	for ( j=0; j< MyNumVecs; j++) {
+		for ( i=0; i<MyVecLength; i++) {
+			(*this)[j][i] = alpha;	
+		}
+	}
+}								
 //
 //  print multivectors
 //

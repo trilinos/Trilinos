@@ -712,11 +712,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//  Check convergence before returning to iterate/solve routine
 	//---------------------------------------------------------------------
 	_nconv = 0;
+	std::cout<<"Checking residuals for tolerance : "<<_residual_tolerance<<std::endl;
 	for (i=0; i<_nev; i++) {
+		std::cout<<"Eigenvalue "<<i<<" : "<<_ritzresiduals[i]<<std::endl;
 		if ( _ritzresiduals[i] < _residual_tolerance ) {
-			_nconv++;
+			_nconv++;		
 		}
 	}			
+	std::cout<<"Converged eigenvalues : "<<_nconv<<std::endl<<std::endl;
 
 	delete [] work; 
 	delete [] index;

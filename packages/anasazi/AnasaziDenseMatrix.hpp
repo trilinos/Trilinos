@@ -4,29 +4,105 @@
 #include <iostream>
 #include <cassert>
 
+/*!	\class AnasaziDenseMatrix
+
+	\brief Anasazi's templated class for constructing Fortran-style dense matrices that
+	are used by the eigensolver.
+
+	\author Rich Lehoucq, Heidi Thornquist
+*/
+
 template <class TYPE>
 class AnasaziDenseMatrix  {
 public:
+	//@{ \name Constructors/Destructor.
+
+	//! %AnasaziDenseMatrix default constructor, creates nondimensional matrix.
 	AnasaziDenseMatrix();
+
+	/*! \brief %AnasaziDenseMatrix constructor, creates a dense matrix of 
+		dimension \c rows by \c cols.  The elements of this matrix are initialized
+		to zero.
+	*/
 	AnasaziDenseMatrix(int rows, int cols);
+
+	/*! \brief %AnasaziDenseMatrix constructor, creates a dense matrix of 
+		dimension \c rows by \c cols with \c ld leading dimension.  The leading
+		dimension \c ld is expected to be larger than, or equal to, \c rows.  The
+		elements of this matrix are initialized to zero.
+	*/
 	AnasaziDenseMatrix(int rows, int ld, int cols);
-	// copy constructor
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> &);
-	// create a view
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> &, int, int);
-	// create a view from a submatrix
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> &, int, int, int, int);
+
+	/*! \brief Creates a new %AnasaziDenseMatrix that is an exact replica of \c A.
+	*/
+	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A);
+
+	/*! \brief Creates a new %AnasaziDenseMatrix of dimension \c rows by \c cols and
+		copies the leading \c rows by \c cols subblock of \c A into it.
+	*/
+	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A, int rows, int cols);
+
+	/*! \brief Creates a new %AnasaziDenseMatrix of dimension \c rows by \c cols and
+		copies a selected submatrix from \c A into it.  The first entry of this 
+		submatrix is determined by \c start_rows and \c start_cols.
+	*/
+	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A, int start_rows, 
+		int start_cols, int rows, int cols);
+
+	//! %AnasaziDenseMatrix destructor.
 	~AnasaziDenseMatrix();
-	void setrows(const int);
-	void setcols(const int);
+	//@}
+
+	//@{ \name Dimension update methods.		
+
+	//! Set the rows of \c *this matrix to \c rows, which is expected to be greater than zero.
+	void setrows(const int rows);
+
+	//! Set the columns of \c *this matrix to \c cols, which is expected to be greater than zero.
+	void setcols(const int cols);
+	//@}
+
+	//@{ \name Dimension information methods.	
+
+	//! Returns the number of rows in \c *this matrix.
 	int getrows() const;
+
+	//! Returns the number of columns in \c *this matrix.
 	int getcols() const;
+
+	//! Returns the leading dimension of \c *this matrix.
 	int getld() const;
-	TYPE getfronorm() const;
+	//@}
+
+	//@{ \name Element access methods.
+
+	//! Return the array containing all the elements of \c *this matrix.
 	TYPE* getarray() const;
+	//@}
+
+	//@{ \name Norm method.
+
+	//! Compute the Frobenius norm of \c *this matrix.	
+	TYPE getfronorm() const;
+	//@}
+
+	//@{ \name Initialization methods.
+
+	/*! \brief Replace the values of \c *this with the values in \c array.
+	*/
 	void setvalues(TYPE* array, const int ldx);
+
+	/*! \brief Replace each element of \c *this matrix with \c value.  
+		The default is zero.
+	*/
 	void init( const TYPE value = 0.0 );
+	//@}
+
+	//@{ \name Print method.
+
+	//! Print \c *this dense matrix
 	void print();
+	//@}
 private:
 	const int _rows, _ld, _cols;
 	const bool _created;
@@ -187,9 +263,10 @@ TYPE AnasaziDenseMatrix<TYPE>::getfronorm() const {
 	TYPE norm=0.0;
 	for (j=0; j<_cols; j++) {
 		for (i=0; i<_rows; i++) {
-			norm += _array[i+j*_ld];
+			norm += pow(_array[i+j*_ld],2);
 		}
 	}
+	norm = sqrt(norm);
 	return norm;
 }
 

@@ -97,11 +97,15 @@ public:
 	//
 	// alpha[i] = norm of i-th column of (*this)
 	//
-	virtual void MvNorm ( TYPE* );
+	virtual void MvNorm ( TYPE* normvec );
 	//
 	// random vectors in i-th column of (*this)
 	//
 	virtual	void MvRandom();
+        //
+        // initializes each element of (*this) with alpha
+        //
+        virtual void MvInit ( TYPE alpha );
 	//
 	// print (*this)
 	//
@@ -324,12 +328,12 @@ void AnasaziLOCAVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 // array[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvNorm ( TYPE * array ) 
+void AnasaziLOCAVec<TYPE>::MvNorm ( TYPE * normvec ) 
 {
-	if (array) {
+	if (normvec) {
 		for (int i=0; i<mvPtrs.size(); i++) {
 //			std::cout<<i<<"\t"<<typeid(*(mvPtrs[i])).name()<<std::endl;
-			array[i] = mvPtrs[i]->norm();
+			normvec[i] = mvPtrs[i]->norm();
 		}
 	}
 }
@@ -341,6 +345,16 @@ void AnasaziLOCAVec<TYPE>::MvRandom ()
 {
 	for (int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->random();
+	}	
+}
+//
+// initializes each element of (*this) with alpha
+//
+template<class TYPE>
+void AnasaziLOCAVec<TYPE>::MvInit ( TYPE alpha ) 
+{
+	for (int i=0; i<mvPtrs.size(); i++) {
+		mvPtrs[i]->init( alpha );
 	}	
 }
 //
