@@ -19,7 +19,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 
-LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
+LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBEPETRA) \
            $(LIBY12M) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBBLAS) 
 
 #=======================================================================
