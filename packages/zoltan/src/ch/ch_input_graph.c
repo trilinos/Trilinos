@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "all_allo_const.h"
 #include "ch_input_const.h"
+#include "dr_const.h"
 
 int chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
 FILE     *fin;			/* input file */
@@ -17,9 +18,8 @@ int      *nvtxs;		/* number of vertices in graph */
 int     **vweights;		/* vertex weight list data */
 float   **eweights;		/* edge weight list data */
 {
+    char     *yo = "chaco_input_graph";
     extern int CHECK_INPUT;	/* print warnings or not? */
-    extern int DEBUG_INPUT;	/* echo that input file read successful? */
-    extern int DEBUG_TRACE;	/* trace main execution path */
     int      *adjptr;		/* loops through adjacency data */
     float    *ewptr;		/* loops through edge weight data */
     int       narcs;		/* number of edges expected in graph */
@@ -49,9 +49,7 @@ float   **eweights;		/* edge weight list data */
     int       read_int();
     double    read_val();
 
-    if (DEBUG_TRACE > 0) {
-	printf("<Entering input_graph>\n");
-    }
+    DEBUG_TRACE_START(0, yo);
 
     /* Read first line  of input (= nvtxs, narcs, option). */
     /* The (decimal) digits of the option variable mean: 1's digit not zero => input
@@ -337,8 +335,6 @@ float   **eweights;		/* edge weight list data */
 
     fclose(fin);
 
-    if (DEBUG_INPUT > 0) {
-	printf("Done reading graph file `%s'.\n", inname);
-    }
+    DEBUG_TRACE_END(0, yo);
     return (error_flag);
 }

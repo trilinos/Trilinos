@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "all_allo_const.h"
 #include "ch_input_const.h"
+#include "dr_const.h"
 
 int chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
 FILE     *fingeom;		/* geometry input file */
@@ -16,8 +17,7 @@ int      *igeom;		/* dimensionality of geometry */
 float   **x, **y, **z;		/* coordiates of vertices */
 {
     extern int CHECK_INPUT;	/* print any warning messages? */
-    extern int DEBUG_INPUT;	/* echo that read was successful? */
-    extern int DEBUG_TRACE;	/* trace main execution path */
+    char     *yo = "chaco_input_geom";
     float     xc, yc, zc;	/* first x, y, z coordinate */
     int       nread;		/* number of lines of coordinates read */
     int       flag;		/* any bad data at end of file? */
@@ -27,9 +27,7 @@ float   **x, **y, **z;		/* coordiates of vertices */
     int       i;		/* loop counter */
     double   read_val();
 
-    if (DEBUG_TRACE > 0) {
-	printf("<Entering input_geom>\n");
-    }
+    DEBUG_TRACE_START(0, yo);
 
     *x = *y = *z = NULL;
     line_num = 0;
@@ -119,8 +117,6 @@ float   **x, **y, **z;		/* coordiates of vertices */
 
     fclose(fingeom);
 
-    if (DEBUG_INPUT > 0) {
-	printf("Finished reading geometry file `%s'; dimension = %d.\n", geomname, ndims);
-    }
+    DEBUG_TRACE_END(0, yo);
     return (0);
 }
