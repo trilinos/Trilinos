@@ -407,8 +407,8 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 
   // Set the ill-conditioning threshold for the upper hessenberg matrix
   if (p.isParameter("Ill-Conditioning Threshold")) {
-    aztec.SetAztecOption(AZ_ill_cond_thresh, 
-			 p.getParameter("Ill-Conditioning Threshold", 1.0e+11)); 
+    aztec.SetAztecParam(AZ_ill_cond_thresh, 
+			p.getParameter("Ill-Conditioning Threshold", 1.0e+11));
   }
 
   // Frequency of linear solve residual output
@@ -1217,7 +1217,7 @@ bool Group::createIfpackPreconditioner(Parameter::List& p) const
   const Epetra_VbrMatrix* vbr= dynamic_cast<const Epetra_VbrMatrix*>(op);
   if (vbr != 0) {
     ifpackGraph = new Ifpack_IlukGraph(vbr->Graph(),
-				       p.getParameter("Fill Factor", 1.0),
+				       p.getParameter("Fill Factor", 1),
 				       p.getParameter("Overlap", 0));
     ifpackGraph->ConstructFilledGraph();
     ifpackPreconditioner = new Ifpack_CrsRiluk(*ifpackGraph);
@@ -1235,7 +1235,7 @@ bool Group::createIfpackPreconditioner(Parameter::List& p) const
 
 
     ifpackGraph = new Ifpack_IlukGraph(crs->Graph(),
-				       p.getParameter("Fill Factor", 1.0),
+				       p.getParameter("Fill Factor", 1),
 				       p.getParameter("Overlap", 0));
     ifpackGraph->ConstructFilledGraph();
     ifpackPreconditioner = new Ifpack_CrsRiluk(*ifpackGraph);

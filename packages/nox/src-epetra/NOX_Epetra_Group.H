@@ -143,7 +143,7 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
   <li> "ilut" with additional parameters:
   <ul>
   <li> "Overlap" - defaults to 0.
-  <li> "Fill Factor" - defaults to 1.0.
+  <li> "Fill Factor" - defaults to 1.
   <li> "Drop Tolerance" - defaults to 1.0e-12
   </ul> <br>
 
