@@ -27,7 +27,6 @@
 #include "dr_elem_util_const.h"
 #include "dr_maps_const.h"
 #include "ch_input_const.h"
-#include "ch_input.h"
 #include "ch_init_dist_const.h"
 
 #ifndef MAX_STR_LENGTH
@@ -36,7 +35,7 @@
 
 static int fill_elements(int, int, PROB_INFO_PTR, 
                          MESH_INFO_PTR, int, int, int *, 
-                         int *, int *, float *, int, 
+                         int *, float *, float *, int, 
                          float *, float *, float *);
 
 /****************************************************************************/
@@ -56,10 +55,10 @@ int read_chaco_mesh(int Proc,
 
   int    i, nvtxs, gnvtxs;
   int    ndim = 0;
-  int   *start = NULL, *adj = NULL, *vwgts = NULL;
+  int   *start = NULL, *adj = NULL;
   int    no_geom = FALSE;
 
-  float *ewgts = NULL;
+  float *ewgts = NULL, *vwgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
 
   FILE  *fp;
@@ -204,7 +203,7 @@ static int fill_elements(
   int        nvtxs,              /* number of vertices in local graph */
   int       *start,              /* start of edge list for each vertex */
   int       *adj,                /* edge list data */
-  int       *vwgts,              /* vertex weight list data */
+  float     *vwgts,              /* vertex weight list data */
   float     *ewgts,              /* edge weight list data */
   int        ndim,               /* dimension of the geometry */
   float     *x,                  /* x-coordinates of the vertices */

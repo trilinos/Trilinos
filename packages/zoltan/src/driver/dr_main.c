@@ -40,6 +40,7 @@
 #include "dr_elem_util_const.h"
 
 int Debug_Driver = 1;
+int Debug_Input = 0;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 
