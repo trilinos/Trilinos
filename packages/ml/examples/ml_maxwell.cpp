@@ -36,8 +36,12 @@
 // ML_Epetra::MultiLevelPreconditioner to solve this formulation of the
 // Maxwell equations. The class takes care of building the node and edge
 // hierarchy, definining the Hiptmair smoother, and setting the coarse
-// solver. More information about MultiLevelPreconditioner can be found of the ML
-// user's guide.
+// solver. More information about MultiLevelPreconditioner can be found in
+// the ML User's Guide.
+
+// You can optionally change the default of 12000 nodes per processor with a
+// command line integer value, e.g., mpirun -np 4 ml_maxwell.exe 5000, for
+// ~5000 nodes per processor.
 
 #include "ml_config.h"
 
@@ -93,25 +97,36 @@ struct user_Tmat_data {
 #define COMMUNICATOR AZ_NOT_MPI
 #endif
 
+/* Aztec data arrays */
+int *reordered_node_externs = NULL;
+int *reordered_glob_nodes = NULL, *Kn_data_org = NULL;
+
 /*****************************************************************************/
 /* Function definitions.                                                     */
 /*****************************************************************************/
 extern void user_partition_edges(struct user_partition *,
-				 struct user_partition *);
+                 struct user_partition *);
 extern void user_partition_nodes(struct user_partition *Partition);
 extern AZ_MATRIX   *user_Ke_build(struct user_partition *);
 extern AZ_MATRIX   *user_Kn_build(struct user_partition *);
 extern ML_Operator *user_T_build (struct user_partition *, 
                                   struct user_partition *, ML_Operator *, ML_Comm *);
+extern void ML_Build_EdgeCoordinates(ML_Operator* Tmat, double *x, double *y,
+                         double *edge_coordinates);
 int main(int argc, char *argv[])
 {
-  int    Nnodes=32*32;              /* Total number of nodes in the problem.*/
-                                    /* 'Nnodes' must be a perfect square.   */
+  int    Nnodes;              /* Total number of nodes in the problem.*/
+                               /* 'Nnodes' must be a perfect square.   */
 
   struct       user_partition Edge_Partition = {NULL, NULL,0,0,NULL,0,0,0}, 
                                 Node_Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
   int          proc_config[AZ_PROC_SIZE];
+
+  double *nodal_coordinates;
+  double *x, *y;
+  int mysize, i;
+  double *edge_coordinates;
 
   /* get processor information (id & # of procs) and set ML's printlevel. */
 
@@ -135,6 +150,16 @@ int main(int argc, char *argv[])
   /* nodes over the processors. NOTE: I believe we assume that if an edge */
   /* is assigned to a processor at least one of its nodes must be also    */
   /* assigned to that processor.                                          */
+
+  if (argc > 1)
+    i = (int) strtol(argv[1],NULL,10);
+  else
+    i = 12000;
+
+  Nnodes = (int) floor( sqrt((double) i * comm->ML_nprocs) );
+  Nnodes = Nnodes * Nnodes;
+  Nnodes = ML_gmax_int(Nnodes,comm);
+  if (comm->ML_mypid == 0) printf("Scaled problem: %d nodes total\n%d processors, %d nodes per processor\n(you requested %d nodes/proc)\n",Nnodes, comm->ML_nprocs, Nnodes / comm->ML_nprocs, i);
 
   Node_Partition.Nglobal = Nnodes;
   Edge_Partition.Nglobal = Node_Partition.Nglobal*2;
@@ -188,7 +213,7 @@ int main(int argc, char *argv[])
   AZ_convert_aztec_matrix_2ml_matrix(AZ_Kn,ML_Kn,proc_config);
 
   ML_Tmat = user_T_build(&Edge_Partition, &Node_Partition, 
-		      ML_Kn, comm);
+              ML_Kn, comm);
 
 
   // convert to Epetra_CrsMatrix
@@ -199,15 +224,53 @@ int main(int argc, char *argv[])
   double CPUTime;
 
   ML_Operator2EpetraCrsMatrix(ML_Ke,Epetra_Ke,
-			      MaxNumNonzeros,
-			      true,CPUTime);
+                  MaxNumNonzeros,
+                  true,CPUTime);
 
   ML_Operator2EpetraCrsMatrix(ML_Kn,
-			      Epetra_Kn,MaxNumNonzeros,
-			      true,CPUTime);
+                  Epetra_Kn,MaxNumNonzeros,
+                  true,CPUTime);
 
   ML_Operator2EpetraCrsMatrix(ML_Tmat,Epetra_T,MaxNumNonzeros,
-			      true,CPUTime);  
+                  true,CPUTime);  
+
+  // ======================================================== //
+  // NODE AND EDGE COORDINATES FOR REPARTITIONING WITH ZOLTAN
+  // ======================================================== //
+
+  /* ML requires nodal_coordinates to be as one vector, with x-, then y-
+   * finally z-coordinates, one after the other.
+   */
+  nodal_coordinates = (double *) malloc(2 * sizeof(double) *
+                                         Node_Partition.Nlocal);
+  mysize = sizeof(double)*(Node_Partition.Nlocal+Node_Partition.Nghost + 30);
+  x = (double *) ML_allocate( mysize );
+  y = (double *) ML_allocate( mysize );
+  /*
+   for (i = 0; i < Node_Partition.Nlocal; i++) {
+     x[i] = ((double) i)/((double) Node_Partition.Nlocal);
+     y[i] = ((double) i)/((double) Node_Partition.Nlocal);
+   }
+  */
+  AZ_ML_Build_NodalCoordinates( Node_Partition.Nglobal,
+                         Node_Partition.Nlocal, Kn_data_org[AZ_N_external],
+                         Node_Partition.my_global_ids,
+                         Node_Partition.needed_external_ids,
+                         reordered_glob_nodes, reordered_node_externs,
+                         x, y, NULL, 2 );
+
+  for (i = 0 ; i < Node_Partition.Nlocal ; ++i) {
+    nodal_coordinates[i] = x[i];
+    nodal_coordinates[i + Node_Partition.Nlocal] = y[i];
+    /*
+    printf("%d: coord(%d) = %e %e\n",ml_nodes->comm->ML_mypid,
+       i, x[i],y[i]);
+    */
+  }
+
+  edge_coordinates= (double *) ML_allocate(sizeof(double)*2*
+                                           (ML_Tmat->outvec_leng+1));
+  ML_Build_EdgeCoordinates(ML_Tmat, x, y, edge_coordinates);
 
 
   // ==================================================== //
@@ -216,6 +279,16 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
+
+  MLList.set("repartition: enable",true);
+  MLList.set("repartition: node min max ratio",1.1);
+  MLList.set("repartition: node min per proc",20);
+  MLList.set("repartition: edge min max ratio",1.1);
+  MLList.set("repartition: edge min per proc",20);
+  MLList.set("repartition: partitioner","Zoltan");
+  MLList.set("repartition: Zoltan dimensions",2);
+  MLList.set("repartition: Zoltan node coordinates",nodal_coordinates);
+  MLList.set("repartition: Zoltan edge coordinates",edge_coordinates);
   
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
@@ -228,8 +301,10 @@ int main(int argc, char *argv[])
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*Epetra_Ke, *Epetra_T, *Epetra_Kn,
-					    MLList);
+                        MLList);
 
+  // Have process 0 print out unused parameters.
+  MLPrec->PrintUnused(0);
   // ========================================================= //
   // D E F I N I T I O N   O F   A Z T E C O O   P R O B L E M //
   // ========================================================= //
@@ -269,15 +344,19 @@ int main(int argc, char *argv[])
   ML_Operator_Destroy( &ML_Ke );
   ML_Operator_Destroy( &ML_Kn );
   ML_Comm_Destroy( &comm );
+  ML_free(nodal_coordinates);
+  ML_free(edge_coordinates);
 
-  if (Edge_Partition.my_local_ids != NULL) free(Edge_Partition.my_local_ids);
-  if (Node_Partition.my_local_ids != NULL) free(Node_Partition.my_local_ids);
-  if (Node_Partition.my_global_ids != NULL) free(Node_Partition.my_global_ids);
-  if (Edge_Partition.my_global_ids != NULL) free(Edge_Partition.my_global_ids);
+  if (Edge_Partition.my_local_ids != NULL) ML_free(Edge_Partition.my_local_ids);
+  if (Node_Partition.my_local_ids != NULL) ML_free(Node_Partition.my_local_ids);
+  if (Node_Partition.my_global_ids != NULL) ML_free(Node_Partition.my_global_ids);
+  if (Edge_Partition.my_global_ids != NULL) ML_free(Edge_Partition.my_global_ids);
   if (Node_Partition.needed_external_ids != NULL) 
-    free(Node_Partition.needed_external_ids);
+    ML_free(Node_Partition.needed_external_ids);
   if (Edge_Partition.needed_external_ids != NULL) 
-    free(Edge_Partition.needed_external_ids);
+    ML_free(Edge_Partition.needed_external_ids);
+
+  AZ_free(reordered_glob_nodes);
 
   if (AZ_Ke!= NULL) {
     AZ_free(AZ_Ke->bindx);
@@ -296,9 +375,9 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-		
+        
   return 0;
-		
+        
 }
 
 #define HORIZONTAL 1
@@ -371,12 +450,12 @@ void user_partition_nodes(struct user_partition *Partition)
   AZ_set_proc_config(proc_config, COMMUNICATOR);
 
   AZ_input_update(NULL,&(Partition->Nlocal), &(Partition->my_global_ids),
-		  proc_config, Partition->Nglobal, 1, AZ_linear);
+          proc_config, Partition->Nglobal, 1, AZ_linear);
   Partition->Nghost = 0;
 }
 /* Assign unknowns to processors */
 void user_partition_edges(struct user_partition *Partition,
-			  struct user_partition *NodePartition)
+              struct user_partition *NodePartition)
 {
   int i;
 
@@ -440,14 +519,14 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
 
     if (horv == HORIZONTAL) {
       if (jj != 0) {
-	Ke_bindx[nz_ptr] = north(ii,jj,nx);     Ke_val[nz_ptr++] = doff;
-	Ke_bindx[nz_ptr] = east(ii,jj,nx);      Ke_val[nz_ptr++] = -1.;
-	if (ii != 0) {Ke_bindx[nz_ptr]=west(ii,jj,nx); Ke_val[nz_ptr++]= 1.;}
-	jj--;
+    Ke_bindx[nz_ptr] = north(ii,jj,nx);     Ke_val[nz_ptr++] = doff;
+    Ke_bindx[nz_ptr] = east(ii,jj,nx);      Ke_val[nz_ptr++] = -1.;
+    if (ii != 0) {Ke_bindx[nz_ptr]=west(ii,jj,nx); Ke_val[nz_ptr++]= 1.;}
+    jj--;
       }
       else {
-	Ke_val[i] = 1. +  2.*sigma/((double) ( 3 * nx * nx));
-	jj = nx-1;
+    Ke_val[i] = 1. +  2.*sigma/((double) ( 3 * nx * nx));
+    jj = nx-1;
       }
       Ke_bindx[nz_ptr] = east(ii,jj,nx);      Ke_val[nz_ptr++] = 1.;
       if (ii != 0){ Ke_bindx[nz_ptr]=west(ii,jj,nx);  Ke_val[nz_ptr++]=-1.;}
@@ -455,14 +534,14 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
     }
     else {
       if (ii != 0) {
-	Ke_bindx[nz_ptr] = north(ii,jj,nx);     Ke_val[nz_ptr++] = -1.;
-	Ke_bindx[nz_ptr] = east(ii,jj,nx);      Ke_val[nz_ptr++] = doff;
-	if (jj != 0) {Ke_bindx[nz_ptr]=south(ii,jj,nx); Ke_val[nz_ptr++]=1.;}
-	ii--;
+    Ke_bindx[nz_ptr] = north(ii,jj,nx);     Ke_val[nz_ptr++] = -1.;
+    Ke_bindx[nz_ptr] = east(ii,jj,nx);      Ke_val[nz_ptr++] = doff;
+    if (jj != 0) {Ke_bindx[nz_ptr]=south(ii,jj,nx); Ke_val[nz_ptr++]=1.;}
+    ii--;
       }
       else {
-	Ke_val[i]  = 1 +  2.*sigma/((double) ( 3 * nx * nx));
-	ii = nx-1;
+    Ke_val[i]  = 1 +  2.*sigma/((double) ( 3 * nx * nx));
+    ii = nx-1;
       }
       Ke_bindx[nz_ptr] = north(ii,jj,nx);     Ke_val[nz_ptr++] = 1.;
       if (ii != 0) {Ke_bindx[nz_ptr]=west(ii,jj,nx);  Ke_val[nz_ptr++]=doff;}
@@ -479,10 +558,10 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
   AZ_set_proc_config(proc_config, COMMUNICATOR);
 
   AZ_transform_norowreordering(proc_config, &(Edge_Partition->needed_external_ids),
-			       Ke_bindx, Ke_val, Edge_Partition->my_global_ids,
-			       &reordered_glob_edges, &reordered_edge_externs, 
-			       &Ke_data_org, Nlocal_edges, 0, 0, 0, 
-			       &cpntr,	       AZ_MSR_MATRIX);
+                   Ke_bindx, Ke_val, Edge_Partition->my_global_ids,
+                   &reordered_glob_edges, &reordered_edge_externs, 
+                   &Ke_data_org, Nlocal_edges, 0, 0, 0, 
+                   &cpntr,           AZ_MSR_MATRIX);
   AZ_free(reordered_glob_edges);
   AZ_free(reordered_edge_externs);
   Edge_Partition->Nghost = Ke_data_org[AZ_N_external];
@@ -494,8 +573,6 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
 
   return(Ke_mat);
 }
-
-int *reordered_node_externs = NULL;  /* Aztec thing */
 
 /********************************************************************/
 /* Set up Kn_mat                                                    */
@@ -509,6 +586,7 @@ int *reordered_node_externs = NULL;  /* Aztec thing */
 /*  3) Stuff the arrays into an Aztec matrix.                       */
 /*------------------------------------------------------------------*/
 
+
 AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 
 {
@@ -516,7 +594,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
   double *Kn_val;
   int    proc_config[AZ_PROC_SIZE];
   AZ_MATRIX *Kn_mat;
-  int    *reordered_glob_nodes = NULL, *cpntr = NULL, *Kn_data_org = NULL;
+  //int    *reordered_glob_nodes = NULL, *cpntr = NULL, *Kn_data_org = NULL;
+  int    *cpntr = NULL;
   int i, ii, jj, nx, gid, Nlocal_nodes, nz_ptr;
 
 
@@ -559,12 +638,12 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
   AZ_set_proc_config(proc_config, COMMUNICATOR);
 
   AZ_transform_norowreordering(proc_config,&(Node_Partition->needed_external_ids),
-			       Kn_bindx, Kn_val, Node_Partition->my_global_ids,
-			       &reordered_glob_nodes, &reordered_node_externs, 
-			       &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
-			       &cpntr, AZ_MSR_MATRIX);
+                   Kn_bindx, Kn_val, Node_Partition->my_global_ids,
+                   &reordered_glob_nodes, &reordered_node_externs, 
+                   &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
+                   &cpntr, AZ_MSR_MATRIX);
   Node_Partition->Nghost = Kn_data_org[AZ_N_external];
-  AZ_free(reordered_glob_nodes);
+  //AZ_free(reordered_glob_nodes);
 
   /* Convert old style Aztec matrix to newer style Aztec matrix */
 
@@ -591,8 +670,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 /*------------------------------------------------------------------*/
 
 ML_Operator *user_T_build(struct user_partition *Edge_Partition,
-		      struct user_partition *Node_Partition,
-		      ML_Operator *Kn_mat, ML_Comm *comm)
+              struct user_partition *Node_Partition,
+              ML_Operator *Kn_mat, ML_Comm *comm)
 {
 
   int nx, i, ii, jj, horv, Ncols, Nexterns;
@@ -626,7 +705,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 
     if (horv == HORIZONTAL) {
       if(ii != -1) {
-	Tmat_bindx[nz_ptr] = southwest(ii,jj,nx); Tmat_val[nz_ptr++] = -1.;
+    Tmat_bindx[nz_ptr] = southwest(ii,jj,nx); Tmat_val[nz_ptr++] = -1.;
       }
       Tmat_bindx[nz_ptr]   = southeast(ii,jj,nx); Tmat_val[nz_ptr++] =  1.; 
     }
@@ -634,7 +713,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
       if (ii == -1) ii = nx-1;
       Tmat_bindx[nz_ptr] = northwest(ii,jj,nx); Tmat_val[nz_ptr++] = -1.;
       if (jj != 0) {
-	Tmat_bindx[nz_ptr] = southwest(ii,jj,nx); Tmat_val[nz_ptr++] =  1.;}
+    Tmat_bindx[nz_ptr] = southwest(ii,jj,nx); Tmat_val[nz_ptr++] =  1.;}
     }
     Tmat_bindx[i+1] = nz_ptr;
 
@@ -656,15 +735,73 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
   /*  ML_Comm_Create( &comm); */
 
   AZ_Tmat_transform2ml(Nexterns,   Node_Partition->needed_external_ids,
-		       reordered_node_externs,
-		       Tmat_bindx, Tmat_val, csr_data->rowptr, Nlocal_nodes,
-		       Node_Partition->my_global_ids,
-		       comm, Nlocal_edges, &Tmat);
+               reordered_node_externs,
+               Tmat_bindx, Tmat_val, csr_data->rowptr, Nlocal_nodes,
+               Node_Partition->my_global_ids,
+               comm, Nlocal_edges, &Tmat);
   ML_free(csr_data);
   Tmat->data_destroy = ML_CSR_MSRdata_Destroy;
   ML_CommInfoOP_Clone(&(Tmat->getrow->pre_comm), Kn_mat->getrow->pre_comm);
 
   return(Tmat);
+}
+
+                                                                                
+/* *********************** ML_Build_EdgeCoordinates ********************** */
+                                                                                
+void ML_Build_EdgeCoordinates(ML_Operator* Tmat, double *x, double *y,
+                         double *edge_coordinates)
+{
+  int i;
+  double *node_data,*edge_sizes;
+  int (*oldone)(ML_Operator *, int, double *, int, double *);
+                                                                                
+ oldone = Tmat->matvec->func_ptr;
+  if (Tmat->matvec->func_ptr == CSR_matvec)
+    Tmat->matvec->func_ptr = CSR_ones_matvec;
+  else if (Tmat->matvec->func_ptr == sCSR_matvec)
+    Tmat->matvec->func_ptr = sCSR_ones_matvec;
+  else {
+    pr_error("ML_Aggregate_ProjectCoordinates: Expected CSR_matvec for projection operator and found something else?\n");
+  }
+                                                                                
+  /* allocate space */
+                                                                                
+                                                                                
+  node_data = (double *) ML_allocate(sizeof(double)* (Tmat->invec_leng+1));
+  edge_sizes = (double *) ML_allocate(sizeof(double)* (Tmat->outvec_leng+1));
+                                                                                
+  /* Compute number of nodes in each edge by doing a ones mult */
+                                                                                
+  for (i = 0; i < Tmat->invec_leng; i++) node_data[i] = 1.;
+  ML_Operator_Apply(Tmat, Tmat->invec_leng, node_data,
+               Tmat->outvec_leng, edge_sizes);
+                                                                                
+  for (i = 0 ; i < Tmat->outvec_leng ; ++i) {
+    if (edge_sizes[i] == 0.) edge_sizes[i] = 1.;
+  }
+                                                                                
+  /* Take nodal coordinates and sum them */
+                                                                                
+  ML_Operator_Apply(Tmat, Tmat->invec_leng, x,
+               Tmat->outvec_leng, edge_coordinates);
+  ML_Operator_Apply(Tmat, Tmat->invec_leng, y,
+             Tmat->outvec_leng, &(edge_coordinates[Tmat->outvec_leng]));
+                                                                                
+  /* and then divide by the size */
+                                                                                
+  for (i = 0 ; i < Tmat->outvec_leng ; ++i) {
+    edge_coordinates[i] /= edge_sizes[i];
+    edge_coordinates[i+Tmat->outvec_leng] /= edge_sizes[i];
+/*
+    if ( (edge_coordinates[i] == 0.) ||
+(edge_coordinates[i+Tmat->outvec_leng]==0.) )
+    printf("%d: edge coords(%d) = %e,%e\n",Tmat->comm->ML_mypid,
+          i,edge_coordinates[i],edge_coordinates[i+Tmat->outvec_leng]);
+*/
+  }
+                                                                                
+  Tmat->matvec->func_ptr = oldone;
 }
 
 #else
