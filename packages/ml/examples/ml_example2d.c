@@ -1711,7 +1711,9 @@ int ml_find_global_row(int i, int proc, int global_nrows, int **whole_glob_map)
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef ML_MPI
 #include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {

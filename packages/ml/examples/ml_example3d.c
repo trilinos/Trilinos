@@ -1242,7 +1242,9 @@ nz = (row/(NP*m*m));
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef ML_MPI
 #include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
