@@ -128,6 +128,15 @@ class StatusTestCombo: public StatusTest<TYPE> {
 
   //@}
 
+  //@{ \name Reset methods
+
+  //! Resets all the status tests in this combination to their initial internal state.
+  /*! This should be done when the status test is being reused with another solver or linear problem.
+  */
+  void Reset(); 
+
+  //@}
+
   //@{ \name Accessor methods
 
   //! Returns the maximum number of iterations set in the constructor.
@@ -275,6 +284,17 @@ StatusType StatusTestCombo<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
     SeqOp( iSolver );
 
   return status_;
+}
+
+template <class TYPE>
+void StatusTestCombo<TYPE>::Reset( )
+{
+  // Resets all status tests.
+  for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
+    {
+      (*i)->Reset();
+    }
+  return;
 }
 
 template <class TYPE>

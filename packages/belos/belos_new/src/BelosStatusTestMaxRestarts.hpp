@@ -74,6 +74,13 @@ class StatusTestMaxRestarts: public StatusTest<TYPE> {
 
   //@}
 
+  //@{ \name Reset methods
+  
+  //! Resets the internal configuration to the initial state
+  void Reset();
+
+  //@}
+
   //@{ \name Accessor methods
 
   //! Returns the maximum number of restarts set in the constructor.
@@ -135,6 +142,13 @@ private:
     return status_;
   }
   
+  template<class TYPE>
+  void StatusTestMaxRestarts<TYPE>::Reset()
+  {
+    status_ = Unchecked;
+    nRestarts_ = 0;
+  }
+
   template<class TYPE>
   ostream& StatusTestMaxRestarts<TYPE>::Print(ostream& os, int indent) const
   {

@@ -162,6 +162,13 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   StatusType GetStatus() const {return(status_);};
   //@}
 
+  //@{ \name Reset methods
+ 
+  //! Resets the internal configuration to the initial state.
+  void Reset();
+
+  //@}
+
   //@{ \name Attribute methods
 
   //! Indicates if residual vector is required by this convergence test.
@@ -291,6 +298,19 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     if (scalevector_) { delete [] scalevector_; }
     if (resvector_) { delete [] resvector_; }
     if (testvector_) { delete [] testvector_; }
+  }
+
+  template <class TYPE>
+  void StatusTestResNorm<TYPE>::Reset() 
+  {
+    if (scalevector_) { delete [] scalevector_; }
+    if (resvector_) { delete [] resvector_; }
+    if (testvector_) { delete [] testvector_; }
+    status_ = Unchecked;
+    cur_rhs_num_ = 0;
+    cur_blksz_ = 0;
+    numrhs_ = 0;
+    firstcallCheckStatus_ = true;
   }
 
   template <class TYPE>

@@ -73,6 +73,13 @@ class StatusTestMaxIters: public StatusTest<TYPE> {
 
   //@}
 
+  //@{ \name Reset methods
+
+  //! Resets the status test to the initial internal state.
+  void Reset();
+
+  //@}
+
   //@{ \name Accessor methods
 
   //! Returns the maximum number of iterations set in the constructor.
@@ -134,6 +141,13 @@ private:
     return status_;
   }
   
+  template<class TYPE>
+  void StatusTestMaxIters<TYPE>::Reset()
+  {
+    nIters_ = 0;
+    status_ = Unchecked;
+  }    
+    
   template<class TYPE>
   ostream& StatusTestMaxIters<TYPE>::Print(ostream& os, int indent) const
   {

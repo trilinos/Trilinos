@@ -160,6 +160,7 @@ EpetraOperator<TYPE>::EpetraOperator( LinearProblemManager<TYPE>& lp,
 template<class TYPE>
 EpetraOperator<TYPE>::~EpetraOperator()
 {
+  delete [] Solver;
 }
 
 template<class TYPE>
@@ -188,8 +189,8 @@ int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector
 {
 	TYPE zero = 0.0, one = 1.0;
 	PetraVec<TYPE> vec_X(X), vec_Y(Y);
-	lp_.SetLHS( &vec_Y );
-	lp_.SetRHS( &vec_X );
+	lp_.Reset( &vec_Y, &vec_X );
+	stest_.Reset();
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.
@@ -218,8 +219,8 @@ int EpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_Mult
 {
 	TYPE zero = 0.0, one = 1.0;
 	PetraVec<TYPE> vec_X(X), vec_Y(Y);
-	lp_.SetLHS( &vec_Y );
-	lp_.SetRHS( &vec_X );
+	lp_.Reset( &vec_Y, &vec_X );
+	stest_.Reset();
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.

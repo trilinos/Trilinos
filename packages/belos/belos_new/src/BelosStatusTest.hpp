@@ -77,7 +77,17 @@ class StatusTest {
   virtual StatusType CheckStatus( IterativeSolver<TYPE>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
-  virtual  StatusType GetStatus() const = 0;
+  virtual StatusType GetStatus() const = 0;
+  //@}
+
+  //@{ \name Reset methods
+  //! Informs the convergence test that it should reset its internal configuration to the initialized state.
+  /*! This is necessary for the case when the status test is being reused by another solver or for another
+    linear problem.  The status test may have information that pertains to a particular linear system.  The
+    internal information will be reset back to the initialized state.  The user specified information that
+    the convergence test uses will remain.
+  */
+  virtual void Reset() = 0;
   //@}
 
   //@{ \name Attribute methods

@@ -551,8 +551,8 @@ void LinearProblemManager<TYPE>::Reset( MultiVec<TYPE>* newX, MultiVec<TYPE>* ne
   initresidsComputed_ = false;
   rhs_index_ = 0;
 
-  if (R0_) delete R0_;
-  R0_ = X_->Clone( X_->GetNumberVecs() ); 
+  X_ = newX;
+  B_ = newB;
   GetInitResVec();
 }
 
@@ -565,6 +565,8 @@ MultiVec<TYPE>* LinearProblemManager<TYPE>::GetInitResVec()
   // in a preconditioned residual.
   if (!initresidsComputed_ && A_ && X_ && B_) 
     {
+      if (R0_) delete R0_;
+      R0_ = X_->Clone( X_->GetNumberVecs() );
       A_->Apply( *X_, *R0_ );
       R0_->MvAddMv( 1.0, *B_, -1.0, *R0_ );
       initresidsComputed_ = true;
