@@ -96,11 +96,13 @@ public:
     \brief Set the parameters in the utilities class.
     
     Valid parameters are:
+    <ul>
     <li> "Output Information" - Sum of MsgType flags to set what information
     to output.
     <li> "MyPID" - Processor ID.
     <li> "Output Processor" - Ranges from 0 to MyPID-1.
     <li> "Output Precision" - Precision of values to be printed by output.
+    </ul>
   */
   static void setUtils(NOX::Parameter::List& p);
 

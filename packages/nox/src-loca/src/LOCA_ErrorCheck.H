@@ -72,6 +72,7 @@ namespace LOCA {
 
   private:
 
+    //! Converts the NOX::Abstract::Group::ReturnType to a string
     static string 
     getReturnTypeString(NOX::Abstract::Group::ReturnType status);
 

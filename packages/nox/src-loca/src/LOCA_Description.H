@@ -28,21 +28,28 @@
 //@HEADER
 
 /*! 
-\mainpage %LOCA:  Library of Continuation Algorithms
+\page loca_overview LOCA Overview
 
 \section loca_intro Introduction
   
-%LOCA is short for "Library of Continuation Algorithms". Its objective is to compute families of solutions to
-\f[
-F(x,p)=0
-\f]
-and their bifurcations, where \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  %LOCA is designed to be used with the <a href="../../../doc/html/index.html">%NOX</a> nonlinear solver package.
+%LOCA is generic continuation package based upon the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.  The foundation for %NOX consists of the NOX::Abstract::Group and NOX::Abstract::Vector which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved.  %LOCA extends these concepts via additional abstract groups that provide the interface needed for continuation and bifurcation tracking such as setting parameters and computing derivatives with respect to parameters.  Also, %LOCA provides several generic groups that implement the extended sets of nonlinear equations representing various forms of continuation and bifurcations.  Finally, %LOCA provides a stepper class that drives a %NOX nonlinear solver to compute points along a continuation curve, and several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail below (see \ref loca_class_overview).
 
-To learn more about the theory behind %LOCA algorithms, please read the %LOCA v1.0 manual (<a href="../../doc/loca_v1.0_manual/src_latex/loca_book.ps">ps</a>, <a href="../../doc/loca_v1.0_manual/src_latex/loca_book.pdf">pdf</a>, <a href="../../doc/loca_v1.0_manual/src_latex/loca_book/index.html">html</a>).
+Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two such interfaces:
+
+ - LOCA::LAPACK::Group
+ - LOCA::Epetra::Group
+
+both of which implement the interface required for all levels of functionality provided by %LOCA.
+
+To learn more about the theory behind %LOCA algorithms, please read the %LOCA v1.0 manual (<a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book.ps">ps</a>, <a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book.pdf">pdf</a>, <a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book/index.html">html</a>).  Please note the theory and implementation described in this manual is for the original version of %LOCA available <a href="http://www.cs.sandia.gov/loca">here</a>.  The implementation here is completely different, but the theory is more-or-less the same.
+
+\section loca_user LOCA User Information
+
+See \ref loca_user_info.
 
 \section loca_classes Class Overview
 
-See \ref loca_overview.
+See \ref loca_class_overview.
 
 \section loca_params Parameter Specifications
 
@@ -53,16 +60,7 @@ See \ref loca_parameters.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page loca_overview LOCA Class Overview
-
-  %LOCA is generic continuation package based upon the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.  The foundation for %NOX consists of the NOX::Abstract::Group and NOX::Abstract::Vector which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved.  %LOCA extends these concepts via additional abstract groups that provide the interface needed for continuation and bifurcation tracking such as setting parameters and computing derivatives with respect to parameters.  Also, %LOCA provides several generic groups that implement the extended sets of nonlinear equations representing various forms of continuation and bifurcations.  Finally, %LOCA provides a stepper class that drives a %NOX nonlinear solver to compute points along a continuation curve, and several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail below.
-
-Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two such interfaces:
-
- - LOCA::LAPACK::Group
- - LOCA::Epetra::Group
-
-both of which implement the interface required for all levels of functionality provided by %LOCA.  
+/*! \page loca_class_overview LOCA Class Overview
 
 \section continuation Continuation Classes
 
@@ -146,6 +144,9 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
      <li> "Utilities" sublist -- used by LOCA::Utils
           <ul>
 	  <li> "Output Information"
+	  <li> "Output Processor"
+	  <li> "MyPID"
+	  <li> "Output Precision"
 	  </ul>
      <li> "Anasazi" sublist -- used by LOCA::Epetra::Group to compute eigenvalues using the Anasazi package
           <ul>
@@ -171,5 +172,87 @@ Parameters can also be passed to the LOCA::Abstract::Group constructor.  Current
      <li> "Method" ["Default", "Nic", "Nic-Day", "Iterative Refinement"]
      </ul>
 </ul>
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page loca_user_info LOCA User Information
+
+\section loca_user_info_overview Overview
+
+Since %LOCA is based on %NOX, using %LOCA is quite similar to using %NOX and
+an understanding of how to use %NOX is a prerequisite for using %LOCA.  See
+\ref nox_user_information for a description of how to use %NOX.  Here we will
+discuss the additional steps required to use %LOCA.
+
+\section loca_user_info_step_1 Step 1: Download, Configure, Compile, and Install LOCA
+
+%LOCA is part of %NOX, so by downloading %NOX you have %LOCA.  To enable %LOCA 
+during configuration and compilation, supply the --enable-loca configuration 
+option.  %LOCA %LAPACK and Epetra support and examples are automatically 
+enabled if they are enabled in %NOX (see \ref nox_configuration_options).  
+Typing "make" and "make install" in the top-level %NOX directory then
+compile and install %LOCA as well as %NOX.
+
+\section loca_user_info_step_2 Step 2: Create contrete implementations of the LOCA AbstractGroup classes
+
+See \ref loca_class_overview for a description of the %LOCA AbstractGroup class
+hierarchy used to supply interfaces for various parameter continuation and
+bifurcation tracking algorithms.  These AbstractGroups extended the interface
+supplied by the NOX::Abstract::Group to provided the functionality needed for
+continuation and bifurcation tracking, and to use %LOCA, concrete 
+implementations of these interfaces must be provided.  
+
+\subsection loca_user_info_step_2_writing_implementation Writing your own implementation
+
+As in %NOX, we recommend using the LOCA::LAPACK::Group as a guide for writing
+your own implementation.  The simplest approach is to derive your group
+from the LOCA::Abstract::Group and provide implementations of the appropriate
+AbstractGroup methods for the level of functionality you desire.  At a 
+minimum for parameter continuation, you must provide implementations of the
+parameter setting/retrieval methods.  Note there is no additional %LOCA 
+abstract vector interface to implement to use %LOCA.
+
+\subsection loca_user_info_step_2_loca_implementations Implementations provided with LOCA
+
+%LOCA provides two ready-made implementations:
+
+<ul>
+<li>
+The LOCA::LAPACK implementation extendes the NOX::LAPACK implementation to
+%LOCA.  %LAPACK support and examples are automatically enabled if they are
+enabled in %NOX.  The LOCA::LAPACK implementation supports all levels of
+functionality provided by %LOCA and can be used in any continuation or
+bifurcation calculation.
+
+<li>
+The LOCA::Epetra implementation extendes the NOX::Epetra implementation to
+%LOCA.  Epetra support and examples are automatically enabled if they are
+enabled in %NOX.  All levels of functionality provided by LOCA are supported
+except Hopf calculations and generalized eigenvalue calcuations, which require
+a separate mass matrix and complex-valued computations.
+
+<li>
+Currently, there is no %LOCA Petc support provided.
+</ul>
+
+\section loca_user_info_step_3 Step 3: Call LOCA from your code
+
+A tutorial describing how to use %LOCA is coming shortly.
+
+\section loca_user_info_step_4 Step 4: Link your code to LOCA
+
+Linking with %LOCA is very similar to linking with %NOX.  You must additionally
+link against -lloca, -lloca-lapack (if using the LOCA::LAPACK), and
+-lloca-epetra (if using LOCA::Epetra).
+
+\section loca_user_info_problems If you have problems...
+
+If you have problems with %LOCA, please report
+them using
+<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
 */
