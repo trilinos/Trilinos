@@ -36,13 +36,20 @@ extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMg
                                      double *x, double *y, double *z, int Ndimensions,
                                      char *base_filename );
 extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate *, int);
+extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
+						 double *x, double *y, double *z);
+extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
+extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
+			    double * vector, char * base_filename, int level);
+extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
+extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 
 }
 
 extern "C" {
 
-double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
-			    int approx_all_zeros, ML_Comm *comm,
+  double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
+			int approx_all_zeros, ML_Comm *comm,
 			    int res_norm_or_not, ML *ml)
 {
 
@@ -586,7 +593,7 @@ void ML_Epetra::MultiLevelPreconditioner::Initialize()
   ml_ = 0;
   agg_ = 0;
   
-  sprintf(ErrorMsg_,"ERROR (MultiLevelPreconditioner) : ");
+  sprintf(ErrorMsg_,"*ML*ERR* : ");
   PrintMsg_ = "";
   
   AZ_defaults(SmootherOptions_,SmootherParams_);
@@ -970,7 +977,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* to ML_NO. It does affect METIS and ParMETIS only.                      */
   /* ********************************************************************** */
 
-  bool UseDropping = false;
+  bool UseDropping = true;
   sprintf(parameter,"%saggregation: use dropping", Prefix_);
   UseDropping = List_.get(parameter, UseDropping);
   if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
@@ -1025,193 +1032,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
 
     Epetra_FECrsMatrix * FakeMatrix = 0;
 
-    if( CreateFakeProblem == true ) {
-    
-      int NumMyRows = RowMatrix_->NumMyRows();
-
-      // create the auxiliary matrix as VBR matrix. This should help
-      // to save memory with respect to the creation of "pure" VBR
-      // matrices.
-
-      FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMatrix_->RowMatrixRowMap(),RowMatrix_->MaxNumEntries());
-      assert( FakeMatrix != 0 ); 
-
-      sprintf(parameter,"%saggregation: dimensions", Prefix_);
-      int NumDimensions = List_.get(parameter,0);
-
-      if( NumDimensions > 3 || NumDimensions <= 0 ) {
-	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,'" << endl
-	     << ErrorMsg_ << "the number of dimensions is incorrect (" << NumDimensions << ")" << endl;
-	exit( EXIT_FAILURE );
-      }
-
-      sprintf(parameter,"%saggregation: x-coordinates", Prefix_);
-      double * x_coord = List_.get(parameter,(double *)0);
-
-      sprintf(parameter,"%saggregation: y-coordinates", Prefix_);
-      double * y_coord = List_.get(parameter,(double *)0);
-
-      if( NumDimensions > 1 && y_coord == 0 ) {
-	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,' you ask" << endl
-	     << ErrorMsg_ << "for d=2,3, but `aggregation: y-coordinates' is empty." << endl;
-	exit( EXIT_FAILURE );
-      }
-
-      sprintf(parameter,"%saggregation: z-coordinates", Prefix_);
-      double * z_coord = List_.get(parameter,(double *)0);
-
-      if( NumDimensions > 2 && z_coord == 0 ) {
-	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,' you ask" << endl
-	     << ErrorMsg_ << "for d=3, but `aggregation: z-coordinates' is empty." << endl;
-	exit( EXIT_FAILURE );
-      }
-
-      sprintf(parameter,"%saggregation: theta", Prefix_);
-      double theta = List_.get(parameter,0.0);
-
-      sprintf(parameter,"%saggregation: use symmetric pattern", Prefix_);
-      bool SymmetricPattern = List_.get(parameter,false);
-
-      // create the auxiliary matrix
-
-      int allocated = 1;
-      int * colInd = new int[allocated];
-      double * colVal = new double[allocated];
-      int NnzRow;
-
-      double coord_i[3], coord_j[3];
-      for( int i = 0; i<3 ; ++i ) {
-	coord_i[i] = 0.0; coord_j[i] = 0.0;
-      }
-
-      // cycle over all rows (also for VBR)
-      for (int i = 0; i < NumMyRows ; ++i ) {
-
-	int GlobalRow = (RowMatrix_->RowMatrixRowMap().MyGlobalElements())[i];
-
-	if( i%NumPDEEqns_ == 0 ) { // do it just once for each block row
-	  switch( NumDimensions ) {
-	  case 3:
-	    coord_i[2] = z_coord[i/NumPDEEqns_];
-	  case 2:
-	    coord_i[1] = y_coord[i/NumPDEEqns_];
-	  case 1:
-	    coord_i[0] = x_coord[i/NumPDEEqns_];
-	  }
-	}
-	
-	int ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
-
-	if( ierr == 0 ) {
-	  do {
-	    delete [] colInd;
-	    delete [] colVal;
-	    allocated *= 2;
-	    colInd = new int[allocated];
-	    colVal = new double[allocated];
-	    ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
-	  } while( ierr == 0 );
-	}
-
-	// NOTE: for VBR matrices, the "real" value that will be used in
-	// the subsequent part of the code is only the one for the first
-	// equations. For each block, I replace values with the sum of
-	// the abs of each block entry.
-	
-	for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
-	  colVal[j] = abs(colVal[j]);
-	  for( int k=1 ; k<NumPDEEqns_ ; ++k ) {
-	    colVal[j] += abs(colVal[j+k]);
-	  }
-	}
-
-	// work only on the first equations. Theta will blend the
-	// coordinate part with the sub of abs of row elements.
-
-	int GlobalCol;
-	double total = 0.0;
-
-	for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
-
-	  // insert diagonal later
-	  if( colInd[j]/NumPDEEqns_ != i/NumPDEEqns_ ) {
-	    if( j%NumPDEEqns_ == 0 ) { // do it only once
-	      switch( NumDimensions ) {
-	      case 3:
-		coord_j[2] = z_coord[colInd[j]/NumPDEEqns_];
-	      case 2:
-		coord_j[1] = y_coord[colInd[j]/NumPDEEqns_];
-	      case 1:
-		coord_j[0] = x_coord[colInd[j]/NumPDEEqns_];
-	      }
-	    }
-
-	    double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
-	    if( d2 == 0.0 ) {
-	      cerr << endl;
-	      cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
-		   << colInd[j]/NumPDEEqns_ << endl
-		   << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
-		   << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
-		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
-		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
-		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
-	      cerr << endl;
-	      d2 = 1.0;
-	    }
-
-	    double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
-	    
-	    GlobalCol= (RowMatrix_->RowMatrixColMap().MyGlobalElements())[colInd[j]];
-
-	    // insert this value on all rows
-	    for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-	      int row = GlobalRow+k;
-	      int col = GlobalCol+k;
-	      // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
-	      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
-		assert( FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
-	      }
-	    }
-
-	    total -= val;
-
-	    // put (j,i) element as well. this works also for
-	    // off-process elements. 
-	    if( SymmetricPattern == true ) {
-	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-		int row = GlobalCol+k;
-		int col = GlobalRow+k;
-		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
-		  assert( FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0 );
-		}
-		total -= val;
-	      }
-	    }
-	  } 
-	}
-
-	// create lines with zero-row sum
-	for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-	  int row = GlobalRow+k;
-	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
-	    assert( FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) == 0);
-	  }
-	}
-          
-      }
-
-      FakeMatrix->GlobalAssemble();
-
-      delete [] colInd;
-      delete [] colVal;
-
-      // stick pointer in Amat for level 0 (finest level)
-      ml_->Amat[LevelID_[0]].data = (void *)FakeMatrix;
-
-      // tell ML to keep the tentative prolongator
-      ML_Aggregate_Set_Reuse(agg_);
-    }
+    if( CreateFakeProblem == true ) CreateAuxiliaryMatrix(FakeMatrix);
     
     NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
@@ -1222,7 +1043,14 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
       ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
 
       // generate new hierarchy with "good" matrix
-      ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
+      if( verbose_ ) {
+	cout << endl;
+	cout << PrintMsg_ << "*** Now re-building the ML hierarchy with the actual matrix..." << endl;
+	cout << endl;
+      }
+
+      //ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
+      ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
     } // nothing special to be done if CreateFakeProblem is false
       
@@ -1394,16 +1222,6 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   sprintf(parameter,"%sadaptive: enable", Prefix_);
   if( List_.get(parameter, false) == true ) CheckPreconditionerKrylov();
   
-  if( verbose_ ) PrintLine();
-
-  // set label
-
-  sprintf(parameter,"%sprint unused", Prefix_);
-  if( List_.isParameter(parameter) ) {
-    int ProcID = List_.get(parameter,-2);
-    if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
-  }
-
   if( AnalyzeMemory_ ) {
     memory_[ML_MEM_FINAL] = ML_MaxAllocatableSize();
     memory_[ML_MEM_TOT1] = memory_[ML_MEM_INITIAL] - memory_[ML_MEM_FINAL];
@@ -1414,49 +1232,18 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /*
    * still need to print out visualization and some other stuff
    */
-  if( viz == true ) {
-    double * x_coord = List_.get("viz: x-coordinates", (double *)0);
-    double * y_coord = List_.get("viz: y-coordinates", (double *)0);
-    double * z_coord = List_.get("viz: z-coordinates", (double *)0);
-    int NumDim = List_.get("viz: dimensions", 0);
-    switch( NumDim ) {
-    case 0:
-      cerr << ErrorMsg_ << "parameter `viz: dimensions' is 0. Did you" << endl
-	<< ErrorMsg_ << "really want to visuzalize the aggregates?" << endl;
-      exit( EXIT_FAILURE );
-      break;
-    case 1:
-      if( x_coord == 0 ) {
-	cerr << ErrorMsg_ << "parameter `viz: x-coordinates' is empty!" << endl;
-	exit( EXIT_FAILURE );
-      }
-      break;
-    case 2:
-      if( y_coord == 0 ) {
-	cerr << ErrorMsg_ << "parameter `viz: y-coordinates' is empty!" << endl;
-	exit( EXIT_FAILURE );
-      }
-      break;
-    case 3:
-      if( z_coord == 0 ) {
-	cerr << ErrorMsg_ << "parameter `viz: z-coordinates' is empty!" << endl;
-	exit( EXIT_FAILURE );
-      }
-      break;
-    }
+  if( viz == true ) VizMePleaze();
 
- //   string BaseFileName = List_.get("viz: filename", (char *)0);
-
-    ML_Aggregate_VizAndStats_Compute( ml_, agg_, NumLevels_,
-				     x_coord, y_coord, z_coord, 
-//				     NumDim, BaseFileName.c_str());
-				     NumDim, 0);
-
-    // clean memory associated with viz and stats.
-    ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
+  // print unused parameters
+  sprintf(parameter,"%sprint unused", Prefix_);
+  if( List_.isParameter(parameter) ) {
+    int ProcID = List_.get(parameter,-2);
+    if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
   }
 
   /* ------------------- that's all folks --------------------------------- */
+
+  if( verbose_ ) PrintLine();
 
   ConstructionTime_ += Time.ElapsedTime();
   
@@ -2391,6 +2178,8 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
   return 0;
 }
 
+// ============================================================================
+
 int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
 {
   // print out some junk for debugging (copied from code in
@@ -2450,76 +2239,281 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
   return 0;
 }
 
-#endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
+// ============================================================================
+void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix)
+{
+  char parameter[80];
 
+  int NumMyRows = RowMatrix_->NumMyRows();
 
-#ifdef ERASEME
+  // create the auxiliary matrix as VBR matrix. This should help
+  // to save memory with respect to the creation of "pure" VBR
+  // matrices.
 
-else if( PrecType == "in ML I trust" ) {
- 
-      int dim = NumPDEEqns_+NumRealEigenvectors+NumImagEigenvectors;
-      NullSpaceToFree_ = new double[dim*NumMyRows()];
-      if( NullSpaceToFree_ == 0 ) {
-	cerr << ErrorMsg_ << "Not enough space to allocate "
-	     << dim*NumMyRows()*8 << " bytes" << endl;
-	exit( EXIT_FAILURE );
+  FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMatrix_->RowMatrixRowMap(),RowMatrix_->MaxNumEntries());
+  assert( FakeMatrix != 0 ); 
+
+  int NumDimensions = 0;
+
+  sprintf(parameter,"%saggregation: x-coordinates", Prefix_);
+  double * x_coord = List_.get(parameter,(double *)0);
+  if( x_coord != 0 ) ++NumDimensions;
+
+  // at least x-coordinates myst be not null
+  if( NumDimensions == 0 ) {
+    cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << endl
+      << ErrorMsg_ << "requires x-, y-, or z-coordinates." << endl
+      << ErrorMsg_ << "You must specify them using options" << endl
+      << ErrorMsg_ << "`aggregation: x-coordinates' (and equivalently for" << endl
+      << ErrorMsg_ << "y- and z-." << endl;
+    exit( EXIT_FAILURE );
+  }
+
+  sprintf(parameter,"%saggregation: y-coordinates", Prefix_);
+  double * y_coord = List_.get(parameter,(double *)0);
+  if( y_coord != 0 ) ++NumDimensions;
+
+      sprintf(parameter,"%saggregation: z-coordinates", Prefix_);
+      double * z_coord = List_.get(parameter,(double *)0);
+      if( z_coord != 0 ) ++NumDimensions;
+
+      // small check to avoid strange behavior
+      if( z_coord != 0 && y_coord == 0 ) {
+        cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
+             << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is null" << endl;
+        exit( EXIT_FAILURE );
       }
-      
-      // default null-space
-      for( int i=0 ; i<NumPDEEqns_ ; ++i )
-	for( int j=0 ; j<NumMyRows() ; ++j )
-	  if( j%NumPDEEqns_ == i ) NullSpaceToFree_[j+i*NumMyRows()] = 1.0;
-	  else                     NullSpaceToFree_[j+i*NumMyRows()] = 0.0;
-      
-      int count = NumPDEEqns_*NumMyRows();
+  
+  sprintf(parameter,"%saggregation: theta", Prefix_);
+  double theta = List_.get(parameter,0.0);
 
-      for( int i=0 ; i<NumRealEigenvectors ; ++i )
-	for( int j=0 ; j<NumMyRows() ; ++j ) 
-	  NullSpaceToFree_[count++] = RealEigenvectors[j+i*NumMyRows()];
-      
-      for( int i=0 ; i<NumImagEigenvectors ; ++i )
-	for( int j=0 ; j<NumMyRows() ; ++j ) 
-	  NullSpaceToFree_[count++] = ImagEigenvectors[j+i*NumMyRows()];
-      
-      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,dim,NullSpaceToFree_,
-				 RowMatrix_->NumMyRows());
+  sprintf(parameter,"%saggregation: use symmetric pattern", Prefix_);
+  bool SymmetricPattern = List_.get(parameter,false);
 
-      // C R A P -- C R A P -- C R A P -- said the crew
-      
-      sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-      string IsIncreasing = List_.get(parameter,"increasing");
+  // usual crap to clutter the output
+  if( verbose_ ) {
+    cout << endl;
+    cout << PrintMsg_ << "*** Using auxiliary matrix to create the aggregates" << endl
+      << PrintMsg_ << "*** Number of dimensions = " << NumDimensions << endl
+      << PrintMsg_ << "*** theta = " << theta;
+    if( SymmetricPattern ) cout << ", using symmetric pattern" << endl;
+    else                   cout << ", using original pattern" << endl;
+    cout << endl;
+  }
 
-      int Direction;
-      if( IsIncreasing == "increasing" ) Direction = ML_INCREASING;
-      else                               Direction = ML_DECREASING;
+  // create the auxiliary matrix
 
-      int FinestLevel;
+  int allocated = 1;
+  int * colInd = new int[allocated];
+  double * colVal = new double[allocated];
+  int NnzRow;
 
-      if( IsIncreasing == "increasing" ) FinestLevel = 0;
-      else                               FinestLevel = NumLevels_-1;
+  double coord_i[3], coord_j[3];
+  for( int i = 0; i<3 ; ++i ) {
+    coord_i[i] = 0.0; coord_j[i] = 0.0;
+  }
 
-      int MaxCreationLevels = NumLevels_;
-      if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
-      
-      ML_Destroy( &ml_ );
-      ML_Create(&ml_,MaxCreationLevels);
-      int NumMyRows;
-      
-      NumMyRows = RowMatrix_->NumMyRows();
-      int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
-      
-      if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
-      
-      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
-      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
-			    Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
-      
-      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
-      
-      NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
-      SetSmoothers();
-      if( NumLevels_ > 1 ) SetCoarse();
-      ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);	
-      
+  // this is a piece of crap.
+  // 'ste zoccole di colonne mi stanno facendo diventare matto!
+  // Il problema e` in parallelo. Non riesco a prendere l'ID globale
+  // delle colonne (per lo meno con Epetra_Vbr, con Epetra_Crs tutto va
+  // come deve). Quindi sono costretto a gettarmi in questo
+  // pantano!
 
-#endif
+  int isize  = RowMatrix_->OperatorDomainMap().NumMyElements();
+  int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - isize;
+  if (Nghost < 0) Nghost = 0; 
+
+  vector<double> global_isize;        global_isize.resize(isize+Nghost+1);
+  vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+
+  int isize_offset;
+  Comm().ScanSum(&isize,&isize_offset,1); isize_offset-=isize;
+
+  for (int i = 0 ; i < isize; i++) {
+          global_isize[i] = (double) (isize_offset + i);
+          global_isize_as_int[i] = isize_offset + i;
+  }
+
+  for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
+
+  ML_exchange_bdry(&global_isize[0],(&(ml_->Amat[LevelID_[0]]))->getrow->pre_comm,
+                  (&(ml_->Amat[LevelID_[0]]))->invec_leng,ml_->comm,ML_OVERWRITE,NULL);
+
+  for ( int j = 0; j < isize+Nghost; j++ ) {
+    global_isize_as_int[j] = (int) global_isize[j];
+  }
+  
+  // =================== //
+  // cycle over all rows //
+  // =================== //
+
+  for (int i = 0; i < NumMyRows ; i+=NumPDEEqns_ ) {
+
+    //int GlobalRow = (RowMatrix_->RowMatrixRowMap().MyGlobalElements())[i];
+    int GlobalRow = global_isize_as_int[i];
+
+    assert( GlobalRow != -1 );
+
+    if( i%NumPDEEqns_ == 0 ) { // do it just once for each block row
+      switch( NumDimensions ) {
+      case 3:
+	coord_i[2] = z_coord[i/NumPDEEqns_];
+      case 2:
+	coord_i[1] = y_coord[i/NumPDEEqns_];
+      case 1:
+	coord_i[0] = x_coord[i/NumPDEEqns_];
+      }
+    }
+
+    int ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
+
+    if( ierr == 0 ) {
+      do {
+	delete [] colInd;
+	delete [] colVal;
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+	ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
+      } while( ierr == 0 );
+    }
+
+    // NOTE: for VBR matrices, the "real" value that will be used in
+    // the subsequent part of the code is only the one for the first
+    // equations. For each block, I replace values with the sum of
+    // the abs of each block entry.
+
+    for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
+      colVal[j] = abs(colVal[j]);
+      for( int k=1 ; k<NumPDEEqns_ ; ++k ) {
+	colVal[j] += abs(colVal[j+k]);
+      }
+    }
+
+    // work only on the first equations. Theta will blend the
+    // coordinate part with the sub of abs of row elements.
+
+    int GlobalCol;
+    double total = 0.0;
+
+    for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
+
+     if( colInd[j]%NumPDEEqns_ == 0 ) { 
+
+      // insert diagonal later
+      if( colInd[j] != i ) {
+	if( colInd[j]%NumPDEEqns_ == 0 ) { // do it only once
+	  switch( NumDimensions ) {
+	  case 3:
+	    coord_j[2] = z_coord[colInd[j]/NumPDEEqns_];
+	  case 2:
+	    coord_j[1] = y_coord[colInd[j]/NumPDEEqns_];
+	  case 1:
+	    coord_j[0] = x_coord[colInd[j]/NumPDEEqns_];
+	  }
+	}
+
+	double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
+	if( d2 == 0.0 ) {
+	  cerr << endl;
+	  cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
+	    << colInd[j]/NumPDEEqns_ << endl
+	    << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
+	    << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
+	    << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
+	    << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
+	    << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
+	  cerr << endl;
+	  d2 = 1.0;
+	}
+
+	double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
+
+	GlobalCol = global_isize_as_int[colInd[j]];
+	assert( GlobalCol != -1 );
+	
+	// insert this value on all rows
+	for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+	  int row = GlobalRow+k;
+	  int col = GlobalCol+k;
+	  if( row >= NumGlobalRows() || col >= NumGlobalRows() ) {
+	    cerr << ErrorMsg_ << "trying to insert element (" << row 
+	         << "," << col << "), " << endl
+		 << ErrorMsg_ << "while NumGlobalRows() = " << NumGlobalRows() << endl
+		 << ErrorMsg_ << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
+		 << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	  }
+	    
+	  // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
+	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
+	    int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
+	    if( ierr ) {
+	      cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
+		<< ErrorMsg_ << "for element (" << row << "," << col << ")" << endl
+		<< ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
+		<< ")" << endl;
+	    }
+	  }
+	}
+
+	total -= val;
+
+	// put (j,i) element as well. this works also for
+	// off-process elements. 
+	if( SymmetricPattern == true ) {
+	  for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+	    int row = GlobalCol+k;
+	    int col = GlobalRow+k;
+	    if( row >= NumGlobalRows() || col >= NumGlobalRows() ) {
+	      cerr << ErrorMsg_ << "trying to insert element (" << row 
+		<< "," << col << "), " << endl
+		<< ErrorMsg_ << "while NumGlobalRows() = " << NumGlobalRows() << endl
+		<< ErrorMsg_ << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
+		<< ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	    }
+	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+	      int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
+	      if( ierr ) {
+		cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
+		  << ErrorMsg_ << "for element (" << row << "," << col << ")" << endl
+		  << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
+		  << ")" << endl;
+	      }
+	    }
+	  }
+	  total -= val;
+	}
+      } 
+    }
+
+    // create lines with zero-row sum
+    for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+      int row = GlobalRow+k;
+      assert( row < NumGlobalRows() );
+      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
+	int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total);
+	if( ierr ) {
+	  cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
+	    << ErrorMsg_ << "for element (" << row << "," << row << ")" << endl
+	    << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
+	    << ")" << endl;
+	}
+      }
+    }
+   }
+  }
+
+  FakeMatrix->GlobalAssemble();
+
+  delete [] colInd;
+  delete [] colVal;
+
+  // stick pointer in Amat for level 0 (finest level)
+  ml_->Amat[LevelID_[0]].data = (void *)FakeMatrix;
+
+  // tell ML to keep the tentative prolongator
+  ML_Aggregate_Set_Reuse(agg_);
+}
+
+#endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
