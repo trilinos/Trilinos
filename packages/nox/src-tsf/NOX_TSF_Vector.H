@@ -141,6 +141,17 @@ namespace NOX {
       //! We query the vector space and ask its dimension  
       int length() const;
 
+      //! Prints out the vector to the specified stream. 
+      /*! 
+	For example, a vector would appear as
+	\f[ \left[ \; 0.1 \; 2.34 \; 5 \; \right] \f] 
+	It will be all on one line, with a single space between each entry, bracketed on either side.
+      */
+      ostream& leftshift(ostream& stream) const;
+
+      // derived
+      void print() const;
+
     private:
       //! The vector owned by this object
       TSFExtended::Vector<double> x;
@@ -148,5 +159,8 @@ namespace NOX {
 
   } // namespace TSF
 } // namespace NOX
+
+//! Function for printing
+ostream& operator<<(ostream& stream, const NOX::TSF::Vector& v);
 
 #endif

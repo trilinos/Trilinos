@@ -283,3 +283,21 @@ int NOX::TSF::Vector::length() const
   return (x.space()).dim();
 }
 
+ostream& NOX::TSF::Vector::leftshift(ostream& stream) const
+{
+  stream << "[ ";
+  for (int i = 0; i < this->length(); i ++)
+    stream << x.getElement(i) << " ";
+  stream << "]";
+  return stream;
+}
+
+ostream& operator<<(ostream& stream, const NOX::TSF::Vector& v)
+{
+  return v.leftshift(stream);
+}
+
+void NOX::TSF::Vector::print() const
+{
+  cout << *this << endl;
+}
