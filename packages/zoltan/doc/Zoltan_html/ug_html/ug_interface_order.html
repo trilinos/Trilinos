@@ -27,10 +27,12 @@
 
 <h2>
 <a NAME="Ordering Functions"></a>Ordering Functions</h2>
+Zoltan provides limited capability for ordering a set of objects, 
+typically given as a graph.
 The following functions are the ordering interface functions in the Zoltan
 library; their descriptions are included below.
 <blockquote><b><a href="#Zoltan_Order">Zoltan_Order</a></b>
-<br><b><a href="#Zoltan_Order_Eval">Zoltan_Order_Eval</a></b></blockquote>
+</blockquote>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%"><a NAME="Zoltan_Order"></a>
 <hr WIDTH="100%">
@@ -132,8 +134,8 @@ releases, ordering only a subset of the objects may be permitted.&nbsp;</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
 <td>An array of&nbsp; global IDs of objects to be ordered on this processor.
-(size = <i>num_obj</i> * <i>num_gid_entries</i>)&nbsp;
-<br>The array may be uninitialized on input (if <i>REORDER</i> is false),
+(size = <i>num_obj</i> * <i>num_gid_entries</i>)
+<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
 but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
 </tr>
 
@@ -141,8 +143,8 @@ but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
 <td>An&nbsp; array of&nbsp; local IDs of objects to be ordered on this
-processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)&nbsp;
-<br>The array may be uninitialized on input (if <i>REORDER</i> is false),
+processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
+<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
 but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
 </tr>
 
@@ -192,25 +194,9 @@ always be set to NULL.</td>
 </tr>
 </table>
 
-<p><!------------------------------------------------------------------------->
-<hr WIDTH="100%"><a NAME="Zoltan_Order_Eval"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<p>
 
-<td WIDTH="85%">int <b>Zoltan_Order_Eval</b> (?)&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b>Zoltan_Order_Eval</b>(?)&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%"><b>Zoltan_Order_Eval </b>evaluates the quality of an ordering.
-Not yet implemented.&nbsp;<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_query.html">Next:&nbsp;
 Application-Registered Query Functions</a>&nbsp; |&nbsp; <a href="ug_interface_mig.html">Previous:&nbsp;
 Migration Functions</a>]
