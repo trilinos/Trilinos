@@ -815,6 +815,7 @@ Optional Features:
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
   --enable-amesos         Build amesos (default is no)
+  --enable-loca           Build loca (default is yes)
   --enable-nox            Build nox (default is yes)
   --enable-meros          Build meros (default is no)
   --enable-tsf            Build TSF (default is no)
@@ -1829,6 +1830,35 @@ fi
 
 
 
+# Check whether --enable-loca or --disable-loca was given.
+if test "${enable_loca+set}" = set; then
+  enableval="$enable_loca"
+  ac_cv_use_loca=$enableval
+else
+  ac_cv_use_loca=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use loca" >&5
+echo $ECHO_N "checking whether to use loca... $ECHO_C" >&6
+
+if test "X$ac_cv_use_loca" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCA
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#The following line is not necessary for LOCA because LOCA
+#lives in the NOX directory structure
+#AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
+
+
 # Check whether --enable-nox or --disable-nox was given.
 if test "${enable_nox+set}" = set; then
   enableval="$enable_nox"
@@ -1855,7 +1885,8 @@ fi
 
 
 
-if test "X$ac_cv_use_nox" != "Xno"; then
+if test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_loca" != "Xno"; then
   BUILD_NOX_TRUE=
   BUILD_NOX_FALSE='#'
 else
@@ -2373,7 +2404,8 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_tsfextended" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
+        test "X$ac_cv_use_loca" != "Xno" ||
+ 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno"; then
   BUILD_TEUCHOS_TRUE=
   BUILD_TEUCHOS_FALSE='#'
@@ -2461,7 +2493,8 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno" ||
+        test "X$ac_cv_use_loca" != "Xno" ||
+ 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
 
 
@@ -2679,7 +2712,8 @@ subdirs="$subdirs packages/meros"
 
 fi
 
-if test "X$ac_cv_use_nox" != "Xno"; then
+if test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_loca" != "Xno"; then
 
 
 subdirs="$subdirs packages/nox"

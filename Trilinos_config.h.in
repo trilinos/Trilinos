@@ -27,6 +27,9 @@
 /* Define if want to build komplex */
 #undef HAVE_KOMPLEX
 
+/* Define if want to build loca */
+#undef HAVE_LOCA
+
 /* Define if want to build meros */
 #undef HAVE_MEROS
 

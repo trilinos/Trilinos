@@ -44,8 +44,14 @@ echo "the list below does not indicate so."
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(loca, [Build loca], LOCA, yes)
+#The following line is not necessary for LOCA because LOCA
+#lives in the NOX directory structure
+#AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, yes)
-AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
+AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_loca" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(meros, [Build meros], MEROS, no)
 AM_CONDITIONAL(BUILD_MEROS, test "X$ac_cv_use_meros" != "Xno")
@@ -101,7 +107,8 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno" || 
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" || 
 	test "X$ac_cv_use_tsfextended" != "Xno" || 
-	test "X$ac_cv_use_belos" != "Xno" || 
+        test "X$ac_cv_use_loca" != "Xno" ||
+ 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
 TAC_ARG_ENABLE_FEATURE(ml, [Build ml], ML, yes)
@@ -116,7 +123,8 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno" ||
+        test "X$ac_cv_use_loca" != "Xno" ||
+ 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
 fi
@@ -220,7 +228,8 @@ if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
 fi
 
-if test "X$ac_cv_use_nox" != "Xno"; then
+if test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_loca" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/nox])
 fi
 
