@@ -2269,4 +2269,6 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
      ML_Operator_Destroy(&permt);
      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
    }
+
+  return 0;
 }
