@@ -1090,10 +1090,11 @@ int ML_Operator_ChangeToChar(ML_Operator *matrix)
      ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
 		       &row_length, 0);
      for (k = 0; k < row_length; k++) {
-       if      (values[k] < 0) val_ptr[Nnz] = (int) 2;
-       else if (values[k] > 0) val_ptr[Nnz] = (int) 1;
-       else                    val_ptr[Nnz] = (int) 0;
-         col_ptr[Nnz++] = columns[k];
+       if      (values[k] == -1.)  val_ptr[Nnz] = (int) 2;
+       else if (values[k] == 1.)   val_ptr[Nnz] = (int) 1;
+       else if (values[k] == 0.)   val_ptr[Nnz] = (int) 0;
+       else pr_error("ML_Operator_ChangeToChar(%d): T(%d,%d) = %e! It must be 1,-1,or 0!!!",matrix->comm->ML_mypid,i,columns[k],values[k]);
+       col_ptr[Nnz++] = columns[k];
      }
      row_ptr[i+1] = Nnz;
    }
