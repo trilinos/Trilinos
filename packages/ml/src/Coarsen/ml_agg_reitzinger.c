@@ -32,6 +32,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *temp_val, d1, d2;
   double droptol;
 
+  ML_CommInfoOP *getrow_comm; 
+  int  N_input_vector;
+  int  bail_flag;
+
   /*
   double *fido,*yyy, *vvv, dtemp;
   struct aztec_context *temp;
@@ -60,6 +64,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
+
   coarsest_level = fine_level - Nlevels_nodal + 1; 
   i = ml_nodes->Amat[coarsest_level].invec_leng;
   ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
@@ -480,6 +485,38 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /*------------------------------------------------------------------*/
    
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
+
+     /* Check that both dimensions of T are strictly greater than 0. 
+        If not, clean up & break from main loop. */
+     i = Tcoarse->outvec_leng;
+     ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
+     if (i==0)
+     {
+        if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) Bailing from AMG hierarchy build on level %d of "
+                 " of levels %d down to %d because Tcoarse has zero rows....\n",
+                 ml_edges->comm->ML_mypid,grid_level,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        /*Don't delete Tcoarse because it is necessary for eigenvalue estimate
+          in Hiptmair setup.*/
+#ifdef NEW_T_PE
+        ML_free(encoded_dir_node);
+#endif
+        /* Current level "grid_level" cannot be used b/c Tcoarse_trans
+           would be used in Hiptmair smoother generation, but Tcoarse_trans
+           hasn't been calculated. Hence no "+1".*/
+        Nlevels_nodal = fine_level - grid_level;
+        coarsest_level = grid_level + 1;
+        if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, "
+               "Nlevels_nodal = %di, fine_level = %d, coarsest_level = %d\n",
+              ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        break; /* from main loop */
+     }
+
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
    
@@ -550,10 +587,60 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         exit(1);
      }
 
+     /* We could try to patch Tcoarse_trans to avoid the error check failing
+        in ML_rap.  Right now, we do the check that's done in ML_rap.  If
+        the check fails, the number of AMG levels is reduced by one and we 
+        exit the main loop. */
+  
+     bail_flag = 0;
+     N_input_vector = Tcoarse_trans->invec_leng;
+     getrow_comm = Tcoarse_trans->getrow->pre_comm;
+     if ( getrow_comm != NULL)
+     {
+        for (i = 0; i < getrow_comm->N_neighbors; i++) {
+           for (j = 0; j < getrow_comm->neighbors[i].N_send; j++) {
+              if (getrow_comm->neighbors[i].send_list[j] >= N_input_vector) {
+                 bail_flag = 1;
+                /*fix code would go here*/
+              }
+           }
+        }
+     }
+     /* If check has failed, clean up current level & break from main loop. */
+     ML_gsum_vec_int(&bail_flag,&j,1,ml_nodes->comm);
+     if (bail_flag)
+     {
+        if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) Bailing from AMG hierarchy build on level %d"
+                  " of levels %d down to %d ........\n",
+                  Tcoarse->comm->ML_mypid,grid_level,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        ML_Operator_Destroy(Tcoarse_trans);
+        (*Tmat_trans_array)[grid_level] = NULL;
+#ifdef NEW_T_PE
+        ML_free(encoded_dir_node);
+#endif
+        /* Current level "grid_level" cannot be used b/c Tcoarse_trans
+           is used in Hiptmair smoother generation, but RAP w/ Tcoarse_trans
+           will give an error (the reason for the bail). Hence no "+1".*/
+        Nlevels_nodal = fine_level - grid_level;
+        coarsest_level = grid_level + 1;
+        if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, "
+               "Nlevels_nodal = %d fine_level = %d  coarsest_level = %d\n",
+              ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
+           fflush(stdout);
+        }
+        break; /* from main loop */
+
+     }
+
      ML_rap(Tfine, &(ml_nodes->Pmat[grid_level]), Tcoarse_trans, 
         &(ml_edges->Pmat[grid_level]),ML_CSR_MATRIX);
-   
+
      Pe = &(ml_edges->Pmat[grid_level]);
+
      csr_data = (struct ML_CSR_MSRdata *) Pe->data;
    
      /********************************************************************/
@@ -635,6 +722,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Pe->matvec->internal = CSR_matvec;
      Pe->matvec->external = NULL;
      Pe->matvec->ML_id = ML_INTERNAL;
+
 #ifdef LEASTSQ_SERIAL
      SPn_mat = ML_Operator_Create(Pn_coarse->comm);
      ML_Gen_SmoothPnodal(ml_nodes,grid_level+1, grid_level, 
@@ -668,7 +756,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_free(Pn_vec);
      d1 = ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm);
      d2 = ML_gdot(Pe->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm);
-     if (ml_edges->comm->ML_mypid == 0) {
+     if (ml_edges->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())  {
        if ( fabs(d1 - d2) > 1.0e-3)  
 	 printf("ML_agg_reitzinger: Pe TH != Th Pn %e %e\n",d1,d2);
      }
@@ -724,7 +812,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
-        if (Tfine->comm->ML_mypid==0 && 2 < ML_Get_PrintLevel())
+        if (Tfine->comm->ML_mypid==0 && 3 < ML_Get_PrintLevel())
            printf("Smoothing edge prolongator...\n");
         ML_Aggregate_Set_Flag_SmoothExistingTentativeP(ag, ML_YES);
         /* default for smoothing factor is 4.0/3.0 */
@@ -736,7 +824,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
         
         /* Weed out small values in Pe. */
-        droptol = 1e-4;
+        droptol = 1e-12;
         if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
            printf("Dropping Pe entries with absolute value smaller than %e\n",
                   droptol);
@@ -780,7 +868,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
 
      if (ag->print_flag < ML_Get_PrintLevel()) {
-	Pe = &(ml_edges->Amat[grid_level]);
+        Pe = &(ml_edges->Amat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         if (Tfine->comm->ML_mypid==0)
            printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
@@ -798,10 +886,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     if (Tfine->comm->ML_mypid==0 )
     {
       if (Nnz_finegrid == 0) 
-	printf("Number of nonzeros on finest grid not given!"
+         printf("Number of nonzeros on finest grid not given!"
                " Complexity not computed!\n");
       else
-	printf("Multilevel complexity is %e\n",
+         printf("Multilevel complexity is %e\n",
                ((double) Nnz_allgrids)/((double) Nnz_finegrid));
     }
   }
