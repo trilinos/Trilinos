@@ -82,7 +82,7 @@ bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
   if ((!p.isParameter("Forcing Term Method")) ||
       (p.isParameterEqual("Forcing Term Method", "Constant"))) {  
     useAdjustableForcingTerm = false;
-    eta_k = p.getParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    eta_k = p.getParameter("Tolerance", 1.0e-4);
     p.sublist("Linear Solver").setParameter("Tolerance", eta_k); 
   }
   else {
