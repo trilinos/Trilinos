@@ -648,8 +648,18 @@ float c_ewgt;
 }
 
 
+/* Locally Heaviest matching. 
+   It looks for locally heaviest edges by backtracking. For a current
+   edge it has to check the weight of all intersecting edges. Edges
+   may be checked several times, but it is amortized not more than
+   time O(k*|I|) and guarantees an approximation of 1/k. */
+   
 
-/* locally heavy matching, graph version */
+/* locally heavy matching, graph version                                       */
+/* This is an implimentation of LAM created by Robert Preis, Linear Time       */
+/* 1/2-Approximation Algorithm for Maximum Weighted Matching in General Graphs,*/
+/* Symposium on Theoretical Aspects of Computer Science, STACS 99, C. Meinel,  */
+/* S. Tison (eds.), Springer, LNCS 1563, 1999, 259-269                         */
 static int matching_lhm (ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
 int  i, j, *Nindex = NULL, err;
