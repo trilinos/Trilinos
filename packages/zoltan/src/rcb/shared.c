@@ -546,7 +546,7 @@ End:
 
 void Zoltan_RB_Print_All(
                      ZZ *zz, ZOLTAN_ID_PTR global_ids, struct Dot_Struct *dots,
-                     int pdotnum, int pdottop, 
+                     int dotnum,
                      int num_import, ZOLTAN_ID_PTR import_global_ids, 
                      int *import_procs)
 {
@@ -559,10 +559,10 @@ int kk;
 int num_gid_entries = zz->Num_GID;
 
   Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
-  printf("ZOLTAN Proc %d Num_Obj=%d Num_Keep=%d Num_Non_Local=%d\n",
-         zz->Proc, pdotnum, pdottop, num_import);
+  printf("ZOLTAN Proc %d Num_Obj=%d Num_Non_Local=%d\n",
+         zz->Proc, dotnum, num_import);
   printf("  Assigned objects:\n");
-  for (kk = 0; kk < pdotnum; kk++) {
+  for (kk = 0; kk < dotnum; kk++) {
      printf("    Obj:  ");
      ZOLTAN_PRINT_GID(zz, &(global_ids[kk*num_gid_entries]));
      printf("  Orig: %4d\n", dots[kk].Proc);
@@ -586,8 +586,6 @@ int Zoltan_RB_Remap(
   ZOLTAN_ID_PTR *lidpt,             /* pointer to Local_IDs array.  */
   struct Dot_Struct **dotpt,        /* pointer to Dots array. */
   int *dotnum,                      /* number of dots */
-  int *dottop,                      /* index of first dot to import on this 
-                                       processor. */
   int *dotmax,                      /* max # of dots arrays can hold */
   int *allocflag,                   /* have to re-allocate space */
   double overalloc,                 /* amount to overallocate by when realloc
@@ -661,11 +659,9 @@ int i;
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error");
         goto End;
       }
-      for (*dottop = 0, outgoing = 0, i = 0; i < *dotnum; i++) 
+      for (outgoing = 0, i = 0; i < *dotnum; i++) 
         if (proc[i] != zz->Proc)
           proc_list[outgoing++] = proc[i];
-        else
-          *(dottop)++;
 
       ierr = Zoltan_RB_Send_Dots(zz, gidpt, lidpt, dotpt, &proc, proc_list,
                                  outgoing, dotnum, dotmax, zz->Proc, allocflag,
@@ -703,9 +699,7 @@ int Zoltan_RB_Return_Arguments(
                                         imported. */
   int **import_to_part,              /* partitions to which objects will be 
                                         imported. */
-  int dotnum,                        /* number of dots on this processor */
-  int dottop                         /* index of first dot to import on this 
-                                        processor. */
+  int dotnum                         /* number of dots on this processor */
 )
 {
 /*
@@ -722,9 +716,10 @@ int num_lid_entries = zz->Num_LID;
   /* Compute number of objects to import.  Include those that change only
      partition but not processor. */
 
-  *num_import = dotnum - dottop;               /* imported from other procs */
-  for (i = 0; i < dottop; i++)  
-    if (dotpt[i].Input_Part != dotpt[i].Part)  /* partition change only */
+  *num_import = 0;
+  for (i = 0; i < dotnum; i++)  
+    if (dotpt[i].Proc != zz->Proc ||   /* imported from other processors */
+        dotpt[i].Input_Part != dotpt[i].Part)   /* partition change only */
       (*num_import)++;
 
   *import_global_ids = *import_local_ids = NULL;
@@ -745,7 +740,8 @@ int num_lid_entries = zz->Num_LID;
     }
 
     for (i = 0, j = 0; j < dotnum; j++) {
-      if (j >= dottop || (dotpt[j].Input_Part != dotpt[j].Part)) {
+      if (dotpt[j].Proc != zz->Proc ||    /* imported from other processors */
+          dotpt[j].Input_Part != dotpt[j].Part) {  /* partition change only */
         ZOLTAN_SET_GID(zz, &((*import_global_ids)[i*num_gid_entries]),
                            &(gidpt[j*num_gid_entries]));
         if (num_lid_entries)

@@ -45,7 +45,7 @@ extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int *, int *, int *, int, int);
 
 extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
-  int , int , int , ZOLTAN_ID_PTR , int *);
+  int , int , ZOLTAN_ID_PTR , int *);
 
 extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
@@ -60,11 +60,11 @@ extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   int, int *, int, MPI_Comm);
 
 extern int Zoltan_RB_Remap(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-  struct Dot_Struct **, int *, int *, int *, int *, double, int , int *, int);
+  struct Dot_Struct **, int *, int *, int *, double, int , int *, int);
 
 extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
   struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **, 
-  int, int);
+  int);
 
 extern int Zoltan_RB_check_geom_input(ZZ *, struct Dot_Struct *, int);
 

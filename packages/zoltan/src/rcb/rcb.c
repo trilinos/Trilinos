@@ -819,8 +819,11 @@ static int rcb_fn(
 
   if (zz->LB.Remap_Flag) {
     ierr = Zoltan_RB_Remap(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
-                           &(rcb->Dots), &dotnum, &dottop, &dotmax,
+                           &(rcb->Dots), &dotnum, &dotmax,
                            &allocflag, overalloc, stats, counters, use_ids);
+    /* Note:  dottop is no longer valid after remapping.  Remapping might
+       destroy the nice local-followed-by-non-local ordering of the 
+       dots array.  Do not use dottop after remapping. */
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_RB_Remap.");
       goto End;
@@ -835,7 +838,7 @@ static int rcb_fn(
                                       rcb->Dots, num_import,
                                       import_global_ids, import_local_ids,
                                       import_procs, import_to_part, 
-                                      dotnum, dottop);
+                                      dotnum);
     if (ierr < 0) {
        ZOLTAN_PRINT_ERROR(proc,yo,
                           "Error returned from Zoltan_RB_Return_Arguments.");
@@ -890,7 +893,7 @@ static int rcb_fn(
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
     /* zz->Debug_Level >= ZOLTAN_DEBUG_ALL ==> use_ids is true */
     Zoltan_RB_Print_All(zz, rcb->Global_IDs, rcb->Dots, 
-                    pdotnum, pdottop, *num_import,
+                    dotnum, *num_import,
                     *import_global_ids, *import_procs);
   }
 
