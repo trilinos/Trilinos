@@ -19,10 +19,11 @@ PLAT		= _linux
 #
 #  The name of the libraries to be created/linked to
 #
-DSuperLUroot 	= $(HOME)/ml_dsuper/ml/lib/SuperLU_DIST
+#DSuperLUroot 	= $(HOME)/ml_dsuper/ml/lib/SuperLU_DIST
+DSuperLUroot 	= ../../SuperLU_DIST
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
 #
-#BLASDEF	     	= -DUSE_VENDOR_BLAS
+BLASDEF	     	= -DUSE_VENDOR_BLAS
 BLASLIB      	= -lessl
 IMPI            = -I/usr/local/mpich/include
 #MPILIB		= -L/usr/lpp/ppe.poe/lib -lmpi

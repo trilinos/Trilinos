@@ -571,7 +571,8 @@ extern double  *doubleCalloc(int_t);
 extern double  SuperLU_timer_ ();
 extern void    superlu_abort_and_exit(char *);
 extern int_t   sp_ienv (int_t);
-extern int     lsame_ (char *, char *);
+/* 10/30/2001 JJH   Added "long" modifier to lsame_ prototype. */
+extern long int lsame_ (char *, char *);
 extern int     xerbla_ (char *, int *);
 extern void    ifill (int_t *, int_t, int_t);
 extern void    dfill (double *, int_t, double);

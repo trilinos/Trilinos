@@ -8,3 +8,6 @@ mystring = SuperLU_DIST1_2_0
 
     10/30/2001  (jhu) Added changes from dmday to correct race condition
         in MPI calls.
+                (jhu) Note!  You must provide the blas from somewhere else, i.e.,
+                             USE_VENDOR_BLAS must be defined.
+                (jhu) Modified prototype of lsame in SRC/superlu_ddefs.h to be compatible with ML's prototype.

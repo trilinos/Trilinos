@@ -19,7 +19,8 @@ PLAT		= _sp
 #
 #  The name of the libraries to be created/linked to
 #
-DSuperLUroot 	= $(HOME)/SuperLU_DIST
+#DSuperLUroot 	= $(HOME)/SuperLU_DIST
+DSuperLUroot 	= ../../SuperLU_DIST
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
 #
 BLASDEF	     	= -DUSE_VENDOR_BLAS

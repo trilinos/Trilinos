@@ -6,7 +6,7 @@
 #
 #  Purpose:         Top-level Definitions
 #
-#  Creation date:   February 4, 1997  version alpha
+#  Creation date:   February 4, 1999  version alpha
 #
 #  Modified:	    September 1, 1999  version 1.0
 #
@@ -14,33 +14,37 @@
 #
 #  The machine (platform) identifier to append to the library names
 #
-PLAT		= _tflops
+PLAT		= _linux
 
 #
 #  The name of the libraries to be created/linked to
 #
-DSuperLUroot 	= /scratch/tmp_9/dmday/SuperLU_DIST
+#DSuperLUroot 	= $(HOME)/ml_dsuper/ml/lib/SuperLU_DIST
+DSuperLUroot 	= ../../SuperLU_DIST
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
+#
 BLASDEF	     	= -DUSE_VENDOR_BLAS
-BLASLIB		= -lcsmath -lcmplx
-MPILIB		= -lmpi
-LIBS	     	= $(DSUPERLULIB) $(BLASLIB) $(MPILIB) -lf
+BLASLIB      	= -lessl
+IMPI            = -I/usr/local/mpich/include
+#MPILIB		= -L/usr/lpp/ppe.poe/lib -lmpi
+#PERFLIB     	= -L/vol1/VAMPIR/lib -lVT
+LIBS	     	= $(DSUPERLULIB) $(BLASLIB) $(PERFLIB) $(MPILIB) -lm
+
 #
 #  The archiver and the flag(s) to use when building archive (library)
 #  If your system has no ranlib, set RANLIB = echo.
 #
 ARCH         	= ar
-ARCHFLAGS    	= cr
+ARCHFLAGS    	= ruv
 RANLIB       	= ranlib
 
-CC           	= cicc 
-CFLAGS       	= -fast -DMPI -DCOUGAR -I/usr/include \
-                  -DPRNTlevel=0 -DDEBUGlevel=0 -DPROFlevel=0 -DAppend_
+CC           	= cc
+CFLAGS          = -D_LINUX -O $(IMPI)
 NOOPTS		=
-FORTRAN		= cif77
-FFLAGS		= -fast
-LOADER       	= ${CC}
-LOADOPTS	= -O -cougar
+FORTRAN         = f77
+FFLAGS          = -DLINUX -O 
+LOADER	        = cc
+LOADOPTS	= 
 #
 #  C preprocessor defs for compilation (-DNoChange, -DAdd_, or -DUpCase)
 #
