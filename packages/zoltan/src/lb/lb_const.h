@@ -84,6 +84,10 @@ typedef enum Zoltan_LB_Method {
 
 
 struct Zoltan_LB_Struct {
+  float * Part_Sizes;             /*  Array of (desired) partition sizes.    */
+  int Max_Global_Parts;           /*  Max value of #partitions used.         */
+  int Max_Part_Dim;               /*  Max value of #weights used 
+                                      for each partition.                    */
   int Num_Global_Parts;           /*  The total number of partitions.
                                       Set in Zoltan_LB_Build_PartDist.       */
   int Num_Global_Parts_Param;     /*  The number of global partitions specified.
@@ -220,6 +224,9 @@ extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
 extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
+extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *, int, int,
+             int *, int *, float *);
+extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, int, float *);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;

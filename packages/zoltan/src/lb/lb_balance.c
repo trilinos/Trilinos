@@ -236,8 +236,6 @@ char msg[256];
 int comm[3],gcomm[3]; 
 float *part_sizes = NULL;
 int part_dim;
-float *sum;
-int i, j, tmp;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -326,50 +324,16 @@ int i, j, tmp;
   part_dim = ((zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
 
   part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
-                                    * (zz->LB.Num_Global_Parts + 1));
+                                     * zz->LB.Num_Global_Parts);
   if (part_sizes == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_MEMERR);
   }
-  sum = part_sizes + zz->LB.Num_Global_Parts * part_dim;
 
-  if (zz->LB.Uniform_Parts) 
-    for (i = 0; i < zz->LB.Num_Global_Parts*part_dim; i++)
-      part_sizes[i] = 1.0 / (double)(zz->LB.Num_Global_Parts);
-
-  else {
-
-    /* Access parameters to get partition size values */
-    /* KDDKDD Temporary until we have appropriate parameter setting. */
-
-    for (j = 0; j < part_dim; j++) sum[j] = 0.0;
-
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
-      for (j = 0; j < part_dim; j++) {
-        tmp = i * part_dim + j;
-/* KDDKDD 
-Backward test -- highest to lowest; zero on last procs.
-*/
-        part_sizes[tmp] = zz->LB.Num_Global_Parts - 1 - (float) (i+1);
-        if (part_sizes[tmp] < 0.) part_sizes[tmp] = 0.0;
-/* KDDKDD
-Forward test --  lowest to highest; zero on first proc.
-        part_sizes[tmp] = (float) (i);
-Multiple-weight test 
-        part_sizes[tmp] = (float) (i+(i%(j+1)));
-*/
-        sum[j] += part_sizes[tmp];
-      }
-
-    /* Normalize partition sizes */
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
-      for (j = 0; j < part_dim; j++)
-        part_sizes[i*part_dim+j] /= sum[j];
-
-    /* Error checking across processors? */
-    /* sum[j] == 0 for any j? */
-  }
+  /* Get partition sizes. */
+  Zoltan_LB_Get_Part_Sizes(zz, zz->Obj_Weight_Dim, zz->LB.Num_Global_Parts,
+    part_sizes);
 
   /*
    * Call the actual load-balancing function.

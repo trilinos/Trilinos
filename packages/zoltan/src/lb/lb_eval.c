@@ -20,8 +20,9 @@ extern "C" {
 
 #include "zz_const.h"
 #include <limits.h>
-#ifndef FLOAT_MAX
-#define FLOAT_MAX (1e38)
+#include <float.h>
+#ifndef FLT_MAX
+#define FLT_MAX (1e38)
 #endif
 
 /*****************************************************************************/
@@ -414,7 +415,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Local and global reduction for object weights. */
     if (zz->Obj_Weight_Dim>0){
       for (i=0; i<zz->Obj_Weight_Dim; i++)
-        tmp_vwgt[i] = FLOAT_MAX; /*min */
+        tmp_vwgt[i] = FLT_MAX; /*min */
       for (i=zz->Obj_Weight_Dim; i<6*zz->Obj_Weight_Dim; i++)
         tmp_vwgt[i] = 0; /* max and sum */
       Zoltan_LB_Proc_To_Part(zz, zz->Proc, &p, &k);
@@ -442,7 +443,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Local and global reduction for cut weights. */
     if (zz->Edge_Weight_Dim>0){
       for (i=0; i<zz->Edge_Weight_Dim; i++)
-        tmp_cutwgt[i] = FLOAT_MAX; /*min */
+        tmp_cutwgt[i] = FLT_MAX; /*min */
       for (i=zz->Edge_Weight_Dim; i<6*zz->Edge_Weight_Dim; i++)
         tmp_cutwgt[i] = 0; /* max and sum */
       Zoltan_LB_Proc_To_Part(zz, zz->Proc, &p, &k);
