@@ -59,7 +59,11 @@ Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& 
   }
 }
 //=========================================================================
-Epetra_IntVector::~Epetra_IntVector(){}
+Epetra_IntVector::~Epetra_IntVector(){
+
+
+ if (Allocated_ && (!UserAllocated_)) delete [] Values_;
+}
 
 //=========================================================================
 int Epetra_IntVector::AllocateForCopy()

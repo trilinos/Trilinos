@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Uncomment the next three lines to debug in mpi mode
-  int tmp;
+  int tmp=0;
   if (MyPID==0) cin >> tmp;
   Comm.Barrier();
 
@@ -225,11 +225,11 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
 
   // Define label for printing out during the solve phase
-  string label = "Ifpack_CrsRiluk Preconditioner: LevelFill = " + toString(LevelFill) + 
-                                                 " Overlap = " + toString(Overlap) + 
-                                                 " Athresh = " + toString(Athresh) + 
-                                                 " Rthresh = " + toString(Rthresh); 
-  ILUK->SetLabel(label.c_str());
+  //string label = "Ifpack_CrsRiluk Preconditioner: LevelFill = " + toString(LevelFill) + 
+  //                                               " Overlap = " + toString(Overlap) + 
+  //                                               " Athresh = " + toString(Athresh) + 
+  //                                               " Rthresh = " + toString(Rthresh); 
+  //ILUK->SetLabel(label.c_str());
 
   int Maxiter = 500;
   double Tolerance = 1.0E-14;

@@ -367,6 +367,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     MinMyElementSize_ = 1;
     MaxMyElementSize_ = 1;
     NumMyPoints_ = 0;
+    MyGlobalElements_ = 0;
   }
 
   DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);  

@@ -163,5 +163,10 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
   
       printf("***************************************************************\n");
     }
+
+    else {
+      *N_update = 0;
+      *update = 0;
+    }
   /* end create_vbr */
 }

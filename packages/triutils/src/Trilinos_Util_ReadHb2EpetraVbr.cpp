@@ -18,18 +18,19 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
   /* Read matrix file and distribute among processors.  
      Returns with this processor's set of rows */ 
 
-  int NumGlobalEquations, NumMyNonzeros;
-  double *val_msr, *x_in, *b_in, *xexact_in;
-  int *bindx_msr;
+  int NumGlobalEquations = 0, NumMyNonzeros = 0;
+  double *val_msr = 0, *x_in = 0, *b_in = 0, *xexact_in = 0;
+  int *bindx_msr = 0;
   
   /* Set exact solution to NULL */
   xexact = NULL;
   Trilinos_Util_read_hb(data_file, comm.MyPID(), &NumGlobalEquations, &NumMyNonzeros,
 			&val_msr,  &bindx_msr, &x_in, &b_in, &xexact_in);
   
-  double *val;
-  int NumGlobalElements, NumGlobalBlockEntries, *indx, *rpntr, *cpntr, *bpntr, *bindx;
-  int NumMyBlockEntries, NumMyElements, * MyGlobalElements;
+  double *val = 0;
+  int NumGlobalElements = 0, NumGlobalBlockEntries = 0;
+  int *indx = 0, *rpntr = 0, *cpntr = 0, *bpntr = 0, *bindx = 0;
+  int NumMyBlockEntries = 0, NumMyElements = 0, * MyGlobalElements = 0;
   
   Trilinos_Util_create_vbr(comm, partitioning,
 			   &NumGlobalEquations, &NumGlobalElements, 
@@ -101,6 +102,11 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
       free ((void *) rpntr);
       free ((void *) bpntr);
       free ((void *) bindx);
+      free ((void *) b_in);
+      free ((void *) x_in);
+      free ((void *) xexact_in);
+      free ((void *) MyGlobalElements);
+      free ((void *) ElementSizeList);
     }
   return;
 }
