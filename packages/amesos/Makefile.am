@@ -64,6 +64,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #SUBDIRS = amd src test example 
 #SUBDIRS = src test
 
+#The following line helps the test harness recover from build errors.
+                                                                                
+all-local:
+	@echo "Trilinos package amesos built successfully"
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
