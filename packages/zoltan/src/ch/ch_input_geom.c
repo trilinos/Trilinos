@@ -65,14 +65,14 @@ float   **x, **y, **z;		/* coordiates of vertices */
 
     *igeom = ndims;
 
-    *x = (float *) smalloc((unsigned) nvtxs * sizeof(float));
+    *x = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
     (*x)[0] = xc;
     if (ndims > 1) {
-	*y = (float *) smalloc((unsigned) nvtxs * sizeof(float));
+	*y = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
 	(*y)[0] = yc;
     }
     if (ndims > 2) {
-	*z = (float *) smalloc((unsigned) nvtxs * sizeof(float));
+	*z = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
 	(*z)[0] = zc;
     }
 

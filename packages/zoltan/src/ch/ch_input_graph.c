@@ -99,19 +99,21 @@ float   **eweights;		/* edge weight list data */
     vtxnums = option - 10 * (option / 10);
 
     /* Allocate space for rows and columns. */
-    *start = (int *) smalloc((unsigned) (*nvtxs + 1) * sizeof(int));
+    *start = (int *) LB_SMALLOC((unsigned) (*nvtxs + 1) * sizeof(int));
     if (narcs != 0)
-	*adjacency = (int *) smalloc((unsigned) (2 * narcs + 1) * sizeof(int));
+	*adjacency = (int *)
+                       LB_SMALLOC((unsigned) (2 * narcs + 1) * sizeof(int));
     else
 	*adjacency = NULL;
 
     if (using_vwgts)
-	*vweights = (int *) smalloc((unsigned) (*nvtxs) * sizeof(int));
+	*vweights = (int *) LB_SMALLOC((unsigned) (*nvtxs) * sizeof(int));
     else
 	*vweights = NULL;
 
     if (using_ewgts)
-	*eweights = (float *) smalloc((unsigned) (2 * narcs + 1) * sizeof(float));
+	*eweights = (float *)
+                      LB_SMALLOC((unsigned) (2 * narcs + 1) * sizeof(float));
     else
 	*eweights = NULL;
 
@@ -322,13 +324,13 @@ float   **eweights;		/* edge weight list data */
 
     else {
 	/* Graph was empty => must be using inertial method. */
-	safe_free((void **) start);
+	LB_safe_free((void **) start);
 	if (*adjacency != NULL)
-	    safe_free((void **) *adjacency);
+	    LB_safe_free((void **) *adjacency);
 	if (*vweights != NULL)
-	    safe_free((void **) *vweights);
+	    LB_safe_free((void **) *vweights);
 	if (*eweights != NULL)
-	    safe_free((void **) *eweights);
+	    LB_safe_free((void **) *eweights);
 	*start = NULL;
 	*adjacency = NULL;
     }
