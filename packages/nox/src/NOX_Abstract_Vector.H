@@ -51,6 +51,8 @@ namespace Abstract {
   \brief %NOX's pure abstract vector interface for vectors that are
   used by the nonlinear solver. 
 
+  This class is a member of the namespace NOX::Abstract. 
+
   The user should implement their own concrete implementation of this
   class or use one of the implementations provided by us.
 
