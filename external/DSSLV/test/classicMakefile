@@ -14,8 +14,8 @@ SUPERLU_C =
 TEST_C = $(SUPERLU_C) 
 TEST_C =
 
-SRC_CXX = SuperludistOO.cpp
 SRC_CXX = 
+SRC_CXX = SuperludistOO.cpp
 
 #=======================================================================
 # test source files
