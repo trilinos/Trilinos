@@ -1,0 +1,875 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside Ifpack. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+# For now, these are just guesses as to where the files belong.
+# Files that prove to be troublesome have been commented out and 
+# placed at the bottom of the appropriate section
+
+#Ifpack_CrsGraph.h
+#Ifpack_CrsRick.h
+#ifp_blas1.h
+#
+#
+#
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+CORE_H = \
+	$(srcdir)/Ifpack_ConfigDefs.h
+
+
+CORE = 
+
+
+### add in paths as needed - trying to prevent 
+### unnecessary paths from being listed - see old.Makefile for ideas
+### Should I add a dependence on AztecOO??  Library doesn't necessarily have
+### to be built - just need some headers???  Ask Mike about headers that 
+### may be needed outside of the various packages, vs those that will not
+### be needed and if I should split them up.
+AM_CPPFLAGS = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+
+
+SERIAL_H = 
+
+SERIAL = 
+
+@HAVE_MPI_TRUE@MPI_H = 
+@HAVE_MPI_FALSE@MPI_H = 
+
+@HAVE_MPI_TRUE@MPI = 
+@HAVE_MPI_FALSE@MPI = 
+
+
+#Ifpack does not yet support threads
+#if HAVE_THREADS
+MPISMP_H = 
+
+MPISMP = 
+
+
+#else
+
+#MPISMP_H =
+#MPISMP =
+
+#endif
+USERBASE_H = 
+
+LANG_WRAPS_H = 
+
+LANG_WRAPS = 
+
+EXTRA_DIST_H = \
+	$(srcdir)/az_ifpack.h \
+	$(srcdir)/ifp_BlockMat.h \
+	$(srcdir)/ifp_BlockVec.h \
+	$(srcdir)/ifp_DenseMat.h \
+	$(srcdir)/ifp_SparseUtil.h \
+	$(srcdir)/ifp_biluk.h \
+	$(srcdir)/ifp_brelax.h \
+	$(srcdir)/ifp_c_wrappers.h \
+	$(srcdir)/ifp_Matrix.h \
+	$(srcdir)/ifp_LocalMat.h \
+	$(srcdir)/ifp_LocalPrecon.h \
+	$(srcdir)/ifp_ifpack.h \
+	$(srcdir)/ifp_blas3.h \
+	$(srcdir)/ifp_lapackd.h \
+	$(srcdir)/ifp_arch.h \
+	$(srcdir)/ifp_GlobalPrecon.h \
+	$(srcdir)/ifp_Precon.h \
+	$(srcdir)/ifp_spblas.h
+
+
+EXTRA_DIST = \
+	$(srcdir)/az_ifpack_prec_create.c \
+	$(srcdir)/az_ifpack_precon.c  \
+	$(srcdir)/az_ifpack_iterate.c \
+	$(srcdir)/az_ifpack_prec_destroy.c \
+	$(srcdir)/az_ifpack_solve.c \
+	$(srcdir)/ifp_BlockMat.cpp \
+	$(srcdir)/ifp_BlockVec.cpp \
+	$(srcdir)/ifp_DenseMat.cpp \
+	$(srcdir)/ifp_SparseUtil.cpp \
+	$(srcdir)/ifp_biluk.cpp \
+	$(srcdir)/ifp_brelax.cpp \
+	$(srcdir)/ifp_c_wrappers.cpp \
+	$(srcdir)/ifp_spmm.cpp \
+	$(srcdir)/ifp_spsm.cpp 
+
+
+@BUILD_OLDIFPACK_TRUE@DIST_H = $(EXTRA_DIST_H) 
+@BUILD_OLDIFPACK_FALSE@DIST_H = 
+
+@BUILD_OLDIFPACK_TRUE@DIST = $(EXTRA_DIST)
+@BUILD_OLDIFPACK_FALSE@DIST = 
+
+COMP_H = \
+	$(srcdir)/Ifpack_IlukGraph.h \
+	$(srcdir)/Ifpack_CrsRiluk.h \
+	$(srcdir)/Ifpack_ScalingType.h
+
+
+COMP = \
+	$(srcdir)/Ifpack_IlukGraph.cpp \
+	$(srcdir)/Ifpack_CrsRiluk.cpp 
+
+
+
+# ------------------------------------------------------------------------
+# Ifpack library specifications
+# ------------------------------------------------------------------------
+IFPACK_LIB = libifpack.a
+
+IFPACK_H = \
+	$(CORE_H) \
+	$(SERIAL_H) \
+	$(USERBASE_H) \
+	$(LANG_WRAPS_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+
+libifpack_a_SOURCES = \
+	$(CORE) \
+	$(SERIAL) \
+	$(LANG_WRAPS) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+
+EXTRA_libifpack_a_SOURCES = \
+	$(EXTRA_DIST) \
+	$(EXTRA_DIST_H) 
+
+
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libifpack_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libifpack_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libifpack_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(IFPACK_LIB)
+
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+pkginclude_HEADERS = $(IFPACK_H)
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Ifpack_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+pkgexecincludedir = $(exec_prefix)/include
+nodist_pkgexecinclude_HEADERS = Ifpack_config.h
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+subdir = src
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = Ifpack_config.h
+CONFIG_CLEAN_FILES =
+LIBRARIES = $(lib_LIBRARIES)
+
+libifpack_a_DEPENDENCIES =
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@am_libifpack_a_OBJECTS = \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_IlukGraph.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@am_libifpack_a_OBJECTS = \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_IlukGraph.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@am_libifpack_a_OBJECTS = \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_prec_create.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_precon.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_iterate.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_prec_destroy.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_solve.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_BlockMat.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_BlockVec.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_DenseMat.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_SparseUtil.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_biluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_brelax.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_c_wrappers.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_spmm.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_spsm.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_IlukGraph.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@am_libifpack_a_OBJECTS = \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_prec_create.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_precon.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_iterate.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_prec_destroy.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_solve.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_BlockMat.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_BlockVec.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_DenseMat.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_SparseUtil.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_biluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_brelax.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_c_wrappers.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_spmm.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_spsm.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_IlukGraph.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT)
+libifpack_a_OBJECTS = $(am_libifpack_a_OBJECTS)
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/Ifpack_CrsRiluk.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Ifpack_IlukGraph.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ifpack_iterate.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ifpack_prec_create.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ifpack_prec_destroy.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ifpack_precon.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ifpack_solve.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ifp_BlockMat.Po $(DEPDIR)/ifp_BlockVec.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ifp_DenseMat.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ifp_SparseUtil.Po $(DEPDIR)/ifp_biluk.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ifp_brelax.Po $(DEPDIR)/ifp_c_wrappers.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ifp_spmm.Po $(DEPDIR)/ifp_spsm.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+DIST_SOURCES = $(libifpack_a_SOURCES) $(EXTRA_libifpack_a_SOURCES)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+
+DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Ifpack_config.h.in \
+	Makefile.am Makefile.in
+SOURCES = $(libifpack_a_SOURCES) $(EXTRA_libifpack_a_SOURCES)
+
+all: Ifpack_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .o .obj
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src/Makefile
+Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+Ifpack_config.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/Ifpack_config.h.in $(top_builddir)/config.status
+	@rm -f stamp-h stamp-hT
+	@echo timestamp > stamp-hT 2> /dev/null
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=src/Ifpack_config.h:src/Ifpack_config.h.in \
+	     $(SHELL) ./config.status
+	@mv stamp-hT stamp-h
+$(srcdir)/Ifpack_config.h.in:  $(srcdir)/./stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/./stamp-h.in; \
+		$(MAKE) $(srcdir)/./stamp-h.in; \
+	else :; fi
+$(srcdir)/./stamp-h.in: $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	@rm -f $(srcdir)/./stamp-h.in $(srcdir)/./stamp-h.inT
+	@echo timestamp > $(srcdir)/./stamp-h.inT 2> /dev/null
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@mv $(srcdir)/./stamp-h.inT $(srcdir)/./stamp-h.in
+
+distclean-hdr:
+	-rm -f Ifpack_config.h
+
+AR = ar
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+Ifpack_IlukGraph.$(OBJEXT): $(srcdir)/Ifpack_IlukGraph.cpp
+Ifpack_CrsRiluk.$(OBJEXT): $(srcdir)/Ifpack_CrsRiluk.cpp
+az_ifpack_prec_create.$(OBJEXT): $(srcdir)/az_ifpack_prec_create.c
+az_ifpack_precon.$(OBJEXT): $(srcdir)/az_ifpack_precon.c
+az_ifpack_iterate.$(OBJEXT): $(srcdir)/az_ifpack_iterate.c
+az_ifpack_prec_destroy.$(OBJEXT): $(srcdir)/az_ifpack_prec_destroy.c
+az_ifpack_solve.$(OBJEXT): $(srcdir)/az_ifpack_solve.c
+ifp_BlockMat.$(OBJEXT): $(srcdir)/ifp_BlockMat.cpp
+ifp_BlockVec.$(OBJEXT): $(srcdir)/ifp_BlockVec.cpp
+ifp_DenseMat.$(OBJEXT): $(srcdir)/ifp_DenseMat.cpp
+ifp_SparseUtil.$(OBJEXT): $(srcdir)/ifp_SparseUtil.cpp
+ifp_biluk.$(OBJEXT): $(srcdir)/ifp_biluk.cpp
+ifp_brelax.$(OBJEXT): $(srcdir)/ifp_brelax.cpp
+ifp_c_wrappers.$(OBJEXT): $(srcdir)/ifp_c_wrappers.cpp
+ifp_spmm.$(OBJEXT): $(srcdir)/ifp_spmm.cpp
+ifp_spsm.$(OBJEXT): $(srcdir)/ifp_spsm.cpp
+libifpack.a: $(libifpack_a_OBJECTS) $(libifpack_a_DEPENDENCIES) 
+	-rm -f libifpack.a
+	$(libifpack_a_AR) libifpack.a $(libifpack_a_OBJECTS) $(libifpack_a_LIBADD)
+	$(RANLIB) libifpack.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Ifpack_CrsRiluk.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Ifpack_IlukGraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_iterate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_prec_create.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_prec_destroy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_precon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_solve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_BlockMat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_BlockVec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_DenseMat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_SparseUtil.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_biluk.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_brelax.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_c_wrappers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_spmm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_spsm.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.c.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f $< || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
+
+az_ifpack_prec_create.o: $(srcdir)/az_ifpack_prec_create.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_prec_create.c' object='az_ifpack_prec_create.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_prec_create.Po' tmpdepfile='$(DEPDIR)/az_ifpack_prec_create.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_prec_create.o `test -f $(srcdir)/az_ifpack_prec_create.c || echo '$(srcdir)/'`$(srcdir)/az_ifpack_prec_create.c
+
+az_ifpack_prec_create.obj: $(srcdir)/az_ifpack_prec_create.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_prec_create.c' object='az_ifpack_prec_create.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_prec_create.Po' tmpdepfile='$(DEPDIR)/az_ifpack_prec_create.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_prec_create.obj `cygpath -w $(srcdir)/az_ifpack_prec_create.c`
+
+az_ifpack_precon.o: $(srcdir)/az_ifpack_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_precon.c' object='az_ifpack_precon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_precon.Po' tmpdepfile='$(DEPDIR)/az_ifpack_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_precon.o `test -f $(srcdir)/az_ifpack_precon.c || echo '$(srcdir)/'`$(srcdir)/az_ifpack_precon.c
+
+az_ifpack_precon.obj: $(srcdir)/az_ifpack_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_precon.c' object='az_ifpack_precon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_precon.Po' tmpdepfile='$(DEPDIR)/az_ifpack_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_precon.obj `cygpath -w $(srcdir)/az_ifpack_precon.c`
+
+az_ifpack_iterate.o: $(srcdir)/az_ifpack_iterate.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_iterate.c' object='az_ifpack_iterate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_iterate.Po' tmpdepfile='$(DEPDIR)/az_ifpack_iterate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_iterate.o `test -f $(srcdir)/az_ifpack_iterate.c || echo '$(srcdir)/'`$(srcdir)/az_ifpack_iterate.c
+
+az_ifpack_iterate.obj: $(srcdir)/az_ifpack_iterate.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_iterate.c' object='az_ifpack_iterate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_iterate.Po' tmpdepfile='$(DEPDIR)/az_ifpack_iterate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_iterate.obj `cygpath -w $(srcdir)/az_ifpack_iterate.c`
+
+az_ifpack_prec_destroy.o: $(srcdir)/az_ifpack_prec_destroy.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_prec_destroy.c' object='az_ifpack_prec_destroy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_prec_destroy.Po' tmpdepfile='$(DEPDIR)/az_ifpack_prec_destroy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_prec_destroy.o `test -f $(srcdir)/az_ifpack_prec_destroy.c || echo '$(srcdir)/'`$(srcdir)/az_ifpack_prec_destroy.c
+
+az_ifpack_prec_destroy.obj: $(srcdir)/az_ifpack_prec_destroy.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_prec_destroy.c' object='az_ifpack_prec_destroy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_prec_destroy.Po' tmpdepfile='$(DEPDIR)/az_ifpack_prec_destroy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_prec_destroy.obj `cygpath -w $(srcdir)/az_ifpack_prec_destroy.c`
+
+az_ifpack_solve.o: $(srcdir)/az_ifpack_solve.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_solve.c' object='az_ifpack_solve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_solve.Po' tmpdepfile='$(DEPDIR)/az_ifpack_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_solve.o `test -f $(srcdir)/az_ifpack_solve.c || echo '$(srcdir)/'`$(srcdir)/az_ifpack_solve.c
+
+az_ifpack_solve.obj: $(srcdir)/az_ifpack_solve.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ifpack_solve.c' object='az_ifpack_solve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ifpack_solve.Po' tmpdepfile='$(DEPDIR)/az_ifpack_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ifpack_solve.obj `cygpath -w $(srcdir)/az_ifpack_solve.c`
+CCDEPMODE = @CCDEPMODE@
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+Ifpack_IlukGraph.o: $(srcdir)/Ifpack_IlukGraph.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_IlukGraph.cpp' object='Ifpack_IlukGraph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_IlukGraph.Po' tmpdepfile='$(DEPDIR)/Ifpack_IlukGraph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_IlukGraph.o `test -f $(srcdir)/Ifpack_IlukGraph.cpp || echo '$(srcdir)/'`$(srcdir)/Ifpack_IlukGraph.cpp
+
+Ifpack_IlukGraph.obj: $(srcdir)/Ifpack_IlukGraph.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_IlukGraph.cpp' object='Ifpack_IlukGraph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_IlukGraph.Po' tmpdepfile='$(DEPDIR)/Ifpack_IlukGraph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_IlukGraph.obj `cygpath -w $(srcdir)/Ifpack_IlukGraph.cpp`
+
+Ifpack_CrsRiluk.o: $(srcdir)/Ifpack_CrsRiluk.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_CrsRiluk.cpp' object='Ifpack_CrsRiluk.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_CrsRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsRiluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsRiluk.o `test -f $(srcdir)/Ifpack_CrsRiluk.cpp || echo '$(srcdir)/'`$(srcdir)/Ifpack_CrsRiluk.cpp
+
+Ifpack_CrsRiluk.obj: $(srcdir)/Ifpack_CrsRiluk.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_CrsRiluk.cpp' object='Ifpack_CrsRiluk.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_CrsRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsRiluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsRiluk.obj `cygpath -w $(srcdir)/Ifpack_CrsRiluk.cpp`
+
+ifp_BlockMat.o: $(srcdir)/ifp_BlockMat.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_BlockMat.cpp' object='ifp_BlockMat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_BlockMat.Po' tmpdepfile='$(DEPDIR)/ifp_BlockMat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_BlockMat.o `test -f $(srcdir)/ifp_BlockMat.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_BlockMat.cpp
+
+ifp_BlockMat.obj: $(srcdir)/ifp_BlockMat.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_BlockMat.cpp' object='ifp_BlockMat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_BlockMat.Po' tmpdepfile='$(DEPDIR)/ifp_BlockMat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_BlockMat.obj `cygpath -w $(srcdir)/ifp_BlockMat.cpp`
+
+ifp_BlockVec.o: $(srcdir)/ifp_BlockVec.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_BlockVec.cpp' object='ifp_BlockVec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_BlockVec.Po' tmpdepfile='$(DEPDIR)/ifp_BlockVec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_BlockVec.o `test -f $(srcdir)/ifp_BlockVec.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_BlockVec.cpp
+
+ifp_BlockVec.obj: $(srcdir)/ifp_BlockVec.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_BlockVec.cpp' object='ifp_BlockVec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_BlockVec.Po' tmpdepfile='$(DEPDIR)/ifp_BlockVec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_BlockVec.obj `cygpath -w $(srcdir)/ifp_BlockVec.cpp`
+
+ifp_DenseMat.o: $(srcdir)/ifp_DenseMat.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_DenseMat.cpp' object='ifp_DenseMat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_DenseMat.Po' tmpdepfile='$(DEPDIR)/ifp_DenseMat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_DenseMat.o `test -f $(srcdir)/ifp_DenseMat.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_DenseMat.cpp
+
+ifp_DenseMat.obj: $(srcdir)/ifp_DenseMat.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_DenseMat.cpp' object='ifp_DenseMat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_DenseMat.Po' tmpdepfile='$(DEPDIR)/ifp_DenseMat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_DenseMat.obj `cygpath -w $(srcdir)/ifp_DenseMat.cpp`
+
+ifp_SparseUtil.o: $(srcdir)/ifp_SparseUtil.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_SparseUtil.cpp' object='ifp_SparseUtil.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_SparseUtil.Po' tmpdepfile='$(DEPDIR)/ifp_SparseUtil.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_SparseUtil.o `test -f $(srcdir)/ifp_SparseUtil.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_SparseUtil.cpp
+
+ifp_SparseUtil.obj: $(srcdir)/ifp_SparseUtil.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_SparseUtil.cpp' object='ifp_SparseUtil.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_SparseUtil.Po' tmpdepfile='$(DEPDIR)/ifp_SparseUtil.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_SparseUtil.obj `cygpath -w $(srcdir)/ifp_SparseUtil.cpp`
+
+ifp_biluk.o: $(srcdir)/ifp_biluk.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_biluk.cpp' object='ifp_biluk.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_biluk.Po' tmpdepfile='$(DEPDIR)/ifp_biluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_biluk.o `test -f $(srcdir)/ifp_biluk.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_biluk.cpp
+
+ifp_biluk.obj: $(srcdir)/ifp_biluk.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_biluk.cpp' object='ifp_biluk.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_biluk.Po' tmpdepfile='$(DEPDIR)/ifp_biluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_biluk.obj `cygpath -w $(srcdir)/ifp_biluk.cpp`
+
+ifp_brelax.o: $(srcdir)/ifp_brelax.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_brelax.cpp' object='ifp_brelax.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_brelax.Po' tmpdepfile='$(DEPDIR)/ifp_brelax.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_brelax.o `test -f $(srcdir)/ifp_brelax.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_brelax.cpp
+
+ifp_brelax.obj: $(srcdir)/ifp_brelax.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_brelax.cpp' object='ifp_brelax.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_brelax.Po' tmpdepfile='$(DEPDIR)/ifp_brelax.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_brelax.obj `cygpath -w $(srcdir)/ifp_brelax.cpp`
+
+ifp_c_wrappers.o: $(srcdir)/ifp_c_wrappers.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_c_wrappers.cpp' object='ifp_c_wrappers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_c_wrappers.Po' tmpdepfile='$(DEPDIR)/ifp_c_wrappers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_c_wrappers.o `test -f $(srcdir)/ifp_c_wrappers.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_c_wrappers.cpp
+
+ifp_c_wrappers.obj: $(srcdir)/ifp_c_wrappers.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_c_wrappers.cpp' object='ifp_c_wrappers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_c_wrappers.Po' tmpdepfile='$(DEPDIR)/ifp_c_wrappers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_c_wrappers.obj `cygpath -w $(srcdir)/ifp_c_wrappers.cpp`
+
+ifp_spmm.o: $(srcdir)/ifp_spmm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_spmm.cpp' object='ifp_spmm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_spmm.Po' tmpdepfile='$(DEPDIR)/ifp_spmm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_spmm.o `test -f $(srcdir)/ifp_spmm.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_spmm.cpp
+
+ifp_spmm.obj: $(srcdir)/ifp_spmm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_spmm.cpp' object='ifp_spmm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_spmm.Po' tmpdepfile='$(DEPDIR)/ifp_spmm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_spmm.obj `cygpath -w $(srcdir)/ifp_spmm.cpp`
+
+ifp_spsm.o: $(srcdir)/ifp_spsm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_spsm.cpp' object='ifp_spsm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_spsm.Po' tmpdepfile='$(DEPDIR)/ifp_spsm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_spsm.o `test -f $(srcdir)/ifp_spsm.cpp || echo '$(srcdir)/'`$(srcdir)/ifp_spsm.cpp
+
+ifp_spsm.obj: $(srcdir)/ifp_spsm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ifp_spsm.cpp' object='ifp_spsm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ifp_spsm.Po' tmpdepfile='$(DEPDIR)/ifp_spsm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ifp_spsm.obj `cygpath -w $(srcdir)/ifp_spsm.cpp`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgexecincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES) Ifpack_config.h.in $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)Ifpack_config.h.in$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags Ifpack_config.h.in $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/$(srcdir)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS) Ifpack_config.h
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am: install-pkgincludeHEADERS
+
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-libLIBRARIES install-man \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

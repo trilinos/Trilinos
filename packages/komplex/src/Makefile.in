@@ -1,0 +1,745 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside Ifpack. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+# For now, these are just guesses as to where the files belong.
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+CORE_H = \
+	$(srcdir)/azk_komplex.h
+
+
+CORE = \
+	$(srcdir)/azk_create_linsys.c \
+	$(srcdir)/azk_create_precon.c \
+	$(srcdir)/azk_destroy_linsys.c \
+	$(srcdir)/azk_destroy_precon.c \
+	$(srcdir)/azk_create_matrix.c \
+	$(srcdir)/azk_create_vector.c \
+	$(srcdir)/azk_destroy_matrix.c \
+	$(srcdir)/azk_destroy_vector.c 
+
+
+
+### add in paths as needed - trying to prevent 
+### unnecessary paths from being listed - see old.Makefile for ideas
+AM_CPPFLAGS = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src 
+
+#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+SERIAL_H = 
+
+SERIAL = 
+
+@HAVE_MPI_TRUE@MPI_H = 
+@HAVE_MPI_FALSE@MPI_H = 
+
+@HAVE_MPI_TRUE@MPI = 
+@HAVE_MPI_FALSE@MPI = 
+
+
+#Ifpack does not yet support threads
+#if HAVE_THREADS
+MPISMP_H = 
+
+MPISMP = 
+
+
+#else
+
+#MPISMP_H =
+#MPISMP =
+
+#endif
+USERBASE_H = 
+
+LANG_WRAPS_H = 
+
+LANG_WRAPS = 
+
+DIST_H = 
+
+DIST = 
+
+COMP_H = 
+
+COMP = \
+	$(srcdir)/azk_extract_solution.c \
+	$(srcdir)/azk_matvec.c \
+	$(srcdir)/azk_precon.c \
+	$(srcdir)/azk_permute_ri.c \
+	$(srcdir)/azk_residual_norm.c 
+
+
+
+# ------------------------------------------------------------------------
+# Komplex library specifications
+# ------------------------------------------------------------------------
+KOMPLEX_LIB = libkomplex.a
+
+KOMPLEX_H = \
+	$(CORE_H) \
+	$(SERIAL_H) \
+	$(USERBASE_H) \
+	$(LANG_WRAPS_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+
+libkomplex_a_SOURCES = \
+	$(CORE) \
+	$(SERIAL) \
+	$(LANG_WRAPS) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libkomplex_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libkomplex_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libkomplex_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(KOMPLEX_LIB)
+
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+pkginclude_HEADERS = $(KOMPLEX_H)
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Ifpack_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+pkgexecincludedir = $(exec_prefix)/include
+nodist_pkgexecinclude_HEADERS = Komplex_config.h
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+subdir = src
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = Komplex_config.h
+CONFIG_CLEAN_FILES =
+LIBRARIES = $(lib_LIBRARIES)
+
+libkomplex_a_DEPENDENCIES =
+@HAVE_MPI_TRUE@am_libkomplex_a_OBJECTS = azk_create_linsys.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_create_precon.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_destroy_linsys.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_destroy_precon.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_create_matrix.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_create_vector.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_destroy_matrix.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_destroy_vector.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_extract_solution.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_matvec.$(OBJEXT) azk_precon.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_permute_ri.$(OBJEXT) \
+@HAVE_MPI_TRUE@	azk_residual_norm.$(OBJEXT)
+@HAVE_MPI_FALSE@am_libkomplex_a_OBJECTS = azk_create_linsys.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_create_precon.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_destroy_linsys.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_destroy_precon.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_create_matrix.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_create_vector.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_destroy_matrix.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_destroy_vector.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_extract_solution.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_matvec.$(OBJEXT) azk_precon.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_permute_ri.$(OBJEXT) \
+@HAVE_MPI_FALSE@	azk_residual_norm.$(OBJEXT)
+libkomplex_a_OBJECTS = $(am_libkomplex_a_OBJECTS)
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/azk_create_linsys.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_create_matrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_create_precon.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_create_vector.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_destroy_linsys.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_destroy_matrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_destroy_precon.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_destroy_vector.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_extract_solution.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_matvec.Po $(DEPDIR)/azk_permute_ri.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_precon.Po \
+@AMDEP_TRUE@	$(DEPDIR)/azk_residual_norm.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
+DIST_SOURCES = $(libkomplex_a_SOURCES)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+
+DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Komplex_config.h.in \
+	Makefile.am Makefile.in
+SOURCES = $(libkomplex_a_SOURCES)
+
+all: Komplex_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
+
+.SUFFIXES:
+.SUFFIXES: .c .o .obj
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src/Makefile
+Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+Komplex_config.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/Komplex_config.h.in $(top_builddir)/config.status
+	@rm -f stamp-h stamp-hT
+	@echo timestamp > stamp-hT 2> /dev/null
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=src/Komplex_config.h:src/Komplex_config.h.in \
+	     $(SHELL) ./config.status
+	@mv stamp-hT stamp-h
+$(srcdir)/Komplex_config.h.in:  $(srcdir)/./stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/./stamp-h.in; \
+		$(MAKE) $(srcdir)/./stamp-h.in; \
+	else :; fi
+$(srcdir)/./stamp-h.in: $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	@rm -f $(srcdir)/./stamp-h.in $(srcdir)/./stamp-h.inT
+	@echo timestamp > $(srcdir)/./stamp-h.inT 2> /dev/null
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@mv $(srcdir)/./stamp-h.inT $(srcdir)/./stamp-h.in
+
+distclean-hdr:
+	-rm -f Komplex_config.h
+
+AR = ar
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+azk_create_linsys.$(OBJEXT): $(srcdir)/azk_create_linsys.c
+azk_create_precon.$(OBJEXT): $(srcdir)/azk_create_precon.c
+azk_destroy_linsys.$(OBJEXT): $(srcdir)/azk_destroy_linsys.c
+azk_destroy_precon.$(OBJEXT): $(srcdir)/azk_destroy_precon.c
+azk_create_matrix.$(OBJEXT): $(srcdir)/azk_create_matrix.c
+azk_create_vector.$(OBJEXT): $(srcdir)/azk_create_vector.c
+azk_destroy_matrix.$(OBJEXT): $(srcdir)/azk_destroy_matrix.c
+azk_destroy_vector.$(OBJEXT): $(srcdir)/azk_destroy_vector.c
+azk_extract_solution.$(OBJEXT): $(srcdir)/azk_extract_solution.c
+azk_matvec.$(OBJEXT): $(srcdir)/azk_matvec.c
+azk_precon.$(OBJEXT): $(srcdir)/azk_precon.c
+azk_permute_ri.$(OBJEXT): $(srcdir)/azk_permute_ri.c
+azk_residual_norm.$(OBJEXT): $(srcdir)/azk_residual_norm.c
+libkomplex.a: $(libkomplex_a_OBJECTS) $(libkomplex_a_DEPENDENCIES) 
+	-rm -f libkomplex.a
+	$(libkomplex_a_AR) libkomplex.a $(libkomplex_a_OBJECTS) $(libkomplex_a_LIBADD)
+	$(RANLIB) libkomplex.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_create_linsys.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_create_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_create_precon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_create_vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_destroy_linsys.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_destroy_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_destroy_precon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_destroy_vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_extract_solution.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_matvec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_permute_ri.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_precon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/azk_residual_norm.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.c.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f $< || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
+
+azk_create_linsys.o: $(srcdir)/azk_create_linsys.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_linsys.c' object='azk_create_linsys.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_linsys.Po' tmpdepfile='$(DEPDIR)/azk_create_linsys.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_linsys.o `test -f $(srcdir)/azk_create_linsys.c || echo '$(srcdir)/'`$(srcdir)/azk_create_linsys.c
+
+azk_create_linsys.obj: $(srcdir)/azk_create_linsys.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_linsys.c' object='azk_create_linsys.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_linsys.Po' tmpdepfile='$(DEPDIR)/azk_create_linsys.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_linsys.obj `cygpath -w $(srcdir)/azk_create_linsys.c`
+
+azk_create_precon.o: $(srcdir)/azk_create_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_precon.c' object='azk_create_precon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_precon.Po' tmpdepfile='$(DEPDIR)/azk_create_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_precon.o `test -f $(srcdir)/azk_create_precon.c || echo '$(srcdir)/'`$(srcdir)/azk_create_precon.c
+
+azk_create_precon.obj: $(srcdir)/azk_create_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_precon.c' object='azk_create_precon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_precon.Po' tmpdepfile='$(DEPDIR)/azk_create_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_precon.obj `cygpath -w $(srcdir)/azk_create_precon.c`
+
+azk_destroy_linsys.o: $(srcdir)/azk_destroy_linsys.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_linsys.c' object='azk_destroy_linsys.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_linsys.Po' tmpdepfile='$(DEPDIR)/azk_destroy_linsys.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_linsys.o `test -f $(srcdir)/azk_destroy_linsys.c || echo '$(srcdir)/'`$(srcdir)/azk_destroy_linsys.c
+
+azk_destroy_linsys.obj: $(srcdir)/azk_destroy_linsys.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_linsys.c' object='azk_destroy_linsys.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_linsys.Po' tmpdepfile='$(DEPDIR)/azk_destroy_linsys.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_linsys.obj `cygpath -w $(srcdir)/azk_destroy_linsys.c`
+
+azk_destroy_precon.o: $(srcdir)/azk_destroy_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_precon.c' object='azk_destroy_precon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_precon.Po' tmpdepfile='$(DEPDIR)/azk_destroy_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_precon.o `test -f $(srcdir)/azk_destroy_precon.c || echo '$(srcdir)/'`$(srcdir)/azk_destroy_precon.c
+
+azk_destroy_precon.obj: $(srcdir)/azk_destroy_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_precon.c' object='azk_destroy_precon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_precon.Po' tmpdepfile='$(DEPDIR)/azk_destroy_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_precon.obj `cygpath -w $(srcdir)/azk_destroy_precon.c`
+
+azk_create_matrix.o: $(srcdir)/azk_create_matrix.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_matrix.c' object='azk_create_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_matrix.Po' tmpdepfile='$(DEPDIR)/azk_create_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_matrix.o `test -f $(srcdir)/azk_create_matrix.c || echo '$(srcdir)/'`$(srcdir)/azk_create_matrix.c
+
+azk_create_matrix.obj: $(srcdir)/azk_create_matrix.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_matrix.c' object='azk_create_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_matrix.Po' tmpdepfile='$(DEPDIR)/azk_create_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_matrix.obj `cygpath -w $(srcdir)/azk_create_matrix.c`
+
+azk_create_vector.o: $(srcdir)/azk_create_vector.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_vector.c' object='azk_create_vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_vector.Po' tmpdepfile='$(DEPDIR)/azk_create_vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_vector.o `test -f $(srcdir)/azk_create_vector.c || echo '$(srcdir)/'`$(srcdir)/azk_create_vector.c
+
+azk_create_vector.obj: $(srcdir)/azk_create_vector.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_create_vector.c' object='azk_create_vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_create_vector.Po' tmpdepfile='$(DEPDIR)/azk_create_vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_create_vector.obj `cygpath -w $(srcdir)/azk_create_vector.c`
+
+azk_destroy_matrix.o: $(srcdir)/azk_destroy_matrix.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_matrix.c' object='azk_destroy_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_matrix.Po' tmpdepfile='$(DEPDIR)/azk_destroy_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_matrix.o `test -f $(srcdir)/azk_destroy_matrix.c || echo '$(srcdir)/'`$(srcdir)/azk_destroy_matrix.c
+
+azk_destroy_matrix.obj: $(srcdir)/azk_destroy_matrix.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_matrix.c' object='azk_destroy_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_matrix.Po' tmpdepfile='$(DEPDIR)/azk_destroy_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_matrix.obj `cygpath -w $(srcdir)/azk_destroy_matrix.c`
+
+azk_destroy_vector.o: $(srcdir)/azk_destroy_vector.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_vector.c' object='azk_destroy_vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_vector.Po' tmpdepfile='$(DEPDIR)/azk_destroy_vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_vector.o `test -f $(srcdir)/azk_destroy_vector.c || echo '$(srcdir)/'`$(srcdir)/azk_destroy_vector.c
+
+azk_destroy_vector.obj: $(srcdir)/azk_destroy_vector.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_destroy_vector.c' object='azk_destroy_vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_destroy_vector.Po' tmpdepfile='$(DEPDIR)/azk_destroy_vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_destroy_vector.obj `cygpath -w $(srcdir)/azk_destroy_vector.c`
+
+azk_extract_solution.o: $(srcdir)/azk_extract_solution.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_extract_solution.c' object='azk_extract_solution.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_extract_solution.Po' tmpdepfile='$(DEPDIR)/azk_extract_solution.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_extract_solution.o `test -f $(srcdir)/azk_extract_solution.c || echo '$(srcdir)/'`$(srcdir)/azk_extract_solution.c
+
+azk_extract_solution.obj: $(srcdir)/azk_extract_solution.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_extract_solution.c' object='azk_extract_solution.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_extract_solution.Po' tmpdepfile='$(DEPDIR)/azk_extract_solution.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_extract_solution.obj `cygpath -w $(srcdir)/azk_extract_solution.c`
+
+azk_matvec.o: $(srcdir)/azk_matvec.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_matvec.c' object='azk_matvec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_matvec.Po' tmpdepfile='$(DEPDIR)/azk_matvec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_matvec.o `test -f $(srcdir)/azk_matvec.c || echo '$(srcdir)/'`$(srcdir)/azk_matvec.c
+
+azk_matvec.obj: $(srcdir)/azk_matvec.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_matvec.c' object='azk_matvec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_matvec.Po' tmpdepfile='$(DEPDIR)/azk_matvec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_matvec.obj `cygpath -w $(srcdir)/azk_matvec.c`
+
+azk_precon.o: $(srcdir)/azk_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_precon.c' object='azk_precon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_precon.Po' tmpdepfile='$(DEPDIR)/azk_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_precon.o `test -f $(srcdir)/azk_precon.c || echo '$(srcdir)/'`$(srcdir)/azk_precon.c
+
+azk_precon.obj: $(srcdir)/azk_precon.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_precon.c' object='azk_precon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_precon.Po' tmpdepfile='$(DEPDIR)/azk_precon.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_precon.obj `cygpath -w $(srcdir)/azk_precon.c`
+
+azk_permute_ri.o: $(srcdir)/azk_permute_ri.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_permute_ri.c' object='azk_permute_ri.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_permute_ri.Po' tmpdepfile='$(DEPDIR)/azk_permute_ri.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_permute_ri.o `test -f $(srcdir)/azk_permute_ri.c || echo '$(srcdir)/'`$(srcdir)/azk_permute_ri.c
+
+azk_permute_ri.obj: $(srcdir)/azk_permute_ri.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_permute_ri.c' object='azk_permute_ri.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_permute_ri.Po' tmpdepfile='$(DEPDIR)/azk_permute_ri.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_permute_ri.obj `cygpath -w $(srcdir)/azk_permute_ri.c`
+
+azk_residual_norm.o: $(srcdir)/azk_residual_norm.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_residual_norm.c' object='azk_residual_norm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_residual_norm.Po' tmpdepfile='$(DEPDIR)/azk_residual_norm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_residual_norm.o `test -f $(srcdir)/azk_residual_norm.c || echo '$(srcdir)/'`$(srcdir)/azk_residual_norm.c
+
+azk_residual_norm.obj: $(srcdir)/azk_residual_norm.c
+@AMDEP_TRUE@	source='$(srcdir)/azk_residual_norm.c' object='azk_residual_norm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/azk_residual_norm.Po' tmpdepfile='$(DEPDIR)/azk_residual_norm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_residual_norm.obj `cygpath -w $(srcdir)/azk_residual_norm.c`
+CCDEPMODE = @CCDEPMODE@
+uninstall-info-am:
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgexecincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES) Komplex_config.h.in $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)Komplex_config.h.in$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags Komplex_config.h.in $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/$(srcdir)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS) Komplex_config.h
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am: install-pkgincludeHEADERS
+
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-libLIBRARIES install-man \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

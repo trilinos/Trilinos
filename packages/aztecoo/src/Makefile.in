@@ -1,0 +1,1443 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside AztecOO. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+# For now, these are just guesses as to where the files belong.
+# Files that prove to be troublesome have been commented out and 
+# placed at the bottom of the appropriate section
+
+#WITH_CPP category is not incorporated into the make structure yet.  Must
+#make an option to use it or not with default being yes.  Must also 
+#incorporate platform specific files after I figure out exactly how to 
+# define a platform for Aztec.  Also change library name if not compiling
+# c++ code.
+
+# I don't know what to do with the following files - many are platform
+# specific - note also that some of the files not listed in the
+# following group may also be specific to the Linux platform
+# the group includes the files listed under mpi
+
+#	$(srcdir)/az_comm_ncube.c 
+#	$(srcdir)/az_comm_intel.c 
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+CORE_H = \
+	$(srcdir)/az_aztec_defs.h \
+	$(srcdir)/az_aztecf.h \
+	$(srcdir)/az_aztec.h \
+	$(srcdir)/az_f77func.h \
+	$(srcdir)/az_y12m_wrappers.h \
+	$(srcdir)/az_blas_wrappers.h \
+	$(srcdir)/az_lapack_wrappers.h
+
+
+CORE = \
+	$(srcdir)/az_comm.c 
+
+# The above file might be platform specific
+
+### Eventually make the following an option (default is to include)
+### Making this optional is one step toward removing the current
+### dependency on Epetra when only Aztec is needed
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)../ifpack/src
+
+WITH_CPP_H = \
+	$(srcdir)/AztecOO.h \
+	$(srcdir)/AztecOO_Operator.h \
+	$(srcdir)/Epetra_MsrMatrix.h \
+	$(srcdir)/Aztec2Petra.h \
+	$(srcdir)/AZOO_iterate.h 
+
+
+WITH_CPP = \
+	$(srcdir)/AztecOO.cpp \
+	$(srcdir)/AztecOO_Operator.cpp \
+	$(srcdir)/Epetra_MsrMatrix.cpp \
+	$(srcdir)/Aztec2Petra.cpp \
+	$(srcdir)/AZOO_iterate.cpp
+
+
+### end option 
+UTIL_H = 
+
+UTIL = \
+	$(srcdir)/az_check.c \
+	$(srcdir)/az_flop_cnt.c \
+	$(srcdir)/az_ilu_util.c \
+	$(srcdir)/az_interface.c \
+	$(srcdir)/az_matrix_util.c \
+	$(srcdir)/az_pad_utils.c \
+	$(srcdir)/az_tools.c \
+	$(srcdir)/az_util.c
+
+
+ENUM_H = 
+
+UNIPROC_H = 
+
+UNIPROC = 
+
+EXTRA_SERIAL_H = 
+
+EXTRA_SERIAL = \
+$(srcdir)/md_timer_generic.c \
+	$(srcdir)/md_wrap_scalar_c.c 
+
+
+EXTRA_MPI_H = 
+
+EXTRA_MPI = \
+	$(srcdir)/md_timer_mpi.c \
+	$(srcdir)/md_wrap_mpi_c.c 
+
+
+EXTRA_DIST = \
+	$(EXTRA_MPI_H) \
+	$(EXTRA_MPI) \
+	$(EXTRA_SERIAL_H) \
+	$(EXTRA_SERIAL)
+
+
+@HAVE_MPI_TRUE@MPI_H = \
+@HAVE_MPI_TRUE@	$(EXTRA_MPI_H)
+
+@HAVE_MPI_FALSE@MPI_H = 
+@HAVE_MPI_TRUE@MPI = \
+@HAVE_MPI_TRUE@	$(EXTRA_MPI)
+
+@HAVE_MPI_FALSE@MPI = 
+
+@HAVE_MPI_TRUE@SERIAL_H = 
+@HAVE_MPI_FALSE@SERIAL_H = \
+@HAVE_MPI_FALSE@	$(EXTRA_SERIAL_H)
+
+
+@HAVE_MPI_TRUE@SERIAL = 
+@HAVE_MPI_FALSE@SERIAL = \
+@HAVE_MPI_FALSE@	$(EXTRA_SERIAL)
+
+
+
+#Aztec does not yet support threads
+#EXTRA_MPISMP_H =
+
+#EXTRA_MPISMP =
+
+#if HAVE_THREADS
+
+#MPISMP_H = \
+#	$(EXTRA_MPISMP_H)
+#MPISMP = \
+#	$(EXTRA_MPISMP)
+
+#else
+MPISMP_H = 
+MPISMP = 
+
+
+#endif
+USERBASE_H = 
+
+LANG_WRAPS_H = 
+
+LANG_WRAPS = \
+	$(srcdir)/az_fortran_wrap.c
+
+
+DIST_H = 
+
+DIST = \
+	$(srcdir)/az_bilu.c \
+	$(srcdir)/az_cg.c \
+	$(srcdir)/az_cgs.c \
+	$(srcdir)/az_cgstab.c \
+	$(srcdir)/az_converge.c \
+	$(srcdir)/az_dd_overlap.c \
+	$(srcdir)/az_dgemv2.c \
+	$(srcdir)/az_dgemv3.c \
+	$(srcdir)/az_domain_decomp.c \
+	$(srcdir)/az_fix_pt.c \
+	$(srcdir)/az_gmres.c \
+	$(srcdir)/az_gmresr.c \
+	$(srcdir)/az_gsumd_puma.c \
+	$(srcdir)/az_icc.c \
+	$(srcdir)/az_ilut.c \
+	$(srcdir)/az_lu_y12.c \
+	$(srcdir)/az_poly.c \
+	$(srcdir)/az_qmrcgs.c \
+	$(srcdir)/az_rilu.c \
+	$(srcdir)/az_subdomain_solver.c \
+	$(srcdir)/az_xyce_gmres.c
+
+
+COMP_H = 
+
+COMP = \
+	$(srcdir)/az_colperm.c \
+	$(srcdir)/az_matvec_mult.c \
+	$(srcdir)/az_old_matvec_mult.c \
+	$(srcdir)/az_precond.c \
+	$(srcdir)/az_reorder.f \
+	$(srcdir)/dlaic1.f \
+	$(srcdir)/dlaswp.f \
+	$(srcdir)/az_scaling.c \
+	$(srcdir)/az_solve.c \
+	$(srcdir)/az_sort.c 
+
+
+
+# ------------------------------------------------------------------------
+# Aztec library specifications
+# ------------------------------------------------------------------------
+AZTECOO_LIB = libaztecoo.a
+
+AZTECOO_H = \
+	$(CORE_H) \
+	$(WITH_CPP_H) \
+	$(UTIL_H) \
+	$(ENUM_H) \
+	$(UNIPROC_H) \
+	$(SERIAL_H) \
+	$(USERBASE_H) \
+	$(LANG_WRAPS_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+
+libaztecoo_a_SOURCES = \
+	$(CORE) \
+	$(WITH_CPP) \
+	$(UTIL) \
+	$(UNIPROC) \
+	$(SERIAL) \
+	$(LANG_WRAPS) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libaztecoo_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libaztecoo_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libaztecoo_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(AZTECOO_LIB)
+
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+pkginclude_HEADERS = $(AZTECOO_H)
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: AztecOO_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+pkgexecincludedir = $(exec_prefix)/include
+nodist_pkgexecinclude_HEADERS = AztecOO_config.h
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+subdir = src
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = AztecOO_config.h
+CONFIG_CLEAN_FILES =
+LIBRARIES = $(lib_LIBRARIES)
+
+libaztecoo_a_DEPENDENCIES =
+@HAVE_MPI_TRUE@am_libaztecoo_a_OBJECTS = az_comm.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AztecOO.$(OBJEXT) AztecOO_Operator.$(OBJEXT) \
+@HAVE_MPI_TRUE@	Epetra_MsrMatrix.$(OBJEXT) Aztec2Petra.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AZOO_iterate.$(OBJEXT) az_check.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_flop_cnt.$(OBJEXT) az_ilu_util.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_interface.$(OBJEXT) az_matrix_util.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_pad_utils.$(OBJEXT) az_tools.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_util.$(OBJEXT) az_fortran_wrap.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_bilu.$(OBJEXT) az_cg.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_cgs.$(OBJEXT) az_cgstab.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_converge.$(OBJEXT) az_dd_overlap.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_dgemv2.$(OBJEXT) az_dgemv3.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_domain_decomp.$(OBJEXT) az_fix_pt.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_gmres.$(OBJEXT) az_gmresr.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_gsumd_puma.$(OBJEXT) az_icc.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_ilut.$(OBJEXT) az_lu_y12.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_poly.$(OBJEXT) az_qmrcgs.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_rilu.$(OBJEXT) az_subdomain_solver.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_xyce_gmres.$(OBJEXT) az_colperm.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_old_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_precond.$(OBJEXT) az_reorder.$(OBJEXT) \
+@HAVE_MPI_TRUE@	dlaic1.$(OBJEXT) dlaswp.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_sort.$(OBJEXT) md_timer_mpi.$(OBJEXT) \
+@HAVE_MPI_TRUE@	md_wrap_mpi_c.$(OBJEXT)
+@HAVE_MPI_FALSE@am_libaztecoo_a_OBJECTS = az_comm.$(OBJEXT) \
+@HAVE_MPI_FALSE@	AztecOO.$(OBJEXT) AztecOO_Operator.$(OBJEXT) \
+@HAVE_MPI_FALSE@	Epetra_MsrMatrix.$(OBJEXT) \
+@HAVE_MPI_FALSE@	Aztec2Petra.$(OBJEXT) AZOO_iterate.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_tools.$(OBJEXT) az_util.$(OBJEXT) \
+@HAVE_MPI_FALSE@	md_timer_generic.$(OBJEXT) \
+@HAVE_MPI_FALSE@	md_wrap_scalar_c.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_fortran_wrap.$(OBJEXT) az_bilu.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_cgstab.$(OBJEXT) az_converge.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_dd_overlap.$(OBJEXT) az_dgemv2.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_dgemv3.$(OBJEXT) az_domain_decomp.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_fix_pt.$(OBJEXT) az_gmres.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_gmresr.$(OBJEXT) az_gsumd_puma.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_icc.$(OBJEXT) az_ilut.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_lu_y12.$(OBJEXT) az_poly.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_subdomain_solver.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_xyce_gmres.$(OBJEXT) az_colperm.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_old_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_precond.$(OBJEXT) az_reorder.$(OBJEXT) \
+@HAVE_MPI_FALSE@	dlaic1.$(OBJEXT) dlaswp.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_sort.$(OBJEXT)
+libaztecoo_a_OBJECTS = $(am_libaztecoo_a_OBJECTS)
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/AZOO_iterate.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Aztec2Petra.Po $(DEPDIR)/AztecOO.Po \
+@AMDEP_TRUE@	$(DEPDIR)/AztecOO_Operator.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_MsrMatrix.Po $(DEPDIR)/az_bilu.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_cg.Po $(DEPDIR)/az_cgs.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_cgstab.Po $(DEPDIR)/az_check.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_colperm.Po $(DEPDIR)/az_comm.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_converge.Po $(DEPDIR)/az_dd_overlap.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_dgemv2.Po $(DEPDIR)/az_dgemv3.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_domain_decomp.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_fix_pt.Po $(DEPDIR)/az_flop_cnt.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_fortran_wrap.Po $(DEPDIR)/az_gmres.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_gmresr.Po $(DEPDIR)/az_gsumd_puma.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_icc.Po $(DEPDIR)/az_ilu_util.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_ilut.Po $(DEPDIR)/az_interface.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_lu_y12.Po $(DEPDIR)/az_matrix_util.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_matvec_mult.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_old_matvec_mult.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_pad_utils.Po $(DEPDIR)/az_poly.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_precond.Po $(DEPDIR)/az_qmrcgs.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_rilu.Po $(DEPDIR)/az_scaling.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_solve.Po $(DEPDIR)/az_sort.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_subdomain_solver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_tools.Po $(DEPDIR)/az_util.Po \
+@AMDEP_TRUE@	$(DEPDIR)/az_xyce_gmres.Po \
+@AMDEP_TRUE@	$(DEPDIR)/md_timer_generic.Po \
+@AMDEP_TRUE@	$(DEPDIR)/md_timer_mpi.Po \
+@AMDEP_TRUE@	$(DEPDIR)/md_wrap_mpi_c.Po \
+@AMDEP_TRUE@	$(DEPDIR)/md_wrap_scalar_c.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
+F77LD = $(F77)
+F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+FFLAGS = @FFLAGS@
+DIST_SOURCES = $(libaztecoo_a_SOURCES)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+
+DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in AztecOO_config.h.in \
+	Makefile.am Makefile.in
+SOURCES = $(libaztecoo_a_SOURCES)
+
+all: AztecOO_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .f .o .obj
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src/Makefile
+Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+AztecOO_config.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/AztecOO_config.h.in $(top_builddir)/config.status
+	@rm -f stamp-h stamp-hT
+	@echo timestamp > stamp-hT 2> /dev/null
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=src/AztecOO_config.h:src/AztecOO_config.h.in \
+	     $(SHELL) ./config.status
+	@mv stamp-hT stamp-h
+$(srcdir)/AztecOO_config.h.in:  $(srcdir)/./stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/./stamp-h.in; \
+		$(MAKE) $(srcdir)/./stamp-h.in; \
+	else :; fi
+$(srcdir)/./stamp-h.in: $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	@rm -f $(srcdir)/./stamp-h.in $(srcdir)/./stamp-h.inT
+	@echo timestamp > $(srcdir)/./stamp-h.inT 2> /dev/null
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@mv $(srcdir)/./stamp-h.inT $(srcdir)/./stamp-h.in
+
+distclean-hdr:
+	-rm -f AztecOO_config.h
+
+AR = ar
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+az_comm.$(OBJEXT): $(srcdir)/az_comm.c
+AztecOO.$(OBJEXT): $(srcdir)/AztecOO.cpp
+AztecOO_Operator.$(OBJEXT): $(srcdir)/AztecOO_Operator.cpp
+Epetra_MsrMatrix.$(OBJEXT): $(srcdir)/Epetra_MsrMatrix.cpp
+Aztec2Petra.$(OBJEXT): $(srcdir)/Aztec2Petra.cpp
+AZOO_iterate.$(OBJEXT): $(srcdir)/AZOO_iterate.cpp
+az_check.$(OBJEXT): $(srcdir)/az_check.c
+az_flop_cnt.$(OBJEXT): $(srcdir)/az_flop_cnt.c
+az_ilu_util.$(OBJEXT): $(srcdir)/az_ilu_util.c
+az_interface.$(OBJEXT): $(srcdir)/az_interface.c
+az_matrix_util.$(OBJEXT): $(srcdir)/az_matrix_util.c
+az_pad_utils.$(OBJEXT): $(srcdir)/az_pad_utils.c
+az_tools.$(OBJEXT): $(srcdir)/az_tools.c
+az_util.$(OBJEXT): $(srcdir)/az_util.c
+az_fortran_wrap.$(OBJEXT): $(srcdir)/az_fortran_wrap.c
+az_bilu.$(OBJEXT): $(srcdir)/az_bilu.c
+az_cg.$(OBJEXT): $(srcdir)/az_cg.c
+az_cgs.$(OBJEXT): $(srcdir)/az_cgs.c
+az_cgstab.$(OBJEXT): $(srcdir)/az_cgstab.c
+az_converge.$(OBJEXT): $(srcdir)/az_converge.c
+az_dd_overlap.$(OBJEXT): $(srcdir)/az_dd_overlap.c
+az_dgemv2.$(OBJEXT): $(srcdir)/az_dgemv2.c
+az_dgemv3.$(OBJEXT): $(srcdir)/az_dgemv3.c
+az_domain_decomp.$(OBJEXT): $(srcdir)/az_domain_decomp.c
+az_fix_pt.$(OBJEXT): $(srcdir)/az_fix_pt.c
+az_gmres.$(OBJEXT): $(srcdir)/az_gmres.c
+az_gmresr.$(OBJEXT): $(srcdir)/az_gmresr.c
+az_gsumd_puma.$(OBJEXT): $(srcdir)/az_gsumd_puma.c
+az_icc.$(OBJEXT): $(srcdir)/az_icc.c
+az_ilut.$(OBJEXT): $(srcdir)/az_ilut.c
+az_lu_y12.$(OBJEXT): $(srcdir)/az_lu_y12.c
+az_poly.$(OBJEXT): $(srcdir)/az_poly.c
+az_qmrcgs.$(OBJEXT): $(srcdir)/az_qmrcgs.c
+az_rilu.$(OBJEXT): $(srcdir)/az_rilu.c
+az_subdomain_solver.$(OBJEXT): $(srcdir)/az_subdomain_solver.c
+az_xyce_gmres.$(OBJEXT): $(srcdir)/az_xyce_gmres.c
+az_colperm.$(OBJEXT): $(srcdir)/az_colperm.c
+az_matvec_mult.$(OBJEXT): $(srcdir)/az_matvec_mult.c
+az_old_matvec_mult.$(OBJEXT): $(srcdir)/az_old_matvec_mult.c
+az_precond.$(OBJEXT): $(srcdir)/az_precond.c
+az_reorder.$(OBJEXT): $(srcdir)/az_reorder.f
+dlaic1.$(OBJEXT): $(srcdir)/dlaic1.f
+dlaswp.$(OBJEXT): $(srcdir)/dlaswp.f
+az_scaling.$(OBJEXT): $(srcdir)/az_scaling.c
+az_solve.$(OBJEXT): $(srcdir)/az_solve.c
+az_sort.$(OBJEXT): $(srcdir)/az_sort.c
+md_timer_mpi.$(OBJEXT): $(srcdir)/md_timer_mpi.c
+md_wrap_mpi_c.$(OBJEXT): $(srcdir)/md_wrap_mpi_c.c
+md_timer_generic.$(OBJEXT): $(srcdir)/md_timer_generic.c
+md_wrap_scalar_c.$(OBJEXT): $(srcdir)/md_wrap_scalar_c.c
+libaztecoo.a: $(libaztecoo_a_OBJECTS) $(libaztecoo_a_DEPENDENCIES) 
+	-rm -f libaztecoo.a
+	$(libaztecoo_a_AR) libaztecoo.a $(libaztecoo_a_OBJECTS) $(libaztecoo_a_LIBADD)
+	$(RANLIB) libaztecoo.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AZOO_iterate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Aztec2Petra.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO_Operator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_MsrMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_bilu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_cg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_cgs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_cgstab.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_check.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_colperm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_comm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_converge.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_dd_overlap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_dgemv2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_dgemv3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_domain_decomp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_fix_pt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_flop_cnt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_fortran_wrap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_gmres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_gmresr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_gsumd_puma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_icc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ilu_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ilut.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_lu_y12.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_matrix_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_matvec_mult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_old_matvec_mult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_pad_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_poly.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_precond.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_qmrcgs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_rilu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_scaling.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_solve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_sort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_subdomain_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_tools.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_xyce_gmres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_timer_generic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_timer_mpi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_wrap_mpi_c.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_wrap_scalar_c.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.c.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f $< || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
+
+az_comm.o: $(srcdir)/az_comm.c
+@AMDEP_TRUE@	source='$(srcdir)/az_comm.c' object='az_comm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_comm.Po' tmpdepfile='$(DEPDIR)/az_comm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_comm.o `test -f $(srcdir)/az_comm.c || echo '$(srcdir)/'`$(srcdir)/az_comm.c
+
+az_comm.obj: $(srcdir)/az_comm.c
+@AMDEP_TRUE@	source='$(srcdir)/az_comm.c' object='az_comm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_comm.Po' tmpdepfile='$(DEPDIR)/az_comm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_comm.obj `cygpath -w $(srcdir)/az_comm.c`
+
+az_check.o: $(srcdir)/az_check.c
+@AMDEP_TRUE@	source='$(srcdir)/az_check.c' object='az_check.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_check.Po' tmpdepfile='$(DEPDIR)/az_check.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_check.o `test -f $(srcdir)/az_check.c || echo '$(srcdir)/'`$(srcdir)/az_check.c
+
+az_check.obj: $(srcdir)/az_check.c
+@AMDEP_TRUE@	source='$(srcdir)/az_check.c' object='az_check.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_check.Po' tmpdepfile='$(DEPDIR)/az_check.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_check.obj `cygpath -w $(srcdir)/az_check.c`
+
+az_flop_cnt.o: $(srcdir)/az_flop_cnt.c
+@AMDEP_TRUE@	source='$(srcdir)/az_flop_cnt.c' object='az_flop_cnt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_flop_cnt.Po' tmpdepfile='$(DEPDIR)/az_flop_cnt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_flop_cnt.o `test -f $(srcdir)/az_flop_cnt.c || echo '$(srcdir)/'`$(srcdir)/az_flop_cnt.c
+
+az_flop_cnt.obj: $(srcdir)/az_flop_cnt.c
+@AMDEP_TRUE@	source='$(srcdir)/az_flop_cnt.c' object='az_flop_cnt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_flop_cnt.Po' tmpdepfile='$(DEPDIR)/az_flop_cnt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_flop_cnt.obj `cygpath -w $(srcdir)/az_flop_cnt.c`
+
+az_ilu_util.o: $(srcdir)/az_ilu_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ilu_util.c' object='az_ilu_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ilu_util.Po' tmpdepfile='$(DEPDIR)/az_ilu_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ilu_util.o `test -f $(srcdir)/az_ilu_util.c || echo '$(srcdir)/'`$(srcdir)/az_ilu_util.c
+
+az_ilu_util.obj: $(srcdir)/az_ilu_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ilu_util.c' object='az_ilu_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ilu_util.Po' tmpdepfile='$(DEPDIR)/az_ilu_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ilu_util.obj `cygpath -w $(srcdir)/az_ilu_util.c`
+
+az_interface.o: $(srcdir)/az_interface.c
+@AMDEP_TRUE@	source='$(srcdir)/az_interface.c' object='az_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_interface.Po' tmpdepfile='$(DEPDIR)/az_interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_interface.o `test -f $(srcdir)/az_interface.c || echo '$(srcdir)/'`$(srcdir)/az_interface.c
+
+az_interface.obj: $(srcdir)/az_interface.c
+@AMDEP_TRUE@	source='$(srcdir)/az_interface.c' object='az_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_interface.Po' tmpdepfile='$(DEPDIR)/az_interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_interface.obj `cygpath -w $(srcdir)/az_interface.c`
+
+az_matrix_util.o: $(srcdir)/az_matrix_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_matrix_util.c' object='az_matrix_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_matrix_util.Po' tmpdepfile='$(DEPDIR)/az_matrix_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_matrix_util.o `test -f $(srcdir)/az_matrix_util.c || echo '$(srcdir)/'`$(srcdir)/az_matrix_util.c
+
+az_matrix_util.obj: $(srcdir)/az_matrix_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_matrix_util.c' object='az_matrix_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_matrix_util.Po' tmpdepfile='$(DEPDIR)/az_matrix_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_matrix_util.obj `cygpath -w $(srcdir)/az_matrix_util.c`
+
+az_pad_utils.o: $(srcdir)/az_pad_utils.c
+@AMDEP_TRUE@	source='$(srcdir)/az_pad_utils.c' object='az_pad_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_pad_utils.Po' tmpdepfile='$(DEPDIR)/az_pad_utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_pad_utils.o `test -f $(srcdir)/az_pad_utils.c || echo '$(srcdir)/'`$(srcdir)/az_pad_utils.c
+
+az_pad_utils.obj: $(srcdir)/az_pad_utils.c
+@AMDEP_TRUE@	source='$(srcdir)/az_pad_utils.c' object='az_pad_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_pad_utils.Po' tmpdepfile='$(DEPDIR)/az_pad_utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_pad_utils.obj `cygpath -w $(srcdir)/az_pad_utils.c`
+
+az_tools.o: $(srcdir)/az_tools.c
+@AMDEP_TRUE@	source='$(srcdir)/az_tools.c' object='az_tools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_tools.Po' tmpdepfile='$(DEPDIR)/az_tools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_tools.o `test -f $(srcdir)/az_tools.c || echo '$(srcdir)/'`$(srcdir)/az_tools.c
+
+az_tools.obj: $(srcdir)/az_tools.c
+@AMDEP_TRUE@	source='$(srcdir)/az_tools.c' object='az_tools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_tools.Po' tmpdepfile='$(DEPDIR)/az_tools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_tools.obj `cygpath -w $(srcdir)/az_tools.c`
+
+az_util.o: $(srcdir)/az_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_util.c' object='az_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_util.Po' tmpdepfile='$(DEPDIR)/az_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_util.o `test -f $(srcdir)/az_util.c || echo '$(srcdir)/'`$(srcdir)/az_util.c
+
+az_util.obj: $(srcdir)/az_util.c
+@AMDEP_TRUE@	source='$(srcdir)/az_util.c' object='az_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_util.Po' tmpdepfile='$(DEPDIR)/az_util.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_util.obj `cygpath -w $(srcdir)/az_util.c`
+
+az_fortran_wrap.o: $(srcdir)/az_fortran_wrap.c
+@AMDEP_TRUE@	source='$(srcdir)/az_fortran_wrap.c' object='az_fortran_wrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_fortran_wrap.Po' tmpdepfile='$(DEPDIR)/az_fortran_wrap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fortran_wrap.o `test -f $(srcdir)/az_fortran_wrap.c || echo '$(srcdir)/'`$(srcdir)/az_fortran_wrap.c
+
+az_fortran_wrap.obj: $(srcdir)/az_fortran_wrap.c
+@AMDEP_TRUE@	source='$(srcdir)/az_fortran_wrap.c' object='az_fortran_wrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_fortran_wrap.Po' tmpdepfile='$(DEPDIR)/az_fortran_wrap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fortran_wrap.obj `cygpath -w $(srcdir)/az_fortran_wrap.c`
+
+az_bilu.o: $(srcdir)/az_bilu.c
+@AMDEP_TRUE@	source='$(srcdir)/az_bilu.c' object='az_bilu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_bilu.Po' tmpdepfile='$(DEPDIR)/az_bilu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_bilu.o `test -f $(srcdir)/az_bilu.c || echo '$(srcdir)/'`$(srcdir)/az_bilu.c
+
+az_bilu.obj: $(srcdir)/az_bilu.c
+@AMDEP_TRUE@	source='$(srcdir)/az_bilu.c' object='az_bilu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_bilu.Po' tmpdepfile='$(DEPDIR)/az_bilu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_bilu.obj `cygpath -w $(srcdir)/az_bilu.c`
+
+az_cg.o: $(srcdir)/az_cg.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cg.c' object='az_cg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cg.Po' tmpdepfile='$(DEPDIR)/az_cg.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cg.o `test -f $(srcdir)/az_cg.c || echo '$(srcdir)/'`$(srcdir)/az_cg.c
+
+az_cg.obj: $(srcdir)/az_cg.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cg.c' object='az_cg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cg.Po' tmpdepfile='$(DEPDIR)/az_cg.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cg.obj `cygpath -w $(srcdir)/az_cg.c`
+
+az_cgs.o: $(srcdir)/az_cgs.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cgs.c' object='az_cgs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cgs.Po' tmpdepfile='$(DEPDIR)/az_cgs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cgs.o `test -f $(srcdir)/az_cgs.c || echo '$(srcdir)/'`$(srcdir)/az_cgs.c
+
+az_cgs.obj: $(srcdir)/az_cgs.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cgs.c' object='az_cgs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cgs.Po' tmpdepfile='$(DEPDIR)/az_cgs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cgs.obj `cygpath -w $(srcdir)/az_cgs.c`
+
+az_cgstab.o: $(srcdir)/az_cgstab.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cgstab.c' object='az_cgstab.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cgstab.Po' tmpdepfile='$(DEPDIR)/az_cgstab.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cgstab.o `test -f $(srcdir)/az_cgstab.c || echo '$(srcdir)/'`$(srcdir)/az_cgstab.c
+
+az_cgstab.obj: $(srcdir)/az_cgstab.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cgstab.c' object='az_cgstab.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cgstab.Po' tmpdepfile='$(DEPDIR)/az_cgstab.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cgstab.obj `cygpath -w $(srcdir)/az_cgstab.c`
+
+az_converge.o: $(srcdir)/az_converge.c
+@AMDEP_TRUE@	source='$(srcdir)/az_converge.c' object='az_converge.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_converge.Po' tmpdepfile='$(DEPDIR)/az_converge.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_converge.o `test -f $(srcdir)/az_converge.c || echo '$(srcdir)/'`$(srcdir)/az_converge.c
+
+az_converge.obj: $(srcdir)/az_converge.c
+@AMDEP_TRUE@	source='$(srcdir)/az_converge.c' object='az_converge.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_converge.Po' tmpdepfile='$(DEPDIR)/az_converge.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_converge.obj `cygpath -w $(srcdir)/az_converge.c`
+
+az_dd_overlap.o: $(srcdir)/az_dd_overlap.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dd_overlap.c' object='az_dd_overlap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dd_overlap.Po' tmpdepfile='$(DEPDIR)/az_dd_overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dd_overlap.o `test -f $(srcdir)/az_dd_overlap.c || echo '$(srcdir)/'`$(srcdir)/az_dd_overlap.c
+
+az_dd_overlap.obj: $(srcdir)/az_dd_overlap.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dd_overlap.c' object='az_dd_overlap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dd_overlap.Po' tmpdepfile='$(DEPDIR)/az_dd_overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dd_overlap.obj `cygpath -w $(srcdir)/az_dd_overlap.c`
+
+az_dgemv2.o: $(srcdir)/az_dgemv2.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dgemv2.c' object='az_dgemv2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dgemv2.Po' tmpdepfile='$(DEPDIR)/az_dgemv2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dgemv2.o `test -f $(srcdir)/az_dgemv2.c || echo '$(srcdir)/'`$(srcdir)/az_dgemv2.c
+
+az_dgemv2.obj: $(srcdir)/az_dgemv2.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dgemv2.c' object='az_dgemv2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dgemv2.Po' tmpdepfile='$(DEPDIR)/az_dgemv2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dgemv2.obj `cygpath -w $(srcdir)/az_dgemv2.c`
+
+az_dgemv3.o: $(srcdir)/az_dgemv3.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dgemv3.c' object='az_dgemv3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dgemv3.Po' tmpdepfile='$(DEPDIR)/az_dgemv3.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dgemv3.o `test -f $(srcdir)/az_dgemv3.c || echo '$(srcdir)/'`$(srcdir)/az_dgemv3.c
+
+az_dgemv3.obj: $(srcdir)/az_dgemv3.c
+@AMDEP_TRUE@	source='$(srcdir)/az_dgemv3.c' object='az_dgemv3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_dgemv3.Po' tmpdepfile='$(DEPDIR)/az_dgemv3.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_dgemv3.obj `cygpath -w $(srcdir)/az_dgemv3.c`
+
+az_domain_decomp.o: $(srcdir)/az_domain_decomp.c
+@AMDEP_TRUE@	source='$(srcdir)/az_domain_decomp.c' object='az_domain_decomp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_domain_decomp.Po' tmpdepfile='$(DEPDIR)/az_domain_decomp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_domain_decomp.o `test -f $(srcdir)/az_domain_decomp.c || echo '$(srcdir)/'`$(srcdir)/az_domain_decomp.c
+
+az_domain_decomp.obj: $(srcdir)/az_domain_decomp.c
+@AMDEP_TRUE@	source='$(srcdir)/az_domain_decomp.c' object='az_domain_decomp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_domain_decomp.Po' tmpdepfile='$(DEPDIR)/az_domain_decomp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_domain_decomp.obj `cygpath -w $(srcdir)/az_domain_decomp.c`
+
+az_fix_pt.o: $(srcdir)/az_fix_pt.c
+@AMDEP_TRUE@	source='$(srcdir)/az_fix_pt.c' object='az_fix_pt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_fix_pt.Po' tmpdepfile='$(DEPDIR)/az_fix_pt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fix_pt.o `test -f $(srcdir)/az_fix_pt.c || echo '$(srcdir)/'`$(srcdir)/az_fix_pt.c
+
+az_fix_pt.obj: $(srcdir)/az_fix_pt.c
+@AMDEP_TRUE@	source='$(srcdir)/az_fix_pt.c' object='az_fix_pt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_fix_pt.Po' tmpdepfile='$(DEPDIR)/az_fix_pt.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fix_pt.obj `cygpath -w $(srcdir)/az_fix_pt.c`
+
+az_gmres.o: $(srcdir)/az_gmres.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmres.c' object='az_gmres.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmres.Po' tmpdepfile='$(DEPDIR)/az_gmres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmres.o `test -f $(srcdir)/az_gmres.c || echo '$(srcdir)/'`$(srcdir)/az_gmres.c
+
+az_gmres.obj: $(srcdir)/az_gmres.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmres.c' object='az_gmres.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmres.Po' tmpdepfile='$(DEPDIR)/az_gmres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmres.obj `cygpath -w $(srcdir)/az_gmres.c`
+
+az_gmresr.o: $(srcdir)/az_gmresr.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmresr.c' object='az_gmresr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmresr.Po' tmpdepfile='$(DEPDIR)/az_gmresr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmresr.o `test -f $(srcdir)/az_gmresr.c || echo '$(srcdir)/'`$(srcdir)/az_gmresr.c
+
+az_gmresr.obj: $(srcdir)/az_gmresr.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmresr.c' object='az_gmresr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmresr.Po' tmpdepfile='$(DEPDIR)/az_gmresr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmresr.obj `cygpath -w $(srcdir)/az_gmresr.c`
+
+az_gsumd_puma.o: $(srcdir)/az_gsumd_puma.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gsumd_puma.c' object='az_gsumd_puma.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gsumd_puma.Po' tmpdepfile='$(DEPDIR)/az_gsumd_puma.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gsumd_puma.o `test -f $(srcdir)/az_gsumd_puma.c || echo '$(srcdir)/'`$(srcdir)/az_gsumd_puma.c
+
+az_gsumd_puma.obj: $(srcdir)/az_gsumd_puma.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gsumd_puma.c' object='az_gsumd_puma.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gsumd_puma.Po' tmpdepfile='$(DEPDIR)/az_gsumd_puma.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gsumd_puma.obj `cygpath -w $(srcdir)/az_gsumd_puma.c`
+
+az_icc.o: $(srcdir)/az_icc.c
+@AMDEP_TRUE@	source='$(srcdir)/az_icc.c' object='az_icc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_icc.Po' tmpdepfile='$(DEPDIR)/az_icc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_icc.o `test -f $(srcdir)/az_icc.c || echo '$(srcdir)/'`$(srcdir)/az_icc.c
+
+az_icc.obj: $(srcdir)/az_icc.c
+@AMDEP_TRUE@	source='$(srcdir)/az_icc.c' object='az_icc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_icc.Po' tmpdepfile='$(DEPDIR)/az_icc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_icc.obj `cygpath -w $(srcdir)/az_icc.c`
+
+az_ilut.o: $(srcdir)/az_ilut.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ilut.c' object='az_ilut.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ilut.Po' tmpdepfile='$(DEPDIR)/az_ilut.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ilut.o `test -f $(srcdir)/az_ilut.c || echo '$(srcdir)/'`$(srcdir)/az_ilut.c
+
+az_ilut.obj: $(srcdir)/az_ilut.c
+@AMDEP_TRUE@	source='$(srcdir)/az_ilut.c' object='az_ilut.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_ilut.Po' tmpdepfile='$(DEPDIR)/az_ilut.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_ilut.obj `cygpath -w $(srcdir)/az_ilut.c`
+
+az_lu_y12.o: $(srcdir)/az_lu_y12.c
+@AMDEP_TRUE@	source='$(srcdir)/az_lu_y12.c' object='az_lu_y12.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_lu_y12.Po' tmpdepfile='$(DEPDIR)/az_lu_y12.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_lu_y12.o `test -f $(srcdir)/az_lu_y12.c || echo '$(srcdir)/'`$(srcdir)/az_lu_y12.c
+
+az_lu_y12.obj: $(srcdir)/az_lu_y12.c
+@AMDEP_TRUE@	source='$(srcdir)/az_lu_y12.c' object='az_lu_y12.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_lu_y12.Po' tmpdepfile='$(DEPDIR)/az_lu_y12.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_lu_y12.obj `cygpath -w $(srcdir)/az_lu_y12.c`
+
+az_poly.o: $(srcdir)/az_poly.c
+@AMDEP_TRUE@	source='$(srcdir)/az_poly.c' object='az_poly.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_poly.Po' tmpdepfile='$(DEPDIR)/az_poly.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_poly.o `test -f $(srcdir)/az_poly.c || echo '$(srcdir)/'`$(srcdir)/az_poly.c
+
+az_poly.obj: $(srcdir)/az_poly.c
+@AMDEP_TRUE@	source='$(srcdir)/az_poly.c' object='az_poly.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_poly.Po' tmpdepfile='$(DEPDIR)/az_poly.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_poly.obj `cygpath -w $(srcdir)/az_poly.c`
+
+az_qmrcgs.o: $(srcdir)/az_qmrcgs.c
+@AMDEP_TRUE@	source='$(srcdir)/az_qmrcgs.c' object='az_qmrcgs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_qmrcgs.Po' tmpdepfile='$(DEPDIR)/az_qmrcgs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_qmrcgs.o `test -f $(srcdir)/az_qmrcgs.c || echo '$(srcdir)/'`$(srcdir)/az_qmrcgs.c
+
+az_qmrcgs.obj: $(srcdir)/az_qmrcgs.c
+@AMDEP_TRUE@	source='$(srcdir)/az_qmrcgs.c' object='az_qmrcgs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_qmrcgs.Po' tmpdepfile='$(DEPDIR)/az_qmrcgs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_qmrcgs.obj `cygpath -w $(srcdir)/az_qmrcgs.c`
+
+az_rilu.o: $(srcdir)/az_rilu.c
+@AMDEP_TRUE@	source='$(srcdir)/az_rilu.c' object='az_rilu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_rilu.Po' tmpdepfile='$(DEPDIR)/az_rilu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_rilu.o `test -f $(srcdir)/az_rilu.c || echo '$(srcdir)/'`$(srcdir)/az_rilu.c
+
+az_rilu.obj: $(srcdir)/az_rilu.c
+@AMDEP_TRUE@	source='$(srcdir)/az_rilu.c' object='az_rilu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_rilu.Po' tmpdepfile='$(DEPDIR)/az_rilu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_rilu.obj `cygpath -w $(srcdir)/az_rilu.c`
+
+az_subdomain_solver.o: $(srcdir)/az_subdomain_solver.c
+@AMDEP_TRUE@	source='$(srcdir)/az_subdomain_solver.c' object='az_subdomain_solver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_subdomain_solver.Po' tmpdepfile='$(DEPDIR)/az_subdomain_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_subdomain_solver.o `test -f $(srcdir)/az_subdomain_solver.c || echo '$(srcdir)/'`$(srcdir)/az_subdomain_solver.c
+
+az_subdomain_solver.obj: $(srcdir)/az_subdomain_solver.c
+@AMDEP_TRUE@	source='$(srcdir)/az_subdomain_solver.c' object='az_subdomain_solver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_subdomain_solver.Po' tmpdepfile='$(DEPDIR)/az_subdomain_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_subdomain_solver.obj `cygpath -w $(srcdir)/az_subdomain_solver.c`
+
+az_xyce_gmres.o: $(srcdir)/az_xyce_gmres.c
+@AMDEP_TRUE@	source='$(srcdir)/az_xyce_gmres.c' object='az_xyce_gmres.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_xyce_gmres.Po' tmpdepfile='$(DEPDIR)/az_xyce_gmres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_xyce_gmres.o `test -f $(srcdir)/az_xyce_gmres.c || echo '$(srcdir)/'`$(srcdir)/az_xyce_gmres.c
+
+az_xyce_gmres.obj: $(srcdir)/az_xyce_gmres.c
+@AMDEP_TRUE@	source='$(srcdir)/az_xyce_gmres.c' object='az_xyce_gmres.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_xyce_gmres.Po' tmpdepfile='$(DEPDIR)/az_xyce_gmres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_xyce_gmres.obj `cygpath -w $(srcdir)/az_xyce_gmres.c`
+
+az_colperm.o: $(srcdir)/az_colperm.c
+@AMDEP_TRUE@	source='$(srcdir)/az_colperm.c' object='az_colperm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_colperm.Po' tmpdepfile='$(DEPDIR)/az_colperm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_colperm.o `test -f $(srcdir)/az_colperm.c || echo '$(srcdir)/'`$(srcdir)/az_colperm.c
+
+az_colperm.obj: $(srcdir)/az_colperm.c
+@AMDEP_TRUE@	source='$(srcdir)/az_colperm.c' object='az_colperm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_colperm.Po' tmpdepfile='$(DEPDIR)/az_colperm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_colperm.obj `cygpath -w $(srcdir)/az_colperm.c`
+
+az_matvec_mult.o: $(srcdir)/az_matvec_mult.c
+@AMDEP_TRUE@	source='$(srcdir)/az_matvec_mult.c' object='az_matvec_mult.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_matvec_mult.Po' tmpdepfile='$(DEPDIR)/az_matvec_mult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_matvec_mult.o `test -f $(srcdir)/az_matvec_mult.c || echo '$(srcdir)/'`$(srcdir)/az_matvec_mult.c
+
+az_matvec_mult.obj: $(srcdir)/az_matvec_mult.c
+@AMDEP_TRUE@	source='$(srcdir)/az_matvec_mult.c' object='az_matvec_mult.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_matvec_mult.Po' tmpdepfile='$(DEPDIR)/az_matvec_mult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_matvec_mult.obj `cygpath -w $(srcdir)/az_matvec_mult.c`
+
+az_old_matvec_mult.o: $(srcdir)/az_old_matvec_mult.c
+@AMDEP_TRUE@	source='$(srcdir)/az_old_matvec_mult.c' object='az_old_matvec_mult.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_old_matvec_mult.Po' tmpdepfile='$(DEPDIR)/az_old_matvec_mult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_old_matvec_mult.o `test -f $(srcdir)/az_old_matvec_mult.c || echo '$(srcdir)/'`$(srcdir)/az_old_matvec_mult.c
+
+az_old_matvec_mult.obj: $(srcdir)/az_old_matvec_mult.c
+@AMDEP_TRUE@	source='$(srcdir)/az_old_matvec_mult.c' object='az_old_matvec_mult.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_old_matvec_mult.Po' tmpdepfile='$(DEPDIR)/az_old_matvec_mult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_old_matvec_mult.obj `cygpath -w $(srcdir)/az_old_matvec_mult.c`
+
+az_precond.o: $(srcdir)/az_precond.c
+@AMDEP_TRUE@	source='$(srcdir)/az_precond.c' object='az_precond.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_precond.Po' tmpdepfile='$(DEPDIR)/az_precond.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_precond.o `test -f $(srcdir)/az_precond.c || echo '$(srcdir)/'`$(srcdir)/az_precond.c
+
+az_precond.obj: $(srcdir)/az_precond.c
+@AMDEP_TRUE@	source='$(srcdir)/az_precond.c' object='az_precond.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_precond.Po' tmpdepfile='$(DEPDIR)/az_precond.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_precond.obj `cygpath -w $(srcdir)/az_precond.c`
+
+az_scaling.o: $(srcdir)/az_scaling.c
+@AMDEP_TRUE@	source='$(srcdir)/az_scaling.c' object='az_scaling.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_scaling.Po' tmpdepfile='$(DEPDIR)/az_scaling.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_scaling.o `test -f $(srcdir)/az_scaling.c || echo '$(srcdir)/'`$(srcdir)/az_scaling.c
+
+az_scaling.obj: $(srcdir)/az_scaling.c
+@AMDEP_TRUE@	source='$(srcdir)/az_scaling.c' object='az_scaling.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_scaling.Po' tmpdepfile='$(DEPDIR)/az_scaling.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_scaling.obj `cygpath -w $(srcdir)/az_scaling.c`
+
+az_solve.o: $(srcdir)/az_solve.c
+@AMDEP_TRUE@	source='$(srcdir)/az_solve.c' object='az_solve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_solve.Po' tmpdepfile='$(DEPDIR)/az_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_solve.o `test -f $(srcdir)/az_solve.c || echo '$(srcdir)/'`$(srcdir)/az_solve.c
+
+az_solve.obj: $(srcdir)/az_solve.c
+@AMDEP_TRUE@	source='$(srcdir)/az_solve.c' object='az_solve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_solve.Po' tmpdepfile='$(DEPDIR)/az_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_solve.obj `cygpath -w $(srcdir)/az_solve.c`
+
+az_sort.o: $(srcdir)/az_sort.c
+@AMDEP_TRUE@	source='$(srcdir)/az_sort.c' object='az_sort.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_sort.Po' tmpdepfile='$(DEPDIR)/az_sort.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_sort.o `test -f $(srcdir)/az_sort.c || echo '$(srcdir)/'`$(srcdir)/az_sort.c
+
+az_sort.obj: $(srcdir)/az_sort.c
+@AMDEP_TRUE@	source='$(srcdir)/az_sort.c' object='az_sort.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_sort.Po' tmpdepfile='$(DEPDIR)/az_sort.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_sort.obj `cygpath -w $(srcdir)/az_sort.c`
+
+md_timer_mpi.o: $(srcdir)/md_timer_mpi.c
+@AMDEP_TRUE@	source='$(srcdir)/md_timer_mpi.c' object='md_timer_mpi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_timer_mpi.Po' tmpdepfile='$(DEPDIR)/md_timer_mpi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_timer_mpi.o `test -f $(srcdir)/md_timer_mpi.c || echo '$(srcdir)/'`$(srcdir)/md_timer_mpi.c
+
+md_timer_mpi.obj: $(srcdir)/md_timer_mpi.c
+@AMDEP_TRUE@	source='$(srcdir)/md_timer_mpi.c' object='md_timer_mpi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_timer_mpi.Po' tmpdepfile='$(DEPDIR)/md_timer_mpi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_timer_mpi.obj `cygpath -w $(srcdir)/md_timer_mpi.c`
+
+md_wrap_mpi_c.o: $(srcdir)/md_wrap_mpi_c.c
+@AMDEP_TRUE@	source='$(srcdir)/md_wrap_mpi_c.c' object='md_wrap_mpi_c.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_wrap_mpi_c.Po' tmpdepfile='$(DEPDIR)/md_wrap_mpi_c.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_mpi_c.o `test -f $(srcdir)/md_wrap_mpi_c.c || echo '$(srcdir)/'`$(srcdir)/md_wrap_mpi_c.c
+
+md_wrap_mpi_c.obj: $(srcdir)/md_wrap_mpi_c.c
+@AMDEP_TRUE@	source='$(srcdir)/md_wrap_mpi_c.c' object='md_wrap_mpi_c.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_wrap_mpi_c.Po' tmpdepfile='$(DEPDIR)/md_wrap_mpi_c.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_mpi_c.obj `cygpath -w $(srcdir)/md_wrap_mpi_c.c`
+
+md_timer_generic.o: $(srcdir)/md_timer_generic.c
+@AMDEP_TRUE@	source='$(srcdir)/md_timer_generic.c' object='md_timer_generic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_timer_generic.Po' tmpdepfile='$(DEPDIR)/md_timer_generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_timer_generic.o `test -f $(srcdir)/md_timer_generic.c || echo '$(srcdir)/'`$(srcdir)/md_timer_generic.c
+
+md_timer_generic.obj: $(srcdir)/md_timer_generic.c
+@AMDEP_TRUE@	source='$(srcdir)/md_timer_generic.c' object='md_timer_generic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_timer_generic.Po' tmpdepfile='$(DEPDIR)/md_timer_generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_timer_generic.obj `cygpath -w $(srcdir)/md_timer_generic.c`
+
+md_wrap_scalar_c.o: $(srcdir)/md_wrap_scalar_c.c
+@AMDEP_TRUE@	source='$(srcdir)/md_wrap_scalar_c.c' object='md_wrap_scalar_c.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_wrap_scalar_c.Po' tmpdepfile='$(DEPDIR)/md_wrap_scalar_c.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_scalar_c.o `test -f $(srcdir)/md_wrap_scalar_c.c || echo '$(srcdir)/'`$(srcdir)/md_wrap_scalar_c.c
+
+md_wrap_scalar_c.obj: $(srcdir)/md_wrap_scalar_c.c
+@AMDEP_TRUE@	source='$(srcdir)/md_wrap_scalar_c.c' object='md_wrap_scalar_c.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md_wrap_scalar_c.Po' tmpdepfile='$(DEPDIR)/md_wrap_scalar_c.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_scalar_c.obj `cygpath -w $(srcdir)/md_wrap_scalar_c.c`
+CCDEPMODE = @CCDEPMODE@
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+AztecOO.o: $(srcdir)/AztecOO.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO.cpp' object='AztecOO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO.Po' tmpdepfile='$(DEPDIR)/AztecOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO.o `test -f $(srcdir)/AztecOO.cpp || echo '$(srcdir)/'`$(srcdir)/AztecOO.cpp
+
+AztecOO.obj: $(srcdir)/AztecOO.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO.cpp' object='AztecOO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO.Po' tmpdepfile='$(DEPDIR)/AztecOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO.obj `cygpath -w $(srcdir)/AztecOO.cpp`
+
+AztecOO_Operator.o: $(srcdir)/AztecOO_Operator.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_Operator.cpp' object='AztecOO_Operator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_Operator.Po' tmpdepfile='$(DEPDIR)/AztecOO_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_Operator.o `test -f $(srcdir)/AztecOO_Operator.cpp || echo '$(srcdir)/'`$(srcdir)/AztecOO_Operator.cpp
+
+AztecOO_Operator.obj: $(srcdir)/AztecOO_Operator.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_Operator.cpp' object='AztecOO_Operator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_Operator.Po' tmpdepfile='$(DEPDIR)/AztecOO_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_Operator.obj `cygpath -w $(srcdir)/AztecOO_Operator.cpp`
+
+Epetra_MsrMatrix.o: $(srcdir)/Epetra_MsrMatrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_MsrMatrix.cpp' object='Epetra_MsrMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_MsrMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_MsrMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_MsrMatrix.o `test -f $(srcdir)/Epetra_MsrMatrix.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_MsrMatrix.cpp
+
+Epetra_MsrMatrix.obj: $(srcdir)/Epetra_MsrMatrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_MsrMatrix.cpp' object='Epetra_MsrMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_MsrMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_MsrMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_MsrMatrix.obj `cygpath -w $(srcdir)/Epetra_MsrMatrix.cpp`
+
+Aztec2Petra.o: $(srcdir)/Aztec2Petra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Aztec2Petra.cpp' object='Aztec2Petra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Aztec2Petra.Po' tmpdepfile='$(DEPDIR)/Aztec2Petra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Aztec2Petra.o `test -f $(srcdir)/Aztec2Petra.cpp || echo '$(srcdir)/'`$(srcdir)/Aztec2Petra.cpp
+
+Aztec2Petra.obj: $(srcdir)/Aztec2Petra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Aztec2Petra.cpp' object='Aztec2Petra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Aztec2Petra.Po' tmpdepfile='$(DEPDIR)/Aztec2Petra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Aztec2Petra.obj `cygpath -w $(srcdir)/Aztec2Petra.cpp`
+
+AZOO_iterate.o: $(srcdir)/AZOO_iterate.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AZOO_iterate.cpp' object='AZOO_iterate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AZOO_iterate.Po' tmpdepfile='$(DEPDIR)/AZOO_iterate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AZOO_iterate.o `test -f $(srcdir)/AZOO_iterate.cpp || echo '$(srcdir)/'`$(srcdir)/AZOO_iterate.cpp
+
+AZOO_iterate.obj: $(srcdir)/AZOO_iterate.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AZOO_iterate.cpp' object='AZOO_iterate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AZOO_iterate.Po' tmpdepfile='$(DEPDIR)/AZOO_iterate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AZOO_iterate.obj `cygpath -w $(srcdir)/AZOO_iterate.cpp`
+CXXDEPMODE = @CXXDEPMODE@
+
+.f.o:
+	$(F77COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.f.obj:
+	$(F77COMPILE) -c -o $@ `cygpath -w $<`
+
+az_reorder.o: $(srcdir)/az_reorder.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.o `test -f $(srcdir)/az_reorder.f || echo '$(srcdir)/'`$(srcdir)/az_reorder.f
+
+az_reorder.obj: $(srcdir)/az_reorder.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.obj `cygpath -w $(srcdir)/az_reorder.f`
+
+dlaic1.o: $(srcdir)/dlaic1.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaic1.o `test -f $(srcdir)/dlaic1.f || echo '$(srcdir)/'`$(srcdir)/dlaic1.f
+
+dlaic1.obj: $(srcdir)/dlaic1.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaic1.obj `cygpath -w $(srcdir)/dlaic1.f`
+
+dlaswp.o: $(srcdir)/dlaswp.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaswp.o `test -f $(srcdir)/dlaswp.f || echo '$(srcdir)/'`$(srcdir)/dlaswp.f
+
+dlaswp.obj: $(srcdir)/dlaswp.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaswp.obj `cygpath -w $(srcdir)/dlaswp.f`
+uninstall-info-am:
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgexecincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES) AztecOO_config.h.in $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)AztecOO_config.h.in$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags AztecOO_config.h.in $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/$(srcdir)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS) AztecOO_config.h
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am: install-pkgincludeHEADERS
+
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-libLIBRARIES install-man \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

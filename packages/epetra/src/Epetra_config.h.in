@@ -1,0 +1,139 @@
+/* src/Epetra_config.h.in.  Generated automatically from configure.ac by autoheader.  */
+
+/* Define to dummy `main' function (if any) required to link to the Fortran 77
+   libraries. */
+#undef F77_DUMMY_MAIN
+
+/* Define to a macro mangling the given C identifier (in lower and upper
+   case), which must not contain underscores, for linking with Fortran. */
+#undef F77_FUNC
+
+/* As F77_FUNC, but for C identifiers containing underscores. */
+#undef F77_FUNC_
+
+/* Define if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
+/* Define if you have a BLAS library. */
+#undef HAVE_BLAS
+
+/* Define if want to build with referenceblasandlapack enabled */
+#undef HAVE_BLASANDLAPACK
+
+/* define if bool is a built-in type */
+#undef HAVE_BOOL
+
+/* Define if you have the <cassert> header file. */
+#undef HAVE_CASSERT
+
+/* Define if you have the <cmath> header file. */
+#undef HAVE_CMATH
+
+/* Define if you have the <cstdio> header file. */
+#undef HAVE_CSTDIO
+
+/* Define if you have the <cstdlib> header file. */
+#undef HAVE_CSTDLIB
+
+/* Define if want to build with debug enabled */
+#undef HAVE_DEBUG
+
+/* Define if want to build with esi enabled */
+#undef HAVE_ESI
+
+/* Define if want to build with fatal_messages enabled */
+#undef HAVE_FATAL_MESSAGES
+
+/* Define if want to build with format_io enabled */
+#undef HAVE_FORMAT_IO
+
+/* Define if you have the <iomanip> header file. */
+#undef HAVE_IOMANIP
+
+/* Define if you have the <iomanip.h> header file. */
+#undef HAVE_IOMANIP_H
+
+/* Define if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define if you have the <iostream.h> header file. */
+#undef HAVE_IOSTREAM_H
+
+/* Define if you have LAPACK library. */
+#undef HAVE_LAPACK
+
+/* Define if you have the <math.h> header file. */
+#undef HAVE_MATH_H
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
+
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* define if the compiler accepts the new for scoping rules */
+#undef HAVE_NEW_FOR_SCOPING
+
+/* Define if want to build with opt enabled */
+#undef HAVE_OPTIMIZE
+
+/* Define if want to build with profile enabled */
+#undef HAVE_PROFILE
+
+/* Define if want to build with purify enabled */
+#undef HAVE_PURIFY
+
+/* Define if want to build with rtop enabled */
+#undef HAVE_RTOP
+
+/* Define if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* define if std::ios_base::fmtflags is supported type */
+#undef HAVE_STD_IOS_BASE_FMTFLAGS
+
+/* define if std::sprintf is supported */
+#undef HAVE_STD_SPRINTF
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
+
+/* Define if you have the <string> header file. */
+#undef HAVE_STRING
+
+/* Define if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if want to build with superlu enabled */
+#undef HAVE_SUPERLU
+
+/* Define if want to build with threads enabled */
+#undef HAVE_THREADS
+
+/* Define if want to build with warning_messages enabled */
+#undef HAVE_WARNING_MESSAGES
+
+/* Define if want to build with zoltan enabled */
+#undef HAVE_ZOLTAN
+
+/* Name of package */
+#undef PACKAGE
+
+/* define if compiling for ASCI Red, aka TFLOP */
+#undef TFLOP
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+#undef inline

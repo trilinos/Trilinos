@@ -1,0 +1,28 @@
+/* Trilinos_config.h.in.  Generated automatically from configure.ac by autoheader.  */
+
+/* Define if want to build with aztecoo enabled */
+#undef HAVE_AZTECOO
+
+/* Define if want to build with epetra enabled */
+#undef HAVE_EPETRA
+
+/* Define if want to build with ifpack enabled */
+#undef HAVE_IFPACK
+
+/* Define if want to build with komplex enabled */
+#undef HAVE_KOMPLEX
+
+/* Define if want to build with oldifpack enabled */
+#undef HAVE_OLDIFPACK
+
+/* Define if want to build with triutils enabled */
+#undef HAVE_TRIUTILS
+
+/* Define if want to build with referencey12m enabled */
+#undef HAVE_Y12M
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION

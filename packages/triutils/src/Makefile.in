@@ -1,0 +1,912 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside AztecOO. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+# For now, these are just guesses as to where the files belong.
+# Files that prove to be troublesome have been commented out and 
+# placed at the bottom of the appropriate section
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+CORE_H = \
+	$(srcdir)/Trilinos_Util.h
+
+
+CORE = \
+	$(srcdir)/Trilinos_Util_duscr_vbr.cpp \
+	$(srcdir)/Trilinos_Util_dusds_vbr.cpp \
+	$(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp \
+	$(srcdir)/Trilinos_Util_read_hb.cpp \
+	$(srcdir)/Trilinos_Util_svbrres.cpp \
+	$(srcdir)/Trilinos_Util_dusmm.cpp \
+	$(srcdir)/Trilinos_Util_scscmv.cpp \
+	$(srcdir)/Trilinos_Util_write_vec.cpp \
+	$(srcdir)/Trilinos_Util_create_vbr.cpp \
+	$(srcdir)/Trilinos_Util_msr2vbr.cpp \
+	$(srcdir)/Trilinos_Util_scscres.cpp \
+	$(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp \
+	$(srcdir)/Trilinos_Util_read_coo.cpp \
+	$(srcdir)/Trilinos_Util_smsrres.cpp \
+	$(srcdir)/Trilinos_Util_csrcsc.cpp \
+	$(srcdir)/Trilinos_Util_csrmsr.cpp \
+	$(srcdir)/Trilinos_Util_ssrcsr.cpp \
+	$(srcdir)/Trilinos_Util_coocsr.cpp \
+	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+
+
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+
+WITH_CPP_H = 
+
+WITH_CPP = 
+
+UTIL_H = \
+	$(srcdir)/iohb.h
+
+
+UTIL = \
+	$(srcdir)/iohb.cpp
+
+
+ENUM_H = 
+
+UNIPROC_H = 
+
+UNIPROC = 
+
+MPI_H = 
+MPI = 
+
+SERIAL_H = 
+SERIAL = 
+
+
+#Triutils does not support threads
+#EXTRA_MPISMP_H =
+
+#EXTRA_MPISMP =
+
+#if HAVE_THREADS
+
+#MPISMP_H = \
+#	$(EXTRA_MPISMP_H)
+#MPISMP = \
+#	$(EXTRA_MPISMP)
+
+#else
+MPISMP_H = 
+MPISMP = 
+
+
+#endif
+USERBASE_H = 
+
+LANG_WRAPS_H = 
+
+LANG_WRAPS = 
+
+DIST_H = 
+
+DIST = 
+
+COMP_H = 
+
+COMP = 
+
+
+# ------------------------------------------------------------------------
+# Aztec library specifications
+# ------------------------------------------------------------------------
+TRIUTILS_LIB = libtriutils.a
+
+TRIUTILS_H = \
+	$(CORE_H) \
+	$(WITH_CPP_H) \
+	$(UTIL_H) \
+	$(ENUM_H) \
+	$(UNIPROC_H) \
+	$(SERIAL_H) \
+	$(USERBASE_H) \
+	$(LANG_WRAPS_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+
+libtriutils_a_SOURCES = \
+	$(CORE) \
+	$(WITH_CPP) \
+	$(UTIL) \
+	$(UNIPROC) \
+	$(SERIAL) \
+	$(LANG_WRAPS) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libtriutils_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libtriutils_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libtriutils_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(TRIUTILS_LIB)
+
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+pkginclude_HEADERS = $(TRIUTILS_H)
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Triutils_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+pkgexecincludedir = $(exec_prefix)/include
+nodist_pkgexecinclude_HEADERS = Triutils_config.h
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+subdir = src
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = Triutils_config.h
+CONFIG_CLEAN_FILES =
+LIBRARIES = $(lib_LIBRARIES)
+
+libtriutils_a_DEPENDENCIES =
+am_libtriutils_a_OBJECTS = Trilinos_Util_duscr_vbr.$(OBJEXT) \
+	Trilinos_Util_dusds_vbr.$(OBJEXT) \
+	Trilinos_Util_distrib_vbr_matrix.$(OBJEXT) \
+	Trilinos_Util_read_hb.$(OBJEXT) Trilinos_Util_svbrres.$(OBJEXT) \
+	Trilinos_Util_dusmm.$(OBJEXT) Trilinos_Util_scscmv.$(OBJEXT) \
+	Trilinos_Util_write_vec.$(OBJEXT) \
+	Trilinos_Util_create_vbr.$(OBJEXT) \
+	Trilinos_Util_msr2vbr.$(OBJEXT) Trilinos_Util_scscres.$(OBJEXT) \
+	Trilinos_Util_distrib_msr_matrix.$(OBJEXT) \
+	Trilinos_Util_read_coo.$(OBJEXT) \
+	Trilinos_Util_smsrres.$(OBJEXT) Trilinos_Util_csrcsc.$(OBJEXT) \
+	Trilinos_Util_csrmsr.$(OBJEXT) Trilinos_Util_ssrcsr.$(OBJEXT) \
+	Trilinos_Util_coocsr.$(OBJEXT) \
+	Trilinos_Util_ReadHb2Epetra.$(OBJEXT) \
+	Trilinos_Util_ReadHpc2Epetra.$(OBJEXT) \
+	Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT) iohb.$(OBJEXT)
+libtriutils_a_OBJECTS = $(am_libtriutils_a_OBJECTS)
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_coocsr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_create_vbr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_csrcsc.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_csrmsr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_duscr_vbr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_dusds_vbr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_dusmm.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_msr2vbr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_read_coo.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_read_hb.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_scscmv.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_scscres.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_smsrres.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_ssrcsr.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_svbrres.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Trilinos_Util_write_vec.Po \
+@AMDEP_TRUE@	$(DEPDIR)/iohb.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+DIST_SOURCES = $(libtriutils_a_SOURCES)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+
+DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Makefile.am \
+	Makefile.in Triutils_config.h.in
+SOURCES = $(libtriutils_a_SOURCES)
+
+all: Triutils_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o .obj
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src/Makefile
+Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+Triutils_config.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/Triutils_config.h.in $(top_builddir)/config.status
+	@rm -f stamp-h stamp-hT
+	@echo timestamp > stamp-hT 2> /dev/null
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=src/Triutils_config.h:src/Triutils_config.h.in \
+	     $(SHELL) ./config.status
+	@mv stamp-hT stamp-h
+$(srcdir)/Triutils_config.h.in:  $(srcdir)/./stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/./stamp-h.in; \
+		$(MAKE) $(srcdir)/./stamp-h.in; \
+	else :; fi
+$(srcdir)/./stamp-h.in: $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	@rm -f $(srcdir)/./stamp-h.in $(srcdir)/./stamp-h.inT
+	@echo timestamp > $(srcdir)/./stamp-h.inT 2> /dev/null
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@mv $(srcdir)/./stamp-h.inT $(srcdir)/./stamp-h.in
+
+distclean-hdr:
+	-rm -f Triutils_config.h
+
+AR = ar
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+Trilinos_Util_duscr_vbr.$(OBJEXT): $(srcdir)/Trilinos_Util_duscr_vbr.cpp
+Trilinos_Util_dusds_vbr.$(OBJEXT): $(srcdir)/Trilinos_Util_dusds_vbr.cpp
+Trilinos_Util_distrib_vbr_matrix.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp
+Trilinos_Util_read_hb.$(OBJEXT): $(srcdir)/Trilinos_Util_read_hb.cpp
+Trilinos_Util_svbrres.$(OBJEXT): $(srcdir)/Trilinos_Util_svbrres.cpp
+Trilinos_Util_dusmm.$(OBJEXT): $(srcdir)/Trilinos_Util_dusmm.cpp
+Trilinos_Util_scscmv.$(OBJEXT): $(srcdir)/Trilinos_Util_scscmv.cpp
+Trilinos_Util_write_vec.$(OBJEXT): $(srcdir)/Trilinos_Util_write_vec.cpp
+Trilinos_Util_create_vbr.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_create_vbr.cpp
+Trilinos_Util_msr2vbr.$(OBJEXT): $(srcdir)/Trilinos_Util_msr2vbr.cpp
+Trilinos_Util_scscres.$(OBJEXT): $(srcdir)/Trilinos_Util_scscres.cpp
+Trilinos_Util_distrib_msr_matrix.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp
+Trilinos_Util_read_coo.$(OBJEXT): $(srcdir)/Trilinos_Util_read_coo.cpp
+Trilinos_Util_smsrres.$(OBJEXT): $(srcdir)/Trilinos_Util_smsrres.cpp
+Trilinos_Util_csrcsc.$(OBJEXT): $(srcdir)/Trilinos_Util_csrcsc.cpp
+Trilinos_Util_csrmsr.$(OBJEXT): $(srcdir)/Trilinos_Util_csrmsr.cpp
+Trilinos_Util_ssrcsr.$(OBJEXT): $(srcdir)/Trilinos_Util_ssrcsr.cpp
+Trilinos_Util_coocsr.$(OBJEXT): $(srcdir)/Trilinos_Util_coocsr.cpp
+Trilinos_Util_ReadHb2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
+Trilinos_Util_ReadHpc2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp
+Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+iohb.$(OBJEXT): $(srcdir)/iohb.cpp
+libtriutils.a: $(libtriutils_a_OBJECTS) $(libtriutils_a_DEPENDENCIES) 
+	-rm -f libtriutils.a
+	$(libtriutils_a_AR) libtriutils.a $(libtriutils_a_OBJECTS) $(libtriutils_a_LIBADD)
+	$(RANLIB) libtriutils.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_coocsr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_create_vbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_csrcsc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_csrmsr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_duscr_vbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_dusds_vbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_dusmm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_msr2vbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_read_coo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_read_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_scscmv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_scscres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_smsrres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_ssrcsr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_svbrres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Trilinos_Util_write_vec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/iohb.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+Trilinos_Util_duscr_vbr.o: $(srcdir)/Trilinos_Util_duscr_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_duscr_vbr.cpp' object='Trilinos_Util_duscr_vbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_duscr_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_duscr_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_duscr_vbr.o `test -f $(srcdir)/Trilinos_Util_duscr_vbr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_duscr_vbr.cpp
+
+Trilinos_Util_duscr_vbr.obj: $(srcdir)/Trilinos_Util_duscr_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_duscr_vbr.cpp' object='Trilinos_Util_duscr_vbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_duscr_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_duscr_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_duscr_vbr.obj `cygpath -w $(srcdir)/Trilinos_Util_duscr_vbr.cpp`
+
+Trilinos_Util_dusds_vbr.o: $(srcdir)/Trilinos_Util_dusds_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_dusds_vbr.cpp' object='Trilinos_Util_dusds_vbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_dusds_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_dusds_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_dusds_vbr.o `test -f $(srcdir)/Trilinos_Util_dusds_vbr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_dusds_vbr.cpp
+
+Trilinos_Util_dusds_vbr.obj: $(srcdir)/Trilinos_Util_dusds_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_dusds_vbr.cpp' object='Trilinos_Util_dusds_vbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_dusds_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_dusds_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_dusds_vbr.obj `cygpath -w $(srcdir)/Trilinos_Util_dusds_vbr.cpp`
+
+Trilinos_Util_distrib_vbr_matrix.o: $(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp' object='Trilinos_Util_distrib_vbr_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_distrib_vbr_matrix.o `test -f $(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp
+
+Trilinos_Util_distrib_vbr_matrix.obj: $(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp' object='Trilinos_Util_distrib_vbr_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_distrib_vbr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_distrib_vbr_matrix.obj `cygpath -w $(srcdir)/Trilinos_Util_distrib_vbr_matrix.cpp`
+
+Trilinos_Util_read_hb.o: $(srcdir)/Trilinos_Util_read_hb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_read_hb.cpp' object='Trilinos_Util_read_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_read_hb.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_read_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_read_hb.o `test -f $(srcdir)/Trilinos_Util_read_hb.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_read_hb.cpp
+
+Trilinos_Util_read_hb.obj: $(srcdir)/Trilinos_Util_read_hb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_read_hb.cpp' object='Trilinos_Util_read_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_read_hb.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_read_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_read_hb.obj `cygpath -w $(srcdir)/Trilinos_Util_read_hb.cpp`
+
+Trilinos_Util_svbrres.o: $(srcdir)/Trilinos_Util_svbrres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_svbrres.cpp' object='Trilinos_Util_svbrres.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_svbrres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_svbrres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_svbrres.o `test -f $(srcdir)/Trilinos_Util_svbrres.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_svbrres.cpp
+
+Trilinos_Util_svbrres.obj: $(srcdir)/Trilinos_Util_svbrres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_svbrres.cpp' object='Trilinos_Util_svbrres.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_svbrres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_svbrres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_svbrres.obj `cygpath -w $(srcdir)/Trilinos_Util_svbrres.cpp`
+
+Trilinos_Util_dusmm.o: $(srcdir)/Trilinos_Util_dusmm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_dusmm.cpp' object='Trilinos_Util_dusmm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_dusmm.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_dusmm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_dusmm.o `test -f $(srcdir)/Trilinos_Util_dusmm.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_dusmm.cpp
+
+Trilinos_Util_dusmm.obj: $(srcdir)/Trilinos_Util_dusmm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_dusmm.cpp' object='Trilinos_Util_dusmm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_dusmm.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_dusmm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_dusmm.obj `cygpath -w $(srcdir)/Trilinos_Util_dusmm.cpp`
+
+Trilinos_Util_scscmv.o: $(srcdir)/Trilinos_Util_scscmv.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_scscmv.cpp' object='Trilinos_Util_scscmv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_scscmv.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_scscmv.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_scscmv.o `test -f $(srcdir)/Trilinos_Util_scscmv.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_scscmv.cpp
+
+Trilinos_Util_scscmv.obj: $(srcdir)/Trilinos_Util_scscmv.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_scscmv.cpp' object='Trilinos_Util_scscmv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_scscmv.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_scscmv.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_scscmv.obj `cygpath -w $(srcdir)/Trilinos_Util_scscmv.cpp`
+
+Trilinos_Util_write_vec.o: $(srcdir)/Trilinos_Util_write_vec.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_write_vec.cpp' object='Trilinos_Util_write_vec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_write_vec.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_write_vec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_write_vec.o `test -f $(srcdir)/Trilinos_Util_write_vec.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_write_vec.cpp
+
+Trilinos_Util_write_vec.obj: $(srcdir)/Trilinos_Util_write_vec.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_write_vec.cpp' object='Trilinos_Util_write_vec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_write_vec.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_write_vec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_write_vec.obj `cygpath -w $(srcdir)/Trilinos_Util_write_vec.cpp`
+
+Trilinos_Util_create_vbr.o: $(srcdir)/Trilinos_Util_create_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_create_vbr.cpp' object='Trilinos_Util_create_vbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_create_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_create_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_create_vbr.o `test -f $(srcdir)/Trilinos_Util_create_vbr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_create_vbr.cpp
+
+Trilinos_Util_create_vbr.obj: $(srcdir)/Trilinos_Util_create_vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_create_vbr.cpp' object='Trilinos_Util_create_vbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_create_vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_create_vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_create_vbr.obj `cygpath -w $(srcdir)/Trilinos_Util_create_vbr.cpp`
+
+Trilinos_Util_msr2vbr.o: $(srcdir)/Trilinos_Util_msr2vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_msr2vbr.cpp' object='Trilinos_Util_msr2vbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_msr2vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_msr2vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_msr2vbr.o `test -f $(srcdir)/Trilinos_Util_msr2vbr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_msr2vbr.cpp
+
+Trilinos_Util_msr2vbr.obj: $(srcdir)/Trilinos_Util_msr2vbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_msr2vbr.cpp' object='Trilinos_Util_msr2vbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_msr2vbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_msr2vbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_msr2vbr.obj `cygpath -w $(srcdir)/Trilinos_Util_msr2vbr.cpp`
+
+Trilinos_Util_scscres.o: $(srcdir)/Trilinos_Util_scscres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_scscres.cpp' object='Trilinos_Util_scscres.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_scscres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_scscres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_scscres.o `test -f $(srcdir)/Trilinos_Util_scscres.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_scscres.cpp
+
+Trilinos_Util_scscres.obj: $(srcdir)/Trilinos_Util_scscres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_scscres.cpp' object='Trilinos_Util_scscres.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_scscres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_scscres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_scscres.obj `cygpath -w $(srcdir)/Trilinos_Util_scscres.cpp`
+
+Trilinos_Util_distrib_msr_matrix.o: $(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp' object='Trilinos_Util_distrib_msr_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_distrib_msr_matrix.o `test -f $(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp
+
+Trilinos_Util_distrib_msr_matrix.obj: $(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp' object='Trilinos_Util_distrib_msr_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_distrib_msr_matrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_distrib_msr_matrix.obj `cygpath -w $(srcdir)/Trilinos_Util_distrib_msr_matrix.cpp`
+
+Trilinos_Util_read_coo.o: $(srcdir)/Trilinos_Util_read_coo.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_read_coo.cpp' object='Trilinos_Util_read_coo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_read_coo.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_read_coo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_read_coo.o `test -f $(srcdir)/Trilinos_Util_read_coo.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_read_coo.cpp
+
+Trilinos_Util_read_coo.obj: $(srcdir)/Trilinos_Util_read_coo.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_read_coo.cpp' object='Trilinos_Util_read_coo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_read_coo.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_read_coo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_read_coo.obj `cygpath -w $(srcdir)/Trilinos_Util_read_coo.cpp`
+
+Trilinos_Util_smsrres.o: $(srcdir)/Trilinos_Util_smsrres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_smsrres.cpp' object='Trilinos_Util_smsrres.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_smsrres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_smsrres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_smsrres.o `test -f $(srcdir)/Trilinos_Util_smsrres.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_smsrres.cpp
+
+Trilinos_Util_smsrres.obj: $(srcdir)/Trilinos_Util_smsrres.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_smsrres.cpp' object='Trilinos_Util_smsrres.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_smsrres.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_smsrres.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_smsrres.obj `cygpath -w $(srcdir)/Trilinos_Util_smsrres.cpp`
+
+Trilinos_Util_csrcsc.o: $(srcdir)/Trilinos_Util_csrcsc.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_csrcsc.cpp' object='Trilinos_Util_csrcsc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_csrcsc.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_csrcsc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_csrcsc.o `test -f $(srcdir)/Trilinos_Util_csrcsc.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_csrcsc.cpp
+
+Trilinos_Util_csrcsc.obj: $(srcdir)/Trilinos_Util_csrcsc.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_csrcsc.cpp' object='Trilinos_Util_csrcsc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_csrcsc.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_csrcsc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_csrcsc.obj `cygpath -w $(srcdir)/Trilinos_Util_csrcsc.cpp`
+
+Trilinos_Util_csrmsr.o: $(srcdir)/Trilinos_Util_csrmsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_csrmsr.cpp' object='Trilinos_Util_csrmsr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_csrmsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_csrmsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_csrmsr.o `test -f $(srcdir)/Trilinos_Util_csrmsr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_csrmsr.cpp
+
+Trilinos_Util_csrmsr.obj: $(srcdir)/Trilinos_Util_csrmsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_csrmsr.cpp' object='Trilinos_Util_csrmsr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_csrmsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_csrmsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_csrmsr.obj `cygpath -w $(srcdir)/Trilinos_Util_csrmsr.cpp`
+
+Trilinos_Util_ssrcsr.o: $(srcdir)/Trilinos_Util_ssrcsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ssrcsr.cpp' object='Trilinos_Util_ssrcsr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ssrcsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ssrcsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ssrcsr.o `test -f $(srcdir)/Trilinos_Util_ssrcsr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ssrcsr.cpp
+
+Trilinos_Util_ssrcsr.obj: $(srcdir)/Trilinos_Util_ssrcsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ssrcsr.cpp' object='Trilinos_Util_ssrcsr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ssrcsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ssrcsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ssrcsr.obj `cygpath -w $(srcdir)/Trilinos_Util_ssrcsr.cpp`
+
+Trilinos_Util_coocsr.o: $(srcdir)/Trilinos_Util_coocsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_coocsr.cpp' object='Trilinos_Util_coocsr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_coocsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_coocsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_coocsr.o `test -f $(srcdir)/Trilinos_Util_coocsr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_coocsr.cpp
+
+Trilinos_Util_coocsr.obj: $(srcdir)/Trilinos_Util_coocsr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_coocsr.cpp' object='Trilinos_Util_coocsr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_coocsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_coocsr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_coocsr.obj `cygpath -w $(srcdir)/Trilinos_Util_coocsr.cpp`
+
+Trilinos_Util_ReadHb2Epetra.o: $(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp' object='Trilinos_Util_ReadHb2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHb2Epetra.o `test -f $(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
+
+Trilinos_Util_ReadHb2Epetra.obj: $(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp' object='Trilinos_Util_ReadHb2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHb2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp`
+
+Trilinos_Util_ReadHpc2Epetra.o: $(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp' object='Trilinos_Util_ReadHpc2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHpc2Epetra.o `test -f $(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp
+
+Trilinos_Util_ReadHpc2Epetra.obj: $(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp' object='Trilinos_Util_ReadHpc2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHpc2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp`
+
+Trilinos_Util_ReadHb2EpetraVbr.o: $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp' object='Trilinos_Util_ReadHb2EpetraVbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHb2EpetraVbr.o `test -f $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+
+Trilinos_Util_ReadHb2EpetraVbr.obj: $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp' object='Trilinos_Util_ReadHb2EpetraVbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHb2EpetraVbr.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp`
+
+iohb.o: $(srcdir)/iohb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/iohb.cpp' object='iohb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/iohb.Po' tmpdepfile='$(DEPDIR)/iohb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o iohb.o `test -f $(srcdir)/iohb.cpp || echo '$(srcdir)/'`$(srcdir)/iohb.cpp
+
+iohb.obj: $(srcdir)/iohb.cpp
+@AMDEP_TRUE@	source='$(srcdir)/iohb.cpp' object='iohb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/iohb.Po' tmpdepfile='$(DEPDIR)/iohb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o iohb.obj `cygpath -w $(srcdir)/iohb.cpp`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgexecincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES) Triutils_config.h.in $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)Triutils_config.h.in$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags Triutils_config.h.in $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/$(srcdir)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS) Triutils_config.h
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am: install-pkgincludeHEADERS
+
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-libLIBRARIES install-man \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
