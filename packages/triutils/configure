@@ -6601,6 +6601,7 @@ echo "$as_me: error: Cannot find math library" >&2;}
 fi
 
 
+if test "X$ac_cv_header_malloc_h" != "Xyes"; then
 
 for ac_header in stdlib.h
 do
@@ -6824,9 +6825,10 @@ fi
 
 
 
-#if test "X$ac_cv_func_malloc_works" != "Xyes"; then
-#  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
-#fi
+ #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+ #  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
+ #fi
+fi
 
 
 
@@ -8124,7 +8126,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8127: \"$ac_link\") >&5
+(eval echo $as_me:8129: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8204,7 +8206,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8207: \"$ac_link\") >&5
+(eval echo $as_me:8209: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -197,10 +197,12 @@ dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-AC_FUNC_MALLOC
-#if test "X$ac_cv_func_malloc_works" != "Xyes"; then
-#  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
-#fi
+if test "X$ac_cv_header_malloc_h" != "Xyes"; then
+ AC_FUNC_MALLOC
+ #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+ #  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
+ #fi
+fi
 
 dnl Check for user-specified names for BLAS
 TAC_ARG_WITH_BLASLIB
