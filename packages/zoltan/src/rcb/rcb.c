@@ -65,10 +65,10 @@ static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double,
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
 static int RCB_CHECK = 1;
 
-/*  RCB_STATS = 0  No statistics logging */
-/*  RCB_STATS = 1  Log times and counts, print summary */
-/*  RCB_STATS = 2  Log times and counts, print for each proc */
-static int RCB_STATS = 1;
+/*  RCB_OUTPUT_LEVEL = 0  No statistics logging */
+/*  RCB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
+/*  RCB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
+static int RCB_OUTPUT_LEVEL = 1;
 
 
 /*  Parameters structure for RCB method.  Used in  */
@@ -77,7 +77,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_OVERALLOC", NULL, "DOUBLE" },
                   { "RCB_REUSE", NULL, "INT" },
                   { "RCB_CHECK", NULL, "INT" },
-                  { "RCB_STATS", NULL, "INT" },
+                  { "RCB_OUTPUT_LEVEL", NULL, "INT" },
                   { "KEEP_CUTS", NULL, "INT" },
                   { NULL, NULL, NULL } };
 
@@ -139,17 +139,18 @@ int LB_rcb(
     LB_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
     LB_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
     LB_Bind_Param(RCB_params, "RCB_CHECK", (void *) &check);
-    LB_Bind_Param(RCB_params, "RCB_STATS", (void *) &stats);
+    LB_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
     LB_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
     check = RCB_CHECK;
-    stats = RCB_STATS;
+    stats = RCB_OUTPUT_LEVEL;
     gen_tree = 0;
     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
-    LB_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc);
+    LB_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc,
+                         lb->Debug_Proc);
 
     *num_export = -1;  /* We don't compute the export map. */
 
@@ -709,7 +710,7 @@ static int rcb(
   lb_time[0] += (end_time - start_time);
 
   if (lb->Debug_Level >= LB_DEBUG_ATIME) {
-    if (lb->Proc == 0) {
+    if (lb->Proc == lb->Debug_Proc) {
       printf("ZOLTAN RCB Times:  \n");
     }
     LB_Print_Stats(lb, lb_time[0], "ZOLTAN     Build:       ");
@@ -842,16 +843,17 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       struct rcb_box *rcbbox, int reuse, int stats)
 
 {
-  int i,proc,nprocs,sum,min,max;
+  int i,proc,nprocs,sum,min,max,print_proc;
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
 
   MPI_Comm_rank(lb->Communicator,&proc);
   MPI_Comm_size(lb->Communicator,&nprocs);
+  print_proc = lb->Debug_Proc;
   
-  if (proc == 0) printf("RCB total time: %g (secs)\n",timetotal);
+  if (proc == print_proc) printf("RCB total time: %g (secs)\n",timetotal);
 
-  if (proc == 0) printf("RCB Statistics:\n");
+  if (proc == print_proc) printf("RCB Statistics:\n");
 
   MPI_Barrier(lb->Communicator);
 
@@ -862,7 +864,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
 
-  if (proc == 0) {
+  if (proc == print_proc) {
     printf(" Total weight of dots = %g\n",wttot);
     printf(" Weight on each proc: ave = %g, max = %g, min = %g\n",
 	   wttot/nprocs,wtmax,wtmin);
@@ -875,7 +877,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
   MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   
-  if (proc == 0) printf(" Maximum weight of single dot = %g\n",wtmax);
+  if (proc == print_proc) printf(" Maximum weight of single dot = %g\n",wtmax);
 
   MPI_Barrier(lb->Communicator);
   if (stats > 1)  printf("    Proc %d max weight = %g\n",proc,weight);
@@ -886,7 +888,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1)  
@@ -896,7 +898,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1) 
@@ -906,7 +908,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1) 
@@ -916,7 +918,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1) 
@@ -926,7 +928,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1) 
@@ -937,7 +939,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
     MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
     ave = ((double) sum)/nprocs;
-    if (proc == 0) 
+    if (proc == print_proc) 
       printf(" # of Reuse: ave = %g, min = %d, max = %d\n",ave,min,max);
     MPI_Barrier(lb->Communicator);
     if (stats > 1) 
@@ -948,7 +950,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (stats > 1) 
@@ -960,7 +962,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -971,7 +973,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -982,7 +984,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -993,7 +995,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -1003,10 +1005,10 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   /* RCB boxes for each proc */
   
   if (stats > 1)  {
-    if (proc == 0) printf(" RCB sub-domain boxes:\n");
+    if (proc == print_proc) printf(" RCB sub-domain boxes:\n");
     for (i = 0; i < 3; i++) {
       MPI_Barrier(lb->Communicator);
-      if (proc == 0) printf("    Dimension %d\n",i+1);
+      if (proc == print_proc) printf("    Dimension %d\n",i+1);
       MPI_Barrier(lb->Communicator);
       printf("      Proc = %d: Box = %g %g\n",
 	     proc,rcbbox->lo[i],rcbbox->hi[i]);
