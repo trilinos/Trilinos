@@ -28,18 +28,15 @@
 
 <h2>
 <a NAME="HSFC"></a>Hilbert Space Filling Curve (HSFC)</h2>
-This partitioning algorithm is based on the 2D & 3D Inverse Hilbert
-Space-Filling Curve code developed by H. Carter Edwards and on the BSFC
-partitioning implementation by Andrew C. Bauer, Department of Engineering, State University
-of New York at Buffalo, as his summer project at SNL in 2001.
+This partitioning algorithm is based on the 2D & 3D Hilbert tables used in the Octree
+partitioner and on the BSFC partitioning implementation by Andrew C. Bauer, Department
+of Engineering, State University of New York at Buffalo, as his summer project at SNL
+in 2001.
 <p>
-The Inverse Hilbert Space-Filling Curve routines by H. Carter Edwards map a point in
-two or three dimensions into the interval [0,infinity).  This implementation further
-scales the Inverse Hilbert coordinate to a double precision floating point
-number in the unit interval [0,1].  This algorithm is designed to work for one,
-two, or three
-dimensional problems.  (The one-dimensional inverse Hilbert curve is defined here
-as the identity function, f(x)=x for all x).
+The Inverse Hilbert Space-Filling Curve functions map a point in one, two or three dimensions
+into the interval [0,infinity).  The Hilbert functions that map [0, infinity) to normal spatial
+coordinates are also provided. (The one-dimensional inverse Hilbert curve is defined here
+as the identity function, f(x)=x for all x.)
 <p>
 The algorithm seeks to divide [0,1] into P intervals each containing
 the same weight of objects associated to these intervals by their inverse Hilbert
@@ -54,12 +51,15 @@ containing a cut.
 This code returns an error if the final imbalance exceeds the user specified tolerance.
 <p>
 This code implements both the point assign and box assign functionality.  The point
-assign determines an appropriate partition interval (associated with a specific processor)
+assign determines an appropriate partition (associated with a specific group of processors)
 for a new point.   The box assign determines the list of processors
 whose associated subdomains intersect the given box.  In order to
 use either of these routines, the user parameter KEEP_CUTS must be turned on.
-Both point assign and box assign now work for any points or boxes in space even if
-they are exterior to the original bounding box.
+Both point assign and box assign now work for points or boxes anywhere in space even if
+they are exterior to the original bounding box.  If a partition is empty (due to the
+partition being assigned zero work), it is not included in the list of partitions
+returned by box assign.  Note: the original box assign algorithm was not rigorous and
+may have missed partitions.  This version is both rigorous and fast.
 <p>
 The Zoltan implementation of HSFC has one parameter that can be modified
 by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>

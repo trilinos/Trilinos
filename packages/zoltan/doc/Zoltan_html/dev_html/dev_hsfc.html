@@ -33,40 +33,38 @@
 <H3>
 Outline of Algorithm</H3>
 
-This partitioning algorithm is based on the 2D & 3D Inverse Hilbert
-Space-Filling Curve code developed by H. Carter Edwards and on the BSFC
-partitioning implementation by Andrew C. Bauer, Department of Engineering,
-State University of New York at Buffalo, as his summer project at SNL in 2001.
-Please refer to the corresponding section in the Zoltan User's guide,
+This partitioning algorithm is based on the 2D & 3D Hilbert tables used in Octree
+and on the BSFC partitioning implementation by Andrew C. Bauer, Department of
+Engineering, State University of New York at Buffalo, as his summer project at 
+SNL in 2001.  Please refer to the corresponding section in the Zoltan User's guide,
 <a href="../ug_html/ug_alg_hsfc.html"><b>Hilbert Space Filling Curve (HSFC),</b></a>
 for information about how to use this module and its parameters.
 <p>
 First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
-If the objects have multiple weights, only the first weight is used.  The smallest
+If the objects have multiple weights, only the first weight is currenlty used.  The smallest
 axis-aligned box is found that contains
-all objects using their two or three dimensional coordinates.
+all of the objects using their two or three dimensional spatial coordinates.
 This bounding box is slightly expanded to insure that all objects are strictly
-interior to the boundary surface. The bounding box is necessary to calculate
+interior to the boundary surface. The bounding box is necessary in order to calculate
 the inverse Hilbert Space Filling curve coordinate. The inverse Hilbert
-coordinate is calculated, scaled to the unit interval [0,1] and stored as a
-double precision floating point value for each object. This code works on problems
-with one, two or three dimensions (the 1-D Inverse Hilbert coordinate is simply the problem
-coordinate itself.)
+coordinate is calculated and stored as a double precision floating point value for
+each object. This code works on problems with one, two or three dimensions (the
+1-D Inverse Hilbert coordinate is simply the problem coordinate itself.)
 <p>
 The algorithm seeks to cut the unit interval into P segments containing equal
 weights of objects associated to the segments by their inverse Hilbert coordinates.
-(For the future, the code allows a user vector to specify the desired fraction
-of the total weight to be assigned to each interval. Note, 0 prevents any object
-being assigned to the corresponding interval. When Zoltan has a mechanism to allow
-the user to input a vector user parameter, this can be finished.)
-The unit interval is divided into N bins. (N=k(P-1)+1, where k is a
+The code allows a user vector to specify the desired fraction
+of the total weight to be assigned to each interval. Note, a zero weight fraction prevents any object
+being assigned to the corresponding interval. The unit interval is divided into N bins, 
+N=k(P-1)+1, where k is a
 small positive constant.)  Each bin has an left and right endpoint
 specifying the half-open interval [l,r) associated with the bin. The bins form a
 non-overlapping cover of [0,1] with the right endpoint of the last bin forced to include 1.
 The bins are of equal size on the first loop.  (Hence each interval or part of the
 partition is a collection of bins.)
-<p> For each loop, an MPI_Allreduce call is made to
+<p>
+For each loop, an MPI_Allreduce call is made to
 globally sum the weights in each bin.  This call also determines the maximum and
 minimum (inverse Hilbert) coordinate found in each bin.  A greedy algorithm sums the
 weights of the bins from left to right until the next bin would cause an overflow for
@@ -129,12 +127,35 @@ outside the original bounding box.
 The user can use
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
 to determine the partitions whose
-corresponding subdomains intersect the user's box.  Currently,
-this algorithm creates a regular lattice of points filling the user's box.
-The point assign function is called repeatedly to determine the partition
-for each lattice point.  The function then refines the lattice and repeats
-the process until the same list of partitions is obtained.  This list is
-returned to the user.  This function requires the KEEP_CUTS parameter to be set by the user.
+corresponding subdomains intersect the user's query box.
+Although very different in implementation, the papers by Lawder and King ("Querying Multi-
+dimensional Data Index Using the Hilbert Space-Filling Curve", 2000, etc.) were the original
+inspiration for this algorithm. The Zoltan_HSFC_box_assign routine primarily scales the
+user query region and determines its intersection with the Hilbert's bounding box.  Points
+exterior to the bounding box get projected along the coordinate axis onto the bounding box.
+A fuzzy region is built around query points and lines to create the boxes required for the search.
+It also handles the trivial one-dimensional case.  Otherwise it repeatedly calls the 2d and 3d
+query functions using the next highest partition's left end point to start the search.  These query
+routines return the next point on the Hilbert curve to enter the query region. A binary
+search finds the partition associated with this point.  The query functions are called one more
+time than the number of partitions that have points interior to the query region.
+<p>
+The query functions decompose the unit square (or cube) level by level like the Octree method.
+Each level divides the remaining region into quadrants (or octets in 3d).  At each level, the
+quadrant with the smallest inverse Hilbert coordinate (that is, occurring first along the Hilbert curve)
+whose inverse Hilbert coordinate is equal or larger than the starting inverse Hilbert coordinate and which
+intersects with query region is selected. Thus, each level calculates the next 2 bits
+(3 bits in 3d) of the inverst Hilbert coordinate of the next point to enter the query region.  No more
+than once per call to the query function, the function may backtrack to a nearest previous
+level that has another quadrant that intersects the query region and has a higher Hilbert coordinate.
+<p>
+In order to determine the intersection with the query region, the next 2 bits (3 in 3 dimensions) of 
+the  Hilbert transformation
+are also computed (by table lookup) at each level for the quadrant being tested. These bits are
+compared to the the bits resulting from the intersection of the query region with the region
+determined by the spatial coordinates computed to the precision of the previous levels.
+<p>
+This function requires the KEEP_CUTS parameter to be set by the user.
 The Box Assign function now works for any box in space, even if it has regions outside the
 original bounding box.
 
