@@ -68,6 +68,7 @@ bool Newton::compute(Abstract::Vector& dir,
 {
   // Compute F at current solution
   bool ok = soln.computeF();
+  double normF = soln.getNormF();
 
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
@@ -95,7 +96,6 @@ bool Newton::compute(Abstract::Vector& dir,
   // Compute the Newton direction
   ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
 
-
   // It didn't work, but maybe it's ok anyway...
   if (!ok) {
 
@@ -106,8 +106,8 @@ bool Newton::compute(Abstract::Vector& dir,
 	   << "- getNormNewtonSolveResidual returned a negative value" << endl;
     }
       
-
-    if (accuracy < 1) {
+    // Check if there is any improvement in the relative residual
+    if (accuracy < normF) {
       ok = true;
       double tolerance = paramsPtr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
       if (Utils::doPrint(Utils::Warning)) 
