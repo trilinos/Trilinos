@@ -145,7 +145,9 @@ MultiVector
 operator*(const MultiVector& x, const double alpha) 
 {
   MultiVector y = Duplicate(x);
-  y.Scale(alpha);
+  for (int v = 0 ; v < x.GetNumVectors() ; ++v)
+    y.Scale(alpha, v);
+
   return(y);
 }
 
@@ -157,7 +159,8 @@ operator/(const MultiVector& x, const double alpha)
     ML_THROW("Division by 0.0", -1);
 
   MultiVector y = Duplicate(x);
-  y.Scale(1.0 / alpha);
+  for (int v = 0 ; v < x.GetNumVectors() ; ++v)
+    y.Scale(1.0 / alpha, v);
   return(y);
 }
 

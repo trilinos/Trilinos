@@ -186,7 +186,7 @@ public:
   }
 
   //! Gets a reference to the internally stored null space.
-  inline const MultiVector& GetNullSpace() const
+  inline const MultiVector GetNullSpace() const
   {
     return(NullSpace_);
   }
@@ -367,21 +367,25 @@ public:
    *
    * \param AdditionalCandidates - (In) Number of candidates, that is the
    *                     number of null space components that will be
-   *                     computed using IncrementNullSpace().
+   *                     computed using IncrementNullSpace(). If
+   *                     \c "UseDefault == false", the code computes
+   *                     one additional candidate using
+   *                     SetupInitialNullSpace(), and the remaining using
+   *                     IncrementNullSpace().
    */
+  // time is tracked within each method.
   // ====================================================================== 
-  void AdaptCompute(const bool UseDefault, const int AdditionalCandidates)
+  void AdaptCompute(const bool UseDefault, int AdditionalCandidates)
   {
 
-    // time is tracked within each method.
     StackPush();
 
     if (UseDefault) 
       Compute();
     else {
-      // compute the first guy, supposing that no null space
       SetupInitialNullSpace();
       Compute();
+      AdditionalCandidates--;
     }
 
     for (int i = 0 ; i < AdditionalCandidates ; ++i) {
@@ -689,6 +693,7 @@ public:
     }
 
     --level;
+    AdditionalNS = Extract(ExpandedNS, NCand);
 
     // ======================================================= //
     // project back to fine level the AdditionalNS vector.     //
