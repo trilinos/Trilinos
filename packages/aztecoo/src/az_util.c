@@ -886,9 +886,6 @@ double *AZ_manage_memory(unsigned int input_size, int action, int type,
                    is allocated.  This number is used when checking to see if
                    a requested piece of memory is already allocated. This number
                    is also used when freeing up memory (see AZ_CLEAR).
-                   NOTE: Aztec uses the type AZ_SYS for temporary internal
-                         pieces of memory that can be deallocated after solving
-                         a linear system.
 
   name:            On input, a character string associated with each piece of
                    memory that is allocated. This string is used when checking
@@ -950,7 +947,6 @@ double *dtmp;
     if (size == 0) return (double *) 0;
 
     /* first look for entry */
-
     while ( current != NULL) {
       if ( (current->size == size) && (current->type == type) &&
            (strcmp(current->name,name) == 0) ) {
@@ -1016,7 +1012,6 @@ double *dtmp;
 
   else if (action == AZ_CLEAR) {
     prev = NULL;
-
     while (current != NULL) {
       if (current->type == type) {
         if (prev == NULL) head       = current->next;

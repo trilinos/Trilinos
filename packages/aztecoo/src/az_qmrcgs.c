@@ -170,7 +170,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"ubar%s",suffix);
   ubar   = (double *) AZ_manage_memory(8*NN*sizeof(double),
-				      AZ_ALLOC,AZ_SYS,label,&j);
+				      AZ_ALLOC,data_org[AZ_name],label,&j);
   v      = &(ubar[1*NN]);
   Aubar  = &(ubar[2*NN]);
   d      = &(ubar[3*NN]);
@@ -234,7 +234,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
   if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
     sprintf(label,"Ad%s",suffix);
     Ad = (double *) AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,
-				     AZ_SYS, label, &j);
+				     data_org[AZ_name], label, &j);
     for (i = 0; i < N; i++) Ad[i] = 0.0;
   }
 

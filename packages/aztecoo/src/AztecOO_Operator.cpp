@@ -58,7 +58,7 @@ int AztecOO_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVect
   solver_->SetLHS(&Y);
 
   // Finally do iterations (set tolerance to zero to force all iterations to be done)
-  int ierr = solver_->recursiveIterate(NumIters_, 0.0);
+  int ierr = solver_->Iterate(NumIters_, 0.0);
 
   if (ierr==1) ierr = 0; // We force maxits, don't report as an error
 

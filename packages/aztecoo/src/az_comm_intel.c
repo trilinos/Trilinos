@@ -337,7 +337,7 @@ void gather_and_send_mesgs(double x[], int data_org[], char *message_recv_add[],
   /* Define arrays for message passing */
 
   ptrd = (double *) AZ_manage_memory(data_org[AZ_total_send]*sizeof(double),
-                                     AZ_ALLOC, AZ_SYS, "ptrd", &n);
+                                     AZ_ALLOC, data_org[AZ_name], "ptrd", &n);
   ptr_send_list = ptrd;
   ptr_recv_list = &x[External_Index];
 

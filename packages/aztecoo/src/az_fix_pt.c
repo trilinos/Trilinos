@@ -148,7 +148,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"z%s",suffix);
   res  = (double *) AZ_manage_memory(NN*sizeof(double),AZ_ALLOC, 
-			           AZ_SYS, label, &j);
+			           data_org[AZ_name], label, &j);
   if (options[AZ_init_guess] != AZ_ZERO)
      AZ_compute_residual(b, x, res, proc_config, Amat);
   else DCOPY_F77(&N, b, &one, res, &one);

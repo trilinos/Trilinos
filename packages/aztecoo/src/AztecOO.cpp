@@ -55,6 +55,20 @@
 #include <ctype.h>
 #endif
 
+AztecOO::MatrixData::~MatrixData()
+{
+  if (X!=0) delete X;
+  if (Y!=0) delete Y;
+  if (SourceVec!=0) delete SourceVec;
+  if (TargetVec!=0) delete TargetVec;
+}
+
+AztecOO::OperatorData::~OperatorData()
+{
+  if (X!=0) delete X;
+  if (Y!=0) delete Y;
+}
+
 //=============================================================================
 AztecOO::AztecOO(Epetra_Operator * A, 
                    Epetra_MultiVector * X,

@@ -768,7 +768,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
 
           sprintf(label,"y in ssolve%d", sub_options[AZ_recursion_level]);
           y = AZ_manage_memory((N+1)*sizeof(double),
-                             AZ_ALLOC, AZ_SYS, label, &i);
+                             AZ_ALLOC, new_data_org[AZ_name], label, &i);
 
           for (i = 0 ; i < N ; i++ ) y[i] = x[i];
           for (i = 0 ; i < N ; i++ ) x[i] = 0.0;

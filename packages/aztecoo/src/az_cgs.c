@@ -157,7 +157,7 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
   sprintf(label,"w%s",suffix);
 
   w      = (double *) AZ_manage_memory(7*NN*sizeof(double),AZ_ALLOC,
-				       AZ_SYS,label,&j);
+				       data_org[AZ_name],label,&j);
   u      = &(w[1*NN]);
   p      = &(w[2*NN]);
   r      = &(w[3*NN]);

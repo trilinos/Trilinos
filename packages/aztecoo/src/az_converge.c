@@ -182,7 +182,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
         exit(1);
       }
       *r_avail = AZ_TRUE;
-      tr = AZ_manage_memory(N*sizeof(double),AZ_ALLOC,AZ_SYS, "trinconv",&j);
+      tr = AZ_manage_memory(N*sizeof(double),AZ_ALLOC,data_org[AZ_name], "trinconv",&j);
       for (i = 0; i < N; i++) tr[i] = r[i];
       AZ_scale_f(AZ_INVSCALE_RHS, Amat, options, tr, x, proc_config,
                  conv_info->scaling);
@@ -383,7 +383,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
     *r_avail = AZ_TRUE;
 
     temp = AZ_manage_memory((N + data_org[AZ_N_external]) * sizeof(double),
-                            AZ_ALLOC, AZ_SYS,
+                            AZ_ALLOC, data_org[AZ_name],
                             "temp in AZ_compute_global_scalars", &j);
     if (conv_info->not_initialized) {
       total_N = AZ_gsum_int(N, proc_config);

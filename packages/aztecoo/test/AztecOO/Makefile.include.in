@@ -118,31 +118,30 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-noinst_PROGRAMS = AztecOO_SetParameters
+noinst_PROGRAMS = AztecOO
 
-AztecOO_SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
+AztecOO_SOURCES = $(srcdir)/cxx_main.cpp
 
-AztecOO_SetParameters_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
+AztecOO_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 
-AztecOO_SetParameters_CXXFLAGS = -I$(top_srcdir)/src \
+AztecOO_CXXFLAGS = -I$(top_srcdir)/src \
 	$(AZTECOO_INCLUDES) $(TEUCHOS_INCLUDES)
 
 
 #Unsure why this test need to link to the BLAS on an IBM.
-AztecOO_SetParameters_LDADD = $(AZTECOO_LIBS) \
+AztecOO_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-subdir = test/AztecOO_SetParameters
+subdir = test/AztecOO
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/AztecOO_config.h
 CONFIG_CLEAN_FILES = Makefile
-noinst_PROGRAMS = AztecOO_SetParameters$(EXEEXT)
+noinst_PROGRAMS = AztecOO$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_AztecOO_SetParameters_OBJECTS = \
-	AztecOO_SetParameters-cxx_main.$(OBJEXT)
-AztecOO_SetParameters_OBJECTS = $(am_AztecOO_SetParameters_OBJECTS)
-AztecOO_SetParameters_LDFLAGS =
+am_AztecOO_OBJECTS = AztecOO-cxx_main.$(OBJEXT)
+AztecOO_OBJECTS = $(am_AztecOO_OBJECTS)
+AztecOO_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -151,16 +150,16 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AztecOO_SetParameters-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AztecOO-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(AztecOO_SetParameters_SOURCES)
+DIST_SOURCES = $(AztecOO_SOURCES)
 DIST_COMMON = Makefile.in Makefile.include.am Makefile.include.in
-SOURCES = $(AztecOO_SetParameters_SOURCES)
+SOURCES = $(AztecOO_SOURCES)
 
 all: all-am
 
@@ -168,7 +167,7 @@ all: all-am
 .SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.include.in: @MAINTAINER_MODE_TRUE@ Makefile.include.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/AztecOO_SetParameters/Makefile.include
+	  $(AUTOMAKE) --foreign  test/AztecOO/Makefile.include
 Makefile.include: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.include.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 Makefile: $(top_builddir)/config.status Makefile.in
@@ -176,10 +175,10 @@ Makefile: $(top_builddir)/config.status Makefile.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-AztecOO_SetParameters-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
-AztecOO_SetParameters$(EXEEXT): $(AztecOO_SetParameters_OBJECTS) $(AztecOO_SetParameters_DEPENDENCIES) 
-	@rm -f AztecOO_SetParameters$(EXEEXT)
-	$(CXXLINK) $(AztecOO_SetParameters_LDFLAGS) $(AztecOO_SetParameters_OBJECTS) $(AztecOO_SetParameters_LDADD) $(LIBS)
+AztecOO-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
+AztecOO$(EXEEXT): $(AztecOO_OBJECTS) $(AztecOO_DEPENDENCIES) 
+	@rm -f AztecOO$(EXEEXT)
+	$(CXXLINK) $(AztecOO_LDFLAGS) $(AztecOO_OBJECTS) $(AztecOO_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -187,7 +186,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_SetParameters-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO-cxx_main.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -204,17 +203,17 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-AztecOO_SetParameters-cxx_main.o: $(srcdir)/cxx_main.cpp
-@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='AztecOO_SetParameters-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_SetParameters-cxx_main.Po' tmpdepfile='$(DEPDIR)/AztecOO_SetParameters-cxx_main.TPo' @AMDEPBACKSLASH@
+AztecOO-cxx_main.o: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='AztecOO-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO-cxx_main.Po' tmpdepfile='$(DEPDIR)/AztecOO-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecOO_SetParameters_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_SetParameters-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecOO_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-AztecOO_SetParameters-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='AztecOO_SetParameters-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_SetParameters-cxx_main.Po' tmpdepfile='$(DEPDIR)/AztecOO_SetParameters-cxx_main.TPo' @AMDEPBACKSLASH@
+AztecOO-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='AztecOO-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO-cxx_main.Po' tmpdepfile='$(DEPDIR)/AztecOO-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecOO_SetParameters_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_SetParameters-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AztecOO_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

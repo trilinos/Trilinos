@@ -501,14 +501,9 @@ class AztecOO {
     MatrixData(Epetra_RowMatrix * inA = 0, Epetra_Vector * inX = 0,
                Epetra_Vector * inY = 0, Epetra_Vector * inSourceVec = 0,
                Epetra_Vector * inTargetVec = 0)
-      : A(inA), X(inX), Y(inY), SourceVec(inSourceVec), TargetVec(inTargetVec){};
+      : A(inA), X(inX), Y(inY), SourceVec(inSourceVec), TargetVec(inTargetVec){}
 
-      ~MatrixData(void) {
-        if (X!=0) delete X;
-        if (Y!=0) delete Y;
-        if (SourceVec!=0) delete SourceVec;
-        if (TargetVec!=0) delete TargetVec;
-      };
+      ~MatrixData();
   };
 
   struct OperatorData {
@@ -517,11 +512,8 @@ class AztecOO {
     Epetra_Vector * Y;
     OperatorData(Epetra_Operator * inA = 0, Epetra_Vector * inX = 0,
                  Epetra_Vector * inY = 0)
-      : A(inA), X(inX), Y(inY) {};
-      ~OperatorData(void) {
-        if (X!=0) delete X;
-        if (Y!=0) delete Y;
-      };
+      : A(inA), X(inX), Y(inY) {}
+      ~OperatorData();
   };
 
  protected:

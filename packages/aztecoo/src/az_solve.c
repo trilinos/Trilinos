@@ -59,6 +59,8 @@
 #define AZ_oldpre_calc        3
 #define AZ_SAVE_SIZE          5
 
+static int az_iterate_id = 1;
+
 void AZ_iterate(double x[], double b[], int options[], double params[],
                 double status[], int proc_config[], AZ_MATRIX *Amat,
                 AZ_PRECOND *precond, struct AZ_SCALING *scaling)
@@ -167,6 +169,11 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
     }
     exit(1);
   }
+
+  ++az_iterate_id;
+  Amat->data_org[AZ_name] += az_iterate_id;
+  precond->Pmat->data_org[AZ_name] += az_iterate_id;
+
   AZ_iterate_setup(options, params, proc_config, Amat, precond);
   AZ_sync(proc_config);
   start_t = AZ_second();
@@ -185,6 +192,11 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
                 options, status, total_time, proc_config);
 
   AZ_iterate_finish(options, Amat, precond);
+
+  precond->Pmat->data_org[AZ_name] -= az_iterate_id;
+  Amat->data_org[AZ_name] -= az_iterate_id;
+  --az_iterate_id;
+
   if (prec_allocated)  AZ_precond_destroy(&precond);
   if (scaling == NULL) AZ_scaling_destroy(&scale2);
 }
@@ -280,7 +292,7 @@ void AZ_solve(double x[], double b[], int options[], double params[],
   if (options[AZ_pre_calc] != AZ_reuse) {
     (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,(Amat->data_org)[AZ_name],"kvecs",(int *) 0);
   }
-  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS, (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
 
   /* output solver, scaling, and preconditioning options */
 
@@ -309,7 +321,7 @@ void AZ_solve(double x[], double b[], int options[], double params[],
     (void) AZ_manage_memory(0,AZ_CLEAR,(Amat->data_org)[AZ_name],(char *) 0,
                             (int *) 0);
 
-  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS, (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
 
   AZ_precond_destroy(&precond);
   AZ_matrix_destroy(&Amat);
@@ -424,7 +436,6 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
 
   /**************************** execution begins ******************************/
-
   newparams = params;
   /* If not using AztecOO convergence test, we must create one */
   if (options[AZ_conv]!=AZTECOO_conv_test)
@@ -1338,9 +1349,10 @@ void AZ_mk_context(int options[], double params[], int data_org[],
 
   AZ_mk_identifier(params,options,data_org, tag);
 
-  precond->context = (struct context *) AZ_manage_memory(sizeof(struct
-                                                                context), AZ_ALLOC,
-                                                         data_org[AZ_name],tag,&istatus);
+  precond->context = (struct context *) AZ_manage_memory(sizeof(struct context),
+                                                         AZ_ALLOC,
+                                                         data_org[AZ_name],
+                                                         tag,&istatus);
   if (istatus == AZ_NEW_ADDRESS) {
     AZ_zero_out_context(precond->context);
     if ((options[AZ_pre_calc] == AZ_reuse) && (proc_config[AZ_node] == 0)){
@@ -1361,13 +1373,14 @@ void AZ_mk_context(int options[], double params[], int data_org[],
       fprintf(stderr, "\n\t\t10) params[AZ_drop]");
       fprintf(stderr, "\n\t\t11) data_org[AZ_name]\n");
       printf("XXX%sXXX %d %d\n",tag,data_org[AZ_name],(int) sizeof(struct context));
-      (void) AZ_manage_memory(0, -43, AZ_SYS, (char *) 0, (int *) 0);
+      (void) AZ_manage_memory(0, -43, data_org[AZ_name], (char *) 0, (int *) 0);
     }
     if (options[AZ_pre_calc] == AZ_reuse) exit(1);
 
     tag[0] = 'T';
     precond->context->tag = (char *) AZ_manage_memory(sizeof(char)*80,
-                                                      AZ_ALLOC, data_org[AZ_name],
+                                                      AZ_ALLOC,
+                                                      data_org[AZ_name],
                                                       tag,&istatus);
     tag[0] = 'P';
     sprintf(precond->context->tag,"%s",tag);
@@ -1697,7 +1710,6 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
 ******************************************************************************/
 
 {
-
   if (Amat->matrix_type == AZ_MSR_MATRIX) {
     Amat->matvec = AZ_MSR_matvec_mult;
     Amat->data_org[AZ_N_int_blk] = Amat->data_org[AZ_N_internal];
@@ -1723,22 +1735,24 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
   options[AZ_recursion_level] = 0;
 
   if (options[AZ_pre_calc] != AZ_reuse) {
-    (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,(Amat->data_org)[AZ_name],"kvecs",
+    (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,
+                            (Amat->data_org)[AZ_name],
+                            "kvecs",
                             (int *) 0);
-    (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,(precond->Pmat->data_org)[AZ_name],
+    (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,
+                           (precond->Pmat->data_org)[AZ_name],
                             "kvecs", (int *) 0);
   }
-  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS, (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name],
+                          (char *) 0, (int *) 0);
 
   /* output solver, scaling, and preconditioning options */
 
   AZ_print_call_iter_solve(options, params, proc_config[AZ_node], 0, precond);
-
 }
 
 void AZ_iterate_finish(int options[], AZ_MATRIX *Amat, AZ_PRECOND *precond)
 {
-
   if (options[AZ_keep_info] == 0) {
 
 #ifdef IFPACK
@@ -1747,13 +1761,15 @@ void AZ_iterate_finish(int options[], AZ_MATRIX *Amat, AZ_PRECOND *precond)
       ifp_freebiluk(precond->context->precon);
 
 #endif
-    (void) AZ_manage_memory(0,AZ_CLEAR,(Amat->data_org)[AZ_name],
+    (void) AZ_manage_memory(0,AZ_CLEAR,
+                            (Amat->data_org)[AZ_name],
                             (char *) 0,(int *) 0);
-    (void) AZ_manage_memory(0,AZ_CLEAR,(precond->Pmat->data_org)[AZ_name],
+    (void) AZ_manage_memory(0,AZ_CLEAR,
+                           (precond->Pmat->data_org)[AZ_name],
                             (char *) 0,(int *) 0);
   }
 
-  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS, (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
 }
 
 int AZ_initialize(double x[], double b[], int options[],

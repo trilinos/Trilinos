@@ -184,7 +184,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"z%s",suffix);
   p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC,
-                                   AZ_SYS, label, &j);
+                                   data_org[AZ_name], label, &j);
   r  = &(p[1*NN]);
   z  = &(p[2*NN]);
   ap = &(p[3*NN]);

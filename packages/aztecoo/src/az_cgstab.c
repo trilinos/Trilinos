@@ -155,7 +155,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"phat%s",suffix);
   phat   = (double *) AZ_manage_memory(7*NN*sizeof(double), AZ_ALLOC, 
-                                       AZ_SYS, label,&j);
+                                       data_org[AZ_name], label,&j);
   p      = &(phat[1*NN]);
   shat   = &(phat[2*NN]);   /* NOTE: phat and shat must be aligned */
                             /*       so that the assembly dgemv    */
