@@ -2985,7 +2985,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,
 				  int *BCindices, 
-void *edge_smoother, void *edge_args[], void *nodal_smoother, void *nodal_args[])
+void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 {
 
    ML_Sm_Hiptmair_Data *dataptr;

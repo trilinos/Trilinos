@@ -4698,8 +4698,8 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_array, 
 			      ML_Operator **Tmat_trans_array, 
 			      ML_Operator *Tmat_bc, 
-			      void *edge_smoother, void *edge_args[],
-			      void *nodal_smoother, void *nodal_args[])
+			      void *edge_smoother, void **edge_args,
+			      void *nodal_smoother, void **nodal_args)
      /*
 			      int (*edge_smoother )(void), void *edge_args[],
 			      int (*nodal_smoother)(void), void *nodal_args[])
