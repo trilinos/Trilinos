@@ -18,12 +18,15 @@ ARCHITECTURE                     PCLINUX
 USE MPI                          no  # [yes, no]
 USE LAPACK                       no  # [yes, no]
 USE BLAS                         no  # [yes, no]
-LIBRARY INCLUDE PATH
-LIBRARY INCLUDE PATH
-LIBRARY DIRECTORY LOCATION
+LIBRARY INCLUDE PATH                 # (e.g. /usr/local/mpi/include)
+                                     ####################################
+LIBRARY INCLUDE PATH                 # PUT AS MANY INCLUDE, DIRECTORIES,#
+                                     # AND LIBRARY NAMES AS YOU NEED!!  #
+                                     ####################################
+LIBRARY DIRECTORY LOCATION           # (e.g. /usr/local/mpi/lib)
 LIBRARY DIRECTORY LOCATION
 #*** NOTE: LIBRARIES MUST BE GIVEN IN CORRECT ORDER!!!!******
-LIBRARY NAME
+LIBRARY NAME                         # (e.g. mpich)
 LIBRARY NAME
 #
 #
@@ -31,20 +34,35 @@ LIBRARY NAME
 #                    AZTEC
 #############################################################
 AZTEC INCLUDE DIRECTORY          default   # [default, ...]
+                                           #############################
+                                           # LEAVE BLANK IF NOT USING  #
+                                           # AZTEC, default TAKES FROM #
+                                           # STANDARD LOCATION         #
+                                           #############################
 NEED TO BUILD AZTEC              yes       # [yes, no]
 AZTEC INTERNAL DEVELOPER         no        # [yes, no]
 #
 #############################################################
 #                    SUPERLU
 #############################################################
-SERIAL SUPERLU DIRECTORY          /home/tuminaro/codes/Aztec/ml/lib/DSuperLU         # [default, ...]
-DISTRIBUTED SUPERLU DIRECTORY     default  $ [default, ...]
-NEED TO BUILD SUPERLU             yes      # [yes, no]
+SERIAL SUPERLU DIRECTORY         default  # [default, ...]
+DISTRIBUTED SUPERLU DIRECTORY             # [default, ...]
+                                           ##############################
+                                           # LEAVE BLANK IF NOT USING,  #
+                                           # default TAKES FROM STANDARD#
+                                           # LOCATION                   #
+                                           ##############################
+NEED TO BUILD SUPERLU            yes      # [yes, no]
 #
 #############################################################
 #                    PARASAILS/METIS
 #############################################################
-PARASAILS DIRECTORY               default   # [default, ...]
-METIS DIRECTORY                   default   # [default, ...]
+PARASAILS DIRECTORY                       # [default, ...]
+METIS DIRECTORY                           # [default, ...]
+                                           ##############################
+                                           # LEAVE BLANK IF NOT USING,  #
+                                           # default TAKES FROM STANDARD#
+                                           # LOCATION                   #
+                                           ##############################
 
 

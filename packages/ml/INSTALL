@@ -1,48 +1,17 @@
 To compile ml ...
 
-There is now a script 'installer' that tries to do these things automatically.
-You should try running things to see what happens ... before reading this stuff.
+There are two scripts 'installer' and 'etc/ml_install'.
 
-1) If you don't have 'Obj/' --> 'cd etc; flatten; cd ..'
-2) Compile any package not built
-3) setenv ARCH machine
-       where machine is one of CPLANT, DEC, HP, PCLINUX, SGI, 
-       SMOS, SOLARIS, SP2, SUN, TFLOP.
-4) create the file 'make_\${ARCH}.variables' in \'ml/\' listing
-   all packages being used, include paths, and libraries.
+1) The first script is interactive and prompts you for input. To use this,
+   type 'installer' from the 'ml/' directory.
+or
+2) The second script reads specifications from an input file. A sample
+   file 'etc/install_options' can be changed to configure for your system.
+   To use this script,
+     a) cd etc
+     b) edit install_options
+     c) ml_install install_options
 
-   For example:
-            PACKAGES=-DML_MPI -DAZTEC -DSUPERLU -DPARASAILS -DMETIS
-            LIB_HOME=/home/doe/ml/lib
-            INC_PATH=-I${LIB_HOME}/ParMetis-2.0/METISLib -I${LIB_HOME}/ParaSails \
-                     -I${LIB_HOME}/DSuperLU/SRC -I${LIB_HOME}/Aztec/lib \
-                     -I/usr/local/mpich/include
-            LIBRARIES= -L${LIB_HOME}/ParMetis-2.0 -lmetis -L${LIB_HOME}/ParaSails \
-                       -lParaSails ${LIB_HOME}/DSuperLU/superluPCLINUX.a \
-                       -L${LIB_HOME}/Aztec/lib -laztec -L/usr/local/mpich/lib -lmpich"
-
-
-5) etc/makefile.$(ARCH) contains basic definitions for CC and compiler 
-   optimizations. In some cases, you might want to tune these.
-
-6) For object files in 'Obj'  ==> type 'cd Obj; make'
-
-   When the day is done, you will find a libml.a file in the Obj
-   directory.  
-
-4) There is a major porting problem associated with blas and lapack. In particular,
-   different machines have different portions of blas/lapack and different packages
-   such as Aztec or SuperLU might also have different portions of blas/lapack. 
-   The trick is to compile ml without having undefines or multiple defines.
-   Each blas/lapack subroutine xxx has associated with it a define of the form 
-   ML_XXX_FUNC (for a complete list: grep "ifndef ML" src/ml_lapack.c).  By 
-   setting defines, you tell ml not to compile its version of the corresponding 
-   subroutine. Currently, defines are set either via CFLAGS in a 
-   etc/makefile.machine file or in the files etc/ml_aztec_lapack.h 
-   etc/ml_superlu_lapack.h etc/ml_vendor_lapack.h that are included by 
-   src/ml_lapack.c. You may need to add new definitions if the defaults don't 
-   work for you.
-    
-
-FOR ML DEVELOPERS: When new files are added, the perl script 'etc/build_depends' should be run. 
+If these scripts don't work, tooo bad. There are some comments given
+in the top of 'installer' for doing things manually.
 
