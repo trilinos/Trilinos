@@ -103,6 +103,8 @@ LIBEPETRA: $(EPETRA_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
 	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBEPETRA) $(EPETRA_OBJ) $(TEMPLATE_OBJS)
 
+# Remove object code and library
+
 clean:
 	@echo "junk" > dummy.$(OBJ_EXT)
 	@rm -f *.$(OBJ_EXT)  $(LIBEPETRA) *~

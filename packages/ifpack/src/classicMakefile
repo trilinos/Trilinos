@@ -44,13 +44,8 @@ IFPACK_OBJ = $(IFPACK_CC_new:.cpp=.$(OBJ_EXT)) $(IFPACK_CC_old:.cpp=.$(OBJ_EXT))
 #$(LIBIFPACK): $(IFPACK_OBJ)
 LIBIFPACK: $(IFPACK_OBJ)
 	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBIFPACK) $(IFPACK_OBJ)
-# following ranlib commented out by rbl
-#	$(RANLIB) $(LIBIFPACK)
 
-#
-# dependencies for 'f' files (none at this time)
-#
-#include ../../build/depends.ifpack
+# Remove object code and library
 
 clean:
 	@echo "junk" > dummy.$(OBJ_EXT)
