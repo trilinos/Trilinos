@@ -462,9 +462,9 @@ int main(int argc, char *argv[])
   //				      iReq, soln);
 
   // **** Ctor #2 - Jac but no Prec
-  //NOX::EpetraNew::Interface::Jacobian& iJac = FD;
-  //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
-  //				     iReq, iJac, FD, soln);
+  NOX::EpetraNew::Interface::Jacobian& iJac = interface;
+  NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+  				     iReq, iJac, Analytic, soln);
 
   // **** Ctor #3 - Prec but no Jac
   //NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
@@ -472,10 +472,10 @@ int main(int argc, char *argv[])
   //				      iReq, iPrec, FD, soln);
 
   // **** Ctor #4 - Prec and Jac
-  NOX::EpetraNew::Interface::Jacobian& iJac = MF;
-  NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
-  NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
-					     iJac, MF, iPrec, FD, soln);
+  //NOX::EpetraNew::Interface::Jacobian& iJac = interface;
+  //NOX::EpetraNew::Interface::Preconditioner& iPrec = interface;
+  //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+//					     iJac, Analytic, iPrec, Analytic, soln);
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
