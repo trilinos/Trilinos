@@ -999,7 +999,7 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   ML_NeighborList *neighbor;
 
   /**************************** execution begins ******************************/
-
+  if (comm_info == NULL) return;
   N_neighbors              = comm_info->N_neighbors;
   if (N_neighbors == 0) return;
 
