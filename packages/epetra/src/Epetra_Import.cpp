@@ -115,19 +115,44 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
       RemoteLIDs_[NumRemoteIDs_++] = i;
     }
   }
-  
-  if ( NumRemoteIDs_>0 && !SourceMap.DistributedGlobal())
-    throw ReportError("Error in Epetra_Import: Serial Import has remote IDs.", -1);
+
+  if( NumRemoteIDs_>0 && !SourceMap.DistributedGlobal() )
+    ReportError("Warning in Epetra_Import: Serial Import has remote IDs. (Importing to Subset of Target Map)", 1);
   
   // Test for distributed cases
   
+  int * RemotePIDs = 0;
+
   if (SourceMap.DistributedGlobal()) {
-    
-    int * RemotePIDs = 0;
     
     if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
     int ierr = SourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
-    if (ierr!=0) throw ReportError("Error in SourceMap.RemoteIDList call", ierr);
+    if (ierr) throw ReportError("Error in SourceMap.RemoteIDList call", ierr);
+
+    //Get rid of IDs that don't exist in SourceMap
+    if(NumRemoteIDs_>0) {
+      int cnt = 0;
+      for( i = 0; i < NumRemoteIDs_; ++i )
+        if( RemotePIDs[i] == -1 ) ++cnt;
+      if( cnt ) {
+        int * NewRemoteGIDs = new int[NumRemoteIDs_-cnt];
+        int * NewRemotePIDs = new int[NumRemoteIDs_-cnt];
+        cnt = 0;
+        for( i = 0; i < NumRemoteIDs_; ++i )
+          if( RemotePIDs[i] != -1 ) {
+            NewRemoteGIDs[cnt] = RemoteGIDs[i];
+            NewRemotePIDs[cnt] = RemotePIDs[i];
+            ++cnt;
+          }
+        NumRemoteIDs_ = cnt;
+        delete [] RemoteGIDs;
+        delete [] RemotePIDs;
+        RemoteGIDs = NewRemoteGIDs;
+        RemotePIDs = NewRemotePIDs;
+        ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
+      }
+    }
+
     Distor_ = SourceMap.Comm().CreateDistributor();
     
     // Construct list of exports that calling processor needs to send as a result

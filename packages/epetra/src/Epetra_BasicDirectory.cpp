@@ -407,6 +407,17 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
   
   // Get directory locations for the requested list of entries
   DirectoryMap_->RemoteIDList(NumEntries, GlobalEntries, dir_procs, 0);
+
+  //Check for unfound GlobalEntries and set cooresponding Procs to -1
+  int NumMissing = 0;
+  for( int i = 0; i < NumEntries; ++i )
+    if( dir_procs[i] == -1 )
+    {
+      Procs[i] = -1;
+      if (DoLIDs) LocalEntries[i] = -1;
+      ++NumMissing;
+    }
+
   int num_sends;
   int * send_gids = 0;
   int * send_procs = 0;
@@ -435,33 +446,28 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
       }
   }
 
-  if (NumEntries>0) imports = new int[PacketSize*NumEntries];
+  int NumRecv = NumEntries - NumMissing;
+  if (NumRecv>0) imports = new int[PacketSize*NumRecv];
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char*> (exports),
 	     PacketSize * sizeof( int ), reinterpret_cast<char*> (imports)));
 
   int * ptr = imports;
-  for( i = 0; i < NumEntries; i++ )
-    {
-      //bool found = false;
-      curr_LID = *ptr++;
-      for( j = 0; j < NumEntries; j++ )
-	if( curr_LID == GlobalEntries[j] )
-	  {
-	    Procs[j] = *ptr++;
-	    if (DoLIDs) LocalEntries[j] = *ptr++;
-	    if (DoSizes) EntrySizes[j] = *ptr++;
-	    // found = true;
-	    break;
-	  }
-      //	if (!found) cout << "Internal error:  Epetra_BasicDirectory::GetDirectoryEntries: Global Index " << curr_LID
-      //	     << " not on processor " << MyPID << endl; abort();
-    }
+  for( i = 0; i < NumRecv; i++ ) {
+    curr_LID = *ptr++;
+    for( j = 0; j < NumEntries; j++ )
+      if( curr_LID == GlobalEntries[j] ) {
+        Procs[j] = *ptr++;
+        if (DoLIDs) LocalEntries[j] = *ptr++;
+        if (DoSizes) EntrySizes[j] = *ptr++;
+        break;
+      }
+  }
   
-  if( send_gids != 0 ) delete [] send_gids;
-  if( send_procs != 0 ) delete [] send_procs;
+  if( send_gids ) delete [] send_gids;
+  if( send_procs ) delete [] send_procs;
   
-  if( imports != 0 ) delete [] imports;
-  if( exports != 0 ) delete [] exports;
+  if( imports ) delete [] imports;
+  if( exports ) delete [] exports;
   
   delete Distor;
   return(0);
