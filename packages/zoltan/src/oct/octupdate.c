@@ -24,6 +24,7 @@
 #include "migoct_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"
+#include <values.h>
 
 /***************************  PROTOTYPES *************************************/
 static void initialize_region(LB *, pRegion *, LB_GID, LB_LID, int, float);
@@ -336,68 +337,64 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
     exit (-1);
   }
   ptr1 = NULL;
-  if(num_objs > 0) {
-    /* Need A Function To Get The Bounds Of The Local Objects */
-    LB_get_bounds(lb, &ptr1, &num_objs, min, max, oct_wgtflag, c0);
 
-    vector_set(OCT_info->OCT_gmin, min);
-    vector_set(OCT_info->OCT_gmax, max);
+  /* Need A Function To Get The Bounds Of The Local Objects */
+  LB_get_bounds(lb, &ptr1, &num_objs, min, max, oct_wgtflag, c0);
+
+  vector_set(OCT_info->OCT_gmin, min);
+  vector_set(OCT_info->OCT_gmax, max);
     
-    /* 
-     * the following code segment was added to create a pseudo global octree
-     * needed for the partitioner. The basic idea is to regroup all the
-     * regions into something close to an octree partitioning and build the
-     * tree from that.
-     * NOTE: This way of doing things is very costly, especially when calling
-     * this for the first time on a mesh not partitioned in an octree style
-     * partitioning.
-     */
+  /* 
+   * the following code segment was added to create a pseudo global octree
+   * needed for the partitioner. The basic idea is to regroup all the
+   * regions into something close to an octree partitioning and build the
+   * tree from that.
+   * NOTE: This way of doing things is very costly, especially when calling
+   * this for the first time on a mesh not partitioned in an octree style
+   * partitioning.
+   */
 
-    level = 0;                                     /* initialize level count */
+  level = 0;                                     /* initialize level count */
 
-    /* 
-     * if more than 1 processor, need to find what level of refinement needed
-     * to initially partition bounding box among the processors 
-     */
-    if(lb->Num_Proc > 1) {
-      n = lb->Num_Proc;
-      if(OCT_info->OCT_dimension == 2)
-	hold = 4;
-      else
-	hold = 8;
-      remainder = hold;
-      for(; remainder >=hold; level++) {
-	int pr;
+  /* 
+   * if more than 1 processor, need to find what level of refinement needed
+   * to initially partition bounding box among the processors 
+   */
+  if(lb->Num_Proc > 1) {
+    n = lb->Num_Proc;
+    if(OCT_info->OCT_dimension == 2)
+      hold = 4;
+    else
+      hold = 8;
+    remainder = hold;
+    for(; remainder >=hold; level++) {
+      int pr;
 
-	pr = (int)pow(hold, level);
-	remainder = n - pr;
-	/*
-	f = 0printf(stderr,"n = %d, pow = %d, level = %d, remainder = %d\n", 
-		n, pr, level, remainder);
-	*/
-      }
-      if(remainder == 0)
+      pr = (int)pow(hold, level);
+      remainder = n - pr;
+    }
+    if(remainder == 0)
 	level--;
     }
 
-    /* create the global root octant */
-    root = POC_new(OCT_info);
-    POC_setbounds(root, OCT_info->OCT_gmin, OCT_info->OCT_gmax);
-    /* POC_setOrientation(root, 0); */
+  /* create the global root octant */
+  root = POC_new(OCT_info);
+  POC_setbounds(root, OCT_info->OCT_gmin, OCT_info->OCT_gmax);
+  /* POC_setOrientation(root, 0); */
     
-    /* subdivide to as many levels as calculated */
-    for(i=0; i<level; i++) {
-      cursor = root;
-      while(cursor != NULL) {
-	if(POC_isTerminal(cursor)) {
-	  cursor2 = POC_nextDfs(cursor);
-	  LB_oct_terminal_refine(lb, cursor, 0);
-	  cursor = cursor2;
-	}
-	else 
-	  cursor = POC_nextDfs(cursor);
+  /* subdivide to as many levels as calculated */
+  for(i=0; i<level; i++) {
+    cursor = root;
+    while(cursor != NULL) {
+      if(POC_isTerminal(cursor)) {
+        cursor2 = POC_nextDfs(cursor);
+        LB_oct_terminal_refine(lb, cursor, 0);
+        cursor = cursor2;
       }
+      else 
+	cursor = POC_nextDfs(cursor);
     }
+  }
     
 #if 0
     if(lb->Proc == 0)
@@ -408,66 +405,65 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
 	  fprintf(stderr, "child %d exists\n", i);
 #endif
 
-    /* this part creates the map array */
-    if(OCT_info->OCT_dimension == 2) {
-      hold = (int)pow(4, level);                  /* ignoring the z+ octants */
-      if(hold == 0)
-	hold = 1;
-    }
-    else
-      hold = (int)pow(8, level);
-
-    part = hold / lb->Num_Proc;          /* how many octants per partition */
-    remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
-    extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *) LB_MALLOC(hold * sizeof(Map));       /* allocate map array */
-    if(array == NULL) {
-      fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
-	      lb->Proc);
-      abort();
-    }
-    /* initialize variables */
-    proc = 0;
-    count = 0;
-    i = 0;
-    cursor = root;
-    while(cursor != NULL) {
-      cursor2 = POC_nextDfs(cursor);
-      if((POC_isTerminal(cursor)) && (i < hold)) {
-	if(proc == extra) {
-	  part++;
-	  extra = -1;
-	}
-	if(count != part) {
-	  array[i].npid = proc;
-	  POC_bounds(cursor, min, max);
-	  vector_set(array[i].min, min);
-	  vector_set(array[i].max, max);
-	  count++;
-	}
-	else {
-	  count = 1;
-	  proc++;
-	  array[i].npid = proc;
-	  POC_bounds(cursor, min, max);
-	  vector_set(array[i].min, min);
-	  vector_set(array[i].max, max);
-	}
-	if(proc == lb->Proc) {
-	  array[i].npid = -1;
-	  parent = POC_parent(cursor);
-	  if(parent != NULL)
-	    POC_setchild(parent, cursor->which, NULL);
-	  POC_setparent(OCT_info, cursor, NULL, -1);    /* octant into local root list */
-	}
-	i++;
-      }
-      cursor = cursor2;
-    } 
-
-    if(OCT_info->OCT_rootlist->oct != root)
-      POC_delTree(OCT_info,root);
+  /* this part creates the map array */
+  if(OCT_info->OCT_dimension == 2) {
+    hold = (int)pow(4, level);                  /* ignoring the z+ octants */
+    if(hold == 0)
+      hold = 1;
   }
+  else
+    hold = (int)pow(8, level);
+
+  part = hold / lb->Num_Proc;          /* how many octants per partition */
+  remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
+  extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
+  array = (Map *) LB_MALLOC(hold * sizeof(Map));       /* allocate map array */
+  if(array == NULL) {
+    fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
+            lb->Proc);
+    abort();
+  }
+  /* initialize variables */
+  proc = 0;
+  count = 0;
+  i = 0;
+  cursor = root;
+  while(cursor != NULL) {
+    cursor2 = POC_nextDfs(cursor);
+    if((POC_isTerminal(cursor)) && (i < hold)) {
+      if(proc == extra) {
+        part++;
+        extra = -1;
+      }
+      if(count != part) {
+        array[i].npid = proc;
+        POC_bounds(cursor, min, max);
+        vector_set(array[i].min, min);
+        vector_set(array[i].max, max);
+        count++;
+      }
+      else {
+        count = 1;
+        proc++;
+        array[i].npid = proc;
+        POC_bounds(cursor, min, max);
+        vector_set(array[i].min, min);
+        vector_set(array[i].max, max);
+      }
+      if(proc == lb->Proc) {
+	array[i].npid = -1;
+	parent = POC_parent(cursor);
+	if(parent != NULL)
+          POC_setchild(parent, cursor->which, NULL);
+        POC_setparent(OCT_info, cursor, NULL, -1);    /* octant into local root list */
+      }
+      i++;
+    }
+    cursor = cursor2;
+  } 
+
+  if(OCT_info->OCT_rootlist->oct != root)
+    POC_delTree(OCT_info,root);
 
   /*
    *  if(lb->Proc == 0)
@@ -503,14 +499,18 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 		   COORD min, COORD max, int wgtflag, float *c0) 
 {
   char *yo = "LB_get_bounds";
-  LB_GID *obj_global_ids; 
-  LB_LID *obj_local_ids;
-  float *obj_wgts;
+  LB_GID *obj_global_ids = NULL; 
+  LB_LID *obj_local_ids = NULL;
+  float *obj_wgts = NULL;
   int i, found;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double PADDING = 0.0000001;
   int ierr = 0;
+
+  /* Initialization */
+  max[0] = max[1] = max[2] = -MAXDOUBLE;
+  min[0] = min[1] = min[2] =  MAXDOUBLE;
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
@@ -519,92 +519,93 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     exit (-1);
   }
 
-  obj_global_ids = (LB_GID *) LB_MALLOC((*num_objs) * sizeof(LB_GID));
-  obj_local_ids  = (LB_LID *) LB_MALLOC((*num_objs) * sizeof(LB_LID));
-  obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
-  if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
-    exit(-1);
-  }
-
-
-  if(lb->Get_Obj_List == NULL &&
-    (lb->Get_First_Obj == NULL || lb->Get_Next_Obj == NULL)) {
-    fprintf(stderr, "Error in octree load balance:  user must declare " 
-            "function Get_Obj_List or Get_First_Obj/Get_Next_Obj.");
-    abort();
-  }
-
-  if (wgtflag == 0)
-    for (i = 0; i < *num_objs; i++) obj_wgts[i] = 0.;
-
-  if (lb->Get_Obj_List != NULL) {
-    lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
-                     wgtflag, obj_wgts, &ierr);
-    found = TRUE;
-  }
-  else {
-    found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &(obj_global_ids[0]),
-                              &(obj_local_ids[0]), wgtflag, &(obj_wgts[0]), 
-                              &ierr);
-  }
-  if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
-                    "Get_Obj_List/Get_First_Obj function.\n", lb->Proc, yo);
-    exit (-1);
-  }
-
-  if(*num_objs > 0 && found) {
-    initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0],
-                      wgtflag, obj_wgts[0]);
-    *c0 = (float)tmp->Weight;
-    vector_set(min, tmp->Coord);
-    vector_set(max, tmp->Coord);
-  }
-  *ptr1 = tmp;
-  for (i = 1; i < (*num_objs); i++) {
-    if (lb->Get_Obj_List == NULL) {
-      found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_ids[i-1],
-                               obj_local_ids[i-1], &(obj_global_ids[i]),
-                               &(obj_local_ids[i]), wgtflag, &(obj_wgts[i]),
-                               &ierr);
-      if (ierr) {
-        fprintf(stderr, "[%d] %s: Error returned from user defined "
-                        "Get_Next_Obj function.\n", lb->Proc, yo);
-        exit (-1);
-      }
-    }
-    if (!found) {
-      fprintf(stderr, "Error in octree load balance:  number of objects "
-             "declared by LB_NUM_OBJ_FN %d != number obtained by "
-             "GET_NEXT_OBJ %d\n", *num_objs, i);
+  if (*num_objs > 0) {
+    obj_global_ids = (LB_GID *) LB_MALLOC((*num_objs) * sizeof(LB_GID));
+    obj_local_ids  = (LB_LID *) LB_MALLOC((*num_objs) * sizeof(LB_LID));
+    obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
+    if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
       exit(-1);
     }
-    initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i],
-                      wgtflag, obj_wgts[i]);
-    *c0 += (float)tmp->Weight;
-    /* the following is really a hack, since it has no real basis 
-       in vector mathematics.... */
-    if(ptr->Coord[0] < min[0])
-      min[0] = ptr->Coord[0];
-    if(ptr->Coord[1] < min[1])
-      min[1] = ptr->Coord[1];
-    if(ptr->Coord[2] < min[2])
-      min[2] = ptr->Coord[2];
-    if(ptr->Coord[0] > max[0])
-      max[0] = ptr->Coord[0];
-    if(ptr->Coord[1] > max[1])
-      max[1] = ptr->Coord[1];
-    if(ptr->Coord[2] > max[2])
-      max[2] = ptr->Coord[2];
-    tmp->next = ptr;
-    tmp = tmp->next;
+    if (wgtflag == 0)
+      for (i = 0; i < *num_objs; i++) obj_wgts[i] = 0.;
 
-    ptr = NULL;
+
+    if(lb->Get_Obj_List == NULL &&
+      (lb->Get_First_Obj == NULL || lb->Get_Next_Obj == NULL)) {
+      fprintf(stderr, "Error in octree load balance:  user must declare " 
+              "function Get_Obj_List or Get_First_Obj/Get_Next_Obj.");
+      abort();
+    }
+
+    if (lb->Get_Obj_List != NULL) {
+      lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
+                       wgtflag, obj_wgts, &ierr);
+      found = TRUE;
+    }
+    else {
+      found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &(obj_global_ids[0]),
+                                &(obj_local_ids[0]), wgtflag, &(obj_wgts[0]), 
+                                &ierr);
+    }
+    if (ierr) {
+      fprintf(stderr, "[%d] %s: Error returned from user defined "
+                      "Get_Obj_List/Get_First_Obj function.\n", lb->Proc, yo);
+      exit (-1);
+    }
+
+    if(found) {
+      initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0],
+                        wgtflag, obj_wgts[0]);
+      *c0 = (float)tmp->Weight;
+      vector_set(min, tmp->Coord);
+      vector_set(max, tmp->Coord);
+    }
+    *ptr1 = tmp;
+    for (i = 1; i < (*num_objs); i++) {
+      if (lb->Get_Obj_List == NULL) {
+        found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_ids[i-1],
+                                 obj_local_ids[i-1], &(obj_global_ids[i]),
+                                 &(obj_local_ids[i]), wgtflag, &(obj_wgts[i]),
+                                 &ierr);
+        if (ierr) {
+          fprintf(stderr, "[%d] %s: Error returned from user defined "
+                          "Get_Next_Obj function.\n", lb->Proc, yo);
+          exit (-1);
+        }
+      }
+      if (!found) {
+        fprintf(stderr, "Error in octree load balance:  number of objects "
+               "declared by LB_NUM_OBJ_FN %d != number obtained by "
+               "GET_NEXT_OBJ %d\n", *num_objs, i);
+        exit(-1);
+      }
+      initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i],
+                        wgtflag, obj_wgts[i]);
+      *c0 += (float)tmp->Weight;
+      /* the following is really a hack, since it has no real basis 
+         in vector mathematics.... */
+      if(ptr->Coord[0] < min[0])
+        min[0] = ptr->Coord[0];
+      if(ptr->Coord[1] < min[1])
+        min[1] = ptr->Coord[1];
+      if(ptr->Coord[2] < min[2])
+        min[2] = ptr->Coord[2];
+      if(ptr->Coord[0] > max[0])
+        max[0] = ptr->Coord[0];
+      if(ptr->Coord[1] > max[1])
+        max[1] = ptr->Coord[1];
+      if(ptr->Coord[2] > max[2])
+        max[2] = ptr->Coord[2];
+      tmp->next = ptr;
+      tmp = tmp->next;
+  
+      ptr = NULL;
+    }
+    LB_FREE(&obj_global_ids);
+    LB_FREE(&obj_local_ids);
+    LB_FREE(&obj_wgts);
   }
-  LB_FREE(&obj_global_ids);
-  LB_FREE(&obj_local_ids);
-  LB_FREE(&obj_wgts);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, lb->Communicator);
