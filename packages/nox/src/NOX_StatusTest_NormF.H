@@ -59,41 +59,41 @@ namespace StatusTest {
   (Also #normF is set to 0.0.)
 
   If checkStatus is called on a problem where the solution group does
-  not have F evaluated (i.e., problem.getSolutionGroup.isF() is
+  not have F evaluated (i.e., problem.getSolutionGroup().isF() is
   false), then the status is set to NOX::StatusTest::Unconverged and
   returned.   (Also #normF is set to -1.0.)
 
   Finally, we return NOX::StatusTest::Converged if \f$\alpha <
-  \beta\f$ and NOX::StatusTest::Uncoverged otherwise.
+  \beta\f$, and NOX::StatusTest::Unconverged otherwise.
   Here \f$\alpha\f$
   represents the norm of \f$F(x)\f$ and \f$\beta\f$ represents the
   tolerance, as described below.
 
-  We define \f$\gamma\f$ to be the optional scale factor. We define it to be
+  Let \f$\gamma\f$ denote an optional scale factor defined as
 
-  - \f$\gamma = \frac{1}{n}\f$ if ScaleType is \c Scaled, and
+  - \f$\gamma = \frac{1}{n}\f$ if \c sType in the constructor is NOX::NormF::Scaled, and
 
-  - \f$\gamma = 1\f$ if ScaleType is \c Unscaled, and
 
-  The norm of \f$F(x)\f$, \f$\alpha\f$, is defined as follows:
+  Then \f$\alpha\f$ is defined as follows:
 
-  - If the Abstract::Vector::NormType is \c TWO, then
+  - If \c nType in the constructor is Abstract::Vector::TWO, then
     \f[ \alpha = \sqrt{ \gamma \sum_{i=1}^n F_i^2 } \f]
 
-  - If the Abstract::Vector::NormType is \c ONE, then
+  - If \c nType in the constructor is Abstract::Vector::ONE, then
     \f[ \alpha = \gamma \sum_{i=1}^n | F_i | \f]
 
-  - If the Abstract::Vector::NormType is \c INF, then
+  - If \c nType in the constructor is Abstract::Vector::INF, then
     \f[ \alpha = \gamma \max_{i} | F_i |  \f]
 
-  We set \f$\beta\f$ as follows. 
+  We set \f$\beta\f$ as follows, based on the value of \c tolerance in
+  the constructor.
 
   - If an initial guess is provided, we use a relative tolerance
   defined by \f[ \beta = \frac{\mbox{tolerance}}{\alpha_0} \f] Here
-  \f$\alpha_0\f$ is the \f$\alpha\f$ as defined above associated with
+  \f$\alpha_0\f$ is the \f$\alpha\f$ (as defined above) associated with
   the initial guess.
 
-  - Otherwise, we use an absolte tolerance defined by
+  - Otherwise, we use an absolute tolerance defined by
   \f[  \beta  = \mbox{tolerance} \f]
 
 */

@@ -56,13 +56,13 @@ namespace StatusTest {
   (Also #normUpdate is set to -1.0.)
 
   If checkStatus is called on the first iteration, then the status is
-  set to NOX::StatusTest::Unconverged and returned.  (Also #normF is
+  set to NOX::StatusTest::Unconverged and returned.  (Also #normUpdate is
   set to -1.0.)
 
   If checkStatus is called on a problem where the solution group does
-  not have F evaluated (i.e., problem.getSolutionGroup.isF() is
+  not have F evaluated (i.e., problem.getSolutionGroup().isF() is
   false), then the status is set to NOX::StatusTest::Unconverged and
-  returned.   (Also #normF is set to -1.0.)
+  returned.   (Also #normUpdate is set to -1.0.)
 
 
   Finally, we return NOX::StatusTest::Converged if \f$\alpha <
@@ -73,26 +73,26 @@ namespace StatusTest {
 
   \f[ \Delta x = x_k - x_{k-1} \f]
 
-  where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
+  where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th nonlinear iterate.
 
-  We define \f$\gamma\f$ to be the optional scale factor. We define it to be
+  Let \f$\gamma\f$ denote an optional scale factor defined as
 
-  - \f$\gamma = \frac{1}{n}\f$ if ScaleType is \c Scaled, and
+  - \f$\gamma = \frac{1}{n}\f$ if \c sType in the constructor is NOX::NormF::Scaled, and
 
-  - \f$\gamma = 1\f$ if ScaleType is \c Unscaled, and
+  - \f$\gamma = 1\f$ if \c sType in the constructor is NOX::NormF::Unscaled.
 
-  The norm of \f$ \Delta x \f$, \f$\alpha\f$, is defined as follows:
+  Then \f$\alpha\f$ is defined as follows:
 
-  - If the Abstract::Vector::NormType is \c TWO, then
+  - If \c nType in the constructor is Abstract::Vector::TWO, then
     \f[ \alpha = \sqrt{ \gamma \sum_{i=1}^n \Delta x_i^2 } \f]
 
-  - If the Abstract::Vector::NormType is \c ONE, then
+  - If \c nType in the constructor is Abstract::Vector::ONE, then
     \f[ \alpha = \gamma \sum_{i=1}^n | \Delta x_i | \f]
 
-  - If the Abstract::Vector::NormType is \c INF, then
+  - If \c nType in the constructor is Abstract::Vector::INF, then
     \f[ \alpha = \gamma \max_{i} | \Delta x_i |  \f]
 
-  \f$\beta\f$ is a scalar set by the user in the constructor. 
+  Finally, \f$\beta\f$ is set to the \c tolerance in the constructor, i.e.,
 
   \f[  \beta  = \mbox{tolerance} \f]
 */

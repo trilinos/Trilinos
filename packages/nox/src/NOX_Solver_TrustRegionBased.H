@@ -57,8 +57,8 @@ The trust region subproblem (TRSP) at iteration \f$k\f$ is given by
 
 &nbsp;&nbsp;
 \f$
-\min \; m_k(s) \equiv f_k + g_k^T s + \frac{1}{2} s^T B_k s,
-\mbox{ s.t. } \|s\| \leq \Delta_k
+\min \; m_k(s) \equiv f_k + g_k^T d + \frac{1}{2} d^T B_k d,
+\mbox{ s.t. } \|d\| \leq \Delta_k
 \quad \mbox{(TRSP)}
 \f$
 
@@ -76,7 +76,7 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 
 &nbsp;&nbsp;
 \f$
-\rho = \displaystyle\frac{ f(x_k) - f(x_k + s) } { m_k(0) - m_k(s) }
+\rho = \displaystyle\frac{ f(x_k) - f(x_k + d) } { m_k(0) - m_k(d) }
 \f$
 
 An iteration consists of the following steps.

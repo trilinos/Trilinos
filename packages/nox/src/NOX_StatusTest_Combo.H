@@ -54,9 +54,8 @@ namespace StatusTest {
   Failed. Therefore, it will generally make sense to put the \c Failed
   -type tests at the end of the \c OR list.
 
-  \note We always runs through all tests, even if we don't need
-  to. This is useful so that the user knows which tests have and have
-  not be satisfied.
+  \note We call checkStatus on \e every convergence test, though some
+  may be called with the NOX::StatusTest::None option.
 
   \author Tammy Kolda (SNL 8950)
 */
@@ -94,7 +93,7 @@ public:
   virtual ~Combo();
 
   /*!
-    Calls checkStatus(problem, NOX::StatusTest::Minimal)
+    \brief Calls checkStatus(problem, NOX::StatusTest::Minimal)
    */
   virtual StatusType checkStatus(const Solver::Generic& problem);
 

@@ -48,29 +48,21 @@ namespace StatusTest {
 
 //! Failure test based on the convergence rate between nonlinear iterations.
 /*!
-  This status test returns a Failed status if the convergence rate is worse 
-  than a specified tolerance for \f$ n \f$ consecutive iterations.
 
-  In many codes if the Jacobian is not accurate, the solver can stagnate.  
-  In this case, further nonlinear iterations make negligible progress in 
-  reducing the norm of F.  To prevent unnecessary churning, this status test 
-  will identify when a code stagnates and ends the solve.
-
-  This status test returns a Failed status if \f$ n \f$ nonlinear steps 
-  have consecutively failed the following test:
-
-  At nonlinear iteration \f$ k \f$, the convergence rate, \f$ \eta \f$ is 
-  computed by:
+  This status test returns NOX::StatusTest::Failed if we fail to
+  reduce the norm of \f$F\f$ by a specified tolerance for n
+  \e consecutive iterations.
+  In other words, if 
   
-  \f[ \eta = \frac{\| F_k \|}{\| F_{k-1} \|} \f]
+  \f[ \frac{\| F_k \|}{\| F_{k-1} \|} \geq {\rm tolerance}\f]
 
-  If \f$ \eta \f$ is greater than or equal to the specified tolerance, then 
-  a counter is incremented.  If the counter hits the user specified number of 
-  iterations, the status test returns a Failed status.  NOTE: For the counter 
-  to increment, the steps have to fail CONSECUTIVELY. The counter is reset 
-  every time a convergence rate passes the requested tolerance.
+  for n \e consecutive iterations, the status is set to
+  NOX::StatusTest::Failed and returned. Otherwise, the status is set
+  to NOX::StatusTest::Uncoverged and returned.  Both n and the
+  tolerance are specified in the constructor, by \c n and \c tol,
+  respectively.
 
-  Based on experience the following values are recomended:
+  Based on experience the following values are recommended:
 
   <ul>
   <li> For Newton solves:  n = 50, tolerance = 1.0<br>
@@ -82,10 +74,11 @@ class Stagnation : public Generic {
 public:
 
   //! Constructor.
-  /*! n is the number of consecutive nonlinear iterations with a 
-    convergence rate failure for this test to return a Failed status. 
+  /*! 
+    \param n - Number of consecutive nonlinear iterations 
+    \param tol - Tolerance for stagnation test
    */
-  Stagnation(int n = 50, double tolerance = 1.0);
+  Stagnation(int n = 50, double tol = 1.0);
 
   //! Destructor.
   virtual ~Stagnation();

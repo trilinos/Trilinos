@@ -48,7 +48,14 @@ namespace StatusTest {
 
 //! Convergence test based on the weighted root mean square norm fo the solution update between iterations.
 /*!
-  Convergence of the nonlinear solver is achieved if the following three criteria are met (Criteria #2 and #3 are only used if a specific solver method or parameter is set - see the documentation below):
+
+` If the number of iterations is zero, then the status is set to
+  NOX::StatusTest::Unconverged and returned. (Also, #value is set to
+  1.0e+12.)
+
+  Otherwise, returns NOX::StatusTest::Converged if the three criteria
+  listed below are satisfied. Note that use of Criteria #2 and #3
+  depend on the options set in the solver.
 
   <ol>
   <li> Weigthed root mean square norm is less than a specified tolerance:
@@ -57,58 +64,72 @@ namespace StatusTest {
   ||\delta x^k||_{wrms} < \mbox{tolerance}
   \f]
  
-  where \f$ ||\delta x^k||_{wrms} \f$ is the weigthed root mean square norm 
-  at nonlinear iteration \f$ k \f$.  "tolerance" is a user supplied parameter 
-  that defaults to 1.0. The user can change 
-  this value in the constructor by specifying the "tolerance" variable.
+  where
 
-  The weighted root mean square norm at iteration \f$ k \f$ is defined by:
-
-  \f[
-  ||\delta x^k||_{wrms} =   \sqrt{ \frac{1}{N} \sum_{i=1}^N \left( \frac {C*(x^k_i-x^{k-1}_i)}{RTOL |x^{k-1}_i| + ATOL_i} \right) ^2  }
+ \f[
+  ||\delta x^k||_{wrms} \equiv C \sqrt{ \frac{1}{N} \sum_{i=1}^N \left( \frac
+    {(x^k_i-x^{k-1}_i)}{RTOL |x^{k-1}_i| + ATOL_i} \right) ^2 }
   \f]
 
-  Where \f$ N \f$ is the total number of unknowns in the problem. 
-  \f$ x^k_i \f$ denotes the \f$ i \f$ -th component of the solution 
-  vector \f$ x \f$ at nonlinear iteration \f$ k \f$. \f$ RTOL \f$ is the 
-  relative error tolerance (a scalar value).  \f$ ATOL_i \f$
-  is the absolute error tolerance and can be a scalar or
-  a vector of the same size as the solution vector. 
-  \f$ C \f$ is a scalar value that is typically set to 1.0.  When 
-  NormWRMS is used in conjunction with time stepping algorithms such as
-  Backward Differentiation Formulas (BDF) a different value may be required 
-  based on the specific BDF algorithm utlilized.  The user is free to set 
-  this parameter in the consturctor with the "BDFMultiplier" variable.
-  Defaults to 1.0.
+  Here:
 
-  NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$ and thus the WRMS norm can not be computed.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value of the WRMS norm to 1.0e+12.  Once an iteration has taken place the WRMS Norm value is calculated as above.  
+  - \f$x_i^k\f$ denotes component \f$i\f$ of nonlinear iterate \f$k\f$.
+  - \f$N\f$ denotes the number of unknowns
+  - \f$RTOL\f$ denotes the relative error tolerance, specified via \c
+    rtol in the constructor
+  - \f$ATOL\f$ denotes the absolution error tolerance, specified via
+    \c atol in the constructor. This can be a vector or a scalar.
+  - \f$C\f$ denotes a weight, specified via the parameter \c
+    BDFMultiplier in the constructor.
 
-  <li> If a line search is used, the line search step size, \f$ \lambda \f$, must be greater than a specified step size value, \f$ \alpha \f$:
+  <li> <em>If a line search based solver is used</em>, the line search
+  step size, \f$ \lambda \f$, must be greater than a specified step
+  size value, \f$ \alpha \f$:
 
   \f[ \lambda > \alpha \f]
 
-  The WRMS norm is essentially a stagnation test: i.e. termination of the convergence test is achieved when the norm of the <B>change</B> in the solution vector between iterations (\f$ \delta x = x^k - x^{k-1} \f$) is below a specified value.  If a line search is used, the line search algorithm could cut the step length so that the change in \f$ x \f$ is small enough to prematurely claim convergence.  This second criteria will prevent this premature convergence by insisting that the line search step size be larger than a specified value \f$ \alpha \f$.  The value \f$ \alpha \f$ can be set in the constructor with the "alpha" variable.  Defaults to 1.0.  Setting this value > 1.0 essentially eliminates this criteria from the status test.  
+  The motivation for this test is to avoid detecting stagnation
+  when in fact the true problem is that the step size is just small.
 
-NOTE: This criteria will only be used if a "Line Search Based" solver is selected as the "Nonlinear %Solver" (see NOX::Solver::LineSearchBased).  The checkStatus() method will dynamic_cast the NOX::Solver::Generic object into a NOX::Solver::LineSearchBased object.  If this cast is successful, it will call the getStepSize() method from the NOX::Solver::LineSearchBased object and use criteria #2 in the status test.  If unsuccessful in the dynamic_cast, criteria #2 is not used in the determination of the status. 
+  The value of \f$\alpha\f$ is set in the constructor via the argument
+  \c alpha. Setting \f$\alpha\f$ to zero effectively eliminates this
+  part of the test.
 
-  <li> The achieved linear solver tolerance, \f$ \eta^k \f$ for nonlinear iteration \f$ k \f$, must be less than a specified tolerance value, \f$ \beta \f$:
+  <li> The achieved linear solver tolerance, \f$ \eta^k \f$ for
+  nonlinear iteration \f$ k \f$, must be less than a specified
+  tolerance value, \f$ \beta \f$; i.e.,
 
   \f[ \eta^k < \beta \f]
-The WRMS norm is essentially a stagnation test: i.e. termination of the convergence test is achieved when the norm of the <B>change</B> in the solution vector between iterations (\f$ \delta x = x^k - x^{k-1} \f$) is below a specified value.  If an adjustable forcing term algorithm is used (see NOX::Direction::Newton for details), then far from the solution when the linear solve tolerance, \f$ \eta^k \f$, is large, the linear solver may take so few iterations (or possibly zero iterations) that the change in \f$ x \f$ is small enough to prematurely claim convergence.  This third criteria prevents premature convergence by requiring that the linear solve tolerance be below a specified value.  The value of the linear solve tolerance, \f$ \beta \f$, can be specified in the constructor with the "beta" variable.  Defaults to 0.5 (heuristic).  Setting this value >= 1.0 essentially eliminates this criteria from the status test.  
 
-NOTE: This criteria will only be used if the "Achieved Tolerance" parameter (the value of \f$ \eta^k \f$) is set by the linear solver in the "Output" sublist of the "%Linear %Solver" sublist.  The checkStatus() method will search for this parameter.  If this parameter is found, then criteria #3 will be used in the status test.  If it is not found, criteria #3 will not be used in the determination of the status. 
+  The motivation for this test is to avoid detecting stagnation when
+  in fact the true problem is that the linear solve tolerance was not
+  accurate enough. 
+
+  The value of \f$\beta\f$ is set in the constructor via the argument
+  \c beta. Setting \f$\beta\f$ to 1.0 effectively eliminates this
+  part of the test.
+
+  \note This criteria will only be used if the "Achieved Tolerance"
+  parameter (the value of \f$ \eta^k \f$) is set by the linear solver
+  in the "Newton"/"Linear Solver"/"Output" sublist.  The
+  checkStatus() method will search for this parameter.  
 
 </ol>
 
   References: 
 
-  (1) "Classics in Applied Mathematics #14: Numerical Solution of 
-  Initial-Value Problems in Differential-Algebraic Equations", 
-  Brennan, K. E., Campbell, S. L., Petzold, L. R., SIAM 1996. 
+  <ol>
 
-  (2) "PVODE, an ODE %Solver for Parallel Computers", Byrne,
-  G. D., and Hindmarsh, A. C., Center for Applied Scientific Computing
-  (CASC), UCRL-JC-132361, Rev. 1, May 1999.
+  <li> K. E. Brennam, S. L. Cambell, L. R. Petzold, <em>Numerical
+  Solution of Initial-Value Problems in Differential-Algebraic
+  Equations</em>, Classics in Applied Mathematics 14, SIAM 1996.
+
+  <li> G. D. Byrne and A. C. Hindmarch, <em>PVODE, an ODE %Solver for
+  Parallel Computers</em>, Technical Report UCRL-JC-132361, Rev. 1,
+  Center for Applied Scientific Computing (CASC), Lawrence Livermore
+  National Lab, May 1999.
+
+  </ol>
 
 */
 class NormWRMS : public Generic {

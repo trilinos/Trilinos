@@ -63,9 +63,9 @@ enum CheckType
   {
     //! Evaluate every test and subtest 
     Complete,
-    //! Evaluate only the tests and subtests that are necessary to determine the status [default]
+    //! Evaluate all tests and subtests that are necessary to determine the status 
     Minimal,
-    //! Do not evaluate, except for necessary intermediate tests 
+    //! Evaluation is entirely optional
     None
   };
 
