@@ -29,7 +29,9 @@
 #ifndef Epetra_HashTable_H_
 #define Epetra_HashTable_H_
 
-class Epetra_HashTable
+#include "Epetra_Object.h"
+
+class Epetra_HashTable : public Epetra_Object
 {
   struct Node
   {
@@ -50,26 +52,26 @@ class Epetra_HashTable
  public:
 
   Epetra_HashTable( const int size, const unsigned int seed = (2654435761U) )
-  : Size_(size), Seed_(seed)
+  : Size_(size),
+    Seed_(seed)
   {
-    if (size>0) {
-      Container_ = new Node * [size];
-      for( int i = 0; i < size; ++i ) Container_[i] = 0;
-    }
+    if (size<=0)
+      throw ReportError( "Bad Hash Table Size: " + toString(size), -1 );
+
+    Container_ = new Node * [size];
+    for( int i = 0; i < size; ++i ) Container_[i] = 0;
   }
 
   Epetra_HashTable( const Epetra_HashTable & obj )
   : Size_(obj.Size_),
     Seed_(obj.Seed_)
   {
-    if (Size_>0) {
-      Container_ = new Node * [Size_];
-      for( int i = 0; i < Size_; ++i ) Container_[i] = 0;
-      {for( int i = 0; i < Size_; ++i )
-	{
-	  Node * ptr = obj.Container_[i];
-	  while( ptr ) { Add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
-	}}
+    Container_ = new Node * [Size_];
+    for( int i = 0; i < Size_; ++i ) Container_[i] = 0;
+    for( int i = 0; i < Size_; ++i )
+    {
+      Node * ptr = obj.Container_[i];
+      while( ptr ) { Add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
     }
   }
 
@@ -82,7 +84,6 @@ class Epetra_HashTable
       ptr1 = Container_[i];
       while( ptr1 ) { ptr2 = ptr1; ptr1 = ptr1->Ptr; delete ptr2; }
     }
-    if (Size_ > 0) delete [] Container_;
   }
 
   void Add( const int key, const int value )
