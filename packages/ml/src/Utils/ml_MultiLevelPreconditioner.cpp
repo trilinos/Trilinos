@@ -139,6 +139,11 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     TMatrixML_ = 0;
   }
 
+  if (ML_Kn_ != 0) {
+    ML_Operator_Destroy(&ML_Kn_);
+    ML_Kn_ = 0;
+  }
+
   if (TMatrixTransposeML_ != 0) {
     ML_Operator_Destroy(&TMatrixTransposeML_);
     TMatrixTransposeML_ = 0;
@@ -379,6 +384,68 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 }
 
 // ================================================ ====== ==== ==== == =
+
+/*! Another constructor for Maxwell equations that takes an Epetra_MsrMatrix,
+ * an ML_Operator, and an AZ_MATRIX type.
+ * Two conditions are required on their maps:
+ * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
+ * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
+ */
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
+                         ML_Operator * ML_TMatrix,
+                         AZ_MATRIX * AZ_NodeMatrix,
+                         int       * proc_config,
+                         const ParameterList & List,
+                         const bool ComputePrec):
+  RowMatrix_(&EdgeMatrix),
+  RowMatrixAllocated_(0)
+{
+  ML_Comm *ml_comm;
+
+  ML_Comm_Create(&ml_comm);
+  ML_Kn_ = ML_Operator_Create(ml_comm);
+  AZ_convert_aztec_matrix_2ml_matrix(AZ_NodeMatrix,ML_Kn_,proc_config);
+
+  int MaxNumNonzeros;
+  double CPUTime;
+  Epetra_CrsMatrix *NodeMatrix, *TMatrix;
+  ML_Operator2EpetraCrsMatrix(ML_Kn_, NodeMatrix,MaxNumNonzeros,
+                  true,CPUTime);
+
+  ML_Operator2EpetraCrsMatrix(ML_TMatrix,TMatrix,MaxNumNonzeros,
+                  true,CPUTime);
+
+  // some sanity checks
+  if (! TMatrix->OperatorDomainMap().SameAs(NodeMatrix->OperatorRangeMap()) ) {
+    cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap..." << endl;
+    ML_CHK_ERRV(-1); // error on discrete grad
+  }
+
+  if (! TMatrix->OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap()) ) {
+    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
+    ML_CHK_ERRV(-2); // error on discrete grad
+  }
+
+  List_ = List;
+
+  ML_CHK_ERRV(Initialize());
+
+  // set Maxwell here.
+  // NOTE: RowMatrix_ and EdgeMatrix_ pointer to the same Epetra_RowMatrix
+  SolvingMaxwell_ = true;
+  NodeMatrix_ = NodeMatrix;
+  TMatrix_ = TMatrix;
+  EdgeMatrix_ = & EdgeMatrix;
+
+  // construct hierarchy
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
+
+  ML_Comm_Destroy(&ml_comm);
+}
+
+// ================================================ ====== ==== ==== == =
 // FIXME: should I be deleted??
 ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner(ML_Operator * Operator,
@@ -446,6 +513,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   // Maxwell stuff is off by default
   SolvingMaxwell_ = false;
   NodeMatrix_ = 0;
+  ML_Kn_ = 0;
   EdgeMatrix_ = 0;
   TMatrix_ = 0;
   ml_edges_ = 0;
@@ -778,6 +846,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
         ML_Aggregate_Set_NodalCoordinates(ml_edges_, agg_edge_, coord);
         ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
         ML_Repartition_Set_Partitioner(ml_edges_,ML_USEZOLTAN);
+        ML_Aggregate_Set_MaxLevels(agg_edge_, ml_edges_->ML_num_levels);
       }
       else if (Repartitioner == "ParMETIS")
         ML_Repartition_Set_Partitioner(ml_edges_,ML_USEPARMETIS);
@@ -1063,6 +1132,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* ********************************************************************** */
   /* Now cycling over all levels                                            */
   /* ********************************************************************** */
+  if (SolvingMaxwell_ == true) {
+      // arguments for edge & node smoothers
+      nodal_args_ = ML_Smoother_Arglist_Create(2);
+      edge_args_ = ML_Smoother_Arglist_Create(2);
+  }
 
   ML_CHK_ERR(SetSmoothers());
   // this below *must* to be here and not before the construction of the smoothers
