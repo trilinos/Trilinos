@@ -29,7 +29,6 @@ static ZOLTAN_HG_PACKING_FN packing_aug2;/* augmenting path; length 2 */
 static ZOLTAN_HG_PACKING_FN packing_aug3;/* augmenting path; length 3 */
 
 static ZOLTAN_HG_PACKING_EWS_FN packing_ews_vp;
-static ZOLTAN_HG_PACKING_EWS_FN packing_ews_vs;
 
 /****************************************************************************/
 
@@ -68,7 +67,6 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 
     str = hgp->ews_str;
     if (!strcasecmp(str, "vertex_product"))  hgp->packing_ews = packing_ews_vp;
-    else if (!strcasecmp(str, "vertex_sum")) hgp->packing_ews = packing_ews_vs;
     else                                     hgp->packing_ews = NULL;
     
   }
@@ -494,14 +492,6 @@ static int packing_ews_vp (ZZ *zz, HGraph *hg)
 {
 /* Placeholder for packing_ews_vp */
 /* Vertex-product edge weight scaling. */
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-static int packing_ews_vs (ZZ *zz, HGraph *hg)
-{
-/* Placeholder for packing_ews_vs */
-/* Vertex-sum edge weight scaling. */
   return ZOLTAN_OK;
 }
 

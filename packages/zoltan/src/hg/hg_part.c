@@ -33,15 +33,15 @@ int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
   }
 
   /* Set reduction method. */
-  hgp->packing  = hgp->packing_rli  = NULL ;
   hgp->matching = hgp->matching_rli = NULL ;
+  hgp->packing  = hgp->packing_rli  = NULL ;
   hgp->grouping = hgp->grouping_rli = NULL ;
-  hgp->packing_ews = NULL;
   hgp->matching_ews = NULL;
+  hgp->packing_ews = NULL;
   hgp->grouping_ews = NULL;
 
-  if (!(Zoltan_HG_Set_Packing_Fn  (hgp))
-   && !(Zoltan_HG_Set_Matching_Fn (hgp))
+  if (!(Zoltan_HG_Set_Matching_Fn (hgp))
+   && !(Zoltan_HG_Set_Packing_Fn  (hgp))
    && !(Zoltan_HG_Set_Grouping_Fn (hgp)))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
     return ZOLTAN_FATAL;
@@ -53,7 +53,7 @@ int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
     return ZOLTAN_FATAL;
   }
 
-  /* Set local refinement method, if any. */
+  /* Set local refinement method. */
   if (!(hgp->local_ref = Zoltan_HG_Set_Local_Ref_Fn(hgp->local_str)))
   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_LOCAL_REFINEMENT.");
     return ZOLTAN_FATAL;

@@ -27,8 +27,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
 static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
 
 static ZOLTAN_HG_GROUPING_EWS_FN grouping_ews_vp;
-static ZOLTAN_HG_GROUPING_EWS_FN grouping_ews_vs;
-
 
 /****************************************************************************/
 
@@ -66,7 +64,6 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 
     str = hgp->ews_str;
     if (!strcasecmp(str, "vertex_product")) hgp->grouping_ews = grouping_ews_vp;
-    else if (!strcasecmp(str,"vertex_sum")) hgp->grouping_ews = grouping_ews_vs;
     else                                    hgp->grouping_ews = NULL;
 
   }
@@ -83,16 +80,16 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
   char  *yo = "Zoltan_HG_Grouping";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
   if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
-
   Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
-
   old_ewgt = hg->ewgt;
   hg->ewgt = new_ewgt;
+
   ierr = hgp->grouping(zz,hg,pack,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     goto End;
@@ -341,15 +338,6 @@ static int grouping_ews_vp (ZZ *zz, HGraph *hg)
 {
 /* Placeholder for grouping_ews_vp */
 /* Vertex-product edge weight scaling. */
-
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-static int grouping_ews_vs (ZZ *zz, HGraph *hg)
-{
-/* Placeholder for grouping_ews_vs */
-/* Vertex-sum edge weight scaling. */
 
   return ZOLTAN_OK;
 }

@@ -28,20 +28,18 @@ static ZOLTAN_HG_MATCHING_FN matching_aug2;/* post matching optimizer */
 static ZOLTAN_HG_MATCHING_FN matching_aug3;/* post matching optimizer */
 
 static ZOLTAN_HG_MATCHING_EWS_FN matching_ews_vp;
-static ZOLTAN_HG_MATCHING_EWS_FN matching_ews_vs;
 
 /*****************************************************************************/
 
 int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 {
-  char *str;
   int found = 0;
+  char *str;
   static int srand_set = 0;
   if (srand_set == 0)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
+  { srand_set = 1 ;
+    srand ((unsigned long) RANDOM_SEED) ;
+  }
 
   str = hgp->redm_str;
   if      (!strcasecmp(str, "mxm"))  hgp->matching = matching_mxm;
@@ -55,7 +53,6 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
   if (hgp->matching) {
 
     found = 1;
-
     /*
      * If reduction method is a matching, set the improvement and
      * edge weight scaling functions accordingly.
@@ -68,7 +65,6 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 
     str = hgp->ews_str;
     if (!strcasecmp(str,"vertex_product"))  hgp->matching_ews = matching_ews_vp;
-    else if (!strcasecmp(str,"vertex_sum")) hgp->matching_ews = matching_ews_vs;
     else                                    hgp->matching_ews = NULL;
 
   }
@@ -88,7 +84,7 @@ int Zoltan_HG_Matching (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (g->vwgt)
+  if (g->vwgt && hgp->matching_ews)
     Zoltan_HG_Scale_Graph_Weight (zz,g);
 
   /* Call matching routine specified by parameters. */
@@ -98,8 +94,8 @@ int Zoltan_HG_Matching (
   }
 
   /* Optimization */
-  if (hgp->matching_rli != NULL)
-   ierr = hgp->matching_rli (zz,g,match,limit);
+  if (hgp->matching_rli)
+    ierr = hgp->matching_rli (zz,g,match,limit);
 
 End:
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -378,6 +374,13 @@ static int matching_pgm (ZZ *zz, Graph *g, Matching match, int limit)
 }
 
 /*****************************************************************************/
+static int matching_aug2 (ZZ *zz, Graph *g, Matching match, int limit)
+{
+/* Placeholder for matching_aug2. */
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
 
 static int matching_aug3 (ZZ *zz, Graph *g, Matching match, int limit)
 { int		i, j, k, size=0, *stack, free_p=0, best_2=-1, best_near=-1,
@@ -448,27 +451,12 @@ static int matching_aug3 (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
-/*****************************************************************************/
-static int matching_aug2 (ZZ *zz, Graph *g, Matching match, int limit)
-{
-/* Placeholder for matching_aug2. */
-  return ZOLTAN_OK;
-}
-
 /****************************************************************************/
 static int matching_ews_vp (ZZ *zz, Graph *hg)
 {
 /* Placeholder for matching_ews_vp */
 /* Vertex-product edge weight scaling. */
 
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-static int matching_ews_vs (ZZ *zz, Graph *hg)
-{
-/* Placeholder for matching_ews_vs */
-/* Vertex-sum edge weight scaling. */
   return ZOLTAN_OK;
 }
 

@@ -167,12 +167,6 @@ typedef struct {
   ZOLTAN_HG_PACKING_FN  *packing;       /* Grouping fn specified by */
   ZOLTAN_HG_GROUPING_FN *grouping;      /* redm_str; NULL if not used */
 
-  char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
-  ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
-
-  char local_str[MAX_PARAM_STRING_LEN]; /*Local refinement string and */
-  ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
-
   char rli_str[MAX_PARAM_STRING_LEN];    /* Reduction Local Improvement string*/
   ZOLTAN_HG_MATCHING_FN *matching_rli;   /* Pointers to Matching, Packing and */
   ZOLTAN_HG_PACKING_FN  *packing_rli;    /* Grouping improvement fn specified */
@@ -183,6 +177,12 @@ typedef struct {
   ZOLTAN_HG_PACKING_EWS_FN  *packing_ews;  /* scaling fn for Matching,*/
   ZOLTAN_HG_GROUPING_EWS_FN *grouping_ews; /* Packing and Grouping,   */
                                            /* specified by ews_str.   */
+
+  char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
+  ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
+
+  char local_str[MAX_PARAM_STRING_LEN]; /*Local refinement string and */
+  ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
 
   int check_graph;                       /* Flag indicating whether the input
                                             hypergraph should be checked for 

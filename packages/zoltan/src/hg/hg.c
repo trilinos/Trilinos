@@ -170,11 +170,11 @@ int ierr = ZOLTAN_OK;
 
   /* Set default values */
   hgp->redl = zz->LB.Num_Global_Parts;
-  strcpy(hgp->redm_str, "pgp");
-  strcpy(hgp->local_str, "no");
+  strcpy(hgp->redm_str, "grg");
+  strcpy(hgp->local_str, "hc");
   strcpy(hgp->global_str, "lin");
   strcpy(hgp->rli_str, "aug3");
-  strcpy(hgp->ews_str, "no");
+  strcpy(hgp->ews_str, "vertex_product");
   hgp->check_graph = 1;
 
   /* Get application values of parameters. */

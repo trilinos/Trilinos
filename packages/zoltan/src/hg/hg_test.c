@@ -45,10 +45,11 @@ int main (int argc, char **argv)
   hgp.bal_tol = 10.0;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
-  strcpy(hgp.global_str, "lin");
-  strcpy(hgp.local_str, "hc");
   strcpy(hgp.rli_str, "aug3");
   strcpy(hgp.ews_str, "vertex_product");
+  strcpy(hgp.global_str, "lin");
+  strcpy(hgp.local_str, "hc");
+  hgp.check_graph = 1;
 
   zz.Debug_Level = 1;
 
