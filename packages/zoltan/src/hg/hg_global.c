@@ -47,8 +47,8 @@ static int global_ran (
   Partition part
 )
 { 
-  int i, j, number, vertex, *order=NULL, new_part;
-  float *weight=NULL;
+  int i, j, number, temp, *order=NULL;
+  float weight_avg = 0.0, weight_sum = 0.0;
   static int srand_set = 0;
   char *yo = "global_ran" ;
 
@@ -57,28 +57,47 @@ static int global_ran (
     srand ((unsigned long) RANDOM_SEED) ;
   }
 
-  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
-      !(weight = (float *) ZOLTAN_CALLOC (p,sizeof(float)))    )
+  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
   { ZOLTAN_FREE ((void **) &order) ;
-    ZOLTAN_FREE ((void **) &weight) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
   for (i=0; i<hg->nVtx; i++)
     order[i] = i;
 
+  /* Randomly permute order array */
   for (i=hg->nVtx; i>0; i--)
-  { vertex = order[number=rand()%i];
+  { number=rand()%i;
+    temp = order[number];
     order[number] = order[i-1];
-    new_part = 0;
-    for (j=1; j<p; j++)
-      if (weight[j] < weight[new_part])
-        new_part = j;
-    part[vertex] = new_part;
-    weight[new_part] += (hg->vwgt)?hg->vwgt[vertex]:1.0;
+    order[i-1] = temp;
   }
+
+  /* Follow the algorithm from global_lin to do
+     linear partitioning on the permuted vertices. */
+  if (hg->vwgt)
+  { for (i=0; i<hg->nVtx; i++)
+      weight_avg += hg->vwgt[i];
+  }
+  else
+    weight_avg = (float)hg->nVtx;
+  weight_avg /= (float)p;
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    printf("GLOBAL_PART weight_avg:%f\n",weight_avg);
+  number = 1; /* Assign next vertex to partition (number-1) */
+  for (i=0; i<hg->nVtx; i++)
+  {
+    j = order[i];
+    part[j] = number-1;
+    weight_sum += hg->vwgt?hg->vwgt[j]:1.0;
+    if (number<p && weight_sum > number*weight_avg)
+      number++;
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      printf("GLOBAL_PART i=%2d, part[%d] = %d weightsum:%f\n",i,j,part[j],weight_sum);
+  }
+
   ZOLTAN_FREE ((void **) &order);
-  ZOLTAN_FREE ((void **) &weight);
   return ZOLTAN_OK;
 }
 
@@ -97,11 +116,15 @@ static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
     weight_avg = (float)hg->nVtx;
   weight_avg /= (float)p;
 
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    printf("GLOBAL_PART weight_avg:%f\n",weight_avg);
   for (i=0; i<hg->nVtx; i++)
   { part[i] = number-1;
     weight_sum += hg->vwgt?hg->vwgt[i]:1.0;
     if (number<p && weight_sum > number*weight_avg)
       number++;
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      printf("GLOBAL_PART part[%d] = %d weightsum:%f\n",i,part[i],weight_sum);
   }
   return ZOLTAN_OK;
 }
