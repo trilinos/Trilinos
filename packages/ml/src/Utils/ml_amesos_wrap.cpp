@@ -96,7 +96,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	 << ") : MaxNonzerosPerRow = "
 	 << MaxNumNonzeros << endl;
     cout << "Amesos (level " << curr_level
-	 << ") : fill-in = "
+	 << ") : Fill-in = "
 	 << 100.0*NumGlobalNonzeros/(NumGlobalRows*NumGlobalRows)
 	 << " %" << endl;
     cout << "Amesos (level " << curr_level
@@ -162,71 +162,86 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   case ML_AMESOS_UMFPACK:
 #ifdef TFLOP
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : building UMFPACK\n",curr_level);
+      printf("Amesos (level %d) : Building UMFPACK\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
-	   << ") : building UMFPACK\n";
+	   << ") : Building UMFPACK\n";
 #endif
     A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
-    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_SUPERLUDIST:
 #ifdef TFLOP
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : building SUPERLUDIST\n",curr_level);
+      printf("Amesos (level %d) : Building SUPERLUDIST\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
-	   << ") : building SUPERLUDIST\n";
+	   << ") : Building SUPERLUDIST\n";
 #endif
     A_Base = A_Factory.Create("Amesos_Superludist", *Amesos_LinearProblem);
     
-    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_SCALAPACK:
 #ifdef TFLOP
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : building SCALAPACK\n",curr_level);
+      printf("Amesos (level %d) : Building SCALAPACK\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
-	   << ") : building SCALAPACK\n";
+	   << ") : Building SCALAPACK\n";
 #endif
     A_Base = A_Factory.Create("Amesos_Scalapack", *Amesos_LinearProblem);
     
-    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_MUMPS:
 #ifdef TFLOP
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : building MUMPS\n",curr_level);
+      printf("Amesos (level %d) : Building MUMPS\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
-	   << ") : building MUMPS\n";
+	   << ") : Building MUMPS\n";
 #endif
     A_Base = A_Factory.Create("Amesos_Mumps", *Amesos_LinearProblem);
-    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_KLU:
   default:
 #ifdef TFLOP
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      printf("Amesos (level %d) : building KLU\n",curr_level);
+      printf("Amesos (level %d) : Building KLU\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
-	   << ") : building KLU\n";
+	   << ") : Building KLU\n";
 #endif
     A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
-    assert(A_Base!=0);
     break;
   }
+
+  // may happen the desired solver is not available. KLU is almost
+  // always compiled, so try this...
+  if( A_Base == 0 ) {
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : Now re-building with KLU\n",curr_level);
+#else
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : Now re-building with KLU\n";
+#endif
+    A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
+    if( A_Base == 0 ) {
+      if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
+	cerr << "Amesos:ERROR: not Amesos solver is available!" << endl;
+      }
+      exit( EXIT_FAILURE );
+    }
+ }
 
   A_Base->SetParameters(ParamList);
 
