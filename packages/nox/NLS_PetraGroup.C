@@ -10,23 +10,25 @@
 
 #include "NLS_PetraGroup.H"
 
-NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x) :
+NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, NLS_PetraGroupInterface& I) :
   xVector(x, true), // deep copy x     
   RHSVector(x, false), // new vector of same size
   gradVector(x, false), // new vector of same size
   NewtonVector(x, false) // new vector of same size
 {
   Jac = NULL;
+  Interface = &I;
   reset();
 }
 
-NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J) :
+NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I) :
   xVector(x, true), // deep copy x     
   RHSVector(x, false), // new vector of same size
   gradVector(x, false), // new vector of same size
   NewtonVector(x, false) // new vector of same size
 {
   Jac = &J;
+  Interface = &I;
   reset();
 }
 
@@ -87,20 +89,16 @@ const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, const NLS_
 //! Compute and return RHS
 const NLS_Vector& NLS_PetraGroup::computeRHS() 
 {
-  cout << "ERROR: NLS_PetraGroup::computeRHS() - This function must be overloaded to\n"
-    "interface with user's code!" << endl;
-  exit(-1);
+  Interface->computeRHS(xVector.getPetraVector(), RHSVector.getPetraVector());
 }
 
-//! Compute RHS
+//! Compute Jacobian
 void NLS_PetraGroup::computeJacobian() 
 {
   if (!isJacobianEnabled())
     throw;
 
-  cout << "ERROR: NLS_PetraGroup::computeJacobian() - This function must be overloaded to\n"
-       << "interface with user's code!" << endl;
-  throw;
+  Interface->computeJacobian(xVector.getPetraVector(), *Jac);
 }
 
 //! Compute and return gradient 

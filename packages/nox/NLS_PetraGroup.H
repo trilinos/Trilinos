@@ -21,6 +21,7 @@
 #include "NLS_Vector.H"
 #include "NLS_PetraVector.H"
 #include "NLS_Group.H"
+#include "NLS_PetraGroupInterface.H"
 
 //! Concrete implementation of the pure virtual NLS_Group.
 
@@ -39,12 +40,12 @@ public:
   //! Constructor for Jacobian-Enabled group.
   /*! Makes internal xVector a deep copy of x and the internal Jacobian
     a pointer to J. Does not delete J. */
-  NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J);
+  NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I);
 
   //! Constructor for Jacobian-Diabled group.
   /*! Makes internal xVector a deep copy of x. A group constructed in
     this manner cannot compute its Jacobian. */
-  NLS_PetraGroup(Epetra_Vector& x);
+  NLS_PetraGroup(Epetra_Vector& x, NLS_PetraGroupInterface& I);
 
   //! Deconstructor
   virtual ~NLS_PetraGroup();
@@ -69,7 +70,7 @@ public:
   //! Compute and return RHS
   virtual const NLS_Vector& computeRHS();
 
-  //! Compute RHS
+  //! Compute Jacobian
   virtual void computeJacobian();
 
   //! Compute and return gradient 
@@ -142,6 +143,9 @@ protected:
 
   //! Pointer to Epetra Jacobian Matrix 
   Epetra_RowMatrix* Jac;
+
+  //! Pointer to user's code for filling the RHS (function) and Jacobian
+  NLS_PetraGroupInterface* Interface;
 
 /** @name IsValid flags 
  *  Tells if the vector is out of date with respect to the current 

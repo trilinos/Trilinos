@@ -1,48 +1,71 @@
-########################################################################
-### Makefile
-########################################################################
+# To run makefile:
+#    1) set environment variable TRILINOS_ARCH to sgi, sun, tflop, or pclinux.
+#       Other machines require an appropriate makefile.$(TRILINOS_ARCH) file.
+#    2) Set TRILINOS_COMM to SERIAL or MPI
+#    3) (Optional) Set TRILINOS_ID to make unique version for same 
+#       architecture and communication mode.
+#
+#    4) Make the archive $(LIBNLSPACK) by typing 'make'.
+#
+include $(TRILINOS_HOME)/build/TARGET
 
-########################################################################
-### Definitions 
-########################################################################
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
-CXXFLAGS = -g -I$(TRILINOS_HOME)/src/petra
+LIBNLSPACK = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libnlspack.a
 
-########################################################################
-### Executable Rules 
-########################################################################
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
-OBJS = NLS_Newton.o NLS_PetraVector.o NLS_Method.o NLS_ParameterList.o 
+# Petra communication defines
+PETRA_COMM_SERIAL          = SERIAL
+PETRA_COMM_MPI             = PETRA_MPI
+PETRA_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
 
-tester: NLS_ParameterList.o NLS_Parameter.o tester.o
-	 $(CXX) $(CXXFLAGS) tester.o NLS_ParameterList.o NLS_Parameter.o -o tester
+# NLSPACK communication defines
+NLSPACK_COMM_SERIAL          = SERIAL
+NLSPACK_COMM_MPI             = AZTEC_MPI
+NLSPACK_COMM                 = $(NLSPACK_COMM_$(TRILINOS_COMM))
 
-########################################################################
-### Object File Rules
-########################################################################
+DEFINES= -D$(TRILINOS_ARCH) $(NLSPACK_ARCH_DEFINES) -D$(NLSPACK_COMM) \
+         -D$(PETRA_COMM) $(PETRA_ARCH_DEFINES) -DIFPACK -DSPARSEBLAS \
+         -DAZ_COL_REORDER
 
-NLS_Newton.o : NLS_Newton.C NLS_Method.H NLS_Newton.H 
-	$(CXX) -c $(CXXFLAGS) NLS_Newton.C -o $@
+INCLUDES = -I. $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
+           -I$(TRILINOS_HOME)/packages/aztecoo/src
 
-NLS_ParameterList.o : NLS_ParameterList.C NLS_Parameter.H NLS_ParameterList.H 
-	$(CXX) -c $(CXXFLAGS) NLS_ParameterList.C -o $@
+LIB_PATHS=
 
-NLS_PetraVector.o : NLS_PetraVector.C NLS_PetraVector.H 
-	$(CXX) -c $(CXXFLAGS) NLS_PetraVector.C -o $@
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) 
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS = $(CXXFLAGS)
+#=======================================================================
+# NLSPACK source files
+#=======================================================================
 
-tester.o : tester.C NLS_Parameter.H NLS_ParameterList.H 
-	$(CXX) -c $(CXXFLAGS) tester.C -o $@
+NLSPACK_CC = NLS_Parameter.C NLS_ParameterList.C \
+             NLS_PetraVector.C NLS_PetraGroup.C \
+             NLS_MethodManager.C NLS_Newton.C
 
-NLS_GenericMethod.o : NLS_GenericMethod.C NLS_Function.H NLS_Group.H \
-	NLS_Method.H NLS_Newton.H NLS_ParameterList.H 
-	$(CXX) -c $(CXXFLAGS) NLS_GenericMethod.C -o $@
+NLSPACK_C  = 
 
-NLS_Parameter.o : NLS_Parameter.C 
-	$(CXX) -c $(CXXFLAGS) NLS_Parameter.C -o $@
+#=======================================================================
+# NLSPACK include files
+#=======================================================================
 
-########################################################################
-### Utilities
-########################################################################
+NLSPACK_INC =
 
+NLSPACK_OBJ          = $(NLSPACK_CC:.C=.o)  $(NLSPACK_C:.c=.o)
 
+$(LIBNLSPACK): $(NLSPACK_OBJ)
+	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
+	$(AR) rcv $(LIBNLSPACK) $(NLSPACK_OBJ)
+	$(RANLIB) $(LIBNLSPACK)
 
+#
+# dependencies for 'f' files (none at this time)
+#
+#include ../../build/depends.ifpack
+
+clean:
+	@echo "junk" > dummy.o
+	@rm -f *.o  $(LIBNLSPACK) *~
