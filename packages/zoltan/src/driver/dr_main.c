@@ -31,7 +31,6 @@ static char *cvs_dr_main = "$Id$";
 /*    30 March 1999:    Date of creation                                    */
 /*--------------------------------------------------------------------------*/
 
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -136,7 +135,7 @@ int main(int argc, char *argv[])
     printf("\n\nReading the command file, %s\n", cmd_file);
     if(!read_cmd_file(cmd_file, &prob, &pio_info))
     {
-      sprintf(cmesg,"fatal: Could not read in the the command file"
+      sprintf(cmesg,"fatal: Could not read in the command file"
               " \"%s\"!\n", cmd_file);
       Gen_Error(0, cmesg);
       error_report(Proc);
@@ -207,14 +206,14 @@ int read_mesh(int Proc,
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
   if (pio_info->file_type == CHACO_FILE) {
-    if (!read_chaco_mesh(Proc, Num_Proc, &prob, &pio_info, &elements)) {
+    if (!read_chaco_mesh(Proc, Num_Proc, prob, pio_info, elements)) {
         Gen_Error(0, "fatal: Error returned from read_chaco_mesh\n");
         return 0;
     }
   }
 #ifdef NEMESIS_IO
   else if (pio_info->file_type == NEMESIS_FILE) {
-    if (!read_exoII_mesh(Proc, Num_Proc, &prob, &pio_info, &elements)) {
+    if (!read_exoII_mesh(Proc, Num_Proc, prob, pio_info, elements)) {
         Gen_Error(0, "fatal: Error returned from read_exoII_mesh\n");
         return 0;
     }
@@ -240,7 +239,7 @@ void print_input(int Num_Proc, PROB_INFO_PTR prob)
   printf("\tTolerance: %lf\n", prob->tol);
   printf("\tParameters:\n");
   for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
-    printf("\t\t%d %lf\n", (i+1), prob->params[i]);
+    printf("\t\t%d %lf\n", i, prob->params[i]);
 
   if (prob->gen_graph)
     printf("\tGenerating graph.\n");

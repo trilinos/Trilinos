@@ -115,18 +115,20 @@ void error_report(int Proc)
       {
         if(iflag == 0)
         {
-          fprintf(stderr, "=========================");
-          fprintf(stderr, "messages from Proc %d", Proc);
-          fprintf(stderr, "=========================\n");
+          fprintf(stderr, "========================="
+                          "messages from Proc %d"
+                          "=========================\n", Proc);
           iflag = 1;
         }
 
-        fprintf(stderr, "\t%s\n", (error_info+i)->err_mesg);
+        fprintf(stderr, "Proc %d: \t%s\n", Proc, (error_info+i)->err_mesg);
         if(error_lev >= 2)
-          fprintf(stderr, "\t\tin file %s\n", (error_info+i)->filename);
+          fprintf(stderr, "Proc %d: \t\tin file %s\n", 
+                           Proc, (error_info+i)->filename);
 
         if(error_lev >= 3)
-          fprintf(stderr, "\t\t\tat line %d\n", (error_info+i)->line_no);
+          fprintf(stderr, "Proc %d: \t\t\tat line %d\n", 
+                           Proc, (error_info+i)->line_no);
       }
 
     }

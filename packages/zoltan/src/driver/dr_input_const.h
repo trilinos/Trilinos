@@ -20,6 +20,10 @@ static char *cvs_dr_input_const = "$Id$";
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
 
+/* Define NEMESIS_IO to use Nemesis I/O.              */
+/* Undefine NEMESIS_IO to avoid compiling in Nemesis. */
+#define NEMESIS_IO
+
 /* define the FEM input file types */
 #define NEMESIS_FILE 0
 #define CHACO_FILE   1

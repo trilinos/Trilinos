@@ -93,10 +93,10 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
             return 0;
           }
 
-          if (strcmp(cptr, "nemesisi") == 0) {
+          if (strcasecmp(cptr, "nemesisi") == 0) {
             pio_info->file_type = NEMESIS_FILE;
           }
-          else if (strcmp(cptr, "chaco") == 0) {
+          else if (strcasecmp(cptr, "chaco") == 0) {
             pio_info->file_type = CHACO_FILE;
           }
           else {
@@ -357,12 +357,13 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           }
           cptr2++;
 
-          iret = sscanf(cptr, "%lf", &value);
+          iret = sscanf(cptr2, "%lf", &value);
           if (iret != 1) {
             Gen_Error(0, "fatal: must specify a parameter value");
             return 0;
           }
           prob->params[param] = value;
+          cptr = strtok(NULL, ",");
         }
       }
     } /* End "if(inp_line[0] != '#')" */

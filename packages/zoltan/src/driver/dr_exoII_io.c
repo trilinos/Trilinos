@@ -67,6 +67,7 @@ int read_exoII_mesh(int Proc,
 #ifdef DEBUG_EXO
   int    j, k, elem;
 #endif
+  FILE  *fdtmp;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -76,6 +77,24 @@ int read_exoII_mesh(int Proc,
   /* generate the parallel filename for this processor */
   gen_par_filename(pio_info->pexo_fname, par_nem_fname, pio_info, Proc,
                    Num_Proc);
+
+  /* 
+   * check whether parallel file exists.  do the check with fopen 
+   * as ex_open coredumps on the paragon when files do not exist.
+   */
+
+  if ((fdtmp = fopen(par_nem_fname, "r")) == NULL) {
+    sprintf(cmesg,"fatal: parallel Exodus II file %s does not exist",
+            par_nem_fname);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+  else
+    fclose(fdtmp);
+
+  /*
+   * now open the existing parallel file using Exodus calls.
+   */
 
   if ((pexoid = ex_open(par_nem_fname, EX_READ, &cpu_ws, &io_ws,
                         &ver)) < 0) {
