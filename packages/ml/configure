@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -909,7 +909,7 @@ Optional Features:
                           package, is used if some ML examples to construct
                           the linear system. Triutils requires
                           --enable_epetra. (default is no)
-  --enable-examples       Build examples for ML package (default is yes)
+  --enable-ml_examples    Build examples for ML package (default is yes)
   --enable-tests          Build tests for ML package (default is no)
 
 Optional Packages:
@@ -6896,18 +6896,18 @@ fi
 #AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 
-# Check whether --enable-examples or --disable-examples was given.
-if test "${enable_examples+set}" = set; then
-  enableval="$enable_examples"
-  ac_cv_use_examples=$enableval
+# Check whether --enable-ml_examples or --disable-ml_examples was given.
+if test "${enable_ml_examples+set}" = set; then
+  enableval="$enable_ml_examples"
+  ac_cv_use_ml_examples=$enableval
 else
-  ac_cv_use_examples=yes
+  ac_cv_use_ml_examples=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use examples" >&5
-echo $ECHO_N "checking whether to use examples... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use ml_examples" >&5
+echo $ECHO_N "checking whether to use ml_examples... $ECHO_C" >&6
 
-if test "X$ac_cv_use_examples" != "Xno"; then
+if test "X$ac_cv_use_ml_examples" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -6922,12 +6922,12 @@ fi
 
 
 
-if test "X$ac_cv_use_examples" != "Xno"; then
-  BUILD_EXAMPLES_TRUE=
-  BUILD_EXAMPLES_FALSE='#'
+if test "X$ac_cv_use_ml_examples" != "Xno"; then
+  ML_BUILD_EXAMPLES_TRUE=
+  ML_BUILD_EXAMPLES_FALSE='#'
 else
-  BUILD_EXAMPLES_TRUE='#'
-  BUILD_EXAMPLES_FALSE=
+  ML_BUILD_EXAMPLES_TRUE='#'
+  ML_BUILD_EXAMPLES_FALSE=
 fi
 
 
@@ -10586,10 +10586,10 @@ echo "$as_me: error: conditional \"ML_USING_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
+if test -z "${ML_BUILD_EXAMPLES_TRUE}" && test -z "${ML_BUILD_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
+echo "$as_me: error: conditional \"ML_BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11227,8 +11227,8 @@ s,@ML_USING_ANASAZI_TRUE@,$ML_USING_ANASAZI_TRUE,;t t
 s,@ML_USING_ANASAZI_FALSE@,$ML_USING_ANASAZI_FALSE,;t t
 s,@ML_USING_TRIUTILS_TRUE@,$ML_USING_TRIUTILS_TRUE,;t t
 s,@ML_USING_TRIUTILS_FALSE@,$ML_USING_TRIUTILS_FALSE,;t t
-s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
-s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
+s,@ML_BUILD_EXAMPLES_TRUE@,$ML_BUILD_EXAMPLES_TRUE,;t t
+s,@ML_BUILD_EXAMPLES_FALSE@,$ML_BUILD_EXAMPLES_FALSE,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t

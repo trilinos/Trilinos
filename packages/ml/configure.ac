@@ -292,8 +292,8 @@ AC_CXX_STD_SPRINTF
 #####################################
 # Following options are ON by default
 #####################################
- TAC_ARG_ENABLE_OPTION(epetra, [Enable Epetra support], ML_EPETRA, yes)
- TAC_ARG_ENABLE_OPTION(aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
+TAC_ARG_ENABLE_OPTION(epetra, [Enable Epetra support], ML_EPETRA, yes)
+TAC_ARG_ENABLE_OPTION(aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
 
 #if we're not using aztecoo, then build certain ML examples
 #without dependencies on libepetra.a  or libaztecoo.a
@@ -385,8 +385,11 @@ AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 #TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 #AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for ML package], EXAMPLES, yes)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE(ml_examples,
+             AC_HELP_STRING([Build examples for ML package]),
+             EXAMPLES,
+             yes)
+AM_CONDITIONAL(ML_BUILD_EXAMPLES, test "X$ac_cv_use_ml_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for ML package], TESTS, no)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")

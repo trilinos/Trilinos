@@ -85,7 +85,7 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES
+if ML_BUILD_EXAMPLES
 EXAMPLE_SUBDIR=examples
 endif
 
