@@ -26,6 +26,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
                         float *c, int STATS_TYPE)
 {
   int proc,                                /* the processor number */
+      print_proc,                          /* the processor that prints */
       nprocs,                              /* total number of processors */
       sum,                                 /* the sum of the counters */
       min,                                 /* minimum value */
@@ -41,10 +42,11 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   /* get the processor number and the total number of processors */
   MPI_Comm_rank(lb->Communicator, &proc);
   MPI_Comm_size(lb->Communicator, &nprocs);
+  print_proc = lb->Debug_Proc;
   
   /* print out some headders */
-  if (proc == 0) printf("Total time: %g (secs)\n",timetotal);
-  if (proc == 0) printf("Statistics:\n");
+  if (proc == print_proc) printf("Total time: %g (secs)\n",timetotal);
+  if (proc == print_proc) printf("Statistics:\n");
 
   MPI_Barrier(lb->Communicator);
 
@@ -53,7 +55,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Number of parition iters: ave = %g, min = %d, max = %d\n", 
 	   ave, min, max);
   MPI_Barrier(lb->Communicator);
@@ -64,7 +66,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Objs sent during gen tree: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(lb->Communicator);
@@ -75,7 +77,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Objs recv during gen tree: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(lb->Communicator);
@@ -86,7 +88,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Objs sent during balancing: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(lb->Communicator);
@@ -97,7 +99,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Objs recv during balancing: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(lb->Communicator);
@@ -108,7 +110,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Max objs: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
   if (STATS_TYPE == 2)
@@ -118,7 +120,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&c[0],&min1,1,MPI_FLOAT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&c[0],&max1,1,MPI_FLOAT,MPI_MAX,lb->Communicator);
   ave = ((double) sum1)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Initial Load: ave = %g, min = %f, max = %f\n",ave,min1,max1);
   MPI_Barrier(lb->Communicator);
   if (STATS_TYPE == 2)
@@ -128,7 +130,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&c[1],&min1,1,MPI_FLOAT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&c[1],&max1,1,MPI_FLOAT,MPI_MAX,lb->Communicator);
   ave = ((double) sum1)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Load Before Balancing: ave = %g, min = %f, max = %f\n", 
 	   ave, min1, max1);
   MPI_Barrier(lb->Communicator);
@@ -140,7 +142,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&c[3],&min1,1,MPI_FLOAT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&c[3],&max1,1,MPI_FLOAT,MPI_MAX,lb->Communicator);
   ave = ((double) sum1)/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Load After Balancing: ave = %g, min = %f, max = %f\n", 
 	   ave, min1, max1);
   MPI_Barrier(lb->Communicator);
@@ -152,7 +154,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -163,7 +165,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Partition time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -174,7 +176,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Migration notice time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
@@ -188,7 +190,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
-  if (proc == 0) 
+  if (proc == print_proc) 
     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);

@@ -102,7 +102,8 @@ int error = FALSE;            /* error flag                                  */
   LB_Bind_Param(OCT_params, "OCT_GRANULARITY", (void *) &oct_granularity);
   LB_Bind_Param(OCT_params, "OCT_OUTPUT_LEVEL", (void *) &oct_output_level);
 
-  LB_Assign_Param_Vals(lb->Params, OCT_params, lb->Debug_Level, lb->Proc);
+  LB_Assign_Param_Vals(lb->Params, OCT_params, lb->Debug_Level, lb->Proc, 
+                       lb->Debug_Proc);
 
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (lb->Obj_Weight_Dim > 0);
