@@ -5,23 +5,23 @@
 
 \section table Table of Contents
 
-- \ref intro
-- \ref download
-- \ref desc
-- \ref dev
-- \ref doc
-- \ref minitutorial
-- \ref MLP
-- \ref mainstruct
-- \ref conversion
-- \ref amesos
-- \ref ifpack
-- \ref anasazi
-- \ref debug 
-- \ref changes
-- \ref copyright
+- \ref ml_intro
+- \ref ml_download
+- \ref ml_desc
+- \ref ml_dev
+- \ref ml_doc
+- \ref ml_minitutorial
+- \ref ml_MLP
+- \ref ml_mainstruct
+- \ref ml_conversion
+- \ref ml_amesos
+- \ref ml_ifpack
+- \ref ml_anasazi
+- \ref ml_debug 
+- \ref ml_changes
+- \ref ml_copyright
 
-\section intro Introduction
+\section ml_intro Introduction
 
 ML is a multigrid preconditioning package intended to solve large sparse linear
 systems of equations arising from primarily elliptic PDE discretizations. Several
@@ -57,11 +57,11 @@ ML has been used within a number of applications at Sandia and a few application
 outside of Sandia. ML is released for external distribution and can be obtained as
 part of the Trilinos development environment. 
 
-\section download Download ML
+\section ml_download Download ML
 
 ML can be downloaded from the web page http://software.sandia.gov/trilinos/downloads.html
 
-\section desc Project Description
+\section ml_desc Project Description
 
 Many important scientific and engineering applications require the use of linear
 solvers. The ML iterative solver package grew out of a need for scalable solvers.
@@ -119,13 +119,13 @@ package has been integrated with several other libraries including: lapack, blas
 SuperLU/SuperLU_DIST, UMFPACK, Mumps, parasails, Trilinos/Epetra, Metis, ParMETIS, ...
 
 
-\section dev Developers
+\section ml_dev Developers
 The ML developers are:
 - Ray S. Tuminaro
 - Jonathan J. Hu
 - Marzio G. Sala
 
-\section doc Documentation about ML
+\section ml_doc Documentation about ML
 
 ML is a large package. The following documents are suggested to ML users:
 - Sandia report SAND-2004-22195 (ML 3.0 Smoothed Aggregation User's Guide, by M.
@@ -145,7 +145,7 @@ to start with ML. This is particularly true for the ML/Epetra interface.
 
 
 
-\section minitutorial Quick introduction to the ML/Epetra interface
+\section ml_minitutorial Quick introduction to the ML/Epetra interface
 
 To take advantage of the ML/Epetra interface, ML must be configured with the
 following options:
@@ -169,7 +169,7 @@ Detailed examples are reported in:
 - \ref ex_mlo
 
 
-\section MLP The ML_Epetra::MultiLevelPreconditioner class
+\section ml_MLP The ML_Epetra::MultiLevelPreconditioner class
 
 This documentation is targeted to the ML_Epetra::MultiLevelPreconditioner 
 class. It is very useful to have a list of the available parameters for a
@@ -180,7 +180,7 @@ given option. This can be in obtained from the comments of:
 - for default values: ML_Epetra::SetDefaults().
 
 
-\section mainstruct Main Structures of ML
+\section ml_mainstruct Main Structures of ML
 
 The following structure are used by ML:
 - ML_Struct (aliased simply as ML) contains the main information about the
@@ -191,7 +191,7 @@ The following structure are used by ML:
   format.
 
  
-\section conversion Conversion utilities from/to Epetra matrices.
+\section ml_conversion Conversion utilities from/to Epetra matrices.
 
 ML is bases on a particular (and very flexible) matrix format, defined by the
 ML_Operator struct. A set of conversion utilities exists to:
@@ -206,7 +206,7 @@ ML_Operator struct. A set of conversion utilities exists to:
 All the conversion functions are declared in file ml_epetra_utils.h.
 
 
-\section amesos ML interface to Amesos 
+\section ml_amesos ML interface to Amesos 
 
 If configured with options \c --enable-amesos \c --enable-epetra 
 \c --enable-teuchos,
@@ -220,7 +220,7 @@ interface (although still working).
 
 
 
-\section ifpack ML interface to IFPACK
+\section ml_ifpack ML interface to IFPACK
 
 If configured with options \c --enable-ifpack \c --enable-epetra 
 \c --enable-teuchos,
@@ -230,7 +230,7 @@ Details about the ML/IFPACK interface are reported in file ml_ifpack_wrap.h.
 
 
 
-\section anasazi ML interface to Anasazi
+\section ml_anasazi ML interface to Anasazi
 
 If configured with options \c --enable-anasazi \c --enable-epetra 
 \c --enable-teuchos,
@@ -251,7 +251,7 @@ and in the ML_Anasazi namespace.
 
 
 
-\section debug Debugging Utilities
+\section ml_debug Debugging Utilities
 
 It is possible to instruct ML_Epetra::MultiLevelPreconditioner to print out the
 process ID, so that one can attach to the desired process. One can proceed as
@@ -275,7 +275,7 @@ computationally expensive, and it is not recommended for performance evaluations
 
 
 
-\section changes Overview of main ML changes from ml-2.0 to ml-3.0
+\section ml_changes Overview of main ML changes from ml-2.0 to ml-3.0
 
 The ML version contained in Trilinos 4.0 has been enhanced with respect
 to the one included in the Trilinos 3.1 distribution as follows:
@@ -328,7 +328,7 @@ part of the C code, has been modified with doxygen-compatible comments.
 SAND-2004-22195).
  
 
-\section copyright Copyright
+\section ml_copyright Copyright
 
 \verbatim
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
