@@ -38,7 +38,7 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_amg.c 		 ml_amg_MIS.c	   ml_amg_genP.c \
 	   ml_agg_reitzinger.c ml_twogrid_analysis.c
 
-ML_CPP = ml_epetra_utils.cpp
+ML_CPP = ml_epetra_utils.cpp ml_epetra_operator.cpp
 #=======================================================================
 # ML include files
 #=======================================================================
@@ -55,7 +55,7 @@ ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
 	ml_defs.h            ml_op_utils.h       ml_gmres.h             \
 	ml_elementagx.h      ml_operator.h       ml_bicgstabl.h         \
 	mli_solver.h         ml_superlu.h        ml_twogrid_analysis.h  \
-    ml_epetra_utils.h
+    ml_epetra_utils.h    ml_epetra_operator.h
 
 #=======================================================================
 # Sample application files
