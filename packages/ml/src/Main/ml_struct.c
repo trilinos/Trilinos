@@ -3278,7 +3278,7 @@ int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
       ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL, 
-                             subml->Amat[0].outvec_leng, CSR_getrows));
+                             subml->Amat[0].outvec_leng, CSR_getrows);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
       free(temp_ptr);
