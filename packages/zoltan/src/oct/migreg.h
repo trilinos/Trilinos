@@ -30,9 +30,9 @@ typedef struct
   int npid;
 } Message;
 
-void migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
-			    int nregions, int *c2);
-void insert_orphan(LB *, Region reg);
-void copy_info(pRegion src, pRegion *dest);
+void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
+			       int nregions, int *c2);
+void LB_insert_orphan(LB *, Region reg);
+void LB_copy_info(pRegion src, pRegion *dest);
 
 #endif

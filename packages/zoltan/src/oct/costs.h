@@ -21,8 +21,8 @@ static char *cvs_costsh_id = "$Id$";
 
 #include "costs_const.h"
 
-extern void  costs_init(pOctant octree);
-extern float costs_subtree_compute(pOctant octant, int *seq);
-extern float costs_weight(pOctant octant);
+extern void  LB_costs_init(pOctant octree);
+extern float LB_costs_subtree_compute(pOctant octant, int *seq);
+extern float LB_costs_weight(pOctant octant);
 
 #endif

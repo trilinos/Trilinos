@@ -21,12 +21,12 @@ static char *cvs_outputc_id = "$Id$";
 #include "octant_const.h"
 #include "octupdate_const.h"
 
-/* void print_stats()
+/* void LB_print_stats()
  *
  * Prints out statistic on the octree load balancing partitioner 
  */
-void print_stats(LB *lb, double timetotal, double *timers, int *counters,
-                 float *c, int STATS_TYPE)
+void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
+                    float *c, int STATS_TYPE)
 {
   int i,                                   /* index counter */
       proc,                                /* the processor number */
@@ -60,21 +60,38 @@ void print_stats(LB *lb, double timetotal, double *timers, int *counters,
 
 #if 0
 {
-  int numobj;
+  char *yo = "LB_print_stats";
+  int numobj, ierr = 0;
   LB *lb;
 
-  numobj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);
+  numobj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
+  if (ierr) {
+    fprintf(stderr, "[%d] %s: Error returned from user defined "
+                    "Get_Num_Obj function.\n", lb->Proc, yo);
+    exit (-1);
+  }
   obj_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
                                              sizeof(LB_GID));
   obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
                                              sizeof(LB_LID));
-  lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids);
+  lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
+                   &ierr);
+  if (ierr) {
+    fprintf(stderr, "[%d] %s: Error returned from user defined "
+                    "Get_Obj_List function.\n", lb->Proc, yo);
+    exit (-1);
+  }
   /* need to get weights of all the objects */
   weight = mweight = tweight = 0.0;
   if(lb->Get_Obj_Weight != NULL)
     for (i = 0; i < numobj; i++) {
       weight = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, obj_global_ids[i],
-                                  obj_local_ids[i]);
+                                  obj_local_ids[i], &ierr);
+      if (ierr) {
+        fprintf(stderr, "[%d] %s: Error returned from user defined "
+                        "Get_Obj_Weight function.\n", lb->Proc, yo);
+        exit (-1);
+      }
       if (weight > mweight)
 	mweight = weight;
       tweight += weight;

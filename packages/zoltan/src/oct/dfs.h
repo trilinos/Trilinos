@@ -21,12 +21,12 @@ static char *cvs_dfsh_id = "$Id$";
 
 #include "dfs_const.h"
 
-extern void dfs_set_visit_criterion(int visit);
-extern int  dfs_SetIds(pOctant oct, int nprevoct);
-extern void visit_all_subtrees();
-extern void visit(pOctant octant);
-extern void visit_by_dist(pOctant octant, pOctant children[8]);
-extern void tag_subtree(pOctant octant, int partition);
+extern void LB_dfs_set_visit_criterion(int visit);
+extern int  LB_dfs_SetIds(pOctant oct, int nprevoct);
+extern void LB_visit_all_subtrees();
+extern void LB_visit(pOctant octant);
+extern void LB_visit_by_dist(pOctant octant, pOctant children[8]);
+extern void LB_tag_subtree(pOctant octant, int partition);
 
 /* global variables for dfs.c !! */
 int partition;              /* Partition number we are working on */

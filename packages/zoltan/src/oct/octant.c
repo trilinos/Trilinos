@@ -561,7 +561,7 @@ void POC_origin_volume(pOctant oct, COORD origin, double *volume) {
   double size[3];                                    /* size of the octant */
 
   POC_bounds(oct,min,max);
-  bounds_to_origin_size(min,max,origin,size);  
+  LB_bounds_to_origin_size(min,max,origin,size);  
   *volume=size[0]*size[1]*size[2];
 }
 

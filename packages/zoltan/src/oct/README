@@ -85,10 +85,6 @@ migoct.c:
    fix_tags(): fixes the import tags so that region tags that were previously
 	exported aren't counted when imported back.
 
-migoct.h:
-   Headder file that contians function declarations that are only used by the 
-   routines in migoct.c
-
 migoct_const.h:
    Headder file that containts function declarations to be used by any
    routine.

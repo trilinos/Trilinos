@@ -19,28 +19,45 @@ static char *cvs_migoctc_id = "$Id$";
 #include <unistd.h>
 #include "lb_const.h"
 #include "octant_const.h"
-#include "migoct.h"
+#include "migoct_const.h"
 #include "comm_const.h"
 #include "all_allo_const.h"
 
-/* void fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
- *	      int *nrectags, LB_TAG *prev_regs, int npimregs,
- *	      pRegion import_regs, pRegion export_regs);
+/* function prototypes */
+/* static void tag_regions(pOctant *octs, int *newpids, int nocts,
+                        LB_TAG **export_tags, int *nsentags, int **tag_pids,
+                        LB_TAG **kept_tags, int *nkeptags); */
+static void tag_regions(LB *, pOctant *octs, int *newpids, int nocts,
+                        Region **export_tags, int *nsentags, int **tag_pids,
+                        Region **prev_tags, int *npimtags, float *c2,
+                        int *max_objs);
+
+/* static void malloc_new_objects(int ntags, LB_TAG *tags, int *tag_pids,
+                               int *nrectags, LB_TAG **import_tags,
+                               LB_TAG *kept_tags, int nkeptags); */
+static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
+                               int *tag_pids, int *nrectags,
+                               pRegion *import_tags, pRegion prev_tags,
+                               int npimtags, float *c3);
+
+/* void LB_fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
+ *	            int *nrectags, LB_TAG *prev_regs, int npimregs,
+ *	            pRegion import_regs, pRegion export_regs);
  */
 
 /* 
- * void Migrate_Objects(LB *lb, pOctant *octants, int *newpids, 
- *                      int number_of_octants,
- *                      LB_TAG **export_tags, int *number_of_sent_tags,
- *                      LB_TAG **import_tags, int *number_of_received_tags)
+ * void LB_Migrate_Objects(LB *lb, pOctant *octants, int *newpids, 
+ *                         int number_of_octants,
+ *                         LB_TAG **export_tags, int *number_of_sent_tags,
+ *                         LB_TAG **import_tags, int *number_of_received_tags)
  *
  * sets up the export_tags, and import_tags for the application that called
  * this load balancing routine 
  */
-void Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
-		     pRegion *export_regions, int *nsenregs, 
-		     pRegion *import_regions, int *nrecregs,
-		     float *c2, float *c3, int *counter3, int *counter4)
+void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
+		        pRegion *export_regions, int *nsenregs, 
+		        pRegion *import_regions, int *nrecregs,
+		        float *c2, float *c3, int *counter3, int *counter4)
 {
   int i;                    /* index counter */
   int *tag_pids;            /* array of which processors to send information */
@@ -239,17 +256,17 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 				    Bruce and Steve's communication routines */
 
   im_load = 0;
-  comm_plan = comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
+  comm_plan = LB_comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
   tmp = (pRegion)malloc(nreceives * sizeof(Region));
   
   if((nreceives != 0) && (tmp == NULL)) {
-    fprintf(stderr,"ERROR in migreg_migrate_regions: %s\n",
+    fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
 	    "cannot allocate memory for import_objs.");
     abort();
   }
   
-  comm_do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
-  comm_destroy(&comm_plan);
+  LB_comm_do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
+  LB_comm_destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */
   j=0;
@@ -310,15 +327,15 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
 /*****************************************************************************/
 /*
- * void fix_tags(LB_TAG **export_tags, int *number_of_sent_tags,
- *               LB_TAG **import_tags, int *number_of_reveived_tags,
- *               LB_TAG *kept_tags, int number_of_kept_tags)
+ * void LB_fix_tags(LB_TAG **export_tags, int *number_of_sent_tags,
+ *                  LB_TAG **import_tags, int *number_of_reveived_tags,
+ *                  LB_TAG *kept_tags, int number_of_kept_tags)
  *
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
-              int **import_procs, int nrectags, pRegion import_regs)
+void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
+                 int **import_procs, int nrectags, pRegion import_regs)
 {
   int i;                                  /* index counter */
 
@@ -338,7 +355,7 @@ void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
     *import_procs      = (int *)   LB_array_alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(int));
     if(*import_procs == NULL) {
-      fprintf(stderr,"ERROR in fix_tags, unable to allocate space\n");
+      fprintf(stderr,"ERROR in LB_fix_tags, unable to allocate space\n");
       abort();
     }
 
@@ -354,7 +371,7 @@ void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
   /* KDD -- LB_Compute_Destinations will perform this operation for us.
   new_export = (LB_TAG *)malloc(sizeof(LB_TAG) * (*nsentags));
   if(((*nsentags) > 0) && (new_export == NULL)) {
-    fprintf(stderr,"ERROR in fix_tags, unable to allocate space\n");
+    fprintf(stderr,"ERROR in LB_fix_tags, unable to allocate space\n");
     abort();
   }
 

@@ -22,15 +22,15 @@ static char *cvs_migregc_id = "$Id$";
 #include "dfs_const.h"
 
 /*
- * migreg_migrate_regions(Message *message_Array, int number_of_regions)
+ * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
  *
  * migrate regions to the processor that have the octant owning their centroid.
  * receive regions from other processors and try to insert them into one of
  * the local subtree.
  */
 
-void migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
-			    int nregions, int *c2) {
+void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
+			       int nregions, int *c2) {
   int i;                         /* index counter */
   int nreceives,                 /* number of messages received */
       from;                      /* from whom the message originated */
@@ -42,34 +42,34 @@ void migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   Region *import_objs;          /* Array of import objects used to request 
 				    the objs from other processors. */
 
-  comm_plan = comm_create(nregions, npids, lb->Communicator, &n_import);
+  comm_plan = LB_comm_create(nregions, npids, lb->Communicator, &n_import);
   *c2 = n_import;
   import_objs = (Region *)malloc(n_import * sizeof(Region));
 
   if((n_import != 0) && (import_objs == NULL)) {
-    fprintf(stderr,"ERROR in migreg_migrate_regions: %s\n",
+    fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
 	    "cannot allocate memory for import_objs.");
     abort();
   }
 
-  comm_do(comm_plan, (char *) regions, sizeof(Region), 
+  LB_comm_do(comm_plan, (char *) regions, sizeof(Region), 
           (char *) import_objs);
 
   for (i=0; i<n_import; i++) {
-    insert_orphan(lb, import_objs[i]);
+    LB_insert_orphan(lb, import_objs[i]);
   }
 
   free(import_objs);
-  comm_destroy(&comm_plan);
+  LB_comm_destroy(&comm_plan);
 }
 
 /*
- * void insert_orphan(pRegion region)
+ * void LB_insert_orphan(pRegion region)
  *
  * Insert orphan regions migrated from off processors, or to insert
  * regions that lie on the boundary.
  */
-void insert_orphan(LB *lb, Region reg) {
+void LB_insert_orphan(LB *lb, Region reg) {
   pRList rootlist;                 /* list of all local roots */
   int rflag;                       /* flag to indicate region fits in octant */
   int i, j;                        /* index counters */
@@ -78,7 +78,7 @@ void insert_orphan(LB *lb, Region reg) {
 
   rootlist = POC_localroots();                 /* get a list all local roots */
   if(rootlist == NULL)                                        /* error check */
-    fprintf(stderr,"ERROR in insert_orphans(), rootlist is NULL\n");
+    fprintf(stderr,"ERROR in LB_insert_orphans(), rootlist is NULL\n");
 
   if (OCT_dimension == 2)
     i = 2;                                           /* ignore z coordinates */
@@ -112,24 +112,24 @@ void insert_orphan(LB *lb, Region reg) {
   
   if(rootlist == NULL) {                                      /* error check */
     fprintf(stderr,
-	    "(%d) ERROR: migreg_migrate_regions could not insert region\n",
+	    "(%d) ERROR: LB_migreg_migrate_regions could not insert region\n",
 	    lb->Proc);
     abort();
   }
   else                                     /* found a place to insert region */
-    oct_subtree_insert(lb, rootlist->oct, &reg);
+    LB_oct_subtree_insert(lb, rootlist->oct, &reg);
 }
 
 
 /*
- * void migreg_migrate_orphans(pRegion RegionList, int number_of_regions,
- *                             int level_of_refinement, Map *map_array)
+ * void LB_migreg_migrate_orphans(pRegion RegionList, int number_of_regions,
+ *                                int level_of_refinement, Map *map_array)
  *
  * Migrate regions that are not attached to an octant to the processor owning
  * the octant where their centroid is.
  */
-void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
-			    Map *array, int *c1, int *c2) {
+void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
+                               int level, Map *array, int *c1, int *c2) {
   int     i, j, k;                    /* index counters */
   pRegion ptr;                        /* region in the mesh */
   COORD   origin;                     /* centroid coordinate information */
@@ -173,25 +173,25 @@ void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
      * translate which child to which entry in map array.
      */
     for(i=0; i<level; i++) {
-      bounds_to_origin(min, max, origin);
+      LB_bounds_to_origin(min, max, origin);
       if(OCT_dimension == 2)
 	j = j * 4;
       else
 	j = j * 8;
-      k = child_which(origin, ptr->Coord);
+      k = LB_child_which(origin, ptr->Coord);
       if(HILBERT) {
 	if(OCT_dimension == 3) 
-	  new_num = change_to_hilbert(min, max, origin, k);
+	  new_num = LB_change_to_hilbert(min, max, origin, k);
 	else 
-	  new_num = change_to_hilbert2d(min, max, origin, k);
+	  new_num = LB_change_to_hilbert2d(min, max, origin, k);
       }
       else if(GRAY)
-	new_num = convert_to_gray(k);
+	new_num = LB_convert_to_gray(k);
       else
 	new_num = k;
 
       j += new_num;
-      child_bounds(min, max, origin, k, cmin, cmax);
+      LB_child_bounds(min, max, origin, k, cmin, cmax);
       vector_set(min, cmin);
       vector_set(max, cmax);
     }
@@ -199,13 +199,13 @@ void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
     /* inform message which processor to send to */
     if(array[j].npid != -1) {
       npids[n] = array[j].npid;
-      copy_info(ptr, &(regions[n++]));
+      LB_copy_info(ptr, &(regions[n++]));
     }
     else {
-      insert_orphan(lb, *ptr);
+      LB_insert_orphan(lb, *ptr);
     }    
     /* copy region info to the message array */
-    /* copy_info(&(Array[nreg].region), ptr); */
+    /* LB_copy_info(&(Array[nreg].region), ptr); */
   
     nreg++;                                      /* increment region counter */
     ptr = ptr->next;                                  /* look at next region */
@@ -216,7 +216,7 @@ void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
    * then there is an error
    */
   if (nreg!=nregions) {
-    fprintf(stderr,"%d migreg_migrate_orphans: "
+    fprintf(stderr,"%d LB_migreg_migrate_orphans: "
 	    "%d regions found != %d expected\n",
 	    lb->Proc,nreg,nregions);
     abort();
@@ -238,7 +238,7 @@ void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
 
   *c1 = n;
   /* migrate the orphan regions according to the message array */
-  migreg_migrate_regions(lb, regions2, npids2, n, c2);
+  LB_migreg_migrate_regions(lb, regions2, npids2, n, c2);
   
   free(regions);
   free(npids);
@@ -247,17 +247,17 @@ void migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions, int level,
 }
 
 /*
- * int copy_info(pRegion *destination, pRegion source)
+ * int LB_copy_info(pRegion *destination, pRegion source)
  *
  * Copies region information from the source to the destination
  */
-void copy_info(pRegion src, pRegion *dest) {
+void LB_copy_info(pRegion src, pRegion *dest) {
   pRegion copy;
 
   /* mallloc space for destination */
   copy = (pRegion)malloc(sizeof(Region));
   if(copy == NULL) {
-    fprintf(stderr,"ERROR in copy_info, cannot allocate memory\n");
+    fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
     abort();
   }
   

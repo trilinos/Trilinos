@@ -47,7 +47,7 @@ Description:
 domain to the 1D domain.  Two different 2D and 3D domains are
 supported.
 
-For the routines 'hsfc2d' and 'hsfc3d' the 2D and 3D domains are
+For the routines 'LB_hsfc2d' and 'LB_hsfc3d' the 2D and 3D domains are
 defined as follows.
 Note that
   *     0   is the minimum value of an unsigned integer
@@ -57,7 +57,7 @@ thus the 2D and 3D domains are
   *   [0,~(0u)] x [0,~(0u)] x [0,~(0u)]
 respectively.
 
-For the routines 'fhsfc2d' and 'fhsfc3d' the 2D and 3D domains are
+For the routines 'LB_fhsfc2d' and 'LB_fhsfc3d' the 2D and 3D domains are
 defines as:
   *   [0.0,1.0] x [0.0,1.0]
   *   [0.0,1.0] x [0.0,1.0] x [0.0,1.0]
@@ -78,7 +78,7 @@ bit is the trailing bit of the last word.
 /*--------------------------------------------------------------------*/
 /* 2D Hilbert Space-filling curve */
 
-void hsfc2d(
+void LB_hsfc2d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -153,7 +153,7 @@ void hsfc2d(
 /*--------------------------------------------------------------------*/
 /* 3D Hilbert Space-filling curve */
 
-void hsfc3d(
+void LB_hsfc3d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of 'key' */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -269,7 +269,7 @@ void hsfc3d(
 
 /*--------------------------------------------------------------------*/
 
-void fhsfc2d(
+void LB_fhsfc2d(
   double     coord[] , /* IN: Normalized floating point coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -280,10 +280,10 @@ void fhsfc2d(
   unsigned c[2] ;
   c[0] = ( imax < c0 ) ? imax : c0 ;
   c[1] = ( imax < c1 ) ? imax : c1 ;
-  hsfc2d( c , nkey , key );
+  LB_hsfc2d( c , nkey , key );
 }
 
-void fhsfc3d(
+void LB_fhsfc3d(
   double     coord[] , /* IN: Normalized floating point coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -296,5 +296,5 @@ void fhsfc3d(
   c[0] = ( imax < c0 ) ? imax : c0 ;
   c[1] = ( imax < c1 ) ? imax : c1 ;
   c[2] = ( imax < c2 ) ? imax : c2 ;
-  hsfc3d( c , nkey , key );
+  LB_hsfc3d( c , nkey , key );
 }
