@@ -613,9 +613,80 @@ int ML_Matrix_DCSR_Set( ML_Matrix_DCSR *mat, int leng, int *ia, int *ja,
 /* set communication information field                                  */
 /* -------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR *mat,ML_CommInfoOP *comminfo)
+int ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR *mat,ML_CommInfoOP *comminfo,
+                            ML_Comm *comm)
 {
    mat->comminfo = comminfo;
+   mat->comm     = comm;
    return 0;
+}
+
+/* ********************************************************************** */
+/* get a single row                                                       */
+/* ---------------------------------------------------------------------- */
+
+int ML_Matrix_DCSR_Getrow(void *data, int N_req_rows, int req_rows[],
+        int allocated, int columns[], double values[], int row_lengths[])
+{
+   int             *rowptr,  row, itemp;
+   register int    i, *bindx;
+   register double *val;
+   ML_Matrix_DCSR  *Amat;
+
+   row  = *req_rows;
+   Amat = (ML_Matrix_DCSR *) data;
+   rowptr = Amat->mat_ia;
+   itemp  = rowptr[row];
+   *row_lengths = rowptr[row+1] - itemp;
+   if (*row_lengths > allocated) return(0);
+   bindx  = &(Amat->mat_ja[itemp]);
+   for (i = 0 ; i < *row_lengths; i++) *columns++ = *bindx++;
+   val    = &(Amat->mat_a[itemp]);
+   for (i = 0 ; i < *row_lengths; i++) *values++  = *val++;
+   return(1);
+}
+
+
+/* ********************************************************************** */
+/* matvec in CSR format                                                   */
+/* ---------------------------------------------------------------------- */
+
+int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
+{
+   int             i, k, Nrows, *bindx, nbytes;
+   double          *y2, *val, sum;
+   ML_CommInfoOP   *getrow_comm;
+   int             *row_ptr;
+   ML_Comm         *comm;
+   ML_Matrix_DCSR  *Amat;
+
+   Amat        = (ML_Matrix_DCSR *) data;
+   comm        = Amat->comm;
+   Nrows       = Amat->mat_n;
+   val         = Amat->mat_a;
+   bindx       = Amat->mat_ja;
+   row_ptr     = Amat->mat_ia;
+   getrow_comm = Amat->comminfo;
+
+   if (getrow_comm != NULL)
+   {
+      nbytes = (getrow_comm->minimum_vec_size+ilen+1) * sizeof(double);
+      y2 = (double *) malloc( nbytes );
+      for (i = 0; i < ilen; i++) y2[i] = x[i];
+      ML_exchange_bdry(y2, getrow_comm, ilen, comm, ML_OVERWRITE);
+   }
+   else y2 = x;
+
+   for (i = 0; i < Nrows; i++)
+   {
+      sum = 0;
+      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+         sum  += val[k] * y2[bindx[k]];
+      y[i] = sum;
+   }
+
+   if (getrow_comm != NULL) free(y2);
+
+   return(1);
 }
 

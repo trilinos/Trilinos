@@ -1926,6 +1926,56 @@ int ML_Set_GridToEqnMapFunc(ML *ml, int level, int fleng, int tleng,
 /* Setting up a given solver                                                 */
 /* ------------------------------------------------------------------------- */
 
+int ML_Setup(ML *ml, int scheme, int finest_level, int incr_or_decr, void *obj)
+{
+   ML_Aggregate *aggr;
+   ML_AMG       *amg;
+
+   if ( scheme == ML_MG2CGC )
+   {
+      if ( incr_or_decr == ML_INCREASING )
+         ML_Gen_Solver( ml, scheme, finest_level, finest_level+1 );
+      else
+         ML_Gen_Solver( ml, scheme, finest_level, finest_level-1 );
+   }
+   else if ( scheme == ML_RSAMG )
+   {
+      if ( obj != NULL )
+      {
+         amg = (ML_AMG *) obj;
+         if ( amg->ML_id != ML_ID_AMG )
+         {
+            printf("ML_Setup ERROR : method = RSAMG, data not ML_AMG.\n");
+            exit(1);
+         }
+      }
+      ML_Gen_MGHierarchy_UsingAMG(ml, finest_level, incr_or_decr, obj);
+   }
+   else if ( scheme == ML_SAAMG )
+   {
+      if ( obj != NULL )
+      {
+         aggr = (ML_Aggregate *) obj;
+         if ( aggr->ML_id != ML_ID_AGGRE )
+         {
+            printf("ML_Setup ERROR : method = SAAMG, data not ML_Aggregate.\n");
+            exit(1);
+         }
+      }
+      ML_Gen_MGHierarchy_UsingAggregation(ml, finest_level, incr_or_decr, obj);
+   }
+   else
+   {
+      printf("ML_Setup ERROR : method not recognized.\n");
+      exit(1);
+   }
+   return 0;
+}
+
+/* ************************************************************************* */
+/* Setting up a given solver                                                 */
+/* ------------------------------------------------------------------------- */
+
 int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
 {
    int        i, j, level, leng1, leng2, leng3, *itmp3;
@@ -2078,6 +2128,25 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       for ( i = coarsest_level; i > finest_level; i-- )
          ml->Pmat[i].bc = &(ml->BCs[i-1]);
    }
+   return 0;
+}
+
+/* ************************************************************************* */
+/* ML_Solve : call iteration function                                        */
+/*-------------------------------------------------------------------------- */
+
+int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs)
+{
+   int level, leng;
+
+   level = ml->ML_finest_level;
+   leng  = ml->Amat[level].outvec_leng;
+   if ( inlen != outlen || leng != inlen )
+   {
+      printf("ML_Solve ERROR : inlen != outlen != mat length.\n");
+      exit(1);
+   }
+   ML_Iterate(ml, sol, rhs);
    return 0;
 }
 
@@ -4106,6 +4175,11 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
    
    return 0;
 }
+
+/*****************************************************************************/
+/* function to partition local subdomain into blocks using metis             */
+/*-------------------------------------------------------------------------- */
+
 int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
 {
    *block_list = (int *) ML_allocate(ml->Amat[level].outvec_leng*sizeof(int));
@@ -4116,8 +4190,236 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
                              nblocks, *block_list, NULL, NULL, 0);
    return 0;
 }
+
+/*****************************************************************************/
+/* Generate a coarse grid matrix suitable for solution with aggregation      */
 /* ------------------------------------------------------------------------- */
-/* generate the Hiptmair smoother (SOR)                                  */
+
+int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
+{
+   int            i, j, k, *mat_ia, *mat_ja, nrows, nnz, offset, N_local;
+   int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
+   int            getrow_flag, osize, *row_ptr, length, zero_flag;
+   int            local_nlevels, local_clevel, nbytes;
+   double         *mat_val, *vals, dsize, di, *diagonal;
+   void           *data;
+   ML_1Level      *sl;
+   ML_Operator    *op;
+   ML_Matrix_DCSR *csr_mat, *csr2_mat;
+   ML             *local_ml;
+   ML_Aggregate   *newag;
+   ML_Solver      *solver;
+
+#ifdef ML_TIMING
+   double t0;
+   t0 = GetClock();
+#endif
+
+   /* ----------------------------------------------------------------- */
+   /* extract local matrix using getrow function and store it into a    */
+   /* CSR data object                                                   */
+   /* ----------------------------------------------------------------- */
+
+   if ( level < 0 || level >= ml_handle->ML_num_levels )
+   {
+      printf("ML_Gen_CoarseSolverAggregation ERROR : invalid level number.\n");
+      exit(-1);
+   }
+   op      = (ML_Operator *) &ml_handle->Amat[level];
+   data    = op->data;
+   osize   = op->outvec_leng;
+   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   space   = osize * 5 + 30;
+   getrow_flag = 0;
+   if      ( op->getrow->internal != NULL ) getrow_flag = 1;
+   else if ( op->getrow->external != NULL ) getrow_flag = 2;
+   else
+   {
+      printf("ML_Gen_CoarseSolverAggregation ERROR : no getrow function.\n");
+      exit(-1);
+   }
+
+   flag    = 0;
+
+   while (flag == 0)
+   {
+      cols    = (int    *) malloc(sizeof(int)*space);
+      vals    = (double *) malloc(sizeof(double)*space);
+
+      nz_ptr = 0;
+      row_ptr[0] = nz_ptr;
+      flag = 1;
+      for (i = 0; i < osize; i++)
+      {
+         if ( getrow_flag == 1 )
+            flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+                              &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
+         else
+            flag = op->getrow->external(data, 1, &i, space-nz_ptr,
+                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
+
+         if (flag == 0) break;
+         zero_flag = 1;
+         for (j = 0; j < length; j++)
+            if ( vals[nz_ptr+j] != 0.0 ) {zero_flag = 0; break;}
+
+         if ( zero_flag == 1 )
+         {
+            cols[nz_ptr] = i;
+            vals[nz_ptr] = 1.0;
+            length = 1;
+         }
+         nz_ptr += length;
+         row_ptr[i+1] = nz_ptr;
+      }
+      if (flag == 0)
+      {
+         dsize = (double) osize;
+         di    = (double) (i+1);
+         dsize = 1.2*dsize/di;
+         space = (int) ( ((double) space)*dsize);
+         space++;
+         free(vals);
+         free(cols);
+      }
+   }
+   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat->mat_n  = osize;
+   csr_mat->mat_ja = cols;
+   csr_mat->mat_a  = vals;
+   csr_mat->mat_ia = row_ptr;
+   csr_mat->comminfo = op->getrow->pre_comm;
+
+   /* ----------------------------------------------------------------- */
+   /* form an global matrix                                             */
+   /* ----------------------------------------------------------------- */
+
+   ML_memory_alloc((void**) &csr2_mat, sizeof(ML_Matrix_DCSR), "DCR");
+   ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
+   csr2_mat->comminfo = NULL;
+   free(cols);
+   free(vals);
+   free(row_ptr);
+   free(csr_mat);
+
+   /* ----------------------------------------------------------------- */
+   /* set Aggregation as solver                                         */
+   /* ----------------------------------------------------------------- */
+
+   coarsest_level = level;
+   sl = &(ml_handle->SingleLevel[coarsest_level]);
+   if ( sl->csolve->func->internal == ML_CSolve_Aggr ) reuse = 1;
+   else
+   {
+      reuse = 0;
+      sl->csolve->func->internal = ML_CSolve_Aggr;
+      sl->csolve->func->ML_id    = ML_INTERNAL;
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* free up previous storage                                          */
+   /* ----------------------------------------------------------------- */
+
+   if ( sl->csolve->data != NULL && reuse == 1 )
+   {
+      solver = (ML_Solver *) sl->csolve->data;
+      if ( solver->dble_params1 != NULL )
+      {
+         ML_memory_free(  (void**) &(solver->dble_params1) );
+         solver->dble_params1 = NULL;
+      }
+      local_ml = solver->void_params1;
+      if ( reuse == 1 ) ML_Destroy( &local_ml );
+      if (solver->Mat1 != NULL )
+      {
+         ML_Matrix_DCSR_Destroy(solver->Mat1);
+         ML_memory_free(  (void**) &(solver->Mat1) );
+         solver->Mat1 = NULL;
+      }
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* create new context                                                */
+   /* ----------------------------------------------------------------- */
+
+   ML_Solver_Create( &solver );
+   sl->csolve->data = (void *) solver;
+   solver->reuse_flag = 0;
+   ML_memory_alloc( (void **) &vals, 3 * sizeof(double), "KLI" );
+   N_local = osize;
+   vals[0]  = (double) N_local;
+   vals[1]  = (double) offset;
+   vals[2]  = (double) csr2_mat->mat_n;
+   solver->dble_params1 = (double *) vals;
+   solver->Mat1 = (void *) csr2_mat;
+   solver->void_params2 = (void *) ml_handle->comm;
+
+   /* ----------------------------------------------------------------- */
+   /* create new context                                                */
+   /* ----------------------------------------------------------------- */
+
+   local_nlevels = 10;
+   ML_Create( &local_ml, local_nlevels );
+   ML_Set_OutputLevel(local_ml, 0);
+   ML_Set_ResidualOutputFrequency(local_ml, 0);
+   ML_Set_Comm_MyRank(local_ml, 0);
+   ML_Set_Comm_Nprocs(local_ml, 1);
+   N_local = csr2_mat->mat_n;
+   cols    = csr2_mat->mat_ja;
+   vals    = csr2_mat->mat_a;
+   row_ptr = csr2_mat->mat_ia;
+   ML_Init_Amatrix(local_ml,local_nlevels-1,N_local,N_local,(void*) csr2_mat);
+   ML_Set_Amatrix_Matvec(local_ml, local_nlevels-1, ML_Matrix_DCSR_Matvec);
+   local_ml->Amat[local_nlevels-1].data_destroy = ML_Matrix_DCSR_Destroy;
+   local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
+   ML_Set_Amatrix_Getrow(local_ml,local_nlevels-1,ML_Matrix_DCSR_Getrow,NULL,
+                         N_local);
+   diagonal = (double *) malloc(N_local * sizeof(double));
+   for ( i = 0; i < N_local; i++ )
+   {
+      for ( j = row_ptr[i]; j < row_ptr[i+1]; j++ )
+      {
+         if ( cols[j] == i ) {diagonal[i] = vals[j]; break;}
+      }
+   }
+   ML_Set_Amatrix_Diag( local_ml, local_nlevels-1, N_local, diagonal);
+   free( diagonal );
+   ML_Aggregate_Create( &newag );
+   if (ml_handle->comm->ML_mypid == 0) ML_Aggregate_Set_OutputLevel(newag,1);
+   else                                ML_Aggregate_Set_OutputLevel(newag,0);
+   ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
+   if ( ag != NULL )
+      ML_Aggregate_Set_Threshold( newag, ag->curr_threshold );
+   if ( ag != NULL )
+      ML_Aggregate_Set_DampingFactor( newag, ag->smoothP_damping_factor );
+   ML_Aggregate_Set_MaxCoarseSize( newag, 10 );
+   ML_Aggregate_Set_PSmootherType( newag, 0 );
+   local_clevel = ML_Gen_MGHierarchy_UsingAggregation(local_ml,
+                         local_nlevels-1, ML_DECREASING, newag);
+   local_clevel = local_nlevels - local_clevel;
+   for (k = local_nlevels-1; k > local_clevel; k--)
+   {
+      ML_Gen_Smoother_SymGaussSeidel(local_ml, k, ML_PRESMOOTHER, 2, 1.);
+      ML_Gen_Smoother_SymGaussSeidel(local_ml, k, ML_POSTSMOOTHER, 2, 1.);
+   }
+   ML_Gen_CoarseSolverSuperLU( local_ml, local_clevel );
+   ML_Gen_Solver(local_ml, ML_MGV, local_nlevels-1, local_clevel);
+   ML_Aggregate_Destroy( &newag );
+   solver->void_params1 = (void *) local_ml;
+
+#ifdef ML_TIMING
+   sl->csolve->build_time = GetClock() - t0;
+   ml_handle->timing->total_build_time += sl->csolve->build_time;
+   if ( ml_handle->comm->ML_mypid == 0 )
+      printf("Local Aggregation total setup time = %e\n",
+         sl->csolve->build_time);
+#endif
+
+   return 0;
+}
+
+/*****************************************************************************/
+/* generate the Hiptmair smoother (SOR)                                      */
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,

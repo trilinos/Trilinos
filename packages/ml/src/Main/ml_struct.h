@@ -42,6 +42,8 @@ typedef struct ML_Struct ML;
 #include "ml_solver.h"
 #include "ml_krylov.h"
 #include "ml_mat_formats.h"
+#include "ml_amg.h"
+#include "ml_aggregate.h"
 #include <string.h>
 
 /* ******************************************************************** */
@@ -110,7 +112,6 @@ extern int ML_Print_Timing(ML *ml);
 
 extern int ML_Destroy(ML **ml);
 extern void ML_Solve_SmootherDestroy(void *data);
-
 
 extern int ML_Init_Comm(ML *ml);
 extern int ML_Set_Comm_MyRank(ML *ml, int myrank);
@@ -192,6 +193,8 @@ extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double
   extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,double,ML_Operator *);
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
 		     double omega);
+extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
+                     int ntimes, double omega);
 extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
                      int ntimes, double omega);
 
@@ -222,6 +225,8 @@ extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj,
                      char *);
 
 extern int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level);
+extern int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level,
+                                          ML_Aggregate *ag);
 extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
                                void *sol_obj, void (*solve)());
 
@@ -235,8 +240,11 @@ extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng, void *data,
                                    int (*func)(void*,double*,double*));
 extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 
+extern int ML_Setup(ML *ml, int method, int finest_level, int, void *);
+
 extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
 extern int ML_Iterate(ML *ml, double *sol, double *rhs);
+extern int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs);
 extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
 extern int ML_Solve_MGFull( ML *ml , double *din, double *dout);
 extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
