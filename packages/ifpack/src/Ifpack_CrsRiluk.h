@@ -385,7 +385,7 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
   bool Allocated() const {return(Allocated_);};
   int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
-  int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper);
+  int BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper);
   
  private:
   
