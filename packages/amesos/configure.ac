@@ -694,6 +694,7 @@ AC_CONFIG_FILES([
 		test/Test_Epetra_RowMatrix/Makefile
 		test/Test_Epetra_CrsMatrix/Makefile
 		test/Test_Epetra_VbrMatrix/Makefile
+		test/Test_MultipleSolves/Makefile
 		test/TestOptions/Makefile
 		test/TestWithTriutils/Makefile
 		test/scripts/Makefile
