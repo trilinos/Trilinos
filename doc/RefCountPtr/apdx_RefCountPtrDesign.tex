@@ -28,15 +28,16 @@ very useful for those who need to debug through code that uses
 the implementation and the interested reader is encouraged to study
 the actual C++ implementation and its test program to fill in the gaps
 left in this discussion.  Note, the best way to browse the C++ code is
-through the doxygen generated HTML files (ToDo: Give URL for teuchos
-web site).
+through the doxygen generated HTML files that are part of the Teuchos
+package in the Trilinos documentation on the web (just do a web search
+for Teuchos).
 
 Figure {}\ref{rcp:fig:rcp-class-diagram} shows a UML
-{}\cite{ref:uml_distilled_2nd_ed} class diagram for this design.  The
-templated class {}\texttt{Ref\-Count\-Ptr<T>} is the user-level type
-that this document describes.  There are also other classes that are
-used behind the scenes to manage the reference count information,
-manage extra data and control dealocation.  Reference-count
+{}\cite{ref:uml_distilled_2nd_ed} class diagram for the basic design.
+The templated class {}\texttt{Ref\-Count\-Ptr<T>} is the user-level
+type that this document describes.  There are also other classes that
+are used behind the scenes to manage the reference count information,
+manage extra data and control deallocation.  Reference-count
 information is managed primarily though an abstract non-templated
 shared {}\texttt{Ref\-Count\-Ptr\-\_node} class object.  This abstract
 class has only one subclass
@@ -53,21 +54,22 @@ to the reference-counted object through a private data member
 diagram as the association between {}\texttt{Ref\-Count\-Ptr<T>} and
 {}\texttt{ConcreteT} (the actual concrete type of the object being
 reference counted).  Here, the type {}\texttt{T} must be a supported
-interface (i.e.~{}\texttt{T} is base class of {}\texttt{ConcreteT} or
-{}\texttt{T} are {}\texttt{ConcreteT} are the same) for the concrete
-type {}\texttt{ConcreteT} and this is shown by the lollipop interface
-{}\texttt{T} connected to the type {}\texttt{ConcreteT}.  It is
-through the private data member {}\texttt{ptr} that the functions
-{}\texttt{get()}, {}\texttt{operator*()} and {}\texttt{operator->()}
-are implemented.
+interface for the concrete type {}\texttt{ConcreteT}
+(i.e.~{}\texttt{T} is base class of {}\texttt{ConcreteT} or
+{}\texttt{T} are {}\texttt{ConcreteT} are the same) and this is shown
+by the lollipop interface {}\texttt{T} connected to the type
+{}\texttt{ConcreteT}.  It is through the private data member
+{}\texttt{ptr} that the functions {}\texttt{get()},
+{}\texttt{operator*()} and {}\texttt{operator->()} are implemented.
 
-Every {}\texttt{Ref\-Count\-Ptr<T>} object also maintains a pointer to
-a shared non-templated {}\texttt{Ref\-Count\-Ptr\-\_node} object which
-is called {}\texttt{node}.  This is shown using the association from
+As mentioned above, every {}\texttt{Ref\-Count\-Ptr<T>} object also
+maintains a pointer to a shared non-templated
+{}\texttt{Ref\-Count\-Ptr\-\_node} object which is called
+{}\texttt{node}.  This is shown using the association from
 {}\texttt{Ref\-Count\-Ptr<T>} to {}\texttt{Ref\-Count\-Ptr\-\_node}
 with the role name {}\texttt{node}.  The
 {}\texttt{Ref\-Count\-Ptr\-\_node} {}\texttt{node} object maintains a
-reference count {}\texttt{count} for the number of
+reference count ({}\texttt{count}) for the number of
 {}\texttt{Ref\-Count\-Ptr<>} objects pointing to itself.  The
 reference-count modification functions {}\texttt{incr\_count()} and
 {}\texttt{deincr\_count()} on the {}\texttt{Ref\-Count\-Ptr\-\_node}
@@ -77,7 +79,10 @@ maintain the proper count.  The {}\texttt{Ref\-Count\-Ptr\-\_node}
 {}\texttt{node} object also maintains an ownership flag
 {}\texttt{has\-\_ownership} that determines if the deallocator will be
 used to deallocate the shared object when the reference count goes to
-zero (this is described later).
+zero (this is described later).  This boolean is used to primarily
+support the case where objects allocated on the stack or statically
+must be wrapped by a {}\texttt{Ref\-Count\-Ptr<>} object in order to
+be passed to some piece of code.
 
 When a {}\texttt{Ref\-Count\-Ptr<T>} object is constructed to
 {}\texttt{NULL}, its {}\texttt{ptr} and {}\texttt{node} private
@@ -95,8 +100,9 @@ non-{}\texttt{NULL} .
 
 Some more of the details of the C++ design of
 {}\texttt{Ref\-Count\-Ptr<>} will be discussed in the context of the
-following snippet of user code.
-%
+following snippet of user code that uses the classes from the class
+hierarchy first presented in Section {}\ref{rcp:sec:intro}.
+
 {\scriptsize\begin{verbatim}
 if( ... ) {
   RefCountPtr<A>   a_ptr1 = rcp(new C);
@@ -106,34 +112,32 @@ if( ... ) {
   ...
 }
 \end{verbatim}}
-%
+
 {}\noindent{}In the above user code, a single concrete object of type
 {}\texttt{C} is dynamically allocated and put into a
 {}\texttt{Ref\-Count\-Ptr<A>} object.  Three other
 {}\texttt{Ref\-Count\-Ptr<>} objects (of different interface types)
-are then creted that reference this same objects.  These classes are
-from the class hierarchy first presented in Section
-{}\ref{rcp:sec:intro}.
+are then created that reference this same object.
 
 In the first statement
-%
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1 = rcp(new C);
 \end{verbatim}}
-%
+
 {}\noindent{}the first {}\texttt{Ref\-Count\-Ptr<>} object is created
 by the expression {}\texttt{rcp(new C)} which calls the following
 templated function
-%
+
 {\scriptsize\begin{verbatim}
 template<class T> RefCountPtr<T> rcp( T* p )
 {
   return RefCountPtr<T>(p,true);
 }
 \end{verbatim}}
-%
+
 {}\noindent{}which calls the constructor
-%
+
 {\scriptsize\begin{verbatim}
 template<class T> RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
   :ptr_(p)
@@ -142,27 +146,28 @@ template<class T> RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
      : NULL )
 {}
 \end{verbatim}}
-%
-{}\noindent{}which is instantiated with the type {}\texttt{T = C}.
-As shown in the above constructor, the pointer {}\texttt{T* p} is
-passed into the constructor of the concrete
+
+{}\noindent{}which is instantiated with the type {}\texttt{T = C}.  As
+shown in the above constructor, the pointer {}\texttt{T* p} is passed
+into the constructor of the concrete
 {}\texttt{Ref\-Count\-Ptr\-\_node\-\_tmpl<\-C\-,Dealloc\-Delete<C> >}
 node.  This process results in the exact same typed address that was
 returned from {}\texttt{new C} being stored in the underlying
-{}\texttt{Ref\-Count\-Ptr\-\_node\-\_tmpl<\-C\-,Dealloc\-Delete<C> >} node
-object and it is this pointer and address that will be used to delete
-the object later.  It is this process involving the useing the
-templated functon {}\texttt{rcp()} that guarantees that the same
+{}\texttt{Ref\-Count\-Ptr\-\_node\-\_tmpl<\-C\-,Dealloc\-Delete<C> >}
+node object and it is this pointer and address that will be used to
+delete the object later.  It is this process involving the use of the
+templated function {}\texttt{rcp()} that guarantees that the same
 address returned from {}\texttt{new} is passed back to
-{}\texttt{delete} which addresses the problem described in Section ???
-that occurs on some platforms.  Figure
+{}\texttt{delete} which addresses the problem described in Appendix
+{}\ref{rcp:apdx:mivbc} that occurs on some platforms.  Figure
 {}\ref{rcp:fig:rcp-object-diagram_m_1} shows a UML object diagram for
-the first {}\texttt{Ref\-Count\-Ptr<C>} object created by the statement
-{}\texttt{rcp(new C)}.  This is a temporary object which is maintained
-by the compiler and we give it the name {}\texttt{t1} even through it
-really has no name.  Note that the initial reference count on the
-{}\texttt{Ref\-Count\-Ptr\-\_node\-\_tmpl<\-C,\-Dealloc\-Delete<C> >} is
-initialized by default as {}\texttt{count=1}.
+the first {}\texttt{Ref\-Count\-Ptr<C>} object created by the
+statement {}\texttt{rcp(new C)}.  This is a temporary object which is
+maintained by the compiler and we give it the name {}\texttt{t1} even
+through it really has no name.  Note that the initial reference count
+on the
+{}\texttt{Ref\-Count\-Ptr\-\_node\-\_tmpl<\-C,\-Dealloc\-Delete<C> >}
+is initialized by default as {}\texttt{count=1}.
 
 {\bsinglespace
 \begin{figure}
@@ -223,24 +228,25 @@ objects {}\texttt{a\_ptr1}, {}\texttt{a\_ptr2}, {}\texttt{b1\_ptr} and
 
 After the first {}\texttt{Ref\-Count\-Ptr<C}} object is created from
 {}\texttt{rcp(new C)}, as shown in Figure
-{}\ref{rcp:fig:rcp-object-diagram_m_1}, the rest rest of the statement
-%
+{}\ref{rcp:fig:rcp-object-diagram_m_1}, the rest of the statement
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1 = rcp(new C);
 \end{verbatim}}
-%
+
 {}\noindent{}is executed.  This statement is executed in one of two
-ways based on how the compiler generates the code.  The strightforward
+ways based on how the compiler generates the code.  The straightforward
 (non-optimized) approach is to default construct the
 {}\texttt{Ref\-Count\-Ptr<A>} object
 \texttt{a\_ptr1} first and then call the assignment operator (see [???]).
-However, the assignment operator for {}\texttt{Ref\-Count\-Ptr<>} is not
-doubly templated so to assign a {}\texttt{Ref\-Count\-Ptr<C>} object to a
-{}\texttt{Ref\-Count\-Ptr<A>}, the doubly templated copy constructor msut
-be invoked to perform a conversion from a {}\texttt{Ref\-Count\-Ptr<C>}
-object to a {}\texttt{Ref\-Count\-Ptr<A>} object.  The copy constructor
-invoked is as follows
-%
+However, the assignment operator for {}\texttt{Ref\-Count\-Ptr<>} is
+not doubly templated so to assign a {}\texttt{Ref\-Count\-Ptr<C>}
+object to a {}\texttt{Ref\-Count\-Ptr<A>} object, the doubly templated
+copy constructor must be invoked to perform a conversion from a
+{}\texttt{Ref\-Count\-Ptr<C>} object to a
+{}\texttt{Ref\-Count\-Ptr<A>} object.  The copy constructor invoked is
+as follows.
+
 {\scriptsize\begin{verbatim}
 template<class T> template <class T2> RefCountPtr<T>::RefCountPtr(const RefCountPtr<T2>& r_ptr)
   : ptr_(r_ptr.get()) // will not compile if T2* is not convertible to T*
@@ -249,14 +255,14 @@ template<class T> template <class T2> RefCountPtr<T>::RefCountPtr(const RefCount
   if(node_) node_->incr_count();
 }
 \end{verbatim}}
-%
+
 {}\noindent{}Note how the reference count is explicitly incremented on
 the node.
 
 This conversion generates another temporary that we will call
 {}\texttt{t2}.  With this temporary {}\texttt{Ref\-Count\-Ptr<A> t2}
-created, the following assignment operator is then invoked
-%
+created, the following assignment operator is then invoked.
+
 {\scriptsize\begin{verbatim}
 template<class T>  RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr)
 {
@@ -272,26 +278,26 @@ template<class T>  RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T
   return *this;
 }
 \end{verbatim}}
-%
-{}\noindent{}The above implementatation of the assignment opeator is a
+
+{}\noindent{}The above implementation of the assignment operator is a
 little more complex since it has to look out for assignment-to-self
 and has to remove its reference to an existing reference-counted
 object (if it has one).  After the assignment operator is invoked and the statement
-%
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1 = rcp(new C);
 \end{verbatim}}
-%
+
 {}\noindent{}has completed and just before the compiler-generated
 temporaries are destroyed, the state of the objects are as shown in
 Figure {}\ref{rcp:fig:rcp-object-diagram_0}.
 
-After the statment
-%
+After the statement
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1 = rcp(new C);
 \end{verbatim}}
-%
+
 {}\noindent{}finishes executing and the compiler deletes the
 temporaries the object diagram looks like Figure
 {}\ref{rcp:fig:rcp-object-diagram_1}.  At this point, only one
@@ -300,30 +306,30 @@ count is back to one (i.e.~{}\texttt{count=1}).
 
 Note that through return value optimization [???] and the conversion
 of
-%
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1 = rcp(new C);
 \end{verbatim}}
-%
+
 {}\noindent{}to
-%
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr1(rcp(new C));
 \end{verbatim}}
-%
+
 {}\noindent{}(which is allowed by the C++ standard [???]) that this
 statement will result in no temporary objects being created when
 optimizations are turned on at compile time.
 
 After describing the details of the first statement above, we could
 also describe the remaining statements
-%
+
 {\scriptsize\begin{verbatim}
   RefCountPtr<A>   a_ptr2 = a_ptr1;
   RefCountPtr<B1>  b1_ptr = rcp_dynamic_cast<B1>(a_ptr1);
   RefCountPtr<B2>  b2_ptr = rcp_dynamic_cast<B2>(a_ptr1);
 \end{verbatim}}
-%
+
 {}\noindent{}in same level of detail but the issues are largely the
 same so we do not discuss them.  Interested readers are encouraged to
 look the implementation of the template function
@@ -339,11 +345,11 @@ constructed, the object diagram looks Figure
 Up to this point we have described how {}\texttt{Ref\-Count\-Ptr<>}
 objects are constructed and assigned and how reference counts are
 manipulated.  Now it is equality important to describe how
-reference-counted objects maintained thorugh
+reference-counted objects maintained through
 {}\texttt{Ref\-Count\-Ptr<>} are deleted when all of the
-{}\texttt{Ref\-Count\-Ptr<>} referring to the object are removed.
-Again, considering the snippet of user code
-%
+{}\texttt{Ref\-Count\-Ptr<>} objects referring to the underlying
+object are removed.  Again, considering the snippet of user code
+
 {\scriptsize\begin{verbatim}
 if( ... ) {
   RefCountPtr<A>   a_ptr1 = rcp(new C);
@@ -353,34 +359,34 @@ if( ... ) {
   ...
 }
 \end{verbatim}}
-%
-{}\noindent{}when the end of the {}\texttt{if(...) \{ ... \}} block is
-reached, the automatic {}\texttt{RefCountPtr<>} objects
-{}\texttt{a\_ptr1}, {}\texttt{a\_ptr2}, {}\texttt{b1\_ptr} and
-{}\texttt{b2\_ptr} allocated on the stack by the compiler are poped
-off of the stack and destroyed in the opposite order that they where
-created.  When each of these {}\texttt{RefCountPtr<>} objects is
-destroyed, the following destructor is called
-%
+
+When the end of the {}\texttt{if(...) \{ ... \}} block is reached, the
+automatic {}\texttt{RefCountPtr<>} objects {}\texttt{a\_ptr1},
+{}\texttt{a\_ptr2}, {}\texttt{b1\_ptr} and {}\texttt{b2\_ptr}
+allocated on the stack by the compiler are popped off of the stack and
+destroyed in the opposite order that they where created.  When each of
+these {}\texttt{RefCountPtr<>} objects is destroyed, the following
+destructor is called
+
 {\scriptsize\begin{verbatim}
 template<class T> RefCountPtr<T>::~RefCountPtr()
 {
   if(node_ && node_->deincr_count() == 0 ) delete node_;
 }
 \end{verbatim}}
-%
-{}\noindent{}The above destructor is quite simple.  If
+
+{}\noindent{}The above destructor is quite simple.  If the
 {}\texttt{RefCountPtr<>} object being destroyed is not {}\texttt{NULL}
 (i.e.~{}\texttt{node\_ != 0}) then the reference count is
 deincremented and if the reference count reaches zero, the node object
-is destroyed.  Therefore, in the above snippet of user code, the
+is deleted.  Therefore, in the above snippet of user code, the
 reference count drops from four to three when {}\texttt{b2\_ptr} is
 destroyed, and from three to two when {}\texttt{b2\_ptr} is destroyed
 and so on until {}\texttt{a\_ptr1} is destroyed.  When
-{}\texttt{a\_ptr1} is destoryed the reference count goes to zero and
+{}\texttt{a\_ptr1} is destroyed the reference count goes to zero and
 the statement {}\texttt{delete node\_;} is executed.  This then calls
 the destructor
-%
+
 {\scriptsize\begin{verbatim}
 template<class T, class Dealloc_T>
 class RefCountPtr_node_tmpl : public RefCountPtr_node {
@@ -391,20 +397,20 @@ public:
   ...
 };
 \end{verbatim}}
-%
-{}\noindent{}which will call on the tempate deallocator object to free
-the mangaged object if it has ownership to do so.  As mentioned
-earlier, because of the way that the very first
+
+{}\noindent{}which will call on the template deallocator policy object
+to free the maneged object if it has ownership to do so.  As
+mentioned earlier, because of the way that the very first
 {}\texttt{RefCountPtr<>} object was created, the pointer
 {}\texttt{ptr\_} is exactly the same pointer returned from
 {}\texttt{new C} which addresses the problem discussed in Appendix
-???.  In this case the default deallocator 
-%
+{}\ref{rcp:apdx:mivbc}.  In this case, the default deallocator
+
 {\scriptsize\begin{verbatim}
 template<class T>
 class DeallocDelete { public: void free( T* ptr ) { if(ptr) delete ptr; }  };
 \end{verbatim}}
-%
+
 {}\noindent{}is used which calls {}\texttt{delete ptr;} to finally
 free the managed object.
 
@@ -421,12 +427,13 @@ adaptation of the {}\texttt{boos\-::any} class [???] that is also
 contained in the Teuchos package and exists in the {}\texttt{Teuchos}
 namespace.
 
-The class {}\texttt{any} uses RTTI to allow it to store any type of
-built-in or user-defined type that has value semantics (i.e.~has a
-copy constructor and an assignment operators defined).
+The class {}\texttt{any} uses RTTI which allows it to store any type
+of built-in or user-defined type that has value semantics (i.e.~has a
+copy constructor and an assignment operators defined) and then to
+retrieve it upon request (assuming the client knows the correct type).
 
-The templated functions
-%
+The templated extra-date manipulation functions
+
 {\scriptsize\begin{verbatim}
 template<class T1, class T2>
 int Teuchos::set_extra_data( const T1 &extra_data, Teuchos::RefCountPtr<T2> *p, int ctx )
@@ -440,10 +447,10 @@ T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, int ctx )
   return any_cast<T1>(p.access_node()->get_extra_data(ctx));
 }
 \end{verbatim}}
-%
+
 {}\noindent{}first described in Section {}\ref{rcp:sec:extra-data}
 call on the non-templated functions
-%
+
 {\scriptsize\begin{verbatim}
 class RefCountPtr_node {
 public:
@@ -454,12 +461,13 @@ public:
   ...
 };
 \end{verbatim}}
-%
-{}\noindent{}that actually minipulate the array of {}\texttt{any}
+
+{}\noindent{}that actually manipulate the array of {}\texttt{any}
 objects.
 
 Note that since {}\texttt{Ref\-Count\-Ptr<>} is itself a class that
 uses value semantics that it can be stored in an {}\texttt{any} object
 and therefore one or more {}\texttt{Ref\-Count\-Ptr<>} objects can be
 associated with an existing {}\texttt{Ref\-Count\-Ptr<>} object using
-{}\texttt{set\-\_extra\-\_data()}.
+{}\texttt{set\-\_extra\-\_data()} (this was described in Section
+{}\ref{rcp:sec:extra-data}).

@@ -16,7 +16,7 @@ class allows one client to dynamically create an object (using
 clients which also need to access the object and then never requiring
 any client to explicitly call delete.  The object will (almost
 magically) be deleted when all of the clients remove their references
-to it.  This is very similiar to the type of garbage collection that
+to it.  This is very similar to the type of garbage collection that
 is in languages like Perl and Java.  There are, however, some
 pathological cases (such as the classic problem of circular
 references, see {}\cite[Item 29, page 212]{ref:meyers_1996}) where
@@ -99,9 +99,12 @@ template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<
 template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1);
 template<class T1, class T2> int              set_extra_data( const T1 &extra_data
-                                                , RefCountPtr<T2> *p, int ctx = -1 );
-template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p, int ctx );
-template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p, int ctx );
+                                                ,const std::string& name, RefCountPtr<T2> *p
+                                                ,bool force_unique = true );
+template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
+                                                ,const std::string& name );
+template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
+                                                ,const std::string& name );
 template<class Dealloc_T
   , class T>                 Dealloc_T&       get_dealloc( RefCountPtr<T>& p );
 template<class Dealloc_T
@@ -113,24 +116,24 @@ template<class Dealloc_T
 Declaration of C++ code for {}\texttt{RefCountPtr<>} and supporting functions.}
 \end{figure}
 
-A word of caution, note that the design of the reference-counted smart
+A word of caution; note that the design of the reference-counted smart
 pointer class discussed in Item 29 of {}\cite{ref:meyers_1996} in the
 subsection ``Adding Reference Counting to Existing Classes'' has a
-purpose very similary to {}\texttt{RefCountPtr<>} but the design of
+purpose very similar to {}\texttt{RefCountPtr<>} but the design of
 {}\texttt{RefCountPtr<>} is very different (see Appendix
 {}\ref{rcp:apdx:design}).  Therefore, while the designs discussed in
 {}\cite{ref:meyers_1996} are not used in their presented form,
 {}\cite{ref:meyers_1996} does discuss in detail many of the issues
-involved in using smart pointers and reference counting and hense
+involved in using smart pointers and reference counting and hence
 provides very useful background information and interested readers are
-strongly encurraged to study this reference.
+strongly encouraged to study this reference.
 
 %
 \subsection{Initializing {}\texttt{RefCountPtr} objects}
 \label{rcp:sec:init-rcp-objects}
 %
 
-A smart reference-counted pointer to a dynammicallly allocated object
+A smart reference-counted pointer to a dynamically allocated object
 (of type {}\texttt{A} for instance) is initialized as follows
 
 {\scriptsize\begin{verbatim}
@@ -146,7 +149,7 @@ or non-{}\texttt{const} objects are expressed (this is explained in
 more detail in Item 28 in {}\cite{ref:meyers_1996}).  There is no
 automatic conversion from raw pointers to smart pointers for many good
 reasons (again, see Item 28 in {}\cite{ref:meyers_1996}).  To allow such
-an implicit conversion almost guarentees memory
+an implicit conversion almost guarantees memory
 allocation/deallocation errors will occur.  Therefore, the following
 templated function
 
@@ -315,10 +318,10 @@ pointer syntax is allowed.
 %
 
 The conversion of smart pointers according to existing C++ conversion
-ruls for raw C++ pointers (e.g.~from derived to base classes, from
+rules for raw C++ pointers (e.g.~from derived to base classes, from
 non-{}\texttt{const} to {}\texttt{const}) is just as easy as with raw
 C++ pointers.  For example, the compiler will implicitly cast a raw
-C++ pointer up its type's inheritance hiearchy (e.g.~{}\texttt{B1}
+C++ pointer up its type's inheritance hierarchy (e.g.~{}\texttt{B1}
 $\rightarrow$ {}\texttt{A} or {}\texttt{E} $\rightarrow$
 {}\texttt{D}).  For smart reference-counted pointers, these implicit
 conversions are just as easy thanks to a templated copy constructor
@@ -411,10 +414,10 @@ memory deallocation error when these smart pointer objects are deleted
 %
 
 After the basics of {}\texttt{RefCountPtr<>} are understood its use is
-quite strightforward and this class can be used with any built-in or
+quite straightforward and this class can be used with any built-in or
 user-defined concrete or abstract data type.  Therefore, one may ask
 why {}\texttt{RefCountPtr<>} should not be used for all objects.
-There is nothing stoping a developer from using
+There is nothing stopping a developer from using
 {}\texttt{RefCountPtr<>} in this way but to do so would be overkill
 and in this author's opinion is counter productive.  The most
 compelling situation where {}\texttt{RefCountPtr<>} should be used is
@@ -429,7 +432,7 @@ other clients (which is rarely a good idea to allow in general).
 In this author's opinion, {}\texttt{RefCountPtr<>} should only be used
 to wrap an object in situations where the client has more than a
 transient relationship to the object.  An example of transient
-relationship with an object is one where the object is simpliy passed
+relationship with an object is one where the object is simply passed
 into and out of a function and no ``memory'' of the object resides
 after the function call finishes.  For example, the following use
 of {}\texttt{RefCountPtr<>}
@@ -502,19 +505,19 @@ even easier (there is no choice) since every variable is passed by
 reference.  Passing arrays of objects to and from functions in these
 languages is slightly more complicated, but not by much.
 
-On the other hand, C++ adds the concpets of {}\texttt{const} and
+On the other hand, C++ adds the concepts of {}\texttt{const} and
 references (i.e.~{}\texttt{type\&}) for passing arguments in addition
 to C's concepts of pointers (i.e.~{}\texttt{type*}) and pass-by-value.
 This makes deciding how to pass arguments in C++ much more complicated
 than in other languages.  These features (which where added to C++ for
 very good technical reasons), when guided by commonsense idioms, can
-make it more-or-less clear how arguments sholud be passed to and from
+make it more-or-less clear how arguments should be passed to and from
 functions in C++ based on their purpose.  This discussion presents
 some of these idioms and how {}\texttt{RefCountPtr<>} fits in.
 
 In many respects C++ is a highly expressive programming language
 where, in many cases, the programmer's intent for an interface or a
-function prototype can be decerned just by looking at the C++
+function prototype can be discerned just by looking at the C++
 declaration.  For example, if a reference or pointer argument passed
 into a function has the {}\texttt{const} qualifier, then a developer
 can rightly assume that the argument will not be changed within the
@@ -530,7 +533,7 @@ array is required (i.e.~{}\texttt{a!=NULL} required) or is optional
 (i.e.~{}\texttt{a==NULL} allowed).
 
 There are other C++ idioms that can be used so that general nature of
-arguments passed to and from a function can be largly discerned just
+arguments passed to and from a function can be largely discerned just
 by looking at the C++ prototype for the function.  The
 {}\texttt{const} qualifier just mentioned above is one of the language
 features which is self-documenting but there are others.  Another
@@ -583,7 +586,7 @@ array of mutable objects
 \end{tabular}
 \begin{center}
 C++ declarations for passing small concrete (i.e.~with value
-sementics) objects to and from functions for various reasons (where
+semantics) objects to and from functions for various reasons (where
 {}\texttt{S} is a place holder for an actual built-in or user-defined
 data type).
 \end{center}
@@ -623,7 +626,7 @@ array of mutable objects
 \end{tabular}
 \begin{center}
 C++ declarations for passing abstract (i.e.~with reference or pointer
-sementics) or large concrete objects to and from functions for various
+semantics) or large concrete objects to and from functions for various
 reasons (where {}\texttt{A} is a place holder for an actual abstract C++
 base class).
 \end{center}
@@ -659,7 +662,7 @@ difficult.
 \section{Advanced features of {}\texttt{RefCountPtr<>}}
 %
 
-In this section we describe some advanced featurs of
+In this section we describe some advanced features of
 {}\texttt{RefCountPtr<>} that most developers will never need to use
 and therefore may never need to know about.  However, there are
 certain challenging use cases where this functionality is critical to
@@ -691,7 +694,7 @@ the object without worry that such a change will affect another
 client.
 
 This type of information must be used very carefully but can be very
-helpful in simplifying the logic in cerain types of use cases. If this
+helpful in simplifying the logic in certain types of use cases. If this
 type of logic is to be used then it must be documented very clearly
 since it is easy to falsely show a reference count higher than the
 number of clients that really own {}\texttt{RefCountPtr<>} objects to
@@ -749,7 +752,7 @@ private:
 \end{verbatim}}
 
 {}\noindent{}Above, every {}\texttt{Derived2} object must have an
-assoicated {}\texttt{Utility} object.  The class {}\texttt{Derived2}
+associated {}\texttt{Utility} object.  The class {}\texttt{Derived2}
 assumes that an object of type {}\texttt{Utility} is allocated
 (presumably on the stack or as a global variable) by the client before
 it is used to construct a type {}\texttt{Derived2} object.  For
@@ -826,10 +829,10 @@ RefCountPtr<Base> createBase(bool someFlag)
 }
 \end{verbatim}}
 
-{}\noindent{} The above implemenation will insure that the
+{}\noindent{} The above implementation will insure that the
 {}\texttt{Utility} object created in this function will remain valid
 and therefore the {}\texttt{Derived2} object returned from the
-function will remain valid but a memmory leak will have been created.
+function will remain valid but a memory leak will have been created.
 If the function {}\texttt{create\-Base(...)}  is only called a few
 times in a program then this memory leak will most likely be harmless
 but if this function is called too many times, memory exhaustion will
@@ -859,7 +862,7 @@ object.  A string \texttt{name} is associated with each piece of extra
 data to disambiguate from other pieces of extra data with the same
 type and to facilitate later retrieval.  The boolean argument
 \texttt{force\-\_unique} (which has a default value of \texttt{true})
-is used to allow or disallow overwritting existing data of the same
+is used to allow or disallow overwriting existing data of the same
 type and name.  A piece of extra data is keyed both on the type of the
 extra data and its string name and access is granted by using one of
 the following nonmember functions.
@@ -970,16 +973,16 @@ of these situations include:
 \begin{enumerate}
 \item
 When reference counts for objects are managed by requiring clients to
-explictly call increment and deincrement functions such as is the case
+explicitly call increment and deincremented functions such as is the case
 in CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}.  Such an
 approach is also presented in {}\cite[Item 29]{ref:meyers_1996}) in
 the subsection ``A Reference-Counting Base Class''.  In these
-protocals, dellocation occurs automatically behind the scenes when
+protocols, deallocation occurs automatically behind the scenes when
 this other reference count goes to zero.
 \item
 When objects are managed by certain types of object databases.  In
-some object databases, an object that is grabed from the database must
-be explictly returned to the database in order to allow proper object
+some object databases, an object that is grabbed from the database must
+be explicitly returned to the database in order to allow proper object
 deletion to take place later.
 \item
 A different reference-counted pointer class is used to initially get
@@ -994,8 +997,8 @@ this underlying object.
 %
 There are also other situations where one can not simply assume to call
 {}\texttt{delete} to remove an object.  The bottom line is that in order
-to be general, one must allow arbitary policies to be used to
-dellocate an object after clients are finished using the object.
+to be general, one must allow arbitrary policies to be used to
+deallocate an object after clients are finished using the object.
 
 {}\texttt{RefCountPtr<>} supports arbitrary deallocation polices using
 the concept of a template deallocator object through the following
@@ -1008,7 +1011,7 @@ RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
 The implementation of the simpler version of {}\texttt{rcp(...)} first
 described in Section {}\ref{rcp:sec:init-rcp-objects} uses the default
-dallocator class
+deallocator class
 
 {\scriptsize\begin{verbatim}
 template<class T>
@@ -1022,7 +1025,7 @@ public:
 
 All deallocator objects must support the typedef member
 {}\texttt{ptr\_t} and function member {}\texttt{free()}.  The concept
-of a template policy inteface (also called a function object
+of a template policy interface (also called a function object
 \cite[Section 18.4]{ref:stroustrup_2000}) should be familiar to
 semi-advanced users of the STL (part of the standard C++ library).
 
@@ -1062,7 +1065,7 @@ private:
 
 The above abstract factory subclass {}\texttt{ObjectADBFactory}
 inherits from a generic {}\texttt{AbstractFactory} base class that
-defines a pure virtial method {}\texttt{create()}.  In order to
+defines a pure virtual method {}\texttt{create()}.  In order to
 implement the override of the {}\texttt{create()} method, a
 deallocator class must be defined and used.  For this purpose we
 define
@@ -1083,7 +1086,7 @@ private:
 \end{verbatim}}
 
 {}\noindent{}Above, the default constructor is declared private
-without an implementation so to avoid accedental default construction
+without an implementation so to avoid accidental default construction
 (see Item 27 in {}\cite{ref:meyers_1994}).
 
 Now we can define the implementation of the {}\texttt{create()} function
@@ -1129,14 +1132,14 @@ but the reader should get the basic idea.
 
 The templated C++ class {}\texttt{RefCountPtr<>} provides a
 low-overhead option for (almost) automatic memory management in C++.
-This class has been deveoped and refined over many years and has been
+This class has been developed and refined over many years and has been
 proven to improve the quality of software projects that use it
 consistently.  Careful use of {}\texttt{RefCountPtr<>} eliminates the
-need to manually call {}\texttt{deltete} when dynamically allocated
+need to manually call {}\texttt{deleted} when dynamically allocated
 objects are no longer needed and helps to reduce the amount of code
 that developers have to write (for example, most classes that use
 dynamically allocated memory do not need developer-supplied
-destructors since the compiler-generated destructors do exaclty the
+destructors since the compiler-generated destructors do exactly the
 right thing).
 
 The class {}\texttt{RefCountPtr<>} also has other advanced features

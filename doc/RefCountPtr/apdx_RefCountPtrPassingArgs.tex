@@ -10,20 +10,20 @@ to pass objects to and from C++ functions and how
 should be stated that many different code projects do not follow these
 idioms.  Usually this is because the developers where unaware of these
 idioms and why they are useful to follow.  Even if a developer is
-familar with these idioms for raw data types, the may not be as
+familiar with these idioms for raw data types, the may not be as
 familiar with how {}\texttt{Ref\-Count\-Ptr<>} fits in.
 
-As stated in Section ???, it is recommended to use raw object
-references for passing transitive arguments (i.e.~those that are only
-accessed during a function call) to a function.  Here, the term
-reference is used in a more abstract sence where a reference can be
-implemented as a C++ references such as {}\texttt{const A \&a} or as a
-C++ pointer such as {}\texttt{A *a}.  On the other hand, it is
-recommended to pass {}\texttt{Ref\-Count\-Ptr<>} wrapped object
-references (i.e.~{}\texttt{const Ref\-Count\-Ptr<A> \&a}) for any
-non-transitive arguments (i.e.~those where a ``memory'' of the object
-in the server implementing the function presits after the function
-returns).
+As stated in Section {}\ref{rcp:sec:passing-args}, it is recommended
+to use raw object references for passing transitive arguments
+(i.e.~those that are only accessed during a function call) to a
+function.  Here, the term reference is used in a more abstract sense
+where a reference can be implemented as a C++ references such as
+{}\texttt{const A \&a} or as a C++ pointer such as {}\texttt{A *a}.
+On the other hand, it is recommended to pass
+{}\texttt{Ref\-Count\-Ptr<>} wrapped object references
+(i.e.~{}\texttt{const Ref\-Count\-Ptr<A> \&a}) for any non-transitive
+arguments (i.e.~those where a ``memory'' of the object in the server
+implementing the function persists after the function returns).
 
 Passing {}\texttt{Ref\-Count\-Ptr<>} wrapped object references to and
 from functions will differ slightly from how raw object references are
@@ -42,7 +42,7 @@ reference and not by non-{}\texttt{const} reference
 perform automatic conversions for {}\texttt{const} references.
 However, passing {}\texttt{Ref\-Count\-Ptr<>} objects by value is
 harmless but passing {}\texttt{Ref\-Count\-Ptr<>} objects by
-{}\texttt{const} reference eliminates unnecessary (while quite trival)
+{}\texttt{const} reference eliminates unnecessary (while quite trivial)
 constructor and destructor function calls.  In any case, passing
 {}\texttt{Ref\-Count\-Ptr<>} objects by {}\texttt{const} reference as
 apposed to by value simplifies stepping through code in a debugger and
@@ -143,18 +143,19 @@ the object.  However, when a small concrete object of type
 {}\texttt{S} (where {}\texttt{S} is a {}\texttt{double} or
 {}\texttt{int} for instance) is being passed it may also be passed by
 value (with or without the {}\texttt{const} modifier as shown in Table
-???).  When a concrete object is passed by value, the {}\texttt{const}
-modifier does not in any way affect the client code that calls the
-function and the client's copy of the argument is guaranteed not to be
-changed regardless of whether the {}\texttt{const} modifier is used or
-not.  On the other hand, the {}\texttt{const} modifier on a C++
-pointer or C++ reference does not really guarantee that the object
-will not be changed.  The {}\texttt{const} modifier used with
-pass-by-value only resticts the modification of the copied argument in
-the function implementation.  Some see the use of {}\texttt{const}
-pass-by-value as a means to help function implementors from making
-mistakes while others see this as a unecessary restiction on the
-freedom in the implementation of the function.
+{}\ref{rcp:tbl:fnc-decl}).  When a concrete object is passed by value,
+the {}\texttt{const} modifier does not in any way affect the client
+code that calls the function and the client's copy of the argument is
+guaranteed not to be changed regardless of whether the
+{}\texttt{const} modifier is used or not.  On the other hand, the
+{}\texttt{const} modifier on a C++ pointer or C++ reference does not
+really guarantee that the object will not be changed.  The
+{}\texttt{const} modifier used with pass-by-value only restricts the
+modification of the copied argument in the function implementation.
+Some see the use of {}\texttt{const} pass-by-value as a means to help
+function implementors from making mistakes while others see this as a
+unnecessary restriction on the freedom in the implementation of the
+function.
 
 When a non-mutable input argument is required, it should be passed by
 value (i.e.~{}\texttt{S s}) or by {}\texttt{const} C++ reference
@@ -185,10 +186,10 @@ required (i.e.~{}\texttt{a!=NULL} required).
 
 Note that while it is possible to pass objects as an array of object
 references such as {}\texttt{const S\& s[]}, it is generally very
-difficult to initialze the references right when the array is first
+difficult to initialize the references right when the array is first
 created (as is required by the standard).  Therefore it is not
 recommended to passed objects as an array of references but instead to
-use an array of pointers as shown in Table ???.
+use an array of pointers as shown in Table {}\ref{rcp:tbl:fnc-decl}.
 
 Note that unlike in the case of passing single non-mutable objects,
 that there is no a convenient way to help differentiate whether an
@@ -203,20 +204,21 @@ maintained after the function call) should be passed through
 references of this type should be passed as {}\texttt{const
 Ref\-Count\-Ptr<const A> \&a}.  Note the presences of the
 {}\texttt{const} templated type {}\texttt{<const A>} which states that
-clients may not modify the underlying wrapped object (see Section ???
-for an explaination of how to express combinations of {}\texttt{const}
-or non-{}\texttt{const} pointers to {}\texttt{const} or
-non-{}\texttt{const} objects using {}\texttt{Ref\-Count\-Ptr<>}).  As
-stated earlier, the {}\texttt{Ref\-Count\-Ptr<>} object itself should
-be passed as a {}\texttt{const} reference to avoid unnecessary
-constructor and destructor calls.  Note that unlike passing single raw
-object references to a function, there is no easy way at compile time
-to differentiate between a required and an optional argument when
-passing a {}\texttt{Ref\-Count\-Ptr<>} wrapped object.  For the
-argument {}\texttt{const Ref\-Count\-Ptr<const A> \&a}, if it is
-required the precondition {}\texttt{a.get()!=NULL} should be
-documented while if the argument is optional then it should be
-documented that {}\texttt{a.get()==NULL} is allowed.
+clients may not modify the underlying wrapped object (see Section
+{}\ref{rcp:sec:init-rcp-objects} for an explanation of how to express
+combinations of {}\texttt{const} or non-{}\texttt{const} pointers to
+{}\texttt{const} or non-{}\texttt{const} objects using
+{}\texttt{Ref\-Count\-Ptr<>}).  As stated earlier, the
+{}\texttt{Ref\-Count\-Ptr<>} object itself should be passed as a
+{}\texttt{const} reference to avoid unnecessary constructor and
+destructor calls.  Note that unlike passing single raw object
+references to a function, there is no easy way at compile time to
+differentiate between a required and an optional argument when passing
+a {}\texttt{Ref\-Count\-Ptr<>} wrapped object.  For the argument
+{}\texttt{const Ref\-Count\-Ptr<const A> \&a}, if it is required the
+precondition {}\texttt{a.get()!=NULL} should be documented while if
+the argument is optional then it should be documented that
+{}\texttt{a.get()==NULL} is allowed.
 
 Passing an array of non-mutable non-transitive objects wrapped in
 {}\texttt{Ref\-Count\-Ptr<>} objects is a little different.  While it
@@ -245,7 +247,7 @@ array being optional (i.e.~{}\texttt{a==NULL} allowed) or required
 %
 
 Many of the issues involved with passing mutable objects (i.e.~client
-maintained objects that are modifed within a function) are the same as
+maintained objects that are modified within a function) are the same as
 for passing non-mutable objects such as described above but there are
 some differences.  First off, objects that are to have their state
 changed within a function must be passed by reference (i.e.~C++
@@ -266,7 +268,7 @@ is required then some would say that a non-\texttt{const} reference
 should always be used.  Interested readers should note, however, that
 references were added to C++ primarily to support operator overloading
 (see {}\cite[Section 3.7]{ref:design_evol_cpp}) and also for return
-values.  If one is writting an overloaded operator function that
+values.  If one is writing an overloaded operator function that
 modifies one of its arguments (such as the stream insertion and
 extraction operators {}\texttt{std::istream\& operator<<(std::istream
 \&i, ... )} and {}\texttt{std::ostream\& operator>>(std::ostream \&o,
@@ -311,7 +313,7 @@ int main()
 
 The above program can be put into a file ({}\texttt{bad\_ref.cpp} for
 instance) and be compiled and linked with no errors by any standard
-complient C++ compiler (for instance using g++ as {}\texttt{g++ -o
+compliant C++ compiler (for instance using g++ as {}\texttt{g++ -o
 bad\_ref.exe bad\_ref.cpp}).  However, when this program is run (as
 {}\texttt{./bad\_ref.exe} for instance) the output will look something
 like:
@@ -329,7 +331,7 @@ The reason for the segmentation fault should be quite obvious.  In the
 case of the above flat program, a very smart compiler might be able to
 produce a warning but in the general case, where the main program and
 the functions {}\texttt{f()} and {}\texttt{g()} are compiled in
-seperate source files, there is no way a C++ compiler can possibly
+separate source files, there is no way a C++ compiler can possibly
 catch this error at compile time.  This example just proves that the
 language does not guarantee that C++ references are bound to valid
 objects.
@@ -375,7 +377,7 @@ clue {}\texttt{\&k} in the statement
 \end{verbatim}}
 
 {}\noindent{}while rightly assuming that the arguments {}\texttt{i}
-and {}\texttt{j} will not be modifed.  Later on in this program,
+and {}\texttt{j} will not be modified.  Later on in this program,
 the statement
 
 {\scriptsize\begin{verbatim}
@@ -383,7 +385,7 @@ the statement
 \end{verbatim}}
 
 {}\noindent{}uses the array {}\texttt{j}, which is assumed to still be
-in its initalized state.  Now suppose that some smarty pants developer
+in its initialized state.  Now suppose that some smarty pants developer
 decides that he can implement the function {}\texttt{f()} better if
 the array in {}\texttt{j} is used as workspace.  If non-\texttt{const}
 references are the norm, then this developer may decide to change the
@@ -432,7 +434,7 @@ easier than tracking down runtime errors that result from using
 non-\texttt{const} C++ reference arguments and using
 non-\texttt{const} C++ pointer arguments give a visual clue as to what
 arguments are being changed and what arguments are being left
-unmodifed.  This is a subjective opinion but is one that is held by
+unmodified.  This is a subjective opinion but is one that is held by
 many esteemed C++ experts (including Strustroup himself).
 
 However, while C++ references where {}\underline{not} purposefully
@@ -457,10 +459,10 @@ void f( const RefCountPtr<const A> &a )
 \end{verbatim}}
 
 {}\noindent{}that the underlying reference-counted object buried in
-{}\texttt{a} is likely to be modifed as a result of this function
+{}\texttt{a} is likely to be modified as a result of this function
 call.
 
-The appraoch advocated here is to prefer non-\texttt{const} C++
+The approach advocated here is to prefer non-\texttt{const} C++
 pointer arguments in non-operator functions unless there is a
 compelling reason to use a non-\texttt{const} C++ reference instead
 such as when there is unlikely to be any confusion whether the
@@ -471,9 +473,9 @@ While it was stated earlier that {}\texttt{Ref\-Count\-Ptr<>} should
 almost always be passed as {}\texttt{const Ref\-Count\-Ptr<>\&}, there
 is one use case where a pointer to a {}\texttt{Ref\-Count\-Ptr<>}
 object should be passed to a function instead and that is when the
-calling client code is to aquire a {}\texttt{Ref\-Count\-Ptr<>} to an
+calling client code is to acquire a {}\texttt{Ref\-Count\-Ptr<>} to an
 object held by the server code.  When only a single
-{}\texttt{Ref\-Count\-Ptr<>} is to be aquired for a sinlge object,
+{}\texttt{Ref\-Count\-Ptr<>} is to be acquired for a single object,
 then it usually best to just return a {}\texttt{Ref\-Count\-Ptr<>}
 object from function as its return type such as in the case
 

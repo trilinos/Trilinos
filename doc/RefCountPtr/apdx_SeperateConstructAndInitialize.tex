@@ -1,5 +1,5 @@
 %
-\section{The ``seperate construction and initialization'' idiom}
+\section{The ``separate construction and initialization'' idiom}
 \label{rcp:apdx:sep-construct-init}
 %
 
@@ -7,40 +7,41 @@ Here we describe an idiom which works most effectively when using
 {}\texttt{RefCountPtr<>} for implementing concrete classes (that may
 be manipulated using reference (i.e.~pointer) semantics) that
 maximizes flexibility and reusability.  This is the concept of
-``seperate construction and initialization''.  The idea is that if an
+``separate construction and initialization''.  The idea is that if an
 class object can be default constructed to a potentially
-``uninitialized'' state and then at any time later can be seperately
+``uninitialized'' state and then at any time later can be separately
 initialized then such a class will have the maximum reusability and
 this can not be disputed.  The idiom described here is more effective
 for concrete classes which are derived from abstract interface
-classes.  It will be shown below that this ``seperate construction and
+classes.  It will be shown below that this ``separate construction and
 initialization'' idiom also trivially supports the ``initialization
 on construction'' idiom which is preferable in many cases and is
 advocated by many experts (for example, see {}\cite[Section
 10.2.3]{ref:stroustrup_2000} and {}\cite[Item 4]{ref:meyers_1996}).
 
-What many C++ experts fail to recongnise, however, is that in many
-cases the entities that are best qualifed to fully initialize and
+What many C++ experts fail to recognize, however, is that in many
+cases the entities that are best qualified to fully initialize and
 object are not in a position, nor should they be forced, to know the
 concrete subclass of an objects that they initialize.  To force some
 types of entities to both allocate and initialize objects is to complicate the
-design and limit the reusablity of such entities.
+design and limit the reusability of such entities.
 
-As an example for where it make sense to seperate construction and
+As an example for where it make sense to separate construction and
 initialization, consider an object-oriented design for filling spare
 matrix objects.  An example of such an interface is the abstract
 {}\texttt{Epetra\_\-Row\-Matrix} interface class in the Epetra [???]
 package.  {}\texttt{Epetra\_\-Row\-Matrix} defines operations to
-insert/replace/sum-into nonzero elements row by row.  It is posible
-two write generic code that takes a pre-allocated
-{}\texttt{Epetra\_\-Row\-Matrix} object and then initalize this object
-with nonzero values.  Such a piece of generica code would be
-compilcated if it had to also know the concrete subclass in order to
-create the object first and then initialize it.  This is prehaps not
-the best example but the reader should get the general idea behind the
-argument for the ``separate construction from initialization'' idiom.
+insert/replace/sum-into nonzero elements row by row.  It is possible to
+write generic code that takes a pre-allocated
+{}\texttt{Epetra\_\-Row\-Matrix} object and then initialize this object
+with nonzero values.  Such a piece of generic code would be
+complicated and perhaps made less reusable if it had to also know the
+concrete subclass(es) in order to create the object first and then
+initialize it.  This is perhaps not the best example but the reader
+should get the general idea behind the argument for the ``separate
+construction from initialization'' idiom.
 
-The basics of this ``seperate construction and initialization'' idiom
+The basics of this ``separate construction and initialization'' idiom
 are demonstrated in the following example subclass.
 
 {\scriptsize\begin{verbatim}
@@ -59,7 +60,7 @@ objects are maintained to objects of type {}\texttt{A} and
 may be abstract and in the overall design, {}\texttt{ConcreteClass1}
 may not be able to know the concrete types for these objects (this
 scenario is the basis for object-oriented design), therefore
-necessitating the use of {}\texttt{RefCountPtr<>}.  Hense, the
+necessitating the use of {}\texttt{RefCountPtr<>}.  Hence, the
 {}\texttt{A} and/or {}\texttt{B} objects must be allocated by an
 external entity and then given to a {}\texttt{ConcreteClass1} object
 in order to fully initialize it.

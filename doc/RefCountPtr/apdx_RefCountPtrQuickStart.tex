@@ -1,5 +1,5 @@
 %
-\section{\texttt{RefCountPtr<>} quickstart and reference}
+\section{\texttt{RefCountPtr<>} quick-start and reference}
 \label{rcp:apdx:quickstart}
 %
 
@@ -24,7 +24,7 @@ Also, all of example code is assumed to be in the namespace
 
 \begin{enumerate}
 
-\item {\bf Creating a \texttt{RefCountPtr<>} object uisng \texttt{new}}
+\item {\bf Creating a \texttt{RefCountPtr<>} object using \texttt{new}}
 %
 {\small\begin{verbatim}
 RefCountPtr<C> c_ptr = rcp(new C);
@@ -108,7 +108,7 @@ RefCountPtr<D>     d_ptr = rcp(new E);
 RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
 \end{verbatim}}
 %
-\item {\bf Dynamic cast (rutime checked)}
+\item {\bf Dynamic cast (runtime checked)}
 %
 {\small\begin{verbatim}
 RefCountPtr<A>     a_ptr  = rcp(new C);

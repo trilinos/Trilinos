@@ -6,16 +6,17 @@
 In this section we discuss issues related to the proper deletion of
 objects that are from types that use virtual base classes and why it
 is important to follow Commandment \ref{rcp:cmd:rcp-new} involving the
-use of the template function \texttt{rcp()} when using \texttt{new} to
-allocate an object to construct a \texttt{RefCoutPtr<>} object.  The
-issue considered here should be handled properly by ANSI C++ standard
-implementations and should not necessitate the use of template
-function \texttt{rcp()} but there are older C++ implementations that
-do not handle the deletion of these types of objects properly
-therefore requiring the use of \texttt{rcp()}.  Here we describe what
-the issues are using a concrete example and describe why some C++
-implementations have trouble getting this correct and how
-\texttt{rcp()} fixes the problem.
+use of the template function {}\texttt{rcp()} when using
+{}\texttt{new} to allocate an object to construct a
+{}\texttt{RefCountPtr<>} object.  The issue considered here should be
+handled properly by ANSI C++ standard implementations and should not
+necessitate the use of template function {}\texttt{rcp()} but there
+are older C++ implementations that do not handle the deletion of these
+types of objects properly therefore requiring the use of
+{}\texttt{rcp()}.  Here we describe what the issues are using a
+concrete example and describe why some C++ implementations have
+trouble getting this correct and how {}\texttt{rcp()} fixes the
+problem.
 
 Consider the following class hierarchy:
 
@@ -42,28 +43,27 @@ class C : virtual public B1, virtual public B2
 };
 \end{verbatim}}
 
-
 An object of type C should have one type B1 object, one type B2 object
 and one (since A is a virtual base class) type A object.  Each of
-these objects must have at least storage for two \texttt{int} data
-members.  On a 32 bit system, each \texttt{int} should require four
+these objects must have at least storage for two {}\texttt{int} data
+members.  On a 32 bit system, each {}\texttt{int} should require four
 bytes.  In addition, each object should have a pointer to a virtual
 function table which on a 32 bit system is four bytes per pointer
-which is the same size as an \texttt{int}.  Therefore, an object of
-type \texttt{C} should have a minimum size (as returned by
-\texttt{sizeof(C)}) of
-%
+which is the same size as an {}\texttt{int}.  Therefore, an object of
+type {}\texttt{C} should have a minimum size (as returned by
+{}\texttt{sizeof(C)}) of
+
 \[
 (4 \, \mbox{objects per C object})(3 \, \mbox{ints per object})(4 \, \mbox{bytes per int})
 = 48 \, \mbox{bytes per C object}.
 \]
-%
+
 While the layout of objects is compiler dependent, many C++
 implementations sets up objects in memory in this manner.
 
 A simple test program (this is the test program for
-\texttt{RefCountPtr<>} in Teuchos) was written to reveal the layout of
-an object of type \texttt{C} in memory.  When run under the g++
+{}\texttt{RefCountPtr<>} in Teuchos) was written to reveal the layout of
+an object of type {}\texttt{C} in memory.  When run under the g++
 version 3.2 the test program output reveals the following structure
 
 {\small\begin{verbatim}
@@ -74,9 +74,9 @@ Offset of B1 object in object of type C = 12
 Offset of B2 object in object of type C = 36
 Offset of A object in object of type C  = 24
 \end{verbatim}}
-%
-\noindent{}This printout shows that an object of type \texttt{C} is layed out in
-memory as shown in Figure \ref{rcp:fig:layout-of-C}.
+
+{}\noindent{}This printout shows that an object of type {}\texttt{C}
+is laid out in memory as shown in Figure \ref{rcp:fig:layout-of-C}.
 
 \begin{figure}[h]
 \begin{center}
@@ -88,21 +88,20 @@ address 10036 & \framebox[10ex]{B2 base}
 \end{tabular}
 \end{center}
 \caption{\label{rcp:fig:layout-of-C}
-Layout of object of type \texttt{C} using g++ version 3.2
+Layout of object of type {}\texttt{C} using g++ version 3.2
 with a base address of (base-10) 10000 for example.}
 \end{figure}
 
 Why is the layout in Figure \ref{rcp:fig:layout-of-C} significant?  To
 understand why this is important, consider how a C++ implementation is
-likely to allocate and delete objects of type \texttt{C}.  The way
-that an object of type \texttt{C} is usually constructed by a C++
-implementation is to call \texttt{malloc(sizeof(C)} first to allocate
-storage for the object and then the subobjects in
-\texttt{C} are constructed according to the standard (i.e.~base-class
+likely to allocate and delete objects of type {}\texttt{C}.  The way
+that an object of type {}\texttt{C} is usually constructed by a C++
+implementation is to call {}\texttt{malloc(sizeof(C))} first to allocate
+storage for the object and then the sub-objects in
+{}\texttt{C} are constructed according to the standard (i.e.~base-class
 objects first, followed by subclass objects).
 
-Now consider the following program (the decalarations for classes A-C
-are not shown):
+Now consider the following program:
 
 {\small\begin{verbatim}
 void delete_A(A* a_ptr)
@@ -118,58 +117,57 @@ void main()
 \end{verbatim}}
 
 Some older C++ implementations (most notably Microsoft Visual C++
-version 6.0) implement the above \texttt{delete} call in the function
-\texttt{delete\_A()} as follows:
-%
+version 6.0) implement the above {}\texttt{delete} call in the
+function {}\texttt{delete\_A()} as follows:
+
 {\small\begin{verbatim}a_ptr->~a_ptr();
 free((void*)a_ptr);
 \end{verbatim}}
-%
-\noindent{}and the program would crash with a runtime error from \texttt{free()}
-complaining that this memory was not allocated from \texttt{malloc()}.
-The reason for the runtime error given the above (incorrect)
-implementation is obvious if one thinks about what is occuring.  Let
-us assume that the runtime allocates memory for the object \texttt{C}
-on the line
-%
+
+{}\noindent{}and the program would crash with a runtime error from
+{}\texttt{free()} complaining that this memory was not allocated from
+{}\texttt{malloc()}.  The reason for the runtime error given the above
+(incorrect) implementation is obvious if one thinks about what is
+occurring.  Let us assume that the runtime allocates memory for the
+object {}\texttt{C} on the line
+
 {\small\begin{verbatim}
 A *a_ptr = new C;
 \end{verbatim}}
-%
-\noindent{}with the address 10000 returned from \texttt{malloc()}
+
+{}\noindent{}with the address 10000 returned from {}\texttt{malloc()}
 as shown in Figure \ref{rcp:fig:layout-of-C}.  When the pointer
-variable \texttt{a\_ptr} is assigned, the address is changed to 100024
-as also shown in Figure \ref{rcp:fig:layout-of-C}.  When this object
-is passed into the function \texttt{delete\_A()} the above
-(incorrect) implemantion first performs
-%
+variable {}\texttt{a\_ptr} is assigned, the address is changed to
+100024 as also shown in Figure \ref{rcp:fig:layout-of-C}.  When this
+object is passed into the function {}\texttt{delete\_A()} the above
+(incorrect) implementation first performs
+
 {\small\begin{verbatim}
 a_ptr->~a_ptr();
 \end{verbatim}}
-%
-\noindent{}and the correct destructors are
-called because this utilizes the virtual function mechanism.  However,
-when the next line
-%
+
+{}\noindent{}and the correct destructors are called because this
+utilizes the virtual function mechanism.  However, when the next line
+
 {\small\begin{verbatim}
 free((void*)a_ptr);
 \end{verbatim}}
-%
-\noindent{}is executed it is equivalent to
-%
+
+{}\noindent{}is executed it is equivalent to
+
 {\small\begin{verbatim}
 free((void*)10024);
 \end{verbatim}}
-%
-\noindent{}which is not the same address 10000 returned from \texttt{malloc()}
-and hense the runtime error.
+
+{}\noindent{}which is not the same address 10000 returned from
+{}\texttt{malloc()} and hence the runtime error.
 
 A fully ANSI/ISO C++ standard implementation must therefore perform
 some type of runtime lookup of an object to determine its base address
-before it calls \texttt{free()}.  Hence we see that a proper C++
-implementation of \texttt{delete} for an object with a virtual functon
-must always perform a runtime type lookup to execute correctly and
-this is unavoidable extra overhead.
+before it calls {}\texttt{free()}.  Hence we see that a proper C++
+implementation of {}\texttt{delete} for an object with a virtual
+function must always perform a runtime type lookup to execute
+correctly and this is unavoidable extra overhead.
 
 The reason that the simplistic (incorrect) implementation (such as
 implemented in MS Visual C++ 6.0) shown above generally works just
@@ -179,9 +177,9 @@ entire object in almost every C++ implementation (and certainly for MS
 Visual C++ 6.0).  And therefore any interface supported by the object
 can be used to delete the object since the addresses are the same.
 
-Now let us consider what a \texttt{RefCountPtr<>} implementation of
+Now let us consider what a {}\texttt{RefCountPtr<>} implementation of
 the above program would look like and how it works even with the
-incorrect implementation of \texttt{delete} (e.g.~as used in MS Visual
+incorrect implementation of {}\texttt{delete} (e.g.~as used in MS Visual
 C++ 6.0).
 
 {\small\begin{verbatim}
@@ -198,38 +196,40 @@ void main()
 \end{verbatim}}
 
 In the above example, the line
-%
+
 {\small\begin{verbatim}
 Teuchos::RefCountPtr<A> a_ptr = Teuchos::rcp(new C);
 \end{verbatim}}
-%
-\noindent{}results the templated function \texttt{rcp()}
-first creating a \texttt{RefCountPtr<C>} object which stores the exact
-same address as returned from \texttt{new C} in the underlying
-reference-count node and then the \texttt{RefCountPtr<C>} object is
-converted into a \texttt{RefCountPtr<A>} object before assignment is
+
+{}\noindent{}results in the templated function {}\texttt{rcp()} first
+creating a {}\texttt{RefCountPtr<C>} object which stores the exact
+same address as returned from {}\texttt{new C} in the underlying
+reference-count node and then the {}\texttt{RefCountPtr<C>} object is
+converted into a {}\texttt{RefCountPtr<A>} object before assignment is
 performed (or just a copy constructor in most C++ implementations).
-Then when the line
-%
+See Appendix {}\ref{rcp:apdx:design} for a description of how this
+works.  Then when the line
+
 {\small\begin{verbatim}
 *a_ptr = Teuchos::null;
 \end{verbatim}}
-%
-\noindent{}in the function \texttt{delete\_A\_ptr()} is executed,
+
+{}\noindent{}in the function {}\texttt{delete\_A\_ptr()} is executed,
 the destructor for the underlying reference-count node calls
-\texttt{delete} on the exact same address returned from \texttt{new C}
-which was set when the first \texttt{RefCountPtr<C>} object was
-constructed by \texttt{rcp(new C)}.  Since this is the same address
-returned form \texttt{new} (and therefore the same returned from
-\texttt{malloc()}) the incorrect implementation works just fine.
-The key to the use of the templated function \texttt{rcp()} is that
-the compiler automatically constructs a \texttt{RefCountPtr<>} with
-the proper type without the programmer having to think about it.
+{}\texttt{delete} on the exact same address returned from
+{}\texttt{new C} which was set when the first
+{}\texttt{RefCountPtr<C>} object was constructed by {}\texttt{rcp(new
+C)}.  Since this is the same address returned form {}\texttt{new} (and
+therefore the same returned from {}\texttt{malloc()}) the incorrect
+compiler implementation (i.e.~MS VC++ 6.0) works just fine.  The key
+to the use of the templated function {}\texttt{rcp()} is that the
+compiler automatically constructs a {}\texttt{RefCountPtr<>} with the
+proper type without the programmer having to think about it.
 
 New versions of C++ compilers do not seem to suffer from this problem
 and the above referenced g++ version performs the above deletion
 correctly as well as several other compilers tested.  At the time of
-this writting it is unclear what platforms still suffer from this
-problem and whether Comnmandment \ref{rcp:cmd:rcp-new} and the use of
-\texttt{rcp()} is really necessary but the use of \texttt{rcp()} is
-safe in any case and is therefore still recommended.
+this writing it is unclear what platforms still suffer from this
+problem and whether Commandment \ref{rcp:cmd:rcp-new} and the use of
+{}\texttt{rcp()} is really necessary but the use of {}\texttt{rcp()}
+is safe in any case and is therefore still recommended.
