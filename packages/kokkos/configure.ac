@@ -82,11 +82,11 @@ AC_CANONICAL_TARGET
 # Use automake
 
 #  Required version of automake.
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.6.3)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.57)
 
 # ------------------------------------------------------------------------
 # Checks for programs
