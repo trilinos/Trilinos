@@ -64,7 +64,7 @@ public:
 
   //! Templated constructor
   template<typename T>
-  ParameterEntry(T value, bool isDefault = false)
+  explicit ParameterEntry(T value, bool isDefault = false)
   : val_(value),
     isUsed_(false),
     isDefault_(isDefault)
