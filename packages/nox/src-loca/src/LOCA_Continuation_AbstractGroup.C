@@ -31,8 +31,50 @@
 //@HEADER
 
 #include "NOX_Parameter_List.H"
+#include "NOX_MultiVector.H"
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_ErrorCheck.H"
+
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::AbstractGroup::applyJacobianMultiVector(
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const
+{
+  string callingFunction = 
+    "LOCA::Continuation::AbstractGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyJacobian(*(input[i]), *(result[i]));
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::AbstractGroup::applyJacobianInverseMultiVector(
+                                    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const
+{
+  string callingFunction = 
+    "LOCA::Continuation::AbstractGroup::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyJacobianInverse(params, *(input[i]), *(result[i]));
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+  }
+
+  return finalStatus;
+}
 
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(

@@ -36,6 +36,9 @@
 #include "NOX_Abstract_Group.H"    // base class
 
 namespace NOX {
+  namespace Abstract {
+    class MultiVector;
+  }
   namespace Parameter {
     class List;
   }
@@ -122,6 +125,28 @@ namespace LOCA {
        * if more appropriate/efficient approaches are available.
        */
       //@{
+
+      //! applyJacobian for multiple right-hand sides 
+      /*! 
+       * The default implementation here calls applyJacobian() for
+       * each right hand side serially but should be overloaded if a 
+       * block solver is available.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+			       NOX::Abstract::MultiVector& result) const;
+
+      //! applyJacobianInverse for multiple right-hand sides
+      /*! 
+       * The default implementation here calls applyJacobianInverse() for
+       * each right hand side serially but should be overloaded if a 
+       * block solver is available.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseMultiVector(
+				    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
 
       //! applyJacobianInverse for multiple right-hand sides
       /*! 
