@@ -221,6 +221,9 @@ int Zoltan_PHG_Coarsening
 
   /* Construct the LevelMap; match[vertex] is changed back to original value */
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
+  /* EBEB This code constructs the vertex-based arrays. It might be
+     bette to construct the edge-based arrays so we can easily remove edges. */
+
   c_hg->nPins = 0;                      /* count of coarsened pins */
   c_hg->nVtx  = 0;                      /* count of coarsened vertices */
   for (i = 0; i < hg->nVtx; i++)  {

@@ -456,9 +456,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int err = ZOLTAN_OK, old_row, row, col;
   int *rows[hgc->nProc_y + 1], bestlno, vertex, nselect;
   char *yo = "matching_ipm";
-int nPins, nVtx;
-int row0=0, row1=0, row2=0;
-
+  int nPins, nVtx;
 
 
   if (sizeof(int) != sizeof (float))  {
@@ -872,7 +870,7 @@ int row0=0, row1=0, row2=0;
 
 if (hgc->myProc_y == 0)
   {
-  int local=0, global=0, unmatched=0;
+  int global=0, unmatched=0;
   
   for (i = 0; i < hg->nVtx; i++)
     {
