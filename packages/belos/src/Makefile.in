@@ -104,7 +104,7 @@ CORE =
 
 
 ### add in paths as needed
-AM_CPPFLAGS = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src 
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
 
 #	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
 SERIAL_H = 

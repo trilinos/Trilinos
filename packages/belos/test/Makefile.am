@@ -94,7 +94,10 @@ libBelosTest_a_SOURCES = \
 	$(MPISMP)
 
 #We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
+AM_CPPFLAGS=-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+		-I$(top_srcdir)/../triutils/src \
+		-I$(top_builddir)/../triutils/src
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -132,4 +135,4 @@ lib_LIBRARIES = $(BELOSTEST_LIB)
 
 MAINTAINERCLEANFILES = Makefile.in 
 
-SUBDIRS = BlockCG
+SUBDIRS = . BlockCG
