@@ -24,6 +24,7 @@ static char *cvs_par_const_h = "$Id$";
 
 extern int LB_Proc;
 extern int LB_Num_Proc;
+extern int LB_Debug;
 
 extern void LB_print_sync_start(int);
 extern void LB_print_sync_end(int);

@@ -23,4 +23,6 @@ static char *cvs_par_h = "$Id$";
 int LB_Proc = 0;        /* Processor ID Number.                             */
 int LB_Num_Proc = 1;    /* Number of processors used.                       */
 
+int LB_Debug = 0;       /* Debug level for DLB Library.                     */
+
 #endif

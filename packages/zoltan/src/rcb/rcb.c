@@ -723,26 +723,23 @@ void lb_rcb(
             sizeof(LB_TAG));
   }
 
-
-{
-int i;
-LB_print_sync_start(TRUE);
-  printf("RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
-         LB_Proc, *pdotnum, *pdottop, *num_non_local);
-  printf("  Assigned objects:\n");
-  for (i = 0; i < *pdotnum; i++) {
-    printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
-           rcb->Dots[i].Tag.Proc);
+  if (LB_Debug > 6) {
+    int i;
+    LB_print_sync_start(TRUE);
+    printf("DLBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
+           LB_Proc, *pdotnum, *pdottop, *num_non_local);
+    printf("  Assigned objects:\n");
+    for (i = 0; i < *pdotnum; i++) {
+      printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
+             rcb->Dots[i].Tag.Proc);
+    }
+    printf("  Non_locals:\n");
+    for (i = 0; i < *num_non_local; i++) {
+      printf("    Obj:  %10d      Orig: %4d\n",
+             (*non_local_objs)[i].Global_ID, (*non_local_objs)[i].Proc);
+    }
+    LB_print_sync_end(TRUE);
   }
-  printf("  Non_locals:\n");
-  for (i = 0; i < *num_non_local; i++) {
-    printf("    Obj:  %10d      Orig: %4d\n",
-           (*non_local_objs)[i].Global_ID, (*non_local_objs)[i].Proc);
-  }
-
-LB_print_sync_end(TRUE);
-}
-
 }
 
 
