@@ -816,6 +816,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     
     temp = (struct amalg_drop *) Amatrix->data;
     scaled_diag  = temp->scaled_diag;
+    if (temp->scaled_diag != NULL) 
+      ML_free(temp->scaled_diag); /* what is going on here */
     temp->scaled_diag = NULL;
     
   }
