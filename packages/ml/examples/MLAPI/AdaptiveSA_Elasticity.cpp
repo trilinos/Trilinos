@@ -31,12 +31,9 @@
 // the exe takes the path to the example as input parameter, e.g.
 // AdaptiveSA_Elasticity.exe ../ExampleMatrices/sphere
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
 #include "ml_config.h"
 #include "ml_common.h"
+
 #ifdef HAVE_ML_MLAPI
 #include "MLAPI.h"
 
@@ -53,7 +50,6 @@ using namespace MLAPI;
 int main(int argc, char *argv[])
 {
   char filename[200];
-  int i = 0;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -61,7 +57,6 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
-  int proc  = comm.MyPID();
   int nproc = comm.NumProc();
 
   // Initialize the workspace and set the output level
@@ -207,7 +202,29 @@ int main(int argc, char *argv[])
   return(0);
 }
 
+#else
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
+int main(int argc, char *argv[])
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
 
+  puts("The ML API requires the following configuration options:");
+  puts("\t--enable-epetra");
+  puts("\t--enable-teuchos");
+  puts("\t--enable-ifpack");
+  puts("\t--enable-amesos");
+  puts("Please check your configure line.");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
+}
 #endif // #if defined(HAVE_ML_MLAPI)
