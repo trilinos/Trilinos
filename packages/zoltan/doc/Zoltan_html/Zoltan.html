@@ -208,9 +208,10 @@ Computing Sciences Department
 <br>Albuquerque, NM&nbsp; 87185-1111
 <br>&nbsp;
 <p>Developers:
-<ul>Erik Boman
+<ul>
+<a href="http://www-sccm.stanford.edu/~boman/">Erik Boman</a>
 <br><a href="http://www.cs.sandia.gov/~kddevin">Karen Devine</a> (<a href="mailto:  kddevin@cs.sandia.gov">kddevin@cs.sandia.gov</a>)
-<br><a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a> (<a href="mailto:  bahendr@cs.sandia.gov">bahendr@cs.sandia.gov</a>)
+<br><a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a> (<a href="mailto:  bah@cs.sandia.gov">bah@cs.sandia.gov</a>)
 <br><a href="http://math.nist.gov/acmd/Staff/WMitchell/">William Mitchell</a>
 (<a href="mailto:william.mitchell@nist.gov">william.mitchell@nist.gov</a>)
 <br>Matthew St. John
@@ -262,12 +263,8 @@ Adaptive physics models</li>
 For such applications, dynamic redistribution of data is needed to maintain
 high performance.&nbsp;</li>
 </ul>
-<b>Zoltan's features:</b>
+<b>Advantages of using Zoltan in applications:</b>
 <ul>
-<li>
-Zoltan's design is <a href="Zoltan_phil.html#ZDesign">data-structure neutral</a>,
-allowing it to be used by many applications.</li>
-
 <li>
 Zoltan's <a href="ug_html/ug_interface.html">object-oriented interface</a>
 is clean and easy to use in applications.</li>
@@ -275,10 +272,6 @@ is clean and easy to use in applications.</li>
 <li>
 A <a href="ug_html/ug_alg.html">suite of load-balancing algorithms</a>
 is included in Zoltan; try them all to see what works best in your application.</li>
-
-<li>
-<a href="dev_html/dev_add.html">New algorithms can be added</a> to Zoltan
-in a straightforward manner.</li>
 
 <li>
 <a href="ug_html/ug_alg_parmetis.html">Interfaces</a> to the popular
@@ -289,28 +282,24 @@ and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a> packages are included.</li
 <a href="ug_html/ug_intro.html#Migration-Help Tools">Data migration tools</a>
 are provided to simplify data movement during re-balancing.</li>
 </ul>
-<b>Advantages of using Zoltan</b>:&nbsp;
+<b>Advantages of using Zoltan for developing new load-balancing algorithms:</b>
 <ul>
 <li>
-As a general-purpose library, Zoltan can be used by many different applications.</li>
+<a href="dev_html/dev_add.html">New algorithms can be added</a> to Zoltan
+in a straightforward manner.</li>
 
 <li>
-Zoltan contains several different classes of load-balancing algorithms
-(geometric, graph-based, refinement-tree).</li>
+Zoltan's <a href="ug_html/ug_query.html">object-oriented interface</a>
+provides a simple, general way to get needed application data for balancing.</li>
 
 <li>
-Application developers can experiment to find the best algorithm for their
-application.</li>
+New algorithms can be compared to high-quality
+implementations of <a href="ug_html/ug_alg.html">existing algorithms</a>.</li>
 
 <li>
-Algorithm researchers can easily compare new algorithms with high-quality
-implementations of existing algorithms.</li>
+Zoltan's <a href="Zoltan_phil.html#ZDesign">data-structure neutral design</a>
+allows new algorithms to be used easily in many different applications.</li>
 
-<li>
-Algorithms can be reused easily in new applications.</li>
-
-<li>
-Support for data migration is provided.</li>
 </ul>
 <b><a href="Zoltan_phil.html">Zoltan philosophy and project description</a>:</b>
 <ul>
@@ -348,10 +337,7 @@ Publications</li>
 
 <ul>
 <li>
-Papers</li>
-
-<li>
-Presentations</li>
+<a href="Zoltan_pubs.html">Papers and Presentations</a></li>
 
 <li>
 <a href="http://www.cs.sandia.gov/~kddevin/cplant/main.html">Zoltan on
@@ -383,7 +369,7 @@ Static partitioners</li>
 Laboratories)</li>
 
 <li>
-<a href="http://www-users.cs.umn.edu/~karypis/metis">METIS</a> (Univerity
+<a href="http://www-users.cs.umn.edu/~karypis/metis">METIS</a> (University
 of Minnesota)</li>
 
 <li>
@@ -415,7 +401,7 @@ Institute</a></li>
 <a href="mailto: kddevin@cs.sandia.gov">Karen Devine</a></li>
 
 <li>
-<a href="mailto: bahendr@cs.sandia.gov">Bruce Hendrickson</a></li>
+<a href="mailto: bah@cs.sandia.gov">Bruce Hendrickson</a></li>
 </ul>
 <!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
 </tr>

@@ -241,8 +241,8 @@ application.
 </li>
 <li> The close coupling of the algorithm's and application's 
 data structures limits the algorithm's use to a single application.
-Developers wanting to use the algorithm in new applications have to re-write
-the algorithm using the new applications' data structures.
+Developers wanting to use the algorithm in a new application have to re-write
+the algorithm using the new application's data structures.
 </li>
 </ul> 
 As a result, research into and use of dynamic load-balancing algorithms are
@@ -293,8 +293,8 @@ info to a file).</td>
 <td valign=top>Must use function-call interfaces.</td>
 </tr>
 <tr>
-<td valign=top>Has no dependence on applications' data structures.</td>
-<td valign=top>Needs information stored in applications' data structures.</td>
+<td valign=top>Has no dependence on an application's data structures.</td>
+<td valign=top>Needs information stored in an application's data structures.</td>
 </tr>
 <tr>
 <td valign=top>Accounts for partition sizes and communication costs.</td>
@@ -346,6 +346,16 @@ access their objects to be balanced (vertices)
 and the interactions between objects (edges)
 for their own computations.  
 </li>
+<li>
+Memory usage is lower as 
+an application does not have to build an intermediate data structure
+that is later converted to appropriate data structures for the load-balancing
+algorithms.
+</li>
+<li>
+The constructor for load-balancing data structures is called only when it
+is needed, and only the data needed for a particular algorithm is obtained.
+</li>
 </ul>
 <p>
 There are a few disadvantages to this object-oriented approach as well.
@@ -386,7 +396,7 @@ packages; these
 algorithms are supported by callback functions returning objects to be
 balanced, edges between objects, and object and edge weights.
 For refinement-tree algorithms, additional callback functions return
-parent-child relationship.
+parent-child relationships.
 <p>
 Support for data migration (the movement of data to establish a new
 decomposition) is also provided through a similar callback
@@ -467,7 +477,7 @@ networks.
 <a href="mailto: kddevin@cs.sandia.gov">Karen Devine</a></li>
 
 <li>
-<a href="mailto: bahendr@cs.sandia.gov">Bruce Hendrickson</a></li>
+<a href="mailto: bah@cs.sandia.gov">Bruce Hendrickson</a></li>
 </ul>
 <!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
 </tr>
