@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
   //locaStepperList.setParameter("Continuation Method", "Natural");
   locaStepperList.setParameter("Continuation Method", "Arc Length");
+  //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
   locaStepperList.setParameter("Continuation Parameter", "Right BC");
   //locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
   locaStepperList.setParameter("Initial Value", 0.1);
@@ -223,8 +224,9 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Scaling", "None");             
   //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   
-  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
+  lsParams.setParameter("Preconditioning", "IFPACK: Jacobian Matrix");
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
   //lsParams.setParameter("Overlap", 2);  

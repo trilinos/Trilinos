@@ -53,14 +53,14 @@ namespace LOCA {
      *     \end{bmatrix} Q
      * \f]
      * where \f$J\f$ is an Epetra_Operator representing an \f$n\times n\f$
-     * Jacobian matrix \f$\frac{df}{dx}\f$, and \f$Q\in\Re^{n+1\times n}$ is
+     * Jacobian matrix \f$\frac{df}{dx}\f$, and \f$Q\in\Re^{n+1\times n}\f$ is
      * orthogonal whose columns span \f$v^{\perp}\f$ with \f$v\in\Re^{n+1}\f$
      * is a supplied vector.  The action of \f$Q\f$ is defined for any 
      * \f$z\in\Re^n\f$ by
      * \f[
      *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
      * \f]
-     * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1\f$ is a Householder
+     * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1}\f$ is a Householder
      * transformation such that \f$P v = \|v\|_2 e_{n+1}\f$ and 
      * \f$u_{n+1} = 1\f$ where \f$e_{n+1}\f$ is the \f$n+1\f$ column of the 
      * identity.
@@ -162,7 +162,7 @@ namespace LOCA {
        */
       void init(const Epetra_MultiVector& x);
 
-      /*
+      /*!
        * \brief Finish up solve.  Call this after a linear solve is
        * finished to inform the operator that the solve is completed.
        */

@@ -32,6 +32,7 @@
 
 #include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
+//#include "LOCA_Bifurcation_TPBord_ExtendedMultiVector.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 #include "LOCA_Utils.H"
@@ -596,14 +597,12 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
 //   // Get constant references to input vector components
 //   const NOX::Abstract::MultiVector& input_x = tp_input.getXMultiVec();
 //   const NOX::Abstract::MultiVector& input_null = tp_input.getNullMultiVec();
-//   const NOX::Abstract::MultiVector::DenseMatrix& input_param = 
+//   NOX::Abstract::MultiVector::DenseMatrix input_param = 
 //     tp_input.getBifParamMatrix();
 
 //   // Get non-constant references to result vector components
 //   NOX::Abstract::MultiVector& result_x = tp_result.getXMultiVec();
 //   NOX::Abstract::MultiVector& result_null = tp_result.getNullMultiVec();
-//   NOX::Abstract::MultiVector::DenseMatrix& result_param = 
-//     tp_result.getBifParamMatrix();
 
 //   // Temporary vector
 //   NOX::Abstract::MultiVector *tmp = input_null.clone(NOX::ShapeCopy);
@@ -626,7 +625,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
 //   result_x.update(1.0, *derivResidualParamPtr, input_param, 1.0);
 
 //   // compute J*y
-//   status = grpPtr->applyJacobianMulti(input_null, result_null);
+//   status = grpPtr->applyJacobianMultiVector(input_null, result_null);
 //   finalStatus = 
 //     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 // 						 callingFunction);
@@ -645,7 +644,10 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
 //   result_null.update(1.0, *tmp, 1.0);
 
 //   // compute l^T*y
-//   result_param = lTransNorm(input_null);
+//   NOX::Abstract::MultiVector::DenseMatrix 
+//     result_param = lTransNorm(input_null);
+
+//   tp_result.setBifParamMatrix(result_param);
 
 //   delete tmp;
 

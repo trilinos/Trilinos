@@ -203,8 +203,6 @@ namespace LOCA {
        */
       //@{
 
-      //@}
-
       /*!
        * \brief Solve a bordered system of equations
        */

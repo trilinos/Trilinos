@@ -731,12 +731,16 @@ fi
 # If multivec support is enabled, must have teuchos
 if test X${BUILD_NOX_MULTIVECS} = Xyes; then
    REQUIRE_TEUCHOS=yes
+   HAVE_NOX_MULTIVECS_SUBST=HAVE_NOX_MULTIVECS
    AC_DEFINE(HAVE_NOX_MULTIVECS,1,[define that multivector support is activated in nox])
+else
+   HAVE_NOX_MULTIVECS_SUBST=
 fi
 
 AC_MSG_CHECKING(whether we should enable multivector support)
 AC_MSG_RESULT(${BUILD_NOX_MULTIVECS})
 AM_CONDITIONAL(BUILD_NOX_MULTIVECS, test X${BUILD_NOX_MULTIVECS} = Xyes)
+AC_SUBST(HAVE_NOX_MULTIVECS_SUBST)
 
 # ------------------------------------------------------------------------
 # Teuchos::any check
@@ -756,12 +760,16 @@ fi
 # If any support is enabled, must have teuchos
 if test X${BUILD_NOX_ANY} = Xyes; then
    REQUIRE_TEUCHOS=yes
+   HAVE_NOX_ANY_SUBST=HAVE_NOX_ANY
    AC_DEFINE(HAVE_NOX_ANY,1,[define that Techos::any support is activated in nox])
+else
+   HAVE_NOX_ANY_SUBST=
 fi
 
 AC_MSG_CHECKING(whether we should enable Teuchos::any support)
 AC_MSG_RESULT(${BUILD_NOX_ANY})
 AM_CONDITIONAL(BUILD_NOX_ANY, test X${BUILD_NOX_ANY} = Xyes)
+AC_SUBST(HAVE_NOX_ANY_SUBST)
 
 # ------------------------------------------------------------------------
 # LOCA-LAPACK Library Check

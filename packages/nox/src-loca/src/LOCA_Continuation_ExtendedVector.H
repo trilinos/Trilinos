@@ -67,6 +67,7 @@ namespace LOCA {
       virtual ExtendedVector& 
       operator=(const ExtendedVector& y);
 
+      //! Assignment operator
       virtual LOCA::Extended::Vector& 
       operator=(const LOCA::Extended::Vector& y);
 

@@ -213,7 +213,7 @@ namespace LOCA {
        * \f[
        *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
        * \f]
-       * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1\f$ is a Householder
+       * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1}\f$ is a Householder
        * transformation such that \f$P v = \|v\|_2 e_{n+1}\f$ and 
        * \f$u_{n+1} = 1\f$ where \f$v\in\Re^{n+1}\f$ is the predictor 
        * vector and \f$e_{n+1}\f$ is the \f$n+1\f$ column of the identity.

@@ -44,6 +44,12 @@ namespace NOX {
 
   namespace Parameter {
 
+    //! Implementation of NOX::Parameter::Arbitrary to hold pointers
+    /*!
+     * %AnyPtr is an implementation of NOX::Parameter::Arbitrary to allow
+     * passing of pointers through parameter lists.  It uses Teuchos::any
+     * to store the pointer in a type-safe manner.
+     */
     class AnyPtr : public NOX::Parameter::Arbitrary {
 
     public:

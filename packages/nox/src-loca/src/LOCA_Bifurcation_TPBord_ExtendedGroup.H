@@ -376,7 +376,7 @@ namespace LOCA {
 	 * each right hand side serially but should be overloaded if a 
 	 * block solver is available.
 	 */
-	// virtual NOX::Abstract::Group::ReturnType
+// 	virtual NOX::Abstract::Group::ReturnType
 // 	applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
 // 				 NOX::Abstract::MultiVector& result) const;
 

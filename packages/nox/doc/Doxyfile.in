@@ -851,7 +851,9 @@ INCLUDE_FILE_PATTERNS  =
 # omitted =1 is assumed.
 
 PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS \
-                         @WITH_PRERELEASE_SUBST@
+                         @WITH_PRERELEASE_SUBST@ \
+                         @HAVE_NOX_MULTIVECS_SUBST@ \
+                         @HAVE_NOX_ANY_SUBST@
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
