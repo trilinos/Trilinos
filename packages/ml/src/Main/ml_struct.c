@@ -1900,8 +1900,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 }
 
 
-int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
-			double eig_ratio, int deg, double eig_tol)
+int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
+			double eig_ratio, int deg)
 {
    int              start_level, end_level, i, j, errCode=0;   
    struct MLSthing *widget;
@@ -1911,6 +1911,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
    int                (*fun)(void *, int, double *, int, double *);
    int iii, jjj, degree;
    ML_Krylov   *kdata;
+   int ntimes = 1;
 #ifdef SYMMETRIZE
    ML_Operator *t3;
 #endif
@@ -1993,9 +1994,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
 	 widget->pAux     = NULL;   /* currently reserved */
 	 widget->res      = NULL;   /* currently reserved */
 	 widget->y        = NULL;   /* currently reserved */
-	 if (eig_ratio >= eig_tol) widget->eig_ratio = eig_ratio; /*JJH*/
-	 else widget->eig_ratio = eig_tol;                        /*JJH*/
-
+	 widget->eig_ratio = eig_ratio;
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
            sprintf(str,"MLS_pre%d",i);
