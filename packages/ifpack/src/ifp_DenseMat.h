@@ -7,8 +7,8 @@
 #include "ifp_BlockVec.h"
 #include "ifp_LocalPrecon.h"
 #include "ifp_ifpack.h"
-#include "ifp_blas3.h"
-#include "ifp_lapackd.h"
+#include "Epetra_BLAS.h"
+#include "Epetra_LAPACK.h"
 
 // ifp_DenseMat objects typically allocate their own storage for matrix data.
 // The default constructor is the only constructor that does not allocate
@@ -248,8 +248,10 @@ inline void ifp_DenseMat::Mat_Mat_Mult(const ifp_LocalMat *B, ifp_LocalMat *C,
     integer LDB = b.nrow;
     integer LDC = c.nrow;
 
-    F77NAME(dgemm)(&transa, &transb, &M, &N, &K, &alpha, a, &LDA, 
-        b.a, &LDB, &beta, c.a, &LDC);
+    Epetra_BLAS blas;
+    blas.GEMM(transa, transb, M, N, K, alpha, a, LDA, b.a, LDB, beta, c.a, LDC);
+    //F77NAME(dgemm)(&transa, &transb, &M, &N, &K, &alpha, a, &LDA, 
+    //    b.a, &LDB, &beta, c.a, &LDC);
 }
 
 // C = alpha A B + beta C
@@ -267,8 +269,10 @@ inline void ifp_DenseMat::Mat_Vec_Mult(const ifp_BlockVec& B, ifp_BlockVec& C,
     assert (a != NULL);
     assert (&B != &C);
 
-    F77NAME(dgemm)(&trans, &trans, &M, &N, &K, &alpha, a, &LDA, 
-        B.v, &LDB, &beta, C.v, &LDC);
+    Epetra_BLAS blas;
+    blas.GEMM(trans, trans, M, N, K, alpha, a, LDA, B.v, LDB, beta, C.v, LDC);
+    //F77NAME(dgemm)(&trans, &trans, &M, &N, &K, &alpha, a, &LDA, 
+    //    B.v, &LDB, &beta, C.v, &LDC);
 }
 
 inline void ifp_DenseMat::Mat_Trans_Vec_Mult(const ifp_BlockVec& B, 
@@ -286,8 +290,10 @@ inline void ifp_DenseMat::Mat_Trans_Vec_Mult(const ifp_BlockVec& B,
     assert (a != NULL);
     assert (&B != &C);
 
-    F77NAME(dgemm)(&transa, &transb, &M, &N, &K, &alpha, a, &LDA,
-        B.v, &LDB, &beta, C.v, &LDC);
+    Epetra_BLAS blas;
+    blas.GEMM(transa, transb, M, N, K, alpha, a, LDA, B.v, LDB, beta, C.v, LDC);
+    //F77NAME(dgemm)(&transa, &transb, &M, &N, &K, &alpha, a, &LDA,
+    //    B.v, &LDB, &beta, C.v, &LDC);
 }
 
 inline void ifp_DenseMat::Mat_Vec_Solve(const ifp_BlockVec&, ifp_BlockVec&) const
@@ -367,7 +373,9 @@ inline ifp_DenseMat_LU::ifp_DenseMat_LU(const ifp_DenseMat& A)
 
     ipiv = new integer[nrow];
 
-    F77NAME(dgetrf)(&M, &N, lu, &LDA, ipiv, &INFO);
+    Epetra_LAPACK lapack;
+    lapack.GETRF(M, N, lu, LDA, ipiv, &INFO);
+    //F77NAME(dgetrf)(&M, &N, lu, &LDA, ipiv, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_LU: dgetrf error", INFO);
 }
@@ -384,8 +392,10 @@ inline void ifp_DenseMat_LU::Mat_Vec_Solve(const ifp_BlockVec& b, ifp_BlockVec& 
     if (b.v != x.v)
         x.BlockCopy(b);
 
-    F77NAME(dgetrs)(&trans, &N, &NRHS, lu, &LDA, ipiv, 
-        x.v, &LDB, &INFO);
+    Epetra_LAPACK lapack;
+    lapack.GETRS(trans, N, NRHS, lu, LDA, ipiv, x.v, LDB, &INFO);
+    //F77NAME(dgetrs)(&trans, &N, &NRHS, lu, &LDA, ipiv, 
+    //    x.v, &LDB, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_LU: dgetrs error", INFO);
 }
@@ -411,12 +421,15 @@ inline ifp_DenseMat_INVERSE::ifp_DenseMat_INVERSE(const ifp_DenseMat& A)
     double *work = new double[LWORK];
 
     // LU factorize
-    F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
+    Epetra_LAPACK lapack;
+    lapack.GETRF(M, N, a, LDA, ipiv, &INFO);
+    //F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_INVERSE: dgetrf error", INFO);
 
     // compute inverse
-    F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
+    lapack.GETRI(N, a, LDA, ipiv, work, &LWORK, &INFO);
+    //F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_INVERSE: dgetri error", INFO);
 
@@ -444,8 +457,10 @@ inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh,
     integer nzero_diag = 0;
     for (i=0;i<nrow; i++) if (a[i*N+i] == 0.0) nzero_diag++;
 
-    F77NAME(dgesvd) (&job, &job, &N, &N, a, &N, s, u, &N, vt, &N,
-	work, &LWORK, &INFO);
+     Epetra_LAPACK lapack;
+    lapack.GESVD(job, job, N, N, a, N, s, u, N, vt, N, work, &LWORK, &INFO);
+    //F77NAME(dgesvd) (&job, &job, &N, &N, a, &N, s, u, &N, vt, &N,
+    //        work, &LWORK, &INFO);
     //if (INFO != 0)
     if (INFO < 0)
 	ifp_error("ifp_DenseMat_SVD: dgesvd error", INFO);
@@ -480,8 +495,10 @@ inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh,
     char trans = 'T';
     double alpha = 1.0;
     double beta = 0.0;
-    F77NAME(dgemm)(&trans, &trans, &N, &N, &N, &alpha, vt, &N,
-        u, &N, &beta, a, &N);
+    Epetra_BLAS blas;
+    blas.GEMM(trans, trans, N, N, N, alpha, vt, N, u, N, beta, a, N);
+    //F77NAME(dgemm)(&trans, &trans, &N, &N, &N, &alpha, vt, &N,
+    //    u, &N, &beta, a, &N);
 
     delete [] u;
     delete [] s;
@@ -527,12 +544,15 @@ inline ifp_DenseMat_DIAGDOM::ifp_DenseMat_DIAGDOM(const ifp_DenseMat& A, double 
     }
 
     // LU factorize
-    F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
+    Epetra_LAPACK lapack;
+    lapack.GETRF(M, N, a, LDA, ipiv, &INFO);
+    //F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_DIAGDOM: dgetrf error", INFO);
 
     // compute inverse
-    F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
+    lapack.GETRI(N, a, LDA, ipiv, work, &LWORK, &INFO);
+    //F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_DIAGDOM: dgetri error", INFO);
 
@@ -590,12 +610,15 @@ inline ifp_DenseMat_GERSH::ifp_DenseMat_GERSH(const ifp_DenseMat& A, double alph
     }
 
     // LU factorize
-    F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
+    Epetra_LAPACK lapack;
+    lapack.GETRF(M, N, a, LDA, ipiv, &INFO);
+    //F77NAME(dgetrf)(&M, &N, a, &LDA, ipiv, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_GERSH: dgetrf error", INFO);
 
     // compute inverse
-    F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
+    lapack.GETRI(N, a, LDA, ipiv, work, &LWORK, &INFO);
+    //F77NAME(dgetri)(&N, a, &LDA, ipiv, work, &LWORK, &INFO);
     if (INFO != 0)
 	ifp_error("ifp_DenseMat_GERSH: dgetri error", INFO);
 

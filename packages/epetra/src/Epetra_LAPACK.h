@@ -225,6 +225,16 @@ class Epetra_LAPACK {
 	      double * WORK, int * INFO) const;
   //@}
 
+  //@{ \name Singular Value Decomposition matrix routines
+
+  //! Epetra_LAPACK wrapper for computing the singular value decomposition (SGESVD)
+  void GESVD( char JOBU, char JOBVT, int M, int N, float * A, int LDA, float * S, float * U,
+	      int LDU, float * VT, int LDVT, float * WORK, int * LWORK, int * INFO) const;
+  //! Epetra_LAPACK wrapper for computing the singular value decomposition (DGESVD)
+  void GESVD( char JOBU, char JOBVT, int M, int N, double * A, int LDA, double * S, double * U,
+	      int LDU, double * VT, int LDVT, double * WORK, int * LWORK, int * INFO) const;
+   //@}
+
   //@{ \name Machine characteristics routines.
   //! Epetra_LAPACK wrapper for DLAMCH routine that returns machine double precision floating point characteristics
   double DLAMCH( char CMACH) const; 

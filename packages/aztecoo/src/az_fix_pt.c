@@ -27,6 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_fix_pt(double b[], double x[], double weight[], int options[], 
 	double params[], int proc_config[],double status[], AZ_MATRIX *Amat, 
@@ -129,7 +130,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
 			           AZ_SYS, label, &j);
   if (options[AZ_init_guess] != AZ_ZERO)
      AZ_compute_residual(b, x, res, proc_config, Amat);
-  else dcopy_(&N, b, &one, res, &one);
+  else DCOPY_F77(&N, b, &one, res, &one);
 
   /* compute a few global scalars:                                 */
   /*     1) ||r||                corresponding to options[AZ_conv] */
@@ -157,8 +158,8 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
        status[AZ_first_precond] = AZ_second() - status[AZ_first_precond];
 
     if (options[AZ_solver] == AZ_analyze)
-       dscal_(&N,&(params[AZ_temp]), res, &one);
-    daxpy_(&N,&alpha, res, &one, x, &one);
+       DSCAL_F77(&N,&(params[AZ_temp]), res, &one);
+    DAXPY_F77(&N,&alpha, res, &one, x, &one);
 
     if ( (iter%print_freq == 0) || (options[AZ_max_iter] > 10) ||
          (iter < options[AZ_max_iter]) ) {

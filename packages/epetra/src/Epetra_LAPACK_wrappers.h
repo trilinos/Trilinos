@@ -43,6 +43,7 @@
 
 #define DGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define DGETRS_F77  F77_FUNC(sgetrs,SGETRS)
+#define DGESVD_F77  F77_FUNC(sgesvd,SGESVD)
 #define DPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
 #define DPOTRS_F77  F77_FUNC(spotrs,SPOTRS)
 #define DPOTRI_F77  F77_FUNC(spotri,SPOTRI)
@@ -71,6 +72,7 @@
 #define DGELS_F77   F77_FUNC(dgels,DGELS)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
@@ -93,6 +95,7 @@
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
 #define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
 #define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
 #define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
@@ -141,6 +144,7 @@
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
+#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
 #define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
 #define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
 #define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
@@ -171,6 +175,7 @@
 
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
+#define SGESVD_F77  F77_FUNC(sgesvd,SGESVD)
 #define SGETRI_F77  F77_FUNC(sgetri,SGETRI)
 #define SGERFS_F77  F77_FUNC(sgerfs,SGERFS)
 #define SGECON_F77  F77_FUNC(sgecon,SGECON)
@@ -206,7 +211,10 @@ extern "C" {
   /* Double precision LAPACK linear solvers */
 void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
 void PREFIX DGETRS_F77(Epetra_fcd, int* n, int* nrhs, double* a,
-                       int* lda, int*ipiv, double*x , int* ldx, int* info);
+                       int* lda, int* ipiv, double* x , int* ldx, int* info);
+void PREFIX DGESVD_F77(Epetra_fcd, Epetra_fcd, int* m, int* n, double* a,
+                       int* lda, double* s, double* u, int* ldu, double* vt, int* ldut,
+		       double* work, int* lwork, int* info);
 void PREFIX DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
 void PREFIX DGECON_F77(Epetra_fcd norm, int* n, double* a, int* lda, 
                        double *anorm, double * rcond, double * work,
@@ -253,8 +261,11 @@ void PREFIX DPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a,
 
   /* Single precision LAPACK linear solvers*/
 void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
-void PREFIX SGETRS_F77(Epetra_fcd, int* m, int* n, float* a,
-                       int* lda, int*ipiv, float*x , int* ldx, int* info);
+void PREFIX SGETRS_F77(Epetra_fcd, int* n, int* nrhs, float* a,
+                       int* lda, int* ipiv, float* x , int* ldx, int* info);
+void PREFIX SGESVD_F77(Epetra_fcd, Epetra_fcd, int* m, int* n, float* a,
+		       int* lda, float* s, float* u, int* ldu, float* vt, int* ldut,
+		       float* work, int* lwork, int* info);
 void PREFIX SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
 void PREFIX SGECON_F77(Epetra_fcd norm, int* n, float* a, int* lda, 
                        float * anorm, float * rcond, float * work,

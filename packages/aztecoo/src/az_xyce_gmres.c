@@ -27,6 +27,8 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
+#include "az_lapack_wrappers.h"
 
 void AZ_pgmresr(double b[], double x[],double weight[], int options[],
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
@@ -217,13 +219,13 @@ char *T2 = "N";
 
   iter = 0;
   while (!converged && iter < options[AZ_max_iter]) {
-    if (r_avail) dcopy_(&N, v[0], &one, res, &one);
+    if (r_avail) DCOPY_F77(&N, v[0], &one, res, &one);
 
     /* v1 = r0/beta */
 
     dble_tmp    = 1.0 / r_2norm;
     first_2norm = r_2norm;
-    dscal_(&N, &dble_tmp, v[0], &one);
+    DSCAL_F77(&N, &dble_tmp, v[0], &one);
 
     rs[0] = r_2norm;  /* initialize 1st rhs term of H system */
     i     = 0;
@@ -234,7 +236,7 @@ char *T2 = "N";
 
       /* v_i+1 = A M^-1 v_i */
 
-      dcopy_(&N, v[i], &one, temp, &one);
+      DCOPY_F77(&N, v[i], &one, temp, &one);
 
       if (iter == 1) init_time = AZ_second();
  
@@ -256,19 +258,19 @@ char *T2 = "N";
          for (ii = 0 ; ii < 2; ii++ ) {
             if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
             dble_tmp = 0.0; mm = i+1;
-            dgemv_(T, &N, &mm, &doubleone, vblock, &aligned_N_total, 
-                   v[i1], &one, &dble_tmp, dots, &one, 1 /* strlen(T) */);
+            DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total, 
+                   v[i1], &one, &dble_tmp, dots, &one);
             AZ_gdot_vec(i1, dots, tmp, proc_config);
             for (k = 0; k <= i; k++) hh[k][i] += dots[k];
-            dgemv_(T2, &N, &mm, &minusone, vblock, &aligned_N_total, 
-                   dots, &one, &doubleone, v[i1], &one, 1 /* strlen(T2) */);
+            DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total, 
+                   dots, &one, &doubleone, v[i1], &one);
          }
       }
       else {                    /* modified */
         for (k = 0; k <= i; k++) {
           hh[k][i] = dble_tmp = AZ_gdot(N, v[k], v[i1], proc_config);
           dble_tmp = -dble_tmp;
-          daxpy_(&N, &dble_tmp, v[k], &one, v[i1], &one);
+          DAXPY_F77(&N, &dble_tmp, v[k], &one, v[i1], &one);
         }
       }
 
@@ -280,7 +282,7 @@ char *T2 = "N";
       else
         dble_tmp = 0.0;
 
-      dscal_(&N, &dble_tmp, v[i1], &one);
+      DSCAL_F77(&N, &dble_tmp, v[i1], &one);
 
       /* update factorization of hh by plane rotation */
 
@@ -308,15 +310,15 @@ char *T2 = "N";
         for (k = 0; k < i; k++) vectmp[k] = hh[k][i];
         vectmp[i] = dble_tmp;
         ijob = 1;
-        dlaic1_(&ijob, &i, svbig, &big, vectmp, &vectmp[i], &sestpr, &ss, &cc);
+        DLAIC1_F77(&ijob, &i, svbig, &big, vectmp, &vectmp[i], &sestpr, &ss, &cc);
         big = sestpr;
-        dscal_(&i, &ss, svbig, &one);
+        DSCAL_F77(&i, &ss, svbig, &one);
         svbig[i] = cc;
         ijob = 2;
-        dlaic1_(&ijob, &i, svsml, &small, vectmp, &vectmp[i], &sestpr, &ss,
+        DLAIC1_F77(&ijob, &i, svsml, &small, vectmp, &vectmp[i], &sestpr, &ss,
                 &cc);
         small = sestpr;
-        dscal_(&i, &ss, svsml, &one);
+        DSCAL_F77(&i, &ss, svsml, &one);
         svsml[i] = cc;
       }
       /* This test is sensitive to params[AZ_FIRST_USER_PARAM] */
@@ -436,8 +438,8 @@ char *T2 = "N";
         else {
           Amat->matvec(temp, v[kspace], Amat, proc_config);
 
-          dscal_(&N, &first_2norm, v[0], &one);
-          daxpy_(&N, &minusone, v[kspace], &one, v[0], &one);
+          DSCAL_F77(&N, &first_2norm, v[0], &one);
+          DAXPY_F77(&N, &minusone, v[kspace], &one, v[0], &one);
         }
       }
     }
