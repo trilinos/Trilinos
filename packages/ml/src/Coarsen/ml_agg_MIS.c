@@ -155,8 +155,10 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* set up the threshold for weight-based coarsening              */
    /* ============================================================= */
 
-   diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
-   while ( diff_level > 0 ) {epsilon *= 0.5; diff_level--;}
+   diff_level = ml_ag->begin_level - ml_ag->cur_level;
+   if ( diff_level == 0 ) ml_ag->curr_threshold = ml_ag->threshold;
+   epsilon = ml_ag->curr_threshold;
+   ml_ag->curr_threshold *= 0.5;
 
    if ( mypid == 0 && printflag )
    {
