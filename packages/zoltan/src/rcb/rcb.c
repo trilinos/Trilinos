@@ -16,16 +16,13 @@
 #include <memory.h>
 #include "lb_const.h"
 #include "rcb_const.h"
-#include "all_allo_const.h"
 #include "params_const.h"
 #include "timer_const.h"
-#include "create_proc_list_const.h"
-#include "comm_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
 
 /* Recursive coordinate bisectioning (RCB) routine
-   operates on "dots" as defined in rcb.h
+   operates on "dots" as defined in shared_const.h
 */
 
 /* Steve Plimpton, Sandia National Labs, ABQ, NM  87185
@@ -39,7 +36,7 @@
    on return, proc owns dotnum "dots" in dense array of max-length dotmax
    all dots will be inside (or on surface of) 3-d box defined by rcbbox
    input weights (if used) are real numbers > 0.0
-   can extend "rcb_dot" data structure in calling program, see rcb.h
+   can extend "Dot_Struct" data structure in calling program, see shared_const.h
    returned RCB tree only contains one cut on each proc,
      need to do MPI_Allgather if wish to collect it on all procs
 */
@@ -51,11 +48,11 @@
 
 /* function prototypes */
 
-static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
-static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
+static void RCB_check(LB *, struct Dot_Struct *, int, int, struct rcb_box *);
+static void RCB_stats(LB *, double, struct Dot_Struct *,int, double *, 
  		      int *, struct rcb_box *, int, int);
 
-static int rcb_fn(LB *, int *, LB_GID **, LB_LID **, int **, double,
+static int rcb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                  int, int, int, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
@@ -100,23 +97,23 @@ char *val)			/* value of variable */
 /*---------------------------------------------------------------------------*/
 
 int LB_rcb(
-  LB *lb,                     /* The load-balancing structure with info for
-                                 the RCB balancer.                           */
-  int *num_import,            /* Number of non-local objects assigned to this
-                                 processor in the new decomposition.         */
-  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  int **import_procs,         /* Returned value:  array of processor IDs for
-                                 processors owning the non-local objects in
-                                 this processor's new decomposition.         */
-  int *num_export,            /* Not computed, set to -1 */
-  LB_GID **export_global_ids, /* Not computed. */
-  LB_LID **export_local_ids,  /* Not computed. */
-  int **export_procs          /* Not computed. */
+  LB *lb,                       /* The load-balancing structure with info for
+                                   the RCB balancer.                         */
+  int *num_import,              /* Number of non-local objects assigned to this
+                                   processor in the new decomposition.       */
+  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  int **import_procs,           /* Returned value:  array of processor IDs for
+                                   processors owning the non-local objects in
+                                   this processor's new decomposition.       */
+  int *num_export,              /* Not computed, set to -1 */
+  LB_ID_PTR *export_global_ids, /* Not computed. */
+  LB_ID_PTR *export_local_ids,  /* Not computed. */
+  int **export_procs            /* Not computed. */
 )
 {
     /* Wrapper routine to set parameter values and call the real rcb. */
@@ -159,45 +156,44 @@ int LB_rcb(
 /*---------------------------------------------------------------------------*/
 
 static int rcb_fn(
-  LB *lb,                     /* The load-balancing structure with info for
-                                 the RCB balancer.                           */
-  int *num_import,            /* Number of non-local objects assigned to this
-                                 processor in the new decomposition.         */
-  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  int **import_procs,         /* Returned value:  array of processor IDs for
-                                 processors owning the non-local objects in
-                                 this processor's new decomposition.         */
-  double overalloc,           /* amount to overallocate by when realloc
-                                 of dot array must be done.     
-                                 1.0 = no extra; 1.5 = 50% extra; etc. */
-  int reuse,                  /* (0) don't use (1) use previous cuts
-                                 stored in treept at initial guesses.  */
-  int wgtflag,                 /* (0) do not (1) do use weights.
-                                      Multidimensional weights not supported */
-  int check,                  /* Check input & output for consistency? */
-  int stats,                  /* Print timing & count summary? */
-  int gen_tree                /* (0) do not (1) do generate full treept */
+  LB *lb,                       /* The load-balancing structure with info for
+                                   the RCB balancer.                         */
+  int *num_import,              /* Number of non-local objects assigned to this
+                                   processor in the new decomposition.       */
+  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  int **import_procs,           /* Returned value:  array of processor IDs for
+                                   processors owning the non-local objects in
+                                   this processor's new decomposition.       */
+  double overalloc,             /* amount to overallocate by when realloc
+                                   of dot array must be done.     
+                                   1.0 = no extra; 1.5 = 50% extra; etc.     */
+  int reuse,                    /* (0) don't use (1) use previous cuts
+                                   stored in treept at initial guesses.      */
+  int wgtflag,                  /* (0) do not (1) do use weights.
+                                   Multidimensional weights not supported    */
+  int check,                    /* Check input & output for consistency?     */
+  int stats,                    /* Print timing & count summary?             */
+  int gen_tree                  /* (0) do not (1) do generate full treept    */
 )
 {
   char    yo[] = "rcb_fn";
   char    msg[256];
   int     proc,nprocs;              /* my proc id, total # of procs */
-  struct rcb_dot *dotbuf, *dotpt;   /* local dot arrays */
+  LB_ID_PTR gidpt;                  /* pointer to rcb->Global_IDs. */
+  LB_ID_PTR lidpt;                  /* pointer to rcb->Local_IDs. */
+  struct Dot_Struct *dotpt;         /* pointer to rcb->Dots. */
   struct rcb_box boxtmp;            /* tmp rcb box */
-  int     keep, outgoing;           /* message exchange counters */
-  int     incoming;                 /* message exchange counters */
   int     pdotnum;                  /* # of dots - decomposition changes it */
   int     pdottop;                  /* dots >= this index are new */
   int    *dotmark = NULL;           /* which side of median for each dot */
   int     dotnum;                   /* number of dots */
   int     dotmax = 0;               /* max # of dots arrays can hold */
   int     dottop;                   /* dots >= this index are new */
-  int     dotnew;                   /* # of new dots after send/recv */
   int     proclower;                /* lower proc in partition */
   int     procmid;                  /* 1st proc in upper half of part */
   int     set;                      /* which part processor is in = 0/1 */
@@ -227,10 +223,7 @@ static int rcb_fn(
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array */
-  int     i,ii,j,k;                 /* local variables */
-  struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
-  int     message_tag;              /* message tag */
-  int    *proc_list = NULL;         /* list of processors to send dots to */
+  int     i,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
@@ -274,6 +267,8 @@ static int rcb_fn(
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 
+  gidpt  = rcb->Global_IDs;
+  lidpt  = rcb->Local_IDs;
   dotpt  = rcb->Dots; 
   rcbbox = rcb->Box;
   treept = rcb->Tree_Ptr;
@@ -502,28 +497,11 @@ static int rcb_fn(
     else
       rcbbox->lo[dim] = valuehalf;
 
-    /* outgoing = number of dots to ship to partner */
-    /* dottop = number of dots that have never migrated */
-
-    for (i = 0, keep = 0, outgoing = 0; i < dotnum; i++)
-      if (dotmark[i] != set)
-	outgoing++;
-      else if (i < dottop)
-	keep++;
-    dottop = keep;
-
-    if (outgoing)
-      if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
-        LB_FREE(&dotmark);
-        LB_FREE(&coord);
-        LB_FREE(&wgts);
-        LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
-      }
-
-    ierr = LB_Create_Proc_List(set, dotnum, outgoing, proc_list, local_comm);
-    if (ierr != LB_OK && ierr != LB_WARN) {
-      LB_FREE(&proc_list);
+    ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
+                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               stats, counters, local_comm);
+    if (ierr) {
+      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
@@ -531,92 +509,15 @@ static int rcb_fn(
       return (ierr);
     }
 
-    incoming = 0;
-    message_tag = 1;
-    ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
-                          &incoming);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      LB_FREE(&proc_list);
-      LB_FREE(&dotmark);
-      LB_FREE(&coord);
-      LB_FREE(&wgts);
-      LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
-    }
-
-    if (outgoing) LB_FREE(&proc_list);
-
-    /* check if need to malloc more space */
-
-    dotnew = dotnum - outgoing + incoming;
-
-    if (dotnew > dotmax) {
-      allocflag = 1;
-      dotmax = (int) (overalloc * dotnew);
-      if (dotmax < dotnew) dotmax = dotnew;
-      dotpt = (struct rcb_dot *) 
-	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
-      if (dotpt == NULL) {
-        LB_FREE(&dotmark);
-        LB_FREE(&coord);
-        LB_FREE(&wgts);
-        LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
-      }
+    if (allocflag) {
+      /* 
+       * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
+       * store their values in rcb.
+       */
+      rcb->Global_IDs = gidpt;
+      rcb->Local_IDs = lidpt;
       rcb->Dots = dotpt;
-      if (stats) counters[6]++;
     }
-
-    if (stats) {
-      counters[1] += outgoing;
-      counters[2] += incoming;
-      if (dotnew > counters[3]) counters[3] = dotnew;
-      if (dotmax > counters[4]) counters[4] = dotmax;
-    }
-    
-    /* malloc comm send buffer */
-
-    if (outgoing > 0) {
-      dotbuf = (struct rcb_dot *) LB_MALLOC(outgoing*sizeof(struct rcb_dot));
-      if (dotbuf == NULL) {
-        LB_FREE(&dotmark);
-        LB_FREE(&coord);
-        LB_FREE(&wgts);
-        LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
-      }
-    }
-    else 
-      dotbuf = NULL;
-
-    /* fill buffer with dots that are marked for sending */
-    /* pack down the unmarked ones */
-    
-    keep = outgoing = 0;
-    for (i = 0; i < dotnum; i++) {
-      if (dotmark[i] != set)
-	memcpy((char *) &dotbuf[outgoing++], (char *) &dotpt[i], 
-               sizeof(struct rcb_dot));
-      else
-	memcpy((char *) &dotpt[keep++], (char *) &dotpt[i], 
-               sizeof(struct rcb_dot));
-    }
-
-    ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
-                      sizeof(struct rcb_dot), (char *) (&dotpt[keep]));
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      LB_FREE(&dotmark);
-      LB_FREE(&coord);
-      LB_FREE(&wgts);
-      LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
-    }
-
-    ierr = LB_Comm_Destroy(&cobj);
-
-    LB_FREE(&dotbuf);
-    
-    dotnum = dotnew;
 
     /* create new communicators */
 
@@ -630,7 +531,6 @@ static int rcb_fn(
       timers[2] += time3 - time2;
       timers[3] += time4 - time3;
     }
-
   }
 
   /* have recursed all the way to final single sub-domain */
@@ -671,31 +571,13 @@ static int rcb_fn(
 
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
-    if (!LB_Special_Malloc(lb,(void **)import_global_ids,*num_import,
-                           LB_SPECIAL_MALLOC_GID)) {
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-    if (!LB_Special_Malloc(lb,(void **)import_local_ids,*num_import,
-                           LB_SPECIAL_MALLOC_LID)) {
-      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-    if (!LB_Special_Malloc(lb,(void **)import_procs,*num_import,
-                           LB_SPECIAL_MALLOC_INT)) {
-      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-      LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-
-
-    for (i = 0; i < *num_import; i++) {
-      ii = i + dottop;
-      LB_SET_GID((*import_global_ids)[i], dotpt[ii].Tag.Global_ID);
-      LB_SET_LID((*import_local_ids)[i], dotpt[ii].Tag.Local_ID);
-      (*import_procs)[i]      = dotpt[ii].Tag.Proc;
+    ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
+                                  import_global_ids, import_local_ids,
+                                  import_procs, dottop);
+    if (ierr) {
+       LB_PRINT_ERROR(proc, yo,"Error returned from LB_RB_Return_Arguments.");
+       LB_TRACE_EXIT(lb, yo);
+       return ierr;
     }
   }
 
@@ -727,21 +609,9 @@ static int rcb_fn(
   }
 
   if (lb->Debug_Level >= LB_DEBUG_ALL) {
-    int kk;
-    LB_Print_Sync_Start(lb->Communicator, TRUE);
-    printf("ZOLTAN RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
-           lb->Proc, pdotnum, pdottop, *num_import);
-    printf("  Assigned objects:\n");
-    for (kk = 0; kk < pdotnum; kk++) {
-      printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[kk].Tag.Global_ID,
-             rcb->Dots[kk].Tag.Proc);
-    }
-    printf("  Non_locals:\n");
-    for (kk = 0; kk < *num_import; kk++) {
-      printf("    Obj:  %10d      Orig: %4d\n",
-             (*import_global_ids)[kk], (*import_procs)[kk]);
-    }
-    LB_Print_Sync_End(lb->Communicator, TRUE);
+    LB_RB_Print_All(lb, rcb->Global_IDs, rcb->Dots, 
+                    pdotnum, pdottop, *num_import,
+                    *import_global_ids, *import_procs);
   }
 
   LB_TRACE_EXIT(lb, yo);
@@ -776,7 +646,7 @@ void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 /* consistency checks on RCB results */
 
-static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
+static void RCB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig,
 	       struct rcb_box *rcbbox)
 
 {
@@ -857,7 +727,7 @@ static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 
 /* RCB statistics */
 
-static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
+static void RCB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
 	       int dotnum, double *timers, int *counters,
 	       struct rcb_box *rcbbox, int reuse, int stats)
 

@@ -16,22 +16,19 @@
 #include <memory.h>
 #include "lb_const.h"
 #include "irb_const.h"
-#include "all_allo_const.h"
 #include "params_const.h"
 #include "timer_const.h"
-#include "create_proc_list_const.h"
-#include "comm_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
 
 /* Inertial recursive bisection (IRB) load balancing routine operates on
-   "dots" as defined in irb.h */
+   "dots" as defined in shared_const.h */
 
 /* Notes:
    dots are balanced across procs by weight (if used)
    on return, proc owns dotnum "dots" in dense array of max-length dotmax
    input weights (if used) are real numbers > 0.0
-   can extend "irb_dot" data structure in calling program, see irb_const.h
+   can extend "Dot_Struct" data structure in calling program, see shared_const.h
    returned tree only contains one cut on each proc,
    need to do MPI_Allgather if wish to collect it on all procs */
 
@@ -39,10 +36,11 @@
 
 #define IRB_DEFAULT_OVERALLOC 1.0
 
-static void IRB_check(LB *, struct irb_dot *, int, int);
-static void IRB_stats(LB *, double, struct irb_dot *,int, double *, int *, int);
+static void IRB_check(LB *, struct Dot_Struct *, int, int);
+static void IRB_stats(LB *, double, struct Dot_Struct *,int, double *,
+                      int *, int);
 
-static int irb_fn(LB *, int *, LB_GID **, LB_LID **, int **, double,
+static int irb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                int, int, int, int);
 
 /*  IRB_CHECK = 0  No consistency check on input or results */
@@ -82,23 +80,23 @@ int LB_Set_IRB_Param(
 /*---------------------------------------------------------------------------*/
 
 int LB_irb(
-     LB *lb,                     /* The load-balancing structure with info for
-                                    the IRB balancer.                   */
-     int *num_import,            /* Number of non-local objects assigned to
-                                    this processor in the new decomposition. */
-     LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                    non-local objects in this processor's new
-                                    decomposition.                           */
-     LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                    non-local objects in this processor's new
-                                    decomposition.                           */
-     int **import_procs,         /* Returned value:  array of processor IDs for
-                                    processors owning the non-local objects in
-                                    this processor's new decomposition.      */
-     int *num_export,            /* Not computed, set to -1 */
-     LB_GID **export_global_ids, /* Not computed. */
-     LB_LID **export_local_ids,  /* Not computed. */
-     int **export_procs          /* Not computed. */
+     LB *lb,                       /* The load-balancing structure with info for
+                                      the IRB balancer.                       */
+     int *num_import,              /* Number of non-local objects assigned to
+                                      this processor in the new decomposition.*/
+     LB_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
+                                      non-local objects in this processor's new
+                                      decomposition.                          */
+     LB_ID_PTR *import_local_ids,  /* Returned value: array of local IDs for
+                                      non-local objects in this processor's new
+                                      decomposition.                          */
+     int **import_procs,           /* Returned value: array of processor IDs for
+                                      processors owning the non-local objects in
+                                      this processor's new decomposition.     */
+     int *num_export,              /* Not computed, set to -1 */
+     LB_ID_PTR *export_global_ids, /* Not computed. */
+     LB_ID_PTR *export_local_ids,  /* Not computed. */
+     int **export_procs            /* Not computed. */
 )
 {
      /* Wrapper routine to set parameter values and call the real irb. */
@@ -135,43 +133,41 @@ int LB_irb(
 /*---------------------------------------------------------------------------*/
 
 static int irb_fn(
-     LB *lb,                     /* The load-balancing structure with info for
-                                    the IRB balancer. */
-     int *num_import,            /* Number of non-local objects assigned to
-                                    this processor in the new decomposition. */
-     LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                    non-local objects in this processor's new
-                                    decomposition. */
-     LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                    non-local objects in this processor's new
-                                    decomposition. */
-     int **import_procs,         /* Returned value:  array of processor IDs for
-                                    processors owning the non-local objects in
-                                    this processor's new decomposition. */
-     double overalloc,           /* amount to overallocate by when realloc
-                                    of dot array must be done.
-                                    1.0 = no extra; 1.5 = 50% extra; etc. */
-     int wgtflag,                /* (0) do not (1) do use weights.
-                                    Multidimensional weights not supported */
-     int check,                  /* Check input & output for consistency? */
-     int stats,                  /* Print timing & count summary? */
-     int gen_tree                /* (0) do not (1) do generate full treept */
+     LB *lb,                       /* The load-balancing structure with info for
+                                      the IRB balancer. */
+     int *num_import,              /* Number of non-local objects assigned to
+                                      this processor in the new decomposition.*/
+     LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                      non-local objects in this processor's new
+                                      decomposition. */
+     LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                      non-local objects in this processor's new
+                                      decomposition. */
+     int **import_procs,           /* Returned value: array of processor IDs for
+                                      processors owning the non-local objects in
+                                      this processor's new decomposition. */
+     double overalloc,             /* amount to overallocate by when realloc
+                                      of dot array must be done.
+                                        1.0 = no extra; 1.5 = 50% extra; etc. */
+     int wgtflag,                  /* (0) do not (1) do use weights.
+                                      Multidimensional weights not supported */
+     int check,                    /* Check input & output for consistency? */
+     int stats,                    /* Print timing & count summary? */
+     int gen_tree                  /* (0) do not (1) do generate full treept */
 )
 {
      char    yo[] = "irb_fn";
      char    msg[256];
      int     proc,nprocs;        /* my proc id, total # of procs */
-     struct irb_dot *dotbuf;     /* local dot arrays */
-     struct irb_dot *dotpt;      /* local dot arrays */
-     int     keep, outgoing;     /* message exchange counters */
-     int     incoming;           /* message exchange counters */
+     LB_ID_PTR gidpt;            /* local global IDs array. */
+     LB_ID_PTR lidpt;            /* local local IDs array. */
+     struct Dot_Struct *dotpt;   /* local dot arrays */
      int     pdotnum;            /* # of dots - decomposition changes it */
      int     pdottop;            /* dots >= this index are new */
      int    *dotmark = NULL;     /* which side of median for each dot */
      int     dotnum;             /* number of dots */
      int     dotmax = 0;         /* max # of dots arrays can hold */
      int     dottop;             /* dots >= this index are new */
-     int     dotnew;             /* # of new dots after send/recv */
      int     proclower;          /* lower proc in partition */
      int     procmid;            /* 1st proc in upper half of part */
      int     set;                /* which part processor is in = 0/1 */
@@ -204,9 +200,6 @@ static int irb_fn(
                                     5 = # of times a previous cut is re-used
                                     6 = # of reallocs of dot array */
      int     i,j,k;              /* local variables */
-     struct Comm_Obj *cobj=NULL; /* pointer for communication object */
-     int     message_tag;        /* message tag */
-     int    *proc_list = NULL;   /* list of processors to send dots to */
 
      IRB_STRUCT *irb = NULL;     /* Pointer to data structures for IRB */
      struct irb_tree *treept = NULL; /* tree of cuts - single cut on exit*/
@@ -244,6 +237,8 @@ static int irb_fn(
 
      irb = (IRB_STRUCT *) (lb->Data_Structure);
 
+     gidpt = irb->Global_IDs;
+     lidpt = irb->Local_IDs;
      dotpt  = irb->Dots;
      treept = irb->Tree_Ptr;
      end_time = LB_Time(lb->Timer);
@@ -344,7 +339,8 @@ static int irb_fn(
 
      while (num_procs > 1) {
 
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time1 = LB_Time(lb->Timer);
+        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+           time1 = LB_Time(lb->Timer);
 
         ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                                  &procmid, &num_procs, &fractionlo);
@@ -438,122 +434,27 @@ static int irb_fn(
         old_set = set;
         root = procmid;
 
-        /* outgoing = number of dots to ship to partner */
-        /* dottop = number of dots that have never migrated */
-
-        for (i = 0, keep = 0, outgoing = 0; i < dotnum; i++)
-           if (dotmark[i] != set)
-              outgoing++;
-           else if (i < dottop)
-              keep++;
-        dottop = keep;
-
-        if (outgoing)
-           if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
-              LB_FREE(&dotmark);
-              LB_FREE(&value);
-              LB_FREE(&wgts);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
-
-        ierr = LB_Create_Proc_List(set, dotnum, outgoing, proc_list,
-                                   local_comm);
-        if (ierr != LB_OK && ierr != LB_WARN) {
-           LB_FREE(&proc_list);
+        ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
+                                   &dotnum, &dotmax, set, &allocflag, overalloc,
+                                   stats, counters, local_comm);
+        if (ierr) {
+           LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
            LB_FREE(&dotmark);
            LB_FREE(&value);
            LB_FREE(&wgts);
            LB_TRACE_EXIT(lb, yo);
-           return (ierr);
+           return ierr;
         }
-
-        incoming = 0;
-        message_tag = 1;
-        ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm,
-                              message_tag, &incoming);
-        if (ierr != COMM_OK && ierr != COMM_WARN) {
-           LB_FREE(&proc_list);
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
-        }
-
-        if (outgoing) LB_FREE(&proc_list);
-
-        /* check if need to malloc more space */
-
-        dotnew = dotnum - outgoing + incoming;
-
-        if (dotnew > dotmax) {
-           allocflag = 1;
-           dotmax = (int) (overalloc * dotnew);
-           if (dotmax < dotnew) dotmax = dotnew;
-           dotpt = (struct irb_dot *)
-              LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct irb_dot));
-           if (dotpt == NULL) {
-              LB_FREE(&dotmark);
-              LB_FREE(&value);
-              LB_FREE(&wgts);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
+    
+        if (allocflag) {
+           /* 
+            * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
+            * store their values in irb.
+            */
+           irb->Global_IDs = gidpt;
+           irb->Local_IDs = lidpt;
            irb->Dots = dotpt;
-           if (stats) counters[6]++;
         }
-
-        if (stats) {
-           counters[1] += outgoing;
-           counters[2] += incoming;
-           if (dotnew > counters[3]) counters[3] = dotnew;
-           if (dotmax > counters[4]) counters[4] = dotmax;
-        }
-
-        /* malloc comm send buffer */
-
-        if (outgoing > 0) {
-           dotbuf = (struct irb_dot *) LB_MALLOC(outgoing*sizeof(struct
-                                                 irb_dot));
-           if (dotbuf == NULL) {
-              LB_FREE(&dotmark);
-              LB_FREE(&value);
-              LB_FREE(&wgts);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
-        }
-        else
-          dotbuf = NULL;
-
-        /* fill buffer with dots that are marked for sending */
-        /* pack down the unmarked ones */
-
-        keep = outgoing = 0;
-        for (i = 0; i < dotnum; i++)
-           if (dotmark[i] != set)
-              memcpy((char *) &dotbuf[outgoing++], (char *) &dotpt[i],
-                     sizeof(struct irb_dot));
-           else
-              memcpy((char *) &dotpt[keep++], (char *) &dotpt[i],
-                     sizeof(struct irb_dot));
-
-        ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf,
-                          sizeof(struct irb_dot), (char *) (&dotpt[keep]));
-        if (ierr != COMM_OK && ierr != COMM_WARN) {
-           LB_FREE(&dotmark);
-           LB_FREE(&value);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
-        }
-
-        ierr = LB_Comm_Destroy(&cobj);
-
-        LB_FREE(&dotbuf);
-
-        dotnum = dotnew;
 
         /* create new communicators */
 
@@ -567,7 +468,6 @@ static int irb_fn(
            timers[2] += time3 - time2;
            timers[3] += time4 - time3;
         }
-
      }
 
      /* have recursed all the way to final single sub-domain */
@@ -606,30 +506,14 @@ static int irb_fn(
 
      *num_import = dotnum - dottop;
      if (*num_import > 0) {
-        if (!LB_Special_Malloc(lb,(void **)import_global_ids,*num_import,
-                               LB_SPECIAL_MALLOC_GID)) {
+        ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
+                                      import_global_ids, import_local_ids,
+                                      import_procs, dottop);
+        if (ierr) {
+           LB_PRINT_ERROR(proc, yo,
+                          "Error returned from LB_RB_Return_Arguments.");
            LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-        if (!LB_Special_Malloc(lb,(void **)import_local_ids,*num_import,
-                               LB_SPECIAL_MALLOC_LID)) {
-           LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-           LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-        if (!LB_Special_Malloc(lb,(void **)import_procs,*num_import,
-                               LB_SPECIAL_MALLOC_INT)) {
-           LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-           LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-           LB_TRACE_EXIT(lb, yo);
-           return LB_MEMERR;
-        }
-
-        for (i = 0; i < *num_import; i++) {
-           j = i + dottop;
-           LB_SET_GID((*import_global_ids)[i], dotpt[j].Tag.Global_ID);
-           LB_SET_LID((*import_local_ids)[i], dotpt[j].Tag.Local_ID);
-           (*import_procs)[i] = dotpt[j].Tag.Proc;
+           return ierr;
         }
      }
 
@@ -660,21 +544,9 @@ static int irb_fn(
      }
 
      if (lb->Debug_Level >= LB_DEBUG_ALL) {
-        int kk;
-        LB_Print_Sync_Start(lb->Communicator, TRUE);
-        printf("ZOLTAN IRB Proc %d Num_Obj=%d Num_Keep=%d Num_Non_Local=%d\n",
-               lb->Proc, pdotnum, pdottop, *num_import);
-        printf("  Assigned objects:\n");
-        for (kk = 0; kk < pdotnum; kk++) {
-           printf("    Obj:  %10d      Orig: %4d\n",
-                  irb->Dots[kk].Tag.Global_ID, irb->Dots[kk].Tag.Proc);
-        }
-        printf("  Non_locals:\n");
-        for (kk = 0; kk < *num_import; kk++) {
-           printf("    Obj:  %10d      Orig: %4d\n", (*import_global_ids)[kk],
-                  (*import_procs)[kk]);
-        }
-        LB_Print_Sync_End(lb->Communicator, TRUE);
+        LB_RB_Print_All(lb, irb->Global_IDs, irb->Dots, 
+                        pdotnum, pdottop, *num_import, 
+                        *import_global_ids, *import_procs);
      }
 
      LB_TRACE_EXIT(lb, yo);
@@ -687,7 +559,7 @@ static int irb_fn(
 
 /* consistency checks on IRB results */
 
-static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
+static void IRB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
 {
      char *yo = "IRB_check";
      char msg[256];
@@ -749,7 +621,7 @@ static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
 
 /* IRB statistics */
 
-static void IRB_stats(LB *lb, double timetotal, struct irb_dot *dotpt,
+static void IRB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
                       int dotnum, double *timers, int *counters, int stats)
 {
      int i, proc, nprocs, sum, min, max, print_proc;

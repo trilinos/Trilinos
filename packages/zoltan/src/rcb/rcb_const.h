@@ -14,25 +14,9 @@
 #ifndef __RCB_CONST_H
 #define __RCB_CONST_H
 
-/* Data structures for parallel RCB
+#include "shared_const.h"
 
-      rcb_dot has 4 required fields as shown below
-      other fields can be added by user
-      are just carried along as dots migrate to new processors
-
-      examples:
-
-  int       global;                global id # of dot
-  int       local;                 local id # (memory loc) of dot before RCB
-  int       proc;                  owner of this dot before RCB
-*/
-
-                             /* dot to balance on for RCB */ 
-struct rcb_dot {	        /* dot = point in 3-space */
-  double    X[3];		/* location of dot */
-  double    Weight;             /* weight of dot - if used must be > 0 */
-  LB_TAG    Tag;                /* Tag containing IDs for the object.  */
-};
+/* Data structures for parallel RCB */
 
 struct rcb_tree {	     /* tree of RCB cuts */
   double    cut;        	/* position of cut */
@@ -55,7 +39,17 @@ struct rcb_box {       	     /* bounding box */
 };
 
 typedef struct RCB_Struct {
-  struct rcb_dot *Dots;
+  LB_ID_PTR Global_IDs;      /* Pointer to array of global IDs; global ID of 
+                                Dots[i] starts in Global_IDs[i*lb->Num_GID].
+                                Because lb->Num_GID is determined at runtime,
+                                this info is most easily stored, allocated and
+                                reallocated separately from Dots. */
+  LB_ID_PTR Local_IDs;       /* Pointer to array of local IDs; local ID of 
+                                Dots[i] starts in Local_IDs[i*lb->Num_LID].
+                                Because lb->Num_LID is determined at runtime,
+                                this info is most easily stored, allocated and
+                                reallocated separately from Dots. */
+  struct Dot_Struct *Dots;     
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
   int Dot_Top;
