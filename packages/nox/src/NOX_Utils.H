@@ -48,7 +48,8 @@ namespace NOX {
 /*!
   \brief Provides static parallel communication and printing utilities.
 
-  The following parameters are used by this class:
+  The following parameters are used by this class and should be
+  defined in the main solver parameter list.
 
   - "Output Information" - An integer which is a sum of MsgType's to
     specify how much information to show. Defaults to
@@ -62,10 +63,7 @@ namespace NOX {
   - "Output Precision" - Specifis the default number of decimal places
     to be used when printing floating point numbers. The default is 4.
 
-  \todo Need to make the public static variables private
-  somehow. Meanwhile, those variables should never be modified
-  directly.
-
+  The public variables should never be modified directly.
 */
 class Utils {
 
