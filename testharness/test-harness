@@ -55,7 +55,7 @@
 ### This would be a good place to include instructions on how to write scripts.
 # location of the directory in which this file is located
 # default location is just below user's home directory
-my $homedir="$ENV{'HOME'}/temp/Trilinos";
+my $homedir="$ENV{'HOME'}/Trilinos";
 my $frequency="daily"; #default value
 chomp(my $date=`date`);
 if ($date =~/Sun/) {
