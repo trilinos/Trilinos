@@ -77,6 +77,7 @@ nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_Solver_TensorBased.H \
 	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
+	$(srcdir)/NOX_LineSearch_PolynomialNew.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
 	$(srcdir)/NOX_Direction_Broyden.H \
@@ -87,6 +88,7 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Solver_TensorBased.C \
 	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
+	$(srcdir)/NOX_LineSearch_PolynomialNew.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
 	$(srcdir)/NOX_Direction_Broyden.C \

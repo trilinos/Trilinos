@@ -1,0 +1,442 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#ifdef WITH_PRERELEASE
+
+#include "NOX_LineSearch_PolynomialNew.H"
+
+#include "NOX_LineSearch_Utils_Printing.H"
+#include "NOX_LineSearch_Utils_Slope.H"
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Parameter_UserNorm.H"
+#include "NOX_Parameter_MeritFunction.H"
+
+NOX::LineSearch::PolynomialNew::PolynomialNew(const NOX::Utils& u, Parameter::List& params) :
+  paramsPtr(NULL),
+  userNormPtr(NULL),
+  meritFuncPtr(NULL),
+  print(u)
+{
+  reset(params);
+}
+
+NOX::LineSearch::PolynomialNew::~PolynomialNew()
+{
+
+}
+
+bool NOX::LineSearch::PolynomialNew::reset(Parameter::List& params)
+{ 
+  paramsPtr = &params;
+
+  NOX::Parameter::List& p = params.sublist("PolynomialNew");
+  
+  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
+
+  if (choice == "Armijo-Goldstein")
+    suffDecrCond = ArmijoGoldstein;  
+  else if (choice == "Ared/Pred") 
+    suffDecrCond = AredPred;
+  else if (choice == "None")
+    suffDecrCond = None;
+  else 
+  {
+    cerr << "NOX::LineSearch::PolynomialNew::reset - Invalid \"Sufficient Decrease Condition\"" << endl;
+    throw "NOX Error";
+  }
+
+  choice = p.getParameter("Interpolation Type", "Cubic");
+
+  if (choice == "Cubic") 
+    interpolationType = Cubic;
+  else if (choice == "Quadratic")
+    interpolationType = Quadratic;
+  else 
+  {
+    cerr << "NOX::LineSearch::PolynomialNew::reset - Invalid \"Interpolation Type\"" << endl;
+    throw "NOX Error";
+  }
+
+  minStep = p.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = p.getParameter("Default Step", 1.0);
+  recoveryStep = p.getParameter("Recovery Step", defaultStep);
+  maxIters = p.getParameter("Max Iters", 100);
+  alpha = p.getParameter("Alpha Factor", 1.0e-4);
+  minBoundFactor = p.getParameter("Min Bounds Factor", 0.1);
+  maxBoundFactor = p.getParameter("Max Bounds Factor", 0.5);
+  doForceInterpolation = p.getParameter("Force Interpolation", false);
+  useCounter = p.getParameter("Use Counters", true);
+  maxIncreaseIter = p.getParameter("Maximum Iteration for Increase", 0);
+  maxRelativeIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
+
+  // Determine if a User Defined Norm is present
+  userNormPtr = NULL;
+  if (p.isParameterArbitrary("User Defined Norm"))
+  {
+    userNormPtr = const_cast<NOX::Parameter::UserNorm*>
+      (dynamic_cast<const NOX::Parameter::UserNorm*>
+       (&(p.getArbitraryParameter("User Defined Norm"))));
+  }
+
+  // Determine the merit function to use
+  meritFuncPtr = NULL;
+  if (p.isParameterArbitrary("User Defined Merit Function")) 
+  {
+    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>
+      (dynamic_cast<const NOX::Parameter::MeritFunction*>
+       (&(p.getArbitraryParameter("User Defined Merit Function"))));
+  }
+
+  // Is increase allowed?
+  doAllowIncrease = (maxIncreaseIter > 0);
+
+  // Set up counter
+  if (useCounter)
+    counter.reset();
+
+  return true;
+}
+
+bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp, 
+					  double& step, 
+					  const Abstract::Vector& dir,
+					  const Solver::Generic& s) 
+{
+  printOpeningRemarks();
+
+  int nNonlinearIters = s.getNumIterations();
+
+  if (useCounter)
+    counter.incrementNumLineSearches();
+
+  // Get the linear solve tolerance if doing ared/pred for conv criteria
+  double eta = (suffDecrCond == AredPred) ? 
+    s.getParameterList().sublist("Direction").sublist("Newton").
+    sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
+
+  // Computations with old group
+  const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
+  double oldPhi = computePhi(oldGrp);	// \phi(0)
+  double oldValue = computeValue(oldGrp, oldPhi);
+  double oldSlope = computeSlope(dir, oldGrp);
+
+  // Computations with new group
+  step = defaultStep;
+  updateGrp(newGrp, oldGrp, dir, step);
+  double newPhi = computePhi(newGrp);
+  double newValue = computeValue(newGrp, newPhi);
+
+
+  bool isConverged = false;
+  bool isFailed = false;
+
+  if (oldSlope >= 0.0) 
+  {
+    printBadSlopeWarning(oldSlope);
+    isFailed = true;
+  }
+  else 
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nNonlinearIters);
+
+  // Increment the number of newton steps requiring a line search
+  if ((useCounter) && (!isConverged))
+    counter.incrementNumNonTrivialLineSearches();
+
+  int nIters = 1;
+  while ((!isConverged) && (!isFailed)) 
+  {
+    print.printStep(nIters, step, oldValue, newValue, "", (suffDecrCond != AredPred));
+
+    if (nIters > maxIters) 
+    {
+      isFailed = true;
+      break;
+    }
+	
+    double prevPhi = 0.0;	// \phi(\lambda_{k-1})
+    double prevPrevPhi = 0.0;	// \phi(\lambda_{k-2})
+    double prevStep = 0.0;	// \lambda_{k-1}
+    double prevPrevStep = 0.0;	// \lambda_{k-2}
+
+    if ((nIters == 1) || (interpolationType == Quadratic)) 
+    {
+
+      prevPhi = newPhi;
+      prevStep = step;
+
+      /* Quadratic Interpolation */
+
+      step = - (oldSlope * prevStep * prevStep) / (2.0 * (prevPhi - oldPhi - prevStep * oldSlope)) ;
+
+    }
+
+    else 
+    {
+      prevPrevPhi = prevPhi;
+      prevPhi = newPhi;
+      prevPrevStep = prevStep;
+      prevStep = step;
+      
+      /*   Cubic Interpolation */
+
+      double term1 = prevPhi - oldPhi - prevStep * oldSlope ;
+      double term2 = prevPrevPhi - oldPhi - prevPrevStep * oldSlope ;
+      
+      double a = 1.0 / (prevStep - prevPrevStep) * 
+	(term1 / (prevStep * prevStep) - term2 / (prevPrevStep * prevPrevStep)) ;
+      
+      double b = 1.0 / (prevStep - prevPrevStep) *
+	(-1.0 * term1 * prevPrevStep / (prevStep * prevStep) +
+	 term2 * prevStep / (prevPrevStep * prevPrevStep)) ;
+      
+      double disc = b * b - 3.0 * a * oldSlope;
+      
+      if (disc < 0) 
+      {
+	isFailed = true;
+	break;
+      }
+      
+      if (fabs(a) < 1.e-12) 
+      {
+	step = -oldSlope / (2.0 * b);
+      }
+      else 
+      {
+	step = (-b + sqrt(disc))/ (3.0 * a);
+      }
+
+    }
+
+    // Apply bounds
+    if (step < minBoundFactor * prevStep) 
+      step = minBoundFactor * prevStep;
+    else if (step > maxBoundFactor * prevStep)
+      step = maxBoundFactor * prevStep;
+
+    // Check that step isn't too small
+    if (step < minStep) 
+    {
+      isFailed = true;
+      break;
+    }
+    
+    // Update the new group and compute new measures
+    updateGrp(newGrp, oldGrp, dir, step);
+    newPhi = computePhi(newGrp);
+    newValue = computeValue(newGrp, newPhi);
+    
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nNonlinearIters);
+    
+    nIters ++;
+
+    if (useCounter)
+      counter.incrementNumIterations();
+
+  } // End while loop 
+
+
+  if (isFailed) 
+  {
+    if (useCounter)
+      counter.incrementNumFailedLineSearches();
+
+    step = recoveryStep;
+    
+    if (step == 0.0)
+    {
+      newGrp = oldGrp;
+      newPhi = oldPhi;
+      newValue = oldValue;
+    }
+    else
+    {
+      updateGrp(newGrp, oldGrp, dir, step);
+      newPhi = computePhi(newGrp);
+      newValue = computeValue(newGrp, newPhi);
+    }
+  }
+
+  string message = (isFailed) ? "(USING RECOVERY STEP!)" : "(STEP ACCEPTED!)";
+  print.printStep(nIters, step, oldValue, newValue, message, (suffDecrCond != AredPred));
+
+  paramsPtr->setParameter("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
+
+  if (useCounter)
+    counter.setValues(*paramsPtr);
+
+  return (!isFailed);
+}
+
+bool NOX::LineSearch::PolynomialNew::checkConvergence(double newValue, double oldValue, 
+						   double oldSlope,
+						   double step, double eta, 
+						   int nNonlinearIters) const
+{
+  if ((nNonlinearIters == 1) && (doForceInterpolation))
+    return false;
+
+  if ((doAllowIncrease) && (nNonlinearIters <= maxIncreaseIter))
+  {
+    double relativeIncrease = newValue / oldValue;
+    if (relativeIncrease < maxRelativeIncrease)
+      return true;
+  }
+  
+  switch (suffDecrCond)
+  {
+
+  case ArmijoGoldstein:
+    
+    return (newValue <= oldValue + alpha * step * oldSlope);
+    break;
+
+  case AredPred:
+    {
+      double newEta = 1.0 - step * (1.0 - eta);
+      return (newValue <= oldValue * (1.0 - alpha * (1.0 - newEta)));
+      break;
+    }
+  case None:
+
+    return true;
+    break;
+
+  default:
+
+    cerr << "NOX::LineSearch::PolynomialNew::isSufficientDecrease - Unknown convergence criteria" << endl;
+    throw "NOX Error";
+
+  }
+}
+
+bool NOX::LineSearch::PolynomialNew::updateGrp(NOX::Abstract::Group& newGrp, 
+					    const NOX::Abstract::Group& oldGrp, 
+					    const NOX::Abstract::Vector& dir, 
+					    double step) const
+{
+  newGrp.computeX(oldGrp, dir, step);
+
+  NOX::Abstract::Group::ReturnType status = newGrp.computeF();
+  if (status != NOX::Abstract::Group::Ok)
+    return false;
+
+  return true;
+}
+
+double NOX::LineSearch::PolynomialNew::computePhi(const NOX::Abstract::Group& grp)
+{
+  double phi = 0;
+
+  if (meritFuncPtr != 0) 
+  {
+    phi = meritFuncPtr->computef(grp);
+  }
+  else
+  { 
+    phi = grp.getNormF();
+    phi = 0.5 * phi * phi;
+  }
+
+  return phi;
+}
+
+double NOX::LineSearch::PolynomialNew::computeValue(const NOX::Abstract::Group& grp, double phi)
+{
+  double value = phi;
+
+  if (suffDecrCond == AredPred) 
+  {
+    if (userNormPtr != NULL)
+      value = userNormPtr->norm(grp.getF());
+    else
+      value = grp.getNormF();
+  }
+
+  return value;
+}
+
+
+double NOX::LineSearch::PolynomialNew::computeSlope(const NOX::Abstract::Vector& dir, 
+						 const NOX::Abstract::Group& grp)
+{
+  double s;
+
+  if (meritFuncPtr != NULL) 
+  {
+    s = meritFuncPtr->computeSlope(dir, grp);
+  }
+  else 
+  {
+    if ( grp.isJacobian() )
+      s = slopeUtil.computeSlope(dir, grp);
+    else 
+      s = slopeUtil.computeSlopeWithOutJac(dir, grp);
+  }
+
+  return s;
+}
+
+void NOX::LineSearch::PolynomialNew::printOpeningRemarks() const
+{
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  {
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
+  }
+
+  if (print.isPrintProcessAndType(NOX::Utils::Details)) 
+  {
+    if (userNormPtr != NULL)
+      cout << "       Norms = Using a user defined norm" << endl;
+    else 
+      cout << "       Norms = L-2" << endl;
+  
+    if (meritFuncPtr != NULL) 
+      cout << "       Merit Function = User Defined" << endl;
+    else 
+      cout << "       Merit Function = 0.5 * || F || * || F ||" << endl;
+  }
+}
+
+void NOX::LineSearch::PolynomialNew::printBadSlopeWarning(double slope) const
+{
+  if (print.isPrintProcessAndType(NOX::Utils::Warning))
+    cout << "WARNING: Computed slope is positive (slope = " 
+	 << slope
+	 << ").\n" << "Using recovery step!" 
+	 << endl;
+}
+
+#endif
