@@ -174,6 +174,7 @@ $(srcdir)/MLAPI/MLAPI_MATLABStream.h         \
 $(srcdir)/MLAPI/MLAPI_SerialMatrix.h         \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.h    \
 $(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
+$(srcdir)/MLAPI/MLAPI_MultiLevelAdaptiveSA.h \
 $(srcdir)/MLAPI/MLAPI_MultiVector.h          \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
 $(srcdir)/MLAPI/MLAPI_Operator_Box.h         \
@@ -227,6 +228,7 @@ $(srcdir)/MLAPI/MLAPI_Expressions.cpp                       \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.cpp                 \
 $(srcdir)/MLAPI/MLAPI_BaseObject.cpp                        \
 $(srcdir)/MLAPI/MLAPI_Aggregation.cpp                       \
+$(srcdir)/MLAPI/MLAPI_Error.cpp                             \
 $(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
 $(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
 $(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
