@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   Epetra_Time Time(Comm);
   
   CommandLineParser CLP(argc,argv);
-  CrsMatrixGallery G("", Comm);
+  CrsMatrixGallery Gallery("", Comm);
 
   // default values for problem type and size
   if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
@@ -72,10 +72,10 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix * A = Gallery.GetMatrix();
 
   // get a pointer to the map
-  const Epetra_Map * Map = G.GetMap();
+  const Epetra_Map * Map = Gallery.GetMap();
 
   // get a pointer to the linear system problem
-  Epetra_LinearProblem * Problem = G.GetLinearProblem();
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
   
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
@@ -142,10 +142,10 @@ int main(int argc, char *argv[])
   // compute the real residual
 
   double residual, diff, res2;
-  G.ComputeResidual(residual);
-  G.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
   
-  (G.GetExactSolution())->Norm2(&res2);
+  (Gallery.GetExactSolution())->Norm2(&res2);
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff/res2 << endl;
