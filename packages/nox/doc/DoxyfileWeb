@@ -54,9 +54,10 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/nox/src
-INPUT                 += ../../../../Trilinos/packages/nox/src-lapack
+INPUT                 += ../../../../Trilinos/packages/nox/src-loca
 INPUT                 += ../../../../Trilinos/packages/nox/src-epetra
 INPUT                 += ../../../../Trilinos/packages/nox/src-petsc
+INPUT                 += ../../../../Trilinos/packages/nox/src-lapack
 INPUT                 += ../../../../Trilinos/packages/nox/example-lapack
 
 FILE_PATTERNS          = *.H *.C
