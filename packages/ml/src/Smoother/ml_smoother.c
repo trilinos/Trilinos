@@ -6274,18 +6274,17 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
-     if (ML_Smoother_Arglist_Nargs(args) != 5) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 5 nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 4) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
-     int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* its           */
+     //int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* its           */
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
-     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 4);    /* poly degree   */
-     dbl_arg2 = (double *) ML_Smoother_Arglist_Get(args, 3); /* eig ratio tol */
+     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 3);    /* poly degree   */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
         printf("Generating subsmoother MLS\n");
-     ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,*dbl_arg1,
-                         *int_arg2, *dbl_arg2);
+     ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
+                         *int_arg2);
    }
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
