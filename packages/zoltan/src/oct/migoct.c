@@ -158,10 +158,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   if (count > 0) {
     /* allocate some space */
-    mtags = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count,
-                                     sizeof(Region));
-    export_pids = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count,
-                                         sizeof(int));
+    mtags = (pRegion) LB_MALLOC((unsigned)count * sizeof(Region));
+    export_pids = (int *) LB_MALLOC((unsigned)count * sizeof(int));
     if(export_pids == NULL) {
       fprintf(stderr, "ERROR: unable to malloc export_pids in tag_regions\n");
       abort();
@@ -181,8 +179,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   
   if (count2 > 0) {
     /* allocate some space */
-    ptags = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count2,
-                                     sizeof(Region));
+    ptags = (pRegion) LB_MALLOC((unsigned)count2 * sizeof(Region));
     if(ptags == NULL) {
       fprintf(stderr, "(%d)ERROR: unable to malloc %d ptags in tag_regions\n",
 	      lb->Proc, count2);
@@ -260,8 +257,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
       msgtag, &nreceives);
 
   if (nreceives > 0) {
-    tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
-                                   sizeof(Region));
+    tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
     if(tmp == NULL) {
       fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
   	    "cannot allocate memory for import_objs.");
@@ -284,8 +280,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   if((j + npimtags) != 0) {                   /* malloc import array */
-    imp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (j + npimtags),
-                                   sizeof(Region));
+    imp = (pRegion) LB_MALLOC((j + npimtags) * sizeof(Region));
     if(imp == NULL) {
       fprintf(stderr, "ERROR in malloc_new_objects, %s\n",
 	      "unable to malloc import array.");
@@ -356,12 +351,9 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 
     /* allocate memory */
 
-    *import_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__,
-                                                  1, nrectags, sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__,
-                                                  1, nrectags, sizeof(LB_LID));
-    *import_procs      = (int *)   LB_Array_Alloc(__FILE__, __LINE__,
-                                                  1, nrectags, sizeof(int));
+    *import_global_ids = (LB_GID *) LB_MALLOC(nrectags * sizeof(LB_GID));
+    *import_local_ids  = (LB_LID *) LB_MALLOC(nrectags * sizeof(LB_LID));
+    *import_procs      = (int *)   LB_MALLOC(nrectags * sizeof(int));
     if (!(*import_global_ids) || !(*import_local_ids) || !(*import_procs)) {
       fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
       abort();
@@ -377,8 +369,7 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 #if 0
 
   /* KDD -- LB_Compute_Destinations will perform this operation for us. */
-  new_export = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1, *nsentags,
-                                         sizeof(LB_TAG));
+  new_export = (LB_TAG *) LB_MALLOC((*nsentags) * sizeof(LB_TAG));
   if(((*nsentags) > 0) && (new_export == NULL)) {
     fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
     abort();

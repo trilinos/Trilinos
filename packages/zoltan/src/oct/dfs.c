@@ -301,14 +301,12 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   if(POC_nOctants()) {          /* allocate space for octants being migrated */
-    docts = (pOctant *) LB_Array_Alloc(__FILE__, __LINE__, 1, POC_nOctants(),
-                                       sizeof(pOctant));
+    docts = (pOctant *) LB_MALLOC(POC_nOctants() * sizeof(pOctant));
     if(!docts) {
       fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
       abort();
     }
-    dpids = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, POC_nOctants(),
-                                   sizeof(int));
+    dpids = (int *) LB_MALLOC(POC_nOctants() * sizeof(int));
     if(!dpids) {
       fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
       LB_FREE(&docts);

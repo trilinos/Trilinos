@@ -420,8 +420,7 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
     extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *) LB_Array_Alloc(__FILE__, __LINE__, 1, hold,
-                                   sizeof(Map));       /* allocate map array */
+    array = (Map *) LB_MALLOC(hold * sizeof(Map));       /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
 	      lb->Proc);
@@ -520,12 +519,9 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     exit (-1);
   }
 
-  obj_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__,
-                                            1, *num_objs, sizeof(LB_GID));
-  obj_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__,
-                                            1, *num_objs, sizeof(LB_LID));
-  obj_wgts       = (float *) LB_Array_Alloc(__FILE__, __LINE__,
-                                            1, *num_objs, sizeof(float));
+  obj_global_ids = (LB_GID *) LB_MALLOC((*num_objs) * sizeof(LB_GID));
+  obj_local_ids  = (LB_LID *) LB_MALLOC((*num_objs) * sizeof(LB_LID));
+  obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
   if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
     exit(-1);
@@ -1201,10 +1197,8 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
     /* set the return variables */
     *nroots_ret=nroots;
     if(nroots) {
-      roots=(pOctant *) LB_Array_Alloc(__FILE__, __LINE__, 1, nroots,
-                                       sizeof(pOctant));
-      rootid=(Rootid *) LB_Array_Alloc(__FILE__, __LINE__, 1, nroots,
-                                       sizeof(Rootid));
+      roots=(pOctant *) LB_MALLOC(nroots * sizeof(pOctant));
+      rootid=(Rootid *) LB_MALLOC(nroots * sizeof(Rootid));
       if((roots == NULL) || (rootid == NULL)) {
 	fprintf(stderr, "LB_oct_roots_in_order: error in malloc\n");
 	abort();

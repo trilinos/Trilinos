@@ -40,8 +40,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, &n_import);
   *c2 = n_import;
   if (n_import > 0) {
-    import_objs = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n_import,
-                                            sizeof(Region));
+    import_objs = (Region *) LB_MALLOC(n_import * sizeof(Region));
 
     if(import_objs == NULL) {
       fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
@@ -147,13 +146,10 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   /* create the array of messages to be sent to other processors */
-  /* Array = (Message *) LB_Array_Alloc(__FILE__, __LINE__, 1, nregions,
-                                        sizeof(Message)); */
+  /* Array = (Message *) LB_MALLOC(nregions * sizeof(Message)); */
 
-  regions = (pRegion *) LB_Array_Alloc(__FILE__, __LINE__, 1, nregions,
-                                       sizeof(pRegion));
-  npids = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, nregions,
-                                 sizeof(int));
+  regions = (pRegion *) LB_MALLOC(nregions * sizeof(pRegion));
+  npids = (int *) LB_MALLOC(nregions * sizeof(int));
 
   ptr = RegionList;
   n = nreg = 0;
@@ -226,9 +222,8 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     abort();
   }
 
-  regions2 = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n,
-                                       sizeof(Region));
-  npids2 = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, n, sizeof(int));
+  regions2 = (Region *) LB_MALLOC(n * sizeof(Region));
+  npids2 = (int *) LB_MALLOC(n * sizeof(int));
   
   /* fprintf(stderr,"(%d) n = %d\n", LB_Proc, n); */
   for(i=0; i<n; i++) {
