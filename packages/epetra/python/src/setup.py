@@ -54,15 +54,14 @@ except IOError:
     makeInfo = { }
 
 # Certain directory paths are needed by setup.py.  srcDir is the path for the
-# source directory, pakDir is the path for the Trilinos package directory,
-#srcDir = os.path.join(makeInfo.get('srcdir',''), "src")
+# python source directory, pakDir is the path for the epetra package directory,
 srcDir = makeInfo.get("srcdir","")
-pakDir = os.path.split(srcDir)[0]
+pakDir = makeInfo.get("top_srcdir","")
 
 # Define the include paths required by various packages.  Each of these is
 # defined as a list of a single or more strings.  Thus they can be added
 # together to yield a list of multiple strings.
-epetraInc = [os.path.join(pakDir, "epetra", "src")]
+epetraInc = [os.path.join(pakDir, "src")]
 
 # Define the library search directories needed to link to various package
 # libraries.  Each of these is defined as a list of a single string.  Thus they
@@ -72,7 +71,7 @@ epetraLibDir    = [os.path.join("..", "..", "src")]
 # Define the library names for various packages.  Each of these is defined as a
 # list of a single string.  Thus they can be added together to yield a list of
 # multiple strings.
-epetraLib    = ["epetra" ]
+epetraLib    = ["epetra"]
 
 # Get the UNIX system name
 sysName = os.uname()[0]
