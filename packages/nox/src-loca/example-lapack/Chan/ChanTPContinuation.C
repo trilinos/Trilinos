@@ -51,11 +51,11 @@ int main()
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("scale",scale);
-  
+
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::LAPACK::Group grp(chan);
+     LOCA::LAPACK::Group grp(chan);
     grp.setParams(p);
 
     // Create initial guess for the null vector of jacobian
@@ -63,8 +63,7 @@ int main()
     nullVec.init(1.0);             // initial value 1.0
 
     // Create a turning point group that uses the lapack group
-    LOCA::DerivUtils du;
-    LOCA::Bifurcation::TPBordGroup tpgrp(grp, nullVec, 0, du);
+    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, 0);
 
     // Create parameter list
     NOX::Parameter::List paramList;
@@ -159,6 +158,9 @@ int main()
   }
 
   catch (string& s) {
+    cout << s << endl;
+  }
+  catch (char *s) {
     cout << s << endl;
   }
   catch (exception& e) {

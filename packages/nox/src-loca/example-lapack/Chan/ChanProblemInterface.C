@@ -31,6 +31,9 @@
 //@HEADER
 
 #include "ChanProblemInterface.H"
+#include "LOCA_Parameter_Vector.H"
+#include "NOX_LAPACK_Vector.H"
+#include "NOX_LAPACK_Matrix.H"
 
 ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
 					   double s)  : 

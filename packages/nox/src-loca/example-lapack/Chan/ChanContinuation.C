@@ -52,16 +52,11 @@ int main()
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("scale",scale);
-
-    // Create scaling vector
-    NOX::LAPACK::Vector s(n);
-    s.init(1.0);
-    //s.init(1.0/ sqrt((double) n));
   
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::LAPACK::Group grp(chan, s);
+    LOCA::LAPACK::Group grp(chan);
     grp.setParams(p);
 
     // Create parameter list
@@ -142,8 +137,10 @@ int main()
       cout << "Stepper failed to converge!" << endl;
 
     // Get the final solution from the solver
-    const LOCA::LAPACK::Group& finalGroup = dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
-    const NOX::LAPACK::Vector& finalSolution = dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
+    const LOCA::LAPACK::Group& finalGroup = 
+      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
+    const NOX::LAPACK::Vector& finalSolution = 
+      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
 
     // Output the parameter list
     if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
@@ -155,6 +152,9 @@ int main()
   }
 
   catch (string& s) {
+    cout << s << endl;
+  }
+  catch (char *s) {
     cout << s << endl;
   }
   catch (exception& e) {

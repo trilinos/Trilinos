@@ -51,7 +51,7 @@ int main()
   p.addParameter("alpha",alpha);
   p.addParameter("beta",beta);
   p.addParameter("scale",scale);
-  
+
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
@@ -63,8 +63,7 @@ int main()
   nullVec.init(1.0);             // initial value 1.0
 
   // Create a turning point group that uses the lapack group
-  LOCA::DerivUtils du;
-  LOCA::Bifurcation::TPBordGroup tpgrp(grp, nullVec, 0, du);
+  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, 0);
 
   // Set up the status tests
   //NOX::StatusTest::NormUpdate statusTestA(tpgrp, 1.0e-7);
@@ -96,11 +95,6 @@ int main()
   NOX::Parameter::List& directionParameters = solverParameters.sublist("Direction");
   NOX::Parameter::List& newtonParameters = directionParameters.sublist("Newton");
   NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
-  linearSolverParameters.setParameter("Bifurcation Solve", "Default");
-// The following non-Default choices are still unproven research ideas
-//  linearSolverParameters.setParameter("Bifurcation Solve", "Nic");
-//  linearSolverParameters.setParameter("Bifurcation Solve", "NicDay");
-//  linearSolverParameters.setParameter("Bifurcation Solve", "Iterative Refinement");
 
   // Create the solver
   NOX::Solver::Manager solver(tpgrp, statusTestsCombo, solverParameters);
@@ -114,7 +108,6 @@ int main()
 
   // Get the answer
   tpgrp = solver.getSolutionGroup();
-  
 
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";

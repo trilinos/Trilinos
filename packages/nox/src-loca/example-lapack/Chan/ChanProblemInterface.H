@@ -33,7 +33,8 @@
 #ifndef CHANPROBLEMINTERFACE_H
 #define CHANPROBLEMINTERFACE_H
 
-#include "LOCA_LAPACK_Group.H"
+#include "LOCA_LAPACK_Interface.H" // base class
+#include "NOX_LAPACK_Vector.H" // class data element
 
 /*!
   \brief LOCA-LAPACK problem interface for the Chan problem.
@@ -49,7 +50,8 @@
    discretization.  The scaling factor \f$s\f$ is used to test continuation
    at different scales of \f$\alpha\f$.
 */
-class ChanProblemInterface : public LOCA::LAPACK::Interface {
+class ChanProblemInterface : 
+  public LOCA::LAPACK::Interface {
 
 public:
  
