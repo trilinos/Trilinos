@@ -12,6 +12,7 @@
 
 #include "lb_const.h"
 #include "all_allo_const.h"
+#include "sppr_header"
 
 /*--------------------------------------------------------------------*/
 /* procedure name mangling                                            */
@@ -200,11 +201,27 @@ MPI_Comm LB_comm_f2c(int *f_comm)
 
 /* These routines get the address of an array allocated by fortran and
    return it */
-
-void LB_fw_Get_Address_int(int *addr, int *ret_addr)
+#ifdef PTR_64BIT
+void LB_fw_Get_Address_int(int *addr,
+                           long *ret_addr)
 {
+   if (sizeof(long) != sizeof(int *)) {
+     LB_PRINT_ERROR(-1, "LB_fw_Get_Address_int", 
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+   }
+   *ret_addr = (long)addr;
+}
+#else
+void LB_fw_Get_Address_int(int *addr,
+                           int *ret_addr)
+{
+   if (sizeof(int) != sizeof(int *)) {
+     LB_PRINT_ERROR(-1, "LB_fw_Get_Address_int", 
+       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
+   }
    *ret_addr = (int)addr;
 }
+#endif  /* PTR_64BIT */
 
 int LB_fw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 {

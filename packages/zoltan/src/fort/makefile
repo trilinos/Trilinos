@@ -1,3 +1,17 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# This software is distributed under the GNU Lesser General Public License.  #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
 ZOD = ../$(ZOLTAN_OBJ_DIR)
 ZOM = $(F90_MODULE_PREFIX)$(ZOD)
 
@@ -37,6 +51,7 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp \
 			set_firstcoarseobj.if	set_firstcoarseobj.fn \
 			set_nextcoarseobj.if	set_nextcoarseobj.fn \
 			$(ZOD)/sppr $(ZOD)/sppr_header
+	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 
 $(ZOD)/lb_user_const.o:	lb_user_const.f90 \
@@ -49,12 +64,14 @@ $(ZOD)/ztypes.o: 	$(ZOD)/ztypes.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr $(ZOD)/sppr_header
+	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(ZOD)/sppr < ztypes.fpp > $(ZOD)/ztypes.f90
 
 $(ZOD)/sppr_header: $(SPPR_HEAD)
 	cp $(SPPR_HEAD) $(ZOD)/sppr_header
 
-$(ZOD)/cwrap.o: cwrap.c
+$(ZOD)/cwrap.o: cwrap.c $(ZOD)/sppr_header
+	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(CC) -c cwrap.c
 	/bin/mv *.o $(ZOD)
 
@@ -67,5 +84,6 @@ clean:
 	      $(ZOD)/fwrap.o \
 	      $(ZOD)/ztypes.o \
 	      $(ZOD)/lb_user_const.o \
-              *.vo *.mod *.dbg $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
+              sppr_header *.vo *.mod *.dbg \
+	      $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
 	rm -Rf album

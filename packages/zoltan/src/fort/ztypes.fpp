@@ -19,10 +19,19 @@ module zoltan_types
 
 integer, parameter :: &
    LB_INT = selected_int_kind(9), &
+#ifdef PTR_64BIT
+   LB_INT_PTR = selected_int_kind(17), &
+#else
+   LB_INT_PTR = selected_int_kind(9), &
+#endif
    LB_FLOAT = selected_real_kind(6), &
    LB_DOUBLE = selected_real_kind(15)
 
+#ifdef PTR_64BIT
+integer, parameter :: LB_PTR_LENGTH = 8
+#else
 integer, parameter :: LB_PTR_LENGTH = 4
+#endif
 
 type LB_PTR
    sequence
@@ -30,7 +39,11 @@ type LB_PTR
 end type LB_PTR
 
 type(LB_PTR), parameter :: &
-   LB_NULL_PTR = LB_PTR(char(0)//char(0)//char(0)//char(0))
+   LB_NULL_PTR = LB_PTR( &
+#ifdef PTR_64BIT
+                 char(0)//char(0)//char(0)//char(0)// &
+#endif
+                 char(0)//char(0)//char(0)//char(0))
 
 interface operator(==)
    module procedure ptrcompare

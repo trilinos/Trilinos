@@ -229,7 +229,7 @@ subroutine LB_fw_Get_Address_int(arg,ret_addr)
 use zoltan_types
 use lb_user_const
 integer(LB_INT) :: arg
-integer(LB_INT), intent(out) :: ret_addr
+integer(LB_INT_PTR), intent(out) :: ret_addr
 end subroutine LB_fw_Get_Address_int
 end interface
 
@@ -927,7 +927,7 @@ subroutine fort_malloc_int(array,n,ret_addr)
 ! This gets called by the C special_malloc to do the allocation
 integer(LB_INT), pointer :: array(:)
 integer(LB_INT), intent(in) :: n
-integer(LB_INT), intent(out) :: ret_addr
+integer(LB_INT_PTR), intent(out) :: ret_addr
 integer :: stat
 ! Allocate the space
 allocate(array(n),stat=stat)
