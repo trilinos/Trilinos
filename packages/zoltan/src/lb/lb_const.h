@@ -136,6 +136,7 @@ typedef enum LB_Method {
 #define LB_NUM_ID_ENTRIES_DEF 1
 #define LB_RETURN_LISTS_DEF   LB_ALL_LISTS
 #define LB_TIMER_DEF          LB_TIME_WALL
+#define LB_TFLOPS_SPECIAL_DEF TRUE
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -286,6 +287,8 @@ struct LB_Struct {
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by LB_Balance.      */
+  int Tflops_Special;             /*  Flag to indicate if we should use some
+                                      MPI constructs (0) or not (1) on tflops*/
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs

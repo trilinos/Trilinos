@@ -88,6 +88,7 @@ LB *lb;
   lb->Debug_Proc = LB_DEBUG_PROC_DEF;
   lb->Fortran = 0;
   lb->Return_Lists = LB_RETURN_LISTS_DEF;
+  lb->Tflops_Special = LB_TFLOPS_SPECIAL_DEF;
   lb->Timer = LB_TIMER_DEF;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;

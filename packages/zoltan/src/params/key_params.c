@@ -30,6 +30,7 @@ static PARAM_VARS Key_params[] = {
 	{ "NUM_GID_ENTRIES", NULL, "INT" },
 	{ "NUM_LID_ENTRIES", NULL, "INT" },
 	{ "RETURN_LISTS", NULL, "STRING" },
+        { "TFLOPS_SPECIAL", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -200,6 +201,19 @@ char *val)			/* value of variable */
 	lb->Return_Lists = tmp;
         break;
 
+      case 11: 		/* Tflops Special flag */
+        if (result.def)
+            result.ival = LB_TFLOPS_SPECIAL_DEF;
+	if (result.ival < 0) {
+	    sprintf(msg, "Invalid Tflops Special value (%d) "
+		"being set to %d.", result.ival, LB_TFLOPS_SPECIAL_DEF);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
+	    result.ival = LB_TFLOPS_SPECIAL_DEF;
+	}
+	lb->Tflops_Special = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+        break;
+
       }  /* end switch (index) */
     }
 
@@ -252,4 +266,6 @@ void LB_Print_Key_Params(LB *lb)
     printf("NONE\n");
     break;
   }
+  if (lb->Tflops_Special)   /* print only if set */
+     printf("ZOLTAN Parameter %s = %s\n", Key_params[11].name, "TRUE");
 }

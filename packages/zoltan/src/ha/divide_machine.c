@@ -33,13 +33,17 @@ int LB_divide_machine(
    For now, it simply divides the machine in half.  In the future, it will
    be a more complicated routine taking into account the architecture of
    the machine and communication network. */
-
+/* If using Tflops_Special, then we have to divide the set into two
+   contiguously numbered sets. */
 
    /* assume for now that processors coming in are in a contiguously
       numbered set and we will divide them into two roughly equal
       contiguously numbered sets */
 
-   MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
+   /* The following statement assumes that proclower is being set correctly in
+      the calling routine if Tflops_Special flag is set */
+   if (!lb->Tflops_Special)
+      MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
 
    *procmid = *proclower + (*num_procs - 1)/2 + 1;
 
