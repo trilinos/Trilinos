@@ -26,12 +26,34 @@
 // ************************************************************************
 //@HEADER
 
+
+//
+//  Jan 7 - TODO (Ken)
+//      Add test of fixed block sizes - DONE 
+//      Add test of matrices that are built without numnz  - DONE 
+//      Add comparison to Crs matrices  - DONE 
+//      Test Multiply1 - DONE 
+//
+//  Jan 9 - TODO (Ken)
+//      Check test coverage 
+//      Cleanup kludge and ken marks - DONE for now
+//      Test with old Epetra_VbrMatrix.cpp and check it in 
+//      Make sure that suminto and replace values still work even after FillComplete is called
+//      Make sure that insert values fails after FillComplete is called
+//      Add OptimizeStorage and new Epetra_VbrMatrix.cpp 
+//      Make sure that suminto and replace values still work even after OptimizeStorage is called
+//      What happens if OptimizeStorage is called before FillComplete?  
+//
+//
+//
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Flops.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include <vector>
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -65,23 +87,126 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose);
 
 int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose);
 
+//
+//  ConvertVbrToCrs is a crude but effective way to convert a Vbr matrix to a Crs matrix
+//  Caller is responsible for deleting the CrsMatrix CrsOut
+//
+void ConvertVbrToCrs( Epetra_VbrMatrix* VbrIn, Epetra_CrsMatrix*& CrsOut ) {
 
+    const Epetra_Map &E_Vbr_RowMap = VbrIn->RowMatrixRowMap() ; 
+    const Epetra_Map &E_Vbr_ColMap = VbrIn->RowMatrixColMap() ; 
+    
+    CrsOut = new Epetra_CrsMatrix( Copy, E_Vbr_RowMap, E_Vbr_ColMap, 0 ); 
+    int NumMyElements = VbrIn->RowMatrixRowMap().NumMyElements() ;
+    vector<int> MyGlobalElements( NumMyElements );
+    VbrIn->RowMatrixRowMap().MyGlobalElements( &MyGlobalElements[0] ) ;
+
+    int NumMyColumns = VbrIn->RowMatrixColMap().NumMyElements() ;
+    vector<int> MyGlobalColumns( NumMyColumns );
+    VbrIn->RowMatrixColMap().MyGlobalElements( &MyGlobalColumns[0] ) ;
+
+    int MaxNumIndices = VbrIn->MaxNumEntries();
+    int NumIndices;
+    vector<int> LocalColumnIndices(MaxNumIndices);
+    vector<int> GlobalColumnIndices(MaxNumIndices);
+    vector<double> MatrixValues(MaxNumIndices); 
+
+    for( int LocalRow=0; LocalRow<NumMyElements; ++LocalRow ) {
+
+      VbrIn->ExtractMyRowCopy( LocalRow, 
+					MaxNumIndices,
+					NumIndices, 
+					&MatrixValues[0],
+					&LocalColumnIndices[0] );
+      
+      for (int j = 0 ; j < NumIndices ; j++ ) 
+	{ 
+	  GlobalColumnIndices[j] = MyGlobalColumns[ LocalColumnIndices[j] ]  ;
+	}
+      
+      CrsOut->InsertGlobalValues( MyGlobalElements[LocalRow], 
+					      NumIndices, 
+					      &MatrixValues[0],
+					      &GlobalColumnIndices[0] );
+      
+      
+    }
+    CrsOut->FillComplete();
+
+}
+
+//
+//  checkmultiply checks to make sure that AX=Y using both multiply 
+//  and both Crs Matrices, multiply1
+//
+int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, Epetra_MultiVector& Check_Y ) {
+
+  int numerrors = 0 ; 
+
+  //
+  //  If X and Y are Epetra_Vectors, we first test Multiply1
+  //
+  Epetra_Vector *vecY =  dynamic_cast<Epetra_Vector *>( &Check_Y );
+  Epetra_Vector *vecX =  dynamic_cast<Epetra_Vector *>( &X );
+  assert( vecX && vecY || (!vecX && !vecY) ) ;
+
+  if ( vecX && vecY ) {
+    double normY, NormError;
+    Check_Y.NormInf( &normY ) ; 
+    Epetra_Vector Y = *vecX ; 
+    Epetra_Vector Error = *vecX ; 
+    A.Multiply1( transpose, *vecX, Y ) ;  
+    Error.Update( 1.0, Y, -1.0, *vecY, 0.0 ) ; 
+      
+    Error.NormInf( &NormError ) ; 
+    if ( NormError / normY > 1e-13 ) numerrors++; 
+  }
+
+  //
+  //  Here we test Multiply 
+  //
+  Epetra_MultiVector Y = X ; 
+  Epetra_MultiVector Error = X ; 
+  A.Multiply( transpose, X, Y ) ; 
+
+  int NumVecs = X.NumVectors() ; 
+  vector<double> NormError(NumVecs);
+  vector<double> Normy(NumVecs);
+
+  Check_Y.NormInf( &Normy[0] ) ;
+
+  Error.Update( 1.0, Y, -1.0, Check_Y, 0.0 ) ; 
+  Error.NormInf( &NormError[0] ) ; 
+
+  bool LoopError = false ; 
+  for ( int ii = 0 ; ii < NumVecs ; ii++ ) {
+    if( NormError[ii] / Normy[ii] > 1e-13 ) {
+      LoopError = true ;
+    }
+  }
+  if ( LoopError ) numerrors++ ; 
+  
+  return numerrors;
+}
 //
 //  TestMatrix contains the bulk of the testing.  
 //    MinSize and MaxSize control the range of the block sizes - which are chosen randomly
-//    ConstructWithMap controls whether a Column Map is passed to the VbrMatrix contructor
+//    ConstructWithNumNz controls whether a Column Map is passed to the VbrMatrix contructor
 //      if false, the underlying graph will not be optimized
 //    ExtraBlocks, if true, causes extra blocks to be added to the matrix, further 
 //      guaranteeing that the matrix and graph will not have optimal storage.  
 //      ExtraBlocks is only supported for fixed block sizes (i.e. when minsize=maxsize)
 //
-//    ConstructWithMap and ExtraBlocks are not supported yet.
+//    ConstructWithNumNz and ExtraBlocks are not supported yet.
 //
 int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug, 
 		int NumMyElements, int MinSize, int MaxSize, 
-		bool ConstructWithMap, bool ExtraBlocks ) {
+		bool ConstructWithNumNz, bool ExtraBlocks, bool symmetric ) {
 
-  int ierr = 0, i, j, forierr = 0;
+
+  assert( (! ExtraBlocks) || MinSize == MaxSize ); // ExtraBlocks is only supported for fixed block sizes
+
+  int ierr = 0, i, j, forierr = 0, forierrM;
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (MyPID < 3) NumMyElements++;
@@ -96,7 +221,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   double DSizeRange = SizeRange;
   
   for (i=1; i<NumMyElements-1; i++) {
-    int curSize = 3 + (int) (DSizeRange * fabs(randvec[i]) + .99);
+    int curSize = MinSize + (int) (DSizeRange * fabs(randvec[i]) + .99);
     ElementSizeList[i] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, curSize));
   }
   ElementSizeList[0] = MaxSize;
@@ -127,9 +252,17 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
       NumNz[i] = 3;
   // Create a Epetra_Matrix
 
-  Epetra_VbrMatrix A(Copy, Map, NumNz);
-  EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
-  EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
+  Epetra_VbrMatrix MatWithNumNz(Copy, Map, NumNz);
+  Epetra_VbrMatrix MatNoNumNz(Copy, Map, 0);
+  Epetra_VbrMatrix* A;
+  if ( ConstructWithNumNz ) 
+    A = &MatWithNumNz ; 
+  else
+    A = &MatNoNumNz ; 
+ 
+
+  EPETRA_TEST_ERR(A->IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(A->IndicesAreLocal(),ierr);
   
   // Use an array of Epetra_SerialDenseMatrix objects to build VBR matrix
 
@@ -148,6 +281,8 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	  BlockEntries[kr][kc][j][i] = -1.0;
 	  if (i==j && kr==kc) BlockEntries[kr][kc][j][i] = 9.0;
 	  else BlockEntries[kr][kc][j][i] = -1.0;
+
+	  if ( ! symmetric )  BlockEntries[kr][kc][j][i] += ((double) j)/10000.0;
 	}
     }
   }
@@ -193,29 +328,77 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	if (i==NumMyElements-1) ColDims[2] = MaxSize - MinSize;
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
-    EPETRA_TEST_ERR(!(A.BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
+    EPETRA_TEST_ERR(!(A->BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
     forierr = 0;
     for (j=0; j < NumEntries; j++) {
       Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
       NumMyNonzeros += AD->M() * AD->N();	  
       //cout << " PID, i, j, M, N, NNZ = " <<Comm.MyPID()<<", " << i<< ", " << j<<", "<<AD->M()<<", "<<AD->N()
       //	   <<", "<<NumMyNonzeros<<endl;
-      forierr += !(A.SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
+      //      assert( A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N()) == 0 );  // KLUDGE KEN DEBUGXX 
+      forierr += !(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
     }
     EPETRA_TEST_ERR(forierr,ierr);
 
-      A.EndSubmitEntries();
+    A->EndSubmitEntries();
+  }
+
+  if ( ExtraBlocks ) { 
+
+
+    //
+    //  Add NumExtraBlocks to the matrix on each process.  
+    //  The i index is chosen from among the block rows that this process owns (i.e. MyGlobalElements[0..NumMyElements-1])
+    //  The j index is chosen from among all block columns 
+    //  
+    //  Bugs - does not support non-contiguous matrices
+    //
+    const int NumExtraBlocks = 2 ; 
+    Epetra_SerialDenseMatrix BlockIindex = Epetra_SerialDenseMatrix( NumExtraBlocks, 1 );
+    Epetra_SerialDenseMatrix BlockJindex = Epetra_SerialDenseMatrix( NumExtraBlocks, 1 );
+
+    BlockIindex.Random(); 
+    BlockJindex.Random(); 
+    BlockIindex.Scale( 1.0 * NumMyElements );
+    BlockJindex.Scale( 1.0 * A->NumGlobalBlockCols() );
+    for ( int ii=0 ; ii<NumExtraBlocks ; ii++ ) {
+      int i = (int) BlockIindex[ii][0]; 
+      int j = (int) BlockJindex[ii][0]; 
+      if ( i < 0 ) i = - i ; 
+      if ( j < 0 ) j = - j ; 
+      assert( i >= 0 ) ;
+      assert( j >= 0 ) ;
+      assert( i < NumMyElements ) ;
+      if ( j >= A->NumGlobalBlockCols() ) {
+	BlockJindex.Print(cout) ; 
+	cout
+	  << " j = " << j 
+	  << " j = " << j 
+	  << " A->NumGlobalBlockCols() = " << A->NumGlobalBlockCols() 
+	  << endl ; 
+      }
+      assert( j < A->NumGlobalBlockCols() ) ;
+      int CurRow = MyGlobalElements[i];
+      int Indices[1] ; 
+      Indices[0] = j ; 
+      Epetra_SerialDenseMatrix * AD = &(BlockEntries[0][0]);
+      EPETRA_TEST_ERR(!(A->BeginInsertGlobalValues( CurRow, 1, Indices)==0),ierr);
+      
+      assert( A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N()) == 0 );
+      //      EPETRA_TEST_ERR(!(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())), ierr);
+      A->EndSubmitEntries();
+    }
   }
   
   // Finish up
-  EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
-  EPETRA_TEST_ERR(!(A.FillComplete()==0),ierr);
-  EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
-  EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
-  // A.OptimizeStorage();
-  // EPETRA_TEST_ERR(!(A.StorageOptimized()),ierr);
-  EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
-  EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
+  EPETRA_TEST_ERR(!(A->IndicesAreGlobal()),ierr);
+  EPETRA_TEST_ERR(!(A->FillComplete()==0),ierr);
+  EPETRA_TEST_ERR(!(A->IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(A->StorageOptimized(),ierr);
+  // A->OptimizeStorage();
+  // EPETRA_TEST_ERR(!(A->StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(A->UpperTriangular(),ierr);
+  EPETRA_TEST_ERR(A->LowerTriangular(),ierr);
 
 
   {for (int kr=0; kr<SizeRange; kr++) delete [] BlockEntries[kr];}
@@ -226,8 +409,8 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   
 
   int NumMyBlockEntries = 3*NumMyElements;
-  if (A.LRID(0)>=0) NumMyBlockEntries--; // If I own first global row, then there is one less nonzero
-  if (A.LRID(NumGlobalElements-1)>=0) NumMyBlockEntries--; // If I own last global row, then there is one less nonzero
+  if (A->LRID(0)>=0) NumMyBlockEntries--; // If I own first global row, then there is one less nonzero
+  if (A->LRID(NumGlobalElements-1)>=0) NumMyBlockEntries--; // If I own last global row, then there is one less nonzero
 
   int NumGlobalBlockEntries = 3*NumGlobalElements-2;
   int NumGlobalNonzeros, NumGlobalEquations;
@@ -235,14 +418,15 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   Comm.SumAll(&NumMyEquations, &NumGlobalEquations, 1);
   
 
-  EPETRA_TEST_ERR(!(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
+  EPETRA_TEST_ERR(!(check(*A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
 	       MyGlobalElements, verbose)==0),ierr);
+
   forierr = 0;
-  for (i=0; i<NumMyElements; i++) forierr += !(A.NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
+  for (i=0; i<NumMyElements; i++) forierr += !(A->NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
-  for (i=0; i<NumMyElements; i++) forierr += !(A.NumMyBlockEntries(i)==NumNz[i]);
+  for (i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==NumNz[i]);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -271,13 +455,13 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
   // Iterate
   Epetra_Flops flopcounter;
-  A.SetFlopCounter(flopcounter);
-  q.SetFlopCounter(A);
-  z.SetFlopCounter(A);
-  resid.SetFlopCounter(A);
+  A->SetFlopCounter(flopcounter);
+  q.SetFlopCounter(*A);
+  z.SetFlopCounter(*A);
+  resid.SetFlopCounter(*A);
   z = z_initial;  // Start with common initial guess
   Epetra_Time timer(Comm);
-  int ierr1 = power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
+  int ierr1 = power_method(false, *A, q, z, resid, &lambda, niters, tolerance, verbose);
   double elapsed_time = timer.ElapsedTime();
   double total_flops = flopcounter.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -296,7 +480,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   z = z_initial;  // Start with common initial guess
   flopcounter.ResetFlops();
   timer.ResetStartTime();
-  ierr1 = power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
+  ierr1 = power_method(true, *A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
   total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -312,12 +496,12 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 		    << endl;
 
   
-  if (A.MyGlobalBlockRow(0)) {
-    int numvals = A.NumGlobalBlockEntries(0);
+  if (A->MyGlobalBlockRow(0)) {
+    int numvals = A->NumGlobalBlockEntries(0);
     Epetra_SerialDenseMatrix ** Rowvals;
     int* Rowinds = new int[numvals];
     int  RowDim;
-    A.ExtractGlobalBlockRowPointers(0, numvals, RowDim, numvals, Rowinds, 
+    A->ExtractGlobalBlockRowPointers(0, numvals, RowDim, numvals, Rowinds, 
 				    Rowvals); // Get A[0,:]
 
     for (i=0; i<numvals; i++) {
@@ -332,7 +516,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   z = z_initial;  // Start with common initial guess
   flopcounter.ResetFlops();
   timer.ResetStartTime();
-  ierr1 = power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
+  ierr1 = power_method(false, *A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
   total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -352,7 +536,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   z = z_initial;  // Start with common initial guess
   flopcounter.ResetFlops();
   timer.ResetStartTime();
-  ierr1 = power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
+  ierr1 = power_method(true, *A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
   total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -363,14 +547,76 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
   if (debug) Comm.Barrier();
 
+  if (verbose) cout << "\n\n*****Comparing against CrsMatrix " << endl<< endl;
+
+  Epetra_CrsMatrix* CrsA;
+  ConvertVbrToCrs( A, CrsA ) ; 
+
+  Epetra_Vector CrsX = Epetra_Vector( A->OperatorDomainMap(), false ) ; 
+  Epetra_Vector CrsY = Epetra_Vector( A->OperatorRangeMap(), false ) ; 
+  Epetra_Vector x(Map);
+  Epetra_Vector y(Map);
+  Epetra_Vector check_y(Map);
+  Epetra_Vector check_ytranspose(Map);
+
+  x.Random() ; 
+  CrsX = x; 
+  CrsA->Multiply( false, CrsX, CrsY ) ; 
+  check_y = CrsY ; 
+  CrsA->Multiply( true, CrsX, CrsY ) ; 
+  check_ytranspose = CrsY ; 
+
+  EPETRA_TEST_ERR( checkmultiply( false, *A, x, check_y ), ierr ); 
+
+  EPETRA_TEST_ERR( checkmultiply( true, *A, x, check_ytranspose ), ierr ); 
+
+  if (! symmetric ) EPETRA_TEST_ERR( !checkmultiply( false, *A, x, check_ytranspose ), ierr );   // Just to confirm that A is not symmetric
+
+  const int NumVecs = 4 ; 
+  
+  Epetra_Map Amap = A->OperatorDomainMap() ; 
+
+  //  Epetra_MultiVector CrsMX = Epetra_MultiVector( A->OperatorDomainMap(), false ) ; 
+  Epetra_MultiVector CrsMX( Amap, NumVecs, false ) ; 
+  Epetra_MultiVector CrsMY( A->OperatorRangeMap(), NumVecs, false ) ; 
+  Epetra_MultiVector mx(Map, NumVecs);
+  Epetra_MultiVector my(Map, NumVecs);
+  Epetra_MultiVector check_my(Map, NumVecs);
+  Epetra_MultiVector check_mytranspose(Map, NumVecs);
+  CrsMX = mx; 
+  CrsA->Multiply( false, CrsMX, CrsMY ) ; 
+  check_my = CrsMY ; 
+  CrsA->Multiply( true, CrsMX, CrsMY ) ; 
+  check_mytranspose = CrsMY ; 
+
+  EPETRA_TEST_ERR( checkmultiply( false, *A, mx, check_my ), ierr ); 
+
+  EPETRA_TEST_ERR( checkmultiply( true, *A, mx, check_mytranspose ), ierr ); 
+
+  
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
-  Epetra_VbrMatrix B(A);
+
+  Epetra_VbrMatrix B(*A);
 
   EPETRA_TEST_ERR(!(check(B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
 	       MyGlobalElements, verbose)==0),ierr);
 
+  EPETRA_TEST_ERR( ! ( A->StorageOptimized() == B.StorageOptimized() ), ierr ) ; 
+
+  EPETRA_TEST_ERR( checkmultiply( false, B, mx, check_my ), ierr ); 
+
+
+  B = B;    // Should be harmless - check to make sure that it is
+
+  EPETRA_TEST_ERR(!(check(B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
+	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
+	       MyGlobalElements, verbose)==0),ierr);
+
+  EPETRA_TEST_ERR( ! ( A->StorageOptimized() == B.StorageOptimized() ), ierr ) ; 
+
+  EPETRA_TEST_ERR( checkmultiply( false, B, mx, check_my ), ierr ); 
 
   if (debug) Comm.Barrier();
 
@@ -447,6 +693,7 @@ int main(int argc, char *argv[])
   //if (rank==0) cin >> tmp;
   //Comm.Barrier();
 
+  //  if ( ! verbose )  
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
 
   if (verbose && MyPID==0)
@@ -460,24 +707,25 @@ int main(int argc, char *argv[])
 
 
 //  int NumMyElements = 1000;
-  int NumMyElements = 10; 
+  int NumMyElements = 4; 
   int MinSize = 3;
   int MaxSize = 8;
-  bool ConstructWithMap = true; 
-  bool ExtraBlocks = true; 
+  bool ConstructWithNumNz = true; 
+  bool ExtraBlocks = false; 
+  bool symmetric = true; 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, ConstructWithMap, ExtraBlocks );   // Test variable block sizes
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, ConstructWithNumNz, ExtraBlocks, symmetric );   // Test variable block sizes
 
-#if 0
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithMap, ExtraBlocks ); // Test fixed block sizes
+#if 1
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithNumNz, ExtraBlocks, symmetric ); // Test fixed block sizes
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithMap, ExtraBlocks ); // Test fixed block sizes with extra blocks
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithNumNz, ExtraBlocks, symmetric ); // Test fixed block sizes with extra blocks
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, false, ExtraBlocks );   // Test variable block sizes, without a map
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, false, ExtraBlocks, symmetric );   // Test variable block sizes, without specifying numnz up front
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, ExtraBlocks ); // Test fixed block sizes, without a map and with extra blocks
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, ExtraBlocks, false ); // Test fixed block sizes, without specifying numnz, non-symmetric
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, false ); // Test fixed block sizes, without a map and with extra blocks
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, true, false ); // Test fixed block sizes, without specifying numnz up front, with extra blocks, non-symmetric
 #endif
  
   /*
