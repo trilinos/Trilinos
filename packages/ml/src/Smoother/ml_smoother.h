@@ -301,8 +301,7 @@ extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 extern struct MLSthing *ML_Smoother_Create_MLS(void);
-extern int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double in[],
-			int outlen, double out[]);
+extern int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int outlen, double out[]);
 
 extern void ML_Smoother_Destroy_MLS(void *data);
 extern void **ML_Smoother_Arglist_Create(int nargs);
