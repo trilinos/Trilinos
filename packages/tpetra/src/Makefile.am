@@ -61,8 +61,7 @@ UNIPROC =
 SERIAL_H = \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
-	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialDirectory.hpp
+	$(srcdir)/Tpetra_SerialDistributor.hpp 
 
 SERIAL = 
 
@@ -70,7 +69,6 @@ EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp \
 	$(srcdir)/Tpetra_MpiData.hpp \
 	$(srcdir)/Tpetra_MpiTraits.hpp 
 
@@ -105,7 +103,8 @@ DIST_H = \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp
+	$(srcdir)/Tpetra_ImportData.hpp \
+	$(srcdir)/Tpetra_BasicDirectory.hpp
 
 DIST = 
 

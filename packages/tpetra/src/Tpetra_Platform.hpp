@@ -85,8 +85,7 @@ public:
 	virtual Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const = 0;
 	virtual Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
 	//! Distributor Instances
-	virtual Teuchos::RefCountPtr< Distributor<ScalarType, OrdinalType> > createScalarDistributor() const = 0;
-	virtual Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > createOrdinalDistributor() const = 0;
+	virtual Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const = 0;
 	//! Directory Instance
 	virtual Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
 	//@}

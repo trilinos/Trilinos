@@ -138,7 +138,6 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
 	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialDirectory.hpp \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
 	$(srcdir)/Tpetra_ElementSpaceData.hpp \
 	$(srcdir)/Tpetra_BlockElementSpace.hpp \
@@ -146,13 +145,13 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_ImportData.hpp \
+	$(srcdir)/Tpetra_BasicDirectory.hpp \
 	$(srcdir)/Tpetra_Vector.hpp $(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_MpiPlatform.hpp $(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp $(srcdir)/Tpetra_MpiData.hpp \
-	$(srcdir)/Tpetra_MpiTraits.hpp
+	$(srcdir)/Tpetra_MpiData.hpp $(srcdir)/Tpetra_MpiTraits.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -299,15 +298,13 @@ UNIPROC =
 SERIAL_H = \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
-	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialDirectory.hpp
+	$(srcdir)/Tpetra_SerialDistributor.hpp 
 
 SERIAL = 
 EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp \
 	$(srcdir)/Tpetra_MpiData.hpp \
 	$(srcdir)/Tpetra_MpiTraits.hpp 
 
@@ -331,7 +328,8 @@ DIST_H = \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp
+	$(srcdir)/Tpetra_ImportData.hpp \
+	$(srcdir)/Tpetra_BasicDirectory.hpp
 
 DIST = 
 COMP_H = \

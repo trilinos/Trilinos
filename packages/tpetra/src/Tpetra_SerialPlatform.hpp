@@ -33,7 +33,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
-#include "Tpetra_SerialDirectory.hpp"
+#include "Tpetra_BasicDirectory.hpp"
 #include "Tpetra_SerialDistributor.hpp"
 
 namespace Tpetra {
@@ -86,22 +86,17 @@ template<typename OrdinalType> class ElementSpace;
 			return(comm);
 		};
 
-		//! Distributor Instances
-		Teuchos::RefCountPtr< Distributor<ScalarType, OrdinalType> > createScalarDistributor() const {
-			Teuchos::RefCountPtr< SerialDistributor<ScalarType, OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new SerialDistributor<ScalarType, OrdinalType>());
-			return(distributor);
-		};
-		Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > createOrdinalDistributor() const {
-			Teuchos::RefCountPtr< SerialDistributor<OrdinalType, OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new SerialDistributor<OrdinalType, OrdinalType>());
+		//! Distributor Instance
+		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
+			Teuchos::RefCountPtr< SerialDistributor<OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new SerialDistributor<OrdinalType>());
 			return(distributor);
 		};
 
 		//! Directory Instance
 		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-      Teuchos::RefCountPtr< SerialDirectory<OrdinalType> > directory;
-      directory = Teuchos::rcp(new SerialDirectory<OrdinalType>(elementSpace)); 
+      Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
+      directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
 			return(directory);
 		};
 

@@ -242,12 +242,12 @@ namespace Tpetra {
     //@{ \name Local/Global ID Accessor Methods
     
     //! Returns the image IDs and corresponding local IDs for a given list of global IDs.
-    void getRemoteIDList(OrdinalType numIDs, std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList, std::vector<OrdinalType>& LIDList) const {
-      data().Directory_->getDirectoryEntries(numIDs, &GIDList.front(), &imageIDList.front(), &LIDList.front());
+    void getRemoteIDList(std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList, std::vector<OrdinalType>& LIDList) const {
+      data().Directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
     };
     //! Returns only the image IDs for a given list of global IDs.
-    void getRemoteIDList(OrdinalType numIDs, std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList) const {
-      data().Directory_->getDirectoryEntries(numIDs, &GIDList.front(), &imageIDList.front(), 0);
+    void getRemoteIDList(std::vector<OrdinalType> const& GIDList, std::vector<OrdinalType>& imageIDList) const {
+      data().Directory_->getDirectoryEntries(GIDList, imageIDList);
     };
     
     //! Returns local ID of global ID passed in, throws exception -1 if not found on this image.

@@ -32,6 +32,7 @@
 #include "Tpetra_Version.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
+#include "Tpetra_MpiData.hpp"
 #include "Tpetra_MpiDistributor.hpp"
 #else
 #include "Tpetra_SerialDistributor.hpp"
@@ -114,9 +115,11 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	// constructors
 	if(debug) cout << "Constructors..." << endl;
 #ifdef TPETRA_MPI
-  Tpetra::MpiDistributor<OrdinalType, OrdinalType> distrib(MPI_COMM_WORLD);
+  Teuchos::RefCountPtr<Tpetra::MpiData> mpidata;
+  mpidata = Teuchos::rcp(new Tpetra::MpiData(MPI_COMM_WORLD));
+  Tpetra::MpiDistributor<OrdinalType> distrib(mpidata);
 #else
-  Tpetra::SerialDistributor<OrdinalType, OrdinalType> distrib;
+  Tpetra::SerialDistributor<OrdinalType> distrib;
 #endif // TPETRA_MPI
   // cpy ctr
 	

@@ -225,9 +225,6 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
   ierr = 0;
 
   // test getRemoteIDList
-#ifdef TPETRA_MPI
-  if(verbose) cout << "Running in MPI mode, not testing getRemoteIDList." << endl;
-#else
 	if(verbose) cout << "Testing getRemoteIDList... ";
   OrdinalType const len = intToOrdinal<OrdinalType>(4); // magic number for length of these arrays
   std::vector<OrdinalType> gList(len); 
@@ -237,7 +234,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
   gList[3] = eList[0];
   std::vector<OrdinalType> pList(len, intToOrdinal<OrdinalType>(5));
   std::vector<OrdinalType> lList(len, intToOrdinal<OrdinalType>(0));
-	es3.getRemoteIDList(len, gList, pList, lList);
+	es3.getRemoteIDList(gList, pList, lList);
 	if(debug) cout << "\nGID PID LID getLID" << endl;
 	for(OrdinalType i = zero; i < len; i++) {
 		if(debug) cout << setw(3) << gList[i] << setw(4) << pList[i] << setw(4) << lList[i] << setw(4) << es3.getLID(gList[i]) << endl;
@@ -252,7 +249,6 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
     if(verbose) cout << "passed" << endl;
   returnierr += ierr;
   ierr = 0;
-#endif // TPETRA_MPI
 	
 	// ======================================================================
 	// finish up

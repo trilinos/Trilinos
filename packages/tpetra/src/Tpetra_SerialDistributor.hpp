@@ -42,96 +42,100 @@ namespace Tpetra {
 		Most SerialDistributor methods throw an error of -1, since they should never be called.
 */
 
-	template<typename PacketType, typename OrdinalType>
-	class SerialDistributor : public Object, public virtual Distributor<PacketType, OrdinalType> {
+	template<typename OrdinalType>
+	class SerialDistributor : public Object, public virtual Distributor<OrdinalType> {
   public:
 
-  //@{ \name Constructor/Destructor
+    //@{ \name Constructor/Destructor
+    
+    //! Default Constructor.
+    SerialDistributor() : Object("Tpetra::SerialDistributor") {};
+    
+    //! Copy Constructor
+    SerialDistributor(SerialDistributor<OrdinalType> const& plan) : Object(plan.label()) {};
+    
+    //! Clone method
+    Distributor<OrdinalType>* clone() {
+      SerialDistributor<OrdinalType>* distributor = new SerialDistributor<OrdinalType>(*this); 
+      return(distributor); 
+    };
+    
+    //! Destructor.
+    virtual ~SerialDistributor() {};
 
-  //! Default Constructor.
-  SerialDistributor() : Object("Tpetra::SerialDistributor") {};
+    //@}
+    
+    //@{ \name Gather/Scatter Constructors
 
-  //! Copy Constructor
-  SerialDistributor(SerialDistributor<PacketType, OrdinalType> const& plan) : Object(plan.label()) {};
+    //! Create Distributor object using list of Image IDs to send to
+    void createFromSends(OrdinalType const& numExportIDs, 
+                         std::vector<OrdinalType> const& exportImageIDs,
+                         bool const& deterministic,
+                         OrdinalType& numRemoteIDs) 
+		{
+      throw reportError("This method should never be called.", -1);
+    };
 
-  //! Clone method
-	Distributor<PacketType, OrdinalType>* clone() {
-		SerialDistributor<PacketType, OrdinalType>* distributor = new SerialDistributor<PacketType, OrdinalType>(*this); 
-		return(distributor); 
-	};
+    //! Create Distributor object using list of Image IDs to receive from
+    void createFromRecvs(OrdinalType const& numRemoteIDs, 
+                         std::vector<OrdinalType> const& remoteGIDs, 
+                         std::vector<OrdinalType> const& remoteImageIDs, 
+                         bool const& deterministic, 
+                         OrdinalType& numExportIDs, 
+                         std::vector<OrdinalType>& exportGIDs, 
+                         std::vector<OrdinalType>& exportImageIDs)
+		{
+      throw reportError("This method should never be called.", -1);
+    };
 
-  //! Destructor.
-  virtual ~SerialDistributor() {};
-  //@}
+    //@}
+    
+    //@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
-	//@{ \name Gather/Scatter Constructors
-  //! Create Distributor object using list of Image IDs to send to
-  void createFromSends(OrdinalType const& numExportIDs, OrdinalType const* exportImageIDs,
-											 bool const& deterministic, OrdinalType& numRemoteIDs ) 
-		{throw reportError("This method should never be called.", -1);};
-	//! Create Distributor object using list of Image IDs to receive from
-	void createFromRecvs(OrdinalType const& numRemoteIDs, OrdinalType const* remoteGIDs, 
-											 OrdinalType const* remoteImageIDs, bool const& deterministic, 
-											 OrdinalType& numExportIDs, OrdinalType*& exportGIDs, 
-											 OrdinalType*& exportImageIDs)
-		{throw reportError("This method should never be called.", -1);};
-	//@}
-	
-	//@{ \name Constant Size
-	//! do
-  void doPostsAndWaits       (PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) 
-		{throw reportError("This method should never be called.", -1);};
-	//! doReverse
-  void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
+    //! doPostsAndWaits
+    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+      throw reportError("This method should never be called.", -1);
+    };
+    
+    //! doPosts
+    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+      throw reportError("This method should never be called.", -1);
+    };
 
-	//! doPosts
-  void doPosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//! doWaits
-  void doWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
+    //! doWaits
+    void doWaits() {
+      throw reportError("This method should never be called.", -1);
+    };
 
-	//! doReversePosts
-  void doReversePosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//! doReverseWaits
-  void doReverseWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//@}
+    //! doReversePostsAndWaits
+    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+      throw reportError("This method should never be called.", -1);
+    };
+    
+    //! doReversePosts
+    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+      throw reportError("This method should never be called.", -1);
+    };
 
-	//@{ \name Non-Constant Size
-	//! do
-  void doPostsAndWaits       (PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//! doReverse
-  void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
+    //! doReverseWaits
+    void doReverseWaits() {
+      throw reportError("This method should never be called.", -1);
+    };
 
-	//! doPosts
-  void doPosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//! doWaits
-  void doWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
+    //@}
+    
+    //@{ \name I/O Methods
 
-	//! doReversePosts
-  void doReversePosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//! doReverseWaits
-  void doReverseWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
-		{throw reportError("This method should never be called.", -1);};
-	//@}
-
-	//@{ \name I/O Methods
-	//! print method inherited from Object
+    //! print method inherited from Object
     void print(ostream& os) const {};
-	//! printInfo method inherited from Distributor
-  void printInfo(ostream& os) const {os << *this;};
-	//@}
 
-}; // class SerialDistributor
+    //! printInfo method inherited from Distributor
+    void printInfo(ostream& os) const {os << *this;};
 
+    //@}
+    
+  }; // class SerialDistributor
+  
 } // namespace Tpetra
 
 #endif // TPETRA_SERIALDISTRIBUTOR_HPP

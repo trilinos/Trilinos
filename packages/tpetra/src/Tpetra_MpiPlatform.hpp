@@ -34,7 +34,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
-#include "Tpetra_MpiDirectory.hpp"
+#include "Tpetra_BasicDirectory.hpp"
 #include "Tpetra_MpiDistributor.hpp"
 
 namespace Tpetra {
@@ -104,23 +104,18 @@ class MpiData;
       comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
       return(comm);
 		};
-
-    //! Distributor Instances
-		Teuchos::RefCountPtr< Distributor<ScalarType, OrdinalType> > createScalarDistributor() const {
-			Teuchos::RefCountPtr< MpiDistributor<ScalarType, OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new MpiDistributor<ScalarType, OrdinalType>(MpiData_));
+    
+		//! Distributor Instance
+		Teuchos::RefCountPtr< Distributor<OrdinalType> > createDistributor() const {
+		  Teuchos::RefCountPtr< MpiDistributor<OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new MpiDistributor<OrdinalType>(MpiData_)); 
       return(distributor);
 		};
-		Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > createOrdinalDistributor() const {
-			Teuchos::RefCountPtr< MpiDistributor<OrdinalType, OrdinalType> > distributor;
-      distributor = Teuchos::rcp(new MpiDistributor<OrdinalType, OrdinalType>(MpiData_));
-      return(distributor);
-		};
-
+    
 		//! Directory Instance
 		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-		  Teuchos::RefCountPtr< MpiDirectory<OrdinalType> > directory;
-      directory = Teuchos::rcp(new MpiDirectory<OrdinalType>(elementSpace)); 
+		  Teuchos::RefCountPtr< BasicDirectory<OrdinalType> > directory;
+      directory = Teuchos::rcp(new BasicDirectory<OrdinalType>(elementSpace)); 
       return(directory);
 		};
 
@@ -137,18 +132,20 @@ class MpiData;
 		//@}
     
     //@{ \name MPI-specific methods, not inherited from Tpetra::Platform
+
     //! Access method to the MPI Communicator we're using.
     MPI_Comm getMpiComm() const {
       return(data().MpiComm_);
     };
+    
     //@}
     
-private:
-	Teuchos::RefCountPtr<MpiData> MpiData_;
-  
-  // convenience functions for returning inner data class, both const and nonconst versions.
-  MpiData& data() {return(*MpiData_);}
-  MpiData const& data() const {return(*MpiData_);}
+  private:
+    Teuchos::RefCountPtr<MpiData> MpiData_;
+    
+    // convenience functions for returning inner data class, both const and nonconst versions.
+    MpiData& data() {return(*MpiData_);};
+    MpiData const& data() const {return(*MpiData_);};
     
 	}; // MpiPlatform class
   

@@ -203,21 +203,17 @@ void codeCoverage(bool verbose, int rank, int size) {
   if(verbose) cout << "createOrdinalComm..." << endl;
 	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
 
-  // createScalarDistributor
-	if(verbose) cout << "createScalarDistributor..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Distributor<ScalarType, OrdinalType> > distributor1 = platform.createScalarDistributor();
-  
-  // createOrdinalDistributor
-  if(verbose) cout << "createOrdinalDistributor..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Distributor<OrdinalType, OrdinalType> > distributor2 = platform.createOrdinalDistributor();
+  // createDistributor
+	if(verbose) cout << "createDistributor..." << endl;
+#ifdef TPETRA_MPI
+  Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
+#else
+  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
+#endif
+	Teuchos::RefCountPtr< Tpetra::Distributor<OrdinalType> > distributor = platform.createDistributor();
 
   // create Directory
   if(verbose) cout << "createDirectory..." << endl;
-#ifdef TPETRA_MPI
-  Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
-#else
-  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
-#endif
-  Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformE);
+  Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformO);
   Teuchos::RefCountPtr< Tpetra::Directory<OrdinalType> > directory = platform.createDirectory(elementspace);
 }

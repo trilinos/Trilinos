@@ -79,7 +79,7 @@ namespace Tpetra {
     
     // Platform, Comm, Distributor, etc.
     Teuchos::RefCountPtr< Platform<OrdinalType, OrdinalType> const > platform_;
-    Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > distributor_;
+    Teuchos::RefCountPtr< Distributor<OrdinalType> > distributor_;
     
   private:
     //! Copy constructor (declared but not defined, do not use)
