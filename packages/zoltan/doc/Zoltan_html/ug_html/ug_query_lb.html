@@ -1388,7 +1388,7 @@ nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_INT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
@@ -1725,7 +1725,7 @@ element in the user provided traversal. The same provisions hold as for
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef void <b>LB_FIRST_COARSE_OBJ_FN</b>
+<td><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef int <b>LB_FIRST_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1900,7 +1900,7 @@ object in the coarse grid.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef void <b>LB_NEXT_COARSE_OBJ_FN</b>
+<td><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef int <b>LB_NEXT_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,

@@ -117,6 +117,10 @@ to the query function being registered. From Fortran this is an optional
 argument, or can be one of several types. In the simplest cases, an intrinsic
 array containing the data will be sufficient. For these cases, data can
 be an assumed size array of type INTEGER(LB_INT), REAL(LB_FLOAT) or REAL(LB_DOUBLE).
+When the argument is omitted in the call to the registration function, a
+data argument will still be passed to the query function.  This should be
+declared as an assumed size array of type INTEGER(LB_INT) and never used.
+
 <p>For more complicated situations, the application may need to pass data
 in a user-defined type. The strong type checking of Fortran does not allow
 passing an arbitrary type without modifying the Fortran interface for each
