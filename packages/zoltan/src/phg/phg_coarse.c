@@ -53,19 +53,20 @@ int Zoltan_PHG_Coarsening
    || !(list      = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
    || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
    || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))  {
-     Zoltan_Multifree (__FILE__, __LINE__, 3, &cmatch, displs, list);     
+     Zoltan_Multifree (__FILE__, __LINE__, 4, &cmatch, &displs, &list, 
+      &each_size);     
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
   }     
   for (i = 0; i < hg->nVtx; i++)
-     cmatch[i] = match[i];  /* working copy of match array */
+     cmatch[i] = match[i];         /* working copy of match array */
     
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of coarse vertices. */
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
   me = hgc->myProc_x;             /* convenience variable */
-  size = 0;                       /* number of ints to communicate */
+  size = 0;                       /* size (in ints) to communicate */
   count = 0;                      /* number of messages to communicate */
   for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
     if (match[i] < 0)  {               /* external processor match */
@@ -81,9 +82,7 @@ int Zoltan_PHG_Coarsening
       else 
         c_hg->nVtx++;         /* myProc owns the matching across processors */ 
     }
-      
-    /* allow for possible (local only) packing and groupings */    
-    if (match[i] >= 0 && cmatch[i] >= 0)  {
+    else if (cmatch[i] >= 0)  { /* allow (local only) packing and groupings */    
       c_hg->nVtx++;
       vertex = i;
       while (cmatch[vertex] >= 0)  {
@@ -95,7 +94,7 @@ int Zoltan_PHG_Coarsening
   }
 
   /* size and allocate the send buffer, and weight array */
-  size += count;
+  size += (2*count);  /* include gno's and counts in message */
   if (!(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))  
    || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float))))  {
     Zoltan_Multifree (__FILE__, __LINE__, 2, c_hg->vwgt, buffer);
@@ -108,9 +107,8 @@ int Zoltan_PHG_Coarsening
 
   for (size = 0, i = 0; i < hgc->nProc_x; i++)
     size += each_size[i];
-
   if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
-    ZOLTAN_FREE (&rbuffer);         
+    ZOLTAN_TRACE_EXIT (zz, yo);
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }  
@@ -202,6 +200,13 @@ int Zoltan_PHG_Coarsening
     }
     
   ZOLTAN_FREE ((void**) &used_edges);
+  
+  /* Update the dist_x array due to coarsened array */
+  size = c_hg->nVtx;
+  MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
+  c_hg->dist_x[0] = 0;
+  for (i = 1; i < hgc->nProc_x; i++)
+     c_hg->dist_x[i] = c_hg->dist_x[i-1] + each_size[i-1];
 
   /* Done if there are no remaining vertices */
   if (c_hg->nVtx == 0)  {
