@@ -45,7 +45,7 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
 {
     int *RowCount, *W, k1, k2, nk, k, block, oldcol, pend, row, oldrow, newcol,
 	result, pc, p, newrow, col, maxnz, nzoff ;
-    double amd_Info [AMD_INFO], lnz, lnz1, flops, colamd_stats [COLAMD_STATS] ;
+    double amd_Info [AMD_INFO], lnz, lnz1, flops ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -78,7 +78,7 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
     flops = 0 ;
 
     /* ---------------------------------------------------------------------- */
-    /* order each block using AMD */
+    /* order each block using AMD or COLAMD */
     /* ---------------------------------------------------------------------- */
 
     for (block = 0 ; block < nblocks ; block++)
@@ -104,9 +104,25 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
 	    P [k1] = Pbtf [k1] ;
 	    Q [k1] = Qbtf [k1] ;
 	    oldcol = Q [k1] ;
-	    nzoff += ((Ap [oldcol+1] - Ap [oldcol]) - 1) ;
-	    PRINTF (("nzoff so far %d\n", nzoff)) ;
+	    pend = Ap [oldcol+1] ;
 
+	    /* nzoff += ((Ap [oldcol+1] - Ap [oldcol]) - 1) ; */
+
+	    for (p = Ap [oldcol] ; p < pend ; p++)
+	    {
+		oldrow = Ai [p] ;
+		newrow = Pinv [oldrow] ;
+		if (newrow < k1)
+		{
+		    nzoff++ ;
+		}
+		else
+		{
+		    lnz++ ;
+		}
+	    }
+
+	    PRINTF (("nzoff so far %d\n", nzoff)) ;
 	}
 	else
 	{
@@ -182,7 +198,7 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
 		ASSERT (klu_valid (nk, Ep, Ei, (double *) NULL)) ;
 
 		PRINTF (("calling AMD\n")) ;
-		result = amd_order (nk, Ep, Ei, Pamd, (double *) NULL, amd_Info) ;
+		result = amd_order (nk, Ep, Ei, Pamd, (double *)NULL, amd_Info);
 		PRINTF (("AMD done\n")) ;
 		if (result == AMD_OUT_OF_MEMORY)
 		{
@@ -214,7 +230,7 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
 		/* order the block with COLAMD (C) */
 		/* ---------------------------------------------------------- */
 
-		int Alen, *AA, ok, colamd_stats [COLAMD_STATS] ;
+		int Alen, *AA, ok, cstats [COLAMD_STATS] ;
 
 		PRINTF (("calling COLAMD\n")) ;
 
@@ -237,8 +253,8 @@ static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
 		    AA [p] = Ci [p] ;
 		}
 
-		/* order (and destroy) AA, returning the col permutation in Ep */
-		ok = colamd (nk, nk, Alen, AA, Ep, (double *) NULL, colamd_stats) ;
+		/* order (and destroy) AA, returning col permutation in Ep */
+		ok = colamd (nk, nk, Alen, AA, Ep, (double *) NULL, cstats) ;
 		PRINTF (("COLAMD done\n")) ;
 
 		/* free the workspace */
@@ -312,9 +328,9 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     double User_Info [KLU_BTF_INFO]	/* optional; may be NULL */
 )
 {
-    int nblocks, *Qbtf, nz, *Cp, *Ci, *Qamd, *Pinv, *Pamd, *Ep, *Ei, *Pbtf,
+    int nblocks, *Qbtf, nz, *Cp, *Ci, *Pinv, *Pamd, *Ep, *Ei, *Pbtf,
 	block, maxblock, k1, k2, nk, maxnz, *P, *Q, *R, nzoff, result, j, i, p,
-	pend, do_btf, nzdiag, ordering, k ;
+	pend, do_btf, nzdiag, ordering, k, nfound ;
     klu_symbolic *Symbolic ;
     double *Lnz, lnz, Info2 [KLU_BTF_INFO], *Info ;
 
@@ -339,7 +355,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
      * The list of row indices in each column of A need not be sorted.
      */
 
-    if (n <= 0 || !Ap || !Ai)
+    if (n <= 0 || (Ap == (int *) NULL) || (Ai == (int *) NULL))
     {
 	/* Ap and Ai must be present, and n must be > 0 */
 	Info [KLU_BTF_INFO_STATUS] = KLU_INVALID ;
@@ -390,6 +406,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    if (i == j)
 	    {
 		/* count the number of diagonal entries */
+		/* TODO: move this code to maxtrans */
 		nzdiag++ ;
 	    }
 	    /* flag row i as appearing in column j */
@@ -460,10 +477,13 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 
     if (do_btf)
     {
-	PRINTF (("calling cbtf\n")) ;
-	nblocks = cbtf (n, Ap, Ai, Pbtf, Qbtf, R) ;
-	PRINTF (("cbtf nblocks %d\n", nblocks)) ;
-	if (nblocks <= 0)
+
+#ifndef HARWELL
+
+	int *Work ;
+	Work = (int *) ALLOCATE (5*n * sizeof (int)) ;
+
+	if (Work == (int *) NULL)
 	{
 	    /* out of memory */
 	    FREE (Pbtf, int) ; 
@@ -472,6 +492,38 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
 	    return ((klu_symbolic *) NULL) ;
 	}
+
+	nblocks = btf_order (n, Ap, Ai, Pbtf, Qbtf, R, &nfound, Work) ;
+
+	/* TODO: add nfound to Symbolic, and to Info */
+
+	FREE (Work, int) ; 
+
+	/* unflip Qbtf if singular */
+	if (nfound < n)
+	{
+	    for (k = 0 ; k < n ; k++)
+	    {
+		Qbtf [k] = MAXTRANS_UNFLIP (Qbtf [k]) ;
+	    }
+	}
+
+#else
+
+	/* call mc21 + mc13 */
+	nblocks = charwell (n, Ap, Ai, Pbtf, Qbtf, R) ;
+	if (nblocks < 0)
+	{
+	    /* out of memory */
+	    FREE (Pbtf, int) ; 
+	    FREE (Qbtf, int) ; 
+	    klu_btf_free_symbolic (&Symbolic) ;
+	    Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
+	    return ((klu_symbolic *) NULL) ;
+	}
+
+#endif
+
 	/* find the size of the largest block */
 	maxblock = 1 ;
 	for (block = 0 ; block < nblocks ; block++)

@@ -72,10 +72,11 @@
  *	int *Li, *Ui, ;			not allocated or defined
  *	double *Lx, *Ux ;
  *
- *	TODO: add discussion of Xwork and Iwork
+ *	TODO: add discussion of Xwork and Iwork, BTF arguments
  *
  *	result = klu_factor (n, Ap, Ai, Ax, Q, Control,
- *		Lp, &Li, &Lx, Up, &Ui, &Ux, P) ;
+ *		Lp, &Li, &Lx, Up, &Ui, &Ux, P,
+ *		...) ;
  *
  * At this point, the arrays Li, Lx, Ui, and Ux are allocated and defined if
  * klu returns KLU_OK (zero).  P [k] = i if row i is the kth pivot row.
@@ -148,38 +149,86 @@ int klu_factor	/* returns 0 if OK, negative if error */
     double *p_umin,
     double *p_umax,
 
-    /* workspace (ignored if NULL) */
-    double *X,	    /* size n double's, if present.  undefined on input,
-		       zero on output */
-    int *Work	    /* size 5n int's, if present */
+    /* workspace, undefined on input */
+    double *X,	    /* size n double's, zero on output */
+    int *Work,	    /* size 5n int's */
+
+    /* ---- the following are only used in the BTF case --- */
+
+    /* inputs, not modified on output */
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ],  /* inverse of P from symbolic factorization */
+    double Rs [ ],  /* scale factors for A */
+
+    /* inputs, modified on output */
+    int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
+    int Offi [ ],
+    double Offx [ ]
 )
 {
-    double tol, s, *Lx, *Ux, umin, umax, growth ;
-    int *Pinv, lsize, usize, result, k, anz, *Li, *Ui,
-	*Lpend, *Stack, *Flag, noffdiag, *adj_pos, get_work, get_X, *W ;
+    double tol, s, *Lx, *Ux, umin, umax, growth, maxlnz ;
+    int *Pinv, lsize, usize, result, anz, *Li, *Ui, *Lpend, *Stack, *Flag,
+	noffdiag, *Ap_pos, get_work, get_X, *W, no_btf ;
 
     /* ---------------------------------------------------------------------- */
     /* get control parameters, or use defaults */
     /* ---------------------------------------------------------------------- */
 
+    no_btf = (Offp == (int *) NULL) ;
     n = MAX (1, n) ;
-    anz = Ap [n] ;
+
+    if (no_btf)
+    {
+	anz = Ap [n] ;
+    }
+    else
+    {
+	anz = Ap [n+k1] - Ap [k1] ;
+    }
 
     s = GET_CONTROL (KLU_LSIZE, -10.0) ;
-    lsize = (int) ((s < 0) ? (-s * anz) : (s)) ;
+    if (s <= 0)
+    {
+	s = -s ;
+	s = MAX (s, 1.0) ;
+	lsize = s * anz + n ;
+    }
+    else
+    {
+	lsize = s ;
+    }
 
     s = GET_CONTROL (KLU_USIZE, -10.0) ;
-    usize = (int) ((s < 0) ? (-s * anz) : (s)) ;
+    if (s <= 0)
+    {
+	s = -s ;
+	s = MAX (s, 1.0) ;
+	usize = s * anz + n ;
+    }
+    else
+    {
+	usize = s ;
+    }
 
     tol = GET_CONTROL (KLU_TOL, 1.0) ;
     growth = GET_CONTROL (KLU_GROWTH, 1.2) ;
 
     /* make sure control parameters are in legal range */
-    lsize  = MAX (1, lsize) ;
-    usize  = MAX (1, usize) ;
+    lsize  = MAX (n+1, lsize) ;
+    usize  = MAX (n+1, usize) ;
+
+    maxlnz = (((double) n) * ((double) n) + ((double) n)) / 2. ;
+    maxlnz = MIN (maxlnz, ((double) INT_MAX)) ;
+
+    lsize  = MIN (maxlnz, lsize) ;
+    usize  = MIN (maxlnz, usize) ;
+
     tol    = MIN (tol, 1.0) ;
     tol    = MAX (0.0, tol) ;
     growth = MAX (1.0, growth) ;
+
+    PRINTF (("Welcome to klu: n %d anz %d k1 %d lsize %d usize %d maxlnz %g\n",
+	n, anz, k1, lsize, usize, maxlnz)) ;
 
     /* ---------------------------------------------------------------------- */
     /* allocate workspace and outputs */
@@ -207,7 +256,7 @@ int klu_factor	/* returns 0 if OK, negative if error */
     Stack = (int *) W ;	    W += n ;
     Flag = (int *) W ;	    W += n ;
     Lpend = (int *) W ;	    W += n ;
-    adj_pos = (int *) W ;   W += n ;
+    Ap_pos = (int *) W ;    W += n ;
 
     get_X = (X == (double *) NULL) ;
     if (get_X)
@@ -242,7 +291,9 @@ int klu_factor	/* returns 0 if OK, negative if error */
     /* with pruning, and non-recursive depth-first-search */
     result = klu_kernel (n, Ap, Ai, Ax, Q, tol, growth, lsize, usize,
 	    Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, &noffdiag, &umin, &umax,
-	    X, Stack, Flag, adj_pos, Lpend) ;
+	    X, Stack, Flag, Ap_pos, Lpend,
+	    /* BTF case: */
+	    no_btf, k1, PSinv, Rs, Offp, Offi, Offx) ;
 
     /* ---------------------------------------------------------------------- */
     /* free workspace */
@@ -321,7 +372,7 @@ void klu_lsolve
 {
     double y [4], lik ;
     double *Y ;
-    int k, p, pend, s, nblocks, block, i, d2, d3, d4 ;
+    int k, p, pend, nblocks, block, i, d2, d3, d4 ;
 
     if (nrhs == 1)
     {
@@ -456,7 +507,7 @@ void klu_usolve
 {
     double y [4], uik, ukk ;
     double *Y ;
-    int k, p, pend, s, nblocks, block, i, d2, d3, d4 ;
+    int k, p, pend, nblocks, block, i, d2, d3, d4 ;
 
     if (nrhs == 1)
     {
@@ -648,7 +699,11 @@ void klu_defaults
 )
 {
     int i ;
-    if (!Control) return ;
+    if (Control == (double *) NULL)
+    {
+	/* nothing to do - return silently (this is not an error) */
+	return ;
+    }
     for (i = 0 ; i < KLU_CONTROL ; i++)
     {
 	Control [i] = 0 ;

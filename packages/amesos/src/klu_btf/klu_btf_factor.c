@@ -31,21 +31,15 @@ static int klu_btf_factor2
 
     /* outputs, not defined on input */
     klu_numeric *Numeric,
-
-    /* workspace */
-    int Cp [ ],
-    int Ci [ ],
-    double Cx [ ],
-
     double Info [ ]
 )
 {
     double klu_Control [KLU_CONTROL], umin, umax, umin2, umax2,
 	*Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, *X ;
-    int k1, k2, nk, k, block, oldcol, pend, row, oldrow, newcol, n, lnz, unz,
-	result, pc, p, newrow, col, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
+    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, lnz, unz,
+	result, p, newrow, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
 	*Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi, *Pblock, noffdiag2, noffdiag,
-	*Pinv, *Iwork ;
+	*Pinv, *Iwork, nzoff ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -58,6 +52,7 @@ static int klu_btf_factor2
     R = Symbolic->R ;
     Lnz = Symbolic->Lnz ;
     nblocks = Symbolic->nblocks ;
+    nzoff = Symbolic->nzoff ;
 
     Pnum = Numeric->Pnum ;
     Offp = Numeric->Offp ;
@@ -72,11 +67,13 @@ static int klu_btf_factor2
     Ubx = Numeric->Ubx ;
     Rs = Numeric->Rs ;
     Pinv = Numeric->Pinv ;
-    X = Numeric->Xwork ;
-    Iwork = Numeric->Iwork ;
-    Pblock = Iwork + 5*(Symbolic->maxblock) ;
+    X = Numeric->Xwork ;			/* X is of size n */
+    Iwork = Numeric->Iwork ;			/* 5*maxblock for klu_factor */
+    Pblock = Iwork + 5*(Symbolic->maxblock) ;	/* 1*maxblock for Pblock */
 
-    /* compute the inverse of P (TODO could be done in klu_btf_analyze) */
+    /* compute the inverse of P from symbolic analysis.  Will be updated to
+     * become the inverse of the numerical factorization when the factorization
+     * is done, for use in klu_btf_refactor */
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
@@ -99,12 +96,12 @@ static int klu_btf_factor2
     klu_defaults (klu_Control) ;
     klu_Control [KLU_TOL] = tol ;
     klu_Control [KLU_GROWTH] = growth ;
-    poff = 0 ;
     lnz = 0 ;
     unz = 0 ;
     noffdiag = 0 ;
     umin = 0 ;
     umax = 0 ;
+    Offp [0] = 0 ;
 
     /* ---------------------------------------------------------------------- */
     /* check the input matrix and compute the row scale factors, Rs */
@@ -146,7 +143,7 @@ static int klu_btf_factor2
 	    /* singleton case */
 	    /* -------------------------------------------------------------- */
 
-	    Offp [k1] = poff ;
+	    poff = Offp [k1] ;
 	    oldcol = Q [k1] ;
 	    pend = Ap [oldcol+1] ;
 	    for (p = Ap [oldcol] ; p < pend ; p++)
@@ -166,6 +163,7 @@ static int klu_btf_factor2
 		    Singleton [block] = Ax [p] / Rs [oldrow] ;
 		}
 	    }
+	    Offp [k1+1] = poff ;
 	    Pnum [k1] = P [k1] ;
 	    lnz++ ;
 	    unz++ ;
@@ -178,55 +176,16 @@ static int klu_btf_factor2
 	{
 
 	    /* -------------------------------------------------------------- */
-	    /* construct the kth block, C */
-	    /* -------------------------------------------------------------- */
-
-	    /* TODO: let klu_kernel construct the block without the extra copy,
-	     * and then we can remove the Cp, Ci, and Cx workspace */
-	    pc = 0 ;
-	    for (k = k1 ; k < k2 ; k++)
-	    {
-		newcol = k-k1 ;
-		Cp [newcol] = pc ;
-		Offp [k] = poff ;
-		oldcol = Q [k] ;
-		pend = Ap [oldcol+1] ;
-		for (p = Ap [oldcol] ; p < pend ; p++)
-		{
-		    oldrow = Ai [p] ;
-		    newrow = Pinv [oldrow] ;
-		    if (newrow < k1)
-		    {
-			/* this is an entry in the off-diagonal part */
-			Offi [poff] = oldrow ;
-			Offx [poff] = Ax [p] / Rs [oldrow] ;
-			poff++ ;
-		    }
-		    else
-		    {
-			/* (newrow,newcol) is an entry in the block */
-			ASSERT (newrow < k2) ;
-			newrow -= k1 ;
-			Ci [pc] = newrow ;
-			Cx [pc] = Ax [p] / Rs [oldrow] ;
-			pc++ ;
-		    }
-		}
-	    }
-	    Cp [nk] = pc ;
-	    PRINTF (("\n----------------------- block %d, C:\n", block)) ;
-	    ASSERT (klu_valid (nk, Cp, Ci, Cx)) ;
-
-	    /* -------------------------------------------------------------- */
-	    /* factor the block */
+	    /* construct and factorize the kth block */
 	    /* -------------------------------------------------------------- */
 
 	    PRINTF (("calling klu\n")) ;
 	    if (Lnz [block] == EMPTY)
 	    {
 		/* COLAMD was used - no estimate of fill-in */
-		/* use 10 times the nnz in A */
-		klu_Control [KLU_LSIZE] = initmem_colamd * pc + nk ;
+		/* use 10 times the nnz in A, plus n */
+		/* TODO: compute nnz in each block in klu_btf_analyze */
+		klu_Control [KLU_LSIZE] = -initmem_colamd ;
 		klu_Control [KLU_USIZE] = klu_Control [KLU_LSIZE] ;
 	    }
 	    else
@@ -237,10 +196,12 @@ static int klu_btf_factor2
 
 	    /* allocates 4 arrays:
 	     * Lbi [block], Lbx [block], Ubi [block], Ubx [block] */
-	    result = klu_factor (nk, Cp, Ci, Cx, (int *) NULL, klu_Control,
+	    result = klu_factor (nk, Ap, Ai, Ax, Q, klu_Control,
 		    Lbp [block], &Lbi [block], &Lbx [block],
 		    Ubp [block], &Ubi [block], &Ubx [block], Pblock,
-		    &noffdiag2, &umin2, &umax2, X, Iwork) ;
+		    &noffdiag2, &umin2, &umax2, X, Iwork,
+		    /* BTF-related arguments: */
+		    k1, Pinv, Rs, Offp, Offi, Offx) ;
 
 	    PRINTF (("klu done\n")) ;
 	    if (result != KLU_OK)
@@ -272,7 +233,7 @@ static int klu_btf_factor2
 	    }
 
 	    /* -------------------------------------------------------------- */
-	    /* combine the klu ordering with the symbolic pre-ordering */
+	    /* combine the klu row ordering with the symbolic pre-ordering */
 	    /* -------------------------------------------------------------- */
 
 	    PRINTF (("Pnum, 1-based:\n")) ;
@@ -294,9 +255,7 @@ static int klu_btf_factor2
 
     }
 
-    /* finish the off-diagonal part */
-    Offp [n] = poff ;
-    ASSERT (Symbolic->nzoff == poff) ;
+    ASSERT (nzoff == Offp [n]) ;
     PRINTF (("\n------------------- Off diagonal entries:\n")) ;
     ASSERT (klu_valid (n, Offp, Offi, Offx)) ;
 
@@ -339,9 +298,13 @@ static int klu_btf_factor2
 	Rs [k] = X [k] ;
     }
 
+    PRINTF (("\n------------------- Off diagonal entries, old:\n")) ;
+    ASSERT (klu_valid (n, Offp, Offi, Offx)) ;
+
     /* apply the pivot row permutations to the off-diagonal entries */
-    for (p = 0 ; p < poff ; p++)
+    for (p = 0 ; p < nzoff ; p++)
     {
+	ASSERT (Offi [p] >= 0 && Offi [p] < n) ;
 	Offi [p] = Pinv [Offi [p]] ;
     }
 
@@ -357,12 +320,12 @@ static int klu_btf_factor2
 
 #define CLEAR(Ptr,size,type) \
 { \
-    int i ; \
+    int ii ; \
     if (Ptr != (type **) NULL) \
     { \
-	for (i = 0 ; i < size ; i++) \
+	for (ii = 0 ; ii < size ; ii++) \
 	{ \
-	    Ptr [i] = (type *) NULL ; \
+	    Ptr [ii] = (type *) NULL ; \
 	} \
     } \
 }
@@ -380,12 +343,11 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     double User_Info [KLU_BTF_INFO]	/* optional; may be NULL */
 )
 {
-    double *Cx, *Info, Info2 [KLU_BTF_INFO], tol, growth, initmem_amd,
+    double *Info, Info2 [KLU_BTF_INFO], tol, growth, initmem_amd,
 	initmem_colamd ;
-    int n, nzoff, nblocks, maxblock, maxnz, *Cp, *Ci, result, lnz, unz, i, *R,
-	block, k1, k2, nk, **Lbp, **Ubp ;
+    int n, nzoff, nblocks, maxblock, maxnz, result, i, *R, block, k1, k2, nk,
+	**Lbp, **Ubp ;
     klu_numeric *Numeric ;
-    void *klu_Work ;
 
     /* ---------------------------------------------------------------------- */
     /* get Info array, and clear the parts used by klu_btf_factor */
@@ -465,7 +427,9 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
 
     /* allocate permanent workspace for factorization and solve.  On typical
      * computers (sizeof (double) = 2*sizeof (int), this is exactly
-     * 4n double's. */
+     * 4n double's.  Note that the solver will use an X of size 4n, whereas
+     * the factorization codes use an X of size n and integer space (Iwork)
+     * of size 6n. */
     Numeric->worksize = n * sizeof (double) +
 	MAX (3*n * sizeof (double), 6*maxblock * sizeof (int)) ;
     Numeric->Work = (void *) ALLOCATE (Numeric->worksize) ; 
@@ -515,40 +479,14 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     }
 
     /* ---------------------------------------------------------------------- */
-    /* allocate workspace */
-    /* ---------------------------------------------------------------------- */
-
-    Cp = (int *) ALLOCATE ((maxblock + 1) * sizeof (int)) ;
-    Ci = (int *) ALLOCATE ((maxnz + 1) * sizeof (int)) ;
-    Cx = (double *) ALLOCATE ((maxnz + 1) * sizeof (double)) ;
-    if ((Cp == (int *) NULL) || (Ci == (int *) NULL) || (Cx == (double *) NULL))
-    {
-	FREE (Cp, int) ;
-	FREE (Ci, int) ;
-	FREE (Cx, double) ;
-	klu_btf_free_numeric (&Numeric) ;
-	Info [KLU_BTF_INFO_STATUS] = KLU_OUT_OF_MEMORY ;
-	return ((klu_numeric *) NULL) ;
-    }
-
-    /* ---------------------------------------------------------------------- */
     /* factorize the blocks */
     /* ---------------------------------------------------------------------- */
 
     PRINTF (("calling klu_btf_factor2\n")) ;
     result = klu_btf_factor2 (Ap, Ai, Ax, tol, growth,
-	    initmem_amd, initmem_colamd, Symbolic, Numeric,
-	    Cp, Ci, Cx, Info) ;
+	    initmem_amd, initmem_colamd, Symbolic, Numeric, Info) ;
     PRINTF (("klu_btf_factor2 done\n")) ;
     Info [KLU_BTF_INFO_STATUS] = result ;
-
-    /* ---------------------------------------------------------------------- */
-    /* free workspace */
-    /* ---------------------------------------------------------------------- */
-
-    FREE (Cp, int) ;
-    FREE (Ci, int) ;
-    FREE (Cx, double) ;
 
     /* ---------------------------------------------------------------------- */
     /* return the numeric object */

@@ -6,8 +6,6 @@
 
 #include "klu_btf_internal.h"
 
-#ifndef NDEBUG
-
 /* ========================================================================== */
 /* === klu_valid ============================================================ */
 /* ========================================================================== */
@@ -29,7 +27,7 @@
 
 int klu_valid (int n, int Ap [ ], int Ai [ ], double Ax [ ])
 {
-    int nz, j, p1, p2, ilast, i, p ;
+    int nz, j, p1, p2, i, p ;
     PRINTF (("\ncolumn oriented matrix, n = %d\n", n)) ;
     if (n <= 0)
     {
@@ -73,4 +71,3 @@ int klu_valid (int n, int Ap [ ], int Ai [ ], double Ax [ ])
     }
     return (TRUE) ;
 }
-#endif

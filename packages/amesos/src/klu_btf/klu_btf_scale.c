@@ -26,7 +26,8 @@ int klu_btf_scale
 {
     int row, col, p, pend, check_duplicates ;
 
-    if (n <= 0 || !Ap || !Ai || !Ax)
+    if (n <= 0 || (Ap == (int *) NULL) || (Ai == (int *) NULL)
+	|| (Ax == (double *) NULL))
     {
 	/* Ap, Ai, and Ax must be present, and n must be > 0 */
 	return (KLU_INVALID) ;

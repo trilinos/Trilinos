@@ -11,7 +11,7 @@ void klu_btf_defaults
 {
     int i ;
 
-    if (!Control)
+    if (Control == (double *) NULL)
     {
 	/* silently return if no Control array */
 	return ;

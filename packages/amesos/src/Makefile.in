@@ -124,11 +124,9 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 	$(srcdir)/AMD/Source/amd_postorder.c \
 	$(srcdir)/AMD/Source/amd_post_tree.c \
 	$(srcdir)/AMD/Source/amd_preprocess.c \
-	$(srcdir)/AMD/Source/amd_valid.c $(srcdir)/btf/btf.f \
-	$(srcdir)/btf/cbtf.c $(srcdir)/btf/mc13d.f \
-	$(srcdir)/btf/mc13e.f $(srcdir)/btf/mc21a.f \
-	$(srcdir)/btf/mc21b.f $(srcdir)/colamd/colamd.c \
-	$(srcdir)/klu_btf/klu_btf_analyze.c \
+	$(srcdir)/AMD/Source/amd_valid.c $(srcdir)/btf/btf_order.c \
+	$(srcdir)/btf/maxtrans.c $(srcdir)/btf/strongcomp.c \
+	$(srcdir)/colamd/colamd.c $(srcdir)/klu_btf/klu_btf_analyze.c \
 	$(srcdir)/klu_btf/klu_btf_defaults.c \
 	$(srcdir)/klu_btf/klu_btf_factor.c \
 	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
@@ -161,10 +159,9 @@ am__objects_1 =
 @HAVE_AMESOS_KLU_TRUE@	amd_postorder.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_post_tree.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_preprocess.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	amd_valid.$(OBJEXT) btf.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	cbtf.$(OBJEXT) mc13d.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	mc13e.$(OBJEXT) mc21a.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	mc21b.$(OBJEXT) colamd.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_valid.$(OBJEXT) btf_order.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	maxtrans.$(OBJEXT) strongcomp.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	colamd.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_analyze.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_defaults.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_factor.$(OBJEXT) \
@@ -224,7 +221,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/amd_post_tree.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_postorder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_preprocess.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amd_valid.Po ./$(DEPDIR)/cbtf.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_valid.Po ./$(DEPDIR)/btf_order.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/colamd.Po ./$(DEPDIR)/driver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu.Po ./$(DEPDIR)/klu_btf_analyze.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_defaults.Po \
@@ -235,10 +232,11 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_scale.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_dump.Po ./$(DEPDIR)/klu_kernel.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/smplinkrows.Po ./$(DEPDIR)/spalloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spbuild.Po ./$(DEPDIR)/spfactor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spoutput.Po ./$(DEPDIR)/spsmp.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spsolve.Po ./$(DEPDIR)/sputils.Po
+@AMDEP_TRUE@	./$(DEPDIR)/maxtrans.Po ./$(DEPDIR)/smplinkrows.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spalloc.Po ./$(DEPDIR)/spbuild.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spfactor.Po ./$(DEPDIR)/spoutput.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spsmp.Po ./$(DEPDIR)/spsolve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/sputils.Po ./$(DEPDIR)/strongcomp.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -248,10 +246,6 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
-F77LD = $(F77)
-F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
 SOURCES = $(libamesos_a_SOURCES) $(EXTRA_libamesos_a_SOURCES)
 DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 	$(EXTRA_libamesos_a_SOURCES)
@@ -472,20 +466,9 @@ target_vendor = @target_vendor@
 
 @HAVE_AMESOS_KLU_FALSE@KLU_H = 
 
-#
+#-------------------------------------------------------------------------------
 #  Here is where we will add Tim Davis' files 
 #
-#
-#  These files do not need to be copied to the include directory on install,
-#  hence they are commented out from here.  
-#
-# KLU_H = \
-# 	$(srcdir)/klu/klu_btf.h \
-# 	$(srcdir)/Amesos_Klu.h \
-# 	$(srcdir)/klu/cbtf.h \
-# 	$(srcdir)/klu/klu.h \
-# 	$(srcdir)/klu/klu_dump.h \
-# 	$(srcdir)/klu/klu_kernel.h
 @HAVE_AMESOS_KLU_TRUE@KLU_H = \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h 
 
@@ -504,12 +487,9 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_post_tree.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_preprocess.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_valid.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/cbtf.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc13d.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc13e.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc21a.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc21b.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf_order.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/maxtrans.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/strongcomp.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/colamd/colamd.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_analyze.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_defaults.c \
@@ -524,6 +504,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu_kernel.c
 
 @HAVE_AMESOS_MUMPS_FALSE@MUMPS_H = 
+#-------------------------------------------------------------------------------
 @HAVE_AMESOS_MUMPS_TRUE@MUMPS_H = \
 @HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_Mumps.h \
 @HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_EpetraBaseSolver.h \
@@ -594,8 +575,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/src/btf \
 	-I$(top_srcdir)/src/klu_btf \
 	-I$(top_srcdir)/src/klu_kernel \
-		-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
-		-I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
+	-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 
@@ -684,7 +665,7 @@ all: Amesos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .f .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -797,7 +778,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_postorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_preprocess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_valid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cbtf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu.Po@am__quote@
@@ -811,6 +792,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_kernel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maxtrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smplinkrows.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spbuild.Po@am__quote@
@@ -819,6 +801,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spsmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spsolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sputils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strongcomp.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -1028,21 +1011,53 @@ amd_valid.obj: $(srcdir)/AMD/Source/amd_valid.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_valid.obj `if test -f '$(srcdir)/AMD/Source/amd_valid.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_valid.c'; fi`
 
-cbtf.o: $(srcdir)/btf/cbtf.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.o -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.o `test -f '$(srcdir)/btf/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/btf/cbtf.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cbtf.Tpo" "$(DEPDIR)/cbtf.Po"; else rm -f "$(DEPDIR)/cbtf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/cbtf.c' object='cbtf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
+btf_order.o: $(srcdir)/btf/btf_order.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_order.o -MD -MP -MF "$(DEPDIR)/btf_order.Tpo" -c -o btf_order.o `test -f '$(srcdir)/btf/btf_order.c' || echo '$(srcdir)/'`$(srcdir)/btf/btf_order.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/btf_order.Tpo" "$(DEPDIR)/btf_order.Po"; else rm -f "$(DEPDIR)/btf_order.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/btf_order.c' object='btf_order.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/btf_order.Po' tmpdepfile='$(DEPDIR)/btf_order.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.o `test -f '$(srcdir)/btf/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/btf/cbtf.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_order.o `test -f '$(srcdir)/btf/btf_order.c' || echo '$(srcdir)/'`$(srcdir)/btf/btf_order.c
 
-cbtf.obj: $(srcdir)/btf/cbtf.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.obj -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.obj `if test -f '$(srcdir)/btf/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/btf/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/cbtf.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cbtf.Tpo" "$(DEPDIR)/cbtf.Po"; else rm -f "$(DEPDIR)/cbtf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/cbtf.c' object='cbtf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
+btf_order.obj: $(srcdir)/btf/btf_order.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_order.obj -MD -MP -MF "$(DEPDIR)/btf_order.Tpo" -c -o btf_order.obj `if test -f '$(srcdir)/btf/btf_order.c'; then $(CYGPATH_W) '$(srcdir)/btf/btf_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/btf_order.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/btf_order.Tpo" "$(DEPDIR)/btf_order.Po"; else rm -f "$(DEPDIR)/btf_order.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/btf_order.c' object='btf_order.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/btf_order.Po' tmpdepfile='$(DEPDIR)/btf_order.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.obj `if test -f '$(srcdir)/btf/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/btf/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/cbtf.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_order.obj `if test -f '$(srcdir)/btf/btf_order.c'; then $(CYGPATH_W) '$(srcdir)/btf/btf_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/btf_order.c'; fi`
+
+maxtrans.o: $(srcdir)/btf/maxtrans.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT maxtrans.o -MD -MP -MF "$(DEPDIR)/maxtrans.Tpo" -c -o maxtrans.o `test -f '$(srcdir)/btf/maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/btf/maxtrans.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/maxtrans.Tpo" "$(DEPDIR)/maxtrans.Po"; else rm -f "$(DEPDIR)/maxtrans.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/maxtrans.c' object='maxtrans.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/maxtrans.Po' tmpdepfile='$(DEPDIR)/maxtrans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o maxtrans.o `test -f '$(srcdir)/btf/maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/btf/maxtrans.c
+
+maxtrans.obj: $(srcdir)/btf/maxtrans.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT maxtrans.obj -MD -MP -MF "$(DEPDIR)/maxtrans.Tpo" -c -o maxtrans.obj `if test -f '$(srcdir)/btf/maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/btf/maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/maxtrans.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/maxtrans.Tpo" "$(DEPDIR)/maxtrans.Po"; else rm -f "$(DEPDIR)/maxtrans.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/maxtrans.c' object='maxtrans.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/maxtrans.Po' tmpdepfile='$(DEPDIR)/maxtrans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o maxtrans.obj `if test -f '$(srcdir)/btf/maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/btf/maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/maxtrans.c'; fi`
+
+strongcomp.o: $(srcdir)/btf/strongcomp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT strongcomp.o -MD -MP -MF "$(DEPDIR)/strongcomp.Tpo" -c -o strongcomp.o `test -f '$(srcdir)/btf/strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/btf/strongcomp.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/strongcomp.Tpo" "$(DEPDIR)/strongcomp.Po"; else rm -f "$(DEPDIR)/strongcomp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/strongcomp.c' object='strongcomp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/strongcomp.Po' tmpdepfile='$(DEPDIR)/strongcomp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o strongcomp.o `test -f '$(srcdir)/btf/strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/btf/strongcomp.c
+
+strongcomp.obj: $(srcdir)/btf/strongcomp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT strongcomp.obj -MD -MP -MF "$(DEPDIR)/strongcomp.Tpo" -c -o strongcomp.obj `if test -f '$(srcdir)/btf/strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/btf/strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/strongcomp.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/strongcomp.Tpo" "$(DEPDIR)/strongcomp.Po"; else rm -f "$(DEPDIR)/strongcomp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/strongcomp.c' object='strongcomp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/strongcomp.Po' tmpdepfile='$(DEPDIR)/strongcomp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o strongcomp.obj `if test -f '$(srcdir)/btf/strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/btf/strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/strongcomp.c'; fi`
 
 colamd.o: $(srcdir)/colamd/colamd.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT colamd.o -MD -MP -MF "$(DEPDIR)/colamd.Tpo" -c -o colamd.o `test -f '$(srcdir)/colamd/colamd.c' || echo '$(srcdir)/'`$(srcdir)/colamd/colamd.c; \
@@ -1619,42 +1634,6 @@ CrsMatrixTranspose.obj: $(srcdir)/CrsMatrixTranspose.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CrsMatrixTranspose.Po' tmpdepfile='$(DEPDIR)/CrsMatrixTranspose.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CrsMatrixTranspose.obj `if test -f '$(srcdir)/CrsMatrixTranspose.cpp'; then $(CYGPATH_W) '$(srcdir)/CrsMatrixTranspose.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CrsMatrixTranspose.cpp'; fi`
-
-.f.o:
-	$(F77COMPILE) -c -o $@ $<
-
-.f.obj:
-	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-btf.o: $(srcdir)/btf/btf.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.o `test -f '$(srcdir)/btf/btf.f' || echo '$(srcdir)/'`$(srcdir)/btf/btf.f
-
-btf.obj: $(srcdir)/btf/btf.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.obj `if test -f '$(srcdir)/btf/btf.f'; then $(CYGPATH_W) '$(srcdir)/btf/btf.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/btf.f'; fi`
-
-mc13d.o: $(srcdir)/btf/mc13d.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.o `test -f '$(srcdir)/btf/mc13d.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc13d.f
-
-mc13d.obj: $(srcdir)/btf/mc13d.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.obj `if test -f '$(srcdir)/btf/mc13d.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc13d.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc13d.f'; fi`
-
-mc13e.o: $(srcdir)/btf/mc13e.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.o `test -f '$(srcdir)/btf/mc13e.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc13e.f
-
-mc13e.obj: $(srcdir)/btf/mc13e.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.obj `if test -f '$(srcdir)/btf/mc13e.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc13e.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc13e.f'; fi`
-
-mc21a.o: $(srcdir)/btf/mc21a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.o `test -f '$(srcdir)/btf/mc21a.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc21a.f
-
-mc21a.obj: $(srcdir)/btf/mc21a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.obj `if test -f '$(srcdir)/btf/mc21a.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc21a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc21a.f'; fi`
-
-mc21b.o: $(srcdir)/btf/mc21b.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.o `test -f '$(srcdir)/btf/mc21b.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc21b.f
-
-mc21b.obj: $(srcdir)/btf/mc21b.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.obj `if test -f '$(srcdir)/btf/mc21b.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc21b.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc21b.f'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

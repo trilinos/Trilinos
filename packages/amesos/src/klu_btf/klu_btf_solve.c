@@ -29,9 +29,9 @@ void klu_btf_solve
 			     * leading dimension d. */
 )
 {
-    double x [4], offik, r ;
+    double x [4], offik ;
     double *Singleton, **Lbx, **Ubx, *Offx, *Rs, *X, *Y, *C ;
-    int k1, k2, nk, k, block, pend, row, n, p, *Q, *R, nblocks, poff, *Pnum,
+    int k1, k2, nk, k, block, pend, n, p, *Q, *R, nblocks, *Pnum,
 	*Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi, s, chunk, nr, n2, n3, i ;
 
     /* ---------------------------------------------------------------------- */

@@ -69,7 +69,7 @@ typedef struct
     double *Rs ;	/* row scaling factors */
 
     /* permanent workspace for factorization and solve */
-    unsigned int worksize ;	/* size (in bytes) of Work */
+    size_t worksize ;		/* size (in bytes) of Work */
     double *Work ;		/* of size MAX (4n doubles,
 				   n doubles + 5*maxblock int's */
     double *Xwork ;		/* aliases into Numeric->Work */

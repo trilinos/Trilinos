@@ -10,6 +10,7 @@
 #include "klu.h"
 #include "klu_kernel.h"
 
+
 /* ========================================================================== */
 /* === dfs ================================================================== */
 /* ========================================================================== */
@@ -21,7 +22,6 @@ static void dfs
     /* input, not modified on output: */
     int j,		/* node at which to start the DFS */
     int k,		/* mark value, for the Flag array */
-    int n,		/* L is n-by-n */
     int Lp [ ],		/* size n+1, column pointers of L */
     int Li [ ],		/* size lnz = Lp [n], row indices of L.  Diagonal (if
 			 * present) is ignored.  L must be lower triangular. */
@@ -36,11 +36,12 @@ static void dfs
     int Lpend [ ],	/* for symmetric pruning */
 
     /* other, not defined on input or output */
-    int adj_pos [ ]	/* keeps track of position in adj list during DFS */
+    int Ap_pos [ ],	/* keeps track of position in adj list during DFS */
 
-    , int *plp
-    , int Ui [ ]
-    , int *pup
+    /* TODO: comment this */
+    int *plp,
+    int Ui [ ],
+    int *pup
 )
 {
     int i, pos, jnew, head, pstart, lp, up ;
@@ -63,14 +64,14 @@ static void dfs
 	    /* first time that j has been visited */
 	    Flag [j] = k;
 	    PRINTF (("[ start dfs at %d : new %d\n", j, jnew)) ;
-	    /* set adj_pos [head] to one past the last entry in col j to scan */
-	    adj_pos [head] = (Lpend[jnew] == EMPTY) ? Lp[jnew+1] : Lpend[jnew] ;
+	    /* set Ap_pos [head] to one past the last entry in col j to scan */
+	    Ap_pos [head] = (Lpend[jnew] == EMPTY) ? Lp[jnew+1] : Lpend[jnew] ;
 	}
 
 	/* add the adjacent nodes to the recursive stack by iterating through
 	 * until finding another non-visited pivotal node */
 	pstart = Lp [jnew] ;
-	for (pos = --adj_pos [head] ; pos > pstart ; --pos)
+	for (pos = --Ap_pos [head] ; pos > pstart ; --pos)
 	{
 	    i = Li [pos] ;
 	    if (Flag [i] != k)
@@ -81,7 +82,7 @@ static void dfs
 		    /* keep track of where we left off in the scan of the
 		     * adjacency list of node j so we can restart j where we
 		     * left off. */
-		    adj_pos [head] = pos ;
+		    Ap_pos [head] = pos ;
 
 		    /* node i is pivotal; push it onto the recursive stack
 		     * and immediately break so we can recurse on node i. */
@@ -113,6 +114,7 @@ static void dfs
     *pup = up ;
 }
 
+
 /* ========================================================================== */
 /* === lsolve_symbolic ====================================================== */
 /* ========================================================================== */
@@ -122,14 +124,17 @@ static void dfs
 static void lsolve_symbolic
 (
     /* input, not modified on output: */
-    int k,		/* mark value, for the Flag array */
-    int n,		/* L is n-by-n, where n >= 0 */
+    int no_btf,
+
+    int k,		/* also used as the mark value, for the Flag array */
+    int Ap [ ],
+    int Ai [ ],
+    int Q [ ],
+
     int Lp [ ],		/* of size n+1, column pointers of L */
     int Li [ ],		/* size lnz=Lp [n], row indices of L */
     int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
 			 * is not yet pivotal.  */
-    int nzb,		/* nz in b */
-    int Bi [ ],		/* pattern of b, of size nzb */
 
     /* workspace, not defined on input or output */
     int Stack [ ],	/* size n */
@@ -141,36 +146,174 @@ static void lsolve_symbolic
 
     /* other */
     int Lpend [ ],	/* for symmetric pruning */
-    int adj_pos [ ],	/* workspace used in dfs */
+    int Ap_pos [ ],	/* workspace used in dfs */
 
+    /* TODO: comment this */
     int *plp,
     int Ui [ ],
-    int *pup
+    int *pup,
+
+    /* ---- the following are only used in the BTF case --- */
+
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ]   /* inverse of P from symbolic factorization */
 )
 {
-    int i, p ;
+    int i, p, pend, oldcol, kglobal ;
 
-    /* compute the pattern of X */
-    for (p = 0 ; p < nzb ; p++)
+    if (no_btf)
     {
-	i = Bi [p] ;
-	PRINTF (("\n ===== DFS at node %d in b, inew: %d\n", i, Pinv [i])) ;
-	if (Flag [i] != k)
+
+	/* ------------------------------------------------------------------ */
+	/* factoring the input matrix as one block */
+	/* ------------------------------------------------------------------ */
+
+	oldcol = (Q == (int *) NULL) ? (k) : (Q [k]) ;
+	pend = Ap [oldcol+1] ;
+	for (p = Ap [oldcol] ; p < pend ; p++)
 	{
-	    if (Pinv [i] >= 0)
+	    i = Ai [p] ;
+
+	    /* (i,k) is an entry in the block.  start a DFS at node i */
+	    PRINTF (("\n ===== DFS at node %d in b, inew: %d\n", i, Pinv [i])) ;
+	    if (Flag [i] != k)
 	    {
-		dfs (i, k, n, Lp, Li, Pinv, Stack, Flag,
-		       Lpend, adj_pos, plp, Ui, pup) ;
+		if (Pinv [i] >= 0)
+		{
+		    dfs (i, k, Lp, Li, Pinv, Stack, Flag,
+			   Lpend, Ap_pos, plp, Ui, pup) ;
+		}
+		else
+		{
+		    /* i is not pivotal, and not flagged. Flag and put in L */
+		    Flag [i] = k ;
+		    Li [(*plp)++] = i ;
+		}
 	    }
-	    else
+	}
+
+    }
+    else
+    {
+
+	/* ------------------------------------------------------------------ */
+	/* BTF factorization */
+	/* ------------------------------------------------------------------ */
+
+	kglobal = k + k1 ;	/* column k of the block is col kglobal of A */
+	oldcol = Q [kglobal] ;	/* Q must be present for BTF case */
+	pend = Ap [oldcol+1] ;
+	for (p = Ap [oldcol] ; p < pend ; p++)
+	{
+	    i = PSinv [Ai [p]] - k1 ;
+	    if (i < 0) continue ;	/* skip entry outside the block */
+
+	    /* (i,k) is an entry in the block.  start a DFS at node i */
+	    PRINTF (("\n ===== DFS at node %d in b, inew: %d\n", i, Pinv [i])) ;
+	    if (Flag [i] != k)
 	    {
-		/* i is not pivotal, and not flagged. Flag it and put in L */
-		Flag [i] = k ;
-		Li [(*plp)++] = i ;
+		if (Pinv [i] >= 0)
+		{
+		    dfs (i, k, Lp, Li, Pinv, Stack, Flag,
+			   Lpend, Ap_pos, plp, Ui, pup) ;
+		}
+		else
+		{
+		    /* i is not pivotal, and not flagged. Flag and put in L */
+		    Flag [i] = k ;
+		    Li [(*plp)++] = i ;
+		}
 	    }
 	}
     }
 }
+
+
+/* ========================================================================== */
+/* === construct_column ===================================================== */
+/* ========================================================================== */
+
+/* Construct the kth column of A, and the off-diagonal part, if requested.
+ * Scatter the numerical values into the workspace X, and construct the
+ * corresponding column of the off-diagonal matrix. */
+
+static void construct_column
+(
+    /* inputs, not modified on output */
+    int no_btf,	    /* true, if factoring the matrix A as one block */
+    int k,	    /* the column of A (or the column of the block) to get */
+    int Ap [ ],
+    int Ai [ ],
+    double Ax [ ],
+    int Q [ ],	    /* column pre-ordering */
+
+    /* zero on input, modified on output */
+    double X [ ],
+
+    /* ---- the following are only used in the BTF case --- */
+
+    /* inputs, not modified on output */
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ],  /* inverse of P from symbolic factorization */
+    double Rs [ ],  /* scale factors for A */
+
+    /* inputs, modified on output */
+    int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
+    int Offi [ ],
+    double Offx [ ]
+)
+{
+    double aik ;
+    int i, p, pend, oldcol, kglobal, poff, oldrow ;
+
+    if (no_btf)
+    {
+
+	/* ------------------------------------------------------------------ */
+	/* factoring the input matrix as one block.  No scaling */
+	/* ------------------------------------------------------------------ */
+
+	oldcol = (Q == (int *) NULL) ? (k) : (Q [k]) ;
+	pend = Ap [oldcol+1] ;
+	for (p = Ap [oldcol] ; p < pend ; p++)
+	{
+	    X [Ai [p]] = Ax [p] ;
+	}
+
+    }
+    else
+    {
+
+	/* ------------------------------------------------------------------ */
+	/* BTF factorization.  Scale and scatter the column into X. */
+	/* ------------------------------------------------------------------ */
+
+	kglobal = k + k1 ;	/* column k of the block is col kglobal of A */
+	poff = Offp [kglobal] ;	/* start of off-diagonal column */
+	oldcol = Q [kglobal] ;
+	pend = Ap [oldcol+1] ;
+	for (p = Ap [oldcol] ; p < pend ; p++)
+	{
+	    oldrow = Ai [p] ;
+	    i = PSinv [oldrow] - k1 ;
+	    aik = Ax [p] / Rs [oldrow] ;
+	    if (i < 0)
+	    {
+		/* this is an entry in the off-diagonal part */
+		Offi [poff] = oldrow ;
+		Offx [poff] = aik ;
+		poff++ ;
+	    }
+	    else
+	    {
+		/* (i,k) is an entry in the block.  scatter into X */
+		X [i] = aik ;
+	    }
+	}
+	Offp [kglobal+1] = poff ;   /* start of the next col of off-diag part */
+    }
+}
+
 
 /* ========================================================================== */
 /* === lsolve_numeric ======================================================= */
@@ -183,36 +326,27 @@ static void lsolve_symbolic
 
 static void lsolve_numeric
 (
-
     /* input, not modified on output: */
-    int n,		/* L is n-by-n, where n >= 0 */
     int Lp [ ],		/* of size n+1, column pointers of L */
     int Li [ ],		/* size lnz=Lp [n], row indices of L */
     double Lx [ ],	/* size lnz=Lp [n], values of L  */
     int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
 			 * is not yet pivotal.  */
-    int nzb,		/* nz in b */
-    int Bi [ ],		/* pattern of b, of size nzb */
-    double Bx [ ],	/* values of b, of size nzb */
 
     /* output, must be zero on input: */
-    double X [ ]	/* size n, initially zero.  On output,
+    double X [ ],	/* size n, initially zero.  On output,
 			 * X [Ui [up1..up-1]] and X [Li [lp1..lp-1]]
 			 * contains the solution. */
 
-    , int Ui [ ]
-    , int up1
-    , int up
+    /* TODO comment this */
+    int Ui [ ],
+    int up1,
+    int up
 )
 {
     double xj ;
     int p, s, j, jnew, pend ;
 
-    /* scatter b into x */
-    for (p = 0 ; p < nzb ; p++)
-    {
-	X [Bi [p]] = Bx [p] ;
-    }
     /* solve Lx=b */
     for (s = up-1 ; s >= up1 ; s--)
     {
@@ -229,6 +363,7 @@ static void lsolve_numeric
 	}
     }
 }
+
 
 /* ========================================================================== */
 /* === lpivot =============================================================== */
@@ -334,6 +469,7 @@ static void lpivot
 
 static void prune
 (
+    /* TODO comment this */
     int Up [ ],
     int Ui [ ],
     int Lp [ ],
@@ -352,7 +488,7 @@ static void prune
     /* check to see if any column of L can be pruned */
     for (p = Up [k] ; p < up-1 ; p++)   /* skip the diagonal entry */
     {
-	int j = Ui [p] ;
+	j = Ui [p] ;
 	ASSERT (j < k) ;
 	PRINTF (("%d is pruned: %d. Lpend[j] %d Lp[j+1] %d\n",
 	    j, Lpend [j] != EMPTY, Lpend [j], Lp [j+1])) ;
@@ -468,16 +604,30 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     /* workspace, not defined on input or output */
     int Stack [ ],  /* size n */
     int Flag [ ],   /* size n */
-    int adj_pos [ ],	/* size n */
+    int Ap_pos [ ],	/* size n */
 
     /* other workspace: */
-    int Lpend [ ]		    /* size n workspace, for pruning only */
+    int Lpend [ ],		    /* size n workspace, for pruning only */
+
+    int no_btf,	    /* where or not to do BTF */
+
+    /* ---- the following are only used in the BTF case --- */
+
+    /* inputs, not modified on output */
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ],  /* inverse of P from symbolic factorization */
+    double Rs [ ],  /* scale factors for A */
+
+    /* inputs, modified on output */
+    int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
+    int Offi [ ],
+    double Offx [ ]
 )
 { 
-    double pivot, *Bx, *Lx, *Ux, abs_pivot, xsize, umin, umax ;
-    int lp, up, k, nzb, *Bi, p, i, pivrow, kbar,
-	*Li, *Ui, ok, oki, okx, kcol, diagrow, noffdiag, firstrow,
-	jnew, lp1, up1 ;
+
+    double pivot, *Lx, *Ux, abs_pivot, xsize, umin, umax ;
+    int lp, up, k, p, i, pivrow, kbar, *Li, *Ui, ok, oki, okx, diagrow,
+	noffdiag, firstrow, lp1, up1 ;
 
     /* ---------------------------------------------------------------------- */
     /* get initial Li, Lx, Ui, and Ux */
@@ -512,25 +662,42 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	Lpend [k] = EMPTY ;	/* flag k as not pruned */
     }
 
-    /* mark all rows as non-pivotal, and find the row indices of the initial
-     * diagonal entries for each column */
-    if (Q == (int *) NULL)
+    /* ---------------------------------------------------------------------- */
+    /* mark all rows as non-pivotal and determine initial diagonal mapping */
+    /* ---------------------------------------------------------------------- */
+
+    if (no_btf)
     {
+	if (Q == (int *) NULL)
+	{
+	    /* Q is identity, so the diagonal entries are the natural ones */
+	    for (k = 0 ; k < n ; k++)
+	    {
+		P [k] = k ;
+		Pinv [k] = FLIP (k) ;	/* mark all rows as non-pivotal */
+	    }
+	}
+	else
+	{
+	    /* Assume Q is applied symmetrically to the system, so initial
+	     * P is equal to Q.  This can change via partial pivoting. */
+	    for (k = 0 ; k < n ; k++)
+	    {
+		P [k] = Q [k] ;
+		Pinv [Q [k]] = FLIP (k) ;   /* mark all rows as non-pivotal */
+	    }
+	}
+    }
+    else
+    {
+	/* BTF case.  PSinv does the symmetric permutation, so don't do here */ 
 	for (k = 0 ; k < n ; k++)
 	{
 	    P [k] = k ;
 	    Pinv [k] = FLIP (k) ;	/* mark all rows as non-pivotal */
 	}
-    }
-    else
-    {
-	for (k = 0 ; k < n ; k++)
-	{
-	    /* Assume Q is applied symmetrically to the system, so the initial
-	     * P is equal to Q.  This can change via partial pivoting. */
-	    P [k] = Q [k] ;
-	    Pinv [Q [k]] = FLIP (k) ;	/* mark all rows as non-pivotal */
-	}
+	/* initialize the construction of the off-diagonal matrix */
+	Offp [0] = 0 ;
     }
 
     /* P [k] = row means that UNFLIP (Pinv [row]) = k, and visa versa.
@@ -552,11 +719,16 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     for (k = 0 ; k < n ; k++)
     {
 
+	PRINTF (("\n\n==================================== k: %d\n", k)) ;
+
 	/* ------------------------------------------------------------------ */
 	/* determine if LU factors have grown too big */
 	/* ------------------------------------------------------------------ */
 
-	PRINTF (("lp %d lsize %d\n", lp, lsize)) ;
+	/* TODO: count realloc's here */
+
+	/* L can grow by at most n-k entries if the column is dense */
+	PRINTF (("lp %d lsize %d  lp+(n-k): %d\n", lp, lsize, lp+(n-k))) ;
 	if (lp + (n-k) > lsize)
 	{
 	    xsize = (growth * ((double) lsize) + 2*n + 1) * sizeof (double) ;
@@ -578,8 +750,9 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	    PRINTF (("inc L to %d done\n", lsize)) ;
 	}
 
-	PRINTF (("up %d usize %d\n", up, usize)) ;
-	if (up + k > usize)
+	/* U can grow by at most (k+1) entries if the column is dense */
+	PRINTF (("up %d usize %d  up+(k+1): %d\n", up, usize, up+(k+1))) ;
+	if (up + (k+1) > usize)
 	{
 	    xsize = (growth * ((double) usize) + 2*n + 1) * sizeof (double) ;
 	    if (INT_OVERFLOW (xsize))
@@ -604,24 +777,10 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	/* start the kth column of L and U */
 	/* ------------------------------------------------------------------ */
 
-	PRINTF (("\n\n==================================== k: %d\n", k)) ;
 	Lp [k] = lp ;
 	Up [k] = up ;
 	lp1 = lp ;
 	up1 = up ;
-
-	/* ------------------------------------------------------------------ */
-	/* get the kth column of A and find the "diagonal" */
-	/* ------------------------------------------------------------------ */
-
-	kcol = (Q == (int *) NULL) ? (k) : (Q [k]) ;
-	nzb = Ap [kcol+1] - Ap [kcol] ;
-	Bi = Ai + Ap [kcol] ;
-	Bx = Ax + Ap [kcol] ;
-
-	diagrow = P [k] ;   /* might already be pivotal */
-	PRINTF (("k %d kcol %d, diagrow = %d, UNFLIP(diagrow) = %d\n",
-	    k, kcol, diagrow, UNFLIP (diagrow))) ;
 
 	/* ------------------------------------------------------------------ */
 	/* compute the nonzero pattern of the kth column of L and U */
@@ -635,8 +794,10 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	}
 #endif
 
-	lsolve_symbolic (k, n, Lp, Li, Pinv, nzb, Bi, Stack, Flag,
-		               Lpend, adj_pos, &lp, Ui, &up) ;
+	lsolve_symbolic (no_btf,    /* BTF flag */
+	    k, Ap, Ai, Q, Lp, Li, Pinv, Stack, Flag, Lpend, Ap_pos,
+	    &lp, Ui, &up,
+	    k1, PSinv) ;	    /* BTF-only args */
 
 #ifndef NDEBUG
 	PRINTF (("--- in U:\n")) ;
@@ -663,10 +824,18 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 #endif
 
 	/* ------------------------------------------------------------------ */
+	/* get the column of the matrix to factorize and scatter into X */
+	/* ------------------------------------------------------------------ */
+
+	construct_column (no_btf,			/* BTF flag */
+	    k, Ap, Ai, Ax, Q, X,
+	    k1, PSinv, Rs, Offp, Offi, Offx) ;		/* BTF-only args */
+
+	/* ------------------------------------------------------------------ */
 	/* compute the numerical values of the kth column (s = L \ A (:,k)) */
 	/* ------------------------------------------------------------------ */
 
-	lsolve_numeric (n, Lp, Li, Lx, Pinv, nzb, Bi, Bx, X, Ui, up1, up) ; 
+	lsolve_numeric (Lp, Li, Lx, Pinv, X, Ui, up1, up) ;
 
 #ifndef NDEBUG
 	for (p = up-1 ; p >= up1 ; p--)
@@ -683,6 +852,11 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	/* partial pivoting with diagonal preference */
 	/* ------------------------------------------------------------------ */
 
+	/* determine what the "diagonal" is */
+	diagrow = P [k] ;   /* might already be pivotal */
+	PRINTF (("k %d, diagrow = %d, UNFLIP(diagrow) = %d\n",
+	    k, diagrow, UNFLIP (diagrow))) ;
+
 	if (lp == lp1)
 	{
 	    /* matrix is structurally singular */
@@ -698,6 +872,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 		    break ;
 		}
 	    }
+	    ASSERT (pivrow >= 0 && pivrow < n) ;
 	    Li [lp1] = pivrow ;
 	    Lx [lp1] = 1.0 ;
 	    lp++ ;
@@ -709,12 +884,12 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	    /* find a pivot and scale the pivot column */
 	    lpivot (lp, lp1, diagrow, Li, Lx, &pivrow, &pivot, &abs_pivot,
 		   tol, X) ;
+	    ASSERT (pivrow >= 0 && pivrow < n) ;
 	}
 
 	/* we now have a valid pivot row, even if the column has NaN's or
 	 * has no entries on or below the diagonal at all. */
 	PRINTF (("\nk %d : Pivot row %d : %g\n", k, pivrow, pivot)) ;
-	ASSERT (pivrow >= 0 && pivrow < n) ;
 	ASSERT (Pinv [pivrow] < 0) ;
 
 	/* ------------------------------------------------------------------ */
@@ -767,6 +942,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	ASSERT (kbar < n) ;
 	ASSERT (P [kbar] == diagrow) ;
 #endif
+
 	if (pivrow != diagrow)
 	{
 	    /* an off-diagonal pivot has been chosen */
@@ -839,6 +1015,8 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     lsize = lp ;
     usize = up ;
     *p_noffdiag = noffdiag ;
+    *p_umin = umin ;
+    *p_umax = umax ;
     PRINTF (("noffdiag %d\n", noffdiag)) ;
 
     REALLOCATE (Li, int,    lsize, ok) ;

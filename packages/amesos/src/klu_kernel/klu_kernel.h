@@ -4,6 +4,9 @@
 
 /* This file should not be included in any user routine. */
 
+#ifndef _KLU_INTERNAL_H
+#define _KLU_INTERNAL_H
+
 int klu_kernel
 (
     /* input, not modified */
@@ -39,7 +42,21 @@ int klu_kernel
     int adj_pos [ ],	/* size n */
     
     /* workspace for pruning only */
-    int Lpend [ ]	/* size n workspace */
+    int Lpend [ ],	/* size n workspace */
+
+    int no_btf,	    /* where or not to do BTF */
+
+    /* ---- the following are only used in the BTF case --- */
+
+    /* inputs, not modified on output */
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ],  /* inverse of P from symbolic factorization */
+    double Rs [ ],  /* scale factors for A */
+
+    /* inputs, modified on output */
+    int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
+    int Offi [ ],
+    double Offx [ ]
 ) ;
 
 /* ========================================================================== */
@@ -132,7 +149,7 @@ int klu_kernel
  * for all integers i.  UNFLIP (i) is >= EMPTY. */
 #define EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) ((i < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
 
 /* get a parameter from the Control array */ 
 #define GET_CONTROL(i,default) \
@@ -140,3 +157,4 @@ int klu_kernel
 	(SCALAR_IS_NAN (Control [i]) ? default : Control [i]) \
 	: default)
 
+#endif

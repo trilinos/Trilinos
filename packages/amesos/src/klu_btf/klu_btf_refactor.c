@@ -24,13 +24,11 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     klu_numeric *Numeric
 )
 {
-    double Control [KLU_CONTROL], *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs,
-	ukk, ujk, *Lx, *Ux, *X ;
-
-    int k1, k2, nk, k, block, oldcol, pend, row, oldrow, newcol, n,
-	p, newrow, col, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
-	*Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi, *Pblock, maxnz, result,
-	i, j, up, upend, upstart, *Ui, *Li, *Pinv, maxblock ;
+    double *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, ukk, ujk, *Lx, *Ux, *X ;
+    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, p, newrow, *P, *Q, *R,
+	nblocks, poff, *Pnum, *Lp, *Up, *Offp, *Offi, **Lbp, **Lbi, **Ubp,
+	**Ubi, maxnz, result, i, j, up, upend, upstart, *Ui, *Li, *Pinv,
+	maxblock ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -76,6 +74,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	    nk = k2 - k1 ;
 	    if (nk == 1)
 	    {
+		/* note that this will cause a failure for singular matrices */
 		Singleton [block] = 100 * block ;
 	    }
 	    else
@@ -108,14 +107,14 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 
     poff = 0 ;
 
-    /* clear X for use in the klu_kernel */
+    /* clear X for use in lufact */
     for (k = 0 ; k < maxblock ; k++)
     {
 	X [k] = 0 ;
     }
 
     /* ---------------------------------------------------------------------- */
-    /* factor each block using klu */
+    /* factor each block */
     /* ---------------------------------------------------------------------- */
 
     for (block = 0 ; block < nblocks ; block++)

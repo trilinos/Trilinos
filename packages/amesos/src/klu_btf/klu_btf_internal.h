@@ -7,7 +7,11 @@
 
 #include "klu_btf.h"
 #include "klu_kernel.h"
-#include "cbtf.h"
+#include "maxtrans.h"
 #include "klu_dump.h"
+
+#ifdef HARWELL
+#include "charwell.h"
+#endif
 
 #endif

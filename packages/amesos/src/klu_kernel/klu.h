@@ -31,9 +31,21 @@ int klu_factor	/* returns 0 if OK, negative if error */
     double *p_umin,
     double *p_umax,
 
-    /* workspace, ignored if NULL */
-    double *X,	    /* size n double's, if present.  Zero on output */
-    int *Work	    /* size 5n int's, if present */
+    /* workspace, undefined on input */
+    double *X,	    /* size n double's.  Zero on output */
+    int *Work,	    /* size 5n int's */
+
+    /* ---- the following are only used in the BTF case --- */
+
+    /* inputs, not modified on output */
+    int k1,	    /* the block of A is from k1 to k2-1 */
+    int PSinv [ ],  /* inverse of P from symbolic factorization */
+    double Rs [ ],  /* scale factors for A */
+
+    /* inputs, modified on output */
+    int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
+    int Offi [ ],
+    double Offx [ ]
 ) ;
 
 

@@ -114,21 +114,10 @@ SCALAPACK_H =
 SCALAPACK =
 endif
 
-#
+#-------------------------------------------------------------------------------
 #  Here is where we will add Tim Davis' files 
 #
 if HAVE_AMESOS_KLU
-#
-#  These files do not need to be copied to the include directory on install,
-#  hence they are commented out from here.  
-#
-# KLU_H = \
-# 	$(srcdir)/klu/klu_btf.h \
-# 	$(srcdir)/Amesos_Klu.h \
-# 	$(srcdir)/klu/cbtf.h \
-# 	$(srcdir)/klu/klu.h \
-# 	$(srcdir)/klu/klu_dump.h \
-# 	$(srcdir)/klu/klu_kernel.h
 KLU_H = \
 	$(srcdir)/Amesos_Klu.h 
 
@@ -146,12 +135,9 @@ KLU = \
 	$(srcdir)/AMD/Source/amd_post_tree.c \
 	$(srcdir)/AMD/Source/amd_preprocess.c \
 	$(srcdir)/AMD/Source/amd_valid.c \
-	$(srcdir)/btf/btf.f \
-	$(srcdir)/btf/cbtf.c \
-	$(srcdir)/btf/mc13d.f \
-	$(srcdir)/btf/mc13e.f \
-	$(srcdir)/btf/mc21a.f \
-	$(srcdir)/btf/mc21b.f \
+	$(srcdir)/btf/btf_order.c \
+	$(srcdir)/btf/maxtrans.c \
+	$(srcdir)/btf/strongcomp.c \
 	$(srcdir)/colamd/colamd.c \
 	$(srcdir)/klu_btf/klu_btf_analyze.c \
 	$(srcdir)/klu_btf/klu_btf_defaults.c \
@@ -169,6 +155,7 @@ else
 KLU_H =
 KLU =
 endif
+#-------------------------------------------------------------------------------
 
 if HAVE_AMESOS_MUMPS
 MUMPS_H = \
@@ -249,8 +236,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/src/btf \
 	-I$(top_srcdir)/src/klu_btf \
 	-I$(top_srcdir)/src/klu_kernel \
-		-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
-		-I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
+	-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 # ------------------------------------------------------------------------
