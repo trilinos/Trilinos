@@ -98,12 +98,15 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int local_global,
           temp[i*(zz->LB.Max_Part_Dim)+j];
       }
     }
+    /* Free old part_sizes array */
+    ZOLTAN_FREE(&temp);
+
     /* Update max values, which give the dimensions of Part_Sizes. */
     zz->LB.Max_Part_Dim = part_dim;
     zz->LB.Max_Global_Parts = zz->LB.Num_Global_Parts;
   }
 
-  /* Insert new values into ps array. */
+  /* Insert new values into part_sizes array. */
   for (i=0; i<len; i++){
     /* Error check. */
     if (part_ids[i] >= zz->LB.Num_Global_Parts){
@@ -149,6 +152,9 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
   int error = ZOLTAN_OK;
   char msg[128];
   static char *yo = "Zoltan_LB_Get_Part_Sizes";
+
+  /* For convenience, if no weights are used, set part_dim to 1 */
+  if (part_dim==0) part_dim = 1;
 
   if (part_dim > zz->LB.Max_Part_Dim){
     sprintf(msg, "Input part_dim=%d is too large", part_dim); 
