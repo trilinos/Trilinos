@@ -666,10 +666,18 @@ BUILD_ANY_EXAMPLES=no
 
 AC_DEFUN([NOX_INTERFACE],
 [
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  AC_ARG_ENABLE($1,
+  [AC_HELP_STRING([--enable-$1],[compile $1 interface libraries])],
+  [DEFAULT_ADDON_$1=$enableval],
+  [DEFAULT_ADDON_$1=no]
+  )
+
   AC_ARG_ENABLE(nox-$1,
-  [AC_HELP_STRING([--enable-nox-$1],[compile $1 interace libraries])],
+  [AC_HELP_STRING([--enable-nox-$1],[compile $1 interface libraries])],
   [ADDON_$1=$enableval],
-  [ADDON_$1=no]
+  [ADDON_$1=${DEFAULT_ADDON_$1}]
   )
   
   AC_ARG_ENABLE(nox-$1-examples,

@@ -877,19 +877,24 @@ Optional Features:
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-debug          compile with debugging
   --enable-opt            compile with optimization
-  --enable-nox-lapack     compile lapack interace libraries
+  --enable-lapack         compile lapack interface libraries
+  --enable-nox-lapack     compile lapack interface libraries
   --enable-nox-lapack-examples
                           compile lapack interface examples
-  --enable-nox-epetra     compile epetra interace libraries
+  --enable-epetra         compile epetra interface libraries
+  --enable-nox-epetra     compile epetra interface libraries
   --enable-nox-epetra-examples
                           compile epetra interface examples
-  --enable-nox-petsc      compile petsc interace libraries
+  --enable-petsc          compile petsc interface libraries
+  --enable-nox-petsc      compile petsc interface libraries
   --enable-nox-petsc-examples
                           compile petsc interface examples
-  --enable-nox-tsf        compile tsf interace libraries
+  --enable-tsf            compile tsf interface libraries
+  --enable-nox-tsf        compile tsf interface libraries
   --enable-nox-tsf-examples
                           compile tsf interface examples
-  --enable-nox-belos      compile belos interace libraries
+  --enable-belos          compile belos interface libraries
+  --enable-nox-belos      compile belos interface libraries
   --enable-nox-belos-examples
                           compile belos interface examples
   --enable-loca           compile the loca libraries
@@ -4119,7 +4124,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4122:" \
+echo "$as_me:4127:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5929,12 +5934,23 @@ BUILD_ANY_EXAMPLES=no
 # ------------------------------------------------------------------------
 
 
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  # Check whether --enable-lapack or --disable-lapack was given.
+if test "${enable_lapack+set}" = set; then
+  enableval="$enable_lapack"
+  DEFAULT_ADDON_lapack=$enableval
+else
+  DEFAULT_ADDON_lapack=no
+
+fi;
+
   # Check whether --enable-nox-lapack or --disable-nox-lapack was given.
 if test "${enable_nox_lapack+set}" = set; then
   enableval="$enable_nox_lapack"
   ADDON_lapack=$enableval
 else
-  ADDON_lapack=no
+  ADDON_lapack=${DEFAULT_ADDON_lapack}
 
 fi;
 
@@ -5990,12 +6006,23 @@ fi
 # ------------------------------------------------------------------------
 
 
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  # Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  DEFAULT_ADDON_epetra=$enableval
+else
+  DEFAULT_ADDON_epetra=no
+
+fi;
+
   # Check whether --enable-nox-epetra or --disable-nox-epetra was given.
 if test "${enable_nox_epetra+set}" = set; then
   enableval="$enable_nox_epetra"
   ADDON_epetra=$enableval
 else
-  ADDON_epetra=no
+  ADDON_epetra=${DEFAULT_ADDON_epetra}
 
 fi;
 
@@ -6051,12 +6078,23 @@ fi
 # ------------------------------------------------------------------------
 
 
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  # Check whether --enable-petsc or --disable-petsc was given.
+if test "${enable_petsc+set}" = set; then
+  enableval="$enable_petsc"
+  DEFAULT_ADDON_petsc=$enableval
+else
+  DEFAULT_ADDON_petsc=no
+
+fi;
+
   # Check whether --enable-nox-petsc or --disable-nox-petsc was given.
 if test "${enable_nox_petsc+set}" = set; then
   enableval="$enable_nox_petsc"
   ADDON_petsc=$enableval
 else
-  ADDON_petsc=no
+  ADDON_petsc=${DEFAULT_ADDON_petsc}
 
 fi;
 
@@ -6112,12 +6150,23 @@ fi
 # ------------------------------------------------------------------------
 
 
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  # Check whether --enable-tsf or --disable-tsf was given.
+if test "${enable_tsf+set}" = set; then
+  enableval="$enable_tsf"
+  DEFAULT_ADDON_tsf=$enableval
+else
+  DEFAULT_ADDON_tsf=no
+
+fi;
+
   # Check whether --enable-nox-tsf or --disable-nox-tsf was given.
 if test "${enable_nox_tsf+set}" = set; then
   enableval="$enable_nox_tsf"
   ADDON_tsf=$enableval
 else
-  ADDON_tsf=no
+  ADDON_tsf=${DEFAULT_ADDON_tsf}
 
 fi;
 
@@ -6173,12 +6222,23 @@ fi
 # ------------------------------------------------------------------------
 
 
+  # Set the default value by checking if other trilinos
+  # libraries are being built.
+  # Check whether --enable-belos or --disable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval="$enable_belos"
+  DEFAULT_ADDON_belos=$enableval
+else
+  DEFAULT_ADDON_belos=no
+
+fi;
+
   # Check whether --enable-nox-belos or --disable-nox-belos was given.
 if test "${enable_nox_belos+set}" = set; then
   enableval="$enable_nox_belos"
   ADDON_belos=$enableval
 else
-  ADDON_belos=no
+  ADDON_belos=${DEFAULT_ADDON_belos}
 
 fi;
 
@@ -6922,7 +6982,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6925: \"$ac_link\") >&5
+(eval echo $as_me:6985: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7000,7 +7060,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7003: \"$ac_link\") >&5
+(eval echo $as_me:7063: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8000,7 +8060,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8003: \"$ac_link\") >&5
+(eval echo $as_me:8063: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8078,7 +8138,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8081: \"$ac_link\") >&5
+(eval echo $as_me:8141: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
