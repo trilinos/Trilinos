@@ -265,7 +265,7 @@ am__include_HEADERS_DIST = $(srcdir)/NOX.H $(srcdir)/NOX_Common.H \
 	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
-	$(srcdir)/NOX_Parameter_AnyPtr.H \
+	$(srcdir)/NOX_Parameter_AnyPtr.H $(srcdir)/NOX_Parameter_Rcp.H \
 	$(srcdir)/NOX_Parameter_List.H \
 	$(srcdir)/NOX_Parameter_Teuchos2NOX.H \
 	$(srcdir)/NOX_Solver_Generic.H $(srcdir)/NOX_Solver_Manager.H \
@@ -643,6 +643,7 @@ PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
 	$(srcdir)/NOX_Parameter_AnyPtr.H \
+	$(srcdir)/NOX_Parameter_Rcp.H \
 	$(srcdir)/NOX_Parameter_List.H \
 	$(srcdir)/NOX_Parameter_Teuchos2NOX.H 
 

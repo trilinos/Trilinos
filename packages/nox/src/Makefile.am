@@ -180,6 +180,7 @@ PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
 	$(srcdir)/NOX_Parameter_AnyPtr.H \
+	$(srcdir)/NOX_Parameter_Rcp.H \
 	$(srcdir)/NOX_Parameter_List.H \
 	$(srcdir)/NOX_Parameter_Teuchos2NOX.H 
 

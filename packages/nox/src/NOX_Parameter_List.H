@@ -36,6 +36,11 @@
 #include "NOX_Common.H"		 // class data element (string)
 #include "NOX_Parameter_Entry.H" // class data element 
 
+#ifdef HAVE_NOX_ANY
+#include "NOX_Parameter_AnyPtr.H"
+#include "NOX_Parameter_Rcp.H"
+#endif
+
 namespace NOX {
 namespace Parameter {
 
@@ -88,10 +93,18 @@ public:
     internally. Sets the parameter as "unused".
   */
   //@{
+
 #ifdef HAVE_NOX_ANY
-  template <class T> void setParameter(const string& name, T* value);
-  template <class T> void setParameter(const string& name, const T* value);
+  template <typename T> 
+  void setParameter(const string& name, T* value);
+
+  template <typename T> 
+  void setParameter(const string& name, const T* value);
+
+  template <typename T> 
+  void setParameter(const string& name, const Teuchos::RefCountPtr<T>& value);
 #endif // HAVE_NOX_ANY
+
   void setParameter(const string& name, bool value);
   void setParameter(const string& name, int value);
   void setParameter(const string& name, double value);
@@ -141,10 +154,18 @@ public:
   //@{
   const NOX::Parameter::Arbitrary& 
   getArbitraryParameter(const string& name) const;
+
 #ifdef HAVE_NOX_ANY
-  template <class T> T* getAnyPtrParameter(const string& name) const;
-  template <class T> const T* getAnyConstPtrParameter(const string& name) const;
+  template <typename T> 
+  T* getAnyPtrParameter(const string& name) const;
+
+  template <typename T> 
+  const T* getAnyConstPtrParameter(const string& name) const;
+
+  template <typename T>
+  Teuchos::RefCountPtr<T> getRcpParameter(const string& name) const;
 #endif // HAVE_NOX_ANY
+
   //@}
 
   //! Return true if a parameter with this name exists.
@@ -163,7 +184,8 @@ public:
   bool isParameterSublist(const string& name) const;
   bool isParameterArbitrary(const string& name) const;
 #ifdef HAVE_NOX_ANY
-  template <class T> bool isParameterAnyPtr(const string& name) const;
+  template <typename T> bool isParameterAnyPtr(const string& name) const;
+  template <typename T> bool isParameterRcp(const string& name) const;
 #endif // HAVE_NOX_ANY
   //@}
 
@@ -217,21 +239,26 @@ private:
 //
 #ifdef HAVE_NOX_ANY
 
-#include "NOX_Parameter_AnyPtr.H"
-
-template <class T> 
+template <typename T> 
 void NOX::Parameter::List::setParameter(const string& name, T* value)
 {
   setParameter(name, NOX::Parameter::AnyPtr(value));
 }
 
-template <class T> 
+template <typename T> 
 void NOX::Parameter::List::setParameter(const string& name, const T* value)
 {
   setParameter(name, NOX::Parameter::AnyPtr(value));
 }
 
-template <class T> 
+template <typename T> 
+void NOX::Parameter::List::setParameter(const string& name, 
+					const Teuchos::RefCountPtr<T>& value)
+{
+  setParameter(name, NOX::Parameter::Rcp(value));
+}
+
+template <typename T> 
 T* NOX::Parameter::List::getAnyPtrParameter(const string& name) const
 {
   ConstIterator i = params.find(name);
@@ -254,7 +281,7 @@ T* NOX::Parameter::List::getAnyPtrParameter(const string& name) const
   throw "NOX Error";
 }
 
-template <class T> 
+template <typename T> 
 const T* NOX::Parameter::List::getAnyConstPtrParameter(const string& name) const
 {
   ConstIterator i = params.find(name);
@@ -277,7 +304,31 @@ const T* NOX::Parameter::List::getAnyConstPtrParameter(const string& name) const
   throw "NOX Error";
 }
 
-template <class T> 
+template <typename T> 
+Teuchos::RefCountPtr<T> 
+NOX::Parameter::List::getRcpParameter(const string& name) const
+{
+  ConstIterator i = params.find(name);
+
+  if ((i != params.end()) && (entry(i).isArbitrary())) {
+    const NOX::Parameter::Arbitrary& arb = entry(i).getArbitraryValue();
+    const NOX::Parameter::Rcp* rcpPtr = 
+      dynamic_cast<const NOX::Parameter::Rcp*>(&arb);
+    if (rcpPtr != NULL)
+      return (*rcpPtr).template getRcp<T>();
+    else {
+      cerr << "NOX::Parameter::List::getRcpParameter - "
+	   << "parameter " << name << "is not a ref-count pointer" << endl;
+      throw "NOX Error";
+    }
+  }
+
+  cerr << "NOX::Parameter::List::getRcpParameter - no such parameter" 
+       << endl;
+  throw "NOX Error";
+}
+
+template <typename T> 
 bool NOX::Parameter::List::isParameterAnyPtr(const string& name) const
 {
   ConstIterator i = params.find(name);
@@ -289,6 +340,24 @@ bool NOX::Parameter::List::isParameterAnyPtr(const string& name) const
 	dynamic_cast<const NOX::Parameter::AnyPtr*>(&arb);
       if (anyPtr != NULL)
 	return (*anyPtr).template isType<T>();
+    }
+  }
+
+  return false;
+}
+
+template <typename T> 
+bool NOX::Parameter::List::isParameterRcp(const string& name) const
+{
+  ConstIterator i = params.find(name);
+
+  if (i != params.end()) {
+    if (entry(i).isArbitrary()) {
+      const NOX::Parameter::Arbitrary& arb = entry(i).getArbitraryValue();
+      const NOX::Parameter::Rcp* rcpPtr = 
+	dynamic_cast<const NOX::Parameter::Rcp*>(&arb);
+      if (rcpPtr != NULL)
+	return (*rcpPtr).template isType<T>();
     }
   }
 
