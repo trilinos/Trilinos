@@ -477,9 +477,18 @@ To compile your code, your Makefile should look something like the
 following, assuming %NOX was installed in /usr/local.
 
 \verbatim
-nox_PREFIX = /usr/local
+NOX_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib 
 LIBS = -lnox
+CXXFLAGS = -I$(NOX_PREFIX)/include/
+\endverbatim
+
+\section step4_lapack Compiling with LAPACK
+
+\verbatim
+NOX_PREFIX = /usr/local
+LDFLAGS = -L$(NOX_PREFIX)/lib 
+LIBS = -lnox -lnoxlapack -llapack -lblas 
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
@@ -488,9 +497,9 @@ CXXFLAGS = -I$(NOX_PREFIX)/include/
 We assume that Epetra, Aztec, and Ifpack are installed in the same place as %NOX.
 
 \verbatim
-nox_PREFIX = /usr/local
+NOX_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib 
-LIBS = -lnox -lnox-epetra -laztecoo -lifpack -lepetra  -llapack -lblas 
+LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetra  -llapack -lblas 
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
