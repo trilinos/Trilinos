@@ -73,8 +73,10 @@ static int refine_no (ZZ *zz,     /* Zoltan data structure */
  */
 
 
-static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, float *gain, HEAP *heap,
-                                   int *pins[2], int *lpins[2], double *weights, double *lweights,
+static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, 
+                                   float *gain, HEAP *heap,
+                                   int *pins[2], int *lpins[2], 
+                                   double *weights, double *lweights,
                                    int *mark, int *adj)
 {
     int   pno=part[v], vto=1-pno, adjsz=0, j, i;
@@ -147,7 +149,8 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, float *gai
 }
 
 
-static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part, int *lpins[2],
+static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part, 
+                                           int *lpins[2],
                                            double *weights, double *lweights)
 {
     int   pno=part[v], vto=1-pno, j;
@@ -191,7 +194,10 @@ static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double 
 }
 
 
-static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, HEAP *heap, int *pins[2], int *lpins[2], double *weights, double *lweights, int *mark, int *adj)
+static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, 
+                            HEAP *heap, int *pins[2], int *lpins[2], 
+                            double *weights, double *lweights, 
+                            int *mark, int *adj)
 {
     float oldgain=gain[v];
     int   pno=part[v], vto=1-pno, adjsz=0, j, i;
@@ -291,25 +297,30 @@ static int refine_fm2 (ZZ *zz,
     double cutsize, best_cutsize, ratio = hg->ratio,
         best_imbal, best_limbal, imbal, limbal;
     HEAP   heap[2];
-    char   *yo="local_fm2";
+    char   *yo="refine_fm2";
     PHGComm *hgc=hg->comm;
     struct {
         int nPins; 
         int rank;
     } root;
     
+    ZOLTAN_TRACE_ENTER(zz, yo);
+
     /*    SelectFunc select_func = fm2_select;*/
     
     
     if (p != 2) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for phg_fm2.");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_FATAL;
     }
     
 
     /* return only if globally there is no edge or vertex */
-    if (!hg->dist_y[hgc->nProc_y] || hg->dist_x[hgc->nProc_x] == 0)
+    if (!hg->dist_y[hgc->nProc_y] || hg->dist_x[hgc->nProc_x] == 0) {
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_OK;
+    }
 
     /* find the index of the proc in column group with 
        the most #nonzeros; it will be our root
@@ -361,14 +372,16 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
     
-    if ((hg->nEdge && (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+    if ((hg->nEdge && (!(pins[0]    = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
                       || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int))))) ||
-        (hg->nVtx && (!(moves    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-                     || !(lgain    = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float))))))
+        (hg->nVtx && (!(moves   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+                     || !(lgain = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float))))))
         MEMORY_ERROR;
 
-    pins[1] = &(pins[0][hg->nEdge]);
-    lpins[1] = &(lpins[0][hg->nEdge]);
+    if (hg->nEdge) {
+        pins[1] = &(pins[0][hg->nEdge]);
+        lpins[1] = &(lpins[0][hg->nEdge]);
+    }
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
         if (hg->nVtx &&
@@ -390,7 +403,9 @@ static int refine_fm2 (ZZ *zz,
         int maxneggain = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
 
         /* now compute global pin distribution */
-        MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+        if (hg->nEdge)
+            MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
+                          hgc->row_comm);
 
         /* now we can compute actual cut */
         best_cutsizeat=0;
@@ -626,6 +641,7 @@ static int refine_fm2 (ZZ *zz,
  End:    
     Zoltan_Multifree(__FILE__, __LINE__, 7, &pins[0], &lpins[0], &moves, &lgain,
                      &mark, &adj, &gain);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;
 }
 
