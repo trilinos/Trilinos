@@ -37,10 +37,13 @@
 
 int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
 {
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
   /* ML matvec wrapper for Epetra matrices. */
 
   // general case
-  Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
 
   // for VBR matrices first
   Epetra_VbrMatrix * VbrA = NULL;
@@ -91,13 +94,17 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
  *                  'values' for storing nonzeros. If more space is needed,
  *                  return 0.
  */
-  Epetra_RowMatrix *Abase = (Epetra_RowMatrix *) data;
   int nz_ptr = 0;
   int NumEntries;
   int MaxPerRow;
   int NumPDEEqns=1;
   int * BlockIndices;
   Epetra_SerialDenseMatrix ** Entries;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+
+  Epetra_RowMatrix *Abase = (Epetra_RowMatrix *) ML_Get_MyGetrowData(mat_in);
   
   Epetra_CrsMatrix * Acrs = dynamic_cast<Epetra_CrsMatrix *>(Abase);
   int MatrixIsCrsMatrix = (Acrs!=0); // If this pointer is non-zero,
@@ -238,7 +245,7 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                         Epetra_ML_comm_wrapper, (void *) A, 
                         newMatrix->comm, isize, N_ghost);
 
-  ML_Operator_Set_Getrow(newMatrix, ML_EXTERNAL, newMatrix->outvec_leng,
+  ML_Operator_Set_Getrow(newMatrix, ML_INTERNAL, newMatrix->outvec_leng,
                        Epetra_ML_getrow);
 
   ML_Operator_Set_ApplyFunc (newMatrix, ML_EXTERNAL, Epetra_ML_matvec);
@@ -258,7 +265,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
-  ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
+  MLnew_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
             Epetra_ML_comm_wrapper, isize+N_ghost);
 
   ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
