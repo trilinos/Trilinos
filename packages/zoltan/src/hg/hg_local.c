@@ -64,9 +64,12 @@ static int gain_check (HGraph *hg, float *gain, int *part, int **cut)
       else if (cut[1-part[vertex]][edge] == 0)
         g -= (hg->ewgt?(hg->ewgt[edge]):1.0);
     }
-    if (g != gain[vertex])
+    if (g != gain[vertex]){
       printf("Wrong gain %f %f\n",g,gain[vertex]);
+      return ZOLTAN_FATAL;
+    }
   }
+  return ZOLTAN_OK;
 }
 
 /****************************************************************************/
@@ -84,28 +87,28 @@ int move_vertex (HGraph *hg, int vertex, int sour, int dest, int *part,
     { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
       { v = hg->hvertex[j];
         gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-        heap_change_value(&(heap[part[v]]),v,gain[v]);
+        if (heap) heap_change_value(&(heap[part[v]]),v,gain[v]);
     } }
     else if (cut[sour][edge] == 2)
     { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
       { v = hg->hvertex[j];
         if (part[v] == sour)
         { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-          heap_change_value(&(heap[part[v]]),v,gain[v]);
+          if (heap) heap_change_value(&(heap[part[v]]),v,gain[v]);
           break;
     } } }
     if (cut[dest][edge] == 0)
     { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
       { v = hg->hvertex[j];
         gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-        heap_change_value(&(heap[part[v]]),v,gain[v]);
+        if (heap) heap_change_value(&(heap[part[v]]),v,gain[v]);
     } }
     else if (cut[dest][edge] == 1)
     { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
       { v = hg->hvertex[j];
         if (v!=vertex && part[v]==dest)
         { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-          heap_change_value(&(heap[part[v]]),v,gain[v]);
+          if (heap) heap_change_value(&(heap[part[v]]),v,gain[v]);
           break;
     } } }
     cut[sour][edge]--;
@@ -123,7 +126,7 @@ static int local_fm (
   Partition part,
   float bal_tol
 )
-{ int    i, j, v, vertex, edge, *cut[2], *locked, *locked_list, round=0;
+{ int    i, j, vertex, edge, *cut[2], *locked, *locked_list, round=0;
   float  total_weight, max_weight, max, best_max_weight, *gain,
          part_weight[2], cutsize, best_cutsize;
   HEAP   heap[2];
@@ -164,7 +167,7 @@ static int local_fm (
   }
   cut[1] = &(cut[0][hg->nEdge]);
 
-  /* Initial cvalculation of the cut distribution and gain values */
+  /* Initial calculation of the cut distribution and gain values */
   for (i=0; i<hg->nEdge; i++)
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
       (cut[part[hg->hvertex[j]]][i])++;

@@ -30,9 +30,10 @@ int heap_init (ZZ *zz, HEAP *h, int space)
 
   h->space = space;
   h->n = 0;
-  if (!(h->ele   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
-      !(h->pos   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
-      !(h->value = (float *)ZOLTAN_CALLOC(space,sizeof(float))) )
+  if ((space>0) &&
+      (!(h->ele   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
+       !(h->pos   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
+       !(h->value = (float *)ZOLTAN_CALLOC(space,sizeof(float))) ))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -86,11 +87,12 @@ int heap_input (HEAP *h, int element, float value)
   return ZOLTAN_OK;
 }
 
-void heap_make (HEAP *h)
+int heap_make (HEAP *h)
 { int i;
   
   for (i=h->n/2; i>=0; i--)
     heapify(h, i);
+  return ZOLTAN_OK;
 }
 
 static void heapify (HEAP *h, int root)
@@ -108,10 +110,15 @@ static void heapify (HEAP *h, int root)
   }
 }
 
-void heap_change_value (HEAP *h, int element, float value)
-{ int position=h->pos[element], father;
+int heap_change_value (HEAP *h, int element, float value)
+{ int position, father;
 
-  if (position >=0)
+  if ((element<0) || (element>=h->space)){
+    return ZOLTAN_FATAL; /* Error */
+  }
+
+  position = h->pos[element];
+  if (position >= 0)
   { if (value < h->value[element])
     { h->value[element] = value;
       heapify(h,position);
@@ -126,6 +133,7 @@ void heap_change_value (HEAP *h, int element, float value)
         position = father;
         father = (father-1)/2;
   } } }
+  return ZOLTAN_OK;
 }
 
 int heap_extract_max (HEAP *h)

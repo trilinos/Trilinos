@@ -248,8 +248,8 @@ extern int  heap_init         (ZZ *, HEAP*, int);
 extern void heap_free         (HEAP*);
 extern int  heap_check        (HEAP*);
 extern int  heap_input        (HEAP*, int, float);
-extern void heap_make         (HEAP*);
-extern void heap_change_value (HEAP*, int, float);
+extern int  heap_make         (HEAP*);
+extern int  heap_change_value (HEAP*, int, float);
 extern int  heap_extract_max  (HEAP*);
 int move_vertex     (HGraph *, int, int, int, int *, int **, float *, HEAP *);
 
