@@ -406,6 +406,8 @@ static int global_bfs (
   }
 
   /* Find pseudo-peripheral start vertex */
+  /* EBEB: Make this a function that can be called
+     each time we begin a new connected component. */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);

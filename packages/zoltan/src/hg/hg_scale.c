@@ -24,12 +24,12 @@ extern "C" {
 /****************************************************************************/
 
 
-
 /* Scaling the weight of hypergraph edges. Currently there are 5 methods.
    The default should be number 1. */
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz,HGraph *hg,float *new_ewgt,int scale)
 {
 int    i, j;
+static char *yo = "Zoltan_HG_Scale_HGraph_Weight";
 
   if (scale == 1) {
      if (hg->vwgt) {
@@ -117,6 +117,11 @@ int    i, j;
         for (i = 0; i < hg->nEdge; i++)
            new_ewgt[i] = hg->ewgt ? hg->ewgt[i] : 1.0;
      }
+  else {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_SCALING");
+     return ZOLTAN_FATAL;
+  }
+
   return ZOLTAN_OK;
 }
 
