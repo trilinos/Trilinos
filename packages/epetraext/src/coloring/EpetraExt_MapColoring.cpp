@@ -34,6 +34,10 @@
 #include <Epetra_MapColoring.h>
 #include <Epetra_Map.h>
 
+#ifdef EPETRAEXT_TIMING
+#include <Epetra_Time.h>
+#endif
+
 #include <vector>
 #include <set>
 #include <map>
@@ -48,6 +52,10 @@ CrsGraph_MapColoring::NewTypeRef
 CrsGraph_MapColoring::
 operator()( OriginalTypeRef orig  )
 {
+#ifdef EPETRAEXT_TIMING
+  Epetra_Time timer( orig.Comm() );
+#endif
+
   origObj_ = &orig;
 
   int err;
@@ -65,6 +73,10 @@ operator()( OriginalTypeRef orig  )
   int NumIndices;
   int * Indices;
 
+#ifdef EPETRAEXT_TIMING
+  double wTime1 = timer.WallTime();
+#endif
+
   // For parallel applications, add in boundaries to coloring
   bool distributedGraph = RowMap.DistributedGlobal();
   if( distributedGraph )
@@ -76,21 +88,32 @@ operator()( OriginalTypeRef orig  )
       assert( orig.ExtractMyRowView( i, NumIndices, Indices ) == 0 );
       assert( base->InsertMyIndices( i, NumIndices, Indices ) >= 0 );
 
+      //Do this with a single insert
+      //Is this the right thing?
       for( int j = 0; j < NumIndices; ++j )
         if( Indices[j] >= nRows )
           assert( base->InsertMyIndices( Indices[j], 1, &i ) >= 0 );
     } 
-
     base->TransformToLocal();
   }
 
   if( verbose_ ) cout << "Base Graph:\n" << *base << endl;
+
+#ifdef EPETRAEXT_TIMING
+  double wTime2 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [INSERT BOUNDARIES] Time: " << wTime2-wTime1 << endl;
+#endif
 
   //Generate Local Distance-1 Adjacency Graph
   //(Transpose of orig excluding non-local column indices)
   EpetraExt::CrsGraph_Transpose transposeTransform( true );
   Epetra_CrsGraph & Adj1 = transposeTransform( *base );
   if( verbose_ ) cout << "Adjacency 1 Graph!\n" << Adj1;
+
+#ifdef EPETRAEXT_TIMING
+  wTime1 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [TRANSPOSE GRAPH] Time: " << wTime1-wTime2 << endl;
+#endif
 
   int Delta = Adj1.MaxNumIndices();
   if( verbose_ ) cout << endl << "Delta: " << Delta << endl;
@@ -115,6 +138,11 @@ operator()( OriginalTypeRef orig  )
   assert( Adj2.TransformToLocal() == 0 );
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
+#ifdef EPETRAEXT_TIMING
+  wTime2 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [GEN DIST-2 GRAPH] Time: " << wTime2-wTime1 << endl;
+#endif
+
   vector<int> rowOrder( nCols );
   //Simple reordering
   {
@@ -130,6 +158,11 @@ operator()( OriginalTypeRef orig  )
     for( int i = 1; iter != end; ++iter, ++i )
       rowOrder[ nCols - i ] = (*iter).second;
   }
+
+#ifdef EPETRAEXT_TIMING
+  wTime1 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [REORDERING] Time: " << wTime1-wTime2 << endl;
+#endif
 
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( ColMap );
 
@@ -147,6 +180,11 @@ operator()( OriginalTypeRef orig  )
 
     (*ColorMap)[ rowOrder[col] ] = *(allowedColors.begin());
   }
+
+#ifdef EPETRAEXT_TIMING
+  wTime2 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [GREEDY COLORING] Time: " << wTime2-wTime1 << endl;
+#endif
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
 
