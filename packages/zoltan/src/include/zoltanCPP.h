@@ -65,7 +65,6 @@ public:
     if (ZZ_Ptr == NULL) {
       //KDD How should we handle this error condition?
     }
-    ZOS_Ptr = NULL;
   }
 
   //! Destructor
@@ -164,10 +163,11 @@ public:
                  int * rank,
                  int * iperm )
   {
+    //  Note:  Zoltan_Order_Struct set to NULL.
     return Zoltan_Order( ZZ_Ptr,
                          num_gid_entries, num_lid_entries,
                          num_objs, global_ids, local_ids,
-                         rank, iperm, ZOS_Ptr );
+                         rank, iperm, NULL );
   }
 
   /////////////////////////////////////////////////////////////////////////
@@ -681,7 +681,6 @@ public:
 private:
 
   Zoltan_Struct * ZZ_Ptr; 
-  Zoltan_Order_Struct * ZOS_Ptr;
 
 };
 
