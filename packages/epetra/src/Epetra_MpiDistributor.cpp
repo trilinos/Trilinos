@@ -42,6 +42,7 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   procs_from_(0),
   indices_from_(0),
   size_indices_from_(0),
+  resized_(false),
   sizes_(0),
   sizes_to_(0),
   starts_to_(0),
@@ -80,6 +81,7 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   procs_from_(0),
   indices_from_(0),
   size_indices_from_(Distributor.size_indices_from_),
+  resized_(false),
   sizes_(0),
   sizes_to_(0),
   starts_to_(0),
@@ -758,14 +760,19 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
      
   int my_proc; 
   MPI_Comm_rank (comm_, &my_proc);  
+  int nprocs;
+  MPI_Comm_size( comm_, &nprocs );
      
-  if( sizes_ )
+  if( resized_ )
   {  
     //test and see if we are already setup for these sizes
     bool match = true; 
     for( i = 0; i < nexports_; ++i )
       match = match && (sizes_[i]==sizes[i]);
-    if( match )  
+    int matched = match?0:1;
+    int match_count = 0;
+    MPI_Allreduce( &matched, &match_count, 1, MPI_INT, MPI_SUM, comm_ );
+    if( match_count == nprocs )
       return 0;
     else //reset existing sizing arrays
       max_send_length_ = 0;
@@ -877,6 +884,8 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
      starts_from_ptr_[i] = sum;
      sum += sizes_from_[i];
   }
+
+  resized_ = true;
 
   return 0;
 }
@@ -1121,11 +1130,14 @@ void Epetra_MpiDistributor::Print( ostream & os) const
   os << endl;
   os << "indices_to: ";
   int k = 0;
-  for( i = 0; i < nsends_; i++ )
+  if( indices_to_ )
   {
-    for( j = 0; j < lengths_to_[i]; j++ )
-      os << " " << indices_to_[j+k];
-    k += lengths_to_[i];
+    for( i = 0; i < nsends_; i++ )
+    {
+      for( j = 0; j < lengths_to_[i]; j++ )
+        os << " " << indices_to_[j+k];
+      k += lengths_to_[i];
+    }
   }
   os << endl;
   os << "nrecvs: " << nrecvs_ << endl;
