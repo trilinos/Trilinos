@@ -141,6 +141,11 @@
 /* maximum dimension of the subspace associated with an ML_Operator type */
 #define ML_MAX_SUBSPACE_DIM 3
 
+/* block partitioning option to use Parmetis */
+#define ML_USEPARMETIS       1
+#define ML_USEMETIS          2
+
+
 /* Allow 64-bit integer support.  This is needed when the ML library is used
  * with MPSalsa.  MPSalsa requires 64-bit global element numbers. */
 #ifndef ML_BIG_INT
