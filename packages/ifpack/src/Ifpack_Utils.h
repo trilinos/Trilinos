@@ -1,4 +1,6 @@
 #ifndef IFPACK_UTILS_H
+#define IFPACK_UTILS_H
+
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "unistd.h"
@@ -32,6 +34,10 @@ int Ifpack_PrintResidual(char* Label,  const Epetra_RowMatrix& A,
 int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
                          const Epetra_MultiVector& X, const Epetra_MultiVector&Y);
 
-void Ifpack_PrintSparsity(Epetra_RowMatrix& A);
+void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A);
 
+int Ifpack_Analyze(const Epetra_RowMatrix& A, const int NumEquations = 1);
+int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
+                       char* FileName,
+                       int NumPDEEqns = 1);
 #endif // IFPACK_UTILS_H
