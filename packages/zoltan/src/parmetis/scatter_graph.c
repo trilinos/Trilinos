@@ -58,7 +58,7 @@ int Zoltan_Scatter_Graph(
   idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt; 
   idxtype *old_vsize, *old_adjwgt;
   float   *old_xyz;
-  int *ptr, *proclist = NULL, *proclist2;
+  int *ptr, *proclist = NULL, *proclist2 = NULL;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int use_graph;	/* do we use graph data, or only the geometry? */
   int use_vsize;	/* do we use the vsize array? */

@@ -82,7 +82,7 @@ calloc.
 realloc.
 <br><b><a href="#Zoltan_Free">Zoltan_Free</a></b>:&nbsp; Frees memory and sets
 the pointer to NULL.
-<br><b><a href="#Zoltan_Set_Memory_Debug">Zoltan_Set_Memory_Debug</a></b>:&nbsp; Sets
+<br><b><a href="#Zoltan_Memory_Debug">Zoltan_Memory_Debug</a></b>:&nbsp; Sets
 the debug level used by the memory utilities; see 
 the <a href="#Debug_Memory">description</a> below.
 <br><b><a href="#Zoltan_Memory_Stats">Zoltan_Memory_Stats</a></b>:&nbsp; Prints 
@@ -103,10 +103,10 @@ in some individual algorithms.  Zoltan developers use these routines
 directly for most memory management, taking advantage of the error checking
 and <a href="#Debug_Memory">debugging capabilities</a> of the library.
 <p>
-Rather than call <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>
-directly, applications using Zoltan can set the
-<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter
-used by this utility through calls to
+Rather than call <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memory_Debug</b></a>
+directly, applications using Zoltan can set the 
+<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter 
+used by this utility through calls to 
 <a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>.
 </blockquote>
 </td>
@@ -231,7 +231,7 @@ double *<b>Zoltan_Malloc</b>(int <i>n</i>, char
 The <b>Zoltan_Malloc</b> function is a wrapper around the standard C malloc
 routine. It allocates a block of memory of size <i>n</i> bytes. The principle
 advantage of using the wrapper is that it allows memory leaks to be tracked
-via the DEBUG_MEMORY variable (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>).
+via the DEBUG_MEMORY variable (set in <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memory_Debug</b></a>).
 <p>A macro <b>ZOLTAN_MALLOC</b> is defined in <i>zoltan_mem.h</i>.
 It takes the argument <i>n</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
 macros to the argument list of the <b>Zoltan_Malloc</b> call:
@@ -511,7 +511,7 @@ has an extra level of indirection when compared to the standard C "free"
 call. This allows the pointer being freed to be set to NULL, which can
 help find errors in which a pointer is used after it is deallocated. Error
 checking is performed to prevent attempts to free NULL pointers. When <b>Zoltan_Free</b>
-is used with the DEBUG_MEMORY options (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>), it can help identify memory leaks.
+is used with the DEBUG_MEMORY options (set in <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memory_Debug</b></a>), it can help identify memory leaks.
 <p>A macro <b>ZOLTAN_FREE</b> is defined in <i>zoltan_mem.h</i>. It
 takes the argument <i>ptr</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
 macros to the argument list of the <b>Zoltan_Free</b> call:
@@ -566,7 +566,7 @@ is NULL.</td>
 One important reason to use the memory-management utilities' wrappers around the system memory
 routines is to facilitate debugging of memory problems.&nbsp  Various amounts of information can
 about memory allocation and deallocation are stored, depending on the debug level set 
-through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
+through a call to <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
 warning occurs, or when <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> is called.&nbsp
 We have found values of one and two to
 be very helpful in our development efforts.&nbsp;  The routine <a href="#Zoltan_Memory_Usage">
@@ -577,11 +577,11 @@ utilization to the user's program.
 
 <!------------------------------------------------------------------------->
 <hr>
-<a NAME="Zoltan_Set_Memory_Debug"></a>
+<a NAME="Zoltan_Memory_Debug"></a>
 <hr>
-void <b>Zoltan_Set_Memory_Debug</b>(int <i>new_level</i>);
+void <b>Zoltan_Memory_Debug</b>(int <i>new_level</i>);
 <hr>
-The <b>Zoltan_Set_Memory_Debug</b> function sets the level of memory debugging to
+The <b>Zoltan_Memory_Debug</b> function sets the level of memory debugging to
 be used.  
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -640,7 +640,7 @@ void <b>Zoltan_Memory_Stats</b>();
 <hr>
 The <b>Zoltan_Memory_Stats</b> function prints information about memory allocation
 and deallocation.&nbsp; The amount of information printed is determined by the
-debug level set through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.
+debug level set through a call to <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memory_Debug</b></a>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>

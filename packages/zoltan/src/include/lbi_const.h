@@ -246,6 +246,7 @@ typedef enum Zoltan_Ref_Type LB_REF_TYPE;
 
 /*******  Unstructured communication package ********/
 
+#define Comm_Obj                Zoltan_Comm_Obj
 #define LB_Comm_Create          Zoltan_Comm_Create
 #define LB_Comm_Destroy         Zoltan_Comm_Destroy
 #define LB_Comm_Invert_Map      Zoltan_Comm_Invert_Map
