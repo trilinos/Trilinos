@@ -186,7 +186,8 @@ static int irb_fn(
      double  time1,time2;        /* timers */
      double  time3,time4;        /* timers */
      double  timestart,timestop; /* timers */
-     double  timers[4];          /* diagnostic timers
+     double  timers[4]={0.,0.,0.,0.}; 
+                                 /* diagnostic timers
                                     0 = start-up time before recursion
                                     1 = time before median iterations
                                     2 = time in median iterations
@@ -251,18 +252,13 @@ static int irb_fn(
 
      /* initialize timers and counters */
 
-     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-        counters[0] = 0;
-        counters[1] = 0;
-        counters[2] = 0;
-        counters[3] = dotnum;
-        counters[4] = dotmax;
-        counters[5] = 0;
-        counters[6] = 0;
-        timers[1] = 0.0;
-        timers[2] = 0.0;
-        timers[3] = 0.0;
-     }
+     counters[0] = 0;
+     counters[1] = 0;
+     counters[2] = 0;
+     counters[3] = dotnum;
+     counters[4] = dotmax;
+     counters[5] = 0;
+     counters[6] = 0;
 
      /* create mark and list arrays for dots */
 

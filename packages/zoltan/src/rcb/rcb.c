@@ -210,7 +210,7 @@ static int rcb_fn(
   int     allocflag;                /* have to re-allocate space */
   double  time1,time2,time3,time4;  /* timers */
   double  timestart,timestop;       /* timers */
-  double  timers[4];                /* diagnostic timers 
+  double  timers[4]={0.,0.,0.,0.};  /* diagnostic timers 
 			              0 = start-up time before recursion
 				      1 = time before median iterations
 				      2 = time in median iterations
@@ -280,20 +280,15 @@ static int rcb_fn(
 
   dottop = dotnum = pdotnum;
 
-  /* initialize timers and counters */
+  /* initialize counters */
 
-  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-    counters[0] = 0;
-    counters[1] = 0;
-    counters[2] = 0;
-    counters[3] = dotnum;
-    counters[4] = dotmax;
-    counters[5] = 0;
-    counters[6] = 0;
-    timers[1] = 0.0;
-    timers[2] = 0.0;
-    timers[3] = 0.0;
-  }
+  counters[0] = 0;
+  counters[1] = 0;
+  counters[2] = 0;
+  counters[3] = dotnum;
+  counters[4] = dotmax;
+  counters[5] = 0;
+  counters[6] = 0;
 
   /* if reuse is turned on, turn on gen_tree since it is needed. */
   if (reuse) gen_tree = 1;
