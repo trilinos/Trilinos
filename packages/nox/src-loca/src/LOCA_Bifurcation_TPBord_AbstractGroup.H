@@ -187,6 +187,63 @@ namespace LOCA {
 				    const NOX::Abstract::Vector& y);
 
 	//@}
+
+	/*!
+	 * @name Virtual methods specific to the modified bordering algorithm
+	 */
+	//@{
+
+	/*!
+	 * \brief Solve a bordered system of equations
+	 */
+	/*!
+	 * Compute the solution to the bordered system of equations
+	 * \f[
+	 *     \begin{bmatrix}
+	 *        J & a \\
+	 *        b^T & 0
+	 *     \end{bmatrix}
+	 *     \begin{bmatrix}
+	 *        \text{vResult} \\
+	 *        \text{sResult}
+	 *     \end{bmatrix} = 
+	 *     \begin{bmatrix}
+	 *        \text{vInput} \\
+	 *        \text{sInput}
+	 *     \end{bmatrix}
+	 * \f]
+	 */
+	virtual NOX::Abstract::Group::ReturnType
+	applyBorderedJacobianInverse(bool trans,
+				     NOX::Parameter::List& params,
+				     const NOX::Abstract::Vector& a,
+				     const NOX::Abstract::Vector& b,
+				     const NOX::Abstract::Vector& vInput,
+				     double sInput,
+				     NOX::Abstract::Vector& vResult,
+				     double& sResult) const = 0;
+
+	/*!
+	 * \brief Solve a bordered system of equations with multiple right-
+	 * hand-sides.
+	 */
+	/*!
+	 * The default implementation here is to call 
+	 * applyBorderedJacobianInverse() serially for each right-hand-side.
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	applyBorderedJacobianInverseMulti(
+			       bool trans,
+			       NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector& a,
+			       const NOX::Abstract::Vector& b,
+			       const NOX::Abstract::Vector*const* vInputs,
+			       double *sInputs,
+			       NOX::Abstract::Vector** vResults,
+			       double *sResults,
+			       int nVecs) const;
+
+	//@}
       };
     } // namespace TPBord
   } // namespace Bifurcation

@@ -39,3 +39,27 @@ LOCA::Bifurcation::TPBord::AbstractGroup::innerProduct(
 {
   return x.dot(y);
 }
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::AbstractGroup::applyBorderedJacobianInverseMulti(
+			       bool trans,
+			       NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector& a,
+			       const NOX::Abstract::Vector& b,
+			       const NOX::Abstract::Vector*const* vInputs,
+			       double *sInputs,
+			       NOX::Abstract::Vector** vResults,
+			       double *sResults,
+			       int nVecs) const
+{
+  NOX::Abstract::Group::ReturnType res;
+
+  for (int i=0; i<nVecs; i++) {
+    res = applyBorderedJacobianInverse(trans, params, a, b, *vInputs[i], 
+				       sInputs[i], *vResults[i], sResults[i]);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+  }
+
+  return res;
+}

@@ -92,6 +92,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
@@ -106,6 +107,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
@@ -225,7 +227,7 @@ LOCA = \
 
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
 
-libloca_a_CXXFLAGS = -I$(top_srcdir)/src
+libloca_a_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack
 
 # ------------------------------------------------------------------------
 # When to turn it on

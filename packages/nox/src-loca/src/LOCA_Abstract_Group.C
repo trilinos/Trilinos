@@ -169,3 +169,17 @@ LOCA::Abstract::Group::applyComplexInverse(
   return NOX::Abstract::Group::NotDefined;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
+				     NOX::Parameter::List& params,
+				     const NOX::Abstract::Vector& a,
+				     const NOX::Abstract::Vector& b,
+				     const NOX::Abstract::Vector& vInput,
+				     double sInput,
+				     NOX::Abstract::Vector& vResult,
+				     double& sResult) const
+{
+  errorCheck.throwError("LOCA::Abstract::Group::applyBorderedJacobianInverse",
+			"Not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}

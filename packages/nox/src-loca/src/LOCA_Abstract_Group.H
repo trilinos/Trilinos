@@ -114,6 +114,37 @@ namespace LOCA {
       virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
       operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
 
+      /*!
+       * \brief Solve a bordered system of equations
+       */
+      /*!
+       * Compute the solution to the bordered system of equations
+       * \f[
+       *     \begin{bmatrix}
+       *        J & a \\
+       *        b^T & 0
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *        \text{vResult} \\
+       *        \text{sResult}
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *        \text{vInput} \\
+       *        \text{sInput}
+       *     \end{bmatrix}
+       * \f]
+       * The default implementation here is to throw an error.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyBorderedJacobianInverse(bool trans,
+				   NOX::Parameter::List& params,
+				   const NOX::Abstract::Vector& a,
+				   const NOX::Abstract::Vector& b,
+				   const NOX::Abstract::Vector& vInput,
+				   double sInput,
+				   NOX::Abstract::Vector& vResult,
+				   double& sResult) const;
+
       //@}
 
       /*! 

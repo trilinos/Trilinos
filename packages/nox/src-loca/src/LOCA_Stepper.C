@@ -523,13 +523,19 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
       return LOCA::Abstract::Iterator::Finished;
     }
 
-    // Check to see if arclength step was aimed to reach bound (should be near)
+    // Check to see if arclength step was aimed to reach bound 
     if (isLastIteration()) {
-      if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
-	cout << "\n\tContinuation run stopping: parameter stepped to bound" 
-	     << endl;
+
+      // Check to see if continuation parameter is within threshold of bound
+      if (withinThreshold()) {
+	if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+	  cout << "\n\tContinuation run stopping: parameter stepped to bound" 
+	       << endl;
+	}
+	return LOCA::Abstract::Iterator::Finished;
       }
-      return LOCA::Abstract::Iterator::Finished;
+      else
+	return LOCA::Abstract::Iterator::NotFinished;
     }
   }
   else if (isLastIteration())  // Failed step did not reach bounds as predicted
@@ -683,3 +689,16 @@ LOCA::Stepper::printEndInfo()
 
 }
 
+bool
+LOCA::Stepper::withinThreshold()
+{
+  NOX::Parameter::List& stepperList = 
+    paramListPtr->sublist("LOCA").sublist("Stepper");
+  NOX::Parameter::List& stepSizeList = 
+    paramListPtr->sublist("LOCA").sublist("Step Size");
+  double relt = stepperList.getParameter("Relative Stopping Threshold", 0.9);
+  double initialStep = stepSizeList.getParameter("Initial Step Size", 1.0);
+  double conParam = curGroupPtr->getContinuationParameter();
+
+  return (fabs(conParam-targetValue) < relt*fabs(initialStep));
+}

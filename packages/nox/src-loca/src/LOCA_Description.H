@@ -125,7 +125,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Max Arc Length Parameter Contribution" -- [double] Max for parameter contribution to unit arclength, triggering rescaling
 	  <li> "Initial Scale Factor" -- [double] Initial factor for parameter term of arclength eq.
 	  <li> "Min Scale Factor" -- [double] Minimum factor for scaling solution term of arclength eq.
-	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha} where \f$\alpha\f$ is the tangent factor exponent.
+	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
 	  <li> "Min Tangent Factor" -- [double] Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
 	  <li> "Tangent Factor Exponent" -- [double] Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
 	  <li> "Compute Eigenvalues" -- [bool] Flag for requesting eigenvalue calculation after each continuation step

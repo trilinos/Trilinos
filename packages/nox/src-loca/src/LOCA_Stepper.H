@@ -131,6 +131,9 @@ namespace LOCA {
     //! Print to the screen the concluding information
     virtual void printEndInfo();
 
+    //! Checks to see if continuation parameter is within threshold of bound
+    virtual bool withinThreshold();
+
   protected:
 
     //! Continuation group manager
