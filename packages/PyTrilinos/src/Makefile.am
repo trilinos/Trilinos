@@ -106,6 +106,10 @@ SWIG_FLAGS = -Wall -noruntime -python -c++
 TRILINOS_HOME    = /usr/local
 TRILINOS_INCLUDE = -I$(TRILINOS_HOME)/include
 
+EPETRA_INC    = -I$(top_srcdir)/../epetra/src
+EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \
+                -I$(top_srcdir)/../epetraext/src/coloring
+
 INTERFACES = RawEpetra.i EpetraExt.i
 WRAPPERS   = $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
 
@@ -116,6 +120,10 @@ all-recursive: $(TARGET)
 NOX_Wrappers:
 	cd NOX && make
 
-# Generate a C++ wrapper and proxy file from a SWIG interface
-%_wrap.cxx %.py: %.i
-	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $<
+# Generate the RawEpetra C++ wrapper and proxy file from the RawEpetra SWIG interface
+RawEpetra_wrap.cxx RawEpetra.py: RawEpetra.i
+	$(SWIG) $(EPETRA_INC) $(SWIG_FLAGS) $<
+
+# Generate the EpetraExt C++ wrapper and proxy file from the EpetraExt SWIG interface
+EpetraExt_wrap.cxx EpetraExt.py: EpetraExt.i
+	$(SWIG) $(EPETRA_INC) $(EPETRAEXT_INC) $(SWIG_FLAGS) $<
