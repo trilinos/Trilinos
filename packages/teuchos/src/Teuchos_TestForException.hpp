@@ -99,6 +99,8 @@ void TestForException_break();
  * As an alternative, you can set a breakpoint for any exception thrown
  * by setting a breakpoint in the function <tt>ThrowException_break()</tt>.
  */
+#if HAVE_SSTREAM || HAVE_SSTREAM_H
+
 #define TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg)         \
 {                                                                   \
     const bool throw_exception = (throw_exception_test);            \
@@ -110,5 +112,21 @@ void TestForException_break();
 	    throw Exception(omsg.str().c_str());                        \
     }                                                               \
 }
+
+#else // we are using the ostrstream, which is based on a char* instead of the string class.
+
+#define TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg)         \
+{                                                                   \
+    const bool throw_exception = (throw_exception_test);            \
+    if(throw_exception) {                                           \
+        TestForException_break();                                     \
+	    TeuchosOStringStream omsg;                                    \
+	    omsg << __FILE__ << ":" << __LINE__ << ": "                 \
+             << #throw_exception_test << ": " << msg;               \
+	    throw Exception(omsg.str());                        \
+    }                                                               \
+}
+
+#endif
 
 #endif // TEST_FOR_EXCEPTION_H
