@@ -1,0 +1,21 @@
+file                description
+--------------------------------
+README              This file
+2d_poisson.csh      Script called by test harness
+baseline*           Expected results
+ml_inputfile*       Input decks for tests
+
+Overview
+--------
+The 2D_poisson _script runs through the 6 test cases (#4 is missing) using the
+executable "ml_example2d.exe" from the ../../examples directory.
+
+Each run is diff'd against the corresponding standard, "baseline*".   If any of
+the following are different:
+
+   operator complexity
+   number of iterates
+   select few entries of the solution
+
+then the test is declared to have failed.  Otherwise, the test is said to have
+passed.

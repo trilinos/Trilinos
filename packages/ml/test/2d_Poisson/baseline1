@@ -1,0 +1,97 @@
+Fine grid = 41 x 41 
+**************************************************************
+* ML Aggregation information                                 *
+==============================================================
+ML_Aggregate : ordering           = natural.
+ML_Aggregate : min nodes/aggr     = 2
+ML_Aggregate : max neigh selected = 0
+ML_Aggregate : attach scheme      = MAXLINK
+ML_Aggregate : coarsen scheme     = UNCOUPLED
+ML_Aggregate : strong threshold   = 8.000000e-02
+ML_Aggregate : P damping factor   = 1.333333e+00
+ML_Aggregate : number of PDEs     = 1
+ML_Aggregate : number of null vec = 1
+ML_Aggregate : smoother drop tol  = 0.000000e+00
+ML_Aggregate : max coarse size    = 32
+ML_Aggregate : max no. of levels  = 4
+**************************************************************
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Aggregate_Coarsen begins 
+ML_Aggregate_CoarsenUncoupled : current level = 3
+ML_Aggregate_CoarsenUncoupled : current eps = 8.000000e-02
+Aggregation(UVB) : Total nonzeros = 8241 (Nrows=1681)
+Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
+Aggregation(UC) : Phase 1 - nodes aggregated = 1421 (1681)
+Aggregation(UC) : Phase 1 - total aggregates = 294 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 1421 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 294
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 294
+Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
+Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
+Gen_Prolongator : max eigen = 1.991338e+00 
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Gen_MGHierarchy : Gen_RAP
+ML_Gen_MGHierarchy : Gen_RAP done
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Aggregate_Coarsen begins 
+ML_Aggregate_CoarsenUncoupled : current level = 2
+ML_Aggregate_CoarsenUncoupled : current eps = 4.000000e-02
+Aggregation(UVB) : Total nonzeros = 2452 (Nrows=294)
+Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
+Aggregation(UC) : Phase 1 - nodes aggregated = 271 (294)
+Aggregation(UC) : Phase 1 - total aggregates = 37 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 271 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 37
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 37
+Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
+Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
+Gen_Prolongator : max eigen = 1.393088e+00 
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Gen_MGHierarchy : Gen_RAP
+ML_Gen_MGHierarchy : Gen_RAP done
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Aggregate_Coarsen begins 
+ML_Aggregate_CoarsenUncoupled : current level = 1
+ML_Aggregate_CoarsenUncoupled : current eps = 2.000000e-02
+Aggregation(UVB) : Total nonzeros = 289 (Nrows=37)
+Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
+Aggregation(UC) : Phase 1 - nodes aggregated = 26 (37)
+Aggregation(UC) : Phase 1 - total aggregates = 5 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 26 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 5
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 1
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 6
+Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
+Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
+Gen_Prolongator : max eigen = 1.530262e+00 
+ML_Gen_MGHierarchy : applying coarsening 
+ML_Gen_MGHierarchy : Gen_RAP
+ML_Gen_MGHierarchy : Gen_RAP done
+Smoothed Aggregation : operator complexity = 1.336731e+00.
+Coarse level = 0 
+
+		*******************************************************
+		***** Preconditioned CG solution
+		***** 4 level MG ( SGS_pre3/SGS_post3, SuperLU)
+		***** No scaling
+		*******************************************************
+
+                iter:    0           residual = 1.000000e+00
+                iter:    1           residual = 2.100013e-02
+                iter:    2           residual = 8.727958e-04
+                iter:    3           residual = 3.058251e-05
+                iter:    4           residual = 9.550186e-07
+                iter:    5           residual = 2.870787e-08
+                iter:    6           residual = 9.162882e-10
+
+
+		total iterations: 6
+		Flops not available for options[AZ_precond] = 16
+Printing out a few entries of the solution ...
+solution(gid = 7) = 7.0000e+00
+solution(gid = 23) = 2.3000e+01
+solution(gid = 47) = 4.7000e+01
+solution(gid = 101) = 1.0100e+02
+solution(gid = 171) = 1.7100e+02

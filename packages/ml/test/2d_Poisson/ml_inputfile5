@@ -1,0 +1,62 @@
+#
+#  Test input file ML 
+#       
+# Notes: 
+#   1) Captilization should not matter
+#   2) Lines starting with # are comments
+#   3) Parallel Partitioning File is not used
+#      when only 1 processor is present.
+#   4) comments in [] indicate available options.
+#   5) The matrix must be stored in a file '.data' according
+#      to Aztec's AZ_read_msr() format.
+#   6) Including the file 'rhsfile' will cause this 
+#      data (stored in Aztec's AZ_read_msr() format)
+#      to be used as righthand side.
+#   7) Including the file 'initguessfile' will cause this 
+#      data (stored in Aztec's AZ_read_msr() format)
+#      to be used as righthand side.
+#   8) rigid body mode information can be input by
+#      keeping files 'rigid_body_mode%d' (stored
+#      in Aztec's AZ_read_msr() format) where %d
+#      starts from 0 and increases. Each file
+#      should contain 1 rigid body mode.
+#   9) The utility ml/util/az_capt2read.c can be used
+#      to convert matlab type '*.dat' data into 
+#      AZ_read_msr() format.
+#
+-----------------------------------------------
+      General Problem Specifications
+-----------------------------------------------
+Number of x nodes per proc    = 203
+Number of DOF per node       = 1
+Parallel Partitioning File   = partition_file
+Output Frequency             = 2       
+Tolerance                    = 1.0e-11
+Print Level                  = 3
+#                              [0,1,...]
+-----------------------------------------------
+      Solution Specifications
+-----------------------------------------------
+Max Number of Levels         = 9
+Type of Smoother             = MLS
+#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
+Smoother steps per level     = 4
+Coarse grid solver           = SuperLU
+#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                               BlockGaussSeidel, Aggregate, Jacobi, Metis,
+#                               SuperLU]
+Coarse Grid iterations       = 1
+Outer Iteration              = Gmres
+#                              [Cg, Bicgstab, Tfqmr, Gmres] 
+
+-----------------------------------------------
+      Aggregation Specifications
+-----------------------------------------------
+Type of Aggregation          = Uncoupled
+#                              [Mis, Uncoupled, Coupled]
+Aggregate threshold          = 0.001
+Max coarse size              = 30
+Smoothed aggregation damping = 1.5 
+Spectral norm calculation    = Calc
+#                              [Anorm, Calc]
