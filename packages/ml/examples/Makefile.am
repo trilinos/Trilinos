@@ -211,10 +211,13 @@ ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
 
+if ML_USING_TEUCHOS
+
 ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_LDADD = ${ml_libs} ../../teuchos/src/libteuchos.a ../../triutils/src/libtriutils.a ../../epetra/src/libepetra.a
 ml_example_epetra_preconditioner_LINK = ${mllink}
+endif
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}

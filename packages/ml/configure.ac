@@ -319,6 +319,7 @@ TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support. Amesos, a Trilinos packa
 TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_IFPACK, no)
 #
 TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
+AM_CONDITIONAL(ML_USING_TEUCHOS, test "X$ac_cv_use_ml_teuchos" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --with-ml_epetra and --with-ml_teuchos.], ML_ANASAZI, no)
 #
