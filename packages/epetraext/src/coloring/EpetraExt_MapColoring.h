@@ -60,10 +60,12 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
    */
   CrsGraph_MapColoring( ColoringAlgorithm algo = ALGO_GREEDY,
                         bool verbose = false,
-                        int reordering = 0 )
+                        int reordering = 0,
+		        int colorParallel = 0 )
   : algo_(algo),
     verbose_(verbose),
-    reordering_(reordering)
+    reordering_(reordering),
+    colorParallel_(colorParallel)
   {}
 
   ///
@@ -73,11 +75,12 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 
  private:
 
-  bool verbose_;
+  const bool verbose_;
 
-  ColoringAlgorithm algo_;
+  const ColoringAlgorithm algo_;
 
-  int reordering_;
+  const int reordering_;
+  const int colorParallel_;
 
 };
 

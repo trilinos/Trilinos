@@ -29,11 +29,16 @@
 #include <EpetraExt_MapColoring.h>
 
 #include <EpetraExt_Transpose_CrsGraph.h>
+#include <EpetraExt_Overlap_CrsGraph.h>
 
 #include <Epetra_CrsGraph.h>
+#include <Epetra_IntVector.h>
 #include <Epetra_MapColoring.h>
 #include <Epetra_Map.h>
+#include <Epetra_Comm.h>
 #include <Epetra_Util.h>
+#include <Epetra_Import.h>
+#include <Epetra_Export.h>
 
 #ifdef EPETRAEXT_TIMING
 #include <Epetra_Time.h>
@@ -68,6 +73,11 @@ operator()( OriginalTypeRef orig  )
 
   if( verbose_ ) cout << "RowMap:\n" << RowMap;
   if( verbose_ ) cout << "ColMap:\n" << ColMap;
+
+  Epetra_MapColoring * ColorMap = 0;
+
+  if( !colorParallel_ )
+  {
 
   Epetra_CrsGraph * base = &( const_cast<Epetra_CrsGraph&>(orig) );
 
@@ -149,7 +159,7 @@ operator()( OriginalTypeRef orig  )
   cout << "EpetraExt::MapColoring [GEN DIST-2 GRAPH] Time: " << wTime2-wTime1 << endl;
 #endif
 
-  Epetra_MapColoring * ColorMap = new Epetra_MapColoring( ColMap );
+  ColorMap = new Epetra_MapColoring( ColMap );
 
   vector<int> rowOrder( nCols );
   if( reordering_ == 0 || reordering_ == 1 ) 
@@ -316,13 +326,197 @@ operator()( OriginalTypeRef orig  )
     cout << "EpetraExt::MapColoring [LUBI COLORING] Time: " << wTime2-wTime1 << endl;
     cout << "Num LUBI Colors: " << ColorMap->NumColors() << endl;
 #endif
+
+    if( distributedGraph ) delete base;
   }
   else
     abort(); //UNKNOWN ALGORITHM
 
-  if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
+  }
+  else
+  {
+    //Generate Parallel Adjacency-2 Graph
 
-  if( distributedGraph ) delete base;
+    EpetraExt::CrsGraph_Overlap OverlapTrans(1);
+    Epetra_CrsGraph & OverlapGraph = OverlapTrans( orig );
+    if( verbose_ ) cout << "OverlapGraph:\n" << OverlapGraph;
+
+    int MyPID = RowMap.Comm().MyPID();
+
+    Epetra_CrsGraph Adj2( Copy, RowMap, OverlapGraph.ColMap(), 0 );
+    int NumIndices;
+    int * Indices;
+    int NumAdj1Indices;
+    int * Adj1Indices;
+    for( int i = 0; i < nRows; ++i )
+    {
+      assert( OverlapGraph.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
+
+      set<int> Cols;
+      for( int j = 0; j < NumAdj1Indices; ++j )
+      {
+        int GID = OverlapGraph.LRID( OverlapGraph.GCID( Adj1Indices[j] ) );
+        assert( OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices ) == 0 );
+        for( int k = 0; k < NumIndices; ++k ) Cols.insert( Indices[k] );
+      }
+      int nCols2 = Cols.size();
+      vector<int> ColVec( nCols2 );
+      set<int>::iterator iterIS = Cols.begin();
+      set<int>::iterator iendIS = Cols.end();
+      for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
+      assert( Adj2.InsertMyIndices( i, nCols2, &ColVec[0] ) >= 0 );
+    }
+    assert( Adj2.TransformToLocal() == 0 );
+    RowMap.Comm().Barrier();
+    if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
+
+    //collect GIDs on boundary
+    vector<int> boundaryGIDs;
+    vector<int> interiorGIDs;
+    for( int row = 0; row < nRows; ++row )
+    {
+      Adj2.ExtractMyRowView( row, NumIndices, Indices );
+      bool testFlag = false;
+      for( int i = 0; i < NumIndices; ++i )
+        if( Indices[i] >= nRows ) testFlag = true;
+      if( testFlag ) boundaryGIDs.push_back( Adj2.GRID(row) );
+      else           interiorGIDs.push_back( Adj2.GRID(row) );
+    }
+
+    int LocalBoundarySize = boundaryGIDs.size();
+    int LocalInteriorSize = interiorGIDs.size();
+
+    Epetra_Map BoundaryMap( -1, boundaryGIDs.size(), &boundaryGIDs[0], 0, RowMap.Comm() );
+    if( verbose_ ) cout << "BoundaryMap:\n" << BoundaryMap;
+    
+    int BoundarySize = BoundaryMap.NumGlobalElements();
+
+    Epetra_Map BoundaryIndexMap( BoundarySize, LocalBoundarySize, 0, RowMap.Comm() );
+    if( verbose_ ) cout << "BoundaryIndexMap:\n" << BoundaryIndexMap;
+
+    Epetra_IntVector bGIDs( View, BoundaryIndexMap, &boundaryGIDs[0] );
+    if( verbose_ ) cout << "BoundaryGIDs:\n" << bGIDs;
+
+    int NumLocalBs = 0;
+    if( !RowMap.Comm().MyPID() ) NumLocalBs = BoundarySize;
+     
+    Epetra_Map LocalBoundaryIndexMap( BoundarySize, NumLocalBs, 0, RowMap.Comm() );
+    if( verbose_ ) cout << "LocalBoundaryIndexMap:\n" << LocalBoundaryIndexMap;
+
+    Epetra_IntVector lbGIDs( LocalBoundaryIndexMap );
+    Epetra_Import lbImport( LocalBoundaryIndexMap, BoundaryIndexMap );
+    lbGIDs.Import( bGIDs, lbImport, Insert );
+    if( verbose_ ) cout << "LocalBoundaryGIDs:\n" << lbGIDs;
+
+    Epetra_Map LocalBoundaryMap( BoundarySize, NumLocalBs, lbGIDs.Values(), 0, RowMap.Comm() );
+    if( verbose_ ) cout << "LocalBoundaryMap:\n" << LocalBoundaryMap;
+
+    Epetra_CrsGraph LocalBoundaryGraph( Copy, LocalBoundaryMap, LocalBoundaryMap, 0 );
+    Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2.RowMap() );
+    LocalBoundaryGraph.Import( Adj2, LocalBoundaryImport, Insert );
+    LocalBoundaryGraph.TransformToLocal();
+    if( verbose_ ) cout << "LocalBoundaryGraph:\n " << LocalBoundaryGraph;
+
+    EpetraExt::CrsGraph_MapColoring BoundaryTrans( algo_, verbose_, reordering_ );
+    Epetra_MapColoring & LocalBoundaryColoring = BoundaryTrans( LocalBoundaryGraph );
+    if( verbose_ ) cout << "LocalBoundaryColoring:\n " << LocalBoundaryColoring;
+
+    Epetra_MapColoring BoundaryColoring( BoundaryMap );
+    Epetra_Export BoundaryExport( LocalBoundaryMap, BoundaryMap );
+    BoundaryColoring.Export( LocalBoundaryColoring, BoundaryExport, Insert );
+    if( verbose_ ) cout << "BoundaryColoring:\n " << BoundaryColoring;
+
+    Epetra_Map InteriorMap( -1, interiorGIDs.size(), &interiorGIDs[0], 0, RowMap.Comm() );
+    if( verbose_ ) cout << "InteriorMap:\n " << InteriorMap;
+
+    Epetra_CrsGraph InteriorGraph( Copy, InteriorMap, InteriorMap, 0 );
+    Epetra_Import InteriorImport( InteriorMap, Adj2.RowMap() );
+    InteriorGraph.Import( Adj2, InteriorImport, Insert );
+    InteriorGraph.TransformToLocal();
+    if( verbose_ ) cout << "InteriorGraph:\n " << InteriorGraph;
+
+    EpetraExt::CrsGraph_MapColoring InteriorTrans;
+    Epetra_MapColoring & InteriorColoring = InteriorTrans( InteriorGraph );
+    if( verbose_ ) cout << "InteriorColoring:\n " << InteriorColoring;
+
+    ColorMap = new Epetra_MapColoring( RowMap );
+
+    //Add Boundary Colors
+    for( int i = 0; i < LocalBoundarySize; ++i )
+    {
+      int GID = BoundaryMap.GID(i);
+      (*ColorMap)(GID) = BoundaryColoring(GID);
+    }
+
+    if( colorParallel_ == 1 )
+    {
+      int MaxBoundaryColors = LocalBoundaryColoring.MaxNumColors();
+
+      for( int i = 0; i < LocalInteriorSize; ++i )
+      {
+        int GID = InteriorMap.GID(i);
+        (*ColorMap)(GID) = InteriorColoring(GID) + MaxBoundaryColors;
+      }
+    }
+    else
+    {
+      vector<int> rowOrder( nRows );
+      if( reordering_ == 0 || reordering_ == 1 ) 
+      {
+        multimap<int,int> adjMap;
+        typedef multimap<int,int>::value_type adjMapValueType;
+        for( int i = 0; i < nRows; ++i )
+          adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+        multimap<int,int>::iterator iter = adjMap.begin();
+        multimap<int,int>::iterator end = adjMap.end();
+        if( reordering_ == 0 ) //largest first (less colors)
+        {
+          for( int i = 1; iter != end; ++iter, ++i )
+            rowOrder[nRows-i] = (*iter).second;
+        }
+        else                  //smallest first (better balance)
+        {
+          for( int i = 0; iter != end; ++iter, ++i )
+            rowOrder[i] = (*iter).second;
+        }
+      }
+      else if( reordering_ == 2 ) //random
+      {
+        for( int i = 0; i < nRows; ++i )
+          rowOrder[i] = i;
+#ifndef TFLOP
+        random_shuffle( rowOrder.begin(), rowOrder.end() );
+#endif
+      }
+
+      //Constrained greedy coloring of interior
+      for( int row = 0; row < nRows; ++row )
+      {
+        if( !(*ColorMap)[ rowOrder[row] ] )
+        {
+          Adj2.ExtractMyRowView( rowOrder[row], NumIndices, Indices );
+
+          set<int> usedColors;
+          int color;
+          for( int i = 0; i < NumIndices; ++i )
+          {
+            color = (*ColorMap)[ Indices[i] ];
+            if( color > 0 ) usedColors.insert( color );
+            color = 0;
+            int testcolor = 1;
+            while( !color )
+            {
+              if( !usedColors.count( testcolor ) ) color = testcolor;
+              ++testcolor;
+            }
+          }
+          (*ColorMap)[ rowOrder[row] ] = color;
+        }
+      }
+    }
+  }
+
+  if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
 
   newObj_ = ColorMap;
 

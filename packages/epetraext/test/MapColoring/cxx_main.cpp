@@ -211,6 +211,18 @@ int main(int argc, char *argv[]) {
 		               verbose, 2);
   Epetra_MapColoring & Lubi2ColorMap = Lubi2MapColoringTransform( A );
 
+  if( verbose ) cout << "Parallel Map Coloring 1!\n";
+  EpetraExt::CrsGraph_MapColoring
+    Parallel1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		               verbose, 0, 1);
+  Epetra_MapColoring & Parallel1ColorMap = Parallel1MapColoringTransform( A );
+
+  if( verbose ) cout << "Parallel Map Coloring 2!\n";
+  EpetraExt::CrsGraph_MapColoring
+    Parallel2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		               verbose, 0, 2);
+  Epetra_MapColoring & Parallel2ColorMap = Parallel2MapColoringTransform( A );
+
   int NumColors = Greedy0ColorMap.NumColors();
   int * ListOfColors = Greedy0ColorMap.ListOfColors();
 
