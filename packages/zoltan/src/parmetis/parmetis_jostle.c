@@ -50,12 +50,9 @@ static PARAM_VARS Graph_params[] = {
 
 /***************  prototypes for internal functions ********************/
 
-#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
-
-static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
-  ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, 
-  float *itr, int *rank, int *iperm, ZOS *order_info);
+/* Zoltan_ParMetis_Shared  should be compiled even when ZOLTAN_PARMETIS 
+   is not defined so it can return an error.
+ */
 static int Zoltan_ParMetis_Shared(
   ZZ *zz,
   int *num_imp,
@@ -70,8 +67,16 @@ static int Zoltan_ParMetis_Shared(
   int *iperm,
   ZOS *order_info
 );
+
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
+
+static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
+  ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
+  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, 
+  float *itr, int *rank, int *iperm, ZOS *order_info);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
+
 #if PARMETIS_MAJOR_VERSION >= 3
 static int pmv3method(char *alg);
 #endif
