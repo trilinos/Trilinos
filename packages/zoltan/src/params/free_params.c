@@ -22,6 +22,7 @@ extern "C" {
 #include <stdlib.h>
 #include "params_const.h"
 #include "zoltan_mem.h"
+#include "zoltan_types.h"
 
 
 void Zoltan_Free_Params(
@@ -44,6 +45,45 @@ PARAM_LIST **params)				/* parameters structure */
     }
 
     *params = NULL;
+}
+
+int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST *from)
+{
+  PARAM_LIST *param;
+  PARAM_LIST *prev;
+
+  if (*to != NULL) {
+    Zoltan_Free_Params(to);
+  }
+
+  prev = NULL;
+
+  while (from) {
+    
+    param = (PARAM_LIST *) ZOLTAN_MALLOC(sizeof(PARAM_LIST));
+    if (param == NULL) {
+      Zoltan_Free_Params(to);
+      return (ZOLTAN_FATAL);
+    }
+
+    param->name = strdup(from->name);
+    param->new_val = strdup(from->new_val);
+    param->index = from->index;
+    param->next = NULL;
+
+    if (prev){
+      prev->next = param;
+    }
+
+    from = from->next;
+    prev = param;
+
+    if (*to == NULL){
+      *to = param;
+    }
+  }
+
+  return ZOLTAN_OK;
 }
 
 #ifdef __cplusplus
