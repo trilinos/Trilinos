@@ -70,7 +70,8 @@ int main()
     asymVec(i) = sin( pi/2.0 * (-1.0 + h*i) );
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::PitchforkBord::ExtendedGroup pfgrp(grp, asymVec, asymVec, 2);
+  LOCA::Bifurcation::PitchforkBord::ExtendedGroup pfgrp(grp, asymVec, asymVec,
+							asymVec,2);
 
   // Set up the status tests
   NOX::StatusTest::NormF statusTestA(1.0e-8);

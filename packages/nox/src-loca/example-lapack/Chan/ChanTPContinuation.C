@@ -67,7 +67,7 @@ int main()
     grp.setParams(p);
 
     // Create initial guess for the null vector of jacobian
-    NOX::LAPACK::Vector nullVec(n);  // length 1
+    NOX::LAPACK::Vector nullVec(n);  // length n
     nullVec.init(1.0);             // initial value 1.0
 
     // Create parameter list
@@ -94,6 +94,16 @@ int main()
     stepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
+
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "Turning Point");
+    bifurcationList.setParameter("Bifurcation Parameter", "alpha");
+    bifurcationList.setParameter("Length Normalization Vector", 
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+    bifurcationList.setParameter("Initial Null Vector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -137,7 +147,7 @@ int main()
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			       //NOX::Utils::OuterIteration + 
+			       NOX::Utils::OuterIteration + 
 			       //NOX::Utils::OuterIterationStatusTest + 
 			       //NOX::Utils::InnerIteration +
 			       //NOX::Utils::Parameters +
@@ -158,20 +168,8 @@ int main()
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
-    // Set up Bifurcation list
-    NOX::Parameter::List& bifList = locaParamsList.sublist("Bifurcation");
-    bifList.setParameter("Bifurcation Parameter", "alpha");
-    bifList.setParameter("Length Normalization Vector", 
-			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
-    bifList.setParameter("Initial Null Vector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
-
-    // Create a turning point group that uses the lapack group
-    //LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 0);
-    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, bifList);
-
     // Create the stepper  
-    LOCA::Stepper stepper(tpgrp, combo, paramList);
+    LOCA::Stepper stepper(grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

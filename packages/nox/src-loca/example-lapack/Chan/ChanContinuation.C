@@ -94,6 +94,11 @@ int main()
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",false);
 
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "None");
+
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");

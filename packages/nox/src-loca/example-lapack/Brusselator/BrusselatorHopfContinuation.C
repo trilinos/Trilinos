@@ -92,9 +92,6 @@ int main()
     NOX::LAPACK::Vector phi(2*n);
     phi.init(1.0);
 
-    // Create a Hopf point group that uses the lapack group
-    LOCA::Bifurcation::HopfBord::ExtendedGroup hopfgrp(grp, y, z, phi, w, 1);
-
     // Create parameter list
     NOX::Parameter::List paramList;
 
@@ -120,6 +117,19 @@ int main()
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",true);
+
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "Hopf");
+    bifurcationList.setParameter("Bifurcation Parameter", "beta");
+    bifurcationList.setParameter("Length Normalization Vector", 
+			 dynamic_cast<NOX::Abstract::Vector*>(&phi));
+    bifurcationList.setParameter("Initial Real Eigenvector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&y));
+    bifurcationList.setParameter("Initial Imaginary Eigenvector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&z));
+    bifurcationList.setParameter("Initial Frequency", w);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -180,7 +190,7 @@ int main()
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(hopfgrp, combo, paramList);
+    LOCA::Stepper stepper(grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

@@ -59,17 +59,10 @@ int main()
     LOCA::LAPACK::Group grp(pf);
     grp.setParams(p);
 
-    // Create initial guess for the null vector of jacobian
-    NOX::LAPACK::Vector nullVec(n);  // length n
-    nullVec.init(1.0);             // initial value 1.0
-
     // Create asymmetry vector
     NOX::LAPACK::Vector asymVec(n);  // length n
     for (int i=0; i<n; i++)
       asymVec(i) = sin( pi/2.0 * (-1.0 + h*i) );
-
-     // Create a turning point group that uses the lapack group
-    LOCA::Bifurcation::PitchforkBord::ExtendedGroup pfgrp(grp, asymVec, asymVec, 2);
 
     // Create parameter list
     NOX::Parameter::List paramList;
@@ -96,6 +89,18 @@ int main()
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",false);
+
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "Pitchfork");
+    bifurcationList.setParameter("Bifurcation Parameter", "lambda");
+    bifurcationList.setParameter("Length Normalization Vector", 
+			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
+    bifurcationList.setParameter("Initial Null Vector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
+    bifurcationList.setParameter("Asymmetric Vector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&asymVec));
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -168,7 +173,7 @@ int main()
 				 statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(pfgrp, combo, paramList);
+    LOCA::Stepper stepper(grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
