@@ -10,6 +10,8 @@
 #include "Amesos_Parameter_List.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -26,7 +28,7 @@ int main(int argc, char *argv[])
 
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm( );
+  Epetra_SerialComm Comm;
 #endif
   int iam = Comm.MyPID() ; 
 
@@ -75,6 +77,7 @@ int main(int argc, char *argv[])
   }
 
   Problem.SetOperator( &A );
+  EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
   //
