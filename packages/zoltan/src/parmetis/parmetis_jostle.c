@@ -579,7 +579,8 @@ static int LB_ParMetis_Jostle(
         if (!proc_list){
           /* Not enough memory, try shorter list */
           if (lb->Debug_Level >= LB_DEBUG_ALL) {
-            printf("[%1d] Debug: Could not allocate %d list nodes, trying %d instead.\n", 
+            printf("[%1d] Debug: Could not allocate %d list nodes, "
+                   "trying %d instead.\n", lb->Proc,
                    max_proc_list_len, max_proc_list_len/2);
           }
           max_proc_list_len /= 2;
