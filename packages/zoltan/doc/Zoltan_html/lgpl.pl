@@ -118,8 +118,8 @@ print <<ENDHTML;
 <!-- The "thank you" page, using SNL template. -->
 
 <body text="#000000" background="http://www.sandia.gov/images/bkgrnd.gif">
-<!-- KDD Turned off alternative link colors in template; 
-the following line was part of the above body command. -->
+<!-- KDD Turned off alternative link colors in template; -->
+<!-- the following line was part of the above body command. -->
 <!-- link="#003366" vlink="#cc0033" alink="#000000"-->
 <a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
 <table BORDER=0 valign="top" >
