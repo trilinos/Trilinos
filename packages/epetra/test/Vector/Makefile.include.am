@@ -39,5 +39,3 @@ Vector_test_DEPENDENCIES = $(EPETRA_LIBS)
 Vector_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
 Vector_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
-
-TESTS = Vector_test.exe

@@ -31,3 +31,25 @@ FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
 MultiVector Object SerialDense SerialSpdDense \
 VbrMatrix Vector Comm scripts BasicPerfTest
+
+TESTS = \
+BlockMap/BlockMap_test.exe \
+Comm/Comm_test.exe \
+CrsGraph/CrsGraph_test.exe \
+CrsMatrix/CrsMatrix_test.exe \
+CrsRectMatrix/CrsRectMatrix_test.exe \
+FECrsGraph/FECrsGraph_test.exe \
+FECrsMatrix/FECrsMatrix_test.exe \
+FEVbrMatrix/FEVbrMatrix_test.exe \
+FEVector/FEVector_test.exe \
+ImportExport/ImportExport_test.exe \
+IntSerialDense/IntSerialDense_test.exe \
+Map/Map_test.exe \
+MapColoring/MapColoring_test.exe \
+MultiVector/MultiVector_test.exe \
+Object/Object_test.exe \
+SerialDense/SerialDense_test.exe \
+SerialSpdDense/SerialSpdDense_test.exe \
+VbrMatrix/VbrMatrix_test.exe \
+Vector/Vector_test.exe
+
