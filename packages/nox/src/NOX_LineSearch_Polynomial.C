@@ -174,6 +174,11 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   // Increment the number of newton steps requiring a line search
   if ((useCounter) && (!isConverged))
     counter.incrementNumNonTrivialLineSearches();
+	
+  double prevPhi = 0.0;	// \phi(\lambda_{k-1})
+  double prevPrevPhi = 0.0;	// \phi(\lambda_{k-2})
+  double prevStep = 0.0;	// \lambda_{k-1}
+  double prevPrevStep = 0.0;	// \lambda_{k-2}
 
   while ((!isConverged) && (!isFailed)) 
   {
@@ -184,11 +189,6 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
       isFailed = true;
       break;
     }
-	
-    double prevPhi = 0.0;	// \phi(\lambda_{k-1})
-    double prevPrevPhi = 0.0;	// \phi(\lambda_{k-2})
-    double prevStep = 0.0;	// \lambda_{k-1}
-    double prevPrevStep = 0.0;	// \lambda_{k-2}
 
     if ((nIters == 1) || (interpolationType == Quadratic)) 
     {
