@@ -38,18 +38,18 @@
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Decomposition Info = <options>
+# Decomposition Method = <method>
 #
 # This line is used to specify the algorithm that Zoltan will use
-# and what tolerance it will attempt to maintain. The options for
-# this line are:
-#	method=<method>	Use this option to specify the method that Zoltan
-#			will use to do the load balance. Currently, the
-#			only methods that are acceptable are:
-#				rcb - Reverse Coordinate Bisection
-#				octpart - Octree/Space Filling Curve
+# for load balancing. Currently, the following methods that are acceptable:
+#	rcb - Reverse Coordinate Bisection
+#	octpart - Octree/Space Filling Curve
+#	parmetis - ParMETIS graph partitioning
+#	jostle - Jostle graph partitioning
+#	reftree - Refinement tree partitioning
+#	
 #-----------------------------------------------------------------------------
-Decomposition Info	= method=rcb
+Decomposition Method	= rcb
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Zoltan Parameters = <options>
