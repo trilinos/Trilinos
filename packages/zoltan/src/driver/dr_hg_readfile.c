@@ -144,8 +144,11 @@ static int old_readfile (
              err = ZOLTAN_FATAL;
              goto End;
              }
-          else if (ch == '\n')
+          else if (ch == '\n')  {
+             string[count++] = '\n';
+             string[count++] = 0;
              break;
+             }
           else
              string[count++] = ch;
           }
