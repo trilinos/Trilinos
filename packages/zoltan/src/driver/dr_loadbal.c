@@ -1383,9 +1383,12 @@ int get_hg_edge_list(
     tmp = hindex[i+1] - hindex[i];
     edge_sizes[i] = tmp;
     for (j = hindex[i]; j < hindex[i+1]; j++) {
-      edge_verts[gid + j*num_gid_entries] = mesh->hvertex[j];
-      edge_procs[j] = Proc;  /* KDD -- temporary; will have to do something
-                                KDD -- different in parallel. */
+      edge_procs[j] = mesh->hvertex_proc[j];  
+      if (edge_procs[j] == Proc)
+        edge_verts[gid+j*num_gid_entries] = 
+                                     mesh->elements[mesh->hvertex[j]].globalID;
+      else
+        edge_verts[gid+j*num_gid_entries] = mesh->hvertex[j];
     }
     for (j = 0; j < ewgt_dim; j++) {
       if (mesh->hewgt_dim >= j)

@@ -45,7 +45,6 @@ int Zoltan_HG_Readfile (
   int *nVtx, 
   int *nEdge, 
   int *nInput,
-  int **hgid,
   int **hindex, 
   int **hvertex,
   int *vwgt_dim, 
@@ -58,11 +57,10 @@ int Zoltan_HG_Readfile (
 char string[81], *s;
 int err = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Readfile";
-int i;
 
   /* Initialize return values in case of error. */
   *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
-  *hgid  = *hindex  = *hvertex = NULL;
+  *hindex  = *hvertex = NULL;
   *vwgt   = *ewgt    = NULL;
   *base   = 0;
 
@@ -81,10 +79,6 @@ int i;
   else if (atoi(s) > 1)
     err = old_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
                         vwgt_dim, vwgt, ewgt_dim, ewgt, base);
-
-  *hgid = (int *) malloc(*nEdge * sizeof(int));
-  for (i = 0; i < *nEdge; i++) 
-    (*hgid)[i] = i;
 
 End:
   return  err;

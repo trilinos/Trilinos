@@ -402,8 +402,10 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
-  mesh->hindex         = mesh->hvertex
-                       = NULL;
+  mesh->hgid           = NULL;
+  mesh->hindex         = NULL;
+  mesh->hvertex        = NULL;
+  mesh->hvertex_proc   = NULL;
   mesh->hewgts         = NULL;
 }
 

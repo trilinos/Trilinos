@@ -116,6 +116,7 @@ int i;
   safe_free((void **) &(mesh->hgid));
   safe_free((void **) &(mesh->hindex));
   safe_free((void **) &(mesh->hvertex));
+  safe_free((void **) &(mesh->hvertex_proc));
 }
 
 #ifdef __cplusplus

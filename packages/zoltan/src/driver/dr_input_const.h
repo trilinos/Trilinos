@@ -152,6 +152,9 @@ extern int chaco_setup_mesh_struct(int, int, PROB_INFO_PTR,
                          int *, int, float *, int, float *, int,
                          float *, float *, float *, short *, int, int);
 
+extern void chaco_init_local_ids(int **, int **, int *, int *, int *, int,
+                         short *, int);
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

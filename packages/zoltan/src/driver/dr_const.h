@@ -146,14 +146,19 @@ struct Mesh_Description
                                    hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
                                    hyperedge.                                */
-  int    *hgid;                /* Global numbering for hyperedges; numbering
+  int    *hgid;                 /* Global numbering for hyperedges; numbering
                                    is derived implicitly from order hyperedges
                                    are read from file. Numbering is 0-based. */
   int    *hindex;               /* for hypergraphs, an entry for each 
                                    hyperedge, giving the starting index into
                                    hvertex for that hyperedge.               */ 
   int    *hvertex;              /* for hypergraphs, an array listing the 
-                                   vertices making up each hyperedge.        */
+                                   vertices making up each hyperedge.
+                                   If the vertex is local, the local ID (index
+                                   into elements array) is stored; otherwise,
+                                   the global ID is stored.        */
+  int    *hvertex_proc;         /* array listing the processor owning vertices
+                                   in hvertex. */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
                                    weights; size = hewgt_dim * nhedges;      */
 

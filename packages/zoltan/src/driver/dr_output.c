@@ -134,7 +134,10 @@ ELEM_INFO_PTR current_elem;
   for (i = 0; i < mesh->nhedges; i++) {
     printf("Hyperedge %d (%d):  (", mesh->hgid[i], i);
     for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
-      printf("%d ", mesh->hvertex[j]);
+      if (mesh->hvertex_proc[j] == Proc)
+        printf("%d ", mesh->elements[mesh->hvertex[j]].globalID);
+      else
+        printf("%d ", mesh->hvertex[j]);
     printf(")\n");
     if (mesh->hewgt_dim) {
       printf("Edge Weights:  ");

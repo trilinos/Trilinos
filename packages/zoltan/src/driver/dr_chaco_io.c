@@ -311,26 +311,14 @@ int chaco_fill_elements(
 
   DEBUG_TRACE_START(Proc, yo);
 
-  num_vtx = ch_dist_max_num_vtx(assignments);
-  vtx_list = (int *) malloc(num_vtx * sizeof(int));
-  ch_dist_vtx_list(vtx_list, &num_vtx, Proc, assignments);
+  chaco_init_local_ids(&local_ids, &vtx_list, &min_vtx, &max_vtx, &num_vtx, 
+                       gnvtxs, assignments, base);
 
-  if (num_vtx > 0) {
-    min_vtx = gnvtxs+1;
-    max_vtx = -1;
-    for (i = 0; i < num_vtx; i++) {
-      if (vtx_list[i] > max_vtx) max_vtx = vtx_list[i];
-      if (vtx_list[i] < min_vtx) min_vtx = vtx_list[i];
-    }
-    local_ids = (int *) malloc((max_vtx - min_vtx + 1) * sizeof(int));
-  }
 
   for (i = 0; i < num_vtx; i++) {
     mesh->elements[i].globalID = vtx_list[i]+base;  /* GlobalIDs are 1-based
                                                        in Chaco; may be 0-based
                                                        or 1-based in HG files */
-    local_ids[vtx_list[i]-min_vtx] = i;
-
     if (vwgts != NULL){
       for (j=0; j<vwgt_dim; j++) {
         mesh->elements[i].cpu_wgt[j] = vwgts[i*vwgt_dim+j];
@@ -421,6 +409,42 @@ int chaco_fill_elements(
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
+}
+
+/****************************************************************************/
+void chaco_init_local_ids(
+  int  **local_ids, 
+  int  **vtx_list, 
+  int   *min_vtx, 
+  int   *max_vtx, 
+  int   *num_vtx, 
+  int    gnvtxs,
+  short *assignments,
+  int    base
+)
+{
+/* Initialize an array of local IDs for vertices for quick search. */
+int i;
+int Proc;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+
+  *num_vtx = ch_dist_max_num_vtx(assignments);
+  *vtx_list = (int *) malloc(*num_vtx * sizeof(int));
+  ch_dist_vtx_list(*vtx_list, num_vtx, Proc, assignments);
+
+  if (*num_vtx > 0) {
+    *min_vtx = gnvtxs+1;
+    *max_vtx = -1;
+    for (i = 0; i < *num_vtx; i++) {
+      if ((*vtx_list)[i] > *max_vtx) *max_vtx = (*vtx_list)[i];
+      if ((*vtx_list)[i] < *min_vtx) *min_vtx = (*vtx_list)[i];
+    }
+    *local_ids = (int *) malloc((*max_vtx - *min_vtx + 1) * sizeof(int));
+  }
+
+  for (i = 0; i < *num_vtx; i++) 
+    (*local_ids)[(*vtx_list)[i] - (*min_vtx)] = i;
 }
 
 #ifdef __cplusplus
