@@ -28,8 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-//%module(package="PyTrilinos") EpetraExt
-%module EpetraExt
+%module(package="PyTrilinos") EpetraExt
 
 %{
 // System includes
@@ -92,6 +91,7 @@
 %template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
 							       std::allocator<Epetra_IntVector> > >;
+//%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
