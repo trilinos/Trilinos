@@ -38,6 +38,7 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_bicgstabl.c    ml_pde.c          ml_xyt.c ml_agg_MIS.c \
        ml_amg.c 		 ml_amg_MIS.c	   ml_amg_genP.c \
        ml_agg_reitzinger.c ml_twogrid_analysis.c ml_operator_blockmat.c
+#ML_CPP=ml_epetra_utils.cpp ml_epetra_operator.cpp
 
 #=======================================================================
 # ML include files

@@ -49,8 +49,8 @@ if test `expr $yes_or_no` = 'yess'
 then
    GOT_EPETRA=yes
    PACKAGES=`${echo} $PACKAGES -DML_WITH_EPETRA` 
-   ${echo} "ALL:" > Obj/make_epetra 
-   ${echo} "	make \"LINKER=/home/tuminaro/codes/mpich-1.2.1/bin/mpiCC\" \"ML_CPP=ml_epetra_utils.cpp ml_epetra_operator.cpp\"" >> Obj/make_epetra
+   rm -f Obj/Makefile
+   cat etc/flat_Makefile | sed "s/LINKER/CXX/" | sed "s/\#ML_CPP/ML_CPP/" > Obj/Makefile
 else
    GOT_EPETRA=no
 fi
@@ -403,10 +403,21 @@ ${echo} ARCH=$ARCH                    >  make_${ARCH}.variables
 ${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
 cd etc
 #./find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
-./find_missing_lapack_functions "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
-cd ..
-cat etc/.thedefs >>  make_${ARCH}.variables
-\rm -f etc/.thedefs
+#
+# if we have lapack and blas, we do not need to run the missing function script
+#
+if  test `expr $GOT_LAPACK` = 'yes' &&
+      (test `expr $GOT_BLAS` = 'yes')
+then
+    echo "no need to compile blas or lapack"
+    cd ..
+    ${echo} "-DML_DUMMY_FUNC"          >> make_${ARCH}.variables
+else
+   ./find_missing_lapack_functions "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
+   cd ..
+   cat etc/.thedefs >>  make_${ARCH}.variables
+   \rm -f etc/.thedefs
+fi
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables
 ${echo} LIBRARIES=$LIBRARIES          >> make_${ARCH}.variables
 
@@ -416,7 +427,7 @@ ${echo} "Now trying to make the ml library with a sample program ..."
 cd Obj
 if test `expr $GOT_EPETRA` = 'yes'
 then
-make ARCH=${ARCH} -f make_epetra
+make ARCH=${ARCH}
 else
 make ARCH=${ARCH}
 fi
@@ -444,7 +455,7 @@ ${echo} "setenv ARCH " $ARCH
 ${echo} ${chdir_command}
 if test `expr $GOT_EPETRA` = 'yes'
 then
-   ${echo} "make -f make_epetra"
+   ${echo} "make"
 else
    ${echo} "make"
 fi
@@ -453,7 +464,7 @@ ${echo} "or just"
 ${echo} ${chdir_command}
 if test `expr $GOT_EPETRA` = 'yes'
 then
-   ${echo} "make ARCH=${ARCH} -f make_epetra"
+   ${echo} "make ARCH=${ARCH}"
 else
    ${echo} "make ARCH=${ARCH}"
 fi
