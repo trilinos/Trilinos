@@ -583,10 +583,11 @@ dnl
 dnl Test a variety of MPI options:
 dnl --enable-mpi       - Turns MPI compiling mode on
 dnl --with-mpi         - specify root directory of MPI
-dnl --with-mpi-cxx     - specify MPI C++ compiler
-dnl --with-mpi-cc      - specify MPI C compiler
-dnl --with-mpi-f77     - specify MPI Fortran 77 compiler
-dnl --with-mpi-include - specify include directory for MPI 
+dnl --with-mpi-compilers - Turns on MPI compiling mode and sets the MPI C++
+dnl                       compiler = mpicxx or mpiCC (if mpicxx not available),
+dnl                       the MPI C compiler = mpicc and 
+dnl                       the MPI Fortran compiler = mpif77
+dnl --with-mpi-incdir - specify include directory for MPI 
 dnl --with-mpi-libs    - specify MPI libraries
 dnl --with-mpi-libdir  - specify location of MPI libraries
 dnl
@@ -599,13 +600,36 @@ dnl @author Mike Heroux <mheroux@cs.sandia.gov>
 dnl
 AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
+
 AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
-[
-HAVE_PKG_MPI=$enableval
-MPI_CXX=mpiCC
-],
+[HAVE_PKG_MPI=$enableval],
 [HAVE_PKG_MPI=no]
+)
+
+AC_ARG_WITH(mpi-compilers,
+[AC_HELP_STRING([--with-mpi-compilers=PATH],
+[use MPI compilers mpicc, mpif77, and mpicxx (or mpiCC) in the specified path or in the default path if no path is specified. Enables MPI])],
+[
+  if test X${withval} != Xno; then
+    HAVE_PKG_MPI=yes
+    if test X${withval} = Xyes; then
+      # Check for mpicxx, if it does not exist, use mpiCC instead.
+      AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
+      MPI_CC=mpicc
+      MPI_F77=mpif77
+    else
+      MPI_TEMP_CXX=${withval}/mpicxx
+      if test -f ${MPI_TEMP_CXX}; then
+        MPI_CXX=${MPI_TEMP_CXX}
+      else
+        MPI_CXX=${withval}/mpiCC
+      fi
+      MPI_CC=${withval}/mpicc
+      MPI_F77=${withval}/mpif77
+    fi
+  fi
+]
 )
 
 AC_ARG_WITH(mpi,
@@ -618,52 +642,10 @@ AC_ARG_WITH(mpi,
 ]
 )
 
-AC_ARG_WITH(mpi-cxx,
-[AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
-[
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
-    MPI_CXX=mpiCC
-  else
-    MPI_CXX=${withval}
-  fi
-  AC_MSG_CHECKING(user-defined MPI C++ compiler)
-  AC_MSG_RESULT([${MPI_CXX}])
-]
-)
-
-AC_ARG_WITH(mpi-cc,
-[AC_HELP_STRING([--with-mpi-cc],[use MPI C compiler (enables MPI) @<:@mpicc@:>@])],
-[
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
-    MPI_CC=mpicc
-  else
-    MPI_CC=${withval}
-  fi
-  AC_MSG_CHECKING(user-defined MPI C compiler)
-  AC_MSG_RESULT([${MPI_CC}])
-]
-)
-
-AC_ARG_WITH(mpi-f77,
-[AC_HELP_STRING([--with-mpi-f77],[use MPI Fortran 77 compiler (enables MPI) @<:@mpicc@:>@])],
-[
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
-    MPI_F77=mpif77
-  else
-    MPI_F77=${withval}
-  fi
-AC_MSG_CHECKING(user-defined MPI Fortran 77 compiler)
-AC_MSG_RESULT([${MPI_F77}])
-]
-)
-
-AC_ARG_WITH(mpi-include,
-[AC_HELP_STRING([--with-mpi-include],[Obsolete.  Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.])],
-[AC_MSG_ERROR([--with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'.])]
-)
+#AC_ARG_WITH(mpi-include,
+#[AC_HELP_STRING([--with-mpi-include],[Obsolete.  Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.])],
+#[AC_MSG_ERROR([--with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'.])]
+#)
 
 AC_ARG_WITH(mpi-libs,
 [AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
@@ -723,7 +705,9 @@ if test -n "${MPI_CXX}"; then
   else
     echo "-----"
     echo "Cannot find MPI C++ compiler ${MPI_CXX}."
-    echo "Specify with --with-mpi-cxx."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a C++ compiler using CXX=<compiler>"
+    echo "Do not use --with-mpi-compilers if using CXX=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
@@ -741,7 +725,9 @@ if test -n "${MPI_CC}"; then
   else
     echo "-----"
     echo "Cannot find MPI C compiler ${MPI_CC}."
-    echo "Specify with --with-mpi-cc."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a C compiler using CC=<compiler>"
+    echo "Do not use --with-mpi-compilers if using CC=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
   fi
@@ -759,7 +745,9 @@ if test -n "${MPI_F77}"; then
   else
     echo "-----"
     echo "Cannot find MPI Fortran compiler ${MPI_F77}."
-    echo "Specify with --with-mpi-f77."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a Fortran 77 compiler using F77=<compiler>"
+    echo "Do not use --with-mpi-compilers if using F77=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
@@ -854,12 +842,27 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     MPI_INC="${MPI_DIR}/include"
   fi
 
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR="${MPI_DIR}/lib"
-  fi
-
   if test -n "${MPI_INC}"; then
     CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
+  fi
+
+  AC_LANG_CPLUSPLUS 
+  AC_MSG_CHECKING(for mpi.h)
+  AC_TRY_CPP([#include "mpi.h"],
+    [AC_MSG_RESULT(yes)], 
+    [
+     AC_MSG_RESULT(no)  
+     echo "-----"
+     echo "Cannot link simple MPI program."
+     echo "Try --with-mpi-compilers to specify MPI compilers."
+     echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+     echo "to specify all the specific MPI compile options."
+     echo "-----"
+     AC_MSG_ERROR(MPI cannot link)
+    ]
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR="${MPI_DIR}/lib"
   fi
 
   if test -n "${MPI_LIBDIR}"; then
@@ -874,21 +877,23 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     LIBS="${MPI_LIBS} ${LIBS}"
   fi
 
-  AC_LANG_CPLUSPLUS 
-  AC_MSG_CHECKING(for mpi.h)
-  AC_TRY_CPP([#include "mpi.h"],
-    [AC_MSG_RESULT(yes)], 
-    [
-     AC_MSG_RESULT(no)  
-     echo "-----"
-     echo "Cannot link simple MPI program."
-     echo "Try --with-mpi-cxx to specify MPI C++ compile script."
-     echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
-     echo "to specify all the specific MPI compile options."
-     echo "-----"
-     AC_MSG_ERROR(MPI cannot link)
-    ]
   )
+
+#   AC_LANG_CPLUSPLUS 
+#   AC_MSG_CHECKING(whether MPI will link using C++ compiler)
+#   AC_TRY_LINK([#include <mpi.h>],
+#   [int c; char** v; MPI_Init(&c,&v);],
+#   [AC_MSG_RESULT(yes)], 
+#   [AC_MSG_RESULT(no)  
+#    echo "-----"
+#    echo "Cannot link simple MPI program."
+#    echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+#    echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+#    echo "to specify all the specific MPI compile options."
+#    echo "-----"
+#    AC_MSG_ERROR(MPI cannot link)]
+#   )
+
 fi
 ])
 
