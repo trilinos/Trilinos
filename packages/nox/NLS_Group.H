@@ -71,6 +71,9 @@ public:
   //! Throws an error if RHS and Jacobian have not been computed 
   virtual const NLS_Vector& computeNewton(NLS_ParameterList& params) = 0;
 
+  //! Compute and return Linear RHS vector d.
+  virtual double computeLinearRHSNorm() = 0;
+
   //@}
 
   /** @name "Is" functions

@@ -76,7 +76,7 @@ class NLS_PetraVector : public NLS_Vector {
 
   NLS_Vector&  scale(double alpha);
 
-  virtual NLS_Vector* newcopy();
+  virtual NLS_Vector* newcopy() const;
 
   double infnorm() const;
 

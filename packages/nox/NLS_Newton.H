@@ -12,6 +12,7 @@
 #define _NLS_NEWTON_H
 
 #include <string>
+#include "NLS_ForcingTerm.H"
 #include "NLS_Method.H"
 
 //! Implementation of plain Newton solver
@@ -37,7 +38,8 @@ private:
   
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
-  NLS_ParameterList& params;     //!< Parameter List
+  NLS_ParameterList& params;    //!< Parameter List
+  NLS_ForcingTerm forcingTerm;  //!< Forcing Term function
   double normrhs;		//!< Norm of RHS
 
   // Statistics

@@ -45,7 +45,8 @@ CCFLAGS = $(CXXFLAGS)
 NLSPACK_CC = NLS_Parameter.C NLS_ParameterList.C \
              NLS_PetraVector.C NLS_PetraGroup.C \
              NLS_MethodManager.C NLS_Newton.C \
-             NLS_Utilities.C
+             NLS_Utilities.C \
+	     NLS_ForcingTerm.C
 
 NLSPACK_C  = 
 

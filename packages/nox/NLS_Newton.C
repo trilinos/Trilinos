@@ -63,12 +63,26 @@ bool NLS_Newton::isConverged()
       
 int NLS_Newton::iterate()
 {
+  // compute the linear solver convergence criteria
+  if (params.getParameter("Forcing Term Method","None")!="None") {
+    params.setParameter("Residual Norm km1",oldsoln.getRHS().norm());
+    params.setParameter("Residual Norm k",normrhs);
+    double tol = forcingTerm.getForcingTerm(params);
+    params.setParameter("Linear Solver Tolerance", tol);
+  }
+
   // compute Jacobian at current solution
   soln.computeJacobian();
 
   // compute Newton direction for current solution
   soln.computeNewton(params);
 
+  // Since soln is the only group that is jacobian enabled we need 
+  // to compute the linear residual norm before the solution is updated. 
+  if (params.getParameter("Forcing Term Method","None")!="None")
+    params.setParameter("Linearized Residual Norm", 
+			soln.computeLinearRHSNorm());
+  
   // copy current group to the old group
   oldsoln.copy(soln);
 

@@ -64,7 +64,7 @@ public:
 
   //! Create a \b new NLS_Vector by copying this one. 
   //! Return a pointer to the new vector. 
-  virtual NLS_Vector* newcopy() = 0;
+  virtual NLS_Vector* newcopy() const = 0;
 
   //@}
 

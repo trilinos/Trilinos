@@ -9,6 +9,7 @@
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
 #include "AztecOO.h"
+#include "NLS_Utilities.H"
 #include "NLS_PetraGroup.H"
 
 NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I) :
@@ -140,12 +141,13 @@ const NLS_Vector& NLS_PetraGroup::computeGrad()
   // Compute grad = Jac^T * RHS.
   bool TransJ = true;
   Jac->Multiply(TransJ, RHSVector.getPetraVector(), gradVector.getPetraVector());
+  isValidGrad = true;
   return gradVector;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeNewton() 
 {
-  cout << "ERROR: No direct methods are avialable for matrix inversion yet!\n"
+  cout << "ERROR: No direct methods are avialable for linear solves yet!\n"
        << "Use the iterative solver call!" << endl;
   throw;
 }
@@ -164,14 +166,45 @@ const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& p)
     throw;
   }
   
-  Epetra_LinearProblem Problem(Jac, &(NewtonVector.getPetraVector()), &(RHSVector.getPetraVector()));
+  Epetra_LinearProblem Problem(Jac, 
+			       &(NewtonVector.getPetraVector()), 
+			       &(RHSVector.getPetraVector()));
+
+  int maxit = p.getParameter("Max Linear Iterations", 400);
+  double tol = p.getParameter("Linear Solver Tolerance", 1.0e-6);
+
+  if (NLS_Utilities::doPrint(3)) {
+    cout << "      *********************************************" << endl;
+    cout << "      NLS_PetraGroup::computeNewton "<< endl;
+    cout << "           Max Linear Iterations    = " << maxit << endl;
+    cout << "           Linear Solver Tolerance  = " << tol << endl;
+    cout << "      *********************************************" << endl 
+	 << endl;
+  }
 
   // For now, set problem level to hard, moderate, or easy
-  Problem.SetPDL(hard);
+  Problem.SetPDL(easy);
   AztecOO aztec(Problem);
-  aztec.Iterate(p.getParameter("Max Linear Iterations", 400), 
-		p.getParameter("Linear Solver Tolerance", 1.0e-4));  
+  aztec.Iterate(maxit,tol);
+  isValidNewton = true;
   return NewtonVector;
+}
+
+double NLS_PetraGroup::computeLinearRHSNorm() 
+{  
+  if (isRHS() && isJacobian() && isNewton()) {
+ 
+    bool TransJ = false;
+    NLS_PetraVector* d = dynamic_cast <NLS_PetraVector*> (RHSVector.newcopy());
+    Jac->Multiply(TransJ, NewtonVector.getPetraVector(), d->getPetraVector());
+    d->update(RHSVector, *d, -1.0);
+    double norm = d->norm();
+    delete d;
+    return norm;
+  }
+  cout << "ERROR: NLS_PetraGroup::computeLinearRHS - Vectors are out" 
+    " of date wrt X!" << endl;
+  throw;
 }
 
 bool NLS_PetraGroup::isRHS() const 

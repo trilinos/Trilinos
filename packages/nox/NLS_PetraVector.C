@@ -119,7 +119,12 @@ NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, double alpha,
 
 NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, const NLS_Vector& d, double step)
 {
-  throw;
+  petraVec->Update(1.0, 
+		   dynamic_cast<const NLS_PetraVector&>(x).getPetraVector(), 
+		   step, 
+		   dynamic_cast<const NLS_PetraVector&>(d).getPetraVector(), 
+		   0.0);
+  return *this;
 }
 
 NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step)
@@ -134,7 +139,7 @@ NLS_Vector& NLS_PetraVector::scale(double alpha)
   return *this;
 }
 
-NLS_Vector* NLS_PetraVector::newcopy() 
+NLS_Vector* NLS_PetraVector::newcopy() const
 {
   NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec, true);
   return newVec;

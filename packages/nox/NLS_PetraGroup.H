@@ -82,6 +82,13 @@ public:
   /*! Throws an error if RHS and Jacobian have not been computed */
   virtual const NLS_Vector& computeNewton(NLS_ParameterList& params);
 
+  //! Compute and place linear residual in vector d.
+  /*! Compute the RHS based on the local linear model.  The Jacobian and
+   *  Newton direction must be alredy evaluated for the solution. This
+   *  is typically used for adaptively changing the linear solver tolerance 
+   *  for iterative linear solution methods. */  
+  virtual double computeLinearRHSNorm();  
+
   //@}
 
   //! Returns true if this group can compute a Jacobian
