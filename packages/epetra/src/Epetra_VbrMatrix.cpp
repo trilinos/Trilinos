@@ -1160,14 +1160,19 @@ int Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
   return(0);  
 }
 //=============================================================================
-int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
-				       double *Values, int * Indices) const {
-  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't row unless matrix is filled
+int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow,
+				       int Length,
+				       int & NumEntries,
+				       double *Values,
+				       int * Indices) const
+{
+  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't extract row unless matrix is filled
   if (!IndicesAreLocal()) EPETRA_CHK_ERR(-2);
 
   int ierr = 0;
   int BlockRow, BlockOffset;
-  ierr = RowMap().FindLocalElementID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) EPETRA_CHK_ERR(ierr);
+  ierr = RowMap().FindLocalElementID(MyRow, BlockRow, BlockOffset);
+  if (ierr!=0) EPETRA_CHK_ERR(ierr);
 
   int RowDim, NumBlockEntries;
   int * BlockIndices;
@@ -1177,13 +1182,15 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   if (ierr!=0) EPETRA_CHK_ERR(ierr);
 
   int * ColFirstPointInElementList = FirstPointInElementList_;
-  if (Importer()!=0) ColFirstPointInElementList = ColMap().FirstPointInElementList();
+  if (Importer()!=0) {
+    ColFirstPointInElementList = ColMap().FirstPointInElementList();
+  }
   NumEntries = 0;
   for (int i=0; i<NumBlockEntries; i++) {
     int ColDim = ValBlocks[i]->N();
     NumEntries += ColDim;
     if (NumEntries>Length) EPETRA_CHK_ERR(-3); // Not enough space
-    double * A = (ValBlocks[i] + BlockOffset)->A(); // Point to first element in row
+    double * A = ValBlocks[i]->A(); // Point to first element in row
     int LDA = ValBlocks[i]->LDA();
     int Index = ColFirstPointInElementList[BlockIndices[i]];
     for (int j=0; j < ColDim; j++) {
@@ -1192,8 +1199,8 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
       *Indices++ = Index++;
     }
   }
-  return(0);
-      
+
+  return(0);      
 }
 //=============================================================================
 int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const

@@ -821,7 +821,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     if (col > myLastRow) col = myFirstRow;
   }
 
-  int elemSize = 1;
+  int elemSize = 2;
   int indexBase = 0;
 
   Epetra_BlockMap map(numGlobalRows, numMyRows,
@@ -835,7 +835,10 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   Epetra_MultiVector x3(map, 3), y3(map, 3);
   x.PutScalar(1.0);
 
-  double coef = 0.5;
+  double* coef = new double[elemSize*elemSize];
+  for(i=0; i<elemSize*elemSize; ++i) {
+    coef[i] = 0.5;
+  }
 
   //we're going to insert each row twice, with coef values of 0.5. So after
   //TransformToLocal, which internally calls MergeRedundantEntries, the
@@ -845,7 +848,8 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
 
     for(j=0; j<numCols; ++j) {
-      EPETRA_TEST_ERR( A.SubmitBlockEntry(&coef, 1, 1, 1), ierr);
+      EPETRA_TEST_ERR( A.SubmitBlockEntry(coef, elemSize,
+					  elemSize, elemSize), ierr);
     }
 
     EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
@@ -853,9 +857,11 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
   EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
 
-  cout << "Multiply x"<<endl;
+  delete [] coef;
+
+  if (verbose) cout << "Multiply x"<<endl;
   EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr );
-  cout << y <<endl;
+  if (verbose) cout << y <<endl;
 
   //Next we're going to extract pointers-to-block-rows and check values to make
   //sure that the internal method Epetra_VbrMatrix::mergeRedundantEntries()
@@ -868,7 +874,8 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int RowDim;
   int** BlockIndices = new int*[numMyRows];
   Epetra_SerialDenseMatrix** Values;
-
+  double* valCopy;
+  int* indicesCopy;
   Epetra_VbrMatrix Aview(View, map, numMyRows);
 
   for(i=myFirstRow; i<=myLastRow; ++i) {
@@ -882,7 +889,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 					      BlockIndices[i-myFirstRow]), ierr);
 
     if (numMyRows != numBlockEntries) return(-1);
-    if (RowDim != 1) return(-2);
+    if (RowDim != elemSize) return(-2);
     for(j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
 	cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
@@ -910,8 +917,17 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 							 BlockIndices[i-myFirstRow],
 							 Values), ierr);
 
+    valCopy = new double[numBlockEntries*elemSize*elemSize];
+    indicesCopy = new int[numBlockEntries*elemSize*elemSize];
+    int checkLen;
+    int myPointRow = (i-myFirstRow)*elemSize + 1;
+    EPETRA_TEST_ERR( Aview.ExtractMyRowCopy(myPointRow,
+					    numBlockEntries*elemSize*elemSize,
+					    checkLen,
+					    valCopy, indicesCopy), ierr);
+
     if (numMyRows != numBlockEntries) return(-1);
-    if (RowDim != 1) return(-2);
+    if (RowDim != elemSize) return(-2);
     for(j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
 	cout << "Aview: Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
@@ -921,6 +937,8 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     }
     
     delete [] BlockIndices[i-myFirstRow];
+    delete [] valCopy;
+    delete [] indicesCopy;
   }
 
   if (verbose&&localProc==0) {
