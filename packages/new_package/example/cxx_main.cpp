@@ -11,7 +11,6 @@
 //     If --enable-newp_swahili is set on the configure line:
 //        prints a summary line and one line "Jambo" for each process to standard out
 //
-#endif
 #include "Newp_Hello.h"
 #ifdef HAVE_NEWP_SWAHILI
 #include "Newp_Jambo.h"
