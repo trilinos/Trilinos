@@ -18,10 +18,16 @@ The following people have contributed to the development of Teuchos:
 
 \section startup Overview of Teuchos
 
-Teuchos contains a number of classes.  To remain portable, these classes have been divided 
-between a "standard" build and an "experimental" build.  The "standard" build has shown to be 
-a portable subset of the Teuchos tools.  The "experimental" build is portable, for the most 
-part, but still has some platforms that need to be addressed.
+Teuchos contains a number of classes.  These classes have been divided 
+between a "standard" build and an "extended" build.  The "standard" build has shown to be 
+a portable subset of the Teuchos tools and is built by default when Teuchos is enabled (<i>--enable-teuchos</i>).  
+The "extended" build is also portable, but contains more special purpose tools like XML parsing and
+communicators (<i>--enable-teuchos-extended</i>).
+
+Additionally, boundschecking for some of the container classes can be enabled through configuring 
+Trilinos with <i>--enable-teuchos-abc</i>.  <b>Boundschecking incurs a significant performance penalty and so is 
+not recommended for production builds.</b>  To enable complex arithmetic in the computational classes, 
+Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
 
 \subsection sclasses Teuchos "Standard" Classes
@@ -38,47 +44,34 @@ part, but still has some platforms that need to be addressed.
 <li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
      it provides nice C++ access to LAPACK.
 
-</ul>
-</ul>
+<li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
+     operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
+     matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
+     Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
+     can be turned on at compile time with the <pre> --enable-teuchos-abc </pre> configure flag.   
 
-\subsection eclasses Teuchos "Experimental" Classes
+</ul>
+<br>
 
+<li> <b> Parameter List: </b>
 <ul>
+<li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
+     and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
+     Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
+
+<li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
+     "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
+     the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
+</ul>
+<br>
 
 <li> <b> Memory Management: </b>
 <ul>
 <li> Smart pointer: Teuchos::RefCountPtr - a reference-counted pointer that is safe under multiple
 inheritance. 
 </ul>
-
 <br>
-<li> <b> Error Handling</b>
 
-<ul>
-<li> Common interface for error reporting: Teuchos::Error. A call to Teuchos::Error::raise() triggers the error handler.  
-The default error handler is Teuchos::DefaultRaiseHandler, which throws a standard exception. If some other behavior
-is desired (for example, if you are calling from a C program and thus cannot use exceptions) you can override
-the default behavior by deriving a custom error handler from Teuchos::RaiseHandlerBase, and installing
-it with a call to Teuchos::Error::setRaiseHandler().
-<li> Base class for customizable error handlers: Teuchos::RaiseHandlerBase. 
-<li> A default error handler: Teuchos::DefaultRaiseHandler. Throws an exception when its handleRaise() method is called.
-</ul>
-
-<br>
-<li> <b> Customizable output </b>
-
-<ul>
-<li> Teuchos::Out allows customizable control of output in a parallel environment. 
-    Out writes text using a user-selected writer. The default writer is
-    class DefaultWriter which prepends a processor identifier to every line; this 
-   is helpful in debugging.
-    All methods of Out are static. Methods such as println() and printf() work
-    on every processor. The "root" methods such as rootPrinln() and rootPrintf()
-    write if called on the root processor, but are ignored on all non-root processors.
-<li> Teuchos::WriterBase is the base class for user-defined writers.
-</ul>
-
-<br>
 <li> <b> Performance Monitoring </b>
 
 <ul>
@@ -89,15 +82,27 @@ it with a call to Teuchos::Error::setRaiseHandler().
      counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
      classes accumulate FLOP counts associated with the \e this object of the computations.
 </ul>
-
 <br>
+
+<li> <b> Exception Handling </b>
+<ul>
+<li> Test for Exception:  The TEST_FOR_EXCEPTION macro accepts a logical test, an exception handler, and a
+     message.  It then throws an "intelligent" exception informing the user of the file, line, and message where
+     the exception was thrown.
+</ul>
+
+</ul>
+
+\subsection eclasses Teuchos "Extended" Classes
+
+<ul>
+
 <li> <b> Containers </b>
 <ul>
 <li> Teuchos::Array is a templated
 array class similar to the STL vector, but with optional boundschecking.
 Boundschecking is useful for debugging, and can be turned on at compile time with
-the <pre> --enable-teuchos-abc </pre> configure flag. Boundschecking incurs a significant
-performance penalty and so is not recommended for production builds. 
+the <pre> --enable-teuchos-abc </pre> configure flag. 
 <li> Teuchos::Hashtable is a templated map with constant-time lookup.
 <li> Teuchos::HashSet is a templated set with constant-time lookup.
 </ul>
@@ -118,15 +123,6 @@ are tags, attributes, and character content.
 <li> Teuchos::MPIComm represents an MPI communicator
 <li> Teuchos::ContainerComm has methods to communicate Teuchos::Array objects
 </ul>
-
-<br>
-<li> <b> Random numbers </b>
-<ul>
-<li> Teuchos::RandomNumberGeneratorBase is a base class for random number generators
-<li> Teuchos::DLARAN uses the LAPACK dlaran() subroutine to generate uniform deviates
-<li> Teuchos::SystemRand uses the srand() call to generate uniform deviates
-</ul>
-
 
 </ul>
      
