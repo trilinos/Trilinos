@@ -5,11 +5,14 @@
 
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
 #include "BelosConfigDefs.hpp"
 #include "AnasaziMatrix.hpp"
+#include "AnasaziMultiVec.hpp"
+#include "AnasaziPrecondition.hpp"
 
 //--------template class AnasaziPetraVec-------------------------------------
 template <class TYPE>
@@ -346,34 +349,38 @@ void AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 	
 }
 ///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraPrecond--------------------
-#include "AnasaziPrecondition.hpp"
+//--------template class AnasaziPetraPrecMat-----------------------
 template <class TYPE>
-class AnasaziPetraPrecond : public AnasaziPrecondition<TYPE> {
+class AnasaziPetraPrecMat : public AnasaziPrecondition<TYPE> {
 public:  
-        AnasaziPetraPrecond(const Epetra_CrsMatrix& );
-        ~AnasaziPetraPrecond();
+        AnasaziPetraPrecMat(const Epetra_CrsMatrix& );
+        ~AnasaziPetraPrecMat();
         void ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
 private:
         const Epetra_CrsMatrix & Epetra_Precond;
 };
 // 
-// implementation of the AnasaziPetraPrecond class.
+// implementation of the AnasaziPetraPrecMat class.
 //
 ////////////////////////////////////////////////////////////////////
 //
-// AnasaziPrecond constructors
+// AnasaziPetraPrecMat constructors
 //
 template <class TYPE>
-AnasaziPetraPrecond<TYPE>::AnasaziPetraPrecond(const Epetra_CrsMatrix& Matrix) :
+AnasaziPetraPrecMat<TYPE>::AnasaziPetraPrecMat(const Epetra_CrsMatrix& Matrix) :
                                                 Epetra_Precond(Matrix) {   
-//      std::cout << "ctor:AnasaziPetraPreond " << this << std::endl;
+//      std::cout << "ctor:AnasaziPetraPrecMat " << this << std::endl;
         }
 //
-// AnasaziPrecond matrix multiply
+// AnasaziPrecondition matrix multiply
 //
 template <class TYPE>
-void AnasaziPetraPrecond<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
+AnasaziPetraPrecMat<TYPE>::~AnasaziPetraPrecMat() {
+//	std::cout << "dtor:AnasaziPetraPrecMat " << this << std::endl;
+}
+
+template <class TYPE>
+void AnasaziPetraPrecMat<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
                                                           AnasaziMultiVec<TYPE>& y ) const {
         int info=0;
         bool trans=false;
@@ -393,4 +400,54 @@ void AnasaziPetraPrecond<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>&
 }
 
 #endif 
- // end of file ANASAZI_PETRA_HPP
+ 
+///////////////////////////////////////////////////////////////
+//--------template class AnasaziPetraPrecOp--------------------
+
+template <class TYPE>
+class AnasaziPetraPrecOp : public AnasaziPrecondition<TYPE> {
+public:
+        AnasaziPetraPrecOp(const Epetra_Operator& prec);
+        ~AnasaziPetraPrecOp();
+        void ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
+private:
+   	const Epetra_Operator& prec_;
+};
+//
+// implementation of the AnasaziPetraPrecOp class.
+//
+// Constructor.
+//
+template <class TYPE>
+AnasaziPetraPrecOp<TYPE>::AnasaziPetraPrecOp(const Epetra_Operator& prec) : prec_(prec) {
+//      std::cout << "ctor:AnasaziPetraPrecOp " << this << std::endl;
+}
+//
+// Destructor.
+//
+template <class TYPE>
+AnasaziPetraPrecOp<TYPE>::~AnasaziPetraPrecOp() {
+//	std::cout << "dtor: AnasaziPetraPrecOp "<< this << std::endl;
+}
+/////////////////////////////////////////////////////////////
+//
+// AnasaziPrecond matrix multiply
+//
+template <class TYPE>
+void AnasaziPetraPrecOp<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
+                                                    AnasaziMultiVec<TYPE>& y) const {
+	int info=0;
+	AnasaziMultiVec<TYPE> & temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
+     	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+
+     	assert( vec_x && vec_y );
+	//
+	// Need to cast away constness because the member function Multiply
+	// is not declared const.
+	//
+	info=const_cast<Epetra_Operator&>(prec_).ApplyInverse( *vec_x, *vec_y );
+	assert(info==0);
+}
+
+// end of file ANASAZI_PETRA_HPP
