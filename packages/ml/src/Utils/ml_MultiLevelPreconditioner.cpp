@@ -32,8 +32,13 @@ extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
 extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int approx_all_zeros, ML_Comm *comm,
 			     int res_norm_or_not, ML *ml);
-//extern int ML_MaxAllocatableSize();
-//extern int ML_MaxMemorySize();
+extern int ML_MaxAllocatableSize();
+extern int ML_MaxMemorySize();
+extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate * agg_, int NumLevels_);
+extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
+                                     double *x, double *y, double *z, int Ndimensions,
+                                     char *base_filename );
+extern int ML_Aggregate_VizAndStats_Setup(ML_Aggregate *, int);
 
 }
 
@@ -1004,6 +1009,17 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   
   ML_Aggregate_Create(&agg_);
   
+  /* **********************************************************************
+   * visualize aggregate shape and other statistics. This is not an
+   * expensive check. However, the file it produces can be fairly large.
+   * Besides, it is usually difficult to visualize 3D aggregates. 
+   * ********************************************************************** */
+  
+  sprintf(parameter,"%sviz: enable", Prefix_);
+  bool viz = List_.get(parameter,false);
+  if( viz == true )
+    ML_Aggregate_VizAndStats_Setup(agg_,NumLevels_);
+
   /* ********************************************************************** */
   /* pick up coarsening strategy. METIS and ParMETIS requires additional    */
   /* lines, as we have to set the number of aggregates                      */
@@ -1193,7 +1209,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   // may want to print some internal stuff 
   // ML_Operator_Print(&(ml_->Pmat[1]),"Pmat");
   // ML_Operator_Print(&(ml_->Rmat[0]),"Rmat");
-  // ML_Operator_Print(&(ml_->Amat[4]),"Amat");
+  // ML_Operator_Print(&(ml_->Amat[2]),"Amat");
   
   CreateLabel();
   
@@ -1214,6 +1230,51 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     memory_[ML_MEM_TOT1_USED] = memory_[ML_MEM_FINAL_USED] - memory_[ML_MEM_INITIAL_USED];
   }
   
+  /*
+   * still need to print out visualization and some other stuff
+   */
+  if( viz == true ) {
+    double * x_coord = List_.get("viz: x-coordinates", (double *)0);
+    double * y_coord = List_.get("viz: y-coordinates", (double *)0);
+    double * z_coord = List_.get("viz: z-coordinates", (double *)0);
+    int NumDim = List_.get("viz: dimensions", 0);
+    switch( NumDim ) {
+    case 0:
+      cerr << ErrorMsg_ << "parameter `viz: dimensions' is 0. Did you" << endl
+	<< ErrorMsg_ << "really want to visuzalize the aggregates?" << endl;
+      exit( EXIT_FAILURE );
+      break;
+    case 1:
+      if( x_coord == 0 ) {
+	cerr << ErrorMsg_ << "parameter `viz: x-coordinates' is empty!" << endl;
+	exit( EXIT_FAILURE );
+      }
+      break;
+    case 2:
+      if( y_coord == 0 ) {
+	cerr << ErrorMsg_ << "parameter `viz: y-coordinates' is empty!" << endl;
+	exit( EXIT_FAILURE );
+      }
+      break;
+    case 3:
+      if( z_coord == 0 ) {
+	cerr << ErrorMsg_ << "parameter `viz: z-coordinates' is empty!" << endl;
+	exit( EXIT_FAILURE );
+      }
+      break;
+    }
+
+ //   string BaseFileName = List_.get("viz: filename", (char *)0);
+
+    ML_Aggregate_VizAndStats_Compute( ml_, agg_, NumLevels_,
+				     x_coord, y_coord, z_coord, 
+//				     NumDim, BaseFileName.c_str());
+				     NumDim, 0);
+
+    // clean memory associated with viz and stats.
+    ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
+  }
+
   /* ------------------- that's all folks --------------------------------- */
   
   IsComputePreconditionerOK_ = true;
@@ -1615,6 +1676,8 @@ void MultiLevelPreconditioner::SetSmoothers()
 			 << PreOrPostSmoother << endl;
       // get ifpack options from list ??? pass list ???
       ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
+    } else if( Smoother == "do-nothing" ) {
+      if( verbose_ ) cout << msg << "do-nothing smoother" << endl;
     } else {
       if( ProcConfig_[AZ_node] == 0 )
 	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
@@ -1703,9 +1766,9 @@ void MultiLevelPreconditioner::SetCoarse()
 				NumSmootherSteps, Omega);
   else if( CoarseSolution == "SuperLU" ) 
     ML_Gen_CoarseSolverSuperLU( ml_ptr, LevelID_[NumLevels_-1]);
-  else if( CoarseSolution == "Amesos-KLU" )
+  else if( CoarseSolution == "Amesos-KLU" ) {
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
-  else if( CoarseSolution == "Amesos-UMFPACK" )
+  } else if( CoarseSolution == "Amesos-UMFPACK" )
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
   else if(  CoarseSolution == "Amesos-Superludist" )
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
@@ -1713,8 +1776,9 @@ void MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SCALAPACK, MaxProcs);
-  else
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+  else if( CoarseSolution == "do-nothing" ) {
+    // do nothing, ML will not use any coarse solver 
+  } ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
     
 }
 
