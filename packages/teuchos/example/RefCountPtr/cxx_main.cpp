@@ -2,9 +2,9 @@
 
 class A { 
  public: 
-   A& operator=(const A&){}; 
-   virtual ~A(){}; 
-   virtual void f(){}; 
+   A() {}
+   virtual ~A(){} 
+   virtual void f(){} 
 };   
 class B1 : virtual public A {};
 class B2 : virtual public A {};
