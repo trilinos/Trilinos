@@ -282,6 +282,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
+      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
       ML_memory_check("L%d: TransP end",level);
 
 #ifdef USE_AT
@@ -308,6 +309,10 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
+
+      ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
+      			    &(ml->Pmat[next]), ML_TRUE);
+
       ML_memory_check("L%d: RAP end",level);
 
 #ifdef GEOMETRIC_2D
