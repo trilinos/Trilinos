@@ -220,7 +220,7 @@ then
             AZCOMM=md_wrap_scalar_c.c
          else 
             AZCOMM=md_wrap_mpi_c.c
-            tFLAGS=`${echo} ${tFLAGS} -DAZ_MPI ${MPI_INC_PATH}`
+            tFLAGS=`${echo} ${tFLAGS}  ${MPI_INC_PATH}`
          fi
          BLAS=
          if test `expr $GOT_BLAS` = 'no'
