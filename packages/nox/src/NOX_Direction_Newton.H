@@ -106,18 +106,16 @@ namespace Direction {
   See NOX::Direction::Manager for more information on choosing the
   search direction.
 
-  <B>Input Parameters</B>
+  <B>Parameters</B>
 
-  The following options may be specified in the "Newton" sublist of
-  the "Direction" sublist of the solver parameters.
+"Direction":
+<ul>
+<li> "Method" = "Newton" [required]
+</ul>
+
+"Direction"/"Newton":
 
 <ul>
-<li>"Rescue Bad %Newton Solve" (Boolean) - True if we even if the
-    linear solve does not meet the tolerance specified by the forcing
-    term. Defaults to true.
-
-<li>"Forcing Term User Defined Norm" (NOX::Parameter::UserNorm derived object) - If using a Type 1 or Type 2 adjustable forcing term, the norms used to calculate \f$ \eta_k \f$ should be based on the same norm used in the convergence test of the linear solver.  Essentially this means that the norm must account for LEFT scaling of any kind that is applied to the linear system during a solve.  If set, the computation of \f$ \eta_k \f$ will be done using a used defined function that is passed in through a NOX::Parameter::Arbitrary derived object. It will take the arbitrary object and cast it to a NOX::Parameter::UserNorm object and use it for norm computations.  If this parameter is not set, this method uses the L-2 Norm for any norm computations of \f$ \eta_k \f$.
-
 <li>"Forcing Term Method" - Method to compute the forcing term, i.e.,
     the tolerance for the linear solver. Choices are:
     <ul>
@@ -138,12 +136,35 @@ namespace Direction {
 
 <li>"Forcing Term Gamma" - \f$\gamma\f$ (used only by "Type 2"). Defaults to 0.9.
 
-  <B>Output Parameters</B>
+<li>"Forcing Term User Defined Norm" (NOX::Parameter::UserNorm derived
+    object) - If using a Type 1 or Type 2 adjustable forcing term, the
+    norms used to calculate \f$ \eta_k \f$ should be based on the same
+    norm used in the convergence test of the linear solver.
+    Essentially this means that the norm must account for LEFT scaling
+    of any kind that is applied to the linear system during a solve.
+    If set, the computation of \f$ \eta_k \f$ will be done using a
+    used defined function that is passed in through a
+    NOX::Parameter::Arbitrary derived object. It will take the
+    arbitrary object and cast it to a NOX::Parameter::UserNorm object
+    and use it for norm computations.  If this parameter is not set,
+    this method uses the L-2 Norm for any norm computations of \f$
+    \eta_k \f$.
 
-<li>"Linear Solver" - a sublist that contains the linear solver
-parameters will be created if it doesn't exist under the "Newton"
-sublist.  The parameter "Tolerance" will be created in the "Linear
-Solver" sublist and set to the computed value of the forcing term.
+<li>"Rescue Bad %Newton Solve" (Boolean) - True if we even if the
+    linear solve does not meet the tolerance specified by the forcing
+    term. Defaults to true.
+
+</ul>
+
+"Direction"/"Newton"/"Linear Solver":
+
+<ul>
+
+<li> "Tolerance" - Tolerance for the linear solve. This may be
+adjusted automatically by the forcing calculation. Defaults to
+1.0e-10.
+
+</ul>
 
 </ul>
 
