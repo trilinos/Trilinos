@@ -40,10 +40,10 @@ int main (int argc, char **argv)
   char   hgraphfile[100]="grid5x5.hg";
   HGraph hg;
   ZZ     zz;
-  HGParams hgp;
+  HGPartParams hgp;
 
   hgp.redl = 0;
-  strcpy(hgp.redm_str, "dep");
+  strcpy(hgp.redm_str, "grg");
   strcpy(hgp.global_str, "lin");
   strcpy(hgp.local_str, "no");
   hgp.check_graph = 1;
@@ -64,8 +64,7 @@ int main (int argc, char **argv)
     puts("-f      graphfile:        (grid5x5.hg)");
     puts("-p      # of parts:       (2)");
     puts("-redl   reduction level:  (0)");
-    puts("-redm   reduction method: {mxp,rep,hep,grp,lhp,pgp,(dep),rrp,mxm,rem,"
-                   "hem,grm,lhm, pgm, deg, mxg, reg, rrg, heg, grg}");
+    puts("-redm   reduction method: {mxm,rem,hem,grm,lhm,pgm,mxp,rep,rrp,rhp,grp,lhp,pgp,mxg,rrg,reg,heg,(grg)}");
     puts("-g      global method:    {ran,(lin)}");
     puts("-l      local method:     (no)");
     puts("default values are in brackets ():");
@@ -76,18 +75,16 @@ int main (int argc, char **argv)
   { if     (!strcmp(argv[i],"-f")   && i+1<argc) strcpy (hgraphfile, argv[++i]);
     else if(!strcmp(argv[i],"-p")   && i+1<argc) p = atoi(argv[++i]);
     else if(!strcmp(argv[i],"-redl")&& i+1<argc) hgp.redl = atoi(argv[++i]);
-    else if(!strcmp(argv[i],"-redm")&& i+1<argc) strcpy (hgp.redm_str, argv[++i]);
-    else if(!strcmp(argv[i],"-g")   && i+1<argc) strcpy (hgp.global_str, argv[++i]);
-    else if(!strcmp(argv[i],"-l")   && i+1<argc) strcpy (hgp.local_str, argv[++i]);
+    else if(!strcmp(argv[i],"-redm")&& i+1<argc) strcpy(hgp.redm_str,argv[++i]);
+    else if(!strcmp(argv[i],"-g")   && i+1<argc) strcpy(hgp.global_str,argv[++i]);
+    else if(!strcmp(argv[i],"-l")   && i+1<argc) strcpy(hgp.local_str,argv[++i]);
     else 
     { fprintf(stderr, "ERROR...option '%s' not legal or without value\n", argv[i]);
       return 1;
     }
   }
-
   if (Zoltan_HG_Set_Options(&zz, &hgp))
     return 1;
-
   ADD_NEW_TIME(t_rest);
 
 /* load and info hypergraph */
@@ -95,7 +92,8 @@ int main (int argc, char **argv)
     return 1;
   if (Zoltan_HG_Info (&zz,&hg))
     return 1;
-  Zoltan_HG_Check (&zz,&hg);
+  if (Zoltan_HG_Check (&zz,&hg))
+    return 1;
   ADD_NEW_TIME(t_load);
 
 /* partition hypergraph */

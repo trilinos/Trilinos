@@ -18,7 +18,6 @@ extern "C" {
 
 #include "hypergraph.h"
 
-
 /*****************************************************************************/
 
 void Zoltan_HG_HGraph_Init(
@@ -30,19 +29,17 @@ void Zoltan_HG_HGraph_Init(
   hgraph->nEdge = 0;
   hgraph->nPin  = 0;
   hgraph->nDim  = 0;
-
   hgraph->EdgeWeightDim   = 0 ;
   hgraph->VertexWeightDim = 0 ;
 
+  hgraph->coor    = NULL;
+  hgraph->vwgt    = NULL;
+  hgraph->ewgt    = NULL;
   hgraph->hindex  = NULL;
   hgraph->hvertex = NULL;
   hgraph->vindex  = NULL;
   hgraph->vedge   = NULL;
-  hgraph->vwgt    = NULL;
-  hgraph->ewgt    = NULL;
-  hgraph->coor    = NULL;
 }
-
 
 /*****************************************************************************/
 
@@ -54,18 +51,17 @@ void Zoltan_HG_Graph_Init(
   graph->nVtx  = 0;
   graph->nEdge = 0;
   graph->nDim  = 0;
-
   graph->EdgeWeightDim   = 0 ;
   graph->VertexWeightDim = 0 ;
 
-  graph->nindex  = NULL;
   graph->vtxdist = NULL;
-  graph->neigh   = NULL;
+
+  graph->coor    = NULL;
   graph->vwgt    = NULL;
   graph->ewgt    = NULL;
-  graph->coor    = NULL;
+  graph->nindex  = NULL;
+  graph->neigh   = NULL;
 }
-
 
 /****************************************************************************/
 
@@ -76,18 +72,17 @@ int Zoltan_HG_HGraph_Free(
 /* Frees all memory associated with a hypergraph; 
  * does not free the hypergraph itself. 
  */
-  if (hg != NULL) {
+  if (hg) {
+    ZOLTAN_FREE ((void **) &hg->coor);
+    ZOLTAN_FREE ((void **) &hg->vwgt);
+    ZOLTAN_FREE ((void **) &hg->ewgt);
     ZOLTAN_FREE ((void **) &hg->hindex);
     ZOLTAN_FREE ((void **) &hg->hvertex);
     ZOLTAN_FREE ((void **) &hg->vindex);
     ZOLTAN_FREE ((void **) &hg->vedge);
-    ZOLTAN_FREE ((void **) &hg->vwgt);
-    ZOLTAN_FREE ((void **) &hg->ewgt);
-    ZOLTAN_FREE ((void **) &hg->coor);
   }
   return ZOLTAN_OK;
 }
-
 
 /****************************************************************************/
 
@@ -96,17 +91,16 @@ int Zoltan_HG_Graph_Free(
 )
 {
 /* Frees all memory associated with a graph; does not free the graph itself. */
-  if (g != NULL) {
+  if (g) {
+    ZOLTAN_FREE ((void **) &g->coor);
+    ZOLTAN_FREE ((void **) &g->vwgt);
+    ZOLTAN_FREE ((void **) &g->ewgt);
     ZOLTAN_FREE ((void **) &g->vtxdist);
     ZOLTAN_FREE ((void **) &g->nindex);
     ZOLTAN_FREE ((void **) &g->neigh);
-    ZOLTAN_FREE ((void **) &g->vwgt);
-    ZOLTAN_FREE ((void **) &g->ewgt);
-    ZOLTAN_FREE ((void **) &g->coor);
   }
   return ZOLTAN_OK;
 }
-
 
 /****************************************************************************/
 
@@ -115,66 +109,68 @@ int Zoltan_HG_Info (
   HGraph *hg
 )
 { 
-  int  	i, size, size_min=INT_MAX, size_max=0;
+  int  	i, size, size_min, size_max;
+  float wgt_min, wgt_max, wgt_tot;
 
   if (zz->Debug_Level < ZOLTAN_DEBUG_ALL)
-    return ZOLTAN_WARN;
+    return ZOLTAN_OK;
 
   puts("---------- HGraph Information (min/ave/max/tot) --------------------");
   printf("info:%d |V|=%d |E|=%d |P|=%d \n",hg->info,hg->nVtx,hg->nEdge,hg->nPin);
 
 /* print weights */
   if (hg->vwgt)
-  { float vwgt_min=FLT_MAX, vwgt_max=0, vwgt_tot=0;
+  { wgt_tot = 0.0;
+    wgt_min = FLT_MAX;
+    wgt_max = FLT_MIN;
     for (i=0; i<hg->nVtx; i++)
-    { vwgt_tot += hg->vwgt[i];
-      vwgt_min = MIN(vwgt_min,hg->vwgt[i]);
-      vwgt_max = MAX(vwgt_max,hg->vwgt[i]);
+    { wgt_tot += hg->vwgt[i];
+      wgt_min = MIN(wgt_min,hg->vwgt[i]);
+      wgt_max = MAX(wgt_max,hg->vwgt[i]);
     }
-    printf("Vertex weights      :    %9.2f %9.2f %9.2f %12.2f\n",vwgt_min,
-     vwgt_tot/hg->nVtx,vwgt_max,vwgt_tot);
+    printf("Vertex weights   :    %9.2f %9.2f %9.2f %12.2f\n",wgt_min,
+     wgt_tot/hg->nVtx,wgt_max,wgt_tot);
   }
   if (hg->ewgt)
-  { float ewgt_min=FLT_MAX, ewgt_max=0.0, ewgt_tot=0.0;
+  { wgt_tot = 0.0;
+    wgt_min = FLT_MAX;
+    wgt_max = FLT_MIN;
     for (i=0; i<hg->nEdge; i++)
-    { ewgt_tot += hg->ewgt[i];
-      ewgt_min = MIN(ewgt_min,hg->ewgt[i]);
-      ewgt_max = MAX(ewgt_max,hg->ewgt[i]);
+    { wgt_tot += hg->ewgt[i];
+      wgt_min = MIN(wgt_min,hg->ewgt[i]);
+      wgt_max = MAX(wgt_max,hg->ewgt[i]);
     }
-    printf("HEdge weights       :    %9.2f %9.2f %9.2f %12.2f\n",ewgt_min,
-     ewgt_tot/hg->nEdge,ewgt_max,ewgt_tot);
+    printf("HEdge weights    :    %9.2f %9.2f %9.2f %12.2f\n",wgt_min,
+     wgt_tot/hg->nEdge,wgt_max,wgt_tot);
   }
 
 /* print sizes */
   if (hg->hindex)
   { size_min = INT_MAX;
-    size_max = 0;
+    size_max = INT_MIN;
     for (i=0; i<hg->nEdge; i++)
     { size = hg->hindex[i+1] - hg->hindex[i];
       size_min = MIN(size_min,size);
       size_max = MAX(size_max,size);
     }
-    printf("Edge sizes          :    %6d    %9.2f %6d    %9d\n",size_min,
+    printf("Edge sizes       :    %6d    %9.2f %6d    %9d\n",size_min,
      (float)(hg->nPin)/hg->nEdge,size_max,hg->nPin);
   }
   if (hg->vindex)
   { size_min = INT_MAX;
-    size_max = 0;
+    size_max = INT_MIN;
     for (i=0; i<hg->nVtx; i++)
     { size = hg->vindex[i+1] - hg->vindex[i];
       size_min = MIN(size_min,size);
       size_max = MAX(size_max,size);
     }
-    printf("Vertex sizes        :    %6d    %9.2f %6d    %9d\n",size_min,
+    printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n",size_min,
      (float)(hg->nPin)/hg->nEdge,size_max,hg->nPin);
   }
 
   puts("--------------------------------------------------------------------");
   return ZOLTAN_OK;
 }
-
-
-
 
 /****************************************************************************/
 /**  Given arrays to lookup a vertex for a given hyperedge (hindex, hvertex)
@@ -197,45 +193,40 @@ int Zoltan_HG_Create_Mirror (
    ZOLTAN_TRACE_ENTER(zz, yo);
 
    /* determine which data to "mirror" and set corresponding data pointers. */
-   if (hg != NULL &&  hg->hindex != NULL && hg->hvertex != NULL
-    && hg->vindex == NULL && hg->vedge == NULL)
-      {
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Have hindex; building vindex.");
-      inlength  = hg->nEdge ;
-      outlength = hg->nVtx ;
-      index     = hg->hindex ;
-      data      = hg->hvertex ;
-      outindex  = hg->vindex = (int*) ZOLTAN_MALLOC (sizeof(int) * (hg->nVtx+1));
-      outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (sizeof(int) *  hg->nPin) ;
-      if (outindex == NULL || outdata == NULL)
-         {
-         ZOLTAN_FREE ((void **) &(hg->vindex)) ;
-         ZOLTAN_FREE ((void **) &(hg->vedge)) ;
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         ZOLTAN_TRACE_EXIT(zz, yo);
-         return ZOLTAN_MEMERR;
-         }
-
-      }
-   else if (hg != NULL && hg->vindex != NULL && hg->vedge != NULL
-    && hg->hindex == NULL && hg->hvertex == NULL)
-      {
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
-      inlength  = hg->nVtx ;
-      outlength = hg->nEdge ;
-      index     = hg->vindex ;
-      data      = hg->vedge ;
-      outindex  = hg->hindex  = (int*)ZOLTAN_MALLOC (sizeof(int) *(hg->nEdge+1));
-      outdata   = hg->hvertex = (int*)ZOLTAN_MALLOC (sizeof(int) * hg->nPin) ;
-      if (outindex == NULL || outdata == NULL)
-         {
-         ZOLTAN_FREE ((void **) &(hg->hindex)) ;
-         ZOLTAN_FREE ((void **) &(hg->hvertex)) ;
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         ZOLTAN_TRACE_EXIT(zz, yo);
-         return ZOLTAN_MEMERR;
-         }
-      }
+   if (hg &&  hg->hindex && hg->hvertex && !(hg->vindex) && !(hg->vedge))
+     {
+     ZOLTAN_TRACE_DETAIL(zz, yo, "Have hindex; building vindex.");
+     inlength  = hg->nEdge ;
+     outlength = hg->nVtx ;
+     index     = hg->hindex ;
+     data      = hg->hvertex ;
+     if (!(outindex=hg->vindex=(int*)ZOLTAN_MALLOC(sizeof(int)*(hg->nVtx+1)))||
+         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(sizeof(int)* hg->nPin))    )
+       {
+       ZOLTAN_FREE ((void **) &(hg->vindex)) ;
+       ZOLTAN_FREE ((void **) &(hg->vedge)) ;
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+       ZOLTAN_TRACE_EXIT(zz, yo);
+       return ZOLTAN_MEMERR;
+       }
+     }
+   else if (hg && hg->vindex && hg->vedge && !(hg->hindex) && !(hg->hvertex))
+     {
+     ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
+     inlength  = hg->nVtx ;
+     outlength = hg->nEdge ;
+     index     = hg->vindex ;
+     data      = hg->vedge ;
+     if (!(outindex=hg->hindex =(int*)ZOLTAN_MALLOC(sizeof(int)*(hg->nEdge+1)))||
+         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(sizeof(int)*hg->nPin))     )
+       {
+       ZOLTAN_FREE ((void **) &(hg->hindex)) ;
+       ZOLTAN_FREE ((void **) &(hg->hvertex)) ;
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+       ZOLTAN_TRACE_EXIT(zz, yo);
+       return ZOLTAN_MEMERR;
+       }
+     }
    else {
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_WARN ;  /* unable to proceed */
@@ -266,7 +257,6 @@ int Zoltan_HG_Create_Mirror (
    return ZOLTAN_OK ;
 }
 
-
 /****************************************************************************/
 /* check that (hindex, hvertex) and (vindex, vedge) are consistant mappings */
 /* returns ZOLTAN_WARN if not consistant, returns ZOLTAN_OK otherwise */
@@ -275,29 +265,37 @@ int Zoltan_HG_Check (
   HGraph *hg
 )
 {
-   int iedge ;               /* iedge denotes an hyperedge */
-   int j ;                   /* j is the index of a vertex */
-   int k ;                   /* k is an index of hyperedge */
+  int iedge ;               /* iedge denotes an hyperedge */
+  int j ;                   /* j is the index of a vertex */
+  int k ;                   /* k is an index of hyperedge */
 
-   if (hg->hindex == NULL || hg->hvertex == NULL
-    || hg->vindex == NULL || hg->vedge == NULL)
-       return ZOLTAN_WARN ;
+  if (!(hg->hindex) || !(hg->hvertex) || !(hg->vindex) || !(hg->vedge) )
+    return ZOLTAN_WARN ;
 
-   /* starting from (hindex,hvertex), for each edge determine each associated */
-   /* vertex.  Then for each vertex lookup associated edges using (vindex, vedge) */
-   for (iedge = 0 ; iedge < hg->nEdge ; iedge++)                  /* for each hyperedge */
-      for (j = hg->hindex[iedge] ; j < hg->hindex[iedge+1] ; j++)  /* get index to vertices */
-         {
-         for (k = hg->vindex[hg->hvertex[j]] ;   /* for each vertex of current hyperedge */
-              k < hg->vindex[hg->hvertex[j]+1] ; k++) /* get index to hyperedges */
-                 if (hg->vedge[k] == iedge)           /* use index value to find an edge */
-                    break ;                           /* still looking for agreement */
-         if (k == hg->vindex[hg->hvertex[j]+1])       /* did we succeed for this hyperedge? */
-            return ZOLTAN_WARN ;                      /* if yes, carry on. if no, failure exit */
-         }
-   return ZOLTAN_OK ;
+  /* Further check needed:
+   * - edge weight or vertex weight smaller than 0.0
+   * - mirror go through that each vertex is in the edge list
+   * - no multiply hyperedges
+   * - index values are in range for both index arrays.
+   * - no single-vertex hyperedges
+   */
+
+  /* starting from (hindex,hvertex), for each edge determine each associated 
+   * vertex. Then for each vertex lookup associated edges using
+   * (vindex, vedge)
+   */
+  for (iedge=0; iedge<hg->nEdge; iedge++)
+    for (j=hg->hindex[iedge]; j<hg->hindex[iedge+1]; j++)
+             /* for each hyperedge get index to vertices */
+    { for (k=hg->vindex[hg->hvertex[j]]; k<hg->vindex[hg->hvertex[j]+1]; k++)
+             /* for each vertex of current hyperedge get index to hyperedges */
+        if (hg->vedge[k] == iedge)     /* does it match with original edge? */
+          break ;                          
+      if (k == hg->vindex[hg->hvertex[j]+1])   /* if no match was found then */
+        return ZOLTAN_WARN ;                   /* failure, else keep on */
+    }
+  return ZOLTAN_OK ;
 }
-
 
 /****************************************************************************/
 
@@ -307,19 +305,25 @@ int Zoltan_HG_HGraph_to_Graph(
   Graph *g
 )
 { 
-  int 	i, j, k, e, roughly_e, pins, *_neigh, *degrees, *next, empty=0;
+  int 	i, j, k, e, roughly_e, pins, *_neigh, *degrees, current_degree,
+        vertex1, vertex2, start, end, empty;
   float	*w, *_ewgt, weight;
-  char *yo = "Zoltan_HG_HGraph_to_Graph" ;
+  char  *yo = "Zoltan_HG_HGraph_to_Graph" ;
 
   Zoltan_HG_Graph_Init(g);
   g->info = hg->info;
   g->nVtx = hg->nVtx;
+  g->nDim = hg->nDim;
+  g->VertexWeightDim = hg->VertexWeightDim;
+  g->EdgeWeightDim = hg->EdgeWeightDim;
   g->vtxdist = NULL;
+
+/* copy coordinates */
+   /* not necessary at the moment, because matching does not use them */
 
 /* copy vertex weights */
   if (hg->vwgt)
-  { g->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nVtx);
-    if (g->vwgt == NULL)
+  { if (!(g->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nVtx)))
     { ZOLTAN_FREE ((void **) &g->vwgt) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -327,12 +331,14 @@ int Zoltan_HG_HGraph_to_Graph(
     for (i=0; i<g->nVtx; i++)
       g->vwgt[i] = hg->vwgt[i];
   }
-  else
-    g->vwgt = NULL;
 
 /* calculate the roughly |E| and each degree */
   roughly_e = 0;
-  degrees = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
+  if (!(degrees = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+    { ZOLTAN_FREE ((void **) &degrees) ;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
   for (i = 0 ; i < hg->nVtx ; i++)
      degrees[i] = 0 ;
   for (i=0; i<hg->nEdge; i++)
@@ -345,19 +351,27 @@ int Zoltan_HG_HGraph_to_Graph(
   }
 
 /* Calculate the initial nindex */
+  if (!(g->nindex = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1))))
+    { ZOLTAN_FREE ((void **) &g->nindex);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
   e = 0;
-  g->nindex = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1));
-  next      = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
   for (i=0; i<hg->nVtx; i++)
-  { next[i] = g->nindex[i] = e;
-    e += degrees[i];
+  { current_degree = degrees[i];
+    degrees[i] = g->nindex[i] = e;
+    e += current_degree;
   }
   g->nindex[hg->nVtx] = e;
-  ZOLTAN_FREE ((void **) &degrees);
-
+  
 /* Calculate the initial neigh and ewgt */
-  _neigh = (int *)   ZOLTAN_MALLOC (sizeof (int) * roughly_e);
-  _ewgt  = (float *) ZOLTAN_MALLOC (sizeof (float) * roughly_e);
+  if (!(_neigh = (int *)   ZOLTAN_MALLOC (sizeof (int) * roughly_e))  ||
+      !(_ewgt  = (float *) ZOLTAN_MALLOC (sizeof (float) * roughly_e)) )
+    { ZOLTAN_FREE ((void **) &_neigh);
+      ZOLTAN_FREE ((void **) &_ewgt);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
   for (i=0; i<hg->nEdge; i++)
   /* if (hg->hindex[i+1]-hg->hindex[i] <= 10) */
   { pins = hg->hindex[i+1]-hg->hindex[i];
@@ -366,20 +380,29 @@ int Zoltan_HG_HGraph_to_Graph(
     if (hg->ewgt)
       weight *= hg->ewgt[i];
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+    { vertex1 = hg->hvertex[j];
       for (k=j+1; k<hg->hindex[i+1]; k++)
-      { _neigh[next[hg->hvertex[j]]] = hg->hvertex[k];
-        _neigh[next[hg->hvertex[k]]] = hg->hvertex[j];
-        _ewgt[next[hg->hvertex[j]]++] = _ewgt[next[hg->hvertex[k]]++] = weight;
+      { vertex2 = hg->hvertex[k];
+        _neigh[degrees[vertex1]] = vertex2;
+        _neigh[degrees[vertex2]] = vertex1;
+        _ewgt[degrees[vertex1]++] = _ewgt[degrees[vertex2]++] = weight;
       }
+    }
   }
-  ZOLTAN_FREE ((void **) &next);
+  ZOLTAN_FREE ((void **) &degrees);
 
 /* Compact identical icident edges and their weight */
-  w = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx);
+  if (!(w = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx)))
+    { ZOLTAN_FREE ((void **) &w);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
   for (i=0; i<hg->nVtx; i++)
     w[i] = 0.0;
+  empty = 0;
   for (i=0; i<hg->nVtx; i++)
-  { int start=g->nindex[i], end=g->nindex[i+1];
+  { start = g->nindex[i];
+    end = g->nindex[i+1];
     g->nindex[i] -= empty;
     for (j=start; j<end; j++)
       if (_ewgt[j] > 0.0)
@@ -399,12 +422,20 @@ int Zoltan_HG_HGraph_to_Graph(
 /* Reallocate to the exact size */
   g->nEdge = g->nindex[g->nVtx];
 
-  g->neigh = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nindex[hg->nVtx]);
-  memcpy(g->neigh,_neigh,g->nindex[hg->nVtx]*sizeof(int));
+  if (!(g->neigh = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nindex[hg->nVtx])))
+    { ZOLTAN_FREE ((void **) &g->neigh);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+  memcpy(g->neigh,_neigh,g->nEdge*sizeof(int));
   ZOLTAN_FREE ((void **) &_neigh);
 
-  g->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nindex[hg->nVtx]);
-  memcpy(g->ewgt,_ewgt,g->nindex[hg->nVtx]*sizeof(float));
+  if (!(g->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nindex[hg->nVtx])))
+    { ZOLTAN_FREE ((void **) &g->ewgt);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+  memcpy(g->ewgt,_ewgt,g->nEdge*sizeof(float));
   ZOLTAN_FREE ((void **) &_ewgt);
 
   return ZOLTAN_OK;
@@ -419,16 +450,13 @@ int Zoltan_HG_Graph_to_HGraph(
 )
 {
 /* 
- *  Converts a graph g into a hypergraph g.
+ *  Converts a graph g into a hypergraph hg.
  *  One hyperedge is created for each vertex of g.
  *  Hyperedge i consists of vertex i + all edge neighbors of i in graph g.
  */
 char *yo = "Zoltan_HG_Graph_to_HGraph";
 int i, j, k;
 int *hindex = NULL, *hvertex = NULL;  /* temporary array pointers */
-float *ewgts = NULL;                  /* temporary array pointers */
-int ewgt_dim = zz->Edge_Weight_Dim;
-int vwgt_dim = zz->Obj_Weight_Dim;
 int cnt;
 int ierr = ZOLTAN_OK;
 
@@ -440,26 +468,26 @@ int ierr = ZOLTAN_OK;
   hg->nEdge = g->nVtx;
   hg->nPin  = g->nVtx + g->nEdge;
   hg->nDim  = g->nDim;
+  hg->VertexWeightDim = g->VertexWeightDim;
+  hg->EdgeWeightDim = g->EdgeWeightDim;
 
   /* Copy coordinates from graph to hypergraph */
-  if (g->coor != NULL) {
+  if (g->coor) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Copying coordinates");
     cnt = hg->nVtx * g->nDim;        
-    hg->coor = (double *) ZOLTAN_MALLOC(cnt * sizeof(double));
-    if (hg->coor == NULL) {
-      ierr = ZOLTAN_MEMERR;
+    if (!(hg->coor = (double *) ZOLTAN_MALLOC(cnt * sizeof(double))))
+    { ierr = ZOLTAN_MEMERR;
       goto End;
     }
     memcpy(hg->coor, g->coor, cnt * sizeof(double));
   }
 
   /* Copy vertex weights from graph to hypergraph */
-  if (g->vwgt != NULL) {
+  if (g->vwgt) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Copying vertex weights");
-    cnt = hg->nVtx * vwgt_dim;
-    hg->vwgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float));
-    if (hg->vwgt == NULL) {
-      ierr = ZOLTAN_MEMERR;
+    cnt = hg->nVtx * hg->VertexWeightDim;
+    if (!(hg->vwgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float))))
+    { ierr = ZOLTAN_MEMERR;
       goto End;
     }
     memcpy(hg->vwgt, g->vwgt, cnt * sizeof(float));
@@ -467,29 +495,30 @@ int ierr = ZOLTAN_OK;
 
   /* Allocate memory for hypergraph edges */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge arrays");
-  hindex = hg->hindex = (int *) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
-  hvertex = hg->hvertex = (int *) ZOLTAN_MALLOC(hg->nPin * sizeof(int));
-  if (g->ewgt != NULL) {
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge weights");
-    cnt = hg->nEdge * ewgt_dim;
-    ewgts = hg->ewgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float));
-  }
-  if ((hg->nEdge > 0 && hindex == NULL) || 
-      (hg->nPin > 0 && hvertex == NULL) || 
-      (g->ewgt != NULL && ewgts == NULL)) {
-    ierr = ZOLTAN_MEMERR;
+  if (!(hindex = hg->hindex=(int *)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
+      !(hvertex = hg->hvertex=(int *)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
+  { ierr = ZOLTAN_MEMERR;
     goto End;
+  }
+  if (g->ewgt) {
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge weights");
+    cnt = hg->nEdge * hg->EdgeWeightDim;
+    if (!(hg->ewgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float))))
+    { ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
   }
 
   /* KDD  The following section will have to be reworked for parallel HGs. */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Filling edge arrays");
-  for (cnt = 0, i = 0; i < hg->nEdge; i++) {
+  cnt = 0;
+  for (i = 0; i < hg->nEdge; i++) {
     hindex[i] = cnt;
     hvertex[cnt++] = i;
     for (j = g->nindex[i]; j < g->nindex[i+1]; j++) {
       hvertex[cnt++] = g->neigh[j];
-      for (k = 0; k < ewgt_dim; k++)
-        ewgts[i * ewgt_dim + k] += g->ewgt[j * ewgt_dim + k];
+      for (k = 0; k < hg->EdgeWeightDim; k++)
+        hg->ewgt[i*(hg->EdgeWeightDim)+k] += g->ewgt[j*(hg->EdgeWeightDim)+k];
     }
   } 
   hindex[hg->nEdge] = cnt;

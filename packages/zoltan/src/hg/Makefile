@@ -18,8 +18,8 @@ C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME)
 L		= -L. -lhg -lm
 
 src.c		= hg_test.c hg_readfile.c hg_util.c \
-		  hg_part.c hg_pack.c hg_match.c hg_coarse.c \
-		  hg_global.c hg_local.c  hg_group.c
+		  hg_part.c hg_match.c hg_pack.c hg_group.c \
+		  hg_coarse.c hg_global.c hg_local.c
 
 all:            	./hg_test
 ./hg_test:		./libhg.a hg_test.o

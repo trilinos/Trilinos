@@ -18,15 +18,13 @@ extern "C" {
 
 #include "hypergraph.h"
 
-static ZOLTAN_HG_PACKING_FN packing_mxp;  /* maximal packing */
-static ZOLTAN_HG_PACKING_FN packing_rep;  /* random edge packing */
-static ZOLTAN_HG_PACKING_FN packing_hep;  /* heavy edge packing */
-static ZOLTAN_HG_PACKING_FN packing_grp;  /* greedy packing */
-static ZOLTAN_HG_PACKING_FN packing_lhp;  /* locally heaviest packing */
-static ZOLTAN_HG_PACKING_FN packing_pgp;  /* path growing packing */
-static ZOLTAN_HG_PACKING_FN packing_dep;  /* decreasing packing */
-static ZOLTAN_HG_PACKING_FN packing_rrp;  /* random vertex, random edge packing */
-
+static ZOLTAN_HG_PACKING_FN packing_mxp; /* maximal packing */
+static ZOLTAN_HG_PACKING_FN packing_rep; /* random edge packing */
+static ZOLTAN_HG_PACKING_FN packing_rrp; /* random, random edge packing */
+static ZOLTAN_HG_PACKING_FN packing_rhp; /* random, heavy edge packing */
+static ZOLTAN_HG_PACKING_FN packing_grp; /* greedy packing */
+static ZOLTAN_HG_PACKING_FN packing_lhp; /* locally heaviest packing */
+static ZOLTAN_HG_PACKING_FN packing_pgp; /* path growing packing */
 
 /****************************************************************************/
 
@@ -39,21 +37,19 @@ ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  if      (strcasecmp(str, "pgp") == 0)  return packing_pgp;
-  else if (strcasecmp(str, "mxp") == 0)  return packing_mxp;
-  else if (strcasecmp(str, "rep") == 0)  return packing_rep;
-  else if (strcasecmp(str, "hep") == 0)  return packing_hep;
-  else if (strcasecmp(str, "grp") == 0)  return packing_grp;
-  else if (strcasecmp(str, "lhp") == 0)  return packing_lhp;
-  else if (strcasecmp(str, "dep") == 0)  return packing_dep;
-  else if (strcasecmp(str, "rrp") == 0)  return packing_rrp;
-  else                                   return NULL;
+  if      (!strcasecmp(str, "mxp"))  return packing_mxp;
+  else if (!strcasecmp(str, "rep"))  return packing_rep;
+  else if (!strcasecmp(str, "rrp"))  return packing_rrp;
+  else if (!strcasecmp(str, "rhp"))  return packing_rhp;
+  else if (!strcasecmp(str, "grp"))  return packing_grp;
+  else if (!strcasecmp(str, "lhp"))  return packing_lhp;
+  else if (!strcasecmp(str, "pgp"))  return packing_pgp;
+  else                               return NULL;
 }
-
 
 /****************************************************************************/
 
-int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
+int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 { int   i, j;
   int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
@@ -61,12 +57,10 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
   char  *yo = "Zoltan_HG_Packing";
 
   old_ewgt = hg->ewgt;
-  hg->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge);
-  if (hg->ewgt == NULL)
-     {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  if (!(hg->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
 
   for (i=0; i<hg->nEdge; i++)
   { sum1 = sum2 = 0.0;
@@ -91,152 +85,132 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
   return ierr;
 }
 
-
 /****************************************************************************/
 
 static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
-   {                    /* limit is defined for future use */
-   int i, j ;
-   char *yo = "packing_mxp" ;
+{                    /* limit is defined for future use */
+  int i, j ;
+  char *yo = "packing_mxp" ;
 
-   for (i = 0 ; i < hg->nVtx ; i++)
-      pack[i] = i ;
+  for (i = 0 ; i < hg->nVtx ; i++)
+    pack[i] = i ;
 
-   for (i = 0 ; i < hg->nEdge ; i++)
-      {
-      for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
-         if (pack[hg->hvertex[j]] != hg->hvertex[j])
-            break ;
-      if (j == hg->hindex[i+1])    /* if true, all vertices free for packing */
-         {
-         for (j = hg->hindex[i] ; j < hg->hindex[i+1]-1 ; j++)
-            pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
-         pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[i]] ;
-         }
-      }
-   return ZOLTAN_OK ;
-   }
-
+  for (i = 0 ; i < hg->nEdge ; i++)
+  { for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
+      if (pack[hg->hvertex[j]] != hg->hvertex[j])
+        break ;
+    if (j == hg->hindex[i+1])    /* if true, all vertices free for packing */
+    { for (j = hg->hindex[i] ; j < hg->hindex[i+1]-1 ; j++)
+        pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+      pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[i]] ;
+    }
+  }
+  return ZOLTAN_OK ;
+}
 
 /****************************************************************************/
 
 static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int limit)
-   {                              /* limit is defined for future use */
-   int i, j, *edges=NULL, edge, random ;
-   char *yo = "packing_rep" ;
+{                              /* limit is defined for future use */
+  int i, j, *edges=NULL, edge, random ;
+  char *yo = "packing_rep" ;
 
-   edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
-   if (edges == NULL)
-      {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR;
-      }
-   for (i = 0 ; i < hg->nEdge ; i++)
-      edges[i] = i ;
-   for (i = 0 ; i < hg->nVtx ;  i++)
-      pack[i]  = i ;
+  if (!(edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+  for (i = 0 ; i < hg->nEdge ; i++)
+    edges[i] = i ;
+  for (i = 0 ; i < hg->nVtx ;  i++)
+    pack[i]  = i ;
 
-   for (i = hg->nEdge ; i > 0 ; i--)
-      {
-      random = rand() % i ;
-      edge = edges[random] ;
-      edges[random] = edges[i-1] ;
+  for (i = hg->nEdge ; i > 0 ; i--)
+  { edge = edges[random=rand()%i] ;
+    edges[random] = edges[i-1] ;
 
-      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
-         if (pack[hg->hvertex[j]] != hg->hvertex[j])
-            break ;
-      if (j == hg->hindex[edge+1])   /* if true, all vertices free for packing */
-         {
-         for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
-            pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
-         pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
-         }
-      }
-   ZOLTAN_FREE ((void **) &edges) ;
-   return ZOLTAN_OK ;
-   }
-
+    for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
+      if (pack[hg->hvertex[j]] != hg->hvertex[j])
+        break ;
+    if (j == hg->hindex[edge+1])   /* if true, all vertices free for packing */
+    { for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
+        pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+      pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
+    }
+  }
+  ZOLTAN_FREE ((void **) &edges) ;
+  return ZOLTAN_OK ;
+}
 
 /****************************************************************************/
 
 static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int limit)
-   {                                      /* limit is defined for future use */
-   int i, j, k, edge, random, *vertices=NULL, vertex ;
-   int *del_edges=NULL, count ;
-   char *yo = "packing_rrp" ;
+{                                      /* limit is defined for future use */
+  int i, j, k, edge, random, *vertices=NULL, vertex ;
+  int *del_edges=NULL, count ;
+  char *yo = "packing_rrp" ;
 
-   vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx) ;
-   del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
-   if (vertices == NULL || del_edges == NULL)
-      {
-      ZOLTAN_FREE ((void **) &vertices) ;
-      ZOLTAN_FREE ((void **) &del_edges) ;
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR;
+  if (!(vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))  ||
+      !(del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  )
+  { ZOLTAN_FREE ((void **) &vertices) ;
+    ZOLTAN_FREE ((void **) &del_edges) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+  for (i = 0 ; i < hg->nVtx ;  i++)
+    vertices[i] = pack[i] = i ;
+  for (i = 0 ; i < hg->nEdge ; i++)
+    del_edges[i] = 0 ;
+
+  for (i = hg->nVtx ; i > 0 ; i--)
+  { vertex = vertices[random=rand()%i] ;
+    vertices[random] = vertices[i-1] ;
+    if (pack[vertex] != vertex)
+      continue ;          /* vertex already packed, move on */
+
+    count = 0 ;            /* count will be number of viable edges */
+    for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
+    { edge = hg->vedge[k] ;
+      if (del_edges[edge] == 1)
+        continue ;       /* edge has been deleted for use already */
+
+      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
+        if (pack[hg->hvertex[j]] != hg->hvertex[j])
+          break ;
+      if (j == hg->hindex[edge+1])
+        count++ ;                 /* found a possible edge */
+      else
+        del_edges[edge] = 1 ;     /* edge unusable, delete it from consideration */
+    }
+    if (count == 0)
+      continue ;                  /* vertex has no free edges available */
+
+    random = rand() % count;      /* randomly select from available edges */
+    for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
+    { edge = hg->vedge[k] ;
+      if (del_edges[edge] == 0 && --count == random)
+      { for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
+          pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+        pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
       }
-   for (i = 0 ; i < hg->nVtx ;  i++)
-      vertices[i] = pack[i] = i ;
-   for (i = 0 ; i < hg->nEdge ; i++)
-      del_edges[i] = 0 ;
-
-   for (i = hg->nVtx ; i > 0 ; i--)
-      {
-      random = rand() % i ;
-      vertex = vertices[random] ;
-      vertices[random] = vertices[i-1] ;
-      if (pack[vertex] != vertex)
-         continue ;          /* vertex already packed, move on */
-
-      count = 0 ;            /* count will be number of viable edges */
-      for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
-         {
-         edge = hg->vedge[k] ;
-         if (del_edges[edge] == 1)
-            continue ;       /* edge has been deleted for use already */
-
-         for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
-            if (pack[hg->hvertex[j]] != hg->hvertex[j])
-               break ;
-         if (j == hg->hindex[edge+1])
-            count++ ;                 /* found a possible edge */
-         else
-            del_edges[edge] = 1 ;     /* edge unusable, delete it from consideration */
-         }
-      if (count == 0)
-         continue ;                  /* vertex has no free edges available */
-
-      random = (count > 1) ? rand() % count : 0 ;      /* randomly select from available edges */
-      for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
-         {
-         edge = hg->vedge[k] ;
-         if (del_edges[edge] == 0 && --count == random)
-            {
-            for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
-               pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
-            pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
-            break ;              /* packed edge, escape to outer loop */
-            }
-         del_edges[edge] = 1 ;
-         }
-      }
-   ZOLTAN_FREE ((void **) &vertices) ;
-   ZOLTAN_FREE ((void **) &del_edges) ;
-   return ZOLTAN_OK ;
-   }
-
+      del_edges[edge] = 1 ;
+    }
+  }
+  ZOLTAN_FREE ((void **) &vertices) ;
+  ZOLTAN_FREE ((void **) &del_edges) ;
+  return ZOLTAN_OK ;
+}
 
 /****************************************************************************/
 
-static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {                                   /* limit is defined for future use */
    int   i, j, k, *vertices=NULL, *del_edges=NULL, vertex, edge,
          number, best_edge, best_size;
    float best_ewgt;
    char  *yo = "packing_hep" ;
 
-   vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx) ;
-   del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
-   if (vertices == NULL  ||  del_edges == NULL)
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))  ||
+       !(del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  )
       {
       ZOLTAN_FREE ((void **) &vertices) ;
       ZOLTAN_FREE ((void **) &del_edges) ;
@@ -250,8 +224,7 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
    for (i = hg->nVtx ; i > 0 ; i--)
       {
-      number = rand() % i ;
-      vertex = vertices[number] ;
+      vertex = vertices[number=rand()%i] ;
       vertices[number] = vertices[i-1] ;
       if (pack[vertex] != vertex)
          continue ;            /* vertex is already matched, move on */
@@ -263,7 +236,7 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
          int size ;
          edge = hg->vedge[j];
          size = hg->hindex[edge+1] - hg->hindex[edge] ;
-         if (del_edges[edge]==0 && ((hg->ewgt == NULL  && size < best_size)
+         if (del_edges[edge]==0 && ((!(hg->ewgt) && size < best_size)
           || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
                        || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
             {
@@ -287,7 +260,6 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
    ZOLTAN_FREE ((void **) &del_edges) ;
    return ZOLTAN_OK ;
 }
-
 
 /****************************************************************************/
 
@@ -316,7 +288,6 @@ int start, int end, int *equal, int *smaller)
   } }
 }
 
-
 static void quicksort_dec_float_int (float* val1, int *val2, int* sorted,
 int start, int end)
 { int  equal, smaller;
@@ -328,9 +299,6 @@ int start, int end)
   }
 }
 
-
-/****************************************************************************/
-
 static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {                                         /* limit is defined for future use */
   int   i, j, *size=NULL, *sorted=NULL;
@@ -340,9 +308,8 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
     pack[i] = i;
 
 /* Sort the hyperedges according to their weight and size */
-  size   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  if (size == NULL || sorted == NULL)
+  if (!(size   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge)) ||
+      !(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  )
      {
      ZOLTAN_FREE ((void **) &size) ;
      ZOLTAN_FREE ((void **) &sorted) ;
@@ -370,7 +337,6 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   return ZOLTAN_OK;
 }
 
-
 /****************************************************************************/
 
 static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
@@ -378,9 +344,8 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
 { int	i, j, vertex, *Vindex_old, next_edge, done=0;
   char *yo = "lhp_pack" ;
 
-  Vindex_old = (int *) ZOLTAN_MALLOC (sizeof (int)
-   * (hg->hindex[edge+1]-hg->hindex[edge]));
-  if (Vindex_old == NULL)
+  if (!(Vindex_old = (int *) ZOLTAN_MALLOC
+     (sizeof(int)*(hg->hindex[edge+1]-hg->hindex[edge]))))
      {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
@@ -421,9 +386,6 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
   return ZOLTAN_OK;
 }
 
-
-/****************************************************************************/
-
 static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {                                      /* limit is defined for future use */
   int	i, *Vindex=NULL, *del_edge=NULL;
@@ -432,9 +394,8 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   for (i=0; i<hg->nVtx; i++)
     pack[i] = i;
 
-  del_edge = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  Vindex   = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1));
-  if (del_edge == NULL || Vindex == NULL)
+  if (!(del_edge = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  ||
+      !(Vindex   = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1))) )
      {
      ZOLTAN_FREE ((void **) &del_edge) ;
      ZOLTAN_FREE ((void **) &Vindex) ;
@@ -454,7 +415,6 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   return ZOLTAN_OK;
 }
 
-
 /****************************************************************************/
 
 static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
@@ -464,10 +424,9 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   float	best_weight, w1=0.0, w2=0.0;
   char *yo = "packing_pgp" ;
 
-  pack2        = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
-  taken_edge   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  taken_vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
-  if (pack2 == NULL || taken_edge == NULL || taken_vertex == NULL)
+  if (!(pack2        = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))  ||
+      !(taken_edge   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge)) ||
+      !(taken_vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))   )
      {
      ZOLTAN_FREE ((void **) &pack2) ;
      ZOLTAN_FREE ((void **) &taken_edge) ;
@@ -524,56 +483,6 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &taken_vertex);
   return ZOLTAN_OK;
 }
-
-
-/****************************************************************************/
-
-static int packing_dep (ZZ *zz, HGraph *hg, Packing pack, int limit)
-{                                    /* limit is defined for future use */
-  int   i, j, *size=NULL, *sorted=NULL, vertex, first_vertex;
-  char *yo = "packing_dep" ;
-
-  for (i=0; i<hg->nVtx; i++)
-    pack[i] = i;
-
-/* Sort the hyperedges according to their weight and size */
-  size   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  if (size == NULL || sorted == NULL)
-     {
-     ZOLTAN_FREE ((void **) &size) ;
-     ZOLTAN_FREE ((void **) &sorted) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-  for (i=0; i<hg->nEdge; i++)
-    size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
-  for (i=0; i<hg->nEdge; i++)
-    sorted[i] = i;
-  quicksort_dec_float_int(hg->ewgt,size,sorted,0,hg->nEdge-1);
-  ZOLTAN_FREE ((void **) &size);
-
-/* Pack hyperedges along decreasing weight */
-  for (i=0; i<hg->nEdge; i++)
-  { j = hg->hindex[sorted[i]];
-    while (j<hg->hindex[sorted[i]+1] && pack[hg->hvertex[j]]!=hg->hvertex[j])
-      j++;
-    if (j<hg->hindex[sorted[i]+1])
-    { first_vertex = vertex = hg->hvertex[j];
-      j++;
-      while (j<hg->hindex[sorted[i]+1])
-      { if (pack[hg->hvertex[j]] == hg->hvertex[j])
-        { pack[vertex] = hg->hvertex[j];
-          vertex = hg->hvertex[j];
-        }
-        j++;
-      }
-      pack[vertex] = first_vertex;
-  } }
-  ZOLTAN_FREE ((void **) &sorted);
-  return ZOLTAN_OK;
-}
-
 
 /****************************************************************************/
 

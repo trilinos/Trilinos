@@ -28,17 +28,14 @@ int Zoltan_HG_Readfile (
 )
 { 
   FILE  *f;
-  int   i, Hedge=0, pin, code=0;
+  int   i, Hedge, pin, code=0;
   char  *s, string[BUF_LEN];
-  char errstr[200] ;
-  char *yo = "hgraph_load" ;
+  char  errstr[200] ;
+  char  *yo = "Zoltan_HG_Readfile" ;
 
 /* TODO: edge weights, multiple edge/vertex weights */
 
-  hg->info = 0;
-  hg->vindex = hg->vedge = NULL;
-  hg->vwgt = hg->ewgt = NULL;
-  hg->coor = NULL;
+  Zoltan_HG_HGraph_Init(hg);
 
   if (!(f = fopen( hgraphfile, "r" )))
   { sprintf(errstr, "ERROR...not able to read file %s!\n",hgraphfile);
@@ -71,15 +68,15 @@ int Zoltan_HG_Readfile (
     code = atoi (s);
 
 /* nEdge HYPEREDGE LINES */
-  hg->hindex  = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1));
-  hg->hvertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nPin);
-  if (hg->hindex == NULL || hg->hvertex == NULL)
+  if (!(hg->hindex  = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1))) ||
+      !(hg->hvertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nPin))       )
      {
      ZOLTAN_FREE ((void **) &hg->hindex) ;
      ZOLTAN_FREE ((void **) &hg->hvertex) ;
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
+  Hedge = 0;
   for (i=0; i<hg->nEdge; i++)
   { hg->hindex[i] = Hedge;
     if (!(fgets (string, BUF_LEN, f)))
@@ -104,8 +101,7 @@ int Zoltan_HG_Readfile (
 
 /* nVtx vertex weights */
   if ((code/10)%10 == 1)
-  { hg->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx);
-    if (hg->vwgt == NULL)
+  { if (!(hg->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx)))
        {
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;

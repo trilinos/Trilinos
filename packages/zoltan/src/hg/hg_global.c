@@ -58,9 +58,8 @@ static int global_ran (
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
-  weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p);
-  if (order == NULL || weight == NULL)
+  if (!(order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
+      !(weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p))    )
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_FREE ((void **) &weight) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
