@@ -28,7 +28,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
                   ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa ml_read_maxwell \
-                  ml_example_epetra_preconditioner
+                  ml_example_epetra_preconditioner \
+                  ml_example_epetra_preconditioner_2level
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -37,7 +38,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
 		          ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
-                  ml_example_epetra_preconditioner
+                  ml_example_epetra_preconditioner \
+                  ml_example_epetra_preconditioner_2level
 endif
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
@@ -47,7 +49,8 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
 		  ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
-                  ml_example_epetra_preconditioner
+                  ml_example_epetra_preconditioner \
+                  ml_example_epetra_preconditioner_2level
 endif
 
 endif
@@ -77,6 +80,7 @@ ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
 ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
+ml_example_epetra_preconditioner_2level_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_2level.cpp
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 endif
@@ -133,16 +137,20 @@ else
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 if ML_USING_AMESOS
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+# Amesos require Teuchos
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+             $(top_builddir)/../teuchos/src/libteuchos.a
 else
-amesos_lib = 
+amesos_lib =
 endif
 if ML_USING_ANASAZI
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+# Anasazi require Teuchos
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
+             $(top_builddir)/../teuchos/src/libteuchos.a
 else
 anasazi_lib = 
 endif
-if ML_USING_TEUCHOS
+if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 else
 teuchos_lib =
@@ -243,13 +251,16 @@ ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
 
-if ML_USING_TEUCHOS
-
 ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_LDADD = ${ml_libs} ../../teuchos/src/libteuchos.a ../../triutils/src/libtriutils.a ../../epetra/src/libepetra.a
+ml_example_epetra_preconditioner_LDADD = ${ml_libs} 
 ml_example_epetra_preconditioner_LINK = ${mllink}
-endif
+
+ml_example_epetra_preconditioner_2level_CPPFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_2level_LDADD = ${ml_libs} 
+ml_example_epetra_preconditioner_2level_LINK = ${mllink}
+
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
