@@ -273,7 +273,6 @@ PACKAGE_STRING='Trilinos 3.1d'
 PACKAGE_BUGREPORT='mheroux@cs.sandia.gov'
 
 ac_unique_file="packages/epetra/src/Epetra_Object.h"
-ac_subdirs_all="$ac_subdirs_all external/y12m"
 ac_subdirs_all="$ac_subdirs_all packages/epetra"
 ac_subdirs_all="$ac_subdirs_all packages/triutils"
 ac_subdirs_all="$ac_subdirs_all packages/ifpack"
@@ -291,7 +290,7 @@ ac_subdirs_all="$ac_subdirs_all packages/nox"
 ac_subdirs_all="$ac_subdirs_all packages/ml"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
 ac_subdirs_all="$ac_subdirs_all packages/teuchos"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE BUILD_Y12M_TRUE BUILD_Y12M_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -811,8 +810,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode enable make rules and dependencies not useful
                           (and sometimes confusing) to the casual installer
-  --enable-referencey12m  Build y12m lib included in the distribution (default
-                          is no)
   --enable-amesos         Build amesos (default is no)
   --enable-nox            Build nox (default is no)
   --enable-meros          Build meros (default is no)
@@ -1704,42 +1701,6 @@ echo "automatically be configured and built, even if"
 echo "the list below does not indicate so."
 
 
-# Check whether --enable-referencey12m or --disable-referencey12m was given.
-if test "${enable_referencey12m+set}" = set; then
-  enableval="$enable_referencey12m"
-  ac_cv_use_referencey12m=$enableval
-else
-  ac_cv_use_referencey12m=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use referencey12m" >&5
-echo $ECHO_N "checking whether to use referencey12m... $ECHO_C" >&6
-
-if test "X$ac_cv_use_referencey12m" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_Y12M
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_referencey12m" != "Xno"; then
-  BUILD_Y12M_TRUE=
-  BUILD_Y12M_FALSE='#'
-else
-  BUILD_Y12M_TRUE='#'
-  BUILD_Y12M_FALSE=
-fi
-
-
-
 # Check whether --enable-amesos or --disable-amesos was given.
 if test "${enable_amesos+set}" = set; then
   enableval="$enable_amesos"
@@ -2373,13 +2334,6 @@ else
 fi
 
 
-if test "X$ac_cv_use_y12m" != "Xno"; then
-
-
-subdirs="$subdirs external/y12m"
-
-fi
-
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
@@ -2522,7 +2476,7 @@ if test "${enable_+set}" = set; then
 
 fi;
 
-                              ac_config_files="$ac_config_files Makefile packages/Makefile external/Makefile"
+                    ac_config_files="$ac_config_files Makefile packages/Makefile"
 
  cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2619,13 +2573,6 @@ if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"MAINTAINER_MODE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"MAINTAINER_MODE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_Y12M_TRUE}" && test -z "${BUILD_Y12M_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_Y12M\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_Y12M\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3183,7 +3130,6 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "packages/Makefile" ) CONFIG_FILES="$CONFIG_FILES packages/Makefile" ;;
-  "external/Makefile" ) CONFIG_FILES="$CONFIG_FILES external/Makefile" ;;
   "Trilinos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS Trilinos_config.h:Trilinos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -3289,8 +3235,6 @@ s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
 s,@INSTALL_STRIP_PROGRAM@,$INSTALL_STRIP_PROGRAM,;t t
 s,@AWK@,$AWK,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
-s,@BUILD_Y12M_TRUE@,$BUILD_Y12M_TRUE,;t t
-s,@BUILD_Y12M_FALSE@,$BUILD_Y12M_FALSE,;t t
 s,@BUILD_AMESOS_TRUE@,$BUILD_AMESOS_TRUE,;t t
 s,@BUILD_AMESOS_FALSE@,$BUILD_AMESOS_FALSE,;t t
 s,@BUILD_NOX_TRUE@,$BUILD_NOX_TRUE,;t t

@@ -38,9 +38,6 @@ echo "package that has been enabled, it will"
 echo "automatically be configured and built, even if"
 echo "the list below does not indicate so."
 
-TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
-AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
-
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
@@ -113,10 +110,6 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno"  ||
         test "X$ac_cv_use_meros" != "Xno")
-
-if test "X$ac_cv_use_y12m" != "Xno"; then
-  AC_CONFIG_SUBDIRS([external/y12m])
-fi
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
@@ -224,6 +217,5 @@ webpage are more detailed than those found using
 
 AC_CONFIG_FILES([
 		Makefile
-		packages/Makefile
-		external/Makefile])
+		packages/Makefile])
  AC_OUTPUT

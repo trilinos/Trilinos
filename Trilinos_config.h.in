@@ -51,9 +51,6 @@
 /* Define if want to build tsfcoreutils */
 #undef HAVE_TSFCOREUTILS
 
-/* Define if want to build referencey12m */
-#undef HAVE_Y12M
-
 /* Name of package */
 #undef PACKAGE
 

@@ -102,10 +102,8 @@ epetra_crsmatrix_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src
 
 
-@BUILD_Y12M_TRUE@REFERENCE_Y12M_LIBS = $(top_builddir)/../../external/y12m/liby12m.a
-
 epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a \
-	$(top_builddir)/../epetra/src/libepetra.a $(REFERENCE_Y12M_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 subdir = example/simple_epetra_aztecoo
@@ -117,13 +115,8 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_epetra_crsmatrix_OBJECTS = epetra_crsmatrix-cxx_main.$(OBJEXT)
 epetra_crsmatrix_OBJECTS = $(am_epetra_crsmatrix_OBJECTS)
-@BUILD_Y12M_TRUE@epetra_crsmatrix_DEPENDENCIES = \
-@BUILD_Y12M_TRUE@	$(top_builddir)/src/libaztecoo.a \
-@BUILD_Y12M_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
-@BUILD_Y12M_TRUE@	$(top_builddir)/../../external/y12m/liby12m.a
-@BUILD_Y12M_FALSE@epetra_crsmatrix_DEPENDENCIES = \
-@BUILD_Y12M_FALSE@	$(top_builddir)/src/libaztecoo.a \
-@BUILD_Y12M_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+epetra_crsmatrix_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a \
+	$(top_builddir)/../epetra/src/libepetra.a
 epetra_crsmatrix_LDFLAGS =
 
 DEFS = @DEFS@
