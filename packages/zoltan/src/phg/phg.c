@@ -297,9 +297,12 @@ static int Zoltan_PHG_Initialize_Params(
 {
   int err;
   
+
+  memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
+                                   another param at least it will be 0 */
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output);
+  Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
@@ -345,6 +348,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
+  hgp->final_output = 0;
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;
   hgp->kway = 0;
