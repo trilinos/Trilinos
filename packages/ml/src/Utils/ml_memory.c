@@ -939,6 +939,7 @@ int ML_MaxAllocatableSize()
 /* returns the maximum allocatable memory, in Mbytes, using mallinfo() */
 int ML_MaxMemorySize()
 { 
+#ifdef ML_MALLINFO
   long int fragments, total_free, largest_free, total_used; 
   int percent;
   
@@ -961,5 +962,7 @@ int ML_MaxMemorySize()
   /* convert to Kbytes */ 
   
   return( (int)(total_used/(1024*1024)) ); 
-  
+#else
+  return -1;
+#endif
 } 

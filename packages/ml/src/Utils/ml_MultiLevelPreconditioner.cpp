@@ -375,6 +375,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
 	     min[ML_MEM_TOT2],avg[ML_MEM_TOT2],max[ML_MEM_TOT2]);
     cout << endl;
+#ifdef ML_MALLINFO    
     cout << "   3- estimated ML memory usage, using mallinfo()" << endl;
     PrintMem("      for the hierarchy              = %5d   %5d   %5d",
 	     min[ML_MEM_HIERARCHY_USED],avg[ML_MEM_HIERARCHY_USED],max[ML_MEM_HIERARCHY_USED]);
@@ -388,6 +389,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 	     min[ML_MEM_TOT1_USED],avg[ML_MEM_TOT1_USED],max[ML_MEM_TOT1_USED]);
     PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
 	     min[ML_MEM_TOT2_USED],avg[ML_MEM_TOT2_USED],max[ML_MEM_TOT2_USED]);
+#endif
   }
 
   if( verbose_ && NumApplications_ ) PrintLine();
