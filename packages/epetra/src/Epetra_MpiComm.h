@@ -279,7 +279,10 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   MPI_Comm GetMpiComm() const {return(Comm_);};
   //@}
   //@{ \name Print object to an output stream
-  virtual void Print(ostream & os) const;
+  //! Print method that implements Epetra_Object virtual Print method
+  void Print(ostream & os) const;
+  //! Print method that implements Epetra_Comm virtual PrintInfo method
+  void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
   //@}
   
  private:

@@ -230,7 +230,7 @@ void Epetra_DistObject::Print(ostream& os) const {
   
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      Comm().Print(os);
+      Comm().PrintInfo(os);
       os << "Length of Export buffer (in chars) = " << LenExports_ << endl;
       os << "Length of Import buffer (in chars) = " << LenImports_ << endl;
       os << flush;

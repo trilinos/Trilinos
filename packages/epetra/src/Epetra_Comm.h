@@ -259,7 +259,7 @@ class Epetra_Comm {
 
   //@{ \name I/O methods
   //! Print object to an output stream
-  virtual void Print(ostream & os) const = 0;
+  virtual void PrintInfo(ostream & os) const = 0;
   //@}
 };
 #endif /* _EPETRA_COMM_H_ */
