@@ -17,8 +17,14 @@ else
 DSCPACK_TEST = 
 endif
 
+if HAVE_AMESOS_UMFPACK
+UMFPACK_TEST = TestUmfpack
+else
+UMFPACK_TEST = 
+endif
 
-noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST)
+
+noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST)
 
 if HAVE_AMESOS_SLUD
 TestSuperLUdist_SOURCES = $(srcdir)/TestSuperLUdist
@@ -32,6 +38,13 @@ TestDscpack_SOURCES = $(srcdir)/TestDscpack
 
 TestDscpack$(EXEEXT): $(srcdir)/TestDscpack
 	cp $(srcdir)/TestDscpack TestDscpack$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_UMFPACK
+TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
+
+TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
+	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
 endif
 
 endif

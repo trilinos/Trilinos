@@ -26,6 +26,9 @@
 /* Define if want to build amesos-slus */
 #undef HAVE_AMESOS_SLUS
 
+/* Define if want to build amesos-umfpack */
+#undef HAVE_AMESOS_UMFPACK
+
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 

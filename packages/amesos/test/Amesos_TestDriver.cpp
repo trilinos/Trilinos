@@ -4,7 +4,7 @@
 //  usage: 
 //     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
 //     Where solver is:  SuperLU, SuperLUdist, SuperLUdist2, 
-//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, SPOOLESERIAL or AZTEC 
+//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, UMFPACK, SPOOLESERIAL or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 
 //  examples:
@@ -132,8 +132,7 @@ main(int argc, char **argv)
       cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
       cerr << "    Solvername = UMFPACK, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDER or SuperLU " << endl;
       cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
-      cerr << "    special is, at presetn, only used in SuperLU " << endl ; 
-      cerr << "      special == 0 means use DGSSV, special == 1 means use DGSSVX " << endl ; 
+      cerr << "    special = number of repeats (0 means run just once) " << endl ; 
       cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << endl ; 
       cerr << "    transpose = 1 means test A^T x = b instead of Ax = b" << endl ; 
       cerr << "    maxerror = maximum allowed error  < 0 == no check " << endl ; 
@@ -230,6 +229,8 @@ main(int argc, char **argv)
     SparseSolver = DSCPACKOLD ; 
   else if  ( Sprogram == "DSCPACK" ) 
     SparseSolver = DSCPACK ; 
+  else if  ( Sprogram == "UMFPACK" ) 
+    SparseSolver = UMFPACK ; 
   else if  ( Sprogram == "SuperLUdist" ) 
     SparseSolver = SuperLUdist ; 
   else if  ( Sprogram == "SuperLUdist2" ) 
@@ -284,9 +285,9 @@ main(int argc, char **argv)
 	<< MatType << endl ; 
     exit_value = -1 ; 
   }
-  if ( special < 0 || special > 1000  ) { 
+  if ( special < 0 || special > 10000  ) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << " Special must be 0 or 1, is: " 
+      cerr << " No more than 10000 repeats allowed" 
 	<< special << endl ; 
     exit_value = -1 ; 
   }
@@ -344,9 +345,9 @@ main(int argc, char **argv)
     exit_value = -1 ; 
   }
   if ( numsolves != 1 &&  SparseSolver != SuperLU && 
-       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK ) {
+       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only SuperLU, SuperLUdist and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only SuperLU, SuperLUdist, UMFPACK and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     
@@ -416,10 +417,10 @@ main(int argc, char **argv)
     try { 
 
 	if ( numsolves < 0 ) { 
-	  Amesos_TestMrhsSolver( Comm, argv[2], - numsolves, SparseSolver, (transpose==1), special ) ; 
+	  Amesos_TestMrhsSolver( Comm, argv[2], - numsolves, SparseSolver, (transpose==1), special, MatrixType ) ; 
 	} else { 
 	  if ( numsolves > 1 ) { 
-	    Amesos_TestMultiSolver( Comm, argv[2], numsolves, SparseSolver, (transpose==1), special ) ; 
+	    Amesos_TestMultiSolver( Comm, argv[2], numsolves, SparseSolver, (transpose==1), special, MatrixType ) ; 
 	  } else {
 	    Amesos_TestSolver( Comm, argv[2], SparseSolver, (transpose==1), special, MatrixType ) ; 
 	  }
@@ -481,7 +482,7 @@ main(int argc, char **argv)
 	//
 	if (maxerror == 1e30 ) maxerror = 10 ; 
 	if (SparseDirectTimingVars::SS_Result.Get_Error() < maxerror / MAX_TOLERANCE_RATIO && 
-	    maxerror > 1.1e-15 ) {
+	    maxerror > 1.1e-14 ) {
 	  summary_file << " Error TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " is allowed to be " << maxerror  ; 
@@ -504,7 +505,7 @@ main(int argc, char **argv)
 
 	if (maxresid == 1e30 ) maxresid = 10 ; 
 	if (SparseDirectTimingVars::SS_Result.Get_Residual() < maxresid / MAX_TOLERANCE_RATIO && 
-	    maxresid > 1.1e-15 ) {
+	    maxresid > 1.1e-14 ) {
 	  summary_file << " Residual TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " is allowed to be " << maxresid  ; 

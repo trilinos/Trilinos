@@ -231,6 +231,8 @@ class Amesos_BaseSolver {
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>The non-zero structure of the matrix should not have changed
           since the last call to SymbolicFactorization().  
+      <li>The distribution of the matrix should not have changed 
+          since the last call to SymbolicFactorization()
       </ul>
 
       postconditions:<ul>
@@ -252,6 +254,8 @@ class Amesos_BaseSolver {
       <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
       <li>The non-zero structure of the matrix should not have changed
           since the last call to SymbolicFactorization().
+      <li>The distribution of the matrix should not have changed 
+          since the last call to SymbolicFactorization()
       <li>The matrix should not have changed
           since the last call to NumericFactorization().
       </ul>

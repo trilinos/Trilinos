@@ -52,6 +52,18 @@ DSCPACK_H =
 DSCPACK =
 endif
 
+if HAVE_AMESOS_UMFPACK
+UMFPACK_H = \
+	$(srcdir)/Amesos_Umfpack.h
+UMFPACK = \
+	$(srcdir)/Amesos_Umfpack.cpp
+else
+UMFPACK_H =
+UMFPACK =
+endif
+
+
+
 if HAVE_AMESOS_SLUD2
 SLUDIST2_H = \
 	$(srcdir)/Superludist2_OO.h
@@ -130,6 +142,7 @@ AMESOS_LIB = libamesos.a
 AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
+	$(UMFPACK_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
@@ -139,6 +152,7 @@ AMESOS_H = \
 libamesos_a_SOURCES = \
 	$(PARAM) \
 	$(DSCPACK) \
+	$(UMFPACK) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
 	$(SLUSERIAL) \

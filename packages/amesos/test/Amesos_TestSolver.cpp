@@ -33,6 +33,9 @@
 #include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
+#ifdef HAVE_AMESOS_UMFPACK
+#include "Amesos_Umfpack.h"
+#endif
 #if 0 
 #include "UmfpackOO.h"
 #include "SpoolesserialOO.h"
@@ -186,108 +189,109 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
 
   Epetra_Time TotalTime( Comm ) ; 
-  //  switch( SparseSolver ) { 
-  //  case UMFPACK:
-  if ( false ) { 
+  for ( int i = 0; i < 1+special ; i++ ) { 
+    if ( false ) { 
 #ifdef TEST_UMFPACK
-  } else if ( SparseSolver == UMFPACK ) { 
-    UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
-    
-    umfpack.SetTrans( transpose ) ; 
-    umfpack.Solve() ; 
+    } else if ( SparseSolver == UMFPACK ) { 
+      UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
+      
+      umfpack.SetTrans( transpose ) ; 
+      umfpack.Solve() ; 
 #endif
 #ifdef HAVE_AMESOS_SLUS
-  } else if ( SparseSolver == SuperLU ) { 
-    Epetra_SLU superluserial( &Problem ) ;
-    
-    superluserial.Solve() ; 
+    } else if ( SparseSolver == SuperLU ) { 
+      Epetra_SLU superluserial( &Problem ) ;
+      
+      superluserial.Solve() ; 
 #endif
 #ifdef HAVE_AMESOS_SLUD
-  } else if ( SparseSolver == SuperLUdist ) {
-
-    for ( int i = 0; i < 1+special ; i++ ) { 
-      SuperludistOO superludist( Problem ) ; 
-      superludist.SetTrans( transpose );  
-      EPETRA_CHK_ERR( superludist.Solve( true ) ); 
-   }
+    } else if ( SparseSolver == SuperLUdist ) {
+      
+      for ( int i = 0; i < 1+special ; i++ ) { 
+	SuperludistOO superludist( Problem ) ; 
+	superludist.SetTrans( transpose );  
+	EPETRA_CHK_ERR( superludist.Solve( true ) ); 
+      }
 #endif
 #ifdef HAVE_AMESOS_SLUD2
-  } else if ( SparseSolver == SuperLUdist2 ) {
-
-    for ( int i = 0; i < 1+special ; i++ ) { 
+    } else if ( SparseSolver == SuperLUdist2 ) {
+      
       Superludist2_OO superludist2( Problem ) ; 
       superludist2.SetTrans( transpose );  
       EPETRA_CHK_ERR( superludist2.Solve( true ) ); 
-   }
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-  } else if ( SparseSolver == DSCPACKOLD ) {
+    } else if ( SparseSolver == DSCPACKOLD ) {
 
-    for ( int i = 0; i < 1+special ; i++ ) { 
       DscpackOO dscpack( Problem ) ; 
       EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
-   }
-  } else if ( SparseSolver == DSCPACK ) {
-
-    for ( int i = 0; i < 1+special ; i++ ) { 
+    } else if ( SparseSolver == DSCPACK ) {
+      
       AMESOS::Parameter::List ParamList ;
       //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify
       Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
-      //      cout << " After the call to A_dscpack.Solve() " << endl ; 
-   }
+#endif
+#ifdef HAVE_AMESOS_UMFPACK
+    } else if ( SparseSolver == UMFPACK ) {
+
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
 #endif
 #ifdef TEST_SPOOLES
-  } else if ( SparseSolver == SPOOLES ) { 
-    SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
-    
-    spooles.SetTrans( transpose ) ; 
-    spooles.Solve() ; 
+    } else if ( SparseSolver == SPOOLES ) { 
+      SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
+      
+      spooles.SetTrans( transpose ) ; 
+      spooles.Solve() ; 
 #endif
 #ifdef HAVE_AMESOS_KUNDERT
-  } else if ( SparseSolver == KUNDERT ) { 
-    KundertOO kundert( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
-    
-    kundert.SetTrans( transpose ) ; 
-    kundert.Solve() ; 
+    } else if ( SparseSolver == KUNDERT ) { 
+      KundertOO kundert( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
+      
+      kundert.SetTrans( transpose ) ; 
+      kundert.Solve() ; 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
-  } else if ( SparseSolver == SPOOLESSERIAL ) { 
-    SpoolesserialOO spoolesserial( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
-    
-    spoolesserial.Solve() ;
+    } else if ( SparseSolver == SPOOLESSERIAL ) { 
+      SpoolesserialOO spoolesserial( (Epetra_RowMatrix *) passA, 
+				     (Epetra_MultiVector *) passx, 
+				     (Epetra_MultiVector *) passb ) ; 
+      
+      spoolesserial.Solve() ;
 #endif
 #ifndef TEST_AZTEC
-  } else if ( SparseSolver == Aztec ) { 
-    SparseDirectTimingVars::log_file 
-      << "Aztec Solver won't compile for me on this platform" << endl ;
-    string errormsg = "Aztec Solver won't compile for me on this platform" ;
-    throw( errormsg ); 
+    } else if ( SparseSolver == Aztec ) { 
+      SparseDirectTimingVars::log_file 
+	<< "Aztec Solver won't compile for me on this platform" << endl ;
+      string errormsg = "Aztec Solver won't compile for me on this platform" ;
+      throw( errormsg ); 
 #else
-  } else if ( SparseSolver == Aztec ) { 
-    AztecOO aztec( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
-    
-    aztec.Iterate(1000, 1.0e-10 * Anorm ) ; 
+    } else if ( SparseSolver == Aztec ) { 
+      AztecOO aztec( (Epetra_RowMatrix *) passA, 
+		     (Epetra_MultiVector *) passx, 
+		     (Epetra_MultiVector *) passb ) ; 
+      
+      aztec.Iterate(1000, 1.0e-10 * Anorm ) ; 
 #endif
-  } else { 
-    SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-    cerr << "\n\n####################  Requested solver not available on this platform #####################\n" << endl ;
-  }
-
-  SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
-  SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
-  SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
-  SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
+    } else { 
+      SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
+      cerr << "\n\n####################  Requested solver not available on this platform #####################\n" << endl ;
+    }
+    
+    SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
+    SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
+    SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
+    SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
+  }  // end for (int i=0; i<special; i++ ) 
 
   //
   //  Compute the error = norm(xcomp - xexact )

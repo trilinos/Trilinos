@@ -18,10 +18,15 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
-	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial
+	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
+	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
+AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
+AmesosUmfpack_SOURCES = $(srcdir)/AmesosUmfpack
+AmesosUmfpackShort_SOURCES = $(srcdir)/AmesosUmfpackShort
+AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
 AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
@@ -39,6 +44,15 @@ AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 
 AmesosDscpackShort$(EXEEXT): $(srcdir)/AmesosDscpackShort
 	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
+
+AmesosUmfpack$(EXEEXT): $(srcdir)/AmesosUmfpack
+	cp  $(srcdir)/AmesosUmfpack  AmesosUmfpack$(EXEEXT)
+
+AmesosUmfpackShort$(EXEEXT): $(srcdir)/AmesosUmfpackShort
+	cp  $(srcdir)/AmesosUmfpackShort  AmesosUmfpackShort$(EXEEXT)
+
+AmesosUmfpackSerial$(EXEEXT): $(srcdir)/AmesosUmfpackSerial
+	cp  $(srcdir)/AmesosUmfpackSerial  AmesosUmfpackSerial$(EXEEXT)
 
 AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)

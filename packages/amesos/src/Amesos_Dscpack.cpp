@@ -215,6 +215,7 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, ImportToDsc, Insert) );
     EPETRA_CHK_ERR( DscMat.TransformToLocal() ) ; 
 
+    if ( DscGraph_ ) delete DscGraph_ ; 
     DscGraph_ = new Epetra_CrsGraph ( DscMat.Graph() ); 
 
     assert( MyDscRank >= 0 || NumLocalNonz == 0 ) ;
@@ -326,6 +327,7 @@ int Amesos_Dscpack::SymbolicFactorization() {
 
  PerformSymbolicFactorization();
 
+ NumericFactorizationOK_ = false; 
  return 0;
 }
 
@@ -363,7 +365,7 @@ int Amesos_Dscpack::Solve() {
   const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
 
   //
-  //  Step 2)  Coalesce the matrix onto process 0
+  //  Coalesce the matrix graph onto process 0
   //
   const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
   MPIC = comm1.Comm() ;
@@ -375,7 +377,7 @@ int Amesos_Dscpack::Solve() {
   
 
   //
-  //  Step 5)  Convert vector b to a replicated vector
+  //  Convert vector b to a vector in the form that DSCPACK needs it
   //
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
@@ -389,7 +391,7 @@ int Amesos_Dscpack::Solve() {
     EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
   }
 
-  Epetra_MultiVector *vecBvector = (vecB) ; 
+  Epetra_MultiVector *vecBvector = (vecB) ; // Ken gxx- do we need vecBvector?
   Epetra_Map DscMap( numrows, NumLocalCols, LocalStructOldNum, 0, Comm ) ;
 
 

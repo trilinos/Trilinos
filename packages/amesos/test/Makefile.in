@@ -108,11 +108,16 @@ install_sh = @install_sh@
 #
 noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
-	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial
+	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
+	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial
 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
+AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
+AmesosUmfpack_SOURCES = $(srcdir)/AmesosUmfpack
+AmesosUmfpackShort_SOURCES = $(srcdir)/AmesosUmfpackShort
+AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
 AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
@@ -171,7 +176,9 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosShortSuperLU$(EXEEXT) AmesosShortKundert$(EXEEXT) \
 	AmesosDistScript$(EXEEXT) AmesosShortScript$(EXEEXT) \
 	AmesosJanusScript$(EXEEXT) SpoolesJanusScript$(EXEEXT) \
-	SpoolesScript$(EXEEXT) AmesosSuperLUserial$(EXEEXT)
+	SpoolesScript$(EXEEXT) AmesosSuperLUserial$(EXEEXT) \
+	AmesosUmfpack$(EXEEXT) AmesosUmfpackShort$(EXEEXT) \
+	AmesosUmfpackSerial$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_AmesosDistScript_OBJECTS =
@@ -184,8 +191,8 @@ AmesosDscpack_OBJECTS = $(am_AmesosDscpack_OBJECTS)
 AmesosDscpack_LDADD = $(LDADD)
 AmesosDscpack_DEPENDENCIES =
 AmesosDscpack_LDFLAGS =
-AmesosDscpackShort_SOURCES = AmesosDscpackShort.c
-AmesosDscpackShort_OBJECTS = AmesosDscpackShort.$(OBJEXT)
+am_AmesosDscpackShort_OBJECTS =
+AmesosDscpackShort_OBJECTS = $(am_AmesosDscpackShort_OBJECTS)
 AmesosDscpackShort_LDADD = $(LDADD)
 AmesosDscpackShort_DEPENDENCIES =
 AmesosDscpackShort_LDFLAGS =
@@ -219,6 +226,21 @@ AmesosSuperLUserial_OBJECTS = $(am_AmesosSuperLUserial_OBJECTS)
 AmesosSuperLUserial_LDADD = $(LDADD)
 AmesosSuperLUserial_DEPENDENCIES =
 AmesosSuperLUserial_LDFLAGS =
+am_AmesosUmfpack_OBJECTS =
+AmesosUmfpack_OBJECTS = $(am_AmesosUmfpack_OBJECTS)
+AmesosUmfpack_LDADD = $(LDADD)
+AmesosUmfpack_DEPENDENCIES =
+AmesosUmfpack_LDFLAGS =
+am_AmesosUmfpackSerial_OBJECTS =
+AmesosUmfpackSerial_OBJECTS = $(am_AmesosUmfpackSerial_OBJECTS)
+AmesosUmfpackSerial_LDADD = $(LDADD)
+AmesosUmfpackSerial_DEPENDENCIES =
+AmesosUmfpackSerial_LDFLAGS =
+am_AmesosUmfpackShort_OBJECTS =
+AmesosUmfpackShort_OBJECTS = $(am_AmesosUmfpackShort_OBJECTS)
+AmesosUmfpackShort_LDADD = $(LDADD)
+AmesosUmfpackShort_DEPENDENCIES =
+AmesosUmfpackShort_LDFLAGS =
 am_SpoolesJanusScript_OBJECTS =
 SpoolesJanusScript_OBJECTS = $(am_SpoolesJanusScript_OBJECTS)
 SpoolesJanusScript_LDADD = $(LDADD)
@@ -250,8 +272,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AmesosDscpackShort.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po \
@@ -262,23 +283,25 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-CFLAGS = @CFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) \
-	AmesosDscpackShort.c $(AmesosJanusScript_SOURCES) \
+	$(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) \
 	$(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) \
 	$(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) \
-	$(AmesosSuperLUserial_SOURCES) $(SpoolesJanusScript_SOURCES) \
-	$(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
+	$(AmesosSuperLUserial_SOURCES) $(AmesosUmfpack_SOURCES) \
+	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
+	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
+	$(amesos_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
@@ -286,12 +309,12 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) AmesosDscpackShort.c $(AmesosJanusScript_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
 
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  test/Makefile
@@ -329,7 +352,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AmesosDscpackShort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po@am__quote@
@@ -344,19 +366,6 @@ distclean-compile:
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
-
-.c.o:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
-
-.c.obj:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c `cygpath -w $<`
-CCDEPMODE = @CCDEPMODE@
 
 .cpp.o:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -732,6 +741,15 @@ AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 
 AmesosDscpackShort$(EXEEXT): $(srcdir)/AmesosDscpackShort
 	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
+
+AmesosUmfpack$(EXEEXT): $(srcdir)/AmesosUmfpack
+	cp  $(srcdir)/AmesosUmfpack  AmesosUmfpack$(EXEEXT)
+
+AmesosUmfpackShort$(EXEEXT): $(srcdir)/AmesosUmfpackShort
+	cp  $(srcdir)/AmesosUmfpackShort  AmesosUmfpackShort$(EXEEXT)
+
+AmesosUmfpackSerial$(EXEEXT): $(srcdir)/AmesosUmfpackSerial
+	cp  $(srcdir)/AmesosUmfpackSerial  AmesosUmfpackSerial$(EXEEXT)
 
 AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)

@@ -14,6 +14,9 @@
 #include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
+#ifdef HAVE_AMESOS_UMFPACK
+#include "Amesos_Umfpack.h"
+#endif
 #ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
 #endif
@@ -28,14 +31,6 @@
 #endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
-#endif
-#ifdef HAVE_AMESOS_DSCPACK
-#include "DscpackOO.h"
-#endif
-#if 0
-#include "UmfpackOO.h"
-#include "SpoolesserialOO.h"
-#include "SuperluserialOO.h"
 #endif
 #include "SparseSolverResult.h"
 #include "Amesos_TestSolver.h"
@@ -66,7 +61,7 @@
 //
 int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
 		     SparseSolverType SparseSolver, bool transpose, 
-		     int special ) {
+		     int special, AMESOS_MatrixType matrix_type ) {
 
 
   int iam = Comm.MyPID() ;
@@ -81,12 +76,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_Vector * readx; 
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
-
-#if 0   
-  // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
-			       readb, readxexact);
-#endif
 
   string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
@@ -126,36 +115,66 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   }
 
   
+  // Create uniform distributed map
+  Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
 
+  // Create Exporter to distribute read-in matrix and vectors
+  Epetra_Export exporter(*readMap, map);
+  Epetra_CrsMatrix A(Copy, map, 0);
 
   Epetra_RowMatrix * passA = 0; 
   Epetra_MultiVector * passx = 0; 
   Epetra_MultiVector * passb = 0;
   Epetra_MultiVector * passxexact = 0;
-  Epetra_MultiVector * passtemp = 0;
+  Epetra_MultiVector * passresid = 0;
   Epetra_MultiVector * passtmp = 0;
 
-  Epetra_MultiVector x(*readMap,numsolves);
-  Epetra_MultiVector b(*readMap,numsolves);
-  Epetra_MultiVector xexact(*readMap,numsolves);
-  Epetra_MultiVector resid(*readMap,numsolves);
-  Epetra_MultiVector readresid(*readMap,numsolves);
-  Epetra_MultiVector tmp(*readMap,numsolves);
-  Epetra_MultiVector readtmp(*readMap,numsolves);
+  Epetra_MultiVector x(map,numsolves);
+  Epetra_MultiVector b(map,numsolves);
+  Epetra_MultiVector xexact(map,numsolves);
+  Epetra_MultiVector resid(map,numsolves);
+  Epetra_MultiVector tmp(map,numsolves);
 
-  passA = serialA; 
-  passx = &x; 
-  passb = &b;
-  passxexact = &xexact;
-  passtemp = &readresid;
-  passtmp = &readtmp;
+
+  Epetra_MultiVector serialx(*readMap,numsolves);
+  Epetra_MultiVector serialb(*readMap,numsolves);
+  Epetra_MultiVector serialxexact(*readMap,numsolves);
+  Epetra_MultiVector serialresid(*readMap,numsolves);
+  Epetra_MultiVector serialtmp(*readMap,numsolves);
+
+  bool distribute_matrix = ( matrix_type == AMESOS_Distributed ) ; 
+  if ( distribute_matrix ) { 
+    //
+    //  Initialize x, b and xexact to the values read in from the file
+    //
+
+    A.Export(*serialA, exporter, Add);
+    Comm.Barrier();
+
+    assert(A.TransformToLocal()==0);    
+    Comm.Barrier();
+
+    passA = &A; 
+    passx = &x; 
+    passb = &b;
+    passxexact = &xexact;
+    passresid = &resid;
+    passtmp = &tmp;
+  } else { 
+    passA = serialA; 
+    passx = &serialx; 
+    passb = &serialb;
+    passxexact = &serialxexact;
+    passresid = &serialresid;
+    passtmp = &serialtmp;
+  }
 
   passxexact->SetSeed(1.31) ; 
   passxexact->Random();
   passx->SetSeed(11.231) ; 
   passx->Random();
 
-  serialA->Multiply( false, *passxexact, *passb ) ; 
+  passA->Multiply( false, *passxexact, *passb ) ; 
 
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
@@ -164,208 +183,226 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 				 (Epetra_MultiVector *) passx, 
 				 (Epetra_MultiVector *) passb );
 
-  Epetra_Time TotalTime( Comm ) ; 
-  //  switch( SparseSolver ) { 
-  //  case UMFPACK:
-  if ( false ) { 
-#ifdef TEST_UMFPACK
-  } else if ( SparseSolver == UMFPACK ) { 
-    UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+  double max_resid = 0.0;
+  for ( int i = 0 ; i < special+1 ; i++ ) { 
     
-    umfpack.SetTrans( transpose ) ; 
-    umfpack.Solve() ; 
+    Epetra_Time TotalTime( Comm ) ; 
+    if ( false ) { 
+#ifdef TEST_UMFPACK
+    } else if ( SparseSolver == UMFPACK ) { 
+      UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
+      
+      umfpack.SetTrans( transpose ) ; 
+      umfpack.Solve() ; 
 #endif
 #ifdef TEST_SUPERLU
-  } else if ( SparseSolver == SuperLU ) { 
-    SuperluserialOO superluserial ; 
-    superluserial.SetUserMatrix( (Epetra_RowMatrix *) passA) ; 
+    } else if ( SparseSolver == SuperLU ) { 
+      SuperluserialOO superluserial ; 
+      superluserial.SetUserMatrix( (Epetra_RowMatrix *) passA) ; 
 
-    superluserial.SetPermc( SuperLU_permc ) ; 
-    superluserial.SetTrans( transpose ) ; 
-    superluserial.SetUseDGSSV( special == 0 ) ; 
+      superluserial.SetPermc( SuperLU_permc ) ; 
+      superluserial.SetTrans( transpose ) ; 
+      superluserial.SetUseDGSSV( special == 0 ) ; 
 
-    for ( int i= 0 ; i < numsolves ; i++ ) { 
-      //    set up to sovle A X[:,i] = B[:,i]
-      Epetra_Vector *passb_i = (*passb)(i) ;
-      Epetra_Vector *passx_i = (*passx)(i) ;
-      superluserial.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
-      superluserial.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      //      superluserial.SetRHS( (Epetra_MultiVector *) passb_i ; 
-      superluserial.Solve() ; 
-      if ( i == 0 ) 
-	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-      if ( i < numsolves-1 ) 
-	SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-      else
-	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	superluserial.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	superluserial.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	//      superluserial.SetRHS( (Epetra_MultiVector *) passb_i ; 
+	superluserial.Solve() ; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
 
-    }
+      }
 #endif
 #ifdef HAVE_AMESOS_SLUD
-  } else if ( SparseSolver == SuperLUdist ) { 
-    SuperludistOO superludist( Problem ) ; 
-    superludist.SetTrans( transpose ) ; 
+    } else if ( SparseSolver == SuperLUdist ) { 
+      SuperludistOO superludist( Problem ) ; 
+      superludist.SetTrans( transpose ) ; 
 
-    bool factor = true; 
-    for ( int i= 0 ; i < numsolves ; i++ ) { 
-      //    set up to sovle A X[:,i] = B[:,i]
-      Epetra_Vector *passb_i = (*passb)(i) ;
-      Epetra_Vector *passx_i = (*passx)(i) ;
-      Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
-      Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      EPETRA_CHK_ERR( superludist.Solve( factor ) ); 
-      factor = false; 
-      if ( i == 0 ) 
-	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-      if ( i < numsolves-1 ) 
-	SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-      else
-	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( superludist.Solve( factor ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
 
-    }
+      }
 #endif
 #ifdef HAVE_AMESOS_SLUD2
-  } else if ( SparseSolver == SuperLUdist2 ) { 
-    Superludist2_OO superludist2( Problem ) ; 
-    superludist2.SetTrans( transpose ) ; 
+    } else if ( SparseSolver == SuperLUdist2 ) { 
+      Superludist2_OO superludist2( Problem ) ; 
+      superludist2.SetTrans( transpose ) ; 
 
-    bool factor = true; 
-    for ( int i= 0 ; i < numsolves ; i++ ) { 
-      //    set up to sovle A X[:,i] = B[:,i]
-      Epetra_Vector *passb_i = (*passb)(i) ;
-      Epetra_Vector *passx_i = (*passx)(i) ;
-      Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
-      Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      EPETRA_CHK_ERR( superludist2.Solve( factor ) ); 
-      factor = false; 
-      if ( i == 0 ) 
-	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-      if ( i < numsolves-1 ) 
-	SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-      else
-	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( superludist2.Solve( factor ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
 
-    }
+      }
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-  } else if ( SparseSolver == DSCPACK ) { 
-    AMESOS::Parameter::List ParamList ;
-    Amesos_Dscpack dscpack( Problem, ParamList ) ; 
+    } else if ( SparseSolver == DSCPACK ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Dscpack dscpack( Problem, ParamList ) ; 
 
-    bool factor = true; 
-    for ( int i= 0 ; i < numsolves ; i++ ) { 
-      //    set up to sovle A X[:,i] = B[:,i]
-      Epetra_Vector *passb_i = (*passb)(i) ;
-      Epetra_Vector *passx_i = (*passx)(i) ;
-      Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
-      Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      EPETRA_CHK_ERR( dscpack.Solve( ) ); 
-      factor = false; 
-      if ( i == 0 ) 
-	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-      if ( i < numsolves-1 ) 
-	SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-      else
-	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( dscpack.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
 
-    }
+      }
+#endif
+#ifdef HAVE_AMESOS_UMFPACK
+    } else if ( SparseSolver == UMFPACK ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Umfpack umfpack( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
+
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( umfpack.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+
+      }
 #endif
 #ifdef TEST_SPOOLES
-  } else if ( SparseSolver == SPOOLES ) { 
-    SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+    } else if ( SparseSolver == SPOOLES ) { 
+      SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
     
-    spooles.SetTrans( transpose ) ; 
-    spooles.Solve() ;
+      spooles.SetTrans( transpose ) ; 
+      spooles.Solve() ;
 #endif 
-#ifdef HAVE_AMESOS_DSCPACK
-  } else if ( SparseSolver == DSCPACK ) { 
-    DscpackOO dscpack( Problem );
-    
-    dscpack.SetTrans( transpose ) ; 
-    dscpack.Solve( true ) ; 
-#endif
 #ifdef HAVE_AMESOS_KUNDERT
-  } else if ( SparseSolver == KUNDERT ) { 
-    KundertOO kundert( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+    } else if ( SparseSolver == KUNDERT ) { 
+      KundertOO kundert( (Epetra_RowMatrix *) passA, 
+			 (Epetra_MultiVector *) passx, 
+			 (Epetra_MultiVector *) passb ) ; 
     
-    kundert.SetTrans( transpose ) ; 
-    kundert.Solve( ) ; 
+      kundert.SetTrans( transpose ) ; 
+      kundert.Solve( ) ; 
 #endif
 #ifdef TEST_SPOOLESSERIAL
-  } else if ( SparseSolver == SPOOLESSERIAL ) { 
-    SpoolesserialOO spoolesserial( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+    } else if ( SparseSolver == SPOOLESSERIAL ) { 
+      SpoolesserialOO spoolesserial( (Epetra_RowMatrix *) passA, 
+				     (Epetra_MultiVector *) passx, 
+				     (Epetra_MultiVector *) passb ) ; 
     
-    spoolesserial.Solve() ;
+      spoolesserial.Solve() ;
 #endif 
 #ifndef TEST_AZTEC
-  } else if ( SparseSolver == Aztec ) { 
-    SparseDirectTimingVars::log_file 
-      << "Aztec Solver won't compile for me on this platform" << endl ;
-    string errormsg = "Aztec Solver won't compile for me on this platform" ;
-    throw( errormsg ); 
+    } else if ( SparseSolver == Aztec ) { 
+      SparseDirectTimingVars::log_file 
+	<< "Aztec Solver won't compile for me on this platform" << endl ;
+      string errormsg = "Aztec Solver won't compile for me on this platform" ;
+      throw( errormsg ); 
 #else
-  } else if ( SparseSolver == Aztec ) { 
-    AztecOO aztec( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+    } else if ( SparseSolver == Aztec ) { 
+      AztecOO aztec( (Epetra_RowMatrix *) passA, 
+		     (Epetra_MultiVector *) passx, 
+		     (Epetra_MultiVector *) passb ) ; 
     
-    aztec.Iterate(1000, 1.0e-10 * Anorm ) ; 
+      aztec.Iterate(1000, 1.0e-10 * Anorm ) ; 
 #endif
-  } else { 
-    SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-    cerr << "\n\n####################  Requested solver not available (Or not tested with multiple RHS) on this platform #####################\n" << endl ;
-  }
+    } else { 
+      SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
+      cerr << "\n\n####################  Requested solver not available (Or not tested with multiple RHS) on this platform #####################\n" << endl ;
+    }
 
-  SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
+    SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
 
-  //
-  //  Compute the error = norm(xcomp - xexact )
-  //
-  vector <double> error(numsolves) ; 
-  double max_error = 0.0;
+    //
+    //  Compute the error = norm(xcomp - xexact )
+    //
+    vector <double> error(numsolves) ; 
+    double max_error = 0.0;
   
-  passtemp->Update(1.0, *passx, -1.0, *passxexact, 0.0);
+    passresid->Update(1.0, *passx, -1.0, *passxexact, 0.0);
 
-  passtemp->Norm2(&error[0]);
-  for ( int i = 0 ; i< numsolves; i++ ) 
-    if ( error[i] > max_error ) max_error = error[i] ; 
-  SparseDirectTimingVars::SS_Result.Set_Error(max_error) ;
+    passresid->Norm2(&error[0]);
+    for ( int i = 0 ; i< numsolves; i++ ) 
+      if ( error[i] > max_error ) max_error = error[i] ; 
+    SparseDirectTimingVars::SS_Result.Set_Error(max_error) ;
 
-  //  passxexact->Norm2(&error[0] ) ; 
-  //  passx->Norm2(&error ) ; 
+    //  passxexact->Norm2(&error[0] ) ; 
+    //  passx->Norm2(&error ) ; 
 
-  //
-  //  Compute the residual = norm(Ax - b)
-  //
-  vector <double> residual(numsolves) ; 
-  double max_resid = 0.0;
+    //
+    //  Compute the residual = norm(Ax - b)
+    //
+    vector <double> residual(numsolves) ; 
   
-  passA->Multiply( transpose, *passx, *passtmp);
-  passtemp->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
-  passtemp->Norm2(&residual[0]);
+    passA->Multiply( transpose, *passx, *passtmp);
+    passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
+    passresid->Norm2(&residual[0]);
 
-  for ( int i = 0 ; i< numsolves; i++ ) 
-    if ( residual[i] > max_resid ) max_resid = residual[i] ; 
+    for ( int i = 0 ; i< numsolves; i++ ) 
+      if ( residual[i] > max_resid ) max_resid = residual[i] ; 
 
 
-  SparseDirectTimingVars::SS_Result.Set_Residual(max_resid) ;
+    SparseDirectTimingVars::SS_Result.Set_Residual(max_resid) ;
     
-  vector <double> bnorm(numsolves); 
-  passb->Norm2( &bnorm[0] ) ; 
-  SparseDirectTimingVars::SS_Result.Set_Bnorm(bnorm[0]) ;
+    vector <double> bnorm(numsolves); 
+    passb->Norm2( &bnorm[0] ) ; 
+    SparseDirectTimingVars::SS_Result.Set_Bnorm(bnorm[0]) ;
 
-  vector <double> xnorm(numsolves); 
-  passx->Norm2( &xnorm[0] ) ; 
-  SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
+    vector <double> xnorm(numsolves); 
+    passx->Norm2( &xnorm[0] ) ; 
+    SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 
+  }
   delete readA;
   delete readx;
   delete readb;

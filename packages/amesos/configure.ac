@@ -257,6 +257,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
 		AMESOS_DSCPACK, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
+		AMESOS_UMFPACK, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUS, no)
 
@@ -269,9 +272,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support fo
 if test "X$ac_cv_use_amesos_slud" = "Xno"; then
    if test "X$ac_cv_use_amesos_slus" = "Xno"; then
       if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
-         if test "X$ac_cv_use_amesos_kundert  " = "Xno"; then
-            AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details])
-         fi
+         if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
+            if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
+               AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details])
+            fi
+         fi				 
       fi				 
    fi
 fi
@@ -380,7 +385,7 @@ fi
 if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    AC_MSG_ERROR([[Amesos/DscpackOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])
+    AC_MSG_ERROR([[Amesos_Dscpack requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])
   fi
 
   TAC_ARG_WITH_SUB( amesos, dscpackdir, [Set DSCPACK directory],  ${tac_with_trilinos3pldir}/DSCPACK1.0 )
@@ -401,7 +406,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h)
 
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
-    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdirstratus1:~/Trilinos> } , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
+    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_dscpacklib} ${LDFLAGS}"
@@ -419,6 +424,77 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
 fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+#  --enable-amesos-umfpack, --with-amesos-umfpackdir, --with-amesos-umfpacklib, 
+#    --with-amesos-umfpackamdlib, 
+#    --with-amesos-umfpackincdir
+#
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that umfmain.h is in the directory pointed to by amesos-umfpackincdic
+#    Make sure that umfpack_di_default is in the library pointed to by amesos-umfpacklib
+#    Make sure that amd_default is in the library pointed to by amesos-umfpackamdlib
+#
+if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+
+  TAC_ARG_WITH_SUB( amesos, umfpackdir, [Set UMFPACK directory],  ${tac_with_trilinos3pldir}/UMFPACKv4.1/ )
+  AC_CHECK_FILE(${tac_with_amesos_umfpackdir})
+
+  TAC_ARG_WITH_SUB( amesos, umfpacklib, [Set UMFPACK library],  ${tac_with_amesos_umfpackdir}UMFPACK/Lib/libumfpack.a )
+  AC_CHECK_FILE(${tac_with_amesos_umfpacklib})
+
+  TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set UMFPACK AMD library],  ${tac_with_amesos_umfpackdir}AMD/Lib/libamd.a )
+  AC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
+
+  TAC_ARG_WITH_SUB( amesos, umfpackincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}UMFPACK/Include )
+  AC_CHECK_FILE(${tac_with_amesos_umfpackincdir})
+
+#
+# This is a bad way to check for umfpack.h, it won't pick umfpack.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+  AC_CHECK_FILE(${tac_with_amesos_umfpackincdir}/umfpack.h,,
+    AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_umfpacklib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_umfpackincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_umfpacklib} ${MPI_LIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(umfpack_di_defaults,,
+      AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
+    LIBS="${tac_with_amesos_umfpackamdlib} ${MPI_LIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(amd_defaults,,
+      AC_MSG_ERROR([[Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
+    LIBS="${SAVE_LIBS}"
+  AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
+else
+  AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, false ) 
+fi
+
+
 
 
 #
