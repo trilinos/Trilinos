@@ -33,6 +33,10 @@
 #define TEUCHOS_PRIMITIVE_TYPE_TRAITS_H
 
 #include "Teuchos_TestForException.hpp"
+#ifdef HAVE_TEUCHOS_GNU_MP
+#include "gmp.h"
+#include "gmpxx.h"
+#endif
 
 /** \file Teuchos_PrimitiveTypeTraits.hpp
 	\brief Declaration of a templated traits class for decomposing an
@@ -84,7 +88,7 @@ public:
     }
 };
 
-#ifdef HAVE_COMPLEX
+#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
 ///
 /** Partial specialization of <tt>PrimitiveTypeTraits</tt> for <tt>std::complex</tt>.
@@ -122,7 +126,49 @@ public:
     }
 };
 
-#endif // HAVE_COMPLEX
+#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
+#ifdef HAVE_TEUCHOS_GNU_MP
+
+///
+/** Full specialization of <tt>PrimitiveTypeTraits</tt> for <tt>mpf_class</tt>.
+ *
+ * Note: This class is not complete yet!
+ */
+template <> class PrimitiveTypeTraits<mpf_class> {
+public:
+  ///
+  typedef double  primitiveType; // Just a guess!
+  ///
+  static int numPrimitiveObjs() { return 10; } // Just a guess!
+  ///
+  static void extractPrimitiveObjs(
+    const mpf_class        &obj
+    ,const int             numPrimitiveObjs
+    ,primitiveType         primitiveObjs[]
+    )
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION( numPrimitiveObjs!=10 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
+#endif
+			TEST_FOR_EXCEPT(true); // ToDo: Implement
+    }
+  ///
+  static void loadPrimitiveObjs(
+    const int              numPrimitiveObjs
+    ,const primitiveType   primitiveObjs[]
+    ,mpf_class             *obj
+    )
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION( numPrimitiveObjs!=10 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
+#endif
+			TEST_FOR_EXCEPT(true); // ToDo: Implement
+    }
+};
+
+#endif // HAVE_TEUCHOS_GNU_MP
+
 
 } // namespace Teuchos
 
