@@ -1,44 +1,52 @@
-/*! \mainpage Amesos:  Direct Sparse Solver Package.
-\htmlonly
-\endhtmlonly
+/*! \mainpage Amesos: An Interface to Serial and Parallel Direct Sparse Solver Packages.
 
-\section Developers
+\image html ../AmesosLogo.jpeg
 
-Amesos is a Trilinos package, developed by K. Stanley, M. Sala,
+\image latex AmesosLogo.eps
+
+\section toc Table of Contents
+
+The main page of the Doxygen documentation is organized as follows:
+- \ref developers
+- \ref intro
+- \ref copyright
+- \ref comparison
+- \ref matrix
+- \ref install
+- \ref install
+- \ref final
+
+\section developers Developers
+
+Amesos is a Trilinos package, developed by M. Sala, K. Stanley,
 R. Hoekstra, T. Davis, and M. Heroux.
 
 \section intro Introduction 
 Amesos provides an object-oriented interface
 to several direct sparse solvers, both sequential and parallel.
 
-<p>At this stage of development, Amesos supported the following classes:
+Amesos supports the following classes:
 
-<ul> 
-
-<li> Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
-<li> Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
-<li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
-<li> Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
-<li> Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
-<li> Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
-</ul>
+- \c Amesos_Lapack - Interface to LAPACK's DGETRF. Amesos_Lapack is the 
+     only dense solver supported by Amesos.
+- \c Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
+- \c Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
+- \c Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
+- \c Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
+- \c Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
+- \c Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
 
 We refer to the Sandia report SAND-2004-2188 for a detailed overview of
 Amesos. A PDF version of this report can be found the
-<tt>Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf</tt>.
+\c Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf.
 
-<P>Note: Support is under development for an interface to ScaLAPACK.
+\section copyright  Copyright and licensing of the third party codes
 
-</ul>
-
-\section Copyright  Copyright and licensing of the third party codes
-
-<p>Each of the Amesos base classes is based on a third party code.  Each
+<p>Most of the Amesos classes are based on a third party code (that is,
+not distributed within Trilinos).  Each
 third party code comes with its own copyright and/or licensing
-requirements.  It is your responsibility to check with the author's of
-those codes (in many case you will need to do so to obtain
-a copy of the code) to make sure that you understand the terms of the
-copyright and/or licensing.  
+requirements. It is responsibility of the user to fulfill the 
+requirements of each supported package' copyright.
 
 <p>Most of these third party codes are intended to be made available at
 no cost to users.  Much of the copyright and licensing restrictions
@@ -47,111 +55,175 @@ request that credit be given in any papers which make use of their code.
 Please refer to the web page for the package that you are interested in 
 for details.  
 
-<p>It is the intent of the SuperLU team to make SuperLU and SuperLUdist
-freely available without any copyright restrictions, i.e. not even GPL
-restrictions. 
-
 \section comparison  Quick comparison of the Amesos classes
+
+The following table reports an overview of the Amesos classes.
 
 <table>
 <tr>
 <td>Features</td>
-<td>Amesos_Dscpack</td>
+<td>Amesos_Lapack</td>
+<td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
 <td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
 </tr>
 <tr>
-<td>Based on Amesos_BaseSolver</td>
-<td>Yes </td>
-<td>Yes </td>
-<td>No </td>
-<td>No </td>
-<td>Yes </td>
+<td>Default behavior</td>
+<td>Enabled</td>
+<td>Enabled//td>
+<td>Disabled</td>
+<td>Disabled</td>
+<td>Disabled</td>
+<td>Disabled</td>
+<td>Disabled</td>
 </tr>
 <tr>
-<td>Memory requirement</td>
-<td>Serial structure;<br>Distributed values and LU</td>
-<td>All serial </td>
-<td>All serial </td>
-<td>Serial input;<br>Distributed LU </td>
-<td>Serial input;<br>Distributed LU </td>
+<td>Package is written in</td>
+<td>FORTRAN77</td>
+<td>C</td>
+<td>C</td>
+<td>C</td>
+<td>C</td>
+<td>FORTRAN90</td>
+<td>C</td>
+</tr>
+<tr>
+<td>Communicator</td>
+<td>none</td>
+<td>none</td>
+<td>none</td>
+<td>none</td>
+<td>MPI</td>
+<td>FORTRAN MPI</td>
+<td>MPI</td>
+</tr>
+<tr>
+<td>Processes used for Factorization/Solve</td>
+<td>Process 0</td>
+<td>Process 0</td>
+<td>Process 0</td>
+<td>Process 0</td>
+<td>Any</td>
+<td>Any (*)</td>
+<td>Any (**)</td>
 </tr>
 <tr>
 <td>Distributed input matrix</td>
 <td>Yes </td>
 <td>Yes </td>
-<td>No </td>
+<td>Yes </td>
+<td>Yes </td>
+<td>Yes </td>
 <td>Yes </td>
 <td>Yes </td>
 </tr>
 <tr>
 <td>Unsymmetric matrices</td>
-<td>No </td>
-<td>Yes </td>
-<td>Yes </td>
-<td>Yes </td>
-<td>Yes </td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires BLAS</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Requires LAPACK</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires BLACS</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Requires ScaLAPACK</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
 </tr>
 </table> 
 
+<P> (*) MUMPS required FORTRAN communicators. Some architectures (e.g., SGI)
+does not allow portable conversions from C/C++ communicator and FORTRAN. On these
+architectures, therefore, \c MPI_COMM_WORLD will be used by MUMPS. Instead, if
+C/C++ communicators can be converted to FORTRAN ones, then any number of
+prosesses can be used by Amesos_Mumps.
+
+<P> (**) DSCPACK requires a number of processes that is a power of 2.
+
+\section matrix Supported Matrix Formats.
+
+The following table details the supported matrix formats for each class.
+
 <table>
 <tr>
-<td>Testing</td>
-<td>Amesos_Dscpack</td>
+<td> </td>
+<td>Amesos_Lapack</td>
+<td>Amesos_Klu</td>
 <td>Amesos_Umfpack</td>
 <td>Amesos_Superlu</td>
 <td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
 </tr>
 <tr>
-<td></td>
-<td> </td>
-<td> </td>
-<td> </td>
-<td> </td>
-<td> </td>
+<td>Epetra_RowMatrix</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
 </tr>
 <tr>
-<td>Sgi64/IRIX/Atlantis</td>
-<td>nightly </td>
-<td>nightly </td>
-<td>unit </td>
-<td>nightly </td>
-<td>unit </td>
+<td>Epetra_CrsMatrix</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
 </tr>
 <tr>
-<td>Sunos/Paunchy</td>
-<td>unit </td>
-<td>unit </td>
-<td>unit </td>
-<td>nightly </td>
-<td>not built </td>
-</tr>
-<tr>
-<td>Herouxsmp/Linux</td>
-<td>unit </td>
-<td>unit</td>
-<td>unit </td>
-<td>nightly </td>
-<td>not built </td>
-</tr>
-<tr>
-<td>OSF/Stratus</td>
-<td>unit</td>
-<td>nightly </td>
-<td>unit </td>
-<td>unit </td>
-<td>not built </td>
-</tr>
-<tr>
-<td>cygwin</td>
-<td>unit </td>
-<td>nightly </td>
-<td>unit </td>
-<td>nightly </td>
-<td>not built </td>
+<td>Epetra_VbrMatrix</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
 </tr>
 </table>
 
@@ -160,368 +232,245 @@ restrictions.
 Each of the Amesos classes provides an interface to a third
 party direct sparse solver code.  In order to install a particular
 class, you must first install the underlying direct sparse solver
-code.  Amesos installation requires four steps:
-<ul>
-<li>Finding MPI for your machine.
-<li>Finding optimized BLAS for your machine.
-<li>Installing the third party code needed by the Amesos class that you intend to use
-<li>Configuring Trilinos with Amesos.
-</ul>
-
-Additional architecture specific hints can be found in the CVS repositiory ~/Trilinos3PL/config.   A copy, albeit a potentially out-of-date copy, of ~/Trilinos3PL/config can be found at:  <a href="http://www.cs.utk.edu/~kstanley/Trilinos3PL/config">http://www.cs.utk.edu/~kstanley/Trilinos3PL/config</a>.  
-
-\subsection mpi Finding MPI for your architecture
-<ul><li>
-Most parallel sparse direct solvers are built on MPI.  
-If Trilinos/config has a configure invocation script for your
-architecture, you can look for --with-mpi there.  
-Mpich, a portable implementation of MPI, is available from 
-the <a href="http://www-unix.mcs.anl.gov/mpi/mpich">MPICH website</a>. 
-LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI website</a>.  On many systems using the right mpicc and mpif77 for compilation and linking avoids the need to specify the mpi libraries and include path.  LAM/MPI uses hcc and hf77.  
-
-<li><b>For existing Trilinos users:</b> Trilinos uses configure to help
-find mpi and the blas.  If you have already configured Trilinos with
-mpi, configure presumably found mpi and the blas.  To find a link
-command which configure used, cd to packages/epetra in your build
-directory and type: "grep conftest config.log | tail" and examine the
-last line.
-</ul>
-
-
-\subsection blas Finding Optimized BLAS for your architecture
-
-<ul> <li>Most sparse direct
-solvers require BLAS, or at least take advantage of them.  
-If Trilinos/config has a configure invocation script for your
-architecture, you can look for --with-blas there.
-If your architecture does not offer optimized BLAS,
-<a href="http://math-atlas.sourceforge.net">ATLAS</a> will create an 
-optimized BLAS library for you.  
-
-<li><b>For existing Trilinos users:</b>See the section by this same name
-under "Finding MPI for your arhitecture." 
-
-</ul>
-
-\subsection thirdparty Installing third party software
-
-
-
-
-<ul>
-<li> SuperLU distributed 
-<ul>
-<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu_dist">Xiaoye Li's SuperLU web site</a> by clicking on the download link in the "SuperLU_DIST Version 2.0" section.
-<li>Untar the SuperLU dist code in your Trilinos3PL directory.
-<li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
-<li>Run an example, following the instructions in EXAMPLE/README (make pddrive; mpirun -np 4 pddrive -r 1 -c 4 pddrive )
-<li>Expected output:
-<pre>
-(0) .. ||X-Xtrue||/||X|| = 1.110223e-15
-        EQUIL time             0.01
-        COLPERM time           0.00
-        ROWPERM time           0.02
-        SYMBFACT time          0.00
-        DISTRIBUTE time        0.01
-        FACTOR time            0.05
-        Factor flops    9.957800e+04    Mflops      2.11
-        SOLVE time             0.03
-        Solve flops     3.325800e+04    Mflops      1.18
-        REFINEMENT time        0.03     Steps       1
-</pre>
-
-</ul>
-<li> SuperLU serial
-<ul>
-<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu">Xiaoye Li's SuperLU web site</a> by clicking on the download link in the "SuperLU Version 2.0" section.
-<li>Untar the SuperLU serial code in your Trilinos3PL directory.
-<li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
-<li>Run an example, following the instructions in EXAMPLE/README (make dlinsol; dlinsol <g10 )
-<li>Expected output:
-<pre>
-10x10 grid, with COLMMD order                                                   
-Dimension 100x100; # nonzeros 460
-Use minimum degree ordering on A'*A.
-Factor time  =    -0.00
-Factor flops = 2.038800e+04     Mflops = -48922564965826384.00
-Solve time   =    -0.00
-Solve flops = 3.854000e+03      Mflops = -9247967695619722.00
-||X - Xtrue||/||X|| = 3.796963e-14
-No of nonzeros in factor L = 914
-No of nonzeros in factor U = 1113
-No of nonzeros in L+U = 1927
-L\U MB 0.022    total MB needed 0.042   expansions 0
-</pre>
-
-
-</ul>
-
-<li>UMFPACK
-<ul>
-<li>Obtain the UMFPACK distribution from <a href="http://www.cise.ufl.edu/research/sparse/umfpack/">Tim Davis's web site</a>
-<li>Untar the UMFPACK code in your Trilinos3PL directory.
-<li>Building UMFPACK
-<ul>
-<li>Edit UMFPACKv4.1/AMD/Make/Make.include (Trilinos3PL/config/UMFPACKv4.1 contains the Make.include files that I used)
-<li>cd UMFPACKv4.1/UMFPACK; make lib
-</ul>
-<li>Check the results: 
-<ul>
-<li>cd UMFPACKv4.1/UMFPACK/Demo; diff my_umfpack_dl_demo.out umfpack_dl_demo.out
-<li>Roughly a dozen lines should be different.  Look for the maxnorm of residual which is typically  near machine precision (1e-14 or better).
-</ul>
-</ul>
-
-<li>DSCPACK 
-<ul>
-<li>Obtain the DSCPACK distribution from <a
-href="http://www.cse.psu.edu/~raghavan/Dscpack">Padma Raghavan's DSCPACK
-web site</a>.  You will have to submit a form asking for a password.
-Dr. Raghavan typically answers within a day - if she does not, let me
-know (kstanley@cs.utk.edu).  
-<li>Untar the DSCPACK code in your Trilinos3PL directory.
-
-<li> Building DSCPACK
-<p>This is quoted verbatim from the DSCPACK/Readme file:
-<pre>
-To Install
------------
-
-cd DSC_LIB
-edit Makefile to provide MPI/BLAS include file paths
-make lib_dbl ( to make double precision version)
-
-cd ..
-edit Makefile to provide MPI/BLAS include file paths
-and libraries 
-make  all  
-     (to make double precision version of all examples)
-</pre>
-<p>Note:  "make Solve1" will not work, use "make all".
-<li>Running an example:
-<p>Type:
-<pre>
-mpirun -np 2 ./Solve1 2 3 4 1 1 1 1 2 1
-</pre>
-<p>Expected output:
-<pre>
-...starting with 2 processors in solver group
-
-...Grid  2X 3X 4, Order 1, Factor 1, Solve  1, RHS 1, Processor 2, 
- NumLocalNonz = 35
-Stats after Matrix number 1 [1]
-
-_________________________________________________________________________________________________________
-                    P       Type       rank     |A|(K)  #solves         sol-err       count-err          sample
-                    2     TS-LLT         24       0.07        1    0.0000000000    0.0000000000    1.0000000000
-            O-time(s)  S-time(s)  N-time(s)   N-ops(M)  N-rate(M)     |L|(K) SO-time(s)  SO-ops(M) SO-rate(M) 
-       min       0.00       0.00       0.00       0.00       0.52       0.07       0.00       0.00       ----
-       max       0.00       0.00       0.00       0.00       0.55       0.07       0.00       0.00       ----
-   overall       ----       ----       ----       0.00       0.96       0.15       ----       0.00       1.14
-      Memory(Mbytes)        min        max    overall
-            Estimate       0.00  NumLocalNonz = 35
-      0.00       0.01
-            Observed       0.00       0.00       0.01
-      Observed L-mem       0.00       0.00       0.00
-      Observed stack       0.00       0.00       0.00
-        Solve-memory       0.00       0.00       0.00
-
-_________________________________________________________________________________________________________
-</pre>
-
-Refer to the Readme for more complete testing and for an explanation
-of the above execution of Solve1.  There is nothing particular about
-those parameters, many other combinations work.  
-
-</ul>
-
-<li>MUMPS
-<ul>
-
-<li>MUMPS is Fortran 90 code, and hence requires n F90 compiler.  All
-ASCI computers are required to support F90.
-
-<li>MUMPS uses ScaLAPACK (which in turn requires the BLACS) to solve
-large root node problems.  Hence, you will need to obtain a copy of <a
-href="http://www.netlib.org/scalapack">ScaLAPACK</a> and the <a
-href="http://www.netlib.org/blacs">BLACS</a>.  There are pre-built libraries 
-for most architectures.  (Note: MUMPS can be built
-without ScaLAPACK and the BLACS.)  Use LIBS=" " 
-to link in the ScaLAPACK and BLACS libraries.
-
-<li>Obtain the DSCPACK distribution from <a
-href="http://www.enseeiht.fr/lima/apo/MUMPS">The MUMPS 
-web site</a>.  You will have to submit a form.
-The MUMPS team typically answers within a day - if they do not, let me
-know (kstanley@cs.utk.edu). Note:  Amesos_Mumps is based on MUMPS_4.2_beta.  
-We will upgrade to Mumps 4.3, July 2003, in the near future.  
- 
-<li>Untar the MUMPS code in your Trilinos3PL directory.
-
-<li>Modify Makefile.inc.  See ~/Trilinos3PL/config/MUMPS_4.2_beta/
-and/or the Make.inc diretory in the MUMPS distribution.
-
-<li>Build MUMPS.  Type "make" in the top level directory: MUMPS_4.2_beta.  
-
-<li>Sanity checks.
-<ul>
-<li>mpirun -np 2 c_example
-<p>Should produce "Solution is : (    1.00     2.00 ) 
-<p>
-<li>mpirun -np 2 dsimpletest < input_simpletest_real 
-<p>Should produce roughly 73 lines of output of which the last is:
-<p>  Solution is 1., 2., 3., 4., 5. (or something close to that)
-</ul>
-</ul>
-</ul>
-
-
-\subsection Common link errors
-
-<ul>
-<li>e_wsfe, do_fio and other undefined externals are fortran I/O routines required by some BLAS libraries.  Use a fortran linker or see the instructions above for determining find how configure links.
-<li>dgemm, dgemv, daxpy and other undefined externals are in the BLAS library.  See above for instructions on how to find a blas library.  
-<li>MPI_Init, MPI_Barrier and other undefined externals are from the MPI library.  See instructions above for finding the MPI library for your system.  
-</ul>
-
-\section config Configuring and building Trilinos with Amesos
-
-
-You will need to add three switches to your configure invocation script.
-<ul>
-<li>Include the Amesos code in the configuration:  
-<ul>
-<li><b>--enable-amesos </b>
-</ul>
-<li>Enable one of the Amesos classes:
-<ul>
-<li><b>--enable-amesos-superlu</b> - Amesos_Superlu
-<li><b>--enable-amesos-superludist </b> - Amesos_Superludist
-<li><b>--enable-amesos-dscpack </b> -  Amesos_Dscpack
-<li><b>--enable-amesos-umfpack </b> -  Amesos_Umfpack
-</ul>
-<li>Specify where to find the third party code in one of the following ways:
-<ul>
-<li><b>--with-trilinos3pldir=/home/somedir/Trilinos3PL</b>
-<li><b>--with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>
-<li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> <br>and <br><b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
-</ul>
-</ul>
-By default, Amesos is built with KLU support. KLU is distributed with Amesos, and is automatically compiled when you compile Amesos (unless --disable-amesos-klu is specified).
-
-<p>UMFPACK requires two libraries libumfpack.a and libamd.a.  If you
-install UMFPACK in your Trilinos3PL directory using the directory
-structure provided by UMFPACK, "--with-trilinos3pldir=" is sufficient.  If you 
-install these libraries in other directories, you can use --with-amesos-umfpacklib= and  --with-amesos-umfpackamdlib= to specify those libraries. 
-
-<p>MUMPS requires two libraries libdmumps.a and libpord.a.  If you
-install MUMPS in your Trilinos3PL directory using the directory
-structure provided by MUMPS, "--with-trilinos3pldir=" is sufficient.
-If you install these libraries in other directories, you can use
---with-amesos-mumpslib= and --with-amesos-mumpspordlib= to specify
-those libraries.  MUMPS also requires ScaLAPACK and BLACS libs.  Use
-LIBS="" in the configuration script to specify the ScaLAPACK and BLACS 
-libraries for inclusion in the link.  
-
-
-
-\subsection testsuperludist  Testing Amesos with SuperLU distributed
-
-<pre>
-cd packages/amesos/test
-source AmesosShortScript.exe
-echo $status
-</pre>
-
-<p>In the 3.0.1 tar ball, the test will print a message upon success.  In the current development version of the code, under CVS control, the test is silent.  However there are two ways to test whether the test succeeded:
-<ul>
-<li>If the test passes, "echo $status" will return 0 
-<li>Another way to check that this test passed is to compare the number of lines (the first number shown on the line) in each of the following two csh commands.  If this test was successful, OK will be printed once for each call to mpirun that is not in commented out, hence the following two calls to wc will show the same number of lines:
-<pre>
-grep OK SST.summary | wc
-grep mpirun AmesosShortScript.exe | grep -v comment | wc
-</pre>
-</ul>
-
-<p>Note: If AmesosShortScript.exe is not in amesos/test, it is likely that the make in the 
-amesos/test directory failed.
-
-<p>AmesosShellScript.exe contains a slightly longer test including larger matrices.
-
-\subsection testsuperluserial  Testing Amesos with SuperLU serial
-
-<p>Amesos as contained in the trilinos3.0.1 tar ball does not include a test for SuperLU serial.  
-
-<p>AmesosShortSuperLU.exe, found only in the CVS repository at the moment, tests Amesos with SuperLU serial.  Follow the instruction for testing with SuperLU distributed above, using AmesosShortSuperLU.exe instead of AmesosShortScript.exe.
-
-
-\subsection testdescpack  Testing Amesos with DSCPACK
-
-<pre>
-cd packages/amesos/test
-source AmesosDscpackShort.exe
-echo $status
-</pre>
-
-<ul>
-<li>If the test passes, "echo $status" will return 0 
-<li>Another way to check that this test passed is to compare the number of lines (the first number shown on the line) in each of the following two csh commands.  If this test was successful, OK will be printed once for each call to mpirun that is not in commented out, hence the following two calls to wc will show the same number of lines:
-<pre>
-grep OK SST.summary | wc
-grep mpirun AmesosShortScript.exe | grep -v comment | wc
-</pre>
-</ul>
-
-<p>Note: If AmesosDscpackShort.exe is not in amesos/test, it is likely that the make in the 
-amesos/test directory failed.
-
-<p>AmesosDscpack.exe contains a slightly longer test.
-
-\subsection testumfpack  Testing Amesos with UMFPACK
-
-<p>Amesos_Umfpack can be used with or without MPI.
-AmesosUmfpackSerial.exe will test Amesos_Umfpack in serial mode.
-AmesosUmfpack.exe will test Amesos_Umfpack as used with MPI (including 
-tests of AmesosUmfpack on distributed matrices).
-
-<pre>
-cd packages/amesos/test
-source AmesosUmfpackSerial.exe
-echo $status
-</pre>
-
-<ul>
-<li>If the test passes, "echo $status" will return 0 
-<li>Another way to check that this test passed is to compare the number of lines (the first number shown on the line) in each of the following two csh commands.  If this test was successful, OK will be printed once for each call to mpirun that is not in commented out, hence the following two calls to wc will show the same number of lines:
-<pre>
-grep OK SST.summary | wc
-grep mpirun AmesosUmfpack.exe | grep -v comment | wc
-</pre>
-</ul>
-
-<p>AmesosUmfpack.exe tests Amesos_Umfpack built with MPI.  (UMFPACK is
-a serial code, however Amesos_Umfpack accepts a distributed matrix as a convenience.) 
-
-<p>Note: If AmesosDscpackShort.exe is not in amesos/test, it is likely that the make in the 
-amesos/test directory failed.
-
-
-\subsection bugs Known bugs
-
-<ul>
-<li> Amesos_Superludist
-<ul>
-<li><b>Superludist_2.0 tar file requires --with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>.  By default, Amesos configuration assumes that you are using superlu_dist_1.0.tar which installs in SuperLU_DIST.  superlu_dist_2.0.tar installs in SuperLU_DIST_2.0.  
-</ul>
-</ul>
-\section HomePages Amesos Home Pages
-
-<p>The official 
-<a href="http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html">Amesos Home Page</a> is kept at Sandia. 
-
-<p>Ken Stanley's <a href="http://www.cs.utk.edu/~kstanley/amesos/doc/html/index.html">
-UTK Amesos home page</a> may be more up-to-date on occasion.
-
-<p>This page last updated 24 May 2004.
+code. 
+
+<P>Amesos is distributed through the Trilinos project, and can be
+downloaded from the web site
+http://software.sandia.gov/trilinos/packages/amesos.
+
+<P>As all other Trilinos packages,
+Amesos is configured and built using the GNU autoconf
+and automake tools. To configure Amesos from the
+Trilinos top directory, a possible procedure is as follows.  Let
+\c TRILINOS_HOME be a shell variable representing the location
+of the Trilinos source directory, and \verb!%! the shell prompt sign.
+Let us suppose that we want to configure Amesos on a
+LINUX machine with MPI, with support
+for KLU and UMFPACK. Header files for UMFPACK are located
+in directory \c /usr/local/umfpack/include, while the library,
+called \c libumfpack.a is located in \c /usr/local/umfpack/lib.
+The configure like will look like:
+
+\code
+% cd $TRILINOS_HOME
+% mkdir LINUX_MPI
+% cd LINUX_MPI
+% ../configure \
+  --with-mpi-compilers \
+  --prefix=$TRILINOS_HOME/LINUX_MPI \
+  --enable-amesos \
+  --enable-amesos-klu \
+  --enable-amesos-umfpack \
+  --with-incdirs="-I/usr/local/umfpack/include" \
+  --with-ldflags="-L/usr/local/umfpack/lib" \
+  --with-libs="-lumfpack"
+% make
+% make install
+\endcode
+
+Other flags may be required depending on the location of
+ MPI, BLAS and LAPACK. The table below reports the 
+architectures and compilers tested with Amesos.
+
+<table>
+<tr>
+<td>architecture</td>
+<td>Amesos_Lapack</td>
+<td>Amesos_Klu</td>
+<td>Amesos_Umfpack</td>
+<td>Amesos_Superlu</td>
+<td>Amesos_Superludist</td>
+<td>Amesos_Mumps</td>
+<td>Amesos_Dscpack</td>
+</tr>
+<tr>
+<td>LINUX (GNU), SERIAL</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>LINUX (Intel), MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>LINUX (GNU), MPI</td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>no </td>
+<td>yes </td>
+</tr>
+<tr>
+<td>SGI 64, MPI</td>
+<td>yes </td>
+<td>yes </td>
+<td>yes </td>
+<td>no </td>
+<td>no</td>
+<td>yes </td>
+<td>no </td>
+</tr>
+<tr>
+<td>DEC/Alpha MPI</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>MAC OSX, SERIAL</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia Cplant, MPI</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Sandia ASCI Red, MPI</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+
+</table>
+
+\section example Example of Use of Amesos Classes
+
+A simple fragment of code using Amesos can read as follows. First,
+  we need to include the header files for Amesos:
+
+\code
+#include "Amesos.h"
+#include "Amesos_BaseSolver.h"
+\endcode
+
+Note that these header files will \e not include the header files
+for the supported libraries (which are of course needed to compile the
+Amesos library itself). Now, let define the linear system matrix, the
+vector that will contain the solution, and the right-hand side as:
+
+\code
+Epetra_LinearProblem Problem;
+Epetra_RowMatrix* A;            // linear system matrix
+Epetra_MultiVector* LHS;        // vector that will contain the solution
+Epetra_MultiVector* RHS;        // right-hand side
+\endcode
+
+All Amesos object (derived from pure virtual class
+Amesos_BaseSolver)
+can be created using the function class \c Amesos, as follows:
+
+\code
+Amesos_BaseSolver * Solver;
+Amesos Factory;
+char* SolverType = "Amesos_Klu";
+Solver = Factory.Create(SolverType, *Problem);
+\endcode
+
+\note It is important to note that all available solvers can be selected
+simply by changing an input parameter. Some solvers are serial, other
+parallel; generally, each solver has its own matrix format. However, the
+user will still have the \e same interface to all of them.
+
+<P>The \c Factory object will create an Amesos_Klu object (if Amesos
+has been configure to support this solver). \c Factory.Create()
+returns 0 if the requested solver is not available. Parameter names
+are case-sensitive; misspelled parameters
+will not be recognized. Method
+\c Factory.Query() can be used to query the factory about the
+availability of a given solver:
+\code
+char* SolverType = "Amesos_Klu";
+bool IsAvailable = Factory.Query(SolverType);
+\endcode
+
+Here, we simply recall that the parameters list can be created as
+\code
+Teuchos::ParameterList List;
+\endcode
+
+and parameters can be set as
+
+\code
+List.set(ParameterName,ParameterValue);
+\endcode
+
+Here, \c ParameterName is a string containing the parameter name,
+and \c ParameterValue is any valid C++ object that specifies the
+parameter value (for instance, an integer, a pointer to an array or to
+an object). Please consult the Amesos Reference Guide for more details.
+The Doxygen documentation of each class can also be of help.
+
+<P>Note that \c Problem is still empty. After setting the pointer to
+the linear system matrix, we can perform the symbolic factorization
+of the linear system matrix:
+
+\code
+AMESOS_CHK_ERR(Solver->SymbolicFactorization());
+\endcode
+
+(\c AMESOS_CHK_ERR is a macro, that checks the return error and, if not
+null, prints out a message and returns.)
+This phase does not require the numerical values of \c A, that can
+therefore be changed after the call to \c SymbolicFactorization().
+However,  the nonzero pattern of \c A \e cannot be
+changed.
+
+The numeric factorization is performed by
+
+\code
+AMESOS_CHK_ERR(Solver->NumericFactorization());
+\endcode
+
+The values of \c RHS must be set before solving the linear system, which
+simply reads
+
+\code
+Problem.SetLHS(LHS);
+Problem.SetRHS(RHS);
+AMESOS_CHK_ERR(Solver->Solve());
+\endcode
+
+Should the user need to re-factorize the matrix, he or she must call
+\c NumericFactorization(). If the structure of the matrix is changed,
+he or she must call \c SymbolicFactorization(). However, it is supposed
+that the linear system matrix and the solution and right-hand side vectors
+are still defined with the same \c Epetra_Map.
+
+\section final Final Remarks
+
+<p>This page last updated 18-Sep-2004.
 
 */
