@@ -14,9 +14,13 @@ SUPERLU_C =
 TEST_C = $(SUPERLU_C) 
 TEST_C =
 
+#
+#  SuperludistOO.cpp in this directory uses Epetra_LinearProblemRedistor.
+#  At present this only works on single process runs.
+#
 SRC_CXX = 
-SRC_CXX = Comm_assert_equal.cpp 
 SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp 
+SRC_CXX = Comm_assert_equal.cpp 
 
 #=======================================================================
 # test source files
