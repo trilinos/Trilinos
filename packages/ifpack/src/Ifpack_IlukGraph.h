@@ -92,8 +92,7 @@ class Ifpack_IlukGraph {
   
 #ifdef HAVE_IFPACK_TEUCHOS
   //!Set parameters using Teuchos::ParameterList object.
-  /* This method is only available if the configure argument
-     '--enable-ifpack-teuchos' was used.
+  /* This method is only available if the Teuchos package is enabled.
      This method recogizes two parameter names: Level_fill and Level_overlap.
      Both are case insensitive, and in both cases the ParameterEntry must
      have type int.

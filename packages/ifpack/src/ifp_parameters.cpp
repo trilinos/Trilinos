@@ -1,4 +1,5 @@
 
+#include <Epetra_CombineMode.h>
 #include <ifp_parameters.h>
 
 #ifdef HAVE_TEUCHOS_EXTENDED
@@ -29,7 +30,7 @@ void initialize_string_map()
   ifp_key_map["LEVEL_OVERLAP"] = level_overlap;
   ifp_key_map["ABSOLUTE_THRESHOLD"] = absolute_threshold;
   ifp_key_map["RELATIVE_THRESHOLD"] = relative_threshold;
-  //ifp_key_map["OVERLAP_MODE"] = overlap_mode;
+  ifp_key_map["OVERLAP_MODE"] = overlap_mode;
   ifp_key_map["DROP_TOLERANCE"] = drop_tolerance;
   ifp_key_map["FILL_TOLERANCE"] = fill_tolerance;
   ifp_key_map["RELAX_VALUE"] = relax_value;
@@ -78,6 +79,7 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
       int dummy_int = -1;
       double dummy_double = -99.9;
       bool dummy_bool = false;
+      Epetra_CombineMode dummy_mode = Add;
 
       parameter offset = (*result).second;
 
@@ -100,6 +102,10 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
       }
       else if (entry.isType<bool>()) {
         params.use_reciprocal = entry.getValue(&dummy_bool);
+        entry_used = true;
+      }
+      else if (entry.isType<Epetra_CombineMode>()) {
+        params.overlap_mode = entry.getValue(&dummy_mode);
         entry_used = true;
       }
     }

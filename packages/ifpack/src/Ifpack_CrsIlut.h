@@ -91,8 +91,7 @@ class Ifpack_CrsIlut: public Epetra_Object, public Epetra_CompObject, public Ifp
 
 #ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
-  /* This method is only available if the configure argument
-     '--enable-ifpack-teuchos' was used.
+  /* This method is only available if the Teuchos package is enabled.
      This method recognizes two parameter names: drop_tolerance and
      fill_tolerance. These names are case insensitive. For both, the
      ParameterEntry must have type double.

@@ -148,6 +148,7 @@ int Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList& parameterlist,
   params.double_params[Ifpack::absolute_threshold] = Athresh_;
   params.double_params[Ifpack::relative_threshold] = Rthresh_;
   params.double_params[Ifpack::drop_tolerance] = Droptol_;
+  params.overlap_mode = OverlapMode_;
 
   Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
 
@@ -155,6 +156,7 @@ int Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList& parameterlist,
   Athresh_ = params.double_params[Ifpack::absolute_threshold];
   Rthresh_ = params.double_params[Ifpack::relative_threshold];
   Droptol_ = params.double_params[Ifpack::drop_tolerance];
+  OverlapMode_ = params.overlap_mode;
 
   return(0);
 }

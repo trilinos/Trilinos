@@ -36,6 +36,7 @@
 #include <Teuchos_map.hpp>
 #include <Teuchos_ParameterList.hpp>
 #endif
+#include <Epetra_CombineMode.h>
 
 namespace Ifpack {
 
@@ -57,7 +58,8 @@ enum parameter {
   num_steps,
 
   //mixed type parameters
-  use_reciprocal
+  use_reciprocal,
+  overlap_mode
 };
 
 #define FIRST_INT_PARAM Ifpack::level_fill
@@ -68,6 +70,7 @@ struct param_struct {
   int int_params[LAST_INT_PARAM-FIRST_INT_PARAM+1];
   double double_params[FIRST_INT_PARAM];
   bool use_reciprocal;
+  Epetra_CombineMode overlap_mode;
 };
 
 #ifdef HAVE_IFPACK_TEUCHOS

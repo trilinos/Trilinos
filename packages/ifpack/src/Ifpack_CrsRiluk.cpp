@@ -200,13 +200,18 @@ int Ifpack_CrsRiluk::SetParameters(const Teuchos::ParameterList& parameterlist,
                                    bool cerr_warning_if_unused)
 {
   Ifpack::param_struct params;
+  params.double_params[Ifpack::relax_value] = RelaxValue_;
   params.double_params[Ifpack::absolute_threshold] = Athresh_;
   params.double_params[Ifpack::relative_threshold] = Rthresh_;
+  params.overlap_mode = OverlapMode_;
 
   Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
 
+  RelaxValue_ = params.double_params[Ifpack::relax_value];
   Athresh_ = params.double_params[Ifpack::absolute_threshold];
   Rthresh_ = params.double_params[Ifpack::relative_threshold];
+  OverlapMode_ = params.overlap_mode;
+
   return(0);
 }
 #endif

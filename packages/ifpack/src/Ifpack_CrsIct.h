@@ -32,6 +32,7 @@
 
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
+#include "Epetra_CombineMode.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
@@ -187,12 +188,12 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
 
 #ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
-  /* This method is only available if the configure argument
-     '--enable-ifpack-teuchos' was used.
-     This method recognizes four parameter names: level_fill, drop_tolerance,
-     absolute_threshold and relative_threshold. These names are case
-     insensitive. For level_fill the ParameterEntry must have type int, and
-     the other three must have type double.
+  /* This method is only available if the Teuchos package is enabled.
+     This method recognizes five parameter names: level_fill, drop_tolerance,
+     absolute_threshold, relative_threshold and overlap_mode. These names are
+     case insensitive. For level_fill the ParameterEntry must have type int, the 
+     threshold entries must have type double and overlap_mode must have type
+     Epetra_CombineMode.
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
@@ -266,9 +267,15 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   int Condest(bool Trans, double & ConditionNumberEstimate) const;
   // Atribute access functions
   
+  //! Get absolute threshold value
+  double GetAbsoluteThreshold() {return Athresh_;}
+
   //! Get relative threshold value
   double GetRelativeThreshold() {return Rthresh_;}
     
+  //! Get overlap mode type
+  Epetra_CombineMode GetOverlapMode() {return OverlapMode_;}
+
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(U().NumGlobalNonzeros()+D().GlobalLength());};
  

@@ -250,13 +250,12 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
 
 #ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
-  /* This method is only available if the configure argument
-    '--enable-ifpack-teuchos' was used.
-     This method recognizes three parameter names: relax_value,
-     absolute_threshold and relative_threshold. These names are case
-     insensitive, and in each case the ParameterEntry must have type double.
-
-     This method does not currently support setting of the OverlapMode.
+  /* This method is only available if the Teuchos package is enabled.
+     This method recognizes four parameter names: relax_value,
+     absolute_threshold, relative_threshold and overlap_mode. These names are
+     case insensitive, and in each case except overlap_mode, the ParameterEntry
+     must have type double. For overlap_mode, the ParameterEntry must have
+     type Epetra_CombineMode.
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
@@ -326,6 +325,9 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
 
   //! Get relative threshold value
   double GetRelativeThreshold() {return Rthresh_;}
+
+  //! Get overlap mode type
+  Epetra_CombineMode GetOverlapMode() {return OverlapMode_;}
 
     
   //! Returns the number of global matrix rows.

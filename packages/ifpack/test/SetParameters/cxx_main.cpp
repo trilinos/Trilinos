@@ -33,6 +33,7 @@
 #include <Ifpack_CrsIct.h>
 #include <Ifpack_OverlapGraph.h>
 
+#include <Epetra_CombineMode.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
@@ -82,6 +83,7 @@ int main(int argc, char* argv[]) {
   paramlist.set("fill_tolerance", 2.0);
   paramlist.set("use_reciprocal", false);
   paramlist.set("level_overlap", 2);
+  paramlist.set("overlap_mode", Add);
 
   Ifpack::set_parameters(paramlist, params);
 
@@ -110,7 +112,7 @@ int main(int argc, char* argv[]) {
   graph.FillComplete();
 
   Ifpack_IlukGraph ilukgraph(graph, 1,1);
-  Ifpack_CrsRiluk crsiluk(ilukgraph);
+  Ifpack_CrsRiluk crsriluk(ilukgraph);
   Ifpack_OverlapGraph overlapgraph(&graph, 1);
 
   Epetra_CrsMatrix A(Copy, graph);
@@ -142,11 +144,18 @@ int main(int argc, char* argv[]) {
 #endif
 
 #ifdef HAVE_IFPACK_TEUCHOS
-  crsiluk.SetParameters(paramlist);
+  crsriluk.SetParameters(paramlist);
 
-  double athresh = crsiluk.GetAbsoluteThreshold();
+  double athresh = crsriluk.GetAbsoluteThreshold();
   if (athresh != 44.0) {
     cerr << "SetParameters test failed to correctly set absolute_threshold."
+        << endl;
+    return(-1);
+  }
+
+  Epetra_CombineMode overlapmode = crsriluk.GetOverlapMode();
+  if (overlapmode != Add) {
+    cerr << "SetParameters test failed to correctly set overlapmode."
         << endl;
     return(-1);
   }
@@ -156,6 +165,13 @@ int main(int argc, char* argv[]) {
   double rthresh = crsict.GetRelativeThreshold();
   if (rthresh != 1.e-2) {
     cerr << "SetParameters test failed to correctly set relative_threshold."
+        << endl;
+    return(-1);
+  }
+
+  overlapmode = crsict.GetOverlapMode();
+  if (overlapmode != Add) {
+    cerr << "SetParameters test failed to correctly set overlapmode."
         << endl;
     return(-1);
   }
