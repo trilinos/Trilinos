@@ -182,12 +182,11 @@ extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
                                PHGPartParams *, int);
     
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
-extern int Zoltan_PHG_HPart_Lib(ZZ*, HGraph*, int, Partition, PHGPartParams*, 
+extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, Partition, PHGPartParams*, 
                                 int);
-extern int Zoltan_PHG_HPart_Info(ZZ*, HGraph*, int, Partition, PHGPartParams*);
 extern double Zoltan_PHG_hcut_size_total(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_hcut_size_links(PHGComm*, HGraph*, Partition, int);    
-extern double Zoltan_PHG_HPart_balance(ZZ*, HGraph*, int, Partition);
+extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, PHGPartParams*);
 extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  HGraph*, FILE*);

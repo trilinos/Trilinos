@@ -113,7 +113,7 @@ static VCycle *newVCycle(HGraph *hg, Partition part, int *levmap, VCycle *finer)
 
 /****************************************************************************/
 /*  Main partitioning function for hypergraph partitioning. */
-int Zoltan_PHG_HPart_Lib (
+int Zoltan_PHG_Partition (
     ZZ *zz,               /* Zoltan data structure */
     HGraph *hg,          /* Input hypergraph to be partitioned */
     int p,                /* Input:  number partitions to be generated */
@@ -124,7 +124,7 @@ int Zoltan_PHG_HPart_Lib (
 {
     VCycle  *vcycle=NULL, *del=NULL;
     int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hg->comm->nProc_x];
-    char *yo = "Zoltan_PHG_HPart_Lib";
+    char *yo = "Zoltan_PHG_Partition";
     
     ZOLTAN_TRACE_ENTER(zz, yo);
     
@@ -224,7 +224,7 @@ int Zoltan_PHG_HPart_Lib (
             uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
                     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                     hgp->coarsepartition_str, hgp->refinement_str, p,
-                    Zoltan_PHG_HPart_balance(zz, hg, p, vcycle->part),
+                    Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
                     Zoltan_PHG_hcut_size_links(&hgp->comm, hg, vcycle->part, p));
         if (hgp->output_level >= PHG_DEBUG_PLOT)
             Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, Parts,
@@ -377,7 +377,7 @@ double Zoltan_PHG_hcut_size_links (PHGComm *hgc, HGraph *hg, Partition part, int
 
 /****************************************************************************/
 
-double Zoltan_PHG_HPart_balance (
+double Zoltan_PHG_Compute_Balance (
   ZZ *zz,
   HGraph *hg,
   int p,
@@ -385,7 +385,7 @@ double Zoltan_PHG_HPart_balance (
 )
 {
   int i;
-  char *yo = "Zoltan_PHG_HPart_balance";
+  char *yo = "Zoltan_PHG_Compute_Balance";
   double *lsize_w, *size_w, max_size_w=0.0, tot_w = 0.0;
 
   if (!(lsize_w = (double*) ZOLTAN_CALLOC (p, sizeof(double))) 

@@ -47,7 +47,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     mid = (lo+hi)/2;
     hg->ratio = (double) (mid-lo+1) / (double) (hi-lo+1);
     /*   hg->redl = 0;  */
-    err = Zoltan_PHG_HPart_Lib (zz, hg, 2, part, hgp, level);
+    err = Zoltan_PHG_Partition (zz, hg, 2, part, hgp, level);
     if (err != ZOLTAN_OK) {
         ZOLTAN_FREE (&part);
         return err;
