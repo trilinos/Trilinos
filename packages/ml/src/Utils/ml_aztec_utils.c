@@ -1475,6 +1475,12 @@ file specified by the input argument datafile instead from a file called
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
 
+  if (proc == 0)
+  {
+     printf("Reading from file %s\n",datafile);
+     fflush(stdout);
+  }
+
   totalN = AZ_gsum_int(N_update, proc_config);
   str    = (char *) AZ_allocate((buf_len+1)*sizeof(char));
   if (str == NULL) {
@@ -1501,7 +1507,8 @@ file specified by the input argument datafile instead from a file called
   (*bindx)[0] = nz_ptr;
   current     = 0;
 
-  if (proc != 0) {
+  if (proc != 0)
+  {
 
     /*
      * Send requests to processor 0.  When the response is received add the
@@ -1546,7 +1553,8 @@ file specified by the input argument datafile instead from a file called
       (void) fprintf(stderr, "ERROR: Matrix data file %s not found\n", datafile);
       exit(-1);
     }
-    (void) fprintf(stdout, " reading matrix (current version is very slow) .");
+    (void) fprintf(stdout,"%d: reading matrix (current version is very slow) .",
+                   proc);
     (void) fflush(stdout);
 
     /* read in number of blks */
