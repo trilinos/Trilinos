@@ -630,6 +630,7 @@ int Zoltan_RB_check_geom_input(
 int Zoltan_RB_check_geom_output(
   ZZ *zz, 
   struct Dot_Struct *dotpt,
+  float *part_sizes,
   int dotnum,
   int dotorig,
   void *rcbbox_arg)
@@ -638,8 +639,8 @@ int Zoltan_RB_check_geom_output(
 
   char *yo = "Zoltan_RB_check_geom_output";
   char msg[256];
-  int i,iflag,proc,nprocs,total1,total2;
-  double weight,wtmax,wtmin,wtone,tolerance;
+  int i,iflag,proc,nprocs,input[2],total[2];
+  double weight,wtsum,tolerance;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
   int ierr = ZOLTAN_OK;
 
@@ -648,57 +649,34 @@ int Zoltan_RB_check_geom_output(
 
   /* check that total # of dots remained the same */
 
-  MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,zz->Communicator);
-  if (total1 != total2) {
+  input[0] = dotorig;  input[1] = dotnum;
+  MPI_Allreduce(input,total,2,MPI_INT,MPI_SUM,zz->Communicator);
+  if (total[0] != total[1]) {
     if (proc == 0) {
       sprintf(msg, "Points before partitioning = %d, "
                    "Points after partitioning = %d.",
-                    total1,total2);
+                    total[0],total[1]);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
       ierr = ZOLTAN_WARN;
     }
   }
   
-  /* check that result is load-balanced within log2(P)*max-wt */
+  /* check that result is within Imbalance_Tol of partition size target */
 
-  weight = wtone = 0.0;
+  weight = 0.0;
   for (i = 0; i < dotnum; i++) {
     weight += dotpt[i].Weight;
-    if (dotpt[i].Weight > wtone) wtone = dotpt[i].Weight;
   }
 
-  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+  MPI_Allreduce(&weight,&wtsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
 
-  /* i = smallest power-of-2 >= nprocs */
-  /* tolerance = largest-single-weight*log2(nprocs) */
-
-  for (i = 0; (nprocs >> i) != 0; i++);
-  tolerance = tolerance * i * (1.0 + TINY);
-
-  if (wtmax - wtmin > tolerance) {
-    if (proc == 0) {
-      sprintf(msg, "Load-imbalance > tolerance of %g.",
-              tolerance);
-      ZOLTAN_PRINT_WARN(proc, yo, msg);
-      ierr = ZOLTAN_WARN;
-    }
-    MPI_Barrier(zz->Communicator);
-    if (weight == wtmin) {
-      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      ZOLTAN_PRINT_WARN(proc, yo, msg);
-      ierr = ZOLTAN_WARN;
-    }
-    if (weight == wtmax) {
-      sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      ZOLTAN_PRINT_WARN(proc, yo, msg);
-      ierr = ZOLTAN_WARN;
-    }
+  /* KDDKDD assumes k == p */
+  tolerance = part_sizes[proc] * wtsum * zz->LB.Imbalance_Tol;
+  if (weight > tolerance) {
+    sprintf(msg, " Weight %f > tolerance %f.", weight, tolerance);
+    ZOLTAN_PRINT_WARN(proc, yo, msg);
+    ierr = ZOLTAN_WARN;
   }
-  
-  MPI_Barrier(zz->Communicator);
   
   if (zz->LB.Method == RCB) {
 
@@ -716,9 +694,8 @@ int Zoltan_RB_check_geom_output(
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
       ierr = ZOLTAN_FATAL;
     }
-  
-    MPI_Barrier(zz->Communicator);
   }
+
   return(ierr);
 }
 

@@ -48,7 +48,7 @@ extern "C" {
 
 
 static int rib_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                  double, int, int, int, int);
+                  double, int, int, int, int, float *);
 static void print_rib_tree(ZZ *, struct rib_tree *);
 /* for Tflops_Special */
 static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
@@ -109,6 +109,7 @@ int Zoltan_RIB(
 )
 {
   /* Wrapper routine to set parameter values and call the real rib. */
+  char *yo = "Zoltan_RIB";
   double overalloc;           /* amount to overallocate by when realloc
                               of dot array must be done.
                               1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -118,6 +119,8 @@ int Zoltan_RIB(
   int stats;                  /* Print timing & count summary? */
   int gen_tree;               /* (0) don't (1) generate whole treept to use
                               later for point and box drop. */
+  float *work_fraction=NULL;/* Partition sizes -- one weight per partition */
+  int i, ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
   Zoltan_Bind_Param(RIB_params, "CHECK_GEOM", (void *) &check_geom);
@@ -137,9 +140,33 @@ int Zoltan_RIB(
   *num_import = -1;
   *num_export = -1;  /* We don't compute the export map. */
 
-  return(rib_fn(zz, num_import, import_global_ids, import_local_ids,
+  if (zz->Obj_Weight_Dim <= 1)
+    work_fraction = part_sizes;
+  else {
+    /* Multi-dimensional partition sizes not permitted yet;
+       reduce to one weight per partition.  
+       This reduction will not be needed once multi-constraint partitioning
+       is implemented. */
+    work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) *
+                                            zz->LB.Num_Global_Parts);
+    if (work_fraction == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      return(ZOLTAN_MEMERR);
+    }
+
+    /* RIB supports only the first weight; pick out the appropriate
+       part_sizes entries for the first weight. */
+    for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
+       work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
+  }
+
+  ierr = rib_fn(zz, num_import, import_global_ids, import_local_ids,
                 import_procs, import_to_part,
-                overalloc, wgtflag, check_geom, stats, gen_tree));
+                overalloc, wgtflag, check_geom, stats, gen_tree, work_fraction);
+
+  if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE(&work_fraction);
+  return(ierr);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -168,7 +195,10 @@ static int rib_fn(
                                 Multidimensional weights not supported */
   int check_geom,               /* Check input & output for consistency? */
   int stats,                    /* Print timing & count summary? */
-  int gen_tree                  /* (0) do not (1) do generate full treept */
+  int gen_tree,                 /* (0) do not (1) do generate full treept */
+  float *part_sizes             /* Input:  Array of size zz->Num_Global_Parts
+                                containing the percentage of work to be
+                                assigned to each partition.               */
 )
 {
   char    yo[] = "rib_fn";
@@ -382,8 +412,9 @@ static int rib_fn(
        through all levels of rib */
     if (zz->Tflops_Special) tmp_nprocs = (tmp_nprocs + 1)/2;
 
-    ierr = Zoltan_Divide_Machine(zz, proc, local_comm, &set, &proclower,
-                             &procmid, &num_procs, &fractionlo);
+    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, 
+                                 &set, &proclower,
+                                 &procmid, &num_procs, &fractionlo);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&value);
@@ -578,7 +609,8 @@ static int rib_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, dotpt,dotnum,pdotnum,NULL);
+    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes, 
+                                       dotnum, pdotnum, NULL);
     if (ierr == ZOLTAN_FATAL) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_output");
       ZOLTAN_TRACE_EXIT(zz, yo);

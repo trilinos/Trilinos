@@ -24,6 +24,9 @@ extern "C" {
 int Zoltan_Divide_Machine(
    ZZ *zz,             /* The Zoltan structure (not used now, will be
                           used for pointer to machine details */
+   float *part_sizes,  /* Array of partition sizes, containing percentage
+                          of work per partition.   
+                          KDDKDD For now, part == proc.  */
    int proc,           /* my processor number in global sense */
    MPI_Comm comm,      /* communicator for part of machine to be divided */
    int *set,           /* part that proc is in after divide (lowest global
@@ -35,6 +38,9 @@ int Zoltan_Divide_Machine(
    double *fractionlo  /* actual division of machine */
 )
 {
+int i, j;
+double sum;
+
 /* This routine divides the current machine (defined by the communicator)
    into two pieces.
    For now, it simply divides the machine in half.  In the future, it will
@@ -54,7 +60,16 @@ int Zoltan_Divide_Machine(
 
    *procmid = *proclower + (*num_procs - 1)/2 + 1;
 
-   *fractionlo = ((double) (*procmid - *proclower))/(*num_procs);
+   sum = 0.0;
+   *fractionlo = 0.0;
+   for (i = 0; i < *num_procs; i++) {
+     j = *proclower + i;
+     if (j < *procmid)
+       *fractionlo += (double) part_sizes[j];
+     sum += (double) part_sizes[j];
+   }
+   if (sum != 0.0) *fractionlo /= sum;
+   
 
    if (proc < *procmid) {
       *set = 0;

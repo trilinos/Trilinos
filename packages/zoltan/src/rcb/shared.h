@@ -56,7 +56,7 @@ extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
 
 extern int Zoltan_RB_check_geom_input(ZZ *, struct Dot_Struct *, int);
 
-extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, 
+extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, float *,
   int, int, void *);
 
 extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , double *, 

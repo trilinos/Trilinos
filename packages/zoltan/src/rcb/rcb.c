@@ -59,7 +59,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-                  double, int, int, int, int, int, int, int, int);
+                  double, int, int, int, int, int, int, int, int, float *);
 static void print_rcb_tree(ZZ *, struct rcb_tree *);
 
 
@@ -100,7 +100,7 @@ char *val)			/* value of variable */
 int Zoltan_RCB(
   ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
-  float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
+  float *part_sizes,            /* Input:  Array of size zz->LB.Num_Global_Parts
                                    containing the percentage of work to be
                                    assigned to each partition.               */
   int *num_import,              /* Returned value:  Number of non-local 
@@ -126,6 +126,7 @@ int Zoltan_RCB(
 )
 {
     /* Wrapper routine to set parameter values and call the real rcb. */
+    char *yo = "Zoltan_RCB";
     double overalloc;         /* amount to overallocate by when realloc
                                  of dot array must be done.     
                                  1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -143,6 +144,8 @@ int Zoltan_RCB(
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
+    float *work_fraction=NULL;/* Partition sizes -- one weight per partition */
+    int i, ierr;
 
 
     Zoltan_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
@@ -172,10 +175,33 @@ int Zoltan_RCB(
     *num_import = -1;
     *num_export = -1;  /* We don't compute the export map. */
 
-    return(rcb_fn(zz, num_import, import_global_ids, import_local_ids,
+    if (zz->Obj_Weight_Dim <= 1)
+      work_fraction = part_sizes;
+    else {
+      /* Multi-dimensional partition sizes not permitted yet;
+         reduce to one weight per partition.  
+         This reduction will not be needed once multi-constraint partitioning
+         is implemented. */
+      work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) *
+                                              zz->LB.Num_Global_Parts);
+      if (work_fraction == NULL) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+        return(ZOLTAN_MEMERR);
+      }
+
+      /* RCB supports only the first weight; pick out the appropriate
+         part_sizes entries for the first weight. */
+      for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
+         work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
+    }
+
+    ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
-                 rectilinear_blocks));
+                 rectilinear_blocks, work_fraction);
+
+    if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE(&work_fraction);
+    return(ierr);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -212,7 +238,10 @@ static int rcb_fn(
   int preset_dir,               /* Set order of directions:     0: don't set,
                                     1: xyz,        2: xzy,      3: yzx,
                                     4: yxz,        5: zxy,      6: zyx  */
-  int rectilinear_blocks        /* (0) do (1) don't break ties in find_median*/
+  int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
+  float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
+                                   containing the percentage of work to be
+                                   assigned to each partition.               */
 )
 {
   char    yo[] = "rcb_fn";
@@ -616,8 +645,9 @@ static int rcb_fn(
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time1 = Zoltan_Time(zz->Timer);
 
-    ierr = Zoltan_Divide_Machine(zz, proc, local_comm, &set, &proclower,
-                             &procmid, &num_procs, &fractionlo);
+    ierr = Zoltan_Divide_Machine(zz, part_sizes, proc, local_comm, 
+                                 &set, &proclower,
+                                 &procmid, &num_procs, &fractionlo);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
       ZOLTAN_FREE(&dotmark);
@@ -818,7 +848,8 @@ static int rcb_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, dotpt,dotnum,pdotnum,rcbbox);
+    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes,
+                                       dotnum, pdotnum, rcbbox);
     if (ierr == ZOLTAN_FATAL) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_output");
       ZOLTAN_TRACE_EXIT(zz, yo);
