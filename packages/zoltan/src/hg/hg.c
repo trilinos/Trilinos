@@ -120,13 +120,13 @@ printf ("RTHRTH: starting\n");
   }
 
 
-hgp.kway = (!strcasecmp(hgp.local_str, "fmkway") ? 1 : 0;
+hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
 
-printf ("RTHRTH  type is %s\n", hgp.kway ? "kway", "recursive bisection");  fflush (NULL);
+printf ("RTHRTH  type is %s\n", (hgp.kway ? "kway": "recursive bisection"));  fflush (NULL);
   if (hgp.kway) {
-     err = Zoltan_HG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp, 0);
-     if (err != ZOLTAN_OK)
-         return err;
+     ierr = Zoltan_HG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp, 0);
+     if (ierr != ZOLTAN_OK)
+         return ierr;
      }
   else {
      /* vmap associates original vertices to sub hypergraphs */
