@@ -155,8 +155,10 @@ void         Zoltan_HG_Srand (unsigned int);
 void         Zoltan_HG_Rand_Perm_Int (int*, int);
 
 /* Hypergraph read from file */
+/* EBEB - Moved to driver directory.
 int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
+*/
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
