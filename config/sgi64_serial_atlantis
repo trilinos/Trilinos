@@ -1,2 +1,2 @@
-.././configure --with-cxxflags="-LANG:std -LANG:ansi-for-init-scope=ON
+.././configure --with-cxxflags="-LANG:std -LANG:ansi-for-init-scope=ON \
 -DMPI_NO_CPPBIND -ptused" --enable-referencey12m
