@@ -33,7 +33,7 @@
 #ifndef LOCA_CONTINUATION_NATURALGROUP_H
 #define LOCA_CONTINUATION_NATURALGROUP_H
 
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"  // base class
 
 namespace LOCA { 
 
@@ -58,38 +58,41 @@ namespace LOCA {
       computeJacobian, computeNewton, etc).
     */
 
-    class NaturalGroup : public LOCA::Continuation::Group {
+    class NaturalGroup : public LOCA::Continuation::ExtendedGroup {
 
     public:
   
       //! Constructor with integer continuation parameter id
-      NaturalGroup(const Abstract::Group& g, int paramID,
+      NaturalGroup(LOCA::Continuation::AbstractGroup& g, int paramID,
 		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
-      NaturalGroup(const Abstract::Group& g, string paramID,
+      NaturalGroup(LOCA::Continuation::AbstractGroup& g, string paramID,
 		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Copy constructor.
-      NaturalGroup(const NaturalGroup& source, NOX::CopyType type = NOX::DeepCopy);
+      NaturalGroup(const NaturalGroup& source, 
+		   NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~NaturalGroup();
   
       //! Assignment operator
-      virtual LOCA::Continuation::Group& 
-      operator=(const LOCA::Continuation::Group& source);
+      virtual LOCA::Continuation::ExtendedGroup& 
+      operator=(const LOCA::Continuation::ExtendedGroup& source);
 
       //! Assignment operator
-      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
       
       //! Assignment operator
       virtual NaturalGroup& operator=(const NaturalGroup& source);
      
       //! Cloning function
-      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      virtual NOX::Abstract::Group* 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set step size for continuation constraint equation
       virtual void setStepSize(double deltaS);
@@ -103,16 +106,16 @@ namespace LOCA {
       virtual void setX(const NOX::Abstract::Vector& y);
 
       //! Set the solution vector to y.
-      virtual void setX(const LOCA::Continuation::Vector& y);
+      virtual void setX(const LOCA::Continuation::ExtendedVector& y);
 
       //! Set the previous solution vector to y.
       virtual void setPrevX(const NOX::Abstract::Vector& y);
 
       //! Set the previous solution vector to y.
-      virtual void setPrevX(const LOCA::Continuation::Vector& y);
+      virtual void setPrevX(const LOCA::Continuation::ExtendedVector& y);
 
       //! Gets the previous solution vector
-      virtual const LOCA::Continuation::Vector& getPrevX() const;
+      virtual const LOCA::Continuation::ExtendedVector& getPrevX() const;
 
       //! Returns true if the previous solution vector has been set
       virtual bool isPrevXVec() const;
@@ -124,7 +127,7 @@ namespace LOCA {
 
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
       virtual void computeX(const NaturalGroup& g, 
-			    const LOCA::Continuation::Vector& d,
+			    const LOCA::Continuation::ExtendedVector& d,
 			    double step);
   
       //! Compute extended continuation equations 
@@ -161,12 +164,6 @@ namespace LOCA {
       applyJacobianInverse(NOX::Parameter::List& params, 
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
-
-      //! Apply right preconditiong for the extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyRightPreconditioning(NOX::Parameter::List& params,
-				const NOX::Abstract::Vector& input, 
-				NOX::Abstract::Vector& result) const;
       //@}
 
       /** @name "Is" functions.
@@ -230,16 +227,16 @@ namespace LOCA {
     protected:
   
       //! Stores the continuation solution vector
-      LOCA::Continuation::Vector xVec;
+      LOCA::Continuation::ExtendedVector xVec;
 
       //! Stores the continuation residual vector
-      LOCA::Continuation::Vector fVec;
+      LOCA::Continuation::ExtendedVector fVec;
 
       //! Stores the continuation Newton vector
-      LOCA::Continuation::Vector newtonVec;
+      LOCA::Continuation::ExtendedVector newtonVec;
 
       //! Stores the previous arclength solution vector
-      LOCA::Continuation::Vector prevXVec;
+      LOCA::Continuation::ExtendedVector prevXVec;
 
       //! Store the derivative of the residual w.r.t. continuation param
       NOX::Abstract::Vector *derivResidualParamPtr;

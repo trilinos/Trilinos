@@ -45,7 +45,8 @@
 // Forward Declarations
 namespace LOCA {
   namespace Continuation {
-    class Group;
+    class ExtendedGroup;
+    class AbstractGroup;;
   }
 }
 
@@ -66,7 +67,7 @@ namespace LOCA {
   public:
 
     //! Constructor 
-    Stepper(LOCA::Abstract::Group& initialGuess,
+    Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
 	    NOX::StatusTest::Generic& t,
 	    NOX::Parameter::List& p);
 
@@ -74,12 +75,12 @@ namespace LOCA {
     virtual ~Stepper();
 
     //! Reset the Stepper to start a new continuation run
-    virtual bool reset(LOCA::Abstract::Group& initialGuess,
+    virtual bool reset(LOCA::Continuation::AbstractGroup& initialGuess,
 		       NOX::StatusTest::Generic& t,
 		       NOX::Parameter::List& p);
 
     //! Return the current solution group.
-    virtual const LOCA::Abstract::Group& getSolutionGroup() const;
+    virtual LOCA::Continuation::AbstractGroup& getSolutionGroup();
 
     //! Return the output parameters from the stepper algorithm. 
     virtual const NOX::Parameter::List& getParameterList() const;
@@ -134,10 +135,10 @@ namespace LOCA {
     LOCA::Continuation::Manager* conGroupManagerPtr;
 
     //! Pointer to the Group with the initial guess for the nonlinear solver.  This is used for resetting the nonlinear solver in between successful steps.
-    LOCA::Continuation::Group* curGroupPtr;
+    LOCA::Continuation::ExtendedGroup* curGroupPtr;
 
     //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
-    LOCA::Continuation::Group* prevGroupPtr;
+    LOCA::Continuation::ExtendedGroup* prevGroupPtr;
 
     //! Pointer to the status test.  This is used for resetting the nonlinear solver in between steps.
     NOX::StatusTest::Generic* statusTestPtr;
@@ -152,10 +153,10 @@ namespace LOCA {
     LOCA::Predictor::Manager* predictorManagerPtr;
 
     //! Current predictor direction
-    LOCA::Continuation::Vector* curPredictorPtr;
+    LOCA::Continuation::ExtendedVector* curPredictorPtr;
 
     //! previous predictor direction
-    LOCA::Continuation::Vector* prevPredictorPtr;
+    LOCA::Continuation::ExtendedVector* prevPredictorPtr;
 
     //! Step size manager
     LOCA::StepSize::Manager* stepSizeManagerPtr;

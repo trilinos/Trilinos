@@ -78,9 +78,9 @@ namespace LOCA {
   
       //! Computes the secant predictor by calling curGroup.computeSecant().
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& prevGroup,
-	      LOCA::Continuation::Group& curGroup,
-	      LOCA::Continuation::Vector& result);
+      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+	      LOCA::Continuation::ExtendedGroup& curGroup,
+	      LOCA::Continuation::ExtendedVector& result);
 
     protected:
       

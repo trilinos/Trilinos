@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_StepSize_Adaptive.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Stepper.H"
 #include "NOX_Solver_Generic.H"
 
@@ -58,12 +58,13 @@ LOCA::StepSize::Adaptive::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
-				  const LOCA::Continuation::Vector& predictor,
-				  const NOX::Solver::Generic& solver,
-				  const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-				  const LOCA::Stepper& stepper,
-				  double& stepSize) 
+LOCA::StepSize::Adaptive::compute(
+		       LOCA::Continuation::ExtendedGroup& curGroup,
+		       const LOCA::Continuation::ExtendedVector& predictor,
+		       const NOX::Solver::Generic& solver,
+		       const LOCA::Abstract::Iterator::StepStatus& stepStatus,
+		       const LOCA::Stepper& stepper,
+		       double& stepSize) 
 {
   // If this is the first step, set step size to initial value
   if (isFirstStep) {

@@ -31,254 +31,105 @@
 //@HEADER
 
 #include "LOCA_Abstract_Group.H"
-#include "LOCA_Parameter_Vector.H"
+#include "NOX_Parameter_List.H"
 
 LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
-  : derivPtr(d.clone(NOX::DeepCopy))
+  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
+    LOCA::Bifurcation::TPBord::SingularSolveGroup()
+{
+}
+
+LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
+			     const LOCA::DerivUtils& d)
+  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
+    LOCA::Bifurcation::TPBord::SingularSolveGroup(params)
 {
 }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type)
-  : derivPtr(source.derivPtr->clone(type))
+  : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
+    LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type)
 {
 }
 
 
 LOCA::Abstract::Group::~Group() 
 {
-  delete derivPtr;
+}
+
+LOCA::Continuation::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+			    const LOCA::Continuation::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Continuation::FiniteDifferenceGroup&
+LOCA::Abstract::Group::operator=(
+		      const LOCA::Continuation::FiniteDifferenceGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Bifurcation::TPBord::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+		     const LOCA::Bifurcation::TPBord::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Bifurcation::TPBord::FiniteDifferenceGroup&
+LOCA::Abstract::Group::operator=(
+	      const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Bifurcation::TPBord::SingularSolveGroup&
+LOCA::Abstract::Group::operator=(
+		   const LOCA::Bifurcation::TPBord::SingularSolveGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::TimeDependent::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+			    const LOCA::TimeDependent::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Bifurcation::HopfBord::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+	       const LOCA::Bifurcation::HopfBord::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup&
+LOCA::Abstract::Group::operator=(
+	       const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+LOCA::Homotopy::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+			    const LOCA::Homotopy::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
 }
 
 LOCA::Abstract::Group&
 LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
 {
 
-  // Protect against A = A
-  if (this != &source) {
-    NOX::CopyType type = NOX::DeepCopy;
-
-    // Delete old values
-    delete derivPtr;
-
-    // Copy values
-    derivPtr = source.derivPtr->clone(type);
-  }
-
+  // Copy parent classes
+  LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup::operator=(source);
+  LOCA::Bifurcation::TPBord::SingularSolveGroup::operator=(source);
+  
   return *this;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseNic(
-                          NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector& input,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector& result) const
-{
-  double alpha = approxNullVec.dot(input)
-               / approxNullVec.dot(JacApproxNullVec);
-
-  NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
-  tmpInput->update(-alpha, JacApproxNullVec, 1.0);
-
-  NOX::Abstract::Group::ReturnType
-    res = applyJacobianInverse(params, *tmpInput, result);
-
-  delete tmpInput;
-
-  result.update(alpha, approxNullVec, 1.0);
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseNicMulti(
-                          NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector*const* inputs,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector** results, int nVecs) const
-{
-  double denom = approxNullVec.dot(JacApproxNullVec);
-
-  double* alphas = new double[nVecs];
-  NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
-
-  for (int i=0; i<nVecs; i++) {
-    alphas[i] = approxNullVec.dot(*(inputs[i])) / denom;
-    tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
-    tmpInputs[i]->update(-alphas[i], JacApproxNullVec, 1.0);
-  }
-
-  NOX::Abstract::Group::ReturnType
-    res = applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
-
-  for (int i=0; i<nVecs; i++) {
-    results[i]->update(alphas[i], approxNullVec, 1.0);
-    delete tmpInputs[i];
-  }
-
-  delete [] tmpInputs;
-  delete [] alphas;
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseNicDay(
-                          NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector& input,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector& result) const
-{
-  double alpha = JacApproxNullVec.dot(input)
-               / JacApproxNullVec.dot(JacApproxNullVec);
-
-  NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
-  tmpInput->update(-alpha, JacApproxNullVec, 1.0);
-
-  NOX::Abstract::Group::ReturnType
-    res = applyJacobianInverse(params, *tmpInput, result);
-
-  delete tmpInput;
-
-  result.update(alpha, approxNullVec, 1.0);
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseNicDayMulti(
-                          NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector*const* inputs,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector** results, int nVecs) const
-{
-  double denom = JacApproxNullVec.dot(JacApproxNullVec);
-
-  double* alphas = new double[nVecs];
-  NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
-
-  for (int i=0; i<nVecs; i++) {
-    alphas[i] = JacApproxNullVec.dot(*(inputs[i]))/denom;
-    tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
-    tmpInputs[i]->update(-alphas[i], JacApproxNullVec, 1.0);
-  }
-
-  NOX::Abstract::Group::ReturnType
-    res = applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
-
-  for (int i=0; i<nVecs; i++) {
-    results[i]->update(alphas[i], approxNullVec, 1.0);
-    delete tmpInputs[i];
-  }
-
-  delete [] tmpInputs;
-  delete [] alphas;
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseItRef(
-                            NOX::Parameter::List& params,
-                            const NOX::Abstract::Vector& input,
-                            NOX::Abstract::Vector& result) const
-{
-  NOX::Abstract::Group::ReturnType 
-    res = applyJacobianInverse(params, input, result);
-
-  NOX::Abstract::Vector* remainder = input.clone(NOX::ShapeCopy);
-
-  res = applyJacobian(result, *remainder);
-
-  // r = b-Ax
-  remainder->update(1.0, input, -1.0);
-
-  NOX::Abstract::Vector* refinement = input.clone(NOX::ShapeCopy);
-
-  // Ay=r
-  res = applyJacobianInverse(params, *remainder, *refinement);
-
-  // x+=y
-  result.update(1.0, *refinement, 1.0);
-  
-  delete remainder;
-  delete refinement;
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseItRefMulti(
-                            NOX::Parameter::List& params,
-                            const NOX::Abstract::Vector*const* inputs,
-                            NOX::Abstract::Vector** results,
-			    int nVecs) const
-{
-  NOX::Abstract::Vector** remainders = new NOX::Abstract::Vector*[nVecs];
-  NOX::Abstract::Vector** refinements = new NOX::Abstract::Vector*[nVecs];
-
-  NOX::Abstract::Group::ReturnType 
-    res = applyJacobianInverseMulti(params, inputs, results, nVecs);
-
-  for (int i=0; i<nVecs; i++) {
-    remainders[i] = inputs[i]->clone(NOX::ShapeCopy);
-    refinements[i] = inputs[i]->clone(NOX::ShapeCopy);
-
-    res = applyJacobian(*(results[i]), *(remainders[i]));
-
-    // r = b-Ax
-    remainders[i]->update(1.0, *(inputs[i]), -1.0);
-  }
-
-  // Ay=r
-  res = applyJacobianInverseMulti(params, remainders, refinements, nVecs);
-
-  // x+=y
-  for (int i=0; i<nVecs; i++) {
-    results[i]->update(1.0, *(refinements[i]), 1.0);
-    delete remainders[i];
-    delete refinements[i];
-  }
-  
-  delete [] remainders;
-  delete [] refinements;
-
-  return res;
-}
-
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const
-{
-  NOX::Abstract::Group::ReturnType res;
-
-  for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
-  }
-
-  return res;
-}
-
-double
-LOCA::Abstract::Group::innerProduct(const NOX::Abstract::Vector& x,
-				    const NOX::Abstract::Vector& y) 
-{
-  return x.dot(y);
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::computeDfDp(int paramID, NOX::Abstract::Vector& result) 
-{
-  return derivPtr->computeDfDp(*this,paramID, result);
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -286,3 +137,32 @@ LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
 {
   return NOX::Abstract::Group::NotDefined;
 }
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::computeMassMatrix()
+{
+  cerr << "Error:  No mass matrix defined for group" << endl;
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
+				       NOX::Abstract::Vector& result) const
+{
+  cerr << "Error:  No mass matrix defined for group" << endl;
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexInverse(
+			       NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector& input_real,
+			       const NOX::Abstract::Vector& input_imag,
+			       double frequency,
+			       NOX::Abstract::Vector& result_real,
+			       NOX::Abstract::Vector& result_imag) const
+{
+  cerr << "Error:  No mass matrix defined for group" << endl;
+  return NOX::Abstract::Group::NotDefined;
+}
+

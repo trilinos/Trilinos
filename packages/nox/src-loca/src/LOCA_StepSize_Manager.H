@@ -69,8 +69,8 @@ namespace LOCA {
   
       //! Computes step size based on step size control method
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& curGroup,
-	      const LOCA::Continuation::Vector& predictor,
+      compute(LOCA::Continuation::ExtendedGroup& curGroup,
+	      const LOCA::Continuation::ExtendedVector& predictor,
 	      const NOX::Solver::Generic& solver,
 	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,

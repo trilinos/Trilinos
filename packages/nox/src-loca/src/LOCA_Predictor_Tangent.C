@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Predictor_Tangent.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 
 LOCA::Predictor::Tangent::Tangent(NOX::Parameter::List& params) :
   parameters(params)
@@ -50,14 +50,14 @@ LOCA::Predictor::Tangent::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Tangent::compute(LOCA::Continuation::Group& prevGroup,
-				  LOCA::Continuation::Group& curGroup,
-				  LOCA::Continuation::Vector& result) 
+LOCA::Predictor::Tangent::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+				  LOCA::Continuation::ExtendedGroup& curGroup,
+				  LOCA::Continuation::ExtendedVector& result) 
 {
   NOX::Abstract::Group::ReturnType res;
 
   res = curGroup.computeTangent();
-  if (res != LOCA::Abstract::Group::Ok)
+  if (res != NOX::Abstract::Group::Ok)
     return res;
   
   result = curGroup.getPredictorDirection();

@@ -71,9 +71,9 @@ namespace LOCA {
   
       //! Computes predictor based on predictor method parameter
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& prevGroup,
-	      LOCA::Continuation::Group& curGroup,
-	      LOCA::Continuation::Vector& result);
+      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+	      LOCA::Continuation::ExtendedGroup& curGroup,
+	      LOCA::Continuation::ExtendedVector& result);
 
       //! Returns current predictor method
       const string& getMethod() const;

@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Predictor_Constant.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 
 LOCA::Predictor::Constant::Constant(NOX::Parameter::List& params) 
 {
@@ -48,9 +48,10 @@ LOCA::Predictor::Constant::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Constant::compute(LOCA::Continuation::Group& prevGroup,
-				   LOCA::Continuation::Group& curGroup,
-				   LOCA::Continuation::Vector& result) 
+LOCA::Predictor::Constant::compute(
+				LOCA::Continuation::ExtendedGroup& prevGroup,
+				LOCA::Continuation::ExtendedGroup& curGroup,
+				LOCA::Continuation::ExtendedVector& result) 
 {
   result.init(0.0);
   result.getParam() = 1.0;

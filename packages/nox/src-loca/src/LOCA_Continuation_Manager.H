@@ -36,11 +36,9 @@
 #include "NOX_Abstract_Group.H" // For ReturnType
 
 namespace LOCA {
-  namespace Abstract {
-    class Group;
-  }
   namespace Continuation {
-    class Group;
+    class AbstractGroup;
+    class ExtendedGroup;
   }
 }
 
@@ -83,8 +81,8 @@ namespace LOCA {
       reset(NOX::Parameter::List& p);
   
       //! Creates continuation group for given method
-      virtual LOCA::Continuation::Group* 
-      createContinuationGroup(const LOCA::Abstract::Group& grp, 
+      virtual LOCA::Continuation::ExtendedGroup* 
+      createContinuationGroup(LOCA::Continuation::AbstractGroup& grp, 
 			      NOX::Parameter::List& linSolverParams);
 
       //! Returns method name

@@ -38,8 +38,8 @@
 // Forward declarations
 namespace LOCA {
   namespace Continuation {
-    class Vector;
-    class Group;
+    class ExtendedVector;
+    class ExtendedGroup;
   }
 }
 
@@ -74,9 +74,9 @@ namespace LOCA {
 	previous solution groups.
       */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& prevGroup,
-	      LOCA::Continuation::Group& curGroup,
-	      LOCA::Continuation::Vector& result) = 0;
+      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+	      LOCA::Continuation::ExtendedGroup& curGroup,
+	      LOCA::Continuation::ExtendedVector& result) = 0;
 
     };
   } // namespace Predictor

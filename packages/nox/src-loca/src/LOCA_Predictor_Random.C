@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Predictor_Random.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 
 LOCA::Predictor::Random::Random(NOX::Parameter::List& params)
 {
@@ -50,9 +50,9 @@ LOCA::Predictor::Random::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Random::compute(LOCA::Continuation::Group& prevGroup,
-				 LOCA::Continuation::Group& curGroup,
-				 LOCA::Continuation::Vector& result) 
+LOCA::Predictor::Random::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+				 LOCA::Continuation::ExtendedGroup& curGroup,
+				 LOCA::Continuation::ExtendedVector& result) 
 {
   // Fill predictor with random values
   result.random();

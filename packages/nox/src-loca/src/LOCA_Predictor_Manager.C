@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Predictor_Manager.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Predictor_Constant.H"
 #include "LOCA_Predictor_Tangent.H"
 #include "LOCA_Predictor_Secant.H"
@@ -78,9 +78,9 @@ LOCA::Predictor::Manager::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Manager::compute(LOCA::Continuation::Group& prevGroup,
-				  LOCA::Continuation::Group& curGroup,
-				  LOCA::Continuation::Vector& result) 
+LOCA::Predictor::Manager::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+				  LOCA::Continuation::ExtendedGroup& curGroup,
+				  LOCA::Continuation::ExtendedVector& result) 
 {
   if (predictorPtr == NULL) {
     cerr << "LOCA::Predictor::Manager::compute - Null pointer error" << endl;

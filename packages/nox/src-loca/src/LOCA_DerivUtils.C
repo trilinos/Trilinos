@@ -33,7 +33,8 @@
 // Class Header 
 #include "LOCA_DerivUtils.H"
 
-#include "LOCA_Abstract_Group.H" 
+#include "LOCA_Continuation_AbstractGroup.H" 
+#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
 #include "NOX_Abstract_Vector.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Common.H"  // For fabs function
@@ -62,7 +63,7 @@ LOCA::DerivUtils::clone(NOX::CopyType type) const
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
 			      const int param_id, 
 			      NOX::Abstract::Vector& result) const
 {
@@ -70,8 +71,8 @@ LOCA::DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
   grp.computeF();
 
   // Allocate new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = 
-    dynamic_cast<Abstract::Group*>(grp.clone());
+  LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
+    dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone());
   
   // Perturb single parameter in this group, and return perturbation, eps
   double eps = perturbParam(*grpPerturbedPtr, param_id);
@@ -91,7 +92,7 @@ LOCA::DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 			       const NOX::Abstract::Vector& nullVector, 
 			       const int param_id,
 			       NOX::Abstract::Vector& result) const
@@ -111,15 +112,15 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 			       const NOX::Abstract::Vector& nullVector, 
 			       const int param_id,
 			       const NOX::Abstract::Vector& JnVector,
 			       NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = 
-    dynamic_cast<Abstract::Group*>(grp.clone());
+  LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
+    dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone());
 
   // Perturb single parameter in this group, and return perturbation
   double eps = perturbParam(*grpPerturbedPtr, param_id);
@@ -141,7 +142,7 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& nullVector,
 				const NOX::Abstract::Vector& aVector,
 				NOX::Abstract::Vector& result) const
@@ -161,15 +162,15 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& nullVector,
 				const NOX::Abstract::Vector& aVector,
 				const NOX::Abstract::Vector& JnVector,
 				NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = 
-    dynamic_cast<Abstract::Group*>(grp.clone());
+  LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
+    dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone());
 
   // Perturb solution vector in direction of aVector, return perturbation
   double eps = perturbXVec(*grpPerturbedPtr, aVector);
@@ -191,7 +192,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::DerivUtils::computeDJnDxaDp(LOCA::Abstract::Group& grp,
+LOCA::DerivUtils::computeDJnDxaDp(LOCA::Continuation::AbstractGroup& grp,
 				  const NOX::Abstract::Vector& nullVector,
 				  const NOX::Abstract::Vector& aVector,
 				  const int param_id,
@@ -217,6 +218,134 @@ LOCA::DerivUtils::computeDJnDxaDp(LOCA::Abstract::Group& grp,
   return ok;
 }
 
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDp(
+			   LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+			   const NOX::Abstract::Vector& yVector,
+			   const NOX::Abstract::Vector& zVector,
+			   double w,
+			   const int param_id, 
+			   NOX::Abstract::Vector& result_real,
+			   NOX::Abstract::Vector& result_imag) const
+{
+  // Allocate base Ce vectors and fill with C times e
+  NOX::Abstract::Vector *baseCeRealVectorPtr = yVector.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *baseCeImagVectorPtr = yVector.clone(NOX::ShapeCopy);
+  grp.computeJacobian();
+  grp.computeMassMatrix();
+  grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
+		   *baseCeImagVectorPtr);
+
+  // Now that Ce is known, call other routine
+  NOX::Abstract::Group::ReturnType ok = 
+    computeDCeDp(grp, yVector, zVector, w, param_id, *baseCeRealVectorPtr, 
+		 *baseCeImagVectorPtr, result_real, result_imag);
+
+  delete baseCeRealVectorPtr;
+  delete baseCeImagVectorPtr;
+
+  return ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDp(
+			   LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+			   const NOX::Abstract::Vector& yVector,
+			   const NOX::Abstract::Vector& zVector,
+			   double w,
+			   const int param_id, 
+			   const NOX::Abstract::Vector& Ce_real,
+			   const NOX::Abstract::Vector& Ce_imag,
+			   NOX::Abstract::Vector& result_real,
+			   NOX::Abstract::Vector& result_imag) const
+{
+  // Form new group that we can perturb
+  LOCA::Bifurcation::HopfBord::AbstractGroup* grpPerturbedPtr = 
+    dynamic_cast<LOCA::Bifurcation::HopfBord::AbstractGroup*>(grp.clone());
+
+  // Perturb single parameter in this group, and return perturbation
+  double eps = perturbParam(*grpPerturbedPtr, param_id);
+
+  // Compute perturbed Ce vectors
+  grpPerturbedPtr->computeJacobian();
+  grpPerturbedPtr->computeMassMatrix();
+  NOX::Abstract::Group::ReturnType ok = 
+    grpPerturbedPtr->applyComplex(yVector, zVector, w, result_real,
+				  result_imag);
+
+  // Difference perturbed and base vector and return approximate derivative
+  doDifference2(result_real, Ce_real, eps);
+  doDifference2(result_imag, Ce_imag, eps);
+
+  delete grpPerturbedPtr;
+
+  return ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDxa(
+			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+			    const NOX::Abstract::Vector& yVector,
+			    const NOX::Abstract::Vector& zVector,
+			    double w,
+			    const NOX::Abstract::Vector& aVector,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const
+{
+  // Allocate base Ce vectors and fill with C times e
+  NOX::Abstract::Vector *baseCeRealVectorPtr = yVector.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *baseCeImagVectorPtr = yVector.clone(NOX::ShapeCopy);
+  grp.computeJacobian();
+  grp.computeMassMatrix();
+  grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
+		   *baseCeImagVectorPtr);
+
+  // Now that Ce is known, call other routine
+  NOX::Abstract::Group::ReturnType ok = 
+    computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
+		  *baseCeImagVectorPtr, result_real, result_imag);
+
+  delete baseCeRealVectorPtr; 
+  delete baseCeImagVectorPtr; 
+
+  return ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDxa(
+			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
+			    const NOX::Abstract::Vector& yVector,
+			    const NOX::Abstract::Vector& zVector,
+			    double w,
+			    const NOX::Abstract::Vector& aVector,
+			    const NOX::Abstract::Vector& Ce_real,
+			    const NOX::Abstract::Vector& Ce_imag,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const
+{
+  // Form new group that we can perturb
+  LOCA::Bifurcation::HopfBord::AbstractGroup* grpPerturbedPtr = 
+    dynamic_cast<LOCA::Bifurcation::HopfBord::AbstractGroup*>(grp.clone());
+
+  // Perturb solution vector in direction of aVector, return perturbation
+  double eps = perturbXVec(*grpPerturbedPtr, aVector);
+
+  // Compute perturbed Ce vectors
+  grpPerturbedPtr->computeJacobian();
+  grpPerturbedPtr->computeMassMatrix();
+  NOX::Abstract::Group::ReturnType ok = 
+    grpPerturbedPtr->applyComplex(yVector, zVector, w, result_real,
+				  result_imag);
+
+  // Difference perturbed and base vector and return approximate derivative
+  doDifference2(result_real, Ce_real, eps);
+  doDifference2(result_imag, Ce_imag, eps);
+
+  delete grpPerturbedPtr;
+
+  return ok;
+}
+
 //
 // Protected methods start here.
 //
@@ -231,9 +360,19 @@ LOCA::DerivUtils::doDifference(NOX::Abstract::Vector& perturbedVector,
   return perturbedVector.scale(1.0/eps);
 }
 
+void
+LOCA::DerivUtils::doDifference2(NOX::Abstract::Vector& perturbedVector,
+			       const NOX::Abstract::Vector& baseVector,
+			       const double eps) const
+{
+  perturbedVector.update(-1.0, baseVector, 1.0);
+  perturbedVector.scale(1.0/eps);
+}
+
 double 
-LOCA::DerivUtils::perturbParam(LOCA::Abstract::Group& grpPerturbed,
-			       const int param_id) const
+LOCA::DerivUtils::perturbParam(
+			LOCA::Continuation::AbstractGroup& grpPerturbed,
+			const int param_id) const
 {
   // Allocated new parameter vector
   LOCA::ParameterVector paramVec(grpPerturbed.getParams());
@@ -250,7 +389,7 @@ LOCA::DerivUtils::perturbParam(LOCA::Abstract::Group& grpPerturbed,
 }
 
 double 
-LOCA::DerivUtils::perturbXVec(LOCA::Abstract::Group& grpPerturbed,
+LOCA::DerivUtils::perturbXVec(LOCA::Continuation::AbstractGroup& grpPerturbed,
 			      const NOX::Abstract::Vector& aVector) const
 {
   // Allocate tempertory xVector

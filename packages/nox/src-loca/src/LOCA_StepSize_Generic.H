@@ -44,8 +44,8 @@ namespace NOX {
 }
 namespace LOCA {
   namespace Continuation {
-    class Group;
-    class Vector;
+    class ExtendedGroup;
+    class ExtendedVector;
   }
   class Stepper;
 }
@@ -84,8 +84,8 @@ namespace LOCA {
 	fails certain criteria (e.g., if it is too small)
       */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& curGroup,
-	      const LOCA::Continuation::Vector& predictor,
+      compute(LOCA::Continuation::ExtendedGroup& curGroup,
+	      const LOCA::Continuation::ExtendedVector& predictor,
 	      const NOX::Solver::Generic& solver,
 	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,

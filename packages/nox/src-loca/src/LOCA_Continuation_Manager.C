@@ -32,8 +32,8 @@
 
 #include "NOX_Parameter_List.H"
 #include "LOCA_Continuation_Manager.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_AbstractGroup.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
 #include "LOCA_Continuation_ArcLengthGroup.H"
 
@@ -58,8 +58,10 @@ LOCA::Continuation::Manager::reset(NOX::Parameter::List& p)
   return NOX::Abstract::Group::Ok;
 }
 
-LOCA::Continuation::Group* 
-LOCA::Continuation::Manager::createContinuationGroup(const LOCA::Abstract::Group& grp, NOX::Parameter::List& linSolverParams) 
+LOCA::Continuation::ExtendedGroup* 
+LOCA::Continuation::Manager::createContinuationGroup(
+			            LOCA::Continuation::AbstractGroup& grp, 
+				    NOX::Parameter::List& linSolverParams) 
 {
   if (method == "Natural") 
     return new LOCA::Continuation::NaturalGroup(grp, conParamID, linSolverParams, *paramsPtr);

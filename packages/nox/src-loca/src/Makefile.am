@@ -45,6 +45,81 @@ LOCA_ABSTRACT = \
         $(srcdir)/LOCA_Abstract_Group.C \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
+LOCA_CONTINUATION_H = \
+	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.H \
+	$(srcdir)/LOCA_Continuation_Manager.H \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H
+
+LOCA_CONTINUATION = \
+	$(srcdir)/LOCA_ExtendedVector.C \
+	$(srcdir)/LOCA_Continuation_ExtendedVector.C \
+	$(srcdir)/LOCA_Continuation_AbstractGroup.C \
+	$(srcdir)/LOCA_Continuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Continuation_ExtendedGroup.C \
+	$(srcdir)/LOCA_Continuation_Manager.C \
+	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
+	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C
+
+LOCA_SINGULARSOLVE_H = \
+	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H
+
+LOCA_SINGULARSOLVE = \
+	$(srcdir)/LOCA_SingularJacobianSolve_Manager.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Default.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
+	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C
+
+LOCA_BIFURCATION_H = \
+        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
+        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H 
+
+LOCA_BIFURCATION = \
+        $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C
+
+LOCA_HOMOTOPY_H = \
+	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
+        $(srcdir)/LOCA_Homotopy_Group.H
+
+LOCA_HOMOTOPY = \
+	$(srcdir)/LOCA_Homotopy_Group.C
+
+LOCA_DERIVUTILS_H = \
+        $(srcdir)/LOCA_DerivUtils.H
+
+LOCA_DERIVUTILS = \
+        $(srcdir)/LOCA_DerivUtils.C
+
 LOCA_UTILS_H = \
         $(srcdir)/LOCA_Utils.H \
         $(srcdir)/LOCA_ErrorCheck.H
@@ -58,28 +133,6 @@ LOCA_PARAMETER_VECTOR_H = \
 
 LOCA_PARAMETER_VECTOR = \
         $(srcdir)/LOCA_Parameter_Vector.C
-
-LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper.H 
-
-LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper.C 
-
-LOCA_CONTINUATION_H = \
-	$(srcdir)/LOCA_MultiVector.H \
-	$(srcdir)/LOCA_Continuation_Vector.H \
-	$(srcdir)/LOCA_Continuation_Group.H \
-	$(srcdir)/LOCA_Continuation_Manager.H \
-	$(srcdir)/LOCA_Continuation_NaturalGroup.H \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.H
-
-LOCA_CONTINUATION = \
-	$(srcdir)/LOCA_MultiVector.C \
-	$(srcdir)/LOCA_Continuation_Vector.C \
-	$(srcdir)/LOCA_Continuation_Group.C \
-	$(srcdir)/LOCA_Continuation_Manager.C \
-	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
-	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C
 
 LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Generic.H \
@@ -107,54 +160,38 @@ LOCA_STEPSIZE = \
 	$(srcdir)/LOCA_StepSize_Constant.C \
 	$(srcdir)/LOCA_StepSize_Adaptive.C 
 
-LOCA_BIFURCATION_H = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBordVector.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBordGroup.H
+LOCA_STEPPER_H = \
+	$(srcdir)/LOCA_Stepper.H 
 
-LOCA_BIFURCATION = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
-	$(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBordVector.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBordGroup.C
-
-LOCA_HOMOTOPY_H = \
-        $(srcdir)/LOCA_HomotopyGroup.H
-
-LOCA_HOMOTOPY = \
-        $(srcdir)/LOCA_HomotopyGroup.C
-
-LOCA_DERIVUTILS_H = \
-        $(srcdir)/LOCA_DerivUtils.H
-
-LOCA_DERIVUTILS = \
-        $(srcdir)/LOCA_DerivUtils.C
+LOCA_STEPPER = \
+	$(srcdir)/LOCA_Stepper.C 
 
 LOCA_H = \
         $(srcdir)/LOCA.H \
-        $(LOCA_ABSTRACT_H) \
+	$(LOCA_CONTINUATION_H) \
+	$(LOCA_SINGULARSOLVE_H) \
+	$(LOCA_BIFURCATION_H) \
+	$(LOCA_HOMOTOPY_H) \
+	$(LOCA_DERIVUTILS_H) \
 	$(LOCA_UTILS_H) \
 	$(LOCA_PARAMETER_VECTOR_H) \
-        $(LOCA_CONTINUATION_H) \
 	$(LOCA_PREDICTOR_H) \
 	$(LOCA_STEPSIZE_H) \
-	$(LOCA_BIFURCATION_H) \
-        $(LOCA_HOMOTOPY_H) \
-	$(LOCA_DERIVUTILS_H) \
-	$(LOCA_STEPPER_H)
+	$(LOCA_STEPPER_H) \
+	$(LOCA_ABSTRACT_H)
 
 LOCA = \
-	$(LOCA_ABSTRACT) \
+	$(LOCA_CONTINUATION) \
+	$(LOCA_SINGULARSOLVE) \
+	$(LOCA_BIFURCATION) \
+	$(LOCA_HOMOTOPY) \
+	$(LOCA_DERIVUTILS) \
 	$(LOCA_UTILS) \
 	$(LOCA_PARAMETER_VECTOR) \
-        $(LOCA_CONTINUATION) \
 	$(LOCA_PREDICTOR) \
 	$(LOCA_STEPSIZE) \
-	$(LOCA_BIFURCATION) \
-        $(LOCA_HOMOTOPY) \
-	$(LOCA_DERIVUTILS) \
-	$(LOCA_STEPPER)
+	$(LOCA_STEPPER) \
+	$(LOCA_ABSTRACT)
 
 # ------------------------------------------------------------------------
 # Loca library specifications

@@ -33,20 +33,9 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
-#include "NOX_Abstract_Group.H"    // base class
-
-#include "NOX_Common.H"            // for string 
-#include "LOCA_DerivUtils.H"
-
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
-}
-
-namespace LOCA {
-  class ParameterVector;
-}
+#include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
+#include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
+#include "LOCA_Homotopy_AbstractGroup.H"                      // base class
 
 //! Library of continuation algorithms namespace
 namespace LOCA { 
@@ -65,130 +54,83 @@ namespace LOCA {
       parameter and scale vector setting/retrieval methods.
     */
 
-    class Group : public virtual NOX::Abstract::Group {
+    class Group : 
+      public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
+      public LOCA::Bifurcation::TPBord::SingularSolveGroup,
+      public virtual LOCA::Homotopy::AbstractGroup
+    {
 
     public:
+
+      //! Default constructor.
+      Group(const DerivUtils& deriv = LOCA::DerivUtils());
   
       //! Default constructor.
-      Group(const DerivUtils& deriv = DerivUtils());
+      Group(NOX::Parameter::List& params,
+	    const DerivUtils& deriv = LOCA::DerivUtils());
  
       //! Copy constructor
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~Group();
+
+      //! Assignment operator
+      virtual LOCA::Continuation::AbstractGroup& 
+      operator=(const LOCA::Continuation::AbstractGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Continuation::FiniteDifferenceGroup& 
+      operator=(const LOCA::Continuation::FiniteDifferenceGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
+      operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& 
+      operator=(const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::TPBord::SingularSolveGroup& 
+      operator=(const LOCA::Bifurcation::TPBord::SingularSolveGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::TimeDependent::AbstractGroup& 
+      operator=(const LOCA::TimeDependent::AbstractGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
+      operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
+      operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
+
+      //! Assignment operator
+      virtual LOCA::Homotopy::AbstractGroup& 
+      operator=(const LOCA::Homotopy::AbstractGroup& source);
   
       //! Assignment operator
       virtual Group& operator=(const Group& source);
 
-      //! Generic routine for applying Nic method to solve near-singular system
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseNic(NOX::Parameter::List& params,
-			      const NOX::Abstract::Vector& input,
-			      const NOX::Abstract::Vector& approxNullVec,
-			      const NOX::Abstract::Vector& JacApproxNullVec,
-			      NOX::Abstract::Vector& result) const;
-
-      /*! Generic routine for applying Nic method to solve near-singular system
-	with multiple right hand sides */
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseNicMulti(NOX::Parameter::List& params,
-			      const NOX::Abstract::Vector*const* inputs,
-			      const NOX::Abstract::Vector& approxNullVec,
-			      const NOX::Abstract::Vector& JacApproxNullVec,
-			      NOX::Abstract::Vector** results, 
-			      int nVecs) const;
-
-      //! Generic routine for applying Nic method to solve near-singular system
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseNicDay(NOX::Parameter::List& params,
-				 const NOX::Abstract::Vector& input,
-				 const NOX::Abstract::Vector& approxNullVec,
-				 const NOX::Abstract::Vector& JacApproxNullVec,
-				 NOX::Abstract::Vector& result) const;
-
-      /*! Generic routine for applying Nic method to solve near-singular system
-	with multiple right hand sides */
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseNicDayMulti(NOX::Parameter::List& params,
-				 const NOX::Abstract::Vector*const* inputs,
-				 const NOX::Abstract::Vector& approxNullVec,
-				 const NOX::Abstract::Vector& JacApproxNullVec,
-				 NOX::Abstract::Vector** results,
-				 int nVecs) const;
-
-      //! Generic routine for applying Iterative Refinement for solving near-singular system
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseItRef(NOX::Parameter::List& params,
-				const NOX::Abstract::Vector& input,
-				NOX::Abstract::Vector& result) const;
-
-
-      //! Generic routine for applying Iterative Refinement for solving near-singular system with multiple right hand sides
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseItRefMulti(NOX::Parameter::List& params,
-				const NOX::Abstract::Vector*const* inputs,
-				NOX::Abstract::Vector** results, 
-				int nVecs) const;
-
-      //! applyJacobianInverse for multiple right-hand sides
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseMulti(NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const;
-
-      //! Compute inner product between two vectors
-      virtual double innerProduct(const NOX::Abstract::Vector& x,
-				  const NOX::Abstract::Vector& y);
-
-      //! Set the parameter vector in the group to p (pVector = p).  
-      virtual void setParams(const ParameterVector& p) = 0;
-
-      //! Return a const reference to the ParameterVector owned by the group. 
-      virtual const ParameterVector& getParams() const = 0;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(int paramID, double val) = 0;
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(int paramID) const = 0;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val) = 0;
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const = 0;
-
-      //! Compute \f$dF/dp\f$ using DerivUtils derivative object
-      virtual NOX::Abstract::Group::ReturnType
-      computeDfDp(int paramID, NOX::Abstract::Vector& result);
-
-      //! Function to print out solution and parameter after successful step
-      virtual void printSolution(const double conParam) const {};
-
-      //! Function to print out a vector and parameter after successful step
-      virtual void printSolution(const NOX::Abstract::Vector& x_,
-                                 const double conParam) const  {}
-
-      //! Set scale vector
-      virtual void setScaleVec(const NOX::Abstract::Vector& s) = 0;
-
-      //! Get scale vector
-      virtual const NOX::Abstract::Vector& getScaleVec() const = 0;
-  
-      //! This is an EVIL, EVIL, EVIL routine!  It breaks the concept of a group, but until we construct a better solution, it is necessary to get homotopy up and running quickly.
-      /*! This routine augments the Jacobian so that it can be used for homotopy algorithms.  After the Jacobian is calculated normally, the it can be augmented by this routine:
-
-      augmented Jacobian = \f$ \lambda J + (1 - \lambda)I \f$
-
-      where \f$ \lambda \f$ is the homotopy continuation parameter, \f$ J \f$ is the Jacobian, and \f$ I \f$ is the identity matrix.
-      */
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
 
-    protected:
-      //! Pointer to current DerivUtils derivative computation object
-      DerivUtils* derivPtr;
+      virtual NOX::Abstract::Group::ReturnType
+      computeMassMatrix();
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyMassMatrix(const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result) const;
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexInverse(NOX::Parameter::List& params,
+			  const NOX::Abstract::Vector& input_real,
+			  const NOX::Abstract::Vector& input_imag,
+			  double frequency,
+			  NOX::Abstract::Vector& result_real,
+			  NOX::Abstract::Vector& result_imag) const;
     };
   } // namespace Abstract
 } // namespace LOCA

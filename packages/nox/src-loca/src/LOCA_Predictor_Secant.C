@@ -32,7 +32,7 @@
 
 #include "LOCA_Predictor_Secant.H"
 #include "LOCA_Predictor_Manager.H"
-#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 
 LOCA::Predictor::Secant::Secant(NOX::Parameter::List& params) :
   firstStepPredictorPtr(NULL)
@@ -60,9 +60,9 @@ LOCA::Predictor::Secant::reset(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Secant::compute(LOCA::Continuation::Group& prevGroup,
-				 LOCA::Continuation::Group& curGroup,
-				 LOCA::Continuation::Vector& result) 
+LOCA::Predictor::Secant::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+				 LOCA::Continuation::ExtendedGroup& curGroup,
+				 LOCA::Continuation::ExtendedVector& result) 
 {
   NOX::Abstract::Group::ReturnType res;
 
@@ -73,7 +73,7 @@ LOCA::Predictor::Secant::compute(LOCA::Continuation::Group& prevGroup,
   }
   else {
     res = curGroup.computeSecant();
-    if (res != LOCA::Abstract::Group::Ok)
+    if (res != NOX::Abstract::Group::Ok)
       return res;
   
     result = curGroup.getPredictorDirection();
