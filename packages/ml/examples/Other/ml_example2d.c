@@ -41,7 +41,7 @@ int    parasails_sym        = 1;
 double parasails_thresh     = 0.01;
 int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
-double parasails_loadbal    = 0.;
+int    parasails_loadbal    = 0;
 double *scaling_vect = NULL;
   /* -------------  external function declarations -------------------------*/
 

@@ -47,7 +47,7 @@ int    parasails_sym        = 0;
 double parasails_thresh     = 0.;
 int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
-double parasails_loadbal    = 0.;
+int    parasails_loadbal    = 0;
 
 /*****************************************************************************/
 /* Set up and solve a test problem defined in the subroutine                 */
