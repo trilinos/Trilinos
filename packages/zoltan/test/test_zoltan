@@ -468,7 +468,7 @@ else
     set nem_methods = ( $nem_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_reftree) then
-    set nem_methods = ( $nem_methods reftree )
+    set nem_methods = ( $nem_methods reftree reftree-connected)
   endif
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
