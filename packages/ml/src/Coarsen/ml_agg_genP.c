@@ -204,25 +204,34 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 
    if ( ag->smoothP_damping_factor != 0.0 )
    {
-      kdata = ML_Krylov_Create( ml->comm );
-      ML_Krylov_Set_PrintFreq( kdata, 0 );
-      ML_Krylov_Set_ComputeEigenvalues( kdata );
-      ML_Krylov_Set_Amatrix(kdata, Amat);
-      ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-      max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-      ML_Krylov_Destroy( &kdata );
-      if ( max_eigen <= 0.0 )
+      if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */
       {
-         printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
-         max_eigen = 1.0;
-      }
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
-         printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
+         kdata = ML_Krylov_Create( ml->comm );
+         ML_Krylov_Set_PrintFreq( kdata, 0 );
+         ML_Krylov_Set_ComputeEigenvalues( kdata );
+         ML_Krylov_Set_Amatrix(kdata, Amat);
+         ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+         max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+         ML_Krylov_Destroy( &kdata );
+         if ( max_eigen <= 0.0 )
+         {
+            printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+            max_eigen = 1.0;
+         }
+         if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+            printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
 
-      widget.omega  = ag->smoothP_damping_factor / max_eigen;
-      ml->spectral_radius[level] = max_eigen;
+         widget.omega  = ag->smoothP_damping_factor / max_eigen;
+         ml->spectral_radius[level] = max_eigen;
+      }
+      else   /* using matrix max norm */
+      {
+         max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
+         widget.omega  = ag->smoothP_damping_factor / max_eigen;
+         ml->spectral_radius[level] = max_eigen;
+      }
    }
-   else
+   else  /* damping fact = 0 ==> no need to compute spectral radius */
    {
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;

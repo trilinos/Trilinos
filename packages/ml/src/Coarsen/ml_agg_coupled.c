@@ -1357,6 +1357,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 
    min_agg_size = 0;
    max_neigh_selected = 0;
+   phaseAFlag = 1;
    ML_Aggregate_Form_Aggregates('1', phaseAFlag, Nrows, exp_Nrows, mat_indx, 
         aggr_index, aggr_stat, node_type, NULL, order_array, &aggr_count, 
         &aggr_cnt_leng, &aggr_cnt_array, max_length, min_agg_size, 

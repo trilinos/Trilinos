@@ -59,6 +59,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    nullspace_dim  = ml_ag->nullspace_dim;
    nullspace_vect = ml_ag->nullspace_vect;
    Nrows          = Amatrix->outvec_leng;
+   num_PDE_eqns   = ml_ag->num_PDE_eqns;
 
    /* ============================================================= */
    /* initialize and update the threshold                           */

@@ -87,12 +87,13 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_scheme             = ML_AGGR_UNCOUPLED;
    (*ag)->threshold                  = 0.08;
    (*ag)->smoothP_damping_factor     = 4.0/3.0;
+   (*ag)->spectral_radius_scheme     = 1;  /* compute it */
    (*ag)->smoothP_type               = 0;  /* point type */
    (*ag)->num_PDE_eqns               = 1;
    (*ag)->nullspace_dim              = 1;
    (*ag)->nullspace_vect             = NULL;
    (*ag)->max_levels                 = 0;
-   (*ag)->max_coarse_size            = 100;
+   (*ag)->max_coarse_size            = 10;
    (*ag)->begin_level                = 0;
    (*ag)->cur_level                  = 0;
    (*ag)->aggr_info                  = NULL;
@@ -113,7 +114,6 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    if (proc_config[AZ_node] == 0) {
       fp = fopen("PaRams","r");
       if (fp == NULL) { printf("woops no PaRams file\n"); exit(1);}
-      system("ls -lg");
       fscanf(fp,"%d", &((*ag)->ordering) );
       fscanf(fp,"%d", &((*ag)->min_nodes_per_aggregate) );
       fscanf(fp,"%d", &((*ag)->max_neigh_already_selected) );
@@ -391,6 +391,34 @@ int ML_Aggregate_Set_DampingFactor( ML_Aggregate *ag, double factor )
       exit(-1);
    }
    ag->smoothP_damping_factor = factor;
+   return 0;
+}
+
+/* ******************************************************************** */
+/* set method to estimate spectral radius of A                          */
+/* -------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SpectralNormScheme_Calc( ML_Aggregate *ag )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_SpectralNormScheme_Calc : wrong object. \n");
+      exit(-1);
+   }
+   ag->spectral_radius_scheme = 1;
+   return 0;
+}
+
+/* -------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate *ag )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_SpectralNormScheme_Anorm : wrong object. \n");
+      exit(-1);
+   }
+   ag->spectral_radius_scheme = 0;
    return 0;
 }
 
