@@ -41,6 +41,9 @@ MPI_LIBPATH		=
 PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
 PARMETIS_INCPATH        = -I../../ParMETIS3_1
 
+PATOH_LIBPATH		= -L../../PaToH
+PATOH_INCPATH		= -I../../PaToH
+
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
