@@ -79,6 +79,8 @@ struct LB_reftree_hash_node **hashtab; /* hash table */
 int nproc;                 /* number of processors */
 LB_ID_PTR local_gids;      /* coarse element Global IDs from user */
 LB_ID_PTR local_lids;      /* coarse element Local IDs from user */
+LB_ID_PTR lid;             /* temporary coarse element Local ID; used to pass
+                              NULL to query functions when NUM_LID_ENTRIES=0 */
 LB_ID_PTR all_gids;        /* coarse element Global IDs from all procs */
 int *assigned;             /* 1 if the element is assigned to this proc */
 int *num_vert;             /* number of vertices for each coarse element */
@@ -135,7 +137,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   root->global_id = LB_MALLOC_GID(lb);
   root->local_id  = LB_MALLOC_LID(lb);
-  if (root->global_id == NULL || root->local_id == NULL) {
+  if (root->global_id == NULL || (num_lid_entries && root->local_id == NULL)) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
@@ -239,7 +241,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
     num_obj -= 1;
 
-    if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
+    if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) || 
+        assigned   == NULL ||
         num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
         out_vertex == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -292,10 +295,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
       sum_vert = 0;
       count = 0;
+      lid = (num_lid_entries ? &(local_lids[count*num_lid_entries]) : NULL);
       found = lb->Get_First_Coarse_Obj(lb->Get_First_Coarse_Obj_Data,
                                        num_gid_entries, num_lid_entries,
                                        &(local_gids[count*num_gid_entries]), 
-                                       &(local_lids[count*num_lid_entries]),
+                                       lid,
                                        &assigned[count],
                                        &num_vert[count], &vertices[sum_vert],
                                        &in_order,
@@ -319,10 +323,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       while (found && count <= num_obj) {
         sum_vert += num_vert[count];
         count += 1;
+        lid = (num_lid_entries ? &(local_lids[count*num_lid_entries]) : NULL);
         found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
                                         num_gid_entries, num_lid_entries,
                                         &(local_gids[count*num_gid_entries]), 
-                                        &(local_lids[count*num_lid_entries]),
+                                        lid,
                                         &assigned[count],
                                         &num_vert[count], &vertices[sum_vert],
                                         &in_vertex[count], &out_vertex[count],
@@ -603,7 +608,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     else
       root->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
     if (root->children[order[i]].global_id == NULL     ||
-        root->children[order[i]].local_id == NULL      ||
+        (num_lid_entries && root->children[order[i]].local_id == NULL) ||
         root->children[order[i]].weight        == NULL ||
         root->children[order[i]].summed_weight == NULL ||
         root->children[order[i]].my_sum_weight == NULL ||
@@ -635,11 +640,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
        *(root->children[order[i]].weight) = 0.0;
     }
     else {
+      lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
       lb->Get_Child_Weight(lb->Get_Child_Weight_Data,
                            num_gid_entries, num_lid_entries,
                            &(local_gids[i*num_gid_entries]),
-                           &(local_lids[i*num_lid_entries]), 
-                           lb->Obj_Weight_Dim, 
+                           lid, lb->Obj_Weight_Dim, 
                            root->children[order[i]].weight, &ierr);
     }
     for (j=0; j<wdim; j++) {
@@ -788,6 +793,8 @@ int final_ierr;            /* error code returned by this routine */
 int num_obj;               /* number of children returned by user */
 LB_ID_PTR local_gids;      /* coarse element Global IDs from user */
 LB_ID_PTR local_lids;      /* coarse element Local IDs from user */
+LB_ID_PTR lid;             /* temporary coarse element Local ID; used to pass
+                              NULL to query functions when NUM_LID_ENTRIES=0 */
 int *assigned;             /* 1 if the element is assigned to this proc */
 int *num_vert;             /* number of vertices for each coarse element */
 int *vertices;             /* vertices for the coarse elements */
@@ -856,7 +863,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
   in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
   out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
   vert1      = (int *) LB_MALLOC((num_obj+1)*sizeof(int));
-  if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
+  if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) || 
+      assigned   == NULL ||
       num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
       out_vertex == NULL || vert1      == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -1033,7 +1041,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     else
       subroot->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
     if (subroot->children[order[i]].global_id     == NULL ||
-        subroot->children[order[i]].local_id      == NULL ||
+        (num_lid_entries && subroot->children[order[i]].local_id == NULL) ||
         subroot->children[order[i]].weight        == NULL ||
         subroot->children[order[i]].summed_weight == NULL ||
         subroot->children[order[i]].my_sum_weight == NULL ||
@@ -1060,10 +1068,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
        *(subroot->children[order[i]].weight) = 0.0;
     }
     else {
+      lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
       lb->Get_Child_Weight(lb->Get_Child_Weight_Data,
                            num_gid_entries, num_lid_entries,
                            &(local_gids[i*num_gid_entries]),
-                           &(local_lids[i*num_lid_entries]), 
+                           lid, 
                            lb->Obj_Weight_Dim,
                            subroot->children[order[i]].weight, &ierr);
     }
@@ -1936,6 +1945,8 @@ int hashsize;         /* dimension of hash table */
 int i, j;             /* loop counter */
 LB_ID_PTR local_gids; /* coarse element Global IDs from user */
 LB_ID_PTR local_lids; /* coarse element Local IDs from user */
+LB_ID_PTR lid;        /* temporary coarse element Local ID; used to pass
+                         NULL to query functions when NUM_LID_ENTRIES=0 */
 int *assigned;        /* 1 if the element is assigned to this proc */
 int *num_vert;        /* number of vertices for each coarse element */
 int *vertices;        /* vertices for the coarse elements */
@@ -1997,7 +2008,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
       out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
 
-      if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
+      if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) ||
+          assigned   == NULL ||
           num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
           out_vertex == NULL) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -2068,10 +2080,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
         determined */
           if (tree_node->in_vertex == 0) tree_node->in_vertex = in_vertex[i];
           if (tree_node->out_vertex == 0) tree_node->out_vertex = out_vertex[i];
+          lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
           lb->Get_Child_Weight(lb->Get_Child_Weight_Data, 
                                num_gid_entries, num_lid_entries,
                                &(local_gids[i*num_gid_entries]),
-                               &(local_lids[i*num_lid_entries]),
+                               lid,
                                lb->Obj_Weight_Dim,
                                tree_node->weight, &ierr);
         }
@@ -2095,7 +2108,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     slocal_gids = LB_MALLOC_GID(lb);
     slocal_lids = LB_MALLOC_LID(lb);
     vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
-    if (slocal_gids == NULL || slocal_lids == NULL || 
+    if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
         vertices == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&slocal_gids);
