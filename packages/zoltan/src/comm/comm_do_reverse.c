@@ -47,21 +47,7 @@ char     *recv_data)		/* array of data I'll own after comm */
 
     MPI_Comm_rank(plan->comm, &my_proc);
 
-    if (!send_data){
-      fprintf(stderr, "Zoltan error in %s: Proc %d has send_data = NULL\n",
-        yo, my_proc);
-      return LB_FATAL;
-    }
-    if (!recv_data){
-      fprintf(stderr, "Zoltan error in %s: Proc %d has recv_data = NULL\n",
-        yo, my_proc);
-      return LB_FATAL;
-    }
-    if (nsize<=0){
-      fprintf(stderr, "Zoltan error in %s: Proc %d has nsize = %d\n",
-        yo, my_proc, nsize);
-      return LB_FATAL;
-    }
+    /* Let LB_Comm_Do check the remaining parameters. */
 
     total_send_length = 0;
     for (i = 0; i < plan->nsends + plan->self_msg; i++) {

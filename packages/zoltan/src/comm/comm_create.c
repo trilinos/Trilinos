@@ -52,6 +52,7 @@ int      *pnrecv)		/* returned # vals I own after communication */
     int       index;		/* index into list of objects */
     int       lb_flag;		/* status flag */
     int       i, j;		/* loop counters */
+    static char *yo = "LB_Comm_Create";
 
     MPI_Comm_rank(comm, &my_proc);
     MPI_Comm_size(comm, &nprocs);
@@ -71,6 +72,11 @@ int      *pnrecv)		/* returned # vals I own after communication */
     prev_proc = nprocs;
     for (i = 0; i < nvals; i++) {
 	proc = assign[i];
+        if ((proc<0) || (proc>= nprocs)){
+           fprintf(stderr, "Zoltan error in %s: %d is an invalid processor number.\n", yo, proc);
+           LB_FREE(starts);
+           return LB_FATAL;
+        }
 	if (no_send_buff && proc != prev_proc) { /* Checks if blocked by proc */
 	    if (proc >= 0 && (starts[proc] || prev_proc < 0)) {
 		no_send_buff = FALSE;
@@ -170,6 +176,7 @@ int      *pnrecv)		/* returned # vals I own after communication */
                deterministic, comm);
     
     if (lb_flag != LB_OK && lb_flag != LB_WARN) {
+        fprintf(stderr, "Zoltan error in %s: Could not invert map.\n", yo);
 	LB_FREE((void **) &indices_to);
 	LB_FREE((void **) &procs_to);
 	LB_FREE((void **) &lengths_to);

@@ -50,17 +50,17 @@ char *recv_data)		/* array of data I'll own after comm */
 
     MPI_Comm_rank(plan->comm, &my_proc);
 
-    if (!send_data){
-      fprintf(stderr, "Zoltan error in %s: Proc %d has send_data = NULL\n", 
-        yo, my_proc);
+    if ((plan->nsends + plan->self_msg) && !send_data){
+      fprintf(stderr, "Zoltan error in %s: Proc %d has nsends = %d, but send_data = NULL\n", 
+        yo, my_proc, plan->nsends);
       return LB_FATAL;
     }
-    if (!recv_data){
-      fprintf(stderr, "Zoltan error in %s: Proc %d has recv_data = NULL\n", 
-        yo, my_proc);
+    if ((plan->nrecvs + plan->self_msg) && !recv_data){
+      fprintf(stderr, "Zoltan error in %s: Proc %d has nrecvs = %d, but recv_data = NULL\n", 
+        yo, my_proc, plan->nrecvs);
       return LB_FATAL;
     }
-    if (nsize<=0){
+    if (nsize<0){
       fprintf(stderr, "Zoltan error in %s: Proc %d has nsize = %d\n", 
         yo, my_proc, nsize);
       return LB_FATAL;
