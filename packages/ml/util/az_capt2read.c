@@ -124,6 +124,8 @@ int main(int argc, char *argv[]) {
        flag = mygetline(string);
    }
    printf("-1\n");
+   for (i = current_row; i < Nrows; i++) 
+      printf("0 0.0\n-1\n");
 }
 
 int mygetline(char string[])
