@@ -219,7 +219,6 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	    
 	}
     } else { /* Form x := inv(A')*x */
-	
 	if ( lsame_(uplo, "L") ) {
 	    /* Form x := inv(L')*x */
     	    if ( L->nrow == 0 ) return 0; /* Quick return */
@@ -297,6 +296,7 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
     SuperLUStat.ops[SOLVE] += solve_ops;
     SUPERLU_FREE(work);
+return 1;
 }
 
 
@@ -465,6 +465,7 @@ sp_dgemv(char *trans, double alpha, SuperMatrix *A, double *x,
 	    ABORT("Not implemented.");
 	}
     }
+return 1;
     
 } /* sp_dgemv */
 
