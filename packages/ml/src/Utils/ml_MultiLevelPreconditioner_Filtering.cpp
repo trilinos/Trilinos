@@ -217,7 +217,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     // as Anasazi keep these information as private         //
     // ==================================================== //
 
-    if( List_.get("filtering: check preconditioner", false) == true ) {
+    if (List_.get("filtering: check preconditioner", false) == true) {
       
       assert( SchurDecomposition_ == 0 ); // must be freed at this point
       
@@ -533,11 +533,11 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
 
   if( verbose_ ) cout << PrintMsg_ << endl << "\tComputing the rate of convergence..." << endl;
 
-  int MaxIters = List_.get(Prefix_ + "adaptive: max iters",(int)5);
+  int MaxIters = List_.get(Prefix_ + "reuse: max iters",(int)5);
 
-  double Ratio = List_.get(Prefix_ + "adaptive: ratio",(double)0.5);
+  double Ratio = List_.get(Prefix_ + "reuse: ratio",(double)0.5);
  
-  int Output = List_.get(Prefix_ + "adaptive: output",-1);
+  int Output = List_.get(Prefix_ + "reuse: output",-1);
   
   Epetra_Vector LHS(Map());
   Epetra_Vector RHS(Map());
@@ -614,7 +614,7 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
   }
   
 #else
-  cerr << ErrorMsg_ << "Adaptive preconditioner requires ML to be configured with" << endl
+  cerr << ErrorMsg_ << "reuse preconditioner requires ML to be configured with" << endl
        << ErrorMsg_ << "--enable-aztecoo." << endl;
   exit( EXIT_FAILURE );
   return false;
