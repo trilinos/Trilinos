@@ -53,3 +53,6 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/ifpack/src
+INPUT                 += ../../../../Trilinos/packages/ifpack/doc/index.doc
+
+EXAMPLE_PATH           = ../../../../Trilinos/packages/ifpack/example

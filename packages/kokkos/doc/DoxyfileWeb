@@ -53,3 +53,6 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/kokkos/src
+INPUT                 += ../../../../Trilinos/packages/kokkos/doc/index.doc
+
+EXAMPLE_PATH           = ../../../../Trilinos/packages/kokkos/example

@@ -53,3 +53,6 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/epetra/src
+INPUT                 += ../../../../Trilinos/packages/epetra/doc/index.doc
+
+EXAMPLE_PATH           = ../../../../Trilinos/packages/epetra/example

@@ -53,3 +53,6 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/amesos/src
+INPUT                 += ../../../../Trilinos/packages/amesos/doc/index.doc
+
+EXAMPLE_PATH           = ../../../../Trilinos/packages/amesos/example

@@ -53,3 +53,4 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/pliris/src
+INPUT                 += ../../../../Trilinos/packages/pliris/doc/index_my.doc
