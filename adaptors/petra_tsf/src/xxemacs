@@ -1,2 +1,0 @@
-#!/bin/csh
-xemacs -geom 120x73 Petra_TSF_$1.h Petra_TSF_$1.cc
