@@ -778,8 +778,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int NcenterNodes;
   int * perm = NULL;
   char str[80];
-  struct amalg_drop * temp;
-  double * scaled_diag;
+  struct amalg_drop * temp = 0;
+  double * scaled_diag = 0;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -898,8 +898,14 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   *total_nz = count;
 
-  if( ML_Aggregate_Get_UseDropping() == ML_NO ) temp->scaled_diag = scaled_diag;
-  
+  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
+    if( temp == 0 ) {
+      fprintf( stderr, "Something wrong here...\n" );
+      exit( EXIT_FAILURE );
+    }
+    temp->scaled_diag = scaled_diag;
+  }
+
 #ifdef DUMP_MATLAB_FILE
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
       fp = fopen(str,"w");
