@@ -140,6 +140,7 @@ KLU = \
 	$(srcdir)/btf/strongcomp.c \
 	$(srcdir)/colamd/colamd.c \
 	$(srcdir)/klu_btf/klu_btf_analyze.c \
+	$(srcdir)/klu_btf/klu_btf_analyze_given.c \
 	$(srcdir)/klu_btf/klu_btf_defaults.c \
 	$(srcdir)/klu_btf/klu_btf_factor.c \
 	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
