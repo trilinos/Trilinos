@@ -4,21 +4,25 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#ifdef PETRA_MPI
+#ifdef EPETRA_MPI
 #include "mpi.h"
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
 #endif
 #include "Trilinos_Util.h"
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "Petra_Comm.h"
-#include "Petra_Time.h"
-#include "Petra_Map.h"
-#include "Petra_BlockMap.h"
-#include "Petra_RDP_MultiVector.h"
-#include "Petra_RDP_Vector.h"
-#include "Petra_RDP_CRS_Matrix.h"
-#include "Petra_CRS_Graph.h"
+#include "Epetra_Comm.h"
+#include "Epetra_Time.h"
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_Export.h"
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +30,7 @@ int main(int argc, char *argv[])
   int ierr = 0, i, j;
   bool debug = false;
 
-#ifdef PETRA_MPI
+#ifdef EPETRA_MPI
 
   // Initialize MPI
 
@@ -35,11 +39,13 @@ int main(int argc, char *argv[])
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
 #else
 
   int size = 1; // Serial case (not using MPI)
   int rank = 0;
+  Epetra_SerialComm Comm;
 
 #endif
   bool verbose = true;
@@ -51,12 +57,6 @@ int main(int argc, char *argv[])
   */
 
 
-#ifdef PETRA_MPI
-  Petra_Comm & Comm = *new Petra_Comm( MPI_COMM_WORLD );
-#else
-  Petra_Comm & Comm = *new Petra_Comm();
-#endif
-
  /* 
   char tmp;
   if (rank==0) cout << "Press any key to continue..."<< endl;
@@ -65,8 +65,7 @@ int main(int argc, char *argv[])
  */ 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-              << " is alive."<<endl;
+  if (verbose) cout << Comm << endl;
 
   bool verbose1 = verbose;
 
@@ -97,13 +96,13 @@ int main(int argc, char *argv[])
   for (i=0; i<NumMyEquations; i++) NumNz[i] = bindx[i+1] - bindx[i] + 1;
 
 
-  Petra_Map& Map = *new Petra_Map(NumGlobalEquations, NumMyEquations, 
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 
 			MyGlobalEquations, 0, Comm);
  
-  Petra_Time & timer = *new Petra_Time(Comm);
+  Epetra_Time timer(Comm);
 
   double start = timer.ElapsedTime();
-  Petra_RDP_CRS_Matrix& A = *new Petra_RDP_CRS_Matrix(Copy, Map, NumNz);
+  Epetra_CrsMatrix A(Copy, Map, NumNz);
   
   /* Add  rows one-at-a-time */
 
@@ -122,15 +121,15 @@ int main(int argc, char *argv[])
   
   if (verbose) cout << "\nTime to construct A                = " << timer.ElapsedTime() - start << endl;
   double * xexactt = xexact;
-  Petra_RDP_Vector& xx = *new Petra_RDP_Vector(Copy, Map, xexactt);
+  Epetra_Vector xx(Copy, Map, xexactt);
 
   double * bt = b;
-  Petra_RDP_Vector& bb = *new Petra_RDP_Vector(Copy, Map, bt);
-  Petra_RDP_Vector& bcomp = *new Petra_RDP_Vector(Map);
+  Epetra_Vector bb(Copy, Map, bt);
+  Epetra_Vector bcomp(Map);
 
   // Sanity check
   assert(A.Multiply(false, xx, bcomp)==0);
-  Petra_RDP_Vector& resid = *new Petra_RDP_Vector(Map); 
+  Epetra_Vector resid(Map); 
  
   assert(resid.Update(1.0, bb, -1.0, bcomp, 0.0)==0);
 
@@ -148,7 +147,7 @@ int main(int argc, char *argv[])
   //    transpose graph on each processor
 
   start = timer.ElapsedTime();
-  Petra_CRS_Graph AG = A.Graph(); // Get matrix graph
+  Epetra_CrsGraph AG = A.Graph(); // Get matrix graph
 
   int NumMyCols = AG.NumMyCols();
   int * TransNumNz = new int[NumMyCols];
@@ -187,9 +186,9 @@ int main(int argc, char *argv[])
   //  Build Transpose matrix with some rows being shared across processors.
   //  We will use a view here since the matrix will not be used for anything else
 
-  const Petra_Map & TransMap = A.ImportMap();
+  const Epetra_Map & TransMap = A.ImportMap();
 
-  Petra_RDP_CRS_Matrix & TempTransA1 = *new Petra_RDP_CRS_Matrix(View, TransMap, TransNumNz);
+  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz);
   int * TransMyGlobalEquations = new int[NumMyCols];
   TransMap.MyGlobalElements(TransMyGlobalEquations);
   
@@ -208,11 +207,11 @@ int main(int argc, char *argv[])
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
 
-  Petra_RDP_CRS_Matrix& TransA1 = *new Petra_RDP_CRS_Matrix(Copy, Map,0);
+  Epetra_CrsMatrix TransA1(Copy, Map,0);
 
   // Create an Export object that will move TempTransA around
 
-  Petra_Export & Export = *new Petra_Export(TransMap, Map);
+  Epetra_Export Export(TransMap, Map);
 
   assert(TransA1.Export(TempTransA1, Export, Add)==0);
   
@@ -224,12 +223,12 @@ int main(int argc, char *argv[])
   // Now compute b = A' * x using the transpose option on Multiply and using 
   // created transpose matrix
 
-  Petra_RDP_Vector& x = *new Petra_RDP_Vector(Map);
+  Epetra_Vector x(Map);
   x.Random(); // Fill with random numbers
 
-  Petra_RDP_Vector& b1 = *new Petra_RDP_Vector(Map);
+  Epetra_Vector b1(Map);
   assert(A.Multiply(true, x, b1)==0);
-  Petra_RDP_Vector& b2 = *new Petra_RDP_Vector(Map);
+  Epetra_Vector b2(Map);
   assert(TransA1.Multiply(false, x, b2)==0);
  
   assert(resid.Update(1.0, b1, -1.0, b2, 0.0)==0);
@@ -248,11 +247,11 @@ int main(int argc, char *argv[])
   // Extract newly constructed matrix one entry at a time and
   //  build Transpose matrix with some rows being shared across processors.
 
-  // const Petra_Map & TransMap = A.ImportMap();
+  // const Epetra_Map & TransMap = A.ImportMap();
 
   start = timer.ElapsedTime();
 
-  Petra_RDP_CRS_Matrix & TempTransA2 = *new Petra_RDP_CRS_Matrix(Copy, TransMap, 0);
+  Epetra_CrsMatrix TempTransA2(Copy, TransMap, 0);
   TransMap.MyGlobalElements(TransMyGlobalEquations);
 
   for (int LocalRow=0; LocalRow<NumMyEquations; LocalRow++) {
@@ -276,11 +275,11 @@ int main(int argc, char *argv[])
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
 
-  Petra_RDP_CRS_Matrix& TransA2 = *new Petra_RDP_CRS_Matrix(Copy, Map,0);
+  Epetra_CrsMatrix TransA2(Copy, Map,0);
 
   // Create an Export object that will move TempTransA around
 
-  // Petra_Export & Export = *new Petra_Export(TransMap, Map); // Export already built
+  // Epetra_Export Export(TransMap, Map); // Export already built
 
   assert(TransA2.Export(TempTransA2, Export, Add)==0);
   
@@ -289,12 +288,12 @@ int main(int argc, char *argv[])
   // Now compute b = A' * x using the transpose option on Multiply and using 
   // created transpose matrix
 
-  // Petra_RDP_Vector& x = *new Petra_RDP_Vector(Map);
+  // Epetra_Vector x(Map);
   // x.Random(); // Fill with random numbers
 
-  // Petra_RDP_Vector& b1 = *new Petra_RDP_Vector(Map);
+  // Epetra_Vector b1(Map);
   assert(A.Multiply(true, x, b1)==0);
-  // Petra_RDP_Vector& b2 = *new Petra_RDP_Vector(Map);
+  // Epetra_Vector b2(Map);
   assert(TransA2.Multiply(false, x, b2)==0);
  
   assert(resid.Update(1.0, b1, -1.0, b2, 0.0)==0);
@@ -330,25 +329,7 @@ int main(int argc, char *argv[])
   delete [] NumNz;
   delete [] TransNumNz;
 
-  delete &bcomp;
-  delete &bb;
-  delete &xx;
-  delete &b1;
-  delete &b2;
-  delete &resid;
-  delete &x;
-  delete &A;
-  delete &TransA1;
-  delete &TransA2;
-  delete &TempTransA1;
-  delete &TempTransA2;
-
-  delete &Export;
-
-  delete &Map;
-  delete &Comm;
-				       
-#ifdef PETRA_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
