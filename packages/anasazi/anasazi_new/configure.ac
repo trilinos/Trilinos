@@ -399,6 +399,8 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
+		example/ModeLaplace/Makefile
+		example/BlockArnoldi/Makefile
 		])
 
 AC_OUTPUT()
