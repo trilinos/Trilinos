@@ -387,7 +387,7 @@ static int LB_ParMetis_Jostle(
 
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
-  scatter = 0;              /* default */
+  scatter = 1;              /* default */
   LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
   LB_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
