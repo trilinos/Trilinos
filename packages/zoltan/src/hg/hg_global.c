@@ -97,11 +97,16 @@ static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
     weight_avg = (float)hg->nVtx;
   weight_avg /= (float)p;
 
+  printf("AAA weight_avg:%f\n",weight_avg);
   for (i=0; i<hg->nVtx; i++)
-  { if (number<p && weight_sum+(hg->vwgt?hg->vwgt[i]:1.0) > number*weight_avg)
+  { /*if (number<p && weight_sum+(hg->vwgt?hg->vwgt[i]:1.0) > number*weight_avg)
       number++;
+*/
     part[i] = number-1;
     weight_sum += hg->vwgt?hg->vwgt[i]:1.0;
+    if (number<p && weight_sum > number*weight_avg)
+      number++;
+    printf("AAA part[%d] = %d weightsum:%f\n",i,part[i],weight_sum);
   }
   return ZOLTAN_OK;
 }

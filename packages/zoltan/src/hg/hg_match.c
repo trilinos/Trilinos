@@ -160,9 +160,7 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
    {
-   int i,j,k=0, ii, jj ;
-   int *v1, *v2 ;
-   int random ;
+   int i, j, k=0, *v1, *v2, random ;
    char *yo = "matching_rem" ;
 
    if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ) ||
@@ -182,22 +180,19 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
           if (i < g->neigh[j])
              {
              v1[k] = i ;
-             v2[k] = g->neigh[j] ;
-             k++ ;
+             v2[k++] = g->neigh[j] ;
              }
 
-   for (i = k ; i > 0 && (*limit) > 0 ; i--)
+   while (k>0 && (*limit)>0)
       {
-      random = rand() % i ;
-      ii = v1[random] ;
-      jj = v2[random] ;
-      v1[random] = v1[i-1] ;
-      v2[random] = v2[i-1] ;
-
-      if (match[ii] == ii && match[jj] == jj)
+      i = v1[random=rand()%k];
+      j = v2[random];
+      v1[random] = v1[--k] ;
+      v2[random] = v2[k] ;
+      if (match[i] == i && match[j] == j)
          {
-         match[ii] = jj ;
-         match[jj] = ii ;
+         match[i] = j ;
+         match[j] = i ;
          (*limit)-- ;
          }
       }
@@ -206,7 +201,6 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
    ZOLTAN_FREE (&v2) ;
    return ZOLTAN_OK ;
    }
-
 
 /*****************************************************************************/
 
@@ -528,6 +522,7 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
 	  match[best_middle] = best_distant;
 	  match[best_distant] = best_middle;
 	  size++;
+          (*limit)--;
         }
         else if (gain_2>EPS)
         { match[i] = best_2;

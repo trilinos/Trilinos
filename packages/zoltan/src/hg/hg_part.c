@@ -160,7 +160,12 @@ int Zoltan_HG_HPart_Lib (
       return ierr ;
     }
 
-    if (c_hg.nVtx < hgp->redl)
+    /* Check the consistency of the coarsening */
+    if (limit != c_hg.nVtx-hgp->redl)
+    { printf("limit %d is not %d-%d!\n",limit,c_hg.nVtx,hgp->redl);
+      return ZOLTAN_FATAL;
+    } 
+    else if (c_hg.nVtx < hgp->redl)
     { printf("wanted coarsen to %d vertices, but reached %d vertices.\n",hgp->redl,c_hg.nVtx);
       return ZOLTAN_FATAL;
     }
