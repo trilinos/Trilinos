@@ -1,4 +1,4 @@
-\documentclass{article}[12pt]
+\documentclass{article}[11pt]
 % fancybox prevents the TOC from printing
 %\usepackage{fancyhdr, fancybox, tabularx, verbatim, epsfig}
 \usepackage{fancyhdr, tabularx, verbatim, epsfig}
@@ -74,19 +74,19 @@
 %
 %\hspace{2.22in}
 \begin{center}
-SAND2004--2195 \\
+SAND2004--XXXX \\
 %\hfill
 %\hspace{2.41in}
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed May 2004
+Printed October 2004
 \end{center}
 
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf ML 4.0 Smoothed Aggregation User's Guide (DRAFT)}}
+{\Large {\bf ML 3.1 Smoothed Aggregation User's Guide}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -1389,7 +1389,7 @@ from each level's smoother, to the aggregation scheme, and a lot of others
 others.
 Often, for non-standard problems, there is no theory to support this choice.
 Also, sometimes it is difficult to understand which component of the
-multilevel cycle is not properly working. To thalp to set the multilevel
+multilevel cycle is not properly working. To help to set the multilevel
 components, \ML~offers a set of tools, to (empirically)
 analyze several components of the multilevel cycles, and the finest-level
 matrix.
@@ -1551,7 +1551,7 @@ tune the sparse eigensolver:
   (10 being verbose). Default = {\tt 0}.}
 
 \choicebox{\tt analysis: print anasazi status}{[{\tt bool}]
-  If true!, prints out the status of the eigensolver after
+  If {\tt true}, prints out the status of the eigensolver after
     convergence. Default: {\tt false}.}
 
 This fragment of code computes the eigenvalues of $A$ and $P^{-1}A$ using
@@ -1777,7 +1777,7 @@ x-coord y-coord <z-coord> aggregate-number
 (\verb!z-coord! is present only for 3D computations.) 
 A visualization software, called \verb!XD3D!\footnote{,
 More information about {\tt XD3D} can be found at the web site
-{\tt http://www.inria.fr/.....}}
+{\tt http://www.cmap.polytechnique.fr/~jouve/xd3d/index.php.}}
 can be used to visualize files in this format, but only for 2D problems.
 Results can be as reported in figure~\ref{fig:viz:aggr}.
 

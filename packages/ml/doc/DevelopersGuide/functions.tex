@@ -122,7 +122,7 @@ building and setting the aggregation options.
 {\flushleft{\bf Description} \hrulefill}
 \vspace{1em}
 
-Set the aggregate coarsening scheme to be used as `coupled' (see Section \ref{aggregation options}).
+Set the aggregate coarsening scheme to be used as `coupled'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -140,7 +140,7 @@ Set the aggregate coarsening scheme to be used as `coupled' (see Section \ref{ag
 {\flushleft{\bf Description} \hrulefill}
 \vspace{1em}
 
-Set the aggregate coarsening scheme to be used as `MIS' (see Section \ref{aggregation options}).
+Set the aggregate coarsening scheme to be used as `MIS'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -160,7 +160,7 @@ Set the aggregate coarsening scheme to be used as `MIS' (see Section \ref{aggreg
 {\flushleft{\bf Description} \hrulefill}
 \vspace{1em}
 
-Set the aggregate coarsening scheme to be used as `uncoupled' (see Section \ref{aggregation options}).
+Set the aggregate coarsening scheme to be used as `uncoupled'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -179,7 +179,7 @@ Set the aggregate coarsening scheme to be used as `uncoupled' (see Section \ref{
 {\flushleft{\bf Description} \hrulefill}
 \vspace{1em}
 
-Set the aggregate coarsening scheme to be used as `METIS (see Section \ref{aggregation options}).
+Set the aggregate coarsening scheme to be used as `METIS'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -197,7 +197,7 @@ Set the aggregate coarsening scheme to be used as `METIS (see Section \ref{aggre
 {\flushleft{\bf Description} \hrulefill}
 \vspace{1em}
 
-Set the aggregate coarsening scheme to be used as `ParMETIS (see Section \ref{aggregation options}).
+Set the aggregate coarsening scheme to be used as `ParMETIS'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -247,7 +247,7 @@ $P_t$ are the seed vectors (tentative prolongator).
 \vspace{1em}
 
 Set the maximum coarsest mesh to `size'. No further coarsening is performed if the total 
-number of matrix equations is less than this `size' (see Section \ref{multigrid options}).
+number of matrix equations is less than this `size'.
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -374,8 +374,8 @@ the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor).
 \vspace{1em}
 
 Set the drop tolerance used when creating the matrix graph for aggregation. Entries in the
-matrix $A$ are dropped when $ | A(i,j) | \le tol\_d * \sqrt{ | A(i,i) A(j,j) | } $. See
-Section \ref{aggregation options} for more details.
+matrix $A$ are dropped when $ | A(i,j) | \le tol\_d * \sqrt{ | A(i,i) A(j,j) |
+} $. 
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -1165,10 +1165,10 @@ k within the multigrid solver context ml\_object.
                stored within the multigrid hierarchy.}
 
 \optionbox{getrow}{On input, a function pointer to the user-defined matrix getrow
-                   function. See Section \ref{single}.}
+                   function.}
 
 \optionbox{comm}{On input, a function pointer to the user-defined communication
-                 function. See Section \ref{sec:multiple}.}
+                 function.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1195,7 +1195,7 @@ k within the multigrid solver context ml\_object.
                   is stored within the multigrid hierarchy.}
 
 \optionbox{matvec}{On input, a function pointer to the user-defined matrix-vector
-                   product function. See Section \ref{single}}.
+                   product function.}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1258,7 +1258,7 @@ pass in the data pointer `data' via ML\_Get\_MySmootherData.
 
 \optionbox{func}{On input, smoothing function to be used at level k when performing
                  a multigrid V cycle. The specific signature and details of this
-                 function are given in Section \ref{multigrid options}.}
+                 function are given in the Users Guide.}
 
 \optionbox{label}{On input, a character string to be associated with Smoother. This string
                   is printed by some routines when identifying the method.}

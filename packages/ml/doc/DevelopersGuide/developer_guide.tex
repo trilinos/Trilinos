@@ -6,7 +6,7 @@
 \bibliographystyle{alpha}
 \newtheorem{remark}{Remark}
 \newcommand{\HRule}{\noindent\rule{\linewidth}{1mm}}
-\title{ML 3.0 Developer's Guide}
+\title{ML 3.1 Developer's Guide}
 \SANDnum{SAND2004-XXXX}
 \SANDauthor{
 Marzio Sala, Jonathan J. Hu, Ray S. Tuminaro}
@@ -14,7 +14,7 @@ Marzio Sala, Jonathan J. Hu, Ray S. Tuminaro}
 \SANDprintDate{May 2004}
 \SANDreleaseType{Internal Use Only}
 
-\title{ML 3.0 Developer's Guide (DRAFT)}
+\title{ML 3.1 Developer's Guide}
 \author{
 Marzio  Sala \\
 Computational Math \& Algorithms \\
@@ -32,7 +32,7 @@ Livermore, CA 94551-0969\\
 \date{\today}
 
 \newcommand{\Aztec}  {{\bf Aztec }}
-\newcommand{\ML}     {{\bf ML }}
+\newcommand{\ML}     {{\sc ml }}
 \newcommand{\be}     {\begin{enumerate}}
 \newcommand{\ee}     {\end{enumerate}}
 \def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
@@ -59,7 +59,7 @@ Livermore, CA 94551-0969\\
 matrix, $b$ is a user supplied vector of length $n$ and $x$ is a vector of
 length $n$ to be computed. \ML\ should be used on large sparse linear
 systems arising from partial differential equation (PDE) discretizations.
-For an overview of ML, we refer to the ML users' guide.
+For an overview of \ML, we refer to the \ML\ users' guide.
 
 This guide is intended for anyone who will be adding to or modifying the \ML
 source code.  This document contains suggested practices, naming conventions,
@@ -73,7 +73,7 @@ established in the Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}.
 
 \section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD 
-programs that funded development of ML.
+programs that funded the development of ML.
 
 \clearpage
 
@@ -118,7 +118,7 @@ programs that funded development of ML.
 %This document was written with the\ML is a large software project (composed by more than 100 thousand
 %lines),
 \ML development was started in 1997 by Ray Tuminaro and Charles Tong.
-Currently, there are 5 full- and part-time developers.
+Currently, there are several full- and part-time developers.
 The kernel of \ML is written in ANSI C, and there is a rich C++ interface
 for Trilinos users and developers. 
 
@@ -139,12 +139,12 @@ http://software.sandia.gov/ml.
 \item new aggregation schemes;
 \item new smoothers;
 \item new coarse solvers;
-\item new multigrid cycles;
+\item new multigrid cycles.
 \end{itemize}
 However, developers should keep the following goals in mind:
 \begin{enumerate}
-\item Code should be robust and error free.
-\item Code should be easy to use and understand.
+\item Code should be robust and error free;
+\item Code should be easy to use and understand;
 \item Code should be easy to maintain.
 \end{enumerate}
 This guide furnished guides, suggestions, and guidelines to help present and
@@ -183,17 +183,14 @@ The goal of this document is to guide new \ML developers in:
 \begin{itemize}
 %\setlength{\itemsep}{-2pt}
 \item getting started (in Section~\ref{sec:started});
-\item modifying how \ML is configured and built (in Section~\ref{sec:configure});
-\item knowing what to do to extend \ML (in Section~\ref{sec:extend});
 \item using available development tools: Bonsai, Bugzilla, Mailman, and the
 cvs repository 
   (in Section~\ref{sec:tools});
-\item writing Doxygen documentation (in Section~\ref{sec:doxygen});
+\item modifying how \ML is configured and built (in Section~\ref{sec:configure});
 \item adding a new test to the \ML repository (in Section~\ref{sec:add_test});
+\item writing Doxygen documentation (in Section~\ref{sec:doxygen});
 \item defining some suggested practices to write code for \ML (in Section~\ref{sec:code});
 \item better understanding the \ML structures (in Section~\ref{sec:structures});
-\item understanding current and future \ML developments (in
-  Section~\ref{sec:to-do}).
 \end{itemize}
 
 \begin{remark}
@@ -239,7 +236,7 @@ developer has access to the CVS repository on {\tt
   software.sandia.gov}. In addition, the user account must be in the
 {\tt trilinos} and {\tt cvs} group on this computer. To request an
 account, send a note to {\tt trilinos-help@software.sandia.gov}.  The
-following variables must be defined:
+following variables must be defined (and exported):
 \begin{verbatim}
 CVSROOT=:ext:your_user_name@software.sandia.gov:/space/CVS
 CVS_RHS=ssh
@@ -252,7 +249,7 @@ cvs checkout ml
 For a more detailed description of CVS commands, we refer to the
 Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}, and to the GNU CVS home.
 
-Please refer to the ML Users Guide for guidance in configuring \ML,
+Please refer to the \ML\ Users Guide for guidance in configuring \ML,
 We suggest creating a simple script that contains all the parameters for {\tt
 configure}. Be sure to use continuation characters ('\verb!\!') properly.
 The characters should be at the end of every line, except the last line, and
@@ -263,6 +260,55 @@ spelling mistakes in configure invocation scripts.
   Other tips for making the configure and build more efficient can
   be found in \cite[Section 2.6]{Trilinos-Dev-Guide}.
 \end{remark}
+
+%%%
+%%%
+%%%
+
+\section{Related Tools}
+\label{sec:tools}
+%
+\subsection{Bonsai}
+\label{bonsai}
+Bonsai is a viewer for the CVS repository that runs via a web browser.
+Some of its capabilities include
+        \begin{enumerate}
+	\item file browsing, with or without "blame" annotation
+	\item differencing of file versions
+	\item repository searches based on file or directory names
+	\item determining CVS changes based on date or time
+        \end{enumerate}
+Bonsai is located at http://software.sandia.gov/bonsai.
+%
+\subsection{Bugzilla}
+%
+Users and developers are encouraged to use Bugzilla, to
+report configuration problems, bugs, suggest enhancements, or request
+new features. Bugzilla can be found on the web at 
+\begin{verbatim}
+http://software.sandia.gov/bugzilla
+\end{verbatim}
+If reporting a configuration problem or a bug, please attach the
+configure script that has been used, and the compilation and/or run-time
+error.
+
+\begin{remark}
+  When checking in a fix that addresses a bug reported in bugzilla,
+  include the bug number.  Also include a short description of the fix.
+\end{remark}
+
+\subsection{Mailing Lists}
+
+Any substantive developer discussion should take place on the \ML
+developer's list, 
+\begin{verbatim}
+ml-developers@software.sandia.gov
+\end{verbatim}
+If the discussion is off-line, it's entirely appropriate to email a
+summary of the discussion to the list.
+The list archives the discussion.  This can be helpful to the
+developers.  Moreover, this discussion can be used as documentation during
+external reviews.
 
 %%% ============================= %%%
 %%% P A R T  2 : use of configure %%%
@@ -293,13 +339,13 @@ spelling mistakes in configure invocation scripts.
 %%%
 %%%
 
-\section{Modifying how \ML is configured and built}
+\section{Modifying How \ML is Configured and Built}
 \label{sec:configure}
 
 \ML is built using the GNU tools autoconf and automake~\cite{Autoconf,Automake}.
 
 As a small example of how to add a new configure option, let us 
-assume that the current working director is Trilinos/packages/ml.
+assume that the current working director is {\tt Trilinos/packages/ml}.
 The file configure.ac contains all of the configure line option definitions
 (e.g., \verb!--enable-ml_flops!).   Suppose that we want to add the configure option
 ``\verb!--enable-ml_foo!". (Note that \verb!ml_foo! has an underscore
@@ -315,15 +361,15 @@ We then run bootstrap:
 ... some output here ...
 \end{verbatim}
 Among other things, bootstrapping  will modify
-\verb!src/ml\_config.h.in! and create a new macro, \verb!HAVE_ML_FOO!.
-When \ML is configured, the file \verb!ml\_config.h! is created.
+\verb!src/ml_config.h.in! and create a new macro, \verb!HAVE_ML_FOO!.
+When \ML is configured, the file \verb!ml_config.h! is created.
 If the option \verb!--enable-ml_foo! was supplied on the command line, then
 \verb!HAVE_ML_FOO! will be defined in \verb!ml_config.h!.
 
 We could use this macro directly in \ML.
 Suppose, however, the macro \verb!ML_FOO! is already used
 heavily in \ML, and we don't want to change the ml source.
-\ML has an include file, \verb!src/Include/ml\_common.h!, that is included in
+\ML has an include file, \verb!src/Include/ml_common.h!, that is included in
 every \ML source file.
 We add the following to \verb!ml_common.h!:
 \begin{verbatim}
@@ -345,7 +391,7 @@ macro \verb!ML_FOO! inside the ml source.
 executed every night on a variety of platforms.
 This suite verifies
 that important part of the code execute correctly, and
-that developers' changes do not affect existing code.  For more details
+that latest changes do not break the existing code.  For more details
 on the test harness, we refer to \cite[Section 3.3]{Trilinos-Dev-Guide}.
 
 There are two ways of adding a new test:
@@ -408,6 +454,11 @@ has been included in \ML.
 \section{How to Write Doxygen Documentation}
 \label{sec:doxygen}
 
+\ML uses doxygen for the comments in C++ code. As
+Doxygen generally does not produce good output for C code, the
+\ML\ C files are not Most Doxygen-complaint. (However, the most important
+  \ML structures have Doxygen comments.)
+
 This section gives some general guidelines about how to write Doxygen
 documentation.  First, a comment on writing comments: you want your comments
 to tell {\sl what your} code does, not {\sl how}.  Remember also that comments
@@ -418,15 +469,9 @@ telling people what it does, and possibly {\sl why} it does it.  Ideally,
 The best way to write comment would be to write the code so that the working
 is obvious, and it's a waste of time to explain badly written code.
 
-\ML uses doxygen for the comments~\ref{doxygen} in C++ code. Most
-  of the C code is not Doxygen-complaint. (However, the most important
-  \ML structures have Doxygen comments.) It is better to write good
-
-For C++ code, always put Doxygen comments every class, and every
-  function in the header file.  Other non-doxygen comments can be added
-  to the source file.
-Also, comment everything in headers. This is where the
-  interface is, and where people usually look for help.
+In C++ code, developers should adopt Doxygen-style comments for every class.
+These comments will be included in the header file.  
+This is where the  interface is, and where people usually look for help.
 
 It is suggested to start a new file with a small Doxygen comment of type:
 \begin{verbatim}
@@ -442,15 +487,15 @@ It is suggested to start a new file with a small Doxygen comment of type:
  */
 \end{verbatim}
 
-Functions/methods can be commented in Doxygen stle as
+Functions/methods can be commented in Doxygen style as
 \begin{verbatim}
 /*! Here a brief description of the function */
 /**
  * Search a string in a buffer.
  *
- * @param buffer the buffer in which to search.
- * @param string the string to look for.
- * @return the index of the first occurrence.
+ * \param buffer (In) the buffer in which to search.
+ * \param string (In) the string to look for.
+ * \return the index of the first occurrence.
  */
 int ML_find_string(Buffer& buffer, String& string);
 \end{verbatim}
@@ -467,65 +512,7 @@ This allows the automatic generation of HTML documentation.
 %%%
 %%%
 
-\section{Related Tools}
-\label{sec:tools}
-%
-\subsection{Bonsai}
-\label{bonsai}
-Bonsai is a viewer for the CVS repository that runs via a web browser.
-Some of its capabilities include
-        \begin{enumerate}
-	\item file browsing, with or without "blame" annotation
-	\item differencing of file versions
-	\item repository searches based on file or directory names
-	\item determining CVS changes based on date or time
-        \end{enumerate}
-Bonsai is located at http://software.sandia.gov/bonsai.
-%
-\subsection{Bugzilla}
-%
-Users and developers are encouraged to use Bugzilla~\ref{bugzilla}, to
-report configuration problems, bugs, suggest enhancements, or request
-new features. Bugzilla can be found on the web at 
-\begin{verbatim}
-http://software.sandia.gov/bugzilla
-\end{verbatim}
-If reporting a configuration problem or a bug, please attach the
-configure script that has been used, and the compilation and/or run-time
-error.
-
-\subsection{How to Use the CVS Repository}
-
-\ML sources are contained in a CVS repository. 
-Remember that CVS log files are part of \ML's official
-  documentation and therefore may (almost certainly, in fact) be seen by
-  persons outside the development team.  With that in mind, write a CVS
-  log message as if it will be published for the world to see.
-
-\begin{remark}
-  When checking in a fix that addresses a bug reported in bugzilla,
-  include the bug number.  Also include a short description of the fix.
-\end{remark}
-
-\subsection{Mailing Lists}
-
-Any substantive developer discussion should take place on the \ML
-developer's list, 
-\begin{verbatim}
-ml-developers@software.sandia.gov
-\end{verbatim}
-If the discussion is off-line, it's entirely appropriate to email a
-summary of the discussion to the list.
-
-The list archives the discussion.  This can be helpful to the
-developers.  Moreover, this discussion can be used as documention during
-external reviews.
-
-%%%
-%%%
-%%%
-
-\section{Exporting \ML's dependencies to other packages}
+\section{Exporting \ML's Dependencies to Other Packages}
 \label{exporting dependencies}
 
 \ML's dependencies are exported to other packages via the file
@@ -582,9 +569,9 @@ See `config.log' for more details.
 {\bf Answer:} The most likely problem is an incorrect configure line option.
 Check that all of the library and include locations that you've specified are
 correct.
-Look in config.log to find the exact error.
+Look in {\tt config.log} to find the exact error.
 %
-\item {\bf Question:} I am building with LAM under PH9 Linux, and
+\item {\bf Question:} I am building with LAM under RH9 Linux, and
   {\tt configure} complains that it cannot find {\tt mpi++.h}.\\
 {\bf Answer:} Add \verb!-DLAM_BUILDING! to your CXX parameters; for
 instance,
@@ -593,10 +580,10 @@ instance,
 \end{verbatim}
 %
 \item {\bf Question:} I'm getting warnings about non-modifiable left hand sides
-when using ML\_free.\\
-{\bf Answer:} ML\_free is a macro.  No casting of the argument is necessary or
+when using {\tt ML\_free}.\\
+{\bf Answer:} {\tt ML\_free} is a macro.  No casting of the argument is necessary or
 even correct.
-The argument to ML\_free is used within the
+The argument to {\tt ML\_free} is used within the
 macro source on the left hand side of a logical check.
   \begin{enumerate}
     \item[ ] Good: ML\_free(i);
@@ -609,6 +596,12 @@ ML?}\\
 {\bf Answer:} C++ style comments are fine to use in C++ files.
 You must use C style comments, i.e., \verb!/* */!, in \verb!*.c! files.
 Otherwise, the code will not compile on either Solaris machines or on Janus.
+
+\item {\bf Can I use C99?}\\
+{\bf Answer:} Most compilers do not support C99 standard. Only C89 code should
+  be included in the \ML distribution. The rational is that many
+  platforms (like ASCI-Red, for instance) still have very old compilers,
+  that are not C99-compliant.
 \end{enumerate}
 
 %%% ================================ %%%
@@ -639,20 +632,18 @@ When the code and the comments disagree, both are probably wrong.
 %%%
 %%%
 
-\section{Suggested Practices}
+\section{Suggested Practices for C++ code}
 \label{sec:code}
 
 \ML is written in both C and C++.
 The C++ programming language differs substantially from the C
 programming language. In terms of usage, C is more like Pascal than it
-is like C++. This style guide differs from traditional C style guides in
-places where the ``C mindset'' is detrimental to the object-oriented
-outlook desired for C++ development.
+is like C++. 
 
 Therefore, it is important to adopt good coding habits, one for C, and
 another for C++. A good style guide can enhance the quality of the code
-that we write.  This style guide tries to present a standard set of
-methods for achieving that end.
+that we write.  This Section tries to present a standard set of
+methods for achieving that end for C++ code.
 
 It is, however, the end itself that is important. Deviations from this
 standard style are acceptable if they enhance readability and code
@@ -662,7 +653,7 @@ a mistake, but purposefully are doing a local variation for a good
 cause.
 
 Further suggestions on ``how to write good C/C++ code'' can be found,
-for instance, in the NOX guide, the Epetra Developers Coding
+for instance, in the NOX guide, and the Epetra Developers Coding
 Guidelines~\cite{Epetra-Dev-Guide}.
 
 \subsection{General}
@@ -671,8 +662,8 @@ Guidelines~\cite{Epetra-Dev-Guide}.
 \item Any code that links to Trilinos, and any Trilinos file must define
   \verb!HAVE_CONFIG_H!.
 \item Although there is no maximum length requirement for source files,
-  files with more than about 1000 lines are cumbersome to deal
-  with. (Unfortunaly many \ML files are longer than 1000 lines.)
+  long files are cumbersome to deal
+  with. 
 \item Lines longer than 80 columns should be avoided. Use C/C++'s string
   concatenation to avoid unwieldy string literals and break long
   statements onto multiple lines. 
@@ -689,10 +680,10 @@ devices. Both of these behaviors result in code that is hard to read.
   directives are, by definition, non-standard, and can cause unexpected
   behavior when compiled on other systems. On another system, a \verb!#pragma!
   might even have the opposite meaning of the intended one.
-\item Macros are almost never necessary in C++.  The construct \verb!#define!
-  NAME value should never be used. Use a const or enum instead.
-  
-  The debugger can deal with them symbolically, while it can't with a
+\item Macros are seldom necessary in C++.  The construct \verb!#define!
+  \verb!NAME! value should never be used. Use a {\tt const} or {\tt enum}
+  instead, because the debugger can deal with them symbolically, 
+  while it can't with a
   \verb!#define!, and their scope is controlled and they only occupy a
   particular namespace, while \verb!#define! symbols apply everywhere except
   inside strings.
@@ -702,41 +693,38 @@ devices. Both of these behaviors result in code that is hard to read.
   restrictions on their usage, a particularly insidious source of bugs.
   Try not to carry forward this limitation into C++.
 \item When incrementally modifying existing code, follow the style of the code you are modifying, not your favorite style. Nothing is harder to read than code where the personal style changes from line to line.
-\item Don't use global data. Consider using file- or class-static data members instead.
-\item File static variables are more appropriate than class-static
-  variables, since they hide more of the class's implementation from the
-  reader of the header file. Of course, if you class implementation does
-  not fit within one file, this technique will not be usable.
+\item Don't use global data. Consider using file- or class-static data members
+instead. (However, the use of static data should be minimized if not avoided.)
 \item A char may be unsigned or signed. You can't assume either. Thus,
   only use (unmodified) char if you don't care about sign extension and
   can live with values in the range of 0-127.
-\item Always provide the return type of a function explicitely, The value
+\item Always provide the return type of a function explicitly, The value
   being returned should be enclosed in parenthesis.
   \begin{verbatim}
   return i;  // No!
   return(i); // Yes
   \end{verbatim}
 \item Functions with a return type of void should use an "empty" return
-  statment.
+  determent.
   \begin{verbatim}
   void foo() {
      ...
      return;
   }
   \end{verbatim}
-\item Functions that don't take any paramer should use an empty parameter
+\item Functions that don't take any parameter should use an empty parameter
 list, and not say void.
-\item Always define a pointer when you  declarare it. Either set it equal to
+\item Always define a pointer when you  declare it. Either set it equal to
 an address in memory, or set it equal to zero. If you don't define a pointer
 as you declare it, you will never know if it will be accessed before you
 assign to it. This goes both for local variables, and for class members in
 constructors.
-\item Use zero (0) instead of NULL in C++ code.
-\item Always inlcude a default case in a \verb!switch! statment, or in a
-sequence of \verb!if-else!'s.
-\item Do not use spaces around `.' or `->', or between unay operators and
+\item Use zero (0) instead of \verb!NULL! in C++ code.
+\item Always include a default case in a \verb!switch! statement, or an \verb!else! in a sequence of \verb!if-else if!'s.
+\item Do not use spaces around `\verb!.!' or `\verb!->!', or between unary operators and
 operands.
-\item Always provide a space on both sides of `=' signs and all loginal
+\item Always provide a space on both sides of `\verb!=!' signs and all
+virginal
 operators.
 \item Use parenthesis to make the code readable.
 \item The block of any \verb!if! statement should always follow on a separate
@@ -749,7 +737,7 @@ if (/*Something*/)      // Yes!
 \end{verbatim}
 \item Operators should have a space on both sides of them. 
 (Exception if the \verb!*! and \verb!&! deferencing operators.). This makes it
-easier to distringuish which usage is intended.
+easier to distinguish which usage is intended.
 \begin{verbatim}
 int* a   // defining a pointer to int
 a * b    // multiplying two variables
@@ -782,9 +770,7 @@ information for the file \verb!ml_foo.h!:
 
 #endif
 \end{verbatim}
-\item HOW DO WE DEAL WITH MPI???
-\item HOW DO WE DEAL WITH include system files??
-\item Definition of classes that are only accesse via pointers (\verb!*!) or
+\item Definition of classes that are only accessed via pointers (\verb!*!) or
 references (\verb!&!) should be declared using forward declarations, and not by
 including the header files.
 \end{itemize}
@@ -795,10 +781,9 @@ including the header files.
 \item All \ML functions should begin with \verb!ML_!;
 \item All \ML-Epetra C++ functions and classes should be in the namespace {\tt
   ML\_Epetra};
-\item All \ML functions should begin with an uppercase letter;
+\item All \ML functions and class names should begin with an uppercase letter;
 \item All \verb!Get! or \verb!Set! functions should be as follows:
 \verb!ML_Get_PrintLevel()!;
-\item All \ML class names should begin with an uppercase letter;
 \item All \ML class data members should end with an underscore (e.g. \verb!int NumLevel_!).
 No other variable names should ever end with an underscore;
 \item Do not use identifiers that begin with one or two underscores;
@@ -810,11 +795,6 @@ No other variable names should ever end with an underscore;
   \end{verbatim}
 \item Variables used for loops counters should be names \verb!i,j,k!, etc.
   in that order. 
-\end{itemize}
-
-\subsection{C++}
-
-\begin{itemize}
 \item For C++ code, C-style casts should never be used. User
   \verb!static_cast!, \verb!reinterprest_cast!, and \verb!const_cast! instead.
 \item \verb!const_cast! should be avoided as much as possible. When you need
@@ -823,7 +803,7 @@ to modify an object that is logically const but not bitwise const, use the
 \item Member definition in constructors: Member definition should be formatted
   as follows, each on their own line, with the colon preceding the first one,
 a comma following all but the last one, and the opening curl brace of the
-  function beody on a new line.
+  function body on a new line.
   \begin{verbatim}
   MLClass::MLClass(int foo)
   : SomeMemberVar(0),
@@ -832,16 +812,6 @@ a comma following all but the last one, and the opening curl brace of the
     ...
   }    
   \end{verbatim}
-\item The characters `\verb!*!' and `\verb!&!' should be
-written in the following way:
-\begin{verbatim}
-int* pointer;
-double& ref;
-\end{verbatim}
-Instead of saying the \verb!*i! is of type \verb!int!, say that \verb!i! is of
-  type \verb!int*!.
-\item Whenever possible, we prefer member initialization to assignment in the
-  body of the constructor.
 \item Declare only one variable per line.
 \begin{verbatim}
 int i,j; // No!
@@ -866,7 +836,7 @@ This is mainly to avoid confusion resulting from mixing \verb!int! and
 \subsection{Indentation}
 
 \begin{itemize}
-\item (Loose) convertion is to put the opening
+\item (Loose) convention is to put the opening
 brace last on the line, and put the closing brace first:
 \begin{verbatim}
 if (x is true) {
@@ -891,6 +861,14 @@ do {
   body of do-loop
 } while (condition);
 \end{verbatim}
+\item The characters `\verb!*!' and `\verb!&!' should be
+written in the following way:
+\begin{verbatim}
+int* pointer;
+double& ref;
+\end{verbatim}
+Instead of saying the \verb!*i! is of type \verb!int!, say that \verb!i! is of
+  type \verb!int*!.
 \item An else statement following an if should begin on the line following the
 i's closing brace.
 \begin{verbatim}
@@ -972,24 +950,6 @@ features: \verb!-ansi -pedantic -Wall!. Flag \verb!-ftrapv! can cause
 \verb!-Weffc++! can be very helpful, but recall that system files can
 produce a lot of warnings with this flag.
 
-\subsection{Suggestions}
-
-\begin{itemize}
-\item C code does {\sl not} allow C++-style comments (like
-  \verb!//!). Even if some compilers do not complain, it is a bad
-  habit to mix C++ and C coding pratices, and should be avoided.
-\item Most compilers do not support C99 standard. Only C89 code should
-  be included in the \ML distribution. The rational is that many
-  platforms (like ASCI-Red, for instance) still have very old compilers,
-  that are not C99-compliant..
-\item For C++ codes, is \verb!malloc()!, \verb!calloc()!, or
-  \verb!realloc()! used in lieu of \verb!new!?  C standard library
-  allocation functions should never be used in C++ programs, since C++
-  provides an allocation operator (\verb!new!)..
-\item Are arrays being deleted as if they were scalars?  {\tt delete
-    myCharArray} should be {\tt delete [] myCharArray}.
-\end{itemize}
-
 %%% ======================================================== %%%
 %%% G E N E R A L   I N F O R M A T I O N    A B O U T   M L %%%
 %%% ======================================================== %%%
@@ -1017,36 +977,44 @@ produce a lot of warnings with this flag.
 \ML has macros that wrap the system calls to allocate and free memory.
 ``ML\_allocate" should be used instead of ``malloc".
 ``ML\_free" should be used instead of ``free".
-One word of warning -- because ML\_free is a macro, you should avoid casting
-within the call to ML\_free:
-\begin{itemize}
-\item Good: \verb!ML\_free(i);!
-\item Bad: \verb!ML\_free( (void *) i);! (does not compile on SGI, for instance)
-\end{itemize}
-
 
 \subsection{Error Handling}
 
-\begin{itemize}
-\item Always check return values of functions for errors.
-\item Whenever possibly, try to recover from errors, by catching an integer
-return value. Currently \ML does not support \verb!try/ catch! blocks.
-\item Use \verb!assert()! calls extensively to check the invariants in your
+The code should always check return values of functions for errors and,
+whenever possible, try to recover from errors, by catching an integer
+return value\footnote{Currently \ML does not support {\tt try/catch}
+  blocks.}.
+The use of \verb!assert()! calls extensively to check the invariants in your
   code. This will dramatically decrease your debugging time by catching
-  inconsistencies early.
-\end{itemize}
+  inconsistencies early. See also Table~\ref{tab:macros}.
+
+\begin{table}
+\centering
+\begin{tabular}{| p{4cm} | p{10cm} | }
+\hline
+\verb!ML_CHK_ERR(ierr)!& If \verb@ierr != 0@, this macro prints out an
+error message, and returns \verb!ierr!. \\
+\verb!ML_CHK_ERRV(ierr)!& If \verb@ierr != 0@, this macro prints out an
+error message, and returns void. \\
+\verb!ML_RETURN(ierr)! & If \verb@ierr != 0@, this macro prints out an
+error message. This macro always returns \verb!ierr!. \\
+\verb!ML_EXIT(ierr)! & If \verb@ierr != 0@, this macro prints out an
+error message. This macro always exits. \\
+\hline
+\end{tabular}
+\caption{C++ return and exit macros.}
+\label{tab:macros}
+\end{table}
 
 \subsection{Output}
 
-\begin{itemize}
-\item \ML uses the concept of {\sl print level}. Each output sentence has a
+\ML uses the concept of {\sl print level}. Each output sentence has a
   value from - to 10 (10 being verbose), and it will be printed out only if
   the current print level is below this value. Each print statement should be
   preceded by a \verb!ML_Get_PrintLevel()!.
-\item Standard output should be sent to \verb!stdout! (C) or \verb!cout! (C++).
-\item Warnings and errors should be sent to \verb!stderr! (C) and \verb!cerr!
+Standard output should be sent to \verb!stdout! (C) or \verb!cout! (C++).
+Warnings and errors should be sent to \verb!stderr! (C) and \verb!cerr!
 (C++).
-\end{itemize}
 
 \subsection{How Getrow() Works}
 
@@ -1054,16 +1022,16 @@ The following simple code can be used to get all local rows of an
 \verb!ML_Operator!, here called \verb!Amat!.
 \begin{verbatim}
 int allocated = 1;
-int    * colInd = new int[allocated];
-double * colVal = new double[allocated];
-int    NumNonzeros;
-int    ierr;
+int* colInd = new int[allocated];
+double* colVal = new double[allocated];
+int NumNonzeros;
+int ierr;
 
-for (int i=0 ; i<Amat->outvec_leng ; ++i)
+for (int i = 0 ; i < Amat->outvec_leng ; ++i)
 {
   ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&NumNonzeros);
 
-  if( ierr == 0 ) {
+  if (ierr == 0) {
     do {
       delete [] colInd;
       delete [] colVal;
@@ -1071,7 +1039,7 @@ for (int i=0 ; i<Amat->outvec_leng ; ++i)
       colInd = new int[allocated];
       colVal = new double[allocated];
       ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&NumNonzeros);
-    } while( ierr == 0 );
+    } while (ierr == 0);
   }
   // .. do something with the row elements
 }
@@ -1118,10 +1086,10 @@ sparse matrix can be created using \verb!spconvert()!. Parallel runs will
 create a file for each process. For parallel runs, one may find useful the
 following function:
 \begin{verbatim}
-int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
-                                           const char label[],
-                                           int *global_row_ordering,
-                                           int *global_col_ordering)
+int ML_Operator_Print_UsingGlobalOrdering(ML_Operator *matrix,
+                                          const char label[],
+                                          int *global_row_ordering,
+                                          int *global_col_ordering)
 \end{verbatim}
 This function prints a \verb!ML_Operator! into MATLAB format. Only one file is generated using global ordering. 
 In input, \verb!matrix! is an \verb!ML_Operator!, distributed among the proceses     
@@ -1210,37 +1178,6 @@ attaching, the user proceed by inserting a char value.
 %%%
 %%%
 
-\subsection{C++ Return and Exit Macros}
-\label{sec:return}
-
-Table~\ref{tab:macros} returns some macros that can be used in C++ codes.
-
-\begin{table}
-\centering
-\begin{tabular}{| p{4cm} | p{10cm} | }
-\hline
-\verb!ML_CHK_ERR(ierr)!& If \verb@ierr != 0@, this macro prints out an
-error message, and returns \verb!ierr!. \\
-\verb!ML_CHK_ERRV(ierr)!& If \verb@ierr != 0@, this macro prints out an
-error message, and returns void. \\
-\verb!ML_RETURN(ierr)! & If \verb@ierr != 0@, this macro prints out an
-error message. This macro always returns \verb!ierr!. \\
-\verb!ML_EXIT(ierr)! & If \verb@ierr != 0@, this macro prints out an
-error message. This macro always exits. \\
-\hline
-\end{tabular}
-\caption{C++ return and exit macros.}
-\label{tab:macros}
-\end{table}
-
-%%%
-%%%
-%%%
-
-\subsection{Redistribute the coarser-level Matrices}
-
-TO DO...
-
 \subsection{Structure ML\_Comm}
 
 The structure \verb!ML_Comm! is defined as follows:
@@ -1308,7 +1245,7 @@ Two example of output are reported in Figure~\ref{fig:sparsity-pattern}.
 %%%
 %%%
 
-\section{Visualization Capabilities}
+\section{OpendDX Visualization Capabilities}
 \label{sec:viz}
 
 \ML\ supports limited capabilities for the visualization of and statistical
@@ -1321,7 +1258,7 @@ The procedure to create the OpenDX input files is as follows:
 \begin{enumerate}
 \item Add the following line after the creation of the ML\_Aggregate object
 \begin{verbatim}
-   ML_Aggregate_VizAndStats_Setup( ag, MaxMgLevels );
+   ML_Aggregate_VizAndStats_Setup(ag, MaxMgLevels );
 \end{verbatim}
   where \verb!MaxMgLevels! is the maximum number of levels (this is the
   same value used to create the \ML\ object).
@@ -1331,8 +1268,8 @@ The procedure to create the OpenDX input files is as follows:
 %   ML_Aggregate_Visualize( ml, ag, MaxMgLevels, x, y, z, option, filename);
 %\end{verbatim}
 \begin{verbatim}
-   ML_Aggregate_VizAndStats_Compute( ml, ag, MaxMgLevels, x, y, z,
-                                     option, filename);
+   ML_Aggregate_VizAndStats_Compute(ml, ag, MaxMgLevels, x, y, z,
+                                    option, filename);
 \end{verbatim}
    where \verb!ml! is the \ML\ object, \verb!ag! the ML\_Aggregation object, 
    and \verb!x,y,z! are double vectors, whose size
@@ -1375,15 +1312,6 @@ where the output files are located, and run OpendDX with the instruction
 Other instructions are reported in file
 \verb!$ML_HOME/util/viz_aggre.README!. An example of code can be found in
 file \verb!$ML_HOME/examples/ml_aztec_simple_METIS.c!.
-
-%%%
-%%%
-%%%
-
-\section{Current and Future Developments}
-\label{sec:to-do}.
-
-TO BE DONE...
 
 %%% ================= %%%
 %%% F U N C T I O N S %%%
