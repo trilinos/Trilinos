@@ -730,11 +730,13 @@ the blocks that correspond to certain indices are updated.
 Three sets of indices are used by the Belos BlockCG
 implementation. The independent indices, $[iidx]$ and $[piidx]$,
 are the indices of the linearly independent columns of the current
-and previous direction vector blocks, respectively. The current
-indices, $[ridx]$, are the indices corresponding to the nonzero
-residuals (those residuals with residual norm less than some small
-tolerance, $rtol$, in the current residual block. In the Belos
-implementation,
+and previous direction vector blocks, respectively. The quantity
+$numind$ refers to the number of independent vectors in the
+current direction vector block. The current indices, $[ridx]$, are
+the indices corresponding to the nonzero residuals (those
+residuals with residual norm greater than some small tolerance,
+$rtol$, in the current residual block, and $numcur$ refers to the
+number of these indices. In the Belos implementation,
  \dm
  rtol = eps,
  \edm
@@ -742,13 +744,13 @@ the machine precision, which is computed via a call to the routine
 {\it CGBlkTols}.  As the name implies, the converged indices,
 $[cidx]$, are the indices in the current residual block that
 correspond to residuals that have converged according to some user
-specified residual tolerance, $ctol$. For proper execution of the
-block iteration, it is necessary for chose $ctol > rtol$.
-
-Since $rtol < ctol$, $[ridx]$ and $[cidx]$ are different sets.
-This distinction was made for numerical reasons, since residuals
-that have converged according to some user specified tolerance may
-still be big enough to be used to generate new linearly
+specified residual tolerance, $ctol$, and $numconv$ refers to the
+number of converged residuals. For proper execution of the block
+iteration, it is necessary for chose $ctol$ greater than or equal
+to $rtol$. Thus, $[ridx]$ and $[cidx]$ can be different sets. This
+distinction was made for numerical reasons, since residuals that
+have converged according to some user specified tolerance may
+still be large enough to be used to generate new linearly
 independent direction vectors, and thus, further assist in the
 convergence of the block linear system. Because the Belos BlockCG
 implementation keeps track of the indices of the residuals in the
@@ -795,7 +797,7 @@ from enforcing
  \dm
  [ {\bf 0} ] = {\hat \bP}^{(i)T}_{[piidx]} \bR^{(i+1)}_{[ridx]} =
    {\hat \bP}^{(i)T}_{[piidx]} \bR^{(i)}_{[ridx]}
- - ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)T}_{[piidx]})
+ - ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)}_{[piidx]})
  [ \alpha_i ].
  \edm
 The coefficient matrix $[\alpha_i]$ has dimensions $numind \times
@@ -808,12 +810,12 @@ dropping dependent direction vectors is working properly. The
 coefficient matrix $[\alpha_i]$ is actually computed by solving
 the block linear system
  \dm
- ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)T}_{[piidx]})
+ ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)}_{[piidx]})
  [ \alpha_i ] = {\hat \bP}^{(i)T}_{[piidx]} \bR^{(i)}_{[ridx]}.
  \edm
 Since $\bA$ is SPD, and ${\hat \bP}^{(i)}_{[piidx]}$ has full
 column rank, then $( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat
-\bP}^{(i)T}_{[piidx]})$ is also SPD, and the above system can be
+\bP}^{(i)}_{[piidx]})$ is also SPD, and the above system can be
 solved via a Cholesky factorization of the system matrix, and
 subsequent forward and back solves for the columns of
 $[\alpha_i]$. This is accomplished with LAPACK's routines {\it
@@ -861,18 +863,18 @@ solving
  \dm
  [ {\bf 0} ] = {\hat \bP}^{(i)T}_{[piidx]} \bA \bP^{(i+1)}_{[iidx]} =
    {\hat \bP}^{(i)T}_{[piidx]} \bA \bR^{(i+1)}_{[iidx]}
-  + ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)T}_{[piidx]})
+  + ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)}_{[piidx]})
  [ \beta_i ]
  \edm
 for $[\beta_i]$. Like the coefficient matrix $[\alpha_i]$, this is
 actually computed by solving the block linear system
  \dm
-  {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)T}_{[piidx]})
- [ \beta_i ] = {\hat \bP}^{(i)T}_{[piidx]} \bA \bR^{(i+1)}_{[iidx]}.
+  {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat \bP}^{(i)}_{[piidx]})
+ [ \beta_i ] = -{\hat \bP}^{(i)T}_{[piidx]} \bA \bR^{(i+1)}_{[iidx]}.
  \edm
-Since a Cholesky factorization of the coefficient matrix has
-already been done during the computation of $[\alpha_i]$, we only
-need to compute the forward and back solves for the columns of
+Since a Cholesky factorization of this system matrix has already
+been done during the computation of $[\alpha_i]$, we only need to
+compute the forward and back solves for the columns of
 $[\beta_i]$.
 
 In Step 6, a QR factorization of the new block of direction
@@ -914,11 +916,11 @@ block size.
        Set $\bP^{(0)} = \bR^{(0)}$ a matrix of $s$ initial
        direction vectors
        \begin{itemize}
-       \item Check to see if $\| \br_k^{(0)} \| < ctol$, for $k =
-       1:numconv$ \\
+       \item Check to see if $\| \br_k^{(0)} \| < ctol$, $\forall
+       k \in [cidx]$ \\
        if so, update $[cidx]$ and $numconv$
-       \item Check to see if $\| \br_k^{(0)} \| < rtol$, for $k =
-       1:numcur$ \\
+       \item Check to see if $\| \br_k^{(0)} \| < rtol$, $\forall
+       k \in [ridx]$ \\
        If so, update $[iidx]$, $[ridx]$, $numind$, and $numcur$
        \end{itemize}
  \item Compute $\bP^{(0)}_{[iidx]} = {\hat \bP}^{(0)}_{[iidx]}
@@ -930,22 +932,22 @@ block size.
  \item[For $i=0,\ldots,$ until convergence, compute:]~~
  \begin{enumerate}
  \item $[\alpha_i] = ( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat
- \bP}^{(i)T}_{[piidx]})^{-1} ( {\hat \bP}^{(i)T}_{[piidx]}
+ \bP}^{(i)}_{[piidx]})^{-1} ( {\hat \bP}^{(i)T}_{[piidx]}
  \bR^{(i)}_{[ridx]})$
  \item $\bX^{(i+1)}_{[ridx]} = \bX^{(i)}_{[ridx]} + {\hat
  \bP}^{(i)}_{[piidx]} [ \alpha_i ]$
  \item $\bR^{(i+1)}_{[ridx]} = \bR^{(i)}_{[ridx]} - \bA {\hat
  \bP}^{(i)}_{[piidx]} [ \alpha_i ]$
  \begin{itemize}
- \item Check to see if $\| \br_k^{(i+1)} \| < ctol$, for $k =
- 1:numconv$ \\
+ \item Check to see if $\| \br_k^{(i+1)} \| < ctol$, $\forall
+       k \in [cidx]$ \\
  if so, update $[cidx]$ and $numconv$
- \item Check to see if $\| \br_k^{(i+1)} \| < rtol$, for $k =
- 1:numcur$ \\
+ \item Check to see if $\| \br_k^{(i+1)} \| < rtol$, $\forall
+       k \in [ridx]$ \\
  If so, update $[iidx]$, $[ridx]$, $numind$, and $numcur$
  \end{itemize}
  \item $[\beta_i] = -( {\hat \bP}^{(i)T}_{[piidx]} \bA {\hat
- \bP}^{(i)T}_{[piidx]})^{-1} ( {\hat \bP}^{(i)T}_{[piidx]} \bA
+ \bP}^{(i)}_{[piidx]})^{-1} ( {\hat \bP}^{(i)T}_{[piidx]} \bA
  \bR^{(i)}_{[iidx]})$
  \item $\bP^{(i+1)}_{[iidx]} = \bR^{(i+1)}_{[iidx]} + {\hat
  \bP}^{(i)}_{[piidx]} [ \beta_i ]$
@@ -1018,8 +1020,9 @@ K}_{i+1}(\bR^{(0)}, \bA)$ in terms of level 3 BLAS, the
 computational requirements are not excessive. Moreover, a robust
 and stable algorithm is realized where the application of $\bA$ is
 to a matrix.  Thus, as the cost of applying $\bA$ increases
-relative to the cost of the orthogonalizations, the efficiency our
-BlockGMRES algorithm will scale with the cost of $\bA \bR^{(0)}$.
+relative to the cost of the orthogonalizations, the efficiency of
+our BlockGMRES algorithm will scale with the cost of $\bA
+\bR^{(0)}$.
 
 We describe additional notation used in this section below. The
 $j$'th canonical basis vector is denoted by ${\bf \epsilon}_j$,
@@ -1494,8 +1497,8 @@ number of right hand sides.
 \begin{thebibliography}{AAAA99}
 
 \bibitem[1]{AMS90} S. F. Ashby, T. A. Manteuffel and P. E.
-Saylor, {\em A Taxonomy for Conjugate Gradient Methods}, SIAM
-J. Numer. Anal., 26 (1990), pp. 1542-1568.
+Saylor, {\em A Taxonomy for Conjugate Gradient Methods}, SIAM J.
+Numer. Anal., 27 (1990), pp. 1542-1568.
 
 \bibitem[2]{bcrr:98} J. Baglama, D. Calvetti, L. Reichel, and A.
 Ruttan, {\em Computation of a few close eigenvalues of a large
