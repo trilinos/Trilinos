@@ -56,6 +56,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  if (Comm.NumProc() == 1)
+    exit(EXIT_SUCCESS);
+
   // size of the global matrix. 
   const int NumPoints = 10000;
 

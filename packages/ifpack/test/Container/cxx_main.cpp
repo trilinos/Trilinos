@@ -30,9 +30,8 @@
 #if defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
@@ -43,8 +42,10 @@
 #include "Ifpack_Amesos.h"
 
 using namespace Trilinos_Util;
+static bool verbose = false;
 
-int TestContainer(string Type, CrsMatrixGallery& Gallery)
+// ======================================================================
+bool TestContainer(string Type, CrsMatrixGallery& Gallery)
 {
 
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
@@ -56,8 +57,10 @@ int TestContainer(string Type, CrsMatrixGallery& Gallery)
   int NumVectors = RHS.NumVectors();
   int NumMyRows = A->NumMyRows();
 
-  cout << "Container type = " << Type << endl;
-  cout << "NumMyRows = " << NumMyRows << ", NumVectors = " << NumVectors << endl;
+  if (verbose) {
+    cout << "Container type = " << Type << endl;
+    cout << "NumMyRows = " << NumMyRows << ", NumVectors = " << NumVectors << endl;
+  }
   LHS.PutScalar(0.0);
   
   Ifpack_Container* Container;
@@ -106,56 +109,70 @@ int TestContainer(string Type, CrsMatrixGallery& Gallery)
   Gallery.ComputeResidual(residual);
   Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
 
-  if( A->Comm().MyPID()==0 ) {
+  if (A->Comm().MyPID() == 0 && verbose) {
     for (int i = 0 ; i < NumVectors ; ++i) {
       cout << "eq " << i << ", ||b-Ax||_2 = " << residual[i] << endl;
       cout << "eq " << i << ", ||x_exact - x||_2 = " << diff[i] << endl;
     }
+    cout << *Container;
   }
 
+  bool passed = false;
   if ((residual[0] < 1e-5) && (diff[0] < 1e-5))
-    return(0);
-  else
-    return(-1);
+    passed = true;
 
   delete [] residual;
   delete [] diff;
+  delete Container;
+
+  return(passed);
 
 }
 
+// ======================================================================
 int main(int argc, char *argv[])
 {
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
+  Epetra_SerialComm SerialComm;
 
-  // size of the global matrix. 
+  for (int i = 1 ; i < argc ; ++i) {
+    if (strcmp(argv[i], "-v") == 0) {
+      verbose = true;
+    }
+  }
+
   const int NumPoints = 900;
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", SerialComm);
   Gallery.Set("problem_size", NumPoints);
   Gallery.Set("map_type", "linear");
   Gallery.Set("num_vectors", 5);
 
-  // test the preconditioner
   int TestPassed = true;
-  if (TestContainer("dense",Gallery))
+
+  if (!TestContainer("dense",Gallery))
     TestPassed = false;
-  if (TestContainer("sparse",Gallery))
+  if (!TestContainer("sparse",Gallery))
     TestPassed = false;
+
+  if (TestPassed)
+    cout << "### ALL TESTS PASSED!" << endl;
+  else {
+    cout << "### AT LEAST ONE TEST FAILED!" << endl;
+    exit(EXIT_FAILURE);
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
 
-  if (TestPassed)
-    exit(EXIT_SUCCESS);
-  else
-    exit(EXIT_FAILURE);
+  exit(EXIT_SUCCESS);
 }
 
 #else

@@ -39,189 +39,199 @@
 #include "Epetra_Time.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_PointRelaxation.h"
-#include "Ifpack_gIct.h"
-#include "Ifpack_vIct.h"
-#include "Ifpack_gRiluk.h"
-#include "Ifpack_vRiluk.h"
+#include "Ifpack_IC.h"
+#include "Ifpack_ILU.h"
+#include "Ifpack_Amesos.h"
+
+bool verbose = false;
 
 using namespace Trilinos_Util;
 
-int TestWithIFPACK(Epetra_LinearProblem* Problem, const string what)
+bool CompareWithAztecOO(Epetra_LinearProblem* Problem, const string what,
+                       int Overlap, int ival)
 {
+
+  AztecOO AztecOOSolver(*Problem);
+  AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
+  AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+  AztecOOSolver.SetAztecOption(AZ_overlap,Overlap);
+  AztecOOSolver.SetAztecOption(AZ_graph_fill,ival);
+  AztecOOSolver.SetAztecOption(AZ_poly_ord, ival);
+  AztecOOSolver.SetAztecParam(AZ_drop, 0.0);
+  AztecOOSolver.SetAztecParam(AZ_athresh, 0.0);
+  AztecOOSolver.SetAztecParam(AZ_rthresh, 0.0);
 
   Epetra_MultiVector& RHS = *(Problem->GetRHS());
   Epetra_MultiVector& LHS = *(Problem->GetLHS());
-  LHS.PutScalar(0.0);
+  Epetra_RowMatrix* A = Problem->GetMatrix();
+
+  LHS.Random();
+  A->Multiply(false,LHS,RHS);
 
   Teuchos::ParameterList List;
-  Epetra_RowMatrix* A = Problem->GetMatrix();
+  List.set("fact: level-of-fill", ival);
+  List.set("relaxation: sweeps", ival);
+  List.set("relaxation: damping factor", 1.0);
+  List.set("relaxation: zero starting solution", true);
+ 
+  //default combine mode is as for AztecOO
+  List.set("schwarz: combine mode", Zero);
+
+  Epetra_Time Time(A->Comm());
 
   Ifpack_Preconditioner* Prec = 0;
   
-  if (what == "Jacobi(1)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(A);
-    List.set("point: type", "Jacobi");
+  if (what == "Jacobi") {
+    Prec = new Ifpack_PointRelaxation(A);
+    List.set("relaxation: type", "Jacobi");
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_Jacobi);
+    AztecOOSolver.SetAztecOption(AZ_reorder,0);
   }
-  if (what == "Jacobi(5)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(A);
-    List.set("point: sweeps", 5);
+  else if (what == "IC no reord") {
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_IC>(A,Overlap);
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
+    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
+    AztecOOSolver.SetAztecOption(AZ_reorder,0);
   }
-  // Cholesky
-  else if (what == "vICT(0)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_vIct>(A);
-    List.set("fact: level-of-fill", 0);
+  else if (what == "IC reord") {
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_IC>(A,Overlap);
     List.set("schwarz: use reordering", true);
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
+    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
+    AztecOOSolver.SetAztecOption(AZ_reorder,1);
   }
-  else if (what == "vICT(4)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_vIct>(A);
-    List.set("fact: level-of-fill", 4);
+  else if (what == "ILU no reord") {
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(A,Overlap);
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
+    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
+    AztecOOSolver.SetAztecOption(AZ_reorder,0);
+  }
+  else if (what == "ILU reord") {
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(A,Overlap);
     List.set("schwarz: use reordering", true);
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
+    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
+    AztecOOSolver.SetAztecOption(AZ_reorder,1);
   }
-  else if (what == "gICT(0)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_gIct>(A);
-    List.set("fact: level-of-fill", 0);
-    List.set("schwarz: use reordering", true);
+  else if (what == "LU") {
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,Overlap);
+    List.set("amesos: solver type", "Klu");
+    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
+    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_lu);
   }
-  else if (what == "gICT(4)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_gIct>(A);
-    List.set("fact: level-of-fill", 4);
-    List.set("schwarz: use reordering", true);
-  }
-  // classical ILU
-  else if (what == "vILU(0)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_vRiluk>(A);
-    List.set("fact: level-of-fill", 0);
-    List.set("schwarz: use reordering", true);
-  }
-  else if (what == "vILU(4)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_vRiluk>(A);
-    List.set("fact: level-of-fill", 4);
-    List.set("schwarz: use reordering", true);
-//    List.set("schwarz: reordering type", "metis");
-  }
-  else if (what == "gILU(0)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_gRiluk>(A);
-    List.set("fact: level-of-fill", 0);
-    List.set("schwarz: use reordering", true);
-  }
-  else if (what == "gILU(4)") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_gRiluk>(A);
-    List.set("fact: level-of-fill", 4);
-    List.set("schwarz: use reordering", true);
-  }
-  // without reordering
-  else if (what == "vILU(0) no reorder") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_vRiluk>(A);
-    List.set("fact: level-of-fill", 0);
-    List.set("schwarz: use reordering", false);
+  else {
+    cerr << "Option not recognized" << endl;
+    exit(EXIT_FAILURE);
   }
 
-  assert(Prec != 0);
+  // ==================================== //
+  // Solve with AztecOO's preconditioners //
+  // ==================================== //
+
+  LHS.PutScalar(0.0);
+
+  Time.ResetStartTime();
+  AztecOOSolver.Iterate(150,1e-5);
+
+  if (verbose) {
+    cout << endl;
+    cout << "==================================================" << endl;
+    cout << "Testing `" << what << "', Overlap = "
+         << Overlap << ", ival = " << ival << endl;
+    cout << endl;
+    cout << "[AztecOO] Total time = " << Time.ElapsedTime() << " (s)" << endl;
+    cout << "[AztecOO] Residual   = " << AztecOOSolver.TrueResidual() << " (s)" << endl;
+    cout << "[AztecOO] Iterations = " << AztecOOSolver.NumIters() << endl;
+    cout << endl;
+  }
+
+  int AztecOOPrecIters = AztecOOSolver.NumIters();
+
+  // =========================================== //
+  // Create the IFPACK preconditioner and solver //
+  // =========================================== //
  
-
+  Epetra_Time Time2(A->Comm());
+  assert(Prec != 0);
   IFPACK_CHK_ERR(Prec->SetParameters(List));
+
+  Time.ResetStartTime();
   IFPACK_CHK_ERR(Prec->Initialize());
+  if (verbose)
+    cout << "[IFPACK] Time for Initialize() = "
+         << Time.ElapsedTime() << " (s)" << endl;
+
+  Time.ResetStartTime();
   IFPACK_CHK_ERR(Prec->Compute());
+  if (verbose)
+    cout << "[IFPACK] Time for Compute() = "
+         << Time.ElapsedTime() << " (s)" << endl;
 
-  // create the AztecOO solver
-  AztecOO AztecOOSolver(*Problem);
-
-  // specify solver
-  AztecOOSolver.SetAztecOption(AZ_solver,AZ_cg);
-  AztecOOSolver.SetAztecOption(AZ_output,32);
 
   AztecOOSolver.SetPrecOperator(Prec);
 
-  AztecOOSolver.Iterate(150,1e-8);
-
-  Prec->Print(cout);
-  delete Prec;
-
-  return(AztecOOSolver.NumIters());
-
-}
-
-// ====================================================================== 
-int TestWithAztecOO(Epetra_LinearProblem* Problem, const string what)
-{
-
-  Epetra_MultiVector& RHS = *(Problem->GetRHS());
-  Epetra_MultiVector& LHS = *(Problem->GetLHS());
   LHS.PutScalar(0.0);
 
-  Teuchos::ParameterList List;
-  Epetra_RowMatrix* A = Problem->GetMatrix();
+  Time.ResetStartTime();
+  AztecOOSolver.Iterate(150,1e-5);
 
-  // create the AztecOO solver
-  AztecOO AztecOOSolver(*Problem);
+  if (verbose) {
+    cout << "[IFPACK] Total time = " << Time2.ElapsedTime() << " (s)" << endl;
+    cout << "[IFPACK] Residual   = " << AztecOOSolver.TrueResidual() << " (s)" << endl;
+    cout << "[IFPACK] Iterations = " << AztecOOSolver.NumIters() << endl;
+    cout << endl;
+  }
 
-  // specify solver
-  AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
-  AztecOOSolver.SetAztecOption(AZ_overlap,0);
-  AztecOOSolver.SetAztecOption(AZ_output,32);
+  int IFPACKPrecIters = AztecOOSolver.NumIters();
 
-  if (what == "Jacobi(1)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_Jacobi);
-  }
-  else if (what == "Jacobi(5)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_Jacobi);
-    AztecOOSolver.SetAztecOption(AZ_poly_ord,5);
-  }
-  else if (what == "vICT(0)" || what == "gICT(0)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
-    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
-    AztecOOSolver.SetAztecOption(AZ_graph_fill,0);
-  }
-  else if (what == "vICT(4)" || what == "gICT(4)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
-    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
-    AztecOOSolver.SetAztecOption(AZ_graph_fill,4);
-  }
-  else if (what == "vILU(0)" || what == "gILU(0)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
-    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
-    AztecOOSolver.SetAztecOption(AZ_graph_fill,0);
-  }
-  else if (what == "vILU(4)" || what == "gILU(4)") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
-    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
-    AztecOOSolver.SetAztecOption(AZ_graph_fill,4);
-  }
-  else if (what == "vILU(0) no reorder") {
-    AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
-    AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
-    AztecOOSolver.SetAztecOption(AZ_graph_fill,0);
-    AztecOOSolver.SetAztecOption(AZ_reorder,0);
+  delete Prec;
+
+  if (IFPACK_ABS(AztecOOPrecIters - IFPACKPrecIters) > 3) {
+    cerr << "TEST FAILED (" << AztecOOPrecIters << " != " 
+         << IFPACKPrecIters << ")" << endl;
+    return(false);
   }
   else
-    exit(EXIT_FAILURE);
-
-  AztecOOSolver.Iterate(1550,1e-8);
-
-  return(AztecOOSolver.NumIters());
+    return(true);
 
 }
+
 // ====================================================================== 
 int main(int argc, char *argv[])
 {
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
 
-  Epetra_Time Time(Comm);
+  if (Comm.MyPID() == 0) {
+    for (int i = 1 ; i < argc ; ++i) {
+      if (strcmp(argv[i], "-v") == 0)
+        verbose = true;
+    }
+  }
 
-  // size of the global matrix. 
-  const int NumPoints = 27000;
+  // process the command line
+  Teuchos::CommandLineProcessor CLP;
+  // matrix name
+  string MatrixName = "laplace_3d";
+  // global size
+  int NumPoints = 27000;
+  CLP.setOption("matrix", &MatrixName, "Matrix name for Gallery (ex: laplace_2d)");
+  CLP.setOption("size", &NumPoints, "Size of the problem. Note: this may need to be a square/cube depending on specified matrix name");
 
-  CrsMatrixGallery Gallery("laplace_3d", Comm);
+  CLP.throwExceptions(false);
+  CLP.parse(argc,argv);
+  
+  CrsMatrixGallery Gallery(MatrixName,Comm);
   Gallery.Set("problem_size", NumPoints);
   Gallery.Set("map_type", "linear");
 
@@ -229,37 +239,32 @@ int main(int argc, char *argv[])
 
   int TestPassed = true;
 
+  // Jacobi as in AztecOO (no overlap)
+  for (int ival = 1 ; ival < 10 ; ival += 3) {
+    TestPassed = TestPassed && 
+      CompareWithAztecOO(Problem,"Jacobi",0,ival);
+  }
+
+  // AztecOO with IC and overlap complains, also with
+  // large fill-ins (in parallel)
+  TestPassed = TestPassed && 
+    CompareWithAztecOO(Problem,"IC no reord",0,0);
+  TestPassed = TestPassed && 
+    CompareWithAztecOO(Problem,"IC reord",0,0);
+
   vector<string> Tests;
-  //Tests.push_back("Jacobi(5)");
-  //Tests.push_back("Jacobi(5)");
-  //Tests.push_back("gILU(4)");
-  //Tests.push_back("vILU(0) no reorder");
-  Tests.push_back("vILU(0)");
-  //Tests.push_back("vILU(4)");
-  //Tests.push_back("gICT(0)");
+  // now test solvers that accept overlap
+  //Tests.push_back("ILU no reord");
+  //Tests.push_back("ILU reord");
+  // following requires --enable-aztecoo-azlu
+  //Tests.push_back("LU");
 
-  for (int i = 0 ; i < Tests.size() ; ++i) {
-    int AztecOOIters, IFPACKIters;
-    double AztecOOTime, IFPACKTime;
-
-    Time.ResetStartTime();
-
-//    AztecOOIters =  TestWithAztecOO(Problem,Tests[i]);
-    AztecOOTime = Time.ElapsedTime();
-
-    Time.ResetStartTime();
-    IFPACKIters = TestWithIFPACK(Problem,Tests[i]);
-    IFPACKTime = Time.ElapsedTime();
-
-    cout << endl;
-    cout << "Testing `" << Tests[i] << "'" << endl;
-    cout << "Total time for AztecOO = " << AztecOOTime << " (s)" << endl;
-    cout << "Total time for IFPACK  = " << IFPACKTime << " (s)" << endl;
-    cout << "Iterations required by AztecOO = " << AztecOOIters << endl;
-    cout << "Iterations required by IFPACK  = " << IFPACKIters << endl;
-
-    if (AztecOOIters != IFPACKIters)
-      TestPassed = false;
+  for (unsigned int i = 0 ; i < Tests.size() ; ++i) {
+    for (int overlap = 0 ; overlap < 1 ; overlap += 2) {
+      for (int ival = 0 ; ival < 10 ; ival += 4)
+        TestPassed = TestPassed && 
+          CompareWithAztecOO(Problem,Tests[i],overlap,ival);
+    }
   }
 
   if (!TestPassed) {
@@ -271,6 +276,7 @@ int main(int argc, char *argv[])
   MPI_Finalize() ; 
 #endif
   cout << "TEST PASSED" << endl;
+
   exit(EXIT_SUCCESS);
 }
 
