@@ -222,7 +222,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 			    dummy, dummy, convergence_info);
   true_scaled_r = scaled_r_norm;
 
-  r_2norm   = sqrt(r_2norm);
+  r_2norm   = rec_residual;
 
   if (r_avail) {
     sprintf(label,"res%s",suffix);
