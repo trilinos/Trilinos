@@ -16,6 +16,7 @@
 #include "ml_common.h"
 
 #ifdef ML_WITH_EPETRA
+#include <vector>
 #include "ml_epetra_utils.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -581,7 +582,138 @@ void ML_DestroyQt( void )
 
 } /* extern "C" */
 
-int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
+
+int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
+				CrsMatrix, int & MaxNumNonzeros,
+				bool CheckNonzeroRow, double & CPUTime)
+{
+
+  int    isize_offset, osize_offset;
+  int Nghost;
+  ML_Comm *comm;
+
+  comm = Amat->comm;
+#ifdef ML_MPI
+  MPI_Comm mpi_comm ;
+  mpi_comm = comm->USR_comm; 
+  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
+#else
+  Epetra_SerialComm EpetraComm ; 
+#endif  
+
+  Epetra_Time Time(EpetraComm);
+
+  if (Amat->getrow->pre_comm == NULL) 
+    Nghost = 0;
+  else {
+    if (Amat->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
+    Nghost = Amat->getrow->pre_comm->total_rcv_length;
+  }
+
+  int isize = Amat->invec_leng;
+  int osize = Amat->outvec_leng;
+
+  EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize;
+  EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize;
+
+  vector<double> global_isize; global_isize.resize(isize+Nghost+1);
+  vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+
+  vector<double> global_osize(osize);
+  vector<int>    global_osize_as_int(osize);
+  
+  for (int i = 0 ; i < isize; i++) {
+          global_isize[i] = (double) (isize_offset + i);
+          global_isize_as_int[i] = isize_offset + i;
+  }
+          
+  for (int i = 0 ; i < osize; i++) {
+    global_osize[i] = (double) (osize_offset + i);
+    global_osize_as_int[i] = osize_offset + i;
+  }
+  for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
+  
+  Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], 0, EpetraComm ) ; 
+  Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], 0, EpetraComm ) ; 
+  
+  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, 0 ); 
+  
+  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
+ 		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
+
+  for ( int j = 0; j < isize+Nghost; j++ ) { 
+    global_isize_as_int[j] = (int) global_isize[j];
+  }
+
+  // MS // introduced variable allocation for colInd and colVal
+  // MS // improved efficiency in InsertGlobalValues
+
+  int allocated = 1;
+  int * colInd = new int[allocated];
+  double * colVal = new double[allocated];
+  int NumNonzeros;
+  int ierr;
+  int    ncnt;
+
+  MaxNumNonzeros=0;
+  
+  for (int i = 0; i < osize; i++)
+  {
+    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+
+    if( ierr == 0 ) {
+      do {
+	delete [] colInd;
+	delete [] colVal;
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+      } while( ierr == 0 );
+    }
+
+    // MS // check out how many nonzeros we have
+    // MS // NOTE: this may result in a non-symmetric pattern for CrsMatrix
+
+    NumNonzeros = 0;
+    for (int j = 0; j < ncnt; j++) {
+      if (colVal[j] != 0.0) {
+	    colInd[NumNonzeros] = global_isize_as_int[colInd[j]];
+	    colVal[NumNonzeros] = colVal[j];
+	    NumNonzeros++;
+      }
+    }
+    if( NumNonzeros == 0 && CheckNonzeroRow ) {
+      cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
+	   << global_osize_as_int[i]
+	   << " has no nonzero elements (and " << ncnt
+	   << " zero entries)" << endl
+	   << "*ML*WRN* Now put 1 on the diagonal...\n";
+      // insert a 1 on the diagonal
+      colInd[NumNonzeros] = global_isize_as_int[i];
+      colVal[NumNonzeros] = 1.0;
+      NumNonzeros++;
+    }
+    MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
+    
+    CrsMatrix->InsertGlobalValues( global_osize_as_int[i], NumNonzeros, 
+				   colVal, colInd);
+    
+  }
+
+  delete [] colInd;
+  delete [] colVal;
+  
+  assert(CrsMatrix->FillComplete(domainmap,rangemap)==0);
+
+  CPUTime = Time.ElapsedTime();
+
+  return 0;
+  
+} /* ML_Operator2EpetraCrsMatrix for rectangular matrices*/
+
+int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double & CPUTime)
 {
