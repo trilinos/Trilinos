@@ -2155,7 +2155,8 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
     GeneralMTV(xp, yp);
 
     if(Importer() != 0) {
-      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), InsertAdd)); // Fill y with Values from export vector
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
@@ -2219,7 +2220,8 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // Do actual computation
     GeneralMTM(Xp, Yp, NumVectors);
     if (Importer()!=0) {
-      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), InsertAdd)); // Fill Y with Values from export vector
+      Y.PutScalar(0.0);  // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
@@ -2883,3 +2885,120 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   
   return;
 }
+int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const {
+  //
+  // This function forms the product y = A * x or y = A' * x
+  //
+
+  if(!Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  int i, j;
+  int* NumEntriesPerRow = Graph().NumIndicesPerRow();
+  int** Indices = Graph().Indices();
+  double** Values = Values_;
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  int NumMyCols_ = NumMyCols();
+
+  if(!TransA) {
+
+    // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+    if(Importer() != 0) {
+      if(ImportVector_ != 0) {
+	if(ImportVector_->NumVectors() != 1) { 
+	  delete ImportVector_; 
+	  ImportVector_= 0;
+	}
+      }
+      if(ImportVector_ == 0) 
+	ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+    }
+		
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if(Exporter() != 0) {
+      if(ExportVector_ != 0) {
+	if(ExportVector_->NumVectors() != 1) { 
+	  delete ExportVector_; 
+	  ExportVector_= 0;
+	}
+      }
+      if(ExportVector_ == 0) 
+	ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
+      yp = (double*) ExportVector_->Values();
+    }
+		
+    // Do actual computation
+    for(i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = *NumEntriesPerRow++;
+      int*    RowIndices = *Indices++;
+      double* RowValues  = *Values++;
+      double sum = 0.0;
+      for(j = 0; j < NumEntries; j++) 
+	sum += RowValues[j] * xp[RowIndices[j]];
+			
+      yp[i] = sum;
+			
+    }
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+  }
+	
+  else { // Transpose operation
+
+    // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+    if(Exporter() != 0) {
+      if(ExportVector_ != 0) {
+	if(ExportVector_->NumVectors() != 1) { 
+	  delete ExportVector_; 
+	  ExportVector_= 0;
+	}
+      }
+      if(ExportVector_ == 0) 
+	ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
+      EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
+      xp = (double*) ExportVector_->Values();
+    }
+
+    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+    if(Importer() != 0) {
+      if(ImportVector_ != 0) {
+	if(ImportVector_->NumVectors() != 1) { 
+	  delete ImportVector_; 
+	  ImportVector_= 0;
+	}
+      }
+      if(ImportVector_ == 0) 
+	ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
+      yp = (double*) ImportVector_->Values();
+    }
+
+    // Do actual computation
+    for(i = 0; i < NumMyCols_; i++) 
+      yp[i] = 0.0; // Initialize y for transpose multiply
+        
+    for(i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = *NumEntriesPerRow++;
+      int*    RowIndices = *Indices++;
+      double* RowValues  = *Values++;
+      for(j = 0; j < NumEntries; j++) 
+	yp[RowIndices[j]] += RowValues[j] * xp[i];
+    }
+    if(Importer() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+  }
+
+  UpdateFlops(2 * NumGlobalNonzeros());
+  return(0);
+}
+
