@@ -1,0 +1,30 @@
+Decomposition Method	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters	= obj_weight_dim=1, comm_weight_dim=1
+File Type		= Chaco, initial distribution = cyclic
+File Name		= bug
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+37
+39
+46
+48
+49
+52
+53
+54
+57
+58
+60
