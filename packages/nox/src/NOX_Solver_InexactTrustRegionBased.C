@@ -818,7 +818,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 	  // Compute tau
 	  double normZ = computeNorm(zVec);
 	  if (sDotZ <= 0.0)
-	    tau = (-1.0 + sqrt(sDotZ * sDotZ + normZ * normZ * 
+	    tau = (-1.0 * sDotZ + sqrt(sDotZ * sDotZ + normZ * normZ * 
 		  (radius * radius - normS * normS)))/(normZ * normZ);
 	  else
 	    tau = (radius * radius - normS * normS)/
@@ -997,10 +997,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // Adjust the eta when taking a cauchy or dogleg step
   // This is equivalent to accounting for backtracking in inexact Newton
   // line searches.  Have to check theory w/ Homer Walker on this.
-  if (stepType == InexactTrustRegionBased::Cauchy) 
-    eta = etaCauchy;
+  if (stepType == InexactTrustRegionBased::Cauchy)
+    eta = 1.0 - (computeNorm(*dirPtr) / computeNorm(cauchyVec))*(1.0-etaCauchy);
   else if (stepType == InexactTrustRegionBased::Dogleg)
-    eta = 1.0 - tau * (1.0 - eta);
+    eta = etaCauchy - tau * (etaCauchy - eta);
 
   // If the inner iteration failed, use a recovery step
   if (innerIterationStatus == Failed) {
