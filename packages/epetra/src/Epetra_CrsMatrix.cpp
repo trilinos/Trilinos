@@ -477,37 +477,26 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
   // Also, determine if matrix is upper or lower triangular or has no diagonal
   // Note:  This function assumes that SortEntries was already called.
 
-  for (i=0; i<NumMyRows_; i++){
+  for (i=0; i<NumMyRows_; i++)
+  {
     int NumEntries = NumEntriesPerRow_[i];
-    if (NumEntries>0) {
+    if (NumEntries>0)
+    {
       double * const Values = Values_[i];
       int * const Indices = Indices_[i];
 
       int offset = 0;
-      int shift = 0;
-      int numMerged = 0;
 
-      while(offset+shift < NumEntries-1) {
-	int index = Indices[offset+shift];
-
-	for(int j=offset+1; j<NumEntries-shift; ++j) {
-	  //Add values with matching indices to Values[offset].
-	  if (index == Indices[j+shift]) {
-	    Values[offset] += Values[j];
-	    ++numMerged;
-	  }
-	  else {
-	    break;
-	  }
-	}
-
-	//Now slide remaining Values down in the list.
-	for(int k=offset+1; k<NumEntries-numMerged; ++k) {
-	  Values[k] = Values[k+numMerged];
-	}
-
-	shift = numMerged;
-	++offset;
+      while( offset < NumEntries-1 )
+      {
+        int index = Indices[offset];
+        int shift = 1;
+        while( Indices[offset+shift] == index )
+        {
+          Values[offset] += Values[offset+shift];
+          ++shift;
+        }
+        offset += shift;
       }
     }
   }
