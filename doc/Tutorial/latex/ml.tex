@@ -38,14 +38,19 @@ geometric and algebraic coarsening schemes.
 Please contact the developers for information on the status of special purpose
 methods, such as those for the incompressible Navier-Stokes equations
 and Maxwell's equations.
-\begin{center} Table of Contents \end{center}
+
+This Chapter will present:
 \begin{itemize}
-\item \S~\ref{ml:theoretical} A Multilevel Preconditioning Framework
-\item \S~\ref{sec:ml_prec} ML Objects as AztecOO Preconditioners
-\item \S~\ref{sec:ml:operator} The ML\_Epetra::MultiLevelOperator Class
-\item \S~\ref{sec:ml:preconditioner} The ML\_Epetra::MultiLevelPreconditioner Class
-\item \S~\ref{sec:ml_DD}
-      The implementation of two level domain decomposition methods with aggregation based coarse grid 
+\item A Multilevel Preconditioning Framework (in Section~\ref{ml:theoretical});
+\item How to use ML Objects as AztecOO Preconditioners (in
+  Section~\ref{sec:ml_prec});
+\item The ML\_Epetra::MultiLevelOperator Class (in
+  Section~\ref{sec:ml:operator});
+\item How to define black-box preconditioners using the
+  ML\_Epetra::MultiLevelPreconditioner Class (in
+  Section~\ref{sec:ml:preconditioner});
+\item How to implement two level domain decomposition methods with
+  aggregation based coarse grid (in Section~\ref{sec:ml_DD}).
 \end{itemize}
 %%%
 %%%
