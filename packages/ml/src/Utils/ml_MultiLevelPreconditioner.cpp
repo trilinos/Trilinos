@@ -698,6 +698,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // tell ML to keep the tentative prolongator
     ML_Aggregate_Set_Reuse(agg_);
+    agg_->keep_agg_information = 1;
 
     if (agg_->aggr_info != NULL) {
       for (int i = 0 ; i < MaxLevels_ ; ++i)
@@ -963,7 +964,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     bool MyCodeIsCrap = true;
     Epetra_VbrMatrix* MeDummy;
     int NumMyRowElements = 0;
-    Epetra_SerialDenseMatrix** oldValues;
+    Epetra_SerialDenseMatrix** oldValues = 0;
 
     Time.ResetStartTime();
 
@@ -1061,12 +1062,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
-      if ((agg_)->aggr_info != NULL) {
-        for (int i = 0 ; i < NumLevels_ ; ++i) {
-          if ((agg_)->aggr_info[i] != NULL) 
-            ML_memory_free((void **)&((agg_)->aggr_info[i]));
-        } 
-      }
     } // nothing special to be done if CreateFakeProblem is false
       
   } else {
@@ -1113,8 +1108,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* Now cycling over all levels                                            */
   /* ********************************************************************** */
 
-  if( SolvingMaxwell_ == false ) {
+  if (SolvingMaxwell_ == false) {
     ML_CHK_ERR(SetSmoothers());
+    // this below *must* to be here and not before the construction of the smoothers
+    if ((agg_)->aggr_info != NULL) {
+      for (int i = 0 ; i < NumLevels_ ; ++i) {
+        if ((agg_)->aggr_info[i] != NULL) 
+          ML_memory_free((void **)&((agg_)->aggr_info[i]));
+      } 
+    }
   }
   else {
     ML_CHK_ERR(SetSmoothersMaxwell());
