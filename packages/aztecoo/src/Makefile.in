@@ -293,7 +293,9 @@ DIST = \
 	$(srcdir)/az_poly.c \
 	$(srcdir)/az_qmrcgs.c \
 	$(srcdir)/az_rilu.c \
-	$(srcdir)/az_subdomain_solver.c 
+	$(srcdir)/az_subdomain_solver.c \
+	$(srcdir)/az_cg_condnum.c \
+	$(srcdir)/az_gmres_condnum.c
 
 
 
@@ -422,7 +424,8 @@ am__objects_8 = az_bilu.$(OBJEXT) az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
 	az_gmres.$(OBJEXT) az_gmresr.$(OBJEXT) az_gsumd_puma.$(OBJEXT) \
 	az_icc.$(OBJEXT) az_ilut.$(OBJEXT) az_lu_y12.$(OBJEXT) \
 	az_poly.$(OBJEXT) az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
-	az_subdomain_solver.$(OBJEXT)
+	az_subdomain_solver.$(OBJEXT) az_cg_condnum.$(OBJEXT) \
+	az_gmres_condnum.$(OBJEXT)
 am__objects_9 = az_colperm.$(OBJEXT) az_matvec_mult.$(OBJEXT) \
 	az_old_matvec_mult.$(OBJEXT) az_precond.$(OBJEXT) \
 	az_reorder.$(OBJEXT) az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
@@ -451,15 +454,18 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/AztecOO_StatusTestResNorm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_MsrMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_bilu.Po ./$(DEPDIR)/az_cg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/az_cgs.Po ./$(DEPDIR)/az_cgstab.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/az_check.Po ./$(DEPDIR)/az_colperm.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/az_comm.Po ./$(DEPDIR)/az_converge.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_cg_condnum.Po ./$(DEPDIR)/az_cgs.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_cgstab.Po ./$(DEPDIR)/az_check.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_colperm.Po ./$(DEPDIR)/az_comm.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_converge.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_dd_overlap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_dgemv2.Po ./$(DEPDIR)/az_dgemv3.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_domain_decomp.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_fix_pt.Po ./$(DEPDIR)/az_flop_cnt.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_fortran_wrap.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/az_gmres.Po ./$(DEPDIR)/az_gmresr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_gmres.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_gmres_condnum.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/az_gmresr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_gsumd_puma.Po ./$(DEPDIR)/az_icc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_ilu_util.Po ./$(DEPDIR)/az_ilut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_interface.Po \
@@ -601,6 +607,8 @@ az_poly.$(OBJEXT): $(srcdir)/az_poly.c
 az_qmrcgs.$(OBJEXT): $(srcdir)/az_qmrcgs.c
 az_rilu.$(OBJEXT): $(srcdir)/az_rilu.c
 az_subdomain_solver.$(OBJEXT): $(srcdir)/az_subdomain_solver.c
+az_cg_condnum.$(OBJEXT): $(srcdir)/az_cg_condnum.c
+az_gmres_condnum.$(OBJEXT): $(srcdir)/az_gmres_condnum.c
 az_colperm.$(OBJEXT): $(srcdir)/az_colperm.c
 az_matvec_mult.$(OBJEXT): $(srcdir)/az_matvec_mult.c
 az_old_matvec_mult.$(OBJEXT): $(srcdir)/az_old_matvec_mult.c
@@ -632,6 +640,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MsrMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_bilu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cg_condnum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cgs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cgstab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_check.Po@am__quote@
@@ -646,6 +655,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_flop_cnt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_fortran_wrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmres.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmres_condnum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmresr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gsumd_puma.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_icc.Po@am__quote@
@@ -1070,6 +1080,30 @@ az_subdomain_solver.obj: $(srcdir)/az_subdomain_solver.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/az_subdomain_solver.Po' tmpdepfile='$(DEPDIR)/az_subdomain_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_subdomain_solver.obj `cygpath -w $(srcdir)/az_subdomain_solver.c`
+
+az_cg_condnum.o: $(srcdir)/az_cg_condnum.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cg_condnum.c' object='az_cg_condnum.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cg_condnum.Po' tmpdepfile='$(DEPDIR)/az_cg_condnum.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cg_condnum.o `test -f '$(srcdir)/az_cg_condnum.c' || echo '$(srcdir)/'`$(srcdir)/az_cg_condnum.c
+
+az_cg_condnum.obj: $(srcdir)/az_cg_condnum.c
+@AMDEP_TRUE@	source='$(srcdir)/az_cg_condnum.c' object='az_cg_condnum.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_cg_condnum.Po' tmpdepfile='$(DEPDIR)/az_cg_condnum.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_cg_condnum.obj `cygpath -w $(srcdir)/az_cg_condnum.c`
+
+az_gmres_condnum.o: $(srcdir)/az_gmres_condnum.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmres_condnum.c' object='az_gmres_condnum.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmres_condnum.Po' tmpdepfile='$(DEPDIR)/az_gmres_condnum.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmres_condnum.o `test -f '$(srcdir)/az_gmres_condnum.c' || echo '$(srcdir)/'`$(srcdir)/az_gmres_condnum.c
+
+az_gmres_condnum.obj: $(srcdir)/az_gmres_condnum.c
+@AMDEP_TRUE@	source='$(srcdir)/az_gmres_condnum.c' object='az_gmres_condnum.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/az_gmres_condnum.Po' tmpdepfile='$(DEPDIR)/az_gmres_condnum.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_gmres_condnum.obj `cygpath -w $(srcdir)/az_gmres_condnum.c`
 
 az_colperm.o: $(srcdir)/az_colperm.c
 @AMDEP_TRUE@	source='$(srcdir)/az_colperm.c' object='az_colperm.o' libtool=no @AMDEPBACKSLASH@
