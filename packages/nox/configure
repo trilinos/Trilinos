@@ -6969,7 +6969,7 @@ echo "${ECHO_T}yes" >&6
 echo "${ECHO_T}no" >&6
 		eval HAVE_PYMOD_NUMERIC=no
 		#
-		if test -n ""
+		if test -n "yes"
 		then
 			{ { echo "$as_me:$LINENO: error: failed to find required module Numeric" >&5
 echo "$as_me: error: failed to find required module Numeric" >&2;}

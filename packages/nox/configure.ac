@@ -813,7 +813,7 @@ if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
   IMPORT_EPETRA=1
 
   # Check for Numeric when building the Epetra module
-  AC_PYTHON_MODULE(Numeric)
+  AC_PYTHON_MODULE(Numeric,yes)
 fi
 AC_SUBST(IMPORT_EPETRA)
 
