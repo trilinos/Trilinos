@@ -1,0 +1,42 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+#
+# Utilities Makefile for machine dependent directories
+#
+
+ifndef DCC
+DCC=$(CC)
+endif
+
+DEPS=-M
+
+include $(OBJ_FILES:.o=.d)
+
+%.o:	%.c
+	@echo "Compiling $<..."
+	@$(CC) $(DEFS) -c $<
+
+%.d:	%.c
+	@echo "(Re)Building dependency for $<..."
+	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*.o/& $@/g'\'' > $@'
+
+$(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) 
+		@echo "creating library "$(LIB_NAME)
+		@$(AR) $(LIB_NAME) $(OBJ_FILES) 
+		@$(RANLIB) $(LIB_NAME)
+
+$(DRIVER_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES)
+		@echo "linking driver "$(DRIVER_NAME)
+		@$(CC) $(OBJ_FILES) -o $(DRIVER_NAME) $(LNK_LIBS)
+
