@@ -538,6 +538,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    print_freq  = ML_Krylov_Get_PrintFreq(data);
    nprocs      = comm->ML_nprocs;
    mypid       = comm->ML_mypid;
+   maxiter     = 10;
    if ( totallength < maxiter ) maxiter = totallength;
 
 
