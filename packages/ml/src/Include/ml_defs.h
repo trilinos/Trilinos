@@ -10,6 +10,7 @@
 #define ML_NONE           10
 #define ML_MGV            11
 #define ML_MG2CGC         12
+#define ML_MGFULLV        13
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
@@ -91,6 +92,7 @@
 #define ML_USER_DEFINED      10
 #define ML_SET                1
 #define ML_DEFAULT           -2
+#define ML_ONE_STEP_CG       -100
 #define ML_ZERO               3
 #define ML_NONZERO            4
 #define ML_INTERNAL         111
