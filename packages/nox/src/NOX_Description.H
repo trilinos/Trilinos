@@ -65,6 +65,10 @@
 
   See \ref nox_developer_information
 
+  \section release_information Release Information
+
+  See \ref nox_release_information
+
   \section license License
 
   %NOX is available for download under the terms
@@ -525,6 +529,25 @@ The following pages are relevant to developers.
 <li>\ref cvsrepos
 <li>\ref coding
 <li>\ref prerelease
+</ul>
+
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page nox_release_information NOX Release Information
+
+NOX/LOCA 4.0 is being released as part of Trilinos 5.0 on March 1st 2005.
+
+What's new in this release:
+<ul> 
+<li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
+<li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
+<li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
+<li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
 </ul>
 
 
