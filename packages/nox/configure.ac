@@ -289,7 +289,6 @@ if test -n "${MPI_F77}"; then
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
 fi
-])
 
 # ------------------------------------------------------------------------
 # Checks for programs
@@ -1276,6 +1275,7 @@ AC_CONFIG_FILES([
 		example-epetra/1Dfem_nonlinear/Makefile
 		example-epetra/1Dfem_nonlinearColoring/Makefile
 		example-epetra/1Dtransfem_nonlinear/Makefile
+		example-epetra/Brusselator/Makefile
                 src-petsc/Makefile
                 example-petsc/Makefile
                 example-petsc/DS6.5.1/Makefile

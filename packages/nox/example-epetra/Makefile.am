@@ -31,6 +31,6 @@
 
 if BUILD_EPETRA_EXAMPLES
 
-SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_nonlinearColoring 1Dtransfem_nonlinear
+SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_nonlinearColoring 1Dtransfem_nonlinear Brusselator
 
 endif
