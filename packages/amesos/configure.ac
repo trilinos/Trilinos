@@ -102,7 +102,7 @@ TAC_ARG_CONFIG_MPI
 # Checks for programs
 # ------------------------------------------------------------------------
 
-#AC_PROG_CC(cc gcc)
+AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 BASE_CXX=${CXX}
 #AC_PROG_F77(f77 g77 f90 xlf90)
@@ -235,21 +235,43 @@ TAC_ARG_WITH_INCDIRS
 #AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
+# Checks for addons
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(amesos-slud,
+[AC_HELP_STRING([--enable-amesos-slud],[compile SuperLU Dist interface])],
+[ADDON_SLUD=$enableval],
+[ADDON_SLUD=yes]
+)
+AM_CONDITIONAL(BUILD_SLUDIST, test X${ADDON_SLUD} = "Xyes")
+
+AC_ARG_ENABLE(amesos-slus,
+[AC_HELP_STRING([--enable-amesos-slus],[compile SuperLU Serial interface])],
+[ADDON_SLUS=$enableval],
+[ADDON_SLUS=yes]
+)
+AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
+
+AC_ARG_ENABLE(amesos-kundert,
+[AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],
+[ADDON_KS=$enableval],
+[ADDON_KS=no]
+)
+AM_CONDITIONAL(BUILD_KUNDERT, test X${ADDON_KS} = "Xyes")
+
+# ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
   # Find valid SuperLU Dist and Kundert libraries
 ### In the future we need to be able to disable dependence on Kundert lib
 
+if test "X$ADDON_SLUD" != "Xno"; then
   AC_LANG_SAVE
   AC_LANG_C
   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
   AC_MSG_ERROR([[Cannot find SuperLU Dist library, please specify additional locations using --with-libdirs]]))  
-#  AC_LANG_C
-  AC_SEARCH_LIBS(spSolve,[epetra_sparse],,
-  AC_MSG_ERROR([[Cannot find Kundert Sparse library, please specify additional locations using --with-libdirs]]))
-  AC_LANG_RESTORE
-
+fi
 
 dnl Replace `main' with a function in -lm:
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -297,9 +319,42 @@ dnl AC_MSG_RESULT($XTRALDADD)
 dnl fi
 
 AC_SUBST(XTRALDADD)
+
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Setup Platform for Kundert
+# ------------------------------------------------------------------------
+
+if test "X$ADDON_KS" = "Xyes"; then
+
+ case "$target" in
+  *freebsd*) PLATFORM=freebsd
+           ;;
+  *linux*) PLATFORM=linux
+         ;;
+  *sgi*) PLATFORM=sgi
+       ;;
+  *powerpc*) PLATFORM=ppc
+      ;;
+  *solaris*) PLATFORM=solaris
+      ;;
+  i386*mingw32msvc) PLATFORM=mingw
+       ;;
+  alpha*-dec-osf*) PLATFORM=dec
+       ;;
+  *)   if test "x$PLATFORM" = "x"; then
+         AC_MSG_NOTICE([Unrecognized target, using generic unix for PLATFORM])
+         Xyce_ARCH=unix
+       fi
+       ;;
+ esac
+
+ AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
+ CPPFLAGS="$CPPFLAGS -D$PLATFORM"
+fi
 
 # ------------------------------------------------------------------------
 # Checks for system services

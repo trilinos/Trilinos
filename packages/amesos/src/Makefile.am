@@ -9,85 +9,54 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-CORE_H = \
-	$(srcdir)/SuperludistOO.h \
-	$(srcdir)/KundertOO.h
-
-
-CORE = \
-	$(srcdir)/SuperludistOO.cpp \
-	$(srcdir)/KundertOO.cpp
-
-UTIL_H = 
-
-UTIL = 
-
-ENUM_H = 
-
-UNIPROC_H = 
-
-UNIPROC = 
-
-SERIAL_H = 
-
-SERIAL = 
-
-EXTRA_MPI_H = 
-
-EXTRA_MPI = 
-
-if HAVE_MPI
-
-MPI_H = \
-	$(EXTRA_MPI_H)
-MPI = \
-	$(EXTRA_MPI)
-
+if BUILD_SLUDIST
+SLUDIST_H = \
+        $(srcdir)/SuperludistOO.h
+SLUDIST = \
+        $(srcdir)/SuperludistOO.cpp
 else
-
-MPI_H =
-MPI =
-
+SLUDIST_H =
+SLUDIST =
 endif
 
-EXTRA_MPISMP_H = 
+if BUILD_SLUSERIAL
+SLUSERIAL_H = \
+       $(srcdir)/Epetra_SLU.h
+SLUSERIAL = \
+       $(srcdir)/Epetra_SLU.cpp
+else
+SLUSERIAL_H =
+SLUSERIAL =
+endif
 
-EXTRA_MPISMP = 
-
-#if HAVE_THREADS
-
-#MPISMP_H = \
-#	$(EXTRA_MPISMP_H)
-#MPISMP = \
-#	$(EXTRA_MPISMP)
-
-#else
-
-MPISMP_H =
-MPISMP =
-
-#endif
-
-
-
-USERBASE_H = 
-
-LANG_WRAPS_H = 
-
-LANG_WRAPS = 
-
-DIST_H = 
-
-DIST = 
+if BUILD_KUNDERT
+KUNDERT_H = \
+       $(srcdir)/Epetra_CrsKundertSparse.h
+KUNDERT = \
+       $(srcdir)/Epetra_CrsKundertSparse.cpp \
+       $(srcdir)/ksparse/alloc.c \
+       $(srcdir)/ksparse/smplinkrows.c \
+       $(srcdir)/ksparse/spbuild.c \
+       $(srcdir)/ksparse/spoutput.c \
+       $(srcdir)/ksparse/spsolve.c \
+       $(srcdir)/ksparse/driver.c \
+       $(srcdir)/ksparse/spalloc.c \
+       $(srcdir)/ksparse/spfactor.c \
+       $(srcdir)/ksparse/spsmp.c \
+       $(srcdir)/ksparse/sputils.c
+else
+KUNDERT_H =
+KUNDERT =
+endif
 
 COMP_H = \
 	$(srcdir)/CrsMatrixTranspose.h
-
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 #Specify locations of include files within Trilinos, but outside Amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+              -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
 # ------------------------------------------------------------------------
 # Amesos library specifications
 # ------------------------------------------------------------------------
@@ -96,26 +65,16 @@ AMESOS_LIB = libamesos.a
 
 
 AMESOS_H = \
-	$(CORE_H) \
-	$(UTIL_H) \
-	$(ENUM_H) \
-	$(UNIPROC_H) \
-	$(SERIAL_H) \
-	$(USERBASE_H) \
-	$(DIST_H) \
-	$(COMP_H) \
-	$(MPI_H) \
-	$(MPISMP_H)
+        $(SLUDIST_H) \
+        $(SLUSERIAL_H) \
+        $(KUNDERT_H) \
+	$(COMP_H)
 
 libamesos_a_SOURCES = \
-	$(CORE) \
-	$(UTIL) \
-	$(UNIPROC) \
-	$(SERIAL) \
-	$(DIST) \
-	$(COMP) \
-	$(MPI) \
-	$(MPISMP)
+        $(SLUDIST) \
+        $(SLUSERIAL) \
+        $(KUNDERT) \
+	$(COMP)
 
 EXTRA_libamesos_a_SOURCES = \
 	$(EXTRA_MPI) \

@@ -68,6 +68,7 @@ POST_UNINSTALL = :
 ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
+CC = @CC@
 CXX = @CXX@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
@@ -86,81 +87,54 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-CORE_H = \
-	$(srcdir)/SuperludistOO.h \
-	$(srcdir)/KundertOO.h
+@BUILD_SLUDIST_TRUE@SLUDIST_H = \
+@BUILD_SLUDIST_TRUE@        $(srcdir)/SuperludistOO.h
 
+@BUILD_SLUDIST_FALSE@SLUDIST_H = 
+@BUILD_SLUDIST_TRUE@SLUDIST = \
+@BUILD_SLUDIST_TRUE@        $(srcdir)/SuperludistOO.cpp
 
-CORE = \
-	$(srcdir)/SuperludistOO.cpp \
-	$(srcdir)/KundertOO.cpp
+@BUILD_SLUDIST_FALSE@SLUDIST = 
 
+@BUILD_SLUSERIAL_TRUE@SLUSERIAL_H = \
+@BUILD_SLUSERIAL_TRUE@       $(srcdir)/Epetra_SLU.h
 
-UTIL_H = 
+@BUILD_SLUSERIAL_FALSE@SLUSERIAL_H = 
+@BUILD_SLUSERIAL_TRUE@SLUSERIAL = \
+@BUILD_SLUSERIAL_TRUE@       $(srcdir)/Epetra_SLU.cpp
 
-UTIL = 
+@BUILD_SLUSERIAL_FALSE@SLUSERIAL = 
 
-ENUM_H = 
+@BUILD_KUNDERT_TRUE@KUNDERT_H = \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/Epetra_CrsKundertSparse.h
 
-UNIPROC_H = 
+@BUILD_KUNDERT_FALSE@KUNDERT_H = 
+@BUILD_KUNDERT_TRUE@KUNDERT = \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/Epetra_CrsKundertSparse.cpp \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/alloc.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/smplinkrows.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spbuild.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spoutput.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spsolve.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/driver.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spalloc.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spfactor.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/spsmp.c \
+@BUILD_KUNDERT_TRUE@       $(srcdir)/ksparse/sputils.c
 
-UNIPROC = 
-
-SERIAL_H = 
-
-SERIAL = 
-
-EXTRA_MPI_H = 
-
-EXTRA_MPI = 
-
-@HAVE_MPI_TRUE@MPI_H = \
-@HAVE_MPI_TRUE@	$(EXTRA_MPI_H)
-
-@HAVE_MPI_FALSE@MPI_H = 
-@HAVE_MPI_TRUE@MPI = \
-@HAVE_MPI_TRUE@	$(EXTRA_MPI)
-
-@HAVE_MPI_FALSE@MPI = 
-
-EXTRA_MPISMP_H = 
-
-EXTRA_MPISMP = 
-
-
-#if HAVE_THREADS
-
-#MPISMP_H = \
-#	$(EXTRA_MPISMP_H)
-#MPISMP = \
-#	$(EXTRA_MPISMP)
-
-#else
-MPISMP_H = 
-MPISMP = 
-
-
-#endif
-USERBASE_H = 
-
-LANG_WRAPS_H = 
-
-LANG_WRAPS = 
-
-DIST_H = 
-
-DIST = 
+@BUILD_KUNDERT_FALSE@KUNDERT = 
 
 COMP_H = \
 	$(srcdir)/CrsMatrixTranspose.h
-
 
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 
 #Specify locations of include files within Trilinos, but outside Amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+              -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+
 
 # ------------------------------------------------------------------------
 # Amesos library specifications
@@ -168,27 +142,17 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 AMESOS_LIB = libamesos.a
 
 AMESOS_H = \
-	$(CORE_H) \
-	$(UTIL_H) \
-	$(ENUM_H) \
-	$(UNIPROC_H) \
-	$(SERIAL_H) \
-	$(USERBASE_H) \
-	$(DIST_H) \
-	$(COMP_H) \
-	$(MPI_H) \
-	$(MPISMP_H)
+        $(SLUDIST_H) \
+        $(SLUSERIAL_H) \
+        $(KUNDERT_H) \
+	$(COMP_H)
 
 
 libamesos_a_SOURCES = \
-	$(CORE) \
-	$(UTIL) \
-	$(UNIPROC) \
-	$(SERIAL) \
-	$(DIST) \
-	$(COMP) \
-	$(MPI) \
-	$(MPISMP)
+        $(SLUDIST) \
+        $(SLUSERIAL) \
+        $(KUNDERT) \
+	$(COMP)
 
 
 EXTRA_libamesos_a_SOURCES = \
@@ -254,11 +218,74 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libamesos_a_DEPENDENCIES =
-@HAVE_MPI_TRUE@am_libamesos_a_OBJECTS = SuperludistOO.$(OBJEXT) \
-@HAVE_MPI_TRUE@	KundertOO.$(OBJEXT) CrsMatrixTranspose.$(OBJEXT)
-@HAVE_MPI_FALSE@am_libamesos_a_OBJECTS = SuperludistOO.$(OBJEXT) \
-@HAVE_MPI_FALSE@	KundertOO.$(OBJEXT) \
-@HAVE_MPI_FALSE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	Epetra_SLU.$(OBJEXT) \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	SuperludistOO.$(OBJEXT) \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	Epetra_SLU.$(OBJEXT) \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	SuperludistOO.$(OBJEXT) \
+@BUILD_KUNDERT_FALSE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	Epetra_SLU.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	alloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	smplinkrows.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spbuild.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spoutput.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spsolve.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	driver.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spalloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spfactor.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	spsmp.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	sputils.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_TRUE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	Epetra_CrsKundertSparse.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	alloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	smplinkrows.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spbuild.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spoutput.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spsolve.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	driver.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spalloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spfactor.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	spsmp.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	sputils.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_FALSE@@BUILD_SLUSERIAL_FALSE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	SuperludistOO.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	Epetra_SLU.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	alloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	smplinkrows.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spbuild.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spoutput.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spsolve.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	driver.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spalloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spfactor.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	spsmp.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	sputils.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_TRUE@	CrsMatrixTranspose.$(OBJEXT)
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@am_libamesos_a_OBJECTS = \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	SuperludistOO.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	Epetra_CrsKundertSparse.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	alloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	smplinkrows.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spbuild.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spoutput.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spsolve.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	driver.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spalloc.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spfactor.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	spsmp.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	sputils.$(OBJEXT) \
+@BUILD_KUNDERT_TRUE@@BUILD_SLUDIST_TRUE@@BUILD_SLUSERIAL_FALSE@	CrsMatrixTranspose.$(OBJEXT)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -268,7 +295,18 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/CrsMatrixTranspose.Po \
-@AMDEP_TRUE@	$(DEPDIR)/KundertOO.Po $(DEPDIR)/SuperludistOO.Po
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_CrsKundertSparse.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_SLU.Po $(DEPDIR)/SuperludistOO.Po \
+@AMDEP_TRUE@	$(DEPDIR)/alloc.Po $(DEPDIR)/driver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/smplinkrows.Po $(DEPDIR)/spalloc.Po \
+@AMDEP_TRUE@	$(DEPDIR)/spbuild.Po $(DEPDIR)/spfactor.Po \
+@AMDEP_TRUE@	$(DEPDIR)/spoutput.Po $(DEPDIR)/spsmp.Po \
+@AMDEP_TRUE@	$(DEPDIR)/spsolve.Po $(DEPDIR)/sputils.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -286,7 +324,7 @@ all: Amesos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
@@ -347,9 +385,20 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
-KundertOO.$(OBJEXT): $(srcdir)/KundertOO.cpp
+Epetra_SLU.$(OBJEXT): $(srcdir)/Epetra_SLU.cpp
 CrsMatrixTranspose.$(OBJEXT): $(srcdir)/CrsMatrixTranspose.cpp
+SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
+Epetra_CrsKundertSparse.$(OBJEXT): $(srcdir)/Epetra_CrsKundertSparse.cpp
+alloc.$(OBJEXT): $(srcdir)/ksparse/alloc.c
+smplinkrows.$(OBJEXT): $(srcdir)/ksparse/smplinkrows.c
+spbuild.$(OBJEXT): $(srcdir)/ksparse/spbuild.c
+spoutput.$(OBJEXT): $(srcdir)/ksparse/spoutput.c
+spsolve.$(OBJEXT): $(srcdir)/ksparse/spsolve.c
+driver.$(OBJEXT): $(srcdir)/ksparse/driver.c
+spalloc.$(OBJEXT): $(srcdir)/ksparse/spalloc.c
+spfactor.$(OBJEXT): $(srcdir)/ksparse/spfactor.c
+spsmp.$(OBJEXT): $(srcdir)/ksparse/spsmp.c
+sputils.$(OBJEXT): $(srcdir)/ksparse/sputils.c
 libamesos.a: $(libamesos_a_OBJECTS) $(libamesos_a_DEPENDENCIES) 
 	-rm -f libamesos.a
 	$(libamesos_a_AR) libamesos.a $(libamesos_a_OBJECTS) $(libamesos_a_LIBADD)
@@ -362,11 +411,155 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/CrsMatrixTranspose.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/KundertOO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CrsKundertSparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_SLU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/SuperludistOO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/alloc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/smplinkrows.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spalloc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spbuild.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spfactor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spoutput.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spsmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/spsolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/sputils.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
+
+.c.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f $< || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
+
+alloc.o: $(srcdir)/ksparse/alloc.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/alloc.c' object='alloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/alloc.Po' tmpdepfile='$(DEPDIR)/alloc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alloc.o `test -f $(srcdir)/ksparse/alloc.c || echo '$(srcdir)/'`$(srcdir)/ksparse/alloc.c
+
+alloc.obj: $(srcdir)/ksparse/alloc.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/alloc.c' object='alloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/alloc.Po' tmpdepfile='$(DEPDIR)/alloc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alloc.obj `cygpath -w $(srcdir)/ksparse/alloc.c`
+
+smplinkrows.o: $(srcdir)/ksparse/smplinkrows.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/smplinkrows.c' object='smplinkrows.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/smplinkrows.Po' tmpdepfile='$(DEPDIR)/smplinkrows.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smplinkrows.o `test -f $(srcdir)/ksparse/smplinkrows.c || echo '$(srcdir)/'`$(srcdir)/ksparse/smplinkrows.c
+
+smplinkrows.obj: $(srcdir)/ksparse/smplinkrows.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/smplinkrows.c' object='smplinkrows.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/smplinkrows.Po' tmpdepfile='$(DEPDIR)/smplinkrows.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smplinkrows.obj `cygpath -w $(srcdir)/ksparse/smplinkrows.c`
+
+spbuild.o: $(srcdir)/ksparse/spbuild.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spbuild.c' object='spbuild.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spbuild.Po' tmpdepfile='$(DEPDIR)/spbuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spbuild.o `test -f $(srcdir)/ksparse/spbuild.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spbuild.c
+
+spbuild.obj: $(srcdir)/ksparse/spbuild.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spbuild.c' object='spbuild.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spbuild.Po' tmpdepfile='$(DEPDIR)/spbuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spbuild.obj `cygpath -w $(srcdir)/ksparse/spbuild.c`
+
+spoutput.o: $(srcdir)/ksparse/spoutput.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spoutput.c' object='spoutput.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spoutput.Po' tmpdepfile='$(DEPDIR)/spoutput.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spoutput.o `test -f $(srcdir)/ksparse/spoutput.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spoutput.c
+
+spoutput.obj: $(srcdir)/ksparse/spoutput.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spoutput.c' object='spoutput.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spoutput.Po' tmpdepfile='$(DEPDIR)/spoutput.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spoutput.obj `cygpath -w $(srcdir)/ksparse/spoutput.c`
+
+spsolve.o: $(srcdir)/ksparse/spsolve.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spsolve.c' object='spsolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spsolve.Po' tmpdepfile='$(DEPDIR)/spsolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsolve.o `test -f $(srcdir)/ksparse/spsolve.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spsolve.c
+
+spsolve.obj: $(srcdir)/ksparse/spsolve.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spsolve.c' object='spsolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spsolve.Po' tmpdepfile='$(DEPDIR)/spsolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsolve.obj `cygpath -w $(srcdir)/ksparse/spsolve.c`
+
+driver.o: $(srcdir)/ksparse/driver.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/driver.c' object='driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/driver.Po' tmpdepfile='$(DEPDIR)/driver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o driver.o `test -f $(srcdir)/ksparse/driver.c || echo '$(srcdir)/'`$(srcdir)/ksparse/driver.c
+
+driver.obj: $(srcdir)/ksparse/driver.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/driver.c' object='driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/driver.Po' tmpdepfile='$(DEPDIR)/driver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o driver.obj `cygpath -w $(srcdir)/ksparse/driver.c`
+
+spalloc.o: $(srcdir)/ksparse/spalloc.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spalloc.c' object='spalloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spalloc.Po' tmpdepfile='$(DEPDIR)/spalloc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spalloc.o `test -f $(srcdir)/ksparse/spalloc.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spalloc.c
+
+spalloc.obj: $(srcdir)/ksparse/spalloc.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spalloc.c' object='spalloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spalloc.Po' tmpdepfile='$(DEPDIR)/spalloc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spalloc.obj `cygpath -w $(srcdir)/ksparse/spalloc.c`
+
+spfactor.o: $(srcdir)/ksparse/spfactor.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spfactor.c' object='spfactor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spfactor.Po' tmpdepfile='$(DEPDIR)/spfactor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spfactor.o `test -f $(srcdir)/ksparse/spfactor.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spfactor.c
+
+spfactor.obj: $(srcdir)/ksparse/spfactor.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spfactor.c' object='spfactor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spfactor.Po' tmpdepfile='$(DEPDIR)/spfactor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spfactor.obj `cygpath -w $(srcdir)/ksparse/spfactor.c`
+
+spsmp.o: $(srcdir)/ksparse/spsmp.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spsmp.c' object='spsmp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spsmp.Po' tmpdepfile='$(DEPDIR)/spsmp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsmp.o `test -f $(srcdir)/ksparse/spsmp.c || echo '$(srcdir)/'`$(srcdir)/ksparse/spsmp.c
+
+spsmp.obj: $(srcdir)/ksparse/spsmp.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/spsmp.c' object='spsmp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/spsmp.Po' tmpdepfile='$(DEPDIR)/spsmp.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsmp.obj `cygpath -w $(srcdir)/ksparse/spsmp.c`
+
+sputils.o: $(srcdir)/ksparse/sputils.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/sputils.c' object='sputils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/sputils.Po' tmpdepfile='$(DEPDIR)/sputils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sputils.o `test -f $(srcdir)/ksparse/sputils.c || echo '$(srcdir)/'`$(srcdir)/ksparse/sputils.c
+
+sputils.obj: $(srcdir)/ksparse/sputils.c
+@AMDEP_TRUE@	source='$(srcdir)/ksparse/sputils.c' object='sputils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/sputils.Po' tmpdepfile='$(DEPDIR)/sputils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sputils.obj `cygpath -w $(srcdir)/ksparse/sputils.c`
+CCDEPMODE = @CCDEPMODE@
 
 .cpp.o:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -380,29 +573,17 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-SuperludistOO.o: $(srcdir)/SuperludistOO.cpp
-@AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
+Epetra_SLU.o: $(srcdir)/Epetra_SLU.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_SLU.cpp' object='Epetra_SLU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SLU.Po' tmpdepfile='$(DEPDIR)/Epetra_SLU.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.o `test -f $(srcdir)/SuperludistOO.cpp || echo '$(srcdir)/'`$(srcdir)/SuperludistOO.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SLU.o `test -f $(srcdir)/Epetra_SLU.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_SLU.cpp
 
-SuperludistOO.obj: $(srcdir)/SuperludistOO.cpp
-@AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
+Epetra_SLU.obj: $(srcdir)/Epetra_SLU.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_SLU.cpp' object='Epetra_SLU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SLU.Po' tmpdepfile='$(DEPDIR)/Epetra_SLU.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.obj `cygpath -w $(srcdir)/SuperludistOO.cpp`
-
-KundertOO.o: $(srcdir)/KundertOO.cpp
-@AMDEP_TRUE@	source='$(srcdir)/KundertOO.cpp' object='KundertOO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/KundertOO.Po' tmpdepfile='$(DEPDIR)/KundertOO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KundertOO.o `test -f $(srcdir)/KundertOO.cpp || echo '$(srcdir)/'`$(srcdir)/KundertOO.cpp
-
-KundertOO.obj: $(srcdir)/KundertOO.cpp
-@AMDEP_TRUE@	source='$(srcdir)/KundertOO.cpp' object='KundertOO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/KundertOO.Po' tmpdepfile='$(DEPDIR)/KundertOO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KundertOO.obj `cygpath -w $(srcdir)/KundertOO.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SLU.obj `cygpath -w $(srcdir)/Epetra_SLU.cpp`
 
 CrsMatrixTranspose.o: $(srcdir)/CrsMatrixTranspose.cpp
 @AMDEP_TRUE@	source='$(srcdir)/CrsMatrixTranspose.cpp' object='CrsMatrixTranspose.o' libtool=no @AMDEPBACKSLASH@
@@ -415,6 +596,30 @@ CrsMatrixTranspose.obj: $(srcdir)/CrsMatrixTranspose.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/CrsMatrixTranspose.Po' tmpdepfile='$(DEPDIR)/CrsMatrixTranspose.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CrsMatrixTranspose.obj `cygpath -w $(srcdir)/CrsMatrixTranspose.cpp`
+
+SuperludistOO.o: $(srcdir)/SuperludistOO.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.o `test -f $(srcdir)/SuperludistOO.cpp || echo '$(srcdir)/'`$(srcdir)/SuperludistOO.cpp
+
+SuperludistOO.obj: $(srcdir)/SuperludistOO.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.obj `cygpath -w $(srcdir)/SuperludistOO.cpp`
+
+Epetra_CrsKundertSparse.o: $(srcdir)/Epetra_CrsKundertSparse.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsKundertSparse.cpp' object='Epetra_CrsKundertSparse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsKundertSparse.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsKundertSparse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsKundertSparse.o `test -f $(srcdir)/Epetra_CrsKundertSparse.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsKundertSparse.cpp
+
+Epetra_CrsKundertSparse.obj: $(srcdir)/Epetra_CrsKundertSparse.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsKundertSparse.cpp' object='Epetra_CrsKundertSparse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsKundertSparse.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsKundertSparse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsKundertSparse.obj `cygpath -w $(srcdir)/Epetra_CrsKundertSparse.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
