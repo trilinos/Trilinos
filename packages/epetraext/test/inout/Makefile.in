@@ -126,7 +126,7 @@ inout_test_SOURCES = \
 
 
 inout_test_DEPENDENCIES = \
-  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/src/inout/libepetraext_inout.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
 

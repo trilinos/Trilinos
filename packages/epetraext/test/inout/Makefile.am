@@ -35,7 +35,7 @@ inout_test_SOURCES = \
   $(top_srcdir)/test/epetra_test_err.h
 
 inout_test_DEPENDENCIES = \
-  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/src/inout/libepetraext_inout.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
 inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
