@@ -149,7 +149,7 @@ int Zoltan_RB_find_bisector(
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank;                      /* rank in partition (Tflops_Special) */
   int     iteration;                 /* bisection iteration no. */
-  int     i, j, k, flag, numlist;
+  int     i, j, k, numlist;
 
   char  msg[256];                    /* for error messages */
 
@@ -401,32 +401,24 @@ int Zoltan_RB_find_bisector(
   }
   */
 
-  /* Scale weights if not comparable or if variable imbal. tols. */
-  flag = 0;
-  temp = zz->LB.Imbalance_Tol[0];
-  for (j=1; j<nwgts; j++)
-    if (zz->LB.Imbalance_Tol[j] != temp) flag = 1;
-  
-  if (flag || (!obj_wgt_comparable)){
-    for (i=0; i<dotnum; i++){
-      for (j=0; j<nwgts; j++){
-        /* First scale to make sums equal. */
-        if ((!obj_wgt_comparable) && (wtsum[j]>0)) 
-          wgts[i*nwgts+j] /= wtsum[j];
-        /* Then scale to make weights larger where the tolerance is low. */
-        if (flag)
-          /* Scale so weights are unchanged when Tol=1.1 */
-          wgts[i*nwgts+j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
-      }
-    }
-    /* Update wtsum. */
+  /* Scale weights. Important for not comparable weights, but also w.r.t.
+     the load imbalance tolerances. */
+  for (i=0; i<dotnum; i++){
     for (j=0; j<nwgts; j++){
-      if (!obj_wgt_comparable)
-        wtsum[j] = 1.0;
-      if (flag)
-        /* Scale so weights are unchanged when Tol=1.1 */
-        wtsum[j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
+      /* If not comparable, scale weights to make sums equal. */
+      if ((!obj_wgt_comparable) && (wtsum[j]>0)) 
+        wgts[i*nwgts+j] /= wtsum[j];
+      /* Then scale to make weights larger where the tolerance is low. */
+      /* Scale so weights are unchanged when Tol=1.1 */
+      wgts[i*nwgts+j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
     }
+  }
+  /* Update wtsum. */
+  for (j=0; j<nwgts; j++){
+    if (!obj_wgt_comparable)
+      if (wtsum[j]>0) wtsum[j] = 1.0;
+    /* Scale so weights are unchanged when Tol=1.1 */
+    wtsum[j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
   }
 
   /* weightlo/hi = total weight in non-active parts of partition */
