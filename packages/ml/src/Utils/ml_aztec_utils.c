@@ -2011,13 +2011,13 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows)
 {
-   int *rows, *cols, i, j, bcrow;
+   int *rows, /* *cols,*/ i, j, bcrow;
    double *vals;
    struct ML_CSR_MSRdata *data;
  
    data = (struct ML_CSR_MSRdata *) ((*Tmat)->data);
    rows = data->rowptr;
-   cols = data->columns;
+   /*cols = data->columns;*/
    vals = data->values;
  
    for (i=0;i<num_dirichlet_rows;i++)
