@@ -36,6 +36,7 @@ typedef struct ML_Aggregate_Struct
    double smoothP_damping_factor;      /* for prolongator smoother      */
    int    smoothP_type;                /* point, block                  */
    int    coarsen_scheme;              /* Uncoupled, Coupled, MIS       */
+   int   * coarsen_scheme_level;  
    int    num_PDE_eqns;                /* block size                    */
    int    nullspace_dim;               /* self-explanatory              */
    double *nullspace_vect;             /* for null space vectors        */
@@ -182,7 +183,13 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_index, int exp_Nrows, 
 				  ML_Comm *comm, char *input_bdry,char *label,
                                   ML_agg_indx_comm *);
-
+int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int, ML_Aggregate *ag,
+					 int choice );
+int ML_Aggregate_Set_CoarsenSchemeLevel_Coupled( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *ag  );
 
 /* ------------------------------------------------------------------------- */
 /* set threshold for pruning matrix graph                                    */

@@ -91,6 +91,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->use_transpose              = ML_FALSE;
    (*ag)->Restriction_smoothagg_transpose = ML_FALSE;
 /*MS*/
+   (*ag)->coarsen_scheme_level       = NULL;
    (*ag)->aggr_options               = NULL;
    (*ag)->aggr_viz_and_stats         = NULL;
 /*MS*/
@@ -135,6 +136,10 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 	ML_Operator_ArrayDestroy( (*ag)->P_tentative, (*ag)->max_levels);
 
 /*MS*/
+      if( (*ag)->coarsen_scheme_level != NULL ) {
+	ML_memory_free( (void **) &((*ag)->coarsen_scheme_level) );
+	(*ag)->coarsen_scheme_level = NULL;
+      }
       if( (*ag)->aggr_options != NULL ) {
 	ML_memory_free( (void **) &((*ag)->aggr_options) );
 	(*ag)->aggr_options = NULL;
@@ -382,6 +387,92 @@ int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  )
    return 0;
 }
 
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int MaxLevels,
+					 ML_Aggregate *ag,
+					 int choice )
+{
+
+  int i;
+
+  if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_CoarsenScheme_METIS : wrong object. \n");
+      exit(-1);
+   }
+   if( ag->coarsen_scheme_level == NULL ) {
+     ML_memory_alloc((void**) &(ag->coarsen_scheme_level),
+		     sizeof(int)*MaxLevels,"coarsen_scheme_level");
+     for( i=0 ; i<MaxLevels ; i++ )
+       ag->coarsen_scheme_level[i] = choice;
+   }
+
+   if( level<-1 || level>=MaxLevels ) {
+     fprintf( stderr,
+	      "*ML*ERR* level not valid (%d), MaxLevels=%d\n"
+	      "*ML*ERR* (file %s, line %d)\n",
+	      level, MaxLevels,
+	      __FILE__,
+	      __LINE__ );
+     return 1;
+   }
+
+   if( level == -1 ) {
+     for( i=0 ; i<MaxLevels ; i++ )
+       ag->coarsen_scheme_level[i] = choice;
+   } else {
+     ag->coarsen_scheme_level[level] = choice;
+   }
+   
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_Coupled( int level, int MaxLevels,
+						 ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_COUPLED) );
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled( int level, int MaxLevels,
+						   ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_UNCOUPLED) );
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int MaxLevels,
+					     ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_MIS) );
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int MaxLevels,
+					       ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_METIS) );
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int MaxLevels,
+						  ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_PARMETIS) );
+}
+
 /*ms*/
 
 /* ************************************************************************* */
@@ -567,7 +658,7 @@ int ML_Aggregate_Get_AggrCount( ML_Aggregate *ag, int level )
       printf("ML_Aggregate_Get_AggrCount : wrong object. \n");
       exit(-1);
    }
-   if ( level < 0 || level >= ag->max_levels ) 
+   if ( level < -1 || level >= ag->max_levels ) 
    {
       printf("ML_Aggregate_Get_AggrCount : level number not valid. \n");
       exit(-1);
@@ -769,7 +860,14 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       printf("Smallest Amatrix->outvec_leng = %d\n", (int) (-1 * gmin));
    */
    nprocs = comm->ML_nprocs;
-   coarsen_scheme = ag->coarsen_scheme;
+   /*MS*/
+   if( ag->coarsen_scheme_level == NULL ) {
+     coarsen_scheme = ag->coarsen_scheme;
+   } else {
+     coarsen_scheme = ag->coarsen_scheme_level[ag->cur_level];
+   }
+   /*ms*/
+   
    if ( ndofs == nprocs ) 
    {
       if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
