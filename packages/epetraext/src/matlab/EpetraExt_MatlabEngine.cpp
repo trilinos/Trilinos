@@ -31,6 +31,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_RowMatrix.h"
 
 using namespace EpetraExt;
 namespace EpetraExt {
@@ -40,8 +41,7 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 
     // MATLAB engOpen, to construct the MATLAB engine
 
-    MyPID_ = Comm_.MyPID();
-    if (MyPID_ == 0) {
+    if (Comm_.MyPID() == 0) {
 		// Gentlemen, start your engines ...
 		Engine_ = engOpen(NULL);
     }
@@ -52,7 +52,7 @@ MatlabEngine::~MatlabEngine (void) {
 
     // MATLAB engClose, to destruct the MATLAB engine
 
-    if (MyPID_ == 0) {
+    if (Comm_.MyPID() == 0) {
 		int result = engClose(Engine_);
 		if (result != 0) {
 	    	// need to handle a nonzero result somehow
@@ -69,7 +69,7 @@ int MatlabEngine::EvalString (char* command) {
 
 int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
     // send a string command to the MATLAB engine
-    if (MyPID_ == 0) {
+    if (Comm_.MyPID() == 0) {
 		if (outputBuffer != NULL) {
 		  if (engOutputBuffer(Engine_, outputBuffer, outputBufferSize))
 			return(-4);
@@ -82,39 +82,40 @@ int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBuffe
 }
 
 //=============================================================================
-int MatlabEngine::PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName) {
+int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * variableName) {
     mxArray* matlabA = 0;
-    if (comm.MyPID() == 0)
+    if (Comm_.MyPID() == 0)
       matlabA = mxCreateDoubleMatrix(A.GlobalLength(), A.NumVectors(), mxREAL);
+      double* pr = mxGetPr(matlabA);
 	
-	if (CopyMultiVector(matlabA, multiVector)) {
+	/*if (CopyMultiVector(matlabA, multiVector)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
-	if (comm.MyPID() == 0)
+	if (Comm_.MyPID() == 0)
 	  if (engPutVariable(Engine_, variableName, matlabA)) {
 		mxDestroyArray(matlabA)
 		return(-1);
 	  }
 	
-	mxDestroyArray(matlabA);
+	mxDestroyArray(matlabA);*/
 	return(0);
 }
 
 //=============================================================================
 int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
     mxArray* matlabA = 0;
-    if (comm.MyPID() == 0)
+    if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
-	  mablabA = createSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
+	  matlabA = mxCreateSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
 
 	if (CopyRowMatrix(matlabA, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
-	if (comm.MyPID() == 0) {
+	if (Comm_.MyPID() == 0) {
 	  if (engPutVariable(Engine_, variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
@@ -139,7 +140,7 @@ int MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName
 int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName) {
   int ierr = 0;
 
-	if (comm.MyPID() == 0) {
+	if (Comm_.MyPID() == 0) {
 	  int numRows = A.M();
 	  int numCols = A.N();
 	  mxArray* matlabA = 0;
@@ -173,7 +174,7 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 //=============================================================================
 int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName) {
 	int ierr = 0;
-	if (comm.MyPID() == 0) {
+	if (Comm_.MyPID() == 0) {
 	  int numRows = A.M();
 	  int numCols = A.N();
 	  mxArray* matlabA = 0;

@@ -99,7 +99,7 @@ class MatlabEngine {
 
   //@}
 
-  int PutMultiVector(const Epetra_MultiVector& multiVector, const char* variableName);
+  int PutMultiVector(const Epetra_MultiVector& A, const char* variableName);
   int PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA);
   int PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA);
   int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName);
@@ -109,7 +109,6 @@ class MatlabEngine {
  private:
 
     Engine* Engine_ ;
-    int MyPID_ ;
 
     const Epetra_Comm& Comm_ ;
 
