@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
       SetDefaults("SA",MLList);
       MLList.set("smoother: pre or post", "both");
       MLList.set("smoother: type", "IFPACK");
-      MLList.set("smoother: ifpack type", "point relaxation (no AS)");
+      MLList.set("smoother: ifpack type", "point relaxation stand-alone");
       ParameterList& IFPACKList = MLList.sublist("smoother: ifpack list");;
       IFPACKList.set("relaxation: type", TestList[i]);
       IFPACKList.set("relaxation: sweeps", sweeps);

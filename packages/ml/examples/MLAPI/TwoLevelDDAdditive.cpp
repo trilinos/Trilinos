@@ -91,6 +91,15 @@ public:
     return(FineMatrix_.RangeSpace());
   }
 
+  ostream& Print(ostream& os, const bool verbose = true) const 
+  {
+    if (MyPID() == 0) {
+      os << "*** MLAPI::TwoLevelAdditiveSA ***" << endl;
+    }
+
+    return(os);
+  }
+
 private:
   const Operator FineMatrix_;
   const Operator R_;
@@ -127,7 +136,7 @@ int main(int argc, char *argv[])
     // define the linear system matrix, solution and RHS
     //Operator FineMatrix = Gallery("laplace_2d", FineSpace);
 
-  Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", GetEpetraComm());
+  Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", GetEpetra_Comm());
   Gallery.Set("problem_size", NumGlobalElements);
   Operator FineMatrix(FineSpace,FineSpace,*(Gallery.GetMatrix()));
 
@@ -160,12 +169,16 @@ int main(int argc, char *argv[])
     MLList.set("aggregation: type","Uncoupled");
 #endif
 
-    P = BuildP(FineMatrix,MLList);
+    AggregationDataBase  ADB(MLList);
+    SmootherDataBase     SDB(MLList);
+    CoarseSolverDataBase CDB(MLList);
+
+    BuildPtent(FineMatrix,ADB,P);
     R = Transpose(P);
 
     CoarseMatrix = RAP(R,FineMatrix,P);
-    FineSolver.Reshape(FineMatrix,"SGS",MLList);
-    CoarseSolver.Reshape(CoarseMatrix,"Amesos",MLList);
+    FineSolver.Reshape(FineMatrix,SDB);
+    CoarseSolver.Reshape(CoarseMatrix,CDB);
 
     // We can now construct a Preconditioner-derived object, that
     // implements the 2-level hybrid domain decomposition preconditioner.
@@ -178,7 +191,8 @@ int main(int argc, char *argv[])
     MLList.set("solver",  "gmres");
     MLList.set("output", 16);
 
-    Krylov(FineMatrix, LHS, RHS, MLAPIPrec, MLList);
+    KrylovDataBase KDB; // set default options
+    Krylov(FineMatrix, LHS, RHS, MLAPIPrec, KDB);
     
   }
   catch (const char e[]) {

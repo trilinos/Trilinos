@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     // set parameters for aggregation and smoothers
     // NOTE: only a limited subset of the parameters accepted by
     // class ML_Epetra::MultiLevelPreconditioner is supported
-    // by MLAPI::MultiLevel!
+    // by MLAPI::MultiLevelSA
     
     Teuchos::ParameterList MLList;
     MLList.set("max levels",3);
@@ -97,10 +97,15 @@ int main(int argc, char *argv[])
     MLList.set("coarse: type","Amesos-KLU");
 
     // create the multilevel hierarchy using aggregation
-    MultiLevel Prec(FineMatrix, MLList);
+    AggregationDataBase  ADB(MLList);
+    SmootherDataBase     SDB(MLList);
+    CoarseSolverDataBase CDB(MLList);
+
+    MultiLevelSA Prec(FineMatrix, ADB, SDB, CDB);
 
     // solve with GMRES (through AztecOO)
-    Krylov(FineMatrix, LHS, RHS, Prec, MLList);
+    KrylovDataBase KDB;
+    Krylov(FineMatrix, LHS, RHS, Prec, KDB);
 
   }
   catch (const char e[]) {
