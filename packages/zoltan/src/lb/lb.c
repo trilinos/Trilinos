@@ -3,6 +3,18 @@
 #include "all_allo_const.h"
 #include "par.h"
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+static void perform_error_checking(LB *);
+static void help_migrate(LB *);
+static void clean_up(LB_COMM *);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 void LB_Initialize(int *argc, char ***argv)
 {
 /*
@@ -40,14 +52,14 @@ int mpi_flag;
 /****************************************************************************/
 /****************************************************************************/
 
-void *LB_Create_LB_Object()
+LB *LB_Create_LB_Object()
 {
 /*
  *  Function to create a load balancing object.  May want more than one
  *  object if using different decompositions with different techniques.
  *  This function allocates and initializes the object.
  *  Output:
- *    void *             --  Pointer to a LB object.
+ *    LB *               --  Pointer to a LB object.
  *
  */
 
@@ -83,32 +95,27 @@ LB *lb;
   lb->Get_All_Border_Objs = NULL;
   lb->Get_Next_Border_Obj = NULL;
   
-  /*
-   *  Cast return value.
-   */
-
-  return((void *) lb);
+  return(lb);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_LB_Fn(void *lbv, LB_FN_TYPE fn_type, void *fn())
+void LB_Set_LB_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn())
 {
 /*
  *  Function to initialize a given LB interface function.
  *  Input:
- *    lbv               --  Pointer to a LB object.
+ *    lb                --  Pointer to a LB object.
  *    fn_type           --  Enum type indicating the function to be set.
  *    fn                --  Pointer to the function to be used in the
  *                          assignment.
  *  Output:
- *    lbv               --  Appropriate field set to value in void *().
+ *    lb                --  Appropriate field set to value in void *().
  */
 
 char *yo = "LB_Set_LB_Fn";
-LB *lb = (LB *) lbv;
 
   switch (fn_type) {
   case LB_OBJECT_WEIGHT_FN_TYPE:
@@ -155,12 +162,12 @@ LB *lb = (LB *) lbv;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_LB_Method(void *lbv, char *method_name, double *params)
+void LB_Set_LB_Method(LB *lb, char *method_name, double *params)
 {
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    lbv                --  The load balancing object to which this method
+ *    lb                 --  The load balancing object to which this method
  *                           applies.
  *    method_name        --  String specifying the desired method.
  *    params             --  Params needed by desired method.  (This field
@@ -170,7 +177,6 @@ void LB_Set_LB_Method(void *lbv, char *method_name, double *params)
  */
 
 char *yo = "LB_Set_LB_Method";
-LB *lb = (LB *) lbv;
 int i;
 
   /*
@@ -214,7 +220,7 @@ int i;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_LB_Tolerance(void *lbv, double tolerance)
+void LB_Set_LB_Tolerance(LB *lb, double tolerance)
 {
 /*
  *  Function to set the tolerance to which the system must be load balanced.
@@ -222,15 +228,14 @@ void LB_Set_LB_Tolerance(void *lbv, double tolerance)
  *  the most heavily loaded processor and the average load will be accepted
  *  as balanced.
  *  Input:
- *    lbv                --  The load balancing object to which this tolerance
+ *    lb                 --  The load balancing object to which this tolerance
  *                           applies.
  *    tolerance          --  The tolerance desired.
  *  Output:
- *    lbv                --  Tolerance field set to appropriate value.
+ *    lb                 --  Tolerance field set to appropriate value.
  */
 
 char *yo = "LB_Set_LB_Tolerance";
-LB *lb = (LB *) lbv;
 
   /*
    *  Check tolerance for errors.
@@ -258,7 +263,7 @@ LB *lb = (LB *) lbv;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_LB_Object_Type(void *lbv, int object_type)
+void LB_Set_LB_Object_Type(LB *lb, int object_type)
 {
 /*
  *  Function to set the object type for objects to be balanced.
@@ -267,14 +272,13 @@ void LB_Set_LB_Object_Type(void *lbv, int object_type)
  *  This value is used only by the application; it is optional as far
  *  as the load-balancer is concerned.
  *  Input:
- *    void *             --  The load balancing object to which this tolerance
+ *    LB *               --  The load balancing object to which this tolerance
  *                           applies.
  *    int                --  An integer representing the object type.
  *  Output:
- *    void *             --  Appropriate fields set to designated type.
+ *    LB *               --  Appropriate fields set to designated type.
  */
 
-LB *lb = (LB *) lbv;
 
   lb->Object_Type = object_type;
   if (Proc == 0) {
@@ -286,9 +290,8 @@ LB *lb = (LB *) lbv;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Balance(void *lbv)
+void LB_Balance(LB *lb)
 {
-LB *lb = (LB *) lbv;
 int num_objs;                  /* Set to the new number of objects on 
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
@@ -302,5 +305,32 @@ int num_keep;                  /* Set to the number of objects the processor
   lb->LB_Fn(lb, &num_objs, &num_keep);
 
   help_migrate(lb);
-  clean_up(lb->LB_Comm);
+  clean_up(&(lb->LB_Comm));
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static void perform_error_checking(LB *lb)
+{
+
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static void help_migrate(LB *lb)
+{
+
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static void clean_up(LB_COMM *comm)
+{
+
 }

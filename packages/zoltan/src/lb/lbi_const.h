@@ -33,6 +33,8 @@ typedef enum LB_Fn_Type LB_FN_TYPE;
 typedef int LB_OBJECT_TYPE;
 typedef void *LB_ID;
 
+struct LB_Struct;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /**********************  Functions to query application  *********************/
@@ -206,36 +208,36 @@ extern void LB_Initialize(int *argc, char ***argv);
  *  object if using different decompositions with different techniques.
  *  This function allocates and initializes the object.
  *  Returned value:
- *    void *             --  Pointer to a LB object.
+ *    struct LB_Struct * --  Pointer to a LB object.
  */
-extern void *LB_Create_LB_Object();
+extern struct LB_Struct *LB_Create_LB_Object();
 
 /*****************************************************************************/
 /*
  *  Function to initialize a given LB interface function.
  *  Input:
- *    void *            --  Pointer to a LB object.
+ *    struct LB_Struct *--  Pointer to a LB object.
  *    LB_FN_TYPE        --  Enum type indicating the function to be set.
  *    void *()          --  Pointer to the function to be used in the 
  *                          assignment.
  *  Output:
  *    void *            --  Appropriate field set to value in void *().
  */
-extern void LB_Set_LB_Fn(void *, LB_FN_TYPE, void *());
+extern void LB_Set_LB_Fn(struct LB_Struct *, LB_FN_TYPE, void *());
 
 /*****************************************************************************/
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    void *             --  The load balancing object to which this method
+ *    struct LB_Struct * --  The load balancing object to which this method
  *                           applies.
  *    char *             --  String specifying the desired method.
  *    double *           --  Params needed by desired method.  (This field
  *                           will be better defined later.)
  *  Output:
- *    void *             --  Appropriate fields set to designated values.
+ *    struct LB_Struct * --  Appropriate fields set to designated values.
  */
-extern void LB_Set_LB_Method(void *, char *, double *);
+extern void LB_Set_LB_Method(struct LB_Struct *, char *, double *);
 
 /*****************************************************************************/
 /*
@@ -244,13 +246,13 @@ extern void LB_Set_LB_Method(void *, char *, double *);
  *  the most heavily loaded processor and the average load will be accepted
  *  as balanced.
  *  Input:
- *    void *             --  The load balancing object to which this tolerance
+ *    struct LB_Struct * --  The load balancing object to which this tolerance
  *                           applies.
  *    double             --  The tolerance desired.
  *  Output:
- *    void *             --  Appropriate fields set to designated value.
+ *    struct LB_Struct * --  Appropriate fields set to designated value.
  */
-extern void LB_Set_LB_Tolerance(void *, double);
+extern void LB_Set_LB_Tolerance(struct LB_Struct *, double);
 
 /*****************************************************************************/
 /*
@@ -260,10 +262,10 @@ extern void LB_Set_LB_Tolerance(void *, double);
  *  This value is used only by the application; it is optional as far
  *  as the load-balancer is concerned.
  *  Input:
- *    void *             --  The load balancing object to which this tolerance
+ *    struct LB_Struct * --  The load balancing object to which this tolerance
  *                           applies.
  *    int                --  An integer representing the object type.
  *  Output:
- *    void *             --  Appropriate fields set to designated type.
+ *    struct LB_Struct * --  Appropriate fields set to designated type.
  */
-extern void LB_Set_LB_Object_Type(void *, int);
+extern void LB_Set_LB_Object_Type(struct LB_Struct *, int);
