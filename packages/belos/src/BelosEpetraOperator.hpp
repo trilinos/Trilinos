@@ -79,8 +79,12 @@ EpetraOperator<TYPE>::EpetraOperator( PetraMat<TYPE>& mat, PetraPrec<TYPE>& prec
 	  MyComm(mat.GetMatrix().Comm()), DomainMap(mat.GetMatrix().OperatorDomainMap()),
 	  RangeMap(mat.GetMatrix().OperatorRangeMap())
 {
-	Solver = new char[solver.length()+1];
-	solver.copy(Solver,10,0);
+        // Copy string to character array.  
+        // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
+        Solver = new char[solver.length()+1];
+        for (int i=0; i<solver.length()+1; i++) {
+            Solver[i] = solver[i];
+        } 
 	Solver[solver.length()] = 0;
 }
 
