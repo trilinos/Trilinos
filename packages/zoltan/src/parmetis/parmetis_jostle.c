@@ -527,6 +527,7 @@ static int Zoltan_ParMetis_Jostle(
   local_ids = NULL;
   global_ids = NULL;
   parts = part_orig = NULL;
+  newproc = NULL;
 
   /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
@@ -668,6 +669,7 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   /* Copy parts array to part, in case ParMetis needs it. */
+  /* EBEB ParMetis will crash if part[i] on input is >= num_parts. */
   for (i=0; i<num_obj; i++)
     part[i] = parts[i];
 
@@ -1184,6 +1186,23 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
+  /* Get a time here */
+  if (get_times) times[3] = Zoltan_Time(zz->Timer);
+
+  /* Output timing results if desired */
+  if (get_times){
+    if (zz->Proc == zz->Debug_Proc) printf("\nZOLTAN timing statistics:\n");
+    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[1]-times[0], 
+                   " Partitioner Pre-processing time  ");
+    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[2]-times[1], 
+                   " Partitioner Library time         ");
+    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[2], 
+                   " Partitioner Post-processing time ");
+    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[0], 
+                   " Partitioner Total time           ");
+    if (zz->Proc==zz->Debug_Proc) printf("\n");
+  }
+
   /* Successful finish */
   ierr = ZOLTAN_OK;
 
@@ -1212,23 +1231,6 @@ End:
   ZOLTAN_FREE(&xyz);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&parts);
-
-  /* Get a time here */
-  if (get_times) times[3] = Zoltan_Time(zz->Timer);
-
-  /* Output timing results if desired */
-  if (get_times){
-    if (zz->Proc==0) printf("\nZOLTAN timing statistics:\n");
-    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[1]-times[0], 
-                   " Partitioner Pre-processing time  ");
-    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[2]-times[1], 
-                   " Partitioner Library time         ");
-    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[2], 
-                   " Partitioner Post-processing time ");
-    Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[0], 
-                   " Partitioner Total time           ");
-    if (zz->Proc==0) printf("\n");
-  }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
