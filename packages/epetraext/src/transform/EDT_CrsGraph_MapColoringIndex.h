@@ -13,7 +13,6 @@ class Epetra_MapColoring;
 class Epetra_IntVector;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_MapColoringIndex : public StructuralTransform< Epetra_CrsGraph,vector<Epetra_IntVector> > {
 
@@ -30,7 +29,6 @@ class CrsGraph_MapColoringIndex : public StructuralTransform< Epetra_CrsGraph,ve
   NewTypePtr operator()( OriginalTypeRef original );
 };
 
-} //namespace Tranform
 } //namespace EpetraExt
 
 #endif //EDT_CRSGRAPH_MAPCOLORINGINDEX_H

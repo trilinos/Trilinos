@@ -15,10 +15,7 @@ using std::vector;
 using std::set;
 using std::map;
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_MapColoring::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_MapColoring::NewTypePtr EpetraExt::CrsGraph_MapColoring::operator()( EpetraExt::CrsGraph_MapColoring::OriginalTypeRef original )
 {
   int err;
 
@@ -118,6 +115,4 @@ NewTypePtr CrsGraph_MapColoring::operator()( OriginalTypeRef original )
   if( distributedGraph ) delete base;
 
   return NewTypePtr( ColorMap );
-}
-
 }

@@ -8,7 +8,6 @@ class Epetra_CrsGraph;
 class Epetra_MapColoring;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_MapColoring> {
 
@@ -26,7 +25,6 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
 
 #endif //EDT_CRSGRAPH_MAPCOLORING_H

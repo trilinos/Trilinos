@@ -10,10 +10,7 @@
 
 using std::map;
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_MapColoringIndex::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_MapColoringIndex::NewTypePtr EpetraExt::CrsGraph_MapColoringIndex::operator()( EpetraExt::CrsGraph_MapColoringIndex::OriginalTypeRef original )
 {
   int err;
 
@@ -45,5 +42,3 @@ NewTypePtr CrsGraph_MapColoringIndex::operator()( OriginalTypeRef original )
   return IndexVec;
 }
 
-} //namespace Tranform
-} //namespace EpetraExt

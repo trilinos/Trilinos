@@ -16,6 +16,8 @@ TRANSFORM_H = \
 	$(srcdir)/EDT_MultiVector_View.h \
 	$(srcdir)/EDT_CrsGraph_Overlap.h \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
+        $(srcdir)/EDT_CrsGraph_MapColoring.h \
+        $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.h
 
 TRANSFORM = \
@@ -24,6 +26,8 @@ TRANSFORM = \
 	$(srcdir)/EDT_MultiVector_View.cpp \
 	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
+        $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
+        $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
 
 BTF_H = \
