@@ -6,6 +6,7 @@ Files:
   hb_to_hg.c     -- converts HB to zdrive-formatted hypergraph.
   hb_to_graph.c  -- converts HB to graph.
   hb_to_hmetis.c -- converts HB to hMETIS-formatted hypergraph.
+  hb_print.c     -- displays an HB matrix.
   metric.c     -- measure communication volume of matrix-vector multiplication.
   Other *.c    -- Matrix Market code for reading a HB matrix file.
 
