@@ -35,9 +35,10 @@ TEST_INC = ../Util.h
 BELOS_TEST_OBJ        = $(TEST_CXX:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT)) \
                   $(TEST_F:.f=.$(OBJ_EXT))
 #=======================================================================
-
-LIB_MPI = libBelosTestMPI.$(LIB_EXT)
-LIB_SERIAL = BelosTestSERIAL.$(LIB_EXT)
+#Do not see a need to build different serial and mpi libraries at this
+#time
+LIB_MPI = libBelosTest.$(LIB_EXT)
+LIB_SERIAL = libBelosTest.$(LIB_EXT)
 
 LIBBELOSTEST = $(LIB_$(TRILINOS_COMM))
 #=======================================================================

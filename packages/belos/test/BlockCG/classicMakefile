@@ -15,7 +15,7 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= ../libBelosTestMPI.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+LIB_PATHS= ../libBelosTest.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
 #=======================================================================
 # EPetra test source files
