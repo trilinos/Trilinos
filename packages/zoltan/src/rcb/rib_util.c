@@ -162,8 +162,13 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   max_obj = (int)(1.5 * num_obj) + 1;
   
-  to->Global_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, gids, max_obj);
-  to->Local_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, lids, max_obj);
+  if (gids){
+    to->Global_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, gids, max_obj);
+  }
+
+  if (lids){
+    to->Local_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, lids, max_obj);
+  }
 
   COPY_BUFFER(Dots, struct Dot_Struct, max_obj, num_obj);
 
@@ -176,6 +181,50 @@ int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   return ZOLTAN_OK;
 }
+void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
+{
+  char *yo = "Zoltan_RIB_Print_Structure";
+  int num_obj, i, len;
+  RIB_STRUCT *rib;
+  struct Dot_Struct dot;
+  struct rib_tree r;
+  int printed = 0;
+
+  rib = (RIB_STRUCT *)zz->LB.Data_Structure;
+  num_obj = Zoltan_Print_Obj_List(zz, rib->Global_IDs, rib->Local_IDs,
+    0, NULL, NULL, howMany);
+
+  for (i=0; rib->Dots && (i<num_obj); i++){
+    dot = rib->Dots[i];
+    printf("(Dots %d) (%lf %lf %lf) (%lf %lf %lf %lf) process %d, partition %d, new partition %dn",
+     i, dot.X[0], dot.X[1], dot.X[2],
+     dot.Weight[0], dot.Weight[1], dot.Weight[2], dot.Weight[3],
+     dot.Proc, dot.Input_Part, dot.Part);
+    printed = 1;
+  }
+  if (!printed){
+    printf("Dots: NULL\n");
+  }
+
+  len = zz->LB.Num_Global_Parts;
+  printed = 0;
+
+  for (i=0; rib->Tree_Ptr && (i<len); i++){
+    r = rib->Tree_Ptr[i];
+    printf("(Tree %d) cm %lf %lf %lf, ev %lf %lf %lf, cut: %lf, parent %d, left %d, right %d\n",
+      i, 
+      r.cm[0], r.cm[1], r.cm[2],
+      r.ev[0], r.ev[1], r.ev[2],
+      r.cut, r.parent, r.left_leaf, r.right_leaf);
+    printed=1;
+  }
+  if (!printed){
+    printf("Tree: NULL\n");
+  }
+
+  printf("Num_Geom: %d\n", rib->Num_Geom);
+}
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
