@@ -175,8 +175,18 @@ namespace LineSearch {
   fails if the computed \f$\lambda_k\f$ is less than this
   value. Defaults to 1.0e-12.
 
-  <li> "Recovery Step" - The step to take when the line search fails.
-    Defaults to value for "Default Step".
+  <li> "Recovery Step Type" - Determines the step size to take when the 
+    line search fails.  Choices are:
+
+     <ul>
+     <li> "Constant" [default] - Uses a constant value set in "Recovery Step".
+     <li> "Last Computed Step" - Uses the last value computed by the 
+                                 line search algorithm. 
+     </ul>
+
+  <li> "Recovery Step" - The value of the step to take when the line 
+    search fails. Only used if the "Recovery Step Type" is set to 
+    "Constant". Defaults to value for "Default Step".
 
   <li> "Interpolation Type" - Type of interpolation that should be
     used. Choices are
@@ -477,11 +487,22 @@ protected:
     Cubic
   };
 
+  //! Type of recovery step to use
+  enum RecoveryStepType {
+    //! Use a constant value
+    Constant,
+    //! Use the last value computed in the line search algorithm
+    LastComputedStep
+  };
+
   //! Choice for sufficient decrease condition; uses "Sufficient Decrease Condition" parameter
   SufficientDecreaseType suffDecrCond;
 
   //! Choice of interpolation type; uses "Interpolation Type" parameter
   InterpolationType interpolationType;
+
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  RecoveryStepType recoveryStepType;
 
    //! Minimum step length (i.e., when we give up); uses "Mimimum Step" parameter
   double minStep;

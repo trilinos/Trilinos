@@ -43,9 +43,9 @@
 
 NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
   paramsPtr(NULL),
+  print(u),
   userNormPtr(NULL),
-  meritFuncPtr(NULL),
-  print(u)
+  meritFuncPtr(NULL)
 {
   reset(params);
 }
@@ -84,6 +84,18 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   else 
   {
     cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
+    throw "NOX Error";
+  }
+
+  choice = p.getParameter("Recovery Step Type", "Constant");
+
+  if (choice == "Constant")
+    recoveryStepType = Constant;
+  else if (choice == "Last Computed Step") {
+    recoveryStepType = LastComputedStep;
+  }
+  else {
+    cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << endl;
     throw "NOX Error";
   }
 
@@ -273,7 +285,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     if (useCounter)
       counter.incrementNumFailedLineSearches();
 
-    step = recoveryStep;
+    if (recoveryStepType == Constant)
+      step = recoveryStep;
     
     if (step == 0.0)
     {
