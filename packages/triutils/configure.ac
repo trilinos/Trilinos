@@ -154,7 +154,8 @@ TAC_ARG_CHECK_MPI
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
 AC_CHECK_HEADERS([cstdio stdio.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
-AC_CHECK_HEADERS([cmath math.h], [break],)
+#We need to check for cmath and math.h because of a problem on some SGI's
+AC_CHECK_HEADERS([cmath math.h],,)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([map map.h], [break],)
 AC_CHECK_HEADERS([malloc.h],,)
