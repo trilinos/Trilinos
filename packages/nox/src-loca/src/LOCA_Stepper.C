@@ -350,7 +350,7 @@ double Stepper::computeStepSize(StatusType solverStatus)
     tmpStepSize = curStepSize * 0.5;    
 
   }
-  else  {
+  else if (stepNumber > 1) {
 
     // adapive step size control
     if (agrValue != 0.0) {
@@ -377,11 +377,17 @@ double Stepper::computeStepSize(StatusType solverStatus)
 
         tmpStepSize = curStepSize * (1.0 + 0.5 * factor * factor);
 
-	tmpStepSize = min(tmpStepSize, startStepSize);
+        if (startStepSize > 0.0) {
+          tmpStepSize = min(tmpStepSize, startStepSize);
+	}
+        else {
+	  tmpStepSize = max(tmpStepSize, startStepSize);
+	}
       }
     }
   }  
-  
+  predStepSize = tmpStepSize;
+
   // Clip the step size if above the bounds
   if (fabs(tmpStepSize) > maxStepSize) {
      predStepSize = maxStepSize;
@@ -400,6 +406,9 @@ double Stepper::computeStepSize(StatusType solverStatus)
 
 StatusType Stepper::checkStepperStatus()
 {
+  if ((solverStatus != Converged) && (stepperStatus == Failed))
+    return Failed;
+
   // Check to see if we hit final parameter value
   if ((solverStatus == Converged) && 
       (curValue == finalValue))
@@ -408,6 +417,10 @@ StatusType Stepper::checkStepperStatus()
   // Check to see if max number of steps has been reached
   if (numTotalSteps == maxConSteps) 
     return Failed;
+
+  // Check to see if the initial solve (step=0) failed
+  // if (stepNumber == 0) 
+  //  return Failed;
 
   return Unconverged;
 }
