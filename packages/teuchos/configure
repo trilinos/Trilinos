@@ -888,6 +888,8 @@ Optional Features:
                           Enable Teuchos extended code (default is no)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
                           PRECision Library (default is no)
+  --enable-teuchos-gnu_mp Enable Teuchos interface support for the GNU MP
+                          Library (default is no)
   --enable-expat          Enable expat XML parser
 
 Optional Packages:
@@ -3426,7 +3428,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3429:" \
+echo "$as_me:3431:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6594,92 +6596,6 @@ _ACEOF
 
 fi
 
-echo "$as_me:$LINENO: checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type" >&5
-echo $ECHO_N "checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type... $ECHO_C" >&6
-if test "${ac_cv_cxx_ios_base+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-
- ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
- cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#elif HAVE_IOSTREAM_H
-#include <iostream.h>
-#endif
-using namespace std;
-void dummy(ostream& os) {
-const ios_base::fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-double val = 1.0;
-os << val << endl;};
-int
-main ()
-{
- dummy( cout );
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_cxx_ios_base=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_cxx_ios_base=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_ios_base" >&5
-echo "${ECHO_T}$ac_cv_cxx_ios_base" >&6
-if test "$ac_cv_cxx_ios_base" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_STD_IOS_BASE_FMTFLAGS
-_ACEOF
-
-fi
-
 echo "$as_me:$LINENO: checking whether the compiler accepts the \"template\" qualifier" >&5
 echo $ECHO_N "checking whether the compiler accepts the \"template\" qualifier... $ECHO_C" >&6
 if test "${ac_cv_cxx_template_qualifier+set}" = set; then
@@ -6765,6 +6681,92 @@ if test "$ac_cv_cxx_template_qualifier" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_TEMPLATE_QUALIFIER
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type" >&5
+echo $ECHO_N "checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type... $ECHO_C" >&6
+if test "${ac_cv_cxx_ios_base+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+
+ ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+#elif HAVE_IOSTREAM_H
+#include <iostream.h>
+#endif
+using namespace std;
+void dummy(ostream& os) {
+const ios_base::fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
+double val = 1.0;
+os << val << endl;};
+int
+main ()
+{
+ dummy( cout );
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_cxx_ios_base=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_cxx_ios_base=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_cxx_ios_base" >&5
+echo "${ECHO_T}$ac_cv_cxx_ios_base" >&6
+if test "$ac_cv_cxx_ios_base" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STD_IOS_BASE_FMTFLAGS
 _ACEOF
 
 fi
@@ -7280,8 +7282,94 @@ echo "${ECHO_T}no" >&6
      	 echo "Use --with-incdirs to specify ARPREC include directory."
      	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
-     	 { { echo "$as_me:$LINENO: error: ARPREC cannot link" >&5
-echo "$as_me: error: ARPREC cannot link" >&2;}
+     	 { { echo "$as_me:$LINENO: error: ARPREC test cannot link" >&5
+echo "$as_me: error: ARPREC test cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+rm -f conftest.err conftest.$ac_ext
+fi
+
+#
+#  --enable-teuchos-arprec
+#
+
+
+# Check whether --enable-teuchos-gnu_mp or --disable-teuchos-gnu_mp was given.
+if test "${enable_teuchos_gnu_mp+set}" = set; then
+  enableval="$enable_teuchos_gnu_mp"
+  ac_cv_use_teuchos_gnu_mp=$enableval
+else
+  ac_cv_use_teuchos_gnu_mp=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-gnu_mp" >&5
+echo $ECHO_N "checking whether to use teuchos-gnu_mp... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_GNU_MP
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+
+     echo "$as_me:$LINENO: checking for gmpxx.h" >&5
+echo $ECHO_N "checking for gmpxx.h... $ECHO_C" >&6
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "gmpxx.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find GNU MP library."
+     	 echo "Use --with-ldflags to specify GNU MP library directory."
+     	 echo "Use --with-incdirs to specify GNU MP include directory."
+     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: GNU MP test cannot link" >&5
+echo "$as_me: error: GNU MP test cannot link" >&2;}
    { (exit 1); exit 1; }; }
 
 fi
@@ -7586,7 +7674,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7589: \"$ac_link\") >&5
+(eval echo $as_me:7677: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7664,7 +7752,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7667: \"$ac_link\") >&5
+(eval echo $as_me:7755: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10194,7 +10282,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10197: \"$ac_link\") >&5
+(eval echo $as_me:10285: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10272,7 +10360,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10275: \"$ac_link\") >&5
+(eval echo $as_me:10363: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

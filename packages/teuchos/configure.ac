@@ -134,7 +134,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
-TAC_ARG_WITH_LIBS(libs, LIBS)
+TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
@@ -241,8 +241,8 @@ AC_CXX_NUMERIC_LIMITS
 # These are pretty obscure
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
-AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_TEMPLATE_QUALIFIER
+AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
@@ -369,7 +369,34 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
      	 echo "Use --with-incdirs to specify ARPREC include directory."
      	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
-     	 AC_MSG_ERROR(ARPREC cannot link)
+     	 AC_MSG_ERROR(ARPREC test cannot link)
+     	])
+fi
+
+#
+#  --enable-teuchos-arprec 
+# 
+ 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, gnu_mp, [Enable Teuchos interface support for the GNU MP Library], 
+		TEUCHOS_GNU_MP, no)  
+
+if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+
+     AC_MSG_CHECKING(for gmpxx.h)
+     AC_TRY_CPP([#include "gmpxx.h"],
+	[AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find GNU MP library."
+     	 echo "Use --with-ldflags to specify GNU MP library directory."
+     	 echo "Use --with-incdirs to specify GNU MP include directory."
+     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
+     	 echo "-----"
+     	 AC_MSG_ERROR(GNU MP test cannot link)
      	])
 fi
 

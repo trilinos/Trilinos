@@ -185,6 +185,9 @@
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 
+/* Define if want to build teuchos-gnu_mp */
+#undef HAVE_TEUCHOS_GNU_MP
+
 /* Define to 1 if you have the <typeinfo> header file. */
 #undef HAVE_TYPEINFO
 
