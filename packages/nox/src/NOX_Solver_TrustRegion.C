@@ -214,12 +214,12 @@ TrustRegion::~TrustRegion()
 }
 
 
-Status::StatusType TrustRegion::getStatus()
+NOX::Status::StatusType TrustRegion::getStatus()
 {
   return status;
 }
 
-Status::StatusType TrustRegion::iterate()
+NOX::Status::StatusType TrustRegion::iterate()
 {
   // First check status
   if (status != Status::Unconverged) 
@@ -413,7 +413,7 @@ Status::StatusType TrustRegion::iterate()
   return status;
 }
 
-Status::StatusType TrustRegion::solve()
+NOX::Status::StatusType TrustRegion::solve()
 {
   printUpdate();
 

@@ -77,7 +77,7 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
   }
 }
 
-Status::StatusType Manager::getStatus()
+NOX::Status::StatusType Manager::getStatus()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::getStatus - Null pointer error" << endl;
@@ -87,7 +87,7 @@ Status::StatusType Manager::getStatus()
   return ptr->getStatus();
 }
 
-Status::StatusType Manager::iterate()
+NOX::Status::StatusType Manager::iterate()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::iterate - Null pointer error" << endl;
@@ -97,7 +97,7 @@ Status::StatusType Manager::iterate()
   return ptr->iterate();
 }
 
-Status::StatusType Manager::solve()
+NOX::Status::StatusType Manager::solve()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::solve - Null pointer error" << endl;

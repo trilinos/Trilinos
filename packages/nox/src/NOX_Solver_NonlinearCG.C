@@ -132,13 +132,13 @@ bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter:
   return true;
 }
 
-Status::StatusType NonlinearCG::getStatus()
+NOX::Status::StatusType NonlinearCG::getStatus()
 {
   status = testptr->operator()(*this);
   return status;
 }
 
-Status::StatusType NonlinearCG::iterate()
+NOX::Status::StatusType NonlinearCG::iterate()
 {
   // Copy pointers into temporary references
   Abstract::Group& soln = *solnptr;
@@ -254,7 +254,7 @@ Status::StatusType NonlinearCG::iterate()
   return status;
 }
 
-Status::StatusType NonlinearCG::solve()
+NOX::Status::StatusType NonlinearCG::solve()
 {
   status = testptr->operator()(*this);
   printUpdate();

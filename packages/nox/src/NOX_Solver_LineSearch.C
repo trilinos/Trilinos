@@ -133,12 +133,12 @@ LineSearch::~LineSearch()
 }
 
 
-Status::StatusType LineSearch::getStatus()
+NOX::Status::StatusType LineSearch::getStatus()
 {
   return status;
 }
 
-Status::StatusType LineSearch::iterate()
+NOX::Status::StatusType LineSearch::iterate()
 {
   // First check status
   if (status != Status::Unconverged) 
@@ -190,7 +190,7 @@ Status::StatusType LineSearch::iterate()
   return status;
 }
 
-Status::StatusType LineSearch::solve()
+NOX::Status::StatusType LineSearch::solve()
 {
   printUpdate();
 
