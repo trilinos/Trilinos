@@ -57,7 +57,7 @@ class Interface {
 public:
  
   //! Type of fill that a computeF() method is used for.  This flag is used when a computeF() is used to compute a lagged Jacobian by finite difference or matrix-free methods.  This allows for removing specific terms of the Jacobian 
-  enum FillType {F, Jacobian};
+  enum FillType {F, Jacobian, Preconditioner};
 
   //! Constructor
   Interface() {};
