@@ -41,11 +41,13 @@ int main(int argc, char *argv[]) {
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+#ifdef EPETRA_MPI
   int localverbose = verbose ? 1 : 0;
   int globalverbose=0;
   MPI_Allreduce(&localverbose, &globalverbose, 1, MPI_INT, MPI_SUM,
 		MPI_COMM_WORLD);
   verbose = (globalverbose>0);
+#endif
 
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
