@@ -70,7 +70,7 @@ private:
   // moment.  The descriptions here are mostly placeholders.
 
   //!  Allocate storage for a matrix
-  void** allocate_matrix(int m, int n, double**& a);
+  void** allocate_matrix(int rows, int cols, double**& a);
 
   //!  Allocate storage for a vector of ints
   void* allocate_vector(int n, int*& x);
@@ -82,7 +82,7 @@ private:
   void delete_matrix(double** A);
 
   //!  Print a matrix
-  void print_matrix(int m, int n, double** A);
+  void print_matrix(int rows, int cols, double** A);
 
   //!  Print a vector of doubles
   void print_vector(int n, double* x);
@@ -147,7 +147,7 @@ private:
   bool isCLParamsCalculated;
 
   //! Problem size
-  int n;
+  int probSize;
 
   //! Maximum number of Krylov iterations (kmax <= n)
   int kmax;

@@ -47,7 +47,7 @@ Tensor::~Tensor()
   for (int i=0; i<maxDim; i++)
     delete basisVptr[i];
   if (maxDim > 0)
-    delete  basisVptr;
+    delete [] basisVptr;
   delete vecw;
   delete dTensor;
   delete dTLambda;
@@ -56,11 +56,11 @@ Tensor::~Tensor()
   delete_matrix(hess);
   delete_matrix(givensC);
   delete_matrix(givensS);
-  delete newHessCol;
-  delete terrvec;
-  delete vecg;
-  delete vecq;
-  delete vecz;
+  delete [] newHessCol;
+  delete [] terrvec;
+  delete [] vecg;
+  delete [] vecq;
+  delete [] vecz;
 }
 
 
@@ -160,11 +160,11 @@ bool Tensor::compute(Abstract::Vector& dir,
     Parameter::List& localParams = paramsPtr->sublist("Linear Solver");
 
     // Set more parameters that need info from the Group....
-    n = soln.getX().length(); 
+    probSize = soln.getX().length(); 
 
     // Manipulate some parameters further....
-    if (kmax > n) {
-      kmax = n;
+    if (kmax > probSize) {
+      kmax = probSize;
 
       // Update parameter list with the actual value used
       localParams.setParameter("Max Iterations", kmax);
@@ -900,10 +900,10 @@ bool Tensor::compute(Abstract::Vector& dir,
   //dir.scale(-1.0);
 
   // Cleanup memory
-  delete pindex;
-  delete yn;
+  delete [] pindex;
+  delete [] yn;
 #ifndef USE_NEWTON_DIR
-  delete yt;
+  delete [] yt;
 #endif
 #ifdef CHECK_RESIDUALS
   delete acPtr;
@@ -1068,21 +1068,21 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
 
 // private
 
-void** Tensor::allocate_matrix(int m, int n, double**& a)
+void** Tensor::allocate_matrix(int rows, int cols, double**& a)
 {
   if (a) {
     // delete_matrix(a);
     cout << "Warning: Possibly a previously allocated matrix\n";
   }
 
-  // allocate memory for storing a rectangular m x n matrix
-  a = new double* [m];
+  // allocate memory for storing a rectangular cols x rows matrix
+  a = new double* [rows];
   if (!a) printf("Allocation error in allocate_matrix()\n");
-  a[0] = new double [m*n];
+  a[0] = new double [rows*cols];
   if (!a) printf("Allocation error in allocate_matrix()\n");
 
-  for (int i=1; i<m; i++) 
-    a[i] = a[i-1] + n;
+  for (int i=1; i<rows; i++) 
+    a[i] = a[i-1] + cols;
 
   return (void**) a;
 }
@@ -1117,19 +1117,19 @@ void* Tensor::allocate_vector(int n, double*& x)
 void Tensor::delete_matrix(double** A)
    /* Free the memory previously allocated in allocate_matrix()  */
 {
-  delete A[0];
-  delete A;
+  delete [] A[0];
+  delete [] A;
 }
 
 
-void Tensor::print_matrix(int m, int n, double** A)
+void Tensor::print_matrix(int rows, int cols, double** A)
    /*  Print a matrix in conventional form.  */
 {
   int i,j;
 
-  for (i=0; i<m; i++) 
+  for (i=0; i<rows; i++) 
     {
-      for (j=0; j<n;j++)
+      for (j=0; j<cols;j++)
           printf("%16.8e ", A[i][j]);
       printf("\n");
     }
@@ -1205,11 +1205,12 @@ double* Tensor::backsolve(double** U, double* b, int* perm, int n, int dim=0)
   double temp;
   int i, j;
   int pi, pj;
-
-  dim = (dim>n) ? dim : n;
+  int dimension;
+  
+  dimension = (dim>n) ? dim : n;
 
   //  Allocate memory for solution vector
-  allocate_vector(dim, x);
+  allocate_vector(dimension, x);
 
   //  Solve Ux=y with backward substitution
   for (i=n-1; i>=0; i--) {
