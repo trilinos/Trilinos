@@ -144,7 +144,8 @@ int main(int argc, char *argv[])
   //   presmoother (for each level) on a random vector;
   // - set "viz: postsmoother" to visualize the effect of postsmoother
   // - set "viz: equation to plot" to the number of equation to 
-  //   be plotted (for vector problems only)
+  //   be plotted (for vector problems only). Default is -1 (that is,
+  //   plot all the equations)
   // - set "viz: print starting solution" to print on file 
   //   the starting solution vector, that was used for pre-
   //   and post-smoothing, and for the cycle. This may help to
@@ -161,7 +162,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: cycle", true);
   MLList.set("viz: presmoother", true);
   MLList.set("viz: postsmoother", true);
-  MLList.set("viz: equation to plot", 1);
+  MLList.set("viz: equation to plot", -1);
   MLList.set("viz: print starting solution", true);
 
   // ============== end of visualization parameters =============
