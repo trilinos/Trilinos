@@ -18,8 +18,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     ML_Operator ***Tmat_trans_array,
                     int smooth_flag, double smooth_factor)
 {
-ML_CommInfoOP *widget;
-ML_NeighborList *neighbors;
   char filename[80];
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
@@ -335,23 +333,11 @@ ML_NeighborList *neighbors;
          {
            pos_encoded_dir_node[temp_bindx[0]] = 1.0;
            encoded_dir_edge[i] = 1 + temp_bindx[0];
-/*
-           if (grid_level == 1 && Tfine->comm->ML_mypid == 0) {
-             fprintf(stderr,"(pid %d, level %d) pos_encoded_dir_node before[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,temp_bindx[0],pos_encoded_dir_node[temp_bindx[0]]);
-             fprintf(stderr,"(pid %d, level %d) i=%d\n",Tfine->comm->ML_mypid,grid_level,i);
-            }
-*/
          }
 	     if (temp_val[0] == -1.0)
          {
            neg_encoded_dir_node[temp_bindx[0]] =-1.0;
            encoded_dir_edge[i] = -(1 + temp_bindx[0]);
-/*
-           if (grid_level == 1 && Tfine->comm->ML_mypid == 0) {
-             fprintf(stderr,"(pid %d, level %d) neg_encoded_dir_node before[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,temp_bindx[0],neg_encoded_dir_node[temp_bindx[0]]);
-             fprintf(stderr,"(pid %d, level %d) i=%d\n",Tfine->comm->ML_mypid,grid_level,i);
-           }
-*/
          }
 	     if (temp_val[0] != -1.0 && temp_val[0] != 1.0)
            printf("Warning uknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]); 
@@ -359,72 +345,12 @@ ML_NeighborList *neighbors;
        else encoded_dir_edge[i] = 0;
      }
 
-     j = ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm);
-     sprintf(str,"pos_encoded_dir_node-before.level%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->invec_leng+j; i++)
-        fprintf(fid,"%d %e\n",i,pos_encoded_dir_node[i]);
-     fclose(fid);
-
-     sprintf(str,"neg_encoded_dir_node-before.level%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->invec_leng+j; i++)
-        fprintf(fid,"%d %e\n",i,neg_encoded_dir_node[i]);
-     fclose(fid);
-
-fflush(stdout);
-
-widget = Tfine->getrow->pre_comm;
-neighbors = widget->neighbors;
-for (k=0; k<ml_nodes->comm->ML_nprocs; k++)
-{
-  if (ml_nodes->comm->ML_mypid == k)
-  {
-    for (i=0; i<widget->N_neighbors; i++)
-    {
-      {
-        printf("(pid %d,level %d) rcv list *to* proc %d (total = %d): ",
-               ml_nodes->comm->ML_mypid,
-               grid_level,
-               neighbors[i].ML_id,
-               neighbors[i].N_rcv);
-        for (j=0; j<neighbors[i].N_rcv; j++)
-          printf("%d  ", neighbors[i].rcv_list[j]);
-        printf("\n");
-      }
-    }
-    fflush(stdout);
-  }
-}
-
-if (ml_nodes->comm->ML_mypid == 0) {
-  for (i=0; i<widget->N_neighbors; i++) {
-    printf("(pid %d,level %d) rcv list *from* proc %d (total = %d): ",
-             ml_nodes->comm->ML_mypid,
-             grid_level,
-             neighbors[i].ML_id,
-             neighbors[i].N_send);
-    for (j=0; j<neighbors[i].N_send; j++)
-      printf("%d  ", neighbors[i].send_list[j]);
-    printf("\n");
-  }
-fflush(stdout);
-}
-*/
-
      ML_transposed_exchange_bdry(pos_encoded_dir_node,
           Tfine->getrow->pre_comm, -1, Tfine->comm, ML_ADD);
 
      pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng +1));
      if (pos_coarse_dirichlet == NULL)
         pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
-
-/*
-     for (i=0; i < Tfine->invec_leng; i++)
-      if (pos_encoded_dir_node[i] != 0) printf("(pid %d, level %d) encoded_dir_node[%d] = %e\n", * Tfine->comm->ML_mypid,grid_level,i,pos_encoded_dir_node[i]);
-*/
 
      ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, pos_encoded_dir_node,
 		       Rn_coarse->outvec_leng,pos_coarse_dirichlet);
@@ -440,11 +366,6 @@ fflush(stdout);
      ML_transposed_exchange_bdry(neg_encoded_dir_node,
           Tfine->getrow->pre_comm, -1, Tfine->comm, ML_ADD);
 
-/*
-     for (i=0; i < Tfine->invec_leng; i++)
-      if (neg_encoded_dir_node[i] != 0) printf("(pid %d, level %d) neg_encoded_dir_node[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,i,neg_encoded_dir_node[i]);
-*/
-
      neg_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng +1));
      if (neg_coarse_dirichlet == NULL)
         pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
@@ -455,10 +376,6 @@ fflush(stdout);
        if (neg_coarse_dirichlet[i] != 0) {
          Nneg_dirichlet++;
        }
-/*
-     printf("(%d, level %d) Nneg_dirichlet = %d, Npos_dirichlet = %d\n",
-         ml_nodes->comm->ML_mypid,grid_level,Nneg_dirichlet,Npos_dirichlet);
-*/
 #endif
 
 
@@ -1196,40 +1113,6 @@ fflush(stdout);
      ML_exchange_bdry(edge_type, Pe->getrow->pre_comm,
 			Pe->invec_leng, Pe->comm, ML_OVERWRITE,NULL);
 #endif
-/*
-     sprintf(str,"neg_encoded_dir_edge.%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->outvec_leng; i++)
-        fprintf(fid,"%d %e\n",i,neg_encoded_dir_edge[i]);
-     fclose(fid);
-
-     sprintf(str,"neg_encoded_dir_node.%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->invec_leng; i++)
-        fprintf(fid,"%d %e\n",i,neg_encoded_dir_node[i]);
-     fclose(fid);
-
-     sprintf(str,"pos_encoded_dir_edge.%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->outvec_leng; i++)
-        fprintf(fid,"%d %e\n",i,pos_encoded_dir_edge[i]);
-     fclose(fid);
-
-     sprintf(str,"pos_encoded_dir_node.%d.%d",
-             grid_level,Tfine->comm->ML_mypid);
-     fid = fopen(str,"w");
-     for (i=0; i<Tfine->invec_leng; i++)
-        fprintf(fid,"%d %e\n",i,pos_encoded_dir_node[i]);
-     fclose(fid);
-
-     printf("(%d) neg_encoded_dir_node is length %d\n",
-         ml_nodes->comm->ML_mypid,
-         Tfine->invec_leng + 
-         ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm));
-*/
      for (i = 0; i < Pe->outvec_leng ; i++)
      {
 #ifdef ML_NEW_T_PE
