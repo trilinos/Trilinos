@@ -445,10 +445,8 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"smoother: damping factor",0.67);
 
-  List.set(Prefix+"smoother: type","MLS");
+  List.set(Prefix+"smoother: type","Hiptmair");
 
-  List.set(Prefix+"smoother: MLS polynomial order",4);
-  
   List.set(Prefix+"smoother: pre or post","both");
   
   // simplest solver on coarse problem
