@@ -1849,6 +1849,7 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
 {
    ML_Operator *Amat, *Rmat, *Pmat;
    int i, output_level;
+   char str[128];
 
 #ifdef ML_TIMING
    double t0;
@@ -1927,6 +1928,11 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]), 
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           ML_MSR_MATRIX);
+
+/*
+   sprintf(str,"Amat[%d]",child_level);
+   ML_Operator_Print(&(ml->Amat[child_level]),str);
+*/
 #ifdef ML_TIMING
    ml->Amat[child_level].build_time = GetClock() - t0;
    ml->timing->total_build_time   += ml->Amat[child_level].build_time;
@@ -4497,7 +4503,6 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 
    fun = ML_Smoother_Hiptmair;
 
-   /* This is what is active for right now. */
    if (pre_or_post == ML_PRESMOOTHER)
    {
       for (i = start_level; i <= end_level; i++)
@@ -4524,9 +4529,15 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    }
    else if (pre_or_post == ML_BOTH)
    {
-      printf("ML_Gen_Smoother_Hiptmair: ML_BOTH isn't done.\n");
       for (i = start_level; i <= end_level; i++)
 	  {
+             ML_Smoother_Create_Hiptmair_Data(&data);
+	         ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+			          Tmat_array[i], Tmat_trans_array[i]);
+	         ml->pre_smoother[i].data_destroy =
+			                            ML_Smoother_Destroy_Hiptmair_Data;
+	         ml->post_smoother[i].data_destroy =
+			                            ML_Smoother_Destroy_Hiptmair_Data;
              sprintf(str,"Hiptmair_pre%d",i);
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, omega, str);
