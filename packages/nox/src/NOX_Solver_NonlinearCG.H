@@ -115,9 +115,9 @@ protected:
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldsolnptr;	
+  Abstract::Group* oldSolnptr;	
   //! Previous solution reference.
-  Abstract::Group& oldsoln;	
+  Abstract::Group& oldSoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
@@ -132,21 +132,21 @@ protected:
       search direction.  We have both a pointer and a reference because
       we need to create a DERIVED object and then want to have a reference
       to it. */
-  Abstract::Vector* olddirptr;
+  Abstract::Vector* oldDirptr;
   //! Previous search direction.reference.
-  Abstract::Vector& olddir;
+  Abstract::Vector& oldDir;
 
   //! Pointer to previous descent direction.
   /*! This pointer points into the previous solution Abstract::Group to the 
       descent direction based on the choice of "Richardson" or "Steepest
       Descent" determined by Orthogonalization in the Parameter::List. */
-  const Abstract::Vector* olddescentdirptr;  
+  const Abstract::Vector* oldDescentDirptr;  
 
   //! Pointer to current preconditioned direction.
   /*! Currently, preconditioning is done using only Jacobi (diagonal)
       scaling as described above.  If preconditioning is turned off, this
       vector is equal to the direction vector. */
-  Abstract::Vector* precdirptr;  
+  Abstract::Vector* preconditionedDirptr;  
 
   //! Pointer to previous descent direction preconditioned with current Jacobian.
   /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
@@ -154,7 +154,7 @@ protected:
       preconditioning is done using only Jacobi (diagonal) scaling.  
       If preconditioning is turned off, this vector is equal to the 
       descent direction from the previous nonlinear iteration. */
-  Abstract::Vector* precolddirptr;  
+  Abstract::Vector* preconditionedOldDirptr;  
 
   //! Vector pointer to difference between current and previous descent directions.
   /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
