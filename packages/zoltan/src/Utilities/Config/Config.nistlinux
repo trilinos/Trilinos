@@ -17,13 +17,13 @@
 #  The variable F90_COMPILER should be set to "absoft", "fujitsu", "lahey",
 #  "nas", "pgi", "psr" or "nag" (the default).  This variable is used only
 #  in this architecture's makefile.
-#  The variable MPI_VERSION should be set to "lam" or "mpich" (the default); 
+#  The variable MPI_VERSION should be set to "lam" (the default) or "mpich"; 
 #  this variable is used only in this architecture's makefile.
 #  For explanations of these variables, please see Makefile.generic.
 ##############################################################################
 
 F90_COMPILER		= nag
-MPI_VERSION 		= mpich
+MPI_VERSION 		= lam
 
 
 ifeq "$(F90_COMPILER)" "absoft"
@@ -96,7 +96,7 @@ AR			= ar r
 
 CC			= gcc
 
-ifeq "$(MPI_LIB)" "lam"
+ifeq "$(MPI_VERSION)" "lam"
 INCLUDE_PATH		= -I$(LAMHOME)/include
 else
 INCLUDE_PATH            = -I$(MPIR_HOME)/include
@@ -118,7 +118,7 @@ MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
 		  -L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66
 endif
 
-PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
+#PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
