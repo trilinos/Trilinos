@@ -73,7 +73,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = serial
+DIST_SUBDIRS = serial mpi
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -202,7 +202,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_FALSE@COMM_SUBDIR = serial
 
 #@HEADER
 # ************************************************************************
@@ -231,8 +230,9 @@ target_vendor = @target_vendor@
 # 
 # ************************************************************************
 #@HEADER
-@HAVE_MPI_TRUE@COMM_SUBDIR = mpi 
-SUBDIRS = $(COMM_SUBDIR)
+@HAVE_MPI_TRUE@MPI_SUBDIR = mpi
+@HAVE_MPI_FALSE@SERIAL_SUBDIR = serial
+SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:

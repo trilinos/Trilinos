@@ -41,6 +41,7 @@ $(srcdir)/Main/ml_struct.h $(srcdir)/Main/ml_seg_precond.h \
 $(srcdir)/Main/ml_1level.h \
 $(srcdir)/Main/mli_solver.h \
 $(srcdir)/Main/ml_ggb.h \
+$(srcdir)/Main/ml_viz_stats.h \
 $(srcdir)/Comm/ml_comminfoagx.h \
 $(srcdir)/Comm/ml_comminfoop.h \
 $(srcdir)/Smoother/ml_csolve.h \
@@ -117,6 +118,7 @@ UTIL_H = \
 $(srcdir)/Utils/ml_aztec_utils.h $(srcdir)/Utils/ml_epetra_utils.h \
 $(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_memory.h \
+$(srcdir)/Utils/ml_agg_info.h \
 $(srcdir)/Utils/ml_aztec_lapack.h      $(srcdir)/Utils/ml_rbm.h \
 $(srcdir)/Utils/ml_read_utils.h \
 $(srcdir)/Utils/ml_superlu_lapack.h \
@@ -125,8 +127,10 @@ $(srcdir)/Utils/ml_twogrid_analysis.h \
 $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
 $(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
+$(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
+$(srcdir)/Utils/ml_viz_opendx.h \
 $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \

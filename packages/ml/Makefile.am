@@ -19,7 +19,7 @@
 # acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
 # license in ths data to reproduce, prepare derivative works, and
 # perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
+
 # others acting on its behalf a paid-up, nonexclusive, irrevocable
 # worldwide license in this data to reproduce, prepare derivative works,
 # distribute copies to the public, perform publicly and display
@@ -81,8 +81,13 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+if BUILD_TESTS
+TEST_SUBDIR=test
+endif
+
 if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=examples
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+

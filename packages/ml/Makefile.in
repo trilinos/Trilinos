@@ -35,7 +35,7 @@
 # acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
 # license in ths data to reproduce, prepare derivative works, and
 # perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
+
 # others acting on its behalf a paid-up, nonexclusive, irrevocable
 # worldwide license in this data to reproduce, prepare derivative works,
 # distribute copies to the public, perform publicly and display
@@ -116,7 +116,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src examples
+DIST_SUBDIRS = src examples test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -280,8 +280,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
+@BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = examples
-SUBDIRS = src $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:

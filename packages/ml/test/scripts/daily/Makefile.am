@@ -26,10 +26,10 @@
 # ************************************************************************
 #@HEADER
 if HAVE_MPI
-COMM_SUBDIR = mpi 
+MPI_SUBDIR = mpi
 else
-COMM_SUBDIR = serial
+SERIAL_SUBDIR = serial
 endif
-
-SUBDIRS = $(COMM_SUBDIR)
-  
+                                                                                
+SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+ 
