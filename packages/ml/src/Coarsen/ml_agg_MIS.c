@@ -19,6 +19,8 @@
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 #include "ml_agg_genP.h"
+#include "ml_viz_stats.h"
+#include "ml_agg_info.h"
 
 /* ******************************************************************** */
 /* variables used for parallel debugging  (Ray)                         */
@@ -114,6 +116,9 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   total_nz = 0;
    int                   count2;
    ML_agg_indx_comm      agg_indx_comm;
+   int * graph_decomposition = NULL;
+   ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
+   int radius;
 
    /*   int kk, old_upper, nnzs, count2, newptr; */
 
@@ -1532,6 +1537,50 @@ Here is how we do all this:
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
+
+   /* ********************************************************************** */
+   /* I allocate room to copy aggr_index and pass this value to the user,    */
+   /* who will be able to analyze and visualize this after the construction  */
+   /* of the levels. This way, the only price we have to pay for stats and   */
+   /* viz is essentially a little bit of memory.                             */
+   /* this memory will be cleaned with the object ML_Aggregate ml_ag.        */
+   /* I set the pointers using the ML_Aggregate_Info structure. This is      */
+   /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
+   /* ********************************************************************** */
+
+   if( ml_ag->aggr_viz_and_stats != NULL ) {
+
+     if( comm->ML_nprocs > 1 ) {
+       fprintf( stderr,
+	       "*ML*ERR* visualization for MIS works only in serial...\n");
+       exit( EXIT_FAILURE );
+     }
+
+     graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows/num_PDE_eqns+1));
+     if( graph_decomposition == NULL ) {
+       fprintf( stderr,
+		"*ML*ERR* Not enough memory for %d bytes\n"
+		"*ML*ERR* (file %s, line %d)\n",
+		sizeof(int)*Nrows/num_PDE_eqns,
+		__FILE__,
+	      __LINE__ );
+       exit( EXIT_FAILURE );
+     }
+
+     for( i=0 ; i<Nrows ; i+=num_PDE_eqns ) {
+       graph_decomposition[i/num_PDE_eqns] = aggr_index[i];
+     }
+     
+     aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
+     aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
+     aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows/num_PDE_eqns;
+     aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
+     aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
+     aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
+     aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
+     aggr_viz_and_stats[ml_ag->cur_level].graph_radius = -1;
+   }
+
 
    ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows, 
                                   ML_EMPTY, csr_data, Nrows, NULL, 0);
