@@ -41,13 +41,13 @@ namespace Direction {
 
 //! %Manager for all direction computations
 /*! 
-   The parameters must specify the type of direction as well as all
+   The parameters specify the type of direction as well as all
    the corresponding parameters for that method.
  
    <ul>
    <li> "Method" - Name of the direction method. Valid choices are
    <ul> 
-   <li> "%Newton" (NOX::Direction::Newton)
+   <li> "%Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
    <li> "Dogleg" (NOX::Direction::Dogleg) - not implemented yet
    <li> "Broyden" (NOX::Direction::Broyden) - not implemented yet
