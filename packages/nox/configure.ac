@@ -622,8 +622,8 @@ AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${ADDON_epetra_EXAMPLES} = Xyes)
 # NOX-EpetraExt support
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(nox-epetraext,
-[AC_HELP_STRING([--enable-nox-epetraext],[compile epetraext support into libnoxepetra])],
+AC_ARG_WITH(nox-epetraext,
+[AC_HELP_STRING([--with-nox-epetraext],[compile epetraext support into libnoxepetra])],
 [BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
 [BUILD_NOX_EPETRAEXT_SUPPORT=no]
 )
