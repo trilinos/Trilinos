@@ -178,7 +178,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /* Evaluate the current balance */
-  LB_eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+  LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
 
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
