@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(nox, 0.2a, nox-developers@software.sandia.gov)
+AC_INIT(nox, 1.0a-dev, nox-developers@software.sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -118,8 +118,7 @@ fi
 # Since this is the first "with" command, we skip a line
 
 AC_ARG_WITH(cppflags,
-[AC_HELP_STRING([--with-cppflags],[add extra preprocessor flags])
-AC_HELP_STRING([],[(e.g., "-DDEBUG -I$HOME/whatever/include")])],
+[AC_HELP_STRING([--with-cppflags],[add extra preprocessor flags (e.g., "-Dflag -Idir")])],
 [EXTRA_CPPFLAGS=${withval}]
 )
 
@@ -155,7 +154,9 @@ ALTERNATE_AR="${withval}"
 
 AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
-[HAVE_PKG_MPI=yes])
+[HAVE_PKG_MPI=$enableval],
+[HAVE_PKG_MPI=no]
+)
 
 AC_ARG_WITH(mpi-cxx,
 [AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
@@ -952,15 +953,32 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
-  # Find a valid y12m
-  AC_LANG_FORTRAN77
+  # Find the dreaded y12 library
+  LIBS="-ly12m ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
 
-  AC_MSG_CHECKING(for y12m)
-  if test -n "${y12m_LIBDIR}" && test -f ${y12m_LIBDIR}/liby12m.a; then
-    LDFLAGS="-L${y12m_LIBDIR} ${LDFLAGS}"
-    AC_MSG_RESULT(yes)
-  elif test -f ${TRILINOS_DIR}/external/y12m/lib/${TRILINOS_TARGET}/liby12m.a; then
-    LDFLAGS="-L${TRILINOS_DIR}/external/y12m/lib/${TRILINOS_TARGET} ${LDFLAGS}"
+  # First, see if we can link without doing anything
+  AC_LANG_CPLUSPLUS
+  AC_TRY_LINK(,,[done=yes],)
+  LDFLAGS=$save_LDFLAGS
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n ${y12m_LIBDIR}; then
+     LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
+     AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi   
+
+  # Next try the Trilinos build dir for reference y12m
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../../external/y12m/src $save_LDFLAGS"
+    AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi   
+
+  AC_MSG_CHECKING([for y12m library])
+  
+  if test $done = yes; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -973,10 +991,6 @@ if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     AC_MSG_ERROR([Cannot find y12m library])
   fi  
 
-  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find function y12mae in y12m library]))
-
-
-  # Check for ifpack
   TRILINOS_LIB_CHECK(epetra)
   TRILINOS_LIB_CHECK(ifpack)
   TRILINOS_LIB_CHECK(aztecoo)
