@@ -337,12 +337,6 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     */
 	int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap);
     
-	//! Sort column entries, row-by-row, in ascending order.
-	int SortEntries();
-
-	//! Add entries that have the same column index. Remove redundant entries from list.
-	int MergeRedundantEntries();
-	
 	//! Analyzes matrix and attempts to optimize storage for matrix operations.
 	int OptimizeStorage();
 	
@@ -657,12 +651,6 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@{ \name Matrix Properties Query Methods.
 	
-	
-	//! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
-	bool NoRedundancies() const {return(Graph_->NoRedundancies());};
-	
-	//! If SortEntries() has been called, this query returns true, otherwise it returns false.
-	bool Sorted() const {return(Graph_->Sorted());};
 	
 	//! If FillComplete() has been called, this query returns true, otherwise it returns false.
 	bool Filled() const {return(Graph_->Filled());};
@@ -993,7 +981,19 @@ or if the number of entries in this row exceed the Length parameter.
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
-  
+
+  //! Sort column entries, row-by-row, in ascending order.
+  int SortEntries();
+
+  //! If SortEntries() has been called, this query returns true, otherwise it returns false.
+  bool Sorted() const {return(Graph_->Sorted());};
+
+  //! Add entries that have the same column index. Remove redundant entries from list.
+  int MergeRedundantEntries();
+
+  //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
+  bool NoRedundancies() const {return(Graph_->NoRedundancies());};
+		
   void DeleteMemory();
 
   Epetra_CrsGraph* Graph_;

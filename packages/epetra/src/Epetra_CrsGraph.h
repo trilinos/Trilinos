@@ -241,19 +241,6 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
 	int OptimizeStorage();
 
-	
-  //! Sort column indices, row-by-row, in ascending order.
-  /*!
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
-  */
-  int SortIndices();
-
-
-	//! Removes any redundant column indices in the rows of the graph.
-  /*!
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
-  */
-	int RemoveRedundantIndices();
 	//@}
 
   //@{ \name Extraction methods.
@@ -320,9 +307,6 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //@{ \name Graph Properties Query Methods.
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
 	bool Filled() const {return(CrsGraphData_->Filled_);};
-	
-	//! If SortIndices() has been called, this query returns true, otherwise it returns false.
-	bool Sorted() const {return(CrsGraphData_->Sorted_);};
 	
 	//! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
 	bool StorageOptimized() const {return(CrsGraphData_->StorageOptimized_);};
@@ -592,7 +576,6 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	// If column indices are stored in one long array (via a call to OptimizeStorage), 
 	// IndicesAreContiguous returns true, otherwise it returns false.
 	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}
-	bool NoRedundancies() const {return(CrsGraphData_->NoRedundancies_);}
 	bool GlobalConstantsComputed() const;
 	bool FindGlobalIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
 	bool FindGlobalIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
@@ -603,6 +586,24 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;}
 	void SetIndicesAreGlobal(bool Flag) {CrsGraphData_->IndicesAreGlobal_ = Flag;}
 	void SetSorted(bool Flag) {CrsGraphData_->Sorted_ = Flag;}
+
+  //! Sort column indices, row-by-row, in ascending order.
+  /*!
+    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+  */
+  int SortIndices();
+
+  //! If SortIndices() has been called, this query returns true, otherwise it returns false.
+  bool Sorted() const {return(CrsGraphData_->Sorted_);};
+	
+  //! Removes any redundant column indices in the rows of the graph.
+  /*!
+    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+  */
+  int RemoveRedundantIndices();
+
+  //! If RemoveRedundantIndices() has been called, this query returns true, otherwise it returns false.
+  bool NoRedundancies() const {return(CrsGraphData_->NoRedundancies_);}
 
  private:
 	void SetGlobalConstantsComputed(bool Flag) {CrsGraphData_->GlobalConstantsComputed_ = Flag;}

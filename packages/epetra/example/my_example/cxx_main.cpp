@@ -406,22 +406,22 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// SortIndices
-	if(verbose) cout << "SortIndices..." << endl;
-	soleOutput = SoleOwner.SortIndices();
-	sharedOutput = SharedOwner.SortIndices();
-	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
-	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
-	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
+	//if(verbose) cout << "SortIndices..." << endl;
+	//soleOutput = SoleOwner.SortIndices();
+	//sharedOutput = SharedOwner.SortIndices();
+	//EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
+	//EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
+	//if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// RemoveRedundantIndices
-	if(verbose) cout << "RemoveRedundantIndices..." << endl;
-	SoleOwner.InsertGlobalIndices(0, 1, array1.Values());
-	SharedOwner.InsertGlobalIndices(0, 1, array1.Values());
-	soleOutput = SoleOwner.RemoveRedundantIndices();
-	sharedOutput = SharedOwner.RemoveRedundantIndices();
-	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
-	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
-	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
+	//if(verbose) cout << "RemoveRedundantIndices..." << endl;
+	//SoleOwner.InsertGlobalIndices(0, 1, array1.Values());
+	//SharedOwner.InsertGlobalIndices(0, 1, array1.Values());
+	//soleOutput = SoleOwner.RemoveRedundantIndices();
+	//sharedOutput = SharedOwner.RemoveRedundantIndices();
+	//EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
+	//EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
+	//if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// FillComplete (#1)
 	if(verbose) cout << "FillComplete..." << endl;
@@ -599,7 +599,6 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 
   EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
   EPETRA_TEST_ERR(!(A.Filled()),ierr);
-  EPETRA_TEST_ERR(!(A.Sorted()),ierr);
   EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
   EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
   EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);

@@ -737,17 +737,6 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@{ \name Matrix Properties Query Methods.
 
-    //! Sort column entries, row-by-row, in ascending order.
-    int SortEntries();
-
-    //! If SortEntries() has been called, this query returns true, otherwise it returns false.
-    bool Sorted() const {return(Graph_->Sorted());};
-
-    //! Add entries that have the same column index. Remove redundant entries from list.
-    int MergeRedundantEntries();
-
-    //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
-    bool NoRedundancies() const {return(Graph_->NoRedundancies());};
     //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
     int OptimizeStorage();
 
@@ -1178,6 +1167,18 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
                        Epetra_Distributor & Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
+
+  //! Sort column entries, row-by-row, in ascending order.
+  int SortEntries();
+
+  //! If SortEntries() has been called, this query returns true, otherwise it returns false.
+  bool Sorted() const {return(Graph_->Sorted());};
+
+  //! Add entries that have the same column index. Remove redundant entries from list.
+  int MergeRedundantEntries();
+
+  //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
+  bool NoRedundancies() const {return(Graph_->NoRedundancies());};
 
   bool StaticGraph() const {return(StaticGraph_);};
 

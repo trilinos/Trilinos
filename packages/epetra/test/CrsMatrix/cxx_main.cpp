@@ -908,7 +908,6 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
 
   EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
   EPETRA_TEST_ERR(!(A.Filled()),ierr);
-  EPETRA_TEST_ERR(!(A.Sorted()),ierr);
   EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
   EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
   EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
