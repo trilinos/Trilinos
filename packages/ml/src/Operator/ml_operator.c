@@ -1788,23 +1788,13 @@ void ML_Aux_Data_Create(ML_Aux_Data** ptr)
 {
   *ptr = (ML_Aux_Data *) ML_allocate(sizeof(ML_Aux_Data));
   (*ptr)->threshold = 0.0;
-  (*ptr)->allocated = 0;
-  (*ptr)->itmp = 0;
-  (*ptr)->dtmp = 0;
   (*ptr)->enable = 0;
   (*ptr)->max_level = -1;
-  (*ptr)->num_PDEs = 1;
 }
 
 void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
 {
-  (*ptr)->itmp = 0;
   (*ptr)->threshold = 0.0;
-  (*ptr)->allocated = 0;
-  if ((*ptr)->itmp != NULL) 
-    ML_free((*ptr)->itmp);
-  if ((*ptr)->dtmp != NULL) 
-    ML_free((*ptr)->dtmp);
   ML_free(*ptr);
 }
 

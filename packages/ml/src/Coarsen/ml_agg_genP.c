@@ -2144,31 +2144,17 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
                          int row_lengths[])
 {
   int ierr;
-  int i, count;
+  int i, j, count, mod;
   int BlockCol, BlockRow;
   double DiagValue = 0.0;
-  double dist;
-  double threshold = data->aux_data->threshold;
-  double* x_coord = data->grid_info->x;
-  double* y_coord = data->grid_info->y;
-  double* z_coord = data->grid_info->z;
-  int* itmp = data->aux_data->itmp;
-  double* dtmp = data->aux_data->dtmp;
-  int N_dimensions = data->grid_info->Ndim;
-  int LocalRow, Nnz, DiagID;
+  int DiagID, ok;
+  int* Filter;
 
   ierr = (*(data->aux_data->aux_func_ptr))(data, N_requested_rows, requested_rows,
                                       allocated_space, columns, values, row_lengths);
   if (ierr == 0)
     return(0);
  
-  if (N_dimensions == 0) {
-    fprintf(stderr, "Error: Zero-dimensional problem in ML_Aux_Getrow()\n"
-            "(file %s, line% d)\n",
-            __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
-  }
-
   if (N_requested_rows != 1) {
     fprintf(stderr, "ML_Aux_Getrow() works only is N_requested_rows == 1\n"
             "(file %s, line %d)\n",
@@ -2176,109 +2162,59 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
     exit(EXIT_FAILURE);
   }
 
-  if (row_lengths[0] > data->aux_data->allocated)
-  {
-    data->aux_data->allocated = row_lengths[0] + 1;
-    ML_free(data->aux_data->itmp);
-    ML_free(data->aux_data->itmp);
-    data->aux_data->itmp = (int*)ML_allocate(sizeof(int) * (data->aux_data->allocated));
-    data->aux_data->dtmp = (double*)ML_allocate(sizeof(double) * (data->aux_data->allocated));
-  }
+  /* new part */
+  mod = data->invec_leng / data->aux_data->filter_size;
+  BlockRow = requested_rows[0] / mod;
+  Filter = data->aux_data->filter[BlockRow];
+  count = 0;
+  DiagID = -1;
+  DiagValue = 0.0;
 
   for (i = 0 ; i < row_lengths[0] ; ++i)
   {
-    itmp[i] = columns[i];
-    dtmp[i] = values[i];
-  }
-
-  BlockRow = requested_rows[0] / data->aux_data->num_PDEs;
-  DiagID = -1;
-
-  for (i = 0 ; i < row_lengths[0] ; ++i) 
-  {
-    if (values[i] == 0.0)
-      continue;
-
-    BlockCol = columns[i] / data->aux_data->num_PDEs;
-    dist = 0.0;
-    if (BlockCol != BlockRow) {
-      switch (N_dimensions)
-      {
-      case 3:
-        dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
-      case 2:
-        dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
-      case 1:
-        dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
-      }
-
-      if (dist == 0.0)
-      {
-        printf("node %d = %e ", BlockRow, x_coord[BlockRow]);
-        if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
-        if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
-        printf("\n");
-        printf("node %d = %e ", BlockCol, x_coord[BlockCol]);
-        if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
-        if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
-        printf("\n");
-        printf("Operator has inlen = %d and outlen = %d\n",
-               data->invec_leng, data->outvec_leng);
-      }
-        
-      dist = 1.0 / dist;
-      dtmp[i] = dist;
-      DiagValue += dist;
-    }
-    else if (columns[i] == requested_rows[0])
+    if (requested_rows[0] == columns[i])
     {
       DiagID = i;
+      columns[count] = columns[i];
+      values[count] = values[i];
+      ++count;
+      continue;
+    }
+
+    ok = 1;
+    BlockCol = columns[i] / mod;
+    for (j = 0 ; j < Filter[0] ; ++j)
+    {
+      if (Filter[j + 1] == BlockCol)
+      {
+        DiagValue += values[i];
+        ok = 0;
+        break;
+      }
+    }
+    if (ok == 1)
+    {
+      columns[count] = columns[i];
+      values[count] = values[i];
+      ++count;
     }
   }
 
   if (DiagID == -1)
   {
-    fprintf(stderr, "ERROR: matrix has no diagonal!\n"
-            "ERROR: (file %s, line %d)\n",
-            __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
+    fprintf(stderr, "Diagonal not defined for row %d\n", requested_rows[0]);
   }
 
-  threshold *= DiagValue;
-  DiagValue = values[DiagID];
-  count = 0;
-
-  for (i = 0 ; i < row_lengths[0] ; ++i) 
-  {
-    if (values[i] == 0.0 || i == DiagID)
-      continue;
-
-    if (dtmp[i] > threshold) 
-    {
-      columns[count] = columns[i];
-      values[count]  = values[i];
-      count++;
-    }
-    else 
-    {
-      DiagValue += values[i];
-    }
-
-  }
-
-  columns[count] = requested_rows[0];
-  values[count] = DiagValue;
-  ++count;
-
+  values[DiagID] += DiagValue;
   row_lengths[0] = count;
 
   return(ierr);
+
 }
 
 void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                             ML_Operator* Cmat)
 {
-  int i;
   double* new_x_coord = NULL;
   double* new_y_coord = NULL;
   double* new_z_coord = NULL;
@@ -2286,15 +2222,6 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   int Nghost;
   ML_Operator* Rmat;
   char name[80];
-
-  if (PDEs != Amat->aux_data->num_PDEs)
-  {
-    fprintf(stderr, "ERROR: Cmat->num_PDEs != Amat->aux_data->numPDEs (%d vs. %d)\n"
-            "ERROR: (file %s, line %d)\n",
-            PDEs, Amat->aux_data->num_PDEs,
-            __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
-  }
 
   if (Pmat->getrow->func_ptr != CSR_getrow) 
   {
@@ -2396,6 +2323,143 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Pmat->getrow->func_ptr = CSR_getrow;
 
   ML_Operator_Destroy(&Rmat);
+}
+
+/*
+ * This function allocates the filter field of the aux_data
+ * structure. Filter[i] contains the number of allowed nonzero
+ * connections in amalgamated row i. Filter[i][0] is the number
+ * of allowed connections; connection `j' is stored in
+ * Filter[0][j + 1]
+ */
+static void ML_Init_Aux(ML* ml, int level)
+{
+  int i, j, n, count, num_PDEs, BlockRow, BlockCol;
+  double threshold;
+  int* columns;
+  double* values;
+  int allocated, entries = 0;
+  int N_dimensions;
+  int DiagID;
+  double DiagValue;
+  int** filter;
+  double dist;
+  double* x_coord,* y_coord,* z_coord;
+
+  ML_Operator* A = &(ml->Amat[level]);
+  num_PDEs = A->num_PDEs;
+  N_dimensions = A->grid_info->Ndim;
+  x_coord = A->grid_info->x;
+  y_coord = A->grid_info->y;
+  z_coord = A->grid_info->z;
+
+  threshold = A->aux_data->threshold;
+  ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  n = A->invec_leng;
+
+  filter = (int**) ML_allocate(sizeof(int*) * n);
+
+  allocated = 128;
+  columns = (int *)    ML_allocate(allocated * sizeof(int));
+  values  = (double *) ML_allocate(allocated * sizeof(double));
+
+  for (i = 0 ; i < n ; ++i)
+  {
+    BlockRow = i;
+    DiagID = -1;
+    DiagValue = 0.0;
+    count = 0;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) 
+    {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol)
+      {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        if (dist == 0.0)
+        {
+          printf("node %d = %e ", i, x_coord[BlockRow]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
+          printf("\n");
+          printf("node %d = %e ", j, x_coord[BlockCol]);
+          if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
+          if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
+          printf("\n");
+          printf("Operator has inlen = %d and outlen = %d\n",
+                 A->invec_leng, A->outvec_leng);
+        }
+
+        dist = 1.0 / dist;
+        values[j] = dist;
+        DiagValue += dist;
+      }
+      else if (columns[j] == i)
+      {
+        DiagID = j;
+      }
+    }
+
+    if (DiagID == -1)
+    {
+      fprintf(stderr, "ERROR: matrix has no diagonal!\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+
+    DiagValue *= threshold;
+    count = 0;
+
+    for (j = 0 ; j < entries ; ++j) 
+    {
+      if (values[j] < DiagValue)
+        columns[count++] = columns[j];
+    }
+
+    /* insert the rows */
+    filter[BlockRow] = (int*) ML_allocate(sizeof(int) * (count + 1));
+    filter[BlockRow][0] = count;
+
+    for (j = 0 ; j < count ; ++j)
+      filter[BlockRow][j + 1] = columns[j];
+
+  }
+
+  ML_free(columns);
+  ML_free(values);
+
+  ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
+
+  A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
+  A->getrow->func_ptr = ML_Aux_Getrow;
+  A->aux_data->filter = filter;
+  A->aux_data->filter_size = n;
+
+}
+
+static void ML_Finalize_Aux(ML* ml, const int level)
+{
+  int i;
+  ML_Operator* A = &(ml->Amat[level]);
+
+  A->getrow->func_ptr = A->aux_data->aux_func_ptr;
+  A->aux_data->aux_func_ptr = 0;
+  for (i = 0 ; i < A->aux_data->filter_size ; ++i)
+    ML_free((A->aux_data->filter[i]));
+  ML_free(A->aux_data->filter);
 }
 
 /* ************************************************************************* */
@@ -2531,12 +2595,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
                 level, ml->Amat[level].aux_data->threshold);
        }
 
-       ml->Amat[level].aux_data->aux_func_ptr  = ml->Amat[level].getrow->func_ptr;
-       ml->Amat[level].getrow->func_ptr = ML_Aux_Getrow;
-       ml->Amat[level].aux_data->allocated = 1024;
-       ml->Amat[level].aux_data->itmp = (int*)ML_allocate(sizeof(int) * 1024);
-       ml->Amat[level].aux_data->dtmp = (double*)ML_allocate(sizeof(double) * 1024);
-       ml->Amat[level].aux_data->num_PDEs = ml->Amat[level].num_PDEs;
+       ML_Init_Aux(ml, level);
      }
 
       if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
@@ -2585,13 +2644,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
      if (aux_flag)
      {
-       ml->Amat[level].getrow->func_ptr = ml->Amat[level].aux_data->aux_func_ptr;
-       ml->Amat[level].aux_data->aux_func_ptr = 0;
-       ml->Amat[level].aux_data->allocated = 0;
-       ML_free(ml->Amat[level].aux_data->itmp);
-       ML_free(ml->Amat[level].aux_data->dtmp);
-       ml->Amat[level].aux_data->itmp = NULL;
-       ml->Amat[level].aux_data->dtmp = NULL;
+       ML_Finalize_Aux(ml, level);
      }
 
 #ifdef ML_TIMING
@@ -2638,7 +2691,6 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         ML_Project_Coordinates(&(ml->Amat[level]), Ptent, &(ml->Amat[next]));
 
         ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
-        ml->Amat[next].aux_data->num_PDEs = ml->Amat[next].num_PDEs;
       }        
       level = next;
       next  = user_next_level(ml, next, user_data);

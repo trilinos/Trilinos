@@ -86,13 +86,11 @@ struct ML_Operator_Subspace_Struct {
 
 typedef struct {
   double    threshold;
-  int       allocated;
-  int*      itmp;
-  double*   dtmp;
   int       (*aux_func_ptr)(ML_Operator *,int,int*,int,int*,double*,int*);
   int       enable;
   int       max_level;
-  int       num_PDEs;
+  int**     filter;
+  int       filter_size;
 } ML_Aux_Data;
 
 void ML_Aux_Data_Create(ML_Aux_Data** ptr);
