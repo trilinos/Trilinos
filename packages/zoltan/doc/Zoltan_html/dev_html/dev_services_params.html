@@ -61,12 +61,15 @@ parameters currently used in Zoltan</a> can be found in the User's Guide.
 these routines have been written to be as independent of Zoltan as possible.
 Only a few minor changes would be required to use these routines as a separate
 library.
-<blockquote><b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>:&nbsp; User
+<blockquote>
+<b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>:&nbsp; User
 interface function that calls a set of method-specific routines.
+<br><b><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a></b>:&nbsp; 
+Same as Zoltan_Set_Param, but for vector parameters. 
 <br><b><a href="#Zoltan_Check_Param">Zoltan_Check_Param</a></b>:&nbsp; Routine
 to check if parameter name and value are OK.
-<br><b><a href="#Zoltan_Bind_Param">Zoltan_Bind_Param</a></b>: Routine to associate
-a parameter name with a variable.
+<br><b><a href="#Zoltan_Bind_Param">Zoltan_Bind_Param</a></b>: Routine to associate a parameter name with a variable.
+<br><b><a href="#Zoltan_Bind_Param_Vec">Zoltan_Bind_Param_Vec</a></b>: Same as Zoltan_Bind_Param, but for vector parameters.
 <br><b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>:&nbsp;
 Scans list of parameter names &amp; values, setting relevant parameters
 accordingly.
@@ -148,6 +151,23 @@ automatically converted to all upper-case letters.</td>
 
 <!------------------------------------------------------------------------->
 <hr>
+<a NAME="Zoltan_Set_Param_Vec"></a>
+<hr>
+int <b>Zoltan_Set_Param_Vec</b>(struct <b><a href="dev_lb_structs.html">Zoltan_Struct</a></b>
+*<i>zz</i>, char *<i>param_name</i>, char *<i>new_val</i>, int <i>index</i>);
+<br>
+<hr>
+<p>
+This routine works the same way as <a href="#Zoltan_Set_Param">
+Zoltan_Set_Param</a>, but is used for vector parameters.
+A vector parameter is a parameter that in
+addition to a name also has a set of indices, usually starting at 0. Each entry (component) may have a different value. This routine
+sets a single entry (component) of a vector parameter. If you want all entries (components) of a vector parameter to have the
+same value, set the parameter using <a href="#Zoltan_Set_Param">
+Zoltan_Set_Param</a> as if it were a scalar parameter. 
+
+<!------------------------------------------------------------------------->
+<hr>
 <a NAME="Zoltan_Check_Param"></a>
 <hr>
 int <b>Zoltan_Check_Param</b>( char *<i>param_name</i>,
@@ -184,16 +204,18 @@ string. See <b>Zoltan_RCB_Set_Param</b> for an example of how to use this routin
 
 <td>The data structure (defined in <i>params/params_const.h</i>) describing
 the domain-specific parameters to be matched against. The data structure
-is an array of items, each of which consists of three fields. The first
+is an array of items, each of which consists of four fields. The first
 field is a string that is a capitalized name of a parameter. The second
 field is an address that is unused in
 <b>Zoltan_Check_Param</b>, but is used
 in <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>. The
 third field is another capitalized string that indicates the type of the
 parameter from the first field. Currently supported types are "INT", "INTEGER",
-"DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional types
+"FLOAT", "REAL", "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional types
 by simple modifications to <b>Zoltan_Check_Param</b> and <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>.
-The array is terminated by an item consisting of three NULL fields. See
+The fourth field is an integer that gives the dimension (length) of
+the parameter, if it is a vector parameter. Scalar parameters have dimension 0.
+The array is terminated by an item consisting of four NULL fields. See
 <b>Zoltan_RCB_Set_Param</b>
 for an example of how to set up this data structure.&nbsp;</td>
 </tr>
@@ -263,16 +285,18 @@ where the actual assignment of values takes place.
 
 <td>The data structure describing the domain-specific parameters to be
 matched against. The data structure is an array of items, each of which
-consists of three fields. The first field is a string that is a capitalized
+consists of four fields. The first field is a string that is a capitalized
 name of a parameter. The second field is an address that is unused in
 <b><a href="#Zoltan_Check_Param">Zoltan_Check_Param</a></b>,
 but is used in <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>.
 The third field is another capitalized string that indicates the type
 of the parameter from the first field. Currently supported types are "INT",
-"INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional
-types by simple modifications to <b><a href="#Zoltan_Check_Param">Zoltan_Check_Param</a></b>
-and <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>. The
-array is terminated by an item consisting of three NULL fields.&nbsp;</td>
+"INTEGER", "FLOAT", "REAL", "DOUBLE", "LONG", "STRING" and "CHAR". 
+It is easy to add additional types by simple modifications to <b><a href="#Zoltan_Check_Param">Zoltan_Check_Param</a></b>
+and <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>. 
+The fourth field is an integer that gives the dimension (length) of
+the parameter, if it is a vector parameter. Scalar parameters have dimension 0.
+The array is terminated by an item consisting of four NULL fields.</td>
 </tr>
 
 <tr>
@@ -306,6 +330,20 @@ calls to <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a>.</b
 </table>
 
 <p>
+
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Bind_Param_Vec"></a>
+<hr WIDTH="100%">
+int <b>Zoltan_Bind_Param_Vec</b>(<b>PARAM_VARS</b>
+*<i>params,</i> char *<i>name,</i> void *<i>var</i>, int <i>dim</i>);
+<br>
+<hr WIDTH="100%">
+<p>
+Same as Zoltan_Bind_Param, but for vector parameters. The additional
+parameter <i>dim</i> gives the dimension or length of the vector parameter.
+</p>
 
 <!------------------------------------------------------------------------->
 <hr>
@@ -347,7 +385,7 @@ is an array of items, each of which consists of three fields. The first
 field is a string which is a capitalized name of a parameter. The second
 field is an address of the parameter which should be altered. The third
 field is another capitalized string which indicates the type of the parameter
-being altered. Currently supported types are "INT", "INTEGER", "DOUBLE",
+being altered. Currently supported types are "INT", "INTEGER", "FLOAT", "REAL", "DOUBLE",
 "LONG", "STRING" and "CHAR". It is easy to add additional types by simple
 modifications to <b><a href="#Zoltan_Check_Param">Zoltan_Check_Param</a></b> and
 <b>Zoltan_Assign_Param_Vals</b>.

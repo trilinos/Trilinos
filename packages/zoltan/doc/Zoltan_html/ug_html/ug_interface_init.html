@@ -34,6 +34,7 @@ are described below:
 <a href="#Zoltan_Initialize">Zoltan_Initialize</a>
 <br><a href="#Zoltan_Create">Zoltan_Create</a>
 <br><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a>
+<br><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a>
 <br><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a>
 <br><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a>
 <br><a href="#Zoltan_Destroy">Zoltan_Destroy</a>
@@ -274,6 +275,95 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="Zoltan_Set_Param_Vec"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+int <b>Zoltan_Set_Param_Vec</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>param_name</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>new_val</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<i>index</i>);
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Set_Param_Vec</b>(<i>zz, param_name, new_val</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_Set_Param_Vec
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
+<br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: index
+</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Set_Param_Vec</b> is used to alter the value of 
+a vector parameter in Zoltan. A vector parameter is a parameter
+that in addition to a name also has a set of indices, usually starting at 0.
+Each entry (component) may have a different value.
+This routine sets a single entry (component) of a vector parameter.
+If you want all entries (components) of a vector parameter to have
+the same value, set the parameter using <a href="#Zoltan_Set_Param">
+Zoltan_Set_Param</a> as if it were a scalar parameter.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure created by 
+<b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; param_name</i></td>
+
+<td>A string containing the name of the parameter to be altered.&nbsp;
+Note that the string is case-insensitive.&nbsp; Also, different Zoltan
+structures can have different parameter values.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; new_val</i></td>
+
+<td>A string containing the new value for the parameter.&nbsp; Example
+strings include "3.154", "True", "7" or anything appropriate for the parameter
+being set. As above, the string is case-insensitive.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; index</i></td>
+
+<td>
+The index of the entry of the vector parameter to be set. The default in Zoltan is that the first entry in a vector has index 0 (C-style indexing).
+</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+</table>
 
 
 
