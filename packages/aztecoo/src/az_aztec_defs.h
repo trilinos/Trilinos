@@ -130,8 +130,12 @@
 #include <string.h>
 #endif
 
+#ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
+#else
+#include <math.h>
+#endif
 #else
 #include <math.h>
 #endif
