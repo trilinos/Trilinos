@@ -36,7 +36,8 @@
     SerialCrsMatrixA_(0), 
     SerialMap_(0), 
     SerialMatrix_(0), 
-    TransposeMatrix_(0) {
+    TransposeMatrix_(0),
+    Matrix_(0) {
 
 
   Problem_ = &prob ; 
@@ -105,16 +106,21 @@ int Amesos_Klu::ConvertToSerial() {
 
 int Amesos_Klu::ConvertToKluCRS(){
   
-  if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
-  TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
-  EPETRA_CHK_ERR( CrsMatrixTranspose( SerialMatrix_, TransposeMatrix_ ) ) ; 
+  if ( UseTranspose() ) { 
+    Matrix_ = SerialMatrix_ ; 
+  } else { 
+    if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
+    TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
+    EPETRA_CHK_ERR( CrsMatrixTranspose( SerialMatrix_, TransposeMatrix_ ) ) ; 
+    Matrix_ = TransposeMatrix_ ; 
+  }
   //
   //  Convert matrix to the form that Klu expects (Ap, Ai, Aval) 
   //
 
-  assert( NumGlobalElements_ == TransposeMatrix_->NumGlobalRows());
-  assert( NumGlobalElements_ == TransposeMatrix_->NumGlobalCols());
-  assert( numentries_ == TransposeMatrix_->NumGlobalNonzeros());
+  assert( NumGlobalElements_ == Matrix_->NumGlobalRows());
+  assert( NumGlobalElements_ == Matrix_->NumGlobalCols());
+  assert( numentries_ == Matrix_->NumGlobalNonzeros());
   Ap.resize( NumGlobalElements_+1 );
   Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
   Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
@@ -126,7 +132,7 @@ int Amesos_Klu::ConvertToKluCRS(){
     int Ai_index = 0 ; 
     int MyRow;
     for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
-      assert( TransposeMatrix_->ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, ColIndices ) == 0 ) ;
+      assert( Matrix_->ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, ColIndices ) == 0 ) ;
       Ap[MyRow] = Ai_index ; 
       for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
 	Ai[Ai_index] = ColIndices[j] ; 

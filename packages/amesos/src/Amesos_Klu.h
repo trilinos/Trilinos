@@ -278,6 +278,8 @@ public:
                                          //  IsLocal==1 - Points to the original matix 
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
   Epetra_CrsMatrix *TransposeMatrix_ ;   //  Points to a Serial Transposed Copy of A 
+  Epetra_CrsMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
+                                         //  the values passed to Klu
                                      
 
   bool UseTranspose_;      //  Set by 
