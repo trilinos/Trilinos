@@ -1,0 +1,22 @@
+
+#include <Epetra_Transform.h>
+
+#include <Epetra_Import.h>
+#include <Epetra_Export.h>
+
+namespace Epetra_Transform {
+
+template<class T,class U>
+struct DistTransform : public Transform<T,U>
+{
+
+  virtual std::auto_ptr<Epetra_Import> importer() { return std::auto_ptr<Epetra_Import>(0); }
+  virtual std::auto_ptr<Epetra_Export> exporter() { return std::auto_ptr<Epetra_Export>(0); }
+
+};
+
+template<class T>
+struct SameTypeDistTransform : public DistTransform<T,T> {};
+
+} //namespace Epetra_Transform
+  
