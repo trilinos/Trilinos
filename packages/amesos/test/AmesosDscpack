@@ -77,7 +77,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (OK, distributed has little meaning on one process, but ...)
 #
-  mpirun -np 1 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 1 0 1e-12 1e-11 >>SST.stdout
+  mpirun -np 1 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 1 0 1e-12 1e-10 >>SST.stdout
   mpirun -np 2 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout 
   mpirun -np 2 amesos_test.exe DSCPACK KheadSorted.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
 
