@@ -274,7 +274,6 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
-		utils/Makefile
 		])
 
 AC_OUTPUT()

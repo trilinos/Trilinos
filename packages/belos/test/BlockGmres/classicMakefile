@@ -5,7 +5,7 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
           -DIFPACK
 
-INCLUDES = -I../../utils -I../../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) \
+INCLUDES = -I../../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) $(EPETRA_INCLUDES) \
 	$(TRIUTILS_INCLUDES)  
   
 
@@ -16,7 +16,7 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= ../../utils/libbelosutils.$(LIB_EXT) $(LIBIFPACK) $(LIBEPETRA) $(LIBTRIUTILS) \
+LIB_PATHS= $(LIBIFPACK) $(LIBEPETRA) $(LIBTRIUTILS) \
 $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
 #=======================================================================
@@ -74,7 +74,6 @@ $(PTARGET): $(PTEST_OBJ)
 #=======================================================================
 clean:
 	@echo "junk" > dummy.$(OBJ_EXT)
-	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_MPI) $(TARGET_SERIAL) $(PTARGET_MPI) \
-				$(PTARGET_SERIAL) 
+	@rm -f *.$(OBJ_EXT)  *~ 
 
 #=======================================================================
