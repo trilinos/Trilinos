@@ -1,33 +1,33 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
-                                                                                
-#include "NOX_Epetra_Operator_JacobiPrec.H" 
+
+#include "NOX_Epetra_Operator_JacobiPrec.H"
 
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Map.h"
@@ -36,8 +36,8 @@ namespace NOX {
 
 namespace Epetra {
 
-//! Constructor 
-JacobiPreconditioner::JacobiPreconditioner(const Epetra_Vector& shape, 
+//! Constructor
+JacobiPreconditioner::JacobiPreconditioner(const Epetra_Vector& shape,
 					   const double value) :
   label("NOX::Epetra::JacobiPreconditioner"),
   diagonalVectorPtr(new Epetra_Vector(shape)),
@@ -51,13 +51,13 @@ JacobiPreconditioner::~JacobiPreconditioner()
   delete diagonalVectorPtr;
 }
 
-int JacobiPreconditioner::SetUseTranspose(bool UseTranspose) 
+int JacobiPreconditioner::SetUseTranspose(bool UseTranspose)
 {
   // Disable this option
   return false;
 }
 
-int JacobiPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
+int JacobiPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   // Not implemented: Throw an error!
   cout << "ERROR: NOX::Epetra::JacobiPreconditioner::Apply() - "
@@ -66,8 +66,8 @@ int JacobiPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector&
   return false;
 }
 
-int JacobiPreconditioner::ApplyInverse(const Epetra_MultiVector& input, 
-				       Epetra_MultiVector& result) const 
+int JacobiPreconditioner::ApplyInverse(const Epetra_MultiVector& input,
+				       Epetra_MultiVector& result) const
 {
 
   // Calculate r = input ./ diagonalVector (./ is element-by-element divide)
@@ -79,8 +79,8 @@ int JacobiPreconditioner::ApplyInverse(const Epetra_MultiVector& input,
 
   return true;
 }
-  
-double JacobiPreconditioner::NormInf() const 
+
+double JacobiPreconditioner::NormInf() const
 {
   // Not implemented: Throw an error!
   cout << "ERROR: NOX::Epetra::JacobiPreconditioner::NormInf() - "
@@ -89,12 +89,12 @@ double JacobiPreconditioner::NormInf() const
   return 0.0;
 }
 
-char* JacobiPreconditioner::Label () const 
+const char* JacobiPreconditioner::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool JacobiPreconditioner::UseTranspose() const 
+
+bool JacobiPreconditioner::UseTranspose() const
 {
   // Not implemented: Throw an error!
   cout << "ERROR: NOX::Epetra::JacobiPreconditioner::UseTranspose() - "
@@ -103,18 +103,18 @@ bool JacobiPreconditioner::UseTranspose() const
   return false;
 }
 
-bool JacobiPreconditioner::HasNormInf() const 
+bool JacobiPreconditioner::HasNormInf() const
 {
   // NormInf is not implemented
   return false;
 }
 
-const Epetra_Comm & JacobiPreconditioner::Comm() const 
+const Epetra_Comm & JacobiPreconditioner::Comm() const
 {
   return diagonalVector.Map().Comm();
 }
-const Epetra_Map& JacobiPreconditioner::OperatorDomainMap () const 
-{  
+const Epetra_Map& JacobiPreconditioner::OperatorDomainMap () const
+{
   const Epetra_BlockMap* bmap = 0;
   bmap = dynamic_cast<const Epetra_Map*>(&diagonalVector.Map());
 
@@ -127,7 +127,7 @@ const Epetra_Map& JacobiPreconditioner::OperatorDomainMap () const
   return dynamic_cast<const Epetra_Map&>(*bmap);
 }
 
-const Epetra_Map& JacobiPreconditioner::OperatorRangeMap () const 
+const Epetra_Map& JacobiPreconditioner::OperatorRangeMap () const
 {
   const Epetra_BlockMap* bmap = 0;
   bmap = dynamic_cast<const Epetra_Map*>(&(diagonalVector.Map()));
@@ -140,8 +140,8 @@ const Epetra_Map& JacobiPreconditioner::OperatorRangeMap () const
 
   return dynamic_cast<const Epetra_Map&>(*bmap);
 }
-bool JacobiPreconditioner::compute(const Epetra_Vector& x, 
-				   const Epetra_Operator* jacobianPtr) 
+bool JacobiPreconditioner::compute(const Epetra_Vector& x,
+				   const Epetra_Operator* jacobianPtr)
 {
   // We need a Jacobian pointer
   if (jacobianPtr == NULL) {
@@ -151,9 +151,9 @@ bool JacobiPreconditioner::compute(const Epetra_Vector& x,
     throw "NOX Error";
   }
 
-  /* To extract the diagonal inverse, we must have a real matrix 
-   * (we can NOT be using matrix-free operators).  Thus it must 
-   * be an Epetra_RowMatrix.  Check for this and if not, throw an 
+  /* To extract the diagonal inverse, we must have a real matrix
+   * (we can NOT be using matrix-free operators).  Thus it must
+   * be an Epetra_RowMatrix.  Check for this and if not, throw an
    * error.
    */
   // Try and cast it to an Epetra_RowMatrix
@@ -169,7 +169,7 @@ bool JacobiPreconditioner::compute(const Epetra_Vector& x,
 
   // Put a copy of the diagonal of the Jacobian into tmpVector
   int retcode = jacobian.ExtractDiagonalCopy(diagonalVector);
-  
+
   // Check if ExtractDiagonalCopy is supported
   if (retcode != 0) {
     cout << "ERROR: NOX::Epetra::JacobiPreconditioner::computePreconditioner - "
@@ -179,19 +179,19 @@ bool JacobiPreconditioner::compute(const Epetra_Vector& x,
 
   // Take element-wise absolute value of diagonal vector
   retcode = diagonalVector.Abs(diagonalVector);
-  
+
   // Check minimum absolute value of diagonal vector
   double minAbsValue = 0.0;
   retcode = diagonalVector.MinValue(&minAbsValue);
 
   if(minAbsValue <= minValue) // This minimum threshold can be adjusted
   {
-    cout << "Poor scaling on Jacobian diagonal (min abs value: " 
-	 << minAbsValue << " ) --> No nonlinear preconditioning will be used!!" 
+    cout << "Poor scaling on Jacobian diagonal (min abs value: "
+	 << minAbsValue << " ) --> No nonlinear preconditioning will be used!!"
 	 << endl;
-    return false; 
+    return false;
   }
-  
+
   return true;
 }
 
