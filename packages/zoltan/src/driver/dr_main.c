@@ -33,6 +33,7 @@ static char *cvs_dr_main = "$Id$";
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <mpi.h>
 
@@ -46,6 +47,8 @@ static char *cvs_dr_main = "$Id$";
 MESH_INFO Mesh;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
+static void print_input_info(FILE *, int, PROB_INFO_PTR);
+static void print_input(int, int, PROB_INFO_PTR, PARIO_INFO_PTR);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -66,8 +69,6 @@ int main(int argc, char *argv[])
   ELEM_INFO_PTR elements;
   PROB_INFO     prob;
 
-  /* Local function prototype */
-  void   print_input(int, PROB_INFO_PTR);
 /***************************** BEGIN EXECUTION ******************************/
 
   /* initialize MPI */
@@ -147,7 +148,7 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-    print_input(Num_Proc, &prob);
+    print_input(Proc, Num_Proc, &prob, &pio_info);
   }
 
   /* broadcast the command info to all of the processor */
@@ -224,28 +225,54 @@ static int read_mesh(
 /*****************************************************************************/
 /*****************************************************************************/
 /* This function prints out parameters as read from the command file.
+ * Parameters are also printed to the parallel output file.
  *---------------------------------------------------------------------------*/
-void print_input(int Num_Proc, PROB_INFO_PTR prob)
+static void print_input(int Proc, int Num_Proc, PROB_INFO_PTR prob, 
+                        PARIO_INFO_PTR pio_info)
 {
 /* local declarations */
-  int i;
+  FILE *fp;
+  char  par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
+
 /*-----------------------------Execution Begins------------------------------*/
 
-  printf("%s version %s\n", UTIL_NAME, VER_STR);
-  printf("Total number of Processors = %d\n\n", Num_Proc);
+  /* Print info to both stdout and the Proc's output file. */
+  /* generate the parallel filename for this processor */
+  strcpy(ctemp, pio_info->pexo_fname);
+  strcat(ctemp, ".out");
+  gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
+  fp = fopen(par_out_fname, "w");
 
-  printf("\nPerforming load balance using %s.\n", prob->method);
-  printf("\tParameters:\n");
+  print_input_info(stdout, Num_Proc, prob);
+  print_input_info(fp, Num_Proc, prob);
+
+  fclose(fp);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
+{
+int i;
+
+  fprintf(fp, "Input values:\n");
+  fprintf(fp, "  %s version %s\n", UTIL_NAME, VER_STR);
+  fprintf(fp, "  Total number of Processors = %d\n\n", Num_Proc);
+
+  fprintf(fp, "\n  Performing load balance using %s.\n", prob->method);
+  fprintf(fp, "\tParameters:\n");
   for (i = 0; i < prob->num_params; i++)
-    printf("\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
+    fprintf(fp, "\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
 
   if (prob->gen_graph)
-    printf("\tGenerating graph.\n");
+    fprintf(fp, "\tGenerating graph.\n");
   else
-    printf("\tNot generating graph.\n");
+    fprintf(fp, "\tNot generating graph.\n");
 
   if (prob->read_coord)
-    printf("\tReading coordinates.\n");
+    fprintf(fp, "\tReading coordinates.\n");
   else
-    printf("\tNot reading coordinates.\n");
+    fprintf(fp, "\tNot reading coordinates.\n");
+
+  fprintf(fp, "##########################################################\n");
 }
