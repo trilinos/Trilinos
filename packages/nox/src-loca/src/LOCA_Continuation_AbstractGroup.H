@@ -1,0 +1,133 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_CONTINUATION_ABSTRACTGROUP_H
+#define LOCA_CONTINUATION_ABSTRACTGROUP_H
+
+#include "NOX_Abstract_Group.H"    // base class
+
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+
+namespace LOCA {
+  class ParameterVector;
+}
+
+namespace LOCA { 
+
+  namespace Continuation { 
+
+    /*!  \brief %LOCA abstract interface to a group, derived from the 
+      NOX::Abstract::Group.  %LOCA %continuation underlying groups provide 
+      the interface necessary to perform continuation, i.e., compute families 
+      of solutions to \f$ F(x,p) = 0 \f$.
+    */
+    /*! 
+      Concrete implemenations of this interface must provide implementations of
+      all of the methods in the NOX::Abstract::Group interface as well as the
+      parameter and scale vector setting/retrieval methods.
+    */
+
+    class AbstractGroup : public virtual NOX::Abstract::Group {
+
+    public:
+  
+      //! Default constructor.
+      AbstractGroup() {}
+ 
+      //! Destructor.
+      virtual ~AbstractGroup() {}
+  
+      //! Assignment operator
+      virtual AbstractGroup& 
+      operator=(const AbstractGroup& source) = 0;
+
+      //! Set the parameter vector in the group to p (pVector = p).  
+      virtual void setParams(const ParameterVector& p) = 0;
+
+       //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val) = 0;
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val) = 0;
+
+      //! Return a const reference to the ParameterVector owned by the group. 
+      virtual const ParameterVector& getParams() const = 0;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const = 0;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const = 0;
+
+      //! Compute \f$dF/dp\f$ using DerivUtils derivative object
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDp(int paramID, NOX::Abstract::Vector& result) = 0;
+
+      //! applyJacobianInverse for multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseMulti(NOX::Parameter::List& params,
+			const NOX::Abstract::Vector* const* inputs,
+			NOX::Abstract::Vector** outputs, int nVecs) const;
+
+      //! Compute a scaled dot product
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
+      //! Compute eigenvalues/eigenvectors
+      virtual NOX::Abstract::Group::ReturnType
+      computeEigenvalues(NOX::Parameter::List& params);
+
+      //! Function to print out solution and parameter after successful step
+      virtual void printSolution(const double conParam) const {};
+
+      //! Function to print out a vector and parameter after successful step
+      virtual void printSolution(const NOX::Abstract::Vector& x_,
+                                 const double conParam) const  {}
+
+      //! Return underlying group
+      virtual const LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup() const;
+      
+      //! Return underlying group
+      virtual LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup();
+
+    };
+  } // namespace Continuation
+} // namespace LOCA
+
+#endif
