@@ -5,41 +5,45 @@ COMP_FLAGS=$2
 LINKER=$3
 THELIBRARIES=$4
 THEARCHS=$5
-#COMPILE=cc
-#COMP_FLAGS=
-#LINKER=cc
-#THELIBRARIES="-L/usr/local/lib -lblas /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a"
-#THELIBRARIES="-L/usr/local/lib -llapack /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a"
-#echo=echo #TAKE OUT
 
-\rm -f capper .undefs .undefs2 .thedefs
+\rm -f capper .undefs .undefs2 .thedefs mygrep
 ${COMPILE} ${COMP_FLAGS} -o capper capper.c
-tt=`grep MLFORTRAN lapack_driver.c | grep void | sed "s/^.*MLFORTRAN(//"| \
-   sed "s/).*//"`
-for i in $tt
-do
-#bb=`grep -i $i .undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
-\rm -f temprog.c .undefs .undefs2
-echo "#include \"ml_defs.h\"" >> temprog.c
-echo  >> temprog.c
-echo "void MLFORTRAN($i)(void);" >> temprog.c
-echo "int main(int argc, char *argv[]){" >> temprog.c
-echo "MLFORTRAN($i)();" >> temprog.c
-echo "return 0;" >> temprog.c
-echo "}" >> temprog.c
-#cat temprog.c
-${COMPILE} ${COMP_FLAGS} -I ../Obj -c temprog.c
-${LINKER} ${COMP_FLAGS} temprog.o ${THELIBRARIES} ${THEARCHS} 2> .undefs
-bb=`cat .undefs | sed "s/$i.o//g"| sed "s/$i.f//g" | sed "s/In function.*://" | grep -i $i | wc | sed "s/^ *//" | sed "s/ .*//"`
-#echo $i
-grep -i $i .undefs
-if test $bb -eq 0
-then
-NAME=`echo $i | ./capper`
-${echo} "\\" >> .thedefs
-${echo} -n "-DML_${NAME}_FUNC ">> .thedefs
-fi
+${COMPILE} ${COMP_FLAGS} -o mygrep mygrep.c
+everyone=`grep MLFORTRAN ../src/Utils/ml_lapack.h | \
+		sed "s/^.*MLFORTRAN(/ /"| sed "s/).*/ /"`
+${echo} "Figuring out blas/lapack dependencies"
+for i in $everyone
+    do
+    all_but_me=`${echo} $everyone | sed "s/ $i / xxxx /" | \
+		      sed "s/^$i /xxxx /" | sed "s/ $i$/ xxxx/"`
+    \rm -f temprog.c .undefs .undefs2
+    ${echo} -n "."
+    ${echo} "#include \"ml_defs.h\"" >> temprog.c
+    ${echo}  >> temprog.c
+    ${echo} "void MLFORTRAN($i)(void);" >> temprog.c
+    ${echo} "int main(int argc, char *argv[]){" >> temprog.c
+    ${echo} "MLFORTRAN($i)(); return 0; }" >> temprog.c
+    ${COMPILE} ${COMP_FLAGS} -I ../Obj -c temprog.c
+    ${LINKER} ${COMP_FLAGS} temprog.o ${THELIBRARIES} ${THEARCHS} 2> .undefs
+    bb=`cat .undefs | grep $i | wc | sed "s/^ *//" | sed "s/ .*//"`
+    if test $bb -eq 0
+       then
+       NAME=`${echo} $i | ./capper`
+       ${echo} "\\" >> .thedefs
+       ${echo} -n "-DML_${NAME}_FUNC ">> .thedefs
+    else
+      cc=`cat .undefs | mygrep $all_but_me`
+      if test $cc -eq 1
+         then
+         NAME=`${echo} $i | ./capper`
+         ${echo} "\\" >> .thedefs
+         ${echo} -n "-DML_${NAME}_FUNC ">> .thedefs
+      fi
+    fi
 done
 ${echo} -DML_NOTHING >> .thedefs
+${echo}
 
-#\rm -f capper .undefs .undefs2 
+\rm -f capper mygrep .undefs .undefs2  temprog.c temprog.o
+
+
