@@ -75,6 +75,42 @@ LOCA::Extended::MultiVector::MultiVector(
   }
 }
 
+LOCA::Extended::MultiVector::MultiVector(
+				   const LOCA::Extended::MultiVector& source,
+				   vector<int>& index, bool view) :
+  numColumns(index.size()),
+  numMultiVecRows(source.numMultiVecRows),
+  numScalarRows(source.numScalarRows),
+  multiVectorPtrs(numMultiVecRows),
+  scalarVectorPtrs(numColumns),
+  extendedVectorPtrs(numColumns),
+  isView(view)
+{
+  // Verify dimensions are consistent
+  checkDimensions(source, index);
+
+  for (int i=0; i<numColumns; i++) {
+    extendedVectorPtrs[i] = NULL;
+  }
+  
+  if (view) {
+   
+    for (int i=0; i<numMultiVecRows; i++) 
+      multiVectorPtrs[i] = source.multiVectorPtrs[i]->subView(index);
+
+    for (int i=0; i<numColumns; i++)
+      scalarVectorPtrs[i] = source.scalarVectorPtrs[index[i]];
+  }
+  else {
+    
+    for (int i=0; i<numMultiVecRows; i++) 
+      multiVectorPtrs[i] = source.multiVectorPtrs[i]->subCopy(index);
+
+    for (int i=0; i<numColumns; i++)
+      *(scalarVectorPtrs[i]) = *(source.scalarVectorPtrs[index[i]]);
+  }
+}
+
 LOCA::Extended::MultiVector::~MultiVector()
 {
   for (int i=0; i<numMultiVecRows; i++)
@@ -379,48 +415,13 @@ LOCA::Extended::MultiVector::clone(int numvecs) const
 NOX::Abstract::MultiVector* 
 LOCA::Extended::MultiVector::subCopy(vector<int>& index) const
 {
-  int numvecs = index.size();
-
-  // Verify dimensions are consistent
-  checkDimensions(*this, index);
-
-  // Create extended multi-vec of appropriate size
-  LOCA::Extended::MultiVector* tmp = 
-    new LOCA::Extended::MultiVector(numvecs, numMultiVecRows, numScalarRows); 
-  
-  // Clone multivec blocks
-  for (int i=0; i<numMultiVecRows; i++) 
-    tmp->multiVectorPtrs[i] = multiVectorPtrs[i]->subCopy(index);
-
-  // Copy scalar vectors
-  for (int i=0; i<numvecs; i++)
-    *(tmp->scalarVectorPtrs[i]) = *(scalarVectorPtrs[index[i]]);
-
-  return tmp;
+  return new LOCA::Extended::MultiVector(*this, index);
 }
 
 NOX::Abstract::MultiVector* 
 LOCA::Extended::MultiVector::subView(vector<int>& index) const
 {
-  int numvecs = index.size();
-
-  // Verify dimensions are consistent
-  checkDimensions(*this, index);
-
-  // Create extended multi-vec of appropriate size
-  LOCA::Extended::MultiVector* tmp = 
-    new LOCA::Extended::MultiVector(numvecs, numMultiVecRows, numScalarRows,
-				    true); 
-  
-  // Clone multivec blocks
-  for (int i=0; i<numMultiVecRows; i++) 
-    tmp->multiVectorPtrs[i] = multiVectorPtrs[i]->subView(index);
-
-  // Copy scalar vector views
-  for (int i=0; i<numvecs; i++)
-    tmp->scalarVectorPtrs[i] = scalarVectorPtrs[index[i]];
-
-  return tmp;
+  return new LOCA::Extended::MultiVector(*this, index, true);
 }
 
 void

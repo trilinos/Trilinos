@@ -69,6 +69,13 @@ namespace LOCA {
       MultiVector(const MultiVector& source, 
 		  NOX::CopyType type = NOX::DeepCopy);
 
+      /*!
+       * \brief Copy constructor that creates s sub copy or view of the 
+       * given multivector
+       */
+      MultiVector(const MultiVector& source, 
+		  vector<int>& index, bool view = false);
+
       //! Vector destructor.
       virtual ~MultiVector();
 
