@@ -704,7 +704,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner
      ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,ml_nblocks_,ml_blocks_);
    }
    if (ml_fsmoothertype_ == "AmesosKLU")
-     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1);
+     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
    
    // choose some smoothers on level > 0
    for (i=1; i<ml_coarsestlev_; i++)
@@ -727,11 +727,11 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner
          continue;
       }
       if (ml_smoothertype_ == "AmesosKLU")
-        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1);
+        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
    }
    // choose a coarse grid solver
    if (ml_coarsesolve_ == "AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1);
+      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
    if (ml_coarsesolve_ == "SGS")
       ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
    if (ml_coarsesolve_ == "Jacobi")
@@ -894,7 +894,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
      ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,0,ML_BOTH,ml_nsmooth_[0],1.,ml_nblocks_,ml_blocks_);
    }
    if (ml_fsmoothertype_ == "AmesosKLU")
-     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1);
+     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
    
    // choose some smoothers on level > 0
    for (i=1; i<ml_coarsestlev_; i++)
@@ -917,12 +917,12 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
          continue;
       }
       if (ml_smoothertype_ == "AmesosKLU")
-        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1);
+        ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
    }
    
    // choose a coarse solver
    if (ml_coarsesolve_ == "AmesosKLU")
-      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1);
+      ML_Gen_Smoother_Amesos(ml_,ml_coarsestlev_,ML_AMESOS_KLU,-1,0.0);
    if (ml_coarsesolve_ == "SGS")
       ML_Gen_Smoother_SymGaussSeidel(ml_,ml_coarsestlev_,ML_BOTH,ml_nsmooth_[ml_coarsestlev_],1.);
    if (ml_coarsesolve_ == "Jacobi")

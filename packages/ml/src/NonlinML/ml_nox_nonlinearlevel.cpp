@@ -196,7 +196,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],0.25);
       else if (fsmoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -214,7 +214,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],0.25);
       else if (smoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -232,7 +232,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],.25);
       else if (coarsesolvetype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -520,7 +520,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],0.6);
       else if (fsmoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -538,7 +538,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],0.6);
       else if (smoothertype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
@@ -557,7 +557,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
          ML_Gen_Smoother_Jacobi(thislevel_ml_,0,ML_BOTH, 
                                 nsmooth[level_],.6);
       else if (coarsesolvetype == "AmesosKLU")
-         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1);
+         ML_Gen_Smoother_Amesos(thislevel_ml_,0,ML_AMESOS_KLU,-1,0.0);
       else
       {
          cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
