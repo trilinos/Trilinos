@@ -32,28 +32,33 @@
 
 namespace Kokkos {
 
-//! Kokkos::MultiVector: Kokkos compressed index sparse matrix base class.
+//! Kokkos::MultiVector: Kokkos multivector base class, used by Kokkos operator classes.
 
 /*! The Kokkos::MultiVector specifies the interface that any multivector interfacing to the Kokkos 
   Operators classes must implement.
 
-  At this time, the primary function provided by Kokkos::MultiVector access to multivector entries.  Two basic
-  categories of data structures are supported:
+  At this time, the primary function provided by Kokkos::MultiVector is access to 
+  multivector entries.  Two basic categories of data structures are supported:
   <ol>
-  <li> MultiVector is described by an array of pointers:  In this situation, the ith entry of this array of pointers
-       is the starting address of a contiguous array of values for the ith vector in the multivector.  The storage mode
+  <li> MultiVector is described by an array of pointers:  
+       In this situation, the ith entry of this array of pointers
+       is the starting address of a contiguous array of values for 
+       the ith vector in the multivector.  The storage mode
        will be assumed if the getIsStrided() method returns false.
-  <li> MultiVector is a regular strided two-dimensional array of values:  In this situation, the increment between 
-       elements in the row and column dimensions is specified by the getRowInc() and getColInc() methods. This is
+  <li> MultiVector is a regular strided two-dimensional array of values:  
+       In this situation, the increment between 
+       elements in the row and column dimensions is specified by the 
+       getRowInc() and getColInc() methods. This is
        a very general mechanism for describing strided access.  Typical situations include:
        <ul>
        <li> getRowInc() = getNumCols(), getColInc() = 1 - column entries are contiguous.  
        <li> getRowInc() = 1, getColInc() = getNumRows() - row entries are contiguous.  
        </ul>
-       However, this mechanism also allows extraction of array subsections, real or imaginary parts from 
-       complex-valued arrays.
+       However, this mechanism also allows extraction of array subsections, 
+       real or imaginary parts from complex-valued arrays.
 
-       This storage mode will be assumed if getIsStrided() returns true.  The base address for the 2D array
+       This storage mode will be assumed if getIsStrided() returns true.  
+       The base address for the 2D array
        will be obtain by call getValues() with the argument equal to 0.
 
   </ol>
@@ -70,16 +75,17 @@ namespace Kokkos {
     virtual ~MultiVector();
     //@}
 
-    //@{ \name Matrix entry access methods.
+    //@{ \name Multivector entry access methods.
 
     //! Returns a pointer to an array of values in the ith column of the multivector.
-    /*! Extract the values in the ith row/column of the matrix.  Note that
-        the values are not copied by this method.  Memory allocation is handled by the matrix object itself.
+    /*! Extract a pointer to the values in the ith column of the multivector.  Note that
+        the values are not copied by this method.  Memory allocation is 
+	handled by the multivector object itself.  Also, if the getIsStrided() method returns
+	true, then the getColInc() should be used to access values in the ith column
+	of the multivector, especially if getColInc() != 1.
 
 	\param i (In) The column that should be returned.
-	\param indices (Out) A pointer to the list of values in the ith column.
 
-	\return Integer error code, set to 0 if successful.
     */
     virtual ScalarType * getValues(OrdinalType i) const = 0;
 	

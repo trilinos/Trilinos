@@ -26,32 +26,41 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_VECTOR_H
-#define KOKKOS_VECTOR_H
+#ifndef KOKKOS_DENSEVECTOR_H
+#define KOKKOS_DENSEVECTOR_H
 
 
 namespace Kokkos {
 
-//! Kokkos::Vector: Kokkos vector base class.
+//! Kokkos::DenseVector: Kokkos vector base class.
 
-/*! The Kokkos::Vector specifies the interface that any vector class interfacing to the Kokkos 
+/*! The Kokkos::DenseVector specifies the interface that any vector class interfacing to the Kokkos 
   Operators classes must implement.
 
-  At this time, the primary function provided by Kokkos::Vector is access to vector data.
+  At this time, the primary function provided by Kokkos::DenseVector is access to vector data.
 
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class Vector {
+  class DenseVector: public virtual Vector {
   public:
 
     //@{ \name Constructors/Destructor.
 
-    //! Vector Destructor
-    virtual ~Vector();
+    //! Default constructor
+    DenseVector(void){dataInitialized_ = false;};
+  
+    //! Copy constructor.
+    DenseVector(const DenseVector& source):
+      dataInitialized_(source.dataInitialized_),
+      length_(source.length_),
+      values_(source.values_) {};
+
+    //! DenseVector Destructor
+    virtual ~DenseVector();
     //@}
 
-    //@{ \name Vector access methods.
+    //@{ \name DenseVector access methods.
 
     //! Returns a pointer to an array of values in the vector.
     /*! Extract a pointer to the values in the vector.  Note that
@@ -59,21 +68,27 @@ namespace Kokkos {
 	handled by the vector object itself.  The getInc() method 
 	should be used to access values, especially if getInc() != 1.
     */
-    virtual ScalarType * getValues() const = 0;
+    virtual ScalarType * getValues() const {return(values_);};
 	
 	
     //@}
 
-    //@{ \name Vector Attribute access methods.
+    //@{ \name DenseVector Attribute access methods.
 	
     //! Length of vector
-    virtual OrdinalType getLength() const = 0;
+    virtual OrdinalType getLength() const {return(length_);};
 	
     //! Increment between entries in the vector, normally = 1.
-    virtual OrdinalType getInc() const = 0;
+    virtual OrdinalType getInc() const {return(inc_);};
 	
     //@}
+
+    bool dataInitialized_;
+    OrdinalType length_;
+    OrdinalType inc_;
+
+    ScalarType * values_;
   };
 
 } // namespace Kokkos
-#endif /* KOKKOS_VECTOR_H */
+#endif /* KOKKOS_DENSEVECTOR_H */

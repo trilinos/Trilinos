@@ -35,7 +35,8 @@ namespace Kokkos {
 
 //! Kokkos::HbMatrix: Kokkos compressed index sparse matrix base class.
 
-/*! The Kokkos::HbMatrix implements the Kokkos::CisMatrix interface using either a Harwell-Boeing matrix or
+/*! The Kokkos::HbMatrix implements the Kokkos::CisMatrix interface 
+    using either a Harwell-Boeing matrix or
     generalized form of one.
 
 */    
@@ -46,7 +47,7 @@ namespace Kokkos {
 
     //@{ \name Constructors/Destructor.
 
-    //! HbMatrix constuctor with variable number of indices per row.
+    //! Default HbMatrix constuctor.
     HbMatrix(void);
   
     //! Copy constructor.
@@ -174,7 +175,7 @@ namespace Kokkos {
 
     OrdinalType * pntr_;
     OrdinalType ** profile_;
-    bool iRowOriented_;
+    bool isRowOriented_;
 
     bool isClassicHbMatrix_;
   };
