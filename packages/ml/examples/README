@@ -1,4 +1,36 @@
-This file contains a short description of the most relevent (for new users) ML examples.
+===============================================================================
+
+#  Current revision: $Revision$
+#  Branch:           $Branch$
+#  Last modified:    $Date$
+#  Modified by:      $Author$
+
+===============================================================================
+
+Attention new users!!
+This file contains a short description of the most relevant ML examples.
+
+===============================================================================
+
+Import files and directories in ml/examples:
+
+Advanced                    Advanced usage:  filtering, preconditioner analysis
+BasicExamples               ** Beginning users should start here **
+Elasticity                  Solving elasticy problems (scalar)
+ExampleMatrices             Input matrices for Elasticity examples
+MatrixFormats               Various matrix storage types available (e.g., CSR)
+MatrixReading               Reading in various matrix types from file
+Maxwell                     Solving eddy current equations
+MultipleRHS                 Solving systems with multiple right-hand-sides
+Other                       Examples that don't fit into other categories
+StandAlone                  Using ML without other Trilinos packages
+TwoLevelDD                  Preconditioning with two-level domain decomposition
+Visualization               Using ML's visualization capabilities
+README                      this file
+README.AddingExamples       (for developers) instructions on adding examples
+
+===============================================================================
+
 
 		How to use ML as a stand-alone package
 		--------------------------------------
@@ -67,7 +99,3 @@ ml_simple_max.c, of which this file is the C++ counterpart.
 This example reads a matrix in AIJ format, and creates
 the corresponding Epetra_CrsMatrix. Then matrix is then
 distributed over all the available processes.
-
-
-
-This file last updated on 18-Nov-04
