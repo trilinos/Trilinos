@@ -11,6 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <ctype.h>
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "all_allo_const.h"
@@ -159,7 +160,7 @@ int LB_Jostle(
   char reduction[MAX_PARAM_STRING_LEN+1];
   char connect[MAX_PARAM_STRING_LEN+1];
   char scatter[MAX_PARAM_STRING_LEN+1];
-  int  i, output_level, threshold, gather_threshold; 
+  int  output_level, threshold, gather_threshold; 
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle. We don't              */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -202,15 +203,15 @@ int LB_Jostle(
 
   /* Set Jostle parameters using jostle_env() */
   if (threshold){
-    sprintf(str, "threshold = %d\0", threshold);
+    sprintf(str, "threshold = %d", threshold);
     jostle_env(str);
   }
   if (gather_threshold){
-    sprintf(str, "gather threshold = %d\0", gather_threshold);
+    sprintf(str, "gather threshold = %d", gather_threshold);
     jostle_env(str);
   }
   if (matching[0]){
-    sprintf(str, "matching = %s\0", matching);
+    sprintf(str, "matching = %s", matching);
     /* Convert to lower case */
     for (cptr=str; *cptr; cptr++){
       *cptr = tolower(*cptr);
@@ -218,7 +219,7 @@ int LB_Jostle(
     jostle_env(str);
   }
   if (reduction[0]){
-    sprintf(str, "reduction = %s\0", reduction);
+    sprintf(str, "reduction = %s", reduction);
     /* Convert to lower case */
     for (cptr=str; *cptr; cptr++){
       *cptr = tolower(*cptr);
@@ -226,7 +227,7 @@ int LB_Jostle(
     jostle_env(str);
   }
   if (connect[0]){
-    sprintf(str, "connect = %s\0", connect);
+    sprintf(str, "connect = %s", connect);
     /* Convert to lower case */
     for (cptr=str; *cptr; cptr++){
       *cptr = tolower(*cptr);
@@ -234,7 +235,7 @@ int LB_Jostle(
     jostle_env(str);
   }
   if (scatter[0]){
-    sprintf(str, "scatter = %s\0", scatter);
+    sprintf(str, "scatter = %s", scatter);
     /* Convert to lower case */
     for (cptr=str; *cptr; cptr++){
       *cptr = tolower(*cptr);
