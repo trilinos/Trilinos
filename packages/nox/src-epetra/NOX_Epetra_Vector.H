@@ -139,6 +139,8 @@ class Vector : public Abstract::Vector {
 
   virtual int length() const;
 
+  virtual bool print() const;
+
  protected:
   
   //! Pointer to petra vector owned by this object
