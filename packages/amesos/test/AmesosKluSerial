@@ -74,7 +74,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 1 1 1e-10 1e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolB.rua 0 1 1 1 1e-11 1e-13 >>SST.stdout
-./amesos_test.exe KLU   ImpcolC.rua 0 1 1 1 1e-12 1e-13 >>SST.stdout
+./amesos_test.exe KLU   ImpcolC.rua 0 1 -2 1 1e-12 1e-13 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolD.rua 0 1 1 1 1e-12 1e-13 >>SST.stdout
 #
 #

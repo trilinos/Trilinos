@@ -180,7 +180,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passx->SetSeed(11.231) ; 
   passx->Random();
 
-  passA->Multiply( false, *passxexact, *passb ) ; 
+  passA->Multiply( transpose, *passxexact, *passb ) ; 
 
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
