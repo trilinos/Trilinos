@@ -166,7 +166,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp \
 	$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp \
 	$(srcdir)/matlab/EpetraExt_PutMultiVector.cpp \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp
+	$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp \
+	$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
 am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_LPTrans_From_GraphTrans.$(OBJEXT) \
@@ -225,7 +226,8 @@ am__objects_12 = EpetraExt_MapColoring.$(OBJEXT) \
 @BUILD_COLORING_TRUE@am__objects_13 = $(am__objects_12)
 am__objects_14 = EpetraExt_MatlabEngine.$(OBJEXT) \
 	EpetraExt_PutMultiVector.$(OBJEXT) \
-	EpetraExt_PutRowMatrix.$(OBJEXT)
+	EpetraExt_PutRowMatrix.$(OBJEXT) \
+	EpetraExt_PutBlockMap.$(OBJEXT)
 @BUILD_MATLAB_TRUE@am__objects_15 = $(am__objects_14)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
@@ -253,6 +255,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MultiVectorOut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Permutation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutBlockMap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutMultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_PutRowMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Reindex_CrsMatrix.Po \
@@ -342,7 +345,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/coloring/EpetraExt_MapColoringIndex.h \
 	$(srcdir)/matlab/EpetraExt_MatlabEngine.h \
 	$(srcdir)/matlab/EpetraExt_PutMultiVector.h \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.h
+	$(srcdir)/matlab/EpetraExt_PutRowMatrix.h \
+	$(srcdir)/matlab/EpetraExt_PutBlockMap.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -680,12 +684,14 @@ EXTRA_COLORING = \
 EXTRA_MATLAB_H = \
     $(srcdir)/matlab/EpetraExt_MatlabEngine.h \
     $(srcdir)/matlab/EpetraExt_PutMultiVector.h \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.h
+    $(srcdir)/matlab/EpetraExt_PutRowMatrix.h \
+    $(srcdir)/matlab/EpetraExt_PutBlockMap.h
 
 EXTRA_MATLAB = \
     $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp \
     $(srcdir)/matlab/EpetraExt_PutMultiVector.cpp \
-	$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp
+    $(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp \
+    $(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
 
 @BUILD_MATLAB_FALSE@MATLAB_H = 
 @BUILD_MATLAB_TRUE@MATLAB_H = \
@@ -901,6 +907,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Permutation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutBlockMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutMultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutRowMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Reindex_CrsMatrix.Po@am__quote@
@@ -1714,6 +1721,22 @@ EpetraExt_PutRowMatrix.obj: $(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_PutRowMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExt_PutRowMatrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PutRowMatrix.obj `if test -f '$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp'; fi`
+
+EpetraExt_PutBlockMap.o: $(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PutBlockMap.o -MD -MP -MF "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo" -c -o EpetraExt_PutBlockMap.o `test -f '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo" "$(DEPDIR)/EpetraExt_PutBlockMap.Po"; else rm -f "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp' object='EpetraExt_PutBlockMap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_PutBlockMap.Po' tmpdepfile='$(DEPDIR)/EpetraExt_PutBlockMap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PutBlockMap.o `test -f '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
+
+EpetraExt_PutBlockMap.obj: $(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PutBlockMap.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo" -c -o EpetraExt_PutBlockMap.obj `if test -f '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo" "$(DEPDIR)/EpetraExt_PutBlockMap.Po"; else rm -f "$(DEPDIR)/EpetraExt_PutBlockMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp' object='EpetraExt_PutBlockMap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_PutBlockMap.Po' tmpdepfile='$(DEPDIR)/EpetraExt_PutBlockMap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PutBlockMap.obj `if test -f '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; fi`
 
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
