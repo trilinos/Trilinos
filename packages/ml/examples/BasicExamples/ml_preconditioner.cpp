@@ -87,6 +87,10 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  int WhichArguments = 0;
+  if (argc > 0)
+    if (strcmp(argv[1],"set1") == 0)
+      WhichArguments = 1;
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
@@ -133,21 +137,39 @@ int main(int argc, char *argv[])
   MLList.set("max levels",5);
   MLList.set("increasing or decreasing","decreasing");
 
-  // use Uncoupled scheme to create the aggregate,
-  // from level 3 use the better but more expensive MIS
-  MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: type (level 3)", "MIS");
+  if (WhichArguments == 0) {
+    // use Uncoupled scheme to create the aggregate,
+    // from level 3 use the better but more expensive MIS
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("aggregation: type (level 3)", "MIS");
+    
+    // smoother is symmetric Gauss-Seidel. Example file 
+    // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
   
-  // smoother is symmetric Gauss-Seidel. Example file 
-  // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
-
-  MLList.set("smoother: type","symmetric Gauss-Seidel");
-
-  // use both pre and post smoothing
-  MLList.set("smoother: pre or post", "both");
+    MLList.set("smoother: type","symmetric Gauss-Seidel");
   
-  // solve with serial direct solver KLU
-  MLList.set("coarse: type","Amesos-KLU");
+    // use both pre and post smoothing
+    MLList.set("smoother: pre or post", "both");
+    
+    // solve with serial direct solver KLU
+    MLList.set("coarse: type","Amesos-KLU");
+  }
+  else {
+    // use Uncoupled scheme to create the aggregate,
+    // from level 3 use the better but more expensive MIS
+    MLList.set("aggregation: type", "MIS");
+    
+    // smoother is symmetric Gauss-Seidel. Example file 
+    // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
+  
+    MLList.set("smoother: type","Jacobi");
+  
+    // use both pre and post smoothing
+    MLList.set("smoother: pre or post", "both");
+    
+    // solve with serial direct solver KLU
+    MLList.set("coarse: type","Jacobi");
+  }
   
   // create the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
