@@ -488,7 +488,7 @@ void FiniteDifference::setDifferenceMethod(DifferenceType diffType_)
   diffType = diffType_;
 }
 
-void FiniteDifference::Print(ostream& strm)
+void FiniteDifference::Print(ostream& strm) const
 {
   jacobian->Print(strm);
 }

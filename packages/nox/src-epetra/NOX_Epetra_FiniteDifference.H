@@ -208,8 +208,8 @@ class FiniteDifference : public Epetra_RowMatrix {
   //! Set the type of perturbation method used (default is Forward)
   virtual void setDifferenceMethod( DifferenceType type );
 
-  //! Set the type of perturbation method used (default is Forward)
-  virtual void Print(ostream&);
+  //! Output the underlying matrix
+  virtual void Print(ostream&) const;
 
 protected:
 
