@@ -35,6 +35,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
+		  ml_example_epetra_preconditioner_analyze \
 		  ml_example_epetra_preconditioner_Maxwell 
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
@@ -51,6 +52,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
+		  ml_example_epetra_preconditioner_analyze \
 		  ml_example_epetra_preconditioner_Maxwell 
 
 endif
@@ -69,6 +71,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
+		  ml_example_epetra_preconditioner_analyze \
 		  ml_example_epetra_preconditioner_Maxwell 
 
 endif
@@ -106,6 +109,7 @@ ml_example_epetra_preconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_epetra_
 ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
 ml_example_epetra_preconditioner_vbr_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_vbr.cpp
 ml_example_epetra_preconditioner_viz_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_viz.cpp
+ml_example_epetra_preconditioner_analyze_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_analyze.cpp
 ml_example_epetra_preconditioner_Maxwell_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_Maxwell.cpp
 
 if ML_BENCHMARKING
@@ -312,6 +316,11 @@ ml_example_epetra_preconditioner_viz_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_viz_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_viz_LDADD = ${ml_libs}
 ml_example_epetra_preconditioner_viz_LINK = ${mllink}
+
+ml_example_epetra_preconditioner_analyze_CPPFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_analyze_LDADD = ${ml_libs}
+ml_example_epetra_preconditioner_analyze_LINK = ${mllink}
 
 ml_example_epetra_preconditioner_Maxwell_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_Maxwell_CXXFLAGS = ${ml_common_include_locations}
