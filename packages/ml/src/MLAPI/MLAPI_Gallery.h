@@ -12,7 +12,31 @@ namespace MLAPI {
   class Space;
   class Operator;
 
+  // ====================================================================== 
+  //! Creates a matrix using the TRIUTILS gallery.
+  // ====================================================================== 
+  
   Operator Gallery(const string ProblemType, const Space& MySpace);
+
+  // ====================================================================== 
+  //! Creates a 1D shifted Laplacian.
+  // ====================================================================== 
+  
+  Operator GetShiftedLaplacian1D(const int NX, const double Factor = 0.99);
+
+  // ====================================================================== 
+  //! Creates a 2D shifted Laplacian.
+  // ====================================================================== 
+  
+  Operator GetShiftedLaplacian2D(const int NX, const int NY, 
+                                 const double Factor = 0.99,
+                                 const bool RandomScale = false);
+  
+  // ====================================================================== 
+  //! Reads a matrix in MATLAB format.
+  // ====================================================================== 
+  
+  Operator ReadMatrix(const char* FileName);
 }
 
 #endif // HAVE_ML_MLAPI
