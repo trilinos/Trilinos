@@ -294,6 +294,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   }
   
   int length = List.get("eigen-analysis: length", 20);
+  int BlockSize = List.get("eigen-analysis: block-size", 1);
   double tol = List.get("eigen-analysis: tolerance", 1.0e-5);
   string which = List.get("eigen-analysis: action", "LM");
   int restarts = List.get("eigen-analysis: restart", 100);
@@ -332,7 +333,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   /* Perform required action                                                */
   /* ********************************************************************** */
 
-  int step = restarts*length*NumBlocks;
+  int step = restarts*length*BlockSize;
   
   // Call the ctor that calls the petra ctor for a matrix
   MLMat<double> Amat(*RowMatrix,MatOp,UseDiagScaling,ml);
@@ -340,7 +341,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
 
   // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, NumBlocks, length, NumBlocks, 
+  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, NumBlocks, length, BlockSize, 
 						which, step, restarts);
 	
   // Inform the solver that the problem is symmetric
