@@ -69,11 +69,11 @@ int LB_ParMetis(
   int **exp_procs     /* list of processors to export to */
 )
 {
-#ifdef LB_NO_PARMETIS
+#ifndef LB_PARMETIS
   fprintf(stderr, "Error: ParMetis requested but not compiled into library.\n");
   return LB_FATAL;
 
-#else /* !LB_NO_PARMETIS */
+#else /* LB_PARMETIS */
   int  i; 
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
@@ -119,7 +119,7 @@ int LB_ParMetis(
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
             alg, options);
 
-#endif /* !LB_NO_PARMETIS */
+#endif /* LB_PARMETIS */
 }
 
 
@@ -247,7 +247,7 @@ int LB_Jostle(
 /* Author: Erik Boman, eboman@cs.sandia.gov (9226)              */
 /****************************************************************/
 
-#if (defined(LB_JOSTLE) || !defined(LB_NO_PARMETIS))
+#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in one chunk. */
 
@@ -1038,7 +1038,7 @@ static int LB_ParMetis_Jostle(
   return LB_OK;
 }
 
-#endif /* defined (LB_JOSTLE) || !defined (LB_NO_PARMETIS) */
+#endif /* defined (LB_JOSTLE) || defined (LB_PARMETIS) */
 
 
 /*********************************************************************/
