@@ -2166,9 +2166,9 @@ int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_Multi
 		if (OperatorX_->NumVectors()!=X.NumVectors()) {delete OperatorX_; OperatorX_ = 0; delete OperatorY_; OperatorY_=0;}
 	if (OperatorX_==0) {
 		if (!X.Map().PointSameAs(DomainMap())) EPETRA_CHK_ERR(-1); // X not point-wise compatible with the block domain map
-		if (!Y.Map().PointSameAs(RowMap())) EPETRA_CHK_ERR(-2); // Y not point-wise compatible with the block col map
-		OperatorX_ = new Epetra_MultiVector(View, ColMap(), X.Pointers(), X.NumVectors());
-		OperatorY_ = new Epetra_MultiVector(View, RowMap(), Y.Pointers(), Y.NumVectors());
+		if (!Y.Map().PointSameAs(RangeMap())) EPETRA_CHK_ERR(-2); // Y not point-wise compatible with the block col map
+		OperatorX_ = new Epetra_MultiVector(View, DomainMap(), X.Pointers(), X.NumVectors());
+		OperatorY_ = new Epetra_MultiVector(View, RangeMap(), Y.Pointers(), Y.NumVectors());
 	}
 	else {
 		EPETRA_CHK_ERR(OperatorX_->ResetView(X.Pointers()));

@@ -129,7 +129,7 @@ int Aztec2Petra(int * proc_config,
       EPETRA_CHK_ERR(ierr);
     }
 
-    A = (Epetra_RowMatrix *) AA; // cast VBR pointer to RowMatrix pointer
+    A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast VBR pointer to RowMatrix pointer
   }
   else if  (Amat->data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
   
@@ -168,12 +168,14 @@ int Aztec2Petra(int * proc_config,
       cerr << "Error in Epetra_CrsMatrix_TransformToLocal" << endl;
       EPETRA_CHK_ERR(ierr);
     }
-    A = (Epetra_RowMatrix *) AA; // cast CRS pointer to RowMatrix pointer
+    A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast CRS pointer to RowMatrix pointer
   }
   else cerr << "Not a supported AZ_MATRIX data type" << endl;
 
-  // Create x vector, note that it is a "long" vector (has ghost entries).
-  x = new Epetra_Vector(View, A->RowMatrixColMap(),az_x);
+
+  // Create x vector
+  x = new Epetra_Vector(View, *map,az_x);
+
   
   // RPP: Can not use the OperatorRangeMap in the ctor of the "b" vector 
   // below.  In MPSalsa, we delete the VbrMatrix yet still use the vector "b".
