@@ -103,6 +103,7 @@ Output files:
 #include <math.h>
 #include "ml_mat_formats.h"
 #include "ml_aztec_utils.h"
+#include "ml_lapack.h"
 
 #ifdef BENCHMARK
 #include "ml_read_utils.h"
@@ -114,7 +115,7 @@ int    parasails_sym        = 1;
 double parasails_thresh     = 0.01;
 int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
-double parasails_loadbal    = 0.;
+int    parasails_loadbal    = 0;
 int my_proc_id;
 
 #define HORIZONTAL 1
@@ -155,7 +156,8 @@ int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tm
 int    *update, *update_index;
 int *external, *extern_index;
 struct reader_context *context;
-int poly_degree = 1, eig_ratio_tol = 27.;
+int poly_degree = 1;
+double eig_ratio_tol = 27.;
 int reduced_smoother_flag = 0;
 
 #ifdef debugSmoother
@@ -219,7 +221,7 @@ int main(int argc, char *argv[])
   int mg_cycle_type;
   double omega, nodal_omega, edge_omega;
   void **edge_args, **nodal_args, *edge_smoother, *nodal_smoother;
-  int  edge_its, nodal_its, temp1[4], temp2[4];
+  int  edge_its, nodal_its, *temp1, *temp2;
   double edge_eig_ratio[25], nodal_eig_ratio[25];
   int smoothPe_flag = ML_NO;
 #ifndef debugSmoother
@@ -1241,11 +1243,11 @@ nx = nx--; /* rst dirichlet */
   AZ_random_vector(vvv, Ke_data_org, proc_config);
 
   ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,zzz);
-  dtemp = sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
+  dtemp = sqrt(fabs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
   ML_Operator_Apply(Amat, Amat->invec_leng, vvv,Amat->outvec_leng,zzz);
-  dtemp2 =  sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
+  dtemp2 =  sqrt(fabs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
 
-  if (abs(dtemp-dtemp2) > 1e-15)
+  if (fabs(dtemp-dtemp2) > 1e-15)
   {
      if (proc_config[AZ_node]== 0 && 0.5 < ML_Get_PrintLevel())
      {
@@ -1337,7 +1339,7 @@ nx = nx--; /* rst dirichlet */
         Nnz = 0;
         for (j=0; j<length; j++)
            /*if ( abs(vals[j]) != 0.0 ) Nnz++;*/
-           if ( abs(vals[j]) > 1e-12 ) Nnz++;
+           if ( fabs(vals[j]) > 1e-12 ) Nnz++;
         if (Nnz <=1)   /* Dirichlet row */
         {
            /* Zero out corresponding row in Tmat. */
@@ -1632,14 +1634,14 @@ nx = nx--; /* rst dirichlet */
       alpha = -AZ_gdot(Nlocal_edges, mode, &(rigid[j*Nlocal_edges]), proc_config)/
 	AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]), 
 		proc_config);
-      daxpy_(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, mode, &one);
+    MLFORTRAN(daxpy)(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, mode, &one);
     }
    
     /* rhs orthogonalization */
 
     alpha = -AZ_gdot(Nlocal_edges, mode, rhs, proc_config)/
       AZ_gdot(Nlocal_edges, mode, mode, proc_config);
-    daxpy_(&Nlocal_edges, &alpha,  mode,  &one, rhs, &one);
+    MLFORTRAN(daxpy)(&Nlocal_edges, &alpha,  mode,  &one, rhs, &one);
 
     for (j = 0; j < Nlocal_edges; j++) rigid[i*Nlocal_edges+j] = mode[j];
     free(mode);
@@ -1651,7 +1653,7 @@ nx = nx--; /* rst dirichlet */
     alpha = -AZ_gdot(Nlocal_edges, rhs, &(rigid[j*Nlocal_edges]), proc_config)/
       AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]), 
 	      proc_config);
-    daxpy_(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, rhs, &one);
+    MLFORTRAN(daxpy)(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, rhs, &one);
   }
 
   if (Nrigid != 0) {
@@ -1764,6 +1766,8 @@ nx = nx--; /* rst dirichlet */
   /****************************************************
   * Set up smoothers for all levels but the coarsest. *
   ****************************************************/
+  temp1 = (int *) ML_allocate(4 * sizeof(int));
+  temp2 = (int *) ML_allocate(4 * sizeof(int));
   coarsest_level = N_levels - coarsest_level;
   for (level = N_levels-1; level > coarsest_level; level--)
   {
@@ -1799,7 +1803,7 @@ nx = nx--; /* rst dirichlet */
 	      temp1[1] = 0;
 	      temp1[3] = 0;
 	    }
-	    ML_gsum_vec_int(temp1, temp2, 4, ml_edges->comm);
+	    ML_gsum_vec_int(&temp1, &temp2, 4, ml_edges->comm);
 	    if (temp1[1] != 0) {
 	      edge_eig_ratio[level] = 2.*((double) temp1[0])/ ((double) temp1[1]);
 	      nodal_eig_ratio[level] = 2.*((double) temp1[2])/ ((double) temp1[3]);
@@ -2314,6 +2318,8 @@ nx = nx--; /* rst dirichlet */
   }
 #endif /*ifdef BENCHMARK*/
 
+  ML_free(temp1);
+  ML_free(temp2);
   ML_Smoother_Arglist_Delete(&nodal_args);
   ML_Smoother_Arglist_Delete(&edge_args);
   ML_Aggregate_Destroy(&ag);
