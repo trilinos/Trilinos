@@ -1539,18 +1539,22 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if(!Graph().DomainMap().SameAs(x.Map())) 
-    EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
   
   double* xp = (double*)x.Values();
   Epetra_Vector* x_tmp = 0;
   int NumMyCols_ = NumMyCols();
-  
+  bool needExport = false;
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
-  if(Importer() != 0) {
-    x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
-    xp = (double*)x_tmp->Values();
+  if(Graph().DomainMap().SameAs(x.Map())) {
+    if(Importer() != 0) {
+      needExport = true;
+      x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
+      xp = (double*)x_tmp->Values();
+    }
+  }
+  else if(!Graph().ColMap().SameAs(x.Map())) {
+    EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
   }
   int ierr = 0;
   int i, j;
@@ -1569,14 +1573,14 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
       xp[ColIndices[j]] += fabs(RowValues[j]);
   }
 
-  if(Importer() != 0) {
+  if(needExport) {
     x.PutScalar(0.0);
     x.Export(*x_tmp, *Importer(), Add); // Fill x with Values from import vector
     delete x_tmp;
     xp = (double*) x.Values();
   }
   // Invert values, don't allow them to get too large
-  for(i = 0; i < NumMyRows_; i++) {
+  for(i = 0; i < x.Map().NumMyElements(); i++) {
     double scale = xp[i];
     if(scale < Epetra_MinDouble) {
       if(scale == 0.0) 
