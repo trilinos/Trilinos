@@ -130,7 +130,7 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       ML_memory_alloc((void**) &perm_r, 2 * n * sizeof(int), "LU3" );
       solver->int_params1 = perm_r;
       solver->int_params2 = perm_c;
-      permc_spec = 2;
+      permc_spec = 0;
       get_perm_c(permc_spec, A, perm_c);
       ML_memory_alloc((void**) &L, sizeof(SuperMatrix), "LU4" );
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU5" );
@@ -526,7 +526,7 @@ int ML_SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
       ML_memory_alloc((void**) &perm_r, n * sizeof(int), "LU7" );
       solver->int_params1 = perm_r;
       solver->int_params2 = perm_c;
-      permc_spec = 1;
+      permc_spec = 0;
       get_perm_c(permc_spec, A, perm_c);
       ML_memory_alloc((void**) &L, sizeof(SuperMatrix), "LU8" );
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU9" );
