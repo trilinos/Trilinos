@@ -9,6 +9,7 @@
 struct reader_context {
    int id;
    int N_levels, nsmooth, maxcoarsesize, coarse_its;
+   int max_outer_its;
    int N_dofPerNode;
    double agg_thresh;
    char smoother[80], agg_coarsen_scheme[80], coarse_solve[80], krylov[80];

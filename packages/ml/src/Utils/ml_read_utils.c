@@ -470,6 +470,20 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
   strcpy(context->krylov,input);
+
+  /* select the maximum number of outer iterations */
+
+  c_srch = "max number of outer iterations";
+  if (!ML_Reader_LookFor(ifp, c_srch, input, '='))
+    context->coarse_its = 500;       /* Defaults to 500 */
+  else {
+    ML_Reader_ReadString(ifp, input, '\n');
+    if (sscanf(input, "%d", &(context->max_outer_its)) != 1) {
+      fprintf(stderr, "%s ERROR: can\'t interp int while looking for \"%s\"\n",
+              yo, c_srch);
+      exit(-1);
+    }
+  }
 }
 
 /*****************************************************************************/
