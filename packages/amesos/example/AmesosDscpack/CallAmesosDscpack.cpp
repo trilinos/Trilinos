@@ -38,13 +38,14 @@
 //  Amesos_config.h defines HAVE_AMESOS_DSCPACK if --enable-amesos-dscpack was set 
 //  in the configure invocation script.
 #include "Amesos_config.h"
+
 #ifdef HAVE_AMESOS_DSCPACK
 #include "Amesos_Dscpack.h"
 #endif
-#include "Amesos_Parameter_List.h"
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
@@ -53,7 +54,7 @@
 int main(int argc, char *argv[])
 {
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
   //
   //  Solve Ax = b using DSCPACK
   //
-  AMESOS::Parameter::List ParamList ;
+  Teuchos::ParameterList ParamList ;
   Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
 
   Problem.SetOperator( &A );

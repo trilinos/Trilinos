@@ -35,8 +35,8 @@
 //
 #include "Amesos_config.h"
 #include "Amesos_Factory.h"
-#include "Amesos_Parameter_List.h"
-#ifdef EPETRA_MPI
+#include "Teuchos_ParameterList.hpp"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 {
 
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   //
   //  Solve Ax = b using Amesos_KLU via the Amesos_Factory interface
   //
-  AMESOS::Parameter::List ParamList ;
+  Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos_Factory Afactory;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
   delete Abase;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
   return 0;
