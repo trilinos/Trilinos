@@ -229,7 +229,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-Hello_Test_exe_SOURCES = Hello_Test.cpp
+Hello_Test_exe_SOURCES = $(srcdir)/Hello_Test.cpp
 Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 Hello_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src
@@ -316,6 +316,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Hello_Test.o: $(srcdir)/Hello_Test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Hello_Test.o -MD -MP -MF "$(DEPDIR)/Hello_Test.Tpo" -c -o Hello_Test.o `test -f '$(srcdir)/Hello_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Hello_Test.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Hello_Test.Tpo" "$(DEPDIR)/Hello_Test.Po"; else rm -f "$(DEPDIR)/Hello_Test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Hello_Test.cpp' object='Hello_Test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Hello_Test.Po' tmpdepfile='$(DEPDIR)/Hello_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Hello_Test.o `test -f '$(srcdir)/Hello_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Hello_Test.cpp
+
+Hello_Test.obj: $(srcdir)/Hello_Test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Hello_Test.obj -MD -MP -MF "$(DEPDIR)/Hello_Test.Tpo" -c -o Hello_Test.obj `if test -f '$(srcdir)/Hello_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Hello_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Hello_Test.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Hello_Test.Tpo" "$(DEPDIR)/Hello_Test.Po"; else rm -f "$(DEPDIR)/Hello_Test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Hello_Test.cpp' object='Hello_Test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Hello_Test.Po' tmpdepfile='$(DEPDIR)/Hello_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Hello_Test.obj `if test -f '$(srcdir)/Hello_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Hello_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Hello_Test.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

@@ -34,7 +34,7 @@ if HAVE_NEWP_SWAHILI
 
 bin_PROGRAMS = Jambo_Test.exe
 
-Jambo_Test_exe_SOURCES = Jambo_Test.cpp
+Jambo_Test_exe_SOURCES = $(srcdir)/Jambo_Test.cpp
 
 Jambo_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 

@@ -30,7 +30,7 @@
 
 bin_PROGRAMS = Hello_Test.exe
 
-Hello_Test_exe_SOURCES = Hello_Test.cpp
+Hello_Test_exe_SOURCES = $(srcdir)/Hello_Test.cpp
 
 Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 
