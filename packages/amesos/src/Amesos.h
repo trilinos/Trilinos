@@ -68,5 +68,13 @@ Amesos solver.
 public: 
   Amesos_BaseSolver *Create( char *ClassType, 
 			     const Epetra_LinearProblem& LinearProblem );
+
+  // @}
+  
+  // @{ Query methods
+  /*! Queries whether a given interface is avaiable or not. */
+
+  bool Query( char * ClassType );
+  
 };  // End of  class Amesos  
 #endif /* _AMESOS_FACTORY_H_ */

@@ -113,4 +113,54 @@ Amesos_BaseSolver* Amesos::Create( char* ClassType,
   }
 }
 
+// ====================================================================
 
+bool Amesos::Query( char* ClassType ) { 
+
+  string CT = ClassType; 
+
+  if ( CT == "Amesos_Mumps" ) { 
+#ifdef HAVE_AMESOS_MUMPS
+    return true;
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Scalapack" ) { 
+#ifdef HAVE_AMESOS_SCALAPACK
+    return true;
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Umfpack" ) { 
+#ifdef HAVE_AMESOS_UMFPACK
+    return true;
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Dscpack" ) { 
+#ifdef HAVE_AMESOS_DSCPACK
+    return true;
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Klu" ) { 
+#ifdef HAVE_AMESOS_KLU
+    return true; 
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Superludist" ) { 
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    return true;
+#else
+    return false;
+#endif
+  } else   if ( CT == "Amesos_Superlu" ) { 
+#ifdef HAVE_AMESOS_SUPERLU
+    return true; 
+#else
+    return false;
+#endif
+  }
+  return false;
+}
