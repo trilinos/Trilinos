@@ -152,9 +152,14 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-AC_CHECK_HEADERS([cmath math.h string string.h cfloat float.h],,,)
-AC_CHECK_HEADERS([malloc.h ctime sys/time.h])
+AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
+AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cassert assert.h], [break],)
+AC_CHECK_HEADERS([cmath math.h], [break],)
+AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([cfloat float.h], [break],)
+AC_CHECK_HEADERS([ctime sys/time.h], [break],)
+AC_CHECK_HEADER([malloc.h],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  AztecOO requires at least one or the other.]])

@@ -182,8 +182,12 @@ TAC_ARG_CHECK_MPI
 # Checks for header files
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-AC_CHECK_HEADERS([iomanip iomanip.h iostream iostream.h string string.h],,,)
+AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
+AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cassert assert.h], [break],)
+AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
+AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADERS([string string.h], [break],)
 
 # **AMESOS SPECIFIC**
 # The next two rows of headers are not verified to be present below.  At this time
