@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
   /** Applies the Amesos direct solver to the given vector. */
-  extern int ML_Smoother_Amesos(void *sm,int inlen,double x[],int outlen,
+  extern int ML_Smoother_Amesos(ML_Smoother *sm,int inlen,double x[],int outlen,
 				double rhs[]);
 
   /** Clean memory associated to Amesos_Handle. */

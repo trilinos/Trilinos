@@ -20,7 +20,7 @@
 /* generate the Amesos smoother                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_Amesos(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_Amesos(ML_Smoother *sm,int inlen,double x[],int outlen,
                         double rhs[])
 {
 
@@ -66,7 +66,7 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
 			   int MaxProcs)
 {
 #ifdef HAVE_ML_AMESOS
-   int            (*fun1)(void *, int, double *, int, double *);
+   int            (*fun1)(ML_Smoother *, int, double *, int, double *);
 
    void *Amesos_Handle ;
    int status;
@@ -109,7 +109,7 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
      } 
 
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
-			      (void *) Amesos_Handle, fun1, NULL, 1, 0.0,str);
+			      (void *) Amesos_Handle, fun1, 1, 0.0,str);
      assert( status == 0 ) ; 
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Amesos;
 
