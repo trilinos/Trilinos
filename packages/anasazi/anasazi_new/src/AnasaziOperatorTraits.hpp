@@ -26,51 +26,56 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_OPERATOR_HPP
-#define ANASAZI_OPERATOR_HPP
+#ifndef ANASAZI_OPERATOR_TRAITS_HPP
+#define ANASAZI_OPERATOR_TRAITS_HPP
+
+/*!     \file AnasaziOperatorTraits.hpp
+        \brief Virtual base class which defines the operator interface 
+	required by the iterative linear solver.
+*/
 
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziReturnType.hpp"
+#include "AnasaziOperator.hpp"
+#include "AnasaziReturnTypes.hpp"
 #include "AnasaziConfigDefs.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
-/*!	\class Anasazi::Operator
-
-	\brief Anasazi's templated virtual class for constructing the operator that is
-	used by the eigensolver.
-	
-	A concrete implementation of this class is necessary.  The user can create their own implementation
-	if those supplied are not suitable for their needs.
-
-	\author Rich Lehoucq, Heidi Thornquist
-*/
 
 namespace Anasazi {
 
-template <class TYPE>
-class Operator {
-public:
-	//@{ \name Constructor/Destructor.
-	//! Default constructor.
-	Operator() {};
+  template< class TYPE, class MV, class OP >
+  struct UndefinedOperatorTraits
+  {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
+  };
+  
+  template <class TYPE, class MV, class OP>
+  class OperatorTraits 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const Operator<TYPE>& Op, 
+			      const MultiVec<TYPE>& x, 
+			      MultiVec<TYPE>& y )
+    { return UndefinedScalarTraits<TYPE, MV, OP>::notDefined(); };
+    
+  };
+  
+  template <class TYPE> 
+  class OperatorTraits < TYPE, MultiVec<TYPE>, Operator<TYPE> > 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const Operator<TYPE>& Op, 
+			      const MultiVec<TYPE>& x, 
+			      MultiVec<TYPE>& y )
+    { return Op.Apply( x, y ); }
+    
+  };
+  
+} // end Anasazi namespace
 
-	//! Destructor.
-	virtual ~Operator(void) {};
-	//@}
+#endif // ANASAZI_OPERATOR_TRAITS_HPP
 
-	//@{ \name Matrix/Operator application method.
-
-	/*! \brief This routine takes the %Anasazi::MultiVec \c x and
-	applies the operator to it resulting in the %Anasazi::MultiVec \c y,
-	which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
-	\c x will be passed directly to \c y.  Thus the operator is the identity if this
-	method is defined by the user.
-	*/
-	virtual ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const 
-		{ return Undefined; };
-
-};
-
-} // end of Anasazi namespace
-#endif
-// end of file AnasaziOperator.hpp
+// end of file AnasaziOperatorTraits.hpp

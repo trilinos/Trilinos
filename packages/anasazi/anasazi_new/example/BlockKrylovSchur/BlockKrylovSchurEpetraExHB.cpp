@@ -32,11 +32,12 @@
 //  eigensolver and then used to construct the Krylov decomposition.  The specifics of the 
 //  block Arnoldi method can be set by the user.
 
-#include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
 
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
 	//
 	int NumMyElements = N_update; // # local rows of matrix on processor
 	//
-    	// Create an integer vector NumNz that is used to build the Petra Matrix.
+    	// Create an integer vector NumNz that is used to build the Epetra Matrix.
 	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
 	// on this processor
 	//
@@ -144,16 +145,16 @@ int main(int argc, char *argv[]) {
         int step = 5;
         int restarts = 10;
 	//
-        // create a PetraAnasaziVec. Note that the decision to make a view or
-        // or copy is determined by the petra constructor called by Anasazi::PetraVec.
+        // create a EpetraAnasaziVec. Note that the decision to make a view or
+        // or copy is determined by the petra constructor called by Anasazi::EpetraVec.
         // This is possible because I pass in arguements needed by petra.
 
-        Anasazi::PetraVec ivec(Map, block);
+        Anasazi::EpetraVec ivec(Map, block);
         ivec.MvRandom();
 
         // call the ctor that calls the petra ctor for a matrix
 
-        Anasazi::PetraOp Amat(A);
+        Anasazi::EpetraOp Amat(A);
         Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
@@ -201,18 +202,18 @@ int main(int argc, char *argv[]) {
 	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) 
 	  index[i] = i;
-        Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+        Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
 	for (i=0; i<nev; i++)
 	  index[i] = nev + i;
-        Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+        Anasazi::EpetraVec* eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
 
         // output results to screen
         MySolver.currentStatus();
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::PetraVec tempevecr(Map,nev), tempAevec(Map,nev);
-	Anasazi::PetraVec tempeveci(Map,nev);
+	Anasazi::EpetraVec tempevecr(Map,nev), tempAevec(Map,nev);
+	Anasazi::EpetraVec tempeveci(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	double* normA = new double[nev];
@@ -280,4 +281,4 @@ int main(int argc, char *argv[]) {
 
   	return 0;
 
-} // end BlockKrylovSchurPetraExHb.cpp
+} // end BlockKrylovSchurEpetraExHb.cpp

@@ -40,11 +40,12 @@
 //
 //  NOTE:  This example came from the ARPACK SVD driver dsvd.f
 //
-#include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
 
@@ -148,14 +149,14 @@ int main(int argc, char *argv[]) {
 	int restarts = 300;
 	int step = restarts*length*block;
 
-	// Create a PetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
+	// Create a EpetraAnasaziVec. Note that the decision to make a view or
+	// or copy is determined by the petra constructor called by Anasazi::EpetraVec.
 	// This is possible because I pass in arguements needed by petra.
-	Anasazi::PetraVec ivec(ColMap, block);
+	Anasazi::EpetraVec ivec(ColMap, block);
 	ivec.MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
-	Anasazi::PetraSymOp Amat(A);	
+	Anasazi::EpetraSymOp Amat(A);	
 	Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
@@ -199,7 +200,7 @@ int main(int argc, char *argv[]) {
 	double* evalr = MyProblem.GetEvals();
 
 	// Retrieve eigenvectors
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs());
+	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs());
 
 	// Output results to screen
 	MySolver.currentStatus();
@@ -216,12 +217,12 @@ int main(int argc, char *argv[]) {
 	//
 	// Compute left singular vectors :  u = Av/sigma
 	//
-	Anasazi::PetraVec Av(RowMap,nev), u(RowMap,nev);
+	Anasazi::EpetraVec Av(RowMap,nev), u(RowMap,nev);
 	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
 	double* tempnrm = new double[nev];
 	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { index[i] = i; }
-        A.Apply( *dynamic_cast<Anasazi::PetraVec* >(evecr->CloneView( index, nev )), Av );
+        A.Apply( *dynamic_cast<Anasazi::EpetraVec* >(evecr->CloneView( index, nev )), Av );
 	Av.MvNorm( tempnrm );
 	for (i=0; i<nev; i++) { S(i,i) = one/tempnrm[i]; };
 	u.MvTimesMatAddMv( one, Av, S, zero );

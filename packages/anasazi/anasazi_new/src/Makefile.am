@@ -24,10 +24,12 @@ CORE_H = \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
+	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
+	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
+	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziPetraInterface.hpp \
 	$(srcdir)/AnasaziReturnType.hpp
 	$(srcdir)/AnasaziSortManager.hpp
 

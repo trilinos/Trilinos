@@ -34,15 +34,15 @@
 //  the AnasaziPetraMat to be used in the construction of the Krylov decomposition.  The 
 //  specifics of the block Arnoldi method can be set by the user.
 
-#include "AnasaziPetraInterface.hpp"
-#include "BelosPetraInterface.hpp"
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziEpetraAdapter.hpp"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "BelosPetraInterface.hpp"
 #include "BelosEpetraOperator.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -257,17 +257,17 @@ int main(int argc, char *argv[]) {
 	int restarts = 5;
 
 	// Create a PetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by AnasaziPetraVec.
+	// or copy is determined by the petra constructor called by AnasaziEpetraVec.
 	// This is possible because I pass in arguements needed by petra.
 
-	Anasazi::PetraVec ivec(Map, block);
+	Anasazi::EpetraVec ivec(Map, block);
 	ivec.MvRandom();
     
 	// Call the ctor that calls the petra ctor for a matrix
 
-	Anasazi::PetraOp Amat(A);
-	Anasazi::PetraOp Bmat(B);
-	Anasazi::PetraGenOp Aop(BelosOp, B);	
+	Anasazi::EpetraOp Amat(A);
+	Anasazi::EpetraOp Bmat(B);
+	Anasazi::EpetraGenOp Aop(BelosOp, B);	
 	Anasazi::BasicEigenproblem<double> MyProblem(&Aop, &Bmat, &ivec);
 
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
@@ -318,10 +318,10 @@ int main(int argc, char *argv[]) {
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
 	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { index[i] = i; }
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs());
+	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	Anasazi::PetraVec tempvec(Map, evecr->GetNumberVecs());	
+	Anasazi::EpetraVec tempvec(Map, evecr->GetNumberVecs());	
 	A.Apply( *evecr, tempvec );
 	tempvec.MvTransMv( 1.0, *evecr, dmatr );
 
