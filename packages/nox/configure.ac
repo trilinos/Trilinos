@@ -78,7 +78,7 @@ dnl AC_REVISION($Revision$)
 # Check for user overrides (to be used later)
 # ------------------------------------------------------------------------
 
-if test -n "$CXXFLAGS"; then
+if test -n "${CXXFLAGS}"; then
   USERDEF_CXXFLAGS=yes
 fi
 
@@ -101,7 +101,7 @@ AC_ARG_WITH(mpi,
 HAVE_PKG_MPI=yes
 MPI_DIR=${withval}
 AC_MSG_CHECKING(MPI directory)
-AC_MSG_RESULT([$MPI_DIR])
+AC_MSG_RESULT([${MPI_DIR}])
 ]
 )
 
@@ -111,7 +111,7 @@ AC_ARG_WITH(mpi-cxx,
 HAVE_PKG_MPI=yes 
 MPI_CXX=${withval}
 AC_MSG_CHECKING(user-defined MPI C++ compiler)
-AC_MSG_RESULT([$MPI_CXX])
+AC_MSG_RESULT([${MPI_CXX}])
 ]
 )
 
@@ -121,7 +121,7 @@ AC_ARG_WITH(mpi-include,
 HAVE_PKG_MPI=yes
 MPI_INC=${withval}
 AC_MSG_CHECKING(user-defined MPI includes)
-AC_MSG_RESULT([$MPI_INC])
+AC_MSG_RESULT([${MPI_INC}])
 ]
 )
 
@@ -131,7 +131,7 @@ AC_ARG_WITH(mpi-libs,
 HAVE_PKG_MPI=yes
 MPI_LIBS=${withval}
 AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([$MPI_LIBS])
+AC_MSG_RESULT([${MPI_LIBS}])
 ]
 )
 
@@ -141,7 +141,7 @@ AC_ARG_WITH(mpi-libdir,
 HAVE_PKG_MPI=yes
 MPI_LIBDIR=${withval}
 AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([$MPI_LIBS])
+AC_MSG_RESULT([${MPI_LIBS}])
 ]
 )
 
@@ -152,12 +152,12 @@ AC_MSG_RESULT([${HAVE_PKG_MPI}])
 # Check for MPI compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
-if test X${MPI_CXX} != X; then
+if test -n "${MPI_CXX}"; then
   AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
-  if test X${MPI_CXX_EXISTS} = Xyes; then
-    CXX=$MPI_CXX
+  if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
+    CXX=${MPI_CXX}
   else
-    AC_MSG_ERROR([MPI C++ compiler ($MPI_CXX) not found.])
+    AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
 fi
 
@@ -174,17 +174,14 @@ AC_PROG_RANLIB
 
 AC_ARG_WITH(flags,
 [  --with-flags            add extra preprocessor flags ("-Dflag -Idir")],
-[
-XTRAFLAGS=$withval
-echo Using extra flags: $withval
-]
+[XTRAFLAGS=${withval}]
 )
 
 AC_MSG_CHECKING([for extra preprocessor flags])
-if test X$XTRAFLAGS = X; then
+if test -z "${XTRAFLAGS}"; then
   AC_MSG_RESULT(none)
 else
-  AC_MSG_RESULT([$XTRAFLAGS])
+  AC_MSG_RESULT([${XTRAFLAGS}])
   CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
 fi
 
@@ -194,18 +191,18 @@ fi
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          compile with debugging],
-[DEBUG=$enableval],
-[DEBUG=default]
+[DEBUG=${enableval}],
+[DEBUG="default"]
 )
 AC_MSG_CHECKING(whether debugging is on)
 AC_MSG_RESULT([${DEBUG}])
 
 AC_ARG_ENABLE(opt,
 [  --enable-opt            compile with optimization],
-[OPT=$enableval],
+[OPT=${enableval}],
 [OPT=default]
 )
-AC_MSG_CHECKING(whether optimization is on)
+AC_MSG_CHECKING([whether optimization is on])
 AC_MSG_RESULT([${OPT}])
 
 case $target in
@@ -222,7 +219,7 @@ case $target in
   # SGI/IRIX test
   mips-sgi-irix* ) 
 
-    if test $CXX = CC; then
+    if test "${CXX}" = "CC"; then
      SPECIAL_CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"    
     fi
@@ -232,17 +229,17 @@ case $target in
 esac
 
 AC_MSG_CHECKING([for special C++ flags])
-if test X$USERDEF_CXXFLAGS = Xyes; then
+if test "X${USERDEF_CXXFLAGS}" = "Xyes"; then
 
-  AC_MSG_RESULT([$CXXFLAGS (user-specified via CXXFLAGS)])
+  AC_MSG_RESULT([${CXXFLAGS} (user-specified via CXXFLAGS)])
 
 else
 
-  if test X$SPECIAL_CXXFLAGS != X; then
-    AC_MSG_RESULT([$SPECIAL_CXXFLAGS])
+  if test -n "${SPECIAL_CXXFLAGS}"; then
+    AC_MSG_RESULT([${SPECIAL_CXXFLAGS}])
     CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
   else
-    AC_MSG_RESULT([$CXXFLAGS (default)])
+    AC_MSG_RESULT([${CXXFLAGS} (default)])
   fi
 
 fi
@@ -261,14 +258,14 @@ ALTERNATE_AR="${withval}"
 ]
 )
 
-if test -n "$SPECIAL_AR" && test X$USE_ALTERNATE_AR != Xyes; then
+if test -n "${SPECIAL_AR}" && test "X${USE_ALTERNATE_AR}" != "Xyes"; then
   USE_ALTERNATE_AR=yes
-  ALTERNATE_AR=$SPECIAL_AR
+  ALTERNATE_AR="${SPECIAL_AR}"
 fi
 
 AC_MSG_CHECKING(for special archiver command)
-if test X${USE_ALTERNATE_AR} = Xyes; then
-   AC_MSG_RESULT([yes (${ALTERNATE_AR})])
+if test "X${USE_ALTERNATE_AR}" = "Xyes"; then
+   AC_MSG_RESULT([${ALTERNATE_AR}])
    AM_CONDITIONAL(USE_ALTERNATE_AR, true)
 else
    AC_MSG_RESULT([none])
@@ -282,29 +279,29 @@ AC_SUBST(ALTERNATE_AR)
 # MPI link check
 # ------------------------------------------------------------------------
 
-if test X${HAVE_PKG_MPI} = Xyes; then
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
-  if test X${MPI_DIR} != X && test X${MPI_INC} = X; then
+  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
     MPI_INC=${MPI_DIR}/include
   fi
 
-  if test X${MPI_DIR} != X && test X${MPI_LIBDIR} = X; then
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR=${MPI_DIR}/lib
   fi
 
-  if test X${MPI_INC} != X; then
+  if test -n "${MPI_INC}"; then
     CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
   fi
 
-  if test X${MPI_LIBDIR} != X; then
+  if test -n "${MPI_LIBDIR}"; then
     LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
   fi
 
-  if test X${MPI_LIBS} = X && test X${MPI_LIBDIR} != X; then
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
     MPI_LIBS="-lmpi"
   fi
 
-  if test X${MPI_LIBS} != X; then
+  if test -n "${MPI_LIBS}"; then
     LIBS = "${MPI_LIBS} ${LIBS}"
   fi
 
@@ -430,11 +427,11 @@ AC_ARG_WITH(pkgdir,
 [  --with-pkgdir           specify root directory of add'l packages],
 [
 USE_PKGDIR=yes
-PKGDIR=$withval
+PKGDIR=${withval}
 ]
 )
 
-if test X${USE_PKGDIR} = Xyes; then
+if test "X${USE_PKGDIR}" = "Xyes"; then
 
    AC_MSG_CHECKING(whether package directory is valid)
    if test -d ${PKGDIR}; then
@@ -455,13 +452,13 @@ fi
 
 AC_ARG_ENABLE(noxepetra,
 [  --disable-noxepetra     disable building noxepetra library],
-[BUILD_NOXEPETRA=$enableval],
+[BUILD_NOXEPETRA=${enableval}],
 [BUILD_NOXEPETRA=yes]
 )
 
 AC_ARG_ENABLE(trilinos-dirs,
 [  --enable-trilinos-dirs  enable use of Trilinos directory structure],
-[USE_TRILINOS_DIRS=$withval],
+[USE_TRILINOS_DIRS=${withval}],
 [USE_TRILINOS_DIRS=default]
 )
 
@@ -472,7 +469,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
   [$1_LIBDIR=$withval])
 
   AC_MSG_CHECKING(for $1)
-  if test X${$1_LIBDIR} != X && test -f ${$1_LIBDIR}/lib$1.a; then
+  if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
     LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
     AC_MSG_RESULT(yes)
   elif test -f ${TRILINOS_LIBDIR}/lib$1.a; then
@@ -492,11 +489,11 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 # Case I: Using standard Trilinos directory structure
 # (a) Check if TRILINOS_HOME is valid
-if test ${BUILD_NOXEPETRA} = yes; then
+if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
-  LIBS="$LIBS $FLIBS"
+  LIBS="${LIBS} ${FLIBS}"
 
   # Find valid BLAS
   AC_LANG_FORTRAN77
@@ -507,7 +504,7 @@ if test ${BUILD_NOXEPETRA} = yes; then
   AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
 
   # Set TRILINOS_COMM (used several places)
-  if test ${HAVE_PKG_MPI} = yes; then
+  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     TRILINOS_COMM="MPI"
   else
     TRILINOS_COMM="SERIAL"
@@ -515,18 +512,18 @@ if test ${BUILD_NOXEPETRA} = yes; then
 
   # If the package directory isn't specified, use the standard
   # TRILINOS directory structure
-  if test X${USE_TRILINOS_DIRS} != Xno && test X${USE_PKGDIR} != Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" != "Xno" && test "X${USE_PKGDIR}" != "Xyes"; then
     USE_TRILINOS_DIRS=yes
   fi
 
-  if test ${USE_TRILINOS_DIRS} != yes && test X${USE_PKGDIR} != Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" != "Xyes" && test "X${USE_PKGDIR}" != "Xyes"; then
     AC_MSG_ERROR([Must use --enable-trilinos-dirs or --with-pkgdir])
   fi
 
-  if test X${USE_TRILINOS_DIRS} = Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" = "Xyes"; then
 
     AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
-    if test $TRILINOS_HOME; then
+    if test -n "${TRILINOS_HOME}"; then
        AC_MSG_RESULT([yes (${TRILINOS_HOME})])
     else
        AC_MSG_RESULT([no (using ${HOME}/Trilinos)])
@@ -542,7 +539,7 @@ if test ${BUILD_NOXEPETRA} = yes; then
     fi
  
     AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
-    if test ${TRILINOS_ARCH}; then
+    if test -n "${TRILINOS_ARCH}"; then
        AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
     else
        case $target in
@@ -561,14 +558,14 @@ if test ${BUILD_NOXEPETRA} = yes; then
  
  
     AC_MSG_CHECKING(whether TRILINOS_ID is defined)
-    if test ${TRILINOS_ID}; then
+    if test -n "${TRILINOS_ID}"; then
        AC_MSG_RESULT([yes (${TRILINOS_ID})])
     else
        AC_MSG_RESULT(no)
     fi
  
     AC_MSG_CHECKING(whether TRILINOS_TARGET is defined)
-    if test ${TRILINOS_TARGET}; then
+    if test -n "${TRILINOS_TARGET}"; then
        AC_MSG_RESULT([yes (${TRILINOS_TARGET})])
     else
        TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
@@ -607,7 +604,7 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Checks for TRILINOS status 
 # ------------------------------------------------------------------------
 
-if test X${BUILD_NOXEPETRA} = Xyes; then
+if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
    AM_CONDITIONAL(BUILD_NOXEPETRA, true)
 else
    AM_CONDITIONAL(BUILD_NOXEPETRA, false)

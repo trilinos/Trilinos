@@ -1553,7 +1553,7 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 # Check for user overrides (to be used later)
 # ------------------------------------------------------------------------
 
-if test -n "$CXXFLAGS"; then
+if test -n "${CXXFLAGS}"; then
   USERDEF_CXXFLAGS=yes
 fi
 
@@ -1581,8 +1581,8 @@ HAVE_PKG_MPI=yes
 MPI_DIR=${withval}
 echo "$as_me:$LINENO: checking MPI directory" >&5
 echo $ECHO_N "checking MPI directory... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: $MPI_DIR" >&5
-echo "${ECHO_T}$MPI_DIR" >&6
+echo "$as_me:$LINENO: result: ${MPI_DIR}" >&5
+echo "${ECHO_T}${MPI_DIR}" >&6
 
 fi;
 
@@ -1594,8 +1594,8 @@ HAVE_PKG_MPI=yes
 MPI_CXX=${withval}
 echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
 echo $ECHO_N "checking user-defined MPI C++ compiler... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: $MPI_CXX" >&5
-echo "${ECHO_T}$MPI_CXX" >&6
+echo "$as_me:$LINENO: result: ${MPI_CXX}" >&5
+echo "${ECHO_T}${MPI_CXX}" >&6
 
 fi;
 
@@ -1607,8 +1607,8 @@ HAVE_PKG_MPI=yes
 MPI_INC=${withval}
 echo "$as_me:$LINENO: checking user-defined MPI includes" >&5
 echo $ECHO_N "checking user-defined MPI includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: $MPI_INC" >&5
-echo "${ECHO_T}$MPI_INC" >&6
+echo "$as_me:$LINENO: result: ${MPI_INC}" >&5
+echo "${ECHO_T}${MPI_INC}" >&6
 
 fi;
 
@@ -1620,8 +1620,8 @@ HAVE_PKG_MPI=yes
 MPI_LIBS=${withval}
 echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
 echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: $MPI_LIBS" >&5
-echo "${ECHO_T}$MPI_LIBS" >&6
+echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
+echo "${ECHO_T}${MPI_LIBS}" >&6
 
 fi;
 
@@ -1633,8 +1633,8 @@ HAVE_PKG_MPI=yes
 MPI_LIBDIR=${withval}
 echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
 echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: $MPI_LIBS" >&5
-echo "${ECHO_T}$MPI_LIBS" >&6
+echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
+echo "${ECHO_T}${MPI_LIBS}" >&6
 
 fi;
 
@@ -1647,7 +1647,7 @@ echo "${ECHO_T}${HAVE_PKG_MPI}" >&6
 # Check for MPI compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
-if test X${MPI_CXX} != X; then
+if test -n "${MPI_CXX}"; then
   # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
 set dummy ${MPI_CXX}; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -1684,11 +1684,11 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-  if test X${MPI_CXX_EXISTS} = Xyes; then
-    CXX=$MPI_CXX
+  if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
+    CXX=${MPI_CXX}
   else
-    { { echo "$as_me:$LINENO: error: MPI C++ compiler ($MPI_CXX) not found." >&5
-echo "$as_me: error: MPI C++ compiler ($MPI_CXX) not found." >&2;}
+    { { echo "$as_me:$LINENO: error: MPI C++ compiler (${MPI_CXX}) not found." >&5
+echo "$as_me: error: MPI C++ compiler (${MPI_CXX}) not found." >&2;}
    { (exit 1); exit 1; }; }
   fi
 fi
@@ -2396,20 +2396,18 @@ fi
 # Check whether --with-flags or --without-flags was given.
 if test "${with_flags+set}" = set; then
   withval="$with_flags"
-
-XTRAFLAGS=$withval
-echo Using extra flags: $withval
+  XTRAFLAGS=${withval}
 
 fi;
 
 echo "$as_me:$LINENO: checking for extra preprocessor flags" >&5
 echo $ECHO_N "checking for extra preprocessor flags... $ECHO_C" >&6
-if test X$XTRAFLAGS = X; then
+if test -z "${XTRAFLAGS}"; then
   echo "$as_me:$LINENO: result: none" >&5
 echo "${ECHO_T}none" >&6
 else
-  echo "$as_me:$LINENO: result: $XTRAFLAGS" >&5
-echo "${ECHO_T}$XTRAFLAGS" >&6
+  echo "$as_me:$LINENO: result: ${XTRAFLAGS}" >&5
+echo "${ECHO_T}${XTRAFLAGS}" >&6
   CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
 fi
 
@@ -2420,9 +2418,9 @@ fi
 # Check whether --enable-debug or --disable-debug was given.
 if test "${enable_debug+set}" = set; then
   enableval="$enable_debug"
-  DEBUG=$enableval
+  DEBUG=${enableval}
 else
-  DEBUG=default
+  DEBUG="default"
 
 fi;
 echo "$as_me:$LINENO: checking whether debugging is on" >&5
@@ -2433,7 +2431,7 @@ echo "${ECHO_T}${DEBUG}" >&6
 # Check whether --enable-opt or --disable-opt was given.
 if test "${enable_opt+set}" = set; then
   enableval="$enable_opt"
-  OPT=$enableval
+  OPT=${enableval}
 else
   OPT=default
 
@@ -2457,7 +2455,7 @@ case $target in
   # SGI/IRIX test
   mips-sgi-irix* )
 
-    if test $CXX = CC; then
+    if test "${CXX}" = "CC"; then
      SPECIAL_CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
@@ -2468,20 +2466,20 @@ esac
 
 echo "$as_me:$LINENO: checking for special C++ flags" >&5
 echo $ECHO_N "checking for special C++ flags... $ECHO_C" >&6
-if test X$USERDEF_CXXFLAGS = Xyes; then
+if test "X${USERDEF_CXXFLAGS}" = "Xyes"; then
 
-  echo "$as_me:$LINENO: result: $CXXFLAGS (user-specified via CXXFLAGS)" >&5
-echo "${ECHO_T}$CXXFLAGS (user-specified via CXXFLAGS)" >&6
+  echo "$as_me:$LINENO: result: ${CXXFLAGS} (user-specified via CXXFLAGS)" >&5
+echo "${ECHO_T}${CXXFLAGS} (user-specified via CXXFLAGS)" >&6
 
 else
 
-  if test X$SPECIAL_CXXFLAGS != X; then
-    echo "$as_me:$LINENO: result: $SPECIAL_CXXFLAGS" >&5
-echo "${ECHO_T}$SPECIAL_CXXFLAGS" >&6
+  if test -n "${SPECIAL_CXXFLAGS}"; then
+    echo "$as_me:$LINENO: result: ${SPECIAL_CXXFLAGS}" >&5
+echo "${ECHO_T}${SPECIAL_CXXFLAGS}" >&6
     CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
   else
-    echo "$as_me:$LINENO: result: $CXXFLAGS (default)" >&5
-echo "${ECHO_T}$CXXFLAGS (default)" >&6
+    echo "$as_me:$LINENO: result: ${CXXFLAGS} (default)" >&5
+echo "${ECHO_T}${CXXFLAGS} (default)" >&6
   fi
 
 fi
@@ -2503,16 +2501,16 @@ ALTERNATE_AR="${withval}"
 
 fi;
 
-if test -n "$SPECIAL_AR" && test X$USE_ALTERNATE_AR != Xyes; then
+if test -n "${SPECIAL_AR}" && test "X${USE_ALTERNATE_AR}" != "Xyes"; then
   USE_ALTERNATE_AR=yes
-  ALTERNATE_AR=$SPECIAL_AR
+  ALTERNATE_AR="${SPECIAL_AR}"
 fi
 
 echo "$as_me:$LINENO: checking for special archiver command" >&5
 echo $ECHO_N "checking for special archiver command... $ECHO_C" >&6
-if test X${USE_ALTERNATE_AR} = Xyes; then
-   echo "$as_me:$LINENO: result: yes (${ALTERNATE_AR})" >&5
-echo "${ECHO_T}yes (${ALTERNATE_AR})" >&6
+if test "X${USE_ALTERNATE_AR}" = "Xyes"; then
+   echo "$as_me:$LINENO: result: ${ALTERNATE_AR}" >&5
+echo "${ECHO_T}${ALTERNATE_AR}" >&6
 
 if true; then
   USE_ALTERNATE_AR_TRUE=
@@ -2538,29 +2536,29 @@ fi
 # MPI link check
 # ------------------------------------------------------------------------
 
-if test X${HAVE_PKG_MPI} = Xyes; then
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
-  if test X${MPI_DIR} != X && test X${MPI_INC} = X; then
+  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
     MPI_INC=${MPI_DIR}/include
   fi
 
-  if test X${MPI_DIR} != X && test X${MPI_LIBDIR} = X; then
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR=${MPI_DIR}/lib
   fi
 
-  if test X${MPI_INC} != X; then
+  if test -n "${MPI_INC}"; then
     CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
   fi
 
-  if test X${MPI_LIBDIR} != X; then
+  if test -n "${MPI_LIBDIR}"; then
     LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
   fi
 
-  if test X${MPI_LIBS} = X && test X${MPI_LIBDIR} != X; then
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
     MPI_LIBS="-lmpi"
   fi
 
-  if test X${MPI_LIBS} != X; then
+  if test -n "${MPI_LIBS}"; then
     LIBS = "${MPI_LIBS} ${LIBS}"
   fi
 
@@ -3245,11 +3243,11 @@ if test "${with_pkgdir+set}" = set; then
   withval="$with_pkgdir"
 
 USE_PKGDIR=yes
-PKGDIR=$withval
+PKGDIR=${withval}
 
 fi;
 
-if test X${USE_PKGDIR} = Xyes; then
+if test "X${USE_PKGDIR}" = "Xyes"; then
 
    echo "$as_me:$LINENO: checking whether package directory is valid" >&5
 echo $ECHO_N "checking whether package directory is valid... $ECHO_C" >&6
@@ -3276,7 +3274,7 @@ fi
 # Check whether --enable-noxepetra or --disable-noxepetra was given.
 if test "${enable_noxepetra+set}" = set; then
   enableval="$enable_noxepetra"
-  BUILD_NOXEPETRA=$enableval
+  BUILD_NOXEPETRA=${enableval}
 else
   BUILD_NOXEPETRA=yes
 
@@ -3285,7 +3283,7 @@ fi;
 # Check whether --enable-trilinos-dirs or --disable-trilinos-dirs was given.
 if test "${enable_trilinos_dirs+set}" = set; then
   enableval="$enable_trilinos_dirs"
-  USE_TRILINOS_DIRS=$withval
+  USE_TRILINOS_DIRS=${withval}
 else
   USE_TRILINOS_DIRS=default
 
@@ -3293,7 +3291,7 @@ fi;
 
 # Case I: Using standard Trilinos directory structure
 # (a) Check if TRILINOS_HOME is valid
-if test ${BUILD_NOXEPETRA} = yes; then
+if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
 
     ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -3386,7 +3384,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:3389:" \
+echo "$as_me:3387:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3552,7 +3550,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3555: \"$ac_link\") >&5
+(eval echo $as_me:3553: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3624,7 +3622,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3627: \"$ac_link\") >&5
+(eval echo $as_me:3625: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3785,7 +3783,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  LIBS="$LIBS $FLIBS"
+  LIBS="${LIBS} ${FLIBS}"
 
   # Find valid BLAS
   ac_ext=f
@@ -3944,7 +3942,7 @@ echo "$as_me: error: Cannot find LAPACK library" >&2;}
 fi
 
   # Set TRILINOS_COMM (used several places)
-  if test ${HAVE_PKG_MPI} = yes; then
+  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     TRILINOS_COMM="MPI"
   else
     TRILINOS_COMM="SERIAL"
@@ -3952,21 +3950,21 @@ fi
 
   # If the package directory isn't specified, use the standard
   # TRILINOS directory structure
-  if test X${USE_TRILINOS_DIRS} != Xno && test X${USE_PKGDIR} != Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" != "Xno" && test "X${USE_PKGDIR}" != "Xyes"; then
     USE_TRILINOS_DIRS=yes
   fi
 
-  if test ${USE_TRILINOS_DIRS} != yes && test X${USE_PKGDIR} != Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" != "Xyes" && test "X${USE_PKGDIR}" != "Xyes"; then
     { { echo "$as_me:$LINENO: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&5
 echo "$as_me: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
-  if test X${USE_TRILINOS_DIRS} = Xyes; then
+  if test "X${USE_TRILINOS_DIRS}" = "Xyes"; then
 
     echo "$as_me:$LINENO: checking whether TRILINOS_HOME is defined" >&5
 echo $ECHO_N "checking whether TRILINOS_HOME is defined... $ECHO_C" >&6
-    if test $TRILINOS_HOME; then
+    if test -n "${TRILINOS_HOME}"; then
        echo "$as_me:$LINENO: result: yes (${TRILINOS_HOME})" >&5
 echo "${ECHO_T}yes (${TRILINOS_HOME})" >&6
     else
@@ -3990,7 +3988,7 @@ echo "$as_me: error: TRILINOS_HOME is invalid" >&2;}
 
     echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
 echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
-    if test ${TRILINOS_ARCH}; then
+    if test -n "${TRILINOS_ARCH}"; then
        echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
 echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
     else
@@ -4011,7 +4009,7 @@ echo "${ECHO_T}no (using ${TRILINOS_ARCH})" >&6
 
     echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
 echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
-    if test ${TRILINOS_ID}; then
+    if test -n "${TRILINOS_ID}"; then
        echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
 echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
     else
@@ -4021,7 +4019,7 @@ echo "${ECHO_T}no" >&6
 
     echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
 echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
-    if test ${TRILINOS_TARGET}; then
+    if test -n "${TRILINOS_TARGET}"; then
        echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
 echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
     else
@@ -4131,7 +4129,7 @@ fi;
 
   echo "$as_me:$LINENO: checking for ifpack" >&5
 echo $ECHO_N "checking for ifpack... $ECHO_C" >&6
-  if test X${ifpack_LIBDIR} != X && test -f ${ifpack_LIBDIR}/libifpack.a; then
+  if test -n "${ifpack_LIBDIR}" && test -f ${ifpack_LIBDIR}/libifpack.a; then
     LDFLAGS="-L${ifpack_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -4160,7 +4158,7 @@ fi;
 
   echo "$as_me:$LINENO: checking for aztecoo" >&5
 echo $ECHO_N "checking for aztecoo... $ECHO_C" >&6
-  if test X${aztecoo_LIBDIR} != X && test -f ${aztecoo_LIBDIR}/libaztecoo.a; then
+  if test -n "${aztecoo_LIBDIR}" && test -f ${aztecoo_LIBDIR}/libaztecoo.a; then
     LDFLAGS="-L${aztecoo_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -4189,7 +4187,7 @@ fi;
 
   echo "$as_me:$LINENO: checking for epetra" >&5
 echo $ECHO_N "checking for epetra... $ECHO_C" >&6
-  if test X${epetra_LIBDIR} != X && test -f ${epetra_LIBDIR}/libepetra.a; then
+  if test -n "${epetra_LIBDIR}" && test -f ${epetra_LIBDIR}/libepetra.a; then
     LDFLAGS="-L${epetra_LIBDIR} ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -4218,7 +4216,7 @@ fi
 # Checks for TRILINOS status
 # ------------------------------------------------------------------------
 
-if test X${BUILD_NOXEPETRA} = Xyes; then
+if test "X${BUILD_NOXEPETRA}" = "Xyes"; then
 
 if true; then
   BUILD_NOXEPETRA_TRUE=
