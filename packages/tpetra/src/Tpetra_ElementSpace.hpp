@@ -12,8 +12,6 @@ namespace Tpetra {
 
 // forward declarations
 template<typename PacketType, typename OrdinalType> class Comm;
-template<typename ScalarType, typename OrdinalType> class Platform;
-template<typename OrdinalType> class ElementSpaceData;
 
 //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented 

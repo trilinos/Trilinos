@@ -7,9 +7,6 @@
 
 namespace Tpetra {
 
-// forward declaration
-template<typename OrdinalType> class ElementSpace;
-
 //! Tpetra::SerialDirectory: This class is a serial implementation of Directory.  Its interface allows ElementSpace and BlockElementSpace objects to reference non-local elements.
 
 /*! For ElementSpace objects, a Directory object must be created by a call to
