@@ -124,7 +124,7 @@ int main()
 		     NOX::Utils::Parameters);
 
   // Set the solver (this is the default)
-  solverParameters.setParameter("Solver", "Line Search");
+  solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
 
   // Create the line search parameters sublist
   NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
