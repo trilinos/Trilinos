@@ -369,7 +369,7 @@ public:
       MultiVector anotherjunk = CopyCandNS;
       cout << "Nits=" << Nits << endl;
 
-      for (i=0; i<Nits; i++)
+      for (int i=0; i<Nits; i++)
         SolveMultiLevelSA(b0,CopyCandNS,level+1);
 
       anotherjunk = anotherjunk - CopyCandNS;
@@ -383,40 +383,35 @@ public:
       cout << "adaptedCompute: EnergyBefore=" << MyEnergyBefore << endl;
       cout << "adaptedCompute: EnergyAfter =" << MyEnergyAfter << endl;
 
+      // FIXME: still to do:
+      // - scaling of the new computed component
+      // - if MyEnergyAfter is zero, take the previous guy
 
-      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits) < 0.1)
+      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits) < 0.1) {
+        ++level;
         break;
+      }
     }
-exit(0);
+    
+    --level;
     //project back to fine level
-    for (int i=level; i>=0 ; level--)
-      CopyCandNS = P_[level] * CopyCandNS;
+    for (int i=level; i>=0 ; i--) {
+      cout << i << endl;
+      CopyCandNS = P_[i] * CopyCandNS;
+    }
    
+    exit(0);
     //XXX NCand++
 
     List_.set("PDE equations", NumPDEEqns);
+    // set the newly computed null space into the list
+    List_.set("aggregation: null space", CopyCandNS);
 
-    // set coarse solver
-    S.Reshape(A_[level], CoarseType, List_);
-    S_[level] = S;
-    MaxLevels_ = level + 1;
-
-    // set the label
-    SetLabel("SA, L = " + GetString(MaxLevels_) +
-             ", smoother = " + SmootherType);
+    // compute a new hierarchy with the new null space.
+    Compute();
 
     // FIXME: update flops!
     UpdateTime();
-
-    if (GetPrintLevel()) {
-      ML_print_line("-", 80);
-      cout << "final level             = " << level << endl;
-      cout << "number of global rows   = " << A_[level].GetNumGlobalRows() << endl;
-      cout << "number of global nnz    = " << A_[level].GetNumGlobalNonzeros() << endl;
-      cout << "coarse solver           = " << CoarseType << endl;
-      cout << "time spent in constr.   = " << GetTime() << " (s)" << endl;
-      ML_print_line("-", 80);
-    }
 
   }
 
