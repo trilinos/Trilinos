@@ -34,9 +34,12 @@ ML_Krylov *ML_Krylov_Create(ML_Comm *comm)
    temp->ML_precon         = NULL;
    temp->ML_precfcn        = NULL;
    temp->ML_eigen          = 0;
+   temp->ML_nonsym_eigen   = 0;
    temp->ML_eigen_max      = 0.0;
    temp->diag_scale        = NULL;
    temp->ML_print_freq     = 1;
+   temp->ML_dont_scale_by_diag = 0; /* don't scale by diagonal */
+                                    /* when computing eigenvalues */
 
    return(temp);
 }
@@ -346,13 +349,19 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
       printf("ML_Krylov_Solve error : wrong object.\n");
       exit(-1);
    }
+
    if ( data->ML_eigen == 1 )
    {
 #ifdef RST_MODIF
-      ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+      if (data->ML_dont_scale_by_diag == 1)
+	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
 #else
 #ifndef MB_MODIF
-      ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+      if (data->ML_dont_scale_by_diag == 1)
+	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+
 #else
       /* no diag. in smoother */
       ML_CG_ComputeEigenvalues(data, leng, ML_FALSE);
@@ -361,6 +370,27 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
       data->ML_eigen = 0;
       return 0;
    }
+
+   else if ( data->ML_nonsym_eigen == 1 )
+   {
+#ifdef RST_MODIF
+      if (data->ML_dont_scale_by_diag == 1)
+	ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_Power_ComputeEigenvalues(data, leng, ML_TRUE); 
+#else
+#ifndef MB_MODIF
+      if (data->ML_dont_scale_by_diag == 1)
+	ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_Power_ComputeEigenvalues(data, leng, ML_TRUE); 
+#else
+      /* no diag. in smoother */
+      ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
+#endif
+#endif
+      data->ML_nonsym_eigen = 0;
+      return 0;
+   }
+
    switch ( data->ML_method )
    {
       case ML_CG :   ML_CG_Solve(data, leng, invec, outvec);
@@ -453,6 +483,37 @@ int ML_Krylov_Set_ComputeEigenvalues(ML_Krylov *data)
    }
    data->ML_eigen = 1;
    return 0;
+}
+int ML_Krylov_Set_ComputeNonSymEigenvalues(ML_Krylov *data)
+{
+   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   {
+      printf("ML_Krylov_Set_ComputeNonSymEigenvalues error : wrong object.\n");
+      exit(-1);
+   }
+   data->ML_nonsym_eigen = 1;
+   return 0;
+}
+
+/* ******************************************************************** */
+/* Indicate whether the matrix should be scaled by the diagonal         */
+/* when computing eigenvalues.                                          */
+/* ******************************************************************** */
+int ML_Krylov_Set_DiagScaling_Eig(ML_Krylov *data, int scale)
+{
+  /* scale = 1: use diagonal scaling       */
+  /* scale = 0: don't use diagonal scaling */
+
+  if (scale == 1)
+    data->ML_dont_scale_by_diag = 0;
+  else if (scale == 0) 
+    data->ML_dont_scale_by_diag = 1;
+  else {
+    printf("ML_Krylov_Set_DiagScaling_Eig: Unknown scaling option %d\n",
+	   scale);
+    return 1;
+  }
+  return 0;
 }
 
 /* ******************************************************************** */
