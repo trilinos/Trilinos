@@ -336,13 +336,16 @@ AM_CONDITIONAL(NEED_PARAMETER_LIST, false )
 #  Ken Stanley added this in June 2003 as the lesser of the 
 #  known evil ways of dealing with stl template instantiation
 #
-case "$target" in
-  alpha*-dec-osf*)  
-    if test $CXX = cxx; then
-      CXXFLAGS="-tweak ${CXXFLAGS}"
-    fi
-  ;;
-esac
+#  Ken Stanley removes this in April 2004 in the hopes that this will allow 
+#  amesos to compile and link on Stratus. 
+#
+#  case "$target" in
+#  alpha*-dec-osf*)  
+#    if test $CXX = cxx; then
+#      CXXFLAGS="-tweak ${CXXFLAGS}"
+#    fi
+#  ;;
+#esac
 
 #
 #
