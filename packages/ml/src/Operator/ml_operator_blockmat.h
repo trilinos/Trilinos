@@ -17,6 +17,7 @@ struct ML_Operator_blockmat_data {
   int (*Ke_matvec)(void *, int, double *, int, double *);
   int (*Ke_getrow)(void *,int,int*,int,int*,double*,int*);
   void *Ke_matvec_data, *Ke_getrow_data, *Ke_comm_data;
+  double *Ke_diag;
 
   /* M functions for matvec, getrow. NOTE: it is assumed    */
   /* that M's communication is identical to Ke's.           */
@@ -24,6 +25,7 @@ struct ML_Operator_blockmat_data {
   int (*M_matvec)(void *, int, double *, int, double *);
   int (*M_getrow)(void *,int,int*,int,int*,double*,int*);
   void *M_matvec_data, *M_getrow_data;
+  double *M_diag;
 
   int N_Ke, Nghost;
   int *cols;         /* work vectors for block matrix getrow */

@@ -247,7 +247,8 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   ML_Operator_blockmat_data = (struct ML_Operator_blockmat_data *) AZ_allocate(
 				       sizeof(struct ML_Operator_blockmat_data));
-
+  ML_Operator_blockmat_data->Ke_diag = NULL;
+  ML_Operator_blockmat_data->M_diag  = NULL;
   ML_Operator_blockmat_data->N_Ke = Ke->invec_leng;
   Nghost = 0;
   if (Ke->getrow->pre_comm != NULL) {
@@ -339,8 +340,10 @@ void  ML_Operator_blockmatdata_Destroy(void *data)
 
   temp  = (struct ML_Operator_blockmat_data *) data;
   if (temp != NULL) {
-    ML_free(temp->cols);
-    ML_free(temp->vals);
+    if (temp->cols != NULL) ML_free(temp->cols);
+    if (temp->vals != NULL) ML_free(temp->vals);
+    if (temp->Ke_diag != NULL) ML_free(temp->Ke_diag);
+    if (temp->M_diag != NULL ) ML_free(temp->M_diag);
     ML_free(temp);
   }
 }
