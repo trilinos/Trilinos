@@ -39,7 +39,8 @@ AztecOO_StatusTestResNorm::AztecOO_StatusTestResNorm(const Epetra_Operator & Ope
     resnormtype_(TwoNorm),
     scaletype_(NormOfInitRes),
     scalenormtype_(TwoNorm),
-    weights_(0),
+    resweights_(0),
+    scaleweights_(0),
     scalevalue_(1.0),
     resvalue_(0.0),
     status_(Unchecked),
@@ -67,7 +68,7 @@ int AztecOO_StatusTestResNorm::DefineResForm( ResType TypeOfResidual, NormType T
 
   restype_ = TypeOfResidual;
   resnormtype_ = TypeOfNorm;
-  weights_ = Weights;
+  resweights_ = Weights;
 
   // These conditions force the residual vector to be computed
   if (restype_==Explicit ||
@@ -86,7 +87,7 @@ int AztecOO_StatusTestResNorm::DefineScaleForm(ScaleType TypeOfScaling, NormType
 
   scaletype_ = TypeOfScaling;
   scalenormtype_ = TypeOfNorm;
-  weights_ = Weights;
+  scaleweights_ = Weights;
   scalevalue_ = ScaleValue;
 
   // These conditions force the residual vector to be computed
@@ -107,8 +108,8 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
 {
 
   Epetra_Vector * crv = dynamic_cast<Epetra_Vector *>(CurrentResVector);
-  // This section computes the norm of the residual vector
 
+  // This section computes the norm of the residual vector
   if (restype_==Implicit && resnormtype_==TwoNorm && CurrentResNormEst!=-1.0) 
     resvalue_ = CurrentResNormEst;
   else if (crv==0) { // Cannot proceed because there is no norm est or res vector
@@ -121,20 +122,53 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
     // Compute explicit residual
     operator_.Apply(lhs_, *localresvector_);
     localresvector_->Update(1.0, rhs_, -1.0); // localresvector_ = rhs_ - operator_* lhs_
+    if (resweights_!=0) { // Check if we should scale the vector
+      // localresvector_ = resweights_ * localresvector_
+      localresvector_->Multiply(1.0, *resweights_, *localresvector_, 0.0);
+    }
     resvalue_ = ComputeNorm(*localresvector_, resnormtype_);
   }
   else {
     curresvecexplicit_ = false;
-    resvalue_ = ComputeNorm(*crv, resnormtype_);
+    if (resweights_!=0) { // Check if we should scale the vector
+      if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
+      // localresvector_ = resweights_ * localresvector_
+      localresvector_->Multiply(1.0, *resweights_, *crv, 0.0);
+      resvalue_ = ComputeNorm(*localresvector_, resnormtype_);
+    }
+    else
+      resvalue_ = ComputeNorm(*crv, resnormtype_);
   }
 
+
+  // Compute scaling term (done once)
   if (firstcallCheckStatus_) {
-    if (scaletype_==NormOfRHS) scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
-    else if (scaletype_==NormOfInitRes) 
+    if (scaletype_==NormOfRHS) {
+      if (scaleweights_!=0) { // Check if we should scale the vector
+	if (localresvector_==0) localresvector_ = new Epetra_Vector(rhs_.Map());
+	// localresvector = scaleweights_ * rhs_
+	localresvector_->Multiply(1.0, *scaleweights_, rhs_, 0.0);
+	scalevalue_ = ComputeNorm(*localresvector_, resnormtype_);
+      }
+      else {
+	scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
+      }
+    }
+    else if (scaletype_==NormOfInitRes) {
       if (restype_==Implicit && scalenormtype_==TwoNorm && CurrentResNormEst!=-1.0) 
 	scalevalue_ = CurrentResNormEst;
-      else
-	scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
+      else {
+	if (scaleweights_!=0) { // Check if we should scale the vector
+	  if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
+	  // weightedrhs = scaleweights_ * initial residual
+	  localresvector_->Multiply(1.0, *scaleweights_, *crv, 0.0);
+	  scalevalue_ = ComputeNorm(*localresvector_, resnormtype_);
+	}
+	else {
+	  scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
+	}
+      }
+    }
     if (scalevalue_==0.0) {
       status_ = Failed;
       return(status_);
@@ -167,7 +201,8 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   PrintStatus(stream, status_);
-    stream << "(";
+  stream << "(";
+  if (resweights_!=0) stream << "Weighted ";
   stream << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
   stream << ((curresvecexplicit_) ? " Exp" : " Imp");
   stream << " Res Vec) ";
@@ -177,6 +212,7 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     stream << " (User Scale)";
   else {
     stream << "(";
+    if (scaleweights_!=0) stream << "Weighted ";
     stream << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
     if (scaletype_==NormOfInitRes)
       stream << " Res0";

@@ -236,8 +236,11 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
   //! Type of norm to use on scaling vector (one, two or infinity)
   NormType scalenormtype_;
   
-  //! Vector of weights
-  Epetra_Vector * weights_;
+  //! Vector of weights that will be applied the residual vector
+  Epetra_Vector * resweights_;
+  
+  //! Vector of weights that will be applied the scale vector
+  Epetra_Vector * scaleweights_;
   
   //! Scale value.
   double scalevalue_;
