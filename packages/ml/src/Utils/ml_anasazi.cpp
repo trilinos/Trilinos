@@ -17,12 +17,14 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "AnasaziPetraInterface.hpp"
-#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBasicSort.hpp"
+#include "AnasaziOutputManager.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziReturnType.hpp"
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziMatrix.hpp"
 #include "AnasaziOperator.hpp"
 
 #include "ml_epetra_utils.h"
@@ -30,7 +32,7 @@
 #include "ml_anasazi.h"
 #include "Teuchos_ParameterList.hpp"
 
-void Orthogonalize(Anasazi::PetraVec<double> & vec)
+void Orthogonalize(Anasazi::EpetraMultiVec & vec)
 {
 
   int NumVectors = vec.NumVectors();
@@ -75,7 +77,7 @@ enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
 // ================================================ ====== ==== ==== == =
 //! ML/Anasazi matrix for matrix-vector product.
 /*! Anasazi requires the input matrix to be derived from class
- * Anasazi::Matrix<TYPE> (here TYPE is double).
+ * Anasazi::Operator<TYPE> (here TYPE is double).
  *
  * This class wraps a given Epetra_RowMatrix into an Anasazi matrix. As
  * Epetra_RowMatrix can perform a multiplication by A, as well as by A^T, the
@@ -89,8 +91,8 @@ enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
  * Optionally, the matrix can be scaled by the diagonal.
  *
  */
-template <class TYPE> 
-class MLMat : public virtual Matrix<TYPE> {
+
+class MLMat : public virtual Operator<double> {
 
 public:
   //! Default constructor
@@ -117,8 +119,8 @@ public:
   ~MLMat();
 
   //! Applies the flavor of ML/Anasazi matrix to Anasazi::Vector x, stores the result in y.
-  ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
-			   MultiVec<TYPE>& y ) const;
+  ReturnType Apply ( const MultiVec<double>& x, 
+		     MultiVec<double>& y ) const;
 
   //! Sets matrix operation.
   void SetMatOp(const MLMatOp MatOp) 
@@ -127,11 +129,12 @@ public:
   }
 
   //! Sets the diagonal scaling.
-  void SetDiagScaling(const bool UseDiagScaling) 
+  // NOTE:  This function should not be used if UseDiagScaling_ is const.
+/*  void SetDiagScaling(const bool UseDiagScaling) 
   {
     UseDiagScaling_ = UseDiagScaling;
   }
-  
+*/  
 private:
   const Epetra_RowMatrix& Mat_;
   MLMatOp MatOp_;
@@ -146,8 +149,8 @@ private:
   ML_Smoother* smoother_;
 };
 
-template <class TYPE>
-MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
+
+MLMat::MLMat(const Epetra_RowMatrix & Matrix,
 		   const MLMatOp MatOp, const bool UseDiagScaling,
 		   ML* ml, ML_Smoother* smoother) 
   : Mat_(Matrix),
@@ -187,8 +190,7 @@ MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
 
 // ================================================ ====== ==== ==== == =
 
-template <class TYPE>
-MLMat<TYPE>::~MLMat() 
+MLMat::~MLMat() 
 {
   if( UseDiagScaling_ ) delete Diagonal_;
   if( tmp_ )  delete tmp_;
@@ -197,13 +199,12 @@ MLMat<TYPE>::~MLMat()
 
 // ================================================ ====== ==== ==== == =
 
-template <class TYPE>
-ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
-				      MultiVec<TYPE>& y ) const 
+ReturnType MLMat::Apply ( const MultiVec<double>& x, 
+				MultiVec<double>& y ) const 
 {
 
   int info = 0;
-  MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+  MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector * vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector * vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
@@ -213,7 +214,7 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   double ** tmp_view, ** x_view, ** y_view, * mask_view;
   
   if( tmp_ == 0 ) {
-    const_cast<MLMat<TYPE> *>(this)->tmp_ = new Epetra_MultiVector(*vec_x);
+    const_cast<MLMat *>(this)->tmp_ = new Epetra_MultiVector(*vec_x);
   }
   
   // extract views for x and tmp_
@@ -414,76 +415,88 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   bool PrintCurrentStatus =  List.get("eigen-analysis: print current status", false);
 
   /* ********************************************************************** */
-  /* view mode for PetraVectors                                             */
+  /* view mode for EpetraMultiVectors                                             */
   /* ********************************************************************** */
   
   int NumBlocks = EigenVectors.NumVectors();
 
-  int * indices = new int[NumBlocks];
+  std::vector<int> indices( NumBlocks );
   for( int i=0 ; i<NumBlocks ; ++i ) indices[i] = i;
   
-  Anasazi::PetraVec<double> Vectors(View,EigenVectors,indices,NumBlocks);
+  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> Vectors =
+    Teuchos::rcp( new Anasazi::EpetraMultiVec(View,EigenVectors,indices) );
+  Vectors->MvRandom();
   
-  delete [] indices;
-
   /* ********************************************************************** */
   /* Perform required action                                                */
   /* ********************************************************************** */
 
-  int step = restarts*length*BlockSize;
-  
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat(*RowMatrix,MatOp,UseDiagScaling,ml);
+  Teuchos::RefCountPtr<MLMat> Amat =
+    Teuchos::rcp( new MLMat(*RowMatrix,MatOp,UseDiagScaling,ml) );
   
-  Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
+  typedef Anasazi::MultiVec<double> MV;
+  typedef Anasazi::Operator<double> OP;
+
+  Teuchos::ParameterList AnasaziPL;
+  AnasaziPL.set("Block Size", BlockSize);
+  AnasaziPL.set("Max Blocks", length);
+  AnasaziPL.set("Max Restarts", restarts);
+  AnasaziPL.set("Tol", tol);
+
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = 
+    Teuchos::rcp( new Anasazi::OutputManager<double>() );
+
+  // Create a sorting manager to handle the sorting of eigenvalues in the solver
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
+  
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, Vectors) );
+
+  // Inform the solver that the problem is symmetric
+  if( isSymmetric ) MyProblem->SetSymmetric(true);
+  else              MyProblem->SetSymmetric(false);
+
+  // Set the number of eigenvalues required
+  MyProblem->SetNEV( NumBlocks );
+  assert( MyProblem->SetProblem() == 0 );
 
   // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, NumBlocks, length, BlockSize, 
-						which, step, restarts);
-	
-  // Inform the solver that the problem is symmetric
-  if( isSymmetric ) MyBlockArnoldi1.setSymmetric(true);
-  else              MyBlockArnoldi1.setSymmetric(false);
-  MyBlockArnoldi1.setDebugLevel(0);
+  Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur1(MyProblem, MySort, MyOM, AnasaziPL);
 
-  //  MyBlockArnoldi1.iterate(5);
-  
   // Solve the problem to the specified tolerances or length
-  MyBlockArnoldi1.solve();
+  MyBlockKrylovSchur1.solve();
   
   // Obtain results directly for eigenvalues
-
-  double * evalr = MyBlockArnoldi1.getEvals(); 
-  double * evali = MyBlockArnoldi1.getiEvals();
+  // The vector is 2*nev in length if problem is non-symmetric
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 
   for( int i=0 ; i<NumBlocks ; ++i ) {
-    RealEigenvalues[i] = evalr[i];
-    ImagEigenvalues[i] = evali[i];
-    
+    RealEigenvalues[i] = (*evals)[i];
+    if( isSymmetric )
+      ImagEigenvalues[i] = 0.0;
+    else
+      ImagEigenvalues[i] = (*evals)[NumBlocks+i];    
   }
-  
-  delete [] evalr;
-  delete [] evali;
   
   // populate real and imaginary components of the eigenvectors
   // if the uses has passed RealEigenvalues or ImagEigenvalues not null
-
-  Anasazi::PetraVec<double> vec(EigenVectors.Map(), NumBlocks);
-
   if( RealEigenvectors && NumRealEigenvectors ) {
 
     *NumRealEigenvectors = 0;    
-    MyBlockArnoldi1.getEvecs(vec);
 
-    Orthogonalize(vec);
+    Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec *>(MyProblem->GetEvecs().get()); 
+    Orthogonalize(*evecs);
     
     int NumRows = EigenVectors.Map().NumMyPoints();
     for( int i=0 ; i<NumBlocks ; ++i ) {
       double norm;
-      vec(i)->Norm2(&norm);
+      (*evecs)(i)->Norm2(&norm);
       if( fabs(norm)>1e-8 )  {
 	for( int j=0 ; j<NumRows ; ++j ) {
-	  RealEigenvectors[(*NumRealEigenvectors)*NumRows+j] = vec[i][j];
+	  RealEigenvectors[(*NumRealEigenvectors)*NumRows+j] = (*evecs)[i][j];
 	}
 	++(*NumRealEigenvectors);
       }    
@@ -493,25 +506,27 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   if( ImagEigenvectors && NumImagEigenvectors ) {
 
     *NumImagEigenvectors=0;
-    MyBlockArnoldi1.getiEvecs(vec);
 
-    Orthogonalize(vec);
+    if ( isSymmetric ) {
+      Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec *>(MyProblem->GetEvecs().get()); 
+      Orthogonalize(*evecs);
     
-    int NumRows = EigenVectors.Map().NumMyPoints();    
-    for( int i=0 ; i<NumBlocks ; ++i ) {
-      double norm;
-      vec(i)->Norm2(&norm);
-      if( fabs(norm)>1e-8 ) {
-	for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
-	  ImagEigenvectors[(*NumImagEigenvectors)*NumRows+j] = vec[i][j];
-	}
-	++(*NumImagEigenvectors);
+      int NumRows = EigenVectors.Map().NumMyPoints();    
+      for( int i=0 ; i<NumBlocks ; ++i ) {
+        double norm;
+        (*evecs)(NumBlocks+i)->Norm2(&norm);
+        if( fabs(norm)>1e-8 ) {
+	  for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
+	    ImagEigenvectors[(*NumImagEigenvectors)*NumRows+j] = (*evecs)[i][j];
+	  }
+	  ++(*NumImagEigenvectors);
+        }
       }
     }
   }
   
   // Output results to screen
-  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
+  if( PrintCurrentStatus && MyPID == 0 ) MyBlockKrylovSchur1.currentStatus();
 
   /* ********************************************************************** */
   /* Scale vectors (real and imag part) so that max is 1 for each of them   */
@@ -580,44 +595,56 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   /* First compute A + A^T to get the real bound                            */
   /* ********************************************************************** */
   
-  Anasazi::PetraVec<double> Vectors(RowMatrix->RowMatrixRowMap(), 1);
-  Vectors.MvRandom();
+  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> Vectors =
+    Teuchos::rcp( new Anasazi::EpetraMultiVec(RowMatrix->RowMatrixRowMap(), 1) );
+  Vectors->MvRandom();
   
-  int step = restarts*length*1;
-  
+  typedef Anasazi::MultiVec<double> MV;
+  typedef Anasazi::Operator<double> OP;
+
+  Teuchos::ParameterList AnasaziPL;
+  AnasaziPL.set("Block Size", 1);
+  AnasaziPL.set("Max Blocks", length);
+  AnasaziPL.set("Max Restarts", restarts);
+  AnasaziPL.set("Tol", tol);
+
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat(*RowMatrix,A_PLUS_AT_MATRIX,UseDiagScaling);
+  Teuchos::RefCountPtr<MLMat> Amat = 
+    Teuchos::rcp( new MLMat(*RowMatrix,A_PLUS_AT_MATRIX,UseDiagScaling) );
   
-  Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = 
+    Teuchos::rcp( new Anasazi::OutputManager<double>() );
+
+  // Create a sorting manager to handle the sorting of eigenvalues in the solver
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>("LM") );
+  
+  // Create the eigenproblem
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, Vectors) );
+  MyProblem->SetSymmetric(true);
+  MyProblem->SetNEV( 1 );
+  assert( MyProblem->SetProblem() == 0 );
 
   // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, 1, length, 1, 
-						"LM", step, restarts);
+  Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur1(MyProblem, MySort, MyOM, AnasaziPL);
 
-  // Inform the solver that the problem is symmetric
-  MyBlockArnoldi1.setSymmetric(true);
-  MyBlockArnoldi1.setDebugLevel(0);
-
-  //  MyBlockArnoldi.iterate(5);
-  
   // Solve the problem to the specified tolerances or length
-  MyBlockArnoldi1.solve();
+  MyBlockKrylovSchur1.solve();
   
   // Obtain results directly
+  Teuchos::RefCountPtr<std::vector<double> > evalr = MyProblem->GetEvals();
 
-  double * evalr = MyBlockArnoldi1.getEvals(); 
+  MaxReal = (*evalr)[0] / 2;
 
-  MaxReal = evalr[0] / 2;
+  Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur1.GetRitzResiduals();
 
-  double * residuals  = MyBlockArnoldi1.getResiduals();
   if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Ritz Residual for A^T + A = " << residuals[0] << endl;
+    cout << "ML_Anasazi : Ritz Residual for A^T + A = " << (*residuals)[0] << endl;
   }
 
-  delete [] evalr;
-  delete [] residuals;  
-  
-  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
+  if( PrintCurrentStatus && MyPID == 0 ) MyBlockKrylovSchur1.currentStatus();
 
   /* ********************************************************************** */
   /* First compute A - A^T to get the real bound                            */
@@ -629,40 +656,36 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
       cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
     }
     
-    Vectors.MvRandom();
+    Vectors->MvRandom();
   
     // Call the ctor that calls the petra ctor for a matrix
-    MLMat<double> Amat2(*RowMatrix,A_MINUS_AT_MATRIX,UseDiagScaling);
+    Teuchos::RefCountPtr<MLMat> Amat2 = 
+      Teuchos::rcp( new MLMat(*RowMatrix,A_MINUS_AT_MATRIX,UseDiagScaling) );
     
-    Anasazi::Eigenproblem<double> MyProblem2(&Amat2, &Vectors);
+    Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem2 =
+      Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat2, Vectors) );
+    MyProblem2->SetSymmetric(false);
+    MyProblem2->SetNEV( 1 );
+    assert( MyProblem2->SetProblem() == 0 );
     
     // Initialize the Block Arnoldi solver
-    Anasazi::BlockArnoldi<double> MyBlockArnoldi2(MyProblem2, tol, 1, length, 1, 
-						  "LM", step, restarts);
-    
-    // Inform the solver that the problem is symmetric
-    MyBlockArnoldi2.setSymmetric(false);
-    MyBlockArnoldi2.setDebugLevel(0);
-    
-    MyBlockArnoldi2.iterate(5);
+    Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur2(MyProblem2, MySort, MyOM, AnasaziPL);
     
     // Solve the problem to the specified tolerances or length
-    MyBlockArnoldi2.solve();
+    MyBlockKrylovSchur2.solve();
     
     // Obtain results directly
-    
-    double * evali = MyBlockArnoldi2.getiEvals();
-    
-    MaxImag = fabs(evali[0] / 2);
+    // The vector is 2*nev in length if problem is non-symmetric
+    Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem2->GetEvals();
+       
+    MaxImag = fabs((*evals)[1] / 2);
 
-    delete [] evali;
-    
-    residuals  = MyBlockArnoldi2.getResiduals();
+    Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur2.GetRitzResiduals();
     if( output > 5 && MyPID == 0 ) {
-      cout << "ML_Anasazi : Ritz Residual for A^T - A = " << residuals[0] << endl;
+      cout << "ML_Anasazi : Ritz Residual for A^T - A = " << (*residuals)[0] << endl;
     }
     
-    if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi2.currentStatus();
+    if( PrintCurrentStatus && MyPID == 0 ) MyBlockKrylovSchur2.currentStatus();
 
     if( output > 5 && MyPID == 0 ) {
       cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << endl;
@@ -809,10 +832,26 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
   /* First compute A + A^T to get the real bound                            */
   /* ********************************************************************** */
   
-  Anasazi::PetraVec<double> Vectors(RowMatrix->RowMatrixRowMap(), 1);
-  Vectors.MvRandom();
+  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> Vectors =
+    Teuchos::rcp( new Anasazi::EpetraMultiVec(RowMatrix->RowMatrixRowMap(), 1) );
+  Vectors->MvRandom();
   
-  int step = restarts*length*1;
+  typedef Anasazi::MultiVec<double> MV;
+  typedef Anasazi::Operator<double> OP;
+
+  Teuchos::ParameterList AnasaziPL;
+  AnasaziPL.set("Block Size", 1);
+  AnasaziPL.set("Max Blocks", length);
+  AnasaziPL.set("Max Restarts", restarts);
+  AnasaziPL.set("Tol", Tolerance);
+
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = 
+    Teuchos::rcp( new Anasazi::OutputManager<double>() );
+
+  // Create a sorting manager to handle the sorting of eigenvalues in the solver
+  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>("LM") );
   
   // Call the ctor that calls the petra ctor for a matrix
 
@@ -820,44 +859,41 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
   if( UseDiagonalScaling == ML_TRUE ) flag = true;
   
   // smoother is generally 0 (NULL)
-  MLMat<double> MLMatrix(*RowMatrix,SMOOTHED_MATRIX,flag,0,smoother);
+  Teuchos::RefCountPtr<MLMat> MLMatrix =
+    Teuchos::rcp( new MLMat(*RowMatrix,SMOOTHED_MATRIX,flag,0,smoother) );
   
-  Anasazi::Eigenproblem<double> MyProblem(&MLMatrix, &Vectors);
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(MLMatrix, Vectors) );
+  MyProblem->SetNEV( 1 );
 
+  // Inform the problem that it is symmetric
+  if( IsProblemSymmetric == ML_TRUE ) MyProblem->SetSymmetric(true);
+  else                                MyProblem->SetSymmetric(false);
+
+  assert( MyProblem->SetProblem() == 0 );
+  
   // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, Tolerance, 1, length, 1, 
-						"LM", step, restarts);
+  Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur(MyProblem, MySort, MyOM, AnasaziPL);
 
-  // Inform the solver that the problem is symmetric
-  if( IsProblemSymmetric == ML_TRUE ) MyBlockArnoldi.setSymmetric(true);
-  else                                MyBlockArnoldi.setSymmetric(false);
-  
-  MyBlockArnoldi.setDebugLevel(0);
-
-  //  MyBlockArnoldi.iterate(5);
-  
   // Solve the problem to the specified tolerances or length
-  MyBlockArnoldi.solve();
+  MyBlockKrylovSchur.solve();
   
   // Obtain results direc3tly
 
-  double* evalr = MyBlockArnoldi.getEvals();
-  double* evali = MyBlockArnoldi.getiEvals(); 
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 
-  *LambdaMax = sqrt(evalr[0]*evalr[0] + evali[0]*evali[0]);
+  if ( IsProblemSymmetric == ML_TRUE )
+    *LambdaMax = sqrt((*evals)[0]*(*evals)[0]);
+  else
+    *LambdaMax = sqrt((*evals)[0]*(*evals)[0] + (*evals)[1]*(*evals)[1]);
   
   if (verbose) {
-    double * residuals  = MyBlockArnoldi.getResiduals();
-    cout << "ML_Anasazi : Ritz Residual = " << residuals[0] << endl;
-    delete [] residuals;
-   
+    Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur.GetRitzResiduals();
+    cout << "ML_Anasazi : Ritz Residual = " << (*residuals)[0] << endl;
   }
   
   delete RowMatrix;
 
-  delete [] evalr;
-  delete [] evali;
-  
   return 0;
  
 }
