@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Introduction</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,37 +19,30 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_usage.html">Next</a>&nbsp; |&nbsp; <a href="ug.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Introduction</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<h2>
+<a NAME="Introduction"></a>Introduction</h2>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Introduction"></A>Introduction</H2>
-Over the past decade, the use of parallel computing to solve large-scale
-scientific problems has grown immensely. Many traditional numerical methods,
-such as finite difference and finite element methods, have been shown to
-be effective and efficient in parallel computing environments; see [<A HREF="ug_refs.html#attaway">Attaway
-et al.</A>] and [<A HREF="ug_refs.html#mpsalsa-gordonbell">Devine et al.</A>]
-for two examples. They have typically been implemented in an MIMD fashion,
-with portions of the problem domain being assigned uniquely to individual
-processors. This static decomposition of the domain is done as a pre-processing
-step to the actual computation either by the application itself or by some
-static partitioning tool such as <A HREF="ug_refs.html#chaco">Chaco</A>,
-<A HREF="ug_refs.html#parmetis">Metis</A>, or <A HREF="ug_refs.html#jostle">Jostle</A>.
-
-<P>As the desire for simulations with greater complexity and resolution
+<blockquote><a href="#Motivation">Project Motivation</a>
+<br><a href="#Load-Balancing Tools">Load-Balancing Tools</a>
+<br><a href="#Migration-Help Tools">Migration-Help Tools</a></blockquote>
+<a NAME="Motivation"></a>Over the past decade, the use of parallel computing
+to solve large-scale scientific problems has grown immensely. Many traditional
+numerical methods, such as finite difference and finite element methods,
+have been shown to be effective and efficient in parallel computing environments;
+see [<a href="ug_refs.html#attaway">Attaway et al.</a>] and [<a href="ug_refs.html#mpsalsa-gordonbell">Devine
+et al.</a>] for two examples. They have typically been implemented in an
+MIMD fashion, with portions of the problem domain being assigned uniquely
+to individual processors. This static decomposition of the domain is done
+as a pre-processing step to the actual computation either by the application
+itself or by some static partitioning tool such as <a href="ug_refs.html#chaco">Chaco</a>,
+<a href="ug_refs.html#parmetis">Metis</a>,
+or <a href="ug_refs.html#jostle">Jostle</a>.
+<p>As the desire for simulations with greater complexity and resolution
 arises, new numerical schemes have been developed, such as adaptive numerical
 methods, multiphysics simulations, and adaptive physics models. In these
 applications, the amount of work per processor can vary over time. For
@@ -51,8 +52,7 @@ or lower accuracy in a region of the problem domain. The changing processor
 work-loads make a static decomposition of the domain insufficient; a dynamic
 load-balancing strategy is needed to readjust work- loads as the computation
 proceeds.
-
-<P>Several important differences exist between static and dynamic load-balancing
+<p>Several important differences exist between static and dynamic load-balancing
 strategies. Dynamic strategies are complicated by the fact that they must
 be implemented in parallel without interfering with the scalability of
 the application. Thus, they must use little memory and execute quickly.
@@ -64,8 +64,7 @@ should produce only small changes in the decomposition so that little data
 movement is required to establish the new decomposition. Most static decomposition
 strategies do not explicitly enforce this incremental property; good dynamic
 strategies must either implicitly or explicitly enforce it.
-
-<P>In the past, most dynamic load-balancing strategies have been implemented
+<p>In the past, most dynamic load-balancing strategies have been implemented
 on a case-by-case basis within application programs. Typically, a single
 strategy was implemented in an application, relying heavily upon the data
 structures of the particular application. This approach has two disadvantages.
@@ -75,10 +74,9 @@ Second, because the application developer is usually interested more in
 the physics of the simulation than in the performance of dynamic load-balancing
 algorithms, only one algorithm is implemented and comparisons to other
 load-balancing methods are not performed to find, perhaps, a more effective
-strategy.&nbsp; See [<A HREF="ug_refs.html#hendrickson-devine">Hendrickson
-and Devine</A>] for a more thorough discussion of these issues.
-
-<P>The goal of the Zoltan Dynamic Load-Balancing Library project is to
+strategy.&nbsp; See [<a href="ug_refs.html#hendrickson-devine">Hendrickson
+and Devine</a>] for a more thorough discussion of these issues.
+<p>The goal of the Zoltan Dynamic Load-Balancing Library project is to
 provide application developers a general-purpose dynamic load-balancing
 tool that can be easily used by a variety of applications. The library
 consists of several different dynamic load-balancing algorithms and is
@@ -97,123 +95,119 @@ select from a number of load-balancing algorithms and invoke load balancing
 at the appropriate places in its computation. While some extra memory and
 function-call overhead is required by this call-back protocol, the generality
 and ease of use of the library obtained by it is well justified.
-
-<P>The Zoltan library consists of two parts: dynamic load-balancing tools
+<p>The Zoltan library consists of two parts: dynamic load-balancing tools
 that compute new decompositions based on current processor work loads,
 and migration-help tools that perform the communication needed to move
 data to establish a new decomposition. Each set of tools is described below.
-
-<P>Also included with the library package is a test driver, <I>zdrive</I>,
+<p>Also included with the library package is a test driver, <i>zdrive</i>,
 which allows developers to test changes to the library without having to
 compile the library into and run a large simulation code. For information
-on how to build and use <I>zdrive</I>, see the <A HREF="../dev_html/dev_driver.html">Test
-Driver</A> section of the <A HREF="../dev_html/dev.html">Zoltan Developer's
-Guide</A>.
-<H2>
-<A NAME="Load-Balancing Tools"></A>Load-Balancing Tools</H2>
+on how to build and use <i>zdrive</i>, see the <a href="../dev_html/dev_driver.html">Test
+Driver</a> section of the <a href="../dev_html/dev.html">Zoltan Developer's
+Guide</a>.
+<h2>
+<a NAME="Load-Balancing Tools"></a>Load-Balancing Tools</h2>
 Within the Zoltan library, many algorithms for dynamically determining
 new processor decompositions can be implemented. Information needed by
 the algorithms is obtained through queries to the application's data structures
 using application defined and registered query routines. Query routines
-provided include geometric queries (supplying information such as
-coordinates for objects), graph-based queries (supplying such information
-as edge lists for objects in the communication graph of the computation),
-and tree-based queries (supplying information about the refinement tree of
-an adaptive mesh-refinement application).
-
-<P>A typical interaction between an application and the dynamic load-balancing
-tools is shown in the <A HREF="#lb_interaction.gif">figure</A> below. Through
-a call to <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
-the application creates a load-balancing data structure, which is storage space
-to hold pointers to registered functions and load-balancing data. This
-structure is passed to a number of load-balancing functions. The application
+provided include geometric queries (supplying information such as coordinates
+for objects), graph-based queries (supplying such information as edge lists
+for objects in the communication graph of the computation), and tree-based
+queries (supplying information about the refinement tree of an adaptive
+mesh-refinement application).
+<p>A typical interaction between an application and the dynamic load-balancing
+tools is shown in the <a href="#lb_interaction.gif">figure</a> below. Through
+a call to <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+the application creates a load-balancing data structure, which is storage
+space to hold pointers to registered functions and load-balancing data.
+This structure is passed to a number of load-balancing functions. The application
 then selects a load-balancing method to be used (Recursive Coordination
-Bisection, "RCB," in the example) through a call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+Bisection, "RCB," in the example) through a call to <b><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
 Several query functions needed by the RCB algorithm are registered through
-calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
+calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.
 These query functions include application-defined functions to return the
-number of objects on the processor (<I>user_return_num_elems_fn</I>), a
-list of the objects (<I>user_return_elem_list_fn</I>), and the coordinates
-for a given object (<I>user_return_coords_fn</I>). After some computation,
-the application calls <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+number of objects on the processor (<i>user_return_num_elems_fn</i>), a
+list of the objects (<i>user_return_elem_list_fn</i>), and the coordinates
+for a given object (<i>user_return_coords_fn</i>). After some computation,
+the application calls <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
 to compute a new decomposition on the processors.
-
-<P>The load-balancing library then follows pointers to the registered query
+<p>The load-balancing library then follows pointers to the registered query
 functions to build the data structures needed for the RCB algorithm. An
 array of data is built, with one entry for each object owned by the processor.
-The number of objects is determined by following the <I>Get_Num_Obj</I>
-pointer to the <I>user_return_num_elems_fn</I>. Storage is allocated for
+The number of objects is determined by following the <i>Get_Num_Obj</i>
+pointer to the <i>user_return_num_elems_fn</i>. Storage is allocated for
 the objects, and lists of the objects' identification numbers are obtained
-by following the <I>Get_Obj_List</I> function pointer to the <I>user_return_elem_list_fn</I>.
+by following the <i>Get_Obj_List</i> function pointer to the <i>user_return_elem_list_fn</i>.
 Then, for each object, the object's coordinates are obtained through calls
-through the <I>Get_Geom</I> function pointer to the registered function
-<I>user_return_coords_fn</I>. Once the data structures are built, the load-balancing
-library can perform the RCB decomposition and return arrays of information
-describing the new decomposition to the application.
-<BR>&nbsp;
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE><A NAME="lb_interaction.gif"></A>Application&nbsp;
-<TABLE BORDER=2 WIDTH="80%" NOSAVE >
-<TR>
-<TD>.<TT>..</TT>&nbsp;
-<BR><TT>/* <I>Register method and application query functions</I> */</TT>&nbsp;
-<BR><TT>lb = LB_Create(MPI_COMM_WORLD);</TT>&nbsp;
-<BR><TT>LB_Set_Method(lb, "RCB");</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn,NULL);</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>/* <I>Call the load balancer</I> */</TT>&nbsp;
-<BR><TT>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);</TT></TD>
-</TR>
-</TABLE>
-&nbsp;</TD>
-</TR>
+through the <i>Get_Geom</i> function pointer to the registered function
+<i>user_return_coords_fn</i>.
+Once the data structures are built, the load-balancing library can perform
+the RCB decomposition and return arrays of information describing the new
+decomposition to the application.
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td NOSAVE><a NAME="lb_interaction.gif"></a>Application&nbsp;
+<table BORDER=2 WIDTH="80%" NOSAVE >
+<tr>
+<td>.<tt>..</tt>
+<br><tt>/* <i>Register method and application query functions</i> */</tt>
+<br><tt>lb = LB_Create(MPI_COMM_WORLD);</tt>
+<br><tt>LB_Set_Method(lb, "RCB");</tt>
+<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</tt>
+<br><tt>...</tt>
+<br><tt>/* <i>Call the load balancer</i> */</tt>
+<br><tt>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);</tt></td>
+</tr>
+</table>
+&nbsp;</td>
+</tr>
 
-<TR>
-<TD>
-<CENTER><IMG SRC="figures/arrow.gif" HEIGHT=48 WIDTH=112></CENTER>
-</TD>
-</TR>
+<tr>
+<td>
+<center><img SRC="figures/arrow.gif" height=48 width=112></center>
+</td>
+</tr>
 
-<TR>
-<TD>
-<DIV ALIGN=right>Dynamic Load Balancer</DIV>
-
-<DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
-<TR>
-<TD><TT>...</TT>&nbsp;
-<BR><TT>/* <I>call registered functions to build LB data structures</I>
-*/</TT>&nbsp;
-<BR><TT>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);&nbsp;</TT>&nbsp;
-
-<P><TT>/* <I>allocate memory for object global and local IDs </I>*/</TT>&nbsp;
-<BR><TT>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids, &amp;ierr);&nbsp;</TT>&nbsp;
-<BR><TT>for (i = 0; i &lt; num_objs; i++) {</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp; lb->Data[i].Global_Tag = global_ids[i];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp; lb->Data[i].Local_Tag = local_ids[i];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids[i], lb->Data[i].Coords, &amp;ierr);</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
-<BR><TT>/* <I>perform balancing on lb->Data</I> */</TT>&nbsp;
-<BR><TT>...</TT></TD>
-</TR>
-</TABLE></DIV>
-&nbsp;&nbsp;</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Example of interaction between the application
-and the load balancer.</I></CAPTION>
-</TABLE>
+<tr>
+<td>
+<div align=right>Dynamic Load Balancer</div>
 &nbsp;
-<H2>
-<A NAME="Migration-Help Tools"></A>Migration-Help Tools</H2>
+<div ALIGN=right><table BORDER=2 WIDTH="80%" NOSAVE >
+<tr>
+<td><tt>...</tt>
+<br><tt>/* <i>call registered functions to build LB data structures</i>
+*/</tt>
+<br><tt>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);&nbsp;</tt>
+<p><tt>/* <i>allocate memory for object global and local IDs </i>*/</tt>
+<br><tt>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids, &amp;ierr);&nbsp;</tt>
+<br><tt>for (i = 0; i &lt; num_objs; i++) {</tt>
+<br><tt>&nbsp;&nbsp; lb->Data[i].Global_Tag = global_ids[i];</tt>
+<br><tt>&nbsp;&nbsp; lb->Data[i].Local_Tag = local_ids[i];</tt>
+<br><tt>&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids[i], lb->Data[i].Coords, &amp;ierr);</tt>
+<br><tt>}</tt>
+<br><tt>/* <i>perform balancing on lb->Data</i> */</tt>
+<br><tt>...</tt></td>
+</tr>
+</table></div>
+&nbsp;</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Example of interaction between the application
+and the load balancer.</i></caption>
+</table>
+
+<h2>
+<a NAME="Migration-Help Tools"></a>Migration-Help Tools</h2>
 Data migration is, unfortunately, an extremely application-dependent part
 of establishing new decompositions. It involves gathering objects from
 the data structures on one processor, sending those objects to a new processor,
@@ -224,8 +218,7 @@ For example, in a finite element application, the "objects" used in load
 balancing may be elements. But when elements are migrated to new processors,
 the nodes associated with those elements must also be sent to the new processors,
 increasing the dependence of data migration on the application.
-
-<P>A general-purpose load-balancing library can not perform all the operations
+<p>A general-purpose load-balancing library can not perform all the operations
 required for data migration in all applications. However, it can assist
 an application with the communication required for data migration. As a
 result of the load-balancing algorithm, the library knows where data must
@@ -235,97 +228,96 @@ specify how to gather data associated with migrating objects and how to
 insert that data into the new processor's data structures. Following the
 registered query-function design of the dynamic load-balancing tools, migration-help
 tools can then be provided to the application. An example of the interaction
-between the application and the migration-help tools is shown in the <A HREF="#mig_interaction.gif">figure</A>
+between the application and the migration-help tools is shown in the <a href="#mig_interaction.gif">figure</a>
 below. The application registers three additional query functions: a function
 that returns the size (in bytes) of the data buffer needed to gather all
-of one object's data (<I>user_elem_size_fn</I>), a function that packs
-one object's data into a buffer (<I>user_pack_one_elem_fn</I>), and a function
+of one object's data (<i>user_elem_size_fn</i>), a function that packs
+one object's data into a buffer (<i>user_pack_one_elem_fn</i>), and a function
 that unpacks one object's data and inserts it into the new processor's
-data structure (<I>user_unpack_one_elem_fn</I>).
-
-<P>The migration-help tools then use these registered functions with the
+data structure (<i>user_unpack_one_elem_fn</i>).
+<p>The migration-help tools then use these registered functions with the
 results of the load-balancing algorithm to move data between processors.
-The migration-help tools follow the <I>Get_Obj_Data_Size</I> function pointer
-to <I>user_elem_size_fn</I> to obtain the size of the data buffer needed
+The migration-help tools follow the <i>Get_Obj_Data_Size</i> function pointer
+to <i>user_elem_size_fn</i> to obtain the size of the data buffer needed
 for an object's data. They allocate appropriately sized import and export
-buffers. Through repeated calls to the <I>Pack_Object</I> function (<I>user_pack_one_elem_fn</I>),
+buffers. Through repeated calls to the <i>Pack_Object</i> function (<i>user_pack_one_elem_fn</i>),
 the migration-help tools fill the export buffer with data for each object
 to be exported. The migration-help tools then send the export buffer data
 to other processors and receive import data from other processors. Then,
 for each object imported, the migration help tools call the registered
-<I>Unpack_Object</I> function (<I>user_unpack_one_elem_fn</I>) to unpack
-the data from the import buffer and insert it in the processor's data structure.
-Under this model, the application developer does not have to implement
-addition communication routines to perform data migration; the migration-help
-tools handle all communication required for data movement.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE><A NAME="mig_interaction.gif"></A>Application&nbsp;
-<TABLE BORDER=2 WIDTH="80%" NOSAVE >
-<TR>
-<TD><TT>...</TT>&nbsp;
-<BR><TT>/* <I>Register packing and unpacking functions</I> */</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_OBJ_SIZE_FN_TYPE,user_elem_size_fn,NULL);</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_PACK_OBJ_FN_TYPE,user_pack_one_elem_fn,NULL);</TT>&nbsp;
-<BR><TT>LB_Set_Fn(lb,LB_UNPACK_OBJ_FN_TYPE,user_unpack_one_elem_fn,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL);</TT>&nbsp;
-<BR><TT>...</TT></TD>
-</TR>
-</TABLE>
-&nbsp;</TD>
-</TR>
+<i>Unpack_Object</i>
+function (<i>user_unpack_one_elem_fn</i>) to unpack the data from the import
+buffer and insert it in the processor's data structure. Under this model,
+the application developer does not have to implement addition communication
+routines to perform data migration; the migration-help tools handle all
+communication required for data movement.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td NOSAVE><a NAME="mig_interaction.gif"></a>Application&nbsp;
+<table BORDER=2 WIDTH="80%" NOSAVE >
+<tr>
+<td><tt>...</tt>
+<br><tt>/* <i>Register packing and unpacking functions</i> */</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_SIZE_FN_TYPE,user_elem_size_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_PACK_OBJ_FN_TYPE,user_pack_one_elem_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_UNPACK_OBJ_FN_TYPE,user_unpack_one_elem_fn,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL);</tt>
+<br><tt>...</tt></td>
+</tr>
+</table>
+&nbsp;</td>
+</tr>
 
-<TR>
-<TD>
-<CENTER><IMG SRC="figures/arrow.gif" HEIGHT=48 WIDTH=112></CENTER>
-</TD>
-</TR>
+<tr>
+<td>
+<center><img SRC="figures/arrow.gif" height=48 width=112></center>
+</td>
+</tr>
 
-<TR>
-<TD>
-<DIV ALIGN=right>Migration-Help Tools</DIV>
-
-<DIV ALIGN=right><TABLE BORDER=2 COLS=1 WIDTH="80%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE><TT>...</TT>&nbsp;
-<BR><TT>size = lb->Get_Obj_Size(lb->Get_Obj_Size_Data, &amp;ierr);</TT>&nbsp;
-<BR><TT>/* <I>pack all objects for export</I> */</TT>&nbsp;
-<BR><TT>for each object i being exported</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; lb->Pack_Obj(lb->Pack_Obj_Data, exp_global_id[i],</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-exp_local_id[i], exp_procs[i], size,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-export_buf[i], &amp;ierr);&nbsp;</TT>&nbsp;
-
-<P><TT>/* <I>perform communication using map</I> */</TT>&nbsp;
-<BR><TT>communicate(lb->Comm_Map, export_buf, &amp;import_buf);</TT>&nbsp;
-
-<P><TT>/* <I>unpack all imported objects</I> */</TT>&nbsp;
-<BR><TT>for each object i received</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; lb->Unpack_Obj(lb->Unpack_Obj_Data, imp_global_id[i],</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-size, import_buf[i], &amp;ierr);</TT>&nbsp;
-<BR><TT>...</TT></TD>
-</TR>
-</TABLE></DIV>
-&nbsp;&nbsp;</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Example of interaction between the application
-and the migration-help tools.</I></CAPTION>
-</TABLE>
+<tr>
+<td>
+<div align=right>Migration-Help Tools</div>
 &nbsp;
-<BR>The migration-help tools are separate modules from the dynamic load-balancing
+<div ALIGN=right><table BORDER=2 COLS=1 WIDTH="80%" NOSAVE >
+<tr NOSAVE>
+<td NOSAVE><tt>...</tt>
+<br><tt>size = lb->Get_Obj_Size(lb->Get_Obj_Size_Data, &amp;ierr);</tt>
+<br><tt>/* <i>pack all objects for export</i> */</tt>
+<br><tt>for each object i being exported</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; lb->Pack_Obj(lb->Pack_Obj_Data, exp_global_id[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+exp_local_id[i], exp_procs[i], size,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+export_buf[i], &amp;ierr);&nbsp;</tt>
+<p><tt>/* <i>perform communication using map</i> */</tt>
+<br><tt>communicate(lb->Comm_Map, export_buf, &amp;import_buf);</tt>
+<p><tt>/* <i>unpack all imported objects</i> */</tt>
+<br><tt>for each object i received</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; lb->Unpack_Obj(lb->Unpack_Obj_Data, imp_global_id[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+size, import_buf[i], &amp;ierr);</tt>
+<br><tt>...</tt></td>
+</tr>
+</table></div>
+&nbsp;</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Example of interaction between the application
+and the migration-help tools.</i></caption>
+</table>
+
+<p>The migration-help tools are separate modules from the dynamic load-balancing
 tools. Thus, an application does not have to use the migration-help tools
 even though it uses the dynamic load-balancing tools to compute a new decomposition.
 If the application has its own migration routines, it can use them in conjunction
 with the load-balancing routines in the load-balancing library.
-<BR>&nbsp;
-
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_usage.html">Next:&nbsp; Using the Library</A>&nbsp; |&nbsp;
-<A HREF="ug.html">Previous:&nbsp; Table of Contents</A>]
-</BODY>
-</HTML>
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_usage.html">Next:&nbsp;
+Using the Library</a>&nbsp; | 
+<a href="ug.html">Previous:&nbsp; Table
+of Contents</a>]
+</body>
+</html>

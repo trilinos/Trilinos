@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Migration-Help Tools</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,52 +19,30 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Previous</a></i></b></div>
 
-   <TITLE> Zoltan Developer's Guide:  Migration-Help Tools</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="migration_help"></A>Migration-Help Tools</H2>
+<h2>
+<a NAME="migration_help"></a>Migration-Help Tools</h2>
 The migration-help tools in the Zoltan library perform communication necessary
-for data migration in the application. The routine <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+for data migration in the application. The routine <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 calls application-registered packing routines to gather data to be sent
-to other processors. It sends the data using the <A HREF="dev_util_comm.html">irregular
-communication package</A>. It then calls application-registered unpacking
+to other processors. It sends the data using the <a href="dev_util_comm.html">irregular
+communication package</a>. It then calls application-registered unpacking
 routines for each imported object to add received data to the processor's
-data structures. See the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>
+data structures. See the <a href="../ug_html/ug.html">Zoltan User's Guide</a>
 for more details on the use of and interface to the migration-help tools.
-
-<P>Implementation of the migration-help tools is completed. However, changes
-to the irregular communication package may necessitate changes in the migration-help
-tools. For example, the irregular communication package currently requires
-that the number of bytes sent is uniform for each object. Thus, for each
-call to <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
-the size of each object's data is necessarily uniform. If an application
-has data of varying sizes for objects, it must report the maximum data
-size in the <B><A HREF="../ug_html/ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
-query function. When the irregular communication package is modified to
-handle non-uniform object sizes, the <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
-function and the <B><A HREF="../ug_html/ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
-query function will have to be changed to take advantage of non-uniform
-data sizes for data migration.
-<BR>&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_fortran.html">Next:&nbsp;
-FORTRAN&nbsp;Interface</A>&nbsp; |&nbsp; <A HREF="dev_add_params.html">Previous:&nbsp;
-Parameters</A>]
-</BODY>
-</HTML>
+<p>In future releases, the migration-help tools will be updated to use
+MPI&nbsp;data types to support heterogeneous computing architectures. In
+addition, changes to the irregular communication package may necessitate
+changes in the migration-help tools.
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Next:&nbsp;
+FORTRAN Interface</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Previous:&nbsp;
+Parameters</a>]
+</body>
+</html>

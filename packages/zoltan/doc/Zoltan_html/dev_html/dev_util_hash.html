@@ -22,9 +22,7 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right>
-<h3>
-<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_util_time.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_parallel.html">Previous</a></i></b></div>
 
 <h2>
 Hash Function</h2>
@@ -34,16 +32,15 @@ of bytes.
 <blockquote><b><a href="#LB_Hash">LB_Hash</a></b>&nbsp; : hash a global
 ID into integers of a certain range</blockquote>
 
-<hr><a NAME="LB_Print_Sync_Start"></a>unsigned int<b> LB_Hash</b>(
+<hr><a NAME="LB_Hash"></a>unsigned int<b> LB_Hash</b>(
 <b><a href="dev_lb_structs.html#LB_Struct">LB_GID</a></b>
-
 <i>key</i>, int <i>n</i>);&nbsp;
 <hr>
 <p><b>LB_Hash </b>computes a hash value for a global ID. Note that this
 hash function has been optimized for 32-bit integer systems, but should&nbsp;
 work on any machine.
 <br>The current implementation uses a&nbsp; simple multiplicative algorithm
-based on Don Knuth's golden ratio method, see <i>The Art of &nbsp;Computer
+based on Don Knuth's golden ratio method, see <i>The Art of&nbsp; Computer
 Programming,</i> vol. 3.
 <br>&nbsp;
 <table WIDTH="100%" >

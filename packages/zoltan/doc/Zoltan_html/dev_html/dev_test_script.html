@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Running test_zoltan</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,35 +19,25 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-   <TITLE> Zoltan Developer's Guide:  Running test_zoltan</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_rcb.html">Next</a>&nbsp; |&nbsp; <a href="dev_driver.html">Previous</a></i></b></div>
 
-<DIV ALIGN=right>
-<H3>
-&nbsp;<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="migration_help"></A>Using the test script <I>test_zoltan</I></H2>
-The purpose of the Zoltan test script is to run the test driver <I><A HREF="dev_driver.html">zdrive</A></I>
+<h2>
+<a NAME="migration_help"></a>Appendix:&nbsp; Using the test script <i>test_zoltan</i></h2>
+The purpose of the Zoltan test script is to run the test driver <i><a href="dev_driver.html">zdrive</a></i>
 on a set of test problems to verify that the Zoltan library works correctly.
 The script compares the output of actual runs with precomputed output.
 The assumption is that if the outputs are identical, then the current implementation
 is is likely to be correct. It is strongly recommended that developers
-run <I>test_zoltan</I> to verify correctness before committing changes
+run <i>test_zoltan</i> to verify correctness before committing changes
 to existing code!
-<BR>&nbsp;
-<H3>
-How to run <I>test_zoltan</I></H3>
-First make sure you have compiled the driver <I><A HREF="dev_driver.html">zdrive</A></I>.&nbsp;
-Then go to the Zoltan directory <I>tests </I>and type<I> test_zoltan </I>and
+<br>&nbsp;
+<h3>
+How to run <i>test_zoltan</i></h3>
+First make sure you have compiled the driver <i><a href="dev_driver.html">zdrive</a></i>.&nbsp;
+Then go to the Zoltan directory <i>tests </i>and type<i> test_zoltan </i>and
 give suitable options as described below. This will run the test script
 in interactive mode. The output from zdrive will be sent to stdout together
 with a summary of results. The summary of results is also saved in a log
@@ -47,104 +45,99 @@ file. If&nbsp; an error occured, look at the log file to find out what
 went wrong. The script currently assumes that runs are deterministic&nbsp;
 and reproducable which is not necessarily true in a parallel environment
 Hence false alarms may occur.
-<BR>&nbsp;
-<H3>
-Syntax</H3>
-<B>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </B>[-arch <I>arch-type</I>] [-cmd
-<I>command</I>] [-logfile <I>filename</I>] [-no_parmetis] [-no_nemesis]
-[-no_chaco]
-
-<P>It is required to use either the -arch or the -cmd option.&nbsp; The
+<br>&nbsp;
+<h3>
+Syntax</h3>
+<b>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </b>[-arch <i>arch-type</i>] [-cmd
+<i>command</i>]
+[-logfile <i>filename</i>] [-no_parmetis] [-no_nemesis] [-no_chaco]
+<p>It is required to use either the -arch or the -cmd option.&nbsp; The
 other arguments are optional.
+<p>Options:
+<br>&nbsp;
+<table BORDER=0 WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP NOSAVE>
+<td WIDTH="25%" NOSAVE>-arch <i>arch-type</i></td>
 
-<P>Options:
-<BR>&nbsp;
-<TABLE BORDER=0 WIDTH="100%" NOSAVE >
-<TR VALIGN=TOP NOSAVE>
-<TD WIDTH="25%" NOSAVE>-arch <I>arch-type</I></TD>
+<td WIDTH="75%" NOSAVE>Currently the supported architectures (<i>arch-type</i>)
+are sun, sunos, smos, tflop, cplant.</td>
 
-<TD WIDTH="75%" NOSAVE>Currently the supported architectures (<I>arch-type</I>)
-are sun, sunos, smos, tflop, cplant.</TD>
+<td></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr VALIGN=TOP NOSAVE>
+<td>-cmd <i>command</i></td>
 
-<TR VALIGN=TOP NOSAVE>
-<TD>-cmd <I>command</I></TD>
-
-<TD WIDTH="25%" NOSAVE>The <I>command</I> is the command that the script
+<td WIDTH="25%" NOSAVE>The <i>command</i> is the command that the script
 uses to launch the driver. One must include an option to specify the number
 of processors as part of the command. Use quotes appropriately, for example,
-<I>-cmd 'mpirun -np'</I>. Default settings have been provided for all the
-supported architectures.</TD>
+<i>-cmd
+'mpirun -np'</i>. Default settings have been provided for all the supported
+architectures.</td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR VALIGN=TOP NOSAVE>
-<TD>-logfile <I>filename</I></TD>
+<tr VALIGN=TOP NOSAVE>
+<td>-logfile <i>filename</i></td>
 
-<TD NOSAVE>The name of the log file. The default is <I>test_zoltan.log</I>.
-If an old log file exists, it will be moved to <I>test_zoltan.log.old.</I>&nbsp;</TD>
+<td NOSAVE>The name of the log file. The default is <i>test_zoltan.log</i>.
+If an old log file exists, it will be moved to <i>test_zoltan.log.old.</i></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD>-no_parmetis</TD>
+<tr>
+<td>-no_parmetis</td>
 
-<TD>Do not run any ParMetis methods.</TD>
+<td>Do not run any ParMetis methods.</td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD>-no_nemesis</TD>
+<tr>
+<td>-no_nemesis</td>
 
-<TD>Do not run test problems in Nemesis format.</TD>
+<td>Do not run test problems in Nemesis format.</td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD>-no_chaco</TD>
+<tr>
+<td>-no_chaco</td>
 
-<TD>Do not run test problems in Chaco format.</TD>
+<td>Do not run test problems in Chaco format.</td>
 
-<TD></TD>
-</TR>
-</TABLE>
-&nbsp;
-<BR>The default behavior is to run all methods on all types of input format.
-<BR>&nbsp;
-<H3>
-Load balancing methods</H3>
+<td></td>
+</tr>
+</table>
+
+<p>The default behavior is to run all methods on all types of input format.
+<br>&nbsp;
+<h3>
+Load balancing methods</h3>
 The following load balancing methods are currently tested in test_zoltan:
-<BR>RCB,&nbsp; ParMetis/Partkway, ParMetis/Partgeom, ParMetis//Repartldiffusion,
+<br>RCB,&nbsp; ParMetis/Partkway, ParMetis/Partgeom, ParMetis//Repartldiffusion,
 and Octpart.
-
-<P>&nbsp;If you would like to run only a subset of these methods, you have
+<p>&nbsp;If you would like to run only a subset of these methods, you have
 to edit the script manually.
-<BR>&nbsp;
-<H3>
-Test problems</H3>
+<br>&nbsp;
+<h3>
+Test problems</h3>
 The current test problems are:
-
-<P>Chaco format:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; simple, nograph, vwgt,
+<p>Chaco format:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; simple, nograph, vwgt,
 grid20x19, film, hammond
-<BR>Nemesis format:&nbsp; box_064, ti_300, ti_4k
-
-<P>Please see the README files located in each test directory for more
+<br>Nemesis format:&nbsp; box_064, ti_300, ti_4k
+<p>Please see the README files located in each test directory for more
 details on these test problems.
-<H3>
-<B>Number of processors</B></H3>
+<h3>
+<b>Number of processors</b></h3>
 Each test problem is run on a predetermined number of processors, currently
 ranging from 3 to 9.
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_rcb.html">Next:
-RCB</A>&nbsp; |&nbsp; <A HREF="dev_driver.html">Previous:&nbsp; Using the test
-driver zdrive</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_rcb.html">Next:
+RCB</a>&nbsp; |&nbsp; <a href="dev_driver.html">Previous:&nbsp; Using the
+test driver zdrive</a>]
+</body>
+</html>
