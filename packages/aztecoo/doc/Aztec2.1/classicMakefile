@@ -1,6 +1,8 @@
-TARGET=AztecOOUserGuide
+TARGET=Aztec21
 
-$(TARGET).dvi: $(TARGET).tex Ex1.tex
+$(TARGET).dvi: $(TARGET).tex data_formats.tex functions.tex overview.tex \
+               advanced.tex data_interface.tex high_level.tex unadvertised.tex \
+               az_sandia_only_guide.tex  examples.tex matrix_free.tex
 	latex $(TARGET)
 	bibtex $(TARGET)
 	latex $(TARGET)
@@ -20,8 +22,4 @@ print: $(TARGET).dvi
 
 clean:
 	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
-           *.bbl *.blg *.lof *.lot *.tex~ Ex1.tex
-
-Ex1.tex: ../../example/UG_Ex1/cxx_main.cpp ex_header.txt ex_footer.txt
-	cat ex_header.txt ../../example/UG_Ex1/cxx_main.cpp ex_footer.txt > Ex1.tex
-
+           *.bbl *.blg *.lof *.lot *~
