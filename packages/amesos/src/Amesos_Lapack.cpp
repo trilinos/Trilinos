@@ -139,11 +139,12 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // MS // now comment it out, if we have parameters for LAPACK sublist
   // MS // uncomment it
   
+  bool Equilibrate = true;
   if (ParameterList.isSublist("Lapack") ) {
     Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
     bool Equilibrate = LAPACKParams.get("Equilibrate", true);
-    DenseSolver_.FactorWithEquilibration(Equilibrate);
   }
+  DenseSolver_.FactorWithEquilibration(Equilibrate);
 
   return 0;
 }
@@ -298,7 +299,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 	DenseB(i,j) = SerialVector[j][i];
 
     DenseSolver_.SetVectors(DenseX,DenseB);
-    (DenseSolver_.Solve());
+    AMESOS_CHK_ERR(DenseSolver_.Solve());
 
     for (int i = 0 ; i < NumGlobalRows() ; ++i)
       for (int j = 0 ; j < NumVectors ; ++j)
