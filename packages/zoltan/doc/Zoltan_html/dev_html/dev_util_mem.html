@@ -298,8 +298,10 @@ routine is unsuccessful, NULL is returned and *<i>ptr</i> is unchanged.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td><i>int</i> *<i>b</i> = (<i>int </i>*) <b><a href="#LB_Malloc">LB_MALLOC</a></b>
-(<i>sizeof</i> (struct <b>LB_Struct</b>));&nbsp;
+<td>
+<i>int</i> <i>n</i> = <i>sizeof</i>(struct <b>LB_Struct</b>);
+<br><i>int</i> *<i>b</i> = (<i>int </i>*) <b><a href="#LB_Malloc">LB_MALLOC</a></b>
+(<i>n</i>));&nbsp;
 <br><i>b</i> = (<i>int </i>*) <b>LB_REALLOC</b> (<i>b</i>, 2*<i>n</i>);</td>
 </tr>
 
