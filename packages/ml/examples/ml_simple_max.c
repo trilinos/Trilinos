@@ -96,7 +96,7 @@ extern void user_partition_nodes(struct user_partition *Partition);
 extern AZ_MATRIX   *user_Ke_build(struct user_partition *);
 extern AZ_MATRIX   *user_Kn_build(struct user_partition *);
 extern ML_Operator *user_T_build (struct user_partition *, 
-                                  struct user_partition *, ML_Operator *);
+                                  struct user_partition *, ML_Operator *, ML_Comm *);
 #ifdef ML_MPI
   #define COMMUNICATOR   MPI_COMM_WORLD
 #else
@@ -116,7 +116,7 @@ extern  int user_Kn_getrow(void *, int, int *, int, int *, double *, int *);
 
 int main(int argc, char *argv[])
 {
-  int    Nnodes=128*128;              /* Total number of nodes in the problem.*/
+  int    Nnodes=32*32;              /* Total number of nodes in the problem.*/
                                     /* 'Nnodes' must be a perfect square.   */
   int    MaxMgLevels=6;             /* Maximum number of Multigrid Levels   */
   int    Nits_per_presmooth=1;      /* # of pre & post smoothings per level */
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
   int          level, coarsest_level, itmp;
   double       edge_coarsening_rate, node_coarsening_rate, *rhs, *xxx;
   void         **edge_args, **nodal_args;
-  struct       user_partition Edge_Partition = {NULL, NULL,0,0}, 
-                                Node_Partition = {NULL, NULL,0,0};
+  struct       user_partition Edge_Partition = {NULL, NULL,0,0,NULL,0,0,0}, 
+                                Node_Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
   /* See Aztec User's Guide for information on these variables */
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
   /* Use Aztec to build ML matrix representing Tmat.                      */
 
   Tmat = user_T_build (&Edge_Partition, &Node_Partition, 
-  		   &(ml_nodes->Amat[MaxMgLevels-1]));
+  		   &(ml_nodes->Amat[MaxMgLevels-1]),ml_nodes->comm);
 
 #else
   /* Build Ke directly as an ML matrix.                                  */
@@ -282,9 +282,8 @@ int main(int argc, char *argv[])
 				  user_T_matvec, 0);
   ML_Operator_Set_Getrow(Tmat,ML_EXTERNAL,Edge_Partition.Nlocal,user_T_getrow);
 
-  ML_Comm_Create( &comm);
   ML_CommInfoOP_Generate( &(Tmat->getrow->pre_comm), user_update_ghost_nodes, 
-			    &Node_Partition, comm, Tmat->invec_leng, 
+			    &Node_Partition, ml_edges->comm, Tmat->invec_leng, 
 			    Node_Partition.Nghost);
 
 #endif
@@ -414,8 +413,18 @@ int main(int argc, char *argv[])
   ML_Krylov_Solve(kdata, Edge_Partition.Nlocal, rhs, xxx);
   ML_Krylov_Destroy( &kdata );
 #endif
-
+  
   /* clean up. */
+
+  if (Edge_Partition.my_local_ids != NULL) free(Edge_Partition.my_local_ids);
+  if (Node_Partition.my_local_ids != NULL) free(Node_Partition.my_local_ids);
+  if (Node_Partition.my_global_ids != NULL) free(Node_Partition.my_global_ids);
+  if (Edge_Partition.my_global_ids != NULL) free(Edge_Partition.my_global_ids);
+  if (Node_Partition.needed_external_ids != NULL) 
+    free(Node_Partition.needed_external_ids);
+  if (Edge_Partition.needed_external_ids != NULL) 
+    free(Edge_Partition.needed_external_ids);
+
 
   ML_Smoother_Arglist_Delete(&nodal_args);
   ML_Smoother_Arglist_Delete(&edge_args);
@@ -423,12 +432,19 @@ int main(int argc, char *argv[])
   ML_Destroy(&ml_edges);
   ML_Destroy(&ml_nodes);
 #ifdef AZTEC
-  AZ_free((void *) Ke_mat->data_org);
-  AZ_free((void *) Ke_mat->val);
-  AZ_free((void *) Ke_mat->bindx);
-  if (Ke_mat  != NULL) AZ_matrix_destroy(&Ke_mat);
+  if (Ke_mat  != NULL) {
+    AZ_free(Ke_mat->bindx);
+    AZ_free(Ke_mat->val);
+    AZ_free(Ke_mat->data_org);
+    AZ_matrix_destroy(&Ke_mat);
+  }
   if (Pmat  != NULL) AZ_precond_destroy(&Pmat);
-  if (Kn_mat != NULL) AZ_matrix_destroy(&Kn_mat);
+  if (Kn_mat != NULL) {
+    AZ_free(Kn_mat->bindx);
+    AZ_free(Kn_mat->val);
+    AZ_free(Kn_mat->data_org);
+    AZ_matrix_destroy(&Kn_mat);
+  }
 #endif
   free(xxx);
   free(rhs);
@@ -580,6 +596,7 @@ void user_partition_nodes(struct user_partition *Partition)
     }
 
   }
+  ML_Comm_Destroy(&comm);
 #endif
 }
 /* Assign unknowns to processors */
@@ -669,6 +686,7 @@ void user_partition_edges(struct user_partition *Partition,
     }
 
   }
+  ML_Comm_Destroy(&comm);
 #endif
 }
 
@@ -763,6 +781,8 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
 			       &reordered_glob_edges, &reordered_edge_externs, 
 			       &Ke_data_org, Nlocal_edges, 0, 0, 0, 
 			       &cpntr,	       AZ_MSR_MATRIX);
+  AZ_free(reordered_glob_edges);
+  AZ_free(reordered_edge_externs);
   Edge_Partition->Nghost = Ke_data_org[AZ_N_external];
 
   /* Convert old style Aztec matrix to newer style Aztec matrix */
@@ -842,6 +862,7 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 			       &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
 			       &cpntr, AZ_MSR_MATRIX);
   Node_Partition->Nghost = Kn_data_org[AZ_N_external];
+  AZ_free(reordered_glob_nodes);
 
   /* Convert old style Aztec matrix to newer style Aztec matrix */
 
@@ -869,7 +890,7 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 
 ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 		      struct user_partition *Node_Partition,
-		      ML_Operator *Kn_mat)
+		      ML_Operator *Kn_mat, ML_Comm *comm)
 {
 
   int nx, i, ii, jj, horv, Ncols, Nexterns;
@@ -877,7 +898,6 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
   double *Tmat_val;
   ML_Operator *Tmat;
   struct ML_CSR_MSRdata *csr_data;
-  ML_Comm *comm;
   struct aztec_context *aztec_context;
   int global_id;
   int Nlocal_nodes, Nlocal_edges; 
@@ -931,7 +951,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
   Nexterns = (aztec_context->Amat->data_org)[AZ_N_external];
 
 
-  ML_Comm_Create( &comm);
+  /*  ML_Comm_Create( &comm); */
 
   AZ_Tmat_transform2ml(Nexterns,   Node_Partition->needed_external_ids,
 		       reordered_node_externs,
@@ -1069,7 +1089,7 @@ int user_Kn_getrow(void *data, int N_requested_rows, int requested_rows[],
 	      int row_lengths[])
 
 {
-  int i, ii, jj, nx, gid, Nlocal_nodes;
+  int i, ii, jj, nx, gid;
 
   int *ids;
   struct user_partition *Node_Partition;
@@ -1077,8 +1097,6 @@ int user_Kn_getrow(void *data, int N_requested_rows, int requested_rows[],
   if (allocated_space < 9) return 0;
   Node_Partition = (struct user_partition *) data;
   ids = Node_Partition->my_local_ids;
-
-  Nlocal_nodes = Node_Partition->Nlocal;
 
   nx = (int) sqrt( ((double) Node_Partition->Nglobal) + .00001);
   i = 0;
@@ -1113,10 +1131,8 @@ int user_T_getrow(void *data, int N_requested_rows, int requested_rows[],
 
   int nx, i, ii, jj, horv;
   int global_id;
-  int Nlocal_nodes, Nlocal_edges; 
   struct user_partition *Edge_Partition;
   struct user_partition *Node_Partition;
-  ML_Operator *Kn_mat;
   struct user_Tmat_data *user_Tmat_data;
   int *my_local_id;
 
@@ -1126,11 +1142,7 @@ int user_T_getrow(void *data, int N_requested_rows, int requested_rows[],
   user_Tmat_data = (struct user_Tmat_data *) data;
   Node_Partition = user_Tmat_data->node;
   Edge_Partition = user_Tmat_data->edge;
-  Kn_mat              = user_Tmat_data->Kn;
   my_local_id = Node_Partition->my_local_ids;
-
-  Nlocal_nodes = Node_Partition->Nlocal;
-  Nlocal_edges = Edge_Partition->Nlocal;
 
   nx = (int) sqrt( ((double) Node_Partition->Nglobal) + .00001);
 
@@ -1160,7 +1172,6 @@ int user_T_matvec(void *data, int Nlocal_nodes, double p[], int Nlocal_edges, do
   int i, global_id, ii, jj, nx, horv;
   struct user_partition *Edge_Partition;
   struct user_partition *Node_Partition;
-  ML_Operator *Kn_mat;
   struct user_Tmat_data *user_Tmat_data;
   int *my_local_id;
   double *temp;
@@ -1168,7 +1179,6 @@ int user_T_matvec(void *data, int Nlocal_nodes, double p[], int Nlocal_edges, do
   user_Tmat_data = (struct user_Tmat_data *) data;
   Node_Partition = user_Tmat_data->node;
   Edge_Partition = user_Tmat_data->edge;
-  Kn_mat              = user_Tmat_data->Kn;
   my_local_id = Node_Partition->my_local_ids;
   temp = (double *) malloc(sizeof(double)*(Nlocal_nodes + 
 					   Node_Partition->Nghost));
@@ -1249,6 +1259,7 @@ int user_update_ghost_edges(double vector[], void *data)
 
   MPI_Wait(&request, &status);
 
+  free(send_buf);
   return 1;
 }
 
@@ -1291,6 +1302,7 @@ int user_update_ghost_nodes(double vector[], void *data)
   /* receive data */
 
   MPI_Wait(&request, &status);
+  free(send_buf);
 
   return 1;
 }
