@@ -142,7 +142,7 @@ int Zoltan_RB_find_median(
 
       /* find tolerance (max of wtmax) */
       tolerance = wtmax;
-      Zoltan_RB_max_double(&tolerance, proclower, rank, num_procs, local_comm);
+      Zoltan_RB_max_double(&tolerance, 1, proclower, rank, num_procs, local_comm);
     }
     else 
       tolerance = 1.0;   /* if user did not supply weights, all are 1.0 */
@@ -314,7 +314,7 @@ int Zoltan_RB_find_median(
           if (breakflag) {                        /* done if moved enough */
             if (Tflops_Special) {
               wtok = wtsum;
-              Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
+              Zoltan_RB_sum_double(&wtok, 1, proclower, rank, num_procs, local_comm);
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -384,7 +384,7 @@ int Zoltan_RB_find_median(
           if (breakflag) {                        /* done if moved enough */
             if (Tflops_Special) {
               wtok = wtsum;
-              Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
+              Zoltan_RB_sum_double(&wtok, 1, proclower, rank, num_procs, local_comm);
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);

@@ -76,8 +76,8 @@ void Zoltan_RB_scan_double(
       tor = (rank ^ mask);
       to = proc - rank + tor;
       if (tor < num_procs) {
-         MPI_Send(tmpout, 1, MPI_DOUBLE, to, tag, local_comm);
-         MPI_Recv(tmpin, 1, MPI_DOUBLE, to, tag, local_comm, &status);
+         MPI_Send(tmpout, count, MPI_DOUBLE, to, tag, local_comm);
+         MPI_Recv(tmpin, count, MPI_DOUBLE, to, tag, local_comm, &status);
          for (i=0; i<count; i++){
             tmpout[i] += tmpin[i];
             if (to < proc) 
@@ -91,24 +91,35 @@ void Zoltan_RB_scan_double(
 }
 
 void Zoltan_RB_sum_double(
-   double   *x,               /* double to be summed */
+   double   *x,               /* doubles to be summed (answer overwrites!) */
+   int      count,            /* number of elements in x */
    int      proclower,        /* smallest processor in partition */
    int      rank,             /* rank of processor in partition */
    int      nprocs,           /* number of processors in partition */
    MPI_Comm comm
 )
 {
-   double   tmp;              /* temporary for sum */
+   double   temp, *tmp;       /* temporary for sum */
    int      tag = 32100;      /* message tag */
    int      partner;          /* message partner in binary exchange */
    int      to;               /* message partner not in binary exchange */
    int      mask;             /* mask to determine communication partner */
    int      nprocs_small;     /* largest power of 2 contained in nprocs */
    int      hbit;             /* 2^hbit = nproc_small */
+   int      i;                /* loop index */
    MPI_Status status;
 
    /* This routine sums doubles on a subset of processors */
  
+   if (count==0)
+     return;
+   else if (count==1){ /* avoid malloc */
+     tmp = &temp;
+   }
+   else /* count>1 */ {
+     tmp = (double *) ZOLTAN_MALLOC(count*sizeof(double));
+   }
+
    /* Find next lower power of 2. */
    for (hbit = 0; (nprocs >> hbit) != 1; hbit++);
  
@@ -120,46 +131,61 @@ void Zoltan_RB_sum_double(
  
    to = proclower + (rank ^ nprocs_small);
    if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
-      MPI_Send(x, 1, MPI_DOUBLE, to, tag, comm);
+      MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
       tag += hbit + 1;
-      MPI_Recv(x, 1, MPI_DOUBLE, to, tag, comm, &status);
+      MPI_Recv(x, count, MPI_DOUBLE, to, tag, comm, &status);
    }
    else {   /* processors within greatest power of 2 */
       if (rank + nprocs_small < nprocs) {
-         MPI_Recv(&tmp, 1, MPI_DOUBLE, to, tag, comm, &status);
-         *x += tmp;
+         MPI_Recv(tmp, count, MPI_DOUBLE, to, tag, comm, &status);
+         for (i=0; i<count; i++)
+            x[i] += tmp[i];
       }  
       for (mask = nprocs_small >> 1; mask; mask >>= 1) { /* binary exchange */
          tag++;
          partner = proclower + (rank ^ mask);
-         MPI_Send(x, 1, MPI_DOUBLE, partner, tag, comm);
-         MPI_Recv(&tmp, 1, MPI_DOUBLE, partner, tag, comm, &status);
-         *x += tmp;
+         MPI_Send(x, count, MPI_DOUBLE, partner, tag, comm);
+         MPI_Recv(tmp, count, MPI_DOUBLE, partner, tag, comm, &status);
+         for (i=0; i<count; i++)
+            x[i] += tmp[i];
       }  
       tag++;
       if (rank + nprocs_small < nprocs)
-         MPI_Send(x, 1, MPI_DOUBLE, to, tag, comm);
+         MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
    }
+   if (count>1)
+      ZOLTAN_FREE(&tmp);
 }
 
 void Zoltan_RB_max_double(
-   double   *x,               /* maximum value */
+   double   *x,               /* maximum value (answer overwrites!) */
+   int      count,            /* number of elements in x */
    int      proclower,        /* smallest processor in partition */
    int      rank,             /* rank of processor in partition */
    int      nprocs,           /* number of processors in partition */
    MPI_Comm comm
 )
 {
-   double   tmp;              /* temporaries for min/max */
+   double   temp, *tmp;       /* temporaries for min/max */
    int      tag = 32100;      /* message tag */
    int      partner;          /* message partner in binary exchange */
    int      to;               /* message partner not in binary exchange */
    int      mask;             /* mask to determine communication partner */
    int      nprocs_small;     /* largest power of 2 contained in nprocs */
    int      hbit;             /* 2^hbit = nproc_small */
+   int      i;                /* loop index */
    MPI_Status status;
 
-   /* This routine finds the global max */
+   /* This routine finds the max on a set of procs */
+
+   if (count==0)
+     return;
+   else if (count==1){ /* avoid malloc */
+     tmp = &temp;
+   }
+   else /* count>1 */ {
+     tmp = (double *) ZOLTAN_MALLOC(count*sizeof(double));
+   }
 
    /* Find next lower power of 2. */
    for (hbit = 0; (nprocs >> hbit) != 1; hbit++);
@@ -172,26 +198,30 @@ void Zoltan_RB_max_double(
  
    to = proclower + (rank ^ nprocs_small);
    if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
-      MPI_Send(x, 1, MPI_DOUBLE, to, tag, comm);
+      MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
       tag += hbit + 1;
-      MPI_Recv(x, 1, MPI_DOUBLE, to, tag, comm, &status);
+      MPI_Recv(x, count, MPI_DOUBLE, to, tag, comm, &status);
    }
    else {   /* processors within greatest power of 2 */
       if (rank + nprocs_small < nprocs) {
-         MPI_Recv(&tmp, 1, MPI_DOUBLE, to, tag, comm, &status);
-         if (tmp > *x) *x = tmp;
+         MPI_Recv(tmp, count, MPI_DOUBLE, to, tag, comm, &status);
+         for (i=0; i<count; i++)
+            if (tmp[i] > x[i]) x[i] = tmp[i];
       }
       for (mask = nprocs_small >> 1; mask; mask >>= 1) { /* binary exchange */
          tag++;
          partner = proclower + (rank ^ mask);
-         MPI_Send(x, 1, MPI_DOUBLE, partner, tag, comm);
-         MPI_Recv(&tmp, 1, MPI_DOUBLE, partner, tag, comm, &status);
-         if (tmp > *x) *x = tmp;
+         MPI_Send(x, count, MPI_DOUBLE, partner, tag, comm);
+         MPI_Recv(tmp, count, MPI_DOUBLE, partner, tag, comm, &status);
+         for (i=0; i<count; i++)
+            if (tmp[i] > x[i]) x[i] = tmp[i];
       }
       tag++;
       if (rank + nprocs_small < nprocs)
-         MPI_Send(x, 1, MPI_DOUBLE, to, tag, comm);
+         MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
    }
+   if (count>1)
+      ZOLTAN_FREE(&tmp);
 }
 
 #ifdef __cplusplus

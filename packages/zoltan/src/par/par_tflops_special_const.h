@@ -25,8 +25,8 @@ extern "C" {
 
 /* prototypes for TFLOPS_SPECIAL */
 extern void Zoltan_RB_scan_double(double *, double *, int, MPI_Comm, int, int, int);
-extern void Zoltan_RB_sum_double(double *, int, int, int, MPI_Comm);
-extern void Zoltan_RB_max_double(double *, int, int, int, MPI_Comm);
+extern void Zoltan_RB_sum_double(double *, int, int, int, int, MPI_Comm);
+extern void Zoltan_RB_max_double(double *, int, int, int, int, MPI_Comm);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

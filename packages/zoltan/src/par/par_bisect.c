@@ -63,7 +63,6 @@ struct bisector {          /* bisector cut info */
 #if (RB_MAX_WGTS > 1)
 static void Zoltan_reduce(int, int, int, int, struct bisector*, struct bisector*, int *,
                MPI_Datatype *, MPI_Comm);
-static void Zoltan_scan(double *, double *, int, MPI_Comm, int, int, int);
 static void Zoltan_bisector_copy(struct bisector*, struct bisector*);
 static double Zoltan_norm(int mcnorm, int n, double *x, double *scal);
 static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
@@ -653,7 +652,8 @@ int Zoltan_RB_find_bisector(
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
             if (Tflops_Special)
-              Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
+              Zoltan_RB_scan_double(localsum, wtupto, nwgts, local_comm, 
+                proc, rank, num_procs);
             else
               MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
             /* MPI_Scan is inclusive, we want to exclude my local weight */
@@ -811,7 +811,8 @@ int Zoltan_RB_find_bisector(
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
             if (Tflops_Special)
-               Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
+               Zoltan_RB_scan_double(localsum, wtupto, nwgts, local_comm, 
+                 proc, rank, num_procs);
             else
                MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
             /* MPI_Scan is inclusive, we want to exclude my local weight */
@@ -1075,32 +1076,6 @@ static void Zoltan_bisector_copy(struct bisector *from, struct bisector *to)
     to->wtlo[i] = from->wtlo[i];
     to->wthi[i] = from->wthi[i];
   }
-}
-
-static void Zoltan_scan(double *wt, double *wtupto, int count, MPI_Comm local_comm, 
-             int proc, int rank, int num_procs)
-{
-   int j, to, tag = 32108;
-   double *tmp;
-   MPI_Status status;
-
-   /* this subroutine performs a scan operation summing doubles on a subset
-      of a set of processors for Tflops_Special */
-
-   tmp = (double *) ZOLTAN_MALLOC(count*sizeof(double));
-   for (j=0; j<count; j++)
-     wtupto[j] = wt[j];
-   if (rank != 0) {
-      to = proc - 1;
-      MPI_Recv(tmp, count, MPI_DOUBLE, to, tag, local_comm, &status);
-      for (j=0; j<count; j++)
-        wtupto[j] += tmp[j];
-   }
-   if (rank != num_procs-1) {
-      to = proc + 1;
-      MPI_Send(wtupto, count, MPI_DOUBLE, to, tag, local_comm);
-   }
-   ZOLTAN_FREE(&tmp);
 }
 
 /* Compute the appropriate norm of a vector.
