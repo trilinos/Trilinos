@@ -282,14 +282,6 @@ typename RefCountPtr<T>::node_t* RefCountPtr<T>::access_node() const
 template<class T>
 inline
 Teuchos::RefCountPtr<T>
-Teuchos::rcp( T* p )
-{
-	return RefCountPtr<T>(p,true);
-}
-
-template<class T>
-inline
-Teuchos::RefCountPtr<T>
 Teuchos::rcp( T* p, bool owns_mem )
 {
 	return RefCountPtr<T>(p,owns_mem);

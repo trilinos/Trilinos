@@ -301,24 +301,6 @@ public:
 
 };	// end class RefCountPtr<...>
 
-/** Return a <tt>RefCountPtr</tt> object properly typed.
- *
- * @param  p  [in] Pointer to an object allocated with <tt>new</tt> only.
- *
- * If the pointer <tt>p</tt> did not come from <tt>new</tt> do not use
- * this function!
- *
- * The client should only create a <tt>RefCountPtr</tt> object given a
- * pointer return by <tt>new</tt> by calling this function.
- *
- * KL 10/07/03: The original code sensibly made owns_mem an optional
- * argument that defaulted to true, but that did not compile on Solaris.
- * I've changed owns_mem to a mandatory argument and created a second
- * method with no owns_mem argument to handle the default case.
- */
-template<class T>
-RefCountPtr<T> rcp( T* p );
-
 ///
 /** Return a <tt>RefCountPtr</tt> object properly typed.
  *
@@ -340,14 +322,16 @@ RefCountPtr<T> rcp( T* p );
  * either the client should use the version of <tt>rcp()</tt> that
  * that uses a deallocator policy object or should pass in 
  * <tt>owns_mem = false</tt>.
- *
- * KL 10/07/03: The original code sensibly made owns_mem an optional
- * argument that defaulted to true, but that did not compile on Solaris.
- * I've changed owns_mem to a mandatory argument and created a second
- * method with no owns_mem argument to handle the default case.
  */
 template<class T>
-RefCountPtr<T> rcp( T* p, bool owns_mem);
+RefCountPtr<T> rcp( T* p, bool owns_mem
+#ifndef __sun
+	= true
+#endif
+	);
+#ifdef __sun // RAB: 20040303: Sun needs to fixe there &^**%F$ compiler
+template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
+#endif
 
 ///
 /** Initialize from a raw pointer with a deallocation policy.
@@ -479,7 +463,16 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  * with the non-member <tt>get_extra_data()</tt> functions.
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique = true);
+void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique
+#ifndef __sun
+	 = true
+#endif
+	);
+#ifdef __sun
+template<class T1, class T2>
+inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p )
+{ set_extra_data( extra_data, name, p, true ); }
+#endif
 
 ///
 /** Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.
