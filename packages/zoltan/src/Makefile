@@ -284,7 +284,13 @@ zoltan:
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
-	@mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME)
+	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; \
+	then  						\
+          if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
+	  then mkdir $(ZOLTAN_LIB_DIR);			\
+	  fi;						\
+	  mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME); \
+	fi
 
 zdrive:
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
