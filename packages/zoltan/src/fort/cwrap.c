@@ -760,28 +760,28 @@ int Zfw_Set_Fn3f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
 
 int Zfw_Set_Fn4f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_1) */
+/* data is type(Zoltan_User_Data_1) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn5f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_2) */
+/* data is type(Zoltan_User_Data_2) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn6f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_3) */
+/* data is type(Zoltan_User_Data_3) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn7f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_4) */
+/* data is type(Zoltan_User_Data_4) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
@@ -811,28 +811,28 @@ int Zfw_Set_Fn3s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
 
 int Zfw_Set_Fn4s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_1) */
+/* data is type(Zoltan_User_Data_1) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn5s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_2) */
+/* data is type(Zoltan_User_Data_2) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn6s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_3) */
+/* data is type(Zoltan_User_Data_3) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
 int Zfw_Set_Fn7s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
-/* data is type(LB_User_Data_4) */
+/* data is type(Zoltan_User_Data_4) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }

@@ -1,7 +1,7 @@
 
 function Zf90_Set_Child_List_Fn0s(lb,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn0s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(dummy,num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
@@ -32,7 +32,7 @@ end function Zf90_Set_Child_List_Fn0s
 
 function Zf90_Set_Child_List_Fn1s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn1s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
@@ -64,7 +64,7 @@ end function Zf90_Set_Child_List_Fn1s
 
 function Zf90_Set_Child_List_Fn2s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn2s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
@@ -96,7 +96,7 @@ end function Zf90_Set_Child_List_Fn2s
 
 function Zf90_Set_Child_List_Fn3s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn3s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
@@ -128,14 +128,15 @@ end function Zf90_Set_Child_List_Fn3s
 
 function Zf90_Set_Child_List_Fn4s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn4s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
     reftype, in_vertex, out_vertex, ierr)
   use zoltan_types
   use lb_user_const
-  type(LB_User_Data_1) INTENT_IN data
+  use zoltan_user_data
+  type(Zoltan_User_Data_1) INTENT_IN data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
   integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
@@ -144,7 +145,7 @@ interface
   integer(Zoltan_INT), intent(out) :: reftype, ierr
   end subroutine fn_ptr
 end interface
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -161,14 +162,15 @@ end function Zf90_Set_Child_List_Fn4s
 
 function Zf90_Set_Child_List_Fn5s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn5s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data,num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
     reftype, in_vertex, out_vertex, ierr)
   use zoltan_types
   use lb_user_const
-  type(LB_User_Data_2) INTENT_IN data
+  use zoltan_user_data
+  type(Zoltan_User_Data_2) INTENT_IN data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
   integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
@@ -177,7 +179,7 @@ interface
   integer(Zoltan_INT), intent(out) :: reftype, ierr
   end subroutine fn_ptr
 end interface
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -194,14 +196,15 @@ end function Zf90_Set_Child_List_Fn5s
 
 function Zf90_Set_Child_List_Fn6s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn6s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
     reftype, in_vertex, out_vertex, ierr)
   use zoltan_types
   use lb_user_const
-  type(LB_User_Data_3) INTENT_IN data
+  use zoltan_user_data
+  type(Zoltan_User_Data_3) INTENT_IN data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
   integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
@@ -210,7 +213,7 @@ interface
   integer(Zoltan_INT), intent(out) :: reftype, ierr
   end subroutine fn_ptr
 end interface
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -227,14 +230,15 @@ end function Zf90_Set_Child_List_Fn6s
 
 function Zf90_Set_Child_List_Fn7s(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_List_Fn7s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
     parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
     reftype, in_vertex, out_vertex, ierr)
   use zoltan_types
   use lb_user_const
-  type(LB_User_Data_4) INTENT_IN data
+  use zoltan_user_data
+  type(Zoltan_User_Data_4) INTENT_IN data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
   integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
@@ -243,7 +247,7 @@ interface
   integer(Zoltan_INT), intent(out) :: reftype, ierr
   end subroutine fn_ptr
 end interface
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH

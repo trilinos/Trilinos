@@ -16,11 +16,13 @@ ZOD = ../$(ZOLTAN_OBJ_DIR)
 ZOM = $(F90_MODULE_PREFIX)$(ZOD)
 
 all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
-			$(ZOD)/lb_user_const.o $(ZOD)/fwrap.o
+			$(ZOD)/zoltan_user_data.o  $(ZOD)/lb_user_const.o \
+			$(ZOD)/fwrap.o 
 
 $(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
 			$(ZOD)/ztypes.o  \
-			$(ZOD)/lb_user_const.o
+			$(ZOD)/zoltan_user_data.o \
+			$(ZOD)/lb_user_const.o 
 	$(F90) -c $(ZOM) $(ZOD)/fwrap.f90
 	/bin/mv *.o *.mod $(ZOD)
 
@@ -79,6 +81,11 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp \
 	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 
+$(ZOD)/zoltan_user_data.o:	zoltan_user_data.f90 \
+			$(ZOD)/ztypes.o
+	$(F90) -c  $(ZOM) zoltan_user_data.f90
+	/bin/mv *.o *.mod $(ZOD)
+
 $(ZOD)/lb_user_const.o:	lb_user_const.f90 \
 			$(ZOD)/ztypes.o
 	$(F90) -c  $(ZOM) lb_user_const.f90
@@ -108,6 +115,7 @@ clean:
 	      $(ZOD)/cwrap.o \
 	      $(ZOD)/fwrap.o \
 	      $(ZOD)/ztypes.o \
+	      $(ZOD)/zoltan_user_data.o \
 	      $(ZOD)/lb_user_const.o \
               sppr_header *.vo *.mod *.dbg \
 	      $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header

@@ -98,16 +98,15 @@ public :: &
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
 
-!KDD Comment out for now; may have to bring back.
-!type LB_Struct
-!   private
-!   sequence
-!   type(LB_PTR) :: addr
-!#ifdef ABSOFT
-!! workaround for a bug in the Absoft compiler
-!   integer :: dummy
-!#endif
-!end type LB_Struct
+type LB_Struct
+   private
+   sequence
+   type(Zoltan_PTR) :: addr
+#ifdef ABSOFT
+! workaround for a bug in the Absoft compiler
+   integer :: dummy
+#endif
+end type LB_Struct
 
 !--------------------------------------------------------------------------
 ! defined constants corresponding to Zoltan enumerated types

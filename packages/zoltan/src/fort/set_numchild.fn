@@ -1,7 +1,7 @@
 
 function Zf90_Set_Num_Child_Fn0f(lb,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn0f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, ierr)
   use zoltan_types
@@ -28,7 +28,7 @@ end function Zf90_Set_Num_Child_Fn0f
 
 function Zf90_Set_Num_Child_Fn1f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn1f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
@@ -57,7 +57,7 @@ end function Zf90_Set_Num_Child_Fn1f
 
 function Zf90_Set_Num_Child_Fn2f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn2f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
@@ -86,7 +86,7 @@ end function Zf90_Set_Num_Child_Fn2f
 
 function Zf90_Set_Num_Child_Fn3f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn3f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
@@ -115,20 +115,21 @@ end function Zf90_Set_Num_Child_Fn3f
 
 function Zf90_Set_Num_Child_Fn4f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn4f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
   use zoltan_types
   use lb_user_const
+  use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_1) INTENT_IN data
+  type(Zoltan_User_Data_1) INTENT_IN data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -145,20 +146,21 @@ end function Zf90_Set_Num_Child_Fn4f
 
 function Zf90_Set_Num_Child_Fn5f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn5f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
   use zoltan_types
   use lb_user_const
+  use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_2) INTENT_IN data
+  type(Zoltan_User_Data_2) INTENT_IN data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -175,20 +177,21 @@ end function Zf90_Set_Num_Child_Fn5f
 
 function Zf90_Set_Num_Child_Fn6f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn6f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
   use zoltan_types
   use lb_user_const
+  use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_3) INTENT_IN data
+  type(Zoltan_User_Data_3) INTENT_IN data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -205,20 +208,21 @@ end function Zf90_Set_Num_Child_Fn6f
 
 function Zf90_Set_Num_Child_Fn7f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Num_Child_Fn7f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     ierr)
   use zoltan_types
   use lb_user_const
+  use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_4) INTENT_IN data
+  type(Zoltan_User_Data_4) INTENT_IN data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH

@@ -27,6 +27,7 @@
 module zoltan
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -40,13 +41,13 @@ public :: &
    Zoltan_INT, &
    Zoltan_FLOAT, &
    Zoltan_DOUBLE, &
-   LB_User_Data_1, &
-   LB_User_Data_2, &
-   LB_User_Data_3, &
-   LB_User_Data_4
+   Zoltan_User_Data_1, &
+   Zoltan_User_Data_2, &
+   Zoltan_User_Data_3, &
+   Zoltan_User_Data_4
 
 public :: &
-   LB_Struct, &
+   Zoltan_Struct, &
    ZOLTAN_FN_TYPEF, &
    ZOLTAN_FN_TYPES
 
@@ -128,7 +129,7 @@ public :: &
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
 
-type LB_Struct
+type Zoltan_Struct
    private
    sequence
    type(Zoltan_PTR) :: addr
@@ -136,7 +137,7 @@ type LB_Struct
 ! workaround for a bug in the Absoft compiler
    integer :: dummy
 #endif
-end type LB_Struct
+end type Zoltan_Struct
 
 !--------------------------------------------------------------------------
 ! defined constants corresponding to Zoltan enumerated types
@@ -235,6 +236,7 @@ interface
 subroutine Zfw_Get_Address_int(arg,ret_addr)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 integer(Zoltan_INT) :: arg
 integer(Zoltan_INT_PTR), intent(out) :: ret_addr
 end subroutine Zfw_Get_Address_int
@@ -245,6 +247,7 @@ interface
 function Zfw_Initialize(ver)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Initialize
 real(Zoltan_FLOAT), intent(out) :: ver
@@ -256,6 +259,7 @@ interface
 function Zfw_Initialize1(argc,argv,starts,ver)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Initialize1
 integer(Zoltan_INT) INTENT_IN argc
@@ -269,6 +273,7 @@ interface
 subroutine Zfw_Create(communicator,lb,nbytes)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer INTENT_IN communicator
 integer(Zoltan_INT), dimension(*), intent(out) :: lb
@@ -281,6 +286,7 @@ interface
 subroutine Zfw_Destroy(lb,nbytes)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes
@@ -292,6 +298,7 @@ interface
 subroutine Zfw_Memory_Stats()
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 end subroutine Zfw_Memory_Stats
 end interface
@@ -301,6 +308,7 @@ interface
 function Zfw_Set_Fn0f(lb,nbytes,fn_type,fn_ptr)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -321,6 +329,7 @@ interface
 function Zfw_Set_Fn0s(lb,nbytes,fn_type,fn_ptr)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -341,6 +350,7 @@ interface
 function Zfw_Set_Fn1f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -362,6 +372,7 @@ interface
 function Zfw_Set_Fn1s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -383,6 +394,7 @@ interface
 function Zfw_Set_Fn2f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -404,6 +416,7 @@ interface
 function Zfw_Set_Fn2s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -425,6 +438,7 @@ interface
 function Zfw_Set_Fn3f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -446,6 +460,7 @@ interface
 function Zfw_Set_Fn3s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -467,6 +482,7 @@ interface
 function Zfw_Set_Fn4f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -479,7 +495,7 @@ type(address), intent(in) :: fn_ptr
 #else
 integer(Zoltan_INT), external :: fn_ptr
 #endif
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 end function Zfw_Set_Fn4f
 end interface
 
@@ -488,6 +504,7 @@ interface
 function Zfw_Set_Fn4s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -500,7 +517,7 @@ type(address), intent(in) :: fn_ptr
 #else
 external fn_ptr
 #endif
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 end function Zfw_Set_Fn4s
 end interface
 
@@ -509,6 +526,7 @@ interface
 function Zfw_Set_Fn5f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -521,7 +539,7 @@ type(address), intent(in) :: fn_ptr
 #else
 integer(Zoltan_INT), external :: fn_ptr
 #endif
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 end function Zfw_Set_Fn5f
 end interface
 
@@ -530,6 +548,7 @@ interface
 function Zfw_Set_Fn5s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -542,7 +561,7 @@ type(address), intent(in) :: fn_ptr
 #else
 external fn_ptr
 #endif
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 end function Zfw_Set_Fn5s
 end interface
 
@@ -551,6 +570,7 @@ interface
 function Zfw_Set_Fn6f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -563,7 +583,7 @@ type(address), intent(in) :: fn_ptr
 #else
 integer(Zoltan_INT), external :: fn_ptr
 #endif
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 end function Zfw_Set_Fn6f
 end interface
 
@@ -572,6 +592,7 @@ interface
 function Zfw_Set_Fn6s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -584,7 +605,7 @@ type(address), intent(in) :: fn_ptr
 #else
 external fn_ptr
 #endif
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 end function Zfw_Set_Fn6s
 end interface
 
@@ -593,6 +614,7 @@ interface
 function Zfw_Set_Fn7f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -605,7 +627,7 @@ type(address), intent(in) :: fn_ptr
 #else
 integer(Zoltan_INT), external :: fn_ptr
 #endif
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 end function Zfw_Set_Fn7f
 end interface
 
@@ -614,6 +636,7 @@ interface
 function Zfw_Set_Fn7s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 #ifdef NASOFTWARE
 use nas_system
 #endif
@@ -626,7 +649,7 @@ type(address), intent(in) :: fn_ptr
 #else
 external fn_ptr
 #endif
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 end function Zfw_Set_Fn7s
 end interface
 
@@ -635,6 +658,7 @@ interface
 function Zfw_LB_Set_Method(lb,nbytes,string,length)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_LB_Set_Method
 integer(Zoltan_INT), dimension(*) INTENT_IN lb, string
@@ -648,6 +672,7 @@ function Zfw_Set_Param(lb,nbytes,param_name,param_name_len, &
                           new_value,new_value_len)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Param
 integer(Zoltan_INT), dimension(*) INTENT_IN lb, param_name, new_value
@@ -663,6 +688,7 @@ function Zfw_LB_Balance(lb,nbytes,changes,num_gid_entries,num_lid_entries, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_LB_Balance
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -685,6 +711,7 @@ function Zfw_LB_Eval(lb,nbytes,print_stats,nobj,obj_wgt, &
                       is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_LB_Eval
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -701,6 +728,7 @@ interface
 function Zfw_LB_Point_Assign(lb,nbytes,coords,proc)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_LB_Point_Assign
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -715,6 +743,7 @@ interface
 function Zfw_LB_Box_Assign(lb,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_LB_Box_Assign
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -733,6 +762,7 @@ function Zfw_Compute_Destinations(lb,nbytes, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Compute_Destinations
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -756,6 +786,7 @@ function Zfw_Help_Migrate(lb,nbytes, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Help_Migrate
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -772,6 +803,7 @@ interface
 subroutine Zfw_Register_Fort_Malloc(malloc_int,free_int)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 #ifdef NASOFTWARE
 type(address), intent(in) :: malloc_int, free_int
@@ -786,6 +818,7 @@ interface
 function Zfw_Get_Wgt_Dim(lb,nbytes)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Get_Wgt_Dim
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -798,6 +831,7 @@ interface
 function Zfw_Get_Comm_Dim(lb,nbytes)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT) :: Zfw_Get_Comm_Dim
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
@@ -811,6 +845,7 @@ interface
 subroutine Zfw_LB_Get_Child_Order(lb,nbytes,order,ierr)
 use zoltan_types
 use lb_user_const
+use zoltan_user_data
 implicit none
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes
@@ -1029,7 +1064,7 @@ deallocate(starts,int_argv)
 end function Zf90_Initialize1
 
 function Zf90_Create(communicator)
-type(LB_Struct), pointer :: Zf90_Create
+type(Zoltan_Struct), pointer :: Zf90_Create
 integer INTENT_IN communicator
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb
 integer(Zoltan_INT) :: nbytes
@@ -1049,7 +1084,7 @@ endif
 end function Zf90_Create
 
 subroutine Zf90_Destroy(lb)
-type(LB_Struct), pointer :: lb
+type(Zoltan_Struct), pointer :: lb
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1067,7 +1102,7 @@ end subroutine Zf90_Memory_Stats
 
 function Zf90_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Fn0f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
@@ -1085,7 +1120,7 @@ end function Zf90_Set_Fn0f
 
 function Zf90_Set_Fn0s(lb,fn_type,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Fn0s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
@@ -1103,7 +1138,7 @@ end function Zf90_Set_Fn0s
 
 function Zf90_Set_Fn1f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn1f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
 integer(Zoltan_INT) INTENT_IN data(*)
@@ -1122,7 +1157,7 @@ end function Zf90_Set_Fn1f
 
 function Zf90_Set_Fn1s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn1s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 integer(Zoltan_INT) INTENT_IN data(*)
@@ -1141,7 +1176,7 @@ end function Zf90_Set_Fn1s
 
 function Zf90_Set_Fn2f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn2f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
 real(Zoltan_FLOAT) INTENT_IN data(*)
@@ -1160,7 +1195,7 @@ end function Zf90_Set_Fn2f
 
 function Zf90_Set_Fn2s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn2s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 real(Zoltan_FLOAT) INTENT_IN data(*)
@@ -1179,7 +1214,7 @@ end function Zf90_Set_Fn2s
 
 function Zf90_Set_Fn3f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn3f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
 real(Zoltan_DOUBLE) INTENT_IN data(*)
@@ -1198,7 +1233,7 @@ end function Zf90_Set_Fn3f
 
 function Zf90_Set_Fn3s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn3s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 real(Zoltan_DOUBLE) INTENT_IN data(*)
@@ -1217,10 +1252,10 @@ end function Zf90_Set_Fn3s
 
 function Zf90_Set_Fn4f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn4f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1236,10 +1271,10 @@ end function Zf90_Set_Fn4f
 
 function Zf90_Set_Fn4s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn4s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1255,10 +1290,10 @@ end function Zf90_Set_Fn4s
 
 function Zf90_Set_Fn5f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn5f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1274,10 +1309,10 @@ end function Zf90_Set_Fn5f
 
 function Zf90_Set_Fn5s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn5s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1293,10 +1328,10 @@ end function Zf90_Set_Fn5s
 
 function Zf90_Set_Fn6f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn6f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1312,10 +1347,10 @@ end function Zf90_Set_Fn6f
 
 function Zf90_Set_Fn6s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn6s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1331,10 +1366,10 @@ end function Zf90_Set_Fn6s
 
 function Zf90_Set_Fn7f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn7f
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1350,10 +1385,10 @@ end function Zf90_Set_Fn7f
 
 function Zf90_Set_Fn7s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn7s
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) INTENT_IN data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -1369,7 +1404,7 @@ end function Zf90_Set_Fn7s
 
 function Zf90_LB_Set_Method(lb,string)
 integer(Zoltan_INT) :: Zf90_LB_Set_Method
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 character(len=*) INTENT_IN string
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT), dimension(len_trim(string)) :: int_string
@@ -1387,7 +1422,7 @@ end function Zf90_LB_Set_Method
 
 function Zf90_Set_Param(lb,param_name,new_value)
 integer(Zoltan_INT) :: Zf90_Set_Param
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 character(len=*) INTENT_IN param_name, new_value
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT), dimension(len_trim(param_name)) :: int_param_name
@@ -1414,7 +1449,7 @@ function Zf90_LB_Balance(lb,changes,num_gid_entries,num_lid_entries, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: Zf90_LB_Balance
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 logical, intent(out) :: changes
 integer(Zoltan_INT), intent(out) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(out) :: num_import, num_export
@@ -1438,7 +1473,7 @@ end function Zf90_LB_Balance
 function Zf90_LB_Eval(lb,print_stats,nobj,obj_wgt, &
                     ncuts,cut_wgt,nboundary,nadj)
 integer(Zoltan_INT) :: Zf90_LB_Eval
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
 integer(Zoltan_INT), intent(out), optional :: nobj, ncuts, nboundary, nadj
 real(Zoltan_FLOAT), intent(out), optional :: obj_wgt(*), cut_wgt(*)
@@ -1543,7 +1578,7 @@ end function Zf90_LB_Free_Data
 
 function Zf90_LB_Point_Assign(lb,coords,proc)
 integer(Zoltan_INT) :: Zf90_LB_Point_Assign
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 real(Zoltan_DOUBLE), dimension(*) INTENT_IN coords
 integer(Zoltan_INT), intent(out) :: proc
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
@@ -1557,7 +1592,7 @@ end function Zf90_LB_Point_Assign
 
 function Zf90_LB_Box_Assign(lb,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 integer(Zoltan_INT) :: Zf90_LB_Box_Assign
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 real(Zoltan_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
 integer(Zoltan_INT), intent(out), dimension(*) :: procs
 integer(Zoltan_INT), intent(out) :: numprocs
@@ -1576,7 +1611,7 @@ function Zf90_Compute_Destinations(lb, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: Zf90_Compute_Destinations
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN num_import
 integer(Zoltan_INT), intent(out) :: num_export
 integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
@@ -1606,7 +1641,7 @@ function Zf90_Help_Migrate(lb, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: Zf90_Help_Migrate
-type(LB_Struct) INTENT_IN lb
+type(Zoltan_Struct) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN num_import, num_export
 integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
@@ -1688,7 +1723,7 @@ end function Zf90_Help_Migrate
 
 ! TEMP child_order
 subroutine Zf90_LB_Get_Child_Order(lb,order,ierr)
-type(LB_Struct), pointer :: lb
+type(Zoltan_Struct), pointer :: lb
 integer(Zoltan_INT), intent(inout), dimension(*) :: order
 integer(Zoltan_INT), intent(out) :: ierr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
