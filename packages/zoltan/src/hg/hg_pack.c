@@ -28,8 +28,6 @@ static ZOLTAN_HG_PACKING_FN packing_pgp; /* path growing packing */
 static ZOLTAN_HG_PACKING_FN packing_aug2;/* augmenting path; length 2 */
 static ZOLTAN_HG_PACKING_FN packing_aug3;/* augmenting path; length 3 */
 
-static ZOLTAN_HG_PACKING_EWS_FN packing_ews_vp;
-
 /****************************************************************************/
 
 int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
@@ -65,10 +63,6 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
     else if (!strcasecmp(str, "aug3"))  hgp->packing_rli = packing_aug3;
     else                                hgp->packing_rli = NULL;
 
-    str = hgp->ews_str;
-    if (!strcasecmp(str, "vertex_product"))  hgp->packing_ews = packing_ews_vp;
-    else                                     hgp->packing_ews = NULL;
-    
   }
   return found;
 }
@@ -83,30 +77,32 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
   char  *yo = "Zoltan_HG_Packing";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-  if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_MEMERR;
+
+  if (hg->vwgt && hgp->ews)
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
+    Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
+    old_ewgt = hg->ewgt;
+    hg->ewgt = new_ewgt;
   }
-
-  Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
-
-  old_ewgt = hg->ewgt;
-  hg->ewgt = new_ewgt;
 
   ierr = hgp->packing(zz,hg,pack, limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     goto End;
   }
 
-
   /* Optimization */
   if (hgp->packing_rli != NULL)
    ierr = hgp->packing_rli (zz,hg,pack,limit);
 
 End:
-  hg->ewgt = old_ewgt;
-  ZOLTAN_FREE ((void **) &new_ewgt);
+  if (hg->vwgt && hgp->ews)
+  { hg->ewgt = old_ewgt;
+    ZOLTAN_FREE ((void **) &new_ewgt);
+  }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -484,14 +480,6 @@ static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int limit)
 static int packing_aug3 (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {
 /* Placeholder for packing_aug3 */
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-static int packing_ews_vp (ZZ *zz, HGraph *hg)
-{
-/* Placeholder for packing_ews_vp */
-/* Vertex-product edge weight scaling. */
   return ZOLTAN_OK;
 }
 

@@ -26,8 +26,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_grg;  /* greedy grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
 static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
 
-static ZOLTAN_HG_GROUPING_EWS_FN grouping_ews_vp;
-
 /****************************************************************************/
 
 int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
@@ -61,11 +59,6 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
     if      (!strcasecmp(str, "aug2"))  hgp->grouping_rli = grouping_aug2;
     else if (!strcasecmp(str, "aug3"))  hgp->grouping_rli = grouping_aug3;
     else                                hgp->grouping_rli = NULL;
-
-    str = hgp->ews_str;
-    if (!strcasecmp(str, "vertex_product")) hgp->grouping_ews = grouping_ews_vp;
-    else                                    hgp->grouping_ews = NULL;
-
   }
 
   return found;
@@ -81,14 +74,16 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_MEMERR;
+  if (hg->vwgt && hgp->ews)
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
+    Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
+    old_ewgt = hg->ewgt;
+    hg->ewgt = new_ewgt;
   }
-  Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
-  old_ewgt = hg->ewgt;
-  hg->ewgt = new_ewgt;
 
   ierr = hgp->grouping(zz,hg,pack,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -100,8 +95,10 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
    ierr = hgp->grouping_rli (zz,hg,pack,limit);
 
 End:
-  hg->ewgt = old_ewgt;
-  ZOLTAN_FREE ((void **) &new_ewgt);
+  if (hg->vwgt && hgp->ews)
+  { hg->ewgt = old_ewgt;
+    ZOLTAN_FREE ((void **) &new_ewgt);
+  }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -330,15 +327,6 @@ static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int limit)
 static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {
 /* Placeholder for grouping_aug3. */
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-static int grouping_ews_vp (ZZ *zz, HGraph *hg)
-{
-/* Placeholder for grouping_ews_vp */
-/* Vertex-product edge weight scaling. */
-
   return ZOLTAN_OK;
 }
 

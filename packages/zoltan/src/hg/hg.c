@@ -31,7 +31,7 @@ extern "C" {
 static PARAM_VARS HG_params[] = {
  /* Add parameters here. */
  { "HG_REDUCTION_LIMIT", NULL, "INT" },
- { "HG_EDGE_WEIGHT_SCALING", NULL, "STRING" },
+ { "HG_EDGE_WEIGHT_SCALING", NULL, "INT" },
  { "HG_REDUCTION_METHOD", NULL, "STRING" },
  { "HG_GLOBAL_PARTITIONING", NULL, "STRING" },
  { "HG_LOCAL_REFINEMENT", NULL, "STRING" },
@@ -164,7 +164,7 @@ int ierr = ZOLTAN_OK;
   Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LOCAL_IMPROVEMENT",
                                 (void *) hgp->rli_str);
   Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING", 
-                                (void *) &(hgp->ews_str));
+                                (void *) &(hgp->ews));
   Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
                                 (void *) &(hgp->check_graph));
 
@@ -174,7 +174,7 @@ int ierr = ZOLTAN_OK;
   strcpy(hgp->local_str, "hc");
   strcpy(hgp->global_str, "lin");
   strcpy(hgp->rli_str, "aug3");
-  strcpy(hgp->ews_str, "vertex_product");
+  hgp->ews = 1;
   hgp->check_graph = 1;
 
   /* Get application values of parameters. */

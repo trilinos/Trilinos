@@ -36,9 +36,6 @@ int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
   hgp->matching = hgp->matching_rli = NULL ;
   hgp->packing  = hgp->packing_rli  = NULL ;
   hgp->grouping = hgp->grouping_rli = NULL ;
-  hgp->matching_ews = NULL;
-  hgp->packing_ews = NULL;
-  hgp->grouping_ews = NULL;
 
   if (!(Zoltan_HG_Set_Matching_Fn (hgp))
    && !(Zoltan_HG_Set_Packing_Fn  (hgp))
@@ -359,57 +356,6 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 }
 
 /****************************************************************************/
-
-int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g)
-{ int   i, j;
-  char *yo = "Zoltan_HG_Scale_Graph_Weight";
-
-  if (g->vwgt)
-  { if (!(g->ewgt))
-    { if (!(g->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
-      { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-      }
-      for (i=0; i<g->nEdge; i++)
-        g->ewgt[i] = 1.0;
-    }
-
-    for (i=0; i<g->nVtx; i++)
-      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-      { if (g->vwgt[i]<=0.0 || g->vwgt[g->neigh[j]]<=0.0)
-          g->ewgt[j] = FLT_MAX;
-        else
-          g->ewgt[j] = g->ewgt[j]/g->vwgt[i]/g->vwgt[g->neigh[j]];
-      }
-  }
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-
-int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
-{ int   i, j;
-  float weight, sum1, sum2;
-
-  for (i=0; i<hg->nEdge; i++)
-  { sum1 = sum2 = 0.0;
-    if (hg->vwgt)
-    { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-      { weight = hg->vwgt[hg->hvertex[j]];
-        sum1 += weight;
-        sum2 += weight*weight;
-    } }
-    else
-      sum1 = sum2 = (float)(hg->hindex[i+1]-hg->hindex[i]);
-    sum1 = (sum1*sum1-sum2)/2.0;
-    if (sum1 == 0.0)
-      new_ewgt[i] = FLT_MAX;
-    else
-      new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/sum1;
-  }
-
-  return ZOLTAN_OK;
-}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -172,11 +172,7 @@ typedef struct {
   ZOLTAN_HG_PACKING_FN  *packing_rli;    /* Grouping improvement fn specified */
   ZOLTAN_HG_GROUPING_FN *grouping_rli;   /* by rli_str; NULL if not used */
 
-  char ews_str[MAX_PARAM_STRING_LEN];    /* Edge weight scale string and */
-  ZOLTAN_HG_MATCHING_EWS_FN *matching_ews; /* Pointers to edge weight */
-  ZOLTAN_HG_PACKING_EWS_FN  *packing_ews;  /* scaling fn for Matching,*/
-  ZOLTAN_HG_GROUPING_EWS_FN *grouping_ews; /* Packing and Grouping,   */
-                                           /* specified by ews_str.   */
+  int ews;                               /* Flag for Edge weight scaling */
 
   char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
   ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
@@ -192,7 +188,9 @@ typedef struct {
 int Zoltan_HG_Set_Part_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
-int Zoltan_HG_Scale_Graph_Weight (ZZ *, Graph *);
+
+/* Scale Edge Weight */
+int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *);
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
 
 /* Matching functions */

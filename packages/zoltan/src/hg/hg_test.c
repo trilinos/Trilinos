@@ -46,7 +46,7 @@ int main (int argc, char **argv)
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.rli_str, "aug3");
-  strcpy(hgp.ews_str, "vertex_product");
+  hgp.ews = 1;
   strcpy(hgp.global_str, "lin");
   strcpy(hgp.local_str, "hc");
   hgp.check_graph = 1;
@@ -61,10 +61,13 @@ int main (int argc, char **argv)
   { puts("hg_test [-flag value] [] [] ...");
     puts("-f      graphfile:        (grid5x5.hg)");
     puts("-p      # of parts:       (2)");
-    puts("-redl   reduction level:  (0)");
+    puts("-bal    balance tolerance:(10.0)");
+    puts("-redl   reduction limit:  (0)");
     puts("-redm   reduction method: {mxm,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
     puts("                           mxg,reg,rrg,rhg,(grg)}");
+    puts("-reda   reduction augment:{no,(aug3)}");
+    puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,(lin)}");
     puts("-l      local method:     (no)");
     puts("-d      debug level:      (1)");
@@ -74,8 +77,11 @@ int main (int argc, char **argv)
   while (++i<argc)
   { if     (!strcmp(argv[i],"-f")   &&i+1<argc)strcpy(hgraphfile,argv[++i]);
     else if(!strcmp(argv[i],"-p")   &&i+1<argc)p=atoi(argv[++i]);
+    else if(!strcmp(argv[i],"-bal") &&i+1<argc)hgp.bal_tol=atof(argv[++i]);
     else if(!strcmp(argv[i],"-redl")&&i+1<argc)hgp.redl=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-redm")&&i+1<argc)strcpy(hgp.redm_str,argv[++i]);
+    else if(!strcmp(argv[i],"-reda")&&i+1<argc)strcpy(hgp.rli_str,argv[++i]);
+    else if(!strcmp(argv[i],"-reds")&&i+1<argc)hgp.ews=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-g")   &&i+1<argc)strcpy(hgp.global_str,argv[++i]);
     else if(!strcmp(argv[i],"-l")   &&i+1<argc)strcpy(hgp.local_str,argv[++i]);
     else if(!strcmp(argv[i],"-d")   &&i+1<argc)zz.Debug_Level=atoi(argv[++i]); 

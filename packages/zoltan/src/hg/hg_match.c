@@ -27,8 +27,6 @@ static ZOLTAN_HG_MATCHING_FN matching_pgm; /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_aug2;/* post matching optimizer */
 static ZOLTAN_HG_MATCHING_FN matching_aug3;/* post matching optimizer */
 
-static ZOLTAN_HG_MATCHING_EWS_FN matching_ews_vp;
-
 /*****************************************************************************/
 
 int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
@@ -62,11 +60,6 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
     if      (!strcasecmp(str, "aug2"))  hgp->matching_rli = matching_aug2;
     else if (!strcasecmp(str, "aug3"))  hgp->matching_rli = matching_aug3;
     else                                hgp->matching_rli = NULL;
-
-    str = hgp->ews_str;
-    if (!strcasecmp(str,"vertex_product"))  hgp->matching_ews = matching_ews_vp;
-    else                                    hgp->matching_ews = NULL;
-
   }
   return found;
 }
@@ -81,12 +74,21 @@ int Zoltan_HG_Matching (
   int limit)
 { int ierr;
   char *yo = "Zoltan_HG_Matching";
+  float *old_ewgt, *new_ewgt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (g->vwgt && hgp->matching_ews)
-    Zoltan_HG_Scale_Graph_Weight (zz,g);
-
+  if (g->vwgt && hgp->ews)
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
+    Zoltan_HG_Scale_Graph_Weight (zz, g, new_ewgt);
+    old_ewgt = g->ewgt;
+    g->ewgt = new_ewgt;
+  }
+  
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,g,match,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -98,6 +100,10 @@ int Zoltan_HG_Matching (
     ierr = hgp->matching_rli (zz,g,match,limit);
 
 End:
+  if (g->vwgt && hgp->ews)
+  { g->ewgt = old_ewgt;
+    ZOLTAN_FREE ((void **) &new_ewgt);
+  }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -450,16 +456,6 @@ static int matching_aug3 (ZZ *zz, Graph *g, Matching match, int limit)
   ZOLTAN_FREE ((void **) &stack);
   return ZOLTAN_OK;
 }
-
-/****************************************************************************/
-static int matching_ews_vp (ZZ *zz, Graph *hg)
-{
-/* Placeholder for matching_ews_vp */
-/* Vertex-product edge weight scaling. */
-
-  return ZOLTAN_OK;
-}
-
 
 /*****************************************************************************/
 #ifdef __cplusplus
