@@ -355,10 +355,11 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
 
   // If result_param = 0, just solve J*result_x = input_x
   if (result_param == 0.0) {
-    res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobianInverse(params,
+    res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobianInverse(
+								  params,
 								  input_x,
 								  result_x);
-  }
+    }
   else {
     // Compute input_x + result_param*df/dp
     NOX::Abstract::Vector* a = input_x.clone(NOX::DeepCopy);
