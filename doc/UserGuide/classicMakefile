@@ -1,6 +1,7 @@
 TARGET=TrilinosUserGuide
 
-$(TARGET).dvi: $(TARGET).tex
+$(TARGET).dvi: $(TARGET).tex ../CommonFiles/TrilinosBibliography.bib \
+         ../CommonFiles/TrilinosPackagesDiagram.eps
 	latex $(TARGET)
 	bibtex $(TARGET)
 	latex $(TARGET)
