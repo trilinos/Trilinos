@@ -504,8 +504,10 @@ static int Zoltan_ParMetis_Jostle(
   int num_lid_entries = zz->Num_LID;
   int num_proc = zz->Num_Proc;     /* Temporary variables whose addresses are*/
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
+#ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
+#endif /* ZOLTAN_PARMETIS */
   int i99;                         /* Variables used for debugging.          */
 #ifdef ZOLTAN_JOSTLE
   int nnodes;
@@ -946,6 +948,7 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Jostle not available.");
 #endif /* ZOLTAN_JOSTLE */
   }
+#ifdef ZOLTAN_PARMETIS
 #if PARMETIS_MAJOR_VERSION >= 3
   /* First check for ParMetis 3 routines */
   else if (strcmp(alg, "PARTKWAY") == 0){
@@ -1061,6 +1064,7 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
   }
+#endif /* ZOLTAN_PARMETIS */
   else {
     /* Sanity check: This should never happen! */
     sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
