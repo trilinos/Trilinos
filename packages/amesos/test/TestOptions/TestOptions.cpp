@@ -3,7 +3,7 @@
 //  valgrind --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
 //  To run this with valgrind under mpirun, 
-//  mpirun -np 2 valgrind --log_file=TestOpt.logfile --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
+//  mpirun -np 2 valgrind --logfile=TestOpt.logfile --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
 //  test/scripts/daily/serial/TestMemoryLeaks[.exe] performs an automated test for memory leaks
 //  using valgrind and this code.  To run TestMemoryLeaks, cd to test/TestOptions in the
@@ -56,6 +56,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#if 0
+
 #ifdef HAVE_VALGRIND_H
 #include <valgrind/valgrind.h>
 #define HAVE_VALGRIND
@@ -64,6 +66,8 @@
 #include <valgrind/valgrind.h>
 #define HAVE_VALGRIND
 #endif 
+#endif 
+
 #endif 
 
 vector<string> AmesosClasses;
@@ -191,13 +195,13 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   //  double residuals[NumAmesosClasses];
   //  for (int i = 0 ; i < NumAmesosClasses; i ++ ) errors[i] = residuals[i] = 0.0 ; 
 
-#if COMPUTE_RCOND 
+  //#ifdef HAVE_AMESOS_UMFPACK
+#if 0
   Epetra_CrsMatrix *Amat ;
 
   //
   //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos interface
   //
-  bool symmetric; 
   Epetra_Map *readMap = 0 ; 
   CreateCrsMatrix( filename, Comm, readMap, false, false, symmetric, Amat ) ;
   Teuchos::ParameterList ParamList ;
@@ -205,7 +209,7 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   Amesos Afactory;
 
   Amesos_BaseSolver* Abase ; 
-  Abase = Afactory.Create( AMESOS_UMFPACK, Problem, ParamList ) ; 
+  Abase = Afactory.Create( "Amesos_Umfpack", Problem ) ; 
   if ( Abase == 0 ) {
     cerr << " AMESOS_UMFPACK is required for this test " << endl ;
     exit(13);
@@ -224,23 +228,26 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   double val[1];
   ind[0] = 0;
   val[0] = 1 ; 
-  if (verbose) cout << " norm(Amat) = " << Amat->NormInf() << endl; 
+  double AnormInf =  Amat->NormInf() ;
+  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
   if ( Amat->MyGRID( 0 ) )
     Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-  if (verbose) cout << " norm(Amat) = " << Amat->NormInf() << endl; 
+  AnormInf =  Amat->NormInf() ;
+  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
+
 
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-   double Rcond1 = UmfpackOperator->GetRcond();
+  double Rcond1 = UmfpackOperator->GetRcond();
 
   if ( Amat->MyGRID( 0 ) )
     Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-  if (verbose) cout << " norm(Amat) = " << Amat->NormInf() << endl; 
+  AnormInf =  Amat->NormInf() ;
+  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
    double Rcond2 = UmfpackOperator->GetRcond();
 
-  if (verbose) cout << " Rcond = " << Rcond << endl; 
   if (verbose) cout << " Rcond1 = " << Rcond1 << endl; 
   if (verbose) cout << " Rcond2 = " << Rcond2 << endl; 
 
@@ -351,14 +358,22 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
 int NextMain( int argc, char *argv[] ) {
 
   AmesosClasses.push_back( "Amesos_Klu" );
-#if 0
+#ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
+#endif
+#ifdef HAVE_AMESOS_UMFPACK
   AmesosClasses.push_back( "Amesos_Umfpack" );
+#endif
+#ifdef HAVE_AMESOS_MUMPS
   AmesosClasses.push_back( "Amesos_Mumps" );
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
   AmesosClasses.push_back( "Amesos_Superludist" );
 #endif
-#if 0
+#ifdef HAVE_AMESOS_SUPERLU
   AmesosClasses.push_back( "Amesos_Superlu" );
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
   AmesosClasses.push_back( "Amesos_Dscpack" );
 #endif
 
@@ -371,15 +386,8 @@ int NextMain( int argc, char *argv[] ) {
   if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 'v') ) 
     verbose = true ; 
 
-  bool Short = false; 
-  if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 's') ) 
-    Short = true ; 
-  if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 's') ) 
-    Short = true ; 
-
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
     cerr << "Usage TestOptions [-s] [-v] " << endl ; 
-    cerr << "-s:  short - test only one matrix  " << endl ; 
     cerr << "-v:  verbose  " << endl ; 
     exit(-1);
   }
@@ -430,35 +438,15 @@ int NextMain( int argc, char *argv[] ) {
 
   //  result += TestOneMatrix("Tri.triS", Comm, verbose, symmetric, 1e-1 , numtests ) ;
   //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
-  //  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-  //  result += TestOneMatrix( AmesosClassesInstalled, "../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix("../Test_Basic/bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #if 0
-      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #endif
-      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #if 0
-      result += TestOneMatrix( AmesosClassesInstalled, "../Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-#endif
-
-  //
-  //  This is really slow when run on valgrind, so we don't want to run 
-  //  the following larger matrices when we are using valgrind.
-  //
-  //  This test is not foolproof - it is possible to have valgrind and not valgrind.h.
-  //
-#ifdef HAVE_VALGRIND 
-  if ( ! RUNNING_ON_VALGRIND ) {
-#endif
-
-    if ( ! Short) { 
-      //  result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      assert( false ) ; 
-
-    }
-#ifdef HAVE_VALGRIND 
-  }
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #endif
 
   if ( verbose) cout << result << " Tests failed " ; 
@@ -466,23 +454,20 @@ int NextMain( int argc, char *argv[] ) {
   if (verbose ) cout << numtests << " Tests performed " << endl ; 
 
 
+  if ( result == 0 && numtests > 0 ) {
+    if (Comm.MyPID() == 0)
+      cout << endl << "TEST PASSED" << endl << endl;
+  }
+  else {
+    if (Comm.MyPID() == 0)
+      cout << endl << "TEST FAILED" << endl << endl;
+    AMESOS_CHK_ERR( 1 ) ; 
+  }
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 
-#ifdef HAVE_VALGRIND
-  //
-  //  If this is being run under valgrind, query valgrind to see if valgrind
-  //  detected ay errors.
-  //
-  //  This does not catch memory leaks.  grep "loss" in the valgrind log files
-  //  to look for memory leaks.  
-  //
-  if ( RUNNING_ON_VALGRIND ) { 
-    if (verbose) cout <<  VALGRIND_COUNT_ERRORS << " valgrind errors " << endl; 
-    result += VALGRIND_COUNT_ERRORS;
-  }
-#endif
   return result ; 
 }
 
@@ -491,5 +476,6 @@ int NextMain( int argc, char *argv[] ) {
 //  from valgrind. 
 //
 int main( int argc, char *argv[] ) {
-  NextMain( argc, argv ) ; 
+  int retval = NextMain( argc, argv ) ; 
+  return retval ;
 }

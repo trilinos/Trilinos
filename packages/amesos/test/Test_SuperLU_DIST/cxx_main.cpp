@@ -166,25 +166,24 @@ int sub_main( Epetra_Comm &Comm ) {
 
   bool TestPassed = true;
 
-#if 1
   TestPassed = TestPassed &&
     CheckError(A,x,b,x_exact);
-#endif
-
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
-    //    system("touch Amesos_OK");
-    Comm.Barrier();
-    return(EXIT_SUCCESS);
   }
   else {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST FAILED" << endl << endl;
-    return(EXIT_FAILURE);
   }
-  assert( false ) ; 
+
+  AMESOS_CHK_ERR( ! TestPassed ) ; 
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return(EXIT_SUCCESS);
 }
 
 //=============================================================================

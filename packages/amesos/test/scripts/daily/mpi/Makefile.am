@@ -26,6 +26,38 @@
 # ************************************************************************
 #@HEADER
 
+#
+#  This is a bit confusing because some of these tests were written by Ken Stanley,
+#  while others were written by Marzio Sala.  
+#
+#  TestAmesos runs cxx_main.cpp tests in the following directories:
+#     Test_Epetra_RowMatrix 
+#     Test_Epetra_CrsMatrix 
+#     Test_Epetra_VbrMatrix 
+#     Test_Detailed 
+#     Test_LAPACK 
+#     Test_KLU 
+#     Test_UMFPACK 
+#     Test_SuperLU 
+#     Test_SuperLU_DIST 
+#     Test_MUMPS 
+#     Test_DSCPACK 
+#  TestBasic runs TestBasic.csh in Test_Basic
+#  TestExamples runs executables in the example directories 
+#  TestKlu.exe runs Test_Basic/AmesosKlu  
+#  TestDscpack.exe runs Test_Basic/AmesosDscpack  
+#  TestSuperlud.exe runs Test_Basic/AmesosSuperludist  
+#  TestSuperlu.exe runs Test_Basic/AmesosSuperlud
+#  TestUmfpack.exe runs Test_Basic/AmesosUmfpack  
+#  TestMumps.exe runs Test_Basic/AmesosMumps  
+#  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
+#  TestSuperluSerial.exe runs Test_Basic/AmesosSuperluSerial
+#  TestUmpfpackSerial.exe runs Test_Basic/AmesosUmpfpackSerial
+#
+#  TestValgrind.exe runs TestOptions/TestOptions.exe (under valgrind) 
+#
+#
+
 EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
@@ -49,6 +81,12 @@ if HAVE_AMESOS_DSCPACK
 DSCPACK_TEST = TestDscpack
 else
 DSCPACK_TEST = 
+endif
+
+if HAVE_VALGRIND
+VALGRIND_TEST = TestValgrind
+else
+VALGRIND_TEST = 
 endif
 
 if HAVE_AMESOS_UMFPACK
@@ -106,6 +144,13 @@ TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
 endif
 
+if HAVE_VALGRIND
+TestValgrind_SOURCES = $(srcdir)/TestValgrind
+
+TestValgrind$(EXEEXT): $(srcdir)/TestValgrind
+	cp $(srcdir)/TestValgrind TestValgrind$(EXEEXT) 
+endif
+
 # if HAVE_AMESOS_SCALAPACK
 # TestScalapack_SOURCES = $(srcdir)/TestScalapack
 # 
@@ -131,5 +176,5 @@ TestMumps$(EXEEXT): $(srcdir)/TestMumps
 endif
 
 noinst_PROGRAMS = TestAmesos TestBasic TestExamples $(DSCPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST)
+	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)
 

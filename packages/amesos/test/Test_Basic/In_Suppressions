@@ -32,6 +32,14 @@
    fun:main
 }
 
+ {
+   <Leak in DSC_Begin in DSCPACK>
+   Memcheck:Leak
+   fun:malloc
+   fun:DSC_Begin
+   fun:_ZN14Amesos_DscpackC1ERK20Epetra_LinearProblem
+   fun:_ZN6Amesos6CreateESsRK20Epetra_LinearProblem
+}
 
 #    2)  Eight errors in write, mwrite and writev
 {
@@ -125,6 +133,18 @@
    fun:lam_dtsndrcv
    fun:lam_ssi_coll_lam_basic_gather
 }
+#  I wonder if this might be the same error in a different lam (this one on my Fedora box)
+#  this one happens on mpirun -np 4 TestOptions.exe but not on mpirun -np 2 TestOptions.exe
+ {
+   <another overlap in lam_memcpy>
+   Memcheck:Overlap
+   fun:memcpy
+   fun:lam_arr_remove
+   fun:lam_ssi_rpi_tcp_finalize
+   fun:MPI_Finalize
+}
+
+
 #    4)  A memory leak in AmesosClasses
 {
    <vector string AmesosClasses memory leak>
@@ -142,6 +162,33 @@
    fun:__fopen_internal
    fun:_IO_fopen@@GLIBC_2.1
    fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+}
+
+
+{
+   <memory leak in SuperLU>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Type_contiguous
+   fun:superlu_gridmap
+   fun:superlu_gridinit
+}
+{
+   <memory leak in Superludist>
+   Memcheck:Leak
+   fun:malloc
+   fun:superlu_malloc_dist
+   fun:pxgstrs_init
+   fun:dSolveInit
+}
+
+ {
+   <another memory leak in Superludist>
+   Memcheck:Leak
+   fun:malloc
+   fun:superlu_malloc_dist
+   fun:intMalloc_dist
+   fun:pdgssvx
 }
 
 
@@ -167,18 +214,40 @@
    fun:rpcreatev
 }
 
+
+#  These showed up running Amesos_Klu on Ken Stanley's linux box running Fedora 
+ {
+   <unitialized or unaddressable bytes in lam or libc>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:swrite
+   fun:tcp_req_send_ack_long
+   fun:lam_ssi_rpi_tcp_adv1
+}
+{
+   <try-catch in EpetraCrsMatrix::CheckSizes >
+   Memcheck:Leak	
+   fun:malloc
+   fun:__cxa_get_globals 
+}
+
 #
-#  The rest of these appear not to be needed anymore
+
+
+#
+#  Neededby TestOptions:
+{
+   <Leak in Epetra_MpiComm>
+   Memcheck:Leak 
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_ZNK14Epetra_MpiComm5CloneEv
+   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
+}
+#  These appear not to be needed anymore, at least not in TestOptions
 #
 #
-#{
-#   <Leak in Epetra_MpiComm>
-#   Memcheck:Leak
-#   fun:__builtin_new
-#   fun:_Znwj
-#   fun:_ZNK14Epetra_MpiComm5CloneEv
-#   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
-#}
 #{
 #   <Leak in MPID>
 #   Memcheck:Leak
@@ -220,3 +289,61 @@
 #   fun:main
 #}
 
+
+
+
+#
+#  Some more memory leaks found by TestOptions 
+#
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZN13Epetra_Object8SetLabelEPKc
+   fun:_ZN13Epetra_ObjectC2EPKci
+}
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_ZNK14Epetra_MpiComm5CloneEv
+   fun:_ZN19Epetra_BlockMapDataC1EiiiRK11Epetra_Comm
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Group_incl
+   fun:superlu_gridmap
+   fun:superlu_gridinit
+}
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZN19Epetra_CrsGraphDataC1E17Epetra_DataAccessRK15Epetra_BlockMapb
+   fun:_ZN15Epetra_CrsGraphC1E17Epetra_DataAccessRK15Epetra_BlockMapib
+}
+
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:superlu_malloc_dist
+   fun:int*alloc_dist
+   fun:get_diag_procs
+}
+
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:superlu_malloc_dist
+   fun:int*alloc_dist
+   fun:dSolveInit
+}

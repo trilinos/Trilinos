@@ -183,17 +183,20 @@ int main(int argc, char *argv[]) {
     cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
     cout << endl;
  }
+  bool TestPassed ; 
   
+  if (TotalErrorResidual < 1e-9) {
+    TestPassed = true ; 
+  }
+  else {
+    TestPassed = false ; 
+  }
+  AMESOS_CHK_ERR( ! TestPassed ) ; 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (TotalErrorResidual < 1e-9) {
-    system("touch Amesos_OK");
-    exit(EXIT_SUCCESS);
-  }
-  else
-    exit(EXIT_FAILURE);
 
 }
 

@@ -58,10 +58,16 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
 
-if ("$mpigo" == "") then
-    set mpigo = "mpirun -np "
+# Some machines use a command different than mpirun to run mpi jobs.  The
+# test-harness.plx script sets the following environment variable
+#  We test for this value below.  If not set, we set it to a default value.
+#
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    # COMMENT 
+
+if ("$mpigo" == "") then                                      # COMMENT
+    set mpigo = "mpirun -np "                                 # COMMENT 
 endif
 
 touch SST.summary

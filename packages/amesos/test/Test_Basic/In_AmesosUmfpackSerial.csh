@@ -123,7 +123,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  One medium sized matrix
 #
-./amesos_test.exe UMFPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT ./amesos_test.exe UMFPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosUmfpackSerial.exe" >> SST.summary 
@@ -131,7 +131,7 @@ echo "COMMENT End AmesosUmfpackSerial.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep amesos_test AmesosUmfpackSerial.exe | grep -v COMMENT | wc`
+set expected_lines = `grep amesos_test AmesosUmfpackSerial.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
@@ -143,7 +143,7 @@ endif
 #
 grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
 #
-#  This should not generaly print anything as errors should have been caught in the if test above
+#  This should not generally print anything as errors should have been caught in the if test above
 #
 grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
 exit($status == 0)

@@ -30,6 +30,16 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 
 
+if HAVE_AMESOS_SUPERLU
+SUPERLU_TEST = TestSuperluSerial
+TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
+
+TestSuperluSerial$(EXEEXT): $(srcdir)/TestSuperluSerial
+	cp $(srcdir)/TestSuperluSerial TestSuperluSerial$(EXEEXT) 
+else
+SUPERLU_TEST = 
+endif
+
 if HAVE_AMESOS_KLU
 KLU_TEST = TestKluSerial
 TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
@@ -54,8 +64,8 @@ endif
 #TestAmesos$(EXEEXT):
 #	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
 
-# noinst_PROGRAMS = TestAmesos $(UMFPACK_TEST) $(KLU_TEST)
-noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST)
+# noinst_PROGRAMS = TestAmesos $(UMFPACK_TEST) $(KLU_TEST)  $(SUPERLU_TEST)
+noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST)  $(SUPERLU_TEST)
 
 
 

@@ -16,6 +16,17 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include <vector>
+
+#ifdef HAVE_VALGRIND_H
+#include <valgrind/valgrind.h>
+#define HAVE_VALGRIND
+#else
+#ifdef HAVE_VALGRIND_VALGRIND_H
+#include <valgrind/valgrind.h>
+#define HAVE_VALGRIND
+#endif 
+#endif 
+
 using namespace Trilinos_Util;
 
 //=============================================================================
@@ -256,24 +267,8 @@ bool Test(char* SolverType,
 }
 
 //=============================================================================
-int main(int argc, char *argv[]) {
 
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-#if 0
-  if ( Comm.MyPID() == 0 ) {
-    cout << "Enter a char to continue" ;
-    char any;
-    cin >> any ; 
-  }
-  Comm.Barrier();
-#endif
-
+int SubMain( Epetra_Comm &Comm ) {
   // Creation of data
   // A and B refer to two different matrices, with the *same*
   // structure and *different* values. Clearly, the map is the same.
@@ -285,6 +280,15 @@ int main(int argc, char *argv[]) {
   int NumVectors_AB = 7;
   int NumVectors_C = 13;
   
+#ifdef HAVE_VALGRIND 
+  if ( RUNNING_ON_VALGRIND ) {
+   Size_AB = 36; // must be square
+   Size_C = 6; 
+   NumVectors_AB = 2;
+   NumVectors_C = 3;
+  }
+#endif
+
   CrsMatrixGallery GalleryA("recirc_2d", Comm);
   GalleryA.Set("problem_size", Size_AB);
   GalleryA.Set("map_type", "interlaced");
@@ -349,23 +353,52 @@ int main(int argc, char *argv[]) {
     else
       cout << "Solver " << Solver << " not available" << endl;
   }
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
+#if 0
+  this does not seem to help
+  delete RowA;
+  delete RowB;
+  delete RowC;
 #endif
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
-    exit(EXIT_SUCCESS);
+    return(EXIT_SUCCESS);
   }
   else {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST FAILED" << endl << endl;
-    exit(EXIT_FAILURE);
+    return(EXIT_FAILURE);
   }
 
 }
+
+int main(int argc, char *argv[]) {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+#if 0
+  if ( Comm.MyPID() == 0 ) {
+    cout << "Enter a char to continue" ;
+    char any;
+    cin >> any ; 
+  }
+  Comm.Barrier();
+#endif
+
+  int retval = SubMain( Comm ) ;   // 
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  return retval ; 
+}
+
 
 #else
 

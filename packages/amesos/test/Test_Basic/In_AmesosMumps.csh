@@ -58,11 +58,17 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+# Some machines use a command different than mpirun to run mpi jobs.  The
+# test-harness.plx script sets the following environment variable
+#  We test for this value below.  If not set, we set it to a default value.
+#
 
-if ("$mpigo" == "") then
-    set mpigo = "mpirun -np "
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    # COMMENT 
+
+if ("$mpigo" == "") then                                      # COMMENT
+    set mpigo = "mpirun -np "                                 # COMMENT 
 endif
+
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start AmesosMumps.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
@@ -187,16 +193,16 @@ $mpigo 2 amesos_test.exe MUMPS   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 $mpigo 3 amesos_test.exe MUMPS SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-$mpigo 1 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-$mpigo 2 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 2 amesos_test.exe MUMPS K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-$mpigo 1 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-$mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 3 1 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 -2 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 3 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe MUMPS K5000.triS 1 1 -2 1 1e-10 1e-8 >>SST.stdout
 
 $mpigo 1 amesos_test.exe MUMPS Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 

@@ -179,22 +179,13 @@ int main(int argc, char *argv[]) {
 
   delete Solver;
 
+  AMESOS_CHK_ERR( ! TestPassed ) ; 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (TestPassed) {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST PASSED" << endl << endl;
-    return(EXIT_SUCCESS);
-  }
-  else {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST FAILED" << endl << endl;
-    system("touch Amesos_FAILED");
-    return(EXIT_FAILURE);
-  }
-
+  return(EXIT_SUCCESS);
 }
 
 #else

@@ -78,6 +78,7 @@ Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) :
   A_and_LU_built = false ; 
   FirstCallToSolve_ = true ; 
   MyDSCObject = DSC_Begin() ; 
+  MyDscRank = -1 ; 
 }
 
 //=============================================================================

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = TestAmesos$(EXEEXT) TestBasic$(EXEEXT) \
 	TestExamples$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
-	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5)
+	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5) \
+	$(am__EXEEXT_6)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,6 +104,7 @@ CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_3 = TestMumps$(EXEEXT)
 @HAVE_AMESOS_KLU_TRUE@am__EXEEXT_4 = TestKlu$(EXEEXT)
 @HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_5 = TestSuperlud$(EXEEXT)
+@HAVE_VALGRIND_TRUE@am__EXEEXT_6 = TestValgrind$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
@@ -136,6 +138,10 @@ am__TestUmfpack_SOURCES_DIST = $(srcdir)/TestUmfpack
 am_TestUmfpack_OBJECTS =
 TestUmfpack_OBJECTS = $(am_TestUmfpack_OBJECTS)
 TestUmfpack_LDADD = $(LDADD)
+am__TestValgrind_SOURCES_DIST = $(srcdir)/TestValgrind
+am_TestValgrind_OBJECTS =
+TestValgrind_OBJECTS = $(am_TestValgrind_OBJECTS)
+TestValgrind_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -144,12 +150,14 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
 	$(TestDscpack_SOURCES) $(TestExamples_SOURCES) \
 	$(TestKlu_SOURCES) $(TestMumps_SOURCES) \
-	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
+	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) \
+	$(TestValgrind_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestBasic_SOURCES_DIST) $(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
 	$(am__TestMumps_SOURCES_DIST) $(am__TestSuperlud_SOURCES_DIST) \
-	$(am__TestUmfpack_SOURCES_DIST)
+	$(am__TestUmfpack_SOURCES_DIST) \
+	$(am__TestValgrind_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -301,6 +309,8 @@ target_vendor = @target_vendor@
 @HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples.sh
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_TEST = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_TEST = TestDscpack
+@HAVE_VALGRIND_FALSE@VALGRIND_TEST = 
+@HAVE_VALGRIND_TRUE@VALGRIND_TEST = TestValgrind
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK_TEST = 
 @HAVE_AMESOS_UMFPACK_TRUE@UMFPACK_TEST = TestUmfpack
 @HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_TEST = 
@@ -320,6 +330,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_MUMPS_TRUE@MUMPS_TEST = TestMumps
 @HAVE_AMESOS_DSCPACK_TRUE@TestDscpack_SOURCES = $(srcdir)/TestDscpack
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
+@HAVE_VALGRIND_TRUE@TestValgrind_SOURCES = $(srcdir)/TestValgrind
 
 # if HAVE_AMESOS_SCALAPACK
 # TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -388,6 +399,9 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_UMFPACK_FALSE@TestUmfpack$(EXEEXT): $(TestUmfpack_OBJECTS) $(TestUmfpack_DEPENDENCIES) 
 @HAVE_AMESOS_UMFPACK_FALSE@	@rm -f TestUmfpack$(EXEEXT)
 @HAVE_AMESOS_UMFPACK_FALSE@	$(LINK) $(TestUmfpack_LDFLAGS) $(TestUmfpack_OBJECTS) $(TestUmfpack_LDADD) $(LIBS)
+@HAVE_VALGRIND_FALSE@TestValgrind$(EXEEXT): $(TestValgrind_OBJECTS) $(TestValgrind_DEPENDENCIES) 
+@HAVE_VALGRIND_FALSE@	@rm -f TestValgrind$(EXEEXT)
+@HAVE_VALGRIND_FALSE@	$(LINK) $(TestValgrind_LDFLAGS) $(TestValgrind_OBJECTS) $(TestValgrind_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -528,6 +542,9 @@ uninstall-am: uninstall-info-am
 
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 @HAVE_AMESOS_UMFPACK_TRUE@	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
+
+@HAVE_VALGRIND_TRUE@TestValgrind$(EXEEXT): $(srcdir)/TestValgrind
+@HAVE_VALGRIND_TRUE@	cp $(srcdir)/TestValgrind TestValgrind$(EXEEXT) 
 
 @HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 

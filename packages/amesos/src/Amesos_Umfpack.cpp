@@ -42,6 +42,7 @@ extern "C" {
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   IsSymbolicFactorizationOK_(false), 
   IsNumericFactorizationOK_(false), 
+  SerialCrsMatrixA_(0),
   Symbolic(0),
   Numeric(0),
   SerialMap_(0), 
@@ -49,6 +50,7 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   UseTranspose_(false),
   Problem_(&prob), 
   Rcond_(0.0), 
+  RcondValidOnAllProcs_(true), 
   PrintTiming_(false),
   PrintStatus_(false),
   ComputeVectorNorms_(false),
@@ -80,6 +82,8 @@ Amesos_Umfpack::~Amesos_Umfpack(void)
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
   if ( Numeric ) umfpack_di_free_numeric (&Numeric) ;
+
+    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
 
   if( Time_ ) delete Time_;
 
@@ -125,12 +129,13 @@ int Amesos_Umfpack::ConvertToSerial()
 
     Epetra_Export export_to_serial(OriginalMap,*SerialMap_);
 
-    Epetra_CrsMatrix* SerialCrsMatrixA;
-    SerialCrsMatrixA = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
-    SerialCrsMatrixA->Export(*Matrix(), export_to_serial,Insert); 
+    if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
+
+    SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
+    SerialCrsMatrixA_->Export(*Matrix(), export_to_serial,Insert); 
     
-    SerialCrsMatrixA->FillComplete(); 
-    SerialMatrix_ = SerialCrsMatrixA;
+    SerialCrsMatrixA_->FillComplete(); 
+    SerialMatrix_ = SerialCrsMatrixA_;
   }
 
   MatTime_ += Time_->ElapsedTime();
@@ -264,6 +269,7 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
 
   Time_->ResetStartTime();
 
+  RcondValidOnAllProcs_ = false ; 
   if (iam == 0) {
     vector<double> Control(UMFPACK_CONTROL);
     vector<double> Info(UMFPACK_INFO);
@@ -324,6 +330,15 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
   NumTime_ += Time_->ElapsedTime();
   return 0;
 }
+
+//=============================================================================
+double Amesos_Umfpack::GetRcond() const {
+  if ( !RcondValidOnAllProcs_ ) {
+    Comm().Broadcast( &Rcond_, 1, 0 ) ; 
+    RcondValidOnAllProcs_ = true; 
+  }
+  return(Rcond_);
+}; 
 
 //=============================================================================
 bool Amesos_Umfpack::MatrixShapeOK() const 
@@ -424,8 +439,8 @@ int Amesos_Umfpack::Solve()
   } else { 
     assert (IsLocal_ == 0);
     const Epetra_Map& OriginalMap = Matrix()->RowMatrixRowMap();
-    Epetra_MultiVector* SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
-    Epetra_MultiVector* SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
+    SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
+    SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
 
     if (ImportToSerial_ == 0) {
       ImportToSerial_ = new Epetra_Import (*SerialMap_,OriginalMap );
@@ -446,6 +461,13 @@ int Amesos_Umfpack::Solve()
     SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
     SerialB = SerialBextract; 
     SerialX = SerialXextract; 
+#if 0 
+    int SBlda;
+    assert( SerialB->ExtractView( &SerialBvalues, &SBlda ) == 0 ) ; 
+    if (Comm().MyPID() == 0 )
+      SerialBvalues[0] = 0.001 ;    // kludge
+#endif
+
   } 
 
   VecTime_ += Time_->ElapsedTime();
@@ -469,7 +491,8 @@ int Amesos_Umfpack::Solve()
     
     for ( int j =0 ; j < NumVectors; j++ ) { 
       double *Control = (double *) NULL, *Info = (double *) NULL ;
-      
+
+
       int status = umfpack_di_solve (UmfpackRequest, &Ap[0], 
 				     &Ai[0], &Aval[0], 
 				     &SerialXvalues[j*SerialXlda], 
@@ -487,8 +510,8 @@ int Amesos_Umfpack::Solve()
 
   if ( IsLocal_ == 0 ) {
     vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
-    delete SerialBextract ;
-    delete SerialXextract ;
+    if (SerialBextract) delete SerialBextract ;
+    if (SerialXextract) delete SerialXextract ;
   }
 
   VecTime_ += Time_->ElapsedTime();

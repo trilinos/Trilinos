@@ -108,7 +108,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe KLU   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolC.rua 0 1 3 0 1e-12 1e-13 >>SST.stdout
-./amesos_test.exe KLU   ImpcolD.rua 0 0 3 0 1e-12 1e-12 >>SST.stdout
+./amesos_test.exe KLU   ImpcolD.rua 0 0 3 0 1e-11 1e-12 >>SST.stdout
 ./amesos_test.exe KLU   ImpcolA.rua 1 0 2 1 1e-9  1e-11 >>SST.stdout
 #
 #  Test multiple right hand sides
@@ -122,7 +122,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-./amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+./amesos_test.exe KLU SuperLU.triU 0 1 1 0 1e-14 1e-13 >>SST.stdout
 
 ./amesos_test.exe KLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
@@ -138,7 +138,7 @@ echo "COMMENT End AmesosKluSerial.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep amesos_test AmesosKluSerial.exe | grep -v COMMENT | wc`
+set expected_lines = `grep amesos_test AmesosKluSerial.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

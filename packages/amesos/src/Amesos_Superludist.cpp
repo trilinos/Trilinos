@@ -520,7 +520,7 @@ int Amesos_Superludist::Factor( ) {
     Ap_[MyRow] = Ai_index ; 
     for ( int j = 0; j < NzThisRow; j++ ) { 
       Ai_[Ai_index] = Global_Columns_[ColIndices[j]] ; 
-      Aval_[Ai_index] = RowValues[j] ; 
+      Aval_[Ai_index] = RowValues[j] ;
       Ai_index++;
     }
   }
@@ -570,10 +570,6 @@ int Amesos_Superludist::Factor( ) {
     set_default_options(&options_);
 #endif
 
-    //
-    //  superlu_ddefs.h defines YES as 1 but also includes it in the enum yes_no_t
-    //
-#undef YES
 
     int numcols = RowMatrixA_->NumGlobalCols() ; 
     if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
@@ -623,10 +619,8 @@ int Amesos_Superludist::Factor( ) {
     else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
     else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
 
-#ifdef FIXME
     if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
     else                 options_.PrintStat = NO;
-#endif
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
@@ -730,7 +724,7 @@ int Amesos_Superludist::ReFactor( ) {
       for ( int j = 0; j < NzThisRow; j++ ) { 
 	//  pdgssvx alters Ai_, so we have to set it again.
 	Ai_[Ai_index] = Global_Columns_[ColIndices[j]];
-	Aval_[Ai_index] = RowValues[j] ; 
+	Aval_[Ai_index] = RowValues[j] ;  
 	Ai_index++;
       }
     }

@@ -32,6 +32,7 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
@@ -137,7 +138,7 @@ public:
       Rcond = min(abs(diag))/max(abs(diag)) see Umfpack documentatoin
       for details.  
    */
-  double GetRcond() const {return(Rcond_);}; 
+  double GetRcond() const ; 
 
   //! Sets parameters from the parameters list, returns 0 if successful.
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
@@ -229,7 +230,9 @@ private:
   /* If IsLocal==1 - Points to the original matrix 
    * If  IsLocal==0 - Points to SerialCrsMatrixA
    */
-  Epetra_RowMatrix *SerialMatrix_;
+  Epetra_RowMatrix* SerialMatrix_;
+
+  Epetra_CrsMatrix* SerialCrsMatrixA_;
 
   //! If \c true, solve the problem with the transpose.
   bool UseTranspose_;
@@ -237,7 +240,7 @@ private:
   const Epetra_LinearProblem * Problem_;
 
   //! Reciprocal condition number estimate
-  double Rcond_;
+  mutable double Rcond_;
 
   //! If \c true, prints timing in the destructor.
   bool PrintTiming_;
@@ -275,6 +278,8 @@ private:
   Epetra_Time * Time_;
   //! Importer from distributed to serial (all rows on process 0).
   Epetra_Import * ImportToSerial_;
+  //  True if Rcond_ is the same on all processes
+  mutable bool RcondValidOnAllProcs_;
   
 };  // class Amesos_Umfpack  
 #endif /* AMESOS_UMFPACK_H */

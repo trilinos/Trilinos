@@ -70,13 +70,13 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   Matrix_(0),
   UseTranspose_(false),
   Problem_(&prob),
-  IsSymbolicFactorizationOK_(false),
-  IsNumericFactorizationOK_(false),
   PrintTiming_(false),
   PrintStatus_(false),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
+  IsSymbolicFactorizationOK_(false),
+  IsNumericFactorizationOK_(false),
   refactorize_(false),
   rcond_threshold_(1e-12),
   ScaleMethod_(1),
@@ -118,6 +118,7 @@ Amesos_Klu::~Amesos_Klu(void) {
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
+
 
 }
 
@@ -279,7 +280,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 	}
       } else { 
 	for ( int j = 0; j < NumEntriesThisRow; j++ ) {
-	  Aval[Ai_index] = RowValues[j] ;
+	  Aval[Ai_index] = RowValues[j] ;     
 	  Ai_index++;
 	}
       }
@@ -448,9 +449,8 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 }
 
 //=============================================================================
-bool Amesos_Klu::MatrixShapeOK() const 
-{
-  bool OK = true;
+bool Amesos_Klu::MatrixShapeOK() const {
+  bool OK ;
 
   // Comment by Tim:  The following code seems suspect.  The variable "OK"
   // is not set if the condition is true.
@@ -459,7 +459,7 @@ bool Amesos_Klu::MatrixShapeOK() const
        GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) {
     OK = false;
   }
-  return(OK);
+  return OK;
 }
 
 //=============================================================================
@@ -565,10 +565,11 @@ int Amesos_Klu::Solve()
       assert (ImportToSerial_ != 0);
     }
 
-    Epetra_MultiVector *SerialXextract = 
-      new Epetra_MultiVector(*SerialMap_,NumVectors);
-    Epetra_MultiVector *SerialBextract = 
-      new Epetra_MultiVector(*SerialMap_,NumVectors);
+    assert ( SerialBextract == 0 ) ; 
+    assert ( SerialXextract == 0 ) ; 
+
+    SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
+    SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors);
     
     SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
     SerialB = SerialBextract ;
@@ -609,6 +610,7 @@ int Amesos_Klu::Solve()
     vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
     delete SerialBextract ;
     delete SerialXextract ;
+
   } // otherwise we are already in place.
 
   VecTime_ += Time_->ElapsedTime();
@@ -617,8 +619,8 @@ int Amesos_Klu::Solve()
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<NumVectors ; ++i ) {
-      (*vecX)(i)->Norm2(&NormLHS);
-      (*vecB)(i)->Norm2(&NormRHS);
+      AMESOS_CHK_ERR((*vecX)(i)->Norm2(&NormLHS));
+      AMESOS_CHK_ERR((*vecB)(i)->Norm2(&NormRHS));
       if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Klu : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << endl;

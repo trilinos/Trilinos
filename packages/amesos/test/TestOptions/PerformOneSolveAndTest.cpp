@@ -119,13 +119,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
     if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
     if (verbose) cout << "PerformOneSolveAndTest.cpp:122" << endl; 
     if (verbose) ParamList.set( "DebugLevel", 1 );
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:old179" << endl; 
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:old181" << endl; 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:124" << endl; 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:126" << endl; 
 
     int ind[1];
     double val[1];
@@ -182,15 +178,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //
     Problem.SetLHS( &sAAx );
     Problem.SetRHS( &b );
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:181" << endl; 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:183" << endl; 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:185" << endl; 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
-
-    //    if (verbose) cout << " x = " << x << endl ; 
-    //
 
     if ( Levels >= 2 ) 
       {
@@ -230,8 +220,6 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
       }
-
-    //    if (verbose) cout << " second Amat' = " << *Amat << endl ; 
 
     //
     //  Phase 3:  Check the residual: bcheck = A' A' A x 

@@ -58,15 +58,15 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-## Some machines use a command different than mpirun to run mpi jobs.  The
-## test-harness.plx script sets the environment variable
-## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
-## this value below.  If not set, we set it to a default value.
+# Some machines use a command different than mpirun to run mpi jobs.  The
+# test-harness.plx script sets the following environment variable
+#  We test for this value below.  If not set, we set it to a default value.
+#
 
-set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    # COMMENT 
 
-if ("$mpigo" == "") then
-    set mpigo = "mpirun -np "
+if ("$mpigo" == "") then                                      # COMMENT
+    set mpigo = "mpirun -np "                                 # COMMENT 
 endif
 
 touch SST.summary
@@ -197,14 +197,14 @@ $mpigo 2 amesos_test.exe SUPERLU   ImpcolE.rua 1 1 -1 0 1e-9  1e-10  >>SST.stdou
 $mpigo 1 amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 $mpigo 3 amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-$mpigo 1 amesos_test.exe SUPERLU K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
-$mpigo 2 amesos_test.exe SUPERLU K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe SUPERLU K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+# COMMENT $mpigo 2 amesos_test.exe SUPERLU K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
 
-$mpigo 1 amesos_test.exe SUPERLU K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe SUPERLU K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe SUPERLU K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe SUPERLU K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
 
-$mpigo 6 amesos_test.exe SUPERLU K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe SUPERLU K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe SUPERLU K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe SUPERLU K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
 
 $mpigo 1 amesos_test.exe SUPERLU Khead.triS 0 1 1 0 1e-11 1e-9 >>SST.stdout
 

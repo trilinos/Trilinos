@@ -5,7 +5,8 @@ EXEEXT = .exe
 
 TEST = TestOptions 
 
-noinst_PROGRAMS = $(TEST) Suppressions
+# noinst_PROGRAMS = $(TEST) Suppressions
+noinst_PROGRAMS = $(TEST) 
 
 if HAVE_AMESOS_EPETRAEXT
    EPETRA_EXT_LIB = 	$(top_builddir)/../epetraext/src/libepetraext.a 
@@ -22,7 +23,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src \
 -I$(top_builddir)/../triutils/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
-Suppressions_SOURCES =  $(srcdir)/Suppressions
+# Suppressions_SOURCES =  $(srcdir)/Suppressions
 
 TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/CreateTridi.cpp \
@@ -63,5 +64,6 @@ TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
-Suppressions$(EXEEXT):  $(srcdir)/Suppressions
-	cp $(srcdir)/Suppressions Suppressions$(EXEEXT)
+# Suppressions$(EXEEXT):  $(srcdir)/Suppressions
+# 	cp $(srcdir)/Suppressions Suppressions$(EXEEXT)
+# 	cp $(srcdir)/In_ValgrindTest.csh ValgrindTest.csh

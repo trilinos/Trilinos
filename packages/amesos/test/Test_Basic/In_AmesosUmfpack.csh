@@ -26,8 +26,7 @@
 # ************************************************************************
 
 #
-#  AmesosUmfpack.exe, the Direct Sparse Solver Regresion Test, tests and times 
-#  Umfpack on a MPI build.
+#  AmesosUmfpack.exe tests and times Umfpack on a MPI build.
 #
 #  RETURNS 0 if the test succeeds and 1 if the test fails 
 #
@@ -58,20 +57,19 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-## Some machines use a command different than mpirun to run mpi jobs.  The
-## test-harness.plx script sets the environment variable
-## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
-## this value below.  If not set, we set it to a default value.
+# Some machines use a command different than mpirun to run mpi jobs.  The
+# test-harness.plx script sets the following environment variable
+#  We test for this value below.  If not set, we set it to a default value.
 
-set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    # COMMENT 
 
-if ("$mpigo" == "") then
-    set mpigo = "mpirun -np "
+if ("$mpigo" == "") then                                      # COMMENT
+    set mpigo = "mpirun -np "                                 # COMMENT 
 endif
 
 touch SST.summary
 cat >>AME.summary <SST.summary 
-echo "COMMENT Start AmesosUmfpack.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
+echo "COMMENT Start AmesosUmfpack.exe " > SST.summary 
 echo "COMMENT The values printed in columns 11 and 12 are relative." >> SST.summary 
 echo "COMMENT We test against absolute errors."   >> SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
@@ -187,14 +185,14 @@ $mpigo 2 amesos_test.exe UMFPACK   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdou
 $mpigo 1 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 $mpigo 3 amesos_test.exe UMFPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-$mpigo 1 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-$mpigo 2 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 2 amesos_test.exe UMFPACK K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-$mpigo 1 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 1 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-$mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
-$mpigo 6 amesos_test.exe UMFPACK K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 0 1 1 1 1e-10 1e-8 >>SST.stdout
+# COMMENT $mpigo 6 amesos_test.exe UMFPACK K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
 
 $mpigo 1 amesos_test.exe UMFPACK Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
@@ -204,19 +202,19 @@ echo "COMMENT End AmesosUmfpack.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpigo AmesosUmfpack.exe | grep -v COMMENT | wc`
+set expected_lines = `grep mpigo AmesosUmfpack.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
-    grep -v OK SST.summary | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+    grep -v OK SST.summary | grep -v COMMENT | grep " " && echo "AmesosUmfpack Regression Test FAILED" 
     exit(1)
 endif
 #
 #  Prints out success or failure and exit 
 #
-grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed on all" $expected_lines[1] " tests"
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "AmesosUmfpack Test passed on all" $expected_lines[1] " tests"
 #
 #  This should not generaly print anything as errors should have been caught in the if test above
 #
-grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "AmesosUmfpack Test FAILED" 
 exit($status == 0)

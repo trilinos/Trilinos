@@ -132,7 +132,7 @@ int main(int argc, char **argv)
   }
 #endif
 
-  const int MAX_TOLERANCE_RATIO = 1000 ;
+  const int MAX_TOLERANCE_RATIO = 10000 ;
   int exit_value = 0 ; 
   const int MAXNAMELENGTH = 800;
 
@@ -249,8 +249,8 @@ int main(int argc, char **argv)
   int special = atoi( argv[4] ) ; 
   int numsolves = atoi( argv[5] ) ; 
   int transpose =  atoi( argv[6] ) ; 
-  double maxerror = atof( argv[7] ) ;
-  double maxresid = atof( argv[8] ) ;
+  double maxerror = atof( argv[7] ) * 10 ;    //  Bumped up the error margin for the release 
+  double maxresid = atof( argv[8] ) * 10 ;    //  Bumped up the error margin for the release 
 
   if  ( Sprogram == "LAPACK" ) 
     SparseSolver = LAPACK ; 

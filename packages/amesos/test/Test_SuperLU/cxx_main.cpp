@@ -173,21 +173,14 @@ int main(int argc, char *argv[]) {
   TestPassed = TestPassed &&
     CheckError(A,x,b,x_exact);
 
+  AMESOS_CHK_ERR( ! TestPassed ) ; 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (TestPassed) {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST PASSED" << endl << endl;
-    system("touch Amesos_OK");
-    return(EXIT_SUCCESS);
-  }
-  else {
-    if (Comm.MyPID() == 0)
-      cout << endl << "TEST FAILED" << endl << endl;
-    return(EXIT_FAILURE);
-  }
+
+  return(EXIT_SUCCESS);
 
 }
 
