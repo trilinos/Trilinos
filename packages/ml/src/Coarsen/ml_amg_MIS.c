@@ -112,7 +112,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       darray = (double *) malloc(sizeof(double) * count);
       for (i = 0; i < Nrows; i++) darray[i] = (double) ml_amg->blk_info[i];
       if ( mat_comm != NULL )
-         ML_exchange_bdry(darray,mat_comm,Nrows,comm,ML_OVERWRITE);
+         ML_exchange_bdry(darray,mat_comm,Nrows,comm,ML_OVERWRITE,NULL);
       sys_info = (int *) malloc(sizeof(double) * count);
       for (i = 0; i < count; i++) sys_info[i] = (int) darray[i];
       free(darray);
@@ -336,7 +336,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       else  darray[i] = 0.;
    }
    ML_exchange_bdry(darray,Amatrix->getrow->pre_comm,Nrows,comm,
-                    ML_OVERWRITE);
+                    ML_OVERWRITE,NULL);
    for (i = Nrows; i < A_ntotal; i++) 
    {
       if (darray[i] == 1.) bdry[i] = 'T';
@@ -2069,7 +2069,7 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
    for (iter = 0; iter < 2; iter++)
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE);
+         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
 
       for (i = 0; i < Nrows; i++)
       {
@@ -2090,7 +2090,7 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
       }
 
       if (getrow_comm != NULL)
-         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE);
+         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
 
       for (i = Nrows-1; i >= 0; i--)
       {
