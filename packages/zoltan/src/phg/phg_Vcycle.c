@@ -128,8 +128,9 @@ int Zoltan_PHG_Partition (
     int level
 )
 {
+    PHGComm *hgc = hg->comm;
     VCycle  *vcycle=NULL, *del=NULL;
-    int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hg->comm->nProc_x];
+    int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hgc->nProc_x];
     char *yo = "Zoltan_PHG_Partition";
     
     ZOLTAN_TRACE_ENTER(zz, yo);
@@ -140,16 +141,16 @@ int Zoltan_PHG_Partition (
     }
     
     /****** Coarsening ******/    
-    while ((hg->dist_x[hg->comm->nProc_x] > hg->redl)
-           && (hg->dist_x[hg->comm->nProc_x] < 0.9 * prevVcnt)
+    while ((hg->dist_x[hgc->nProc_x] > hg->redl)
+           && (hg->dist_x[hgc->nProc_x] < 0.9 * prevVcnt)
            && (hg->nEdge != 0) && hgp->matching) {
         int *match = NULL;
         VCycle *coarser=NULL;
         
-        prevVcnt=hg->dist_x[hg->comm->nProc_x];
+        prevVcnt=hg->dist_x[hgc->nProc_x];
         
         if (hgp->output_level >= PHG_DEBUG_LIST) {
-            uprintf(hg->comm, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+            uprintf(hgc, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
                     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                     hgp->coarsepartition_str, hgp->refinement_str, p);
             if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -170,20 +171,20 @@ int Zoltan_PHG_Partition (
         }
         for (i = 0; i < hg->nVtx; i++)
             match[i] = i;
-        
+
         /* Calculate matching (packing or grouping) */
         err = Zoltan_PHG_Matching (zz, hg, match, hgp);
         if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
             ZOLTAN_FREE ((void**) &match);
             goto End;
         }
-        
+
         if (!(coarser = newVCycle(NULL, NULL, NULL, vcycle))) {
             ZOLTAN_FREE ((void**) &match);
             ZOLTAN_PRINT_ERROR (zz->Proc, yo, "coarser is NULL.");
             goto End;
         }
-        
+
         /* Construct coarse hypergraph and LevelMap */
         err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, 
          vcycle->LevelMap, &vcycle->LevelCnt, &vcycle->LevelData);
@@ -200,7 +201,7 @@ int Zoltan_PHG_Partition (
 
 
     if (hgp->output_level >= PHG_DEBUG_LIST) {
-        uprintf(hg->comm, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+        uprintf(hgc, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
                 hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                 hgp->coarsepartition_str, hgp->refinement_str, p);
         if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -228,7 +229,7 @@ int Zoltan_PHG_Partition (
         err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->part, hgp);
         
         if (hgp->output_level >= PHG_DEBUG_LIST)     
-            uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
+            uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
                     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                     hgp->coarsepartition_str, hgp->refinement_str, p,
                     Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
@@ -240,7 +241,6 @@ int Zoltan_PHG_Partition (
         
         /* Project coarse partition to fine partition */
         if (finer)  { 
-           PHGComm *hgc = hg->comm;
            int each_size [hgc->nProc_x], displs[hgc->nProc_x];
            int gno, lpart, size, *ip;
            char *rbuffer;

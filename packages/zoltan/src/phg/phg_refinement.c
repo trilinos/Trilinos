@@ -290,7 +290,7 @@ static int refine_fm2 (
     float  *gain=0, *lgain=0;
     HEAP   heap[2];
     char   *yo="local_fm2";
-    PHGComm *hgc=&hg->comm;
+    PHGComm *hgc=hg->comm;
     struct {
         int nPins; 
         int rank;
