@@ -40,6 +40,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int *tmp1, *tmp2, Nlocal, Nneighbors_rcv, Nneighbors_snd, new_length;
   double *new_Tfine_Pn_vec;
   USR_REQ         *request;
+  int t1,t2,t3;
 #ifdef NEW_T_PE
   int    *encoded_dir_node, Pn_ghost = 0;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
@@ -648,15 +649,21 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_az_sort(index, Tcoarse->outvec_leng, NULL, Tcoarse_vec);
      ML_free(index);
 
+     t1 = Nnondirichlet;
+     t2 = Npos_dirichlet;
+     t3 = Nneg_dirichlet;
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) {
        if (Tcoarse_vec[i1] != 0.) {
-	 if (i1 < Nnondirichlet) Nnondirichlet--;
+	 if (i1 < Nnondirichlet) t1--; 
 	 else if (i1 < Nnondirichlet + Npos_dirichlet) 
-	   Npos_dirichlet--;
+	   t2--;
 	 else if (i1 < Nnondirichlet + Npos_dirichlet + Nneg_dirichlet) 
-	   Nneg_dirichlet--;
+	   t3--;
        }
      }
+     Nnondirichlet = t1;
+     Npos_dirichlet = t2;
+     Nneg_dirichlet = t3;
      csr_data = (struct ML_CSR_MSRdata *) Tcoarse->data;
      nz_ptr = 0;
      old_nzptr = 0;
