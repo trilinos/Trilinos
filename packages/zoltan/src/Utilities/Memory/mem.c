@@ -309,6 +309,8 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
     new_ptr->next = top;
     top = new_ptr;
     bytes_used += n;
+fprintf (stderr, "bytes_used is %d, n = %d\n", bytes_used,n) ;
+
     if (bytes_used > bytes_max) {
       bytes_max = bytes_used;
     }
@@ -362,7 +364,7 @@ double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
 	     proc, (long) ptr);
 	}
 	else {	/* Update entry in allocation list */
-	  bytes_used += n - dbptr->size;
+	  bytes_used += (n - dbptr->size);
 	  dbptr->size = n;
 	  dbptr->ptr = p;
 	  if (bytes_used > bytes_max) {
@@ -419,7 +421,7 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
    }
    else {
        *prev = dbptr->next;
-       bytes_used = -dbptr->size;
+       bytes_used -= dbptr->size;
        free((char *) dbptr);
        }
    }
@@ -479,8 +481,8 @@ void      Zoltan_Memory_Stats()
 
     if (DEBUG_MEMORY == 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
-    "Max memory allocated %d\n", proc, nmalloc, nfree, bytes_max);
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
+    proc, nmalloc, nfree);
         if (nmalloc > nfree)
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
@@ -490,9 +492,8 @@ void      Zoltan_Memory_Stats()
     }
     else if (DEBUG_MEMORY > 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
-                "maximum bytes = %d\n",
-		proc, nmalloc, nfree, bytes_max);
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, max bytes"
+    " %d, total bytes %d\n", proc, nmalloc, nfree, bytes_max, bytes_used);
         if (nmalloc > nfree) 
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
