@@ -654,8 +654,8 @@ End:
     if (!hgc->myProc_x) 
         MPI_Reduce (&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgc->col_comm);
 
+    MPI_Bcast (&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);    
 #ifdef _DEBUG    
-    MPI_Bcast (&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);
     test = Zoltan_PHG_hcut_size_links(hgc, hg, part, p);
     if (fabs(totalcut-test)>0.00001)
         errexit("hey new cut function tells that cut=%.5lf but old says it is %.5lf\n", totalcut, test);
