@@ -66,6 +66,10 @@
 
 #include <typeinfo>
 
+extern "C" {
+  extern int AZ_sys_msg_type;
+}
+
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
 LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
@@ -1355,7 +1359,6 @@ NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
 					 const Epetra_Operator& solveJacOp)
 {
   // Message type tags must be synchronized between processors (az_comm.c)
-  extern int AZ_sys_msg_type;
   AZ_sys_msg_type = AZ_MSG_TYPE;
 
   solveJacOpPtr = const_cast<Epetra_Operator*>(&solveJacOp);
