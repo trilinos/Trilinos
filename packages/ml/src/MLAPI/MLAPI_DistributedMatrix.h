@@ -232,7 +232,7 @@ public:
     return(Matrix_->Comm()); 
   }
 
-  ostream& Print(ostream& os, bool verbose = true) const
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const
   {
     int Length = MaxNumEntries();
     vector<double> Values(Length);
