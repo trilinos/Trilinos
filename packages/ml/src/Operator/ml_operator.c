@@ -596,75 +596,6 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
 }
 
 /* ******************************************************************** */
-/* print this matrix (obsolete)                                         */
-/* ******************************************************************** */
-
-int ML_Operator_Print_Old(ML_Operator *Amatrix)
-{
-   int    i, j, m, count, nbytes, Nrows, maxnnz_per_row=500;
-   int    *int_buf;
-   double *dble_buf;
-   int               (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
-   ML_GetrowFunc     *getrow_obj;
-
-   /* ------------------------------------------------------------- */
-   /* first find out whether the getrow function is available       */
-   /* ------------------------------------------------------------- */
-
-   getrow_obj = Amatrix->getrow;
-   if ( getrow_obj->ML_id == ML_EXTERNAL) 
-   {
-      getrowfunc = getrow_obj->external;
-   } 
-   else 
-   {
-      getrowfunc = getrow_obj->internal;
-   }
-   if ( getrowfunc == NULL ) 
-   {
-      printf("ML_Aggregate_Coarsen Error : no getrow function.\n");
-      exit(-1);
-   }
-
-   /* ------------------------------------------------------------- */
-   /* allocate initial temporary storage space for getrow           */
-   /* also allocate space for storing the diagonal (if epsilon>0)   */
-   /* ------------------------------------------------------------- */
-
-   Nrows = Amatrix->outvec_leng;
-   nbytes = maxnnz_per_row * sizeof( int );
-   ML_memory_alloc((void**) &int_buf, nbytes, "OPA");
-   nbytes = maxnnz_per_row * sizeof( double );
-   ML_memory_alloc((void**) &dble_buf, nbytes, "OPB");
-
-   /* ------------------------------------------------------------- */
-   /* find out about how much memory to allocate for the matrix     */
-   /* ------------------------------------------------------------- */
-
-   count = 0;
-   for ( i = 0; i < Nrows; i++ ) 
-   {
-      while (getrowfunc(Amatrix->data, 1, &i, maxnnz_per_row, int_buf, 
-                          dble_buf, &m) == 0 ) 
-      {
-         ML_memory_free((void**) &int_buf);
-         ML_memory_free((void**) &dble_buf);
-         maxnnz_per_row = maxnnz_per_row * 2 + 1; 
-         nbytes = maxnnz_per_row * sizeof( int );
-         ML_memory_alloc((void**) &int_buf, nbytes, "AGD");
-         nbytes = maxnnz_per_row * sizeof( double );
-         ML_memory_alloc((void**) &dble_buf,  nbytes, "AGE");
-      }
-      for ( j = 0; j < m; j++ ) 
-         printf("Operator(%d,%d) = %e\n", i+1, int_buf[j]+1, dble_buf[j]);
-      count += m;
-   }
-   ML_memory_free((void**) &int_buf);
-   ML_memory_free((void**) &dble_buf);
-   return 0;
-}
-
-/* ******************************************************************** */
 /* Getrow function that is used to drop matrix elements and to collapse */
 /* several rows into a block. It is assumed that                        */
 /* ML_Operator_AmalgamateAndDropWeak() was previously called to         */
@@ -997,29 +928,38 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
   return 0;
 }
 
-/* This function is not finished. Started by Ray Tuminaro ... but I don't need it for now. */
-extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, int **unblocked, int *size);
-int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, int **unblocked, int *size)
+/* ******************************************************************** */
+/* ******************************************************************** */
+/* This function is not finished. Started by Ray Tuminaro .. but I don't*/
+/* need it for now.                                                     */
+/* ******************************************************************** */
+
+extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
+                                            int **unblocked, int *size);
+
+/* ******************************************************************** */
+/* Take a vector created in the blocked matrix and transform it to a    */
+/* vector corresponding to the unblocked matrix. This is a bit tricky   */
+/* due to the ghost nodes (where not every DOF within a block might     */
+/* appear as a ghost node.                                              */
+/* ******************************************************************** */
+
+int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
+                                     int **unblocked, int *size)
 {
-/* Take a vector created in the blocked matrix and transform it to a vector corresponding
-   to the unblocked matrix. This is a bit tricky due to the ghost nodes (where not every
-   DOF within a block might appear as a ghost node. */
-   
-      struct amalg_drop  *temp;
-      int j;
+   struct amalg_drop  *temp;
+   int j;
 
-     temp = (struct amalg_drop *) Amat->data;
-     *size = temp->Amat->invec_leng;
-     if (temp->Amat->getrow->pre_comm != NULL) {
-        *size += temp->Amat->getrow->pre_comm->total_rcv_length;
-     }
-     *unblocked = (int *) ML_allocate(sizeof(int)*(*size+1));
-     if (*unblocked == NULL)
-        pr_error("ML_Operator_Amalgamate_Vec_Trans: out of space\n");
+   temp = (struct amalg_drop *) Amat->data;
+   *size = temp->Amat->invec_leng;
+   if (temp->Amat->getrow->pre_comm != NULL)
+      *size += temp->Amat->getrow->pre_comm->total_rcv_length;
 
-     for (j = 0; j < *size; j++) {
-       (*unblocked)[j] = blocked[ temp->blk_inds[j] ];
-    }
-    return 0;
+   *unblocked = (int *) ML_allocate(sizeof(int)*(*size+1));
+   if (*unblocked == NULL)
+      pr_error("ML_Operator_Amalgamate_Vec_Trans: out of space\n");
+
+   for (j = 0; j < *size; j++) (*unblocked)[j] = blocked[temp->blk_inds[j]];
+   return 0;
 }
 
