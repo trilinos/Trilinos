@@ -240,6 +240,32 @@ be obtained by typing
 $TRILINOS_HOME/packages/amesos/configure --help
 \end{verbatim}
 
+\begin{table}[tbhp]
+  \centering
+  \begin{tabular}{| l  l | c | c | c | c | }
+    \hline
+    Architecture & Communicator & KLU & UMFPACK & SuperLU\_DIST 2.0 & MUMPS 4.3.1
+    \\
+    \hline
+    LINUX & SERIAL & $\bullet$ & $\bullet$ & -- & -- \\
+    LINUX, GNU & LAM/MPI  &$\bullet$  & $\bullet$ & $\bullet$
+    & -- \\
+    LINUX, GNU & MPICH  & -- & -- & --
+    & -- \\
+    LINUX, Intel & MPICH  &$\bullet$  & $\bullet$ & --
+    & $\bullet$ \\
+    SGI 64 & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
+    DEC/Alpha & MPI & $\bullet$ & $\bullet$ & -- & -- \\
+    SUN/Solaris & MPI & -- & -- & -- & -- \\
+    ASCI Red & MPI & -- & -- & -- & -- \\
+    \hline
+  \end{tabular}
+  \caption{Supported architectures for various interfaces. 
+  `$\bullet$' means that the interface can successfully compiled, 
+  `--' means that it cannot, or may require specific tweaks.}
+  \label{tab:arch}
+\end{table}
+
 %%%
 %%%
 %%%
