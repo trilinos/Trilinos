@@ -62,6 +62,8 @@ struct ijv *mat;
     *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
 
     *base = 0;   /* MatrixMarket is 1-based, but we convert to 0-based. */
+                 /* Warning: This causes zdrive output to be 0-based 
+                    while the input was 1-based! We need to fix this.  */
     rewind(f);   /* need to read first line again! */
           
 
@@ -119,8 +121,11 @@ struct ijv *mat;
     for (k=0; k<nz; k++)
     {
         fscanf(f, "%d %d %lg\n", &mat[k].i, &mat[k].j, &mat[k].val);
-        (mat[k].i)--;  /* adjust from 1-based to 0-based */
-        (mat[k].j)--;
+        if (*base == 0){
+          /* adjust from 1-based to 0-based */
+          (mat[k].i)--;  
+          (mat[k].j)--;
+        }
         if (matrix_obj==ROWS){
           /* swap (i,j) to transpose matrix and switch vertices/hyperedges */
           tmp = mat[k].i;
@@ -187,7 +192,8 @@ struct ijv *mat;
     /* Initialize index array to -1. */
     for (j=0; j<(*nEdge+1); j++)
       (*index)[j] = -1;
-    /* Loop over the nonzeros. For each hyperedge, make list of vertices. */
+    /* Loop over the nonzeros. For each hyperedge (same index i), 
+       make list of vertices (index j). Data are sorted by i index. */
     prev_edge = -1;
     for (k=0; k<(*nPins); k++){
       /* next edge is mat[k].i */
@@ -217,6 +223,7 @@ End:
 }
 
 
+/* sort by increasing i value */
 static int comp(const void *a, const void *b)
 {
   return ((struct ijv *)a)->i - ((struct ijv *)b)->i;
