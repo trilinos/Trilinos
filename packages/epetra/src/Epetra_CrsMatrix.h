@@ -420,10 +420,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Returns the result of a solve using the Epetra_CrsMatrix on a Epetra_Vector x in y.
-    /*! 
+    //! Returns the result of a local solve using the Epetra_CrsMatrix on a Epetra_Vector x in y.
+    /*! This method solves a triangular system of equations asynchronously on each processor.
     \param In
-	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
+	   Upper -If true, solve Uy = x, otherwise solve Ly = x.
     \param In
 	   Trans -If true, solve transpose problem.
     \param In
@@ -437,10 +437,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector& y) const;
 
-    //! Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_MultiVector X in Y.
-    /*! 
+    //! Returns the result of a local solve using the Epetra_CrsMatrix a Epetra_MultiVector X in Y.
+    /*! This method solves a triangular system of equations asynchronously on each processor.
     \param In
-	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
+	   Upper -If true, solve Uy = x, otherwise solve Ly = x.
     \param In
 	   Trans -If true, solve transpose problem.
     \param In
@@ -484,7 +484,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	RighttScale() will make the one norm of the resulting matrix exactly 1.
     \param Out
 	   x -A Epetra_Vector containing the column sums of the \e this matrix. 
-	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
+	   \warning It is assumed that the distribution of x is described by the DomainMap() of \e this.
 
     \return Integer error code, set to 0 if successful.
   */
