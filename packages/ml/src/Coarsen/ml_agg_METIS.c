@@ -1412,7 +1412,7 @@ int agg_offset, vertex_offset;
        if( aggr_count < Nprocs ) {
 	 if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
-		    "*ML*WRN* In CoarsenMETIS, %s global aggregates are required,\n"
+		    "*ML*WRN* In CoarsenMETIS, %d global aggregates are required,\n"
 		    "*ML*WRN* but you have only %d processes. METIS requires at\n"
 		    "*ML*WRN* one aggregate per process. Otherwise, you can use ParMETIS\n"
 		    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local aggregate\n"

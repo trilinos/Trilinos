@@ -605,7 +605,8 @@ int ML_Aggregate_Viz_Stats_SetUpLevel( ML_Aggregate_Viz_Stats finer_level,
   ML_memory_alloc((void*)&(coarser_level->x),size,"x for info");
   if( dim > 1 ) ML_memory_alloc((void*)&(coarser_level->y),size,"y for info");
   if( dim > 2 ) ML_memory_alloc((void*)&(coarser_level->z),size,"z for info");
-  
+
+  return 0;  
 }
 
   

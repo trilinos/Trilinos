@@ -31,8 +31,8 @@ int ML_Smoother_Amesos(void *sm,int inlen,double x[],int outlen,
 #else
   fprintf( stderr,
 	   "*ML*ERR* you should configure with --with-ml_amesos\n"
-	   "*ML*ERR* to use Amesos as smoother"
-	   "*ERR*ML* (file=%s, line=%d)\n"
+	   "*ML*ERR* to use Amesos as smoother\n"
+	   "*ML*ERR* (file=%s, line=%d)\n",
 	   __FILE__,
 	   __LINE__ );
   exit( EXIT_FAILURE );
@@ -50,8 +50,8 @@ void ML_Smoother_Clean_Amesos(void *Amesos_Handle)
 #else
   fprintf( stderr,
 	   "*ML*ERR* you should configure with --with-ml_amesos\n"
-	   "*ML*ERR* to use Amesos as smoother"
-	   "*ERR*ML* (file=%s, line=%d)\n"
+	   "*ML*ERR* to use Amesos as smoother\n"
+	   "*ERR*ML* (file=%s, line=%d)\n",
 	   __FILE__,
 	   __LINE__ );
   exit( EXIT_FAILURE );

@@ -440,8 +440,8 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
     if( NumPDEEqns == NullSpaceDim ) {
 
-      double * StartArrayOfPointers[NullSpaceDim];
-      double * ReordArrayOfPointers[NullSpaceDim];
+      double ** StartArrayOfPointers = new double * [NullSpaceDim];
+      double ** ReordArrayOfPointers = new double * [NullSpaceDim];
       
       for( int k=0 ; k<NullSpaceDim ; ++k ) {
 	StartArrayOfPointers[k] = StartingNullSpace+k*StartingNumElements*NumPDEEqns;
@@ -453,6 +453,9 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
       
       Q->Multiply(true,startNS,reordNS);
       
+      delete StartArrayOfPointers;
+      delete ReordArrayOfPointers;
+
     } else {
       
       Epetra_Vector startNS2(StartingMap);
@@ -497,10 +500,10 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   
   Epetra2MLMatrix( Q, ML_Q2);
 
-  return ML_Q2;
-
   if( Start != NULL ) delete [] Start;
   if( Reord != NULL ) delete [] Reord;
+
+  return ML_Q2;
 
 #endif
 }

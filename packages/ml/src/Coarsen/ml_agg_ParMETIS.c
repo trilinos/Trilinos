@@ -367,7 +367,7 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
   
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Entering `ML_BuildReorderedDecomposition'\n");
-    printf("*ML*DBG* with Nrows=%d, Naggregates=%d %d\n",
+    printf("*ML*DBG* with Nrows=%d, Naggregates=%d\n",
 	   Nrows, Naggregates);
     debug_starting_time = GetClock(); 
   }
@@ -1024,7 +1024,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if( starting_amalg_bdry == NULL ) {
      fprintf( stderr,
 	      "*ML*ERR* Not enough space to allocate %d bytes\n"
-	      "*ML*ERR* (file %s, line %)\n",
+	      "*ML*ERR* (file %s, line %d)\n",
 	      nbytes,
 	      __FILE__,
 	      __LINE__ );
@@ -1056,7 +1056,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* communicate the boundary information */
 
    ML_exchange_bdry(starting_amalg_bdry,Amatrix->getrow->pre_comm,
-		    nvertices,comm, ML_OVERWRITE,NULL);
+		    Nrows,comm, ML_OVERWRITE,NULL);
 
    /* ********************************************************************** */
    /* allocate memory for starting_decomposition and call ParMETIS to        */

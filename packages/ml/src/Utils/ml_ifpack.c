@@ -30,8 +30,8 @@ int ML_Smoother_Ifpack(void *sm,int inlen,double x[],int outlen,
 #else
   fprintf( stderr,
 	   "*ML*ERR* you should configure with --with-ml_ifpack\n"
-	   "*ML*ERR* to use Ifpack as smoother"
-	   "*ERR*ML* (file=%s, line=%d)\n"
+	   "*ML*ERR* to use Ifpack as smoother\n"
+	   "*ML*ERR* (file=%s, line=%d)\n",
 	   __FILE__,
 	   __LINE__ );
   exit( EXIT_FAILURE );
@@ -49,8 +49,8 @@ void ML_Smoother_Clean_Ifpack(void *Ifpack_Handle)
 #else
   fprintf( stderr,
 	   "*ML*ERR* you should configure with --with-ml_ifpack\n"
-	   "*ML*ERR* to use Ifpack as smoother"
-	   "*ERR*ML* (file=%s, line=%d)\n"
+	   "*ML*ERR* to use Ifpack as smoother\n"
+	   "*ML*ERR* (file=%s, line=%d)\n",
 	   __FILE__,
 	   __LINE__ );
   exit( EXIT_FAILURE );
