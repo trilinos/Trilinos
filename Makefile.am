@@ -51,7 +51,7 @@ EXTRA_DIST = \
 	sampleScripts/cplant_serial_ross \
 	sampleScripts/cygwin_mpi sampleScripts/cygwin_serial_gcc \
 	sampleScripts/cygwin_serial_icl sampleScripts/cygwingcc_amesos \
-	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi 
+	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi \
 	sampleScripts/janus_mpi_stlport \
 	sampleScripts/linux_mpi_codecov \
 	sampleScripts/linux_mpi_herouxsmp sampleScripts/linux_mpi_instCluster \

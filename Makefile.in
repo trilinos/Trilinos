@@ -209,7 +209,17 @@ EXTRA_DIST = \
 	sampleScripts/cplant_serial_ross \
 	sampleScripts/cygwin_mpi sampleScripts/cygwin_serial_gcc \
 	sampleScripts/cygwin_serial_icl sampleScripts/cygwingcc_amesos \
-	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi 
+	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi \
+	sampleScripts/janus_mpi_stlport \
+	sampleScripts/linux_mpi_codecov \
+	sampleScripts/linux_mpi_herouxsmp sampleScripts/linux_mpi_instCluster \
+	sampleScripts/linux_serial_codecov \
+	sampleScripts/macosx_mpi_paul sampleScripts/macosx_serial_paul \
+	sampleScripts/macosx_serial_samt5980 \
+	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
+	sampleScripts/sgi64_serial_atlantis \
+	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
+	sampleScripts/README config/AutotoolsVersionInfo
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -626,16 +636,6 @@ uninstall-info: uninstall-info-recursive
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-info-am
 
-	sampleScripts/janus_mpi_stlport \
-	sampleScripts/linux_mpi_codecov \
-	sampleScripts/linux_mpi_herouxsmp sampleScripts/linux_mpi_instCluster \
-	sampleScripts/linux_serial_codecov \
-	sampleScripts/macosx_mpi_paul sampleScripts/macosx_serial_paul \
-	sampleScripts/macosx_serial_samt5980 \
-	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
-	sampleScripts/sgi64_serial_atlantis \
-	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
-	sampleScripts/README config/AutotoolsVersionInfo
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
