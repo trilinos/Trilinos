@@ -16,6 +16,7 @@ typedef long int logical;
 typedef short int shortlogical;
 typedef char logical1;
 typedef char integer1;
+#include "ml_vendor_lapack.h"
 /* typedef long long longint; */ /* system-dependent */
 
 #define TRUE_ (1)
