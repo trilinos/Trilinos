@@ -42,8 +42,9 @@ char *yo = "Zoltan_HG_Coarsening";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   Zoltan_HG_HGraph_Init(c_hg);
-  c_hg->info = hg->info + 1;
+  c_hg->info  = hg->info + 1;
   c_hg->ratio = hg->ratio;
+  c_hg->redl  = hg->redl;
 
   /* Calculate the number of coarse vertices. pack[vertex] -> -pack[vertex]-1 */
   c_hg->nVtx = 0;
@@ -191,9 +192,9 @@ char *yo = "Zoltan_HG_Coarsening";
   c_hg->nInput = c_hindex[c_hg->nEdge];
 
   /* Reallocate the arrays to their exact size */
-  c_hg->ewgt    =(float*)ZOLTAN_REALLOC(c_ewgt,    c_hg->nEdge * sizeof(float));
-  c_hg->hindex  =(int*)  ZOLTAN_REALLOC(c_hindex,(c_hg->nEdge+1) * sizeof(int));
-  c_hg->hvertex =(int*)  ZOLTAN_REALLOC(c_hvertex, c_hg->nInput  * sizeof(int));
+  c_hg->ewgt    =(float*)ZOLTAN_REALLOC(c_ewgt,    c_hg->nEdge  * sizeof(float));
+  c_hg->hindex  =(int*)  ZOLTAN_REALLOC(c_hindex, (c_hg->nEdge+1) * sizeof(int));
+  c_hg->hvertex =(int*)  ZOLTAN_REALLOC(c_hvertex, c_hg->nInput   * sizeof(int));
 
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
