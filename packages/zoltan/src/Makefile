@@ -14,7 +14,7 @@
 #
 #====================================================================
 #
-GDEFINES = -DDEBUG 
+GDEFINES = -DDEBUG
 
 #
 # Makefile for load-balancing library.
@@ -44,8 +44,8 @@ VX_INC= vx_const.h
 ALL_CSRC=all_allo.c
 ALL_INC=all_const.h all_allo_const.h
 
-LB_CSRC=lb.c
-LB_INC=lb_const.h lb.h lbi_const.h
+LB_CSRC=lb.c lb_util.c 
+LB_INC=lb_const.h lb.h lbi_const.h lb_util_const.h
 
 RCB_CSRC=rcb.c rcb_util.c 
 RCB_INC=rcb.h
@@ -71,10 +71,10 @@ SMOS_PATH   =   $(LIB_PATH)/smos
 SUN_PATH    =   $(LIB_PATH)/sun
 SGI10K_PATH =   $(LIB_PATH)/sgi10k
 
-
-
 SUN_INC_PATH     =   -I$(SUN_PATH)/include  -I/Net/local/lang/SC2.0.1/include \
-			-I/Net/local/lang/SC2.0.1/ansi_include $(SUBINCPATH)
+			-I/Net/local/lang/SC2.0.1/ansi_include \
+                        -I/Net/hondo/puma1/pumatmp1/tools/mpi/include \
+                         $(SUBINCPATH)
 SGI10K_INC_PATH  =   -I$(SGI10K_PATH)/include $(SUBINCPATH)
 SMOS_INC_PATH    =   -I$(SMOS_PATH)/include $(SUBINCPATH)
 TFLOP_INC_PATH   =   -I$(TFLOP_PATH)/include $(SUBINCPATH)
@@ -102,7 +102,7 @@ tflop:
 sun:
 	@cd Obj_sun; \
 	$(MAKE) dlb "SUN_OBJ=$(LIB_SRC_OBJ)" "INC=$(INC)" \
-	"TARGET=dlb" "LIB=$(LIB) $(SUN_BLASLIB)" \
+	"TARGET=dlb" "LIB=$(LIB)" \
 	"SUN_LIB_PATH=$(SUN_LIB_PATH)" \
 	"SUN_INC_PATH=$(SUN_INC_PATH)" "VPATH=$(SUBVPATH)" \
         "GDEFINES=$(GDEFINES)"
