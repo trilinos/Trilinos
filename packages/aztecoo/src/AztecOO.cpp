@@ -624,11 +624,8 @@ int AztecOO::SetProblemOptions(ProblemDifficultyLevel PDL,
 }
 
 //=============================================================================
-int AztecOO::SetPreconditioner(void  (*prec_function)
-					      (double *, int *, int *, double *,
-					       struct AZ_MATRIX_STRUCT  *,
-					       struct AZ_PREC_STRUCT *),
-					      void *p_data)
+int AztecOO::SetPreconditioner(AZ_PREC_FUN  prec_function,
+			       void *p_data)
 {
   if (Pmat_==0) EPETRA_CHK_ERR(-1); // No matrix yet
   EPETRA_CHK_ERR(DestroyPreconditioner()); // Delete existing preconditioner if one exists

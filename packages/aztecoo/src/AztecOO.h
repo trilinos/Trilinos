@@ -225,9 +225,7 @@ class AztecOO {
   //! AztecOO External Preconditioner Set (function and data)
   /*! Associates an external function and data pointer with preconditioner
    */
-  int SetPreconditioner(void  (*prec_function)(double *, int *, int *, double *,
-                                               struct AZ_MATRIX_STRUCT  *,
-                                               struct AZ_PREC_STRUCT *),
+  int SetPreconditioner(AZ_PREC_FUN  prec_function,
                         void *prec_data);
 
   //! AztecOO External Scaling Set
@@ -578,9 +576,9 @@ extern "C" int Epetra_Aztec_getrow(int columns[], double values[], int row_lengt
                                    int requested_rows[], int allocated_space);
 extern "C" int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat);
 
-extern "C" void AztecOO_StatusTest_wrapper(void * conv_test_obj,void * res_vector_obj,
-					   int iteration, double * res_vector, int print_info, 
-					   int sol_updated, int * converged, int * isnan, 
-					   double * rnorm, int * r_avail); 
+void AztecOO_StatusTest_wrapper(void * conv_test_obj,void * res_vector_obj,
+			   int iteration, double * res_vector, int print_info, 
+			   int sol_updated, int * converged, int * isnan, 
+			   double * rnorm, int * r_avail); 
 #endif /* _AZTECOO_H_ */
 

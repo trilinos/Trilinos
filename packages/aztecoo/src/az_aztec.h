@@ -1032,9 +1032,12 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern void AZ_matrix_init(AZ_MATRIX *Amat, int local);
 
+  typedef void (*AZ_PREC_FUN)(double*, int*, int*, double*,
+                              struct AZ_MATRIX_STRUCT*,
+                              struct AZ_PREC_STRUCT*);
+
   extern struct AZ_PREC_STRUCT   *AZ_precond_create(struct AZ_MATRIX_STRUCT *Pmat,
-                                                    void (*prec_fun)( double *, int *, int *, double *,
-                                                                      struct AZ_MATRIX_STRUCT  *, struct AZ_PREC_STRUCT *),
+                                                    AZ_PREC_FUN,
                                                     void *data);
 
   extern void AZ_matrix_destroy( struct AZ_MATRIX_STRUCT **Amat);
