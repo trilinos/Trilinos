@@ -47,7 +47,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
 ## List the Trilinos package being tested on the following line
-    echo "Package being tested: AztecOO  " >>& $file2
+    echo "Package being tested: AztecOO  " > $file2
     echo "Name of subdirectory: " $1 >>& $file2
     echo "Date: " `eval date` >>& $file2
     echo `uname -a` >>& $file2
@@ -57,7 +57,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## IMPORTANT: Specify the script owner(s) on the following line
 ## For one owner type "owner@abc.com", for multiple owners
 ## "owner1@abc.com; owner2@def.com"
-    echo "mheroux@cs.sandia.gov, jmwille@sandia.gov" >>& $file
+    echo "mheroux@cs.sandia.gov, jmwille@sandia.gov" > $file
     echo "Script owner(s) is listed on the previous line." >>& $file
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: AztecOO  " >>& $file
@@ -66,9 +66,9 @@ else
     cd ../../../
     set file = log.`eval date +%d%b%Y_%H%M%S`
     rm -f $file
+    echo $file
+    echo "Date: " `eval date` > $file
 endif
-echo $file
-echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 

@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
   paramlist.set("AZ_kspace", 2.5);//bad type
 
   if (verbose1==true) {
-    cout << "parameter 'AZ_kspace' given bad type (double), warning should"
+    cout << "Test: parameter 'AZ_kspace' given bad type (double), warning should"
          << "be printed to cerr"<<endl;
     err = azoo.SetParameters(paramlist, verbose1);
   }
@@ -111,6 +111,10 @@ int main(int argc, char* argv[]) {
     return(-1);
   }
 #endif
+
+  if (verbose1==true) {
+    cout << "********* Test passed **********" << endl;
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
