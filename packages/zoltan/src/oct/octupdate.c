@@ -1036,7 +1036,7 @@ static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct)
 
     if (nregions > (MAXOCTREGIONS*2) ) {
       fprintf(stderr, "OCT LB_oct_subtree_dref: warning: too many (%d) regions "
-	     "in oct %d (id=%d)\n",POC_nRegions(oct),(int)oct,POC_id(oct));
+	     "in oct (id=%d)\n",POC_nRegions(oct),POC_id(oct));
       return(-1);
     }
     else

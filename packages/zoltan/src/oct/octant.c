@@ -310,7 +310,8 @@ int POC_isTerminal(pOctant oct) {
 
   child=0;
   for (i=0; (!child) && (i<8) ; i++)
-    child=(int)oct->child[i];
+    if (oct->child[i] != NULL)
+      child=1;
   if(child == 0)
     return(1);
   else

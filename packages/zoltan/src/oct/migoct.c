@@ -109,10 +109,13 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   (*max_objs) = 0;
 
   /* check for migrating, pointer should not be larger than an int */
+#ifdef KDDKDD
+/* KDD  Don't know why this test is needed   6/2000 */
   if (sizeof(int)<sizeof(pOctant)) {
     fprintf(stderr,"OCT %s: Fatal error, sizeof(int)<sizeof(ptr)\n", yo);
     abort();
   }
+#endif
 
   if (!nsentags) 
     return;
