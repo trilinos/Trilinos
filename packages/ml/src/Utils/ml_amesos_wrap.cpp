@@ -76,6 +76,18 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   int NumGlobalRows = Amesos_CrsMatrix->NumGlobalRows();
   int NumGlobalNonzeros = Amesos_CrsMatrix->NumGlobalNonzeros();
 
+  // sanity check, coarse matrix should not be empty
+  if( NumGlobalRows == 0 && Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
+    cerr << endl;
+    cerr << "ERROR : Coarse matrix has no rows!" << endl;
+    cerr << endl;
+  }
+  if( NumGlobalNonzeros == 0 && Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
+    cerr << endl;
+    cerr << "ERROR : Coarse matrix has no nonzero elements!" << endl;
+    cerr << endl;
+  }
+
 #ifdef TFLOP
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
     printf("Amesos (level %d) : NumGlobalRows = %d\n",curr_level,NumGlobalRows);
