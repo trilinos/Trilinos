@@ -2,20 +2,25 @@
 //@HEADER
 
 /* 
-   This is an example of using NOX with the NOX::Example group and
-   vector classes. These are very basic classes intended only to
-   illustrate and test NOX. They are based on LAPACK.
+   This is an example of using NOX with the NOX::Solver::TensorBased 
+   tensor-Krylov method.
 
-   This example is a modified extension of the "Broyden Tridiagonal
-   Problem" from Jorge J. More', Burton S. Garbow, and Kenneth
-   E. Hillstrom, Testing Unconstrained Optimization Software, ACM
-   TOMS, Vol. 7, No. 1, March 1981, pp. 14-41.
+   This test problem is a modified extension of the "Broyden
+   Tridiagonal Problem" from Jorge J. More', Burton S. Garbow, and
+   Kenneth E. Hillstrom, Testing Unconstrained Optimization Software,
+   ACM TOMS, Vol. 7, No. 1, March 1981, pp. 14-41.  The modification
+   involves squaring the last equation fn(x) and using it in a
+   homotopy-type equation.
 
-   The parameter "lambda" is a continuation-type parameter that
-   may be varied from 0 to 1 for adjusting the ill-conditioning of
-   the problem.  A value of 0 is the original, unmodified problem,
-   while a value of 1 is that problem with the last equation 
-   squared.
+   The parameter "lambda" is a homotopy-type parameter that may be
+   varied from 0 to 1 to adjust the ill-conditioning of the problem.
+   A value of 0 is the original, unmodified problem, while a value of
+   1 is that problem with the last equation squared.  Typical values
+   for increasingly ill-conditioned problems might be 0.9, 0.99,
+   0.999, etc.
+
+   The standard starting point is x(i) = -1, but x(i) = 0 requires a 
+   few linesearches to test that code functionality.
 */
 
 
@@ -23,8 +28,8 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_Example_Group.H"
+#include "NOX_Solver_TensorBased.H"  
 
-#include "../src/NOX_Solver_TensorBased.H"  // bwb - because not in NOX.H
 
 class Broyden : public NOX::Example::Interface {
 
@@ -40,7 +45,7 @@ public:
     cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
-      initialGuess(i) = -1;
+      initialGuess(i) = 0;  // -1;
       solution(i) = 1;
     }
     fevals = 0;
@@ -118,8 +123,10 @@ int main()
   NOX::Example::Group grp(broyden);
 
   // Set up the status tests
-  NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
-  NOX::StatusTest::MaxIters statusTestB(20);
+  //NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
+  NOX::StatusTest::NormF statusTestA(1.0e-12, 
+				     NOX::StatusTest::NormF::Unscaled);
+  NOX::StatusTest::MaxIters statusTestB(150);
   NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
   // Set up the solver parameters
@@ -135,12 +142,22 @@ int main()
   // Choose the solver itself
   solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
   
-  // Set up the sublist parameters
-  //NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
-  //lineSearchParameters.setParameter("Method","Backtrack");
+  // Set up the line search parameters
+  NOX::Parameter::List& lineSearchParameters = 
+    solverParameters.sublist("Line Search");
+  lineSearchParameters.setParameter("Method","Curvilinear");
+  lineSearchParameters.setParameter("Max Iters",20);
 
-  NOX::Parameter::List& directionParameters = solverParameters.sublist("Direction");
+  // Set up the direction parameters
+  NOX::Parameter::List& directionParameters = 
+    solverParameters.sublist("Direction");
   directionParameters.setParameter("Method","Tensor");
+
+  // Set up the local solver parameters
+  NOX::Parameter::List& localSolverParameters = 
+    directionParameters.sublist("Linear Solver");
+  localSolverParameters.setParameter("Tolerance",1e-4);
+  localSolverParameters.setParameter("Reorthogonalize","As Needed");
 
   // Create the solver
   NOX::Solver::TensorBased solver(grp, statusTestsCombo, solverParameters);
