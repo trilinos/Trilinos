@@ -36,7 +36,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedVector::ExtendedVector(
 			                const NOX::Abstract::Vector& xVec,
 					const NOX::Abstract::Vector& nullVec,
 					double slackVar, double bifParam) :
-  LOCA::ExtendedVector(2,2)
+  LOCA::Extended::Vector(2,2)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
@@ -47,7 +47,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedVector::ExtendedVector(
 LOCA::Bifurcation::PitchforkBord::ExtendedVector::ExtendedVector(
               const LOCA::Bifurcation::PitchforkBord::ExtendedVector& source, 
 	      NOX::CopyType type) :
-  LOCA::ExtendedVector(source, type)
+  LOCA::Extended::Vector(source, type)
 {
 }
 
@@ -63,9 +63,9 @@ LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
   return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(y));
 }
 
-LOCA::ExtendedVector& 
+LOCA::Extended::Vector& 
 LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
-						const LOCA::ExtendedVector& y)
+					      const LOCA::Extended::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(y));
 }
@@ -74,7 +74,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedVector&
 LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
                     const LOCA::Bifurcation::PitchforkBord::ExtendedVector& y)
 { 
-  LOCA::ExtendedVector::operator=(y);
+  LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 

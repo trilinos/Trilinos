@@ -34,6 +34,7 @@
 #define LOCA_SINGULARJACOBIANSOLVE_MANAGER_H
 
 #include "LOCA_SingularJacobianSolve_Generic.H"  // base class
+#include "NOX_Parameter_List.H"
 
 namespace LOCA {
 
@@ -64,7 +65,7 @@ namespace LOCA {
       Manager(NOX::Parameter::List& params);
 
       //! Constructor. 
-      Manager(const NOX::Parameter::List& params);
+      Manager(const NOX::Parameter::List& params = NOX::Parameter::List());
 
       //! Copy constructor
       Manager(const Manager& source);

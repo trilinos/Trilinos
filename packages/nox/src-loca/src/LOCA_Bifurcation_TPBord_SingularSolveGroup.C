@@ -33,9 +33,8 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
 
-LOCA::Bifurcation::TPBord::SingularSolveGroup::SingularSolveGroup(
-					   const NOX::Parameter::List& params)
-  : singularSolveManager(const_cast<NOX::Parameter::List&>(params).sublist("Singular Solve"))
+LOCA::Bifurcation::TPBord::SingularSolveGroup::SingularSolveGroup()
+  : singularSolveManager()
 {
 }
 

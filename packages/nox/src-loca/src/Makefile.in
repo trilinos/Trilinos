@@ -101,7 +101,8 @@ am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1)
-am__objects_3 = libloca_a-LOCA_ExtendedVector.$(OBJEXT) \
+am__objects_3 = libloca_a-LOCA_Extended_Vector.$(OBJEXT) \
+	libloca_a-LOCA_Extended_MultiVector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_AbstractGroup.$(OBJEXT)
 am__objects_4 = libloca_a-LOCA_Continuation_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Continuation_AbstractGroup.$(OBJEXT) \
@@ -201,8 +202,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_ErrorCheck.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po \
@@ -235,7 +237,8 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libloca_a_SOURCES)
 DIST_SOURCES = $(libloca_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
-	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Extended_Vector.H \
+	$(srcdir)/LOCA_Extended_MultiVector.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.H \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
@@ -458,11 +461,13 @@ LOCA_ABSTRACT = \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
 LOCA_EXTENDED_H = \
-	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Extended_Vector.H \
+	$(srcdir)/LOCA_Extended_MultiVector.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.H
 
 LOCA_EXTENDED = \
-	$(srcdir)/LOCA_ExtendedVector.C \
+	$(srcdir)/LOCA_Extended_Vector.C \
+	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C
 
 LOCA_CONTINUATION_H = \
@@ -796,8 +801,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_ErrorCheck.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po@am__quote@
@@ -835,21 +841,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libloca_a-LOCA_ExtendedVector.o: $(srcdir)/LOCA_ExtendedVector.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo" -c -o libloca_a-LOCA_ExtendedVector.o `test -f '$(srcdir)/LOCA_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_ExtendedVector.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_ExtendedVector.C' object='libloca_a-LOCA_ExtendedVector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Extended_Vector.o: $(srcdir)/LOCA_Extended_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Extended_Vector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo" -c -o libloca_a-LOCA_Extended_Vector.o `test -f '$(srcdir)/LOCA_Extended_Vector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_Vector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_Vector.C' object='libloca_a-LOCA_Extended_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_ExtendedVector.o `test -f '$(srcdir)/LOCA_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_ExtendedVector.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_Vector.o `test -f '$(srcdir)/LOCA_Extended_Vector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_Vector.C
 
-libloca_a-LOCA_ExtendedVector.obj: $(srcdir)/LOCA_ExtendedVector.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_ExtendedVector.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo" -c -o libloca_a-LOCA_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_ExtendedVector.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_ExtendedVector.C' object='libloca_a-LOCA_ExtendedVector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_ExtendedVector.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Extended_Vector.obj: $(srcdir)/LOCA_Extended_Vector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Extended_Vector.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo" -c -o libloca_a-LOCA_Extended_Vector.obj `if test -f '$(srcdir)/LOCA_Extended_Vector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_Vector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_Vector.C' object='libloca_a-LOCA_Extended_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_Vector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_ExtendedVector.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_Vector.obj `if test -f '$(srcdir)/LOCA_Extended_Vector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_Vector.C'; fi`
+
+libloca_a-LOCA_Extended_MultiVector.o: $(srcdir)/LOCA_Extended_MultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Extended_MultiVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo" -c -o libloca_a-LOCA_Extended_MultiVector.o `test -f '$(srcdir)/LOCA_Extended_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_MultiVector.C' object='libloca_a-LOCA_Extended_MultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_MultiVector.o `test -f '$(srcdir)/LOCA_Extended_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_MultiVector.C
+
+libloca_a-LOCA_Extended_MultiVector.obj: $(srcdir)/LOCA_Extended_MultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Extended_MultiVector.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo" -c -o libloca_a-LOCA_Extended_MultiVector.obj `if test -f '$(srcdir)/LOCA_Extended_MultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_MultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_MultiVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Extended_MultiVector.C' object='libloca_a-LOCA_Extended_MultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Extended_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Extended_MultiVector.obj `if test -f '$(srcdir)/LOCA_Extended_MultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Extended_MultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Extended_MultiVector.C'; fi`
 
 libloca_a-LOCA_Extended_AbstractGroup.o: $(srcdir)/LOCA_Extended_AbstractGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Extended_AbstractGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Extended_AbstractGroup.Tpo" -c -o libloca_a-LOCA_Extended_AbstractGroup.o `test -f '$(srcdir)/LOCA_Extended_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Extended_AbstractGroup.C; \

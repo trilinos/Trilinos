@@ -38,7 +38,7 @@ LOCA::Bifurcation::HopfBord::ExtendedVector::ExtendedVector(
 		               const NOX::Abstract::Vector& imagEigenVec,
 			       double frequency,
 			       double bifParam) :
-  LOCA::ExtendedVector(3,2)
+  LOCA::Extended::Vector(3,2)
 {
   setVector(0, xVec);
   setVector(1, realEigenVec);
@@ -50,7 +50,7 @@ LOCA::Bifurcation::HopfBord::ExtendedVector::ExtendedVector(
 LOCA::Bifurcation::HopfBord::ExtendedVector::ExtendedVector(
                     const LOCA::Bifurcation::HopfBord::ExtendedVector& source,
 		    NOX::CopyType type) :
-  LOCA::ExtendedVector(source, type)
+  LOCA::Extended::Vector(source, type)
 {
 }
 
@@ -66,9 +66,9 @@ LOCA::Bifurcation::HopfBord::ExtendedVector::operator=(
   return operator=(dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(y));
 }
 
-LOCA::ExtendedVector& 
+LOCA::Extended::Vector& 
 LOCA::Bifurcation::HopfBord::ExtendedVector::operator=(
-						const LOCA::ExtendedVector& y)
+					      const LOCA::Extended::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(y));
 }
@@ -77,7 +77,7 @@ LOCA::Bifurcation::HopfBord::ExtendedVector&
 LOCA::Bifurcation::HopfBord::ExtendedVector::operator=(
                          const LOCA::Bifurcation::HopfBord::ExtendedVector& y)
 { 
-  LOCA::ExtendedVector::operator=(y);
+  LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 

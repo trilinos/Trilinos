@@ -36,7 +36,7 @@ LOCA::Bifurcation::TPBord::ExtendedVector::ExtendedVector(
 					  const NOX::Abstract::Vector& xVec,
 					  const NOX::Abstract::Vector& nullVec,
 					  double bifParam) :
-  LOCA::ExtendedVector(2,1)
+  LOCA::Extended::Vector(2,1)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
@@ -46,7 +46,7 @@ LOCA::Bifurcation::TPBord::ExtendedVector::ExtendedVector(
 LOCA::Bifurcation::TPBord::ExtendedVector::ExtendedVector(
                       const LOCA::Bifurcation::TPBord::ExtendedVector& source,
 		      NOX::CopyType type) :
-  LOCA::ExtendedVector(source, type)
+  LOCA::Extended::Vector(source, type)
 {
 }
 
@@ -62,18 +62,19 @@ LOCA::Bifurcation::TPBord::ExtendedVector::operator=(
   return operator=(dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(y));
 }
 
-LOCA::ExtendedVector& 
+LOCA::Extended::Vector& 
 LOCA::Bifurcation::TPBord::ExtendedVector::operator=(
-					       const LOCA::ExtendedVector& y)
+					     const LOCA::Extended::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(y));
+  return 
+    operator=(dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(y));
 }
 
 LOCA::Bifurcation::TPBord::ExtendedVector& 
 LOCA::Bifurcation::TPBord::ExtendedVector::operator=(
                            const LOCA::Bifurcation::TPBord::ExtendedVector& y)
 { 
-  LOCA::ExtendedVector::operator=(y);
+  LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 

@@ -33,7 +33,7 @@
 #ifndef LOCA_CONTINUATION_EXTENDEDVECTOR_H
 #define LOCA_CONTINUATION_EXTENDEDVECTOR_H
 
-#include "LOCA_ExtendedVector.H"  // Base class
+#include "LOCA_Extended_Vector.H"  // Base class
 
 namespace LOCA {
 
@@ -44,12 +44,12 @@ namespace LOCA {
       for continuation equations.
     */
     /*! 
-       This class uses the LOCA::ExtendedVector implementation to store the
+       This class uses the LOCA::Extended::Vector implementation to store the
        solution and parameter components of the continuation vector
        and merely provides an interface for naming which components of the
        multivector these quantities correspond to.
     */
-    class ExtendedVector : public LOCA::ExtendedVector {
+    class ExtendedVector : public LOCA::Extended::Vector {
 
     public:
   
@@ -64,13 +64,19 @@ namespace LOCA {
       virtual ~ExtendedVector();
 
       //! Assignment operator
-      virtual ExtendedVector& operator=(const ExtendedVector& y);
+      virtual ExtendedVector& 
+      operator=(const ExtendedVector& y);
+
+      virtual LOCA::Extended::Vector& 
+      operator=(const LOCA::Extended::Vector& y);
 
       //! Assignment operator
-      virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+      virtual NOX::Abstract::Vector& 
+      operator=(const NOX::Abstract::Vector& y);
 
       //! Assignment operator
-      virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      virtual NOX::Abstract::Vector* 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Sets the continuation vector by setting its two components 
       virtual void setVec(const NOX::Abstract::Vector& xVec, double param);

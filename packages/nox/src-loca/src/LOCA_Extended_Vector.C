@@ -31,62 +31,116 @@
 //@HEADER
 
 #include "NOX_Random.H" //for NOX::Random
-#include "LOCA_ExtendedVector.H"  // Class definition
+#include "LOCA_Extended_Vector.H"  // Class definition
+#include "LOCA_Extended_MultiVector.H" // for createMultiVector
 
-LOCA::ExtendedVector::ExtendedVector(int nvecs, int nscalars) :
-  vectorPtrs(nvecs), scalars(nscalars)
+LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
+  vectorPtrs(nvecs), isView(nvecs), scalars(nscalars)
 {
 }
 
-LOCA::ExtendedVector::ExtendedVector(const LOCA::ExtendedVector& source, 
+LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source, 
 			       NOX::CopyType type) :
   vectorPtrs(source.vectorPtrs.size()), 
+  isView(source.vectorPtrs.size()),
   scalars(source.scalars)
 {
-  for (unsigned int i=0; i<vectorPtrs.size(); i++)
+  for (unsigned int i=0; i<vectorPtrs.size(); i++) {
     vectorPtrs[i] = source.vectorPtrs[i]->clone(type);
+    isView[i] = false;
+  }
 
   if (type != NOX::DeepCopy)
     init(0.0);
 }
 
 
-LOCA::ExtendedVector::~ExtendedVector()
+LOCA::Extended::Vector::~Vector()
 {
-  for (unsigned int i=0; i<vectorPtrs.size(); i++)
-    delete vectorPtrs[i];
+  for (unsigned int i=0; i<vectorPtrs.size(); i++) {
+    if (!isView[i])
+      delete vectorPtrs[i];
+  }
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::operator=(const NOX::Abstract::Vector& y)
+LOCA::Extended::Vector::operator=(const NOX::Abstract::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::ExtendedVector&>(y));
+  return operator=(dynamic_cast<const LOCA::Extended::Vector&>(y));
 }
 
-LOCA::ExtendedVector& 
-LOCA::ExtendedVector::operator=(const LOCA::ExtendedVector& y)
+LOCA::Extended::Vector& 
+LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
 { 
   if (this != &y) {
-    for (unsigned int i=0; i<vectorPtrs.size(); i++)
-      delete vectorPtrs[i];
-
-    vectorPtrs = y.vectorPtrs;
     scalars = y.scalars;
 
     for (unsigned int i=0; i<vectorPtrs.size(); i++)
-      vectorPtrs[i] = y.vectorPtrs[i]->clone(NOX::DeepCopy);
+      *(vectorPtrs[i]) = *(y.vectorPtrs[i]);
   }
   return *this;
 }
 
 NOX::Abstract::Vector* 
-LOCA::ExtendedVector::clone(NOX::CopyType type) const
+LOCA::Extended::Vector::clone(NOX::CopyType type) const
 {
-  return new LOCA::ExtendedVector(*this, type);
+  return new LOCA::Extended::Vector(*this, type);
+}
+
+NOX::Abstract::MultiVector* 
+LOCA::Extended::Vector::createMultiVector(
+				   const NOX::Abstract::Vector* const* vecs,
+				   int numVecs, 
+				   NOX::CopyType type) const
+{
+  // Pointers to sub-vectors of extended vectors
+  const NOX::Abstract::Vector** subvecs = 
+    new const NOX::Abstract::Vector*[numVecs-1];
+
+  // Pointer to sub-multivector of extended multivector
+  NOX::Abstract::MultiVector* submvec;
+
+  // Create empty extended multivector
+  LOCA::Extended::MultiVector *mvec = 
+    new LOCA::Extended::MultiVector(numVecs, vectorPtrs.size(), 
+				    scalars.size());
+
+  const LOCA::Extended::Vector* evec;
+
+  // Create sub multivectors
+  for (unsigned int i=0; i<vectorPtrs.size(); i++) {
+
+    // Get the ith abstract vector from each column
+    for (int j=0; j<numVecs-1; j++) {
+      evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
+      subvecs[j] = evec->vectorPtrs[i];
+    }
+
+    // Create multivector for the ith row
+    submvec = vectorPtrs[i]->createMultiVector(subvecs, numVecs, type);
+
+    // Set pointer to sub multivec
+    mvec->setMultiVectorPtr(i, submvec);
+
+  }
+
+  // Get scalars
+  for (unsigned int i=0; i<scalars.size(); i++) 
+    mvec->setScalar(i,0,scalars[i]);
+  for (int j=0; j<numVecs-1; j++) {
+    evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
+    for (unsigned int i=0; i<scalars.size(); i++) 
+      mvec->setScalar(i,j+1,evec->scalars[i]);
+  }
+
+  delete [] subvecs;
+
+  return mvec;
+    
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::init(double gamma)
+LOCA::Extended::Vector::init(double gamma)
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->init(gamma);
@@ -96,7 +150,7 @@ LOCA::ExtendedVector::init(double gamma)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::random(bool useSeed, int seed) {
+LOCA::Extended::Vector::random(bool useSeed, int seed) {
   if (useSeed)
     NOX::Random::setSeed(seed);
   for (unsigned int i=0; i<scalars.size(); i++)
@@ -109,9 +163,10 @@ LOCA::ExtendedVector::random(bool useSeed, int seed) {
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::abs(const NOX::Abstract::Vector& y)
+LOCA::Extended::Vector::abs(const NOX::Abstract::Vector& y)
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->abs(*(Y.vectorPtrs[i]));
@@ -122,9 +177,10 @@ LOCA::ExtendedVector::abs(const NOX::Abstract::Vector& y)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::reciprocal(const NOX::Abstract::Vector& y)
+LOCA::Extended::Vector::reciprocal(const NOX::Abstract::Vector& y)
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->reciprocal(*(Y.vectorPtrs[i]));
@@ -135,7 +191,7 @@ LOCA::ExtendedVector::reciprocal(const NOX::Abstract::Vector& y)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::scale(double gamma)
+LOCA::Extended::Vector::scale(double gamma)
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->scale(gamma);
@@ -146,9 +202,10 @@ LOCA::ExtendedVector::scale(double gamma)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::scale(const NOX::Abstract::Vector& y)
+LOCA::Extended::Vector::scale(const NOX::Abstract::Vector& y)
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->scale(*(Y.vectorPtrs[i]));
@@ -159,10 +216,11 @@ LOCA::ExtendedVector::scale(const NOX::Abstract::Vector& y)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::update(double alpha, const NOX::Abstract::Vector& y, 
-			  double gamma)
+LOCA::Extended::Vector::update(double alpha, const NOX::Abstract::Vector& y, 
+			       double gamma)
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), gamma);
@@ -173,13 +231,15 @@ LOCA::ExtendedVector::update(double alpha, const NOX::Abstract::Vector& y,
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::update(double alpha, 
-			  const NOX::Abstract::Vector& y, 
-			  double beta, const NOX::Abstract::Vector& b,
-			  double gamma)
+LOCA::Extended::Vector::update(double alpha, 
+			       const NOX::Abstract::Vector& y, 
+			       double beta, const NOX::Abstract::Vector& b,
+			       double gamma)
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
-  const LOCA::ExtendedVector& B = dynamic_cast<const LOCA::ExtendedVector&>(b);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
+  const LOCA::Extended::Vector& B = 
+    dynamic_cast<const LOCA::Extended::Vector&>(b);
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), beta, *(B.vectorPtrs[i]),
@@ -191,7 +251,7 @@ LOCA::ExtendedVector::update(double alpha,
 }
 
 double 
-LOCA::ExtendedVector::norm(NormType type) const
+LOCA::Extended::Vector::norm(NormType type) const
 {
   double n = 0.0;
   double nv;
@@ -229,9 +289,10 @@ LOCA::ExtendedVector::norm(NormType type) const
 }
 
 double 
-LOCA::ExtendedVector::norm(const NOX::Abstract::Vector& weights) const
+LOCA::Extended::Vector::norm(const NOX::Abstract::Vector& weights) const
 {
-  const LOCA::ExtendedVector& W = dynamic_cast<const LOCA::ExtendedVector&>(weights);
+  const LOCA::Extended::Vector& W = 
+    dynamic_cast<const LOCA::Extended::Vector&>(weights);
   double n = 0.0;
   double nv;
 
@@ -247,9 +308,10 @@ LOCA::ExtendedVector::norm(const NOX::Abstract::Vector& weights) const
 }
 
 double 
-LOCA::ExtendedVector::dot(const NOX::Abstract::Vector& y) const
+LOCA::Extended::Vector::dot(const NOX::Abstract::Vector& y) const
 {
-  const LOCA::ExtendedVector& Y = dynamic_cast<const LOCA::ExtendedVector&>(y);
+  const LOCA::Extended::Vector& Y = 
+    dynamic_cast<const LOCA::Extended::Vector&>(y);
   double d = 0.0;
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
@@ -261,7 +323,7 @@ LOCA::ExtendedVector::dot(const NOX::Abstract::Vector& y) const
 }
 
 int 
-LOCA::ExtendedVector::length() const
+LOCA::Extended::Vector::length() const
 {
   int l = 0;
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
@@ -272,7 +334,7 @@ LOCA::ExtendedVector::length() const
 }
 
 void 
-LOCA::ExtendedVector::print() const
+LOCA::Extended::Vector::print() const
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->print();
@@ -283,40 +345,51 @@ LOCA::ExtendedVector::print() const
 }
 
 void 
-LOCA::ExtendedVector::setVector(int i, const NOX::Abstract::Vector& v)
+LOCA::Extended::Vector::setVector(int i, const NOX::Abstract::Vector& v)
 {
-  if (vectorPtrs[i] != NULL)
-    *vectorPtrs[i] = v;
-  else
-    vectorPtrs[i] = v.clone();
+  if (vectorPtrs[i] != NULL) 
+    if (!isView[i])
+      delete vectorPtrs[i];
+  vectorPtrs[i] = v.clone(NOX::DeepCopy);
+  isView[i] = false;
 }
 
 void 
-LOCA::ExtendedVector::setScalar(int i, double s)
+LOCA::Extended::Vector::setVectorView(int i, NOX::Abstract::Vector& v)
+{
+  if (vectorPtrs[i] != NULL) 
+    if (!isView[i])
+      delete vectorPtrs[i];
+  vectorPtrs[i] = &v;
+  isView[i] = true;
+}
+
+void 
+LOCA::Extended::Vector::setScalar(int i, double s)
 {
   scalars[i] = s;
 }
 
 const NOX::Abstract::Vector& 
-LOCA::ExtendedVector::getVector(int i) const
+LOCA::Extended::Vector::getVector(int i) const
 {
   return *vectorPtrs[i];
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::getVector(int i)
+LOCA::Extended::Vector::getVector(int i)
 {
   return *vectorPtrs[i];
 }
 
 double 
-LOCA::ExtendedVector::getScalar(int i) const
+LOCA::Extended::Vector::getScalar(int i) const
 {
   return scalars[i];
 }
 
 double& 
-LOCA::ExtendedVector::getScalar(int i)
+LOCA::Extended::Vector::getScalar(int i)
 {
   return scalars[i];
 }

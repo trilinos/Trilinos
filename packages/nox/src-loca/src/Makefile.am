@@ -46,11 +46,13 @@ LOCA_ABSTRACT = \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
 LOCA_EXTENDED_H = \
-	$(srcdir)/LOCA_ExtendedVector.H \
+	$(srcdir)/LOCA_Extended_Vector.H \
+	$(srcdir)/LOCA_Extended_MultiVector.H \
 	$(srcdir)/LOCA_Extended_AbstractGroup.H
 
 LOCA_EXTENDED = \
-	$(srcdir)/LOCA_ExtendedVector.C \
+	$(srcdir)/LOCA_Extended_Vector.C \
+	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C
 
 LOCA_CONTINUATION_H = \

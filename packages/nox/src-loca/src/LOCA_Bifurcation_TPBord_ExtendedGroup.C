@@ -572,6 +572,86 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
   return finalStatus;
 }
 
+// NOX::Abstract::Group::ReturnType
+// LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianMultiVector(
+// 				     const NOX::Abstract::MultiVector& input,
+// 				     NOX::Abstract::MultiVector& result) const 
+// {
+//   string callingFunction = 
+//     "LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianMultiVector()";
+//   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+//   NOX::Abstract::Group::ReturnType status;
+
+//   if (!isJacobian()) {
+//     LOCA::ErrorCheck::throwError(callingFunction,
+// 				 "Called with invalid Jacobian!");
+//   }
+
+//   // Cast vectors to TPBordVectors
+//   const LOCA::Bifurcation::TPBord::ExtendedMultiVector& tp_input = 
+//     dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedMultiVector&>(input);
+//   LOCA::Bifurcation::TPBord::ExtendedMultiVector& tp_result = 
+//     dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedMultiVector&>(result);
+
+//   // Get constant references to input vector components
+//   const NOX::Abstract::MultiVector& input_x = tp_input.getXMultiVec();
+//   const NOX::Abstract::MultiVector& input_null = tp_input.getNullMultiVec();
+//   const NOX::Abstract::MultiVector::DenseMatrix& input_param = 
+//     tp_input.getBifParamMatrix();
+
+//   // Get non-constant references to result vector components
+//   NOX::Abstract::MultiVector& result_x = tp_result.getXMultiVec();
+//   NOX::Abstract::MultiVector& result_null = tp_result.getNullMultiVec();
+//   NOX::Abstract::MultiVector::DenseMatrix& result_param = 
+//     tp_result.getBifParamMatrix();
+
+//   // Temporary vector
+//   NOX::Abstract::MultiVector *tmp = input_null.clone(NOX::ShapeCopy);
+
+//   // verify underlying Jacobian is valid
+//   if (!grpPtr->isJacobian()) {
+//     status = grpPtr->computeJacobian();
+//     finalStatus = 
+//       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+// 						   callingFunction);
+//   }
+
+//   // compute J*x
+//   status = grpPtr->applyJacobianMultiVector(input_x, result_x);
+//   finalStatus = 
+//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+// 						 callingFunction);
+
+//   // compute J*x + p*dR/dp
+//   result_x.update(1.0, *derivResidualParamPtr, input_param, 1.0);
+
+//   // compute J*y
+//   status = grpPtr->applyJacobianMulti(input_null, result_null);
+//   finalStatus = 
+//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+// 						 callingFunction);
+
+//   // compute J*y + p*dJy/dp
+//   result_null.update(1.0, *derivNullResidualParamPtr, input_param, 1.0);
+
+//   // compute (dJy/dx)*x
+//   status = grpPtr->computeDJnDxa(tpXVec.getNullVec(), input_x, 
+// 				 tpFVec.getNullVec(), *tmp);
+//   finalStatus = 
+//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+// 						 callingFunction);
+  
+//   // compute (dJy/dx)*x + J*y + p*dJy/dp
+//   result_null.update(1.0, *tmp, 1.0);
+
+//   // compute l^T*y
+//   result_param = lTransNorm(input_null);
+
+//   delete tmp;
+
+//   return finalStatus;
+// }
+
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianTranspose(
 					  const NOX::Abstract::Vector& input,

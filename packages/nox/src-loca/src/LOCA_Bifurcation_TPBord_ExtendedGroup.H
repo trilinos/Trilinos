@@ -370,6 +370,16 @@ namespace LOCA {
 	virtual NOX::Abstract::Group::ReturnType
 	computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
+	//! applyJacobian for multiple right-hand sides 
+	/*! 
+	 * The default implementation here calls applyJacobian() for
+	 * each right hand side serially but should be overloaded if a 
+	 * block solver is available.
+	 */
+	// virtual NOX::Abstract::Group::ReturnType
+// 	applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+// 				 NOX::Abstract::MultiVector& result) const;
+
 	/*! 
 	 * \brief Applies the inverse of the extended Jacobian matrix using 
 	 * the bordering algorithm for multiple right-hand sides.

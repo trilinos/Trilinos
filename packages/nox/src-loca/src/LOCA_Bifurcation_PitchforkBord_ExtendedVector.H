@@ -33,7 +33,7 @@
 #ifndef LOCA_BIFURCATION_PITCHFORKBORD_EXTENDEDVECTOR_H
 #define LOCA_BIFURCATION_PITCHFORKBORD_EXTENDEDVECTOR_H
 
-#include "LOCA_ExtendedVector.H"  // Base class
+#include "LOCA_Extended_Vector.H"  // Base class
 
 namespace LOCA {
 
@@ -46,13 +46,13 @@ namespace LOCA {
 	for pitchfork equations.
       */
       /*! 
-	This class uses the LOCA::ExtendedVector implementation to store the
+	This class uses the LOCA::Extended::Vector implementation to store the
 	solution, null, slack, and parameter components of the pitchfork vector
 	and merely provides an interface for naming which components of the
 	multivector these quantities correspond to.
       */
 
-      class ExtendedVector : public LOCA::ExtendedVector {
+      class ExtendedVector : public LOCA::Extended::Vector {
 
       public:
   
@@ -73,8 +73,8 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Vector& y);
 
 	//! Assignment operator
-	virtual LOCA::ExtendedVector& 
-	operator=(const LOCA::ExtendedVector& y);
+	virtual LOCA::Extended::Vector& 
+	operator=(const LOCA::Extended::Vector& y);
   
 	//! Assignment operator
 	virtual ExtendedVector& operator=(const ExtendedVector& y);

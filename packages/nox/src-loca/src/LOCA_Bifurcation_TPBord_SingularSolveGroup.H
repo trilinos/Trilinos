@@ -64,8 +64,8 @@ namespace LOCA {
 
       public:
 
-	//! Constructor with const parameter list
-	SingularSolveGroup(const NOX::Parameter::List& params = NOX::Parameter::List());
+	//! Constructor with no parameter list
+ 	SingularSolveGroup();
   
 	//! Constructor with non-const parameter list
 	SingularSolveGroup(NOX::Parameter::List& params);

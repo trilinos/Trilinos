@@ -35,21 +35,29 @@
 LOCA::Continuation::ExtendedVector::ExtendedVector(
 					   const NOX::Abstract::Vector& xVec,
 					   double param) :
-  LOCA::ExtendedVector(1,1)
+  LOCA::Extended::Vector(1,1)
 {
-  LOCA::ExtendedVector::setVector(0, xVec);
-  LOCA::ExtendedVector::setScalar(0, param);
+  LOCA::Extended::Vector::setVector(0, xVec);
+  LOCA::Extended::Vector::setScalar(0, param);
 }
 
 LOCA::Continuation::ExtendedVector::ExtendedVector(
 			    const LOCA::Continuation::ExtendedVector& source, 
 			    NOX::CopyType type) :
-  LOCA::ExtendedVector(source, type)
+  LOCA::Extended::Vector(source, type)
 {
 }
 
 LOCA::Continuation::ExtendedVector::~ExtendedVector()
 {
+}
+
+LOCA::Extended::Vector& 
+LOCA::Continuation::ExtendedVector::operator=(
+					     const LOCA::Extended::Vector& y)
+{
+  return 
+    operator=(dynamic_cast<const LOCA::Continuation::ExtendedVector&>(y));
 }
 
 NOX::Abstract::Vector& 
@@ -62,7 +70,7 @@ LOCA::Continuation::ExtendedVector&
 LOCA::Continuation::ExtendedVector::operator=(const 
 				      LOCA::Continuation::ExtendedVector& y)
 {
-  LOCA::ExtendedVector::operator=(y);
+  LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 
@@ -76,30 +84,30 @@ void
 LOCA::Continuation::ExtendedVector::setVec(const NOX::Abstract::Vector& xVec,
 				   double param)
 {
-  LOCA::ExtendedVector::setVector(0, xVec);
-  LOCA::ExtendedVector::setScalar(0, param);
+  LOCA::Extended::Vector::setVector(0, xVec);
+  LOCA::Extended::Vector::setScalar(0, param);
 }
 
 const NOX::Abstract::Vector& 
 LOCA::Continuation::ExtendedVector::getXVec() const
 {
-  return LOCA::ExtendedVector::getVector(0);
+  return LOCA::Extended::Vector::getVector(0);
 }
 
 double 
 LOCA::Continuation::ExtendedVector::getParam() const
 {
-  return LOCA::ExtendedVector::getScalar(0);
+  return LOCA::Extended::Vector::getScalar(0);
 }
 
 NOX::Abstract::Vector& 
 LOCA::Continuation::ExtendedVector::getXVec()
 {
-  return LOCA::ExtendedVector::getVector(0);
+  return LOCA::Extended::Vector::getVector(0);
 }
 
 double& 
 LOCA::Continuation::ExtendedVector::getParam()
 {
-  return LOCA::ExtendedVector::getScalar(0);
+  return LOCA::Extended::Vector::getScalar(0);
 }
