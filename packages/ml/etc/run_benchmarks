@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# This script is used for running a series of benchmark tests.
+# Users indicate a directory containing subdirectories which 
+# describe data corresponding to different problems (one directory
+# for each problem). The script automatically descends each 
+# subdirectory and runs the executable (given on the command line)
+# within the subdirectory. All data necessary to run the executable
+# must be within this subdirectory. The problem is run and the output
+# is compared with an output file in this subdirectory. Some summary
+# statistics are reported.
+# Note: This script is often used with the executable ml_readfile
+#        which contains comments on setting up problems. 
+#
+# Usage: tester [executable bench_directory scratch_directory]
+
+BENCH_DIRECTORY=/home/tuminaro/ml_bench
+EXECUTABLE=/home/tuminaro/codes/Aztec/ml/Obj/ml_readfile
+SCRATCH_DIRECTORY=/tmp/poop
+
+#echo "Usage: tester [executable bench_directory scratch_directory]
+
+#
+# Take command line arguments and replace defaults
+#
+if test $1
+then
+  EXECUTABLE=$1
+fi
+if test $3
+then
+  SCRATCH_DIRECTORY=$3
+fi
+if test $2
+then
+  BENCH_DIRECTORY=$2
+fi
+
+#
+#  Check for the benchmark directory containing the 
+#  valid input/output data.
+#
+
+if test -d ${BENCH_DIRECTORY}
+then
+  touch ${BENCH_DIRECTORY}
+else
+  echo "The directory ${BENCH_DIRECTORY} does not exist?"
+  exit
+fi
+
+#
+#  Check for the executable 
+#
+
+if test -f ${EXECUTABLE}
+then
+  touch ${EXECUTABLE}
+else
+  echo "The executable ${EXECUTABLE} does not exist?"
+  exit
+fi
+
+
+#
+#  Check for the work space directory where current run output 
+#  will be stored.
+#
+
+if test -d ${SCRATCH_DIRECTORY}
+then
+  touch ${SCRATCH_DIRECTORY}
+else
+  echo "Creating the directory ${SCRATCH_DIRECTORY}"
+  mkdir ${SCRATCH_DIRECTORY}
+fi
+
+
+#
+# Run program within each subdirectory and compare output
+# with that contained in the corresponding ${BENCH_DIRECTORY}.
+#
+rm -f ${SCRATCH_DIRECTORY}/summary
+echo " *********** Summary ***************" >> ${SCRATCH_DIRECTORY}/summary
+echo >> ${SCRATCH_DIRECTORY}/summary
+echo >> ${SCRATCH_DIRECTORY}/summary
+echo
+tail -3 ${SCRATCH_DIRECTORY}/summary
+
+
+cd ${BENCH_DIRECTORY}
+for i in *
+do 
+   cd ${i}
+   if test -d ${SCRATCH_DIRECTORY}/${i}
+   then
+      touch ${SCRATCH_DIRECTORY}/${i}
+   else
+      mkdir ${SCRATCH_DIRECTORY}/${i}
+   fi
+   rm -f ${SCRATCH_DIRECTORY}/${i}/output ${SCRATCH_DIRECTORY}/${i}/difs
+   ${EXECUTABLE} > ${SCRATCH_DIRECTORY}/${i}/output
+   diff -w output ${SCRATCH_DIRECTORY}/${i}/output > \
+          ${SCRATCH_DIRECTORY}/${i}/difs
+   wc ${SCRATCH_DIRECTORY}/${i}/difs >> ${SCRATCH_DIRECTORY}/summary
+   tail -1 ${SCRATCH_DIRECTORY}/summary
+   cd ..
+done
