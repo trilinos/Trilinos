@@ -618,6 +618,10 @@ private:
 
   //! Maximum number of levels
   int MaxLevels_;
+
+  //! Number of applications of the ML cycle
+  int CycleApplications_;
+
   //! Integer array used to easily handle ML_INCREASING and ML_DECREASING
   /*! Integer array, of size MaxLevels_, that contain the ML level ID
     for the first logical level, and so on for all levels. The ML level ID

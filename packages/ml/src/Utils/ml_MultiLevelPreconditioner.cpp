@@ -671,6 +671,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   Label_ = new char[80];
   
+  // number of applications of the cycle
+  CycleApplications_ = List_.get("cycle applications", 1);  
+
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
@@ -720,6 +723,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     else                               cout << PrintMsg_ << "Using decreasing levels. ";
     cout << "Finest level  = " << LevelID_[0];
     cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
+    cout << "Number of applications of the ML cycle = " << CycleApplications_ << endl;
   }
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -767,6 +771,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
     /* ********************************************************************** */
 
     ML_Create(&ml_,MaxCreationLevels);
+    ml_->comm->ML_nprocs = Comm().NumProc();
+    ml_->comm->ML_mypid = Comm().MyPID();
+#ifdef ML_MPI
+    const Epetra_MpiComm* C2 = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+    ml_->comm->USR_comm = C2->Comm();
+#endif
+
     ml_->output_level = OutputLevel;
 
     int NumMyRows;
@@ -1517,8 +1528,19 @@ ApplyInverse(const Epetra_MultiVector& X,
 		     yvectors[i], xvectors[i],
 		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
       break;
-    default: // standard way of doing things in ML
-      ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
+    default: 
+      // MS // Standard way of doing things in ML
+      // MS // Added support for multiple cycles on 08-Mar-05
+
+      for (int ia = 0 ; ia < CycleApplications_ ; ++ia) {
+        int StartingSolution = ML_ZERO;
+        if (ia)
+          StartingSolution = ML_NONZERO;
+
+        ML_Cycle_MG(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]), 
+                    yvectors[i], xvectors[i], StartingSolution,
+                    ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+      }
     }
     
     // filtering (requires suitable setup first). Note that the
