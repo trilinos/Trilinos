@@ -32,7 +32,7 @@ Manager::~Manager()
 
 bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Parameter::List& params)
 {
-  string newmethod = params.getParameter("Nonlinear Solver", "Newton");
+  string newmethod = params.getParameter("Nonlinear Solver", "Line Search Based");
 
   if (method != newmethod) {
     
