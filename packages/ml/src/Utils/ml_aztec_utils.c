@@ -2807,6 +2807,7 @@ typedef struct MLAZ_LevelSettings
   double params[AZ_PARAMS_SIZE];
   double status[AZ_STATUS_SIZE];
   double omega;
+  double smoother_damping;
 
 } MLAZ_LevelSettings;
 
@@ -3224,6 +3225,7 @@ void MLAZ_Defaults( void )
 			MLAZ_NumNodesPerAggregate);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_metis_aggregation_value,
 			512);
+  MLAZ_Set_LevelParam(MLAZ_ALL, MLAZ_smoother_damping, .67);
   MLAZ_Set_LevelAztecSmoother(MLAZ_ALL,options,params);
  
   /* now some stuff with coarse level */
@@ -3324,7 +3326,7 @@ void MLAZ_Set_LevelOption( int level, int option, int value )
       
     default:
       fprintf( stderr,
-	       "*ERR*ML* input option not valid\n" );
+	       "*ERR*ML* input level option not valid\n" );
     }
 
   }
@@ -3352,9 +3354,13 @@ void MLAZ_Set_LevelParam(int level,int option, double value)
       Settings.Level[level].omega = value;
       break;
       
+    case MLAZ_smoother_damping:
+      Settings.Level[level].smoother_damping = value;
+      break;
+
     default:
       fprintf( stderr,
-	       "*ERR*ML* input option not valid\n" );
+	       "*ERR*ML* input level param not valid\n" );
     }
   }
   
