@@ -7,7 +7,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "reftree.h"
 #include "all_allo_const.h"
 #include "params_const.h"
@@ -71,7 +71,7 @@ double time0, time1, time2, time3, time4;
    * initialize the tree (first call only)
    */
 
-  if (zz->Data_Structure == NULL) {
+  if (zz->LB.Data_Structure == NULL) {
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) time0 = Zoltan_Time(zz->Timer);
     ierr = Zoltan_Reftree_Init(zz);
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
@@ -216,13 +216,13 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
    * set the root and hash table
    */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table;
-  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -455,13 +455,13 @@ int num_gid_entries = zz->Num_GID;  /* Number of array entries in a global ID */
    * set the root and hash table
    */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table;
-  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -691,13 +691,13 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID. */
    * set the root and hash table
    */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table;
-  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -1023,7 +1023,7 @@ float current_size;   /* amount of weight consumed so far */
 float eps;            /* allowed deviation from average partition size */
 int num_part;         /* number of partitions */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
 
   /*
    * determine the size of the partitions and tolerance interval
@@ -1040,7 +1040,7 @@ int num_part;         /* number of partitions */
 
   num_part = zz->Num_Proc;
   partition_size = root->summed_weight[0]/num_part;
-  eps = (zz->Imbalance_Tol - 1.0)*partition_size/2.0;
+  eps = (zz->LB.Imbalance_Tol - 1.0)*partition_size/2.0;
 
   /*
    * traverse the tree to define the partition and count the number of exports
@@ -1057,7 +1057,7 @@ int num_part;         /* number of partitions */
    * if no exports, we're done
    */
 
-  if (zz->LB_Return_Lists == ZOLTAN_LB_NO_LISTS) {
+  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     return(ZOLTAN_OK);
   }
   else if (num_exp == 0) {

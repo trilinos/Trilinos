@@ -12,10 +12,9 @@
  ****************************************************************************/
 
 #include <ctype.h>
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "zz_const.h"
+#include "zz_util_const.h"
 #include "all_allo_const.h"
-#include "comm_const.h"
 #include "parmetis_jostle.h"
 #include "params_const.h"
 #include "timer_const.h"
@@ -307,7 +306,7 @@ int Zoltan_Jostle(
   }
 
   /* Set imbalance tolerance */
-  sprintf(str, "imbalance = %3d ", (int)(100*(zz->Imbalance_Tol - 1)));
+  sprintf(str, "imbalance = %3d ", (int)(100*(zz->LB.Imbalance_Tol - 1)));
   jostle_env(str);
 
   /* Multidimensional vertex weights */
@@ -445,24 +444,24 @@ static int Zoltan_ParMetis_Jostle(
   else {
     obj_wgt_dim = zz->Obj_Weight_Dim;
   }
-  if (zz->Comm_Weight_Dim<0){
+  if (zz->Edge_Weight_Dim<0){
     sprintf(msg, "Communication weight dimension is %d, "
-            "but should be >= 0. Using Comm_Weight_Dim = 0.",
-            zz->Comm_Weight_Dim);
+            "but should be >= 0. Using Edge_Weight_Dim = 0.",
+            zz->Edge_Weight_Dim);
     ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
     comm_wgt_dim = 0;
   }
-  else if (zz->Comm_Weight_Dim>1){
+  else if (zz->Edge_Weight_Dim>1){
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "This method does not support "
-        "multidimensional communication weights. Using Comm_Weight_Dim = 1.");
+        "multidimensional communication weights. Using Edge_Weight_Dim = 1.");
     comm_wgt_dim = 1;
   }
   else {
-    comm_wgt_dim = zz->Comm_Weight_Dim;
+    comm_wgt_dim = zz->Edge_Weight_Dim;
   }
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", 
+    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Edge_Weight_Dim=%d\n", 
       zz->Proc, alg, obj_wgt_dim, comm_wgt_dim);
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", zz->Proc,
       options[0], options[1], options[2], options[3]);
@@ -1161,7 +1160,7 @@ static int Zoltan_ParMetis_Jostle(
     return ZOLTAN_MEMERR;
   }
   for (i=0; i<ncon; i++)
-    imb_tols[i] = zz->Imbalance_Tol;
+    imb_tols[i] = zz->LB.Imbalance_Tol;
 
   /* Verify that graph is correct */
   if (get_graph_data){
@@ -1393,7 +1392,7 @@ static int Zoltan_ParMetis_Jostle(
     if (part[i] != zz->Proc) nsend++;
 
   /* Create export lists */
-  if (zz->LB_Return_Lists){
+  if (zz->LB.Return_Lists){
     (*num_exp) = nsend;
     if (nsend > 0) {
       if (!Zoltan_Special_Malloc(zz,(void **)exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {

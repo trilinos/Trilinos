@@ -15,7 +15,7 @@
 #define __PARMETIS_JOSTLE_H
 
 #include <limits.h>
-#include "comm_const.h"
+#include "zoltan_comm.h"
 #include "parmetis_jostle_const.h"
 
 /* Include ParMetis and/or Jostle header files if necessary. 
