@@ -264,9 +264,6 @@ extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml,
                                                int fine_level, int N_levels,
                                                int incr_or_decrease,
                                                int *proc_config);
-extern int ML_Gen_Smoother_HiptmairReuse( ML *ml , int nl, int pre_or_post, 
-					  int ntimes, double omega);
-
 extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, 
 				   int ntimes, double omega, int Nextra, 
 				   int extra[]);
