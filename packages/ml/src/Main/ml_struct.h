@@ -188,6 +188,9 @@ extern int ML_Set_Amatrix_Diag(ML*,int,int, double *);
 extern int ML_Set_Amatrix_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
+extern int MLnew_Set_Amatrix_Getrow(ML *ml, int level,
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
 
 extern int ML_Set_Amatrix_GetrowNeighbors(ML*,int,int N_neigh,int *nlist);
 extern int ML_Set_Amatrix_GetrowCommInfo(ML *, int level, int neighbor,

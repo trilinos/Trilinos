@@ -4084,7 +4084,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    /* Force the diagonal to not be zero */
 
    vals = NULL;
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       Amat_data   = (struct ML_CSR_MSRdata *) Amat->data;
       vals  = Amat_data->values;
       cols = Amat_data->columns;
@@ -5506,7 +5506,7 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5613,7 +5613,7 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5748,7 +5748,7 @@ int ML_Smoother_MSR_SGS(void *sm,int inlen,double x[],int outlen,double rhs[])
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -5860,7 +5860,7 @@ extra  = (int *) data[3];
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -6013,7 +6013,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -6129,7 +6129,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -7368,7 +7368,7 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
@@ -7504,7 +7504,7 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;

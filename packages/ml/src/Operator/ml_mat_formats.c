@@ -185,8 +185,11 @@ int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int    *bindx, j, row, start, finish;
    double *val;
    struct ML_CSR_MSRdata *input_matrix;
+   ML_Operator *mat_in;
 
-  input_matrix = (struct ML_CSR_MSRdata *) data;
+   mat_in = (ML_Operator *) data;
+  input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
+
   bindx  = input_matrix->columns;
   val    = input_matrix->values;
 

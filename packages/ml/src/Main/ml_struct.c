@@ -653,6 +653,38 @@ int ML_Set_Amatrix_Getrow(ML *ml, int nl,
    return(ML_Operator_Set_Getrow(Amat, ML_EXTERNAL, Amat->outvec_leng, getrow));
 }
 
+int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
+        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+	int (*comm  )(double *vec, void *data), int comm_vec_leng )
+{
+   ML_Operator *Amat;
+   int         Nghost;
+
+   Amat = &(ml->Amat[nl]);
+
+   if (comm != NULL) {
+      Nghost = comm_vec_leng - Amat->invec_leng;
+      if (Nghost < 0) {
+         printf("ML_Set_Amatrix_Getrow: comm_vec_leng is less than the\n");
+         printf("                       matrix's invec_length\n");
+         exit(1);
+      }
+      ML_CommInfoOP_Generate( &(Amat->getrow->pre_comm), comm, Amat->data,
+			      ml->comm, Amat->invec_leng, Nghost);
+   }
+   else {
+      if ((ml->comm->ML_nprocs > 1) & (ml->comm->ML_mypid == 0)) {
+         printf("Warning: No communication information given to ");
+         printf("ML_Set_Amatrix_Getrow\n");
+      }
+      ML_CommInfoOP_Set_neighbors(&(Amat->getrow->pre_comm), 0,
+                               NULL, ML_OVERWRITE, NULL, 0);
+
+   }
+
+   return(ML_Operator_Set_Getrow(Amat, ML_INTERNAL, Amat->outvec_leng, getrow));
+}
+
 /* ------------------------------------------------------------------------- */
 
 int ML_Set_Amatrix_GetrowNeighbors(ML *ml, int level, int N_neigh,
@@ -1003,7 +1035,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       fun  = ML_Smoother_SGS;
       Amat = &(ml->Amat[i]);
 
-      if (Amat->getrow->external == MSR_getrows){
+      if (Amat->getrow->internal == MSR_getrows){
          ptr   = (struct ML_CSR_MSRdata *) Amat->data;
          val   = ptr->values;
          bindx = ptr->columns;
@@ -1149,7 +1181,7 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
    Amat = &(ml->Amat[nl]);
    fun  = ML_Smoother_SGS;
 
-   if (Amat->getrow->external == MSR_getrows){
+   if (Amat->getrow->internal == MSR_getrows){
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;

@@ -1102,7 +1102,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng, 
                              imatrix->getrow->Nrows, ML_EMPTY, (void*)temp, 
                              imatrix->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_EXTERNAL, imatrix->getrow->Nrows, 
+   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, imatrix->getrow->Nrows, 
 		          MSR_getrows);
    omatrix->max_nz_per_row = max_per_row;
    omatrix->N_nonzeros     = N_nonzeros;

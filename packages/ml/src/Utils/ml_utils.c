@@ -2928,7 +2928,7 @@ int ML_Operator_Lump(ML_Operator *A, ML_Operator **B)
   *B = ML_Operator_halfClone(A);
   (*B)->halfclone = ML_FALSE;
   (*B)->N_nonzeros = nn;
-  ML_Operator_Set_Getrow(*B, ML_EXTERNAL, nn, MSR_getrows);
+  ML_Operator_Set_Getrow(*B, ML_INTERNAL, nn, MSR_getrows);
 
   csr_data = (struct ML_CSR_MSRdata *)
                ML_allocate(sizeof(struct ML_CSR_MSRdata));

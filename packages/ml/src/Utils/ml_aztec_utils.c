@@ -118,7 +118,8 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
      msr_mat->values      = Amat->val;
      msr_mat->rowptr      = NULL;
      context->getrowstuff = (void *) msr_mat;
-     ML_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,az_comm_wrapper,
+     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,
+			   az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
      ML_Set_Amatrix_Diag(  ml_handle, level, osize,   Amat->val);
      ml_handle->Amat[level].N_nonzeros =
@@ -147,12 +148,12 @@ int AZ_get_MSR_arrays(ML_Operator *Amat, int **bindx, double **val)
    struct aztec_context *context;
    struct ML_CSR_MSRdata *ptr = NULL;
 
-   if (Amat->getrow->external == MSR_getrows) {
+   if (Amat->getrow->internal == MSR_getrows) {
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       *val   = ptr->values;
       *bindx = ptr->columns;
    }
-   else if (Amat->getrow->external == az_msrgetrow_wrapper) {
+   else if (Amat->getrow->internal == az_msrgetrow_wrapper) {
       context = (struct aztec_context *) Amat->data;
       ptr = (struct ML_CSR_MSRdata *) context->getrowstuff;
       *val   = ptr->values;
@@ -256,11 +257,18 @@ int az_msrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;
+   ML_Operator *mat_in;
+   void *temp1;
+   int status;
 
-   context = (struct aztec_context *) data;   
-
-   return(MSR_getrows(context->getrowstuff, N_requested_rows, 
-          requested_rows, allocated_space, columns, values, row_lengths) );
+   mat_in = (ML_Operator *) data;
+   context   = (struct aztec_context *) ML_Get_MyGetrowData(mat_in);
+   temp1     = (void *) context;
+   mat_in->data = context->getrowstuff;
+   status = MSR_getrows(mat_in, N_requested_rows, requested_rows, 
+			allocated_space, columns, values, row_lengths);
+   mat_in->data = temp1;
+   return(status);
 }
 
 /***************************************************************************/
