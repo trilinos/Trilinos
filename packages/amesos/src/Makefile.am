@@ -114,15 +114,15 @@ endif
 #SCALAPACK =
 #endif
 
-if HAVE_AMESOS_MERIKOS
-MERIKOS_H = \
-	$(srcdir)/Amesos_Merikos.h
-MERIKOS = \
-	$(srcdir)/Amesos_Merikos.cpp
-else
-MERIKOS_H =
-MERIKOS =
-endif
+#if HAVE_AMESOS_MERIKOS
+#MERIKOS_H = \
+#	$(srcdir)/Amesos_Merikos.h
+#MERIKOS = \
+#	$(srcdir)/Amesos_Merikos.cpp
+#else
+#MERIKOS_H =
+#MERIKOS =
+#endif
 
 #-------------------------------------------------------------------------------
 #  Here is where we will add Tim Davis' files 
@@ -272,7 +272,6 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
-	$(MERIKOS_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
 	$(FACTORY_H) \
@@ -291,7 +290,6 @@ libamesos_a_SOURCES = \
 	$(DSCPACK) \
 	$(KLU) \
 	$(UMFPACK) \
-	$(MERIKOS) \
 	$(MUMPS) \
 	$(FACTORY) \
 	$(SUPERLU) \
