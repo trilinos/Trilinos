@@ -48,6 +48,7 @@
 
 #include "ml_anasazi.h"
 
+#ifdef OLD_AUX
 // ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::
 CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
@@ -473,5 +474,6 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
   // pray that no bugs will tease us
   return(0);
 }
+#endif
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */

@@ -559,9 +559,12 @@ private:
   //! Creates label for this object (printed out by AztecOO)
   int CreateLabel();
 
+#define OLD_AUX
+#ifdef OLD_AUX
   int CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix * & FakeMatrix);
 
   int CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix * & FakeMatrix);
+#endif
 
   void PrintMem(char *fmt, int size, int, int);
 

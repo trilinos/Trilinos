@@ -59,8 +59,6 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_memory.h"
 #include "ml_DD_prec.h"
-extern int ML_USE_EDGE_WEIGHT; // defined in ml_agg_METIS.c
-extern double ML_WEIGHT_THRES; // defined in ml_agg_METIS.c
 #include <iostream>
 #include <iomanip>
 
@@ -780,10 +778,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if( SolvingMaxwell_ == false ) {
 
-    // this is for the auxiliary matrix stuff, but is ok 
-    // for the other cases are well
+    // ====================================================================== //
+    // create hierarchy for classical equations (all but Maxwell)             //
+    // ====================================================================== //
 
     // tell ML to keep the tentative prolongator
+    // in the case ReComputePreconditioner() or auxiliary matrix
+    // are used.
     ML_Aggregate_Set_Reuse(agg_);
     agg_->keep_agg_information = 1;
 
@@ -791,10 +792,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
       for (int i = 0 ; i < MaxLevels_ ; ++i)
         agg_->aggr_info[i] = NULL;
     }
-
-    // ====================================================================== //
-    // create hierarchy for classical equations (all but Maxwell)             //
-    // ====================================================================== //
 
     ML_Create(&ml_,MaxCreationLevels);
     ml_->comm->ML_nprocs = Comm().NumProc();
@@ -845,16 +842,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
           cout << "ML_MASK_FILTER" << endl;
           break;
         }
+
         cout << PrintMsg_ << "Threshold = "
-             << List_.get("filter: absolute threshold", 0.0) 
-             << " (absolute), "
-             << List_.get("filter: relative threshold", 1.0) 
-             << " (relative)" << endl;
-        cout << PrintMsg_ << "Dividers = "
-             << List_.get("filter: first divider", 0)
-             << " (first), " 
-             << List_.get("filter: second divider", 0)
-             << " (second), " << endl;
+          << List_.get("filter: absolute threshold", 0.0) 
+          << " (absolute), "
+          << List_.get("filter: relative threshold", 1.0) 
+          << " (relative)" << endl;
+
+        if (FT == ML_TWO_BLOCKS_FILTER || FT == ML_THREE_BLOCKS_FILTER) {
+          cout << PrintMsg_ << "Dividers = "
+               << List_.get("filter: first divider", 0)
+               << " (first), " 
+               << List_.get("filter: second divider", 0)
+               << " (second), " << endl;
+        }
 
         if (FT == ML_MASK_FILTER) {
           cout << "Mask is as follows:" << endl;
@@ -868,9 +869,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
             cout << endl;
           }
         }
-
-        //cout << "Note: the filter is not applied to matvec(), only getrow()" << endl;
         cout << endl;
+
       }
       List_.set("filter: equations", NumPDEEqns_);
 
@@ -1018,19 +1018,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   double Threshold = 0.0;
   Threshold = List_.get("aggregation: threshold", Threshold);
-  if (Threshold < 0.0) {
-    // if negative, it means that METIS has to use this threshold
-    // for the edge weighting. This is recognized by METIS only
-    // at the moment (03-Dec-04)
-    ML_WEIGHT_THRES = -Threshold;
-    ML_USE_EDGE_WEIGHT = ML_YES;
-    // set this anyway
-    ML_Aggregate_Set_Threshold(agg_,-Threshold);
-  }
-  else {
-    ML_USE_EDGE_WEIGHT = ML_NO;
-    ML_Aggregate_Set_Threshold(agg_,Threshold);
-  }
+  ML_Aggregate_Set_Threshold(agg_,Threshold);
    
   int MaxCoarseSize = 128;
   MaxCoarseSize = List_.get("coarse: max size", MaxCoarseSize);
@@ -1112,6 +1100,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if (SolvingMaxwell_ == false) {
 
+#ifdef OLD_AUX
     bool CreateFakeProblem = 
       List_.get("aggregation: use auxiliary matrix", false);
 
@@ -1169,7 +1158,83 @@ ComputePreconditioner(const bool CheckPreconditioner)
         cout << PrintMsg_ << "Time to build the finest-level auxiliary matrix = "
              << Time.ElapsedTime() << " (s)" << endl;
     }
+#endif
     
+    if (List_.get("aggregation: aux: enable", false))
+    {
+      Time.ResetStartTime();
+
+      double* in_x_coord = List_.get("aggregation: aux: x-coordinates", (double *)0);
+      double* in_y_coord = List_.get("aggregation: aux: y-coordinates", (double *)0);
+      double* in_z_coord = List_.get("aggregation: aux: z-coordinates", (double *)0);
+      double Threshold   = List_.get("aggregation: aux: threshold", 0.0);
+      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 2);
+      int NumDimensions  = 0;
+
+      ML_Operator* AAA = &(ml_->Amat[LevelID_[0]]);
+      if (NumPDEEqns_ != 1)
+        ML_Operator_AmalgamateAndDropWeak(AAA, NumPDEEqns_, 0.);
+
+      int n = AAA->invec_leng, Nghost;
+
+      if (AAA->getrow->pre_comm == NULL)
+        Nghost = 0;
+      else {
+        if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+          ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+        Nghost = AAA->getrow->pre_comm->total_rcv_length;
+      }
+
+      if (in_x_coord) 
+      {
+        NumDimensions++;
+        double* x_coord;
+        ML_memory_alloc((void**)&x_coord, sizeof(double) * (Nghost + n),
+                           "x_coord");
+        for (int i = 0 ; i < n ; ++i)
+          x_coord[i] = in_x_coord[i];
+
+        ML_exchange_bdry(x_coord,AAA->getrow->pre_comm,n, AAA->comm, ML_OVERWRITE,NULL);
+        ml_->Amat[LevelID_[0]].grid_info->x = x_coord;
+      }
+
+      if (in_y_coord) 
+      {
+        NumDimensions++;
+        double* y_coord;
+        ML_memory_alloc((void**)&y_coord, sizeof(double) * (Nghost + n),
+                        "y_coord");
+        for (int i = 0 ; i < n ; ++i)
+          y_coord[i] = in_y_coord[i];
+
+        ML_exchange_bdry(y_coord,AAA->getrow->pre_comm,n, AAA->comm, ML_OVERWRITE,NULL);
+        ml_->Amat[LevelID_[0]].grid_info->y = y_coord;
+      }
+
+      if (in_z_coord) 
+      {
+        NumDimensions++;
+        double* z_coord;
+        ML_memory_alloc((void**)&z_coord, sizeof(double) * (Nghost + n),
+                        "z_coord");
+        for (int i = 0 ; i < n ; ++i)
+          z_coord[i] = in_z_coord[i];
+
+        ML_exchange_bdry(z_coord,AAA->getrow->pre_comm,n,
+                         AAA->comm, ML_OVERWRITE,NULL);
+        ml_->Amat[LevelID_[0]].grid_info->z = z_coord;
+      }
+
+      ml_->Amat[LevelID_[0]].grid_info->Ndim = NumDimensions;
+      
+      if (NumPDEEqns_ != 1)
+        ML_Operator_UnAmalgamateAndDropWeak(AAA, NumPDEEqns_, 0.);
+
+      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+      ml_->Amat[LevelID_[0]].aux_data->enable = 1;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+    }
+
     Time.ResetStartTime();
 
     NumLevels_ = 
@@ -1179,6 +1244,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       cout << PrintMsg_ << "Time to build the hierarchy = " 
            << Time.ElapsedTime() << " (s)" << endl;
     
+#ifdef OLD_AUX
     if (CreateFakeProblem == true) {
 
       Time.ResetStartTime();
@@ -1229,6 +1295,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       Time.ResetStartTime();
 
     } // nothing special to be done if CreateFakeProblem is false
+#endif
       
   } else {
 
@@ -1325,6 +1392,41 @@ ComputePreconditioner(const bool CheckPreconditioner)
   OutputList_.set("time: coarse solver setup", InitialTime.ElapsedTime() 
                   + OutputList_.get("time: coarse solver setup", 0.0));
   InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Recompute complexities                                                 //
+  // ====================================================================== //
+
+  if (!SolvingMaxwell_) {
+
+    double RowComplexity = 0.0, RowZero = 0.0;
+    double NnzComplexity = 0.0, NnzZero = 0.0;
+
+    for (int i = 0 ; i < NumLevels_ ; ++i) 
+    {
+      int local[2];
+      int global[2];
+      local[0] = ml_->Amat[LevelID_[i]].invec_leng;
+      local[1] = ml_->Amat[LevelID_[i]].N_nonzeros;
+      Comm().SumAll(local,global,2);
+      // kludge because it appears that the nonzeros for ML
+      // defined operators are only local, while for Epetra
+      // are global.
+      if (LevelID_[i] == 0) {
+        global[1] = local[1];
+        RowZero = global[0];
+        NnzZero = global[1];
+      }
+      RowComplexity += global[0];
+      NnzComplexity += global[1];
+    }
+    if (verbose_) 
+    {
+      cout << PrintMsg_ << endl;
+      cout << PrintMsg_ << "sum n_i   / n_finest   = " << RowComplexity / RowZero << endl;
+      cout << PrintMsg_ << "sum nnz_i / nnz_finest = " << NnzComplexity / NnzZero << endl;
+    }
+  }
 
   // ====================================================================== //
   // Specific   preconditioners                                             //
