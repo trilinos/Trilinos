@@ -8,14 +8,15 @@
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
 
-set error = None
+set error = 0
 set AnError = False
-set printexitvalue
+### maybe should pass $homedir and package name to script
+#set printexitvalue
 if( "$2" == "True" ) then # $2 is an optional parameter indicating if 
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../../../../logErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
@@ -35,15 +36,9 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 ## List the Trilinos package being tested on the following line
     echo "Package being tested: Epetra  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-    set file3 = tempfile
-    rm -f $file3
-    set file4 = tempfile2
-    rm -f $file4
 else
     cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+    set file = log.`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
 echo $file
@@ -66,18 +61,20 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVbrMatri
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		if( "$2" == "True" ) then
-		    ( mpirun -np 5 $g > ../$file3 ) >>& ../$file4
-		    if(! -z ../$file4 ) then
+		    ./$g >>& ../$file
+		    if( "$status" != "0" ) then
 		    # A test failed.
 			set AnError = True
+			echo "  ******** Test failed ********" >>& ../$file
 			echo "############" $g "##############" >>& ../$file2
-			mpirun -np 5 $g -v >>& ../$file2
-			cat ../$file4 >> ../$file
-			rm -f ../$file4
+			./$g -v >>& ../$file2
+		    else
+		    # Tests passed
+			echo "******** Test passed ********" >>& ../$file
 		    endif
 		else
 		# This is not an automated test.
-		    mpirun -np 5 $g -v >>& ../$file
+		    ./$g -v >>& ../$file
 		endif
 	end
 	cd ..
@@ -85,9 +82,7 @@ end
 
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
-if ( "$2" == "True" ) then
-    rm $file3
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+if( "$AnError" != "True" && "$2" == "True" ) then
+    rm -f $file2
 endif
+
