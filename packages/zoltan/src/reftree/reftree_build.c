@@ -79,7 +79,7 @@ struct LB_reftree_hash_node **hashtab; /* hash table */
 int nproc;                 /* number of processors */
 LB_ID_PTR local_gids;      /* coarse element Global IDs from user */
 LB_ID_PTR local_lids;      /* coarse element Local IDs from user */
-LB_ID_PTR lid;             /* temporary coarse element Local ID; used to pass
+LB_ID_PTR lid, prev_lid;   /* temporary coarse element Local ID; used to pass
                               NULL to query functions when NUM_LID_ENTRIES=0 */
 LB_ID_PTR all_gids;        /* coarse element Global IDs from all procs */
 int *assigned;             /* 1 if the element is assigned to this proc */
@@ -323,15 +323,19 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       while (found && count <= num_obj) {
         sum_vert += num_vert[count];
         count += 1;
+        prev_lid = (num_lid_entries ? &(local_lids[(count-1)*num_lid_entries]) 
+                                    : NULL);
         lid = (num_lid_entries ? &(local_lids[count*num_lid_entries]) : NULL);
         found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
-                                        num_gid_entries, num_lid_entries,
-                                        &(local_gids[count*num_gid_entries]), 
-                                        lid,
-                                        &assigned[count],
-                                        &num_vert[count], &vertices[sum_vert],
-                                        &in_vertex[count], &out_vertex[count],
-                                        &ierr);
+                                      num_gid_entries, num_lid_entries,
+                                      &(local_gids[(count-1)*num_gid_entries]), 
+                                      prev_lid,
+                                      &(local_gids[count*num_gid_entries]), 
+                                      lid,
+                                      &assigned[count],
+                                      &num_vert[count], &vertices[sum_vert],
+                                      &in_vertex[count], &out_vertex[count],
+                                      &ierr);
         if (ierr) {
           LB_PRINT_ERROR(lb->Proc, yo, 
                       "Error returned from user function Get_Next_Coarse_Obj.");
@@ -1954,6 +1958,8 @@ int *in_vertex;       /* "in" vertex for each coarse element */
 int *out_vertex;      /* "out" vertex for each coarse element */
 LB_ID_PTR slocal_gids;/* coarse element Global IDs from user */
 LB_ID_PTR slocal_lids;/* coarse element Local IDs from user */
+LB_ID_PTR plocal_gids;/* previous coarse element Global IDs from user */
+LB_ID_PTR plocal_lids;/* previous coarse element Local IDs from user */
 int sassigned;        /* 1 if the element is assigned to this proc */
 int snum_vert;        /* number of vertices for a coarse element */
 int sin_vertex;       /* "in" vertex for a coarse element */
@@ -2107,8 +2113,11 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
     slocal_gids = LB_MALLOC_GID(lb);
     slocal_lids = LB_MALLOC_LID(lb);
+    plocal_gids = LB_MALLOC_GID(lb);
+    plocal_lids = LB_MALLOC_LID(lb);
     vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
     if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
+        plocal_gids == NULL || (num_lid_entries > 0 && plocal_lids == NULL) || 
         vertices == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&slocal_gids);
@@ -2163,14 +2172,19 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                              tree_node->weight, &ierr);
       }
 
+      LB_SET_GID(lb, plocal_gids, slocal_gids);
+      LB_SET_LID(lb, plocal_lids, slocal_lids);
       found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
                                       num_gid_entries, num_lid_entries,
+                                      plocal_gids, plocal_lids,
                                       slocal_gids, slocal_lids, &sassigned,
                                       &snum_vert, vertices,
                                       &sin_vertex, &sout_vertex, &ierr);
     }
     LB_FREE(&slocal_gids);
     LB_FREE(&slocal_lids);
+    LB_FREE(&plocal_gids);
+    LB_FREE(&plocal_lids);
   }
   return(final_ierr);
 }
