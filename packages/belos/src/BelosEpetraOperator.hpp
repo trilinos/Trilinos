@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-// File BelosEpetraOperator.hpp : This file implements a BelosEpetraOperator that derives from
+// File BelosEpetraOperator.hpp :   This file implements a BelosEpetraOperator that derives from
 // 					the EpetraOperator class, so Belos can be integrated into
 //					other codes as an abstract operator.
 //
@@ -42,6 +42,11 @@
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 
+/*! \class Belos::EpetraOperator
+ 	\brief This class  derives from	the Epetra_Operator class, so Belos can be 
+	integrated into other codes as an abstract operator.
+*/
+
 namespace Belos {
 
 ///////////////////////////////////////////////////////////////
@@ -56,31 +61,58 @@ namespace Belos {
 template <class TYPE>
 class EpetraOperator : public virtual Epetra_Operator {
 public:
-	// Constructor / Destructor
+	//@{ \name Constructor / Destructor
+
+	//! Constructor
 	EpetraOperator( PetraMat<TYPE>& mat, PetraPrec<TYPE>& precond,
 			    const string solver="BlockGMRES", const TYPE tol=1.0e-6, const int maxits=25, 
 			    const int block=1, const int debuglevel=0, bool verbose=false );
 
+	//! Destructor
 	~EpetraOperator();
+	//@}
 
-	// Implement Epetra_Operator functionality
+	//@{ \name Attribute methods.
 
-	// Attribute set methods.
+	//! Set whether the operator or its inverse should be applied. [ This option is not implemented ]
 	int SetUseTranspose( bool UseTranspose ) { return(-1); };
+	//@}
 
-	// Mathematical Functions.
+	//@{ \name Operator application methods.
+
+	//! Apply the operator.
 	int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
-	int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
-	double NormInf() const { return(0.0); };
 
-	// Atribute access functions
+	//! Apply the operator's inverse.
+	int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+	//@}
+
+	//@{ \name Norm methods.
+
+	//! Compute the infinity norm of the operator. [ This option is not implemented ]
+	double NormInf() const { return(0.0); };
+	//@}
+
+	//@{ \name Attribute access functions
+
+	//! Return the label of the operator.
 	char* Label() const { return(Solver); };
+
+	//! Return whether the operator is using the transpose.
 	bool UseTranspose() const { return(false); };
+
+	//! Return whether the infinity norm is available for this operator.
 	bool HasNormInf() const { return(false); };
+
+	//! Return the communicator for this operator.
 	const Epetra_Comm& Comm() const { return(MyComm); };
+
+	//! Return the domain map for this operator.
 	const Epetra_Map& OperatorDomainMap() const { return(DomainMap); };
+
+	//! Return the range map for this operator.
 	const Epetra_Map& OperatorRangeMap() const { return(RangeMap); };	
-	   
+	//@}	   
 private:
 	PetraMat<TYPE>& Mat;
 	PetraPrec<TYPE>& Prec;

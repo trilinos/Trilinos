@@ -32,11 +32,9 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "BelosConfigDefs.hpp"
 
-namespace Anasazi {
-
 /*! 	\class Anasazi::MultiVec
 
-	\brief Anasazi's templated pure virtual class for constructing multivectors that 
+	\brief Belos's templated pure virtual class for constructing multivectors that 
 	are used by the eigensolver.
 
 	A concrete implementation of this class is necessary.  The user can create
@@ -45,10 +43,13 @@ namespace Anasazi {
 	\author Rich Lehoucq, Heidi Thornquist
 */
 
+namespace Anasazi {
+
 template <class TYPE>
 class MultiVec {
 public:
 	//@{ \name Constructor/Destructor.
+
 	//! %Anasazi::MultiVec constructor.
 	MultiVec() {};
 

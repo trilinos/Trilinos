@@ -32,8 +32,6 @@
 #include "AnasaziMultiVec.hpp"
 #include "BelosConfigDefs.hpp"
 
-namespace Anasazi {
-
 /*!	\class Anasazi::Precondition
 
 	\brief Belos's templated virtual class for constructing the 
@@ -47,21 +45,21 @@ namespace Anasazi {
 	function is not overridden, then the block linear solver will be
 	unpreconditioned.
 
-	\author Rich Lehoucq, Teri Barth
+	\author Teri Barth, Mike Heroux, and Heidi Thornquist
 */
+
+namespace Anasazi {
 
 template <class TYPE>
 class Precondition {
 public:
 	//@{ \name Constructor/Destructor.
+
 	//! %Anasazi::Precondition constructor.
-	Precondition() {
-//		cout << "ctor:Anasazi::Precondition " << this << endl; 
-	}
+	Precondition() {};
+
 	//! %Anasazi::Precondition destructor.
-	virtual ~Precondition() {
-//		cout << "dtor:Anasazi::Precondition " << this << endl; 
-	};
+	virtual ~Precondition() {};
 	//@}
 
 	//@{ \name Preconditioner application method.

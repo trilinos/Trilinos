@@ -33,11 +33,9 @@
 #include "AnasaziReturnType.hpp"
 #include "BelosConfigDefs.hpp"
 
-namespace Anasazi {
-
 /*!	\class Anasazi::Matrix
 
-	\brief Anasazi's templated pure virtual class for constructing the matrix/operator that is
+	\brief Belos's templated pure virtual class for constructing the matrix/operator that is
 	used by the eigensolver.
 	
 	A concrete implementation of this class is necessary.  The user can create their own implementation
@@ -46,19 +44,19 @@ namespace Anasazi {
 	\author Rich Lehoucq, Heidi Thornquist
 */
 
+namespace Anasazi {
+
 template <class TYPE>
 class Matrix {
 public:
 
 	//@{ \name Constructor/Destructor.
-	//! %Anasazi::Matrix constructor.
-	Matrix() {
-//		cout << "ctor:Anasazi::Matrix " << this << endl; 
-	}
-	//! %Anasazi::Matrix destructor.
-	virtual ~Matrix() {
-//		cout << "dtor:Anasazi::Matrix " << this << endl; 
-	};
+
+	//! Default constructor
+	Matrix() {};
+
+	//! Destructor.
+	virtual ~Matrix() {};
 	//@}
 	
 	//@{ \name Matrix/Operator application method.
