@@ -1,2 +1,0 @@
-#!/bin/csh
-xemacs -geom 120x73 TSF_$1.h TSF_$1.cc

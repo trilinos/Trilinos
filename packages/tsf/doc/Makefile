@@ -1,9 +1,0 @@
-# Doxygen will generate html latex man and rtf format document.  Use the main
-# html page as the target.
-TARGET=html/index.html
-
-$(TARGET): ../src/*.h Doxyfile stringOfPearls.* footer.html index.doc
-	doxygen
-
-clean:
-	rm -rf html latex man rtf
