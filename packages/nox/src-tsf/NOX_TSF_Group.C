@@ -294,6 +294,12 @@ NOX::TSF::Group::computeNewton(NOX::Parameter::List& p)
       // Scale soln by -1
       newtonVector.scale(-1.0);
       
+      if (verbosity() > TSFExtended::VerbLow)
+        {
+          cerr << "newton step" << endl;
+          newtonVector.getTSFVector().print(cerr);
+        }
+      
       // Return solution
       return status;
     }
@@ -375,6 +381,15 @@ NOX::TSF::Group::applyJacobianInverse(NOX::Parameter::List& p,
 
   }
  
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "---------------- applying J^-1 ------------------" << endl;
+      cerr << "J=" << endl;
+      jacobian.print(cerr);
+      cerr << "F=" << endl;
+      input.getTSFVector().print(cerr);
+    }
+  
   TSFExtended::SolverState<double> status 
     = solver.solve(jacobian, input.getTSFVector(),
                    result.getTSFVector());
@@ -385,6 +400,11 @@ NOX::TSF::Group::applyJacobianInverse(NOX::Parameter::List& p,
     }
   else
     {
+      if (verbosity() > TSFExtended::VerbMedium)
+        {
+          cerr << "soln=" << endl;
+          result.getTSFVector().print(cerr);
+        }
       return NOX::Abstract::Group::Ok;
     }
 

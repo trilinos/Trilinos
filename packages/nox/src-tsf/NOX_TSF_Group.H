@@ -40,6 +40,7 @@
 #include "TSFVectorType.hpp"
 #include "TSFVectorSpace.hpp"
 #include "TSFLinearSolver.hpp"
+#include "TSFObjectWithVerbosity.hpp"
 #include "TSFNonlinearOperator.hpp" // nonlinear operator
 
 // Forward declares
@@ -54,7 +55,9 @@ namespace NOX
 namespace NOX {
   namespace TSF {
 
-    class Group : public virtual NOX::Abstract::Group {
+    class Group : public virtual NOX::Abstract::Group,
+    public TSFExtended::ObjectWithVerbosity<Group> 
+    {
 
     public:
 
