@@ -1,3 +1,4 @@
+#define PRINTITNOW
 #define MatrixProductHiptmair
 /*
 #define NoDampingFactor
@@ -815,6 +816,256 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 /* ------------------------------------------------------------------------- */
 
 #ifdef MatrixProductHiptmair
+/* Block Hiptmair Smoother */
+int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen, 
+                            double rhs[])
+{
+  int iter, kk, Nrows, init_guess, crap;
+   ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
+   ML_Smoother  *smooth_ptr;
+   ML_Sm_BlockHiptmair_Data *dataptr;
+   ML_Comm_Envelope *envelope;
+   int reduced_smoother_flag;
+//#define ML_DEBUG_SMOOTHER
+#ifdef ML_DEBUG_SMOOTHER
+   int i,j;
+   double *res2, res_norm;
+#endif
+   double *res_edge;
+   double *res_edge1, *res_edge2;
+   double *rhs_nodal1, *rhs_nodal2;
+   double *x_nodal1, *x_nodal2;
+   double *edge_update1, *edge_update2;
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Ke_mat = smooth_ptr->my_level->Amat;
+   Nrows = Ke_mat->getrow->Nrows;
+
+   /* pointer to private smoother data */
+   dataptr = (ML_Sm_BlockHiptmair_Data *) smooth_ptr->smoother->data;
+
+   Tmat = (ML_Operator *) dataptr->Tmat;
+   Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
+   TtATmat = (ML_Operator *) dataptr->TtATmat;
+   /*
+      If true, do cheaper smoothing by smoothing (edges/nodes) on the pre
+      smooth and smoothing (nodes/edges) on the post smooth.
+   */
+   reduced_smoother_flag = (int) dataptr->reduced_smoother;
+
+   res_edge = (double *) dataptr->res_edge;
+   res_edge1 = (double *) dataptr->res_edge1;
+   res_edge2 = (double *) dataptr->res_edge2;
+   edge_update1 = (double *) dataptr->edge_update1;
+   edge_update2 = (double *) dataptr->edge_update2;
+   rhs_nodal1 = (double *) dataptr->rhs_nodal1;
+   rhs_nodal2 = (double *) dataptr->rhs_nodal2;
+   x_nodal1 = (double *) dataptr->x_nodal1;
+   x_nodal2 = (double *) dataptr->x_nodal2;
+
+   if (Ke_mat->getrow->ML_id == ML_EMPTY) 
+      pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
+
+   /* A Josh hack to see if blockA is right */
+   ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
+                     rhs, Ke_mat->outvec_leng,res_edge);
+   printf("\n\t%d: ||A*rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+		            sqrt((ML_gdot(Nrows, res_edge, res_edge, Tmat_trans->comm))));
+
+#ifdef ML_DEBUG_SMOOTHER
+   printf("\n--------------------------------\n");
+   printf("Coming into matrix Hiptmair\n");
+   printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+           sqrt((ML_gdot(Nrows, x, x, Tmat_trans->comm))));
+   printf("\t%d: ||rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+          sqrt((ML_gdot(Nrows, rhs, rhs, Tmat_trans->comm))));
+   fflush(stdout);
+#endif
+
+   ML_Comm_Envelope_Create(&envelope);
+   smooth_ptr->envelope = envelope;
+
+   /*
+   if (smooth_ptr->pre_or_post != ML_TAG_PRESM)
+      smooth_ptr->pre_or_post = ML_TAG_PRESM;
+   else
+      smooth_ptr->pre_or_post = ML_TAG_POSTSM;
+   */
+   
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+   printf("Coming into Hiptmair: pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
+
+   ML_Comm_Envelope_Set_Tag(envelope, smooth_ptr->my_level->levelnum,
+                            smooth_ptr->pre_or_post); 
+
+   init_guess = smooth_ptr->init_guess;
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   {
+      if (reduced_smoother_flag)
+      {
+         if (smooth_ptr->pre_or_post == ML_TAG_PRESM)
+         {
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+            printf("Hiptmair: pre edge smoothing\n");
+#endif
+#endif
+            ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			                  inlen, x, outlen, rhs, init_guess);
+         }
+      }
+      else
+      {
+         ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, init_guess);
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+         printf("\t(1) smooth_ptr->pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
+      }
+      init_guess = ML_NONZERO;
+
+      for (kk = 0; kk < TtATmat->invec_leng/2; kk++) x_nodal1[kk] = 0.;
+      for (kk = TtATmat->invec_leng/2; kk < TtATmat->invec_leng; kk++) 
+	      x_nodal2[kk] = 0.;
+
+      ML_Comm_Envelope_Increment_Tag(envelope);
+   
+      /* calculate initial residual */ 
+      ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
+                        x, Ke_mat->outvec_leng,res_edge);
+      for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
+
+      /* split residual for separate nodal calculations */
+      res_edge1 = (double *) ML_allocate( Nrows/2 * sizeof(double));
+      res_edge2 = (double *) ML_allocate( Nrows/2 * sizeof(double));
+      for (kk = 0; kk < Nrows/2; kk++) res_edge1[kk] = -res_edge[kk];
+      for (kk = Nrows/2; kk < Nrows; kk++) res_edge2[kk-Nrows/2] = res_edge[kk];
+   
+#ifdef ML_DEBUG_SMOOTHER
+
+      printf("After SGS on edges\n");
+      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows, x, x, Tmat_trans->comm)));
+      printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm)));
+#endif
+   
+      /****************************
+      * Symmetric sweep on nodes. *
+      ****************************/
+      ML_Comm_Envelope_Increment_Tag(envelope);
+
+      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
+                        res_edge1, Tmat_trans->outvec_leng,rhs_nodal1);
+      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
+                        res_edge2, Tmat_trans->outvec_leng,rhs_nodal2);
+
+#ifdef ML_DEBUG_SMOOTHER
+      printf("Before SGS on nodes\n");
+
+      printf("\t%d: ||x_nodal1|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          x_nodal1,x_nodal1,Tmat_trans->comm)));
+      printf("\t%d: ||x_nodal2|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          x_nodal2,x_nodal2,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal1|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          rhs_nodal1,rhs_nodal1,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal2|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          rhs_nodal2,rhs_nodal2,Tmat_trans->comm)));
+#endif
+
+      /* two solves on nodes */
+
+      ML_Smoother_Apply(&(dataptr->ml_nodal->pre_smoother[0]),
+			TtATmat->invec_leng, x_nodal1,
+			TtATmat->outvec_leng, rhs_nodal2,ML_ZERO);
+
+      ML_Smoother_Apply(&(dataptr->ml_nodal->pre_smoother[0]),
+			TtATmat->invec_leng, x_nodal2,
+			TtATmat->outvec_leng, rhs_nodal1,ML_ZERO);
+
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After SGS on nodes\n");
+      printf("\t%d: ||x_nodal1|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                  x_nodal1,x_nodal1,Tmat_trans->comm)));
+      printf("\t%d: ||x_nodal2|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                  x_nodal2,x_nodal2,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal1|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+            sqrt(ML_gdot(Tmat_trans->outvec_leng,rhs_nodal1,
+                 rhs_nodal1,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal2|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+            sqrt(ML_gdot(Tmat_trans->outvec_leng,rhs_nodal2,
+                 rhs_nodal2,Tmat_trans->comm)));
+#endif
+   
+      /************************
+      * Update edge solution. *
+      ************************/
+      ML_Comm_Envelope_Increment_Tag(envelope);
+
+      ML_Operator_Apply(Tmat, Tmat->invec_leng,
+                        x_nodal1, Tmat->outvec_leng,edge_update1);
+      ML_Operator_Apply(Tmat, Tmat->invec_leng,
+                        x_nodal2, Tmat->outvec_leng,edge_update2);
+   
+      for (kk=0; kk < Nrows/2; kk++) x[kk] += edge_update1[kk];
+      for (kk=Nrows/2; kk < Nrows; kk++) x[kk] += edge_update2[kk-Nrows/2];
+
+      if (reduced_smoother_flag)
+      {
+         if (smooth_ptr->pre_or_post == ML_TAG_POSTSM)
+         {
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+            printf("Hiptmair: post edge smoothing\n");
+#endif
+#endif
+            ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, ML_NONZERO);
+         }
+      }
+      else 
+      {
+         ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			               inlen, x, outlen, rhs, ML_NONZERO);
+#ifdef ML_DEBUG_SMOOTHER
+#ifdef PRINTITNOW
+         printf("\t(2) smooth_ptr->pre_or_post = %d\n",smooth_ptr->pre_or_post);
+#endif
+#endif
+      }
+
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After updating edge solution\n");
+      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt((ML_gdot(Nrows,x,x,Tmat_trans->comm))));
+      printf("--------------------------------\n");
+#endif
+
+      ML_Comm_Envelope_Increment_Tag(envelope);
+   
+   } /*for (iter = 0; ...*/
+
+   ML_Comm_Envelope_Destroy(envelope);
+   return 0;
+}
+#ifdef ML_DEBUG_SMOOTHER
+#undef ML_DEBUG_SMOOTHER
+#endif
+
+/******************************************************************************/
+
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
@@ -1015,11 +1266,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 #endif /* ifdef MatrixProductHiptmair */
 
-/* ************************************************************************* */
-/* Hiptmair smoother                                                         */
-/* ------------------------------------------------------------------------- */
-
 #ifdef MatrixFreeHiptmair
+
+/******************************************************************************/
+
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                          double rhs[])
 {
@@ -2745,6 +2995,102 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    return(0);
 }
  
+int ML_Smoother_Create_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data **data)
+{
+   ML_Sm_BlockHiptmair_Data *ml_data;
+ 
+   ML_memory_alloc((void**) data, sizeof(ML_Sm_BlockHiptmair_Data), "Hiptmair" );
+   ml_data = (*data);
+   ml_data->Tmat = NULL;
+   ml_data->Tmat_trans = NULL;
+   ml_data->ATmat_trans = NULL;
+   ml_data->TtAT_diag = NULL;
+   ml_data->TtATmat = NULL;
+   ml_data->sm_nodal = NULL;
+   ml_data->res_edge = NULL;
+   ml_data->res_edge1 = NULL;
+   ml_data->res_edge2 = NULL;
+   ml_data->rhs_nodal1 = NULL;
+   ml_data->rhs_nodal2 = NULL;
+   ml_data->x_nodal1 = NULL;
+   ml_data->x_nodal2 = NULL;
+   ml_data->edge_update1 = NULL;
+   ml_data->edge_update2 = NULL;
+   ml_data->max_eig = 0.0;
+   ml_data->omega = 1.0;
+   ml_data->output_level = 2;
+   ml_data->ml_nodal = NULL;
+   ml_data->ml_edge = NULL;
+   ml_data->reduced_smoother = 0;
+   return(0);
+}
+ 
+/* ******************************************************************** */
+/* Destructor for Block Sm_Hiptmair_Data                                */
+/* ******************************************************************** */
+ 
+void ML_Smoother_Destroy_BlockHiptmair_Data(void *data)
+{
+   ML_Sm_BlockHiptmair_Data *ml_data;
+ 
+   ml_data = (ML_Sm_BlockHiptmair_Data *) data;
+ 
+   if ( ml_data->ATmat_trans != NULL )
+      ML_Operator_Destroy(&(ml_data->ATmat_trans));
+ 
+   if ( ml_data->TtAT_diag != NULL )
+      ML_free(ml_data->TtAT_diag);
+ 
+   if ( ml_data->TtATmat != NULL )
+      ML_Operator_Destroy(&(ml_data->TtATmat));
+
+   if ( ml_data->res_edge != NULL )
+      ML_free(ml_data->res_edge);
+
+   if ( ml_data->res_edge1 != NULL )
+      ML_free(ml_data->res_edge1);
+
+   if ( ml_data->res_edge2 != NULL )
+      ML_free(ml_data->res_edge2);
+
+   if ( ml_data->rhs_nodal1 != NULL )
+      ML_free(ml_data->rhs_nodal1);
+
+   if ( ml_data->rhs_nodal2 != NULL )
+      ML_free(ml_data->rhs_nodal2);
+
+   if ( ml_data->x_nodal1 != NULL )
+      ML_free(ml_data->x_nodal1);
+
+   if ( ml_data->x_nodal2 != NULL )
+      ML_free(ml_data->x_nodal2);
+
+   if ( ml_data->edge_update1 != NULL )
+      ML_free(ml_data->edge_update1);
+
+   if ( ml_data->edge_update2 != NULL )
+      ML_free(ml_data->edge_update2);
+
+   if ( (ml_data->sm_nodal != NULL) && (ml_data->sm_nodal->my_level != NULL) )
+   {
+      ML_free(ml_data->sm_nodal->my_level);
+   }
+
+   if ( ml_data->sm_nodal != NULL )
+      ML_Smoother_Destroy(&(ml_data->sm_nodal));
+
+   if ( ml_data->ml_nodal != NULL ){
+     ML_Destroy(&(ml_data->ml_nodal));
+   }
+
+   if ( ml_data->ml_edge != NULL ) {
+     ML_Destroy(&(ml_data->ml_edge));
+   }
+
+
+   ML_memory_free((void**) &ml_data);
+}                                                                               
+ 
 /* ******************************************************************** */
 /* Destructor for Sm_Hiptmair_Data                                          */
 /* ******************************************************************** */
@@ -3048,9 +3394,209 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 /* ************************************************************************* */
 /* Function to generate the matrix products needed in the Hiptmair smoother  */
 /* on one level.                                                             */
-/* ************************************************************************* */
+/* ************************************************************************ */
 
 #ifdef MatrixProductHiptmair
+
+/* Block Hiptmair stuff */
+int ML_Smoother_Gen_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data **data,
+		                 ML_Operator *Amat,
+                                 ML_Operator *Tmat, ML_Operator *Tmat_trans,
+                                 ML_Operator *Tmat_bc, int BClength,
+				  int *BCindices, 
+void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
+{
+
+   ML_Sm_BlockHiptmair_Data *dataptr;
+   ML_Operator *tmpmat, *tmpmat2, *Mmat;
+   ML_1Level *mylevel;
+   struct ML_CSR_MSRdata *matdata;
+   int *row_ptr, i, j, k;
+   double *val_ptr;
+   double *dbl_arg1, *diagonal;
+#ifdef ML_TIMING_DETAILED
+   double t0;
+
+   t0 = GetClock();
+#endif
+
+   Mmat = Amat->sub_matrix1;
+   dataptr = *data;
+   dataptr->Tmat_trans = Tmat_trans;
+   dataptr->Tmat = Tmat;
+   dataptr->output_level = 2.0;
+   dataptr->omega = 1.0;
+   if ((edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_MLS))
+      dataptr->reduced_smoother =
+                        *((int *) ML_Smoother_Arglist_Get(edge_args,2));
+
+   /* Get maximum eigenvalue for damping parameter. */
+
+  if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
+       (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+  {
+    dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
+    if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1))
+    {
+      //hhhhhhhhhhhhmmmmmmmmmmmmmmmmmmmmm  do we want to use A or submat M here?
+      dataptr->max_eig = ML_Operator_GetMaxEig(Amat);
+      dataptr->omega = 1.0 / dataptr->max_eig;
+      if (Amat->comm->ML_mypid == 0
+          && dataptr->output_level < ML_Get_PrintLevel())
+        printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
+    }
+    if (Amat->comm->ML_mypid == 0
+        && dataptr->output_level < ML_Get_PrintLevel())
+    {
+	     printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
+		    Amat->invec_leng);
+         printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
+         fflush(stdout);
+    }  
+  }
+
+   /* Check matrix dimensions. */
+
+   if (Tmat_trans->invec_leng != Mmat->outvec_leng)
+   {
+      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tTmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
+			 Tmat_trans->invec_leng, Mmat->outvec_leng);
+      exit(1);
+   }
+   if ( dataptr->Tmat_trans->invec_leng != Mmat->outvec_leng )
+   {
+      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tATmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
+			 dataptr->Tmat_trans->invec_leng, Mmat->outvec_leng);
+      exit(1);
+   }
+   if ( Mmat->invec_leng != Tmat->outvec_leng )
+   {
+      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Mmat and Tmat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tMmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
+			 Mmat->invec_leng, Tmat->outvec_leng);
+      exit(1);
+   }
+
+   ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_edge),Amat,
+					  edge_smoother, edge_args, 
+					  dataptr->omega);
+
+
+   /* Triple matrix product T^{*}AT. */
+
+
+   tmpmat = ML_Operator_Create(Mmat->comm);
+   if (Tmat_bc != NULL)
+   {
+      tmpmat2 = ML_Operator_Create(Mmat->comm);
+      /* Calculate matrix product Ke * T.  Postprocess to get (almost)
+         the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
+         Dirichlet b.c. applied to both rows and columns of Ke.  The
+         only differences will be the b.c.  rows themselves, which
+         will be zero. */
+      ML_2matmult(Mmat,Tmat_bc,tmpmat2);
+      matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
+      row_ptr = matdata->rowptr;
+      val_ptr = matdata->values;
+
+      for (i=0; i < BClength; i++)
+      {
+         j = BCindices[i];
+         /* Zero out corresponding row in product Ke * T. */
+         for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
+            val_ptr[k] = 0.0;
+      }
+      ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
+      ML_Operator_Destroy(&tmpmat2);
+   }
+   else
+   {
+      ML_rap(Tmat_trans, Mmat, Tmat, tmpmat, ML_MSR_MATRIX);
+
+      /* Some garbage code to fix up the case when sigma is */
+      /* very small and so tmpmat is very small. Probably   */
+      /* something better should be put in here!!!!         */
+
+      matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
+      if (tmpmat->diagonal != NULL) {
+	ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
+	for (i = 0; i < tmpmat->outvec_leng; i++) {
+	  if ( fabs(diagonal[i]) < 1.0e-10)  {
+	    matdata->values[i] = 1.;
+	    diagonal[i] = 1.;
+	  }
+	}
+      }
+   }
+/*
+   kdata = ML_Krylov_Create( tmpmat->comm );
+   ML_Krylov_Set_ComputeEigenvalues( kdata );
+   ML_Krylov_Set_PrintFreq( kdata, 0 );
+   ML_Krylov_Set_Amatrix(kdata, tmpmat);
+   ML_Krylov_Solve(kdata, tmpmat->outvec_leng, NULL, NULL);
+   if (tmpmat->comm->ML_mypid == 0)
+   {
+      printf("N:Calculated max eigenvalue of %lf.\n",dataptr->max_eig);
+      printf("N:Using Hiptmair damping factor of %lf.\n",dataptr->omega);
+      fflush(stdout);
+   }  
+*/
+   /* Create ML_Smoother data structure for nodes.
+      This is used in symmetric GS sweep over nodes. */
+   mylevel = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
+   ML_Smoother_Create(&(dataptr->sm_nodal), mylevel);
+   dataptr->sm_nodal->ntimes = 1;
+   dataptr->sm_nodal->omega = 1.0;
+
+/*
+   dataptr->sm_nodal->omega = 1.0 / ML_Krylov_Get_MaxEigenvalue(kdata);
+   ML_Krylov_Destroy(&kdata);
+*/
+
+   dataptr->sm_nodal->my_level->Amat = tmpmat;
+   dataptr->sm_nodal->my_level->comm = tmpmat->comm;
+   dataptr->TtATmat = tmpmat;
+
+   ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),tmpmat,
+					  nodal_smoother, nodal_args, 1.0);
+
+   /* Allocate some work vectors that are needed in the smoother. */
+
+   dataptr->res_edge = (double*) ML_allocate( Amat->invec_leng*2*sizeof(double));
+   dataptr->res_edge1 = (double*) ML_allocate( Amat->invec_leng*sizeof(double));
+   dataptr->res_edge2 = (double*) ML_allocate( Amat->invec_leng*sizeof(double));
+   dataptr->rhs_nodal1 = (double *)
+                        ML_allocate(Tmat->invec_leng * sizeof(double));
+   dataptr->rhs_nodal2 = (double *)
+                        ML_allocate(Tmat->invec_leng * sizeof(double));
+   dataptr->x_nodal1 = (double *)
+                      ML_allocate(Tmat->invec_leng * sizeof(double));
+   dataptr->x_nodal2 = (double *)
+                      ML_allocate(Tmat->invec_leng * sizeof(double));
+   dataptr->edge_update1 = (double * )
+                          ML_allocate(Amat->invec_leng * sizeof(double));
+   dataptr->edge_update2 = (double * )
+                          ML_allocate(Amat->invec_leng * sizeof(double));
+   /*
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+#endif       
+   */
+   return 0;
+}
+
+/******************************************************************************/
+
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,

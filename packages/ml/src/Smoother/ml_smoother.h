@@ -22,6 +22,7 @@ typedef struct ML_Smoother_Struct ML_Smoother;
 typedef struct ML_Sm_BGS_Data_Struct ML_Sm_BGS_Data;
 typedef struct ML_Sm_ILUT_Data_Struct ML_Sm_ILUT_Data;
 typedef struct ML_Sm_Hiptmair_Data_Struct ML_Sm_Hiptmair_Data;
+typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 
 /* ******************************************************************** */
 /* local include files                                                  */
@@ -159,6 +160,33 @@ struct ML_Sm_Hiptmair_Data_Struct
    int   reduced_smoother;
 };
 
+/* for block hiptmair */
+
+struct ML_Sm_BlockHiptmair_Data_Struct
+{
+   ML_Operator *Tmat;
+   ML_Operator *Tmat_trans;
+   ML_Operator *ATmat_trans;
+   double      *TtAT_diag;
+   ML_Operator *TtATmat;
+   ML_Smoother *sm_nodal;
+   double *res_edge;
+   double *res_edge1;
+   double *res_edge2;
+   double *rhs_nodal1;
+   double *rhs_nodal2;
+   double *x_nodal1;
+   double *x_nodal2;
+   double *edge_update1;
+   double *edge_update2;
+   double max_eig;
+   double omega;
+   double output_level;
+   ML    *ml_nodal;
+   ML    *ml_edge;
+   int   reduced_smoother;
+};
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */
@@ -196,6 +224,7 @@ extern  int ML_Smoother_OverlappedILUT(void *,int,double *x,int,double *);
 extern  int ML_Smoother_VBlockAdditiveSchwarz(void *,int,double*,int,double*);
 extern  int ML_Smoother_VBlockMultiplicativeSchwarz(void *,int,double*,int,double*);
 extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
+extern  int ML_Smoother_BlockHiptmair(void *, int, double *, int, double *);
 
 /* ******************************************************************** */
 /* ******************************************************************** */
@@ -204,7 +233,12 @@ extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 /* ******************************************************************** */
 
 extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
+extern  int ML_Smoother_Create_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data **data);
 extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
+                         ML_Operator*, ML_Operator*, ML_Operator*,
+                         ML_Operator*, int, int*, void *, void **,
+					  void *, void **);
+extern  int ML_Smoother_Gen_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*,
                          ML_Operator*, int, int*, void *, void **,
 					  void *, void **);
@@ -213,6 +247,7 @@ extern int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 						  void **args, double default_omega);
 
 extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
+extern void ML_Smoother_Destroy_BlockHiptmair_Data(void *data);
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
 extern void ML_Smoother_Destroy_BGS_Data(void *data);
 extern void ML_Smoother_Clean_BGS_Data(void *data);

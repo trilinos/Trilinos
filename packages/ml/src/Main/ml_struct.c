@@ -2614,7 +2614,8 @@ int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs)
 int ML_Iterate(ML *ml, double *sol, double *rhs)
 {
    int  i = 0, count = 0;
-   double res_norm, prev_res_norm = -1.0, reduction, r0 = 0.0 /*, old_reduction = 10.*/;
+   double res_norm, prev_res_norm = -1.0, reduction, r0 = 0.0 
+	  /*, old_reduction = 10.*/;
 
    reduction = 1.;
 
@@ -4863,6 +4864,123 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 /* ------------------------------------------------------------------------- */
 /* Generate the Hiptmair smoother.                                           */
 /* ------------------------------------------------------------------------- */
+
+/* block version */
+
+int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
+			      ML_Operator **Tmat_array, 
+			      ML_Operator **Tmat_trans_array, 
+			      ML_Operator *Tmat_bc, 
+			      void *edge_smoother, void **edge_args,
+			      void *nodal_smoother, void **nodal_args)
+     /*
+			      int (*edge_smoother )(void), void *edge_args[],
+			      int (*nodal_smoother)(void), void *nodal_args[])
+     */
+
+{
+   ML_Sm_BlockHiptmair_Data *data;
+   int (*fun)(void *, int, double *, int, double *);
+   int start_level, end_level, i, status = 1;
+   int *BClist=NULL, BClength=0;
+   ML_BdryPts *ml_bc;
+   char str[80];
+#ifdef ML_TIMING
+   double         t0;
+   t0 = GetClock();
+#endif
+
+   if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;
+#ifdef ML_TIMING
+      printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
+#endif
+}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_Hiptmair: cannot set smoother on level %d\n",
+	         start_level);
+      return 1;
+   }
+
+   fun = ML_Smoother_BlockHiptmair;
+
+   if (pre_or_post == ML_PRESMOOTHER)
+   {
+      for (i = start_level; i <= end_level; i++)
+	  {
+         /* Get list of Dirichlet bc, if any. */
+         ml_bc = ml->SingleLevel[i].BCs;
+         if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
+            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         ML_Smoother_Create_BlockHiptmair_Data(&data);
+	     ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
+			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
+                                  BClength, BClist, 
+             edge_smoother, edge_args, nodal_smoother, nodal_args );
+	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         BClist = NULL; BClength = 0;
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
+      }
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER)
+   {
+      printf("ML_Gen_Smoother_Hiptmair: ML_POSTSMOOTHER isn't done.\n");
+      for (i = start_level; i <= end_level; i++)
+	  {
+             sprintf(str,"Hiptmair_post%d",i);
+             status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+
+      }
+
+   }
+   else if (pre_or_post == ML_BOTH)
+   {
+      for (i = start_level; i <= end_level; i++)
+	  {
+         /* Get list of Dirichlet bc, if any. */
+         ml_bc = ml->SingleLevel[i].BCs;
+         if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
+            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         ML_Smoother_Create_BlockHiptmair_Data(&data);
+	     ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
+			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
+					   BClength, BClist, 
+edge_smoother, edge_args, nodal_smoother, nodal_args );
+	     ml->post_smoother[i].data_destroy =
+			                            ML_Smoother_Destroy_BlockHiptmair_Data;
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
+         sprintf(str,"Hiptmair_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
+         BClist = NULL; BClength = 0;
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+      }
+   }
+   else return(pr_error("ML_Gen_Smoother_BlockHiptmair: unknown "
+                        "pre_or_post choice\n"));
+   return(status);
+}
+
+
+/******************************************************************************/
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_array, 
