@@ -225,6 +225,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 	AMESOS::Parameter::List ParamList ;
 	Amesos_Superludist A_Superludist( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
+	EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) ); 
+	EPETRA_CHK_ERR( A_Superludist.NumericFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_Superludist.Solve(  ) ); 
       }
 #endif

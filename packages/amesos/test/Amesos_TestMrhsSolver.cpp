@@ -384,6 +384,8 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       AMESOS::Parameter::List ParamList ;
       Amesos_Superludist superludist( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 
 
       bool factor = true; 
       for ( int i= 0 ; i < numsolves ; i++ ) { 
