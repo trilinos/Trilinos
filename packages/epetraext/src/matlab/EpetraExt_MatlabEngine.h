@@ -82,7 +82,7 @@ class MatlabEngine {
   //@{ \name LotsHere methods
 
   //! EvalString method
-  void EvalString (char* command, char* output, int n) const;
+  void EvalString (char* command) const;
 
   //@}
 

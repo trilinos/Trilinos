@@ -57,7 +57,7 @@ MatlabEngine::~MatlabEngine (void) {
 
 	int result = engClose (Engine_) ;
 
-	if (result == 1)
+	if (result != 0)
 	{
 	    cout << "That was bad.  engClose failed." << endl ; 
 	}
@@ -67,7 +67,7 @@ MatlabEngine::~MatlabEngine (void) {
 }
 
 //=======================================================================
-void MatlabEngine::EvalString (char* command, char* output, int n) const {
+void MatlabEngine::EvalString (char* command) const {
 
     // send a string command to the MATLAB engine
     if (MyPID_ == 0) {
@@ -76,16 +76,9 @@ void MatlabEngine::EvalString (char* command, char* output, int n) const {
 
 	int result = engEvalString (Engine_, command) ;
 
-	if (result == 1)
+	if (result != 0)
 	{
 	    cout << "That was bad.  engEvalString failed." << endl ; 
-	}
-
-	// print the output of the command, if a buffer exists
-	// and we have requested output to be printed (echoed).
-	if (output != (char *) 0)
-	{
-	    cout << output << endl ;
 	}
 
     }
