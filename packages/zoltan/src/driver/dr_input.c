@@ -505,7 +505,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   int size;
 /***************************** BEGIN EXECUTION ******************************/
 
-  MPI_Bcast(&Debug_Driver, sizeof(int), MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 
