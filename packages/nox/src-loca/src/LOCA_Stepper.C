@@ -478,9 +478,16 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 	   curGroupPtr->computeScaledDotProduct(*prevPredictorPtr, 
 						 *prevPredictorPtr));
 
-    if (tangentFactor < minTangentFactor)
+    if (tangentFactor < minTangentFactor) {
+      if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+      cout << "\n\tTangent factor scaling:  Failing step!  Tangent factor "
+	   << "less than" << endl
+	   << "\t\tspecified bound: " << LOCA::Utils::sci(tangentFactor) 
+	   << " < " << LOCA::Utils::sci(minTangentFactor)
+	   << endl;
+      }
       return LOCA::Abstract::Iterator::Unsuccessful;
-
+    }
   }
 
   return stepStatus;
