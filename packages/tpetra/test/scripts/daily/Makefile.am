@@ -26,4 +26,10 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = serial
+if HAVE_MPI
+MPI_SUBDIR = mpi
+else
+SERIAL_SUBDIR = serial
+endif
+
+SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)

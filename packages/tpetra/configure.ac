@@ -317,6 +317,7 @@ AC_CONFIG_FILES([
     test/Platform/Makefile
 		test/Comm/Makefile
 		test/ElementSpace/Makefile
+    test/Directory/Makefile
 		test/Distributor/Makefile
     test/ImportExport/Makefile
 		test/BlockElementSpace/Makefile
@@ -327,6 +328,7 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
+    test/scripts/daily/mpi/Makefile
 		])
 
 AC_OUTPUT()
