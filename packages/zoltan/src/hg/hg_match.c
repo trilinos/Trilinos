@@ -23,6 +23,7 @@ extern "C" {
 static ZOLTAN_HG_MATCHING_FN matching_mxm;  /* maximal matching */
 static ZOLTAN_HG_MATCHING_FN matching_rem;  /* random edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_rrm;  /* random, random edge matching */
+static ZOLTAN_HG_MATCHING_FN matching_rm2;  /* random, light edge matching, random */
 static ZOLTAN_HG_MATCHING_FN matching_rhm;  /* random, heavy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_grm;  /* greedy edge matching, Hi to Lo */
 static ZOLTAN_HG_MATCHING_FN matching_gm2;  /* greedy edge matching, Lo to Hi */
@@ -44,6 +45,7 @@ int found = 1;
   if      (!strcasecmp(hgp->redm_str, "mxm"))  hgp->matching = matching_mxm;
   else if (!strcasecmp(hgp->redm_str, "rem"))  hgp->matching = matching_rem;
   else if (!strcasecmp(hgp->redm_str, "rrm"))  hgp->matching = matching_rrm;
+  else if (!strcasecmp(hgp->redm_str, "rm2"))  hgp->matching = matching_rm2;
   else if (!strcasecmp(hgp->redm_str, "rhm"))  hgp->matching = matching_rhm;
   else if (!strcasecmp(hgp->redm_str, "grm"))  hgp->matching = matching_grm;
   else if (!strcasecmp(hgp->redm_str, "gm2"))  hgp->matching = matching_gm2;
@@ -232,7 +234,7 @@ char *yo = "matching_rem";
 
 
 
-/* randoom vertex, then random edge matching */
+/* random vertex, then random edge matching */
 static int matching_rrm (ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
 int i, j, k, edge, random, vertex, pstack, partner;
@@ -273,6 +275,70 @@ char *yo = "matching_rrm";
    Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
    return ZOLTAN_OK;
    }
+
+/*****************************************************************************/
+
+
+
+/* random vertex, then lightest hyperedge weight then random vertex matching */
+/* this code is almost identical with rrm (above) */
+static int matching_rm2 (ZZ *zz, HGraph *hg, Matching match, int *limit)
+{
+int i, j, k, edge, random, vertex, pstack, partner;
+int *vertices = NULL, *stack = NULL;
+char *yo = "matching_rrm";
+
+   if (!(vertices = (int*) ZOLTAN_MALLOC (hg->nVtx   * sizeof(int)))
+    || !(stack    = (int*) ZOLTAN_MALLOC (hg->nInput * sizeof(int))) ) {
+       Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+       return ZOLTAN_MEMERR;
+       }
+   for (i = 0; i < hg->nVtx;  i++)
+      vertices[i] = i;
+
+   for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
+      float weight, min_weight ;                  /* added to rrm */
+      random = Zoltan_HG_Rand() % i;
+      vertex = vertices[random];
+      vertices[random] = vertices[i-1];
+      pstack = 0;
+      min_weight = 1.0e20 ;                    /* added to rrm */
+      if (match[vertex] == vertex) {
+         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
+            edge = hg->vedge[j];
+
+            weight = hg->ewgt ? hg->ewgt[edge] : 1.0 ;
+            for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
+               partner = hg->hvertex[k];
+
+               /* the following if-else is different from rrm */
+               if (partner == match[partner] && partner != vertex
+                && min_weight < weight)
+                  {
+                  pstack=0 ;
+                  min_weight = weight ;
+                  stack[pstack++] = partner;
+                  }
+               else if (partner == match[partner] && partner != vertex
+                && min_weight == weight)
+                  stack[pstack++] = partner;
+               }
+            }
+         if (pstack > 0) {
+            random = stack[Zoltan_HG_Rand() % pstack];
+            match[vertex] = random;
+            match[random] = vertex;
+            (*limit)--;
+            }
+         }
+      }
+   Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
+   return ZOLTAN_OK;
+   }
+
+
+
 
 /*****************************************************************************/
 
@@ -344,48 +410,7 @@ char *yo = "matching_rhm";
    return ZOLTAN_OK;
    }
 
-
 /*****************************************************************************/
-/* Replacing graph version below with following hypergraph version */
-#ifdef RTHRTH
-/* random greedy matching (graph) */
-static int matching_grm (ZZ *zz, Graph *g, Matching match, int *limit)
-{
-int   i, j, *order = NULL, *vertex = NULL, vertex1, vertex2;
-char *yo = "matching_grm";
-
-  if (!g->ewgt)
-     return matching_mxm(zz, hg, g, match, limit);
-
-  if (!(order  = (int*) ZOLTAN_MALLOC (g->nEdge * sizeof(int)))
-   || !(vertex = (int*) ZOLTAN_MALLOC (g->nEdge * sizeof(int))) ) {
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &order, &vertex);
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR;
-      }
-  for (i = 0; i < g->nEdge; i++)
-     order[i] = i;
-
-  for (i = 0; i < g->nVtx; i++)
-     for (j = g->nindex[i]; j < g->nindex[i+1]; j++)
-        vertex[j] = i;
-
-  Zoltan_quicksort_pointer_dec_float (order, g->ewgt, 0, g->nEdge - 1);
-
-  for (i = 0; i < g->nEdge && *limit > 0; i++) {
-     vertex1 = vertex[order[i]];
-     vertex2 = g->neigh[order[i]];
-     if (vertex1 != vertex2 && match[vertex1] == vertex1
-      && match[vertex2] == vertex2) {
-         match[vertex1] = vertex2;
-         match[vertex2] = vertex1;
-         (*limit)--;
-         }
-     }
-  Zoltan_Multifree (__FILE__, __LINE__, 2, &order, &vertex);
-  return ZOLTAN_OK;
-}
-#endif
 
 
 
