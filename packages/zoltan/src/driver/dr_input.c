@@ -313,42 +313,13 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       }
 
       /****** Decomposition Info ******/
-      else if (token_compare(cptr, "decomposition info")) {
+      else if (token_compare(cptr, "decomposition method")) {
         /* The method to use for decomposing the graph */
-
-        /* Search to the first null character */
-        cptr = strchr(cptr, '\0');
-        cptr++;
-        strip_string(cptr, " \t\n=");
-        cptr = strtok(cptr, ",");
-        while(cptr != NULL)
+        if(strlen(prob->method) == 0)
         {
+          cptr = strtok(NULL, "\t=");
           strip_string(cptr, " \t\n");
-          string_to_lower(cptr, '\0');
-          if(strstr(cptr, "method"))
-          {
-            if(strlen(prob->method) == 0)
-            {
-              cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
-              {
-                Gen_Error(0, "fatal: need to specify a value with method");
-                return 0;
-              }
-
-              cptr2++;
-              strcpy(prob->method, cptr2);
-            }
-          }
-          else
-          {
-            sprintf(cmesg,
-                    "fatal(%s): unknown LB method \"%s\" specified in command"
-                    " file", yo, cptr);
-            Gen_Error(0, cmesg);
-            return 0;
-          }
-          cptr = strtok(NULL, ",");
+          strcpy(prob->method, cptr);
         }
       }
 

@@ -1,4 +1,4 @@
-Decomposition Info	= method=rcb
+Decomposition Method 	= rcb
 Zoltan Parameters	= 
 File Type		= Chaco, initial procs = 1
 File Name		= grid20x19

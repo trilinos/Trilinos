@@ -1,4 +1,4 @@
-Decomposition Info	= method=parmetis
+Decomposition Method 	= parmetis
 Zoltan Parameters	= obj_weight_dim=1, parmetis_method=partgeom
 File Type		= Chaco
 File Name		= vwgt
