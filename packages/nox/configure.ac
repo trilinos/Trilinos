@@ -1397,6 +1397,7 @@ AC_CONFIG_FILES([
                 test/scripts/daily/Makefile
                 test/scripts/daily/serial/Makefile
                 test/scripts/daily/mpi/Makefile
+                test/utils/Makefile
                 test/lapack/Makefile
                 test/lapack/NOX_NewTest/Makefile
                 test/lapack/NOX_Group/Makefile

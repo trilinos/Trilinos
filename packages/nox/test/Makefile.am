@@ -27,4 +27,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = scripts lapack epetra petsc
+SUBDIRS = scripts utils lapack epetra petsc

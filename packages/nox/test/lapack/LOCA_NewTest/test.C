@@ -29,7 +29,7 @@
                                                                                 
 #include "LOCA.H"  // LOCA headers
 #include "LOCA_LAPACK.H" // LOCA LAPACK Interface headers
-#include "nox_test_err.h" // common file for testing 
+#include "NOX_TestError.H" // common file for testing 
 
 #ifdef HAVE_MPI
 #include <mpi.h>

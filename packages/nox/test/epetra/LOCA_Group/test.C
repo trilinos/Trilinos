@@ -30,7 +30,7 @@
 // NOX headers
 #include "LOCA.H"  // Required headers
 #include "LOCA_Epetra.H" // Epetra Interface headers
-#include "nox_test_err.h" // Test Suite headers
+#include "NOX_TestError.H" // Test Suite headers
 
 // Trilinos headers
 #ifdef HAVE_MPI
