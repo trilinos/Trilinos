@@ -965,10 +965,9 @@ Optional Packages:
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
-  --with-ml_internal_comm_functions
-                          Use ML's implementation of global communication
-                          functions (not the MPI implementation) (default is
-                          no)
+  --with-ml_external_mpi_functions
+                          Use mpi-provided global communication functions (not
+                          ml's internal implementation) (default is yes)
   --with-ml_aztec2_1      Enable Aztec 2.1 support (default is no)
   --with-ml-64bit-integer Support for 64-bit integers; required if ML used
                           with MPSalsa. Examples:
@@ -3916,7 +3915,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3919:" \
+echo "$as_me:3918:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7224,23 +7223,23 @@ fi
 
 
 
-# Check whether --with-ml_internal_comm_functions or --without-ml_internal_comm_functions was given.
-if test "${with_ml_internal_comm_functions+set}" = set; then
-  withval="$with_ml_internal_comm_functions"
-  ac_cv_use_ml_internal_comm_functions=$withval
+# Check whether --with-ml_external_mpi_functions or --without-ml_external_mpi_functions was given.
+if test "${with_ml_external_mpi_functions+set}" = set; then
+  withval="$with_ml_external_mpi_functions"
+  ac_cv_use_ml_external_mpi_functions=$withval
 else
-  ac_cv_use_ml_internal_comm_functions=no
+  ac_cv_use_ml_external_mpi_functions=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_internal_comm_functions" >&5
-echo $ECHO_N "checking whether to use ml_internal_comm_functions... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use ml_external_mpi_functions" >&5
+echo $ECHO_N "checking whether to use ml_external_mpi_functions... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_internal_comm_functions" != "Xno"; then
+if test "X$ac_cv_use_ml_external_mpi_functions" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_USE_INTERNAL_COMM_FUNCTIONS
+#define HAVE_ML_EXTERNAL_MPI_FUNCTIONS
 _ACEOF
 
 else
@@ -8257,7 +8256,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8260: \"$ac_link\") >&5
+(eval echo $as_me:8259: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8335,7 +8334,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8338: \"$ac_link\") >&5
+(eval echo $as_me:8337: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11288,7 +11287,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11291: \"$ac_link\") >&5
+(eval echo $as_me:11290: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11366,7 +11365,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11369: \"$ac_link\") >&5
+(eval echo $as_me:11368: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
