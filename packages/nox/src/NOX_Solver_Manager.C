@@ -14,7 +14,7 @@
 // Header files for different solvers
 #include "NOX_Solver_Newton.H"		// Newton's method
 #include "NOX_Solver_NonlinearCG.H"	// Nonlinear Conjugate Gradient method
-
+#include "NOX_Solver_TrustRegion.H"     // Trust region method
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -46,6 +46,9 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
     } 
     else if (method == "NonlinearCG") {
       ptr = new NonlinearCG(grp, tests, params);
+    } 
+    else if (method == "Trust Region") {
+      ptr = new TrustRegion(grp, tests, params);
     } 
     else {
       cout << "ERROR: NOX::Solver::Manager - invalid choice for nonlinear " 
