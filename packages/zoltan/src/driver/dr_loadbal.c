@@ -28,9 +28,11 @@ extern "C" {
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
+#include "dr_util_const.h"
 
 static int Num_GID = 1, Num_LID = 1;
-static void test_drops(struct Zoltan_Struct *, int);
+static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
+   struct Zoltan_Struct *);
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -375,10 +377,6 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 #endif
   
-    if (Test.Drops) 
-      test_drops(zz, Proc);
-
-  
     /*
      * Call another routine to perform the migration
      */
@@ -406,6 +404,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
     }
   
+    if (Test.Drops) 
+      test_drops(Proc, mesh, pio_info, zz);
+
     /* Clean up */
     Zoltan_LB_Free_Part(&import_gids, &import_lids,
                         &import_procs, &import_to_part);
@@ -994,67 +995,254 @@ ELEM_INFO *elem, *found_elem = NULL;
 }
 
 /*****************************************************************************/
+/*****************************************************************************/
+
+static void test_point_drops(FILE *, double *, struct Zoltan_Struct *,
+  int, int *, int, int *, int, int);
+static void test_box_drops(FILE *, double *, double *, struct Zoltan_Struct *, 
+  int, int, int, int);
+
 static void test_drops(
-  struct Zoltan_Struct *zz,
-  int Proc
+  int Proc,
+  MESH_INFO_PTR mesh, 
+  PARIO_INFO_PTR pio_info,
+  struct Zoltan_Struct *zz
 )
 {
-double x[] = {0.0L, 0.0L, 0.0L};
-int i, status;
-double xlo, ylo, zlo;
-double xhi, yhi, zhi;
-int procs[1000], parts[1000];
-int proccnt, partcnt;
-  
-  status = Zoltan_LB_Point_Assign(zz, x, &(procs[0]));
-  if (status != ZOLTAN_OK) 
-    Gen_Error(1, "error returned from Zoltan_LB_Point_Assign()\n");
-  else
-    printf("%d Point_Assign (%f %f %f) on %d\n",
-            Proc, x[0], x[1], x[2], procs[0]);
+FILE *fp;
+double xlo[3], xhi[3];
+char par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
+int i;
+int Num_Proc;
+int max_part, gmax_part;
+int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
+                /* If false, test only Zoltan_*_PP_Assign.                    */
+                /* True if # partitions == # processors.                      */
 
-  status = Zoltan_LB_Point_PP_Assign(zz, x, &(procs[0]), &(parts[0]));
-  if (status != ZOLTAN_OK) 
-    Gen_Error(1, "error returned from Zoltan_LB_Point_PP_Assign()\n");
-  else
-    printf("%d Point_PP_Assign (%f %f %f) on %d part %d\n",
-            Proc, x[0], x[1], x[2], procs[0], parts[0]);
+  /* Find maximum partition number across all processors. */
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+  max_part = gmax_part = -1;
+  for (i = 0; i < mesh->num_elems; i++)
+    if (mesh->elements[i].my_part > max_part)
+      max_part = mesh->elements[i].my_part;
+  MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  test_both = ((gmax_part == (Num_Proc-1)) && (Test.Local_Partitions == 0));
 
-  xlo = ylo = zlo = 0.0L;
-  xhi = yhi = zhi = 1.0L;
-  status = Zoltan_LB_Box_Assign(zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, 
-                                &proccnt);
-  if (status != ZOLTAN_OK) 
-    Gen_Error(1, "error returned from Zoltan_LB_Box_Assign()\n");
-  else {
-    printf("%d Box_Assign LO: (%f %f %f)\n"
-           "%d            HI: (%f %f %f)\n", 
-           Proc, xlo, ylo, zlo, Proc, xhi, yhi, zhi);
-    printf("       On %d Procs: ", proccnt);
-    for (i = 0; i < proccnt; i++)
-      printf("%d ", procs[i]);
-    printf("\n");
+  /* generate the parallel filename for this processor */
+  strcpy(ctemp, pio_info->pexo_fname);
+  strcat(ctemp, ".drops");
+  gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
+  fp = fopen(par_out_fname, "w");
+
+  /* Test unit box */
+  xlo[0] = xlo[1] = xlo[2] = 0.0L;
+  xhi[0] = xhi[1] = xhi[2] = 1.0L;
+  test_box_drops(fp, xlo, xhi, zz, Proc, -1, -1, test_both);
+
+  /* Test box based on this processor */
+  if (mesh->num_elems > 0) {
+    double x[3] = {0., 0., 0.};
+    int iierr = 0;
+    ELEM_INFO_PTR current_elem = &(mesh->elements[0]);
+    unsigned int lid = 0;
+    unsigned int gid = (unsigned) (current_elem->globalID);
+
+    if (mesh->eb_nnodes[current_elem->elem_blk] == 1) {
+      x[0] = current_elem->coord[0][0];
+      if (mesh->num_dims > 1)
+        x[1] = current_elem->coord[0][1];
+      if (mesh->num_dims > 2)
+        x[2] = current_elem->coord[0][2];
+    }
+    else 
+      get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
+
+    xlo[0] = x[0];
+    xlo[1] = x[1];
+    xlo[2] = x[2];
+    xhi[0] = x[0] + 1.0;
+    xhi[1] = x[1] + 2.0;
+    xhi[2] = x[2] + 3.0;
+    test_box_drops(fp, xlo, xhi, zz, Proc, Proc, current_elem->my_part,
+                   test_both);
   }
 
+  /* Test box that (most likely) includes the entire domain. */
+  /* All partitions and processors with partitions should be in the output.  */
+  xlo[0] = -1000000.;
+  xlo[1] = -1000000.;
+  xlo[2] = -1000000.;
+  xhi[0] = 1000000.;
+  xhi[1] = 1000000.;
+  xhi[2] = 1000000.;
+  test_box_drops(fp, xlo, xhi, zz, Proc, 
+                ((max_part >= 0) ? Proc : -1), /* do not test for proc if
+                                                  proc has no partitions */
+                -1, test_both);
 
-  status = Zoltan_LB_Box_PP_Assign(zz, xlo, ylo, zlo, xhi, yhi, zhi,
-                                   procs, &proccnt, parts, &partcnt);
+  fclose(fp);
+}
+
+/*****************************************************************************/
+static void test_point_drops(
+  FILE *fp, 
+  double *x, 
+  struct Zoltan_Struct *zz, 
+  int Proc,
+  int *procs,
+  int proccnt,
+  int *parts,
+  int partcnt,
+  int test_both
+)
+{
+int status;
+int one_part, one_proc;
+int i;
+
+  if (test_both) {
+    status = Zoltan_LB_Point_Assign(zz, x, &one_proc);
+    if (status != ZOLTAN_OK) 
+      fprintf(fp, "error returned from Zoltan_LB_Point_Assign()\n");
+    else  {
+      fprintf(fp, "%d Zoltan_LB_Point_Assign    (%e %e %e) on proc %d\n",
+              Proc, x[0], x[1], x[2], one_proc);
+      for (i = 0; i < proccnt; i++) 
+        if (one_proc == procs[i]) 
+          break;
+      if (i == proccnt) 
+        fprintf(fp, "%d Error:  processor %d (from Zoltan_LB_Point_Assign) "
+                    "not in proc list from Zoltan_LB_Box_Assign\n", 
+                    Proc, one_proc);
+    }
+  }
+  else fprintf(fp, "%d Zoltan_LB_Point_Assign not tested.\n", Proc);
+
+  status = Zoltan_LB_Point_PP_Assign(zz, x, &one_proc, &one_part);
   if (status != ZOLTAN_OK) 
-    Gen_Error(1, "error returned from Zoltan_LB_Box_PP_Assign()\n");
+    fprintf(fp, "error returned from Zoltan_LB_Point_PP_Assign()\n");
   else {
-    printf("%d Box_PP_Assign LO: (%f %f %f)\n"
-           "%d               HI: (%f %f %f)\n", 
-           Proc, xlo, ylo, zlo, Proc, xhi, yhi, zhi);
+    fprintf(fp, "%d Zoltan_LB_Point_PP_Assign (%e %e %e) on proc %d part %d\n",
+            Proc, x[0], x[1], x[2], one_proc, one_part);
 
-    printf("       On %d Procs: ", proccnt);
-    for (i = 0; i < proccnt; i++)
-      printf("%d ", procs[i]);
-    printf("\n");
+    for (i = 0; i < proccnt; i++) 
+      if (one_proc == procs[i]) 
+        break;
+    if (i == proccnt) 
+      fprintf(fp, "%d Error:  processor %d (from Zoltan_LB_Point_PP_Assign) "
+                  "not in proc list from Zoltan_LB_Box_PP_Assign\n", 
+                  Proc, one_proc);
 
-    printf("       In %d Parts: ", partcnt);
-    for (i = 0; i < partcnt; i++)
-      printf("%d ", parts[i]);
-    printf("\n");
+    if (parts != NULL) {
+      for (i = 0; i < partcnt; i++) 
+        if (one_part == parts[i]) 
+          break;
+      if (i == partcnt) 
+        fprintf(fp, "%d Error:  partition %d (from Zoltan_LB_Point_PP_Assign) "
+                    "not in part list from Zoltan_LB_Box_PP_Assign\n", 
+                    Proc, one_part);
+    }
+  }
+}
+
+/*****************************************************************************/
+static void test_box_drops(
+  FILE *fp, 
+  double *xlo, 
+  double *xhi, 
+  struct Zoltan_Struct *zz, 
+  int Proc, 
+  int answer_proc,   /* If >= 0, an expected answer for proc. */
+  int answer_part,   /* If >= 0, an expected answer for part. */
+  int test_both
+)
+{
+int status, procfound, partfound;
+int proccnt, partcnt;
+int procs[1000], parts[1000];
+double x[3];
+int i;
+
+  if (test_both) {
+    status = Zoltan_LB_Box_Assign(zz, xlo[0], xlo[1], xlo[2], 
+                                      xhi[0], xhi[1], xhi[2], 
+                                      procs, &proccnt);
+    if (status != ZOLTAN_OK) 
+      fprintf(fp, "\nerror returned from Zoltan_LB_Box_Assign()\n");
+    else {
+      fprintf(fp, "\n%d Zoltan_LB_Box_Assign    LO: (%e %e %e)\n"
+                    "%d                         HI: (%e %e %e)\n", 
+                  Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
+  
+      procfound = 0;
+      fprintf(fp, "       On %d Procs: ", proccnt);
+      for (i = 0; i < proccnt; i++) {
+        fprintf(fp, "%d ", procs[i]);
+        if (procs[i] == answer_proc) procfound = 1;
+      }
+      fprintf(fp, "\n");
+      if (answer_proc >= 0 && !procfound)
+        fprintf(fp, "%d Zoltan_LB_Box_Assign error:  "
+                     "expected proc %d not in output proc list\n",
+                      Proc, answer_proc);
+      
+      /* Test point assign */
+      test_point_drops(fp, xlo, zz, Proc, procs, proccnt, NULL, 0, test_both);
+      test_point_drops(fp, xhi, zz, Proc, procs, proccnt, NULL, 0, test_both);
+      x[0] = 0.5 * (xlo[0] + xhi[0]);
+      x[1] = 0.5 * (xlo[1] + xhi[1]);
+      x[2] = 0.5 * (xlo[2] + xhi[2]);
+      test_point_drops(fp, x, zz, Proc, procs, proccnt, NULL, 0, test_both);
+    }
+  }
+  else fprintf(fp, "\n%d Zoltan_LB_Box_Assign not tested.\n", Proc);
+
+
+  status = Zoltan_LB_Box_PP_Assign(zz, xlo[0], xlo[1], xlo[2], 
+                                       xhi[0], xhi[1], xhi[2], 
+                                       procs, &proccnt, 
+                                       parts, &partcnt);
+  if (status != ZOLTAN_OK) 
+    fprintf(fp, "\nerror returned from Zoltan_LB_Box_PP_Assign()\n");
+  else {
+    fprintf(fp, "\n%d Zoltan_LB_Box_PP_Assign LO: (%e %e %e)\n"
+                  "%d                         HI: (%e %e %e)\n", 
+                Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
+
+    procfound = 0;
+    fprintf(fp, "       On %d Procs: ", proccnt);
+    for (i = 0; i < proccnt; i++) {
+      fprintf(fp, "%d ", procs[i]);
+      if (procs[i] == answer_proc) procfound = 1;
+    }
+    fprintf(fp, "\n");
+
+    partfound = 0;
+    fprintf(fp, "       In %d Parts: ", partcnt);
+    for (i = 0; i < partcnt; i++) {
+      fprintf(fp, "%d ", parts[i]);
+      if (parts[i] == answer_part) partfound = 1;
+    }
+    fprintf(fp, "\n");
+    if (answer_proc >= 0 && !procfound)
+      fprintf(fp, "%d Zoltan_LB_Box_PP_Assign error:  "
+                   "expected proc %d not in output proc list\n",
+                    Proc, answer_proc);
+    if (answer_part >= 0 && !partfound)
+      fprintf(fp, "%d Zoltan_LB_Box_PP_Assign error:  "
+                  "expected part %d not in output part list\n",
+                  Proc, answer_part);
+
+    /* Test point assign */
+    test_point_drops(fp, xlo, zz, Proc, procs, proccnt, parts, partcnt, 
+                     test_both);
+    test_point_drops(fp, xhi, zz, Proc, procs, proccnt, parts, partcnt, 
+                     test_both);
+    x[0] = 0.5 * (xlo[0] + xhi[0]);
+    x[1] = 0.5 * (xlo[1] + xhi[1]);
+    x[2] = 0.5 * (xlo[2] + xhi[2]);
+    test_point_drops(fp, x, zz, Proc, procs, proccnt, parts, partcnt, 
+                     test_both);
   }
 }
 
