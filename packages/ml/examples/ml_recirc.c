@@ -576,7 +576,7 @@ int *block_list, nblocks = 3;
       ML_Aggregate_Set_DampingFactor( *ml_ag, context->agg_damping);
       ndim = num_PDE_eqns;
 
-      (*ml_ag)->Restriction_smoothagg_transpose = ML_TRUE; // rst playing
+      (*ml_ag)->Restriction_smoothagg_transpose = ML_TRUE; /* rst playing */
       ML_Aggregate_Set_MaxCoarseSize(*ml_ag, 5);
       (*ml_ag)->drop_tol_for_smoothing = 0.08;
 
