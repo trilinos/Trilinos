@@ -51,7 +51,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
-  assert(Allocate()==0);
+  int err = Allocate();
+  assert( err == 0 );
 }
 
 //==============================================================================
@@ -67,7 +68,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumBlockEntriesPerRow);
-  assert(Allocate()==0);
+  int err = Allocate();
+  assert( err == 0 );
 }
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
@@ -83,7 +85,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
-  assert(Allocate()==0);
+  int err = Allocate();
+  assert( err == 0 );
 }
 
 //==============================================================================
@@ -100,7 +103,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
-  assert(Allocate()==0);
+  int err = Allocate();
+  assert( err == 0 );
 }
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph) 
@@ -114,7 +118,8 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
     CV_(CV)
 {
   InitializeDefaults();
-  assert(Allocate()==0);
+  int err = Allocate();
+  assert(err==0);
 }
 
 //==============================================================================
@@ -155,7 +160,8 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
     Graph_ = new Epetra_CrsGraph(src.Graph());
   }
 
-  assert( Allocate() == 0 );
+  int err = Allocate();
+  assert( err == 0 );
 
   int i, j;
   
@@ -2140,17 +2146,22 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
   if (NumSameIDs>0) {
     int MaxNumBlockEntries = A.MaxNumBlockEntries();
     BlockIndices = new int[MaxNumBlockEntries];  // Need some temporary space
-      
-      
+ 
+
     for (i=0; i<NumSameIDs; i++) {
       BlockRow = GRID(i);
-      assert(A.ExtractGlobalBlockRowPointers(BlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
-					     BlockIndices, Entries)==0); // Set pointers
+      EPETRA_CHK_ERR( A.ExtractGlobalBlockRowPointers(BlockRow,
+                                                      MaxNumBlockEntries,
+						      RowDim, NumBlockEntries, 
+						      BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-      if (StaticGraph() || IndicesAreLocal())
-	assert(BeginReplaceGlobalValues(BlockRow, NumBlockEntries, BlockIndices)==0);
-      else
-	assert(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices)==0); 
+      if (StaticGraph() || IndicesAreLocal()) {
+	EPETRA_CHK_ERR(BeginReplaceGlobalValues(BlockRow, NumBlockEntries,
+                                                BlockIndices));
+      }
+      else {
+	EPETRA_CHK_ERR(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+      }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),
 							 Entries[j]->LDA(),
@@ -2168,13 +2179,15 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
     for (i=0; i<NumPermuteIDs; i++) {
       FromBlockRow = A.GRID(PermuteFromLIDs[i]);
       ToBlockRow = GRID(PermuteToLIDs[i]);
-      assert(A.ExtractGlobalBlockRowPointers(FromBlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
-					     BlockIndices, Entries)==0); // Set pointers
+      EPETRA_CHK_ERR(A.ExtractGlobalBlockRowPointers(FromBlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
+					     BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-      if (StaticGraph() || IndicesAreLocal())
-	assert(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
-      else
-	assert(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0); 
+      if (StaticGraph() || IndicesAreLocal()) {
+	EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
+      else {
+	EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),
 							 Entries[j]->LDA(), RowDim, Entries[j]->N());
@@ -2182,7 +2195,7 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
     }
     delete [] BlockIndices;
   }
-    
+ 
   return(0);
 }
 
@@ -2245,8 +2258,8 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
     FromBlockRow = A.GRID(ExportLIDs[i]);
     BlockIndices = intptr + 3;
     ColDims = BlockIndices + GlobalMaxNumBlockEntries;
-    assert(A.BeginExtractGlobalBlockRowCopy(FromBlockRow, GlobalMaxNumBlockEntries, RowDim,
-					    NumBlockEntries, BlockIndices, ColDims)==0);
+    EPETRA_CHK_ERR(A.BeginExtractGlobalBlockRowCopy(FromBlockRow, GlobalMaxNumBlockEntries, RowDim,
+					    NumBlockEntries, BlockIndices, ColDims));
     // Now extract each block entry into send buffer
     Entries = valptr;
     for (j=0; j<NumBlockEntries; j++) {
@@ -2323,20 +2336,24 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     BlockIndices = intptr + 3; 
     ColDims = BlockIndices + GlobalMaxNumBlockEntries;
     if (CombineMode==Add) {
-      if (StaticGraph() || IndicesAreLocal())
+      if (StaticGraph() || IndicesAreLocal()) {
 	// Replace any current values
-	assert(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
-      else
+	EPETRA_CHK_ERR(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
+      else {
 	// Insert values
-	assert(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
+	EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
     }
     else if (CombineMode==Insert) {
-      if (StaticGraph() || IndicesAreLocal())
+      if (StaticGraph() || IndicesAreLocal()) {
 	// Replace any current values
-	assert(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
-      else
+	EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
+      else {
 	// Insert values
-	assert(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
+	EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+      }
     }
     // Now extract each block entry into send buffer
     Values = valptr;

@@ -169,8 +169,9 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   if (Map_NumMyElements>0) send_procs = new int[Map_NumMyElements];
   int * Map_MyGlobalElements = Map.MyGlobalElements();
 
-  assert(DirectoryMap_->RemoteIDList(Map_NumMyElements, Map_MyGlobalElements, 
-				     send_procs, 0)==0); 
+  EPETRA_CHK_ERR(DirectoryMap_->RemoteIDList(Map_NumMyElements,
+					     Map_MyGlobalElements, 
+					     send_procs, 0));
 
   bool det_flag = true;
 

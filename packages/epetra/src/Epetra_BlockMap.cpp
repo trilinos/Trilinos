@@ -407,8 +407,9 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
   // Now get min of MySameMap across all processors
 
   int GlobalSameMap = 0;
-  assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
-    
+  int err = Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
+  assert(err==0);
+
   return(GlobalSameMap==1);
 }
 
@@ -429,7 +430,8 @@ bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
     MySameMap = 0;
 
   int GlobalSameMap = 0;
-  assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
+  int err = Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
+  assert( err == 0 );
 
   return(GlobalSameMap==1);
 }

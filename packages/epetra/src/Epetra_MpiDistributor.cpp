@@ -310,7 +310,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
   nsends_ -= self_msg_;
 
   //Invert map to see what msgs are received and what length
-  assert(ComputeRecvs_( my_proc, nprocs ) == 0);
+  EPETRA_CHK_ERR( ComputeRecvs_( my_proc, nprocs ) );
 
   if (nrecvs_>0) {
     request_ = new MPI_Request[ nrecvs_ ];
@@ -343,11 +343,12 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
   int nprocs;
   MPI_Comm_size( comm_, &nprocs );
 
-  assert(ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
-			    ExportGIDs, ExportPIDs, my_proc) == 0);
+  EPETRA_CHK_ERR( ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
+				 ExportGIDs, ExportPIDs, my_proc) );
 
   int testNumRemoteIDs;
-  assert( CreateFromSends( NumExportIDs, ExportPIDs, Deterministic, testNumRemoteIDs ) == 0 );
+  EPETRA_CHK_ERR( CreateFromSends( NumExportIDs, ExportPIDs,
+				   Deterministic, testNumRemoteIDs ) );
 
   return(0);
 }
@@ -470,7 +471,8 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
     }
   }
 
-  assert(tmp_plan.CreateFromSends( num_imports, proc_list, true, num_exports)==0); 
+  EPETRA_CHK_ERR(tmp_plan.CreateFromSends( num_imports, proc_list,
+					   true, num_exports) );
   if( num_exports > 0 )
   {
     //export_objs = new int[ 2 * num_exports ];
@@ -484,10 +486,10 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
   }
 
   int len_c_export_objs = 0;
-  assert(tmp_plan.Do(reinterpret_cast<char *> (import_objs), 
-                     2 * sizeof( int ), 
-                     len_c_export_objs,
-                     c_export_objs)==0);
+  EPETRA_CHK_ERR( tmp_plan.Do(reinterpret_cast<char *> (import_objs),
+			      2 * sizeof( int ), 
+			      len_c_export_objs,
+			      c_export_objs) );
   int * export_objs = reinterpret_cast<int *>(c_export_objs);
 
   for( i = 0; i < num_exports; i++ ) {
@@ -510,8 +512,8 @@ int Epetra_MpiDistributor::Do( char * export_objs,
                                int & len_import_objs,
                                char *& import_objs )
 {
-  assert(DoPosts(export_objs, obj_size, len_import_objs, import_objs)==0);
-  assert(DoWaits()==0);
+  EPETRA_CHK_ERR( DoPosts(export_objs, obj_size, len_import_objs, import_objs) );
+  EPETRA_CHK_ERR( DoWaits() );
   return(0);
 }
 
@@ -522,8 +524,9 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
                                       int & len_import_objs,
                                       char *& import_objs )
 {
-  assert(DoReversePosts(export_objs, obj_size, len_import_objs, import_objs)==0);
-  assert(DoReverseWaits()==0);
+  EPETRA_CHK_ERR( DoReversePosts(export_objs, obj_size,
+				 len_import_objs, import_objs) );
+  EPETRA_CHK_ERR( DoReverseWaits() );
   return(0);
 }
 //==============================================================================
@@ -885,8 +888,9 @@ int Epetra_MpiDistributor::Do( char * export_objs,
                                int & len_import_objs,
                                char *& import_objs )
 {
-  assert(DoPosts(export_objs, obj_size, sizes, len_import_objs, import_objs)==0);
-  assert(DoWaits()==0);
+  EPETRA_CHK_ERR( DoPosts(export_objs, obj_size, sizes,
+			  len_import_objs, import_objs) );
+  EPETRA_CHK_ERR( DoWaits() );
 
   return(0);
 }
@@ -899,8 +903,9 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
                                       int & len_import_objs,
                                       char *& import_objs )
 {
-  assert(DoReversePosts(export_objs, obj_size, sizes, len_import_objs, import_objs)==0);
-  assert(DoReverseWaits()==0);
+  EPETRA_CHK_ERR( DoReversePosts(export_objs, obj_size, sizes,
+				 len_import_objs, import_objs) );
+  EPETRA_CHK_ERR( DoReverseWaits() );
 
   return(0);
 }
