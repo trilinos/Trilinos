@@ -71,15 +71,32 @@ Zoltan Parameters	= RCB_WGTFLAG=0,RCB_OVERALLOC=1.0
 Zoltan Parameters	= RCB_REUSE=0
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# File Type = <file type>
+# File Type = <file type><,chaco options>
 #
 # This line is OPTIONAL. If it is not included, then it is assumed that
 # the file type is parallel nemesis.
 #
 # This line contains tells which format the file is in. The current
-# options for this line are:
+# file types for this line are:
 #	NemesisI	- parallel ExodusII/NemesisI files (1 per processor)
 #	Chaco		- Chaco graph and/or geometry file(s)
+#
+# For NemesisI input, the initial distribution of data is given in the 
+# Nemesis files.  For Chaco input, however, an initial decomposition is
+# imposed by the zdrive.  Two initial distribution methods are provided.
+# The method to be used can be specified in the chaco options:
+#       initial distribution = <option>
+# where <option> is
+#       linear  -- gives the first n/p vertices to proc 0, the
+#                  next n/p vertices to proc 1, etc.  
+#       deal    -- assigns the vertices to processors as one would
+#                  deal cards; i.e., gives the first vertex to proc 0, 
+#                  the second vertex to proc 1, ..., the pth vertex to 
+#                  proc (p-1),the (p+1)th vertex to proc 0, the (p+2)th 
+#                  vertex to proc 1, etc.
+# If an initial distribution is not specified, the default is linear.
+# For example,
+#       File Type = chaco, initial distribution = deal
 #-----------------------------------------------------------------------------
 File Type		= NemesisI
 
