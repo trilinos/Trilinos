@@ -106,6 +106,87 @@ void List::setParameter(const string& name, const string& value)
 }
 
 
+bool List::getParameter(const string& name, bool nominal)
+{
+  PCConstIterator i = params.find(name);
+
+  if (i == params.end()) {
+    params[name].setValue(nominal);
+    i = params.find(name);
+  }
+
+  if ((i != params.end()) && (ITER second.isBool()))
+    return ITER second.getBoolValue();
+
+  cerr << "NOX::Parameter::List::getParameter - get error for bool" << endl;
+  throw "NOX Error";
+}
+
+int List::getParameter(const string& name, int nominal) 
+{
+  PCConstIterator i = params.find(name);
+
+  if (i == params.end()) {
+    params[name].setValue(nominal);
+    i = params.find(name);
+  }
+
+  if ((i != params.end()) && (ITER second.isInt()))
+    return ITER second.getIntValue();
+
+  cerr << "NOX::Parameter::List::getParameter - get error for int" << endl;
+  throw "NOX Error";
+}
+
+double List::getParameter(const string& name, double nominal) 
+{
+  PCConstIterator i = params.find(name);
+
+  if (i == params.end()) {
+    params[name].setValue(nominal);
+    i = params.find(name);
+  }
+
+  if ((i != params.end()) && (ITER second.isDouble()))
+    return ITER second.getDoubleValue();
+
+  cerr << "NOX::Parameter::List::getParameter - get error for double" << endl;
+  throw "NOX Error";
+
+}
+
+const string& List::getParameter(const string& name, const char* nominal) 
+{
+  PCConstIterator i = params.find(name);
+
+  if (i == params.end()) {
+    params[name].setValue(nominal);
+    i = params.find(name);
+  }
+
+  if ((i != params.end()) && (ITER second.isString()))
+    return ITER second.getStringValue();
+
+  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl;
+  throw "NOX Error";
+}
+
+const string& List::getParameter(const string& name, const string& nominal) 
+{
+  PCConstIterator i = params.find(name);
+
+  if (i == params.end()) {
+    params[name].setValue(nominal);
+    i = params.find(name);
+  }
+
+  if ((i != params.end()) && (ITER second.isString()))
+    return ITER second.getStringValue();
+
+  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl;
+  throw "NOX Error";
+}
+  
 bool List::getParameter(const string& name, bool nominal) const
 {
   PCConstIterator i = params.find(name);

@@ -98,12 +98,19 @@ public:
   /** @name Getting Parameters 
    
     Get different types of parameters. The type depends on the second
-    entry. Returns the nominal value if that parameter has not been *
-    specified. Be sure to use static_cast<type>() when the type is *
-    ambiguous. Both char* and string map return string values.  Sets
-    the parameters as "used".
+    entry. Returns the nominal value if that parameter has not been
+    specified. The non-const version adds the (name, nominal) pair to
+    the list if it's not already specified. Be sure to use
+    static_cast<type>() when the type is ambiguous. Both char* and
+    string map return string values. Sets the parameters as "used".
   */
   //@{
+  bool getParameter(const string& name, bool nominal);
+  int getParameter(const string& name, int nominal);
+  double getParameter(const string& name, double nominal);
+  const string& getParameter(const string& name, const char* nominal);
+  const string& getParameter(const string& name, const string& nominal);
+
   bool getParameter(const string& name, bool nominal) const;
   int getParameter(const string& name, int nominal) const;
   double getParameter(const string& name, double nominal) const;
