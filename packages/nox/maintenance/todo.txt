@@ -3,6 +3,7 @@ TAMMY: Clean up header files in terms of including extra headers
 
 TAMMY: Update guidelines 
        (Added 2-12-2002 by TGK)
+       (DONE 2-12-2002 by TGK)
 
 TAMMY: Add extra config options for -ansi -Wall 
        (Added 2-12-2002 by TGK)
@@ -10,6 +11,9 @@ TAMMY: Add extra config options for -ansi -Wall
        Note: the problem with the -ansi -Wall options are that they
        are compiler dependent, so this may be too hard to do.
        (Added 2-12-2002 by TGK)
+
+       Don't want to do this, but use the new --with-flags option.
+       (DONE 2-13-02 by TGK)
 
 TAMMY: Add Trilinos-like MACRO for printing line number of file name
        for errors.
@@ -38,9 +42,22 @@ ROGER: Regression testing
 
 TAMMY: Fix up new direction stuff 
        (Added 2-12-2002 by TGK)
-
+       (DONE 2-13-2002 by TGK)
 
 TAMMY: Add fix to Newton's method to return immediately if the
        solution is already converged.
        (Added 2-12-2002 by TGK)
+
+
+TAMMY: Remove g2c and spblas from example makefiles, unless actually
+       needed.
+       (Added 2-13-2002 by TGK)
+
+TAMMY: Moving forcing term calcuation out of NOX_Solver_Newton into
+       the Newton direction
+       (Added 2-13-2002 by TGK)
+       (DONE 2-13-02 by TGK)
+
+TAMMY: Fix max/min stuff
+       (Added 2-13-2002 by TGK)
 
