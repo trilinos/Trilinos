@@ -1,0 +1,12 @@
+Decomposition Method 	= hsfc
+Zoltan Parameters	= comm_weight_dim=1
+File Type		= Chaco, initial procs = 1
+File Name		= ewgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+6
+7
+11
+12
+13

@@ -14,7 +14,24 @@
 
 /* Andy Bauer's Space Filling Curve (SFC) partitioning modified by Bob Heaphy */
 
+/* This code uses the Inverse Hilbert Space-Filling Curve to map 1-3 dimensional
+   problems to the unit interval, [0,1].  It then partitions the unit interval
+   into non-overlapping segments each containing equal weights of computational
+   objects.  For details concerning the algorithm, please read the Developers
+   Guide. For instructions on using this partitioning algorithm, please read the
+   Users Guide.
+
+   Future:  this algorithm will work if the lb->Num_Proc is replaced by
+   lb->Num_Partitions.  Currently, the partitions have equal weights. The code
+   uses an array, work_fraction, that specifies any fraction of the total
+   weight to be assigned to the corresponding partition. It requires a
+   new user input function to accept an array of user inputs for a single
+   user parameter in order to be utilized.
+*/
+
+
 #include "hsfc.h"
+
 
 /****************************************************************************/
 /* This structure is a Zoltan convention for user settable parameters */
@@ -40,7 +57,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
                                       destinations */
    {
    MPI_Op mpi_op ;
-   MPI_User_function  Zoltan_HSFC_mpifunction ;   /* simultaneous SUM, MAX, MIN */
+   MPI_User_function  Zoltan_HSFC_mpi_sum_max_min ;   /* simultaneous SUM, MAX, MIN */
 
    /* malloc'd arrays that need to be freed before completion */
    Dots      *dots = NULL ;
@@ -77,7 +94,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    ZOLTAN_TRACE_ENTER (zz, yo) ;
    start_time = Zoltan_Time(zz->Timer) ;
    *num_export = *num_import = -1 ;            /* in case of early error exit */
-   MPI_Op_create(&Zoltan_HSFC_mpifunction,1,&mpi_op); /* register user method */
+   MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min,1,&mpi_op); /* register user method */
 
    /* allocate persistant storage required by box assign and point assign */
    Zoltan_HSFC_Free_Structure (zz) ;
@@ -377,23 +394,25 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    ZOLTAN_FREE (&grand_partition) ;
    ZOLTAN_FREE (&target) ;
 
-   /* allocate storage for export information and fill in data */
-   if (zz->Num_GID > 0 && *num_export > 0)
+   if (!zz->LB.Return_Lists) 
+     *num_export = -1 ;
+   else if (*num_export > 0)
       {
-      err = Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_GID) ;
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-         ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids") ;
-      }
-   if (zz->Num_LID > 0 && *num_export > 0)
-      {
-      err = Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_LID) ;
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-         ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc local ids") ;
-      }
-   if (*num_export > 0)
-      {
+      /* allocate storage for export information and fill in data */
+      if (zz->Num_GID > 0)
+         {
+         err = Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
+          ZOLTAN_SPECIAL_MALLOC_GID) ;
+         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+            ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids") ;
+         }
+      if (zz->Num_LID > 0)
+         {
+         err = Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
+          ZOLTAN_SPECIAL_MALLOC_LID) ;
+         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+            ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc local ids") ;
+         }
       err = Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
        ZOLTAN_SPECIAL_MALLOC_INT) ;
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
@@ -403,8 +422,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       for (j = i = 0 ; i < ndots ; i++)
         if (dots[i].proc != zz->Proc)
           {
-          if (*num_export > 0)
-             *((*export_procs)+j) = dots[i].proc ;
+          *((*export_procs)+j) = dots[i].proc ;
           if (zz->Num_GID > 0)
              ZOLTAN_SET_GID (zz, *export_gids + j*zz->Num_GID, gids + i*zz->Num_GID);
           if (zz->Num_LID > 0)
@@ -534,7 +552,7 @@ int Zoltan_HSFC_Set_Param (char *name, char *val)
 
 
 /* allows SUM, MAX, MIN on single array (different parts) in one MPI_Allreduce call */
-void Zoltan_HSFC_mpifunction (void *in, void *inout, int *len, MPI_Datatype *datatype)
+void Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len, MPI_Datatype *datatype)
    {
    int i, count = *len/3 ;
 

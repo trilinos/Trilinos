@@ -23,8 +23,8 @@
 #
 
 # Chaco problems to run
-set ch_name = (simple nograph vwgt ewgt bug grid20x19 film hammond drake)
-set ch_nproc = (4 4 3 4 3 5 6 8 3) # no. of procs
+set ch_name = (simple nograph vwgt ewgt bug grid20x19 film hammond)
+set ch_nproc = (4 4 3 4 3 5 6 8) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
@@ -215,11 +215,17 @@ if ( $yes_fortran ) then
   endif
 else
 # Using C
+
+  # These Chaco problems are run only for C driver; F90 driver does not
+  # read assignment input files.
+  set ch_name = ($ch_name drake)
+  set ch_nproc = ($ch_nproc 3) # no. of procs
+
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc bsfc oct0 oct1 oct2 )
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc hsfc-oneproc bsfc oct0 oct1 oct2 )
     set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 )
   else
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc bsfc oct0 oct1 oct2 partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc hsfc-oneproc bsfc oct0 oct1 oct2 partkway partkway-oneproc partkway-cyclic partgeom diffusion )
     set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 partkway partgeom diffusion )
   endif
 endif

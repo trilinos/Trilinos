@@ -12,13 +12,24 @@
  *    $Revision$
  ****************************************************************************/
 
-
 #include "hsfc.h"
 
+/* For a detailed description of the following algorithm, please see the
+   Developers Guide.  For instructions on use, please see the Users
+   Guide.
+
+   This is a temporary algorithm which suffers from two limitations that will
+   be removed in the future.  First, it will not except points outside the
+   bounding box determined during the load balance phase. Second, it is
+   approximate in the sense that every processor reported is actually in a
+   partition that falls (in part) within the user's input box, but some
+   processors may be missed!  The algorithm places a lattice of points within
+   the user's specified box and determines the partition in which each box
+   belongs. A partition may have volume that falls within the box but has no
+   lattice point falling within.  Hence, it may be missed.  */
 
 
-
-/* temporary version, provides approximate answer */
+/* returns list of processors with partitions falling within user's box */
 int Zoltan_HSFC_Box_Assign (
  ZZ *zz, double xlo, double ylo, double zlo,
          double xhi, double yhi, double zhi, int *procs,int *count)
@@ -29,7 +40,7 @@ int Zoltan_HSFC_Box_Assign (
    int        proc ;
    HSFC_Data *d ;
    int        n, i, loop ;
-   const int  NN       = 4 ;
+   const int  NN       = 4 ;    /* determines lattice spacing */
    int        oldcount = 0 ;
    const int  MAXLOOP  = 5 ;
    int        err ;
@@ -58,7 +69,6 @@ int Zoltan_HSFC_Box_Assign (
         procs[(*count)++] = i ;
      goto free ;
      }
-
 
    if (ylo < d->bbox_lo[1])   ylo = d->bbox_lo[1] ;
    if (yhi > d->bbox_hi[1])   yhi = d->bbox_hi[1] ;
@@ -108,4 +118,3 @@ free:
    ZOLTAN_TRACE_EXIT (zz,yo) ;
    return err;
    }
-

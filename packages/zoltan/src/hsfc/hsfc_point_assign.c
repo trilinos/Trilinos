@@ -16,6 +16,15 @@
 
 #include "hsfc.h"
 
+/* For a detailed explaination of this module, please see the Developers
+   Guide.  For instructions on its use, please see the Users Guide.
+
+   Currently, this routine returns an error for points outside of the
+   bounding box created during the load balancing phase.  This limitation
+   is expected to be removed in the future.
+*/
+
+
 
 /* Point drop for refinement after above partitioning */
 int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *proc)

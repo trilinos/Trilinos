@@ -1,6 +1,5 @@
 Decomposition Method 	= hsfc
-Zoltan Parameters	= keep_cuts=1
-File Type		= Chaco
+File Type		= Chaco, initial procs = 1
 File Name		= grid20x19
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0

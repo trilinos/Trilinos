@@ -303,7 +303,7 @@ double Zoltan_HSFC_IHilbert1d (double *coord)
 
 double Zoltan_HSFC_IHilbert2d (double *coord)
    {
-   unsigned int key[4];        /* dimensioned higher than expected because of code bug */
+   unsigned int key[4] ;       /* dimensioned higher than expected because of old code bug */
    Zoltan_HSFC_fhsfc2d (coord, 2, key);
    return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
    }
@@ -311,7 +311,7 @@ double Zoltan_HSFC_IHilbert2d (double *coord)
 
 double Zoltan_HSFC_IHilbert3d (double *coord)
    {
-   unsigned int key[4] ;       /* dimensioned higher than expected because of code bug */
+   unsigned int key[4] ;       /* dimensioned higher than expected because of old code bug */
    Zoltan_HSFC_fhsfc3d (coord, 2, key) ;
    return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
    }
