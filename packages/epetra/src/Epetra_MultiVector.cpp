@@ -617,6 +617,12 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
 					 Epetra_CombineMode CombineMode ) {
   int i, j, jj, k;
   
+  if(    CombineMode != Add
+      && CombineMode != Zero
+      && CombineMode != Insert
+      && CombineMode != Average
+      && CombineMode != AbsMax )
+    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
   if (NumImportIDs<=0) return(0);
 
@@ -646,9 +652,11 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
 	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
 	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = *ptr++;
+      else if(CombineMode==AbsMax)
+        for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],fabs(*ptr++)); //
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
-      else // if(CombineMode==Average)
+      else if(CombineMode==Average)
 	for (j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;}
     }
 
@@ -668,9 +676,16 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
 	    To[i][jj] = *ptr++;
 	}
       }
+      else if(CombineMode==AbsMax) {
+        for (j=0; j<NumImportIDs; j++) {
+          jj = ImportLIDs[j];
+          for (i=0; i<NumVectors; i++)
+            To[i][jj] = EPETRA_MAX( To[i][jj], fabs(*ptr++) );
+        }
+      }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
-      else { // if (CombineMode==Average)
+      else if(CombineMode==Average) {
 	for (j=0; j<NumImportIDs; j++) {
 	  jj = ImportLIDs[j];
 	  for (i=0; i<NumVectors; i++)
@@ -700,9 +715,17 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
 	    To[i][jj+k] = *ptr++;
       }
     }
+    else if(CombineMode==AbsMax) {
+      for (j=0; j<NumImportIDs; j++) {
+	jj = MaxElementSize*ImportLIDs[j];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<MaxElementSize; k++)
+	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], fabs(*ptr++) );
+      }
+    }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
-    else { // if (CombineMode==Average)
+    else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
 	jj = MaxElementSize*ImportLIDs[j];
 	for (i=0; i<NumVectors; i++)
@@ -738,9 +761,19 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
 	    To[i][jj+k] = *ptr++;
       }
     }
+    else  if(CombineMode==AbsMax){
+      for (j=0; j<NumImportIDs; j++) {
+	ptr = (double *) Imports + j*SizeOfPacket;
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
+	int ElementSize = ToElementSizeList[ImportLIDs[j]];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<ElementSize; k++)
+	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], fabs(*ptr++) );
+      }
+    }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
-    else { // if (CombineMode==Average)
+    else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
 	ptr = (double *) Imports + j*SizeOfPacket;
 	jj = ToFirstPointInElementList[ImportLIDs[j]];

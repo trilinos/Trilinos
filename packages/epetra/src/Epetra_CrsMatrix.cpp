@@ -1401,6 +1401,11 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
 
   if (NumImportIDs<=0) return(0);
 
+  if (   CombineMode != Add
+      && CombineMode != Insert
+      && CombineMode != Zero )
+    EPETRA_CHK_ERR(-1); //Unsupported CombineMode, defaults to Zero
+
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
   int NumEntries;
   int * Indices;
@@ -1436,7 +1441,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
     Indices = intptr + 2; 
     if (CombineMode==Add) {
       if (StaticGraph())
-	// Replace any current values
+	// Add to any current values
 	assert(SumIntoGlobalValues(ToRow, NumEntries, Values, Indices)==0);
       else
 	// Insert values
@@ -1450,6 +1455,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
 	// Insert values
 	assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
     }
+
     valptr += DoublePacketSize; // Point to next segment
     dintptr = valptr + GlobalMaxNumEntries;
     intptr = (int *) dintptr;

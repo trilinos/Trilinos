@@ -34,22 +34,26 @@
     If set to Insert, off-processor components will replace existing
     components on the receiving processor.
     If set to Average, off-processor components will be averaged with
-    existing components on the receiving processor.
+    existing components on the receiving processor. (Recursive Binary Average)
+    If set to AbsMax, magnitudes of off-processor components will be maxed
+    with magnitudes of existing components of the receiving processor.
+    { V = Supported by Epetra_Vector and Epetra_MultiVector,
+      M = Supported by Epetra_CrsMatrix and Epetra_VbrMatrix }
 */
 
 enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
-                                     will be added together. */
+                                     will be added together. (V,M) */
                         Zero,   /*!< Off-processor components will be
-                                     ignored. */
+                                     ignored. (V,M) */
                         Insert, /*!< Off-processor components will
                                      be inserted into locations on
-                                     receiving processor. */
-                        Replace, /*!< Off-processor components will
-                                     replace existing components on the 
-                                     receiving processor. */
-                        Average /*!< Off-processor components will be
+                                     receiving processor replacing existing values. (V,M) */
+                        Average,/*!< Off-processor components will be
                                      averaged with existing components 
-                                     on the receiving processor. */
+                                     on the receiving processor. (V) */
+                        AbsMax  /*!< Magnitudes of Off-processor components will be
+                                     maxed with magnitudes of existing components 
+                                     on the receiving processor. (V) */
                         };
 
 #endif // _EPETRA_COMBINEMODE_H_

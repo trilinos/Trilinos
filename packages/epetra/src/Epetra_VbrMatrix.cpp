@@ -328,7 +328,7 @@ int Epetra_VbrMatrix::BeginReplaceValues(int BlockRow, int NumBlockEntries,
   if (CV_==View) return(-3); // This is a view only.  Cannot remove entries.
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) return(-1); // Not in BlockRow range
 
-  Epetra_CombineMode SubmitMode = Replace;
+  Epetra_CombineMode SubmitMode = Insert;
   return(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal, SubmitMode));
 }
 
@@ -1882,6 +1882,11 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
 				       Epetra_Distributor & Distor, 
 				       Epetra_CombineMode CombineMode){
   if (NumImportIDs<=0) return(0);
+
+  if(   CombineMode != Add
+     && CombineMode != Zero
+     && CombineMode != Insert )
+    EPETRA_CHK_ERR(-1); // CombineMode not supported, default to mode Zero
 
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
