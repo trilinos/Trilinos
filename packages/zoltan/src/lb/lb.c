@@ -1115,23 +1115,16 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID));
     local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
       
-    if ((!global_ids) || (!local_ids) || (vwgt_dim && ((!vwgts) || (!tmp_wgt)))){
+    if ((!global_ids) || (!local_ids)){
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       return;
     }
+  }
   
-    LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
-    if (*ierr == LB_FATAL){
-      LB_FREE(&global_ids);
-      LB_FREE(&local_ids);
-      return;
-    }
-  
-  } 
 
-  /* Compute object weight sums */
+  /* Allocate space for weights if needed */
   if (vwgt_dim>0){
     vwgts   = (float  *) LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
     tmp_wgt = (float *) LB_MALLOC(3*vwgt_dim * sizeof(float));
@@ -1143,8 +1136,18 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
       LB_FREE(&tmp_wgt);
       return;
     }
+  } 
+  
+  LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
+  if (*ierr == LB_FATAL){
+    LB_FREE(&global_ids);
+    LB_FREE(&local_ids);
+    return;
+  }
   
 
+  /* Compute object weight sums */
+  if (vwgt_dim>0){
     for (j=0; j<vwgt_dim; j++)
       tmp_wgt[j] = 0;
     for (i=0; i<num_obj; i++){
@@ -1286,29 +1289,33 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     if (lb->Proc == 0){
       printf("\n%s  Statistics for current partitioning/balance:\n", yo);
       for (i=0; i<vwgt_dim; i++)
-        printf("%s  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, "
+        printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "
           "Imbal. = %5.3f\n",
           yo, i+1, tmp_wgt[vwgt_dim+i], tmp_wgt[2*vwgt_dim+i], 
-          tmp_wgt[vwgt_dim+i]*nproc/tmp_wgt[2*vwgt_dim+i]-1.);
+          (tmp_wgt[2*vwgt_dim+i] > 0
+            ? tmp_wgt[vwgt_dim+i]*nproc/tmp_wgt[2*vwgt_dim+i]
+            : 1.));
       printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
         yo, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
-        stats[NUM_GSTATS]*nproc/stats[2*NUM_GSTATS]-1.);
+        (stats[2*NUM_GSTATS] > 0
+              ? stats[NUM_GSTATS]*nproc/stats[2*NUM_GSTATS]
+              : 1.));
       if (lb->Get_Num_Edges != NULL){
         printf("%s  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+1], stats[2*NUM_GSTATS+1], 
           (stats[2*NUM_GSTATS+1] > 0 
-                ? stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]-1.
-                : 0));
+                ? stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]
+                : 1.));
         printf("%s  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+2], stats[2*NUM_GSTATS+2], 
           (stats[2*NUM_GSTATS+2] > 0
-                ? stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]-1.
-                : 0));
+                ? stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]
+                : 1.));
         printf("%s  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+3], stats[2*NUM_GSTATS+3], 
           (stats[2*NUM_GSTATS+3] > 0
-                ? stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]-1.
-                : 0));
+                ? stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]
+                : 1.));
       }
       printf("\n");
     }
