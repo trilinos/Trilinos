@@ -20,14 +20,16 @@ extern "C" {
 #include "hypergraph.h"
 #include "hg.h"
 
-#define ZOLTAN_PRINT_VTX_NUM           0
-#define ZOLTAN_PRINT_HGRAPH_FROM_GRAPH 0
+#define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
 
 
 /* Temporary prototypes. These functions should perhaps
    move to the hg module?? */
-static int Zoltan_HG_Get_Hedges();
-static int Zoltan_HG_Print_Hedges();
+static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
+           ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
+           float **p_edge_wgts, int *glob_hedges, int *glob_pins);
+static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, int nhedges,
+           int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -66,7 +68,8 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part;
   int *vwgt, *adjwgt;
-  int *hevtxs, *heprocs, *hindex;
+  int *heprocs, *hindex;
+  ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, nhedges; 
@@ -201,7 +204,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
-      fprintf(fp, "% First line: #vertices #edges weight_flag\n");
+      fprintf(fp, "%% First line: #vertices #edges weight_flag\n");
       fprintf(fp, "%d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_edges, 
         print_vtx_num, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
@@ -231,8 +234,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   }
 
   /* Write hypergraph to file, if applicable. */
-  if (ZOLTAN_PRINT_HGRAPH_FROM_GRAPH ||
-      (zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL)) {
+  if ( zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
     sprintf(full_fname, "%s.hg", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
@@ -246,7 +248,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
-      fprintf(fp, "% First line: #vertices #hyperedges #pins weight_flag\n");
+      fprintf(fp, "%% First line: #vertices #hyperedges #pins weight_flag\n");
       fprintf(fp, "%d %d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_hedges, 
         glob_pins, ZOLTAN_PRINT_VTX_NUM, 
         (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
@@ -256,7 +258,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     }
 
     /* Each proc prints its part of the hgraph. */
-    Zoltan_HG_Print_Hedges(zz, fp, nhedges, hindex, hevtxs, heprocs, hewgts);
+    Zoltan_HG_Print_Hedges(zz, fp, nhedges, hindex, hevtxs, hewgts);
 
     fclose(fp);
   }
@@ -274,6 +276,12 @@ End:
   ZOLTAN_FREE(&vwgt);
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
+  if ( zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
+    ZOLTAN_FREE(&hindex);
+    ZOLTAN_FREE(&hevtxs);
+    ZOLTAN_FREE(&heprocs);
+    ZOLTAN_FREE(&hewgts);
+  }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return error;
@@ -281,12 +289,15 @@ End:
 
 
 /* Each proc gets hypergraph data from query functions.
-   Compute some global values. */
+ * Compute some global values. 
+ * All procs must participate due to collective communication.
+ */
 static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
            ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
            float **p_edge_wgts, int *glob_hedges, int *glob_pins)
 {
   int i, ierr, cnt, j, nEdge, nInput, npins, numwgts, minproc;
+  int loc_hedges, loc_pins;
   int *hindex , *edge_procs;
   ZOLTAN_ID_PTR edge_verts;
   float *edge_wgts;
@@ -333,13 +344,19 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
   }
   hindex[nEdge] = cnt;
 
+  /* Compute local hg statistics. */
   /* Make hindex negative if hedge is owned by another proc. */
+  loc_hedges = loc_pins = 0;
   for (i = 0; i < nEdge; i++) {
     minproc = zz->Num_Proc;
     for (j=hindex[i]; j<hindex[i+1]; j++)
       if (edge_procs[j]<minproc)
         minproc = edge_procs[j];
-    if (minproc != zz->Proc)  /* lowest proc owns hyperedge, not me */
+    if (minproc == zz->Proc){  /* my hyperedge */
+      loc_hedges++;
+      loc_pins += (hindex[i+1] - hindex[i]); /* edge_size[i] */
+    }
+    else  /* lowest proc owns hyperedge, not me */
       hindex[i] = -hindex[i];
   }
 
@@ -349,6 +366,12 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
                        "Input error:  Number of pins != sum of edge sizes");
     goto End;
   }
+
+  /* Compute global #pins and #hyperedges, no duplicates */
+  MPI_Allreduce(&loc_hedges, glob_hedges, 1, MPI_INT, MPI_SUM,
+      zz->Communicator);
+  MPI_Allreduce(&loc_pins, glob_pins, 1, MPI_INT, MPI_SUM,
+      zz->Communicator);
 
 End:
   /* Return pointers to arrays allocated in this routine. */
@@ -366,7 +389,7 @@ End:
 
 /* Each processor prints its hyperedges to file. */
 static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, int nhedges,
-           int *hindex, ZOLTAN_ID_PTR hevtxs, int heprocs, float *hewgts)
+           int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts)
 {
   int i,j;
   char *yo = "Zoltan_HG_Print_Hedges";
@@ -375,9 +398,9 @@ static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, int nhedges,
 
   for (i=0; i<nhedges; i++){
     if (hindex[i]>=0){
-      /* EBEB Print all hyperedges, no test for uniqueness. */
+      /* Only print hedges owned by me (to avoid duplicate hedges) */
       for (j=hindex[i]; j<ABS(hindex[i+1]); j++){ 
-        /* Print global ids as integers. */
+        /* EBEB - Print global ids as integers. */
         fprintf(fp, "%d ", (int) hevtxs[j]);
       }
     }
