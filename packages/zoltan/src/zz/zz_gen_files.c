@@ -68,7 +68,7 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_ID_PTR global_ids = NULL;
   FILE *fp;
   char full_fname[256];
-  int *vtxdist, *xadj, *adjncy, *part;
+  int *vtxdist, *xadj, *adjncy, *part, *adjproc;
   int *heprocs, *hindex;
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
@@ -84,6 +84,7 @@ int gen_geom, int gen_graph, int gen_hg)
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = part = NULL;
+  adjproc = NULL;
   float_vwgt = ewgts = hewgts = NULL;
   xyz = NULL;
   heprocs = hindex = NULL;
@@ -106,7 +107,7 @@ int gen_geom, int gen_graph, int gen_hg)
     /* Build (ParMetis) graph data structures. */
     error = Zoltan_Build_Graph(zz, 1, 1, num_obj,
            global_ids, local_ids, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-           &vtxdist, &xadj, &adjncy, &ewgts);
+           &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_Build_Graph returned error.");
       goto End;
