@@ -2,7 +2,7 @@ include TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 include makefile.$(TRILINOS_TARGET)
 
-allbutesi: aztecoo epetra ifpack komplex petra triutils
+allbutesipetra: aztecoo epetra ifpack komplex triutils
 all: aztecoo epetra epetra_esi ifpack komplex petra triutils
 
 libinstall:
