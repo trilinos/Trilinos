@@ -90,6 +90,16 @@ int main(int argc, char *argv[])
   bool ok = Epetra_ML_readaztecvector(filename,*Rhs,*map,comm,0);
   if (!ok) {
      cout << "**ERR**: could not read rhs\n"; throw -1; }
+     
+#if 0
+  // read variable block information
+  sprintf(filename,"%s/data_vblocks.txt",argv[1]);
+  int* blocks    = 0;
+  int* block_pde = 0;
+  ok = Epetra_ML_readvariableblocks(filename,*map,comm,&blocks,&block_pde);
+  if (!ok) {
+     cout << "**ERR**: could not read variable blocks\n"; throw -1; }
+#endif  
        
   Space FineSpace(map->NumGlobalElements());
   Operator A(FineSpace, FineSpace, Afine, true);
