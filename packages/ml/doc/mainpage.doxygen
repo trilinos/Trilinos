@@ -15,6 +15,7 @@
 - \ref ml_amesos
 - \ref ml_ifpack
 - \ref ml_anasazi
+- \ref ml_mlapi_intro
 - \ref ml_debug 
 - \ref ml_changes
 - \ref ml_copyright
@@ -281,6 +282,12 @@ and in the ML_Anasazi namespace.
 
 \note ML also have an interface to ARPACK and PARPACK. 
 
+
+\section ml_mlapi_intro Overview of MLAPI
+
+An object-oriented layer based on ML, called MLAPI, can be used to
+access most of the ML capabilites in a very way. Click \ref ml_mlapi to more
+details.
 
 
 \section ml_debug Debugging Utilities
@@ -748,13 +755,13 @@ Trilinos 4.0 tutorial.
 /*!
 \page ml_mlapi Overview of MLAPI
 
-Table of contents:
+\section mlapi_tab Table of contents
+
 - \ref mlapi_intro
 - \ref mlapi_memory
 - \ref mlapi_multivector
 - \ref mlapi_prec
 - \ref mlapi_epetrainterface
-
 
 
 \section mlapi_intro Introduction to MLAPI

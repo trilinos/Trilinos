@@ -57,6 +57,7 @@ INPUT                 += ../../../../Trilinos/packages/ml/src/Operator
 INPUT                 += ../../../../Trilinos/packages/ml/src/Utils 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Main
+INPUT                 += ../../../../Trilinos/packages/ml/src/MLAPI
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -68,6 +69,9 @@ FILE_PATTERNS         += ml_ifpack_wrap.h
 FILE_PATTERNS         += ml_operator.h 
 FILE_PATTERNS         += ml_struct.h 
 FILE_PATTERNS         += ml_aggregate.h
+FILE_PATTERNS         += ml_RowMatrix.h
+FILE_PATTERNS         += ml_Ifpack_ML.h
+FILE_PATTERNS         += MLAPI*.h
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
@@ -76,6 +80,7 @@ EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Visualization
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Maxwell 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MatrixReading 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/StandAlone
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MLAPI
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/
 
 IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
@@ -84,3 +89,4 @@ PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK
 PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS 
 PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X 
 PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
+PREDEFINED            += HAVE_ML_MLAPI
