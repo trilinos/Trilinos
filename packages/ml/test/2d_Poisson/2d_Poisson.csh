@@ -103,7 +103,8 @@ else
       else
         echo "********           ${TESTNAME}:    test #${testnum} passed" >> ${SUMMARY_FILE}
         ${RM} -f output${testnum}
-      endif
+      endif #if (("${check1}" == "0")||...
+    endif #if ( ${VERBOSE} == '-vtt' ) then
   
     ${RM} -f difs${testnum}
     ${RM} -f ml_inputfile
