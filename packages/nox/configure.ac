@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(nox, 0.1b)
+AC_INIT(nox, 0.2a, nox-developers@csmr.ca.sandia.gov)
 
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
