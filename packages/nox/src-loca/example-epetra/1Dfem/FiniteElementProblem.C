@@ -232,7 +232,7 @@ bool FiniteElementProblem::setParameter(string label, double value)
   return true;
 }
 
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
 {
   
   // Declare required variables
@@ -256,13 +256,13 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
 	// If this row is owned by current processor, add the index
 	if (StandardMap->MyGID(row)) {
 	  column=OverlapMap->GID(ne+j);
-	  AA.InsertGlobalIndices(row, 1, &column);
+	  AAA.InsertGlobalIndices(row, 1, &column);
 	}
       } 	
     }
   }
-  AA.TransformToLocal();
-  AA.SortIndices();
-  AA.RemoveRedundantIndices();
-  return AA;
+  AAA.TransformToLocal();
+  AAA.SortIndices();
+  AAA.RemoveRedundantIndices();
+  return AAA;
 }
