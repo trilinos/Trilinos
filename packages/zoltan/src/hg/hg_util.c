@@ -265,22 +265,96 @@ int Zoltan_HG_Check (
   HGraph *hg
 )
 {
+  int i ;
   int iedge ;               /* iedge denotes an hyperedge */
   int j ;                   /* j is the index of a vertex */
   int k ;                   /* k is an index of hyperedge */
+  int *check ;
+  int ierr = ZOLTAN_OK ;
 
   if (!(hg->hindex) || !(hg->hvertex) || !(hg->vindex) || !(hg->vedge) )
     return ZOLTAN_WARN ;
 
-  /* Further check needed:
-   * - edge weight or vertex weight smaller than 0.0
-   * - mirror go through that each vertex is in the edge list
-   * - no multiply hyperedges
-   * - index values are in range for both index arrays.
-   * - no single-vertex hyperedges
-   */
+  check = (int *) ZOLTAN_MALLOC (sizeof (int)
+   * ((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)) ;
+  if (check == NULL)
+     {
+     if (zz->Debug_Level > 0)
+        printf ("Zoltan_HG_Check unable to allocate memory\n") ;
+     return ZOLTAN_MEMERR ;
+     }
+  for (i = 0 ; i < hg->nEdge ; i++)
+     check[i] = -1 ;
+  for (i = 0 ; i < hg->nVtx ; i++)
+     for (j = hg->vindex[i] ; j < hg->vindex[i+1] ; j++)
+        if (check[hg->vedge[j]] < i)
+           check[hg->vedge[j]] = i ;
+        else
+           {
+           if (zz->Debug_Level > 0)
+              printf ("Zoltan_HG_Check found multiple hedge for same vertex\n") ;
+           ierr = ZOLTAN_WARN ;
+           }
+  for (i = 0 ; i < hg->nVtx ; i++)
+     check[i] = -1 ;
+  for (i = 0 ; i < hg->nEdge ; i++)
+     for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
+        if (check[hg->hvertex[j]] < i)
+           check[hg->hvertex[j]] = i ;
+        else
+           {
+           if (zz->Debug_Level > 0)
+              printf ("Zoltan_HG_Check found multiple vertex for same hedge\n") ;
+           ierr = ZOLTAN_WARN ;
+           }
+  ZOLTAN_FREE ((void **) &check) ;
 
-  /* starting from (hindex,hvertex), for each edge determine each associated 
+  for (i = 0 ; i < hg->VertexWeightDim * hg->nVtx ; i += hg->VertexWeightDim)
+     if (hg->vwgt[i] < 0.0)
+        {
+        if (zz->Debug_Level > 0)
+          printf ("Zoltan_HG_Check found negative vertex weight\n") ;
+        ierr = ZOLTAN_WARN ;
+        }
+
+  for (i = 0 ; i < hg->EdgeWeightDim * hg->nEdge ; i += hg->EdgeWeightDim)
+     if (hg->ewgt[i] < 0.0)
+        {
+        if (zz->Debug_Level > 0)
+          printf ("Zoltan_HG_Check found negative edge weight\n") ;
+        ierr = ZOLTAN_WARN ;
+        }
+
+  for (i = 0 ; i < hg->nEdge ; i++)
+     if ((hg->hindex[i+1] - hg->hindex[i]) < 2)
+        {
+        if (zz->Debug_Level > 0)
+          printf ("Zoltan_HG_Check found hedge with less than %d vertices\n",
+           (hg->hindex[i+1] - hg->hindex[i])) ;
+        ierr = ZOLTAN_WARN ;
+        }
+
+  for (i = 0 ; i < hg->nEdge; i++)
+     for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
+        if (hg->hvertex[j] < 0  ||  hg->hvertex[j] >= hg->nVtx)
+           {
+           if (zz->Debug_Level > 0)
+              printf ("Zoltan_HG_Check found vertex out of range in hvertex\n") ;
+           ierr = ZOLTAN_WARN ;
+           }
+
+
+  for (i = 0 ; i < hg->nVtx ; i++)
+     for (j = hg->vindex[i] ; j < hg->vindex[i+1] ; j++)
+        if (hg->vedge[j] < 0  ||  hg->vedge[j] >= hg->nEdge)
+           {
+           if (zz->Debug_Level > 0)
+              printf ("Zoltan_HG_Check found edge out of range in vedge\n") ;
+           ierr = ZOLTAN_WARN ;
+           }
+
+
+  /* starting from (hindex,hvertex), for each edge determine each associated
    * vertex. Then for each vertex lookup associated edges using
    * (vindex, vedge)
    */
@@ -294,6 +368,7 @@ int Zoltan_HG_Check (
       if (k == hg->vindex[hg->hvertex[j]+1])   /* if no match was found then */
         return ZOLTAN_WARN ;                   /* failure, else keep on */
     }
+  /* return ierr ; */
   return ZOLTAN_OK ;
 }
 
@@ -391,7 +466,7 @@ int Zoltan_HG_HGraph_to_Graph(
   }
   ZOLTAN_FREE ((void **) &degrees);
 
-/* Compact identical icident edges and their weight */
+/* Compact identical incident edges and their weight */
   if (!(w = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx)))
     { ZOLTAN_FREE ((void **) &w);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
