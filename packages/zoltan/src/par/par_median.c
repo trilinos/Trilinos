@@ -32,6 +32,11 @@ struct median {          /* median cut info */
 };
 
 
+/* prototypes */
+void LB_reduce(int, int, int, int, struct median *, struct median *, int *,
+               MPI_Datatype, MPI_Comm);
+void LB_scan(double *, double *, MPI_Comm, int, int, int);
+
 /************ R O U T I N E S   I N   T H I S   F I L E  **********************
 
        NAME                             TYPE
@@ -93,7 +98,6 @@ int LB_find_median(
   MPI_Op            med_op;
   MPI_Datatype      med_type;
   MPI_User_function LB_median_merge;
-  void    LB_reduce(), LB_scan();    /* for Tflops_Special */
 
 
 /***************************** BEGIN EXECUTION ******************************/
@@ -297,9 +301,11 @@ int LB_find_median(
 
       /* combine median data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
-      if (lb->Tflops_Special)
-         LB_reduce(num_procs, rank, proc, 1, &medme, &med, 1, med_type,
+      if (lb->Tflops_Special) {
+         i = 1;
+         LB_reduce(num_procs, rank, proc, 1, &medme, &med, &i, med_type,
                    local_comm);
+      }
       else
          MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
 
