@@ -15,12 +15,21 @@ typedef enum {
     DN         /* Fortran style column-wise storage for dense matrix */
 } Stype_t;
 
+#ifndef ppc
 typedef enum {
     _S,         /* single */
     _D,         /* double */
     _C,         /* single complex */
     _Z          /* double complex */
 } Dtype_t;
+#else
+typedef enum {
+    SLU_S,         /* single */
+    SLU_D,         /* double */
+    SLU_C,         /* single complex */
+    SLU_Z          /* double complex */
+} Dtype_t;
+#endif
 
 typedef enum {
     GE,        /* general */
