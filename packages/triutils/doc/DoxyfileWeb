@@ -53,3 +53,6 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/triutils/src
+EXTRACT_ALL            = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
