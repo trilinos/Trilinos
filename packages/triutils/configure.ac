@@ -143,6 +143,7 @@ TAC_ARG_CHECK_MPI
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h],,,)
 AC_CHECK_HEADERS([cmath math.h string string.h],,,)
+AC_CHECK_HEADERS([malloc.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Triutils requires at least one or the other.]])
@@ -195,6 +196,11 @@ AC_F77_WRAPPERS
 dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+AC_FUNC_MALLOC
+if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
+fi
 
 dnl Check for user-specified names for BLAS
 TAC_ARG_WITH_BLASLIB

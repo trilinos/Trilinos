@@ -1,9 +1,16 @@
 #ifndef IOHB_H
 #define IOHB_H
 
+#ifdef HAVE_CONFIG_H
+#include "Triutils_config.h"
+#endif
+
 #include<stdio.h>
 #include<stdlib.h>
+
+#ifdef HAVE_MALLOC_H
 #include<malloc.h>
+#endif
 
 int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type, 
                                                       int* Nrhs);

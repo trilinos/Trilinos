@@ -180,10 +180,6 @@ if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xye
   AC_MSG_ERROR([[Cannot find cmath or math.h.  Komplex requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_malloc_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find malloc.h.  Komplex requires this header file.]])
-fi
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
