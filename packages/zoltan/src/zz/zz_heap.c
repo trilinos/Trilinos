@@ -64,6 +64,20 @@ int i;
 
 
 
+void Zoltan_HG_heap_clear (HEAP *h)
+{
+int i;
+
+  h->n = 0;
+  for (i = 0; i < h->space; i++) {
+     h->ele[i]   = 0;
+     h->value[i] = 0.0;
+     h->pos[i]   = -1;
+     }
+}
+
+
+
 /* Frees all memory and sets the heap value back to default */
 void Zoltan_HG_heap_free (HEAP *h)
 {
@@ -184,17 +198,20 @@ int position, father;
 
 
 /* Extracts the maximum element & restores the heap property. Time O(log(n))*/
-int Zoltan_HG_heap_extract_max (HEAP *h)
+int Zoltan_HG_heap_extract_max (HEAP *h, float *value)
 {
 int max;
 
   if (h->n == 0)
      return -1;           /* No elements in heap. */
 
-  max = h->ele[0];
+  max     = h->ele[0];
+  *value  = h->value[0];
+
   h->value[max] = 0.0;
   h->pos[max] = -1;
   h->pos[h->ele[0] = h->ele[--(h->n)]] = 0;
+
   heapify(h,0);
   return max;
 }

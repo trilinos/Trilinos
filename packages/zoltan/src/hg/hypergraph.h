@@ -110,6 +110,7 @@ typedef int ZOLTAN_HG_GROUPING_EWS_FN (ZZ*, HGraph*);
 struct HGPartParamsStruct {
   float bal_tol;                        /* Balance tolerance in % of average */
   int redl;                             /* Reduction limit. */
+  int kway;                             /* 1 -> kway, 0->recursive bisection */
 
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   ZOLTAN_HG_MATCHING_FN *matching;      /* Pointers to Matching, Packing and */
@@ -225,14 +226,16 @@ typedef struct {
 #define Zoltan_HG_heap_not_empty(H)     (((H)->n)!=0)
 #define Zoltan_HG_heap_max_value(H)     ((H)->value[(H)->ele[0]])
 #define Zoltan_HG_heap_peek_max(H)      ((H)->ele[0])
+#define Zoltan_HG_heap_count(H)         ((H)->n)
 
 int  Zoltan_HG_heap_init         (ZZ*, HEAP*, int);
+void Zoltan_HG_heap_clear        (HEAP*);
 void Zoltan_HG_heap_free         (HEAP*);
 int  Zoltan_HG_heap_check        (HEAP*);
 int  Zoltan_HG_heap_input        (HEAP*, int, float);
 int  Zoltan_HG_heap_make         (HEAP*);
 int  Zoltan_HG_heap_change_value (HEAP*, int, float);
-int  Zoltan_HG_heap_extract_max  (HEAP*);
+int  Zoltan_HG_heap_extract_max  (HEAP*, float*);
 
 int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);

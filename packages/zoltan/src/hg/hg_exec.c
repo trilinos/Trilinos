@@ -85,7 +85,7 @@ hgp.orphan_flag = 0;
   strcpy(hgp.redm_str,   "grg");
   strcpy(hgp.redmo_str,  "aug2");
   strcpy(hgp.global_str, "gr0");
-  strcpy(hgp.local_str,  "fm");
+  strcpy(hgp.local_str,  "fm2");
 
   zz.Debug_Level = 1;
   zz.Proc = 0;
@@ -140,10 +140,6 @@ hgp.orphan_flag = 0;
      return 1;
   ADD_NEW_TIME(t_rest);
 
-  /* tighten balance tolerance for recursive bisection process */
-  if (p > 2)
-     hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
-
   /* load hypergraph and print its info */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
      return 1;
@@ -162,20 +158,34 @@ hgp.orphan_flag = 0;
      return 1;
   ADD_NEW_TIME(t_load);
 
-  /* vmap associates original vertices to sub hypergraphs */
-  hg.vmap = (int*) ZOLTAN_MALLOC (hg.nVtx * sizeof (int));
-  if (hg.vmap == NULL)
-     return 1;
-  for (i = 0; i < hg.nVtx; i++)
-     hg.vmap[i] = i;
-
-  /* partition hypergraph */
+  hgp.kway = (!strcasecmp(hgp.local_str, "fmkway")
+   ||         !strcasecmp(hgp.local_str, "no")) ? 1 : 0;
   if (!((part) = (int*) calloc ((unsigned)(hg.nVtx), sizeof(int))))
      return 1;
-  err = Zoltan_HG_rdivide (1, p, (Partition) part, &zz, &hg, &hgp, 0);
-  if (err != ZOLTAN_OK)
-     return err;
-  ZOLTAN_FREE (&hg.vmap);
+
+  if (hgp.kway) {
+     err = Zoltan_HG_HPart_Lib (&zz, &hg, p, part, &hgp, 0);
+     if (err != ZOLTAN_OK)
+         return err;
+     }
+  else {
+     /* tighten balance tolerance for recursive bisection process */
+     if (p > 2)
+        hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
+
+     /* vmap associates original vertices to sub hypergraphs */
+     hg.vmap = (int*) ZOLTAN_MALLOC (hg.nVtx * sizeof (int));
+     if (hg.vmap == NULL)
+       return 1;
+     for (i = 0; i < hg.nVtx; i++)
+        hg.vmap[i] = i;
+
+     /* partition hypergraph */
+     err = Zoltan_HG_rdivide (1, p, (Partition) part, &zz, &hg, &hgp, 0);
+     if (err != ZOLTAN_OK)
+        return err;
+     ZOLTAN_FREE (&hg.vmap);
+     }
 
 
 if (zz.Proc == 0)

@@ -18,10 +18,13 @@ extern "C" {
 
 #include "hypergraph.h"
 
+static int isabove (int origin, int test, int p);
+static int isbelow (int origin, int test, int p);
 
 
 static ZOLTAN_HG_LOCAL_REF_FN local_no;
 static ZOLTAN_HG_LOCAL_REF_FN local_fm2;
+static ZOLTAN_HG_LOCAL_REF_FN local_fmkway;
 
 /****************************************************************************/
 
@@ -29,9 +32,10 @@ static ZOLTAN_HG_LOCAL_REF_FN local_fm2;
 
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
 {
-  if      (!strcasecmp(str, "fm")) return local_fm2;
-  else if (!strcasecmp(str, "no")) return local_no;
-  else                             return NULL;
+  if      (!strcasecmp(str, "fm2"))    return local_fm2;
+  else if (!strcasecmp(str, "fmkway")) return local_fmkway;
+  else if (!strcasecmp(str, "no"))     return local_no;
+  else                                 return NULL;
 }
 
 /****************************************************************************/
@@ -161,6 +165,7 @@ static int local_fm2 (
 int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
 double total_weight, part_weight[2], max_weight[2];
 double cutsize, best_cutsize, *gain = 0;
+float  junk;
 HEAP   heap[2];
 int    steplimit;
 char   *yo="local_fm2";
@@ -277,7 +282,7 @@ else if (Zoltan_HG_heap_max_value(&heap[0]) == Zoltan_HG_heap_max_value(&heap[1]
            sour = 1;
         dest = 1-sour;
 
-        vertex = Zoltan_HG_heap_extract_max(&heap[sour]);
+        vertex = Zoltan_HG_heap_extract_max(&heap[sour], &junk);
 
 /*
 if ((hg->vwgt[vertex] + part_weight[dest] > max_weight[dest]) &&
@@ -358,6 +363,9 @@ while (rth < &locked_list [hg->nVtx-1])
 }
 
 
+
+/***************************************************************************/
+
 static int local_fm (
   ZZ *zz,
   HGraph *hg,
@@ -371,6 +379,7 @@ int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
 double  total_weight, max_weight, max, best_max_weight, *gain = 0,
  part_weight[2], cutsize, best_cutsize;
 HEAP   heap[2];
+float  junk;
 char   *yo="local_fm";
 
   if (p != 2) {
@@ -466,7 +475,7 @@ char   *yo="local_fm";
            sour = 1;
         dest = 1-sour;
 
-        vertex = Zoltan_HG_heap_extract_max(&heap[sour]);
+        vertex = Zoltan_HG_heap_extract_max(&heap[sour], &junk);
         locked[vertex] = part[vertex] + 1;
         locked_list[number_locked++] = vertex;
         akt_cutsize -= gain[vertex];
@@ -521,6 +530,176 @@ char   *yo="local_fm";
 
   return ZOLTAN_OK;
 }
+
+/***************************************************************************/
+
+static int local_fmkway (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  Partition part,
+  HGPartParams *hgp,
+  float bal_tol
+)
+{
+const int MAX_LOOP = 4;
+int     i, j, k, loop;
+HEAP   *heap;
+double *part_weight, total_weight, max_weight, perfect_weight;
+float  *gain, tgain;
+int   **cuts, *store;
+int     edge, vertex, bestpart, limit, *tpart;
+char   *yo="local_fmkway";
+
+  /* allocate necessary storage for heaps and weight calculation */
+  if  (!(heap        = (HEAP*)   ZOLTAN_CALLOC (p,         sizeof (HEAP)))
+   ||  !(part_weight = (double*) ZOLTAN_CALLOC (p,         sizeof (double)))
+   ||  !(gain        = (float*)  ZOLTAN_CALLOC (p,         sizeof (float)))
+   ||  !(cuts        = (int**)   ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))
+   ||  !(tpart       = (int*)    ZOLTAN_CALLOC (hg->nVtx,  sizeof (int)))
+   ||  !(store       = (int*)    ZOLTAN_CALLOC (hg->nEdge * p, sizeof (int))))
+     {
+     Zoltan_Multifree(__FILE__,__LINE__, 6, &heap, &part_weight, &gain, &cuts,
+      &tpart, &store);
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+     }
+
+  /* simulate a 2 dimensional array whose dimensions are known at run time */
+  for (i = 0; i < hg->nEdge; i++)
+     cuts[i] = store + i * p;
+
+  /* Initialize the heaps  */
+  for (i = 0; i < p; i++)
+     Zoltan_HG_heap_init (zz, &heap[i], hg->nVtx);
+
+  /* algorithm loops to create interprocessor communication sections */
+  for (loop = 0; loop < MAX_LOOP; loop++) {
+     int evenloop = (loop%2) ? 0 : 1;   /* determines direction of legal moves */
+
+    /* Calculate the total weights (local vertices weight) */
+     total_weight = 0.0;
+     memset (part_weight, 0, p * sizeof (double));
+     if (hg->vwgt)
+        for (i = 0; i < hg->nVtx; i++) {
+           total_weight         += hg->vwgt[i];
+           part_weight[part[i]] += hg->vwgt[i];
+           }
+     else {
+        total_weight = hg->nVtx;
+        for (i = 0; i < hg->nVtx; i++)
+           part_weight[part[i]] += 1.0;
+        }
+     /* most general case, need MPI global communication for total weight here */
+     /* temporary equal fill RTHRTH, should use target weight vector */
+     max_weight     = (total_weight / (double)p)  * bal_tol;
+     perfect_weight =  total_weight / (double)p;
+
+     /* Initial calculation of the cut distribution */
+     memset (store, 0, hg->nEdge * p);
+     for (i = 0; i < hg->nEdge; i++)
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
+           ++cuts[i][part[hg->hvertex[j]]];
+
+     for (i = 0; i < hg->nVtx; i++)  {
+        for (j = 0; j < p; j++)
+           gain[j] = 0.0;
+
+        /* calculate gains */
+        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
+           edge = hg->vedge[j];
+           for (k = 0; k < p; k++)  {
+              if (k == part[i])
+                 continue;
+              if (cuts[edge][k] != 0 && cuts[edge][part[i]] == 1)
+                 gain[k] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              if (cuts[edge][k] == 0)
+                 gain[k] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              }
+           }
+
+        /* save best move, if any, for each vertex */
+        tpart[i] = bestpart = -1;                 /* arbitrary illegal value */
+        tgain = -1.0e37;                          /* arbitrary small value */
+        for (j = 0; j < p; j++)
+           if (j != part[i] && gain[j] >= tgain
+            && ((evenloop && isabove (part[i], j, p)) /* legal move direction */
+            || (!evenloop && isbelow (part[i], j, p))))  {
+                     bestpart = j;
+                     tgain = gain[j];
+                     }
+
+        /* fill heaps with the best, legal gain value per vertex */
+        if (bestpart != -1 && tgain >= 0.0)  {
+           Zoltan_HG_heap_input (&heap[bestpart], i, tgain);
+           tpart[i] = bestpart;
+           }
+        } /* end of loop over all vertices --- i */
+
+     /* make moves until while balance is OK */
+     for (i = 0; i < p; i++)  {
+        Zoltan_HG_heap_make (&heap[i]);
+
+        limit = 0.35 * Zoltan_HG_heap_count (&heap[i]);
+        while (Zoltan_HG_heap_not_empty (&heap[i]) && limit-- > 0)  {
+            vertex = Zoltan_HG_heap_extract_max(&heap[i], &tgain);
+            if ((hg->vwgt[vertex] + part_weight[i]) < max_weight)  {
+               part_weight[i] += hg->vwgt[vertex];
+               part[vertex] = i;                          /* fake update (no global comm) */
+               }
+            }
+        }
+
+     /* communicate back moves made/rejected, update info (faked above) */
+     /* update "ghost" vertices by either the previous comm is all to all, */
+     /* or by a third comm by vertex owners to ghost owners */
+     /* NOTE: this too is implicit in this serial version */
+
+     /* clear heaps for next loop */
+     for (i = 0; i < p; i++)
+        Zoltan_HG_heap_clear(&heap[i]);
+     }   /* end of loop over loop */
+
+  for (i = 0; i < p; i++)
+     Zoltan_HG_heap_free(&heap[i]);
+  Zoltan_Multifree(__FILE__,__LINE__, 6, &heap, &part_weight, &gain, &cuts,
+   &tpart, &store);
+
+  return ZOLTAN_OK;
+}
+
+
+
+static int isabove (int origin, int test, int p)
+   {
+   if (origin > p/2)  {
+      if (test < origin && test > (origin - p/2))
+         return 0;
+      return 1;
+      }
+   else  {
+      if (test > origin && test <= (origin + p/2))
+         return 1;
+      return 0;
+      }
+   }
+
+
+
+static int isbelow (int origin, int test, int p)
+   {
+   if (origin > p/2)  {
+      if (test < origin && test >= (origin - p/2))
+         return 1;
+      return 0;
+      }
+   else  {
+      if (test > origin && test < (origin + p/2))
+         return 0;
+      return 1;
+      }
+   }
+
 
 
 #ifdef __cplusplus

@@ -215,13 +215,14 @@ char *yo = "Zoltan_HG_HPart_Lib";
   /* Locally refine partition */
   err = Zoltan_HG_Local (zz, hg, p, part, hgp);
 
-
+#ifdef RTHRTH
 if (hg->info == 0 && level < 2)
    if (orphan (zz, hg, p, part, hgp))
        {
        hgp->orphan_flag = 1;
        /* printf ("RTHRTH fixing orphans\n"); */
        }
+#endif
 
 if (hg->info == 0 && hgp->cleanup == 1)
 {

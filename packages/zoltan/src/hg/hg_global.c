@@ -581,6 +581,7 @@ static int greedy_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank;
+  float junk;
   int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
   int ierr=ZOLTAN_OK;
   double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
@@ -676,7 +677,7 @@ static int greedy_order (
   while (bfsnumber < hg->nVtx ) {
 
     /* Get next vertex from heap */
-    vtx = Zoltan_HG_heap_extract_max(h);
+    vtx = Zoltan_HG_heap_extract_max(h, &junk);
 
     if (vtx<0){
       /* This should never happen. */

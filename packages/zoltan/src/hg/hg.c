@@ -86,7 +86,7 @@ int i;
 char *yo = "Zoltan_HG";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
+printf ("RTHRTH: starting\n");
 
   /* Initialization of return arguments. */
   *num_imp   = *num_exp   = -1;
@@ -117,28 +117,39 @@ char *yo = "Zoltan_HG";
     goto End;
   }
 
-  /* vmap associates original vertices to sub hypergraphs */
-  zoltan_hg->HG.vmap = (int*) ZOLTAN_MALLOC (zoltan_hg->HG.nVtx * sizeof (int));
-  if (zoltan_hg->HG.vmap == NULL)  {
-     ierr = ZOLTAN_MEMERR;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     goto End;
-     }
-  for (i = 0; i < zoltan_hg->HG.nVtx; i++)
-     zoltan_hg->HG.vmap[i] = i;
 
-  /* tighten balance tolerance for recursive bisection process */
-  if (zz->LB.Num_Global_Parts > 2)
-     hgp.bal_tol = pow (hgp.bal_tol,
-      1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
+hgp.kway = (!strcasecmp(hgp.local_str, "fmkway") ? 1 : 0;
 
-  /* partition hypergraph */
-  ierr = Zoltan_HG_rdivide (1, zz->LB.Num_Global_Parts, output_parts, zz, &zoltan_hg->HG, &hgp, 0);
-  if (ierr != ZOLTAN_OK)  {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-     goto End;
+printf ("RTHRTH  type is %s\n", hgp.kway ? "kway", "recursive bisection");  fflush (NULL);
+  if (hgp.kway) {
+     err = Zoltan_HG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp, 0);
+     if (err != ZOLTAN_OK)
+         return err;
      }
-  ZOLTAN_FREE (&zoltan_hg->HG.vmap);
+  else {
+     /* vmap associates original vertices to sub hypergraphs */
+     zoltan_hg->HG.vmap = (int*) ZOLTAN_MALLOC (zoltan_hg->HG.nVtx * sizeof (int));
+     if (zoltan_hg->HG.vmap == NULL)  {
+        ierr = ZOLTAN_MEMERR;
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        goto End;
+        }
+     for (i = 0; i < zoltan_hg->HG.nVtx; i++)
+        zoltan_hg->HG.vmap[i] = i;
+
+     /* tighten balance tolerance for recursive bisection process */
+     if (zz->LB.Num_Global_Parts > 2)
+        hgp.bal_tol = pow (hgp.bal_tol,
+         1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
+
+     /* partition hypergraph */
+     ierr = Zoltan_HG_rdivide (1, zz->LB.Num_Global_Parts, output_parts, zz, &zoltan_hg->HG, &hgp, 0);
+     if (ierr != ZOLTAN_OK)  {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+        goto End;
+        }
+     ZOLTAN_FREE (&zoltan_hg->HG.vmap);
+     }
 
 
 if (zz->Proc == 0)
@@ -231,10 +242,10 @@ static int Zoltan_HG_Initialize_Params(
                               (void*) hgp->redmo_str);
 
   /* Set default values */
-  strcpy(hgp->redm_str,   "grg");
-  strcpy(hgp->redmo_str,  "aug2");
-  strcpy(hgp->global_str, "gr0");
-  strcpy(hgp->local_str,  "fm");
+  strncpy(hgp->redm_str,   "grg",  MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redmo_str,  "aug2", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->global_str, "gr0",  MAX_PARAM_STRING_LEN);
+  strncpy(hgp->local_str,  "fm2",  MAX_PARAM_STRING_LEN);
   hgp->ews = 1;
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
@@ -258,6 +269,7 @@ hgp->orphan_flag = 0;
 
   /* Convert strings to function pointers. */
   return Zoltan_HG_Set_Part_Options(zz, hgp);
+
 }
 
 /*****************************************************************************/
