@@ -57,15 +57,15 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 					int Naggre, int * NnodesPerAggre,
 					USR_COMM Comm);
-static ML_Operator * ML_BuildQ( int StartingNumElements,
-	 		 int ReorderedNumElements,
-			 int reordered_decomposition[],
-			 double StartingNullSpace[],
-			 double ReorderedNullSpace[],
-			 int ComputeNewNullSpace,
-			 double StartingBdry[], double ReorderedBdry[],
-			 USR_COMM mpi_communicator,
-			 ML_Comm *ml_communicator );
+extern ML_Operator * ML_BuildQ( int StartingNumElements,
+				int ReorderedNumElements,
+				int reordered_decomposition[],
+				double StartingNullSpace[],
+				double ReorderedNullSpace[],
+				int ComputeNewNullSpace,
+				double StartingBdry[], double ReorderedBdry[],
+				USR_COMM mpi_communicator,
+				ML_Comm *ml_communicator );
 
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */
@@ -102,7 +102,8 @@ int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value )
   if( optimal_value <= 1 && 9 < ML_Get_PrintLevel() ) {
     fprintf( stderr,
 	     "*ML*WRN* invalid parameter for OptimalValue (%d)\n"
-	     "*ML*WRN* (must be greater than 1)\n" );
+	     "*ML*WRN* (must be greater than 1)\n",
+	     optimal_value );
   }
   
   OPTIMAL_VALUE = optimal_value;
@@ -1627,7 +1628,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
     if( iaggre > Naggre ) {
       fprintf( stderr,
 	       "*ML*ERR* something went wrong in counting the nodes per aggre\n"
-	       "*ML*ERR* node %s is assigned to global aggregate %d, but you\n"
+	       "*ML*ERR* node %d is assigned to global aggregate %d, but you\n"
 	       "*ML*ERR* have only %d aggregates. This is proc %d.\n",
 	       i,
 	       iaggre,
