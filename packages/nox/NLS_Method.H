@@ -11,25 +11,20 @@
 #ifndef _NLS_METHOD_H
 #define _NLS_METHOD_H
 
-#include <string>
-#include "NLS_Parameter.H"
-#include "NLS_ParameterList.H"
-#include "NLS_Group.H"
+#include <string>		// argument to function
+#include "NLS_ParameterList.H"	// argument to function
+#include "NLS_Group.H"		// return value from function
 
 //! Abstract nonlinear solver method interface.
 class NLS_Method 
 {
 
-protected: 
-  //! Constructor 
-  NLS_Method() {};
-
-  //! This is what the basic constructor for a derived class should look like
-  // NLS_Method(NLS_Function& f, NLS_ParameterList& p) {};
-  
 public:
 
-  //! Status of solver
+  //! Status of solver.
+  /*! Positive values indicate convergence, negative values indicate
+    failure, and zero indicates neutral (i.e., neither converged nor
+    failed). */
   enum STATUS {
     NotConverged = 0,
     ConvergedAbsTol = 1,
@@ -38,25 +33,28 @@ public:
     OtherError = -2
   };
 
+  //! Constructor 
+  NLS_Method() {};
+
   //! Deconstructor
   virtual ~NLS_Method() {};
 
   //! Change parameters for the nonlinear method.
   virtual void resetParameters(NLS_ParameterList& p) = 0;
 
-  //! Check for convergence of the nonlinear problem
+  //! Check current convergence/failure status. 
   virtual STATUS getStatus() = 0;
 
-  //! Do one nonlinear method iteration
+  //! Do one nonlinear method iteration and return status.
   virtual STATUS iterate() = 0;
 
-  //! Solve the nonlinear problem
+  //! Solve the nonlinear problem and return final status.
   virtual STATUS solve() = 0;
 
-  //! Return a reference to the current solution group
+  //! Return a reference to the current solution group.
   virtual NLS_Group& getSolutionGroup() const = 0;
 
-  //! Fill in the parameter with the named profile information
+  //! Fill in the parameter with the named profile information.
   virtual bool getProfileInfo(string& name, NLS_Parameter& p) const = 0;
 
 };
