@@ -196,16 +196,25 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (IsComputed() == false)
     IFPACK_CHK_ERR(-1);
 
-  Time_->ResetStartTime();
-
-  int NumVectors = X.NumVectors();
-
-  if (NumVectors != Y.NumVectors())
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
   
+  Time_->ResetStartTime();
+
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
+  const Epetra_MultiVector* Xcopy;
+  if (X.Pointers()[0] == Y.Pointers()[0])
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
+    
   Problem_->SetLHS(&Y);
-  Problem_->SetRHS((Epetra_MultiVector*)&X);
+  Problem_->SetRHS((Epetra_MultiVector*)Xcopy);
   IFPACK_CHK_ERR(Solver_->Solve());
+
+  if (Xcopy != &X)
+    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();

@@ -290,26 +290,36 @@ public:
   {
     if (Inverse_ == 0)
       return (0.0);
-    else 
-      // no flops occur in AdditiveSchwarz, only in Inverse_
-      return(Inverse_->InitializeFlops());
+    else {
+      double partial = Inverse_->InitializeFlops();
+      double total;
+      Comm().SumAll(&partial, &total, 1);
+      return(total);
+    }
   }
 
   virtual double ComputeFlops() const
   {
     if (Inverse_ == 0)
       return (ComputeFlops_);
-    else 
-      // no flops occur in AdditiveSchwarz, only in Inverse_
-      return(ComputeFlops_ + Inverse_->ComputeFlops());
+    else {
+      double partial = Inverse_->ComputeFlops();
+      double total;
+      Comm().SumAll(&partial, &total, 1);
+      return(ComputeFlops_ + total);
+    }
   }
 
   virtual double ApplyInverseFlops() const
   {
     if (Inverse_ == 0)
       return (ApplyInverseFlops_);
-    else 
-      return(ApplyInverseFlops_ + Inverse_->ApplyInverseFlops());
+    else {
+      double partial = Inverse_->ApplyInverseFlops();
+      double total;
+      Comm().SumAll(&partial, &total, 1);
+      return(ApplyInverseFlops_ + total);
+    }
   }
 
   //! Returns the level of overlap.
@@ -629,6 +639,8 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
 
   IsComputed_ = true; // need this here for Condest(Ifpack_Cheap)
   ++NumCompute_;
+  ComputeTime_ += Time_->ElapsedTime();
+  // flops are summed up in method ComputeFlops()
 
   string R = "";
   if (UseReordering_)
@@ -637,14 +649,12 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   if (ComputeCondest_)
     Condest(Ifpack_Cheap);
   
-  // reset lavel with condest()
+  // add Condest() to label
   Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
     + "\n\t\t***** " + R + "Condition number estimate = "
     + Ifpack_toString(Condest());
 
-  ComputeTime_ += Time_->ElapsedTime();
-  // flops are summed up in method ComputeFlops()
   return(0);
 }
 
@@ -818,18 +828,18 @@ Print(std::ostream& os) const
     os << "================================================================================" << endl;
     os << "Ifpack_AdditiveSchwarz, overlap level = " << OverlapLevel_ << endl;
     if (CombineMode_ == Insert)
-      os << "Combine mode              = Insert" << endl;
+      os << "Combine mode                          = Insert" << endl;
     else if (CombineMode_ == Add)
-      os << "Combine mode              = Add" << endl;
+      os << "Combine mode                          = Add" << endl;
     else if (CombineMode_ == Zero)
-      os << "Combine mode              = Zero" << endl;
+      os << "Combine mode                          = Zero" << endl;
     else if (CombineMode_ == Average)
-      os << "Combine mode              = Average" << endl;
+      os << "Combine mode                          = Average" << endl;
     else if (CombineMode_ == AbsMax)
-      os << "Combine mode              = AbsMax" << endl;
+      os << "Combine mode                          = AbsMax" << endl;
 
-    os << "Condition number estimate = " << Condest_ << endl;
-    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << "Condition number estimate             = " << Condest_ << endl;
+    os << "Global number of rows                 = " << Matrix_->NumGlobalRows() << endl;
 
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

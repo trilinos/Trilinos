@@ -130,8 +130,6 @@ public:
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method 
-    must support the case where X and Y are the same object.
     */
   virtual int ApplyInverse(const Epetra_MultiVector& X, 
 			   Epetra_MultiVector& Y) const;
@@ -363,8 +361,6 @@ private:
   //! Contains information about non-overlapping partitions.
   Ifpack_Partitioner* Partitioner_;
   string PartitionerType_;
-  //! If \c true, this object can be used as preconditioner for AztecOO
-  bool UseWithAztecOO_;
   int PrecType_;
   //! Label for \c this object
   string Label_;
@@ -404,7 +400,6 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   Containers_(0),
   Partitioner_(0),
   PartitionerType_("greedy"),
-  UseWithAztecOO_(true),
   PrecType_(IFPACK_JACOBI),
   ZeroStartingSolution_(true),
   Graph_(0),
@@ -558,8 +553,10 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Time_.ResetStartTime();
 
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
   const Epetra_MultiVector* Xcopy;
-  if (UseWithAztecOO_)
+  if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = new Epetra_MultiVector(X);
   else
     Xcopy = &X;
@@ -576,7 +573,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     break;
   }
 
-  if (UseWithAztecOO_)
+  if (Xcopy != &X)
     delete Xcopy;
 
   ApplyInverseTime_ += Time_.ElapsedTime();
@@ -1065,7 +1062,6 @@ int Ifpack_BlockRelaxation<T>::SetParameters(Teuchos::ParameterList& List)
     exit(EXIT_FAILURE);
   }
 
-  UseWithAztecOO_       = List.get("relaxation: AztecOO compliant", UseWithAztecOO_);
   NumSweeps_            = List.get("relaxation: sweeps", NumSweeps_);
   DampingFactor_        = List.get("relaxation: damping factor", 
                                    DampingFactor_);

@@ -49,10 +49,11 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   Comm_(Comm()),
   H_(0),
   Condest_(-1.0),
-  Relax_(1.0),
   Athresh_(0.0),
-  Rthresh_(0.0),
+  Rthresh_(1.0),
   LevelOfFill_(1.0),
+  DropTolerance_(0.0),
+  Relax_(0.0),
   IsInitialized_(false),
   IsComputed_(false),
   UseTranspose_(false),
@@ -70,9 +71,13 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
 //==============================================================================
 Ifpack_ICT::~Ifpack_ICT()
 {
+  Destroy();
+}
 
-  if (H_)
-    delete H_;
+//==============================================================================
+void Ifpack_ICT::Destroy()
+{
+  if (H_) delete H_; H_ = 0;
 
   IsInitialized_ = false;
   IsComputed_ = false;
@@ -85,28 +90,32 @@ int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
   LevelOfFill_ = List.get("fact: ict level-of-fill",LevelOfFill_);
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
+  Relax_ = List.get("fact: relax value", Relax_);
+  DropTolerance_ = List.get("fact: drop tolerance", DropTolerance_);
 
   // set label
-  sprintf(Label_, "ICT (fill=%f, athr=%f, rthr=%f)",
-	  LevelOfFill_, Athresh_, 
-	  Rthresh_);
+  Label_ = "ICT (fill=" + Ifpack_toString(LevelOfFill())
+    + ", athr=" + Ifpack_toString(AbsoluteThreshold()) 
+    + ", rthr=" + Ifpack_toString(RelativeThreshold())
+    + ", relax=" + Ifpack_toString(RelaxValue())
+    + ")";
+
   return(0);
 }
 
 //==========================================================================
 int Ifpack_ICT::Initialize()
 {
-  IsInitialized_ = false;
+  // clean data if present
+  Destroy();
+
   Time_.ResetStartTime();
 
+  // matrix must be square
   if (Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();
-
-  // delete previously allocated factorization
-  if (H_)
-    delete H_;
 
   // nothing else to do here
   IsInitialized_ = true;
@@ -125,181 +134,166 @@ int Ifpack_ICT::Compute() {
   Time_.ResetStartTime();
   IsComputed_ = false;
 
-  // extract information from matrix A_, put them
-  // in STL vectors that will be used in ComputeZeroFill()
-  // and ComputeNonZeroFill()
-
-  int NumMyRows_ = Matrix().NumMyRows();
-
-  vector<int> Nnz(NumMyRows_);
-  vector<vector<int> > Indices(NumMyRows_);
-  vector<vector<double> > Values(NumMyRows_);
-
-  int Length = Matrix().MaxNumEntries();
-  vector<int> RowIndices(Length);
+  int NumMyRows_ = A_.NumMyRows();
+  int Length = A_.MaxNumEntries();
+  vector<int>    RowIndices(Length);
   vector<double> RowValues(Length);
 
-  vector<int> Diag(NumMyRows_);
+  int RowNnz;
+  double flops = 0.0;
 
-  long int flops = 0;
-
-  // first cycle over all rows and extract Nnz, indices and values
-  // for each row
-  //
-  for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-    int RowNnz;
-    Matrix().ExtractMyRowCopy(i,Length,RowNnz,&RowValues[0],&RowIndices[0]);
-    
-#if 0
-    for (int j = 0 ; j < RowNnz ; ++j) {
-      cout << "A(" <<  1 +i << ", " << 1 + RowIndices[j] << ") = " <<
-	RowValues[j] << ";" << endl;
-    }
-    cout << endl;
-#endif
-
-    // count how many elements are below diagonal, and store
-    // the position of diagonal element
-    int count = 0;
-    double DiagVal = 0.0;
-    for (int j = 0 ; j < RowNnz ; ++j) {
-      if (RowIndices[j] == i)
-	DiagVal = RowValues[j];
-      else if (RowIndices[j] < i)
-	++count;
-    }
-
-    ++count; // diagonal value
-    Nnz[i] = count;
-    Indices[i].resize(count);
-    Values[i].resize(count);
-
-    // I suppose that the matrix has diagonal value, and I store
-    // it last. Matrix always has the diagonal entry (albeit possibly
-    // zero) if this matrix comes from Ifpack_AdditiveSchwarz.
-    count = 0;
-    for (int j = 0 ; j < RowNnz ; ++j) {
-      if (RowIndices[j] < i) {
-	Indices[i][count] = RowIndices[j]; 
-	Values[i][count] = RowValues[j]; 
-	++count;
-      }
-    }
-    Indices[i][count] = i;
-    Values[i][count] = DiagVal;
-    Diag[i] = count;
-    ++count;
-
-    assert (count == Nnz[i]);
-  }
-
-  H_ = new Epetra_CrsMatrix(Copy,Matrix().RowMatrixRowMap(),0);
+  H_ = new Epetra_CrsMatrix(Copy,A_.RowMatrixRowMap(),0);
   if (H_ == 0)
     IFPACK_CHK_ERR(-5);
 
-  // insert element Matrix()(0,0)
-  Values[0][0] = sqrt(Values[0][0]);
-  EPETRA_CHK_ERR(H_->InsertGlobalValues(0,Nnz[0],&(Values[0][0]),
-                                        &(Indices[0][0])));
+  // get A(0,0) element and insert it (after sqrt)
+  IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnz,
+                                     &RowValues[0],&RowIndices[0]));
 
-  vector<double> tmp(NumMyRows_);
+  // modify diagonal
+  for (int i = 0 ;i < RowNnz ; ++i) {
+    if (RowIndices[i] == 0) {
+      double& v = RowValues[i];
+      v = AbsoluteThreshold() * EPETRA_SGN(v) + RelativeThreshold() * v;
+      break;
+    }
+  }
 
-  // now perform the factorization for row `row_i'
+  // FIXME???
+  assert (RowIndices[0] == 0); // NOTE: assume ordered indices
+
+  RowValues[0] = sqrt(RowValues[0]);
+  EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&(RowValues[0]),
+                                        &(RowIndices[0])));
+
+  // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
 
+    // get row `row_i' of the matrix
+    IFPACK_CHK_ERR(A_.ExtractMyRowCopy(row_i,Length,RowNnz,
+                                       &RowValues[0],&RowIndices[0]));
+
     // number of nonzeros in this row are defined as the nonzeros
-    // of the matrix, plus the level of fill (-1, because Nnz
-    // contains the diagonal as well, which is always stored).
-    int LOF = (int)(LevelOfFill_ * (Nnz[row_i] - 1));
+    // of the matrix, plus the level of fill 
+    int LOF = (int)(LevelOfFill() * RowNnz);
+    if (LOF == 0) LOF = 1;
 
-    // first non-zero index in row_i
-    int MinIndex = Indices[row_i][0];
-    // get diagonal value for atresh_
-    double DiagonalValue = Values[row_i][Diag[row_i]];
+    // convert line `row_i' into STL map for fast access
+    map<int,double> SingleRow;
+    map<int,double>::iterator where;
 
-    // zero-out tmp from MinIndex to subdiagonal entry
-    for (int j = MinIndex ; j < row_i - 1 ; ++j)
-      tmp[j] = 0.0;
-
-    // put nonzero values of row_i
-    for (int j = 0 ; j < Nnz[row_i] - 1 ; ++j) {
-      int col_j = Indices[row_i][j];
-      tmp[col_j] = Values[row_i][j];
+    double h_ii = 0.0;
+    for (int i = 0 ; i < RowNnz ; ++i) {
+      if (RowIndices[i] == row_i) {
+        double& v = RowValues[i];
+        h_ii = AbsoluteThreshold() * EPETRA_SGN(v) + RelativeThreshold() * v;
+      }
+      else if (RowIndices[i] < row_i)
+        SingleRow[RowIndices[i]] = RowValues[i];
     }
-
-    // put all elements in this vector, because it
-    // will be sorted using STL sort() algorithm later
-    vector<Ifpack_Element> RowEntries;
-    Ifpack_Element Element;
-
-    // form element (row_i, col_j) -- all of them.
+      
+    // form element (row_i, col_j)
     // I start from the first row that has a nonzero column
     // index in row_i.
-    for (int col_j = MinIndex ; col_j < row_i ; ++col_j) {
-      double& h_ij = tmp[col_j];
+    for (int col_j = RowIndices[0] ; col_j < row_i ; ++col_j) {
+
+      short int flops = 0;
+      double h_ij = 0.0, h_jj = 0.0;
+      where = SingleRow.find(col_j);
+      if (where != SingleRow.end())
+        h_ij = SingleRow[where->first];
 
       // get pointers to row `col_j'
       int* ColIndices;
       double* ColValues;
       int ColNnz;
       H_->ExtractGlobalRowView(col_j, ColNnz, ColValues, ColIndices);
-      // all cross-products will be zero, skip all
-      if (ColIndices[ColNnz - 1] < MinIndex)
-        continue;
 
-      // look for cross product between `row_i' and `col_j'
-      for (int k = 0 ; k < ColNnz - 1 ; ++k) {
+      for (int k = 0 ; k < ColNnz ; ++k) {
         int col_k = ColIndices[k];
-        if (col_k < MinIndex)
-          continue;
-        h_ij -= tmp[col_k] * ColValues[k];
-        flops += 2;
+
+        if (col_k == col_j)
+          h_jj = ColValues[k];
+        else {
+          where = SingleRow.find(col_k);
+          if (where != SingleRow.end()) {
+            h_ij -= ColValues[k] * SingleRow[where->first];
+            flops += 2;
+          }
+        }
       }
 
-      if (h_ij == 0.0 || IFPACK_ABS(h_ij) < Athresh_
-          || IFPACK_ABS(h_ij < DiagonalValue) < Rthresh_)
-        continue;
+      h_ij /= h_jj;
 
-      h_ij /= ColValues[ColNnz - 1];
-      ++flops;
-      Element.SetIndex(col_j);
-      Element.SetValue(h_ij);
-      RowEntries.push_back(Element);
+      if (IFPACK_ABS(h_ij) > DropTolerance_)
+        SingleRow[col_j] = h_ij;
+    
+      // only approx
+      ComputeFlops_ += 2.0 * flops + 1;
     }
 
-    if ((int)RowEntries.size() > LOF) {
-      // sort in ascending order the entries for this row
-      sort(RowEntries.begin(),RowEntries.end());
+    int size = SingleRow.size();
+
+    vector<double> AbsRow(size);
+    int count = 0;
+    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
+      AbsRow[count++] = IFPACK_ABS(where->second);
     }
 
-    // look for the components that are in the level-of-fill range
-    // NOTE: here level-of-fill refers to the number of
-    // *off-diagonal* elements. If zero, no off-diagonal elements
-    // will be mantained.
-    for (int k = 0 ; k < EPETRA_MIN(LOF,(int)RowEntries.size()) ; ++k) {
-      int col_k = RowEntries[k].Index();
-      if (col_k >= row_i)
-        continue;
-      double h_ij = RowEntries[k].Value();
-      // skip zero elements
-      if (h_ij == 0.0)
-        continue;
-      DiagonalValue -= h_ij * h_ij;
-      flops += 2;
-      H_->InsertGlobalValues(row_i,1, &h_ij, &col_k);
+    double cutoff = 0.0;
+    if (count > LOF) {
+      nth_element(AbsRow.begin(), AbsRow.end() + LOF, AbsRow.end(), 
+                  greater<double>());
+      cutoff = AbsRow[LOF];
     }
-    // FIXME: use relax here??
 
-    // diagonal element is always inserted
-    DiagonalValue = sqrt(DiagonalValue);
-    H_->InsertGlobalValues(row_i,1, &DiagonalValue, &row_i);
+    // fix the diagonal element
+    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
+      h_ii -= where->second * where->second;
+    }
+    if (h_ii < 0.0) h_ii = 1e-12;;
 
-    Values[row_i].resize(0);
-    Indices[row_i].resize(0);
+    SingleRow[row_i] = sqrt(h_ii);
+
+    // only approx, + 1 == sqrt
+    ComputeFlops_ += 2 * SingleRow.size() + 1;
+
+    double DiscardedElements = 0.0;
+
+    for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
+      if (IFPACK_ABS(where->second) > cutoff) {
+        IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &(where->second),
+                                              (int*)&(where->first)));
+      }
+      else
+        DiscardedElements += where->second;
+    }
+
+    // FIXME: not so sure of that!
+    if (RelaxValue() != 0.0) {
+      DiscardedElements *= RelaxValue();
+      IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &DiscardedElements,
+                                            &row_i));
+    }
+
   }
 
   IFPACK_CHK_ERR(H_->FillComplete());
+
+#if 0
+  // to check the complete factorization
+  Epetra_Vector LHS(Matrix().RowMatrixRowMap());
+  Epetra_Vector RHS1(Matrix().RowMatrixRowMap());
+  Epetra_Vector RHS2(Matrix().RowMatrixRowMap());
+  Epetra_Vector RHS3(Matrix().RowMatrixRowMap());
+  LHS.Random();
+
+  Matrix().Multiply(false,LHS,RHS1);
+  H_->Multiply(true,LHS,RHS2);
+  H_->Multiply(false,RHS2,RHS3);
+
+  RHS1.Update(-1.0, RHS3, 1.0);
+#endif
 
   IsComputed_ = true;
   ComputeFlops_ += flops;
@@ -323,9 +317,19 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
 
   Time_.ResetStartTime();
 
-  // NOTE: I do suppose that X and Y are two different vectors
-  EPETRA_CHK_ERR(H_->Solve(false,false,false,X,Y));
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
+  const Epetra_MultiVector* Xcopy;
+  if (X.Pointers()[0] == Y.Pointers()[0])
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
+
+  EPETRA_CHK_ERR(H_->Solve(false,false,false,*Xcopy,Y));
   EPETRA_CHK_ERR(H_->Solve(false,true,false,Y,Y));
+
+  if (Xcopy != &X)
+    delete Xcopy;
 
   ApplyInverseFlops_ += 4.0 * H_->NumGlobalNonzeros();
 

@@ -310,11 +310,20 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   bool Upper = true;
   bool UnitDiagonal = true;
 
-  Epetra_MultiVector Y1(Y);
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
+  const Epetra_MultiVector* Xcopy;
+  if (X.Pointers()[0] == Y.Pointers()[0])
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
 
-  U_->Solve(Upper, true, UnitDiagonal, X, Y);
+  U_->Solve(Upper, true, UnitDiagonal, *Xcopy, Y);
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
+
+  if (Xcopy != &X)
+    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();

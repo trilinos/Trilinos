@@ -47,8 +47,7 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
   Diagonal_(0),
   Time_(0),
   IsParallel_(false),
-  ZeroStartingSolution_(true),
-  UseWithAztecOO_(true)
+  ZeroStartingSolution_(true)
 {
 }
 
@@ -87,8 +86,6 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
     IFPACK_CHK_ERR(-2);
   }
   
-  UseWithAztecOO_       = List.get("relaxation: AztecOO compliant", 
-                                   UseWithAztecOO_);
   NumSweeps_            = List.get("relaxation: sweeps",NumSweeps_);
   DampingFactor_        = List.get("relaxation: damping factor", 
                                    DampingFactor_);
@@ -305,10 +302,6 @@ void Ifpack_PointRelaxation::SetLabel()
 }
 
 //==============================================================================
-// Recall that this method is NOT supposed to be AztecOO compatible
-// unless option "relaxation: AztecOO compliant" is set to true.
-// ML users should set this option to false.
-// 
 // Note that Ifpack_PointRelaxation and Jacobi is much faster than
 // Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> (because of the
 // way the matrix-vector produce is performed).
@@ -328,8 +321,10 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Time_->ResetStartTime();
 
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
   const Epetra_MultiVector* Xcopy;
-  if (UseWithAztecOO_)
+  if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = new Epetra_MultiVector(X);
   else
     Xcopy = &X;
@@ -352,7 +347,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-1); // something wrong
   }
 
-  if (UseWithAztecOO_)
+  if (Xcopy != &X)
     delete Xcopy;
 
   ++NumApplyInverse_;

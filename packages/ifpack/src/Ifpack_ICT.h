@@ -93,11 +93,13 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 
+  //! Returns a reference to the matrix to be preconditioned.
   const Epetra_RowMatrix& Matrix() const
   {
     return(A_);
   }
 
+  //! Returns \c true is the preconditioner has been successfully initialized.
   bool IsInitialized() const
   {
     return(IsInitialized_);
@@ -171,7 +173,7 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
   int NumMyNonzeros() const {return(H().NumMyNonzeros());};
 
   //! Returns the address of the D factor associated with this factored matrix.
-  const Epetra_CrsMatrix & H() const {return(*H_);};
+  const Epetra_CrsMatrix& H() const {return(*H_);};
     
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
@@ -187,35 +189,35 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
   */
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-    //! Returns 0.0 because this class cannot compute Inf-norm.
-    double NormInf() const {return(0.0);};
+  //! Returns 0.0 because this class cannot compute Inf-norm.
+  double NormInf() const {return(0.0);};
 
-    //! Returns false because this class cannot compute an Inf-norm.
-    bool HasNormInf() const {return(false);};
+  //! Returns false because this class cannot compute an Inf-norm.
+  bool HasNormInf() const {return(false);};
 
-    //! Returns the current UseTranspose setting.
-    bool UseTranspose() const {return(UseTranspose_);};
+  //! Returns the current UseTranspose setting.
+  bool UseTranspose() const {return(UseTranspose_);};
 
-    //! Returns the Epetra_Map object associated with the domain of this operator.
-    const Epetra_Map & OperatorDomainMap() const {return(A_.OperatorDomainMap());};
+  //! Returns the Epetra_Map object associated with the domain of this operator.
+  const Epetra_Map& OperatorDomainMap() const {return(A_.OperatorDomainMap());};
 
-    //! Returns the Epetra_Map object associated with the range of this operator.
-    const Epetra_Map & OperatorRangeMap() const{return(A_.OperatorRangeMap());};
+  //! Returns the Epetra_Map object associated with the range of this operator.
+  const Epetra_Map& OperatorRangeMap() const{return(A_.OperatorRangeMap());};
 
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    const Epetra_Comm & Comm() const{return(Comm_);};
+  //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+  const Epetra_Comm& Comm() const{return(Comm_);};
   //@}
 
-    const char* Label() const
-    {
-      return(Label_);
-    }
+  const char* Label() const
+  {
+    return(Label_.c_str());
+  }
 
-    int SetLabel(const char* Label)
-    {
-      strcpy(Label_,Label);
-      return(0);
-    }
+  int SetLabel(const char* Label)
+  {
+    Label_ = Label;
+    return(0);
+  }
  
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const;
@@ -262,18 +264,52 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
     return(0.0);
   }
 
+  //! Returns the number of flops in all applications of Compute().
   virtual double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
+  //! Returns the number of flops in all applications of ApplyInverse().
   virtual double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
 
+  //! Returns the level-of-fill 
+  /*! \note: if 1.0, then the factored matrix
+      contains approximatively the same number of elements of A.
+   */
+  inline double LevelOfFill() const
+  {
+    return(LevelOfFill_);
+  }
 
- private:
+  //! Returns the absolute threshold.
+  inline double AbsoluteThreshold() const
+  {
+    return(Athresh_);
+  }
+
+  //! Returns the relative threshold.
+  inline double RelativeThreshold() const
+  {
+    return(Rthresh_);
+  }
+
+  //! Returns the relaxation value.
+  inline double RelaxValue() const
+  {
+    return(Relax_);
+  }
+
+  //! Returns the drop threshold.
+  inline double DropTolerance() const
+  {
+    return(DropTolerance_);
+  }
+
+private:
   
   //! Should not be used.
   Ifpack_ICT(const Ifpack_ICT& rhs) :
@@ -288,64 +324,56 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
     return(*this);
   }
 
-  double LevelOfFill() const
-  {
-    return(LevelOfFill_);
-  }
+  //! Destroys all data associated to the preconditioner.
+  void Destroy();
 
-  double AbsoluteThreshold() const
-  {
-    return(Athresh_);
-  }
-
-  double RelativeThreshold() const
-  {
-    return(Rthresh_);
-  }
-
-  double RelaxValue() const
-  {
-    return(Relax_);
-  }
-
+  //! Reference to the matrix to be preconditioned, supposed symmetric.
   const Epetra_RowMatrix& A_;
+  //! Reference to the communicator.
   const Epetra_Comm& Comm_;
+  //! Contains the Cholesky factorization.
   Epetra_CrsMatrix* H_;
-
+  //! Contains the estimate of the condition number, if -1.0 if not computed.
   double Condest_;
-  double Relax_;
+  //! Absolute threshold.
   double Athresh_;
+  //! Relative threshold.
   double Rthresh_;
+  //! Level of fill.
   double LevelOfFill_;
-  
-  char Label_[160];
-
+  //! During factorization, drop all values below this.
+  double DropTolerance_;
+  //! Relaxation value.
+  double Relax_;
+  //! Label of \c this object.
+  string Label_;
+  //! If \c true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
+  //! If \c true, the preconditioner has been successfully computed.
   bool IsComputed_;
+  //! If \c true, use the transpose of the matrix.
   bool UseTranspose_;
-
+  //! Number of local rows in the matrix.
   int NumMyRows_;
-
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
-
   //! Contains the time for all successful calls to Initialize().
   double InitializeTime_;
   //! Contains the time for all successful calls to Compute().
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
-
   //! Contains the number of flops for Compute().
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
   mutable double ApplyInverseFlops_;
+  //! Used for timing purposes.
+  mutable Epetra_Time Time_;
 
-mutable Epetra_Time Time_;
 };
 
 #endif // IFPACK_TEUCHOS

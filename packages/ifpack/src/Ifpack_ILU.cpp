@@ -537,9 +537,26 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
                              Epetra_MultiVector& Y) const
 {
 
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-3);
+
+  if (X.NumVectors() != Y.NumVectors())
+    IFPACK_CHK_ERR(-2);
+
   Time_.ResetStartTime();
 
-  IFPACK_CHK_ERR(Solve(Ifpack_ILU::UseTranspose(), X, Y));
+  // AztecOO gives X and Y pointing to the same memory location,
+  // need to create an auxiliary vector, Xcopy
+  const Epetra_MultiVector* Xcopy;
+  if (X.Pointers()[0] == Y.Pointers()[0])
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
+
+  IFPACK_CHK_ERR(Solve(Ifpack_ILU::UseTranspose(), *Xcopy, Y));
+
+  if (Xcopy != &X)
+    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();

@@ -73,13 +73,6 @@ Ifpack_GaussSeidel does not consider backward Gauss-Seidel methods.
 
 <P>For a list of supported parameters, please refer to page \ref ifp_params.
 
-\note The ApplyInverse() implementation of this class is \e not AztecOO
-complaint, as it does assume that the two input vectors X and Y actually
-refer to two different memory location. In fact, this case is handled
-by class Ifpack_AdditiveSchwarz, which takes care of calling methods ApplyInverse()
-of Ifpack_PointRelaxation with two vectors pointing to different memory
-locations.
-
 <P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
 \ref Ifpack_PointRelaxation.
 
@@ -374,9 +367,10 @@ private:
   mutable Epetra_Vector* Diagonal_;
   //! Time object to track timing.
   Epetra_Time* Time_;
+  //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
+  //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
-  bool UseWithAztecOO_;
   // @}
 
 };

@@ -251,10 +251,6 @@ The complete list of supported parameters is reported below.
   to be preconditioned as starting solution. Otherwise, use the zero vector
   as starting solution.
 
-- \c "relaxation: AztecOO compliant": if \c true, the point or block
-  preconditioner object can be used as preconditioner for AztecOO. ML users
-  should set this option to \c false.
-
 - \c "partitioner: type": specifies the scheme to adopt to partition
   the graph (for block relaxation methods only). Valid values: 
   - \c "linear" (uses a linear decomposition);
@@ -363,8 +359,6 @@ parameter.
 <td>\c "relaxation: min diagonal value" </td><td>\c double </td><td>\c "0.0" </td>
 </tr> <tr>
 <td>\c "relaxation: zero starting solution" </td><td>\c bool </td><td>\c "true" </td>
-</tr> <tr>
-<td>\c "relaxation: AztecOO compliant" </td><td>\c bool </td><td>\c "true" </td>
 </tr> <tr>
 <td>\c "partitioner: type"        </td><td>\c string </td><td>\c "greedy" </td>
 </tr> <tr>
@@ -490,7 +484,6 @@ algorithm (division by zero, out-of-bounds, ...)</td>
 
 - IFPACK does not support Epetra matrices whose OperatorDomainMap() is different from the  OperatorRangeMap() and from RowMatrixRowMap(). Handling of this particular case is under development for class Ifpack_AdditiveSchwarz only.
 - IFPACK does not work correctly when \c UseTranspose() \c == true.
-- Ifpack_ICT and Ifpack_ILUT are still under development.
 
 
 \section ifp_copyright Copyright

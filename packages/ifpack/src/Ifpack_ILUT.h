@@ -183,13 +183,13 @@ public:
   //! Returns the label of \c this object.
   const char* Label() const
   {
-    return(Label_);
+    return(Label_.c_str());
   }
 
   //! Sets the label for \c this object
   int SetLabel(const char* Label)
   {
-    strcpy(Label_,Label);
+    Label_ = Label;
     return(0);
   }
  
@@ -248,7 +248,45 @@ public:
     return(ApplyInverseFlops_);
   }
 
- private:
+  inline double LevelOfFill() const {
+    return(LevelOfFill_);
+  }
+
+  //! Set relative threshold value
+  inline double RelaxValue() const {
+    return(Relax_);
+  }
+
+  //! Get absolute threshold value
+  inline double AbsoluteThreshold() const
+  {
+    return(Athresh_);
+  }
+
+  //! Get relative threshold value
+  inline double RelativeThreshold() const
+  {
+    return(Rthresh_);
+  }
+    
+  //! Gets the dropping tolerance
+  inline double DropTolerance() const
+  {
+    return(DropTolerance_);
+  }
+    
+  //! Returns the number of nonzero entries in the global graph.
+  int NumGlobalNonzeros() const {
+    // FIXME: diagonal of L_ should not be stored
+    return(L().NumGlobalNonzeros() + U().NumGlobalNonzeros() - L().NumGlobalRows());
+  }
+ 
+  //! Returns the number of nonzero entries in the local graph.
+  int NumMyNonzeros() const {
+    return(L().NumMyNonzeros() + U().NumMyNonzeros());
+  }
+
+private:
   
   // @}
   // @{ Internal methods
@@ -264,63 +302,6 @@ public:
   Ifpack_ILUT& operator=(const Ifpack_ILUT& RHS)
   {
     return(*this);
-  }
-
-  //! Set absolute threshold value
-  void SetLevelOfFill(double LevelOfFill) 
-  {
-    LevelOfFill_ = LevelOfFill; return;
-  }
-
-  inline double LevelOfFill() const {
-    return(LevelOfFill_);
-  }
-
-  //! Set relative threshold value
-  int SetRelax(double Relax) {
-    Relax_ = Relax; 
-    return(0);
-  }
-
-  //! Set relative threshold value
-  double RelaxValue() const {
-    return(Relax_);
-  }
-
-  //! Get absolute threshold value
-  double AbsoluteThreshold() const
-  {
-    return(Athresh_);
-  }
-
-  //! Get relative threshold value
-  double RelativeThreshold() const
-  {
-    return(Rthresh_);
-  }
-    
-  //! Set absolute threshold value
-  int SetAbsoluteThreshold(const double Athresh)
-  {
-    Athresh_ = Athresh;
-    return(0);
-  }
-
-  //! Set relative threshold value
-  int SetRelativeThreshold(const double Rthresh)
-  {
-    Rthresh_ = Rthresh;
-    return(0);
-  }
-    
-  //! Returns the number of nonzero entries in the global graph.
-  int NumGlobalNonzeros() const {
-    return(L().NumGlobalNonzeros() + U().NumGlobalNonzeros());
-  }
- 
-  //! Returns the number of nonzero entries in the local graph.
-  int NumMyNonzeros() const {
-    return(L().NumMyNonzeros() + U().NumMyNonzeros());
   }
 
   // @}
@@ -344,8 +325,10 @@ public:
   double Rthresh_;
   //! Level-of-fill
   double LevelOfFill_;
+  //! Discards all elements below this tolerance
+  double DropTolerance_;
   //! Label for \c this object
-  char Label_[160];
+  string Label_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
   //! \c true if \c this object has been computed
@@ -369,7 +352,7 @@ public:
   //! Contains the number of flops for Compute().
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  double ApplyInverseFlops_;
+  mutable double ApplyInverseFlops_;
   //! Used for timing purposed
   mutable Epetra_Time Time_;
 
