@@ -43,6 +43,11 @@
 
 AC_INIT(triutils, 1.0, mheroux@cs.sandia.gov)
 
+# Hello World!
+echo "----------------------------------------"
+echo "Running Triutils Configure Script"
+echo "----------------------------------------"
+
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
@@ -253,4 +258,7 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT()
 
-
+# Bye World!
+echo "----------------------------------------"
+echo "Finished Running Triutils Configure Script"
+echo "----------------------------------------"
