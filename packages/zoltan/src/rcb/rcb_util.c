@@ -52,7 +52,7 @@ LB_GID obj_global_id;                 /* Global ID returned by application.  */
 LB_LID obj_local_id;                  /* Local ID returned by application.   */
 int num_geom;                         /* # values per object used to describe
                                          the geometry.                       */
-float wgt;
+float wgt = 1.;
 int found;
 int i, ierr = 0;
 

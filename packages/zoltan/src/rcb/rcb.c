@@ -162,7 +162,7 @@ static int rcb(
   int     incoming, incoming2;      /* message exchange counters */
   int     pdotnum;                  /* # of dots - decomposition changes it */
   int     pdottop;                  /* dots >= this index are new */
-  int    *dotmark;                  /* which side of median for each dot */
+  int    *dotmark = NULL;           /* which side of median for each dot */
   int     dotnum;                   /* number of dots */
   int     dotmax = 0;               /* max # of dots arrays can hold */
   int     dottop;                   /* dots >= this index are new */
@@ -173,7 +173,8 @@ static int rcb(
   int     readnumber;               /* # of proc partner(s) to read from */
   int     markactive;               /* which side of cut is active = 0/1 */
   int     dim;                      /* which of 3 axes median cut is on */
-  double *coord, *wgts;             /* temp arrays for median_find */
+  double *coord = NULL;             /* temp array for median_find */
+  double *wgts = NULL;              /* temp array for median_find */
   double  valuehalf;                /* median cut position */
   double  fractionlo;               /* desired wt in lower half */
   int     first_guess;              /* flag if first guess for median search */
@@ -247,7 +248,6 @@ static int rcb(
   LB_time[0] = LB_end_time - LB_start_time;
   LB_start_time = LB_end_time;
 
-  
   /* local copies of calling parameters */
 
   dottop = dotnum = pdotnum;
