@@ -84,6 +84,8 @@
                                     ${SCRATCH_SUBDIR}/difs${ttt}
           wc ${SCRATCH_SUBDIR}/difs${ttt} >> ${SCRATCH_ROOT_DIRECTORY}/summary
           tail -1 ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity"
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity" >> ${SCRATCH_ROOT_DIRECTORY}/summary
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations"
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations" >> ${SCRATCH_ROOT_DIRECTORY}/summary
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = "
