@@ -146,6 +146,30 @@ referred to the existing literature for a comprehensive presentation.
 \medskip
 
 %-----------------------------------------------------------------------------
+\subsection{Condition Number Estimates}
+\label{sec:cond}
+%-----------------------------------------------------------------------------
+
+The condition of a matrix $B$, called $\kappa_p(B)$, is defined as
+$\kappa_p(B) = \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$. 
+$\kappa_p(B)$
+gives some indication of how many accurate floating point
+digits can be expected from operations involving the matrix and its
+inverse.  A condition number approaching the accuracy of a given
+floating point number system, about 15 decimal digits in IEEE double
+precision, means that any results involving $B$ or $B^{-1}$ may be
+meaningless.
+
+The $\infty$-norm of a vector $y$ is defined as the maximum of the
+absolute values of the vector entries, and the $\infty$-norm of a
+matrix C is defined as
+$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.
+A crude lower bound for the $\kappa_\infty(C)$ is
+$\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
+lower bound because $\kappa_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
+\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$. 
+
+%-----------------------------------------------------------------------------
 \subsection{Point Preconditioners}
 \label{sec:point}
 %-----------------------------------------------------------------------------
@@ -458,6 +482,83 @@ be the same for each linear system and the overhead of computing the
 pattern is amortized.
 
 %-----------------------------------------------------------------------------
+\subsubsection{{\em A-priori} Diagonal Perturbations}
+\label{sec:a-priori}
+%-----------------------------------------------------------------------------
+
+A well-known disadvantage of incomplete factorizations is that the two
+factors can be unstable. This may occur, for instance, if matrix $A$ in
+(\ref{eq:linear_sys}) is badly scaled, or if one of the pivotal elements
+occurs to be very small. Computing the condition number estimate using method
+{\tt Condest()} can help to
+detect ill-conditioned factorizations.  The procedure is as follows. If this
+condition estimate is larger than machine precision, say greater than
+$10^{15}$, then it is possible that numerical errors in the application of the
+preconditioner can will destroy convergence of the iterative solver (that is,
+the iterative solver starts to diverge, stagnates, or aborts because it
+detects ill-conditioning).  In this case, {\sl a-priori} diagonal
+perturbations may be effective.  
+
+Diagonal perturbations operate as follows:
+instead of using matrix $A$, we perform the factorization  on 
+a modified matrix $B$\footnote{This matrix is never built. The code modifies
+  the {\tt ExtractMyRowCopy()} method, and updated the diagonal value.}, whose elements are defined as
+\begin{equation}
+\label{eq:B}
+\begin{array}{lcr}
+B_{i,j} = A_{i,j} \quad \quad i \neq j \\
+B_{i,i} = \alpha \; \; sgn(A_{i,i}) + \rho A_{i,i},
+  \end{array}
+\end{equation}
+where $\alpha$ and $\rho$ are two real parameters, to be determined by the
+user. $\alpha$ represents an absolute threshold added to the matrix, while
+$\rho$ is a relative threshold (that is, the actual diagonal value of the
+matrix to be factored is $\rho$ times the original value).  This has the
+effect of forcing the diagonal values to have minimal magnitude of $\alpha$
+and to increase each by an amount proportional to $\rho$, and still keep the
+sign of the original diagonal entry.
+
+Although no general theory to define $\alpha$ and $\rho$ is avaialble, 
+it can be convenient to adopt the strategy
+outlined in Figure~\ref{f:aprioristrategy}.
+{\small
+\begin{figure}
+\vspace{.05in}
+\hrule
+\vspace{.1in}
+\begin{enumerate}
+\item Set the absolute threshold $\alpha = 0.0$ and the relative
+threshold $\rho = 1.0$ (equivalent to no perturbation).
+\item Define perturbed diagonal entries as $d_{i} = sign(d_i)\alpha +
+d_i\rho$ and compute the incomplete factors $L$ and $U$.
+\item Compute $condest = \|(LU)^{-1}e\|_\infty$ where $e = (1, 1,
+\ldots, 1)^T$.
+\item If failure ($condest > 10^{15}$ or convergence is poor), set $\alpha =
+10^{-5}$, $\rho = 1.0$.  Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-5}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 1.0$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 1.01$. Repeat Steps 2 and 3.
+\item If still failing, continue alternate increases in
+   the two threshold values.
+\end{enumerate}
+\vspace{.1in}
+\hrule
+\caption{Simple {\it a priori} Threshold Strategy}
+\label{f:aprioristrategy}
+\end{figure}
+
+\begin{remark}
+Note that if the condition estimate of the preconditioner is
+well below machine precision and one is not achieving
+convergence, then diagonal perturbation will probably not be useful.
+Instead, one should try to construct a more accurate factorization by
+increasing the level-of-fill.
+\end{remark}
+
+%-----------------------------------------------------------------------------
 \subsection{Additive Schwarz Preconditioners}
 \label{sec:additive}
 %-----------------------------------------------------------------------------
@@ -637,9 +738,9 @@ are performed
 \item Method \verb!ApplyInverse()! applies the preconditioner. Any class that
 uses \verb!ApplyInverse()! to apply the preconditioner can take advantage of
 an \verb!Ifpack_Preconditioner! derived object\footnote{For example, {\tt
-  AztecOO} objects can use {\tt Ifpack\_Preconditioner} objects as
-    preconditioners. Note that {\tt Compute()} must be successfully called before using
-    \verb!ApplyInverse()!.}
+AztecOO} objects can use {\tt Ifpack\_Preconditioner} objects as
+preconditioners.} Note that {\tt Compute()} must be successfully called before
+using \verb!ApplyInverse()!.
 
 \item Method \verb!IsInitialized()! returns {\tt true} is the preconditioner has
 been successfully initialized, {\tt false} otherwise.
@@ -648,31 +749,15 @@ been successfully initialized, {\tt false} otherwise.
 been successfully computed, {\tt false} otherwise.
 %
 \item Method \verb!Condest()! returns an estimation of the condition
-number of the preconditioned system.
-The condition of a matrix $B$, called $cond_p(B)$, is defined as
-$cond_p(B) = \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$. 
-$cond_p(B)$
-gives some indication of how many accurate floating point
-digits can be expected from operations involving the matrix and its
-inverse.  A condition number approaching the accuracy of a given
-floating point number system, about 15 decimal digits in IEEE double
-precision, means that any results involving $B$ or $B^{-1}$ may be
-meaningless.
-
-The $\infty$-norm of a vector $y$ is defined as the maximum of the
-absolute values of the vector entries, and the $\infty$-norm of a
-matrix C is defined as
-$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.
-A crude lower bound for the $cond_\infty(C)$ is
-$\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
-lower bound because $cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
-\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$. 
-
-More accurate (and expensive) computations for the condition number can be
+number of the preconditioner $P$ (and not of the preconditioner system), see
+Section~\ref{sec:cond}. 
+Accurate (and expensive) computations of the condition number of
+the preconditioned system can be
 obtained by calling {\tt Condest(Ifpack\_CG)} or {\tt
   Condest(Ifpack\_GMRES)}\footnote{We note that using CG or GMRES to compute
 and estimated condition number is an expensive operations, and should not
 be used unless the accurate value of the condition number is required.}.
+See Section~\ref{sec:a-priori} for more details.
 %
 \item Methods \verb!NumInitialize()!, \verb!NumCompute()! and
 \verb!NumApplyInverse()! return the number of calls to each phase.
@@ -826,7 +911,7 @@ return value if different from 0, the macro prints out a warning message on
 \label{sec:block_ex}
 %-----------------------------------------------------------------------------
 
-From the point of view of the implementation block preconditioner
+From the point of view of the implementation, block preconditioners
 are sensibly more complex than their point counterpart:
 \begin{enumerate}
 \item A strategy to define the blocks has to be chosen (for instance, 
@@ -906,7 +991,7 @@ Partitioner->Compute();
 
 Once an \verb!Ifpack_Partitioner! is created, we are ready to
 compute the block preconditioner. This requires the extraction of
-all the diagonal bocks of equation (\ref{eq:D}). In \ifpack, the
+all the diagonal blocks of equation (\ref{eq:D}). In \ifpack, the
 user can choose to store the $A_{i,i}$ as dense matrices, or a sparse
 matrices. In the former case, the inverse of each block is applied using
 LAPACK\footnote{LAPACK is used to factorize the matrix, then each application
@@ -1258,28 +1343,6 @@ processor. Note that, for non-zero overlap values, the preconditioner is in gene
   ILUT.}
 
 \choicebox{\tt fact: relax value}{[{\tt double}] Relaxation value.}
-
-\smallskip
-
-It is often convenient to compute the incomplete factorization of a given
-matrix, say $A$, by ``filtering'' this matrix, so that it behaves ``well''
-during the factorization process. The idea to filter the matrix is very
-simple: instead of using matrix $A$, we perform the factorization  on 
-a modified matrix $B$\footnote{This matrix is never built. The code modifies
-  the {\tt ExtractMyRowCopy()} method, and updated the diagonal value.}, whose elements are defined as
-\begin{equation}
-\label{eq:B}
-\begin{array}{lcr}
-B_{i,j} = A_{i,j} \quad \quad i \neq j \\
-B_{i,i} = \alpha \; \; sgn(A_{i,i}) + \rho A_{i,i},
-  \end{array}
-\end{equation}
-where $\alpha$ and $\rho$ are two real parameters, to be determined by the
-user. $\alpha$ represents and absolute threshold added to the matrix, while
-$\rho$ is a relative threshold (that is, the actual diagonal value of the matrix to
-be factored is $\rho$ times the original value). 
-
-\smallskip
 
 \choicebox{\tt fact: absolute threshold}{[{\tt double}] Value $\alpha$ in equation (\ref{eq:B}). }
 
