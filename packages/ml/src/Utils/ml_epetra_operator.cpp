@@ -58,8 +58,7 @@ Epetra_ML_Operator::~Epetra_ML_Operator() {
 }
 //==============================================================================
 #ifndef WKC
-int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
-ctor& Y) const {
+int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
 
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
