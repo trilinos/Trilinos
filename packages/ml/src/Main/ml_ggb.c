@@ -58,7 +58,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 
  
 
-  //  Fattening        = eigen_struct->Fattening;
+  /*  Fattening        = eigen_struct->Fattening; */
 
      
   /* Set parameters for ARPACK: (2)then those that are fixed for MPSalsa */
@@ -119,7 +119,7 @@ void  ML_ARPACK_driver(char which[],
 
 
   double     *vecx, *vecy, *rhs, *rhs1;                       /* Dummy Pointers */
-  int        comm; //, mu=0, delta=0, sigma=0;
+  int        comm; /*, mu=0, delta=0, sigma=0; */
 
   
   FILE       *ifp;
@@ -127,7 +127,7 @@ void  ML_ARPACK_driver(char which[],
 
   /********************************  Begin ************************************/
   
-  //  ifp   = fopen("CheckQmgs.m", "w");
+  /*  ifp   = fopen("CheckQmgs.m", "w"); */
   
 
   /******************************************************
@@ -371,8 +371,8 @@ void  ML_ARPACK_driver(char which[],
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 			Amat->outvec_leng, rhs);
 	    
-	    //	    for (kk =0 ; kk < nloc2 ; kk++ ) 
-	    //   eigen_struct->Kq[j*ldv+kk] = rhs[kk];
+	    /*	    for (kk =0 ; kk < nloc2 ; kk++ ) */
+	    /*   eigen_struct->Kq[j*ldv+kk] = rhs[kk];*/
 	    
 
 
@@ -413,8 +413,8 @@ void  ML_ARPACK_driver(char which[],
 			      Amat->outvec_leng, vecx);
 
 	    
-	    //	    for (kk =0 ; kk < nloc2 ; kk++ ) 
-	    //  eigen_struct->Kq[j*ldv+kk] = vecx[kk];
+	    /*	    for (kk =0 ; kk < nloc2 ; kk++ ) */
+	    /*  eigen_struct->Kq[j*ldv+kk] = vecx[kk];*/
 	    
 
 
@@ -439,7 +439,7 @@ void  ML_ARPACK_driver(char which[],
 			ddot_(&nloc2, rhs, &one, rhs, &one));                   
 	    }	    
 	    
-	    d[j+2*ncv] =   a2; //  /dlapy2_(&lamR,&lamI);
+	    d[j+2*ncv] =   a2; /*  /dlapy2_(&lamR,&lamI);*/
 	    
 	    d[j+1+2*ncv] = a2;
 	    
@@ -464,7 +464,7 @@ void  ML_ARPACK_driver(char which[],
 
 	  comm=0; dummy1 = 6; dummy2 = 3; dummy3 = ncv; dummy4 = -6;
      
-	  //	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+	  /*	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);*/
 
      	  ml_c_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
 
@@ -491,14 +491,14 @@ void  ML_ARPACK_driver(char which[],
       ML_GGBalp (v, nconv, nloc2, eigen_struct);
       
       
-      //      ML_GGB_2_CSR (eigen_struct->Qmgs, eigen_struct->Pnconv, 
-      //	    nloc2, mydata, Debug_Flag);
+      /*      ML_GGB_2_CSR (eigen_struct->Qmgs, eigen_struct->Pnconv, 
+      	    nloc2, mydata, Debug_Flag); */
       
      
       ML_GGB2CSR (eigen_struct->Evec , eigen_struct->Pnconv, nloc2, mydata, Debug_Flag);
       
-      ML_free((void *) v);
-      ML_free((void *) eigen_struct->Eval);
+      ML_free(v);
+      ML_free(eigen_struct->Eval);
 
 
 
@@ -544,16 +544,16 @@ void  ML_ARPACK_driver(char which[],
   }
  
 
-  ML_free((void *) select);
-  ML_free((void *) work);
-  ML_free((void *) vecx);
-  ML_free((void *) vecy);
-  ML_free((void *) rhs1);
-  ML_free((void *) rhs);
-  ML_free((void *) resid);
-  ML_free((void *) workd);
-  ML_free((void *) workev);
-  ML_free((void *) workl);
+  ML_free(select);
+  ML_free( work);
+  ML_free( vecx);
+  ML_free( vecy);
+  ML_free( rhs1);
+  ML_free( rhs);
+  ML_free( resid);
+  ML_free( workd);
+  ML_free( workev);
+  ML_free( workl);
 
     
   /*  fclose(ifp);   */
@@ -732,8 +732,8 @@ void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Stru
 	      k = k + 1;
 	    }
 	
-	ML_free((void *) eigen_struct->Evec);
-	ML_free((void *) current_vec);
+	ML_free( eigen_struct->Evec);
+	ML_free( current_vec);
 
 
 	
@@ -863,10 +863,10 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   */
 
   
-  ML_free((void *) tau);
-  ML_free((void *) work);
-  ML_free((void *) tau1);
-  ML_free((void *) work1);
+  ML_free( tau);
+  ML_free( work);
+  ML_free( tau1);
+  ML_free( work1);
   
 
   /* Perform  B = A1'*A, to compute the principal angle with SVD */
@@ -887,8 +887,8 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   jobvt[0] = 'N';
   jobvt[1] = '\0';
   
-  lda      =  ncols1;       // should be changed to n
-  lwork    =  10*ncols1;    // should be changed to n 
+  lda      =  ncols1;       /* should be changed to n */
+  lwork    =  10*ncols1;    /* should be changed to n */
   ldu      =  ncols1;
   ldvt     =  ncols2;
 
@@ -913,16 +913,16 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   /* theta = acos(min(S)) */
   if (S[ncols2-1] > 1.0) theta = 0.0;
   else  theta = acos(S[ncols2-1]);
-  //  if (S[ncols2-1] <0.0) theta = 3.1415/2;
+  /*  if (S[ncols2-1] <0.0) theta = 3.1415/2;*/
  
 
 
   
-  ML_free((void *) A);
-  ML_free((void *) A1);  
-  ML_free((void *) S);
-  ML_free((void *) B);
-  ML_free((void *) work);
+  ML_free( A);
+  ML_free( A1);  
+  ML_free( S);
+  ML_free( B);
+  ML_free( work);
 
 
   return theta;
@@ -994,10 +994,10 @@ int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   theta = theta*57.2958;     /* Transfer to degrees */
   
   
-  ML_free((void *) A);
-  ML_free((void *) rhs);
-  ML_free((void *) rhs1);
-  ML_free((void *) dumm);
+  ML_free( A);
+  ML_free( rhs);
+  ML_free( rhs1);
+  ML_free( dumm);
   
 
   if (theta > epsilon) ggb_flag = 1;
