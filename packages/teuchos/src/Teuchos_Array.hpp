@@ -138,9 +138,9 @@ namespace Teuchos
   template<class T> inline
   void Array<T>::indexCheckCrash(int i) const
   {
-    TEST_FOR_EXCEPTION(i<0 || i>=size(), std::range_error,
+    TEST_FOR_EXCEPTION(i<0 || i>=length(), std::range_error,
                        "Array<T>::indexCheckCrash: "
-                       "index " << i << "out of range [0, "<< size() << ")");
+                       "index " << i << "out of range [0, "<< length() << ")");
       
   }
 
