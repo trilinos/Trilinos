@@ -18,12 +18,10 @@ extern "C" {
 
 #include <math.h>
 #include "hg.h"
+#include "phg.h"
 #include "params_const.h"
 #include "all_allo_const.h"
 
-/* static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
-static double hcut_size_total (HGraph *hg, Partition part);
-*/
 
 /*
  *  Main routines for Zoltan interface to hypergraph partitioning.
@@ -131,7 +129,8 @@ printf ("RTHRTH: starting\n");
   zoltan_hg->HG.redl = hgp.redl;
  
   /* allocate output partition memory */
-  output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
+  zoltan_hg->Output_Parts = output_parts
+                          = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
   if (nVtx && output_parts == NULL) {
     ierr = ZOLTAN_MEMERR;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -199,8 +198,9 @@ if (zz->Proc == 0)
 {
 double *subtotal=NULL;
 double total, top;
-int cuts, tcuts, temp;
-
+double cuts, tcuts; 
+int temp;
+double remcutl, remcutn;
 
 
  if (!(subtotal = (double *) ZOLTAN_MALLOC(sizeof(double)* zz->LB.Num_Global_Parts))) {
@@ -229,10 +229,14 @@ if (zoltan_hg->HG.info == 0) {
        goto End;
     }
 
-cuts = (int) Zoltan_HG_hcut_size_links (zz, &zoltan_hg->HG, output_parts);
-tcuts = (int)Zoltan_HG_hcut_size_total (&zoltan_hg->HG, output_parts);
+cuts = Zoltan_HG_hcut_size_links (zz, &zoltan_hg->HG, output_parts);
+tcuts = Zoltan_HG_hcut_size_total (&zoltan_hg->HG, output_parts);
 
-printf ("RTHRTHp=%d, cuts %5d%c %5d tol %.3f:  ", zz->LB.Num_Global_Parts, cuts,
+Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+cuts += remcutl;
+tcuts += remcutn;
+
+printf ("RTHRTHp=%d, cuts %f%c %f tol %.3f:  ", zz->LB.Num_Global_Parts, cuts,
  hgp.orphan_flag ? '*' : ' ', tcuts, top*zz->LB.Num_Global_Parts);
 
 temp = ((zz->LB.Num_Global_Parts > 8) ? 8 : zz->LB.Num_Global_Parts);
@@ -249,7 +253,6 @@ printf ("\n");
 End:
   if (ierr == ZOLTAN_MEMERR)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-  ZOLTAN_FREE((void**) &output_parts);
   Zoltan_HG_Free_Structure(zz);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
@@ -257,18 +260,22 @@ End:
 
 /*****************************************************************************/
 
-
-
 void Zoltan_HG_Free_Structure(ZZ *zz)
 {
-/* frees all data associated with LB.Data_Structure for hypergraphs */
-ZHG *zoltan_hg = (ZHG *)(zz->LB.Data_Structure);
+  /* frees all data associated with LB.Data_Structure for hypergraphs */
+  ZHG *zoltan_hg = (ZHG*) zz->LB.Data_Structure;
 
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
-     &zoltan_hg->Local_IDs, &zoltan_hg->Input_Parts);
-    Zoltan_HG_HGraph_Free(&zoltan_hg->HG);
-    ZOLTAN_FREE((void**) &zz->LB.Data_Structure);
+    Zoltan_Multifree(__FILE__, __LINE__, 8, &zoltan_hg->GIDs,
+                                            &zoltan_hg->LIDs,
+                                            &zoltan_hg->Input_Parts,
+                                            &zoltan_hg->Output_Parts,
+                                            &zoltan_hg->Remove_EGIDs,
+                                            &zoltan_hg->Remove_ELIDs,
+                                            &zoltan_hg->Remove_Esize,
+                                            &zoltan_hg->Remove_Ewgt);
+    Zoltan_HG_HGraph_Free (&zoltan_hg->HG);
+    ZOLTAN_FREE (&zz->LB.Data_Structure);
   }
 }
 
@@ -309,8 +316,8 @@ int Zoltan_HG_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
   toZZ->LB.Data_Structure = (void *)to;
 
   rc = Zoltan_Copy_Obj_List(fromZZ, 
-      from->Global_IDs, &to->Global_Ids,
-      from->Local_IDs, &to->Local_Ids, 
+      from->GIDs, &to->Global_Ids,
+      from->LIDs, &to->Local_Ids, 
       fromZZ->Obj_Weight_Dim, from->HG.vwgt, &to->HG.vwgt,
       from->Input_Parts, &to->Input_Parts, &to->HG.nVtx);
 
@@ -440,8 +447,8 @@ int num_gid_entries   = zz->Num_GID;
 int num_lid_entries   = zz->Num_LID;
 int nVtx              = zoltan_hg->HG.nVtx;
 Partition input_parts = zoltan_hg->Input_Parts;
-ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
-ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
+ZOLTAN_ID_PTR gids    = zoltan_hg->GIDs;
+ZOLTAN_ID_PTR lids    = zoltan_hg->LIDs;
 char *yo = "Zoltan_HG_Return_Lists";
 
   if (zz->LB.Return_Lists) {
@@ -494,8 +501,6 @@ char *yo = "Zoltan_HG_Return_Lists";
 
 /****************************************************************************/
 
-
-
 void Zoltan_HG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
   ZHG *zoltan_hg,
@@ -508,76 +513,32 @@ void Zoltan_HG_HGraph_Print(
  * Set zoltan_hg to NULL if want to print only an HGraph.
  * Lots of output; synchronized across processors, so is a bottleneck.
  */
-int i;
-int num_gid = zz->Num_GID;
-int num_lid = zz->Num_LID;
-char *yo = "Zoltan_HG_HGraph_Print";
+  int i;
+  int num_gid = zz->Num_GID;
+  int num_lid = zz->Num_LID;
+  char *yo = "Zoltan_PHG_HGraph_Print";
 
   if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
     return;
   }
 
-  Zoltan_Print_Sync_Start(zz->Communicator, 1);
+  Zoltan_Print_Sync_Start (zz->Communicator, 1);
 
   /* Print Vertex Info */
-  fprintf(fp, "%s Proc %d\n", yo, zz->Proc);
-  fprintf(fp, "Vertices (GID, LID, index)\n");
-  for (i = 0; i < hg->nVtx; i++) {
+  fprintf (fp, "%s Proc %d\n", yo, zz->Proc);
+  fprintf (fp, "Vertices (GID, LID, index)\n");
+  for (i = 0; i < zoltan_hg->nObj; i++) {
     fprintf(fp, "(");
-    ZOLTAN_PRINT_GID(zz, &(zoltan_hg->Global_IDs[i * num_gid]));
+    ZOLTAN_PRINT_GID(zz, &zoltan_hg->GIDs[i * num_gid]);
     fprintf(fp, ", ");
-    ZOLTAN_PRINT_LID(zz, &(zoltan_hg->Local_IDs [i * num_lid]));
+    ZOLTAN_PRINT_LID(zz, &zoltan_hg->LIDs[i * num_lid]);
     fprintf(fp, ", %d)\n", i);
   }
-
   Zoltan_HG_Print(zz, hg, parts, fp, "Build");
-
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 
-
-
-/* static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
-{
-int i, j, *parts, nparts;
-double cut = 0.0;
-char *yo = "hcut_size_links";
-
-  if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-
-  for (i = 0; i < hg->nEdge; i++) {
-     nparts = 0;
-     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
-        if (parts[part[hg->hvertex[j]]] < i + 1)
-           nparts++;
-        parts[part[hg->hvertex[j]]] = i + 1;
-        }
-     cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
-     }
-  ZOLTAN_FREE ((void**) &parts);
-  return cut;
-}
-*/
-
-/* static double hcut_size_total (HGraph *hg, Partition part)
-{
-int i, j, hpart;
-double cut = 0.0;
-
-  for (i = 0; i < hg->nEdge; i++) {
-     hpart = part[hg->hvertex[hg->hindex[i]]];
-     for (j = hg->hindex[i] + 1; j < hg->hindex[i+1]
-      && part[hg->hvertex[j]] == hpart; j++);
-         if (j != hg->hindex[i+1])
-            cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
-     }
-  return cut;
-}
-*/
 
 /*****************************************************************************/
 #ifdef __cplusplus

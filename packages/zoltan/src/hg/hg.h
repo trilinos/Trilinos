@@ -40,22 +40,7 @@ extern "C" {
 
 #define EPS 1e-6
     
-
 /*****************************************************************************/
-/* Data structure for Zoltan's base hypergraph.
- * Includes Zoltan IDs corresponding to local objects (vertices) and
- * a HGraph as used by the algorithms. */
-
-struct Zoltan_HGraph {
-  ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
-  ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
-  Partition Input_Parts;    /* Initial partition #s for on-processor objects */
-  HGraph HG;                /* Hypergraph for initial objects.       */
-};
-typedef struct Zoltan_HGraph ZHG;
-
-/*****************************************************************************/
-
 
 typedef struct {
   HGraph    *hg;
@@ -191,10 +176,9 @@ void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 /* Prototypes */
 extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
-extern int Zoltan_HG_Hypergraph_Callbacks(ZZ *, int, float, int, 
+extern int Zoltan_HG_Hypergraph_Callbacks(ZZ *, ZHG *, int, float, int, 
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
-  ZOLTAN_ID_PTR *, int **, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
-  int **, float **);
+  ZOLTAN_ID_PTR *, int **);
 
 extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, Partition, FILE*);
 extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,

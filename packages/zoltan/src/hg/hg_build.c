@@ -53,9 +53,19 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
   }
 
   /* Initialize the Zoltan hypergraph data fields. */
-  zhg->Global_IDs = NULL;
-  zhg->Local_IDs = NULL;
+  zhg->nObj = 0;
+  zhg->GIDs = NULL;
+  zhg->LIDs = NULL;
   zhg->Input_Parts = NULL;
+  zhg->Output_Parts = NULL;
+  zhg->nRemove = 0;
+  zhg->Remove_EGIDs = NULL;
+  zhg->Remove_ELIDs = NULL;
+  zhg->Remove_Esize = NULL;
+  zhg->Remove_Ewgt = NULL;
+  zhg->nRecv_GNOs = 0;
+  zhg->Recv_GNOs = NULL;
+  zhg->VtxPlan = NULL;
 
   hgraph = &(zhg->HG);
   Zoltan_HG_HGraph_Init(hgraph);
@@ -67,13 +77,14 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
     /* Hypergraph callback functions exist; call them and build the HG directly */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-    ierr = Zoltan_Get_Obj_List(zz, &(hgraph->nVtx), &(zhg->Global_IDs),
-      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt),
+    ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs),
+      &(zhg->LIDs), zz->Obj_Weight_Dim, &(hgraph->vwgt),
       &(zhg->Input_Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
     }
+    hgraph->nVtx = zhg->nObj;
 
     ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -92,17 +103,18 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
     Zoltan_HG_Graph_Init(&graph);
-    ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt),
+    ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs),
+      &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt),
       &(zhg->Input_Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       Zoltan_HG_Graph_Free(&graph);
       goto End;
     }
+    graph.nVtx = zhg->nObj;
 
     ierr = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
-     zhg->Global_IDs, zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
+     zhg->GIDs, zhg->LIDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
      &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
@@ -128,8 +140,8 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
      /* Geometric callbacks are registered;       */
      /* get coordinates for hypergraph objects.   */
      ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
-     ierr = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
-      zhg->Local_IDs, &(hgraph->nDim), &(hgraph->coor));
+     ierr = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->GIDs,
+      zhg->LIDs, &(hgraph->nDim), &(hgraph->coor));
   }
 
   if (hgp->check_graph) {
@@ -150,8 +162,8 @@ End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
     Zoltan_HG_HGraph_Free(&(zhg->HG));
-    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
-     &(zhg->Local_IDs), &(zhg->Input_Parts), zoltan_hg);
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->GIDs),
+     &(zhg->LIDs), &(zhg->Input_Parts), zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -183,23 +195,18 @@ int i, j;
 int cnt;
 int ierr = ZOLTAN_OK;
 
-ZOLTAN_ID_PTR global_ids = zhg->Global_IDs;  
+ZOLTAN_ID_PTR global_ids = zhg->GIDs;  
 HGraph *hg = &(zhg->HG);
 int nVtx = hg->nVtx;                     
 int num_gid_entries = zz->Num_GID;
 static PHGComm scomm;
 static int first_time = 1;
-int nremove;    /* Number of dense hyperedges removed. */
 
-  /* KDDKDD For now, do not return removed edges; will need them later,
-   * KDDKDD though for correct cutsize computation. 
-   */
-  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, nVtx, hgp->EdgeSizeThreshold,
-                                        0, &(hg->nEdge), 
+  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg, nVtx, hgp->EdgeSizeThreshold,
+                                        1, &(hg->nEdge), 
                                         &edge_gids, &edge_lids, &edge_sizes,
                                         &(hg->ewgt), &(hg->nPins), 
-                                        &edge_verts, &edge_procs, 
-                                        &nremove, NULL, NULL, NULL, NULL);
+                                        &edge_verts, &edge_procs);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Error returned from Zoltan_HG_Hypergraph_Callbacks");
@@ -259,6 +266,7 @@ int nremove;    /* Number of dense hyperedges removed. */
     scomm.RNGState_col = Zoltan_Rand(NULL);
     first_time = 0;
   }
+  scomm.zz = zz;
 
   hg->comm = &scomm;
   
@@ -266,7 +274,7 @@ int nremove;    /* Number of dense hyperedges removed. */
     /* 
      * Correlate GIDs in edge_verts with local indexing in zhg to build the
      * input HG.
-     * Use hash table to map global IDs to local position in zhg->Global_IDs.
+     * Use hash table to map global IDs to local position in zhg->GIDs.
      * Based on hashing code in Zoltan_Build_Graph.
      * KDD -- This approach is serial for now; look more closely at 
      * KDD -- Zoltan_Build_Graph when move to parallel.

@@ -21,6 +21,9 @@
 extern "C" {
 #endif
 
+/********************************************************************
+ * A seldom-used graph data structure.
+ ********************************************************************/
     
 typedef struct {
    int info;    /* primarily for debugging recursive algorithms;initially 0 */
@@ -48,8 +51,13 @@ typedef struct {
    } Graph;
 
 
+/********************************************************************
+ * Hypergraph data structure.  Supports both serial hypergraph and 
+ * 2D data distribution (where each block is, in fact, a serial 
+ * hypergraph).
+ ********************************************************************/
 typedef struct {
-  int info;             /* primarily for debugging recursive algorithms;initially 0 */
+  int info;             /* primarily for debugging recursive algs;initially 0 */
   int nVtx;             /* number of vertices on this processor */
   int nEdge;            /* number of hyperedges on this processor */
   int nPins;            /* number of pins (nonzeros) on this processor */
@@ -57,7 +65,7 @@ typedef struct {
   int VtxWeightDim;     /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
 
-    /* arrays with vertex and edge weights */
+  /* arrays with vertex and edge weights */
   float *vwgt;    /* weights of vertices, nVtx long by VtxWeightDim */
   float *ewgt;    /* weights of hypergraph edges, nEdge long by EdgeWeightDim */
     
@@ -73,17 +81,17 @@ typedef struct {
   int *vindex;      /* length nVtx+1 index into vedge, last is nPins */
   int *vedge;       /* length nPins array containing associated hyperedges */
 
-    /* UVCUVC: todo vmap, ratio and redl should be removed from HGraph
-       and some could go to VCycle struct in RB code */
+  /* UVCUVC: todo vmap, ratio and redl should be removed from HGraph
+     and some could go to VCycle struct in RB code */
   int *vmap;        /* used when recursively dividing for p > 2 */
   double ratio;     /* split when recursively dividing for p > 2 */
   int redl;         /* working reduction limit */
 
     
-  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct: (set in phg_build)
-                     UVCUVC: I've included here because nProc_x, nProc_y was here
-                     for convenience.
-                   */
+  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct:
+                     (set in phg_build)
+                     UVCUVC: I included here because nProc_x, nProc_y was here
+                     for convenience.  */
   int *dist_x;    /* distributions of vertices to processor columns. Vertices
                    * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
   int *dist_y;    /* distribution of hyperedges to processor rows as above */                  
@@ -91,6 +99,35 @@ typedef struct {
 } HGraph;
 
 
+/********************************************************************
+ * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 
+ * corresponding to local objects (vertices) and a HGraph as used 
+ * by the partitioning algorithms. 
+ ********************************************************************/
+
+struct Zoltan_HGraph {
+  int nObj;                 /* Number of on-processor objects. */
+  ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
+  ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
+  int *Input_Parts;         /* Initial partition #s for on-processor objects */
+  int *Output_Parts;        /* Final partition #s for on-processor objects */
+  int nRemove;              /* # of input hyperedges removed */
+  ZOLTAN_ID_PTR Remove_EGIDs;/* GIDs of removed hyperedges */
+  ZOLTAN_ID_PTR Remove_ELIDs;/* LIDs of removed hyperedges */
+  int *Remove_Esize;        /* Size (# of vtx) in each removed hyperedge */
+  float *Remove_Ewgt;       /* Edge weights for each removed hyperedge */
+  int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
+  int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
+                               received from other processors in row.
+                               Used to fill buffer for Comm_Do_Reverse
+                               with VtxPlan in building return lists. */
+  ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
+                               within row communicators. */
+  HGraph HG;                /* Hypergraph for initial objects.       */
+};
+typedef struct Zoltan_HGraph ZHG;
+
+/******************************************************************************/
 /* Matching, Packing, and Grouping arrays.  Technically, they are all the same;
  * the different typedefs are not needed.  In the description below, Matching is
  * used; the same description applies to Packing and Grouping.  If a vertex i is
@@ -102,7 +139,7 @@ typedef int *Matching;  /* length |V|, matching information of vertices */
 typedef int *Packing;   /* length |V|, packing information of vertices */
 typedef int *Grouping;  /* length |V|, grouping information of vertices */
 
-typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse vertices */
+typedef int *LevelMap;  /* length |V|, mapping of fine vtxs onto coarse vtxs */
 typedef int *Partition; /* length |V|, partition ID for each vertex */
 
 

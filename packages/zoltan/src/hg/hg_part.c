@@ -327,11 +327,10 @@ double cut = 0.0;
 
   for (i = 0; i < hg->nEdge; i++) {
      hpart = part[hg->hvertex[hg->hindex[i]]];
-     for (j = hg->hindex[i] + 1; j < hg->hindex[i+1]
-      && part[hg->hvertex[j]] == hpart; j++);
-         if (j != hg->hindex[i+1])
-            cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
-     }
+     for (j = hg->hindex[i] + 1; 
+          j < hg->hindex[i+1] && part[hg->hvertex[j]] == hpart; j++);
+     if (j != hg->hindex[i+1]) cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
+  }
   return cut;
 }
 
@@ -357,7 +356,7 @@ char *yo = "hcut_size_links";
   if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
-     }
+  }
 
   for (i = 0; i < hg->nEdge; i++) {
      nparts = 0;
@@ -365,9 +364,9 @@ char *yo = "hcut_size_links";
         if (parts[part[hg->hvertex[j]]] < i+1)
            nparts++;
         parts[part[hg->hvertex[j]]] = i + 1;
-        }
-     cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
      }
+     cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
+  }
   ZOLTAN_FREE ((void**) &parts);
   return cut;
 }

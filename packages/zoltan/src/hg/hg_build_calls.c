@@ -18,6 +18,7 @@ extern "C" {
 
 #include "zz_const.h"
 #include "zz_util_const.h"
+#include "hg_hypergraph.h"
     
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
@@ -28,6 +29,10 @@ extern "C" {
 
 int Zoltan_HG_Hypergraph_Callbacks(
   ZZ *zz,
+  ZHG *zhg,                /* Input:   Pointer to Zoltan's structure with
+                                       GIDs, LIDs.
+                              Output:  Removed edge fields of zhg are changed
+                                       if dense edges are removed. */
   int gnVtx,               /* Input:   Global number of vertices in hgraph */
   float esize_threshold,   /* Input:   %age of gnVtx considered a dense edge */
   int return_removed,      /* Input:   flag indicating whether to return
@@ -42,19 +47,7 @@ int Zoltan_HG_Hypergraph_Callbacks(
   int *npins,              /* Output:  # of pins on this processor = 
                                        sum esizes[i], i = 0..nedges-1. */
   ZOLTAN_ID_PTR *pins,     /* Output:  vertex GIDs of pins */
-  int **pin_procs,         /* Output:  processors owning pin vertices */
-  int *nremove,                /* Output:  if return_removed:
-                                           # of dense edges removed */
-  ZOLTAN_ID_PTR *remove_gids,  /* Output:  if return_removed:
-                                           GIDs of removed dense hyperedges */
-  ZOLTAN_ID_PTR *remove_lids,  /* Output:  if return_removed:
-                                           LIDs of removed dense hyperedges */
-  int **remove_esizes,         /* Output:  if return_removed:
-                                           # of vertices for each hyperedge on
-                                           this processor */
-  float **remove_ewgts         /* Output:  if return_removed:
-                                           edge weights for each hyperedge on
-                                           this processor */
+  int **pin_procs          /* Output:  processors owning pin vertices */
 )
 {
 /* Function to call the Zoltan Hypergraph callback functions */
@@ -69,6 +62,12 @@ int num_lid_entries = zz->Num_LID;
 float gesize_threshold;   /* Edges with more vertices than gesize_threshold
                              are considered to be dense. */
 int nkeep;                /* Number of edges below gesize_threshold. */
+int nremove;              /* Number of edges to be removed; i.e., number of
+                             edges above gesize_threshold. */
+ZOLTAN_ID_PTR remove_egids = NULL;  /* Edge GIDs for removed edges */
+ZOLTAN_ID_PTR remove_elids = NULL;  /* Edge LIDs for removed edges */
+int *remove_esizes = NULL;          /* Edge sizes (# pins) for removed edges */
+float *remove_ewgts = NULL;         /* Edge weights for removed edges */
 
   *nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -97,32 +96,33 @@ int nkeep;                /* Number of edges below gesize_threshold. */
       goto End;
     }
                      
-    /* KDDKDD ADD HERE:  DENSE EDGE REMOVAL FROM egids/elids */
-
+    /* Remove dense edges from input list */
     gesize_threshold = esize_threshold * gnVtx;
-    *nremove = 0;
+    nremove = 0;
     for (i = 0; i < *nedges; i++) 
       if ((*esizes)[i] > gesize_threshold)  {
-        (*nremove)++;
-printf("%d KDDKDD Removing edge (%d %u) size %d:  %f %f\n", zz->Proc, i, (*egids)[i], (*esizes)[i], esize_threshold, gesize_threshold);
+        nremove++;
       }
 
-    if (*nremove) {
-      /* Keep a record of removed edges so we can get their edge lists
-       * later if needed (e.g., to evaluate total partition quality) */
+    if (nremove) {
       if (return_removed) {
-        *remove_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, *nremove);
-        *remove_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, *nremove);
-        *remove_esizes = (int *) ZOLTAN_MALLOC(*nremove * sizeof(int));
+        /* Keep a record of removed edges so we can get their edge lists
+         * later if needed (e.g., to evaluate total partition quality) */
+        zhg->nRemove = nremove;
+        zhg->Remove_EGIDs = remove_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nremove);
+        zhg->Remove_ELIDs = remove_elids = ZOLTAN_MALLOC_LID_ARRAY(zz, nremove);
+        zhg->Remove_Esize = remove_esizes 
+                          = (int *) ZOLTAN_MALLOC(nremove * sizeof(int));
         if (ewgtdim)
-          *remove_ewgts = (float *) ZOLTAN_MALLOC(*nremove * ewgtdim
-                                                           * sizeof(float));
+          zhg->Remove_Ewgt = remove_ewgts 
+                           = (float *) ZOLTAN_MALLOC(nremove * ewgtdim
+                                                              * sizeof(float));
   
-        if (!(*remove_gids) || !(*remove_lids) || (*remove_esizes) 
-            || (ewgtdim && !(*remove_ewgts))) MEMORY_ERROR;
+        if (!remove_egids || (num_lid_entries && !remove_elids) 
+            || !remove_esizes || (ewgtdim && !remove_ewgts)) MEMORY_ERROR;
       }
       
-      *nremove = nkeep = 0;
+      nremove = nkeep = 0;
       for (i = 0; i < *nedges; i++)
         if ((*esizes)[i] <= gesize_threshold) {
           /* Keep the edge in egids/elids to obtain its pins. */
@@ -141,15 +141,15 @@ printf("%d KDDKDD Removing edge (%d %u) size %d:  %f %f\n", zz->Proc, i, (*egids
         else if (return_removed) {
           /* Remove the edges from egids/elids; don't want to have to 
              allocate memory for its pins */
-          ZOLTAN_SET_GID(zz, &((*remove_gids)[*nremove*num_gid_entries]),
+          ZOLTAN_SET_GID(zz, &(remove_egids[nremove*num_gid_entries]),
                              &((*egids)[i*num_gid_entries]));
           if (num_lid_entries)
-            ZOLTAN_SET_LID(zz, &((*remove_lids)[nkeep*num_lid_entries]),
+            ZOLTAN_SET_LID(zz, &(remove_elids[nremove*num_lid_entries]),
                                &((*elids)[i*num_lid_entries]));
-          (*remove_esizes)[*nremove] = (*esizes)[i];
+          remove_esizes[nremove] = (*esizes)[i];
           for (j = 0; j < ewgtdim; j++)
-            (*remove_ewgts)[*nremove * ewgtdim + j] = (*ewgts)[i*ewgtdim + j];
-          (*nremove)++;
+            remove_ewgts[nremove * ewgtdim + j] = (*ewgts)[i*ewgtdim + j];
+          (nremove)++;
         }
       *nedges = nkeep;
     }
