@@ -203,6 +203,23 @@ public:
   */
   virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
 
+  //! Apply right preconditiong to the given input vector
+  /*!
+    Let \f$M\f$ be a right preconditioner for the Jacobian \f$J\f$; in
+    other words, \f$M\f$ is a matrix such that
+    \f[ JM \approx I. \f]
+    Computes 
+    \f[ \mbox{result} = M^{-1} \; \mbox{input}, \f]
+    and returns \c true.
+
+    Returns false if any errors are encountered.
+
+    The parameters are from the "Linear %Solver" sublist of the
+    "%Direction" sublist that is passed to solver during construction.
+  */
+  virtual bool applyRightPreconditioning(Parameter::List& params,
+					 const Vector& input, 
+					 Vector& result) const;
   //@}
 
   /** @name "Is" functions.

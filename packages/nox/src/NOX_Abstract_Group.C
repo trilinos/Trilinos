@@ -60,7 +60,8 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return false;
 }
 
-bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& input, Vector& result) const
+bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& input, 
+				 Vector& result) const
 {
   return false;
 }
@@ -68,6 +69,13 @@ bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& inp
 bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
 {
   return false;
+}
+
+bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& input, 
+				      Vector& result) const
+{
+  result = input;
+  return true;
 }
 
 bool Group::isJacobian() const
