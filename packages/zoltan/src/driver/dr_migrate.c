@@ -485,14 +485,15 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
   /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
   size += gmax_adj_len * 2 * sizeof(int);
 
-  /* Add space to correct alignment so casts work in (un)packing. */
-  size += pad_for_alignment(size);
-
   /* Assume if one element has edge wgts, all elements have edge wgts. */
-  if (Use_Edge_Wgts)
+  if (Use_Edge_Wgts) {
+    /* Add space to correct alignment so casts work in (un)packing. */
+    size += pad_for_alignment(size);
     size += gmax_adj_len * sizeof(float);
+  }
 
   /* Add space for coordinate info */
+  size += pad_for_alignment(size);
   size += gmax_nnodes * Mesh.num_dims * sizeof(float);
   
   return (size);
@@ -568,19 +569,23 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
    * copy the allocated float fields for this element.
    */
 
-  /* Pad the buffer so the following casts will work.  */
-  size += pad_for_alignment(size);
-
-  buf_float = (float *) (buf + size);
-
   /* copy the edge_wgt data */
   if (Use_Edge_Wgts) {
+
+    /* Pad the buffer so the following casts will work.  */
+    size += pad_for_alignment(size);
+    buf_float = (float *) (buf + size);
+
     for (i = 0; i < current_elem->adj_len; i++) {
       *buf_float = current_elem->edge_wgt[i];
       buf_float++;
     }
     size += current_elem->adj_len * sizeof(float);
   }
+
+  /* Pad the buffer so the following casts will work.  */
+  size += pad_for_alignment(size);
+  buf_float = (float *) (buf + size);
 
   /* copy coordinate data */
   for (i = 0; i < num_nodes; i++) {
@@ -721,16 +726,13 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
     }
     size += current_elem->adj_len * 2 * sizeof(int);
 
-    /*
-     * copy the allocated float fields for this element.
-     */
-
-    /* Pad the buffer so the following casts will work.  */
-    size += pad_for_alignment(size);
-    buf_float = (float *) (buf + size);
-
     /* copy the edge_wgt data */
     if (Use_Edge_Wgts) {
+
+      /* Pad the buffer so the following casts will work.  */
+      size += pad_for_alignment(size);
+      buf_float = (float *) (buf + size);
+
       current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
                                               * sizeof(float));
       if (current_elem->edge_wgt == NULL) {
