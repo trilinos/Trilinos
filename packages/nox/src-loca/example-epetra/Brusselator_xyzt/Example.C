@@ -99,11 +99,9 @@
 #include "Problem_Interface.H" // Interface file to NOX
 #include "Brusselator.H"              
 
-#ifdef HAVE_MPI
 #ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
 #define DO_XYZT 1
-#endif
 #endif
 
 #ifdef DO_XYZT
@@ -160,6 +158,11 @@ int main(int argc, char *argv[])
 #endif
 #else
   cout << "RUNNING IN SERIAL, NOT MPI " << endl;
+#ifdef DO_XYZT
+  int timeStepsPerProc= 1; // default
+  if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
+  Epetra_SerialComm globalComm;
+#endif
   Epetra_SerialComm Comm;
 #endif
 

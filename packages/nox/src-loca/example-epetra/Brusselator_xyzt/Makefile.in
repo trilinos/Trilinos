@@ -86,8 +86,7 @@ am__EXEEXT_1 = example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-Brusselator.$(OBJEXT) example-Basis.$(OBJEXT) \
-	example-Problem_Interface.$(OBJEXT) \
-	example-LOCA_EpetraNew_Interface_xyzt.$(OBJEXT)
+	example-Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -96,7 +95,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-Basis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Brusselator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -287,9 +285,7 @@ EXAMPLE = example
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Brusselator.C $(srcdir)/Brusselator.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
-	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C $(srcdir)/LOCA_EpetraNew_Interface_xyzt.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_MassMatrix.H
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H 
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
@@ -356,7 +352,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Basis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Brusselator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 
 .C.o:
@@ -438,22 +433,6 @@ example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-example-LOCA_EpetraNew_Interface_xyzt.o: $(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-LOCA_EpetraNew_Interface_xyzt.o -MD -MP -MF "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo" -c -o example-LOCA_EpetraNew_Interface_xyzt.o `test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo" "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' object='example-LOCA_EpetraNew_Interface_xyzt.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-LOCA_EpetraNew_Interface_xyzt.o `test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
-
-example-LOCA_EpetraNew_Interface_xyzt.obj: $(srcdir)/LOCA_EpetraNew_Interface_xyzt.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -MT example-LOCA_EpetraNew_Interface_xyzt.obj -MD -MP -MF "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo" -c -o example-LOCA_EpetraNew_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo" "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po"; else rm -f "$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C' object='example-LOCA_EpetraNew_Interface_xyzt.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.Po' tmpdepfile='$(DEPDIR)/example-LOCA_EpetraNew_Interface_xyzt.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-LOCA_EpetraNew_Interface_xyzt.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

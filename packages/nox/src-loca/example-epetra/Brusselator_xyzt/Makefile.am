@@ -35,9 +35,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Brusselator.C $(srcdir)/Brusselator.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
-	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C $(srcdir)/LOCA_EpetraNew_Interface_xyzt.H \
-	$(srcdir)/LOCA_EpetraNew_Interface_MassMatrix.H
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H 
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
