@@ -17,7 +17,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, solaris, gcc, linux, tflop, cplant,
+# where arch-type is one of {generic, solaris, gcc, gcc64, linux, tflop, cplant,
 # dec, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
@@ -133,7 +133,6 @@ if (! $?run ) then
     switch ( $arch )
     case generic:
     case gcc:
-    case gcc64
     case gccP3:
     case g++:
     case linux:
@@ -141,6 +140,10 @@ if (! $?run ) then
     case sun:
     case sgi32:
     case sgi64:
+      set run = "mpirun -np"
+      breaksw
+    case gcc64:
+      set no_nemesis = 1
       set run = "mpirun -np"
       breaksw
     case tflop:
@@ -363,6 +366,7 @@ echo " " >> $logfile
 if (! $no_chaco ) then
   @ nprob = $#ch_name
   @ nfailed = 0
+  @ ndropfailed = 0
   while ( $#ch_name )
 
     # Go to the next test directory, initialize
@@ -394,6 +398,8 @@ if (! $no_chaco ) then
     foreach mtd ( $methods )
       # Clear fail flag
       @ fail = 0
+      @ dropfail = 0
+      @ droptest = 0
       @ skip = 0  # Was used to skip certain methods in previous versions.
 
       if (! $skip ) then
@@ -403,6 +409,14 @@ if (! $no_chaco ) then
           /bin/cp zdrive.inp.${mtd} zdrive.inp
           if (-e ${outdir}/${ch_name[1]}.$mtd.$np.0 ) then
             /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
+          endif
+
+          #  Delete old drop files, if any.
+          if (-e ${outdir}/${ch_name[1]}.$mtd.drops.$np.0 ) then
+            /bin/rm ${outdir}/${ch_name[1]}.$mtd.drops.$np.*
+          endif
+          if (-e ${ch_name[1]}.drops.$np.0 ) then
+            /bin/rm ${ch_name[1]}.drops.$np.*
           endif
 
           # Run the driver
@@ -422,6 +436,22 @@ if (! $no_chaco ) then
             if ( $status ) then 
               @ fail = 1
             endif
+
+            # If drop files were created, test them. 
+            if (-e ${ch_name[1]}.drops.$np.$i ) then
+              @ droptest = 1
+              /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
+              if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$arch ) then
+       	        set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$arch
+              else
+                set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
+              endif
+              diff -cw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+              if ( $status ) then 
+                @ dropfail = 1
+              endif
+            endif
+
             @ i = $i + 1
           end
     
@@ -436,6 +466,16 @@ if (! $no_chaco ) then
           echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
         else
           echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
+        endif
+
+        # Report failure of drop tests, if any.
+        if ( $droptest ) then
+          if ( $dropfail ) then
+            @ ndropfailed = $ndropfailed + 1
+            echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+          else
+            echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+          endif
         endif
 
       endif # !skip
@@ -459,6 +499,12 @@ if (! $no_chaco ) then
     echo "Failure: $nfailed Chaco problems failed." | tee -a $logfile
   endif
   echo " " | tee -a $logfile
+  if ( $ndropfailed == 0 ) then
+    echo "Success: all Chaco drop tests passed." | tee -a $logfile
+  else
+    echo "Failure: $ndropfailed Chaco drop tests failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
 
 endif # chaco
 
@@ -466,6 +512,7 @@ endif # chaco
 if (! $no_nemesis ) then
   @ nprob = $#nem_name
   @ nfailed = 0
+  @ ndropfailed = 0
   while ( $#nem_name )
 
     # Go to the next test directory, initialize
@@ -486,6 +533,8 @@ if (! $no_nemesis ) then
     foreach mtd ( $nem_methods )
       # Clear fail flag
       @ fail = 0
+      @ dropfail = 0
+      @ droptest = 0
       @ skip = 0
 
       if (! $skip ) then
@@ -494,6 +543,7 @@ if (! $no_nemesis ) then
         if (-e zdrive.inp.${mtd} ) then
           /bin/cp zdrive.inp.${mtd} zdrive.inp
           /bin/rm ${outdir}/${nem_name[1]}.$mtd.$np.*
+          /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
     
           # Run the driver
           $run $np ../$zdrive
@@ -517,6 +567,21 @@ if (! $no_nemesis ) then
             if ( $status ) then 
               @ fail = 1
             endif
+
+            if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
+              @ droptest = 1
+              /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i  ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i
+              if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$arch ) then
+      	        set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$arch
+              else
+                set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
+              endif
+              diff -cw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+              if ( $status ) then 
+                @ dropfail = 1
+              endif
+            endif
+
             @ i = $i + 1
             @ pdirno = $pdirno + 1
             if ($pdirno > $nem_pdisk[1]) then
@@ -536,6 +601,14 @@ if (! $no_nemesis ) then
           echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
         endif
 
+        if ( $droptest ) then
+          if ( $dropfail ) then
+            @ ndropfailed = $ndropfailed + 1
+            echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+          else
+            echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile 
+          endif
+        endif
       endif # !skip
 
     end # foreach method
@@ -558,6 +631,12 @@ if (! $no_nemesis ) then
     echo "Failure: $nfailed Nemesis problems failed." | tee -a $logfile
   endif
   echo " " | tee -a $logfile
+  if ( $ndropfailed == 0 ) then
+    echo "Success: all Nemesis drop tests passed." | tee -a $logfile
+  else
+    echo "Failure: $ndropfailed Nemesis drop tests failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
 
 endif # Nemesis
 
@@ -568,7 +647,7 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {generic, gcc, sun, solaris, tflop, cplant, dec, linux, sgi32, sgi64}."
+  echo "where arch-type is one of {generic, gcc, gcc64, sun, solaris, tflop, cplant, dec, linux, sgi32, sgi64}."
   echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."
