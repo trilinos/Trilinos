@@ -60,7 +60,7 @@ int ML_Operator_blockmat_matvec(void *data, int inlen, double invec[],
 int ML_Operator_blockmat_comm( double *x, void *data)
 {
   struct ML_Operator_blockmat_data *ML_Operator_blockmat_data;
-  int k, N_Ke, Nghost, i;
+  int N_Ke, Nghost, i;
   double *temp;
   ML_Operator *mat;
 
