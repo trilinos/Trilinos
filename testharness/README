@@ -1,7 +1,10 @@
 ################################################################################
-# The Trilinos Project - Test-Harness
+# The Trilinos Project - Test Harness
 #
 # README
+#
+# For more detailed information, visit:
+#   http://software.sandia.gov/trilinos/developer/test_harness.html
 #
 # Jim Willenbring, Mike Phenow, Ken Stanley
 #
@@ -11,62 +14,54 @@
  Usage
 --------------------------------------------------------------------------------
 
- ./test-harness.plx -f FILENAME		run test-harness with FILENAME config file
+ perl test-harness.plx -f FILENAME	run test harness with FILENAME config file
 
- ./test-harness.plx -nf FILENAME	run test harness with given test-harness-
+ perl test-harness.plx -nf FILENAME	run test harness with given test harness 
                                     config file, but don't run tests (for cross-
                                     compiling machines)
 
- ./test-harness.plx -tf FILENAME	run test harness with given test-harness-
+ perl test-harness.plx -tf FILENAME	run test harness with given test harness-
                                     config file, but don't configure and build--
                                     only run tests (for cross-compiling 
                                     machines)
 
- ./test-harness.plx -p FILENAME		parse FILENAME config file and exit--this is 
+ perl test-harness.plx -p FILENAME	parse FILENAME config file and exit--this is 
                                     useful for catching errors and 
                                     inconsistencies without running the entire 
                                     test-harness
 
- ./test-harness.plx -g FILENAME		generate commented config file (with 
+ perl test-harness.plx -g FILENAME	generate commented config file (with 
 									defaults) named FILENAME and exit
 
- ./test-harness.plx -sg FILENAME	generate uncommented config file (with 
+ perl test-harness.plx -sg FILENAME	generate uncommented config file (with 
 									defaults) named FILENAME and exit
 
- ./test-harness.plx -h				print test-harness help/usage information
+ perl test-harness.plx -h			print test harness help/usage information
 									and exit
 
- Note: if "./test-harness.plx" doesn't work on your machine, try 
-       "perl test-harness.plx"
-
 --------------------------------------------------------------------------------
- Requirements
+ Required Shell Programs
 --------------------------------------------------------------------------------
 
-- Programs - 
-  - mv, rm, cp, mkdir, find, date, uname, configure, make
-
-- Perl Modules - 
-  - 
-
-- Files & Permissions - 
-  - 
+ mv, rm, cp, mkdir, find, date, uname, configure, make
 
 --------------------------------------------------------------------------------
- Directory Structure
+ Directory Contents
 --------------------------------------------------------------------------------
 
-test-harness(.plx)		- test-harness perl executable
-dependencies  			- list of all Trilinos package dependencies
-README					- this README file
+ test-harness.plx	    - test harness perl executable
+ dependencies  			- list of all Trilinos package dependencies
+ README					- this README file
 
-config/					- test-harness config files
-elements-machine/		- machine-dependent invoke-configure elements
-elements-trilinos/		- machine-independent invoke-configure elements
+ config/				- test harness config files
+ elements-machine/		- machine-dependent invoke-configure elements
+ elements-trilinos/		- machine-independent invoke-configure elements
 
-results/                - location of output if REPORT_METHOD is 
+ lib/                   - location of perl modules required by the test harness
+
+ results/               - location of output if REPORT_METHOD is 
                           LOCAL_FILESYSTEM
 
---------------------------------------------------------------------------------
- FAQ
---------------------------------------------------------------------------------
+ test-harness           - old test harness (deprecated)
+ checkin-test-harness   - old checkin test harness (deprecated)
+ subdir-list            - old test harness data file (deprecated)
