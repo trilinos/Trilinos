@@ -33,6 +33,7 @@
 #include "NOX_Common.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_BLAS_Wrappers.H"
+#include "NOX_Random.H" // for Random class
 
 NOX::LAPACK::Vector::Vector() : 
   n(0),
@@ -137,10 +138,10 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::init(double value)
 NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, int seed) 
 {
   if (useSeed)
-    urand.setSeed(seed);
+    NOX::Random::setSeed(seed);
 
   for (int i = 0; i < n; i ++) 
-    x[i] = urand();
+    x[i] = NOX::Random::number();
 
   return *this;
 }

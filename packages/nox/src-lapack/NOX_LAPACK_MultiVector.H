@@ -37,8 +37,6 @@
 
 #ifdef HAVE_NOX_MULTIVECS
 
-#include "NOX_Random.H" // for Random class
-
 namespace NOX {
   namespace LAPACK {
     class Vector;
@@ -287,9 +285,6 @@ namespace NOX {
 
       //! Flag indicating whether columns are owned by this multivector
       bool ownsCols;
-
-      //! Random number generator
-      NOX::Random urand;
 
       //! Default constructor (Protected)
       MultiVector();

@@ -33,6 +33,7 @@
 #include "NOX_LAPACK_MultiVector.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_BLAS_Wrappers.H"
+#include "NOX_Random.H"
 
 NOX::LAPACK::MultiVector::MultiVector() {}
 
@@ -124,11 +125,11 @@ NOX::Abstract::MultiVector&
 NOX::LAPACK::MultiVector::random(bool useSeed, int seed)
 {
   if (useSeed)
-    urand.setSeed(seed);
+    NOX::Random::setSeed(seed);
 
   for (int j=0; j<numCols; j++)
     for (int i=0; i<len; i++)
-      vecPtrs[j][i] = urand();
+      vecPtrs[j][i] = NOX::Random::number();
 
   return *this;
 }

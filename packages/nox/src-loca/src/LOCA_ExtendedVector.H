@@ -35,7 +35,6 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
-#include "NOX_Random.H"
 
 namespace LOCA {
 
@@ -167,9 +166,6 @@ namespace LOCA {
 
     //! Array of doubles
     vector< double > scalars;
-
-    //! Random number generator
-    NOX::Random urand;
 
   }; // class ExtendedVector
 } // namespace LOCA

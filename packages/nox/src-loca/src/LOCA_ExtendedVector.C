@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Random.H" //for NOX::random()
+#include "NOX_Random.H" //for NOX::Random
 #include "LOCA_ExtendedVector.H"  // Class definition
 
 LOCA::ExtendedVector::ExtendedVector(int nvecs, int nscalars) :
@@ -97,12 +97,14 @@ LOCA::ExtendedVector::init(double gamma)
 
 NOX::Abstract::Vector& 
 LOCA::ExtendedVector::random(bool useSeed, int seed) {
-  for (unsigned int i=0; i<vectorPtrs.size(); i++)
-    vectorPtrs[i]->random(useSeed, seed);
   if (useSeed)
-    urand.setSeed(seed);
+    NOX::Random::setSeed(seed);
   for (unsigned int i=0; i<scalars.size(); i++)
-    scalars[i] = urand();
+    scalars[i] = NOX::Random::number();
+  if (vectorPtrs.size() > 0)
+    vectorPtrs[0]->random(useSeed, seed);
+  for (unsigned int i=1; i<vectorPtrs.size(); i++)
+    vectorPtrs[i]->random();
   return *this;
 }
 

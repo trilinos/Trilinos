@@ -68,10 +68,10 @@ namespace NOX {
         (inclusive).  If the supplied seed is invalid, an error message
 	is printed and the seed is replaced by 1.
     */
-    void setSeed(int s);
+    static void setSeed(int s);
       
     //! Compute a random number
-    double operator() ();
+    static double number();
 
   protected:
 
@@ -79,12 +79,12 @@ namespace NOX {
     /*! The %string argument supplies the calling function name for an error
         message in the case that the supplied seed is invalid.
     */
-    double checkSeed(const string& func, int s);
+    static int checkSeed(const string& func, int s);
 
   protected:
       
     //! Seed value
-    double seed;
+    static double seed;
   };
 
 }

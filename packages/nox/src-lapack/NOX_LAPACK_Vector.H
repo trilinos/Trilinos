@@ -37,7 +37,6 @@
 
 #include "NOX_Abstract_Vector.H" // base class
 #include "NOX_Common.H" // for #include<vector>
-#include "NOX_Random.H" // for Random class
 
 namespace NOX {
 
@@ -194,10 +193,6 @@ namespace NOX {
 
       //! Whether this vector is a view
       bool isView;
-
-      //! Random number generator
-      NOX::Random urand;
-
     };
 
   } // namespace LAPACK
