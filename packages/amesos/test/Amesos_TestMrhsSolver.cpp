@@ -29,6 +29,9 @@
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+#include "Amesos_Superludist.h"
+#endif
 #ifdef HAVE_AMESOS_SLUD2
 #include "Superludist2_OO.h"
 #endif
@@ -366,6 +369,30 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( mumps.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+
+      }
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    } else if ( SparseSolver == SUPERLUDIST ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Superludist superludist( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
+
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( superludist.Solve( ) ); 
 	factor = false; 
 	if ( i == 0 ) 
 	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 

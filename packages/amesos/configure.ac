@@ -254,6 +254,9 @@ AC_CHECK_FILE(${tac_with_trilinos3pldir})
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUD, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, superludist, [Enable Amesos interface support for SuperLU Dist], 
+		AMESOS_SUPERLUDIST, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for SuperLU Dist 2.0 (requires amesos-slud)], 
 		AMESOS_SLUD2, no)
 
@@ -323,6 +326,58 @@ amesos_libs=" "
 # AC_LANG_PUSH
 #  Atlantis fails unless we do the test links with the C compiler (instead of c++)
 AC_LANG([C])
+
+if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
+
+  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+    AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details]])
+  fi
+
+  TAC_ARG_WITH_SUB( amesos, superludistdir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0 )
+  AC_CHECK_FILE(${tac_with_amesos_superludistdir})
+
+  TAC_ARG_WITH_SUB( amesos, superludistlib, [Set SuperLU dist library],  ${tac_with_amesos_superludistdir}/libsuperludist.a )
+  AC_CHECK_FILE(${tac_with_amesos_superludistlib})
+
+  TAC_ARG_WITH_SUB( amesos, superludistincdir, [Set SuperLU dist include directory],  ${tac_with_amesos_superludistdir}/SRC )
+  AC_CHECK_FILE(${tac_with_amesos_superludistincdir})
+
+#
+# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  AC_CHECK_FILE(${tac_with_amesos_superludistincdir}/supermatrix.h)
+
+  AC_CHECK_FILE(${tac_with_amesos_superludistincdir}/supermatrix.h,,
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))
+
+
+##  LDFLAGS="${tac_with_amesos_superludistlib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_superludistlib} ${MPI_LIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(SuperLU_timer_,,
+      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
+    LIBS="${SAVE_LIBS}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
+
+  AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, false ) 
+fi
+
+
+
+
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that supermatrix.h is in the SuperLU distributed include directory
+#    Make sure that SuperLU_timer is in the SuperLU distributed library
+#
 
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 

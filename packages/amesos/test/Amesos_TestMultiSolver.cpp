@@ -32,6 +32,9 @@
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+#include "Amesos_Superludist.h"
+#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif
@@ -277,6 +280,14 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( mumps.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    } else if ( SparseSolver == SUPERLUDIST ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Superludist superludist( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( superludist.Solve( ) ); 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
     } else if ( SparseSolver == SPOOLESSERIAL ) { 

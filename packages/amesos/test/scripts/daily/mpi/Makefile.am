@@ -29,6 +29,12 @@ else
 KLU_TEST = 
 endif
 
+if HAVE_AMESOS_SUPERLUDIST
+SUPERLUDIST_TEST = TestSuperludist
+else
+SUPERLUDIST_TEST = 
+endif
+
 if HAVE_AMESOS_MUMPS
 MUMPS_TEST = TestMumps
 else
@@ -37,7 +43,7 @@ endif
 
 
 noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST)
+	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) 
 
 if HAVE_AMESOS_SLUD
 TestSuperLUdist_SOURCES = $(srcdir)/TestSuperLUdist
@@ -65,6 +71,13 @@ TestKlu_SOURCES = $(srcdir)/TestKlu
 
 TestKlu$(EXEEXT): $(srcdir)/TestKlu
 	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_SUPERLUDIST
+TestSuperludist_SOURCES = $(srcdir)/TestSuperludist
+
+TestSuperludist$(EXEEXT): $(srcdir)/TestSuperludist
+	cp $(srcdir)/TestSuperludist TestSuperludist$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_MUMPS

@@ -17,6 +17,9 @@
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+#include "Amesos_Superludist.h"
+#endif
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
@@ -215,6 +218,16 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 	EPETRA_CHK_ERR( superludist.Solve( true ) ); 
       }
 #endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    } else if ( SparseSolver == SUPERLUDIST ) {
+      
+      for ( int i = 0; i < 1+special ; i++ ) { 
+	AMESOS::Parameter::List ParamList ;
+	Amesos_Superludist A_Superludist( Problem, ParamList ) ; 
+	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
+	EPETRA_CHK_ERR( A_Superludist.Solve(  ) ); 
+      }
+#endif
 #ifdef HAVE_AMESOS_SLUD2
     } else if ( SparseSolver == SuperLUdist2 ) {
       
@@ -237,28 +250,34 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) {
 
-      AMESOS::Parameter::List ParamList ;
-      Amesos_Mumps A_mumps( Problem, ParamList ) ; 
-      EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
-      EPETRA_CHK_ERR( A_mumps.Solve(  ) ); 
+      for ( int i = 0; i < 1+special ; i++ ) { 
+	AMESOS::Parameter::List ParamList ;
+	Amesos_Mumps A_mumps( Problem, ParamList ) ; 
+	EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
+	EPETRA_CHK_ERR( A_mumps.Solve(  ) ); 
+      }
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) {
 
-      AMESOS::Parameter::List ParamList ;
-      Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
-      EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
-      EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
+      for ( int i = 0; i < 1+special ; i++ ) { 
+	AMESOS::Parameter::List ParamList ;
+	Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
+	EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
+	EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
+      }
 #endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) {
 
-      AMESOS::Parameter::List ParamList ;
-      Amesos_Klu A_klu( Problem, ParamList ) ; 
-      EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
-      EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
-      EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
-      EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+      for ( int i = 0; i < 1+special ; i++ ) { 
+	AMESOS::Parameter::List ParamList ;
+	Amesos_Klu A_klu( Problem, ParamList ) ; 
+	EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
+	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
+	EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
+	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+      }
 #endif
 #ifdef TEST_SPOOLES
     } else if ( SparseSolver == SPOOLES ) { 

@@ -84,6 +84,9 @@ extern "C" {
 main(int argc, char **argv)
 {
 
+
+  exit(13);
+
     vector <double> BBval ; 
     BBval.resize(12);
   //
@@ -131,7 +134,7 @@ main(int argc, char **argv)
       cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
 	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << endl ; 
       cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
-      cerr << "    Solvername = UMFPACK, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS, KLU or SuperLU " << endl;
+      cerr << "    Solvername = UMFPACK, SUPERLUDIST, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS, KLU or SuperLU " << endl;
       cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
       cerr << "    special = number of repeats (0 means run just once) " << endl ; 
       cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << endl ; 
@@ -234,6 +237,8 @@ main(int argc, char **argv)
     SparseSolver = DSCPACK ; 
   else if  ( Sprogram == "SuperLUdist" ) 
     SparseSolver = SuperLUdist ; 
+  else if  ( Sprogram == "SUPERLUDIST" ) 
+    SparseSolver = SUPERLUDIST ; 
   else if  ( Sprogram == "SuperLUdist2" ) 
     SparseSolver = SuperLUdist2 ; 
   else if  ( Sprogram == "SPOOLES" ) 
@@ -301,15 +306,6 @@ main(int argc, char **argv)
 	  << numsolves << endl ; 
     exit_value = -1 ; 
   }
-#if 0
-  if ( MatType == 1 && numsolves != 1 &&  SparseSolver != SuperLUdist2 ) {
-    if ( ( MyPID == 0 )  ) {
-      cerr << "MatType == 1 (distributed) is only supported for numsolves == 1.   " <<
-	" Here numsolves = " << numsolves << endl ; 
-    }
-    exit_value = -1 ;     
-  }
-#endif
   if ( transpose< 0 ||  transpose > 1) { 
     if ( ( MyPID == 0 )  ) 
       cerr << "transpose must be 0 (no trans) or 1" 
@@ -348,9 +344,11 @@ main(int argc, char **argv)
     exit_value = -1 ; 
   }
   if ( numsolves != 1 &&  SparseSolver != SuperLU && 
-       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK  && SparseSolver != KLU && SparseSolver != MUMPS ) {
+       SparseSolver != SUPERLUDIST  && 
+       SparseSolver != SuperLUdist  && 
+       SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK  && SparseSolver != KLU && SparseSolver != MUMPS ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only SuperLU, SuperLUdist, UMFPACK, MUMPS, KLU and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only SuperLU, SUEPRLUDIST, SuperLUdist, UMFPACK, MUMPS, KLU and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     

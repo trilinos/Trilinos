@@ -9,6 +9,16 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+if HAVE_AMESOS_SUPERLUDIST
+SUPERLUDIST_H = \
+	$(srcdir)/Amesos_Superludist.h
+SUPERLUDIST = \
+	$(srcdir)/Amesos_Superludist.cpp
+else
+SUPERLUDIST_H =
+SUPERLUDIST =
+endif
+
 if HAVE_AMESOS_SLUD
 SLUDIST_H = \
 	$(srcdir)/SuperludistOO.h
@@ -192,6 +202,7 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(SUPERLUDIST_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
@@ -204,6 +215,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(SUPERLUDIST) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
 	$(SLUSERIAL) \

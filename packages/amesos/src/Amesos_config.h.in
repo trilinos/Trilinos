@@ -32,6 +32,9 @@
 /* Define if want to build amesos-slus */
 #undef HAVE_AMESOS_SLUS
 
+/* Define if want to build amesos-superludist */
+#undef HAVE_AMESOS_SUPERLUDIST
+
 /* Define if want to build amesos-umfpack */
 #undef HAVE_AMESOS_UMFPACK
 

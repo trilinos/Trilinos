@@ -20,7 +20,8 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
 	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
-	AmesosKlu AmesosKluShort AmesosKluSerial 
+	AmesosKlu AmesosKluShort AmesosKluSerial \
+	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
@@ -32,6 +33,9 @@ AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
 AmesosKlu_SOURCES = $(srcdir)/AmesosKlu
 AmesosKluShort_SOURCES = $(srcdir)/AmesosKluShort
 AmesosKluSerial_SOURCES = $(srcdir)/AmesosKluSerial
+AmesosSuperludist_SOURCES = $(srcdir)/AmesosSuperludist
+AmesosSuperludistShort_SOURCES = $(srcdir)/AmesosSuperludistShort
+AmesosSuperludistSerial_SOURCES = $(srcdir)/AmesosSuperludistSerial
 AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
@@ -70,6 +74,15 @@ AmesosKluShort$(EXEEXT): $(srcdir)/AmesosKluShort
 
 AmesosKluSerial$(EXEEXT): $(srcdir)/AmesosKluSerial
 	cp  $(srcdir)/AmesosKluSerial  AmesosKluSerial$(EXEEXT)
+
+AmesosSuperludist$(EXEEXT): $(srcdir)/AmesosSuperludist
+	cp  $(srcdir)/AmesosSuperludist  AmesosSuperludist$(EXEEXT)
+
+AmesosSuperludistShort$(EXEEXT): $(srcdir)/AmesosSuperludistShort
+	cp  $(srcdir)/AmesosSuperludistShort  AmesosSuperludistShort$(EXEEXT)
+
+AmesosSuperludistSerial$(EXEEXT): $(srcdir)/AmesosSuperludistSerial
+	cp  $(srcdir)/AmesosSuperludistSerial  AmesosSuperludistSerial$(EXEEXT)
 
 AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
