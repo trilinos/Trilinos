@@ -16,6 +16,7 @@
 #include <string.h>
 #include "lb_const.h"
 #include "rcb_const.h"
+#include "irb_const.h"
 #include "oct_util_const.h"
 #include "reftree_const.h"
 
