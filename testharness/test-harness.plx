@@ -16,6 +16,7 @@ use strict;
 # Options variables
 my %flags;                  # command line flags (boolean or string)
 my %options;                # config-file hash of arrays (keys, lists of values)
+my @optionsOrder;           # order of options (for printing in summary)
 
 # Report variables
 my %summary;                # overall test-harness summary
@@ -107,8 +108,13 @@ report($SUMMARY);
         
         # generate config file and exit
         if ($flags{g}) { 
-            genConfigTemp($flags{g}, $flags{s}); 
+            generateConfig($flags{g}, $flags{s}); 
             exit;            
+        } 
+        
+        # fill optionsOrder array for correctly ordered output of options
+        else {
+            generateConfig(0, 1, 1);
         }
         
         # print help and exit
@@ -144,7 +150,8 @@ report($SUMMARY);
 
     sub prepareVariables {    
         
-        $reportCount = "000";
+        $reportCount = "000";          
+        @optionsOrder = ();
         
         $codes[$FILE_SYSTEM_ERROR] = "file system error";           
         $codes[$SYSTEM_COMMAND_ERROR] = "system command error";        
@@ -157,10 +164,6 @@ report($SUMMARY);
         $codes[$TEST_PASSED] = "test passed";
         $codes[$SUMMARY] = "summary";
             
-        $summary{$FILE_SYSTEM_ERROR} = ();
-        $summary{$SYSTEM_COMMAND_ERROR} = ();
-        $summary{$CONFIG_ERROR} = ();
-        $summary{$UPDATE_ERROR} = ();
         $summary{$TRILINOS_CONFIGURE_ERROR} = ();
         $summary{$TRILINOS_BUILD_ERROR} = ();
         $summary{$TEST_COMPILE_ERROR} = ();
@@ -876,11 +879,7 @@ report($SUMMARY);
             $testName =~ s/.*\///;
         }
         
-        # extract summary data -------------------------------------------------        
-        if ($code == $FILE_SYSTEM_ERROR || $code == $SYSTEM_COMMAND_ERROR ||
-               $code == $CONFIG_ERROR || $code == $UPDATE_ERROR) {
-            push (@{$summary{$code}}, $message);
-        }         
+        # extract summary data ------------------------------------------------- 
         if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
             push (@{$summary{$code}}, "$comm ($message broke)");
         }        
@@ -1132,16 +1131,18 @@ report($SUMMARY);
             $body .= "Test-harness Config: \n";
             $body .= "\n";        
             
-            for my $key (sort keys %options) { 
-                my $lastElementIndex = $#{$options{$key}}; 
-                $body .= "$key (".($lastElementIndex+1)."): \n";
-                if ($lastElementIndex+1 > 0) {
-                    for (my $i=0; $i<=$lastElementIndex; $i++) {
-                        $body .= "  $options{$key}[$i]\n";
+            for my $key (@optionsOrder) {
+                if ($key ne "TRILINOS_DIR" && $key ne "FREQUENCY") {
+                    my $lastElementIndex = $#{$options{$key}}; 
+                    $body .= "$key (".($lastElementIndex+1)."): ";
+                    for (my $j=0; $j<=$lastElementIndex; $j++) {
+                        if ($j != 0) { $body .= ", "; }
+                        $body .= "$options{$key}[$j]";
                     }
-                } 
-                $body .= "\n";
+                    $body .= "\n";
+                }
             } 
+            $body .= "\n";
         } # summary
         
         # print the dependencies hash of arrays --------------------------------        
@@ -1153,11 +1154,9 @@ report($SUMMARY);
             for my $key (sort keys %dependencies) { 
                 my $lastElementIndex = $#{$dependencies{$key}}; 
                 $body .= "$key (".($lastElementIndex+1)."): \n";
-                if ($lastElementIndex+1 > 0) {
-                    for (my $i=0; $i<=$lastElementIndex; $i++) {
-                        $body .= "  $dependencies{$key}[$i]\n";
-                    }
-                } 
+                for (my $i=0; $i<=$lastElementIndex; $i++) {
+                    $body .= "    $dependencies{$key}[$i]\n";
+                }
                 $body .= "\n";
             } 
         } # summary
@@ -1754,7 +1753,7 @@ report($SUMMARY);
                     } else {
                         my $message = "";
                         $message .= "attempting to use <HOST_FILE> value, but HOST_FILE wasn't given";
-                        report($FILE_SYSTEM_ERROR, $message);
+                        report($CONFIG_ERROR, $message);
                         printEvent($message);
                         die " *** test-harness-config error - aborting test-harness ***\n";
                         
@@ -1789,7 +1788,7 @@ report($SUMMARY);
     } # validateOptions()
     
     ############################################################################
-    # genConfigTemp()
+    # generateConfig()
     #
     # Generates Test-Harness template config file named in current directory
     # named "test-harness-config" and exits.
@@ -1798,16 +1797,19 @@ report($SUMMARY);
     #   - args: string/boolean filename, boolean short
     #   - returns: 
 
-    sub genConfigTemp {
+    sub generateConfig {
         my $filename = $_[0];
         my $short = $_[1];
+        my $silent = $_[2];
         my $outFile;
                 
-        open (outFile, "> $filename")
-            or die "can't open $filename";
+        if (!$silent) {
+            open (outFile, "> $filename")
+                or die "can't open $filename";
         
-        print outFile "# test-harness-config\n";  
-        print outFile "\n";
+            print outFile "# test-harness-config\n";  
+            print outFile "\n";
+        }
 
         if (!$short) {
             print outFile "################################################################################\n";
@@ -1828,10 +1830,12 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "#===============================================================================\n";
-        print outFile "# Frequently changed configuration options\n";
-        print outFile "#===============================================================================\n";
-        print outFile "\n";
+        if (!$silent) {
+            print outFile "#===============================================================================\n";
+            print outFile "# Frequently changed configuration options\n";
+            print outFile "#===============================================================================\n";
+            print outFile "\n";
+        }
         
         if (!$short) {        
             print outFile "#-------------------------------------------------------------------------------\n";
@@ -1843,7 +1847,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MACHINE_CONFIG_FILE             = \n";
+        push (@optionsOrder, "MACHINE_CONFIG_FILE");
+        if (!$silent) { print outFile "MACHINE_CONFIG_FILE             = \n"; }
         
         if (!$short) {        
             print outFile "\n";  
@@ -1857,7 +1862,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MACHINE_MPI_CONFIG_FILE         = \n";
+        push (@optionsOrder, "MACHINE_MPI_CONFIG_FILE");
+        if (!$silent) { print outFile "MACHINE_MPI_CONFIG_FILE         = \n"; }
         
         if (!$short) {        
             print outFile "\n";  
@@ -1871,7 +1877,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "TRILINOS_CONFIG_FILE            = \n";
+        push (@optionsOrder, "TRILINOS_CONFIG_FILE");
+        if (!$silent) { print outFile "TRILINOS_CONFIG_FILE            = \n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -1890,13 +1897,16 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "REPORT_METHOD                   = EMAIL\n";
+        push (@optionsOrder, "REPORT_METHOD");
+        if (!$silent) { print outFile "REPORT_METHOD                   = EMAIL\n"; }
         
-        print outFile "\n";
-        print outFile "#===============================================================================\n";
-        print outFile "# Less frequently changed configuration options\n";
-        print outFile "#===============================================================================\n";
-        print outFile "\n";
+        if (!$silent) { 
+            print outFile "\n";
+            print outFile "#===============================================================================\n";
+            print outFile "# Less frequently changed configuration options\n";
+            print outFile "#===============================================================================\n";
+            print outFile "\n";
+        }
 		
         if (!$short) {        
             print outFile "#-------------------------------------------------------------------------------\n";
@@ -1909,7 +1919,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "SERIAL_DIR                      = SERIAL\n";
+        push (@optionsOrder, "SERIAL_DIR");
+        if (!$silent) { print outFile "SERIAL_DIR                      = SERIAL\n"; }
         
         if (!$short) {    
             print outFile "\n";  
@@ -1923,7 +1934,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MPI_DIR                         = MPI\n";
+        push (@optionsOrder, "MPI_DIR");
+        if (!$silent) { print outFile "MPI_DIR                         = MPI\n"; }
         
         if (!$short) {    
             print outFile "\n";  
@@ -1940,7 +1952,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "HOST_FILE                       = <TRILINOS_DIR>/hostfile\n";
+        push (@optionsOrder, "HOST_FILE");
+        if (!$silent) { print outFile "HOST_FILE                       = <TRILINOS_DIR>/hostfile\n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -1954,7 +1967,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
+        push (@optionsOrder, "MPI_STARTUP_CMD");
+        if (!$silent) { print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -1967,7 +1981,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MPI_SHUTDOWN_CMD                = lamhalt\n";
+        push (@optionsOrder, "MPI_SHUTDOWN_CMD");
+        if (!$silent) { print outFile "MPI_SHUTDOWN_CMD                = lamhalt\n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -1980,7 +1995,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MAKE_FLAGS                      = \n";
+        push (@optionsOrder, "MAKE_FLAGS");
+        if (!$silent) { print outFile "MAKE_FLAGS                      = \n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -1994,7 +2010,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "CVS_UPDATE                      = YES \n";
+        push (@optionsOrder, "CVS_UPDATE");
+        if (!$silent) { print outFile "CVS_UPDATE                      = YES \n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -2006,7 +2023,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "CVS_CMD                         = cvs\n";
+        push (@optionsOrder, "CVS_CMD");
+        if (!$silent) { print outFile "CVS_CMD                         = cvs\n"; }
         
         if (!$short) {    
             print outFile "\n";  
@@ -2022,7 +2040,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "REPORT_NAMES                    = ORDER\n";
+        push (@optionsOrder, "REPORT_NAMES");
+        if (!$silent) { print outFile "REPORT_NAMES                    = ORDER\n"; }
         
         if (!$short) {    
             print outFile "\n";  
@@ -2036,7 +2055,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "MAIL_METHOD                     = sendmail\n";
+        push (@optionsOrder, "MAIL_METHOD");
+        if (!$silent) { print outFile "MAIL_METHOD                     = sendmail\n"; }
         
         if (!$short) {        
             print outFile "\n";
@@ -2049,7 +2069,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "SUMMARY_EMAIL                   = \n";
+        push (@optionsOrder, "SUMMARY_EMAIL");
+        if (!$silent) { print outFile "SUMMARY_EMAIL                   = \n"; }
         
         if (!$short) {        
             print outFile "\n";
@@ -2063,7 +2084,8 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "ALL_EMAILS                      = \n";
+        push (@optionsOrder, "ALL_EMAILS");
+        if (!$silent) { print outFile "ALL_EMAILS                      = \n"; }
         
         if (!$short) {        
             print outFile "\n";
@@ -2080,10 +2102,13 @@ report($SUMMARY);
             print outFile "\n";
         }
         
-        print outFile "SEND_TO_DEFAULTS                = NO\n";
+        push (@optionsOrder, "SEND_TO_DEFAULTS");
+        if (!$silent) { print outFile "SEND_TO_DEFAULTS                = NO\n"; }
         
-        print outFile "\n";
-        print outFile "# end test-harness-config";
-            
-        close outFile;
-    } # genConfigTemp()
+        if (!$silent) { 
+            print outFile "\n";
+            print outFile "# end test-harness-config";
+                
+            close outFile;
+        }
+    } # generateConfig()
