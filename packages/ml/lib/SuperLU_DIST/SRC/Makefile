@@ -32,7 +32,7 @@ include ../make.inc
 ALLAUX 	= symbfact.o sp_ienv.o zfdperm.o \
 	  etree.o sp_colorder.o get_perm_c.o \
 	  mmd.o colamd.o comm.o memory.o util.o superlu_grid.o \
-	  lsame.o xerbla.o pxerbla.o superlu_timer.o
+	  pxerbla.o superlu_timer.o
 
 #
 # Routines to permute large entries to diagonal
@@ -42,7 +42,7 @@ DLDPERM = dldperm.o mc64ad.o mc21.o #fd05.o
 #
 # Routines literally taken from SuperLU
 #
-DSLUSRC	= dlamch.o slamch.o dlangs.o dgsequ.o dlaqgs.o dutil.o \
+DSLUSRC	= dlangs.o dgsequ.o dlaqgs.o dutil.o \
 	  dmemory.o dsp_blas2.o dsp_blas3.o dreadhb.o
 ZSLUSRC	= dcomplex.o dlamch.o slamch.o zlangs.o zgsequ.o zlaqgs.o \
 	  zmemory.o zsp_blas2.o zsp_blas3.o zreadhb.o zutil.o
