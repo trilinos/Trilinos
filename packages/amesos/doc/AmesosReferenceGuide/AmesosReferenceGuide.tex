@@ -77,8 +77,8 @@ Albuquerque, NM 87185-1110
 
 \begin{abstract}
   
-  This document described the main functinalities of the Amesos package,
-  version 1.0. Amesos, available as part Trilinos 4.0, provides an
+  This document describes the main functinalities of the Amesos package,
+  version 1.0. Amesos, available as part of Trilinos 4.0, provides an
   object-oriented interface to several serial and parallel sparse direct
   solvers libraries, for the solution of the linear systems of equations
   \begin{equation}
@@ -125,23 +125,22 @@ that funded development of Trilinos.
 \section{Introduction}
 
 Aim of the Amesos package is to provide an object-oriented interface to
-several sparse direct solvers. For each solver, Amesos provides a C++
-interface. All the interfaces have the same look-and-feel, and accept
-matrices defined as Epetra\_RowMatrix objects, and vectors defined as
-Epetra\_MultiVector objects. Amesos makes easy for users to switch from
-one direct solver library from another.
-
-Amesos contains several classes, as reported in
-table~\ref{tab:classes}\footnote{Amesos is an interface to other
-  packages, mainly developed outside the Trilinos framework. (Currently,
-  serial SuperLU is included in the Trilinos framework.) In order to use
-  those packages, the user should carefully check copyright and
+several sparse direct solvers\footnote{Amesos is an interface to other
+  packages, mainly developed outside the Trilinos framework. In order to
+  use those packages, the user should carefully check copyright and
   licensing of those third-party codes.  Please refer to the web page or
-  the documentation of each particular package for details.}.  The
-classes covered in this guide are:
+  the documentation of each particular package for details.}. For each
+solver, Amesos provides a C++ interface. All the interfaces have the
+same look-and-feel, and accept matrices defined as Epetra\_RowMatrix
+objects, and vectors defined as Epetra\_MultiVector objects. Amesos
+makes easy for users to switch from one direct solver library from
+another.
+
+Amesos contains several classes, as reported in table~\ref{tab:classes}.
+The classes covered in this guide are:
 \begin{itemize}
-\item \verb!Amesos_KLU!: Interface to Amesos's internal solver
-  KLU, described in Section~\ref{sec:klu}.
+\item \verb!Amesos_KLU!: Interface to Amesos's internal solver KLU (in
+  Section~\ref{sec:klu}).
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
   UMFPACK~\cite{umfpack-home-page}, version 4.3 (in Section~\ref{sec:umfpack});
 \item \verb!Amesos_Superludist!: Interface to Xiaoye S.~Li's distributed
@@ -153,8 +152,8 @@ classes covered in this guide are:
 All the Amesos classes are derived from a base class mode,
 \verb!Amesos_BaseSolver!. This abstract interface provides the basic
 functionalities for all Amesos solvers, and allows users to choose
-different direct solvers very easily -- by changing an input scalar
-parameter. See Section~\ref{sec:amesos_generic} for more details.
+different direct solvers very easily --- by changing an input parameter.
+See Section~\ref{sec:amesos_generic} for more details.
 
 Once an Amesos object is defined, the direct solution of the linear
 system simply reads, for all interfaces,
@@ -177,12 +176,12 @@ automatically managed by Amesos.
     \hline
     Class &   &  & Interface to \\
     \hline
-    \tt Amesos\_Klu          & serial & unsym & KLU \\
-    \tt Amesos\_Umfpack      & serial & unsym & UMFPACK 4.3 \\
-    \tt Amesos\_Superlu      & serial & unsym & SuperLU 3.0 \\
-    \tt  Amesos\_Superludist  & parallel & unsym & SuperLU\_DIST 2.0 \\
-    \tt Amesos\_Mumps        & parallel & SPD, sym, unsym & MUMPS 4.3.1 \\
-    \tt Amesos\_Scalapack    & parallel & unsym & ScaLAPACK \\
+    \tt Amesos\_Klu          & serial & general & KLU \\
+    \tt Amesos\_Umfpack      & serial & general & UMFPACK 4.3 \\
+    \tt Amesos\_Superlu      & serial & general & SuperLU 3.0 \\
+    \tt  Amesos\_Superludist  & parallel & general & SuperLU\_DIST 2.0 \\
+    \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
+    \tt Amesos\_Scalapack    & parallel & general & ScaLAPACK \\
     \hline
   \end{tabular}
   \caption{Supported interfaces. ``serial'' means that the supported
@@ -190,7 +189,7 @@ automatically managed by Amesos.
     more than one processor, the linear problem is shipped to processor 0, 
     solved, then the solution is broadcasted in the solution vector 
     $X$. ``parallel'' means that a subset or all the processes in the current
-    communicator will be used by the solver. ``unsym'' means general
+    communicator will be used by the solver. ``general'' means general
     unsymmetric 
     matrix, If ``sym'' (symmetric matrix) or  ``SPD'' (symmetric
     positive definite), the direct solver library can take advantage of
@@ -209,7 +208,7 @@ automatically managed by Amesos.
 Amesos is distributed through the Trilinos project, and can be
 downloaded from the web site
 \begin{verbatim}
-http://software.sandia.gov/Trilinos
+http://software.sandia.gov/trilinos/packages/amesos
 \end{verbatim}
 
 \smallskip
@@ -217,16 +216,15 @@ http://software.sandia.gov/Trilinos
 Each of the Amesos classes provides an interface to a third-party direct
 sparse solver code\footnote{Exception to this rule is KLU, which is
   distributed within Amesos.}. In order to configure and compile a given
-interface, you must first install the underlying direct sparse solver
-code. Generally, the BLAS library is required. Some solvers may need
-CBLACS, LAPACK, BLACS, ScaLAPACK. Amesos requires Epetra and Teuchos
-(both part of Trilinos).
+interface, the user must first install the underlying direct sparse
+solver code. Generally, the BLAS library is required. Some solvers may
+need CBLACS, LAPACK, BLACS, ScaLAPACK. Amesos requires Epetra and
+Teuchos (both part of Trilinos).
 
 Amesos is configured and built using the GNU autoconf~\cite{Autoconf}
 and automake~\cite{Automake} tools. To configure Amesos from the
-Trilinos top directory, a possible procedure is as follows.
-
-Let \verb!$TRILINOS_HOME! be a shell variable representing the location
+Trilinos top directory, a possible procedure is as follows.  Let
+\verb!$TRILINOS_HOME! be a shell variable representing the location
 of the Trilinos source directory, and \verb!%! the shell prompt sign.  In order to configure Trilinos with
 Amesos, for instance on a LINUX machine with MPI, one may do the
 following:
@@ -244,11 +242,9 @@ following:
 \end{verbatim}
 Here, \verb!FLAGS! represents the set of configure options for other
 Trilinos packages, and \verb!AMESOS_FLAGS! the configure options
-specific to Amesos. 
-
-The configure options required to enable a specific interface are
-reported in each third-party package's section. A complete list of them can
-be obtained by typing
+specific to Amesos.  The configure options required to enable a specific
+interface are reported in each third-party package's section. A complete
+list of them can be obtained by typing
 \begin{verbatim}
 % $TRILINOS_HOME/packages/amesos/configure --help
 \end{verbatim}
@@ -294,13 +290,13 @@ which concrete class to use to implement the Amesos\_BaseSolver
 interface. The main goal of this class is to allow the user to select
 any supported (and enabled at configuration time) direct solver, simply
 changing an input parameter. Another remarkable advantage of
-Amesos\_BaseSolver is that, using this class, users does not have to
-include the header files of the third-party libraries in their
-code\footnote{Using Amesos\_BaseSolver, third-party libraries header
-  files are required in the compilation of Amesos only.}.
+Amesos\_BaseSolver is that users does not have to include the header
+files of the third-party libraries in their code\footnote{Using
+  Amesos\_BaseSolver, third-party libraries header files are required in
+  the compilation of Amesos only.}.
 
 An example of use of this class is as follows. First, the following
-header files must be included:
+header file must be included:
 \begin{verbatim}
   #include "Amesos.h" 
 \end{verbatim}
@@ -373,9 +369,8 @@ the solution phase, for instance using
 
 Specific parameters can be set using a Teuchos parameters list, whose
 definition requires the input file \verb!Teuchos_ParameterList.hpp!. For
-a detailed description, we refer to the Teuchos documentation. We only
-report the most important methods of this class in
-Table~\ref{tab:teuchos}.
+a detailed description, we refer to the Teuchos documentation. We report
+the most important methods of this class in Table~\ref{tab:teuchos}.
 
 \begin{table}[htbp]
   \centering
@@ -397,7 +392,7 @@ Table~\ref{tab:teuchos}.
 
 
 Here, we simply recall that the
-parameters' list can be created as
+parameters list can be created as
 \begin{verbatim}
   Teuchos::ParameterList AmesosList;
 \end{verbatim}
@@ -529,7 +524,7 @@ solver's specific parameters in this sublist. An example is as follows:
   AmesosMumpsList.set("ICTNL", ictnl);
 \end{verbatim}
 Parameters and sublists not recognized are simply ignored. Recall that
-spaces are important, and that parameters' list is case sensitive!
+spaces are important, and that parameters list is case sensitive!
 
 %%%
 %%%
@@ -557,7 +552,7 @@ In order to use KLU, Amesos must be configured with the options
 \begin{verbatim}
 --enable-amesos-klu
 \end{verbatim}
-The KLU soucrs are distributed with the Amesos package.
+The KLU souces are distributed with the Amesos package.
 
 %%%
 %%%
@@ -618,7 +613,7 @@ package (that does not handle complex matrices), only double precision
 matrices can be considered.
 
 Amesos\_Superludist can solve the linear system on a subset of the
-processes, as specified in the parameters' list. This is done by
+processes, as specified in the parameters list. This is done by
 creating a new process group derived from the MPI group of the
 Epetra\_Comm object, with function \verb!superlu_gridinit()!. 
 
@@ -724,7 +719,7 @@ the options\footnote{The MUMPS interface can take be used on a subset of
 The MUMPS constructor will look for a sublist, called
 \verb!mumps!. 
 The user can set all the MUMPS's parameters, by sticking pointers to the
-integer array ICNTL and the double array CNTL to the parameters' list,
+integer array ICNTL and the double array CNTL to the parameters list,
 or by using the functions reported at the end of this section.
 
 \vskip .1in
@@ -918,7 +913,7 @@ int main(int argc, char *argv[]) {
 \end{verbatim}
 Here we use the class Trilinos\_Util::CrsMatrixGallery to read and
 Harwell/Boeing matrix from file, whose name is hardwired in the code for
-simplicity (see~\cite[Chap 5]{TrilinosTutorial}). The name can be read from the
+simplicity (see~\cite[Chap 5]{Trilinos-tutorial}). The name can be read from the
 input line using class Trilinos\_Util\_CommandLineParser (see
 \cite{Trilinos-tutorial}), or the Teuchos package.
 \begin{verbatim}
@@ -930,7 +925,7 @@ Epetra\_LinearProblem, that can be obtained as follows:
 \begin{verbatim}  
   Epetra_LinearProblem * Problem = G.GetLinearProblem();
 \end{verbatim}
-Now, we define a Teuchos parameters' list, and set the maximum number of
+Now, we define a Teuchos parameters list, and set the maximum number of
 processes by
 \begin{verbatim}  
   Teuchos::ParameterList AmesosList;
