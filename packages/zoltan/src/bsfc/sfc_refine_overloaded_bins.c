@@ -19,7 +19,6 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 			  int wgt_dim, unsigned* refine_key,
 			  unsigned*, int proc, int my_bins_per_proc,
 			  int number_of_bits, int prev_used_bits, 
-			  int size_of_unsigned, unsigned imax,
 			  int number_of_cuts, float* work_percent_array, 
 			  float* total_weight_array, 
 			  float* actual_work_allocated,
@@ -33,7 +32,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 			       int* number_of_cuts_in_bin, int wgt_dim,
 			       SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 			       int num_local_objects, int prev_used_bits, 
-			       int size_of_unsigned, unsigned imax,
+			       int size_of_unsigned,
 			       float* work_percent_array,
 			       float* total_weight_array,
 			       float* actual_work_allocated)
@@ -43,9 +42,14 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   int number_of_bits, number_of_bins_to_refine;
   int gl_max_cuts;
   float* fstore;
-  
-  int* overloaded_bin_flag = 
-    (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
+  int* overloaded_bin_flag;
+
+  if(size_of_unsigned != sizeof(unsigned)) {
+    LB_PRINT_ERROR(lb->Proc, yo, "The size of an unsigned integer is smaller on another processor. Cannot use this routine. Try increasing max_cuts_in_bin.");
+    return(LB_FATAL);
+  }      
+
+  overloaded_bin_flag = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
   if(overloaded_bin_flag == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
@@ -152,8 +156,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
     while(k<num_local_objects && refine_bin >= 0) {
       if((int) sfc_vert_ptr[k].my_bin == refine_bin) {
 	ierr = sfc_create_compare_key(lb, sfc_vert_ptr[k].sfc_key, refine_key, 
-				      (refine_key+SFC_KEYLENGTH), prev_used_bits,
-				      size_of_unsigned);
+				      (refine_key+SFC_KEYLENGTH), prev_used_bits);
 	if(ierr == LB_FATAL)
 	  return LB_FATAL;
 	
@@ -168,8 +171,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 				 (refine_key_gl+SFC_KEYLENGTH), 
 				 refine_proc, number_of_bins,  
 				 number_of_bits, prev_used_bits, 
-				 size_of_unsigned, imax, gl_max_cuts, 
-				 work_percent_array,
+				 gl_max_cuts, work_percent_array,
 				 total_weight_array, actual_work_allocated, 
 				 max_cuts_in_bin, 0);
     if(ierr!= LB_OK && ierr != LB_WARN) {
@@ -207,9 +209,9 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 			  int wgt_dim, unsigned* refine_key, 
 			  unsigned* AND_operator_array, int proc,
 			  int my_bins_per_proc, int number_of_bits, 
-			  int prev_used_bits, int size_of_unsigned, 
-			  unsigned imax, int number_of_cuts, 
-			  float* work_percent_array, float* total_weight_array, 
+			  int prev_used_bits, int number_of_cuts,
+			  float* work_percent_array,
+			  float* total_weight_array, 
 			  float* actual_work_allocated, 
 			  int max_cuts_in_bin, int level_flag) 
 {
@@ -218,10 +220,20 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   int *number_of_cuts_in_bin, destination_proc = -1;
   int new_number_of_cuts, ierr;
   float *binned_wgt_array, *summed_binned_wgt_array = NULL, work_prev_allocated;
+
+  unsigned check_bin[SFC_KEYLENGTH+1], gl_check_bin[SFC_KEYLENGTH+1]; 
+  unsigned umax = ~(0u);
+
+  /* check that we haven't used all of the bits already */
+  if(prev_used_bits >= 8*sizeof(unsigned) * SFC_KEYLENGTH) {
+    LB_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
+    return(LB_OK);
+  }
+  if(prev_used_bits + number_of_bits > 8*sizeof(unsigned) * SFC_KEYLENGTH) 
+    number_of_bits = 8*sizeof(unsigned) * SFC_KEYLENGTH - prev_used_bits;
+
   /* check_bin is used to check if there is only 1 object
      in bin or if all objects in the bin have the same sfc key */
-  unsigned check_bin[SFC_KEYLENGTH+1], gl_check_bin[SFC_KEYLENGTH+1];  
-  
   for(i=0;i<=SFC_KEYLENGTH;i++)
     check_bin[i] = 0;
   
@@ -235,8 +247,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   for(i=0;i<num_local_objects;i++) {
     if(sfc_check_refine(sfc_vert_ptr[i].sfc_key, refine_key, AND_operator_array)) {
       sfc_vert_ptr[i].my_bin = sfc_get_array_location(my_bins_per_proc, number_of_bits,
-						      prev_used_bits, (sfc_vert_ptr+i), 
-						      size_of_unsigned, imax);
+						      prev_used_bits, (sfc_vert_ptr+i));
       destination_proc = sfc_vert_ptr[i].destination_proc;
       for(j=0;j<wgt_dim;j++)
 	binned_wgt_array[j+wgt_dim*sfc_vert_ptr[i].my_bin] += objs_wgt[i*wgt_dim+j];
@@ -280,7 +291,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
       if(sfc_check_refine(sfc_vert_ptr[i].sfc_key, refine_key, AND_operator_array)) { 
 	for(j=0;j<SFC_KEYLENGTH;j++)
 	  sfc_vert_ptr[i].sfc_key[j] = (sfc_vert_ptr[i].sfc_key[i] & AND_operator_array[i]) + 
-	    (((imax/(num_local_objects*lb->Num_Proc))*i*(lb->Proc+1)) & ~(AND_operator_array[i]));   
+	    (((umax/(num_local_objects*lb->Num_Proc))*i*(lb->Proc+1)) & ~(AND_operator_array[i]));   
       }
   }
     
@@ -383,8 +394,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 	k++;
       }
       ierr = sfc_create_compare_key(lb, sfc_vert_ptr[l].sfc_key, new_refine_key, 
-				    new_AND_operator_array, prev_used_bits+number_of_bits,
-				    size_of_unsigned);
+				    new_AND_operator_array, prev_used_bits+number_of_bits);
       if(ierr == LB_FATAL) 
 	return LB_FATAL;
       /* call this routine again */
@@ -392,7 +402,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 				 wgt_dim, new_refine_key, new_AND_operator_array,
 				 proc, my_bins_per_proc, number_of_bits,
 				 prev_used_bits+number_of_bits,
-				 size_of_unsigned, imax, number_of_cuts_in_bin[i], 
+				 number_of_cuts_in_bin[i], 
 				 work_percent_array, total_weight_array, 
 				 actual_work_allocated, max_cuts_in_bin, level_flag+1);
       if(ierr != LB_OK && ierr != LB_WARN) {
@@ -418,11 +428,11 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   previously used bits are the same. 
 */
 int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[], 
-			   unsigned AND_operator_array[], int prev_used_bits,
-			   int size_of_unsigned)
+			   unsigned AND_operator_array[], int prev_used_bits)
 {
   int i;
   unsigned umax = ~(0u);
+  int size_of_unsigned = sizeof(unsigned);
   char yo[] = "sfc_create_compare_key";
 
   if(prev_used_bits/(size_of_unsigned*8) >= SFC_KEYLENGTH) {

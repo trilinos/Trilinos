@@ -10,6 +10,7 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -61,7 +62,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
 int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 		    int* amount_of_bits_used, int size_of_unsigned, 
-		    unsigned imax, float* global_actual_work_allocated, 
+		    float* global_actual_work_allocated, 
 		    float *work_percent_array, float* total_weight_array,
 		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
@@ -140,8 +141,6 @@ int LB_sfc(
   float* objs_wgt = NULL;             /* array of objects weights */
   int size_of_unsigned;               /* minimum size of an unsigned integer,
 					 used only for heterogeneous systems */
-  unsigned imax;                      /* largest unsigned integer for an integer
-					 of size size_of_unsigned */
   float *global_actual_work_allocated = NULL; /* cumulative actual work allocated */
   float *total_weight_array = NULL;   /* sum of weights (length of wgt_dim) */
   float *work_percent_array = NULL;   /* the cumulative percent of work each
@@ -238,11 +237,7 @@ int LB_sfc(
   i = sizeof( unsigned );
   ierr = MPI_Allreduce(&i, &size_of_unsigned, 1, MPI_INT, 
 		       MPI_MIN, lb->Communicator);
-  if(size_of_unsigned == sizeof( unsigned ))
-    imax = IScale ;
-  else 
-    imax = pow(2, size_of_unsigned*8) - 1;
-  
+
   /* get application data (number of objects, ids, weights, and coords */
   num_local_objects = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   
@@ -360,7 +355,8 @@ int LB_sfc(
 
   /* Normalize space coordinates and fill in sfc_vertex info */
   sfc_create_info(lb, global_bounding_box, (global_bounding_box+num_dims), 
-		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr, coords);
+		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr,
+		  coords);
 
   LB_FREE(&coords);
 
@@ -382,7 +378,7 @@ int LB_sfc(
   /*create bins, fill global weight vector and perform initial partition of the bins*/
   ierr = sfc_create_bins(lb, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
 			 &amount_of_bits_used, size_of_unsigned, 
-			 imax, global_actual_work_allocated, work_percent_array, 
+			 global_actual_work_allocated, work_percent_array, 
 			 total_weight_array, &balanced_flag, &vert_in_cut_ptr,
 			 &wgts_in_cut_ptr, &num_vert_in_cut, &number_of_cuts,
 			 bins_per_proc, hashtable_divider, &plan,
@@ -391,7 +387,7 @@ int LB_sfc(
       LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_create_bins function.");
       return(ierr);
   }
-
+ 
   if(balanced_flag != SFC_BALANCED) { 
     int* local_balanced_flag_array; /* used to indicate which partitions on this 
 				       processor are already balanced - useful
@@ -451,7 +447,7 @@ int LB_sfc(
 	ierr = sfc_refine_partition(lb, &local_balanced_flag, 
 				    &amount_of_bits_used, num_vert_in_cut,
 				    vert_in_cut_ptr, size_of_unsigned, 
-				    imax, wgt_dim, wgts_in_cut_ptr, 
+				    wgt_dim, wgts_in_cut_ptr, 
 				    work_percent_array, total_weight_array,
 				    global_actual_work_allocated, 
 				    number_of_cuts, &max_cuts_in_bin,

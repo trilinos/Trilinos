@@ -43,7 +43,6 @@ void sfc_create_info(
   int wgt_dim,
   SFC_VERTEX_PTR sfc_vert_ptr,
   double coords[]
-
 )
 {
   char yo[] = "sfc_create_info";
@@ -68,6 +67,7 @@ void sfc_create_info(
       LB_fhsfc3d(normed_coords, &unsigned_sfc_keylength, sfc_vert_ptr[i].sfc_key);      
     }
   }
+
   LB_TRACE_EXIT(lb, yo);
   return;
 }

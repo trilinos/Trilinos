@@ -27,6 +27,7 @@ struct sfc_hash_obj {
   unsigned id;
   int destination_proc;
   struct sfc_hash_obj * next;
+  struct sfc_hash_obj * prev;
   float* weight_ptr;
 };
 
@@ -63,8 +64,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
 			 int wgt_dim, float* obj_wgt);
 
 int sfc_get_array_location(int number_of_bins, int number_of_bits, 
-			   int prev_used_bits, SFC_VERTEX_PTR sfc_vert_ptr, 
-			   int size_of_unsigned, unsigned imax);
+			   int prev_used_bits, SFC_VERTEX_PTR sfc_vert_ptr);
 
 void sfc_get_normed_coords(double min_bounding_box[], 
 			   double max_bounding_box[], 
@@ -74,12 +74,13 @@ void sfc_get_normed_coords(double min_bounding_box[],
 void sfc_create_info(LB *lb, double min_bounding_box[], 
 		     double max_bounding_box[], int num_dims,
 		     int num_local_objects, int wgt_dim, 
-		     SFC_VERTEX_PTR sfc_vert_ptr, double* coords);
+		     SFC_VERTEX_PTR sfc_vert_ptr, 
+		     double* coords);
 
 int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 			 int *amount_of_used_bits, int num_vert_in_cut,
 			 SFC_VERTEX_PTR vert_in_cut_ptr,
-			 int size_of_unsigned, unsigned imax, 
+			 int size_of_unsigned,  
 			 int wgt_dim, float* wgts_in_cut_ptr, 
 			 float* work_percent_array, 
 			 float* total_weight_array,
@@ -90,8 +91,8 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 			 int bin_refinement_method);
 
 int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[], 
-			   unsigned AND_operator_array[], int prev_used_bits,
-			   int size_of_unsigned);
+			   unsigned AND_operator_array[], int prev_used_bits);
+
 int sfc_check_refine(unsigned* sfc_key, unsigned* compare_key,
 		     unsigned* AND_operator_array);
 

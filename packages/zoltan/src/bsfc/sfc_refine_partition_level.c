@@ -27,7 +27,7 @@
 int sfc_refine_partition(LB* lb, int* local_balanced_flag, 
 			 int *amount_of_used_bits, int num_vert_in_cut,
 			 SFC_VERTEX_PTR vert_in_cut_ptr, int size_of_unsigned,
-			 unsigned imax, int wgt_dim, float* wgts_in_cut_ptr,
+			 int wgt_dim, float* wgts_in_cut_ptr,
 			 float* work_percent_array, float* total_weight_array,
 			 float* global_actual_work_allocated, 
 			 int number_of_cuts, int* max_cuts_in_bin,
@@ -47,6 +47,14 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   int number_of_bins = subbins_per_bin;
 
   LB_TRACE_ENTER(lb, yo);
+
+  /* check to see that all of the bits of the sfc key 
+     have not already been used */
+  if(*amount_of_used_bits >= size_of_unsigned * SFC_KEYLENGTH * 8) {
+    LB_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
+    *local_balanced_flag = SFC_BALANCED;
+    return(LB_OK);
+  }
   
   /*  assume initially that all the partitions on this processor are balanced.
       we will check later on whether any are not balanced */
@@ -64,6 +72,8 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   while(number_of_bins > pow(2,i))
     i++;
   amount_of_bits = i;
+  if(amount_of_bits + *amount_of_used_bits > 8*size_of_unsigned * SFC_KEYLENGTH)
+    amount_of_bits = 8*size_of_unsigned * SFC_KEYLENGTH - *amount_of_used_bits;
   number_of_bins = pow(2,i);
     
   ll_prev_bins = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
@@ -101,9 +111,8 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       ll_location = ll_bins_head[ll_counter];
       while(ll_location != -1) {
 	vert_in_cut_ptr[ll_location].my_bin = 
-	  sfc_get_array_location(number_of_bins, amount_of_bits,
-				 *amount_of_used_bits, (vert_in_cut_ptr+ll_location), 
-				 size_of_unsigned, imax);
+	  sfc_get_array_location(number_of_bins, amount_of_bits, 
+				 *amount_of_used_bits, (vert_in_cut_ptr+ll_location));
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }  
       
@@ -289,14 +298,19 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	  if(ll_counter == -1 && same_flag == 0) {
 	    /* 
 	       all of the objects in this bin have the same sfc_key, options:
-	       1. stop refinement of the bin (this is futile work!)
+	       1. stop refinement of the bin (no improvement of the partition can be obtained)
 	       2. create new sfc_keys for the objects and continue refinement
 	       note: acbauer has chosen option 2
 	    */
+	    unsigned umax;
+	    if(size_of_unsigned == sizeof(unsigned))
+	      umax = ~(0u);
+	    else 
+	      umax = pow(2,size_of_unsigned) - 1;
 	    ll_counter = ll_bins_head[i];
 	    j=1;
 	    while(ll_counter != -1) {
-	      unsigned new_key = imax*((float) j/(float) 10*amount_of_objects_in_bin);
+	      unsigned new_key = umax*((float) j/(float) 10*amount_of_objects_in_bin);
 	      for(k=0;k<SFC_KEYLENGTH;k++)
 		vert_in_cut_ptr[ll_counter].sfc_key[k] = new_key;
 	      j++;

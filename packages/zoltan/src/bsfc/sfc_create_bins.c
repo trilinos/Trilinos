@@ -31,7 +31,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 			       SFC_VERTEX_PTR sfc_vert_ptr,
 			       float objs_wgt[], int num_local_objects,
 			       int prev_used_bits, int size_of_unsigned,
-			       int imax, float* work_percent_array,
+			       float* work_percent_array,
 			       float* total_weight_array,
 			       float* actual_work_allocated);
 
@@ -43,7 +43,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 		    int* amount_of_bits_used, int size_of_unsigned, 
-		    unsigned imax, float* global_actual_work_allocated, 
+		    float* global_actual_work_allocated, 
 		    float *work_percent_array, float* total_weight_array, 
 		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
@@ -98,6 +98,9 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   while(number_of_bins > pow(2,i))
     i++;
   amount_of_bits = i;
+  /* check to see that we have not used up all of the bits */
+  if(amount_of_bits > 8*size_of_unsigned * SFC_KEYLENGTH)
+    amount_of_bits = 8*size_of_unsigned * SFC_KEYLENGTH;
   number_of_bins = pow(2,i);
   *amount_of_bits_used = amount_of_bits;
 
@@ -119,8 +122,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 
   for(i=0;i<num_local_objects;i++) {
     sfc_vert_ptr[i].my_bin = 
-      sfc_get_array_location(number_of_bins, amount_of_bits, 0,
-			     (sfc_vert_ptr+i), size_of_unsigned, imax);
+      sfc_get_array_location(number_of_bins, amount_of_bits, 0, (sfc_vert_ptr+i));
     sfc_vert_ptr[i].destination_proc = 
       (sfc_vert_ptr[i].my_bin)/(2*bins_per_proc);
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
@@ -428,7 +430,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 				      number_of_cuts_in_bin, wgt_dim,
 				      sfc_vert_ptr, objs_wgt,num_local_objects,
 				      amount_of_bits, size_of_unsigned,
-				      imax, work_percent_array, total_weight_array, 
+				      work_percent_array, total_weight_array, 
 				      global_actual_work_allocated);
   
   LB_FREE(&number_of_cuts_in_bin);    
@@ -456,6 +458,45 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   /* if the current partitioning is acceptable, the algorithm is finished */
   if(*balanced_flag == SFC_BALANCED) {
     return LB_OK;
+  }
+
+  /* if the size of an unsigned integer is different on different processors,
+     need to 'shrink' down the key size of unsigned integers on all processors
+     to have the same amount of bits but only need to do this for sfc objects
+     that are in a cut bin */
+  if(size_of_unsigned != sizeof(unsigned)) {
+    int k;
+    int my_size_of_unsigned = sizeof(unsigned);
+    int difference = sizeof(unsigned) - size_of_unsigned;
+    unsigned copy_key[SFC_KEYLENGTH];
+    for(i=0;i<num_local_objects;i++) 
+      if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT) {
+	copy_key[0] = sfc_vert_ptr[i].sfc_key[0] >> (8*difference); 
+	for(j=1;j<SFC_KEYLENGTH;j++) {
+	  k=0;
+	  while(size_of_unsigned*(j+1) > my_size_of_unsigned*(k+1))
+	    k++;
+	  
+	  /* all needed bits in one sfc_key */
+	  if(size_of_unsigned*(j+1) > my_size_of_unsigned*k) {
+	    copy_key[j] = sfc_vert_ptr[i].sfc_key[k] << 
+	      (8*(size_of_unsigned*j-my_size_of_unsigned*k));
+	    copy_key[j] = copy_key[j] >> (8*difference);
+	  }
+	  /* needed bits in 2 different sfc_keys */
+	  else { 
+	    /* first key */
+	    copy_key[j] = sfc_vert_ptr[i].sfc_key[k-1] <<  
+	      (8*(size_of_unsigned*j-my_size_of_unsigned*(k-1)));
+	    copy_key[j] = copy_key[j] >> (8*difference);
+	    /* second key */
+	    copy_key[j] += sfc_vert_ptr[i].sfc_key[k] >>
+	      (8*2*(my_size_of_unsigned*k-size_of_unsigned*j));
+	  }
+	}
+	for(j=0;j<SFC_KEYLENGTH;j++)
+	  sfc_vert_ptr[i].sfc_key[j] = copy_key[j];
+      }
   }
 
   /* move the sfc objects that belong to any bin that contains a cut
@@ -650,10 +691,8 @@ void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr,
    allocated.  if the destination bin has not been put in the 
    hashtable yet, memory is allocated and the object weight(s) is put
    in.  if the destination bin has already been allocated, the object
-   weight(s) is added in.
+   weight(s) is added in. */
 
-   will likely speed up this operation if an ordered linklist is used 
-   instead of a randomly ordered linklist */
 int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr, 
 			 int array_location, SFC_VERTEX_PTR sfc_vert_ptr,
 			 int wgt_dim, float* obj_wgt)
@@ -663,8 +702,8 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
   char    yo[] = "sfc_put_in_hashtable";
 
   extra_hash_ptr = sfc_hash_ptr[array_location];
-
-  if(sfc_hash_ptr[array_location] == NULL) {
+  /* if this location has not been filled yet */
+  if(sfc_hash_ptr[array_location] == NULL) { 
     sfc_hash_ptr[array_location] = 
       (SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
     if(sfc_hash_ptr[array_location] == NULL) {
@@ -675,6 +714,30 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
     (sfc_hash_ptr[array_location])->destination_proc = 
       sfc_vert_ptr->destination_proc;
     (sfc_hash_ptr[array_location])->next = NULL;
+    (sfc_hash_ptr[array_location])->prev = NULL;
+    (sfc_hash_ptr[array_location])->weight_ptr = 
+      (float *) LB_MALLOC(sizeof(float) * wgt_dim);
+    if((sfc_hash_ptr[array_location])->weight_ptr == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      return(LB_MEMERR);
+    }
+    for(i=0;i<wgt_dim;i++)
+      (sfc_hash_ptr[array_location])->weight_ptr[i] = obj_wgt[i];
+  }
+  /* location is at the beginning of the linklist */
+  else if(extra_hash_ptr->id > sfc_vert_ptr->my_bin) { 
+    sfc_hash_ptr[array_location] = 
+      (SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+    if(sfc_hash_ptr[array_location] == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      return(LB_MEMERR);
+    }
+    (sfc_hash_ptr[array_location])->id = sfc_vert_ptr->my_bin;
+    (sfc_hash_ptr[array_location])->destination_proc = 
+      sfc_vert_ptr->destination_proc;
+    (sfc_hash_ptr[array_location])->next = extra_hash_ptr;
+    extra_hash_ptr->prev = sfc_hash_ptr[array_location];
+    (sfc_hash_ptr[array_location])->prev = NULL;
     (sfc_hash_ptr[array_location])->weight_ptr = 
       (float *) LB_MALLOC(sizeof(float) * wgt_dim);
     if((sfc_hash_ptr[array_location])->weight_ptr == NULL) {
@@ -686,15 +749,15 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
   }
   else {
     while(extra_hash_ptr->next != NULL &&
-	  extra_hash_ptr->id != sfc_vert_ptr->my_bin) 
+	  extra_hash_ptr->id < sfc_vert_ptr->my_bin) 
       extra_hash_ptr = extra_hash_ptr->next;
 
     if(extra_hash_ptr->id == sfc_vert_ptr->my_bin) {
       for(i=0;i<wgt_dim;i++)
 	extra_hash_ptr->weight_ptr[i] += obj_wgt[i];
     }      
-    
-    else {
+    else if(extra_hash_ptr->next == NULL) {
+      SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr->next =
 	(SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
       if(extra_hash_ptr->next == NULL) {
@@ -705,6 +768,31 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
       extra_hash_ptr->id = sfc_vert_ptr->my_bin;
       extra_hash_ptr->destination_proc = sfc_vert_ptr->destination_proc;
       extra_hash_ptr->next = NULL;
+      extra_hash_ptr->prev = another_hash_ptr;
+      extra_hash_ptr->weight_ptr = 
+	(float *) LB_MALLOC(sizeof(float) * wgt_dim);
+      if(extra_hash_ptr->weight_ptr == NULL) {
+	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	return(LB_MEMERR);
+      }
+      for(i=0;i<wgt_dim;i++)
+	extra_hash_ptr->weight_ptr[i] = obj_wgt[i];
+    }
+    else {
+      SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
+      extra_hash_ptr = extra_hash_ptr->prev;
+      extra_hash_ptr->next =
+	(SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+      if(extra_hash_ptr->next == NULL) {
+	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	return(LB_MEMERR);
+      }
+      extra_hash_ptr = extra_hash_ptr->next;
+      extra_hash_ptr->prev = another_hash_ptr->prev;
+      another_hash_ptr->prev = extra_hash_ptr;
+      extra_hash_ptr->id = sfc_vert_ptr->my_bin;
+      extra_hash_ptr->destination_proc = sfc_vert_ptr->destination_proc;
+      extra_hash_ptr->next = another_hash_ptr;
       extra_hash_ptr->weight_ptr = 
 	(float *) LB_MALLOC(sizeof(float) * wgt_dim);
       if(extra_hash_ptr->weight_ptr == NULL) {
@@ -728,12 +816,13 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
 */
 
 int sfc_get_array_location(int number_of_bins, int number_of_bits, 
-			   int prev_used_bits, SFC_VERTEX_PTR sfc_vert_ptr, 
-			   int size_of_unsigned, unsigned imax)
+			   int prev_used_bits, SFC_VERTEX_PTR sfc_vert_ptr)
 {
   int counter = 0;
-  unsigned ilocation, ilocation2;
- 
+  unsigned ilocation = 0;
+  unsigned ilocation2 = 0;
+  int pub = prev_used_bits;
+  int size_of_unsigned = sizeof(unsigned);
 
   if(prev_used_bits == 0)
     ilocation = 
@@ -752,7 +841,13 @@ int sfc_get_array_location(int number_of_bins, int number_of_bits,
       ilocation += ((sfc_vert_ptr->sfc_key[counter+1]) >> 
 		    (2*size_of_unsigned*8-prev_used_bits-number_of_bits));  
   }
- 
+  if(ilocation >= number_of_bins)  {
+    int myid;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    printf("OH DAMN OH on proc %d, ilocation is %d and # bins is %d pub is %d \n", myid, ilocation, number_of_bins, pub);
+    ilocation = number_of_bins - 1;
+  }
+
   return(ilocation);
 }
 
