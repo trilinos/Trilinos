@@ -35,7 +35,7 @@
 #include "NOX_Abstract_Group.H"
 
 NOX::LineSearch::Utils::Slope::Slope() :
-  vecPtr(0)
+  vecPtr(0), grpPtr(0)
 {
 
 }
@@ -43,6 +43,7 @@ NOX::LineSearch::Utils::Slope::Slope() :
 NOX::LineSearch::Utils::Slope::~Slope()
 {
   delete vecPtr;
+  delete grpPtr;
 }
 
 double NOX::LineSearch::Utils::Slope::computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp) 
@@ -74,7 +75,8 @@ double NOX::LineSearch::Utils::Slope::computeSlope(const Abstract::Vector& dir, 
   return(vecPtr->dot(grp.getF()));
 }
 
-double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vector& dir, const Abstract::Group& grp) 
+double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vector& dir, 
+							     const Abstract::Group& grp) 
 {
   // Allocate space for vecPtr and grpPtr if necessary
   if (vecPtr == 0) 
@@ -104,17 +106,14 @@ double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vec
     eta = 1.0e-6;
 
   // Perturb the solution vector
-  *vecPtr = grp.getX();
-  vecPtr->update(eta, dir, 1.0);
+  vecPtr->update(eta, dir, 1.0, grp.getX(), 0.0);
 
   // Compute the new F --> F(x + eta * dir)
   grpPtr->setX(*vecPtr);  
   grpPtr->computeF();
 
   // Compute Js = (F(x + eta * dir) - F(x))/eta
-  *vecPtr = grpPtr->getF();
-  vecPtr->update(-1.0, grp.getF(), 1.0);
-  vecPtr->scale(1.0/eta);
+  vecPtr->update(-1.0/eta, grp.getF(), 1.0/eta, grpPtr->getF(), 0.0);
   
   return(vecPtr->dot(grp.getF()));
 }
