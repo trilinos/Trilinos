@@ -35,7 +35,7 @@
 
 /******************************************************************************/
 
-int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
+int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -65,7 +65,7 @@ int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
 
 /******************************************************************************/
 
-int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[], 
+int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
@@ -874,7 +874,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 } /* ML_Operator2EpetraCrsMatrix */
 
 #ifdef WKC
-int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)
+int Epetra_ML_matvec_WKC (ML_Operator *data, int in, double *p, int out, double *ap)
 {
   ML_Operator *mat_in;
 

@@ -3,10 +3,10 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
-extern int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
+extern int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
 
-extern int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
+extern int Poisson_matvec(ML_Operator *A_data, int in_length, double p[], int out_length,
                    double ap[]);
 extern int user_smoothing(void *data, int x_length, double x[],
                    int rhs_length, double rhs[]);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
    return(1);
 }
 
-int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
+int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int count = 0, i, start, row;
@@ -103,7 +103,7 @@ int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
    }
    return(1);
 }
-int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
+int Poisson_matvec(ML_Operator *A_data, int in_length, double p[], int out_length,
                    double ap[])
 {
    int i;

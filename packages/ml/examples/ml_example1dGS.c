@@ -8,15 +8,15 @@
 /*       Sample User programs                                            */
 /*************************************************************************/
 
-extern int myinterp(void *mydata, int, double p[], int, double ap[]);
-extern int mymatvec(void *mydata, int, double p[], int, double ap[]);
-extern int myrestrict(void *mydata, int, double p[], int, double ap[]);
+extern int myinterp(ML_Operator *mydata, int, double p[], int, double ap[]);
+extern int mymatvec(ML_Operator *mydata, int, double p[], int, double ap[]);
+extern int myrestrict(ML_Operator *mydata, int, double p[], int, double ap[]);
 extern int mysmooth(void *mydata, int, double x[], int, double rhs[]);
-extern int myAgetrow(void *data, int N_requested_rows, int requested_rows[],
+extern int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
-extern int myRgetrow(void *data, int N_requested_rows, int requested_rows[],
+extern int myRgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
-extern int myPgetrow(void *data, int N_requested_rows, int requested_rows[],
+extern int myPgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
 extern double get_boundary(double x[], int size, int *processor_info);
 
@@ -31,7 +31,7 @@ struct data {
 	int start_row;
 };
 
-int myinterp(void *mydata, int leng1, double p[], int leng2, double ap[])
+int myinterp(ML_Operator *mydata, int leng1, double p[], int leng2, double ap[])
 {
    int i, fine_i, fine_size, coarse_size, proc_id;
    double ghost;
@@ -80,7 +80,7 @@ int my_comm(double *vec, void *idata)
    return 0;
 }
 
-int mymatvec(void *mydata, int leng1, double p[], int leng2, double ap[])
+int mymatvec(ML_Operator *mydata, int leng1, double p[], int leng2, double ap[])
 {
    int i, size, proc_id;
    double ghost;
@@ -103,7 +103,7 @@ int mymatvec(void *mydata, int leng1, double p[], int leng2, double ap[])
    return 0;
 }
 
-int myrestrict(void *mydata, int leng1, double p[], int leng2, double ap[])
+int myrestrict(ML_Operator *mydata, int leng1, double p[], int leng2, double ap[])
 {
    int i, fine_i, coarse_size, proc_id;
    struct data *data;
@@ -194,7 +194,7 @@ MPI_Request request;
 
 
 
-int myAgetrow(void *data, int N_requested_rows, int requested_rows[],
+int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int ncount = 0, i, row, Nrow, proc, Nprocs;
@@ -225,7 +225,7 @@ int myAgetrow(void *data, int N_requested_rows, int requested_rows[],
    }
    return(1);
 }
-int myRgetrow(void *data, int N_requested_rows, int requested_rows[],
+int myRgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int ncount = 0, i, row, Nrow;
@@ -252,7 +252,7 @@ int myRgetrow(void *data, int N_requested_rows, int requested_rows[],
    }
    return(1);
 }
-int myPgetrow(void *data, int N_requested_rows, int requested_rows[],
+int myPgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int ncount = 0, i, row, Nrow, col, proc, oldcount, right_neighbor;

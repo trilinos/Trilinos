@@ -24,11 +24,11 @@ class Epetra_LinearProblem;
 #include "ml_include.h"
 
 //! matvec function for Epetra_RowMatrix objects
-int Epetra_ML_matvec(void *data, int in, double *p, int out,
+int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out,
                  double *ap);
 
 #ifdef WKC
-int Epetra_ML_matvec_WKC(void *data, int in, double *p, int out,
+int Epetra_ML_matvec_WKC(ML_Operator *data, int in, double *p, int out,
                  double *ap);
 #endif 
 
@@ -59,7 +59,7 @@ int Epetra_ML_matvec_WKC(void *data, int in, double *p, int out,
   \param \in allocated_space: indicates the space available in 'columns'
   and 'values' for storing nonzeros. If more space is needed, return 0.
 */
-int Epetra_ML_getrow(void *data, int N_requested_rows,
+int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
                  double values[], int row_lengths[]);
 
