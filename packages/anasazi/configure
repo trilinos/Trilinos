@@ -879,7 +879,7 @@ Optional Features:
   --enable-examples       Build examples for all Trilinos packages (default is
                           yes)
   --enable-belos          Build examples which use belos (default is no)
-  --enable-ifpack         Build examples which use ifpack (default is no)
+  --enable-ifpack         Build examples which use ifpack (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5739,7 +5739,7 @@ if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
   ac_cv_use_ifpack=$enableval
 else
-  ac_cv_use_ifpack=no
+  ac_cv_use_ifpack=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ifpack" >&5

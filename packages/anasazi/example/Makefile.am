@@ -9,7 +9,11 @@ ANASAZI_BIRAM_EX_SI_IFPACK = BlockArnoldiPetraExGen
 endif
 endif
 
-noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) BlockArnoldiPetraExHb BlockArnoldiPetraEx 
+#if BUILD_TRIUTILS
+ANASAZI_BIRAM_EX_HB = BlockArnoldiPetraExHb
+#endif 
+
+noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) $(ANASAZI_BIRAM_EX_HB) BlockArnoldiPetraEx 
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
 
@@ -23,7 +27,8 @@ BlockArnoldiPetraExGen_SOURCES = $(srcdir)/BlockArnoldiPetraExGen.cpp
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../tpetra/src -I$(top_srcdir)/../belos/src \
 		-I$(top_builddir)/../belos/src -I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src 
+		-I$(top_builddir)/../ifpack/src -I$(top_srcdir)/../teuchos/src \
+		-I$(top_builddir)/../teuchos/src
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -53,7 +58,8 @@ BlockArnoldiPetraExHb_LDADD = $(top_builddir)/utils/libanasaziutils.a \
 
 BlockArnoldiPetraExGen_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/utils/libanasaziutils.a 
+	$(top_builddir)/utils/libanasaziutils.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockArnoldiPetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils
 
@@ -61,6 +67,7 @@ BlockArnoldiPetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils
 BlockArnoldiPetraExGen_LDADD = $(top_builddir)/utils/libanasaziutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../belos/src/libbelos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

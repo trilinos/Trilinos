@@ -262,7 +262,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
-TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, no)
+TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, yes)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 # ------------------------------------------------------------------------
