@@ -2300,6 +2300,7 @@ static int MAXLEV = 24;
       return sier2d(x,y,2,level+1,addf/2,addp/2,peakx,peaky-addp) + addf;
 
   }
+  return (double) 0;
 }
 
 /*****************************************************************************/
