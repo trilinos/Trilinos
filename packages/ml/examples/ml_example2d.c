@@ -419,6 +419,8 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   int          N_levels = 2, level;
   int          coarsest_level;
   int          old_guy, ndim;
+  int temp1[2], temp2[2];
+  double eig_ratio;
 
    /**************************************************************************/
    extern void create_msr_matrix(int*, double **, int **, int);
@@ -584,7 +586,24 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER,  nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
 #else
-         ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
+	 /*
+	          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_BOTH,  nsmooth,
+						 1.);
+		  ml->pre_smoother[level].smoother->internal = 
+		  	 ML_Smoother_MSR_GSforwardnodamping;
+		  ml->post_smoother[level].smoother->internal = 
+		  	 ML_Smoother_MSR_GSbackwardnodamping;
+	 */
+	 temp1[0] = ml->Amat[level].outvec_leng;
+	 if (level != 0)
+	   temp1[1] = ml->Amat[level-1].outvec_leng;
+	 else temp1[1] = 0;
+	 ML_gsum_vec_int(temp1, temp2, 2, ml->comm);
+	 eig_ratio = 20.;
+	 if (temp1[1] != 0)
+	   eig_ratio = ((double) temp1[0])/ ((double) temp1[1]);
+	 if (eig_ratio < 4.) eig_ratio = 4.;
+	 ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth, eig_ratio);
 #endif
       }
 
