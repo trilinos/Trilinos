@@ -94,15 +94,15 @@ char *yo = "Zoltan_HG_HPart_Lib";
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
       "coarsening plot");
 
+  if (hgp->output_level > HG_DEBUG_LIST || hg->info==0) {
+     err = Zoltan_HG_Info(zz, hg);
+     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+        return err;
+     }
   if (hgp->output_level >= HG_DEBUG_LIST) {
      printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
       hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
       hgp->redmo_str, hgp->global_str, hgp->local_str, p);
-     if (hgp->output_level > HG_DEBUG_LIST) {
-        err = Zoltan_HG_Info(zz, hg);
-        if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-           return err;
-        }
      }
 
   /* the graph will only be reduced to a size equal to the number of parts */  
@@ -293,17 +293,17 @@ ZOLTAN_FREE (&t);
 
 
   /* print useful information (conditionally) */
-  if (hgp->output_level > HG_DEBUG_LIST) {
-     err = Zoltan_HG_HPart_Info (zz, hg, p, part, hgp);
-     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-        goto End;
-     }
   if (hgp->output_level >= HG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
      hgp->redmo_str, hgp->global_str, hgp->local_str, p,
      Zoltan_HG_HPart_balance(zz, hg, p, part),
      Zoltan_HG_hcut_size_links(zz, hg, part));
+  if (hgp->output_level > HG_DEBUG_LIST  || hg->info == 0) {
+     err = Zoltan_HG_HPart_Info (zz, hg, p, part, hgp);
+     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+        goto End;
+     }
 
   if (hgp->output_level >= HG_DEBUG_PLOT)
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part,

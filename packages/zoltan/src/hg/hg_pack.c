@@ -91,7 +91,7 @@ char  *yo = "Zoltan_HG_Packing";
      }
 
   /* Optimization */
-  if (hgp->packing_opt != NULL)
+  if (hgp->packing_opt != NULL && *limit > 0)
      err = hgp->packing_opt (zz, hg, pack, limit);
 
 End:

@@ -139,7 +139,7 @@ printf ("RTHRTH: starting\n");
 /*
 hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
 */
-hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);
+hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"grkway")) ? 1 : 0);
 
   if (zz->LB.Method == PATOH) {
     ierr = Zoltan_HG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
@@ -213,6 +213,13 @@ for (i = 0; i < zz->LB.Num_Global_Parts; i++)
    if (subtotal[i] > top)
       top = subtotal[i];
    }
+
+if (zoltan_hg->HG.info == 0) {
+    ierr = Zoltan_HG_HPart_Info (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+       goto End;
+    }
+
 cuts = (int) Zoltan_HG_hcut_size_links (zz, &zoltan_hg->HG, output_parts);
 tcuts = (int)Zoltan_HG_hcut_size_total (&zoltan_hg->HG, output_parts);
 
