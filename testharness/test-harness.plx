@@ -286,136 +286,141 @@ mpiShutdown();
         # for each build directory =============================================
         for (my $j=0; $j<=$#buildDir; $j++) {
 
-            my $comm; 
-            if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
-                $comm = "mpi";
-            } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
-                $comm = "serial";
-            } 
-            
-            # descend into build dir
-            chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";
-            
-            # test for existence of invoke-configure
-            if (!-f "invoke-configure") {
-                my $message = "";
-                $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
-                $message .= "invoke-configure must be present\n";
-                sendMail($FILE_SYSTEM_ERROR, $message, $comm);
-                print $message;
-                die " *** file missing - aborting test-harness ***\n";
-            } 
-            
-            # test for read permissions on invoke-configure
-            if (!-r "invoke-configure") {
-                my $message = "";
-                $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
-                $message .= "invoke-configure must be readable\n";
-                sendMail($FILE_SYSTEM_ERROR, $message, $comm);
-                print $message;
-                die " *** file permission wrong - aborting test-harness ***\n";
-            } 
-            
-            # test for executable permission on invoke-configure
-            if (!-x "invoke-configure") {
-                my $message = "";
-                $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
-                $message .= "invoke-configure must be executable\n";
-                sendMail($FILE_SYSTEM_ERROR, $message, $comm);
-                print $message;
-                die " *** file permission wrong - aborting test-harness ***\n";
-            }
-            
-            # should we quit trying (no invoke-configure left)
-            my $quitTrying = 0;
-            
-            # configure --------------------------------------------------------
-            
-            # configure passed?
-            my $configurePassed = 0;            
-            
-            my $COUNT = 0;
-            while (!$configurePassed && !$quitTrying) {
-                if (++$COUNT >= 3) { $quitTrying = 1; }
-            
-                # attempt to configure
-                my $configureOutput = configure($buildDir[$j]);
-                
-                # configure failed
-                if ($configureOutput) {    
-                    
-                    # fix invoke configure
-                    my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log.txt";
-                    my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                    my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);               
-                    
-                    # remove broken package
-                    system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackage";
-                    
-                    print "$comm - Trilinos configuration failed--$brokenPackage broke\n";  
-                    
-                    # there is no invoke-configure left or it's empty
-                    if (!-f $invokeConfigure || -z $invokeConfigure) {   
-                        $quitTrying = 1;
-                    }
-                    
-                    # send email
-                    sendMail($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm);
+            # -t (test only) flag is absent...
+            if (!$flags{t}) {
+                my $comm; 
+                if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
+                    $comm = "mpi";
+                } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
+                    $comm = "serial";
                 } 
                 
-                # configure succeeded
-                else {     
-                    $configurePassed = 1;
-                    print "$comm - Trilinos configured successfully\n";                      
+                # descend into build dir
+                chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";
+                
+                # test for existence of invoke-configure
+                if (!-f "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be present\n";
+                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** file missing - aborting test-harness ***\n";
+                } 
+                
+                # test for read permissions on invoke-configure
+                if (!-r "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be readable\n";
+                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** file permission wrong - aborting test-harness ***\n";
+                } 
+                
+                # test for executable permission on invoke-configure
+                if (!-x "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be executable\n";
+                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** file permission wrong - aborting test-harness ***\n";
                 }
-            
-                # build --------------------------------------------------------
                 
-                # build passed?            
-                my $buildPassed = 0;            
+                # should we quit trying (no invoke-configure left)
+                my $quitTrying = 0;
                 
-                while ($configurePassed && !$buildPassed && !$quitTrying) {
+                # configure --------------------------------------------------------
+                
+                # configure passed?
+                my $configurePassed = 0;            
+                
+                my $COUNT = 0;
+                while (!$configurePassed && !$quitTrying) {
                     if (++$COUNT >= 3) { $quitTrying = 1; }
                 
-                    # attempt to build
-                    my $buildOutput = build($buildDir[$j]);
+                    # attempt to configure
+                    my $configureOutput = configure($buildDir[$j]);
                     
-                    # build failed
-                    if ($buildOutput) {
-                                   
-                        # fix invoke configure         
-                        my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log.txt";
+                    # configure failed
+                    if ($configureOutput) {    
+                        
+                        # fix invoke configure
+                        my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log.txt";
                         my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);
+                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);               
                         
                         # remove broken package
                         system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackage";
                         
-                        print "$comm - Trilinos build failed--$brokenPackage broke\n";  
-                    
+                        print "$comm - Trilinos configuration failed--$brokenPackage broke\n";  
+                        
                         # there is no invoke-configure left or it's empty
                         if (!-f $invokeConfigure || -z $invokeConfigure) {   
                             $quitTrying = 1;
                         }
                         
-                        # force reconfigure
-                        $configurePassed = 0;
-                        
                         # send email
-                        sendMail($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
+                        sendMail($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm);
                     } 
                     
-                    # build succeeded
-                    else {    
-                        $buildPassed = 1;
-                        print "$comm - Trilinos built successfully\n";                  
+                    # configure succeeded
+                    else {     
+                        $configurePassed = 1;
+                        print "$comm - Trilinos configured successfully\n";                      
                     }
-                    
-                } # while (configurePassed && !buildPassed)
                 
-            } # while (!configurePassed)
-            
+                    # build --------------------------------------------------------
+                    
+                    # build passed?            
+                    my $buildPassed = 0;            
+                    
+                    while ($configurePassed && !$buildPassed && !$quitTrying) {
+                        if (++$COUNT >= 3) { $quitTrying = 1; }
+                    
+                        # attempt to build
+                        my $buildOutput = build($buildDir[$j]);
+                        
+                        # build failed
+                        if ($buildOutput) {
+                                       
+                            # fix invoke configure         
+                            my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log.txt";
+                            my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
+                            my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);
+                            
+                            # remove broken package
+                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackage";
+                            
+                            print "$comm - Trilinos build failed--$brokenPackage broke\n";  
+                        
+                            # there is no invoke-configure left or it's empty
+                            if (!-f $invokeConfigure || -z $invokeConfigure) {   
+                                $quitTrying = 1;
+                            }
+                            
+                            # force reconfigure
+                            $configurePassed = 0;
+                            
+                            # send email
+                            sendMail($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
+                        } 
+                        
+                        # build succeeded
+                        else {    
+                            $buildPassed = 1;
+                            print "$comm - Trilinos built successfully\n";                  
+                        }
+                        
+                    } # while (configurePassed && !buildPassed)
+                    
+                } # while (!configurePassed)                       
+            } # if (-t)
             # test -------------------------------------------------------------
+            
+            # -n flag passed -- skip tests
+            if ($flags{n}) { return; }
             
             # locate all test dirs under Trilinos/packages        
             chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
@@ -1629,7 +1634,7 @@ mpiShutdown();
             print outFile "\n";
         }
         
-        print outFile "SUMMARY_EMAIL                   = mnphenow\@software.sandia.gov\n";
+        print outFile "SUMMARY_EMAIL                   = \n";
         
         if (!$short) {        
             print outFile "\n";
@@ -1643,7 +1648,7 @@ mpiShutdown();
             print outFile "\n";
         }
         
-        print outFile "ALL_EMAILS                      = mnphenow\@software.sandia.gov\n";
+        print outFile "ALL_EMAILS                      = \n";
         
         if (!$short) {        
             print outFile "\n";
