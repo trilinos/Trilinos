@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DATAACCESS_H_
-#define _EPETRA_DATAACCESS_H_
+#ifndef EPETRA_DATAACCESS_H
+#define EPETRA_DATAACCESS_H
 /*! \file Epetra_DataAccess.h 
     \brief Epetra_DataAccess Mode enumerable type
  */
@@ -39,4 +39,4 @@ enum Epetra_DataAccess {Copy, /*!< User data will be copied at
                                  used throughout the life of the object. */
                        };
 
-#endif // _EPETRA_DATAACCESS_H_
+#endif // EPETRA_DATAACCESS_H

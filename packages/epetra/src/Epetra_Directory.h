@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DIRECTORY_H_
-#define _EPETRA_DIRECTORY_H_
+#ifndef EPETRA_DIRECTORY_H
+#define EPETRA_DIRECTORY_H
 
 class Epetra_BlockMap;  // Compiler needs forward reference
 class Epetra_Map;
@@ -75,4 +75,4 @@ class Epetra_Directory {
   //@}
 };
 
-#endif /* _EPETRA_DIRECTORY_H_ */
+#endif /* EPETRA_DIRECTORY_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_INTVECTOR_H_
-#define _EPETRA_INTVECTOR_H_
+#ifndef EPETRA_INTVECTOR_H
+#define EPETRA_INTVECTOR_H
 
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
@@ -255,4 +255,4 @@ class Epetra_IntVector : public Epetra_DistObject {
   bool Allocated_;
 };
 
-#endif /* _EPETRA_INTVECTOR_H_ */
+#endif /* EPETRA_INTVECTOR_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_VECTOR_H_
-#define _EPETRA_VECTOR_H_
+#ifndef EPETRA_VECTOR_H
+#define EPETRA_VECTOR_H
 
 #include "Epetra_MultiVector.h"
 class Epetra_Map;
@@ -398,4 +398,4 @@ class Epetra_Vector : public Epetra_MultiVector {
 
 };
 
-#endif /* _EPETRA_VECTOR_H_ */
+#endif /* EPETRA_VECTOR_H */

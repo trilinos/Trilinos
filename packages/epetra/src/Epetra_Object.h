@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_OBJECT_H_
-#define _EPETRA_OBJECT_H_
+#ifndef EPETRA_OBJECT_H
+#define EPETRA_OBJECT_H
 
 #include "Epetra_CombineMode.h"
 #include "Epetra_DataAccess.h"
@@ -158,4 +158,4 @@ inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 }
 
 
-#endif /* _EPETRA_OBJECT_H_ */
+#endif /* EPETRA_OBJECT_H */

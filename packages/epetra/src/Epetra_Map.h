@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MAP_H_
-#define _EPETRA_MAP_H_
+#ifndef EPETRA_MAP_H
+#define EPETRA_MAP_H
 
 //! Epetra_Map: A class for partitioning vectors and matrices.
 
@@ -193,4 +193,4 @@ class Epetra_Map : public Epetra_BlockMap {
   
 };
 
-#endif /* _EPETRA_MAP_H_ */
+#endif /* EPETRA_MAP_H */

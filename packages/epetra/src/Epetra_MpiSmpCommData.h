@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MPISMPCOMMDATA_H_
-#define _EPETRA_MPISMPCOMMDATA_H_
+#ifndef EPETRA_MPISMPCOMMDATA_H
+#define EPETRA_MPISMPCOMMDATA_H
 
 #include "Epetra_Data.h"
 #include <mpi.h>
@@ -62,4 +62,4 @@ class Epetra_MpiSmpCommData : public Epetra_Data {
 	Epetra_MpiSmpCommData& operator=(const Epetra_MpiSmpCommData & CommData);
   
 };
-#endif /* _EPETRA_MPISMPCOMMDATA_H_ */
+#endif /* EPETRA_MPISMPCOMMDATA_H */

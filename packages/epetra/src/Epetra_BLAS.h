@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_BLAS_H_
-#define _EPETRA_BLAS_H_
+#ifndef EPETRA_BLAS_H
+#define EPETRA_BLAS_H
 
 #include "Epetra_Object.h"
 
@@ -148,4 +148,4 @@ inline Epetra_BLAS::Epetra_BLAS(const Epetra_BLAS& BLAS){}
 // Epetra_BLAS destructor
 inline Epetra_BLAS::~Epetra_BLAS(){}
 
-#endif /* _EPETRA_BLAS_H_ */
+#endif /* EPETRA_BLAS_H */

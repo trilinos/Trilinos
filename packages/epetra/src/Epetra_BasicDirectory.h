@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_BASICDIRECTORY_H_
-#define _EPETRA_BASICDIRECTORY_H_
+#ifndef EPETRA_BASICDIRECTORY_H
+#define EPETRA_BASICDIRECTORY_H
 
 #include "Epetra_Object.h"
 #include "Epetra_Directory.h"
@@ -112,4 +112,4 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
 };
 
-#endif /* _EPETRA_BASICDIRECTORY_H_ */
+#endif /* EPETRA_BASICDIRECTORY_H */

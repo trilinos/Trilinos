@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DISTOBJECT_H_
-#define _EPETRA_DISTOBJECT_H_
+#ifndef EPETRA_DISTOBJECT_H
+#define EPETRA_DISTOBJECT_H
 #include "Epetra_Object.h"
 #include "Epetra_SrcDistObject.h"
 class Epetra_Comm;
@@ -228,4 +228,4 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
 };
 
-#endif /* _EPETRA_DISTOBJECT_H_ */
+#endif /* EPETRA_DISTOBJECT_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALDENSEVECTOR_H_
-#define _EPETRA_SERIALDENSEVECTOR_H_
+#ifndef EPETRA_SERIALDENSEVECTOR_H
+#define EPETRA_SERIALDENSEVECTOR_H
 
 #include "Epetra_Object.h" 
 #include "Epetra_SerialDenseMatrix.h"
@@ -192,4 +192,4 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   double * Values()  const {return(A_);};
 };
 
-#endif /* _EPETRA_SERIALDENSEVECTOR_H_ */
+#endif /* EPETRA_SERIALDENSEVECTOR_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MPIDISTRIBUTOR_H_
-#define _EPETRA_MPIDISTRIBUTOR_H_
+#ifndef EPETRA_MPIDISTRIBUTOR_H
+#define EPETRA_MPIDISTRIBUTOR_H
 #include "Epetra_Object.h"
 #include "Epetra_Distributor.h"
 class Epetra_MpiComm;
@@ -180,4 +180,4 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     Epetra_MpiDistributor * comm_plan_reverse_;
 
 };
-#endif /* _EPETRA_MPIDISTRIBUTOR_H_ */
+#endif /* EPETRA_MPIDISTRIBUTOR_H */

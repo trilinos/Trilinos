@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_BLOCKMAPDATA_H_
-#define _EPETRA_BLOCKMAPDATA_H_
+#ifndef EPETRA_BLOCKMAPDATA_H
+#define EPETRA_BLOCKMAPDATA_H
 
 #include "Epetra_Data.h"
 #include "Epetra_IntSerialDenseVector.h"
@@ -91,4 +91,4 @@ class Epetra_BlockMapData : public Epetra_Data {
 	Epetra_BlockMapData& operator=(const Epetra_BlockMapData & BlockMapData);
 
 };
-#endif /* _EPETRA_BLOCKMAPDATA_H_ */
+#endif /* EPETRA_BLOCKMAPDATA_H */

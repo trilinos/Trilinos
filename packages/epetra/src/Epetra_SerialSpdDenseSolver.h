@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALSPDDENSESOLVER_H_
-#define _EPETRA_SERIALSPDDENSESOLVER_H_
+#ifndef EPETRA_SERIALSPDDENSESOLVER_H
+#define EPETRA_SERIALSPDDENSESOLVER_H
 #include "Epetra_SerialDenseSolver.h"
 class Epetra_SerialSymDenseMatrix;
 
@@ -241,4 +241,4 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   Epetra_SerialSpdDenseSolver(const Epetra_SerialSpdDenseSolver& Source){};
 };
 
-#endif /* _EPETRA_SERIALSPDDENSESOLVER_H_ */
+#endif /* EPETRA_SERIALSPDDENSESOLVER_H */

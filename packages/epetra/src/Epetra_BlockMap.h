@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_BLOCKMAP_H_
-#define _EPETRA_BLOCKMAP_H_
+#ifndef EPETRA_BLOCKMAP_H
+#define EPETRA_BLOCKMAP_H
 
 #include "Epetra_Object.h"
 #include "Epetra_BlockMapData.h"
@@ -491,4 +491,4 @@ class Epetra_BlockMap: public Epetra_Object {
 
 };
 
-#endif /* _EPETRA_BLOCKMAP_H_ */
+#endif /* EPETRA_BLOCKMAP_H */

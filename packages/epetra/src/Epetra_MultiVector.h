@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MULTIVECTOR_H_
-#define _EPETRA_MULTIVECTOR_H_
+#ifndef EPETRA_MULTIVECTOR_H
+#define EPETRA_MULTIVECTOR_H
 
 class Epetra_Comm;
 class Epetra_BlockMap;
@@ -965,4 +965,4 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
 };
 
-#endif /* _EPETRA_MULTIVECTOR_H_ */
+#endif /* EPETRA_MULTIVECTOR_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_FLOPS_H_
-#define _EPETRA_FLOPS_H_
+#ifndef EPETRA_FLOPS_H
+#define EPETRA_FLOPS_H
 
 //! Epetra_Flops:  The Epetra Floating Point Operations Class.
 /*! The Epetra_Flops class provides basic support and consistent interfaces
@@ -78,4 +78,4 @@ class Epetra_Flops {
   
 };
 
-#endif /* _EPETRA_FLOPS_H_ */
+#endif /* EPETRA_FLOPS_H */

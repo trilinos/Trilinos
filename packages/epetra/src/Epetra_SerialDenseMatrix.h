@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALDENSEMATRIX_H_
-#define _EPETRA_SERIALDENSEMATRIX_H_
+#ifndef EPETRA_SERIALDENSEMATRIX_H
+#define EPETRA_SERIALDENSEMATRIX_H
 
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
@@ -367,4 +367,4 @@ This function performs a variety of matrix-matrix multiply operations.
 
 };
 
-#endif /* _EPETRA_SERIALDENSEMATRIX_H_ */
+#endif /* EPETRA_SERIALDENSEMATRIX_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_OPERATOR_H_
-#define _EPETRA_OPERATOR_H_
+#ifndef EPETRA_OPERATOR_H
+#define EPETRA_OPERATOR_H
 
 class Epetra_MultiVector;
 class Epetra_Map;
@@ -120,4 +120,4 @@ class Epetra_Operator {
 
 };
 
-#endif /* _EPETRA_OPERATOR_H_ */
+#endif /* EPETRA_OPERATOR_H */

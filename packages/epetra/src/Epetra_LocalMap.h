@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_LOCALMAP_H_
-#define _EPETRA_LOCALMAP_H_
+#ifndef EPETRA_LOCALMAP_H
+#define EPETRA_LOCALMAP_H
 
 //! Epetra_LocalMap: A class for replicating vectors and matrices across multiple processors.
 
@@ -105,4 +105,4 @@ class Epetra_LocalMap : public Epetra_Map {
 	int CheckInput();
 	
 };
-#endif /* _EPETRA_LOCALMAP_H_ */
+#endif /* EPETRA_LOCALMAP_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALDENSESOLVER_H_
-#define _EPETRA_SERIALDENSESOLVER_H_
+#ifndef EPETRA_SERIALDENSESOLVER_H
+#define EPETRA_SERIALDENSESOLVER_H
 class Epetra_SerialDenseMatrix;
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
@@ -403,4 +403,4 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, p
   Epetra_SerialDenseSolver(const Epetra_SerialDenseSolver& Source){};
 };
 
-#endif /* _EPETRA_SERIALDENSESOLVER_H_ */
+#endif /* EPETRA_SERIALDENSESOLVER_H */

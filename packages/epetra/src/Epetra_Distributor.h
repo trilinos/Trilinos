@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DISTRIBUTOR_H_
-#define _EPETRA_DISTRIBUTOR_H_
+#ifndef EPETRA_DISTRIBUTOR_H
+#define EPETRA_DISTRIBUTOR_H
 
 //! Epetra_Distributor:  The Epetra Gather/Scatter Setup Base Class.
 /*! The Epetra_Distributor class is an interface that encapsulates the general
@@ -131,4 +131,4 @@ class Epetra_Distributor {
   virtual void Print(ostream & os) const = 0;
   //@}
 };
-#endif /* _EPETRA_DISTRIBUTOR_H_ */
+#endif /* EPETRA_DISTRIBUTOR_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_LAPACK_H_
-#define _EPETRA_LAPACK_H_
+#ifndef EPETRA_LAPACK_H
+#define EPETRA_LAPACK_H
 
 //! Epetra_LAPACK:  The Epetra LAPACK Wrapper Class.
 /*! The Epetra_LAPACK class is a wrapper that encapsulates LAPACK
@@ -250,4 +250,4 @@ inline Epetra_LAPACK::Epetra_LAPACK(const Epetra_LAPACK& LAPACK){}
 // Epetra_LAPACK destructor
 inline Epetra_LAPACK::~Epetra_LAPACK(){}
 
-#endif /* _EPETRA_LAPACK_H_ */
+#endif /* EPETRA_LAPACK_H */

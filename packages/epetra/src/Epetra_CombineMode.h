@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_COMBINEMODE_H_
-#define _EPETRA_COMBINEMODE_H_
+#ifndef EPETRA_COMBINEMODE_H
+#define EPETRA_COMBINEMODE_H
 /*! \file Epetra_CombineMode.h 
     \brief Epetra_Combine Mode enumerable type
  */
@@ -56,4 +56,4 @@ enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
                                      on the receiving processor. (V) */
                         };
 
-#endif // _EPETRA_COMBINEMODE_H_
+#endif // EPETRA_COMBINEMODE_H

@@ -23,8 +23,8 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 
-#ifndef _EPETRA_ROWMATRIX_H_
-#define _EPETRA_ROWMATRIX_H_
+#ifndef EPETRA_ROWMATRIX_H
+#define EPETRA_ROWMATRIX_H
 
 class Epetra_Comm;
 class Epetra_Import;
@@ -238,4 +238,4 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
   //@}
 };
 
-#endif /* _EPETRA_ROWMATRIX_H_ */
+#endif /* EPETRA_ROWMATRIX_H */

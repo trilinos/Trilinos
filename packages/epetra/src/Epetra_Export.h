@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_EXPORT_H_
-#define _EPETRA_EXPORT_H_
+#ifndef EPETRA_EXPORT_H
+#define EPETRA_EXPORT_H
 
 #include "Epetra_Object.h"
 class Epetra_BlockMap;
@@ -275,4 +275,4 @@ for each class is given in the appropriate class documentation.
 
 };
 
-#endif /* _EPETRA_EXPORT_H_ */
+#endif /* EPETRA_EXPORT_H */

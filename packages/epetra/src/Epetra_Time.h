@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_TIME_H_
-#define _EPETRA_TIME_H_
+#ifndef EPETRA_TIME_H
+#define EPETRA_TIME_H
 
 //! Epetra_Time:  The Epetra Timing Class.
 /*! The Epetra_Time class is a wrapper that encapsulates the general
@@ -100,4 +100,4 @@ class Epetra_Time: public Epetra_Object {
   
 };
 
-#endif /* _EPETRA_TIME_H_ */
+#endif /* EPETRA_TIME_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SRCDISTOBJECT_H_
-#define _EPETRA_SRCDISTOBJECT_H_
+#ifndef EPETRA_SRCDISTOBJECT_H
+#define EPETRA_SRCDISTOBJECT_H
 class Epetra_BlockMap;
 
 
@@ -52,4 +52,4 @@ class Epetra_SrcDistObject {
   virtual const Epetra_BlockMap & Map() const = 0;
 };
 
-#endif /* _EPETRA_SRCDISTOBJECT_H_ */
+#endif /* EPETRA_SRCDISTOBJECT_H */

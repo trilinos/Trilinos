@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALDISTRIBUTOR_H_
-#define _EPETRA_SERIALDISTRIBUTOR_H_
+#ifndef EPETRA_SERIALDISTRIBUTOR_H
+#define EPETRA_SERIALDISTRIBUTOR_H
 
 #include "Epetra_Object.h"
 #include "Epetra_Distributor.h"
@@ -84,4 +84,4 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
 
   virtual void Print(ostream & os) const;
 };
-#endif /* _EPETRA_SERIALDISTRIBUTOR_H_ */
+#endif /* EPETRA_SERIALDISTRIBUTOR_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MPICOMM_H_
-#define _EPETRA_MPICOMM_H_
+#ifndef EPETRA_MPICOMM_H
+#define EPETRA_MPICOMM_H
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiDistributor.h"
@@ -316,4 +316,4 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
 	Epetra_MpiCommData * MpiCommData_;
 
 };
-#endif /* _EPETRA_MPICOMM_H_ */
+#endif /* EPETRA_MPICOMM_H */

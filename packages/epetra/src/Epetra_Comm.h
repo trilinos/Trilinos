@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_COMM_H_
-#define _EPETRA_COMM_H_
+#ifndef EPETRA_COMM_H
+#define EPETRA_COMM_H
 
 #include "Epetra_Object.h"
 
@@ -270,4 +270,4 @@ class Epetra_Comm {
   virtual void PrintInfo(ostream & os) const = 0;
   //@}
 };
-#endif /* _EPETRA_COMM_H_ */
+#endif /* EPETRA_COMM_H */

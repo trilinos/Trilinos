@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_FASTCRSMATRIX_H_
-#define _EPETRA_FASTCRSMATRIX_H_
+#ifndef EPETRA_FASTCRSMATRIX_H
+#define EPETRA_FASTCRSMATRIX_H
 
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
@@ -136,4 +136,4 @@ class Epetra_FastCrsOperator: public Epetra_CompObject, public virtual Epetra_Op
   mutable Epetra_MultiVector * ExportVector_;
 
 };
-#endif /* _EPETRA_FASTCRSMATRIX_H_ */
+#endif /* EPETRA_FASTCRSMATRIX_H */

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SERIALCOMMDATA_H_
-#define _EPETRA_SERIALCOMMDATA_H_
+#ifndef EPETRA_SERIALCOMMDATA_H
+#define EPETRA_SERIALCOMMDATA_H
 
 #include "Epetra_Data.h"
 
@@ -54,4 +54,4 @@ class Epetra_SerialCommData : public Epetra_Data {
 	Epetra_SerialCommData& operator=(const Epetra_SerialCommData & CommData);
   
 };
-#endif /* _EPETRA_SERIALCOMMDATA_H_ */
+#endif /* EPETRA_SERIALCOMMDATA_H */

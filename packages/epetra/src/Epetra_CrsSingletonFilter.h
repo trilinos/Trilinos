@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_CRSSINGLETONFILTER_H_
-#define _EPETRA_CRSSINGLETONFILTER_H_
+#ifndef EPETRA_CRSSINGLETONFILTER_H
+#define EPETRA_CRSSINGLETONFILTER_H
 
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"
@@ -286,4 +286,4 @@ class Epetra_CrsSingletonFilter {
   //! Copy constructor (defined as private so it is unavailable to user).
   Epetra_CrsSingletonFilter(const Epetra_CrsSingletonFilter & Problem){};
 };
-#endif /* _EPETRA_CRSSINGLETONFILTER_H_ */
+#endif /* EPETRA_CRSSINGLETONFILTER_H */

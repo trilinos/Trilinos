@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_UTIL_H_
-#define _EPETRA_UTIL_H_
+#ifndef EPETRA_UTIL_H
+#define EPETRA_UTIL_H
 #include "Epetra_Object.h"
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
@@ -205,4 +205,4 @@ int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
 			      double * & lhs, int & ldlhs);
 
 
-#endif /* _EPETRA_UTIL_H_ */
+#endif /* EPETRA_UTIL_H */
