@@ -1,3 +1,18 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+
 /* This routine calculates a communication pattern for the situation where
    there are two groups of processors and each processor has a number of
    items which need to be communicated to the other group.  This routine
