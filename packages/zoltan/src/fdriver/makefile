@@ -34,7 +34,7 @@ $(ZOD)/fdr_migrate.o: 	fdr_migrate.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fdr_loadbal.o: 	fdr_loadbal.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/fdr_migrate.o
+			$(ZOD)/fdr_migrate.o $(ZOD)/fdr_input.o
 	$(F90) $(ZOM) -c fdr_loadbal.f90
 	/bin/mv *.o *.mod $(ZOD)
 

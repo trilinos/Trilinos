@@ -29,6 +29,7 @@ public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, &
 
 public :: Test_Multi_Callbacks
 public :: Test_Local_Partitions
+public :: Test_Drops
 
 !/*****************************************************************************
 ! *  Definitions for the Zoltan library driver program.
@@ -41,6 +42,7 @@ character(len=3), parameter :: VER_STR = "1.0"
 ! should be registered.  Default is 0.
 integer(Zoltan_INT) :: Test_Multi_Callbacks = 0
 integer(Zoltan_INT) :: Test_Local_Partitions = 0
+integer(Zoltan_INT) :: Test_Drops = 0
 
 !/* If it doesn't get defined in stdio.h then use this as a default */
 integer(Zoltan_INT), parameter :: FILENAME_MAX = 1024

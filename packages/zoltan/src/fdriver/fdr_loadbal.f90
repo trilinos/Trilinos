@@ -15,6 +15,7 @@ use zoltan
 use zoltan_user_data
 use mpi_h
 use dr_const
+use dr_input
 use dr_migrate
 implicit none
 private
@@ -41,9 +42,10 @@ contains
 !/*****************************************************************************/
 !/*****************************************************************************/
 
-logical function run_zoltan(Proc, prob)
+logical function run_zoltan(Proc, prob, pio_info)
 integer(Zoltan_INT) :: Proc
 type(PROB_INFO) :: prob
+type(PARIO_INFO) :: pio_info
 
 !/* Local declarations. */
   type(Zoltan_Struct), pointer :: zz_obj
@@ -136,7 +138,7 @@ type(PROB_INFO) :: prob
     endif
 
   else if (Test_Local_Partitions == 2) then
-!   /* Compute Proc partitions for odd-ranked processors; let remaining
+!   /* Compute Proc partitions for odd-ranked processors let remaining
 !    * partitions be in even-ranked processors. */
    if (modulo(Proc,2) == 1) then
       s(1:1) = achar(Proc/100 + iachar('0'))
@@ -260,7 +262,7 @@ type(PROB_INFO) :: prob
     if (Proc == 0) then
        print *,"BEFORE load balancing"
     endif
-!    driver_eval();
+!    driver_eval()
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
 !  }
 
@@ -299,9 +301,13 @@ type(PROB_INFO) :: prob
     if (Proc == 0) then
       print *,"AFTER load balancing"
     endif
-!    driver_eval();
+!    driver_eval()
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
 !  }
+
+  if (Test_Drops.eq.1) then
+    call test_drops_rtn(Proc, mesh, pio_info, zz_obj)
+  endif 
 
 !  /* Clean up */
   ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
@@ -349,8 +355,8 @@ integer(Zoltan_INT) function get_first_element(data, &
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -405,8 +411,8 @@ integer(Zoltan_INT) function get_next_element(data, &
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   found = 0
   mesh_data => data%ptr
@@ -419,10 +425,10 @@ integer(Zoltan_INT) function get_next_element(data, &
   endif
   
   if (num_lid_entries.gt.0) then
-    idx = local_id(lid);
-    current_elem => elem(idx);
+    idx = local_id(lid)
+    current_elem => elem(idx)
   else 
-    !/* testing zero-length local IDs; search by global ID for current elem */
+    !/* testing zero-length local IDs search by global ID for current elem */
     current_elem => search_by_global_id(mesh, global_id(gid), idx)
   endif
 
@@ -478,8 +484,8 @@ integer(Zoltan_INT), intent(out) :: ierr
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -495,7 +501,7 @@ integer(Zoltan_INT), intent(out) :: ierr
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
 
-  get_partition = current_elem%my_part;
+  get_partition = current_elem%my_part
 
   ierr = ZOLTAN_OK
 
@@ -523,8 +529,8 @@ integer(Zoltan_INT), intent(out) :: ierr
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -579,8 +585,8 @@ integer(Zoltan_INT) :: idx
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -597,7 +603,7 @@ integer(Zoltan_INT) :: lid
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
 
-  ierr = ZOLTAN_OK;
+  ierr = ZOLTAN_OK
 
   get_num_edges = current_elem%nadj
 end function get_num_edges
@@ -625,8 +631,8 @@ integer(Zoltan_INT), intent(out) :: ierr
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
-  gid = num_gid_entries;
-  lid = num_lid_entries;
+  gid = num_gid_entries
+  lid = num_lid_entries
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -671,5 +677,295 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   ierr = ZOLTAN_OK
 end subroutine get_edge_list
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+
+
+
+
+subroutine test_drops_rtn(Proc, mesh, pio_info, zz)
+integer(Zoltan_INT) :: Proc
+type(MESH_INFO), pointer :: mesh
+type(PARIO_INFO) :: pio_info
+type(Zoltan_Struct), pointer :: zz
+
+type (Zoltan_User_Data_2) :: data
+real(Zoltan_DOUBLE) :: xlo(3), xhi(3), x(3)
+character(FILENAME_MAX+1) :: par_out_fname, ctemp
+type(ELEM_INFO), pointer :: current_elem
+integer :: fp
+integer(Zoltan_INT) :: ierr
+integer(Zoltan_INT) :: i, tmp
+integer(Zoltan_INT) :: Num_Proc
+integer(Zoltan_INT) :: max_part, gmax_part
+integer(Zoltan_INT) :: gid(1), lid(1)
+integer(Zoltan_INT) :: test_both  
+              !/* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
+              !/* If false, test only Zoltan_*_PP_Assign.                    */
+              !/* True if # partitions == # processors.                      */
+
+  mesh => Mesh
+
+  !/* Find maximum partition number across all processors. */
+  call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, ierr)
+  max_part = -1
+  gmax_part = -1
+  do i = 0, mesh%num_elems-1
+    if (mesh%elements(i)%my_part > max_part) then
+      max_part = mesh%elements(i)%my_part
+    endif
+  end do
+  call MPI_Allreduce(max_part, gmax_part, 1, MPI_INTEGER, MPI_MAX, &
+                     MPI_COMM_WORLD, ierr)
+  if ((gmax_part == (Num_Proc-1)) .and. (Test_Local_Partitions == 0)) then
+    test_both = 1
+  else
+    test_both = 0
+  endif
+
+  !/* generate the parallel filename for this processor */
+  ctemp = trim(pio_info%pexo_fname)//".drops"
+  call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
+  open(unit=fp,file=par_out_fname,action="write")
+
+  !/* Test unit box */
+  xlo(1) = 0.0
+  xlo(2) = 0.0
+  xlo(3) = 0.0
+  xhi(1) = 1.0
+  xhi(2) = 1.0
+  xhi(3) = 1.0
+  call test_box_drops(fp, xlo, xhi, zz, Proc, -1, -1, test_both)
+
+  !/* Test box based on this processor */
+  if (mesh%num_elems > 0) then
+    x(1) = 0.
+    x(2) = 0.
+    x(3) = 0.
+    current_elem => mesh%elements(0)
+    lid(1) = 0
+    gid(1) = current_elem%globalID
+
+    if (mesh%eb_nnodes(current_elem%elem_blk) == 1) then
+      x(1) = current_elem%coord(0,0)
+      if (mesh%num_dims > 1) x(2) = current_elem%coord(1,0)
+      if (mesh%num_dims > 2) x(3) = current_elem%coord(2,0)
+    else 
+      data%ptr => mesh
+      call get_geom(data, 1, 1, gid, lid, x, ierr)
+    endif
+
+    xlo(1) = x(1)
+    xlo(2) = x(2)
+    xlo(3) = x(3)
+    xhi(1) = x(1) + 1.0
+    xhi(2) = x(2) + 2.0
+    xhi(3) = x(3) + 3.0
+    call test_box_drops(fp, xlo, xhi, zz, Proc, Proc, current_elem%my_part, &
+                        test_both)
+  endif
+
+  !/* Test box that (most likely) includes the entire domain. */
+  !/* All partitions and processors with partitions should be in the output.  */
+  xlo(1) = -1000000.
+  xlo(2) = -1000000.
+  xlo(3) = -1000000.
+  xhi(1) = 1000000.
+  xhi(2) = 1000000.
+  xhi(3) = 1000000.
+  if (max_part >= 0) then
+    tmp = Proc
+  else
+    !/* do not test for proc if proc has no partitions */
+    tmp = -1
+  endif
+  call test_box_drops(fp, xlo, xhi, zz, Proc, tmp, -1, test_both)
+
+  close(fp)
+
+end subroutine test_drops_rtn
+
+!/*****************************************************************************/
+subroutine test_point_drops(fp, x, zz, Proc, procs, proccnt, parts, partcnt, &
+                            test_both)
+integer :: fp 
+real(Zoltan_DOUBLE) :: x(*) 
+type(Zoltan_Struct), pointer :: zz
+integer(Zoltan_INT) :: Proc
+integer(Zoltan_INT) :: procs(*)
+integer(Zoltan_INT) :: proccnt
+integer(Zoltan_INT) :: parts(*)
+integer(Zoltan_INT) :: partcnt
+integer(Zoltan_INT) :: test_both
+ 
+integer(Zoltan_INT) :: status
+integer(Zoltan_INT) :: one_part, one_proc
+integer(Zoltan_INT) :: i
+integer(Zoltan_INT) :: found
+
+  if (test_both.ne.0) then
+    status = Zoltan_LB_Point_Assign(zz, x, one_proc)
+    if (status .ne. ZOLTAN_OK)  then
+      write(fp,*) "error returned from Zoltan_LB_Point_Assign()"
+    else  
+      write(fp, &
+            fmt='(i2," Zoltan_LB_Point_Assign    (",es13.6,es14.6,es14.6,") on proc",i2)') &
+            Proc, x(1), x(2), x(3), one_proc
+      found = 0
+      do i = 1,proccnt
+        if (one_proc .eq. procs(i)) then
+          found = 1
+          exit
+        endif
+      end do
+      if (found.eq.0) then
+        write(fp, &
+              fmt='(i2," Error:  processor ",i3,&
+                 &" (from Zoltan_LB_Point_Assign) not in proc list from Zoltan_LB_Box_Assign")')&
+              Proc, one_proc
+      endif
+    endif
+  else 
+    write(fp,*) Proc, "Zoltan_LB_Point_Assign not tested."
+  endif
+
+  status = Zoltan_LB_Point_PP_Assign(zz, x, one_proc, one_part)
+  if (status .ne. ZOLTAN_OK) then
+    write(fp,*) "error returned from Zoltan_LB_Point_PP_Assign()"
+  else 
+    write(fp, &
+          fmt='(i2," Zoltan_LB_Point_PP_Assign (",es13.6,es14.6,es14.6,") on proc",&
+               &i2," part ",i2)') &
+          Proc, x(1), x(2), x(3), one_proc, one_part
+
+    found = 0
+    do i = 1,proccnt
+      if (one_proc .eq. procs(i)) then
+        found = 1
+        exit
+      endif
+    end do
+    if (found.eq.0) then
+      write(fp, &
+            fmt='(i2," Error:  processor ",i3,&
+           &" (from Zoltan_LB_Point_PP_Assign) not in proc list from Zoltan_LB_Box_PP_Assign")')&
+            Proc, one_proc
+    endif
+
+    if (partcnt .gt. 0) then
+      found = 0
+      do i=1,partcnt
+        if (one_part .eq. parts(i)) then
+          found = 1
+          exit
+        endif
+      end do
+      if (found.eq.0) then
+        write(fp, &
+              fmt='(i2," Error:  partition ",i3,&
+           &" (from Zoltan_LB_Point_PP_Assign) not in part list from Zoltan_LB_Box_PP_Assign")')&
+              Proc, one_part
+      endif
+    endif
+  endif
+end subroutine test_point_drops
+
+!/*****************************************************************************/
+
+subroutine test_box_drops(fp, xlo, xhi, zz, Proc, answer_proc, answer_part, &
+                          test_both)
+integer :: fp 
+real(Zoltan_DOUBLE) ::  xlo(*)
+real(Zoltan_DOUBLE) ::  xhi(*)
+type(Zoltan_Struct), pointer :: zz
+integer(Zoltan_INT) :: Proc 
+integer(Zoltan_INT) :: answer_proc !/* If >= 0, an expected answer for proc. */
+integer(Zoltan_INT) :: answer_part !/* If >= 0, an expected answer for part. */
+integer(Zoltan_INT) :: test_both
+ 
+integer(Zoltan_INT) ::  status, procfound, partfound
+integer(Zoltan_INT) ::  proccnt, partcnt
+integer(Zoltan_INT) ::  procs(1000), parts(1000)
+real(Zoltan_DOUBLE) ::  x(3)
+integer(Zoltan_INT) ::  i
+
+  write(fp,*) " "
+  write(fp,*) "-------------------------------------------------------"
+  if (test_both .eq. 1) then
+    status = Zoltan_LB_Box_Assign(zz, xlo(1), xlo(2), xlo(3), &
+                                      xhi(1), xhi(2), xhi(3), &
+                                      procs, proccnt)
+    if (status .ne. ZOLTAN_OK) then
+      write(fp,*) "error returned from Zoltan_LB_Box_Assign()"
+    else 
+      write(fp, fmt='(i2," Zoltan_LB_Box_Assign    LO: (",es13.6,es14.6,es14.6,")")') &
+            Proc, xlo(1), xlo(2), xlo(3)
+      write(fp, fmt='(i2,"                         HI: (",es13.6,es14.6,es14.6,")")') &
+            Proc, xhi(1), xhi(2), xhi(3)
+  
+      procfound = 0
+      write(fp,fmt='("       On ",i3," Procs: ",100i3)') proccnt, (procs(i),i=1,proccnt)
+      do i = 1,proccnt
+        if (procs(i) .eq. answer_proc) procfound = 1
+      end do
+      if (answer_proc .ge. 0 .and. procfound.eq.0) then
+        write(fp,*) Proc, " Zoltan_LB_Box_Assign error:  ", &
+                    "expected proc ", answer_proc, " not in output proc list"
+      endif
+    endif
+  else 
+    write(fp,*) Proc, " Zoltan_LB_Box_Assign not tested."
+  endif
+
+
+  status = Zoltan_LB_Box_PP_Assign(zz, xlo(1), xlo(2), xlo(3),  &
+                                       xhi(1), xhi(2), xhi(3),  &
+                                       procs, proccnt,  &
+                                       parts, partcnt)
+  if (status .ne. ZOLTAN_OK) then
+    write(fp,*) "error returned from Zoltan_LB_Box_PP_Assign()"
+  else 
+    write(fp, fmt='(i2," Zoltan_LB_Box_PP_Assign LO: (",es13.6,es14.6,es14.6,")")') &
+          Proc, xlo(1), xlo(2), xlo(3)
+    write(fp, fmt='(i2,"                         HI: (",es13.6,es14.6,es14.6,")")') &
+          Proc, xhi(1), xhi(2), xhi(3)
+
+    procfound = 0
+    write(fp,fmt='("       On ",i3," Procs: ",100i3)') proccnt, (procs(i),i=1,proccnt)
+    do i = 1,proccnt
+      if (procs(i) .eq. answer_proc) procfound = 1
+    end do
+
+    partfound = 0
+    write(fp,fmt='("       In ",i3," Parts: ",100i3)') partcnt, (parts(i),i=1,partcnt)
+    do i=1,partcnt
+      if (parts(i) .eq. answer_part) partfound = 1
+    end do
+    if (answer_proc .ge. 0 .and. procfound.eq.0) then
+      write(fp,*) Proc, " Zoltan_LB_Box_PP_Assign error:  ", &
+                   "expected proc ", answer_proc, " not in output proc list"
+    endif
+    if (answer_part .ge. 0 .and. partfound.eq.0) then
+      write(fp,*) Proc, " Zoltan_LB_Box_PP_Assign error:  ", &
+                  "expected part ", answer_part, "not in output part list"
+    endif
+
+    !/* Test point assign */
+    call test_point_drops(fp, xlo, zz, Proc, procs, proccnt, parts, partcnt, &
+                          test_both)
+    call test_point_drops(fp, xhi, zz, Proc, procs, proccnt, parts, partcnt, &
+                          test_both)
+    x(1) = 0.5 * (xlo(1) + xhi(1))
+    x(2) = 0.5 * (xlo(2) + xhi(2))
+    x(3) = 0.5 * (xlo(3) + xhi(3))
+    call test_point_drops(fp, x, zz, Proc, procs, proccnt, parts, partcnt, &
+                          test_both)
+  endif
+end subroutine test_box_drops
+
+
+
 
 end module dr_loadbal

@@ -196,7 +196,7 @@ type(PARIO_INFO) :: pio_info
         endif
     endif
 
-    if (lowercase(trim(command)) == "zdrive test multi") then
+    if (lowercase(trim(command)) == "test multi callbacks") then
 !       assumes there is one blank between "=" and the input value
         Test_Multi_Callbacks = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
     endif
@@ -204,6 +204,11 @@ type(PARIO_INFO) :: pio_info
     if (lowercase(trim(command)) == "test local partitions") then
 !       assumes there is one blank between "=" and the input value
         Test_Local_Partitions = iachar(trim(inp_line(index(inp_line,"=")+2:))) - iachar('0')
+    endif
+
+    if (lowercase(trim(command)) == "test drops") then
+!       assumes there is one blank between "=" and the input value
+        Test_Drops = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
     endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -326,6 +331,7 @@ type(PARIO_INFO) :: pio_info
 
   call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(Test_Drops, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%rdisk, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%num_dsk_ctrlrs, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
@@ -421,7 +427,7 @@ integer(Zoltan_INT) :: proc_for, nprocs
 !  /*      Local variables      */
 
   integer(Zoltan_INT) :: iTemp1
-  integer(Zoltan_INT) :: iMaxDigit=0, iMyDigit=0
+  integer(Zoltan_INT) :: iMaxDigit, iMyDigit
   character(len=FILENAME_MAX) :: cTemp
   character(len=6) :: frmat
   character(len=32) :: nproc_str, myproc_str
@@ -435,12 +441,14 @@ integer(Zoltan_INT) :: proc_for, nprocs
 !   * name to preserve proper alphabetic sorting of the files.
 !   */
 
+  iMaxDigit = 0
   iTemp1 = nprocs
   do while (iTemp1 >= 1)
     iTemp1 = iTemp1/10
     iMaxDigit = iMaxDigit + 1
   end do
 
+  iMyDigit = 0
   iTemp1 = proc_for
   do while (iTemp1 >= 1)
     iTemp1 = iTemp1/10

@@ -186,7 +186,7 @@ end interface
 !   * now run zoltan to get a new load balance and perform
 !   * the migration
 !   */
-  if (.not. run_zoltan(Proc, prob)) then
+  if (.not. run_zoltan(Proc, prob, pio_info)) then
       print *, "fatal: Error returned from run_zoltan"
       stop
   endif
