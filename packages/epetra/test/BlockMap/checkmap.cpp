@@ -30,7 +30,6 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
       if (Map.MaxMyElementSize() != ElementSize) return(-54);
       if (Map.MinMyElementSize() != ElementSize) return(-56);
-      delete [] MyElementSizeList;
     }
   else
     {
@@ -52,7 +51,6 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
       }
       if (MaxSize !=Map.MaxMyElementSize()) return(-53);
       if (MinSize !=Map.MinMyElementSize()) return(-55);
-      delete [] MyElementSizeList;
     }
 
   const Epetra_Comm & Comm1 = Map.Comm();
@@ -72,7 +70,7 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   if (Map.MaxElementSize()!=ElementSize) return(-11);
 
   int MaxLID = Map.MaxLID();
-  //  if (MaxLID!=NumMyElements-1+IndexBase) return(-12);
+  if (MaxLID!=NumMyElements-1) return(-12);
 
   int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
@@ -88,11 +86,11 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   else if (Map.MinElementSize()!=2) return(-15);
 
   int MinLID = Map.MinLID();
-  if (MinLID!=IndexBase) return(-16);
+  if (MinLID!=0) return(-16);
 
   int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
-  if (!DistributedGlobal) MinMyGID = 0;
+  if (!DistributedGlobal) MinMyGID = IndexBase; // Not really needed
   if (Map.MinMyGID()!=MinMyGID) return(-17);
 
   int * MyGlobalElements1 = new int[NumMyElements];
@@ -107,8 +105,6 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
     for (i=0; i<NumMyElements; i++)
       if (MyGlobalElements[i]!=MyGlobalElements1[i]) return(-18);
   
-  delete [] MyGlobalElements1;
-
   if (Map.NumGlobalElements()!=NumGlobalElements) return(-19);
   
   if (Map.NumGlobalPoints()!=NumGlobalPoints) return(-20);
@@ -122,7 +118,7 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   int MaxLID2 = Map.LID(Map.GID(MaxLID));
   if (MaxLID2 != MaxLID) return(-24);
 
-  if (Map.GID(MaxLID+1) != -1) return(-25);// MaxLID+1 doesn't exist
+  if (Map.GID(MaxLID+1) != IndexBase-1) return(-25);// MaxLID+1 doesn't exist
   if (Map.LID(MaxMyGID+1) != -1) return(-26);// MaxMyGID+1 doesn't exist or is on a different processor
 
   if (!Map.MyGID(MaxMyGID)) return (-27);
@@ -189,6 +185,48 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
     }
   }
   delete [] PointToElementList;
+
+  // Check RemoteIDList function that includes a parameter for size
+  // Get some GIDs off of each processor to test
+  int TotalNumEle, NumElePerProc, NumProc = Comm.NumProc();
+  int MinNumEleOnProc;
+  int NumMyEle;
+  Comm.MinAll(&NumMyEle,&MinNumEleOnProc,1);
+  if (MinNumEleOnProc > 5) NumElePerProc = 6;
+  else NumElePerProc = MinNumEleOnProc;
+  if (NumElePerProc > 0) {
+    TotalNumEle = NumElePerProc*NumProc;
+    int * MyGIDlist = new int[NumElePerProc];
+    int * GIDlist = new int[TotalNumEle];
+    int * PIDlist = new int[TotalNumEle];
+    int * LIDlist = new int[TotalNumEle];
+    int * SizeList = new int[TotalNumEle];
+    for (i=0; i<NumElePerProc; i++)
+	  MyGIDlist[i] = MyGlobalElements1[i];
+    Comm.GatherAll(MyGIDlist,GIDlist,NumElePerProc);// Get a few values from each proc
+    Map.RemoteIDList(TotalNumEle, GIDlist, PIDlist, LIDlist, SizeList);
+    int MyPID= Comm.MyPID();
+    for (i=0; i<TotalNumEle; i++) {
+      if (Map.MyGID(GIDlist[i])) {
+	if (PIDlist[i] != MyPID) return(-44);
+	if (!Map.MyLID(Map.LID(GIDlist[i])) || Map.LID(GIDlist[i]) != LIDlist[i] || Map.GID(LIDlist[i]) != GIDlist[i]) return(-45);
+	cout << SizeList[i]  << "  " << Map.ElementSize(Map.LID(GIDlist[i])) << "  " << Map.LID(GIDlist[i]) << "  " << LIDlist[i] << "  " << GIDlist[i] << endl;
+	//if (SizeList[i] != Map.ElementSize(LIDlist[i])) return(-46);
+      }
+      else {
+	if (PIDlist[i] == MyPID) return(-47); // If MyGID comes back false, the PID listed should be that of another proc
+      }
+    }
+
+    delete [] MyGIDlist;
+    delete [] GIDlist;
+    delete [] PIDlist;
+    delete [] LIDlist;
+    delete [] SizeList;
+  }
+
+  delete [] MyGlobalElements1;
+  delete [] MyElementSizeList;
 
   // Check RemoteIDList function (assumes all maps are linear, even if not stored that way)
 
