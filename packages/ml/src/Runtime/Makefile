@@ -47,12 +47,12 @@ $(APPLICATION): $(APPLICATION_OBJ) ../lib/libml.a
 	   $(INCLUDES) -o $(APPLICATION) ../lib/libml.a $(LIB_PATHS) \
 	   $(ARCH_LIBS) -lm
 
-driver: driver.o lib/libml.a
-	cc -c $(PACKAGES) $(MPI_INC_PATH) Main/driver.c
-	cc -o driver driver.o -L. -lml \
-           $(SUPERLU_LIB_PATH) \
-           $(MPI_LIB_PATH) -lsocket -lnsl -L/usr/local/lib -lblas -lm
-#          -lrpc -lgs -lpthread -ldxml -lm -lmpi
+driver: driver.o ../lib/libml.a
+	(cd ..; make)
+	echo "Linking"; \
+	$(LINKER) driver.o $(ARCH_FLAGS) $(DEFINES) \
+           $(INCLUDES) -o driver ../lib/libml.a $(LIB_PATHS) \
+           $(ARCH_LIBS) -lm
 
 #
 # dependencies for 'c' files
@@ -64,6 +64,12 @@ ml_example2d.o : ../../examples/ml_example2d.c ../Coarsen/ml_aggregate.h \
         ../Include/ml_include.h ../Utils/ml_memory.h ../Include/ml_include.h\
         ../Main/ml_struct.h ../Utils/ml_utils.h
 	$(CC) -c $(CFLAGS) ../../examples/ml_example2d.c -o $@
+
+driver.o : ../../examples/ml_example2d.c ../Coarsen/ml_aggregate.h \
+        ../Comm/ml_comm.h ../Include/ml_defs.h\
+        ../Include/ml_include.h ../Utils/ml_memory.h ../Include/ml_include.h\
+        ../Main/ml_struct.h ../Utils/ml_utils.h
+	$(CC) -c $(CFLAGS) ../Main/driver.c -o $@
 
 clean:
 	@echo "junk" > dummy.o
