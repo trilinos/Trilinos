@@ -681,7 +681,7 @@ namespace Teuchos {
 	TEUCHOS_CHK_ERR(-1); // Return error
       }
     // Call GEMM function
-    GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
+    this->GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
     double nflops = 2 * numRows_;
     nflops *= numCols_;
     nflops *= A_ncols;
