@@ -21,6 +21,11 @@
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
 
+#include "DD_Const.h"             /* rthrth */
+#include "lb_const.h"             /* rthrth */
+
+static Zoltan_DD_Directory *dd ;  /* rthrth */
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -125,6 +130,9 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+
+Zoltan_DD_Create (&dd, lb->Communicator, lb->Num_GID, lb->Num_LID, 0, 0, 1) ;
+
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -180,6 +188,16 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+{
+int ii ;
+for (ii = 0 ; ii < num_imported ; ii++)
+   printf ("ZOLTAN_DEBUG(%d): GID %3u\n", dd->my_proc, import_gids[ii]) ;
+}
+
+
+Zoltan_DD_Update (dd, import_gids, import_lids, NULL, NULL, num_imported) ; /* rthrth */
+Zoltan_DD_Stats (dd) ;  /* rthrth */
+
   /*
    * Call another routine to perform the migration
    */
@@ -200,9 +218,31 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
+
+{
+int *ownerlist ;
+int ii ;
+
+ownerlist = (int *) LB_MALLOC (sizeof (int) * num_imported) ;
+
+Zoltan_DD_Find (dd, export_gids, NULL, NULL, NULL, num_exported, ownerlist) ;
+
+for (ii = 0 ; ii < num_exported ; ii++)
+   printf ("ZOLTAN_FIND_DEBUG(%d): GID %3u, Owner %3d\n", dd->my_proc, export_gids[ii], ownerlist[ii]) ;
+
+LB_FREE (&ownerlist) ;
+}
+
+
+Zoltan_DD_Remove (dd, export_gids, num_exported) ;
+Zoltan_DD_Stats (dd) ;
+
+
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
+
+Zoltan_DD_Destroy (dd) ;
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;

@@ -126,14 +126,16 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 SUB_VPATH	= ../all ../lb ../par ../rcb ../oct ../bsfc \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
-		  ../Utilities/Communication ../Utilities/Memory
+		  ../Utilities/Communication ../Utilities/Memory \
+                  ../Utilities/DDirectory
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb  -I../oct  -I../bsfc \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
-		  -I../Utilities/Communication -I../Utilities/Memory
+		  -I../Utilities/Communication -I../Utilities/Memory \
+                  -I../Utilities/DDirectory
 SUBDIRS		= driver ch all lb par rcb oct bsfc parmetis params timer ha \
 		  reftree 
-UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory
+UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory Utilities/DDirectory
 
 
 ALL_CSRC	= all_allo.c free_structure.c
@@ -217,10 +219,10 @@ ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
-		  -lzoltan_comm -lzoltan_mem \
+		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
-ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a
+ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
@@ -236,7 +238,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Iparmetis -Itimer -Iha -Ireftree \
-		  -IUtilities/Memory -IUtilities/Communication \
+		  -IUtilities/Memory -IUtilities/Communication -IUtilities/DDirectory \
 		  -I$(ZOLTAN_INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
@@ -279,6 +281,7 @@ zoltan:
 	fi;					 
 	@cd Utilities; \
 	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_mem.a; \
+	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_dd.a; \
 	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_comm.a  
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\

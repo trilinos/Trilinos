@@ -9,6 +9,7 @@ Utility                           Subdirectory            Library Name
 ----------------------------------------------------------------------------
 Memory Management                 Memory                  libzoltan_mem.a
 Unstructured Communication        Communication           libzoltan_comm.a
+Distributed Directory             DDirectory              libzoltan_dd.a
 
 
 A single Makefile builds all the utilities.  For directions on building

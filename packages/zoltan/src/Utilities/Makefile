@@ -17,6 +17,7 @@
 # Utilities currently supported:
 #    Memory management utility (libzoltan_mem.a)
 #    Unstructured communication utility (libzoltan_comm.a)
+#    Distributed directory utility (libzoltan_dd.a)
 #
 # To compile a utility, type
 #    gmake ZOLTAN_ARCH=<targetmachine> <Utility name>
@@ -26,9 +27,11 @@
 #    <Utility name> can be a library name 
 #        libzoltan_comm.a  
 #        libzoltan_mem.a
+#        libzoltan_dd.a
 #    or a driver name
 #        zdrive_comm (or comm, for short)
 #        zdrive_mem  (or mem, for short)
+#        zdrive_dd   (or dd, for short)
 #
 ##############################################################################
 
@@ -61,9 +64,9 @@ endif
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../Memory ../Communication
-SUBINCPATH	= -I../Memory -I../Communication
-SUBDIRS		= Memory Communication
+SUB_VPATH	= ../Memory ../Communication ../DDirectory
+SUBINCPATH	= -I../Memory -I../Communication -I../DDirectory -I../../lb
+SUBDIRS		= Memory Communication DDirectory
 
 ############################################################################
 # MEMORY MANAGEMENT PACKAGE
@@ -93,6 +96,22 @@ COMM_DRIVER_CSRC= comm_main.c
 COMM_DRIVER_LIBS= -L. -l$(COMM_TARGET) -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB) 
 COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 
+############################################################################
+# DISTRIBUTED DIRECTORY PACKAGE
+
+DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
+                  DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c \
+                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c
+DD_INC		= DD_Const.h
+DD_LIB		= libzoltan_dd.a
+DD_TARGET	= zoltan_dd
+
+DD_DRIVER	= zdrive_dd
+DD_DRIVER_CSRC	= dd_main.c
+DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) $(MEM_TARGET) \
+                  $(MPI_LIBPATH) $(MPI_LIB)
+DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB)
+
 
 ##############################################################################
 #  Architecture-independent definitions
@@ -109,7 +128,7 @@ CCOMP		= $(CC) $(INC_PATH) $(CFLAGS)
 # lint defines
 #
 LINT		= lint 
-LINT_INC_PATH	= -IMemory -ICommunication  $(INC_PATH)
+LINT_INC_PATH	= -IMemory -ICommunication  -IDDirectory $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) 
 
@@ -123,6 +142,7 @@ help:
 	@echo  'Utilities currently supported:'
 	@echo  '   Memory management utility ('$(MEM_LIB)')'
 	@echo  '   Unstructured communication utility ('$(COMM_LIB)')'
+	@echo  '   Distributed directory utility ('$(DD_LIB)')'
 	@echo  ' '
 	@echo  'To compile a utility, type'
 	@echo  '   gmake ZOLTAN_ARCH=<targetmachine> <Utility name>'
@@ -132,9 +152,11 @@ help:
 	@echo  '   <Utility name> can be a library name '
 	@echo  '        '$(COMM_LIB)
 	@echo  '        '$(MEM_LIB)
+	@echo  '        '$(DD_LIB)
 	@echo  'or a driver name'
 	@echo  '        '$(COMM_DRIVER)' (or comm, for short)'
 	@echo  '        '$(MEM_DRIVER)' (or mem, for short)'
+	@echo  '        '$(DD_DRIVER)' (or dd, for short)'
 	@echo  ' '
 	@echo  'The file Config/Config.<targetmachine> '
 	@echo  'should exist.  See Config/Config.generic for '
@@ -224,6 +246,45 @@ zdrive_comm comm:
 	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(COMM_DRIVER_DEP)"
 	
+$(DD_LIB):
+	@if [ ! -d $(LIB_DIR) ]; 		\
+	then mkdir $(LIB_DIR); 			\
+	fi
+	@if [ ! -d $(OBJ_DIR) ]; 		\
+	then mkdir $(OBJ_DIR); 			\
+	fi
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) $(DD_LIB) 			\
+	"LIB_NAME=$(DD_LIB)"			\
+	"CC=$(CCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(DD_CSRC:.c=.o)"		\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"AR=$(AR)" 				\
+	"RANLIB=$(RANLIB)" 			
+	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
+	fi
+
+
+zdrive_DD dd:
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(COMM_LIB)
+	$(MAKE) $(DD_LIB) 
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) zdrive_dd 			\
+	"DRIVER_NAME=zdrive_dd"		\
+	"CC=$(CCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(DD_DRIVER_CSRC:.c=.o)" 	\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(DD_DRIVER_DEP)"
+
 
 zscript:
 	@echo "Building Utilities zoltan_script..."
@@ -275,6 +336,17 @@ zscript:
 	@echo 'then cp -f $(COMM_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
 	@echo 'else cp -f $(COMM_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
 	@echo 'fi' >> zoltan_script
+	@echo "echo 'Zoltan:  Compiling Utilities/DDirectory'" >> zoltan_script
+	@for iii in $(DD_CSRC)  ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../DDirectory/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo Zoltan:  Linking $(DD_LIB)" >> zoltan_script
+	@echo '$$AR' $(DD_LIB) $(DD_CSRC:.c=.o) >> zoltan_script
+	@echo '$$RANLIB' $(DD_LIB) >> zoltan_script
+	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
+	@echo 'then cp -f $(DD_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
+	@echo 'else cp -f $(DD_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
+	@echo 'fi' >> zoltan_script
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
 #
@@ -292,6 +364,10 @@ lint_mem: $(MEM_CSRC) $(MEM_DRIVER_CSRC)
 	$(LINT) $(LINT_FLAGS) $?
 
 lint_comm: $(MEM_CSRC) $(COMM_CSRC) $(COMM_DRIVER_CSRC) 
+	@echo "running lint..."
+	$(LINT) $(LINT_FLAGS) $?
+
+lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(DD_DRIVER_CSRC) 
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
