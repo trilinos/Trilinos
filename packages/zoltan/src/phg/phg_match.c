@@ -480,7 +480,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
   int *rows[hgc->nProc_y + 1], bestlno, vertex, nselect;
   char *yo = "matching_ipm";
-int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
+int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) != sizeof (float))  {
@@ -488,7 +488,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
     err = ZOLTAN_FATAL;
     goto fini;
   }
-  
+
   /* determine basic working parameters */
   nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x) ;
@@ -503,7 +503,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
        nVtx = count;
     nTotal += calc_nCandidates (count, hgc->nProc_x);
   }
-            
+                 
   /* allocate working and fixed sized array storage */
   sums = NULL;
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
@@ -514,9 +514,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
-     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float)))
-     || !(master_data = (int*) ZOLTAN_MALLOC (3*nTotal*sizeof (int)))
-     || !(master_procs= (int*) ZOLTAN_MALLOC (nTotal * sizeof (int))))  {
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float))))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
        err = ZOLTAN_MEMERR;
        goto fini;
@@ -530,7 +528,9 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
    || !(size   = (int*)   ZOLTAN_MALLOC (nSize        * sizeof (int)))
    || !(rec    = (int*)   ZOLTAN_MALLOC (nRec         * sizeof (int)))
    || !(index  = (int*)   ZOLTAN_MALLOC (nIndex       * sizeof (int)))
-   || !(aux    = (int*)   ZOLTAN_MALLOC (nAux         * sizeof (int))))  {
+   || !(aux    = (int*)   ZOLTAN_MALLOC (nAux         * sizeof (int)))
+   || !(master_data = (int*) ZOLTAN_MALLOC (3 * nTotal * sizeof (int)))
+   || !(master_procs= (int*) ZOLTAN_MALLOC (nTotal * sizeof (int))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      err = ZOLTAN_MEMERR;
      goto fini;
@@ -557,6 +557,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
   
   pvisit = 0;                                    /* marks position in visit[] */
   mp = master_data;
+  nmaster = 0;                      /* count of data accumulted in master row */
   for (round = 0; round < nRounds; round++)  {
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
          
@@ -584,9 +585,9 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
     
     /* determine actual global number of candidates this round */
     MPI_Allreduce (&nsend, &nTotal, 1, MPI_INT, MPI_SUM, hgc->row_comm);     
-    if (nTotal == 0)
-      break;             /* unlikely, but globally, all work is done, so quit */
-            
+    if (nTotal == 0)   
+      break;                            /* globally all work is done, so quit */
+
     /* communication to determine global size and displacements of rec buffer */
     MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
      
@@ -633,7 +634,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
         r     = &edgebuf[permute[k]];     
         gno   = *r++;                        /* gno of candidate vertex */
         count = *r++;                        /* count of following hyperedges */
-        
+                
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
         if ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
@@ -663,8 +664,8 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
               if (sums [hg->hvertex[j]] == 0.0)
                 index [m++] = hg->hvertex[j];
               sums [hg->hvertex[j]] +=hgp->vtx_scal[hg->hvertex[j]]*hg->ewgt[*r];
-            }         
-                                                 
+            }    
+        
         /* if local vtx, remove self inner product (useless maximum) */
         if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
           sums [VTX_GNO_TO_LNO (hg, gno)] = 0.0;
@@ -699,10 +700,13 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
             sums[aux[i]] = 0.0;
           }          
         }
-        else             /* psum message doesn't fit into buffer */
+        else  {           /* psum message doesn't fit into buffer */
+          for (i = 0; i < count; i++)              
+            sums[aux[i]] = 0.0;        
           break;
-      }                  /* DONE: loop over k */   
-
+        }  
+      }                  /* DONE: loop over k */          
+      
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
@@ -712,7 +716,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
        &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
       if (err != ZOLTAN_OK)
         goto fini;
-        
+       
       /* build index into receive buffer pointer for each new row of data */
       old_row = -1;
       k = 0;
@@ -727,20 +731,20 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
         count = *r++;
         r += (count * 2);
       }
-      
+     
       /* save current positions into source rows within rec buffer */
       for (i = 0; i < k; i++)
         rows[i] = &rec[index[i]];
       for (i = k; i < hgc->nProc_y; i++)
         rows[i] = &rec[recsize];       /* in case no data came from a row */
-      rows[i] = &rec[recsize];
+      rows[i] = &rec[recsize]; 
       
       /* merge partial i.p. sum data to compute total inner products */ 
       s = send; 
       for (n = old_kstart; n < kstart; n++)  {
         m = 0;              
         gno = edgebuf [permute[n]];
-                
+        
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
           continue;                           /* this gno is not on this proc */
@@ -750,12 +754,12 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
           if (rows[i] < &rec[recsize] && *rows[i] == gno)  {       
             count = *(++rows[i]);
             for (j = 0; j < count; j++)  {
-              lno = *(++rows[i]);              
+              lno = *(++rows[i]);         
               if (sums[lno] == 0.0)       /* is this first time for this lno? */
                 aux[m++] = lno;           /* then save the lno */          
               sums[lno] += *(float*) (++rows[i]);    /* sum the psums */
             }
-            rows[i] += 3;                    /* skip past row to next gno */              
+            rows[i] += 3;                 /* skip past current lno, row, col */              
           }
         }
           
@@ -777,16 +781,16 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
           }      
           *s++ = gno;
           *s++ = count;
-          for (i = 0; i < m; i++)   {
-            lno = aux[i];             
-            if (sums[lno] > TSUM_THRESHOLD)  {
-              *s++ = lno;
-               f = (float*) s++;
-              *f = sums[lno];
-            }  
-            sums[lno] = 0.0;  
-          }
-        }
+        }  
+        for (i = 0; i < m; i++)   {
+          lno = aux[i];             
+          if (sums[lno] > TSUM_THRESHOLD)  {
+            *s++ = lno;
+             f = (float*) s++;
+            *f = sums[lno];
+          }  
+          sums[lno] = 0.0;  
+        }     
       }
       sendsize = s - send;   /* size (in ints) of send buffer */
       
@@ -807,8 +811,8 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
           ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory");
           return ZOLTAN_MEMERR;
         }
-      }      
-               
+      }    
+        
       MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
        hgc->col_comm);
        
@@ -839,17 +843,17 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
             *mp++ = VTX_LNO_TO_GNO (hg, bestlno);
              f = (float*) mp++;
             *f = bestsum;
-            master_procs[mcount++] = VTX_TO_PROC_X (hg, gno);
+            master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
           }
         } 
     }                                       /* DONE: kstart < nTotal loop */
 
     /* MASTER ROW only: send best results to candidates' owners */
-    err = communication_by_plan (zz, mcount, master_procs, NULL, 3, master_data,
+    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3, master_data,
      &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
     if (err != ZOLTAN_OK)
       goto fini;
-    mcount = 0;
+    nmaster = 0;
     mp = master_data;
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
@@ -859,7 +863,8 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
         vertex = *r++;
         f      = (float*) r++;
         bestsum = *f;            
-                     
+
+                             
         /* Note: ties are broken to favor local over global matches */   
         lno =  VTX_GNO_TO_LNO (hg, gno);  
         if ((bestsum > sums [lno]) || (bestsum == sums[lno]
@@ -882,7 +887,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
         lno = select[i];
         *s++ = gno = VTX_LNO_TO_GNO (hg, lno);
         *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
-          
+            
         /* each distict owner (gno or vertex) needs its copy of the message */
         d1 = VTX_TO_PROC_X (hg, gno);
         d2 = VTX_TO_PROC_X (hg, vertex);
@@ -903,7 +908,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
     /* update match array with current selections */
     /* Note: -gno-1 designates an external match as a negative number */
     if (hgc->myProc_y == 0)
-      for (r = rec; r < rec + 2 * nrec; )  {
+      for (r = rec; r < rec + 2 * nrec; )  {   
         gno    = *r++;
         vertex = *r++;
 
@@ -924,28 +929,31 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);   
   }                                             /* DONE: loop over rounds */
 
-#ifdef RTHRTH      
-uprintf (hgc, "RTHRTH about to test for valid match\n");
-
+   
+if (0 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
 {
 int local = 0, global = 0, unmatched = 0;
 for (i = 0; i < hg->nVtx; i++)
   {
-  if (match[i] == i)  unmatched++;
-  if (match[i] < 0)   global++;
+  if      (match[i] == i)  unmatched++;
+  else if (match[i] < 0)   global++;
+  else                     local++;
   }
 uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
- unmatched, global, hg->nVtx-unmatched-global, hg->nVtx);
+ unmatched, global, local, hg->nVtx);
 }
 
-#endif
+
+
+if (1)
+{
 /* The following tests that the global match array is a valid permutation */                                    
 for (i = 0; i < hg->nVtx; i++)
   if (match[i] < 0)  cmatch[i] = -match[i] - 1;
   else               cmatch[i] = VTX_LNO_TO_GNO (hg, match[i]);
-  
-MPI_Allgather (&hg->nVtx, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm);  
-  
+
+MPI_Allgather (&hg->nVtx, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm); 
+
 recsize = 0;
 for (i = 0; i < hgc->nProc_x; i++)
   recsize += size[i];
@@ -960,6 +968,7 @@ MPI_Allgatherv (cmatch, hg->nVtx, MPI_INT, rec, size, dest, MPI_INT, hgc->row_co
 
 if (nSend < recsize)
   send = (int*) ZOLTAN_REALLOC (send, recsize * sizeof(int));
+  
 for (i = 0; i < recsize; i++)
   send[i] = 0;
 for (i = 0; i < recsize; i++)
@@ -971,7 +980,7 @@ for (i = 0; i < recsize; i++)
     count++;
 if (count)    
   uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
-
+}
 
 fini:
   Zoltan_Multifree (__FILE__, __LINE__, 14, &cmatch, &visit, &sums, &send,
