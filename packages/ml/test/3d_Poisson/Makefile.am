@@ -21,52 +21,21 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or
-# Ray Tuminaro (rstumin@sandia.gov) 
+# Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu|rstumin}@sandia.gov) 
 # 
 # ************************************************************************
 #@HEADER
 
 EXEEXT = .exe
 
-if ML_USING_EPETRA
-epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
-else
-epetra_lib =
-endif
-
-if ML_USING_AZTECOO
-aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
-else
-aztecoo_lib =
-endif
-
-# One of the input options for this example is the coarse direct solver KLU.
-# KLU is part of amesos, which in turn needs teuchos.
-
-if ML_USING_TEUCHOS 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-teuchos_lib =
-endif
-
-if ML_USING_AMESOS
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-else
-amesos_lib =
-endif
-
-if ML_USING_IFPACK
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-else
-ifpack_lib =
-endif
+# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
+include $(top_builddir)/Makefile.export
 
 EXTRA_DIST= 3d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
 noinst_PROGRAMS = 3d_Poisson
 
-3d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
+3d_Poisson_SOURCES = $(top_srcdir)/examples/Other/ml_example3d.c
 
 3d_Poisson$(EXT): $(3d_Poisson_SOURCES)
 
@@ -86,43 +55,17 @@ GetNecessaryFiles: $(EXTRA_DIST)
 	@if (! [ -e ml_inputfile6 ] ); then cp -f $(srcdir)/ml_inputfile6 .; fi
 	@if (! [ -e ml_inputfile7 ] ); then cp -f $(srcdir)/ml_inputfile7 .; fi
 
-#3d_Poisson$(REALEXT): $(3d_Poisson_SOURCES)
-
 3d_Poisson_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a \
-	$(aztecoo_lib) \
-        $(amesos_lib) \
-	$(epetra_lib) \
-        $(teuchos_lib) \
-	GetNecessaryFiles
+    $(top_builddir)/src/libml.a \
+    GetNecessaryFiles
 
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src          \
-                   -I$(top_builddir)/../teuchos/src        \
-                   -I$(top_builddir)/../amesos/src
+ml_common_include_locations = $(ML_EXPORT_INCLUDES)
 
-ml_libs = $(top_builddir)/src/libml.a        \
-                $(aztecoo_lib) \
-                $(ifpack_lib) \
-	        $(amesos_lib) \
-                $(epetra_lib) \
-	        $(teuchos_lib) \
-                $(LIBS) \
-                $(LAPACK_LIBS)                            \
-                $(BLAS_LIBS)                            \
-                $(FLIBS)
+ml_libs = $(ML_EXPORT_LIBS) \
+          $(LIBS)           \
+          $(LAPACK_LIBS)    \
+          $(BLAS_LIBS)      \
+          $(FLIBS)
 
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
