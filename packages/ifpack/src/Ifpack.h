@@ -109,6 +109,10 @@ public:
 				Epetra_RowMatrix* Matrix,
 				const int overlap = 0);
 
+  //! Sets the options in List from the command line
+  int SetParameters(int argc, char* argv[],
+                    Teuchos::ParameterList& List, string& PrecType,
+                    int& Overlap);
 
 };
 

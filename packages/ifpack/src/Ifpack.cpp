@@ -11,6 +11,7 @@
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
+#include "Teuchos_CommandLineProcessor.hpp"
 #ifdef HAVE_IFPACK_AMESOS
 #include "Ifpack_Amesos.h"
 #endif
@@ -62,4 +63,54 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
 
 }
 
+// ======================================================================
+int Ifpack::SetParameters(int argc, char* argv[],
+                          Teuchos::ParameterList& List, string& PrecType,
+                          int& Overlap)
+{
+
+  Teuchos::CommandLineProcessor CLP;
+
+  // prec type
+  string ifp_prec_type = "ILU";
+  CLP.setOption("ifp-prec-type",&ifp_prec_type,"Preconditioner type");
+  // overlap among the processors
+  int ifp_overlap = 0;
+  CLP.setOption("ifp-overlap",&ifp_overlap,"Overlap among processors");
+  // relaxation type
+  string ifp_relax_type = "Jacobi";
+  CLP.setOption("ifp-relax-type",&ifp_relax_type,"Relaxation type");
+  // sweeps (for relax only)
+  int ifp_relax_sweeps = 1;
+  CLP.setOption("ifp-relax-sweeps",
+                &ifp_relax_sweeps,"Number of sweeps for relaxation");
+  // damping (for relax only)
+  double ifp_relax_damping = 1.0;
+  CLP.setOption("ifp-relax-damping",
+                &ifp_relax_damping,"Damping for relaxation");
+  // partitioner type (for block relaxation only)
+  string ifp_part_type = "greedy";
+  CLP.setOption("ifp-part-type",&ifp_part_type,"Partitioner type");
+  // number of local parts (for block relaxation only)
+  int ifp_part_local = 1;
+  CLP.setOption("ifp-part-local",&ifp_part_local,"number of local partitions");
+
+  // allow users to specify other options for other packages
+  CLP.recogniseAllOptions(false);
+  CLP.throwExceptions(false);
+  CLP.parse(argc,argv);
+
+  // I cannot really set those in the List, I pass them back to the user
+  PrecType = ifp_prec_type;
+  Overlap = ifp_overlap;
+
+  // set the list here
+  List.set("relaxation: type", ifp_relax_type);
+  List.set("relaxation: sweeps", ifp_relax_sweeps);
+  List.set("relaxation: damping factor", ifp_relax_damping);
+  List.set("partitioner: type", ifp_part_type);
+  List.set("partitioner: local parts", ifp_part_local);
+
+  return(0);
+}
 #endif // HAVE_IFPACK_TEUCHOS
