@@ -13,6 +13,14 @@
 
 *************************   CHACO TEST PROBLEMS   *****************************
 -------------------------------------------------------------------------------
+ch_bug
+  Small graph where all nodes are aligned along the y-axis.  Also contains
+  duplicate nodes at the same coordinates and zero-weight nodes.
+  Graph and coordinates included.
+  Vertex and edge weights specified.
+  Note:  ParMETIS method partgeom may fail on this problem.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 ch_ewgt
   Simple graph.
   2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
