@@ -101,7 +101,7 @@ typedef enum LB_Method {
 #define LB_DEBUG_PARAMS 1
 #define LB_DEBUG_ZTIME 2
 #define LB_DEBUG_ATIME 3
-#define LB_DEBUG_TRACE_ZERO 5
+#define LB_DEBUG_TRACE_SINGLE 5
 #define LB_DEBUG_TRACE_ALL 6
 #define LB_DEBUG_TRACE_DETAIL 7 
 #define LB_DEBUG_LIST 8
@@ -409,13 +409,13 @@ struct LB_Struct {
 #define LB_TRACE_ENTER(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == LB_DEBUG_TRACE_ZERO)) \
+      (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
     printf("ZOLTAN (Processor %d) Entering %s\n", (lb)->Proc, (yo));
 
 #define LB_TRACE_EXIT(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == LB_DEBUG_TRACE_ZERO)) \
+      (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
     printf("ZOLTAN (Processor %d) Leaving %s\n", (lb)->Proc, (yo));
 
 #define LB_TRACE_DETAIL(lb,yo,string) \
