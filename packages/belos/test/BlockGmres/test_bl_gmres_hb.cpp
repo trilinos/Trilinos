@@ -1,5 +1,5 @@
 //
-// test_bl_gmres_hb.cpp
+// test_bl_pgmres_hb.cpp
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // Multiple right-hand-sides are created randomly.
@@ -21,6 +21,7 @@
 #include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_Time.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -37,7 +38,9 @@ int main(int argc, char *argv[]) {
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
-	
+	double *xguess=0, *b=0, *xexact=0;
+	Teuchos::Time timer("Belos");	
+
 #ifdef EPETRA_MPI	
 	// Initialize MPI	
 	MPI_Init(&argc,&argv); 	
@@ -68,13 +71,13 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-	Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
-		                    &bindx);
-	//
-	// *****Distribute data among processors*****
-	//
-	Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
-		                             &update, &val, &bindx);
+        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+                              &val, &bindx, &xguess, &b, &xexact);
+        // 
+        // *****Distribute data among processors*****
+        //
+        Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update, 
+                                         &update, &val, &bindx, &xguess, &b, &xexact);
 	//
 	// *****Construct the matrix*****
 	//
@@ -127,16 +130,31 @@ int main(int argc, char *argv[]) {
     	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************
 	//
-	int numrhs = 15;  // total number of right-hand sides to solve for
-    	int block = 10;  // blocksize used by solver
-	int numrestarts = 20; // number of restarts allowed 
-    	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
+	int numrhs = 1;  // total number of right-hand sides to solve for
+    	int block = 1;  // blocksize used by solver
+	int numrestarts = 0; // number of restarts allowed 
+	//int maxits = 1200;
+	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
+	//************************************************************
 	//*****Construct random right-hand-sides *****
 	//
-	Belos::PetraVec<double> rhs(Map, numrhs);
-	rhs.MvRandom();
+    	// array represents the users data
+	double * array = new double[numrhs*NumMyElements]; 
+	// set the rhs's to zero, then randomize them
+	for (j=0; j<numrhs; j++ ) {
+		for (i=0; i<NumMyElements; i++ ) {
+			array[i + j*NumMyElements]= 0.0;
+		}
+	}
+	//
+	// create a Belos::PetraVec. Note that the decision to make a view or
+	// or copy is determined by the Petra constructor called by Belos::PetraVec.
+	// This is possible because I pass in arguements needed by petra.
+	//
+	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
+	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
@@ -147,8 +165,13 @@ int main(int argc, char *argv[]) {
 	//
 	// Set initial guesses all to zero vectors.
 	//
-	Belos::PetraVec<double> iguess(Map, numrhs);
-	iguess.MvInit(0.0);
+	for (j=0; j<numrhs; j++ ) {
+		for (i=0; i<NumMyElements; i++ ) {
+			array[i + j*NumMyElements]= 0.0;
+		}
+	}
+
+	Belos::PetraVec<double> iguess( Map, numrhs );
 	MyBlockGmres.SetInitGuess( iguess );
 
 	MyBlockGmres.SetRestart(numrestarts);
@@ -177,7 +200,10 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
+	
+	timer.start();
 	MyBlockGmres.Solve(verbose);
+	timer.stop();
 
 	if (verbose) {
 		cout << "Final Computed Gmres Residual Norms" << endl;
@@ -188,6 +214,9 @@ int main(int argc, char *argv[]) {
 		cout << "Final True Gmres Residual Norms" << endl;
 	}
 	MyBlockGmres.TrueResiduals(verbose);
+	if (verbose) {
+		cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
+	}
 
 	Belos::PetraVec<double> solutions(Map, numrhs);
 	MyBlockGmres.GetSolutions( solutions );
@@ -196,9 +225,8 @@ int main(int argc, char *argv[]) {
 // Release all objects  
 
   delete [] NumNz;
-  delete [] bindx, update, col_inds;
-  delete [] val, row_vals;
+  delete [] array;
 	
   return 0;
   //
-} // end test_bl_gmres_hb.cpp
+} // end test_bl_pgmrs_hb.cpp

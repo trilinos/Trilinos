@@ -10,7 +10,6 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/AnasaziDenseMatrix.hpp \
 	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziReturnType.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
