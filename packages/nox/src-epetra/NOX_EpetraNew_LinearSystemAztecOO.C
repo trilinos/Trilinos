@@ -287,6 +287,9 @@ reset(NOX::Parameter::List& linearSolverParams)
   zeroInitialGuess = 
     linearSolverParams.getParameter("Zero Initial Guess", false);
 
+  manualScaling = 
+    linearSolverParams.getParameter("Compute Scaling Manually", true);
+
   // Place linear solver details in the "Output" sublist of the
   // "Linear Solver" parameter list
   outputSolveDetails = 
@@ -583,7 +586,10 @@ applyJacobianInverse(Parameter::List &p,
 
   // ************* Begin linear system scaling *******************
   if (scaling != 0) {
-    //scaling->computeScaling(Problem);
+
+    if (!manualScaling)
+      scaling->computeScaling(Problem);
+    
     scaling->scaleLinearSystem(Problem);
 
     if (utils.isPrintProcessAndType(Utils::Details)) {

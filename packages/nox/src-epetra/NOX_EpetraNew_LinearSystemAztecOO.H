@@ -249,6 +249,8 @@ options are valid:
 
 <li> "Max Adaptive %Solve Iterations" - (integer) Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.  (NOTE: This parameter is currently NOT supported)
 
+<li> "Compute Scaling Manually" - (boolean) The linear system can be scaled if a NOX::EpetraNew::Scaling object is supplied to LinearSystemAztecOO.  When to compute the scaling can be handled either manually by the user, or this object can automatically compute the scaling prior to a linear solve.  By setting this flag to true, the user will call NOX::EpetraNew::Scaling::computeScaling() manually - on their own!  Setting this to false means the LinearSystemAztecOO object will call the computeScaling function right before it applies the scaling to the matrix in the applyJacobianInverse function.  Default is true (user will call compute scaling). 
+
 <li> "Output %Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
 
 </ul>
@@ -543,6 +545,9 @@ protected:
 
   //! Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).
   bool zeroInitialGuess;
+
+  //! Stores the parameter "Compute Scaling Manually".
+  bool manualScaling;
 
   //! Counter for number of times called since reset or construction
   int precQueryCounter;
