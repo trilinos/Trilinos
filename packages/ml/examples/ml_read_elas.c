@@ -381,7 +381,7 @@ double max_diag, min_diag, max_sum, sum;
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
-     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
+     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 1, 30., nsmooth);
      /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
      */
