@@ -1,32 +1,32 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef _NOX_EPETRA_MATRIXFREE_H_
 #define _NOX_EPETRA_MATRIXFREE_H_
 
@@ -64,13 +64,13 @@ where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is th
 where \f$ \lambda = 1.0e-6 \f$.
  */
 class MatrixFree : public Epetra_Operator {
-      
+
  public:
 
   //! Define types for use of the perturbation parameter \f$ \delta\f$.
   enum DifferenceType {Forward, Backward, Centered};
 
-  //! Constructor 
+  //! Constructor
   MatrixFree(Interface& i, const Epetra_Vector& x, double lambda = 1.0e-6);
 
   //! Pure virtual destructor
@@ -78,45 +78,45 @@ class MatrixFree : public Epetra_Operator {
 
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-    affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
-    does not support transpose use, this method should return a value of -1.      
+    affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
+    does not support transpose use, this method should return a value of -1.
     \param     UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
-    
+
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
   virtual int SetUseTranspose(bool UseTranspose);
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param     X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param     Y -A Epetra_MultiVector of dimension NumVectors containing result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param     Y -A Epetra_MultiVector of dimension NumVectors containing result.
-    
+
     \return Integer error code, set to 0 if successful.
-    
-    \warning In order to work with AztecOO, any implementation of this method must 
+
+    \warning In order to work with AztecOO, any implementation of this method must
     support the case where X and Y are the same object.
   */
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  
+
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that
      \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
-     
-     \warning This method must not be called unless HasNormInf() returns true.    */ 
+
+     \warning This method must not be called unless HasNormInf() returns true.    */
   virtual double NormInf() const;
-  
+
   //! Returns a character string describing the operator
-  virtual char* Label () const;
-  
+  virtual const char* Label () const;
+
   //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const;
 
@@ -134,7 +134,7 @@ class MatrixFree : public Epetra_Operator {
 
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
- 
+
   //! Set the type of perturbation method used (default is Forward)
   virtual void setDifferenceMethod( DifferenceType type );
 
@@ -146,7 +146,7 @@ class MatrixFree : public Epetra_Operator {
 
   //! Set the perturbation parameter \f$ \eta \f$.
   void setPerturbation(double eta_);
-  
+
   //! Returns the most recently used value of the perturbation parameter \f$ \eta \f$.
   double getPerturbation() const;
 
@@ -154,20 +154,20 @@ protected:
 
   //! Label for matrix
   string label;
-  
+
   //! User provided interface function
   Interface& interface;
 
-  //! The current solution vector 
+  //! The current solution vector
   Epetra_Vector currentX;
 
-  //! Perturbed solution vector 
+  //! Perturbed solution vector
   mutable Epetra_Vector perturbX;
 
-  //! Function evaluation at currentX 
+  //! Function evaluation at currentX
   mutable Epetra_Vector fo;
 
-  //! Function evaluation at perturbX 
+  //! Function evaluation at perturbX
   mutable Epetra_Vector fp;
 
   //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
@@ -175,12 +175,12 @@ protected:
 
   //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
   /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
-   */ 
+   */
   const Epetra_Map* epetraMap;
 
   //! Set to true if the epetraMap is created by NOX::Epetra::MatrixFree.
   /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.  This flag tells the destructor whether or not to destroy the Epetra_Map.
-   */ 
+   */
   bool ownsMap;
 
   //! Define types for use of the perturbation parameter \f$ \delta\f$.

@@ -1,32 +1,32 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
@@ -51,8 +51,8 @@ MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
   fmPtr(0),
   epetraMap(0),
   ownsMap(false),
-  lambda(1.0e-6),
   diffType(Forward),
+  lambda(1.0e-6),
   eta(0.0),
   userEta(1.0e-6),
   computeEta(true),
@@ -66,7 +66,7 @@ MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
   fp.PutScalar(0.0);
 
   // Epetra_Operators require Epetra_Maps, so anyone using block maps
-  // (Epetra_BlockMap) won't be able to directly use the AztecOO solver.  
+  // (Epetra_BlockMap) won't be able to directly use the AztecOO solver.
   // We get around this by creating an Epetra_Map from the Epetra_BlockMap.
   const Epetra_Map* testMap = 0;
   testMap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
@@ -92,7 +92,7 @@ MatrixFree::~MatrixFree()
     delete epetraMap;
 }
 
-int MatrixFree::SetUseTranspose(bool UseTranspose) 
+int MatrixFree::SetUseTranspose(bool UseTranspose)
 {
   if (UseTranspose == true) {
     cout << "ERROR: NOX::EpetraNew::MatrixFree::SetUseTranspose() - Transpose is "
@@ -127,7 +127,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm computed correctly
   if (test != 0) {
-    if (NOX::Utils::doPrint(Utils::Warning)) 
+    if (NOX::Utils::doPrint(Utils::Warning))
       cout << "Warning: NOX::EpetraNew::MatrixFree::Apply() - solutionNorm "
 	   << "failed!" << endl;
     solutionNorm = 1.0;
@@ -137,16 +137,16 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm computed correctly
   if (test != 0) {
-    if (NOX::Utils::doPrint(Utils::Warning)) 
-      cout << "Warning: NOX::EpetraNew::MatrixFree::Apply() - vectorNorm failed!" 
+    if (NOX::Utils::doPrint(Utils::Warning))
+      cout << "Warning: NOX::EpetraNew::MatrixFree::Apply() - vectorNorm failed!"
 	   << endl;
     vectorNorm = 1.0;
   }
 
   // Make sure the norm is not zero, otherwise we can get an inf perturbation
   if (vectorNorm == 0.0) {
-    //if (NOX::Utils::doPrint(Utils::Warning)) 
-    //cout << "Warning: NOX::EpetraNew::MatrixFree::Apply() - vectorNorm is zero" 
+    //if (NOX::Utils::doPrint(Utils::Warning))
+    //cout << "Warning: NOX::EpetraNew::MatrixFree::Apply() - vectorNorm is zero"
     //<< endl;
     vectorNorm = 1.0;
   }
@@ -155,10 +155,10 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if ( diffType == Centered )
     if ( !fmPtr )
       fmPtr = new Epetra_Vector(fo);
-  
+
   // Create a reference to the extra perturbed residual vector
   Epetra_Vector& fm = *fmPtr;
-  
+
   double scaleFactor = 1.0;
   if ( diffType == Backward )
   scaleFactor = -1.0;
@@ -169,11 +169,11 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       test  = currentX.Dot(X, &dotprod);
       if (dotprod==0.0) dotprod = 1.0e-12;
       //eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm);
-      eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm) * dotprod/fabs(dotprod); 
+      eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm) * dotprod/fabs(dotprod);
     }
     else
       eta = lambda*(lambda + solutionNorm/vectorNorm);
-    
+
     //cout << "New Pert = " << eta << endl;
     //cout << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
   }
@@ -194,7 +194,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     groupPtr->computeF();
     fp = dynamic_cast<const NOX::Epetra::Vector&>
       (groupPtr->getF()).getEpetraVector();
-  } 
+  }
 
   if ( diffType == Centered ) {
     Y.Scale(-2.0);
@@ -207,7 +207,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       groupPtr->computeF();
       fm = dynamic_cast<const NOX::Epetra::Vector&>
         (groupPtr->getF()).getEpetraVector();
-    } 
+    }
   }
 
   // Compute the directional derivative
@@ -219,7 +219,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Y.Update(1.0, fp, -1.0, fm, 0.0);
     Y.Scale( 1.0/(2.0 * eta) );
   }
-  
+
   return 0;
 }
 
@@ -240,11 +240,11 @@ double MatrixFree::NormInf() const
 }
 
 
-char* MatrixFree::Label () const
+const char* MatrixFree::Label () const
 {
-  return const_cast<char*>(label.c_str());
+  return label.c_str();
 }
-  
+
 bool MatrixFree::UseTranspose() const
 {
   return false;
@@ -271,9 +271,9 @@ const Epetra_Map& MatrixFree::OperatorRangeMap() const
 
 bool MatrixFree::computeJacobian(const Epetra_Vector& x)
 {
-  // Since we have no explicit Jacobian we set our currentX to the 
+  // Since we have no explicit Jacobian we set our currentX to the
   // incoming value and evaluate the RHS.  When the Jacobian is applied,
-  // we compute the perturbed residuals and the directional 
+  // we compute the perturbed residuals and the directional
   // derivative.
   currentX = x;
 
@@ -300,8 +300,8 @@ void MatrixFree::setLambda(double lambda_)
 {
   lambda = lambda_;
 }
- 
-void MatrixFree::setComputePerturbation(bool bVal) 
+
+void MatrixFree::setComputePerturbation(bool bVal)
 {
   computeEta = bVal;
 }

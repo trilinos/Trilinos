@@ -1,29 +1,29 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,9 +45,9 @@ using namespace NOX;
 using namespace NOX::EpetraNew;
 
 FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
-                                   NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   double beta_, 
+                                   NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   double beta_,
 				   double alpha_) :
   utils(printingParams),
   map(x.Map()),
@@ -72,9 +72,9 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   jacobian = createGraphAndJacobian(i, x);
 }
 
-FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   double beta_, 
+FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   double beta_,
 				   double alpha_) :
   utils(),
   map(x.Map()),
@@ -100,9 +100,9 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
 }
 
 FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
-                                   NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   const Epetra_Vector& beta_, 
+                                   NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   const Epetra_Vector& beta_,
 				   double alpha_) :
   utils(printingParams),
   map(x.Map()),
@@ -127,9 +127,9 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   jacobian = createGraphAndJacobian(i, x);
 }
 
-FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   const Epetra_Vector& beta_, 
+FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   const Epetra_Vector& beta_,
 				   double alpha_) :
   utils(),
   map(x.Map()),
@@ -155,10 +155,10 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
 }
 
 FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
-                                   NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   Epetra_CrsGraph& userGraph, 
-				   double beta_, 
+                                   NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   Epetra_CrsGraph& userGraph,
+				   double beta_,
 				   double alpha_) :
   utils(printingParams),
   map(x.Map()),
@@ -179,16 +179,16 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   useGroupForComputeF(false),
   groupPtr(0)
 {
-  // Create the finite difference Jacobian matrix directly using a 
+  // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
   jacobian->TransformToLocal();
 }
 
-FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   Epetra_CrsGraph& userGraph, 
-				   double beta_, 
+FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   Epetra_CrsGraph& userGraph,
+				   double beta_,
 				   double alpha_) :
   utils(),
   map(x.Map()),
@@ -209,17 +209,17 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   useGroupForComputeF(false),
   groupPtr(0)
 {
-  // Create the finite difference Jacobian matrix directly using a 
+  // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
   jacobian->TransformToLocal();
 }
 
 FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
-                                   NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   Epetra_CrsGraph& userGraph, 
-				   const Epetra_Vector& beta_, 
+                                   NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   Epetra_CrsGraph& userGraph,
+				   const Epetra_Vector& beta_,
 				   double alpha_) :
   utils(printingParams),
   map(x.Map()),
@@ -240,16 +240,16 @@ FiniteDifference::FiniteDifference(NOX::Parameter::List& printingParams,
   useGroupForComputeF(false),
   groupPtr(0)
 {
-  // Create the finite difference Jacobian matrix directly using a 
+  // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
   jacobian->TransformToLocal();
 }
 
-FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i, 
-				   const Epetra_Vector& x, 
-				   Epetra_CrsGraph& userGraph, 
-				   const Epetra_Vector& beta_, 
+FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
+				   const Epetra_Vector& x,
+				   Epetra_CrsGraph& userGraph,
+				   const Epetra_Vector& beta_,
 				   double alpha_) :
   utils(),
   map(x.Map()),
@@ -270,7 +270,7 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
   useGroupForComputeF(false),
   groupPtr(0)
 {
-  // Create the finite difference Jacobian matrix directly using a 
+  // Create the finite difference Jacobian matrix directly using a
   // user supplied graph.
   jacobian = new Epetra_CrsMatrix(Copy, userGraph);
   jacobian->TransformToLocal();
@@ -284,12 +284,12 @@ FiniteDifference::~FiniteDifference()
   delete graph;
 }
 
-char* FiniteDifference::Label () const
+const char* FiniteDifference::Label () const
 {
-  return const_cast<char*>(label.c_str());
+  return label.c_str();
 }
 
-int FiniteDifference::SetUseTranspose(bool UseTranspose) 
+int FiniteDifference::SetUseTranspose(bool UseTranspose)
 {
   return jacobian->SetUseTranspose(UseTranspose);
 }
@@ -338,12 +338,12 @@ int FiniteDifference::MaxNumEntries() const
 {
   return jacobian->MaxNumEntries();
 }
-  
+
 int FiniteDifference::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
 {
   return jacobian->ExtractMyRowCopy(MyRow, Length, NumEntries, Values, Indices);
 }
-  
+
 int FiniteDifference::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
   return jacobian->ExtractDiagonalCopy(Diagonal);
@@ -363,22 +363,22 @@ int FiniteDifference::InvRowSums(Epetra_Vector& x) const
 {
   return jacobian->InvRowSums(x);
 }
-  
+
 int FiniteDifference::LeftScale(const Epetra_Vector& x)
 {
   return jacobian->LeftScale(x);
 }
-  
+
 int FiniteDifference::InvColSums(Epetra_Vector& x) const
 {
   return jacobian->InvColSums(x);
 }
-  
+
 int FiniteDifference::RightScale(const Epetra_Vector& x)
 {
   return jacobian->RightScale(x);
 }
-  
+
 double FiniteDifference::NormInf() const
 {
   return jacobian->NormInf();
@@ -388,47 +388,47 @@ double FiniteDifference::NormOne() const
 {
   return jacobian->NormOne();
 }
-  
+
 int FiniteDifference::NumGlobalNonzeros() const
 {
   return jacobian->NumGlobalNonzeros();
 }
-  
+
 int FiniteDifference::NumGlobalRows() const
 {
   return jacobian->NumGlobalRows();
 }
-  
+
 int FiniteDifference::NumGlobalCols() const
 {
   return jacobian->NumGlobalCols();
 }
-  
+
 int FiniteDifference::NumGlobalDiagonals() const
 {
   return jacobian->NumGlobalDiagonals();
 }
-  
+
 int FiniteDifference::NumMyNonzeros() const
 {
   return jacobian->NumMyNonzeros();
 }
-  
+
 int FiniteDifference::NumMyRows() const
 {
   return jacobian->NumMyRows();
 }
-  
+
 int FiniteDifference::NumMyCols() const
 {
   return jacobian->NumMyCols();
 }
-  
+
 int FiniteDifference::NumMyDiagonals() const
 {
   return jacobian->NumMyDiagonals();
 }
-  
+
 bool FiniteDifference::LowerTriangular() const
 {
   return jacobian->LowerTriangular();
@@ -453,7 +453,7 @@ const Epetra_Map& FiniteDifference::RowMatrixColMap() const
 {
   return jacobian->RowMatrixColMap();
 }
-  
+
 const Epetra_Import* FiniteDifference::RowMatrixImporter() const
 {
   return jacobian->RowMatrixImporter();
@@ -477,9 +477,9 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     cout << "ERROR: NOX::EpetraNew::FiniteDifference::computeJacobian() - "
 	 << "Jacobian to evaluate is not a FiniteDifference object!" << endl;
     throw "NOX Error";
-  } 
+  }
 
-  // We need the Epetra_CrsMatrix inside the FiniteDifference object 
+  // We need the Epetra_CrsMatrix inside the FiniteDifference object
   // for the correct insertion commands.
   Epetra_CrsMatrix& jac = *testMatrix->jacobian;
 
@@ -493,13 +493,13 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
   // Create a reference to the extra perturbed residual vector
   Epetra_Vector& fm = *fmPtr;
- 
+
   double scaleFactor = 1.0;
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  double eta = 0.0;  // Value to perturb the solution vector 
-  
+  double eta = 0.0;  // Value to perturb the solution vector
+
   int min = map.MinAllGID();  // Minimum Global ID value
   int max = map.MaxAllGID();  // Maximum Global ID value
   int myMin = map.MinMyGID(); // Minimum Local ID value
@@ -512,36 +512,36 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
   // loop over each global unknown
   for (int k = min; k < max+1; k++) {
-  
-    // Perturb the solution vector via local IDs only if it is owned by 
+
+    // Perturb the solution vector via local IDs only if it is owned by
     // this processor
     int proc = 0;
     if (map.MyGID(k)) {
 
-      if (betaType == Scalar) 
+      if (betaType == Scalar)
 	eta = alpha*x[map.LID(k)] + beta;
       else
 	eta = alpha*x[map.LID(k)] + (*betaVector)[map.LID(k)];
 
       x_perturb[map.LID(k)] += scaleFactor * eta;
       proc = map.Comm().MyPID();
-    }  
+    }
 
     // Find what proc eta is on
     int broadcastProc = 0;
-    map.Comm().SumAll(&proc ,&broadcastProc , 1); 
+    map.Comm().SumAll(&proc ,&broadcastProc , 1);
     // Send the perturbation variable, eta, to all processors
-    map.Comm().Broadcast(&eta, 1, broadcastProc); 
+    map.Comm().Broadcast(&eta, 1, broadcastProc);
 
     // Compute the perturbed RHS
     computeF(x_perturb,fp, NOX::EpetraNew::Interface::Required::FD_Res);
 
     if ( diffType == Centered ) {
       if (map.MyGID(k))
-        x_perturb[map.LID(k)] -= 2.0 * eta;  
+        x_perturb[map.LID(k)] -= 2.0 * eta;
       computeF(x_perturb,fm, NOX::EpetraNew::Interface::Required::FD_Res);
     }
-    
+
     // Compute the column k of the Jacobian
     if ( diffType != Centered ) {
       Jc.Update(1.0, fp, -1.0, fo, 0.0);
@@ -552,7 +552,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
       Jc.Scale( 1.0/(2.0 * eta) );
     }
 
-    // Insert nonzero column entries into the jacobian    
+    // Insert nonzero column entries into the jacobian
     for (int j = myMin; j < myMax+1; j++) {
       if (Jc[map.LID(j)] != 0.0) {
 	jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&k);
@@ -560,7 +560,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     }
 
     // Unperturb the solution vector
-    x_perturb = x;    
+    x_perturb = x;
 
   }
 
@@ -576,11 +576,11 @@ bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
 }
 
 Epetra_CrsMatrix*  FiniteDifference::
-createGraphAndJacobian(Interface::Required& i, 
+createGraphAndJacobian(Interface::Required& i,
 		       const Epetra_Vector& x)
 {
 
-  double eta = 0.0;  // Value to perturb the solution vector 
+  double eta = 0.0;  // Value to perturb the solution vector
 
   int min = map.MinAllGID();  // Minimum Global ID value
   int max = map.MaxAllGID();  // Maximum Global ID value
@@ -595,27 +595,27 @@ createGraphAndJacobian(Interface::Required& i,
 
   // loop over each global unknown
   for (int k = min; k < max+1; k++) {
-  
-    // Perturb the solution vector via local IDs only if it is owned by 
+
+    // Perturb the solution vector via local IDs only if it is owned by
     // this processor
     if (map.MyGID(k)) {
 
-      if (betaType == Scalar) 
+      if (betaType == Scalar)
 	eta = alpha*x[map.LID(k)] + beta;
       else
 	eta = alpha*x[map.LID(k)] + (*betaVector)[map.LID(k)];
-      
+
       x_perturb[map.LID(k)] += eta;
-    }  
+    }
 
     // Compute the perturbed RHS
     computeF(x_perturb, fp, NOX::EpetraNew::Interface::Required::FD_Res);
-    
+
     // Compute the column k of the Jacobian
     Jc.Update(1.0, fp, -1.0, fo, 0.0);
     //Jc.Scale(1.0/eta);
 
-    // Insert column entries into the graph    
+    // Insert column entries into the graph
     for (int j = myMin; j < myMax+1; j++) {
       if (Jc[map.LID(j)] != 0.0) {
 	graph->InsertGlobalIndices(j,1,&k);
@@ -623,7 +623,7 @@ createGraphAndJacobian(Interface::Required& i,
     }
 
     // Unperturb the solution vector
-    x_perturb = x;    
+    x_perturb = x;
 
   }
 
@@ -660,15 +660,15 @@ void FiniteDifference::setGroupForComputeF(NOX::Abstract::Group& group)
 }
 
 
-bool FiniteDifference::computeF(const Epetra_Vector& input, 
-				Epetra_Vector& result, 
+bool FiniteDifference::computeF(const Epetra_Vector& input,
+				Epetra_Vector& result,
 				NOX::EpetraNew::Interface::Required::FillType)
 {
   bool ok = false;
-  
-  
+
+
   if (!useGroupForComputeF)
-    ok = interface.computeF(input, result, 
+    ok = interface.computeF(input, result,
 			    NOX::EpetraNew::Interface::Required::FD_Res);
   else {
 

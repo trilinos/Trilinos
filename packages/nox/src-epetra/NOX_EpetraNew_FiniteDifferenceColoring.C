@@ -1,32 +1,32 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MapColoring.h"
@@ -50,8 +50,8 @@ using namespace NOX::EpetraNew;
 // coloring in parallel since the raw matrix graph is not known.
 FiniteDifferenceColoring::FiniteDifferenceColoring(
                              NOX::Parameter::List& printingParams,
-                             Interface::Required& i, 
-                             const Epetra_Vector& x, 
+                             Interface::Required& i,
+                             const Epetra_Vector& x,
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
@@ -68,9 +68,9 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   colorVect(0),
   betaColorVect(0),
   mappedColorVect(0),
+  xCol_perturb(0),
   columnMap(0),
-  rowColImporter(0),
-  xCol_perturb(0)
+  rowColImporter(0)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
@@ -81,8 +81,8 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 }
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             Interface::Required& i, 
-                             const Epetra_Vector& x, 
+                             Interface::Required& i,
+                             const Epetra_Vector& x,
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
@@ -99,9 +99,9 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   colorVect(0),
   betaColorVect(0),
   mappedColorVect(0),
+  xCol_perturb(0),
   columnMap(0),
-  rowColImporter(0),
-  xCol_perturb(0)
+  rowColImporter(0)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
@@ -113,8 +113,8 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
                              NOX::Parameter::List& printingParams,
-                             Interface::Required& i, 
-                             const Epetra_Vector& x, 
+                             Interface::Required& i,
+                             const Epetra_Vector& x,
                              Epetra_CrsGraph& rawGraph_,
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
@@ -131,22 +131,22 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   Importer(0),
   colorVect(0),
   betaColorVect(0),
-  columnMap(&rawGraph_.ColMap()),
-  rowColImporter(new Epetra_Import(*columnMap, map)),
+  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap())),
   xCol_perturb(new Epetra_Vector(rawGraph_.ColMap())),
-  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap()))
+  columnMap(&rawGraph_.ColMap()),
+  rowColImporter(new Epetra_Import(*columnMap, map))
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
-  if( parallelColoring ) 
+  if( parallelColoring )
     coloringType = NOX_PARALLEL;
 
   createColorContainers();
 }
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-                             Interface::Required& i, 
-                             const Epetra_Vector& x, 
+                             Interface::Required& i,
+                             const Epetra_Vector& x,
                              Epetra_CrsGraph& rawGraph_,
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
@@ -163,14 +163,14 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   Importer(0),
   colorVect(0),
   betaColorVect(0),
-  columnMap(&rawGraph_.ColMap()),
-  rowColImporter(new Epetra_Import(*columnMap, map)),
+  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap())),
   xCol_perturb(new Epetra_Vector(rawGraph_.ColMap())),
-  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap()))
+  columnMap(&rawGraph_.ColMap()),
+  rowColImporter(new Epetra_Import(*columnMap, map))
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
-  if( parallelColoring ) 
+  if( parallelColoring )
     coloringType = NOX_PARALLEL;
 
   createColorContainers();
@@ -194,21 +194,21 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x)
 
 bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
-  // First check to make sure Jac is a 
+  // First check to make sure Jac is a
   // NOX::EpetraNew::FiniteDifferenceColoring object
-  FiniteDifferenceColoring* testMatrix = 
+  FiniteDifferenceColoring* testMatrix =
          dynamic_cast<FiniteDifferenceColoring*>(&Jac);
   if (testMatrix == 0) {
     cout << "ERROR: NOX::EpetraNew::FiniteDifferenceColoring::computeJacobian() - "
-	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!" 
+	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!"
          << endl;
     throw "NOX Error";
-  } 
+  }
 
   // Create a timer for performance
   Epetra_Time fillTimer(x.Comm());
 
-  // We need the Epetra_CrsMatrix inside the FiniteDifferenceColoring object 
+  // We need the Epetra_CrsMatrix inside the FiniteDifferenceColoring object
   // for the correct insertion commands.
   Epetra_CrsMatrix& jac = *testMatrix->jacobian;
 
@@ -233,10 +233,10 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 
   // We need to loop over the largest number of colors on a processor
-  
+
   // Use the overlap (column-space) version of the solution
   xCol_perturb->Import(x, *rowColImporter, Insert);
-  
+
   // Compute the RHS at the initial solution
   if( coloringType == NOX_SERIAL )
     computeF(*xCol_perturb, fo, NOX::EpetraNew::Interface::Required::FD_Res);
@@ -246,12 +246,12 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
       x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
     computeF(x_perturb, fo, NOX::EpetraNew::Interface::Required::FD_Res);
   }
-  
+
   // loop over each color in the colorGraph
   list<int>::iterator allBegin = listOfAllColors.begin(),
                       allEnd   = listOfAllColors.end(),
                       allIter;
-  
+
   std::map<int, int>::iterator mapEnd = colorToNumMap.end(),
                                myMapIter;
   for ( allIter = allBegin; allIter != allEnd; ++allIter ) {
@@ -264,7 +264,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     }
 
     // Perturb the solution vector using coloring
-  
+
     // ----- First create color map and assoc perturbation vectors
     int color = -1;
     if( !skipIt ) color = colorList[k];
@@ -272,19 +272,19 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     colorVect = new Epetra_Vector(*cMap);
     betaColorVect = new Epetra_Vector(*cMap);
     betaColorVect->PutScalar(beta);
-   
+
     // ----- Fill colorVect with computed perturbation values
     // NOTE that we do the mapping ourselves here instead of using an
     // Epetra_Import object.  This is to ensure local mapping only since
-    // Import/Export operations involve off-processor transfers, which we 
+    // Import/Export operations involve off-processor transfers, which we
     // wish to avoid.
     for (int i=0; i<colorVect->MyLength(); i++)
       (*colorVect)[i] = (*xCol_perturb)[columnMap->LID(cMap->GID(i))];
     colorVect->Abs(*colorVect);
     colorVect->Update(1.0, *betaColorVect, alpha);
 
-    // ----- Map perturbation vector to original index space 
-    // ----- and use it 
+    // ----- Map perturbation vector to original index space
+    // ----- and use it
     mappedColorVect->PutScalar(0.0);
     // Here again we do the mapping ourselves to avoid off-processor data
     // transfers that would accompany use of Epetra_Import/Export objects.
@@ -301,11 +301,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
         x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
       computeF(x_perturb, fp, NOX::EpetraNew::Interface::Required::FD_Res);
     }
-    
+
     if ( diffType == Centered ) {
       xCol_perturb->Update(-2.0, *mappedColorVect, 1.0);
       if( coloringType == NOX_SERIAL )
-        computeF(*xCol_perturb, fm, 
+        computeF(*xCol_perturb, fm,
                  NOX::EpetraNew::Interface::Required::FD_Res);
       else {
         //x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
@@ -323,22 +323,22 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     else {
       Jc.Update(1.0, fp, -1.0, fm, 0.0);
     }
-    
-    // Insert nonzero column entries into the jacobian    
+
+    // Insert nonzero column entries into the jacobian
     if( !skipIt ) {
       for (int j = myMin; j < myMax+1; j++) {
         int globalColumnID = (*columns)[k][map.LID(j)];
-        if( globalColumnID >= 0) { 
-  
+        if( globalColumnID >= 0) {
+
           // Now complete the approximation to the derivative by dividing by
           // the appropriate perturbation
-          if ( diffType != Centered ) 
-            Jc[map.LID(j)] /= 
+          if ( diffType != Centered )
+            Jc[map.LID(j)] /=
               (scaleFactor * (*mappedColorVect)[columnMap->LID(globalColumnID)]);
           else
-            Jc[map.LID(j)] /= 
+            Jc[map.LID(j)] /=
               (2.0 * (*mappedColorVect)[columnMap->LID(globalColumnID)]);
-  
+
   	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
           if(err) {
             cout << "ERROR (" << map.Comm().MyPID() << ") : "
@@ -365,7 +365,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if (utils.isPrintType(Utils::Details)) {
     for(int n = 0; n < map.Comm().NumProc(); n++) {
       if(map.Comm().MyPID() == n)
-        cout << "\tTime to fill Jacobian [" << n << "] --> " 
+        cout << "\tTime to fill Jacobian [" << n << "] --> "
              << fillTime << " sec." << endl;
       x.Comm().Barrier();
     }
@@ -391,17 +391,17 @@ void FiniteDifferenceColoring::createColorContainers()
       myColorList[i] = -1;
 
   colorMap->Comm().GatherAll( myColorList, allColorList, maxNumColors );
-  
+
   // Insert all colors into our list
   for( int i = 0; i < maxNumColors*colorMap->Comm().NumProc(); i++ )
     listOfAllColors.push_back( allColorList[i] );
-  
+
   listOfAllColors.remove(-1);
   listOfAllColors.sort();
   listOfAllColors.unique();
-  
+
   // Now create a map to use with the index object
   for( int i = 0; i < numColors; i++ )
     colorToNumMap.insert( pair< int, int > ( colorList[i], i ) );
-  
+
 }

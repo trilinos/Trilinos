@@ -1,32 +1,32 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef _EPETRA_FINITEDIFFERENCE_H_
 #define _EPETRA_FINITEDIFFERENCE_H_
 
@@ -54,7 +54,7 @@ namespace NOX {
 namespace Epetra {
 
   /*! \brief Concrete implementation for creating an Epetra_RowMatrix Jacobian via finite differencing of the residual.
-  
+
 The Jacobian entries are calculated via 1st order finite differencing.  This requires \f$ N  + 1 \f$ calls to computeF() where \f$ N \f$ is the number of unknowns in the problem.
 
   \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta\mathbf{e}_j) - F_i(x)}{\delta}  \f]
@@ -66,19 +66,19 @@ The perturbation, \f$ \delta \f$, is calculated based on one of the following eq
 \f[ \delta = \alpha * | x_j | + \beta \f]
 \f[ \delta = \alpha * | x_j | + \beta_j \f]
 
-where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ can be either a scalar or a vector (defaults to a scalar value of 1.0e-6).  The choice is defined by the type of constructor used.  All parameters are supplied in the constructor.  
+where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ can be either a scalar or a vector (defaults to a scalar value of 1.0e-6).  The choice is defined by the type of constructor used.  All parameters are supplied in the constructor.
 In addition to the forward difference derivative approximation, backward or centered differences can be used via the setDifferenceMethod function.  Note that centered difference provides second order spatial accuracy but at the cost of twice as many function evaluations.
 
   Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems but only for debugging purposes.
   */
 class FiniteDifference : public Epetra_RowMatrix {
-      
+
  public:
 
-  //! Define types for use of the perturbation parameter \f$ \delta\f$. 
+  //! Define types for use of the perturbation parameter \f$ \delta\f$.
   enum DifferenceType {Forward, Backward, Centered};
 
-  //! Constructor 
+  //! Constructor
   FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor
@@ -94,7 +94,7 @@ class FiniteDifference : public Epetra_RowMatrix {
   virtual ~FiniteDifference();
 
   //! Returns a character string describing the name of the operator
-  virtual char* Label () const;
+  virtual const char* Label () const;
 
   //! If set true, the transpose of this operator will be applied
   virtual int SetUseTranspose(bool UseTranspose);
@@ -125,10 +125,10 @@ class FiniteDifference : public Epetra_RowMatrix {
 
   //! See Epetra_RowMatrix documentation.
   virtual int MaxNumEntries() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
 
@@ -140,46 +140,46 @@ class FiniteDifference : public Epetra_RowMatrix {
 
   //! See Epetra_RowMatrix documentation.
   virtual int InvRowSums(Epetra_Vector& x) const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int LeftScale(const Epetra_Vector& x);
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int InvColSums(Epetra_Vector& x) const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int RightScale(const Epetra_Vector& x);
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual double NormInf() const;
 
   //! See Epetra_RowMatrix documentation.
   virtual double NormOne() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalNonzeros() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalRows() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalCols() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalDiagonals() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyNonzeros() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyRows() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyCols() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyDiagonals() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual bool LowerTriangular() const;
 
@@ -194,7 +194,7 @@ class FiniteDifference : public Epetra_RowMatrix {
 
   //! See Epetra_RowMatrix documentation.
   virtual const Epetra_Map & RowMatrixColMap() const;
-  
+
   //! See Epetra_RowMatrix documentation.
   virtual const Epetra_Import * RowMatrixImporter() const;
 
@@ -238,7 +238,7 @@ protected:
   //! User provided interface function.
   Interface& interface;
 
-  //! Perturbed solution vector - a work array that needs to be mutable. 
+  //! Perturbed solution vector - a work array that needs to be mutable.
   mutable Epetra_Vector x_perturb;
 
   //! Function evaluation at currentX - a work array that needs to be mutable.
@@ -262,13 +262,13 @@ protected:
   //! Vector for the perturbation calculation.
   const Epetra_Vector* betaVector;
 
-  //! Define types for the \f$ \beta \f$ parameter during the computation of the perturbation parameter \f$ \delta\f$. 
+  //! Define types for the \f$ \beta \f$ parameter during the computation of the perturbation parameter \f$ \delta\f$.
   enum BetaType {Scalar, Vector};
 
   //! Flag that sets whether \f$ \beta \f$ is a scalar or a vector.
   BetaType betaType;
 
-  //! Define types for use of the perturbation parameter \f$ \delta\f$. 
+  //! Define types for use of the perturbation parameter \f$ \delta\f$.
   DifferenceType diffType;
 
   //! label for the Epetra_RowMatrix
