@@ -955,7 +955,7 @@ void rcb_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       struct rcb_box *rcbbox, int reuse)
 
 {
-  int i,iflag,proc,nprocs,sum,min,max;
+  int i,proc,nprocs,sum,min,max;
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
 
