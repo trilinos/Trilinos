@@ -4,7 +4,6 @@
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 
-
 #include <stdio.h>
 #include "comm_const.h"
 #include "mem_const.h"
@@ -50,8 +49,8 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     int       i, j;		/* loop counters */
     static char *yo = "LB_Comm_Create";
 
-    if (!comm){
-      COMM_ERROR("Invalid communicator.", yo, my_proc);
+    if (comm == MPI_COMM_NULL){
+      COMM_ERROR("Invalid communicator: MPI_COMM_NULL.", yo, my_proc);
       return COMM_FATAL;
     }
 
