@@ -197,12 +197,14 @@ HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
+
 PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_heap.c \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c phg_sort.c \
 		  phg_scale.c \
 		  phg_Vcycle.c phg_util.c 
-PHG_INC 	= phg.h phypergraph.h phg_util.h
+PHG_INC 	= phg.h phg_hypergraph.h phg_util.h
+
 GDEFINES       += -DZOLTAN_HG
 endif
 
@@ -210,7 +212,7 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c hg_rdivide.c \
-		  hg_part.c hg_plot.c hg_util.c 
+		  hg_part.c hg_plot.c hg_util.c
 HG_INC 		= hg.h hypergraph.h hg_util.h
 GDEFINES       += -DZOLTAN_HG
 else
