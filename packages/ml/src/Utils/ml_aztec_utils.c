@@ -2822,8 +2822,8 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
 {
 
   int i, irow, icol, j;
-  int nx, ny, nz;
-  double delta_x, delta_y, delta_z;
+  int nx = -1, ny = -1, nz = -1;
+  double delta_x = 0.0, delta_y = 0.0, delta_z = 0.0;
   
   switch( option ) {
 
@@ -2839,7 +2839,7 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
     break;
 
   case 3:
-    nx = (int) pow(N,0.3333334);
+    nx = (int) pow((double)N,0.3333334);
     ny = nx;
     nz = nx;
     
@@ -3862,7 +3862,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      ifp = fopen(cmd_file_name, "r");
      if (ifp==NULL) 
      {
-        (void) fprintf(stderr,"could not open file\n",
+        (void) fprintf(stderr,"could not open file\n"
                               "%s:%d\n",__FILE__,__LINE__);
         exit(EXIT_FAILURE);
      }
@@ -3892,7 +3892,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      if (G_update != count)
      {
         (void) fprintf(stderr,"number of dofs in file %s ",cmd_file_name);
-        (void) fprintf(stderr,"does not match total number of dofs\n",
+        (void) fprintf(stderr,"does not match total number of dofs\n"
                               "%s:%d\n",__FILE__,__LINE__);
         fflush(stderr); exit(EXIT_FAILURE);
      }
@@ -3914,7 +3914,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
     count2++;
     if (count2>5)
     {
-       fprintf(stderr,"Cannot align update vector to block distribution\n",
+       fprintf(stderr,"Cannot align update vector to block distribution\n"
                       "%s:%d\n",__FILE__,__LINE__);
        fflush(stderr);
        exit(EXIT_FAILURE);
@@ -3980,7 +3980,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
        }
        *update = (int*)AZ_realloc((void*)(*update),(*N_update+count)*sizeof(int));
        if (*update==NULL) {
-       fprintf(stderr,"Allocation of memory failed\n",
+       fprintf(stderr,"Allocation of memory failed\n"
                       "%s:%d\n",__FILE__,__LINE__); 
        fflush(stderr); exit(EXIT_FAILURE);
        }
@@ -4001,7 +4001,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   (*blocks)    = (int*)ML_allocate((*N_update)*sizeof(int));
   if (*blocks==NULL)
   {
-     (void) fprintf(stderr,"not enough space to allocate blocks: *blocks\n",
+     (void) fprintf(stderr,"not enough space to allocate blocks: *blocks\n"
                            "%s:%d\n",__FILE__,__LINE__);
      fflush(stderr);
      exit(EXIT_FAILURE);
@@ -4038,7 +4038,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   {
         if (proc==0) 
         {
-          (void) fprintf(stderr,"***ERR*** global number of variable blocks wrong\n",
+          (void) fprintf(stderr,"***ERR*** global number of variable blocks wrong\n"
                                 "%s:%d\n",__FILE__,__LINE__);
           fflush(stderr);
         }

@@ -338,7 +338,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
 {
 
   int i,j,iaggre;
-  int N_coarser = finer_level.Naggregates, N_coarser_global;
+  int N_coarser = finer_level.Naggregates, N_coarser_global = -1;
   int N_finer = finer_level.Nlocal/*, N_finer_global*/;
   int *graph_decomposition = finer_level.graph_decomposition;
   double *x = finer_level.x;
@@ -740,7 +740,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int begin, end;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
-  int Nrows, Naggregates_global, Nrows_global, offset;
+  int Nrows, Naggregates_global = -1, Nrows_global, offset;
   int mypid = ml->comm->ML_mypid;
   
   /* ------------------- execution begins --------------------------------- */
@@ -1200,9 +1200,11 @@ int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
   else if( z == NULL ) N_dimensions = 2;
   else N_dimensions = 3;
 
-  z_col = 0.0;
-  z_row = 0.0;
+  x_row = 0.0;
+  x_col = 0.0;
+  y_row = 0.0;
   y_col = 0.0;
+  z_row = 0.0;
   z_col = 0.0;
   
   for( irow=0 ; irow<Nrows ; irow++ ) {
@@ -1481,7 +1483,7 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   int begin, end;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
-  int Naggregates_global, Nrows_global, offset;
+  int Naggregates_global = -1, Nrows_global, offset;
   int mypid = ml->comm->ML_mypid;
   
   /* ------------------- execution begins --------------------------------- */

@@ -2296,7 +2296,7 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
   int i;
   int NumMyRows;
   int m,nc,nr,maxdim,ltit;
-  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz = 1;
+  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz = 10.0;
   double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx,xx,yy;
   int square = ML_FALSE;
   /*change square to .true. if you prefer a square frame around
