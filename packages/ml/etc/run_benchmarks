@@ -12,28 +12,28 @@
 # Note: This script is often used with the executable ml_readfile
 #        which contains comments on setting up problems. 
 #
-# Usage: tester [executable bench_directory scratch_directory]
+#echo "Usage: tester [bench_directory executable scratch_directory]
 
 BENCH_DIRECTORY=/home/tuminaro/ml_bench
 EXECUTABLE=/home/tuminaro/codes/Aztec/ml/Obj/ml_readfile
 SCRATCH_DIRECTORY=/tmp/poop
 
-#echo "Usage: tester [executable bench_directory scratch_directory]
+#echo "Usage: tester [bench_directory executable scratch_directory]
 
 #
 # Take command line arguments and replace defaults
 #
-if test $1
+if test $2
 then
-  EXECUTABLE=$1
+  EXECUTABLE=$2
 fi
 if test $3
 then
   SCRATCH_DIRECTORY=$3
 fi
-if test $2
+if test $1
 then
-  BENCH_DIRECTORY=$2
+  BENCH_DIRECTORY=$1
 fi
 
 #
@@ -91,18 +91,30 @@ tail -3 ${SCRATCH_DIRECTORY}/summary
 cd ${BENCH_DIRECTORY}
 for i in *
 do 
-   cd ${i}
-   if test -d ${SCRATCH_DIRECTORY}/${i}
+   if test `expr ${i}` != 'CVS'
    then
-      touch ${SCRATCH_DIRECTORY}/${i}
-   else
-      mkdir ${SCRATCH_DIRECTORY}/${i}
+      cd ${i}
+#      echo -n $i "  "
+      if test -d ${SCRATCH_DIRECTORY}/${i}
+      then
+         touch ${SCRATCH_DIRECTORY}/${i}
+      else
+         mkdir ${SCRATCH_DIRECTORY}/${i}
+      fi
+      /bin/rm -f ml_inputfile
+      for j in ml_inputfile*
+      do
+        ttt=`echo $j | sed "s/ml_inputfile//"`
+        /bin/rm -f ${SCRATCH_DIRECTORY}/${i}/output${ttt} ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
+        /bin/rm -f ml_inputfile
+        cp $j ml_inputfile
+        ${EXECUTABLE} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
+        diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
+                                    ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
+        wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
+        tail -1 ${SCRATCH_DIRECTORY}/summary
+      done
+      /bin/rm -f ml_inputfile
+      cd ..
    fi
-   rm -f ${SCRATCH_DIRECTORY}/${i}/output ${SCRATCH_DIRECTORY}/${i}/difs
-   ${EXECUTABLE} > ${SCRATCH_DIRECTORY}/${i}/output
-   diff -w output ${SCRATCH_DIRECTORY}/${i}/output > \
-          ${SCRATCH_DIRECTORY}/${i}/difs
-   wc ${SCRATCH_DIRECTORY}/${i}/difs >> ${SCRATCH_DIRECTORY}/summary
-   tail -1 ${SCRATCH_DIRECTORY}/summary
-   cd ..
 done
