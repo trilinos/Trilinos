@@ -43,11 +43,13 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST = \
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
+EXTRA_DIST = \
+	Abstract.i    __init__.py  PyInterface.h \
+	Callback.cxx  Parameter.i  Solver.i \
+	Callback.h    Epetra.i     PyInterface.cxx  StatusTest.i
+
+
+
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################

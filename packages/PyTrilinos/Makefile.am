@@ -53,6 +53,7 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
+pyLocate				setup.py \
 config/ac_cxx_bool.m4                   config/depcomp \
 config/ac_cxx_have_std.m4               config/install-sh \
 config/ac_cxx_have_stl.m4               config/missing \

@@ -43,11 +43,18 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST = \
-#
-#       I believe that by switching to AUX_DIR(../../config) one 
-#       could get rid of these.
-#
+# We will list some source files here because we don't compile them in the
+# usual way.
+EXTRA_DIST = \
+	Epetra_VectorHelper.h  NumPyArray.cxx \
+	__init__.py            NumPyArray.h \
+	EpetraExt.i            NumPyWrapper.cxx \
+	Epetra_NumPyVector.cxx NumPyWrapper.h \
+	Epetra_NumPyVector.h \
+	Epetra.py              PyTrilinos.h \
+	Epetra_VectorHelper.cxx \
+	numeric_include.h      RawEpetra.i
+
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
