@@ -1,16 +1,13 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
-
-/************************************************************************/
-/*          Utilities for Trilinos/ML users                             */
-/*----------------------------------------------------------------------*/
-/* Authors:  Marzio Sala (SNL)                                          */
-/*           Mike Heroux (SNL)                                          */
-/*           Jonathan Hu  (SNL)                                         */
-/*           Ray Tuminaro (SNL)                                         */
-/************************************************************************/
+/*!
+ *  \file ml_MultiLevelPreconditioner.cpp
+ *
+ *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
+ *
+ *  \author Marzio Sala, SNL, 9214
+ *
+ *  \date Last update do Doxygen: 22-Jul-04
+ *
+ */
 
 
 #include "ml_common.h"
@@ -483,6 +480,11 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Row
 
 // ================================================ ====== ==== ==== == =
 
+/*! The constructor for the Maxwell equations requires three Epetra_RowMatrix's. 
+ * Two conditions are required on their maps:
+ * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
+ * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
+ */
 MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
 						    const Epetra_RowMatrix & TMatrix,
 						    const Epetra_RowMatrix & NodeMatrix,
@@ -531,7 +533,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 }
 
 // ================================================ ====== ==== ==== == =
-
+// FIXME: should I be deleted??
 MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 						    const ParameterList & List, const bool ComputePrec,
 						    const char Prefix[] )
@@ -757,7 +759,10 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
 #endif
 
 // ================================================ ====== ==== ==== == =
-
+/*! - set to 0 all allocatable pointers
+ *  - put default values in Aztec vectors.
+ *  - zero-out timing
+ */
 void MultiLevelPreconditioner::Initialize()
 {
 
@@ -832,7 +837,7 @@ void MultiLevelPreconditioner::Initialize()
 
 
 // ================================================ ====== ==== ==== == =
-
+// FIXME: test me of delete me??
 int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 {
 
@@ -901,7 +906,8 @@ int MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPrecondition
     // "adaptive: enable" == true, we know the rate of convergence
     // with the previous matrix (and this preconditioner. Now, 
     // we recompute this ratio, and compare it with the previous one.
-    // This requires an AztecOO object
+    // This requires an AztecOO object to be defined (ML must have been
+    // configured with --enable-aztecoo)
 
     if( CheckPreconditionerKrylov() == false ) Destroy_ML_Preconditioner();
     else                                       return 0;
@@ -1899,9 +1905,20 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 // ============================================================================
-
+/*! Values for \c "smoother: type"
+ * - \c Jacobi
+ * - \c Gauss-Seidel
+ * - \c symmetric Gauss-Seidel
+ * - \c block Gauss-Seidel
+ * - \c MLS
+ * - \c Aztec
+ * - \c IFPACK (still under development)
+ * - \c do-nothing
+ */
 void MultiLevelPreconditioner::SetSmoothers() 
 {
+
+  /*! SET SMOOTHZ */
 
   char parameter[80];
 
@@ -2077,6 +2094,22 @@ void MultiLevelPreconditioner::SetSmoothers()
 
 // ============================================================================
 
+/*! Options for Maxwell smoothing:
+ *  - \c "smoother: sweeps" (int)
+ *  - \c "smoother: type" (string). Possible values:
+ *    - \c MLS
+ *    - \c Gauss-Seidel
+ *  - \c "smoother: node: sweeps" (int): sweeps for nodal hierarchy
+ *  - \c "smoother: node: damping factor" (double)
+ *  - \c "smoother: edge: sweeps" (int): sweeps for edge hierarchy
+ *  - \c "smoother:  edge: damping factor" (double)
+ *  
+ * This function is still under development. The following options are
+ * hardwired:
+ * - HALF_HIPTMAIR
+ *   
+ */
+
 void MultiLevelPreconditioner::SetSmoothersMaxwell()
 {
 
@@ -2184,7 +2217,17 @@ void MultiLevelPreconditioner::SetSmoothersMaxwell()
 }
 
 // ============================================================================
-
+/*! Values for \c "coarse: type"
+ * - \c Jacobi
+ * - \c Gauss-Seidel
+ * - \c SuperLU (deprecated)
+ * - \c Amesos-KLU
+ * - \c Amesos-UMFPACK
+ * - \c Amesos-Superludist
+ * - \c Amesos-MUMPS
+ * - \c Amesos-ScALAPACK (under development in Amesos)
+ * - \c do-nothing
+ */
 void MultiLevelPreconditioner::SetCoarse() 
 {
 
@@ -2232,7 +2275,14 @@ void MultiLevelPreconditioner::SetCoarse()
 }
 
 // ============================================================================
-
+/*! Values for \c "aggregation: type"
+ * - \c Uncoupled-MIS
+ * - \c METIS
+ * - \c ParMETIS
+ * - \c Uncoupled
+ * - \c Coupled (deprecated)
+ * - \c MIS
+ */
 void MultiLevelPreconditioner::SetAggregation() 
 {
 

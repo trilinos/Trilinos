@@ -1,17 +1,13 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
-
-/************************************************************************/
-/*          Utilities for Trilinos/ML users                             */
-/*----------------------------------------------------------------------*/
-/* Authors : Mike Heroux (SNL)                                          */
-/*           Jonathan Hu  (SNL)                                         */
-/*           Ray Tuminaro (SNL)                                         */
-/*           Marzio Sala (SNL)                                          */
-/************************************************************************/
-
+/*!
+ *  \file ml_MultiLevelPreconditioner_Defaults.cpp
+ *
+ *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
+ *
+ *  \author Marzio Sala, SNL, 9214
+ *
+ *  \date Last update do Doxygen: 22-Jul-04
+ *
+ */
 
 #include "ml_common.h"
 #include "ml_common.h"
@@ -54,22 +50,6 @@ using namespace ML_Epetra;
 
 // ============================================================================
 
-/*! Currently supported defaults:
-
-  - SA: classic smoothed aggregation, using Uncoupled/MIS schemes;
-
-  - maxwell: for Maxwell equations (under development);
-
-  - DD: 2-level domain decomposition preconditioner, using METIS, and
-  Aztec smoothers with ILUT(0);
-
-  - DD-ML: 3-level domain decomposition preconditioner, using METIS and
-  ParMETIS, and Aztec smoothers with ILUT(0);
-
-  - DD-LU:  2-level domain decomposition preconditioner, using METIS, and
-  Aztec smoothers with LU.
-
-*/
 int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
 			   int * options, double * params,
 			   const string Prefix) 
@@ -106,7 +86,31 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 }
 
 // ============================================================================
-
+/*! Sets the following default values for "DD":
+  - "default values" = DD"
+  - \c "max levels" = 2
+  - \c "output" = 8
+  - \c "increasing or decreasing" = increasing"
+  - \c "PDE equations" = 1
+  - \c "aggregation: type" = METIS"
+  - \c "aggregation: local aggregates" = 1
+  - \c "aggregation: damping factor" = 1.333
+  - \c "coarse: max size" = 128
+  - \c "aggregation: threshold" = 0.0
+  - \c "smoother: sweeps" = 2
+  - \c "smoother: damping factor" = 0.67
+  - \c "smoother: pre or post" = both"
+  - \c "smoother: type" = Aztec". The Aztec smoother has the following features:
+    - \c  options[AZ_precond] = \c AZ_dom_decomp
+    - \c options[AZ_scaling] = \c AZ_none
+    - \c options[AZ_subdomain_solve] = \c AZ_ilut
+  - \c "smoother: Aztec options" = options
+  - \c "smoother: Aztec params" = params
+  - \c "smoother: Aztec as solver" = false
+  - \c "coarse: type" = Amesos-KLU"
+  - \c "prec type" = MGV"
+  - \c "print unused" = 1
+ */
 int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
 			     int * options, double * params) 
 {
@@ -158,14 +162,15 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
 
   return 0;
 
 }
 
 // ============================================================================
-
+/*! As for SetDefaultsDD(), but used exact LU decompositions on each subdomains.
+ */
 int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
 				int * options, double * params) 
 {
@@ -217,14 +222,41 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
 
   return 0;
 
 }
 
 // ============================================================================
-
+/*! Sets the following default values for "DD"
+ - \c "default values" = "DD-ML"
+ - \c "max levels" = 3
+ - \c "output" = 8
+ - \c "increasing or decreasing" = "increasing"
+ - \c "PDE equations" = 1
+ - \c "aggregation: type (level 0)" = "METIS"
+ - \c "aggregation: type (level 1)" = "ParMETIS"
+ - \c "aggregation: nodes per aggregate (level 0)" = 512
+ - \c "aggregation: nodes per aggregate (level 1)" = 32
+ - \c "aggregation: damping factor" = 4.0/3
+ - \c "coarse: max size" = 128
+ - \c "aggregation: threshold" = 0.0
+ - \c "smoother: sweeps (level 0)" = 2
+ - \c "smoother: damping factor (level 0)" = 0.67
+ - \c "smoother: pre or post (level 0)" = "both"
+ - \c "smoother: type" = "Aztec".  The Aztec smoother has the following features:
+     - \c options[AZ_precond] = \c AZ_dom_decomp
+     - \c options[AZ_scaling] = \c AZ_none
+     - \c options[AZ_subdomain_solve] = \c AZ_ilut
+     - \c options[AZ_overlap] = 0
+ - \c "smoother: Aztec options (level 0)" = options
+ - \c "smoother: Aztec params (level 0)" = params
+ - \c "smoother: Aztec as solver (level 0)" = false
+ - \c "coarse: type" = "Amesos-KLU"
+ - \c "prec type" = "MGV"
+ - \c "print unused" = -1
+ */
 int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
 				     int * options, double * params)
 {
@@ -280,14 +312,16 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
   
   return 0;
 
 }
 
 // ============================================================================
-
+/*! As for SetDefaultsDD_3Levels, but with LU factorizations on each subdomain
+ * for each level
+ */
 int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefix,
 					int * options, double * params)
 {
@@ -343,14 +377,32 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
   
   return 0;
 
 }
 
 // ============================================================================
-
+/*! Set values for Maxwell:
+ * - \c "default values" = "maxwell"
+ * - \c "max levels" = 10
+ * - \c "output" = 10
+ * - \c "PDE equations" = 1
+ * - \c "increasing or decreasing" = "decreasing"
+ * - \c "aggregation: type" = "Uncoupled-MIS"
+ * - \c "aggregation: damping factor" = 1.3333
+ * - \c "coarse: max size" = 16
+ * - \c "aggregation: threshold" = 0.0
+ * - \c "smoother: sweeps" = 2
+ * - \c "smoother: damping factor" = 0.67
+ * - \c "smoother: type" = "MLS"
+ * - \c "smoother: MLS polynomial order" = 3
+ * - \c "smoother: pre or post" = "both"
+ * - \c "coarse: type" = "SuperLU"
+ * - \c "prec type" = "MGV"
+ * - \c "print unused" = -1
+ */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 				  int * options, double * params)
 {
@@ -397,14 +449,31 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
   List.set(Prefix+"prec type","MGV");
 
   // print unused Prefixs on proc 0
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
 
   return 0;
   
 }
 
 // ============================================================================
-
+/*! Set default values for classical smoothed aggregation:
+ * - \c "default values" = "SA"
+ * - \c "max levels" = 10
+ * - \c "output" = 8
+ * - \c "PDE equations" = 1
+ * - \c "increasing or decreasing" = "increasing"
+ * - \c "aggregation: type" = "Uncoupled-MIS"
+ * - \c "aggregation: damping factor" = 1.3333
+ * - \c "coarse: max size" = 16
+ * - \c "aggregation: threshold" = 0.0
+ * - \c "smoother: sweeps" = 2
+ * - \c "smoother: damping factor" = 0.67
+ * - \c "smoother: type" = "Gauss-Seidel
+ * - \c "smoother: pre or post" = "both"
+ * - \c "coarse: type" = "Amesos-KLU"
+ * - \c "prec type" = "MGV"
+ * - \c "print unused" =-1
+ */
 int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
 			     int * options, double * params)
 {
@@ -431,7 +500,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
   // don't forget any element
   List.set(Prefix+"aggregation: threshold",0.0);
 
-  // guass-seidel for all levels
+  // gauss-seidel for all levels
   List.set(Prefix+"smoother: sweeps",2);
 
   List.set(Prefix+"smoother: damping factor",0.67);
@@ -446,7 +515,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
   List.set(Prefix+"prec type","MGV");
 
   // print unused Prefixs on proc 0
-  List.set(Prefix+"print unused",-2);
+  List.set(Prefix+"print unused",-1);
   
   return 0;
 

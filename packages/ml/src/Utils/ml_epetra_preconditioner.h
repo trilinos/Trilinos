@@ -1,3 +1,14 @@
+/*!
+ *  \file ml_epetra_preconditioner.h
+ *
+ *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
+ *
+ *  \author Marzio Sala, SNL, 9214
+ *
+ *  \date Last update do Doxygen: 22-Jul-04
+ *
+ */
+
 #ifndef _ML_EPETRA_PRECONDITIONER_H_
 #define _ML_EPETRA_PRECONDITIONER_H_
 
@@ -47,6 +58,32 @@ namespace ML_Epetra
 {
 
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
+  /*! This function, defined in the namespace ML_Epetra, can be used to set
+   * default values in a user's defined Teuchos::ParameterList.
+   * \param \in ProblemType: a string, whose possible values are:
+   *    - "DD" : defaults for 2-level domain decomposition preconditioners based
+   *    on aggregation;
+   *    - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
+   *    spaces defined by aggregation;
+   *    - "SA" : classical smoothed aggregation preconditioners;
+   *    - "maxwell" : default values for Maxwell.
+   * \param \out List : list which will populated by the default parameters
+   * \param \in options : integer array, of size \c AZ_OPTIONS_SIZE, that will be
+   * populated with suitable values. A pointer to \c options will be stick into
+   * the parameters list. Note that this array is still required to apply the
+   * preconditioner! Do not delete options, nor let it go out of scope. The default value is 
+   * 0, meaning that \c SetDefaults() will allocate the array. It is
+   * responsibility of the user to free this memory.
+   * \param \out params : double array, of size \c AZ_PARAMS_SIZE. See comments
+   * for \c options.    
+   * * \param \in Prefix : a string value, defaulted to "". All parameters will have
+   * \c Prefix as prefix. For example, the maximum number of level is defined as
+   * \c "aggregation: max levels". If \c Prefix == "vel prob: ", than the maximum
+   * number of levels will be inserted as \c "vel prob: aggregation: max levels".
+   * An ML_Epetra::MultiLevelPreconditioner can be created with a specified
+   * prefix. This is useful when more than one preconditioner must be created, and
+   * the user wants to put all the parameters in the same parameters list.
+   */
   int SetDefaults(string ProblemType, Teuchos::ParameterList & List,
 		  int * options = 0, double * params = 0, const string Prefix = "");
   
@@ -54,6 +91,7 @@ namespace ML_Epetra
   int SetDefaultsDD(Teuchos::ParameterList & List, const string Prefix = "",
 		    int * options = 0, double * params = 0);
   
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners, using LU on each subdomain
   int SetDefaultsDD_LU(Teuchos::ParameterList & List, const string Prefix = "",
 		       int * options = 0, double * params = 0);
   
@@ -82,7 +120,52 @@ namespace ML_Epetra
 /*! MultiLevelPreconditioner class implements Epetra_RowMatrix using a
     an Epetra_RowMatrix, and possibly a Teuchos parameters list, that
     specifies how to construct the preconditioner.
-    The resulting preconditioner is completely black-box.
+    The resulting preconditioner is completely black-box. The user needs
+    to prive the linear system matrix, and specify in the parameters list 
+    the required options.
+
+    The code accepts any Epetra_RowMatrix-derived class. Some code can take
+    advantage if Epetra_RowMatrix is an Epetra_CrsMatrix, or and 
+    Epetra_VbrMatrix.
+
+    This file requires ML to be configured with the following options:
+    - \c --enable-epetra
+    - \c --enable-teuchos
+    
+    The following option is suggested:
+    - \c --enable-amesos
+
+    Some part of this class needs the following options:
+    - \c --enable-aztecoo
+    - \c --enable-anasazi
+    
+    It is important to note that ML is more restrictive than Epetra for
+    the definition of maps. It is required that RowMatrixRowMap() is equal 
+    to OperatorRangeMap(). This is because ML needs to perform matrix-vector
+    product, as well as getrow() functions, on the same data distribution.
+    
+    Also, for square matrices, OperatorDomainMap() 
+    must be as OperatorRangeMap(). 
+
+    Several examples are provided in the \c examples subdirectories:
+    - ml_example_epetra_preconditioner.cpp is an introductory 
+      example;
+    - ml_example_epetra_preconditioner_2level.cpp shows how to
+      define a 2-level domain decomposition preconditioner using 
+      this class;
+    - ml_example_epetra_preconditioner_viz.cpp details how to
+      visualize the aggregates;
+    - ml_example_epetra_preconditioner_vbr.cpp is an example for
+      VBR matrices;
+    - ml_example_epetra_preconditioner_Maxwell.cpp reports how to
+      use this class for Maxwell problems.
+    - ml_example_epetra_preconditioner_AztecMSR.cpp shows how to
+      convert an Aztec matrix (in MSR format, but the example can be
+      easily modified for VBR matrix formats) into Epetra matrices.
+      
+    \warning The Maxwell interface is still under development. 
+
+    \author Marzio Sala, SNL 9214
 */  
 class MultiLevelPreconditioner : public virtual Epetra_RowMatrix {
       
@@ -142,19 +225,24 @@ public:
   //! Prints label associated to this object.
   char * Label() const{return(Label_);};  
   
-  //! Prints unused parameters in the input ParameterList.
+  //! Prints unused parameters in the input ParameterList on standard output. */
   void PrintUnused() const
   {
     List_.unused(std::cout);
   }
 
-  //! Prints unused parameters in the input ParameterList.
+  //! Prints unused parameters in the input ParameterList on the specified stream.
   void PrintUnused(ostream & os) const
   {
     List_.unused(os);
   }
 
   //! Prints unused parameters in the input ParameterList to cout on proc \c MyPID. 
+  /*! Mispelled parameters are simply ignored. Therefore, it is often the best
+   * choice to print out the parameters that have not been used in the
+   * construction phase. 
+   * - \param \in MyPID : ID of process that should print the unused parameters.
+   */
   void PrintUnused(const int MyPID) const;
 
   //! Gets a reference to the internally stored parameters' list.
@@ -179,9 +267,11 @@ public:
   
   //@{ \name Mathematical functions.
 
+  //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(-1);}
 
+  //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //@}
@@ -192,12 +282,29 @@ public:
   //! Computes the multilevel hierarchy.
   /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as
     specified in the input ParameterList), or takes default values otherwise, and creates the ML
-    objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(). */
+    objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(),
+    or by the destructor,
+
+    In a Newton-type procedure, several linear systems have to be solved, Often, these systems
+    are not too different. In this case, it might be convenient to keep the already 
+    computed preconditioner (with hierarchy, coarse solver, smoothers), and use it to
+    precondition the next linear system. ML offers a way to determine whether the 
+    already available preconditioner is "good enough" for the next linear system. 
+    The user should proceed as follows:
+    - define \c "adaptive: enable" == \c true
+    - solve the first linear system. ML tries to estimate the rate of convergence, and record it;
+    - change the values of the linear system matrix (but NOT its structure)
+    - compute the new preconditioner as \c ComputePreconditioner(true)
+    It is supposed that the pointer to the Epetra_RowMatrix remains constant. Currently,
+    it is not possible to modify this pointer (other than creating a new preconditioner)
+  */
+  
   int ComputePreconditioner(const bool CheckFiltering = false);
 
-  // FIXME: delete me??
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   int ComputeFilteringPreconditioner();
-
+#endif
+  
   //! Queries whether multilevel hierarchy has been computed or not.
   int IsPreconditionerComputed()  const
   {
@@ -380,11 +487,38 @@ public:
 
   //@{ \name debugging and other utilities
 
+  //! Stops the code, waiting for a debugger to attach
+  /*! BreakForDebugger() is useful when the user wants to attach to the running
+   * process(es). This is a very easy task for serial runs -- just run gdb.
+   * Parallel runs may result more problematic. In this case, one can proceed as
+   * follows:
+   * - define the enviromental variable ML_BREAK_FOR_DEBUGGER (example, in BASH,
+   *   \c export \c ML_BREAK_FOR_DEBUGGER=1 )
+   * - run the parallel code on a terminal (example, \c mpirun \c -np \c 4 \c
+   *   ml_example.exe )
+   * - the code will stop in the first call to ComputePreconditioner(). This may
+   *   occur in the construction phase. Few information about the ID number of
+   *   each process will be showed.
+   * - in another terminal, attach to the desired process.
+   * - insert one character to let the code continue, and debug as required.
+   */
   int BreakForDebugger();
 
+  //! Prints the computational stencil for the specified row and equation (for 2D Cartesian grids only)
+  /*! For problems defined on 2D Cartesian grids (with node numbering increasing
+   * along the x-axis), this function prints out the stencil in an intelligible
+   * form.
+   * \param \in nx : number of nodes along the X-axis
+   * \param \in ny : number of nodes along the Y-axis
+   * \param \in NodeID : (local) ID of node that will be used to print the
+   *   stencil. If set to -1, the code will automatically chose an internal node.
+   *   Default: -1.
+   * \param \in EquationID : ID of the equation that will be used to print the
+   *   stencil (default = 0)  
+   */
   int PrintStencil2D(const int nx, const int ny, 
 		     int NodeID = -1,
-		     const int EquationID = 1);
+		     const int EquationID = 0);
   //@}
 
 private:
@@ -403,10 +537,10 @@ private:
   //! Initializes object with defauls values.
   void Initialize();
 
-  //! Sets level smoothers for non-Maxwell equations.
+  //! Sets smoothers for non-Maxwell equations.
   void SetSmoothers();
 
-  //! Sets level smoothers for Maxwell equations.
+  //! Sets smoothers for Maxwell equations.
   void SetSmoothersMaxwell();
 
   //! Sets coarse level solvers.
@@ -418,7 +552,7 @@ private:
   //! Sets preconditioner type (usually, V-cycle).
   void SetPreconditioner();
 
-  //! Sets the null space.
+  //! Sets the null space for non-Maxwell problems.
   void SetNullSpace();
 
   //! Sets the null space for Maxwell equations.
@@ -445,32 +579,49 @@ private:
 
   int SetFiltering();
 
+  //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
+  /*! Used only when \c "adaptive: \c enable" is \c false and \c "filtering: \c enable" is true.
+   * \warning: still under development
+   */
   bool CheckPreconditionerFiltering();
   
+  //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
+  /*! Used only when \c "adaptive: \c enable" is \c true, and
+   * ComputePreconditioner(true) is called. */
   bool CheckPreconditionerKrylov();
   //@}
 
   //@{ \name Internal data
   
-  ML * ml_;                                 //! Pointer to ML_Struct
-  ML_Aggregate *agg_;                       //! ML_Aggregate, contains aggregate information
-  
-  char * Label_;                            //! Label for this object
+  //! Pointer to ML_Struct
+  ML * ml_;
+  //! ML_Aggregate, contains aggregate information
+  ML_Aggregate *agg_;
+  //! Label for this object
+  char * Label_;
 
-  const Epetra_RowMatrix * RowMatrix_;      //! pointer to linear system matrix
+  //! pointer to linear system matrix
+  const Epetra_RowMatrix * RowMatrix_;
   //! specifies whether a hierarchy already exists or not.
   bool IsComputePreconditionerOK_;
   
   //! Number of levels
   int NumLevels_;
-  const Epetra_Map * DomainMap_;            //! Domain Map
-  const Epetra_Map * RangeMap_;             //! Range Map
-  const Epetra_Comm * Comm_;                //! Epetra communicator object.
+  //! Domain Map
+  const Epetra_Map * DomainMap_;
+  //! Range Map
+  const Epetra_Map * RangeMap_;
+  //! Epetra communicator object
+  const Epetra_Comm * Comm_;
   bool  ownership_;
-  int   ProcConfig_[AZ_PROC_SIZE];          //! proc_config for Aztec smoothers
-  int   SmootherOptions_[AZ_OPTIONS_SIZE];  //! options for Aztec smoothers
-  double SmootherParams_[AZ_PARAMS_SIZE];   //! params for Aztec smoothers
-  double SmootherStatus_[AZ_STATUS_SIZE];   //! status for Aztec smoothers
+  //! proc_config for Aztec smoothers
+  int   ProcConfig_[AZ_PROC_SIZE];
+  //! options for Aztec smoothers
+  int   SmootherOptions_[AZ_OPTIONS_SIZE];
+  //! params for Aztec smoothers
+  double SmootherParams_[AZ_PARAMS_SIZE];
+  //! status for Aztec smoothers
+  double SmootherStatus_[AZ_STATUS_SIZE];
 
   //! List containing all input parameters.
   Teuchos::ParameterList List_;
