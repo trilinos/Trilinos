@@ -5508,8 +5508,8 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
       pr_error("ML_Gen_Blocks_Metis: out of space\n");
  
    ML_Operator_BlockPartition(&(ml->Amat[level]), ml->Amat[level].outvec_leng,
-                             nblocks, *block_list, NULL, NULL, 0,
-			      ML_USEMETIS);
+			      nblocks, *block_list, ML_USEMETIS, NULL,
+			      NULL, NULL);
    return 0;
 }
 
