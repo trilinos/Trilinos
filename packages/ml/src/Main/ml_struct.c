@@ -2077,7 +2077,7 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
      kdata = ML_Krylov_Create( Amat->comm );
      if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
      if (matrix_is_nonsymmetric && (symmetrize_matrix == 0))
-#ifdef HAVE_ML_ANASAZI
+#if defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI)
        /* Ray, this is how the function is organized:
 	  - 10 is the maximum number of iterations
 	  - 1e10 a tolerance
