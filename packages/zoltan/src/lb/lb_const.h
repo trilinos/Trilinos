@@ -128,6 +128,11 @@ struct LB_Migrate_Struct {
                                           for help-migration.                */
   void *Pre_Process_Data;              /* Ptr to user defined data to be
                                           passed to Pre_Process()            */
+  LB_POST_MIGRATE_FN *Post_Process;    /* Function that performs application
+                                          specific post-processing.  Optional
+                                          for help-migration.                */
+  void *Post_Process_Data;             /* Ptr to user defined data to be
+                                          passed to Post_Process()           */
   LB_OBJ_SIZE_FN *Get_Obj_Size;        /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
