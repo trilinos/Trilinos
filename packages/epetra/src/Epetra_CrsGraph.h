@@ -487,10 +487,16 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	int GRID(int LRID) const {return(RowMap().GID(LRID));};
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
-	int LCID(int GCID) const {if(!CrsGraphData_->HaveColMap_) return(-1); else return(ColMap().LID(GCID));};
+	int LCID(int GCID) const
+	  {
+	    return( CrsGraphData_->HaveColMap_ ? ColMap().LID(GCID) : -1 );
+	  }
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-	int GCID(int LCID) const {if(!CrsGraphData_->HaveColMap_) return(-1); else return(ColMap().GID(LCID));};
+	int GCID(int LCID) const
+	  {
+	    return( CrsGraphData_->HaveColMap_ ? ColMap().GID(LCID) : -1 );
+	  }
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
 	bool MyGRID(int GRID) const {return(LRID(GRID) != -1);};
@@ -560,11 +566,11 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
 	//! Returns the reference count of CrsGraphData.
 	/*! (Intended for testing purposes.) */
-	int ReferenceCount() const {return(CrsGraphData_->ReferenceCount());};
+	int ReferenceCount() const {return(CrsGraphData_->ReferenceCount());}
 
 	//! Returns a pointer to the CrsGraphData instance this CrsGraph uses. 
 	/*! (Intended for developer use only for testing purposes.) */
-	const Epetra_CrsGraphData* DataPtr() const {return(CrsGraphData_);};
+	const Epetra_CrsGraphData* DataPtr() const {return(CrsGraphData_);}
 
   //@}	
 
@@ -578,34 +584,37 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	friend class Epetra_OffsetIndex;
 
  protected:
-	int* NumIndicesPerRow() const {return(CrsGraphData_->NumIndicesPerRow_.Values());};
-	int* NumAllocatedIndicesPerRow() const {return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());};
-	int** Indices() const {return(CrsGraphData_->Sidekick());};
+	int* NumIndicesPerRow() const {return(CrsGraphData_->NumIndicesPerRow_.Values());}
+	int* NumAllocatedIndicesPerRow() const {return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
+	int** Indices() const {return(CrsGraphData_->Sidekick());}
+	int* Indices(int LocalRow) {return(CrsGraphData_->Indices_[LocalRow].Values());}
 	// If column indices are stored in one long array (via a call to OptimizeStorage), 
 	// IndicesAreContiguous returns true, otherwise it returns false.
-	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);};
-	bool NoRedundancies() const {return(CrsGraphData_->NoRedundancies_);};
+	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}
+	bool NoRedundancies() const {return(CrsGraphData_->NoRedundancies_);}
 	bool GlobalConstantsComputed() const;
 	bool FindGlobalIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
+	bool FindGlobalIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
 	bool FindMyIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
+	bool FindMyIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
 	int InsertIndices(int Row, int NumIndices, int* Indices);
 	int MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
-	void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;};
-	void SetIndicesAreGlobal(bool Flag) {CrsGraphData_->IndicesAreGlobal_ = Flag;};
-	void SetSorted(bool Flag) {CrsGraphData_->Sorted_ = Flag;};
+	void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;}
+	void SetIndicesAreGlobal(bool Flag) {CrsGraphData_->IndicesAreGlobal_ = Flag;}
+	void SetSorted(bool Flag) {CrsGraphData_->Sorted_ = Flag;}
 
  private:
-	void SetGlobalConstantsComputed(bool Flag) {CrsGraphData_->GlobalConstantsComputed_ = Flag;};
-	void SetIndicesAreContiguous(bool Flag) {CrsGraphData_->IndicesAreContiguous_ = Flag;};
-	void SetNoRedundancies(bool Flag) {CrsGraphData_->NoRedundancies_ = Flag;};
+	void SetGlobalConstantsComputed(bool Flag) {CrsGraphData_->GlobalConstantsComputed_ = Flag;}
+	void SetIndicesAreContiguous(bool Flag) {CrsGraphData_->IndicesAreContiguous_ = Flag;}
+	void SetNoRedundancies(bool Flag) {CrsGraphData_->NoRedundancies_ = Flag;}
 	void ComputeIndexState();
 	int MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 	int Allocate(int* NumIndicesPerRow, int Inc);
 	int ReAllocate();
 	int ComputeGlobalConstants();
-	void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;};
-	bool Allocated() const {return(CrsGraphData_->Allocated_);};
-	void SetAllocated(bool Flag) {CrsGraphData_->Allocated_ = Flag;};
+	void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;}
+	bool Allocated() const {return(CrsGraphData_->Allocated_);}
+	void SetAllocated(bool Flag) {CrsGraphData_->Allocated_ = Flag;}
 	
 	int CheckSizes(const Epetra_SrcDistObject& A);
 

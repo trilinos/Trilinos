@@ -130,8 +130,10 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
 
       CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndices;
       const int indexBaseMinusOne = IndexBase() - 1;
-      for(int j = 0; j < NumIndices; j++) 
-	CrsGraphData_->Indices_[i][j] = indexBaseMinusOne; // Fill column indices with out-of-range values
+      int* ColIndices = CrsGraphData_->Indices_[i].Values();
+      for(int j = 0; j < NumIndices; j++) {
+	ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
+      }
     }
   }	 
   else { // CV_ == View
@@ -273,8 +275,10 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     }
     
     CrsGraphData_->NumIndicesPerRow_[Row] = stop;
-    for(j = start; j < stop; j++) 
-      CrsGraphData_->Indices_[Row][j ] = UserIndices[j-start];
+    int* RowIndices = CrsGraphData_->Indices_[Row].Values();
+    for(j = start; j < stop; j++) {
+      RowIndices[j] = UserIndices[j-start];
+    }
   }
   CrsGraphData_->MaxNumIndices_ = EPETRA_MAX(CrsGraphData_->MaxNumIndices_, CrsGraphData_->NumIndicesPerRow_[Row]);
   CrsGraphData_->UpdateSidekick(Row);
@@ -395,9 +399,8 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
 }
 
 //==============================================================================
-int Epetra_CrsGraph::RemoveMyIndices(int Row) {
-
-  int j;
+int Epetra_CrsGraph::RemoveMyIndices(int Row)
+{
   int ierr = 0;
 
   if(IndicesAreGlobal()) 
@@ -411,7 +414,7 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row) {
   int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
   CrsGraphData_->NumIndicesPerRow_[Row] = 0;
   
-  for(j = 0; j < NumIndices; j++) 
+  for(int j = 0; j < NumIndices; j++) 
     CrsGraphData_->Indices_[Row][j] = -1; // Set to invalid 
 
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -424,47 +427,131 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row) {
 }
 
 // protected ===================================================================
-bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow, int Index, int Start, int& Loc) const {
-  int j;
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
+					 int Index,
+					 int Start,
+					 int& Loc) const
+{
   int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
   int* Indices = CrsGraphData_->Indices_[LocalRow].Values();
 
   // If we have transformed the column indices, we must map this global Index to local
-  if(IndicesAreLocal()) 
+  if(CrsGraphData_->IndicesAreLocal_) {
     Index = LCID(Index);
+  }
 
-  int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
-  for(j = 0; j < NumIndices; j++) {
-    if(j0 >= NumIndices) 
-      j0 = 0; // wrap around
-    if(Indices[j0] == Index) {
-      Loc = j0;
-      return(true);
+  if (CrsGraphData_->Sorted_) {
+    int insertPoint;
+    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    return( Loc > -1 );
+  }
+  else {
+    int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+    for(j = 0; j < NumIndices; j++) {
+      if(j0 >= NumIndices) 
+	j0 = 0; // wrap around
+      if(Indices[j0] == Index) {
+	Loc = j0;
+	return(true);
+      }
+      j0++;
     }
-    j0++;
   }
   return(false);
 }
 
 // protected ===================================================================
-bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow, int Index, int Start, int& Loc) const {
-  int j;
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
+					 const int* Indices,
+					 int Index,
+					 int Start,
+					 int& Loc) const
+{
+  // If we have transformed the column indices, we must map this global Index to local
+  if(CrsGraphData_->IndicesAreLocal_) {
+    Index = LCID(Index);
+  }
+
+  if (CrsGraphData_->Sorted_) {
+    int insertPoint;
+    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    return( Loc > -1 );
+  }
+  else {
+    int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+    for(j = 0; j < NumIndices; j++) {
+      if(j0 >= NumIndices) 
+	j0 = 0; // wrap around
+      if(Indices[j0] == Index) {
+	Loc = j0;
+	return(true);
+      }
+      j0++;
+    }
+  }
+  return(false);
+}
+
+// protected ===================================================================
+bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow,
+				     int Index,
+				     int Start,
+				     int& Loc) const
+{
   int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
   int* Indices = CrsGraphData_->Indices_[LocalRow].Values();
 
-  // If we have transformed the column indices, we must map this global Index to local
-  if(IndicesAreGlobal()) 
+  if(!CrsGraphData_->IndicesAreLocal_) {
     throw ReportError("Epetra_CrsGraph::FindMyIndexLoc", -1);// Indices must be local
+  }
 
-  int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
-  for(j = 0; j < NumIndices; j++) {
-    if(j0 >= NumIndices) 
-      j0 -= NumIndices; // wrap around
-    if(Indices[j0] == Index) {
-      Loc = j0;
-      return(true);
+  if (CrsGraphData_->Sorted_) {
+    int insertPoint;
+    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    return( Loc > -1 );
+  }
+  else {
+    int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+    for(j = 0; j < NumIndices; j++) {
+      if(j0 >= NumIndices) 
+	j0 = 0; // wrap around
+      if(Indices[j0] == Index) {
+	Loc = j0;
+	return(true);
+      }
+      j0++;
     }
-    j0++;
+  }
+  return(false);
+}
+
+// protected ===================================================================
+bool Epetra_CrsGraph::FindMyIndexLoc(int NumIndices,
+				     const int* Indices,
+				     int Index,
+				     int Start,
+				     int& Loc) const
+{
+  if(!CrsGraphData_->IndicesAreLocal_) {
+    throw ReportError("Epetra_CrsGraph::FindMyIndexLoc", -1);// Indices must be local
+  }
+
+  if (CrsGraphData_->Sorted_) {
+    int insertPoint;
+    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    return( Loc > -1 );
+  }
+  else {
+    int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+    for(j = 0; j < NumIndices; j++) {
+      if(j0 >= NumIndices) 
+	j0 = 0; // wrap around
+      if(Indices[j0] == Index) {
+	Loc = j0;
+	return(true);
+      }
+      j0++;
+    }
   }
   return(false);
 }
@@ -730,8 +817,9 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
   const int numMyBlockRows = NumMyBlockRows();
   for(i = 0; i < numMyBlockRows; i++) {
     const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+    int* ColIndices = CrsGraphData_->Indices_[i].Values();
     for(j = 0; j < NumIndices; j++) {
-      int GID = CrsGraphData_->Indices_[i][j];
+      int GID = ColIndices[j];
       // Check if GID matches a row GID
       if(DomainMap.MyGID(GID)) {
 	if(LocalGIDs.Get(GID) == -1) // This means its a new local GID
@@ -839,7 +927,8 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
     EPETRA_CHK_ERR(-1); // Return error: Indices must not be both local and global
 
   MakeColMap(DomainMap, RangeMap); // If user has not prescribed column map, create one from indices
-  
+  const Epetra_BlockMap& colmap = ColMap();
+
   // Store number of local columns
   CrsGraphData_->NumMyCols_ = ColMap().NumMyPoints();
   CrsGraphData_->NumMyBlockCols_ = ColMap().NumMyElements();
@@ -850,11 +939,12 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
   if(IndicesAreGlobal()) {
     for(int i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+      int* ColIndices = CrsGraphData_->Indices_[i].Values();
       for(int j = 0; j < NumIndices; j++) {
-	int GID = CrsGraphData_->Indices_[i][j];
-	int LID = LCID(GID);
+	int GID = ColIndices[j];
+	int LID = colmap.LID(GID);
 	if(LID != -1) 
-	  CrsGraphData_->Indices_[i][j] = LID;
+	  ColIndices[j] = LID;
 	else 
 	  throw ReportError("Internal error in FillComplete ",-1); 
       }
@@ -926,8 +1016,9 @@ int Epetra_CrsGraph::OptimizeStorage() {
   int* tmp = CrsGraphData_->All_Indices_.Values();
   for(i = 0; i < numMyBlockRows; i++) {
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+    int* ColIndices = CrsGraphData_->Indices_[i].Values();
     for(j = 0; j < NumIndices; j++) 
-      tmp[j] = CrsGraphData_->Indices_[i][j];
+      tmp[j] = ColIndices[j];
     Epetra_IntSerialDenseVector tempVector(View, tmp, NumIndices);
     CrsGraphData_->Indices_[i] = tempVector;
     tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.

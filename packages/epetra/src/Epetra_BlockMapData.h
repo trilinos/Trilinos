@@ -91,6 +91,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   bool LinearMap_;
   bool DistributedGlobal_;
 
+  int LastContiguousGID_;
   int LastContiguousGIDLoc_;
   Epetra_HashTable * LIDHash_;
 

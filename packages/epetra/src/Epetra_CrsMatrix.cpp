@@ -455,13 +455,15 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
   int ierr = 0;
   int Loc;
 
-  if (Row < 0 || Row >= NumMyRows_) 
+  if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
+  }
+
+  double* RowValues = Values_[Row]; 
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) 
-      Values_[Row][Loc] = Values[j];
+      RowValues[Loc] = Values[j];
     else 
       ierr = 2; // Value Excluded
   }
@@ -474,18 +476,22 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries, double * Values, int *Offsets) {
-
+int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
+					  double * Values, int *Offsets)
+{
   int j;
   int ierr = 0;
 
   Row = Graph_->LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) 
+  if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
-  for(j=0; j<NumEntries; j++)
-    Values_[Row][Offsets[j]] = Values[j];
+  }
+
+  double* RowValues = Values_[Row]; 
+  for(j=0; j<NumEntries; j++) {
+    RowValues[Offsets[j]] = Values[j];
+  }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
@@ -495,21 +501,34 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries, double * Valu
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::SumIntoGlobalValues(int Row, int NumEntries, double * Values, int *Indices) {
-
+int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
+					  int NumEntries,
+					  double * Values,
+					  int *Indices)
+{
   int j;
   int ierr = 0;
   int Loc;
 
   Row = Graph_->LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) 
+  if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
+  }
+
+  if (!Graph_->HaveColMap()) {
+    EPETRA_CHK_ERR(-1);
+  }
+
+  const Epetra_BlockMap& colmap = Graph_->ColMap();
+  int NumColIndices = Graph_->NumMyIndices(Row);
+  const int* ColIndices = Graph_->Indices(Row);
+
+  double* RowValues = Values_[Row]; 
   for (j=0; j<NumEntries; j++) {
-    int Index = Indices[j];
-    if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc)) 
-      Values_[Row][Loc] += Values[j];
+    int Index = colmap.LID(Indices[j]);
+    if (Graph_->FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+      RowValues[Loc] += Values[j];
     else 
       ierr = 2; // Value Excluded
   }
@@ -532,13 +551,15 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * Values, 
   int ierr = 0;
   int Loc;
 
-  if (Row < 0 || Row >= NumMyRows_) 
+  if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
+  }
+
+  double* RowValues = Values_[Row];
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) 
-      Values_[Row][Loc] += Values[j];
+      RowValues[Loc] += Values[j];
     else 
       ierr = 2; // Value Excluded
   }
@@ -557,11 +578,14 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * Valu
 
   Row = Graph_->LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) 
+  if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
-  for (j=0; j<NumEntries; j++)
-      Values_[Row][Offsets[j]] += Values[j];
+  }
+
+  double* RowValues = Values_[Row];
+  for (j=0; j<NumEntries; j++) {
+    RowValues[Offsets[j]] += Values[j];
+  }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.

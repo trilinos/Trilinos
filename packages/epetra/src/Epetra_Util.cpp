@@ -144,16 +144,16 @@ int Epetra_Util_binary_search(int item,
     else end = mid;
   }
 
+  if (list[start] == item) return(start);
+  if (list[end] == item) return(end);
+
   if (list[end] < item) {
-    insertPoint = (int)end+1;
+    insertPoint = end+1;
     return(-1);
   }
 
-  if (list[start] == item) return((int)start);
-  if (list[end] == item) return((int)end);
-
-  if (list[start] < item) insertPoint = (int)end;
-  else insertPoint = (int)start;
+  if (list[start] < item) insertPoint = end;
+  else insertPoint = start;
 
   return(-1);
 }

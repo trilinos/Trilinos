@@ -42,6 +42,7 @@ Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize,
     NumGlobalElements_(NumGlobalElements),
     IndexBase_(IndexBase),
     ElementSize_(ElementSize),
+    LastContiguousGID_(0),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
 {

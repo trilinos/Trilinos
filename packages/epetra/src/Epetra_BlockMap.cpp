@@ -32,6 +32,7 @@
 #include "Epetra_Directory.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_HashTable.h"
+
 // Use the new LID hash table approach by default
 #define EPETRA_BLOCKMAP_NEW_LID
 
@@ -639,7 +640,14 @@ void Epetra_BlockMap::GlobalToLocalSetup()
     ++val;
   }
   BlockMapData_->LastContiguousGIDLoc_ = i - 1;
-    
+  if (BlockMapData_->LastContiguousGIDLoc_ < 0) {
+    BlockMapData_->LastContiguousGID_ = BlockMapData_->MyGlobalElements_[0];
+  }
+  else {
+    BlockMapData_->LastContiguousGID_ =
+      BlockMapData_->MyGlobalElements_[BlockMapData_->LastContiguousGIDLoc_];
+  }
+
   //Hash everything else
   if(i < numMyElements) {
     if (BlockMapData_->LIDHash_ != NULL) {
@@ -671,39 +679,41 @@ void Epetra_BlockMap::GlobalToLocalSetup()
 }
 
 //==============================================================================
-int Epetra_BlockMap::LID(int GID) const {
-
-  if ((GID < BlockMapData_->MinMyGID_) || (GID > BlockMapData_->MaxMyGID_) || (BlockMapData_->NumMyElements_ == 0)) 
+int Epetra_BlockMap::LID(int GID) const
+{
+  if ((GID < BlockMapData_->MinMyGID_) || (GID > BlockMapData_->MaxMyGID_)) {
     return(-1); // Out of range
-  else if (LinearMap()) 
+  }
+
+  if (BlockMapData_->LinearMap_) {
     return(GID - BlockMapData_->MinMyGID_); // Can compute with an offset
+  }
+
+  if( GID >= BlockMapData_->MyGlobalElements_[0] &&
+      GID <= BlockMapData_->LastContiguousGID_ ) {
+    return( GID - BlockMapData_->MyGlobalElements_[0] );
+  }
 
 #ifdef EPETRA_BLOCKMAP_NEW_LID
-
-  else
-    if( GID >= BlockMapData_->MyGlobalElements_[0] && GID <= BlockMapData_->MyGlobalElements_[BlockMapData_->LastContiguousGIDLoc_] )
-      return( GID - BlockMapData_->MyGlobalElements_[0] );
-    else {
-      return BlockMapData_->LIDHash_->Get( GID );
-    }
-  
+  return BlockMapData_->LIDHash_->Get( GID );
 #else
-  
-  else
-    return(BlockMapData_->LID_[GID - BlockMapData_->MinMyGID_]); // Find it in LID array
-  
+  return(BlockMapData_->LID_[GID - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
 }
 
 //==============================================================================
-int Epetra_BlockMap::GID(int LID) const {
-
-  if ((LID < BlockMapData_->MinLID_) || (LID > BlockMapData_->MaxLID_) || (BlockMapData_->NumMyElements_ == 0))
+int Epetra_BlockMap::GID(int LID) const
+{
+  if ((LID < BlockMapData_->MinLID_) || (LID > BlockMapData_->MaxLID_) ||
+      (BlockMapData_->NumMyElements_ == 0)) {
     return(BlockMapData_->IndexBase_ - 1); // Out of range
-  else if (LinearMap()) 
+  }
+
+  if (LinearMap()) {
     return(LID + BlockMapData_->MinMyGID_); // Can compute with an offset
-  else 
-    return(BlockMapData_->MyGlobalElements_[LID]); // Find it in MyGlobalElements array
+  }
+
+  return(BlockMapData_->MyGlobalElements_[LID]); // Find it in MyGlobalElements array
 }
 
 //==============================================================================
