@@ -366,7 +366,7 @@ int main() {
 	assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
 	const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1 );
 	assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,ctx_rcp)->B1_f() == B1_f_return );
-	assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
+	assert( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),ctx_int) == -5 ); // test const version
 
 	// Set pointers to null to force releasing any owned memory
 	a_ptr1 = Teuchos::null;

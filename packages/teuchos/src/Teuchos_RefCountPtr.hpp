@@ -353,7 +353,7 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-int Teuchos::set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx )
+int Teuchos::set_extra_data( const T1 &extra_data, Teuchos::RefCountPtr<T2> *p, int ctx )
 {
 	*(*p); // Assert not NULL
 	return p->access_node()->set_extra_data( extra_data, ctx );
@@ -369,15 +369,15 @@ T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, int ctx )
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p )
+const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p, int ctx )
 {
-	return get_extra_data(const_cast<RefCountPtr<T2>&>(p));
+	return get_extra_data<T1>( const_cast<RefCountPtr<T2>&>(p), ctx );
 }
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
 Dealloc_T&
-Teuchos::get_dealloc( Teuchos::RefCountPtr<T>& p )
+Teuchos::get_dealloc( RefCountPtr<T>& p )
 {
 	*p; // Assert not NULL
 	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
