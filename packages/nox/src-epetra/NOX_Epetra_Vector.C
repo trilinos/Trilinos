@@ -229,8 +229,8 @@ int Vector::length() const
   return epetraVec->GlobalLength();
 }
 
-bool Vector::print() const
+void Vector::print() const
 {
   epetraVec->Print(cout);
-  return true;
+  return;
 }

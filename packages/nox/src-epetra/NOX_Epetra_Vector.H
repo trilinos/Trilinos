@@ -139,7 +139,7 @@ class Vector : public virtual Abstract::Vector {
 
   virtual int length() const;
 
-  virtual bool print() const;
+  virtual void print() const;
 
  protected:
   
