@@ -161,17 +161,19 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
     || temp_weight == NULL || target == NULL || delta == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for partitions, targets") ;
 
-   if (part_sizes != NULL) 
+   if (zz->Obj_Weight_Dim <= 1)
       work_fraction = part_sizes;
    else
       {
-      work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) * zz->LB.Num_Global_Parts);
+      work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) *
+                                              zz->LB.Num_Global_Parts);
       if (work_fraction == NULL)
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for work_fraction") ;
         
-      /* Initialize work fraction for uniform partitions */
+      /* HSFC supports only the first weight; pick out the appropriate
+         part_sizes entries for the first weight. */
       for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
-         work_fraction[i] = 1.0 / (double) zz->LB.Num_Global_Parts ;
+         work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
       }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
@@ -325,7 +327,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    ZOLTAN_FREE (&grand_weight) ;
    ZOLTAN_FREE (&partition) ;
    ZOLTAN_FREE (&delta) ;
-   if (part_sizes == NULL) ZOLTAN_FREE (&work_fraction) ;
+   if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE (&work_fraction) ;
    d->nloops = loop ;                 /* remember work required to balance */
 
    d->final_partition= (Partition *)ZOLTAN_MALLOC(sizeof(Partition)*zz->LB.Num_Global_Parts);
@@ -513,7 +515,7 @@ free:
    ZOLTAN_FREE (&temp_weight) ;
    ZOLTAN_FREE (&weights) ;
    ZOLTAN_FREE (&target) ;
-   if (part_sizes == NULL) ZOLTAN_FREE (&work_fraction) ;
+   if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE (&work_fraction) ;
    ZOLTAN_FREE (&delta) ;
    ZOLTAN_FREE (&parts) ;
 

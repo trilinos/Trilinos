@@ -583,6 +583,7 @@ int part;             /* partition under construction */
 float current_size;   /* amount of weight consumed so far */
 int num_part;         /* number of partitions */
 int ierr;             /* error flag */
+int wdim;             /* Max(zz->Obj_Weight_Dim, 1) */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -618,16 +619,10 @@ int ierr;             /* error flag */
     return(ZOLTAN_MEMERR);
   }
 
-  if (part_sizes == NULL) 
-    for (part=0; part<num_part; part++) {
-      cutoff[part] = ((float)(part+1))/((float)num_part);
-    }
-  else {
-    cutoff[0] = part_sizes[0];
-    for (part = 1; part < num_part; part++) {
-       cutoff[part] = cutoff[part-1] + part_sizes[part];
-    }
-  }
+  cutoff[0] = part_sizes[0];  /* TEMP SINGLE WEIGHT */
+  wdim = ((zz->Obj_Weight_Dim == 0) ? 1 : zz->Obj_Weight_Dim);
+  for (part = 1; part < num_part; part++) 
+     cutoff[part] = cutoff[part-1] + part_sizes[part*wdim]; /* TEMP SINGLE WEIGHT */
   cutoff[num_part-1] = 1.0; /* just to make sure roundoff doesn't bite us */
 
 /* multiply cutoff by the total weight so that cutoff gives the desired

@@ -87,7 +87,7 @@ int Zoltan_Get_Obj_List(
     }
    
     if (wdim > 0)
-      *objwgts  = (float*) ZOLTAN_MALLOC (sizeof(float) * *num_obj);
+      *objwgts  = (float*) ZOLTAN_MALLOC (sizeof(float) * *num_obj * wdim);
 
     if ((*global_ids == NULL) || (num_lid_entries > 0 && *local_ids == NULL) ||
         (wdim > 0 && *objwgts == NULL)) {

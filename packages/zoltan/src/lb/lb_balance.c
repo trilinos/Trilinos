@@ -235,8 +235,9 @@ double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
 float *part_sizes = NULL;
-int i;
-float sum;
+int part_dim;
+float *sum;
+int i, j, tmp;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -322,28 +323,52 @@ float sum;
   /*
    * Generate partitions sizes.
    */
-  if (!(zz->LB.Uniform_Parts)) {
-    part_sizes = (float *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts*sizeof(float));
-    if (part_sizes == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ZOLTAN_MEMERR);
-    }
+  part_dim = ((zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
+
+  part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
+                                    * (zz->LB.Num_Global_Parts + 1));
+  if (part_sizes == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return (ZOLTAN_MEMERR);
+  }
+  sum = part_sizes + zz->LB.Num_Global_Parts * part_dim;
+
+  if (zz->LB.Uniform_Parts) 
+    for (i = 0; i < zz->LB.Num_Global_Parts*part_dim; i++)
+      part_sizes[i] = 1.0 / (double)(zz->LB.Num_Global_Parts);
+
+  else {
 
     /* Access parameters to get partition size values */
     /* KDDKDD Temporary until we have appropriate parameter setting. */
-    for (sum = 0.0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
-/* KDDKDD Backward test -- highest to lowest; zero on last proc.
-      part_sizes[i] = zz->LB.Num_Global_Parts - 1 - (float) (i);
+
+    for (j = 0; j < part_dim; j++) sum[j] = 0.0;
+
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+      for (j = 0; j < part_dim; j++) {
+        tmp = i * part_dim + j;
+/* KDDKDD 
+Backward test -- highest to lowest; zero on last procs.
 */
-      part_sizes[i] = (float) (i);
-      sum += part_sizes[i];
-    }
+        part_sizes[tmp] = zz->LB.Num_Global_Parts - 1 - (float) (i+1);
+        if (part_sizes[tmp] < 0.) part_sizes[tmp] = 0.0;
+/* KDDKDD
+Forward test --  lowest to highest; zero on first proc.
+        part_sizes[tmp] = (float) (i);
+Multiple-weight test 
+        part_sizes[tmp] = (float) (i+(i%(j+1)));
+*/
+        sum[j] += part_sizes[tmp];
+      }
+
     /* Normalize partition sizes */
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      part_sizes[i] /= sum;
-    }
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+      for (j = 0; j < part_dim; j++)
+        part_sizes[i*part_dim+j] /= sum[j];
+
     /* Error checking across processors? */
+    /* sum[j] == 0 for any j? */
   }
 
   /*
