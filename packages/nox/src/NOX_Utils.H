@@ -120,7 +120,9 @@ public:				// types
     //! 2^6
     LinearSolverDetails = 0x40,   
     //! 2^7
-    TestDetails = 0x80
+    TestDetails = 0x80,
+    //! 2^8
+    Debug = 0x0100
   };
 
 
