@@ -286,6 +286,9 @@ then
     echo "Doing a cvs update of `pwd`/ml..."
     echo
     cvs update ml
+    # Make sure the ml/Obj directory is up to date.
+    cd ${SCRIPT_DIRECTORY}/etc
+    ./flatten >& /dev/null
     cd ${BENCH_ROOT_DIRECTORY}/..
     echo
     echo "Doing a cvs update of `pwd`/mlbench..."
