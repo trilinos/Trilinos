@@ -1,7 +1,7 @@
 ../configure --enable-nox --enable-nox-epetra \
 --enable-referencey12m \
 CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
-EPETRA_TEMPLATE_OBJS="./cxx_repository/*.o" \
+TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
 --with-mpi=/usr/local/cplant/ross/current \
 --with-mpi-cxx="/usr/local/cplant/ross/current/bin/c++" \

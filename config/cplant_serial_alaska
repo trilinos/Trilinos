@@ -1,5 +1,5 @@
 .././configure CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
-EPETRA_TEMPLATE_OBJS="./cxx_repository/*.o" \
+TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
 --enable-referencey12m --enable-nox --enable-nox-epetra \
 CC=/usr/local/cplant/alaska/current/bin/cc \
