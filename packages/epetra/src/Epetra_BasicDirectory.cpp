@@ -44,7 +44,6 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     SizeList_(0),
     AllMinGIDs_(0)
 {
-
   // Test for simple cases
 
   // Uniprocessor and local map cases (Nothing to set up)
@@ -237,11 +236,11 @@ int Epetra_BasicDirectory::Generate()
 // 			Space should already be allocated for Procs and
 //     			LocalEntries.
 int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
-					  const int * GlobalEntries, int * Procs,
-					  int * LocalEntries, int * EntrySizes ) const {
-
-
-
+						const int * GlobalEntries,
+						int * Procs,
+						int * LocalEntries,
+						int * EntrySizes ) const
+{
   int ierr = 0;
   int j;
   int i;

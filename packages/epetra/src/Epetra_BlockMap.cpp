@@ -865,6 +865,10 @@ Epetra_BlockMap & Epetra_BlockMap::operator= (const Epetra_BlockMap & map) {
     BlockMapData_ = map.BlockMapData_;
     BlockMapData_->IncrementReferenceCount();
   }
+  
+  if (BlockMapData_->Directory_ != NULL) {
+    delete BlockMapData_->Directory_;
+    BlockMapData_->Directory_ = Comm().CreateDirectory(*this); // Make directory
+  }
   return(*this);
 }
-

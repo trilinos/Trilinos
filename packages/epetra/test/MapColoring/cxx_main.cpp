@@ -228,6 +228,9 @@ int main(int argc, char *argv[]) {
   delete [] colorLIDs;
   delete [] colorCount;
 
+  delete Map1;
+  delete Map2;
+
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

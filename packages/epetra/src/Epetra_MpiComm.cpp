@@ -133,13 +133,13 @@ int Epetra_MpiComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
 //=============================================================================
 Epetra_Distributor * Epetra_MpiComm:: CreateDistributor() const {
 
-  Epetra_Distributor * dist = dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*this));
+  Epetra_Distributor * dist = new Epetra_MpiDistributor(*this);
   return(dist);
 }
 //=============================================================================
 Epetra_Directory * Epetra_MpiComm:: CreateDirectory(const Epetra_BlockMap & map) const {
 
-  Epetra_Directory * dir = dynamic_cast<Epetra_Directory *>(new Epetra_BasicDirectory(map));
+  Epetra_Directory * dir = new Epetra_BasicDirectory(map);
   return(dir);
 }
 //=============================================================================
