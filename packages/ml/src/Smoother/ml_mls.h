@@ -1,6 +1,8 @@
 #ifndef __MLMLS__
 #define __MLMLS__
 
+#include "ml_common.h"
+
 #define MLS_MAX_DEG  5 /* max. degree of MLS smoother        */
 
 struct MLSthing {

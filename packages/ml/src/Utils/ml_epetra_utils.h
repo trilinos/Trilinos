@@ -5,6 +5,7 @@ class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
+#include "ml_common.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Object.h"
 #include "Epetra_RowMatrix.h"

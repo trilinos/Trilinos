@@ -1,5 +1,7 @@
 #ifdef SUPERLU
 
+#include "ml_common.h"
+
 #ifdef SGI
 #define ML_DLAMCH_FUNC
 #define ML_DLAMC1_FUNC

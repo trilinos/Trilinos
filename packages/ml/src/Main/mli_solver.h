@@ -13,6 +13,7 @@
 #ifndef _MLSOLVERIFACE_
 #define _MLSOLVERIFACE_
 
+#include "ml_common.h"
 #include "ml_comm.h"
 #include "ml_aggregate.h"
 #include "ml_amg.h"

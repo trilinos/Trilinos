@@ -6,6 +6,7 @@
 #ifndef __MLOPERATOR_BLOCKMAT__
 #define __MLOPERATOR_BLOCKMAT__
 
+#include "ml_common.h"
 #include "ml_operator.h"
 /*****************************************************************************/
 /* structure to wrap ML subblock matrices into a large ML matrix.            */

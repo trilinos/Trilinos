@@ -13,6 +13,7 @@
 #ifndef __MLBDRYPTSH__
 #define __MLBDRYPTSH__
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 

@@ -12,6 +12,7 @@
 /* local include files                                                  */
 /* ******************************************************************** */
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_bdrypts.h"
 #include "ml_mapper.h"

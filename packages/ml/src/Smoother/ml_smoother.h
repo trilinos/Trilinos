@@ -28,6 +28,7 @@ typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 /* local include files                                                  */
 /* ******************************************************************** */
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_1level.h"

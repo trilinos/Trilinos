@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 //#include "ml_struct.h" 
+#include "ml_common.h"
 #include "ml_mat_formats.h" 
 struct ML_Eigenvalue_Struct  {
   int Max_Iter;

@@ -1,6 +1,8 @@
 #ifndef __MLDEFS__
 #define __MLDEFS__
 
+#include "ml_common.h"
+
 #ifdef matched
 #define MLFORTRAN(aaa) aaa
 #else

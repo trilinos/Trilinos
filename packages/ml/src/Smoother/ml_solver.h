@@ -14,6 +14,7 @@
 #define _MLSOLVER_
 
 /* #include <stdlib.h> */
+#include "ml_common.h"
 #include "ml_defs.h"
 
 #ifdef DSUPERLU

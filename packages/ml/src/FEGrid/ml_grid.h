@@ -13,6 +13,7 @@
 #ifndef __MLGRID__
 #define __MLGRID__
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_gridfunc.h"

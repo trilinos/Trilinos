@@ -12,6 +12,8 @@ extern "C" {
 #endif
 #endif
 
+#include "ml_common.h"
+
 extern void ML_check_it(double sol[], double rhs[], ML *ml);
 
 extern void ML_interp_check(ML *ml, int, int);

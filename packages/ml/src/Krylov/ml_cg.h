@@ -13,6 +13,7 @@
 #ifndef __MLCG__
 #define __MLCG__
 
+#include "ml_common.h"
 #include "ml_krylov.h"
 
 #ifndef ML_CPP

@@ -62,6 +62,7 @@ typedef struct ML_Aggregate_Struct
 /* other ML include files                                               */
 /* ------------------------------------------------------------------------- */
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_comm.h"
 #include "ml_memory.h"

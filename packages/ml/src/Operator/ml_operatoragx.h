@@ -18,6 +18,7 @@
 /* buffer access, and (3) communication (recv, send)                    */
 /* -------------------------------------------------------------------- */
 
+#include "ml_common.h"
 #include "ml_memory.h"
 #include "ml_comm.h"
 #include "ml_comminfoagx.h"

@@ -13,6 +13,7 @@
 #ifndef __MLGRIDFUNC__
 #define __MLGRIDFUNC__
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 

@@ -13,6 +13,7 @@
 #ifndef __MLMAPPERH__
 #define __MLMAPPERH__
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 

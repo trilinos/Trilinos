@@ -10,6 +10,7 @@
 /* Date          : December, 1999                                       */
 /* ******************************************************************** */
 
+#include "ml_common.h"
 #include "ml_krylov.h"
 
 #ifndef __MLGMRES__

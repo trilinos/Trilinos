@@ -13,6 +13,7 @@
 
 
 #ifdef AZTEC
+#include "ml_common.h"
 #include "ml_defs.h"
 #define ML_IDAMAX_FUNC
 #define ML_DSWAP_FUNC

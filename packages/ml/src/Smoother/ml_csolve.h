@@ -24,6 +24,7 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 /* local include files                                                  */
 /* ******************************************************************** */
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_1level.h"

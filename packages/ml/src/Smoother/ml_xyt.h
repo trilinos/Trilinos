@@ -1,6 +1,7 @@
 #ifndef __MLXYT__
 #define __MLXYT__
 
+#include "ml_common.h"
 #include "ml_operator.h"
 
 #ifndef ML_CPP

@@ -13,6 +13,7 @@
 #ifndef __MLCOMMINFOOP__
 #define __MLCOMMINFOOP__
 
+#include "ml_common.h"
 #include "ml_comm.h"
 
 typedef struct ML_CommInfoOP_Struct ML_CommInfoOP;

@@ -22,6 +22,7 @@
 typedef struct ML_Krylov_Struct ML_Krylov;
 
 /* #include "ml_struct.h" */
+#include "ml_common.h"
 #include "ml_comm.h"
 #include "ml_operator.h"
 

@@ -26,6 +26,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 /* local include files                                                  */
 /* ******************************************************************** */
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_bdrypts.h"

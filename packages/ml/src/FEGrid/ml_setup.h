@@ -15,6 +15,7 @@ ML_GridFunc  *gridfcns_basis=NULL;
 extern "C" {
 #endif
 
+#include "ml_common.h"
 
 
 void ML_compose_global_grid(     void           *c_grid, 

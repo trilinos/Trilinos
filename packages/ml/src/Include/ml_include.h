@@ -13,6 +13,7 @@
 #ifndef _MLINCLUDE_
 #define _MLINCLUDE_
 
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_struct.h"
 #include "ml_agg_genP.h"

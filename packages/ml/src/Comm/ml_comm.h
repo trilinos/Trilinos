@@ -14,6 +14,7 @@
 #define _MLCOMM_
 
 #include <stdio.h>
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_memory.h"
 

@@ -12,6 +12,8 @@
 #ifndef __MLSUPERLU__
 #define __MLSUPERLU__
 
+#include "ml_common.h"
+
 typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 
 struct ML_Sm_Schwarz_Data_Struct 

@@ -19,6 +19,8 @@ extern "C" {
 #endif
 #endif
 
+#include "ml_common.h"
+
 extern int oldML_Mdfy_Prolongator_DirBdry(ML *, int , double *, double *);
 extern int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, 
            int fine_size);

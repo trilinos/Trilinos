@@ -13,6 +13,7 @@
 #ifndef _MLPDE__
 #define _MLPDE__
 
+#include "ml_common.h"
 #include "mli_solver.h"
 
 #ifndef ML_CPP

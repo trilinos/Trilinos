@@ -24,6 +24,7 @@ extern "C" {
 
 #define AZ_ONLY_PRECONDITIONER  -7778
 
+#include "ml_common.h"
 #include "az_aztec.h"
 
 /******************************************************************************/

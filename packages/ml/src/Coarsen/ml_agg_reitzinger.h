@@ -14,6 +14,7 @@
 
 #ifndef __MLAGGREITZINGER__
 #define __MLAGGREITZINGER__
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_mat_formats.h"
 #include "ml_agg_genP.h"

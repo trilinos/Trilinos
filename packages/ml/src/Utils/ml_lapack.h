@@ -7,6 +7,7 @@
 /********************************************************************* */
 /*          Utilities for Aztec/ML users                               */
 /********************************************************************* */
+#include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_utils.h"
 #include <stdio.h>

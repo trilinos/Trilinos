@@ -13,6 +13,7 @@
 #ifndef __MLAMGGENP__
 #define __MLAMGGENP__
 
+#include "ml_common.h"
 #include "ml_amg.h"
 #include "ml_operator.h"
 

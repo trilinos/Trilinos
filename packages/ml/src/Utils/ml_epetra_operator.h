@@ -29,6 +29,7 @@ class Epetra_MultiVector;
 class Epetra_BlockMap;
 class Epetra_Comm;
 
+#include "ml_common.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Object.h"
 #include "ml_include.h"

@@ -43,6 +43,7 @@ struct ML_vbrdata
    int    *bindx, *bpntr, *cpntr, *rpntr, *indx;
    double *val;
 };
+#include "ml_common.h"
 #include "ml_comminfoop.h"
 
 typedef struct ML_Matrix_DCSR_Struct
