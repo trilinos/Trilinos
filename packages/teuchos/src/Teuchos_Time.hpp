@@ -39,7 +39,7 @@ namespace Teuchos
     static double wallTime();
   
     /** starts the timer */
-    void start();
+    void start(bool reset = false);
 
     /** stop the timer */
     double stop();

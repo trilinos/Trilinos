@@ -23,15 +23,16 @@ Time::Time(const string& name, bool start)
 	if(start) this->start();
 }
 
-void Time::start()
+void Time::start(bool reset)
 {
   isRunning_ = true;
   startTime_ = wallTime();
+  if(reset) totalTime_ = 0;
 }
 
 double Time::stop()
 {
-  totalTime_ += wallTime() - startTime_;
+  totalTime_ += ( wallTime() - startTime_ );
   isRunning_ = false;
   startTime_ = 0;
   return totalTime_;
