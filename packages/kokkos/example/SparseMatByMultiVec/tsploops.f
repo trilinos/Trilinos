@@ -92,8 +92,8 @@ c
       character*80 filname
       character*8  key
       character*3  type, rhstyp
-      real*8 norm
-      external norm
+      real*8 norm, second
+      external norm, second
 *
 *     --------------------------
 *     First executable statement
