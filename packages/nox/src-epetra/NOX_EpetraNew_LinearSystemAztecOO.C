@@ -448,15 +448,15 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 
   // Some Debugging utilities 
   if (utils.isPrintProcessAndType(Utils::Debug)) {
-    cout << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
-    cout << "jacType = " << jacType << endl;
-    cout << "jacPtr = " << jacPtr << endl;
-    cout << "jacInterfacePtr = " << jacInterfacePtr << endl;
-    cout << "ownsJacOperator = " << ownsJacOperator << endl;
-    cout << "precType = " << precType << endl;
-    cout << "precPtr = " << precPtr << endl;
-    cout << "precInterfacePtr = " << precInterfacePtr << endl;
-    cout << "ownsPrecOperator = " << ownsPrecOperator << endl;
+    //cout << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
+    //cout << "jacType = " << jacType << endl;
+    //cout << "jacPtr = " << jacPtr << endl;
+    //cout << "jacInterfacePtr = " << jacInterfacePtr << endl;
+    //cout << "ownsJacOperator = " << ownsJacOperator << endl;
+    //cout << "precType = " << precType << endl;
+    //cout << "precPtr = " << precPtr << endl;
+    //cout << "precInterfacePtr = " << precInterfacePtr << endl;
+    //cout << "ownsPrecOperator = " << ownsPrecOperator << endl;
   }
     
   return;
