@@ -1,3 +1,4 @@
+#define KLOPTER
 #include "Superludist2_OO.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -80,7 +81,6 @@ Superludist2_OO::~Superludist2_OO(void) {
     Destroy_LU(numrows, &grid, &LUstruct);
     ScalePermstructFree(&ScalePermstruct);
     LUstructFree(&LUstruct);
-    SUPERLU_FREE(berr);
   }
 
 }
@@ -153,6 +153,8 @@ int Superludist2_OO::Solve(bool factor) {
                                 // make multiple solves work.
   bool CheckExtraction = false;    //  Set to true to force extraction for unit test
 
+  assert( GetTrans() == false ) ; 
+
   Epetra_RowMatrix *RowMatrixA = 
     dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   
@@ -175,7 +177,6 @@ int Superludist2_OO::Solve(bool factor) {
   Comm.Barrier();
 #endif
 
-  //  return 0; // WORK GXX BOGUS KEN 
 
   //
   //  Step 1)  Convert the matrix to an Epetra_CrsMatrix
@@ -220,18 +221,11 @@ int Superludist2_OO::Solve(bool factor) {
   cout << " Superludist2_OO.cpp::   traceback mode = " << Epetra_Object::GetTracebackMode() << endl ; 
   cerr << " Send this to cerr cerr cerr   traceback mode = " << Epetra_Object::GetTracebackMode() << endl ; 
 #endif
-  EPETRA_CHK_ERR( ! ( Phase2Matmap.LinearMap())  ) ; // Map must be contiguously divided
 
   int numrows = Phase2Matmap.NumGlobalElements() ; 
   assert( numrows == Phase2Mat->NumGlobalRows() ) ; 
   int numcols = Phase2Mat->NumGlobalCols() ; 
   assert( numrows == numcols ) ; 
-
-  int m_loc = Phase2Matmap.NumMyElements() ; 
-  int nnz_loc = Phase2Mat->NumMyNonzeros() ;
-  vector <int> MyRowPtr( m_loc+1 ) ;  
-
-  int MyFirstElement ;
 
   //
   //  Here I compute what a uniform distribution should look like
@@ -241,7 +235,10 @@ int Superludist2_OO::Solve(bool factor) {
   int m_per_p = numrows / Comm.NumProc() ;
   cout << " m_per_p = " << m_per_p << endl ; 
   int remainder = numrows - ( m_per_p * Comm.NumProc() );
-  MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
+  int MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
+  int MyFirstNonElement = (iam+1) * m_per_p + EPETRA_MIN( iam+1, remainder );
+  int NumExpectedElements = MyFirstNonElement - MyFirstElement ; 
+
 
   cout << " iam = " << iam << " MyFirstElement = " << MyFirstElement << endl ; 
   if ( ( numrows == 5 ) && ( Comm.NumProc() == 2)  ) {
@@ -249,76 +246,91 @@ int Superludist2_OO::Solve(bool factor) {
     assert( iam ==1 || MyFirstElement == 0 ) ; 
   }
 
+
+
+  int IsLocal = ( Phase2Matmap.NumMyElements() == 
+		  Phase2Matmap.NumGlobalElements() )?1:0;
+  Comm.Broadcast( &IsLocal, 1, 0 ) ; 
   //
-  //  Check to make sure that we have exactly the rows (elements) that an uniform
-  //  distribution would give us.
+  //  Step ?)  Convert to a distributed matrix, if appropriate
   //
-#if 0
-  {  
-    vector <int> MyRows( m_loc ) ; 
-    Phase2Matmap.MyGlobalElements( &MyRows[0] ) ; 
-    for (int row = 0 ; row < m_loc ; row++ ) {
-      cout << " iam = " << iam 
-	   << " row = " << row << " MyFirstElement = " << MyFirstElement << 
-	" Myrows[row] =" <<  	MyRows[row]  << endl ; 
-      //  I don't understand why this is screwed up, but 
-      //  I am commenting it out for now WORK GXX because 
-      //  it looks like the check is wrong, not the code.
-      //  I claim it works now WORK GXX  - With one preoces it does - Duh!
-      //      EPETRA_CHK_ERR( MyFirstElement+row != MyRows[row] ) ;
+  Epetra_CrsMatrix *Phase3Mat = 0 ;
+  Epetra_Map DistMap(  Phase2Matmap.NumGlobalElements(), NumExpectedElements, 0, Comm );
+  Epetra_CrsMatrix DistCrsMatrixA(Copy, DistMap, 0);
+
+  bool redistribute = true ;
+  if ( redistribute ) {
+
+    Epetra_Export export_to_dist( Phase2Matmap, DistMap);
+
+    DistCrsMatrixA.Export( *Phase2Mat, export_to_dist, Add ); 
+    
+    DistCrsMatrixA.TransformToLocal() ; 
+    Phase3Mat = &DistCrsMatrixA ;
+
+    
+  } else {
+    {  
+      EPETRA_CHK_ERR( ! ( Phase2Matmap.LinearMap())  ) ; // Map must be contiguously divided
+      //
+      //  This is another way to check that the distribution is as pdgssvx expects it
+      //  (i.e. a linear map)
+      //
+      int Phase2NumElements = Phase2Matmap.NumMyElements() ; 
+      vector <int> MyRows( Phase2NumElements ) ; 
+      Phase2Matmap.MyGlobalElements( &MyRows[0] ) ; 
+      for (int row = 0 ; row < Phase2NumElements ; row++ ) {
+	EPETRA_CHK_ERR( MyFirstElement+row != MyRows[row] ) ;
+      }
     }
+    Phase3Mat = Phase2Mat ;
   }
+
+#if 0
+  assert( MyFirstElement ==  Phase3Mat->RowMap().MinMyGID() ) ; 
+  assert( NumExpectedElements == Phase3Mat->RowMap().NumMyElements() ) ; 
+  assert( MyFirstElement+NumExpectedElements-1 ==  Phase3Mat->RowMap().MaxMyGID() ) ; 
 #endif
-  vector <int> MyRows( m_loc ) ; 
-  Phase2Matmap.MyGlobalElements( &MyRows[0] ) ; 
-  cout << " iam = " << iam << "MyRows = " ;
-  for ( int i = 0; i < m_loc ; i++) cout << MyRows[i] << " " ;
-  cout << endl ; 
-
-  cout << "NumMyElements = " <<  Phase2Matmap.NumMyElements() << endl ; 
-  cout << "iam = " << iam << " My GIDs = " <<  Phase2Matmap.MinMyGID() << " ..  " 
-       << Phase2Matmap.MaxMyGID() << endl ; 
-  assert( MyFirstElement ==  Phase2Matmap.MinMyGID() ) ; 
-  assert( MyFirstElement+m_loc-1 ==  Phase2Matmap.MaxMyGID() ) ; 
-
-
+  //  Comm.Barrier(); 
+  int MyActualFirstElement = Phase3Mat->RowMap().MinMyGID() ; 
+  int NumMyElements = Phase3Mat->NumMyRows() ; 
+  vector <int> MyRowPtr( NumMyElements+1 ) ;  
   //
   //  This is actually redundant with the Ap below
   //
   MyRowPtr[0] = 0 ; 
   int CurrentRowPtr = 0 ;
-  for ( int i = 0; i < m_loc ; i++ ) { 
-    CurrentRowPtr += Phase2Mat->NumMyEntries( i ) ; 
+  for ( int i = 0; i < NumMyElements ; i++ ) { 
+    CurrentRowPtr += Phase3Mat->NumMyEntries( i ) ; 
     MyRowPtr[i+1] = CurrentRowPtr ; 
   }
 
-  //  return 0; // WORK GXX BOGUS KEN - Fails before here 
-
   //
-  //  Extract nzval(Aval) and colind(Ai) from the CrsMatrix (Phase2Mat) 
+  //  Extract nzval(Aval) and colind(Ai) from the CrsMatrix (Phase3Mat) 
   //
 
+  int nnz_loc = Phase3Mat->NumMyNonzeros() ;
   if ( factor ) { 
   //
   //  Step 6) Convert the matrix to Ap, Ai, Aval
   //
-    Ap.resize( m_loc+1 );
-    Ai.resize( EPETRA_MAX( m_loc, nnz_loc) ) ; 
-    Aval.resize( EPETRA_MAX( m_loc, nnz_loc) ) ; 
+    Ap.resize( NumMyElements+1 );
+    Ai.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
+    Aval.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
     
     int NzThisRow ;
     double *RowValues;
     int *ColIndices;
     int Ai_index = 0 ; 
     int MyRow;
-    int num_my_cols = Phase2Mat->NumMyCols() ; 
+    int num_my_cols = Phase3Mat->NumMyCols() ; 
     vector <int>Global_Columns( num_my_cols ) ; 
     for ( int i = 0 ; i < num_my_cols ; i ++ ) { 
-      Global_Columns[i] = Phase2Mat->GCID( i ) ; 
+      Global_Columns[i] = Phase3Mat->GCID( i ) ; 
     }
 
-    for ( MyRow = 0; MyRow <m_loc; MyRow++ ) {
-      int status = Phase2Mat->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices ) ;
+    for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
+      int status = Phase3Mat->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices ) ;
       assert( status == 0 ) ; 
       Ap[MyRow] = Ai_index ; 
       assert( Ap[MyRow] == MyRowPtr[MyRow] ) ; 
@@ -328,27 +340,16 @@ int Superludist2_OO::Solve(bool factor) {
 	Ai_index++;
       }
     }
-    assert( m_loc == MyRow );
-    Ap[ m_loc ] = Ai_index ; 
+    assert( NumMyElements == MyRow );
+    Ap[ NumMyElements ] = Ai_index ; 
   }
-  
 
   //
-  //  WORK GXX - DONE - trivial actually 
   //  Pull B out of the Epetra_vector 
   //
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
-
-  double *bValues ;
-  double *xValues ;
-  int ldb, ldx ; 
-
-  EPETRA_CHK_ERR( vecB->ExtractView( &bValues, &ldb ) )  ; 
-  EPETRA_CHK_ERR( vecX->ExtractView( &xValues, &ldx ) ) ; 
-  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
-  EPETRA_CHK_ERR( ! ( ldx == m_loc ) ) ; 
 
   int nrhs; 
   if ( vecX == 0 ) { 
@@ -359,8 +360,35 @@ int Superludist2_OO::Solve(bool factor) {
     EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
   }
 
+  Epetra_MultiVector vecXdistributed( DistMap, nrhs ) ; 
+  Epetra_MultiVector vecBdistributed( DistMap, nrhs ) ; 
 
-  //  return 0; // WORK GXX BOGUS KEN 
+
+  double *bValues ;
+  double *xValues ;
+  int ldb, ldx ; 
+
+  Epetra_MultiVector* vecXptr; 
+  Epetra_MultiVector* vecBptr; 
+
+  if ( redistribute ) {
+    Epetra_Import ImportToDistributed( DistMap, Phase2Matmap);
+
+    vecXdistributed.Import( *vecX, ImportToDistributed, Insert ) ;
+    vecBdistributed.Import( *vecB, ImportToDistributed, Insert ) ;
+
+    vecXptr = &vecXdistributed ; 
+    vecBptr = &vecBdistributed ; 
+  } else {
+    vecXptr = vecX ; 
+    vecBptr = vecB ; 
+  }
+
+
+  EPETRA_CHK_ERR( vecBptr->ExtractView( &bValues, &ldb ) )  ; 
+  EPETRA_CHK_ERR( vecXptr->ExtractView( &xValues, &ldx ) ) ; 
+  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
+  EPETRA_CHK_ERR( ! ( ldx == NumMyElements ) ) ; 
 
   //
   //  Step 7)  Call SuperLUdist
@@ -379,11 +407,7 @@ int Superludist2_OO::Solve(bool factor) {
     assert ( nprow * npcol == numprocs ) ; 
     superlu_gridinit( MPIC, nprow, npcol, &grid);
   
-#ifdef DEBUG
-    assert( Comm_assert_equal( &Comm, numrows ) );
-    assert( Comm_assert_equal( &Comm, numcols ) );
-#endif
-    
+
   } else {
     assert( numprocs == Comm.NumProc() ) ; 
   }
@@ -394,89 +418,12 @@ int Superludist2_OO::Solve(bool factor) {
     if ( factor ) { 
       set_default_options(&options);
       
-      if ( !(berr = doubleMalloc_dist(nrhs)) )
-	EPETRA_CHK_ERR( -1 ) ; 
-      
-#if 0
-    /* Set up the local A in NR_loc format */
-    cout << " iam = " << iam << " nnz_loc = " << nnz_loc 
-	   << " m_loc = " << m_loc 
-	   << " MyFirstElement = " << MyFirstElement 
-	   << " numrows = " << numrows 
-	   << " numcols = " << numcols  << endl ; 
-    cout << " Ap = " ; 
-    for (int i = 0; i < m_loc+1 ; i++ ) { 
-      cout << Ap[i] << " " ; 
-    } ; 
-    cout << endl ; 
+      dCreate_CompRowLoc_Matrix_dist( &A, numrows, numcols, 
+				      nnz_loc, NumMyElements, MyActualFirstElement,
+				      &Aval[0], &Ai[0], &Ap[0], 
+				      SLU_NR_loc, SLU_D, SLU_GE );
 
-    cout << " Ai = " ;
-    for (int i = 0; i < nnz_loc ; i++ ) { 
-      cout << Ai[i] << " "  ; 
-    } ; 
-    cout << endl ; 
-
-    cout << " Aval = "; 
-    for (int i = 0; i < nnz_loc ; i++ ) { 
-      cout << Aval[i]  << " " ; 
-    } ; 
-    cout << endl ; 
-    cout << " END OF MIDDLE PRINTOUT of A " << endl ; 
-#endif
-    dCreate_CompRowLoc_Matrix_dist( &A, numrows, numcols, 
-				    nnz_loc, m_loc, MyFirstElement,
-				    &Aval[0], &Ai[0], &Ap[0], 
-				    SLU_NR_loc, SLU_D, SLU_GE );
-    
-#if 0
-  Comm.Barrier();
-    cout << " iam = " << iam << " nnz_loc = " << nnz_loc 
-	   << " m_loc = " << m_loc 
-	   << " MyFirstElement = " << MyFirstElement 
-	   << " numrows = " << numrows 
-	   << " numcols = " << numcols  << endl ; 
-    cout << " iam = " << iam << " Ap = " ; 
-    for (int i = 0; i < m_loc+1 ; i++ ) { 
-      cout << Ap[i] << " " ; 
-    } ; 
-    cout << endl ; 
-
-    cout << " iam = " << iam << " Ai = " ;
-    for (int i = 0; i < nnz_loc ; i++ ) { 
-      cout << Ai[i] << " "  ; 
-    } ; 
-    cout << endl ; 
-
-    cout << " iam = " << iam << " Aval = " ;
-    for (int i = 0; i < nnz_loc ; i++ ) { 
-      cout << Aval[i]  << " " ; 
-    } ; 
-    cout << endl ; 
-    cout << " END OF BOTTOM PRINTOUT of A " << endl ; 
-#endif
-#if 1
-  Comm.Barrier();
-  //  Print for matlab 
-  //
-  for (int i = 0; i < m_loc ; i++ ) { 
-    for ( int j = Ap[i]; j < Ap[i+1] ; j++ ) { 
-      cout << "A(" << i + MyFirstElement +1  << "," << Ai[j]+1 << " ) = " << Aval[j] << "; % iam = " << iam <<endl ; 
-    } 
-  }
-#endif
-
-
-    //      /* Create compressed column matrix for A. */
-    //      dCreate_CompCol_Matrix_dist(&A, numrows, numcols, 
-    //				  nnz_loc, &Aval[0], &Ai[0], 
-    //				  &Ap[0], SLU_NC, SLU_D, SLU_GE);
       A_and_LU_built = true; 
-#if 0
-      cout << " Here is A " << endl ; 
-      dPrint_CompCol_Matrix_dist( &A ); 
-      cout << " That was A " << "numrows = " << numrows <<  endl ; 
-      cout << "numcols = " << numcols <<  endl ; 
-#endif
       
       /* Initialize ScalePermstruct and LUstruct. */
       ScalePermstructInit(numrows, numcols, &ScalePermstruct);
@@ -491,56 +438,32 @@ int Superludist2_OO::Solve(bool factor) {
       EPETRA_CHK_ERR( Factored_ == false ) ; 
       options.Fact = FACTORED ; 
     }
-
     //
-    //  WORK GXX - We may not need to do anything over than copy the 
-    //  data from b into x  - This looks good to me. 
-    //  pdgssvx_ABglobal returns x in b, so we copy b into x and pass x as b.
+    //  pdgssvx returns x in b, so we copy b into x.  
     //
     for ( int j = 0 ; j < nrhs; j++ )
-      for ( int i = 0 ; i < m_loc; i++ ) xValues[i+j*ldx] = bValues[i+j*ldx]; 
+      for ( int i = 0 ; i < NumMyElements; i++ ) xValues[i+j*ldx] = bValues[i+j*ldb]; 
+    cout << " iam=" << iam << " Superludist2_OO.cpp::559 " << endl ; 
 
-#if 0
-    cout << " B = [ " ;
-    for ( int i = 0 ; i < m_loc; i++ ) cout << xValues[i+0*ldx] << " " ; 
-    cout << "];"  << endl ; 
-#endif
-    
-    /* Initialize the statistics variables. */
-    PStatInit(&stat);
+    PStatInit(&stat);    /* Initialize the statistics variables. */
 
-    /* Call the linear equation solver. */
     int info ;
-    //    dPrint_CompCol_Matrix_dist(&A);
+    vector<double>berr(nrhs);
+    cout << " ldx = " << ldx << " nrhs = " << nrhs << " NumMyElements= " << NumMyElements << endl ; 
     pdgssvx(&options, &A, &ScalePermstruct, &xValues[0], ldx, nrhs, &grid,
-	    &LUstruct, &SOLVEstruct, berr, &stat, &info);
-
-    //    pdgssvx_ABglobal(&options, &A, &ScalePermstruct, &xValues[0], 
-    //		     ldb, nrhs, &grid, &LUstruct, berr, &stat, &info);
+	    &LUstruct, &SOLVEstruct, &berr[0], &stat, &info);
     EPETRA_CHK_ERR( info ) ; 
 
-#if 0
-    cout << " X = [ " ;
-    for ( int i = 0 ; i < m_loc; i++ ) cout << xValues[i+0*ldx] << " " ; 
-    cout << "];"  << endl ; 
-#endif
-    
     PStatFree(&stat);
-
-#if 0
-    cout << " Here is X: " ;
-    vecX->Print(cout ) ; 
-
-    cout << endl << " Here is B: " ;
-    vecB->Print(cout) ; 
-    cout << endl ; 
-#endif
 
   }
 
-  //
-  //  NO WORK GXX - I don't think that we need to do anything to convert X 
-  //
+  if ( redistribute ) { 
+    Epetra_Import ImportBackToOriginal( Phase2Matmap,DistMap);
+    
+    vecX->Import( *vecXptr, ImportBackToOriginal, Insert ) ;
+  }
+
 
   return(0) ; 
 }

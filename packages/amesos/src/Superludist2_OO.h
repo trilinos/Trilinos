@@ -174,7 +174,12 @@ class Superludist2_OO {
   //@{ \name Post-construction setup methods.
 
   //!  Setting the transpose flag to true causes Solve() to compute A^t x = b 
-  void SetTrans( bool trans ) { Transpose_ = trans ;} ; 
+  /*!
+    Transpose not supported in release 0.1;
+   */
+  void SetTrans( bool trans ) { 
+    assert( trans == false) ; 
+    Transpose_ = trans ;} ; 
 
 
   //@}
@@ -275,7 +280,6 @@ class Superludist2_OO {
   ScalePermstruct_t ScalePermstruct;
   SuperLUStat_t stat;
   LUstruct_t LUstruct;
-  double   *berr;
   vector <int> Ap;
   vector <int> Ai;
   vector <double> Aval;

@@ -297,13 +297,15 @@ main(int argc, char **argv)
 	  << numsolves << endl ; 
     exit_value = -1 ; 
   }
-  if ( MatType == 1 && numsolves != 1 ) {
+#if 0
+  if ( MatType == 1 && numsolves != 1 &&  SparseSolver != SuperLUdist2 ) {
     if ( ( MyPID == 0 )  ) {
       cerr << "MatType == 1 (distributed) is only supported for numsolves == 1.   " <<
 	" Here numsolves = " << numsolves << endl ; 
     }
     exit_value = -1 ;     
   }
+#endif
   if ( transpose< 0 ||  transpose > 1) { 
     if ( ( MyPID == 0 )  ) 
       cerr << "transpose must be 0 (no trans) or 1" 
@@ -314,6 +316,11 @@ main(int argc, char **argv)
   if ( transpose != 0 && SparseSolver == SPOOLESSERIAL ) { 
     if ( ( MyPID == 0 )  ) 
       cerr << "Our use of SPOOLESSERIAL does not support transpose yet" << endl ;
+    exit_value = -1 ; 
+  }
+  if ( transpose != 0 && SparseSolver == SuperLUdist2 ) { 
+    if ( ( MyPID == 0 )  ) 
+      cerr << "Our use of SuperLU_DIST_2.0 does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == SuperLU ) { 
@@ -336,7 +343,8 @@ main(int argc, char **argv)
       cerr << "AZTEC accepts only distributed matrices on multiple processes" << endl ;
     exit_value = -1 ; 
   }
-  if ( numsolves != 1 &&  SparseSolver != SuperLU && SparseSolver != SuperLUdist  && SparseSolver != DSCPACK ) {
+  if ( numsolves != 1 &&  SparseSolver != SuperLU && 
+       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK ) {
     if ( ( MyPID == 0 )  ) 
       cerr << "Only SuperLU, SuperLUdist and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
