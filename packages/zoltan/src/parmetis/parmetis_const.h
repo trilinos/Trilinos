@@ -37,7 +37,7 @@ struct LB_hash_node {
 
 int LB_ParMetis_Part(LB *, int *, LB_GID **, LB_LID **, int **);
 int LB_hashf(LB_GID, int);
-int LB_hash_lookup (struct LB_hash_node **, int, LB_GID);
+int LB_hash_lookup (struct LB_hash_node **, LB_GID, int);
 
 
 /* ParMETIS data types and definitions. */
