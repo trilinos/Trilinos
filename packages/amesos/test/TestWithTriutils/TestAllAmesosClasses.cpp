@@ -122,7 +122,7 @@ void TestAmesos(char ProblemType[],
       cout << msg << "......Total Time = " << StartTime.ElapsedTime() << endl;
 
       if( Norm > 1e-9 ) {
-	cerr << end << msg << " WARNING : TEST FAILED!" << endl << endl;
+	cerr << endl << msg << " WARNING : TEST FAILED!" << endl << endl;
       }
     }
 
