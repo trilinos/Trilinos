@@ -108,8 +108,12 @@ int Zoltan_PHG_CoarsePartition(
  * multilevel scheme (V-cycle).
  * It gathers the distributed hypergraph to each processor and computes
  * a decomposition of the serial hypergraph.  
- * KDDKDD:  Future:  compute a different partition on each processor
- * KDDKDD:  and select the best.
+ * It computes a different partition on each processor
+ * using different random numbers (and possibly also
+ * different algorithms) and selects the best.
+ *
+ * EBEB Future: We could compute several partitionings on each
+ * processors and select best. Helpful for small no. of procs.
  */
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
@@ -139,7 +143,7 @@ int i, si;
      */
     ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
 
-    /* KDDKDD Select different coarse partitioners for processors here. */
+    /* Select different coarse partitioners for processors here. */
 
     CoarsePartition = hgp->CoarsePartition;
     if (CoarsePartition == NULL) {
@@ -216,7 +220,7 @@ int i, si;
           goto End;
         }
 
-        /* KDDKDD Evaluate and select the best */
+        /* Evaluate and select the best */
 
         pick_best(zz, phg->comm, shg, numPart, spart);
     
@@ -278,61 +282,83 @@ int rootnpins, rootrank;
 /****************************************************************************/
 
 /* Sequence partitioning on the vertices of a hypergraph
-   in a given order. Currently, even partition sizes
-   are assumed. Multi-weights are not yet supported; only the
+   in a given order. The goal is to assign approximately
+   even weights to each partition, or alternatively, proportional
+   to the target weights (if such are given), subject to
+   a specified linear order (sequence). 
+
+   Multi-weights are not yet supported; only the
    first weight is used in computing the partition.
 
-   This function is called by coarse_part_lin and coarse_part_ran.
+   Note: This is a quick heuristic. We could alternatively use
+   a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis, 
+   but for our purposes it is not worth the effort.
 
-   EBEB: This is a quick heuristic. We could alternatively use
-   a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis. */
+*/
 
 static int seq_part (
   ZZ *zz, 
-  HGraph *hg, 
-  int *order, 
-  int p, 
-  Partition part,
-  PHGPartParams *hgp
+  HGraph *hg,         /* the hypergraph, containing vertex weights */
+  int *order,         /* the ordering of the vertices */
+  int p,              /* desired number of partitions */
+  Partition part,     /* Output: partition numbers */
+  PHGPartParams *hgp  /* misc hypergraph parameters */
 )
 {
-  int i, j, number;
+  int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
+  float *tpweights=NULL; /* EBEB Get target partition weights */
+  float tpsum = 0.0;
 
-  /* First sum up all the weights. */
+  /* Sum up all the vertex weights. */
   for (i=0; i<hg->nVtx; i++)
     weight_sum += hg->vwgt[i*vwgtdim];
 
-  number = 0; /* Assign next vertex to partition no. number */
-  cutoff = weight_sum/p;  /* Cutoff for current partition */
-  if (hgp->output_level >= PHG_DEBUG_ALL)
-    printf("COARSE_PART weight_sum=%f, cutoff=%f\n", weight_sum, cutoff);
+  /* Sum up all the target partition weights. */
+  /* Only use first vweight for now. */
+  if (tpweights==NULL)
+    tpsum = p;
+  else {
+    for (i=0; i<p; i++)
+      tpsum += tpweights[i*vwgtdim];
+  }
 
+  pnumber = 0; /* Assign next vertex to partition no. pnumber */
+  /* Set cutoff for current partition */
+  cutoff = weight_sum*(tpweights ? tpweights[0] : 1.0)/tpsum;  
+
+  /* Loop through all vertices in specified order, and assign
+     partition numbers.  */                                        
   for (i=0; i<hg->nVtx; i++) {
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
-    part[j] = number;
+    part[j] = pnumber;
     old_sum = part_sum;
     part_sum += hg->vwgt[j*vwgtdim];
     /* Check if we passed the cutoff and should start a new partition */
-    if ((number+1) < p && part_sum > cutoff) {
-      number++;
+    if ((pnumber+1) < p && part_sum > cutoff) {
+      pnumber++; /* Increase current part number */
       /* Decide if current vertex should be moved to the next partition */
-      if (part_sum-cutoff > cutoff-old_sum) {
+      if (tpweights  
+         ? ((part_sum-cutoff)/tpweights[pnumber] > 
+           (cutoff-old_sum)/tpweights[pnumber-1]) 
+         : (part_sum-cutoff > cutoff-old_sum)) {
         part[j]++;
         part_sum = old_sum;
       }
       weight_sum -= part_sum;
-      cutoff = weight_sum/(p-number);
-      if (part[j] == number)
+      if (part[j] == pnumber)
         part_sum = hg->vwgt[j*vwgtdim];
       else
         part_sum = 0.0;
+      /* Update cutoff. */
+      tpsum -= (tpweights ? tpweights[pnumber-1] : 1.0);
+      cutoff = weight_sum*(tpweights ? tpweights[pnumber] : 1.0)/tpsum;
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
-      printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f\n", i, j, part[j],
-       part_sum);
+      printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n", 
+       i, j, part[j], part_sum, cutoff);
   }
   return ZOLTAN_OK;
 }
@@ -396,7 +422,8 @@ static int bfs_order (
   HGraph *hg,	     /* Hypergraph. */
   int *order,	     /* Order array. On exit, order[i] is the i'th vertex. */
   int start_vtx,     /* Start the BFS from this vertex. */
-  int visit_mode,    /* Visit random (0) or heavy (1) hyperedges first? */
+  int visit_mode,    /* Visit random (0), heavy (1), or smaller (2)
+                         hyperedges first? */
   int p,	     /* Optional (input):  Number of partitions. */
   Partition part,    /* Optional (output): Partition array. */
   PHGPartParams *hgp /* Partitioning parameters. */
@@ -406,6 +433,7 @@ static int bfs_order (
   int first, last, num_edges, *edges = NULL;
   int vwgtdim = hg->VtxWeightDim;
   int err = ZOLTAN_OK;
+  float *wgt;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
   char msg[128], *mark_edge = NULL;
   static char *yo = "bfs_order";
@@ -438,7 +466,7 @@ static int bfs_order (
   for (i=0; i < hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
 
-  /* array edges only needs to be of size maximum #edges for any vtx */
+  /* array edges only has to be of size maximum degree (#edges) for any vtx */
   num_edges = 0;
   for (i=0; i<hg->nVtx; i++)
     if (hg->vindex[i+1] - hg->vindex[i] > num_edges)
@@ -446,6 +474,7 @@ static int bfs_order (
 
   mark_edge  = (char*)  ZOLTAN_CALLOC (hg->nEdge, sizeof (char));
   edges      = (int*)   ZOLTAN_CALLOC (num_edges, sizeof (int));
+  wgt        = (float*) ZOLTAN_MALLOC (num_edges* sizeof (float));
   if ((hg->nEdge > 0 && mark_edge == NULL) || (num_edges > 0 && edges == NULL)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
@@ -537,7 +566,7 @@ static int bfs_order (
     }
 
     /* Add nbors to queue. */
-    /* Pick edges in random order, or heaviest first. */
+    /* Decide order to visit the edges. */
     num_edges = hg->vindex[vtx+1] - hg->vindex[vtx];
     for (i=0; i<num_edges; i++)
       edges[i] = hg->vedge[hg->vindex[vtx]+i];
@@ -545,8 +574,21 @@ static int bfs_order (
       /* Randomly permute the edges. */
       Zoltan_HG_Rand_Perm_Int (edges, num_edges);
     else if (visit_mode==1)
-      /* Sort edges by weight */
+      /* Sort edges by decreasing weight */
       Zoltan_quicksort_pointer_dec_float(edges, hg->ewgt, 0, num_edges-1);
+    else if (visit_mode==2){
+      /* Sort edges by decreasing weight/size ratio  */
+      for (i=0; i<num_edges; i++) {
+        if (hg->hindex[i+1] - hg->hindex[i] > 0) /* check for size 0 */
+          wgt[i] = hg->ewgt[i] / (hg->hindex[i+1] - hg->hindex[i]);
+        else
+          wgt[i] = 0.0; /* size 0 nets are useless */
+      }
+      Zoltan_quicksort_pointer_dec_float(edges, wgt, 0, num_edges-1);
+    }
+    else
+      /* Linear order. Do nothing. */
+      ;
 
     for (j=0; j<num_edges; j++) {
       edge = edges[j];
@@ -581,6 +623,7 @@ error:
   ZOLTAN_FREE ((void**) &rank);
   ZOLTAN_FREE ((void**) &mark_edge);
   ZOLTAN_FREE ((void**) &edges);
+  ZOLTAN_FREE ((void**) &wgt);
   return err;
 }
 
