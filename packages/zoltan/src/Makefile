@@ -48,7 +48,9 @@ endif
 
 include $(ZOLTAN_CONFIG)
 
+ifndef ZOLTAN_OBJ_DIR
 ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
+endif
 
 ifndef ZOLTAN_LIB_DIR
 ZOLTAN_LIB_DIR = $(ZOLTAN_OBJ_DIR)
