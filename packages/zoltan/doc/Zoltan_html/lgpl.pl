@@ -110,15 +110,18 @@ print <<ENDHTML;
 
 <html><head><title>Download Page</title></head>
 
-<! The following line actually invokes the download >
+<!-- The following line actually invokes the download -->
 
 <META HTTP-EQUIV="Refresh" CONTENT="0;URL=$downloadfile">
 </HEAD>
 
-<! The "thank you" page, using SNL template. >
+<!-- The "thank you" page, using SNL template. -->
 
 <body text="#000000" background="http://www.sandia.gov/images/bkgrnd.gif">
-<! KDD Turned off alternative link colors in template; the ><! following line was part of the above body command. ><! link="#003366" vlink="#cc0033" alink="#000000"><a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
+<!-- KDD Turned off alternative link colors in template; 
+the following line was part of the above body command. -->
+<!-- link="#003366" vlink="#cc0033" alink="#000000"-->
+<a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
 <table BORDER=0 valign="top" >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="140">
