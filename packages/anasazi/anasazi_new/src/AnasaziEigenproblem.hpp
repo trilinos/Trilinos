@@ -92,9 +92,6 @@ namespace Anasazi {
     //! The number of eigenvalues (NEV) that are requested.
     virtual void SetNEV( const int nev ) = 0;
 
-    //! Set the blocksize to be used by the iterative solver in solving this eigenproblem.
-    virtual void SetBlockSize( const int blocksize ) = 0;
-
     //! Inform the eigenproblem that this problem is symmetric.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
@@ -144,9 +141,6 @@ namespace Anasazi {
     
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
     virtual int GetNEV() const = 0;
-    
-    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    virtual int GetBlockSize() const = 0;
     
     //! Get the symmetry information for this eigenproblem.
     virtual bool IsSymmetric() const = 0;

@@ -73,6 +73,9 @@ class Eigensolver {
   */
   virtual int GetNumRestarts() const = 0;
 
+  //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+  virtual int GetBlockSize() const = 0;
+
   //! Get the solvers native residuals for the current eigenpairs. 
   /*! This is not be the same as the true residuals for most solvers. Sometimes the native
     residuals are not in multivector form, so the norm type is solver dependent.  

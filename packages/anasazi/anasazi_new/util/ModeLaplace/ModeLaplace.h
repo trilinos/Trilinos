@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef MODE_LAPLACE_H
-#define MODE_LAPLACE_H
+#ifndef ANASAZI_MODE_LAPLACE_H
+#define ANASAZI_MODE_LAPLACE_H
 
 #include "ModalProblem.h"
 

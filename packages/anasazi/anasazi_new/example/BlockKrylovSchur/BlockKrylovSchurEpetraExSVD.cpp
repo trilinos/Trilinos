@@ -141,20 +141,20 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
-	int block = 1;
+	int blocksize = 1;
 	int length = 10;
 	int nev = 4;
 	double tol = lapack.LAMCH('E');
 	string which="LM";
 	int restarts = 300;
-	int step = restarts*length*block;
+	int step = restarts*length*blocksize;
 
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
 	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver. 
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, blocksize) );
 	ivec->MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
@@ -167,7 +167,6 @@ int main(int argc, char *argv[]) {
 
 	// Set the number of eigenvalues requested and the blocksize the solver should use
 	MyProblem->SetNEV( nev );
-	MyProblem->SetBlockSize( block );
 
 	// Inform the eigenproblem that you are finishing passing it information
 	assert( MyProblem->SetProblem() == 0 );
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							   length, step, restarts);	
+							   blocksize, length, step, restarts);	
 	
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);

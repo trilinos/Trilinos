@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef CHECKING_TOOLS_H
-#define CHECKING_TOOLS_H
+#ifndef ANASAZI_CHECKING_TOOLS_H
+#define ANASAZI_CHECKING_TOOLS_H
 
 #include "Epetra_ConfigDefs.h"
 

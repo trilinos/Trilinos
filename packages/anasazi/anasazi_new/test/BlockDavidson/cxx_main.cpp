@@ -29,6 +29,7 @@
 //  This test is for the internal utilities that are used by the modal analysis solver.
 //
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBlockDavidson.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -43,6 +44,7 @@
 #include "Epetra_Map.h"
 
 #include "ModeLaplace1DQ1.h"
+#include "BlockPCGSolver.h"
 
 int main(int argc, char *argv[]) 
 {
@@ -75,8 +77,8 @@ int main(int argc, char *argv[])
   int numberFailedTests = 0;
   int returnCode = 0;  
 
-  //  Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
 
   //  Problem information
   int space_dim = 1;
@@ -85,15 +87,53 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 50;
 
+  //  Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+
   // Create problem
-  ModalProblem *testCase = new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]);
+  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
 
   // Get the stiffness and mass matrices
-  const Epetra_Operator *K = testCase->getStiffness();
-  const Epetra_Operator *M = testCase->getMass();
+  Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
+  Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
+
+  // Create preconditioner
+  int maxIterCG = 100;
+  double tolCG = 1e-05;
   
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
+  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, K.get(), tolCG, maxIterCG, 3) );
+  opStiffness->setPreconditioner( 0 );
+
+  int nev = 4;
+  int blockSize = 5;
+  int maxBlocks = 8;
+  int maxIter = 500;
+  double tol = tolCG * 10.0;
+  
+  // Create eigenproblem
+
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  ivec->Random();
+  
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, M, ivec) );
+  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+  
+  // Inform the eigenproblem that the operator A is symmetric
+  MyProblem->SetSymmetric(true);
+  
+  // Set the number of eigenvalues requested and the blocksize the solver should use
+  MyProblem->SetNEV( nev );
+  
+  // Create the eigensolver
+
+  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, tol,
+						  blockSize, maxBlocks, maxIter);
+
+  // Solve the problem to the specified tolerances or length
+  MySolver.solve();
+
+
 
   return 0;
 }	

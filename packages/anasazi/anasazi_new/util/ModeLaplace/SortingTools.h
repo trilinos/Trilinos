@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef SORTING_TOOLS_H
-#define SORTING_TOOLS_H
+#ifndef ANASAZI_SORTING_TOOLS_H
+#define ANASAZI_SORTING_TOOLS_H
 
 #include <cstring>
 using std::memcpy;

@@ -90,8 +90,6 @@ namespace Anasazi {
     by Anasazi to solve the eigenvalue problem.  Even if an initial guess is not known
     by the user, an initial vector must be passed in.  Sets the pointer to the input
     %Anasazi::MultiVec, so no copy is made.  
-    
-    NOTE:  This multivector should have the same number of columns as the blocksize
     */
     void SetInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; };
     
@@ -104,9 +102,6 @@ namespace Anasazi {
 
     //! Inform the eigenproblem of the number of eigenvalues (NEV) that are required.
     void SetNEV( const int nev ){ _nev = nev; };
-
-    //! Set the blocksize to be used by the iterative solver in solving this eigenproblem.
-    void SetBlockSize( const int blocksize ){ _blocksize = blocksize; };
 
     //! Inform the eigenproblem that this problem is symmetric.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
@@ -158,9 +153,6 @@ namespace Anasazi {
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
     int GetNEV() const { return( _nev ); }
 
-    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int GetBlockSize() const { return( _blocksize ); }
-
     //! Get the symmetry information for this eigenproblem.
     bool IsSymmetric() const { return( _isSym ); }
     
@@ -190,7 +182,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> _InitVec, _AuxVec;
     Teuchos::RefCountPtr<MV> _Evecs;
     TYPE *_Evals;
-    int _nev, _blocksize;
+    int _nev;
     bool _isSym;
 
     typedef MultiVecTraits<TYPE,MV> MVT;
@@ -205,7 +197,6 @@ namespace Anasazi {
   BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem(void) : 
     _Evals(0), 
     _nev(1), 
-    _blocksize(1), 
     _isSym(false)
   {
   }
@@ -218,7 +209,6 @@ namespace Anasazi {
     _InitVec(InitVec), 
     _Evals(0),
     _nev(1), 
-    _blocksize(1), 
     _isSym(false)
   {
   }
@@ -233,7 +223,6 @@ namespace Anasazi {
     _InitVec(InitVec), 
     _Evals(0),
     _nev(1), 
-    _blocksize(1), 
     _isSym(false)
   {
   }
@@ -250,7 +239,6 @@ namespace Anasazi {
     _Evals(Problem._Evals),
     _Evecs(Problem._Evecs),
     _nev(Problem._nev), 
-    _blocksize(Problem._blocksize),
     _isSym(Problem._isSym)
   {
   }
@@ -278,15 +266,9 @@ namespace Anasazi {
 
     // If there is no initial vector, then we don't have anything to clone workspace from.
     if ( !_InitVec.get() ) { return Failed; }
-    else { 
-      // If there is an initial multivector, but it doesn't have the same columns as the blocksize, we don't need to continue.
-      if (_InitVec->GetNumberVecs() != _blocksize ) return Failed; }
 
     // If we don't need any eigenvalues, we don't need to continue.
     if (_nev == 0) { return Failed; }
-
-    // If there is a zero blocksize, we don't need to continue.
-    if (_blocksize  == 0) { return Failed; }
 
     // If there is an A, but no operator, we can set them equal.
     if (_AOp.get() && !_Op.get()) { _Op = _AOp; }

@@ -33,7 +33,6 @@
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
@@ -65,13 +64,12 @@ namespace Anasazi {
     
     //! %Anasazi::BlockDavidson constructor.
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
-		      const Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > &sm,
-		      const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
-		      const STYPE tol=1.0e-6,
-		      const int length=25, 
-		      const int step=25, 
-		      const int maxIter=300 
-		      );
+		   const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
+		   const STYPE tol=1.0e-6,
+		   const int blockSize = 1,
+		   const int length=25, 
+		   const int maxIter=300 
+		   );
     
     //! %Anasazi::BlockDavidson destructor.
     virtual ~BlockDavidson() {};
@@ -99,10 +97,13 @@ namespace Anasazi {
     
     //! Get the current restart count of the iteration method.
     /*! Some eigensolvers can perform restarts (i.e.Arnoldi) to reduce memory
-      and orthogonalization costs.  For other eigensolvers that don't
-      perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
+      and orthogonalization costs.  For other eigensolvers, like LOBPCG or BlockDavidson,
+      this is not a valid stopping criteria.
     */
-    int GetNumRestarts() const { return(_restarts); };
+    int GetNumRestarts() const { return(_restartIter); };
+
+    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+    int GetBlockSize() const { return(_blockSize); }
     
     //! Get the solvers native residuals for the current eigenpairs. 
     /*! This is not be the same as the true residuals for most solvers. Sometimes the native
@@ -138,9 +139,8 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > _problem; 
-    Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > _sm; 
-    Teuchos::RefCountPtr<OutputManager<STYPE> > _om; 
+    const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > _problem; 
+    const Teuchos::RefCountPtr<OutputManager<STYPE> > _om; 
     //
     // Information obtained from the eigenproblem
     //
@@ -148,14 +148,14 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> _BOp;
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
-    const int _nev, _blockSize;  
+    const int _nev;  
     STYPE* _evals;
     //
     // Internal data.
     //
-    const int _numBlocks, _restarts, _step, _maxIter;
+    const int _numBlocks, _maxIter, _blockSize;
     const STYPE _residual_tolerance;
-    int _restartiter, _iter, _dimSearch;
+    int _restartIter, _iter, _dimSearch;
     int _lwork;
     //
     // Internal utilities class required by eigensolver.
@@ -164,8 +164,8 @@ namespace Anasazi {
     //
     // Internal storage for eigensolver
     //
-    Teuchos::RefCountPtr<MV> _X, _MX, _KX;
-    Teuchos::SerialDenseMatrix<int,STYPE> _K, _S;
+    Teuchos::RefCountPtr<MV> _X, _MX, _KX, _R;
+    Teuchos::SerialDenseMatrix<int,STYPE> _KK, _S;
     std::vector<STYPE> _theta, _normR, _work;
 
     typedef MultiVecTraits<STYPE,MV> MVT;
@@ -178,29 +178,25 @@ namespace Anasazi {
   //
   template <class STYPE, class MV, class OP>
   BlockDavidson<STYPE,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
-					   const Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > &sm,
-					   const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
-					   const STYPE tol, 
-					   const int numBlocks, 
-					   const int step, 
-					   const int maxIter
-					   ): 
+					    const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
+					    const STYPE tol,
+					    const int blockSize,
+					    const int numBlocks, 
+					    const int maxIter
+					    ): 
     _problem(problem), 
-    _sm(sm),
     _om(om),
     _Op(_problem->GetOperator()),
     _BOp(_problem->GetB()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
     _nev(problem->GetNEV()), 
-    _blockSize(problem->GetBlockSize()), 
     _evals(problem->GetEvals()), 
     _numBlocks(numBlocks), 
-    _restarts(25),
-    _step(step),
     _maxIter(maxIter),
+    _blockSize(blockSize),
     _residual_tolerance(tol),
-    _restartiter(0), 
+    _restartIter(0), 
     _iter(0), 
     _dimSearch(0),
     _MSUtils(om)
@@ -225,7 +221,7 @@ namespace Anasazi {
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of _X.]
     //
-    if (_BOp->get())
+    if (_BOp.get())
       _MX = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -236,7 +232,7 @@ namespace Anasazi {
     //
     // Initialize the workspace.
     //
-    _X->MvRandom();
+    MVT::MvRandom( *_X );
     //
     // Define dense local matrices and arrays
     //
@@ -249,11 +245,11 @@ namespace Anasazi {
     //
     // tmpKK = Local workspace                   (size: dimSearch x dimSearch)
     //
-    _theta.size( _dimSearch );
-    _normR.size( _blockSize );
+    _theta.resize( _dimSearch );
+    _normR.resize( _blockSize );
     //    
-    _KK.size( _dimSearch, _dimSearch );
-    _S.size( _dimSearch, _dimSearch );
+    _KK.shape( _dimSearch, _dimSearch );
+    _S.shape( _dimSearch, _dimSearch );
         
   }
   
@@ -262,7 +258,7 @@ namespace Anasazi {
   {
     int i, j;
     int info, nb;
-    int bStart = 0, offset = 0;
+    int bStart = 0, offSet = 0;
     int knownEV = 0;
     int nFound = _blockSize;
     bool reStart = false;
@@ -281,7 +277,7 @@ namespace Anasazi {
     //
     _lwork = lapack.ILAENV( 1, "geqrf", "", maxBlock*_blockSize, maxBlock*_blockSize );
     _lwork *= _blockSize;
-    _work.size( _lwork );
+    _work.resize( _lwork );
     //
     while ( _iter <= _maxIter ) {
       
@@ -313,7 +309,7 @@ namespace Anasazi {
 	//
 	// Apply the mass matrix.
 	//	
-	if (_BOp->get())
+	if (_BOp.get())
 	  OPT::Apply( *_BOp, *Xcurrent, *_MX );
 	//
 	// Orthonormalize Xcurrent again the known eigenvectors and previous vectors.
@@ -321,16 +317,16 @@ namespace Anasazi {
 	if (nb == bStart) {
 	  if (nFound > 0) {
 	    if (knownEV == 0) {
-	      info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 2 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xprev, nFound, 2 );
 	    }
 	    else {
-	      info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 0 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xprev, nFound, 0 );
 	    }
 	  }
 	  nFound = 0;
 	} 
 	else {
-	  info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, _blockSize, 0 );
+	  info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xprev, _blockSize, 0 );
 	}
 	//
 	// Exit the code if there has been a problem.
@@ -342,9 +338,9 @@ namespace Anasazi {
 	//
 	if ( 0 ) {
 	  if (localSize > 0)
-	    accuracyCheck( &Xcurrent, &MX, &Xprev );
+	    accuracyCheck( Xcurrent.get(), _MX.get(), Xprev.get() );
 	  else
-	    accuracyCheck( &Xcurrent, &MX, Teuchos::null );
+	    accuracyCheck( Xcurrent.get(), _MX.get(), NULL );
 	}
 	//
 	// Apply the stiffness matrix.
@@ -358,12 +354,12 @@ namespace Anasazi {
 	for (i=0; i < localSize + _blockSize; i++)
 	  index[i] = knownEV + i;
 	Xtotal = MVT::CloneView( *_X, &index[0], localSize + _blockSize );
-	Teuchos::SerialDenseMatrix<int,STYPE> subKK( View, _KK, 0, localSize+_blockSize, _blockSize, 0, localSize );
-	MVT::MvTransMv( one, *Xtotal, *_KX, KKsub );
+	Teuchos::SerialDenseMatrix<int,STYPE> subKK( Teuchos::View, _KK, localSize+_blockSize, _blockSize, 0, localSize );
+	MVT::MvTransMv( one, *Xtotal, *_KX, subKK );
 	//
 	// Perform spectral decomposition
 	//
-	info = _MSUtils.directSolver(localSize+_blockSize, _KK, 0, &_S, &theta, localSize+_blockSize, 10);
+	info = _MSUtils.directSolver(localSize+_blockSize, _KK, 0, &_S, &_theta, localSize+_blockSize, 10);
 	//
 	// Exit the code if there has been a problem.
 	//
@@ -394,12 +390,12 @@ namespace Anasazi {
 	// Update the search space :
 	// KX = Xtotal * S where S is the eigenvectors of the projected problem.
 	//
-	Teuchos::SerialDenseMatrix<int,STYPE> subS( View, _S, localSize+_blockSize, _blockSize );
-	MVT::MvTimesMatAddMv( one, *_Xtotal, subS, zero, *_KX );
+	Teuchos::SerialDenseMatrix<int,STYPE> subS( Teuchos::View, _S, localSize+_blockSize, _blockSize );
+	MVT::MvTimesMatAddMv( one, *Xtotal, subS, zero, *_KX );
 	//
 	// Apply the mass matrix for the next block
 	// 
-	if (_BOp->get())
+	if (_BOp.get())
 	  OPT::Apply( *_BOp, *_KX, *_MX );
 	//
 	// Apply the stiffness matrix for the next block
@@ -411,9 +407,9 @@ namespace Anasazi {
 	// 
 	Teuchos::SerialDenseMatrix<int,STYPE> D(_blockSize, _blockSize);
 	for (i=0; i<_blockSize; i++ )
-	  D(i,i) = -theta[i];
+	  D(i,i) = -_theta[i];
 	//
-	if (_BOp->get()) {
+	if (_BOp.get()) {
 	  MVT::MvTimesMatAddMv( one, *_MX, D, one, *_R );
 	}
 	else {
@@ -444,7 +440,7 @@ namespace Anasazi {
 	// Apply the preconditioner on the residuals
 	//
 	if (maxBlock == 1) {
-	  if (_Prec->get()) {
+	  if (_Prec.get()) {
 	    OPT::Apply( *_Prec, *_R, *Xcurrent );
 	  }
 	  else
@@ -467,7 +463,7 @@ namespace Anasazi {
 	for( i=0; i<_blockSize; i++) 
 	  index[i] = knownEV + localSize + _blockSize + i;
 	Xnext = MVT::CloneView( *_X, &index[0], _blockSize );
-	if (_Prec) {
+	if (_Prec.get()) {
 	  OPT::Apply( *_Prec, *_R, *Xnext );
 	}
 	else 
@@ -493,14 +489,14 @@ namespace Anasazi {
       // Store the final converged eigenvectors
       //
       if (knownEV + nFound >= _nev) {
-	std::vector<int> index2(1);
+	std::vector<int> index(1);
 	for (j=0; j<_blockSize; j++) {
 	  if (_normR[j] < _residual_tolerance) {
-	    index2[0] = j;
+	    index[0] = j;
 	    Teuchos::RefCountPtr<MV> tmp_KX = MVT::CloneView( *_KX, &index[0], 1 );
-	    index2[0] = knownEV;
-	    MVT::SetBlock( *tmp_KX, &index2[0], 1, *_X );
-	    _evals[knownEV] = theta[j];
+	    index[0] = knownEV;
+	    MVT::SetBlock( *tmp_KX, &index[0], 1, *_X );
+	    _evals[knownEV] = _theta[j];
 	    knownEV++;
 	  }
 	}
@@ -512,25 +508,25 @@ namespace Anasazi {
       //
       if (maxBlock == 1) {
 	if (nFound > 0) {
-	  std::vector<int> index2(1);
+	  std::vector<int> index(1);
 	  int tmp_ptr = knownEV + nFound;
 	  nFound = 0;
 	  for (j=0; j<_blockSize; j++) {
 	    //
 	    // Get a view of the current prospective eigenvector.
 	    //
-	    index2[0] = j;
+	    index[0] = j;
 	    Teuchos::RefCountPtr<MV> tmp_KX = MVT::CloneView( *_KX, &index[0], 1 );
 	    if (_normR[j] < _residual_tolerance) {
-	      index2[0] = knownEV;
-	      MVT::SetBlock( *tmp_KX, &index2[0], 1, *_X );	      
-	      _evals[knownEV] = theta[j];
+	      index[0] = knownEV;
+	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_X );	      
+	      _evals[knownEV] = _theta[j];
 	      knownEV++;
 	      nFound++;	      
 	    }
 	    else {
-	      index2[0] = tmp_ptr + (j-nFound);
-	      MVT::SetBlock( *tmp_KX, &index2[0], 1, *_X );
+	      index[0] = tmp_ptr + (j-nFound);
+	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_X );
 	    }
 	  } // for (j=0; j<_blockSize; j++)
 	  //
@@ -564,15 +560,25 @@ namespace Anasazi {
 	// to move the converged eigenvectors to the front of the spectral
 	// transformation.
 	//
+	STYPE tmp_swap;
+	std::vector<STYPE> tmp_swap_vec(nb*_blockSize);
 	while (firstIndex < nFound) {
 	  for (j=firstIndex; j<_blockSize; j++) {
 	    if (_normR[j] < _residual_tolerance) {
 	      //
 	      // Swap and j-th and firstIndex-th position
 	      //
-	      blas.SWAP(nb*_blockSize, _S.values() + j*_dimSearch, 1, _S.values() + firstIndex*_dimSearch, 1 );
-	      blas.SWAP(1, &_theta[0] + j, 1, &_theta[0] + firstIndex, 1 );
-	      blas.SWAP(1, &_normR[0] + j, 1, &_normR[0] + firstIndex, 1 );
+	      blas.COPY(nb*_blockSize, _S[ j ], 1, &tmp_swap_vec[0], 1);
+	      blas.COPY(nb*_blockSize, _S[ firstIndex ], 1, _S[ j ], 1 );
+	      blas.COPY(nb*_blockSize, &tmp_swap_vec[0], 1, _S[ firstIndex ], 1 );
+	      // Swap _theta
+	      tmp_swap = _theta[j];
+	      _theta[j] = _theta[firstIndex];
+	      _theta[firstIndex] = tmp_swap;
+	      // Swap _normR
+	      tmp_swap = _normR[j];
+	      _normR[j] = _normR[firstIndex];
+	      _normR[firstIndex] = tmp_swap;
 	      break;
 	    }
 	  } 
@@ -597,18 +603,18 @@ namespace Anasazi {
       //
       // Define the restarting space and local stiffness matrix
       //
-      _KK.PutScalar( zero );
+      _KK.putScalar( zero );
       for (j=0; j<bStart*_blockSize; j++)
-	KK(j,j) = _theta[j + nFound];
+	_KK(j,j) = _theta[j + nFound];
       //
       // Form the restarting space
       //
       int oldCol = nb*_blockSize;
       int newCol = nFound + (bStart+1)*_blockSize;
       newCol = (newCol > oldCol) ? oldCol : newCol;
+      std::vector<int> index( oldCol );
       lapack.GEQRF(oldCol, newCol, _S.values(), _S.stride(), &_theta[0], &_work[0], _lwork, &info);
-      lapack.ORGQR(oldCol, newCol, newCol, _S.values(), _S,stride(), &_theta[0], &_work[0], _lwork, &info);      
-      index.resize( oldCol );
+      lapack.ORGQR(oldCol, newCol, newCol, _S.values(), _S.stride(), &_theta[0], &_work[0], _lwork, &info);      
       for (i=0; i<oldCol; i++)
 	index[i] = knownEV + i;
       Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *_X, &index[0], oldCol );
@@ -617,7 +623,7 @@ namespace Anasazi {
 	index[i] = knownEV + i; 
       Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_X, &index[0], newCol );
       Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *_X, newCol );
-      Teuchos::SerialDenseMatrix<int,STYPE> _Sview( View, _S, oldCol, newCol );
+      Teuchos::SerialDenseMatrix<int,STYPE> _Sview( Teuchos::View, _S, oldCol, newCol );
       MVT::MvTimesMatAddMv( one, *oldX, _Sview, zero, *temp_newX );
       MVT::MvAddMv( one, *temp_newX, zero, *temp_newX, *newX ); 
       
@@ -625,7 +631,7 @@ namespace Anasazi {
 	offSet++;
       
       knownEV += nFound;
-      maxBlock = (dimSearch/_blockSize) - (knownEV/_blockSize);
+      maxBlock = (_dimSearch/_blockSize) - (knownEV/_blockSize);
       //
       // Put random vectors if the Rayleigh Ritz vectors are not enough
       // 
@@ -648,7 +654,7 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (knownEV > 0))
-      _MSUtils.sortScalars_Vectors(knownEV, _evals, _evecs);
+      _MSUtils.sortScalars_Vectors(knownEV, _evals, _evecs.get());
  
   } // end solve()
 
@@ -656,27 +662,26 @@ namespace Anasazi {
   template <class STYPE, class MV, class OP>
   void BlockDavidson<STYPE,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
     {
-      
       cout.precision(2);
       cout.setf(ios::scientific, ios::floatfield);
       double tmp;
       
-      int myPid = MyComm.MyPID();
+      ostream& os = _om->GetOStream();
       
       if (X) {
-	if (M) {
+	if (_BOp.get()) {
 	  if (MX) {
-	    tmp = _MSUtils.errorEquality(X, MX, M);
-	    if (myPid == 0)
+	    tmp = _MSUtils.errorEquality(X, MX, _BOp.get());
+	    if (_om->doOutput(0))
 	      cout << " >> Difference between MX and M*X = " << tmp << endl;
 	  }
-	  tmp = _MSUtils.errorOrthonormality(X, M);
-	  if (myPid == 0)
+	  tmp = _MSUtils.errorOrthonormality(X, _BOp.get());
+	  if (_om->doOutput(0))
 	    cout << " >> Error in X^T M X - I = " << tmp << endl;
 	}
 	else {
 	  tmp = _MSUtils.errorOrthonormality(X, 0);
-	  if (myPid == 0)
+	  if (_om->doOutput(0))
 	    cout << " >> Error in X^T X - I = " << tmp << endl;
 	}
       }
@@ -684,23 +689,23 @@ namespace Anasazi {
       if (Q == 0)
 	return;
       
-      if (M) {
-	tmp = _MSUtils.errorOrthonormality(Q, M);
-	if (myPid == 0)
+      if (_BOp.get()) {
+	tmp = _MSUtils.errorOrthonormality(Q, _BOp.get());
+	if (_om->doOutput(0))
 	  cout << " >> Error in Q^T M Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = _MSUtils.errorOrthogonality(Q, X, M);
-	  if (myPid == 0)
+	  tmp = _MSUtils.errorOrthogonality(Q, X, _BOp.get());
+	  if (_om->doOutput(0))
 	    cout << " >> Orthogonality Q^T M X up to " << tmp << endl;
 	}
       }
       else {
 	tmp = _MSUtils.errorOrthonormality(Q, 0);
-	if (myPid == 0)
+	if (_om->doOutput(0))
 	  cout << " >> Error in Q^T Q - I = " << tmp << endl;
 	if (X) {
 	  tmp = _MSUtils.errorOrthogonality(Q, X, 0);
-	  if (myPid == 0)
+	  if (_om->doOutput(0))
 	    cout << " >> Orthogonality Q^T X up to " << tmp << endl;
 	}
       }

@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef MODAL_PROBLEM_H
-#define MODAL_PROBLEM_H
+#ifndef ANASAZI_MODAL_PROBLEM_H
+#define ANASAZI_MODAL_PROBLEM_H
 
 class Epetra_MultiVector;
 

@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 	//
         //  Variables used for the Block Arnoldi Method
         // 
-        int block = 5;
+        int blocksize = 5;
         int length = 10;
         int nev = 5;
         double tol = 1.0e-8;
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
         // or copy is determined by the petra constructor called by Anasazi::EpetraMultiVec.
         // This is possible because I pass in arguements needed by petra.
 
-        Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
+        Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blocksize) );
         ivec->MvRandom();
 
         // call the ctor that calls the petra ctor for a matrix
@@ -164,9 +164,8 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that the matrix A is symmetric
 	//MyProblem->SetSymmetric(true);
 
-	// Set the number of eigenvalues requested and the blocksize the solver should use
+	// Set the number of eigenvalues requested 
 	MyProblem->SetNEV( nev );
-	MyProblem->SetBlockSize( block );
 
        // Inform the eigenproblem that you are finishing passing it information
         assert( MyProblem->SetProblem() == 0 );
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
 	//  Initialize the Block Arnoldi solver
 	//
         Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							   length, step, restarts);
+							   blocksize, length, step, restarts);
 	
         // iterate a few steps (if you wish)
         //MySolver.iterate(5);

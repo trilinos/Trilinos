@@ -209,8 +209,8 @@ int main(int argc, char *argv[]) {
 	// Set up Belos Block GMRES operator for inner iteration
 	//*******************************************************
 	//
-	int block = 3;  // blocksize used by linear solver and eigensolver [ not required to be the same ]
-        int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+	int blocksize = 3;  // blocksize used by linear solver and eigensolver [ not required to be the same ]
+        int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
         double btol = 1.0e-7;  // relative residual tolerance
         //
         // Create the Belos::LinearProblemManager
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 	Belos::LinearProblemManager<double> My_LP;
 	My_LP.SetOperator( &BelosMat );
 	My_LP.SetLeftPrec( &BelosPrec );
-	My_LP.SetBlockSize( block );
+	My_LP.SetBlockSize( blocksize );
 	//
 	// Create the Belos::StatusTest
 	//
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 
 	// Create a AnasaziEpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blocksize) );
 	ivec->MvRandom();
     
 	// Call the ctor that calls the petra ctor for a matrix
@@ -275,9 +275,8 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem->SetSymmetric(true);
 
-	// Set the number of eigenvalues requested and the blocksize the solver should use
+	// Set the number of eigenvalues requested 
 	MyProblem->SetNEV( nev );
-	MyProblem->SetBlockSize( block );
 
         // Inform the eigenproblem that you are finishing passing it information
         assert( MyProblem->SetProblem() == 0 );
@@ -293,7 +292,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							 length, step, restarts);
+							 blocksize, length, step, restarts);
 	
 	// iterate a few steps (if you wish)
 	//MySolver.iterate(5);

@@ -223,21 +223,21 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Krylov Schur Method
 	//
-	int block = 1;
+	int blocksize = 1;
 	int length = 20;
 	int nev = 4;
 	double tol = 1e-8;
 	string which="SM";
 	int restarts = 300;
 	//int step = 1;
-	int step = restarts*length*block;
+	int step = restarts*length*blocksize;
 	
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
 	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blocksize) );
 	ivec->MvRandom();
 
 	// Create an Anasazi::EpetraOp for the operator A.
@@ -250,9 +250,8 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that the operator A is symmetric
 	MyProblem->SetSymmetric(rho==0.0); 
 	
-	// Set the number of eigenvalues requested and the blocksize the solver should use
+	// Set the number of eigenvalues requested
 	MyProblem->SetNEV( nev );
-	MyProblem->SetBlockSize( block );
 	
 	// Inform the eigenproblem that you are finishing passing it information
 	assert( MyProblem->SetProblem() == 0 );
@@ -268,7 +267,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							   length, step, restarts);	
+							   blocksize, length, step, restarts);	
 	
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);

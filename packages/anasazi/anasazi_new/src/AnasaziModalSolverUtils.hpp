@@ -914,7 +914,7 @@ namespace Anasazi {
     
     int i;
     STYPE maxCoeffX = Teuchos::ScalarTraits<STYPE>::zero();
-    std::vector<int> tmp( xc );
+    std::vector<STYPE> tmp( xc );
     MVT::MvNorm( *MX, &tmp[0] );
 
     for (i = 0; i < xc; ++i) {

@@ -18,6 +18,8 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/BlockPCGSolver.h \
+	$(srcdir)/CheckingTools.h \
 	$(srcdir)/ModeLaplace1DQ1.h \
 	$(srcdir)/ModeLaplace1DQ2.h \
 	$(srcdir)/ModeLaplace2DQ1.h \
@@ -26,17 +28,17 @@ CORE_H = \
 	$(srcdir)/ModeLaplace3DQ2.h \
 	$(srcdir)/ModalProblem.h \
 	$(srcdir)/ModeLaplace.h \
-	$(srcdir)/CheckingTools.h \
 	$(srcdir)/SortingTools.h
 
 CORE = \
+	$(srcdir)/BlockPCGSolver.cpp \
+	$(srcdir)/CheckingTools.cpp \
 	$(srcdir)/ModeLaplace1DQ1.cpp \
 	$(srcdir)/ModeLaplace1DQ2.cpp \
 	$(srcdir)/ModeLaplace2DQ1.cpp \
 	$(srcdir)/ModeLaplace2DQ2.cpp \
 	$(srcdir)/ModeLaplace3DQ1.cpp \
 	$(srcdir)/ModeLaplace3DQ2.cpp \
-	$(srcdir)/CheckingTools.cpp \
 	$(srcdir)/SortingTools.cpp
 
 UTIL_H = 
@@ -100,7 +102,10 @@ COMP =
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 #  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/src/ModalAnalysisSolvers
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/src/ModalAnalysisSolvers
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.

@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef MODE_LAPLACE_1D_Q1_H
-#define MODE_LAPLACE_1D_Q1_H
+#ifndef ANASAZI_MODE_LAPLACE_1D_Q1_H
+#define ANASAZI_MODE_LAPLACE_1D_Q1_H
 
 #include "Epetra_ConfigDefs.h"
 
