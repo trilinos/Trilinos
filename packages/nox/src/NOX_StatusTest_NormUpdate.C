@@ -41,7 +41,7 @@ using namespace NOX;
 using namespace NOX::StatusTest;
 
 NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   updateVectorPtr(NULL),
   normType(ntype),
   scaleType(stype),
@@ -51,7 +51,7 @@ NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType s
 }
 
 NormUpdate::NormUpdate(double tol, ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   updateVectorPtr(NULL),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
@@ -67,10 +67,17 @@ NormUpdate::~NormUpdate()
 
 StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
 {
-  status = Unconverged;
-  const Abstract::Group& grp = problem.getSolutionGroup();
-  const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
-  const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
+  return checkStatus(problem, NOX::StatusTest::Minimal);
+}
+
+StatusType NormUpdate::checkStatus(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+{
+  if (checkType == None)
+  {
+    status = Unevaluated;
+    normUpdate = -1.0;
+    return status;
+  }
 
   // On the first iteration, the old and current solution are the same so
   // we should return the test as unconverged until there is a valid 
@@ -83,14 +90,15 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
     return status;
   } 
 
+  const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
+  const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
+
   if (updateVectorPtr == NULL) 
     updateVectorPtr = curSoln.clone();
 
-  *updateVectorPtr = curSoln;
+  updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0); 
 
-  updateVectorPtr->update(-1.0, oldSoln, 1.0); 
-
-  int n = grp.getX().length();
+  int n = (scaleType == Scaled) ? updateVectorPtr->length() : 0;
 
   switch (normType) {
     
@@ -108,9 +116,7 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
 
   }
 
-  if (normUpdate < tolerance)
-    status = Converged;
-
+  status = (normUpdate < tolerance) ? Converged : Unconverged;
   return status;
 }
 

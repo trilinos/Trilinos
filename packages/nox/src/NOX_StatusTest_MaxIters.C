@@ -34,39 +34,53 @@
 #include "NOX_Common.H"
 #include "NOX_Solver_Generic.H"
 
-using namespace NOX::StatusTest;
-
-MaxIters::MaxIters(int maxiterations) :
-  niters(0)
+NOX::StatusTest::MaxIters::MaxIters(int maxIterations) :
+  maxiters(maxIterations),
+  status(Unevaluated)
 {
-  if (maxiterations < 1) {
-    cout << "Error: Must choose maxiterations > 1 in NOX::StatusTest::MaxIters" << endl;
-    throw;
+  if (maxiters < 1) 
+  {
+    cout << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << endl;
+    throw "NOX Error";
   }
-    
-  maxiters = maxiterations;
-  status = Unconverged;
 }
 
-MaxIters::~MaxIters()
+NOX::StatusTest::MaxIters::~MaxIters()
 {
 }
 
-StatusType MaxIters::checkStatus(const Solver::Generic& problem)
+NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::checkStatus(const Solver::Generic& problem)
 {
-  status = Unconverged;
-  niters = problem.getNumIterations();
-  if (niters >= maxiters)
-    status = Failed;
+  return checkStatus(problem, NOX::StatusTest::Minimal);
+}
+
+NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::checkStatus(const Solver::Generic& problem, 
+								   NOX::StatusTest::CheckType checkType)
+{
+  switch (checkType)
+  {
+  case NOX::StatusTest::Complete:
+  case NOX::StatusTest::Minimal:
+    niters = problem.getNumIterations();
+    status = (niters >= maxiters) ? Failed : Unconverged;
+    break;
+
+  case NOX::StatusTest::None:
+  default:
+    niters = -1;
+    status = Unevaluated;
+    break;
+  }
+
   return status;
 }
 
-StatusType MaxIters::getStatus() const
+NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::getStatus() const
 {
   return status;
 }
 
-ostream& MaxIters::print(ostream& stream, int indent) const
+ostream& NOX::StatusTest::MaxIters::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -76,12 +90,12 @@ ostream& MaxIters::print(ostream& stream, int indent) const
  return stream;
 }
 
-int MaxIters::getMaxIters() const
+int NOX::StatusTest::MaxIters::getMaxIters() const
 {
   return maxiters;
 }
 
-int MaxIters::getNumIters() const
+int NOX::StatusTest::MaxIters::getNumIters() const
 {
   return niters;
 }

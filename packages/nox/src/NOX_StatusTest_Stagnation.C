@@ -41,14 +41,13 @@ NOX::StatusTest::Stagnation::Stagnation(int maxSteps_, double tolerance_) :
   lastIteration(-1),
   tolerance(tolerance_),
   convRate(1.0),
-  status(NOX::StatusTest::Unconverged)
+  status(NOX::StatusTest::Unevaluated)
 {
     
 }
 
 NOX::StatusTest::Stagnation::~Stagnation()
 {
-
 }
 
 NOX::StatusTest::StatusType 

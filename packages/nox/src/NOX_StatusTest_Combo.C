@@ -38,14 +38,14 @@ using namespace NOX::StatusTest;
 Combo::Combo(ComboType t) :
   type(t)
 {
-  status = Unconverged;
+  status = Unevaluated;
 }
 
 Combo::Combo(ComboType t, Generic& a) :
   type(t)
 {
   tests.push_back(&a);
-  status = Unconverged;
+  status = Unevaluated;
 }
 
 Combo::Combo(ComboType t, Generic& a, Generic& b) :
@@ -53,14 +53,15 @@ Combo::Combo(ComboType t, Generic& a, Generic& b) :
 {
   tests.push_back(&a);
   addStatusTest(b);
-  status = Unconverged;
+  status = Unevaluated;
 }
 
 Combo& Combo::addStatusTest(Generic& a)
 {
   if (isSafe(a))
     tests.push_back(&a);
-  else {
+  else 
+  {
     const int indent = 2;
     cout << "\n*** WARNING! ***\n";
     cout << "This combo test currently consists of the following:\n";
@@ -80,7 +81,8 @@ bool Combo::isSafe(Generic& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<Generic*>::iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Generic*>::iterator i = tests.begin(); i != tests.end(); ++i) 
+  {
     
     Combo* ptr = dynamic_cast<Combo*>(*i);
     if (ptr != NULL)
@@ -98,12 +100,15 @@ Combo::~Combo()
 
 StatusType Combo::checkStatus(const Solver::Generic& problem)
 {
-  status = Unconverged;
+  return checkStatus(problem, NOX::StatusTest::Minimal);
+}
 
+StatusType Combo::checkStatus(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+{
   if (type == OR)
-    orOp(problem);
+    orOp(problem, checkType);
   else
-    andOp(problem);
+    andOp(problem, checkType);
 
   return status;
 }
@@ -113,16 +118,26 @@ StatusType Combo::getStatus() const
   return status;
 }
 
-void Combo::orOp(const Solver::Generic& problem)
+void Combo::orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
 {
+  if (checkType == None)
+    status = Unevaluated;
+  else
+    status = Unconverged;
+
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
-  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  {
+    StatusType s = (*i)->checkStatus(problem, checkType);
 
-    StatusType s = (*i)->checkStatus(problem);
-
-    if ((status == Unconverged) && (s != Unconverged)) {
+    if ((status == Unconverged) && (s != Unconverged)) 
+    {
       status = s;
+
+      // Turn off checking for the remaining tests
+      if (checkType == Minimal)
+	checkType = None;
     }
 
   }
@@ -130,24 +145,35 @@ void Combo::orOp(const Solver::Generic& problem)
   return;
 }
 
-void Combo::andOp(const Solver::Generic& problem)
+void Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
 {
+  if (checkType == None)
+    status = Unevaluated;
+  else
+    status = Unconverged;
+
   bool isUnconverged = false;
 
   for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    StatusType s = (*i)->checkStatus(problem);
+    StatusType s = (*i)->checkStatus(problem, checkType);
 
     // If any of the tests are unconverged, then the AND test is
     // unconverged.
-    if (s == Unconverged) {
+    if (s == Unconverged) 
+    {
       isUnconverged = true;
       status = Unconverged;
+
+      // Turn off checking for the remaining tests
+      if (checkType == Minimal)
+	checkType = None;
     }
 
     // If this is the first test and it's converged/failed, copy its
     // status to the combo status.
-    if ((!isUnconverged) && (status == Unconverged)) {
+    if ((!isUnconverged) && (status == Unconverged)) 
+    {
       status = s;
     }
 

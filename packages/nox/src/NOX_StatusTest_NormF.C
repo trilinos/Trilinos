@@ -38,7 +38,7 @@
 #include "NOX_Utils.H"
 
 NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   normType(ntype),
   scaleType(stype),
   toleranceType(Absolute),
@@ -50,7 +50,7 @@ NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType 
 }
 
 NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   toleranceType(Absolute),
@@ -64,7 +64,7 @@ NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
 NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
 			      NOX::Abstract::Vector::NormType ntype, 
 			      NOX::StatusTest::NormF::ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   normType(ntype),
   scaleType(stype),
   toleranceType(Relative),
@@ -78,7 +78,7 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
 
 
 NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
-  status(Unconverged),
+  status(Unevaluated),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   toleranceType(Relative),
@@ -137,12 +137,22 @@ void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
 
 NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem)
 {
-  normF = computeNorm( problem.getSolutionGroup() );
+  return checkStatus(problem, NOX::StatusTest::Minimal);
+}
 
-  if (normF < trueTolerance)
-    status = Converged;
+NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem,
+								NOX::StatusTest::CheckType checkType)
+{
+  if (checkType == NOX::StatusTest::None)
+  {
+    normF = 0.0;
+    status = Unevaluated;
+  }
   else
-    status = Unconverged;
+  {
+    normF = computeNorm( problem.getSolutionGroup() );
+    status = (normF < trueTolerance) ? Converged : Unconverged;
+  }
 
   return status;
 }

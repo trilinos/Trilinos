@@ -45,12 +45,15 @@ class MaxIters : public Generic {
 public:
 
   //! Constructor. Specify the maximum number of nonlinear solver iterations.
-  MaxIters(int maxiterations);
+  MaxIters(int maxIterations);
 
   //! Destructor.
   virtual ~MaxIters();
 
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
+
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem, 
+						  NOX::StatusTest::CheckType checkType);
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
@@ -59,7 +62,11 @@ public:
   //! Returns the Maximum number of iterations set in the constructor.
   virtual int getMaxIters() const;
 
-  //! Returns the current number of iterations taken by the solver.
+  /*! 
+    \brief Returns the current number of iterations taken by the solver.
+
+    Returns -1 if the status of this test is NOX::StatusTest::Unevaluated.
+   */
   virtual int getNumIters() const;
 
 private:
@@ -67,13 +74,11 @@ private:
   //! Maximum number of iterations
   int maxiters;
 
-  //! Current number of iterations
+  //! Current number of iterations (if known)
   int niters;
 
   //! %Status
   NOX::StatusTest::StatusType status;
-
-
 };
 
 } // namespace Status

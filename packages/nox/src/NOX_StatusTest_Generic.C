@@ -43,6 +43,9 @@ ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type)
   case  NOX::StatusTest::Converged:
     os << "Converged";
     break;
+  case NOX::StatusTest::Unevaluated:
+    os << "??";
+    break;
   case  NOX::StatusTest::Unconverged:
   default:
     os << "**";

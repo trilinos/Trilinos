@@ -45,8 +45,11 @@ class Generic;			// forward declaration (included below)
 //! %Status checkers.
 namespace StatusTest {
 
-  //! Status type.
-  enum StatusType { 
+//! Status type.
+enum StatusType 
+  { 
+    //! Unevaluated
+    Unevaluated = -2,
     //! Neither Converged nor Failed
     Unconverged = 0, 
     //! Converged
@@ -55,7 +58,23 @@ namespace StatusTest {
     Failed = -1 
   };
 
-//! Generic status test.
+//! Type of check that should be done by checkStatus
+enum CheckType
+  {
+    //! Evaluate every test and subtest 
+    Complete,
+    //! Evaluate only the tests and subtests that are necessary to determine the status [default]
+    Minimal,
+    //! Do not evaluate, except for necessary intermediate tests 
+    None
+  };
+
+/*! 
+
+  \brief %Generic status test to check for convergence or failure of
+  the nonlinear solver.
+
+*/
 class Generic {
 
 public:
@@ -66,8 +85,23 @@ public:
   //! Destructor.
   virtual ~Generic() {};
 
-  //! %Test stopping criterion, given a generic problem.
+  /*! 
+    %Test the stopping criterion
+  */
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem) = 0;
+
+  /*! 
+    %Test the stopping criterion
+    
+    The test can (and should, if possible) be skipped if \c isRequired
+    is false. If the test is skipped, then the status should be set to
+    NOX::StatusTest::Unevaluated.
+  */
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem, 
+						  NOX::StatusTest::CheckType checkType)
+  { 
+    return checkStatus(problem); 
+  };
 
   //! Return the result of the most recent checkStatus call
   virtual NOX::StatusTest::StatusType getStatus() const = 0;

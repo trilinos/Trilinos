@@ -124,6 +124,9 @@ public:
 
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
 
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem,
+						  NOX::StatusTest::CheckType checkType);
+
   virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
