@@ -188,7 +188,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     myMapIter = colorToNumMap.find( *allIter );
     if( myMapIter != mapEnd ) {
       skipIt = false;
-      k = myMapIter->second;
+      k = (*myMapIter).second;
     }
 
     // Perturb the solution vector using coloring
