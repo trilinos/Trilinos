@@ -95,7 +95,7 @@ foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwel
   if ( ${exefiles} != 'fakefile.exe' ) then
      /bin/rm -f fakefile.exe
      foreach g(*.exe)
-       if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_example_elasticity.exe" ) then
+       if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_example_elasticity.exe" & $g != "ml_readex.exe") then
          echo "[TestExamples]" >>& ../$file
          echo "[TestExamples] Testing file >>" $g "<<" >>& ../$file
          if( "$2" == "True" ) then

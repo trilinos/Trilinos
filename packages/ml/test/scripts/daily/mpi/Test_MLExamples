@@ -33,6 +33,17 @@ set OWNERS = "jhu@sandia.gov, rstumin@sandia.gov, mwgee@sandia.gov"
 ## For multiple subdirectories, separate by spaces
 set TEST_SUBDIRS = "2d_Poisson 3d_Poisson"
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable 
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 ################################################################################
 # notes
 #
@@ -134,13 +145,13 @@ foreach f ( ${TEST_SUBDIRS} )
 
             # certain OS's don't search the PWD for scripts, so prepend "./"
             set g = "./"${gg}
-		    $g >>& ../$file4
+		    $mpigo 1 $g >>& ../$file4
 		    if(! -z ../$file4 ) then
             # If file4 is not empty, then a test failed.
 			  set AnError = True
 			  #echo "  ******** Test failed ********" >>& ../$file
 			  #echo "############" $g "##############" >>& ../$file2
-			  $g -v >>& ../$file2
+			  $mpigo 1 $g -v >>& ../$file2
 			  cat ../$file4 >> ../$file
 			  rm -f ../$file4
 		    else
@@ -149,7 +160,7 @@ foreach f ( ${TEST_SUBDIRS} )
 		    endif
 		else
 		# This is not an automated test.
-		    $g -v >>& ../$file
+		    $mpigo 1 $g -v >>& ../$file
 		endif
 	end
 	cd ..

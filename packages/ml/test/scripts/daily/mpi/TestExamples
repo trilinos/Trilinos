@@ -39,6 +39,17 @@ set OWNERS = "jhu@sandia.gov, rstumin@sandia.gov, mwgee@sandia.gov"
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable 
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`    
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 set error = None
 set AnError = False
 set printexitvalue
@@ -95,18 +106,18 @@ foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwel
   if ( ${exefiles} != 'fakefile.exe' ) then
      /bin/rm -f fakefile.exe
      foreach g(*.exe)
-       if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_example_elasticity.exe" ) then
+       if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_example_elasticity.exe" & $g != "ml_readex.exe") then
          echo "[TestExamples]" >>& ../$file
          echo "[TestExamples] Testing file >>" $g "<<" >>& ../$file
          if( "$2" == "True" ) then
            # forget the output now. run with 2 processors
-           mpirun -np 2 ./$g >>& /dev/null
+           $mpigo 2 ./$g >>& /dev/null
            if( $status != 0 ) then
              # A test failed.
              set AnError = True
              echo "[TestExamples] ERROR: Test w/ 2 proc failed!!" >>& ../$file
              echo "[TestExamples] ERROR: now re-running with output" >>& ../$file
-             mpirun -np 2 ./$g >>& ../$file
+             $mpigo 2 ./$g >>& ../$file
              echo "[TestExamples] Errors for script " $g " are listed above." >>& ../$file2
            else
              # Tests passed
@@ -114,7 +125,7 @@ foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwel
            endif
         else
            # This is not an automated test.
-           mpirun -np 2 ./$g >>& ../$file
+           $mpigo 2 ./$g >>& ../$file
         endif
       endif
     end
