@@ -38,6 +38,7 @@ NLS_PetraGroup::NLS_PetraGroup(const NLS_PetraGroup& copyFrom) :
   isValidGrad = copyFrom.isValidGrad;
   isValidNewton = copyFrom.isValidNewton;
   isValidJacobian = copyFrom.isValidJacobian;
+  normRHS = copyFrom.normRHS;
 
   // New copy takes ownership of the shared Jacobian
   if (isValidJacobian)
@@ -82,8 +83,10 @@ NLS_Group& NLS_PetraGroup::operator=(const NLS_PetraGroup& copyFrom)
   isValidJacobian = copyFrom.isValidJacobian;
 
   // Only copy vectors that are valid
-  if (isValidRHS)
+  if (isValidRHS) {
     RHSVector = copyFrom.RHSVector;
+    normRHS = copyFrom.normRHS;
+  }
   if (isValidGrad)
     gradVector = copyFrom.gradVector;
   if (isValidNewton)
