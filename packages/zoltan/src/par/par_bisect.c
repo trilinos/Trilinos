@@ -60,7 +60,7 @@ struct bisector {          /* bisector cut info */
 /* prototypes */
 #if (RB_MAX_WGTS > 1)
 static void Zoltan_reduce(int, int, int, int, struct bisector*, struct bisector*, int *,
-               MPI_Datatype, MPI_Comm);
+               MPI_Datatype *, MPI_Comm);
 static void Zoltan_scan(double *, double *, int, MPI_Comm, int, int, int);
 static void Zoltan_bisector_copy(struct bisector*, struct bisector*);
 static double Zoltan_norm(int mcnorm, int n, double *x, double *scal);
@@ -121,15 +121,19 @@ int Zoltan_RB_find_bisector(
 
 #else /* RB_MAX_WGTS > 1 */
 
-  struct bisector *med, *medme;      /* bisector data */
+  struct bisector *med = NULL;       /* bisector data */
+  struct bisector *medme = NULL;     /* bisector data */
   double  localmax, localmin;        /* lower/upper bounds on this proc */
   double  valuemax2, valuemin2;      /* test valuemin, valuemax */
-  double  *localsum;                 /* temporary sum of wts */
-  double  *wtsum, *wtupto;           /* temporary sum of wts */
+  double  *localsum = NULL;          /* temporary sum of wts */
+  double  *wtsum = NULL;             /* temporary sum of wts */
+  double  *wtupto = NULL;            /* temporary sum of wts */
   double  tmp_half;                  /* guess for new bisection */
-  double  *tmp;                      /* temp array for Tflops_Special */
-  double  *tmplo, *tmphi;            /* temp arrays for norm calculations */
-  double  *invfraclo, *invfrachi;    /* inverse of fractionlo,hi */
+  double  *tmp = NULL;               /* temp array for Tflops_Special */
+  double  *tmplo = NULL;             /* temp arrays for norm calculations */
+  double  *tmphi = NULL;             /* temp arrays for norm calculations */
+  double  *invfraclo = NULL;         /* inverse of fractionlo,hi */
+  double  *invfrachi = NULL;         /* inverse of fractionlo,hi */
   double  normlo=0.0, normhi=0.0;    /* norms of weight vectors */
   double  oldnorm;                   /* temp norm */
   double  eps;                       /* abs. tolerance for imbalance */
@@ -549,7 +553,7 @@ int Zoltan_RB_find_bisector(
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
-         Zoltan_reduce(num_procs, rank, proc, 1, medme, med, &i, med_type,
+         Zoltan_reduce(num_procs, rank, proc, 1, medme, med, &i, &med_type,
                    local_comm);
       }
       else
@@ -1018,7 +1022,7 @@ void Zoltan_bisector_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 }
 
 static void Zoltan_reduce(int nproc, int rank, int proc, int n, struct bisector *in,
-               struct bisector *inout, int *len, MPI_Datatype datatype,
+               struct bisector *inout, int *len, MPI_Datatype *datatype,
                MPI_Comm comm)
 {
    struct bisector *tmp = NULL;
@@ -1034,19 +1038,19 @@ static void Zoltan_reduce(int nproc, int rank, int proc, int n, struct bisector 
    m = 2*n;
    if (rank%m) {
       to = proc - n;
-      MPI_Send(in, 1, datatype, to, tag, comm);
-      MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
+      MPI_Send(in, 1, *datatype, to, tag, comm);
+      MPI_Recv(inout, 1, *datatype, to, tag, comm, &status);
    }
    else
       if (rank + n < nproc) {
          to = proc + n;
-         MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
-         Zoltan_bisector_merge(in, inout, len, &datatype);
+         MPI_Recv(inout, 1, *datatype, to, tag, comm, &status);
+         Zoltan_bisector_merge(in, inout, len, datatype);
          tmp = (struct bisector *) ZOLTAN_MALLOC(sizeof(struct bisector) + 4*(in->nwgts)*sizeof(double));
          Zoltan_bisector_copy(inout, tmp);
          if (m < nproc)
             Zoltan_reduce(nproc, rank, proc, m, tmp, inout, len, datatype, comm);
-         MPI_Send(inout, 1, datatype, to, tag, comm);
+         MPI_Send(inout, 1, *datatype, to, tag, comm);
          ZOLTAN_FREE(&tmp);
       }
       else
