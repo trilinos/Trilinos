@@ -163,8 +163,8 @@ BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem,
 	//
 	// Make room for the eigenvectors
 	//
-	_evecr = ivec->Clone(_nev); assert(_evecr!=NULL);
-	_eveci = ivec->Clone(_nev); assert(_eveci!=NULL);
+	_evecr = ivec->Clone(_nev+1); assert(_evecr!=NULL);
+	_eveci = ivec->Clone(_nev+1); assert(_eveci!=NULL);
 	//
 	// Create the rectangular Hessenberg matrix
 	//
@@ -512,6 +512,10 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 			_jstart = _jend;  // Move the pointer
 			ComputeResiduals( false );		
 			_isdecompcurrent = false;
+			// Output current information if necessary
+			if (_debuglevel > 0) {
+			  currentStatus();
+			}
 		}
 		// Finish off this factorization and restart.
 		else {  
@@ -536,18 +540,18 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 				_restartiter++;
 				_isdecompcurrent = false;
 			}
+			// Output current information if necessary
+			if (_debuglevel > 0) {
+			  currentStatus();
+			}
 		}
 	}
 	//
 	// Compute the current eigenvalue estimates before returning.
 	//
-	//cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<endl<<endl;
+	//cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<endl<<endl;       
 	//cout<<_hessmatrix<<endl;
 
-	// Output current information if necessary
-	if (_debuglevel > 0) {
-		currentStatus();
-	}
 }
 
 template <class TYPE>
@@ -1167,7 +1171,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
                 if (temp > _scalefactor) _scalefactor = temp;
         }
         _scalefactor = sqrt(_scalefactor);
-        _schurerror = sub_block_b2.normFrobenius()/_scalefactor;
+	_schurerror = sub_block_b2.normFrobenius()/_scalefactor;
 	//
 	// ------------>  NOT SURE IF RITZRESIDUALS CAN BE UPDATED AFTER DEFLATION!
 	//
@@ -1201,6 +1205,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 			Hjp1(i, j) = sub_block_b(i, j);
 		    }
 		}
+		//
+		// Determine whether we need to continue with the computations.
+		//
+		if (_schurerror < _residual_tolerance )
+		  {
+		    exit_flg = true;
+		  }
+
 		delete basistemp, basistemp2;
 		delete [] index;
 	}			
@@ -1298,7 +1310,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	      evecstempr = evecstemp->CloneView( index+i, 1 );
 	      evecr1 = _evecr->CloneView( index+i, 1 );
 	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
-		delete evecr1; evecr1=0;
+	      delete evecr1; evecr1=0;
 	      evecr1 = _evecr->CloneView( index+i+1, 1 );
 	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
 	      delete evecr1; evecr1=0;
@@ -1324,48 +1336,23 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  if (conjprs) {	
 	    MultiVec<TYPE>  *evecstempi=0, *eveci1=0;
 	    //
-	    // There's a problem when the last eigenvalues is the first of
-	    // a conjugate pair.
+	    // There is storage for an extra eigenvector.  
+	    // So, when the last eigenvalues is the first of a conjugate pair, that eigenvector will be computed.
 	    //
-	    if (indexi[conjprs-1]==_nev) {
-	      // Set conjugate part of imaginary eigenvectors first.
-	      for (i=0; i<conjprs-1; i++) {
-		evecstempi = evecstemp->CloneView( indexi+i, 1 );
-		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
-				 *evecstempi, zero, *evecstempi );
-		delete eveci1; eveci1=0;		
-      		// Change index and set non-conjugate part of imaginary eigenvalue
-		indexi[i]--;
-		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
-				 *evecstempi, zero, *evecstempi );			
-	      }
-		delete eveci1; eveci1=0;
-		delete evecstempi; evecstempi=0;	      
-	      // Set imaginary part of last eigenvector now.
-	      indexi[0] = indexi[conjprs-1]-1;
-	      evecstempi = evecstemp->CloneView( indexi+(conjprs-1), 1 );
-	      eveci1 = _eveci->CloneView( indexi, 1 );
-	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[0]])/_evali[indexi[0]]/(2*one),
+	    for (i=0; i<conjprs; i++) {
+	      evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
+	      eveci1 = _eveci->CloneView( indexi+i, 1 );
+	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
 			       *evecstempi, zero, *evecstempi );
-	      
-	    } else {
-	      for (i=0; i<conjprs; i++) {
-		evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
-		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
-				 *evecstempi, zero, *evecstempi );
-		delete eveci1; eveci1=0;
-		// Change index and set non-conjugate part of imag eigenvector.
-		indexi[i]--;
-		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
-				 *evecstempi, zero, *evecstempi );
-	      }	      
-	    }				    
-	    // Clean up.
-	    delete evecstempi, eveci1;
+	      delete eveci1; eveci1=0;
+	      // Change index and set non-conjugate part of imag eigenvector.
+	      indexi[i]--;
+	      eveci1 = _eveci->CloneView( indexi+i, 1 );
+	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+			       *evecstempi, zero, *evecstempi );
+	      delete eveci1; eveci1=0;
+	      delete evecstempi; evecstempi=0;
+	    }	      
 	  }
 	  // Clean up.
 	  delete evecstemp; 
