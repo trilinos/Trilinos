@@ -15,7 +15,7 @@
 /* ******************************************************************** */
 #include <stdlib.h>
 #include "ml_common.h"
-#ifdef SUPERLU
+#if defined(SUPERLU)
 #include "dsp_defs.h"
 #include "util.h"
 #else
@@ -34,14 +34,24 @@
 
 /* This macro should be defined to reconcile name changes between
    SuperLU 1.0 & SuperLU 2.0.*/
-#ifdef ML_SUPERLU2_0
+#ifdef HAVE_ML_SUPERLU2_0
 #define DN SLU_DN
 #define _D SLU_D
 #define GE SLU_GE
 #define NR SLU_NR
+
+/* This fixes a bug in the headers of SuperLU, version 2.0.  This prototype
+   is omitted in dsp_defs.h. */
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void dCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz,
                                    double *nzval, int *colind, int *rowptr,
                                    Stype_t stype, Dtype_t dtype, Mtype_t mtype);
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 /* ******************************************************************** */
@@ -51,7 +61,7 @@ extern void dCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz,
 
 int ML_SuperLU_Solve(ML_Solver *vsolver,int ilen,double *x,int olen,double *rhs)
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int            i, n, info, flag, *perm_r, *perm_c, permc_spec;
    int            N_local, offset, *etree, panel_size, lwork;
    double         *local_x, *local_rhs, *R, *C, *ferr, *berr;
@@ -512,7 +522,7 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
 
 int ML_SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
 {
-#ifdef ML_SUPERLU2
+#ifdef SUPERLU
 
    SuperMatrix *A, *L, *U, B;
    int         i, n, info, flag, *perm_r, *perm_c, permc_spec;
@@ -587,7 +597,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 {
    ML_Solver   *solver;
 
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -709,7 +719,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 {
    ML_Solver   *solver;
 
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -755,7 +765,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
 int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int            i, j, *mat_ia, *mat_ja, nrows, nnz, offset, N_local;
    int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;
@@ -1297,7 +1307,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, m, k, extNrows, nblocks, length, *indptr, ntimes;
    int                *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
@@ -1473,7 +1483,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, k, m, extNrows, nblocks, length, *indptr, ntimes;
    int                index, *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
@@ -1668,7 +1678,7 @@ int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data)
    ml_data->blk_size     = NULL;
    ml_data->blk_info     = NULL;
    ml_data->blk_indices  = NULL;
-#ifdef SUPERLU
+#if defined(SUPERLU)
    ml_data->slu_Amat     = NULL;
    ml_data->slu_Lmat     = NULL;
    ml_data->slu_Umat     = NULL;
@@ -1686,7 +1696,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 {
    int                i;
    ML_Sm_Schwarz_Data *ml_data;
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix        *A, *L, *U;
 #endif
 
@@ -1729,7 +1739,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( ml_data->blk_indices[i] != NULL ) 
             ML_free( ml_data->blk_indices[i] );
    }
-#ifdef SUPERLU
+#if defined(SUPERLU)
    if ( ml_data->slu_Amat != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
@@ -1797,7 +1807,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
              int *recv_lengths, int *ext_ja, double *ext_aa, int *map, 
              int *map2, int Noffset)
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, k, **bmat_ia, **bmat_ja, allocated_space;
    int                *blk_size, index, **blk_indices, **aux_bmat_ia;
    int                offset, nnz, Nrows, extNrows, **aux_bmat_ja;
@@ -2360,7 +2370,7 @@ int ML_SuperLU_Solve_WKC(ML_Solver *vsolver,int ilen,double *pep_x,int olen,doub
 
 
 
-#ifdef SUPERLU
+#if defined(SUPERLU)
 double **pp_x , **pp_rhs;
 Epetra_MultiVector &ep_x ( *(Epetra_MultiVector *)pep_x );
 Epetra_MultiVector &ep_rhs ( *(Epetra_MultiVector *)pep_rhs );

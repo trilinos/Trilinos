@@ -80,6 +80,10 @@
 #define SUPERLU
 #endif
 
+#ifdef HAVE_ML_SUPERLU2_0
+#define SUPERLU
+#endif
+
 #ifdef HAVE_ML_SUPERLU_DIST
 #define DSUPERLU
 #endif

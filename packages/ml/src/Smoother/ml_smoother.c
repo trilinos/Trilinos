@@ -61,7 +61,7 @@
 /* include files for SuperLU and MPI                                         */
 /* ------------------------------------------------------------------------- */
 
-#ifdef SUPERLU
+#if defined(SUPERLU)
 #include "dsp_defs.h"
 #include "util.h"
 #else
@@ -2826,7 +2826,7 @@ int ML_Smoother_OverlappedILUT(ML_Smoother *sm,int inlen,double x[],int outlen,
 int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, m, k, extNrows, nblocks, length, *indptr, ntimes;
    int                *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
@@ -2997,7 +2997,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, k, m, extNrows, nblocks, length, *indptr, ntimes;
    int                index, *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
@@ -3460,7 +3460,7 @@ int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data)
    ml_data->blk_size     = NULL;
    ml_data->blk_info     = NULL;
    ml_data->blk_indices  = NULL;
-#ifdef SUPERLU
+#if defined(SUPERLU)
    ml_data->slu_Amat     = NULL;
    ml_data->slu_Lmat     = NULL;
    ml_data->slu_Umat     = NULL;
@@ -3478,7 +3478,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 {
    int                i;
    ML_Sm_Schwarz_Data *ml_data;
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix        *A, *L, *U;
 #endif
 
@@ -3521,7 +3521,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( ml_data->blk_indices[i] != NULL ) 
             ML_free( ml_data->blk_indices[i] );
    }
-#ifdef SUPERLU
+#if defined(SUPERLU)
    if ( ml_data->slu_Amat != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
@@ -5175,7 +5175,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
              int *recv_lengths, int *ext_ja, double *ext_aa, int *map, 
              int *map2, int Noffset)
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int                i, j, k, **bmat_ia, **bmat_ja, allocated_space;
    int                *blk_size, index, **blk_indices, **aux_bmat_ia;
    int                offset, nnz, Nrows, extNrows, **aux_bmat_ja;

@@ -109,7 +109,7 @@ struct DinvA_widget {
 };
 
 #ifdef out
-#ifdef SUPERLU
+#if defined(SUPERLU)
 #include "dsp_defs.h"
 #include "util.h"
 #endif
@@ -135,7 +135,7 @@ struct ML_Sm_Schwarz_Data_Struct
    int           **blk_indices;
    int           **perm_r;
    int           **perm_c;
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix   **slu_Amat;
    SuperMatrix   **slu_Lmat;
    SuperMatrix   **slu_Umat;

@@ -4821,7 +4821,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 {
    ML_Solver   *solver;
 
-#ifdef SUPERLU
+#if defined(SUPERLU)
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -4867,7 +4867,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
 int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
 {
-#ifdef SUPERLU
+#if defined(SUPERLU)
    int            i, j, *mat_ia, *mat_ja, nrows, nnz, offset, N_local;
    int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;

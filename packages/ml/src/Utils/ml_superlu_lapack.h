@@ -1,4 +1,4 @@
-#ifdef SUPERLU
+#if defined(SUPERLU)
 
 #include "ml_common.h"
 

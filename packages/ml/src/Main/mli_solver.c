@@ -461,7 +461,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
 
     if ( nlevels - 1 != coarsest_level )
     {
-#ifdef SUPERLU
+#if defined(SUPERLU)
        ML_Gen_CoarseSolverSuperLU(ml, coarsest_level);
 #else
        ML_Gen_Smoother_GaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 10, 1.0);
