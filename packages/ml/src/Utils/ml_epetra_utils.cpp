@@ -1472,13 +1472,14 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
     fp = 0;
   }
 
-  int ok = 1;
+  int ok = 0;
   if (proc==0)
   {
      fgets(buffer,199,fp);
      int tmp = strtol(buffer,&bptr,10); // read number of global rows
      if (tmp != numeq_total) ok = 0;
-     fgets(buffer,199,fp);
+     else                    ok = 1;
+     fclose(fp); fp = 0;
   }
   comm.Broadcast(&ok,1,0);
   if (!ok) return false;
