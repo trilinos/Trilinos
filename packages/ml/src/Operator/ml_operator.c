@@ -1089,13 +1089,16 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
 /* same number of rows and the same number of columns.              */
 /* ---------------------------------------------------------------- */
 
-ML_Operator *ML_Operator_Add(ML_Operator *A, ML_Operator *B)
+int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
 {
   int A_allocated = 0, *A_bindx = NULL, B_allocated = 0, *B_bindx = NULL;
-  double *A_val = NULL, *B_val = NULL;
-  int i, A_length, B_length, *hashed_inds, *hashed_cols, total_Nz;
-  int max_nz_per_row, j;
+  double *A_val = NULL, *B_val = NULL, *hashed_vals;
+  int i, A_length, B_length, *hashed_inds, total_Nz;
+  int max_nz_per_row = 0, j;
   int hash_val, index_length;
+  int *columns, *rowptr, nz_ptr;
+  double *values;
+  struct ML_CSR_MSRdata *temp;
 
 
   if (A->getrow == NULL) 
@@ -1118,29 +1121,113 @@ ML_Operator *ML_Operator_Add(ML_Operator *A, ML_Operator *B)
 
   /* let's just count some things */
 
-  hashed_cols = (int *) ML_allocate(sizeof(int)*(A->invec_leng+1));
   hashed_inds = (int *) ML_allocate(sizeof(int)*(A->invec_leng+1));
-  index_length = A->invec_leng;
-  for (i = 0; i < A->invec_leng; i++) hashed_cols[i] = -1;
-  printf("NOT FINISHED\n");
+  hashed_vals = (double *) ML_allocate(sizeof(double)*(A->invec_leng+1));
 
-  total_Nz = 0;
-  max_nz_per_row = 0;
+  index_length = A->invec_leng;
+  for (i = 0; i < A->invec_leng; i++) hashed_inds[i] = -1;
+  for (i = 0; i < A->invec_leng; i++) hashed_vals[i] = 0.;
+
+  nz_ptr = 0;
   for (i = 0 ; i < A->getrow->Nrows; i++) {
       ML_get_matrix_row(A, 1, &i, &A_allocated, &A_bindx, &A_val,
                         &A_length, 0);
       for (j = 0; j < A_length; j++) {
-	hash_val = ML_hash_it(A_bindx[0], hashed_inds, index_length);
+	hash_val = ML_hash_it(A_bindx[j], hashed_inds, index_length);
+        hashed_inds[hash_val] = A_bindx[j];
+        hashed_vals[hash_val] += A_val[j];
+	A_bindx[j] = hash_val;
       }
+
       ML_get_matrix_row(B, 1, &i, &B_allocated, &B_bindx, &B_val,
                         &B_length, 0);
+      for (j = 0; j < B_length; j++) {
+	hash_val = ML_hash_it(B_bindx[j], hashed_inds, index_length);
+        hashed_inds[hash_val] = B_bindx[j];
+        hashed_vals[hash_val] += B_val[j];
+        B_bindx[j] = hash_val;
+      }
+
+      for (j = 0; j < A_length; j++) {
+        nz_ptr++;
+	hashed_inds[A_bindx[j]] = -1;
+	hashed_vals[A_bindx[j]] = 0.;
+      }
+      for (j = 0; j < B_length; j++) {
+        if (hashed_inds[B_bindx[j]] != -1) {
+	  nz_ptr++;
+	  hashed_inds[B_bindx[j]] = -1;
+	  hashed_vals[B_bindx[j]] = 0.;
+	}
+      }
   }
-  ML_free(hashed_cols);
+  nz_ptr++;
+  columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
+  values = (double *) ML_allocate(sizeof(double)*nz_ptr);
+  rowptr = (int    *) ML_allocate(sizeof(int)*(A->outvec_leng+1));
+  if (values == NULL) pr_error("ML_Operator_Add: out of space\n");
+
+
+  nz_ptr = 0;
+  rowptr[0] = 0;
+  for (i = 0 ; i < A->getrow->Nrows; i++) {
+      ML_get_matrix_row(A, 1, &i, &A_allocated, &A_bindx, &A_val,
+                        &A_length, 0);
+      for (j = 0; j < A_length; j++) {
+	hash_val = ML_hash_it(A_bindx[j], hashed_inds, index_length);
+        hashed_inds[hash_val] = A_bindx[j];
+        hashed_vals[hash_val] += A_val[j];
+	A_bindx[j] = hash_val;
+      }
+
+      ML_get_matrix_row(B, 1, &i, &B_allocated, &B_bindx, &B_val,
+                        &B_length, 0);
+      for (j = 0; j < B_length; j++) {
+	hash_val = ML_hash_it(B_bindx[j], hashed_inds, index_length);
+        hashed_inds[hash_val] = B_bindx[j];
+        hashed_vals[hash_val] += B_val[j];
+        B_bindx[j] = hash_val;
+      }
+
+      for (j = 0; j < A_length; j++) {
+        columns[nz_ptr] = hashed_inds[A_bindx[j]];
+        values[nz_ptr]  = hashed_vals[A_bindx[j]];
+        nz_ptr++;
+	hashed_inds[A_bindx[j]] = -1;
+	hashed_vals[A_bindx[j]] = 0.;
+      }
+      for (j = 0; j < B_length; j++) {
+        if (hashed_inds[B_bindx[j]] != -1) {
+	  columns[nz_ptr] = hashed_inds[B_bindx[j]];
+	  values[nz_ptr]  = hashed_vals[B_bindx[j]];
+	  nz_ptr++;
+	  hashed_inds[B_bindx[j]] = -1;
+	  hashed_vals[B_bindx[j]] = 0.;
+	}
+      }
+      rowptr[i+1] = nz_ptr;
+      if (rowptr[i+1] - rowptr[i] > max_nz_per_row)
+	max_nz_per_row = rowptr[i+1] - rowptr[1];
+  }
+  temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  if (temp == NULL) pr_error("ML_Operator_Add: no space for temp\n");
+  temp->columns = columns;
+  temp->values  = values;
+  temp->rowptr   = rowptr;
+  ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, ML_EMPTY,
+				temp,A->outvec_leng, NULL,0);
+  ML_Operator_Set_Getrow(C, ML_EXTERNAL, A->outvec_leng, CSR_getrows);
+  ML_CommInfoOP_Clone(&(C->getrow->pre_comm), A->getrow->pre_comm);
+  C->max_nz_per_row = max_nz_per_row;
+  C->N_nonzeros     = nz_ptr;
+
+  ML_free(hashed_vals);
   ML_free(hashed_inds);
   ML_free(A_val);
   ML_free(A_bindx);
   ML_free(B_val);
   ML_free(B_bindx);
 
+  return 1;
 
 }

@@ -144,9 +144,8 @@ extern int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag);
 extern int ML_Operator_Apply(ML_Operator *, int, double *, int, double *);
 extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, double *,
                                             int olen, double *);
-  /*
-extern ML_Operator *ML_Operator_Add(ML_Operator *A, ML_Operator *B);
-  */
+extern int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C);
+
 extern int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans );
 
 extern int ML_Operator_Check_Getrow(ML_Operator *, int, char*);
