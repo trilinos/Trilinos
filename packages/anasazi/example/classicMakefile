@@ -6,7 +6,7 @@ DEFINES = -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
 	-DIFPACK
 
 INCLUDES = -I../utils -I../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) \
-	$(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)
+	$(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES) $(BELOS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -17,7 +17,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 LIB_PATHS= ../utils/libanasaziutils.$(LIB_EXT) $(LIBIFPACK) $(LIBEPETRA) \
 $(LIBTRIUTILS) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
-all:  BlockArnoldiPetraEx BlockArnoldiPetraExHb
+all:  BlockArnoldiPetraEx BlockArnoldiPetraExHb BlockArnoldiPetraExGen
 
 BlockArnoldiPetraEx: BlockArnoldiPetraEx.$(OBJ_EXT)
 	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
@@ -28,6 +28,11 @@ BlockArnoldiPetraExHb: BlockArnoldiPetraExHb.$(OBJ_EXT)
 	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
 
 BlockArnoldiPetraExHb.$(OBJ_EXT) : BlockArnoldiPetraExHb.cpp 
+
+BlockArnoldiPetraExGen: BlockArnoldiPetraExGen.$(OBJ_EXT)
+	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
+
+BlockArnoldiPetraExGen.$(OBJ_EXT) : BlockArnoldiPetraExGen.cpp 
 
 clean:
 	rm -f *.$(OBJ_EXT) *.stackdump core
