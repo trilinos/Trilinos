@@ -12,9 +12,11 @@ class Epetra_CrsGraph;
 
 //forward declarations for esi interfaces.
 
-class esi::Object;
-template<class T> class esi::IndexSpace;
-template<class Scalar,class Ordinal> class esi::Vector;
+namespace esi {
+  class Object;
+  template<class T> class IndexSpace;
+  template<class Scalar,class Ordinal> class Vector;
+}//close namespace esi
 
 #include "Epetra_Array.h"
 

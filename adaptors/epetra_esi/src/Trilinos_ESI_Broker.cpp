@@ -64,7 +64,9 @@
 #undef CHK_ERR
 #endif
 
-#define CHK_ERR(a) { int chkErrorCode; if ((chkErrorCode = a) != 0) { \
+static int chkErrorCode;
+
+#define CHK_ERR(a) { if ((chkErrorCode = a) != 0) { \
                       cerr << _fnName_ << ", " << __FILE__ << ", line " \
                            << __LINE__ << " " << chkErrorCode << endl; \
                       return(chkErrorCode); \

@@ -10,10 +10,11 @@
 template<class Scalar, class Ordinal>
 aztecoo_esi::Solver<Scalar,Ordinal>::
 Solver(epetra_esi::CrsMatrix<Scalar,Ordinal>* A)
-   : epetra_esi::Object(), AztecOO(), petraA_(A),
+   : epetra_esi::Object(), petraA_(A->getEpetra_CrsMatrix()),
      maxIters_(300), tolerance_(1.e-8), whichConstructor_(0),
      petraAalloced_(false)
 {
+  aztecoo_ = new AztecOO;
   int err = addInterfaces();
   if (err) msgAbort("aztecoo_esi::Solver ctor addInterfaces() error");
 }
@@ -22,10 +23,11 @@ Solver(epetra_esi::CrsMatrix<Scalar,Ordinal>* A)
 template<class Scalar, class Ordinal>
 aztecoo_esi::Solver<Scalar,Ordinal>::
 Solver(esi::Operator<Scalar, Ordinal>* esi_op)
-   : epetra_esi::Object(), AztecOO(),
+   : epetra_esi::Object(),
      maxIters_(300), tolerance_(1.e-8), whichConstructor_(1),
      petraAalloced_(false)
 {
+  aztecoo_ = new AztecOO;
   petraA_ = new epetra_esi::Operator<double,int>(*esi_op);
   if (petraA_ == NULL) {
     msgAbort("aztecoo_esi::Solver ctor failed to alloc epetra_esi::Operator.");
@@ -145,7 +147,7 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzOption(int optionIndx,
   }
 
   if (num > 0) {
-    SetAztecOption(optionIndx, optionValue);
+    aztecoo_->SetAztecOption(optionIndx, optionValue);
     if (optionIndx == AZ_max_iter) maxIters_ = optionValue;
 
     return(0);
@@ -178,7 +180,7 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzParam(int paramIndx,
   }
 
   if (num > 0) {
-    SetAztecParam(paramIndx, (double)paramValue);
+    aztecoo_->SetAztecParam(paramIndx, (double)paramValue);
     if (paramIndx == AZ_tol) tolerance_ = paramValue;
 
     return(0);
@@ -222,7 +224,7 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::createPetraVectorsThenSolve(
    Epetra_Vector* pb = new Epetra_Vector(Copy, pmap, bdata);
    if (px == NULL || pb == NULL) return(-1);
 
-   err = Iterate(petraA_, px, pb, maxIters_, tolerance_);
+   err = aztecoo_->Iterate(petraA_, px, pb, maxIters_, tolerance_);
 
    delete px;
    delete pb;

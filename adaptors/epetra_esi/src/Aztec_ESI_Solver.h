@@ -26,11 +26,11 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class Solver : public virtual epetra_esi::Object,
-                      public virtual esi::Operator<Scalar, Ordinal>,
-                      public virtual esi::Solver<Scalar, Ordinal>,
-                      public virtual esi::SolverIterative<Scalar, Ordinal>,
-                      public virtual AztecOO
+class Solver : public virtual esi::Object,
+               public epetra_esi::Object,
+               public virtual esi::Operator<Scalar, Ordinal>,
+               public virtual esi::Solver<Scalar, Ordinal>,
+               public virtual esi::SolverIterative<Scalar, Ordinal>
 {
  public:
   typedef TYPENAME esi::scalarTraits<Scalar>::magnitude_type magnitude_type;
@@ -51,8 +51,8 @@ class Solver : public virtual epetra_esi::Object,
   //
 
   /** Function for signalling that the initialization is complete. 
-   aztecoo_esi::Solver currently doesn't do anything in response to this function
-   call.
+   aztecoo_esi::Solver currently doesn't do anything in response to this
+   function call.
    @return error-code 0 if successful.
   */
   virtual esi::ErrorCode setup( void )
@@ -69,7 +69,8 @@ class Solver : public virtual epetra_esi::Object,
        The run-time type of this vector must also be epetra_esi::Vector.
    @return error-code 0 if successful.
   */
-  virtual esi::ErrorCode apply(esi::Vector<Scalar, Ordinal>& b, esi::Vector<Scalar, Ordinal>& x)
+  virtual esi::ErrorCode apply(esi::Vector<Scalar, Ordinal>& b,
+                               esi::Vector<Scalar, Ordinal>& x)
     { return( solve(b, x) ); }
 
 
@@ -86,14 +87,14 @@ class Solver : public virtual epetra_esi::Object,
        The run-time type of this vector must also be epetra_esi::Vector.
    @return error-code 0 if successful.
   */
-  virtual esi::ErrorCode solve(esi::Vector<Scalar, Ordinal>& b, esi::Vector<Scalar,
- Ordinal>& x)
+  virtual esi::ErrorCode solve(esi::Vector<Scalar, Ordinal>& b,
+                               esi::Vector<Scalar, Ordinal>& x)
     {
 
       Epetra_Vector* px = dynamic_cast<Epetra_Vector*>(&x);
       Epetra_Vector* pb = dynamic_cast<Epetra_Vector*>(&b);
-      if (px != NULL || pb != NULL) {
-        return( Iterate(petraA_, px, pb, maxIters_, tolerance_) ); 
+      if (px != NULL && pb != NULL) {
+        return( aztecoo_->Iterate(petraA_, px, pb, maxIters_, tolerance_) ); 
       }
 
       //If the dynamic_cast operations failed (i.e., if the input vectors are
@@ -126,10 +127,12 @@ class Solver : public virtual epetra_esi::Object,
   virtual esi::ErrorCode setOperator(esi::Operator<Scalar, Ordinal>& A)
     {
       petraA_ = NULL;
-      petraA_ = dynamic_cast<epetra_esi::CrsMatrix<double,int>*>(&A);
+      epetra_esi::CrsMatrix<double,int>* tmpA =
+           dynamic_cast<epetra_esi::CrsMatrix<double,int>*>(&A);
+      if (tmpA == NULL) return(-1);
+      petraA_ = tmpA->getEpetra_CrsMatrix();
       if (petraA_ != NULL) return(0);
-
-      petraA_ = new epetra_esi::Operator<double,int>(A);
+//      petraA_ = new epetra_esi::Operator<double,int>(A);
       if (petraA_ == NULL) {
         msgAbort("aztecoo_esi::Solver ctor failed to allocate epetra_esi::Operator.");
       }
@@ -164,7 +167,7 @@ class Solver : public virtual epetra_esi::Object,
   /** Query the number of iterations that were taken during the previous solve.
   */
   virtual esi::ErrorCode getNumIterationsTaken(Ordinal& itersTaken)
-    { itersTaken = (Ordinal)(status_[AZ_its]); return(0); }
+    { itersTaken = aztecoo_->NumIters(); return(0); }
 
  private:
   int addInterfaces();
@@ -183,6 +186,7 @@ class Solver : public virtual epetra_esi::Object,
                                   esi::Vector<Scalar, Ordinal>& x);
 
   Epetra_RowMatrix* petraA_;
+  AztecOO* aztecoo_;
   Ordinal maxIters_;
   Scalar tolerance_;
   int whichConstructor_;

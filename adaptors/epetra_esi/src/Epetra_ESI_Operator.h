@@ -26,10 +26,11 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class Operator : public virtual epetra_esi::Object,
-                      public virtual esi::Operator<Scalar, Ordinal>,
-                      public virtual esi::OperatorTranspose<Scalar, Ordinal>,
-                      public virtual Epetra_RowMatrix
+class Operator : public virtual esi::Object,
+                 public virtual epetra_esi::Object,
+                 public virtual esi::Operator<Scalar, Ordinal>,
+                 public virtual esi::OperatorTranspose<Scalar, Ordinal>,
+                 public virtual Epetra_RowMatrix
 {
  public:
   /** Constructor. */

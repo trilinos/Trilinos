@@ -7,13 +7,14 @@
 template<class Scalar, class Ordinal>
 epetra_esi::CrsMatrix<Scalar,Ordinal>::
 CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& graph)
-   : epetra_esi::Object(), Epetra_CrsMatrix(CV, graph),
+   : epetra_esi::Object(),
      setupHasBeenCalled_(false),
      ispace_(NULL),
      comm_(NULL),
      rowMap_(NULL),
      whichConstructor_(0)
 {
+   epetra_crsmatrix_ = new Epetra_CrsMatrix(CV, graph);
    int err = addInterface("esi::Object", (void*)((esi::Object*)this) );
    if (err) msgAbort("epetra_esi::CrsMatrix ctor addInterface(esi::Object) error");
 
@@ -66,11 +67,11 @@ CrsMatrix(Epetra_DataAccess CV,
    : epetra_esi::Object(),
      setupHasBeenCalled_(false),
      ispace_(const_cast<epetra_esi::IndexSpace<Ordinal>*>(&indexspace)),
-     Epetra_CrsMatrix(CV, indexspace, estimatedNumEntriesPerRow),
      comm_(NULL),
      rowMap_(NULL),
      whichConstructor_(1)
 {
+   epetra_crsmatrix_ = new Epetra_CrsMatrix(CV, indexspace, estimatedNumEntriesPerRow);
    int err = addInterface("esi::Object", (void*)((esi::Object*)this) );
    if (err) msgAbort("epetra_esi::CrsMatrix ctor addInterface(esi::Object) error");
 
@@ -118,6 +119,7 @@ epetra_esi::CrsMatrix<Scalar,Ordinal>::
   if (ispace_ != NULL) ispace_->deleteReference();
   delete comm_;
   delete rowMap_;
+  delete epetra_crsmatrix_;
 }
 
 #endif

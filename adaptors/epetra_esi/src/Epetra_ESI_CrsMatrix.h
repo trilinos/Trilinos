@@ -31,14 +31,13 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class CrsMatrix : public virtual epetra_esi::Object,
-                      public virtual esi::Operator<Scalar, Ordinal>,
-                      public virtual esi::OperatorTranspose<Scalar, Ordinal>,
-                      public virtual esi::MatrixData<Ordinal>,
-                      public virtual esi::MatrixRowWriteAccess<Scalar, Ordinal>,
-                      public virtual esi::MatrixRowReadAccess<Scalar, Ordinal>,
-                      public virtual Epetra_RowMatrix,
-                      public virtual Epetra_CrsMatrix
+class CrsMatrix : public virtual esi::Object,
+                  public virtual epetra_esi::Object,
+                  public virtual esi::Operator<Scalar, Ordinal>,
+                  public virtual esi::OperatorTranspose<Scalar, Ordinal>,
+                  public virtual esi::MatrixData<Ordinal>,
+                  public virtual esi::MatrixRowWriteAccess<Scalar, Ordinal>,
+                  public virtual esi::MatrixRowReadAccess<Scalar, Ordinal>
 {
  public:
   /** Constructor that takes a fully initialized Epetra_CrsGraph object.
@@ -79,7 +78,8 @@ class CrsMatrix : public virtual epetra_esi::Object,
    @return error-code 0 if successful.
   */
   virtual esi::ErrorCode setup( void )
-    { int err = TransformToLocal();  if (err) EPETRA_ESI_ERR_BEHAVIOR(-1);
+    { int err = epetra_crsmatrix_->TransformToLocal();
+      if (err) EPETRA_ESI_ERR_BEHAVIOR(-1);
       setupHasBeenCalled_ = true;    return(0); }
 
 
@@ -92,14 +92,15 @@ class CrsMatrix : public virtual epetra_esi::Object,
        The run-time of this vector must also be epetra_esi::Vector.
    @return error-code 0 if successful.
   */
-  virtual esi::ErrorCode apply(esi::Vector<Scalar, Ordinal>& x, esi::Vector<Scalar, Ordinal>& y)
+  virtual esi::ErrorCode apply(esi::Vector<Scalar, Ordinal>& x,
+                               esi::Vector<Scalar, Ordinal>& y)
     { int err = 0;
       if (!setupHasBeenCalled_) err = setup();
       if (err) return(-1);
       const Epetra_Vector* px = dynamic_cast<const Epetra_Vector*>(&x);
       Epetra_Vector* py = dynamic_cast<Epetra_Vector*>(&y);
       if (px == NULL || py == NULL) EPETRA_ESI_ERR_BEHAVIOR(-2);
-      err = Multiply(false, *px, *py);
+      err = epetra_crsmatrix_->Multiply(false, *px, *py);
       if (err != 0) EPETRA_ESI_ERR_BEHAVIOR(-3);
       return( 0 ); }
 
@@ -116,14 +117,15 @@ class CrsMatrix : public virtual epetra_esi::Object,
        The run-time of this vector must also be epetra_esi::Vector.
    @return error-code 0 if successful.
   */
-  virtual esi::ErrorCode applyTranspose(esi::Vector<Scalar, Ordinal>& x, esi::Vector<Scalar, Ordinal>& y)
+  virtual esi::ErrorCode applyTranspose(esi::Vector<Scalar, Ordinal>& x,
+                                        esi::Vector<Scalar, Ordinal>& y)
     { int err = 0;
       if (!setupHasBeenCalled_) err = setup();
       if (err) EPETRA_ESI_ERR_BEHAVIOR(-1);
       const Epetra_Vector* px = dynamic_cast<const Epetra_Vector*>(&x);
       Epetra_Vector* py = dynamic_cast<Epetra_Vector*>(&y);
       if (px == NULL || py == NULL) EPETRA_ESI_ERR_BEHAVIOR(-1);
-      EPETRA_ESI_ERR_BEHAVIOR( Multiply(true, *px, *py) ); }
+      EPETRA_ESI_ERR_BEHAVIOR( epetra_crsmatrix_->Multiply(true, *px, *py) ); }
 
 
   //
@@ -136,7 +138,8 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getGlobalSizes(Ordinal& rows, Ordinal& columns)
-    { rows = NumGlobalRows(); columns = NumGlobalCols(); return(0); }
+    { rows = epetra_crsmatrix_->NumGlobalRows();
+      columns = epetra_crsmatrix_->NumGlobalCols(); return(0); }
 
   /** Query this operator's local dimensions.
     @param rows Output.
@@ -144,11 +147,13 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getLocalSizes(Ordinal& rows, Ordinal& columns)
-    { rows = NumMyRows(); columns = NumMyCols(); return(0); }
+    { rows = epetra_crsmatrix_->NumMyRows();
+      columns = epetra_crsmatrix_->NumMyCols(); return(0); }
 
 
-  /** Obtain the index-spaces that describe the row-space and column-space of this
-    operator. !!!! Note that at the current time, the same index-space is returned
+  /** Obtain the index-spaces that describe the row-space and column-space of
+     this operator. !!!! Note that at the current time, the same index-space
+     is returned
    for both the row-space and the column-space. This is clearly wrong. Our
    implementation always stores complete rows locally, so the column-space
    partitioning information is not correctly represented by the row-space. !!!!
@@ -157,8 +162,8 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getIndexSpaces(esi::IndexSpace<Ordinal>*& rowIndexSpace, esi::IndexSpace<Ordinal>*& colIndexSpace)
-    { Epetra_Map& rmap = (Epetra_Map&)RowMap();
-      Epetra_Map& cmap = (Epetra_Map&)RowMap();
+    { Epetra_Map& rmap = (Epetra_Map&)(epetra_crsmatrix_->RowMap());
+      Epetra_Map& cmap = (Epetra_Map&)(epetra_crsmatrix_->RowMap());
       rowIndexSpace = dynamic_cast<esi::IndexSpace<Ordinal>*>(&rmap);
       colIndexSpace = dynamic_cast<esi::IndexSpace<Ordinal>*>(&cmap);
       if (rowIndexSpace==NULL || colIndexSpace==NULL) {
@@ -178,7 +183,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getRowAllocatedLength(Ordinal row, Ordinal& length)
-    { length = NumAllocatedGlobalEntries(row);
+    { length = epetra_crsmatrix_->NumAllocatedGlobalEntries(row);
       if (length<0) EPETRA_ESI_ERR_BEHAVIOR(-1);
       return(0); }
 
@@ -189,7 +194,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getRowNonzeros(Ordinal row, Ordinal& numEntries)
-    { numEntries = NumGlobalEntries(row);
+    { numEntries = epetra_crsmatrix_->NumGlobalEntries(row);
       if (numEntries<0) EPETRA_ESI_ERR_BEHAVIOR(-1); 
       return(0); }
 
@@ -199,7 +204,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode setAllValues(Scalar coef)
-    { EPETRA_ESI_ERR_BEHAVIOR( PutScalar(coef) ); }
+    { EPETRA_ESI_ERR_BEHAVIOR( epetra_crsmatrix_->PutScalar(coef) ); }
 
   /** Copy a set of coefficients and column-indices into a row.
     @param row Input, global row-number.
@@ -208,13 +213,14 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @param length Input, number of coefs and indices being copied in.
     @return error-code 0 if successful.
   */
-  virtual esi::ErrorCode copyIntoRow(Ordinal row, Scalar* coefs, Ordinal* colIndices, Ordinal length)
+  virtual esi::ErrorCode copyIntoRow(Ordinal row, Scalar* coefs,
+                                     Ordinal* colIndices, Ordinal length)
     {
       if (whichConstructor_ == 0) {
-        EPETRA_ESI_ERR_BEHAVIOR( ReplaceGlobalValues(row, length, coefs, colIndices) );
+        EPETRA_ESI_ERR_BEHAVIOR( epetra_crsmatrix_->ReplaceGlobalValues(row, length, coefs, colIndices) );
       }
       else {
-        EPETRA_ESI_ERR_BEHAVIOR( InsertGlobalValues(row, length, coefs, colIndices) );
+        EPETRA_ESI_ERR_BEHAVIOR( epetra_crsmatrix_->InsertGlobalValues(row, length, coefs, colIndices) );
       }
      }
 
@@ -232,7 +238,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode sumIntoRow(Ordinal row, Scalar* coefs, Ordinal* colIndices, Ordinal length)
-    { EPETRA_ESI_ERR_BEHAVIOR( SumIntoGlobalValues(row, length, coefs, colIndices) ); }
+    { EPETRA_ESI_ERR_BEHAVIOR( epetra_crsmatrix_->SumIntoGlobalValues(row, length, coefs, colIndices) ); }
 
 
   /** Query whether the loadComplete function has been called.
@@ -240,7 +246,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode isLoaded(bool& state)
-    { state = Filled(); return(0); }
+    { state = epetra_crsmatrix_->Filled(); return(0); }
 
 
   /** Query whether the internal data structures have been allocated.
@@ -308,7 +314,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode copyOutRow(Ordinal row, Scalar* coefs, Ordinal* colIndices, Ordinal length, Ordinal& rowLength)
-    { EPETRA_ESI_ERR_BEHAVIOR(ExtractGlobalRowCopy(row, length, rowLength, coefs,colIndices));}
+    { EPETRA_ESI_ERR_BEHAVIOR(epetra_crsmatrix_->ExtractGlobalRowCopy(row, length, rowLength, coefs,colIndices));}
 
 
   /** Extract a copy of only the coefficients for a row of the matrix (into
@@ -320,7 +326,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode copyOutRowCoefficients(Ordinal row, Scalar* coefs, Ordinal length, Ordinal& rowLength)
-    { EPETRA_ESI_ERR_BEHAVIOR(ExtractGlobalRowCopy(row, length, rowLength, coefs)); }
+    { EPETRA_ESI_ERR_BEHAVIOR(epetra_crsmatrix_->ExtractGlobalRowCopy(row, length, rowLength, coefs)); }
 
 
   /** Extract a copy of only the column-indices for a row of the matrix (into
@@ -332,7 +338,9 @@ class CrsMatrix : public virtual epetra_esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode copyOutRowIndices(Ordinal row, Ordinal* colIndices, Ordinal length, Ordinal& rowLength)
-    { EPETRA_ESI_ERR_BEHAVIOR(Graph().ExtractGlobalRowCopy(row, length,rowLength,colIndices));}
+    { EPETRA_ESI_ERR_BEHAVIOR(epetra_crsmatrix_->Graph().ExtractGlobalRowCopy(row, length,rowLength,colIndices));}
+
+  Epetra_CrsMatrix* getEpetra_CrsMatrix() { return(epetra_crsmatrix_); }
 
  private:
   bool setupHasBeenCalled_;
@@ -345,6 +353,7 @@ class CrsMatrix : public virtual epetra_esi::Object,
   Ordinal globalSize_, localSize_;
   Epetra_Comm* comm_;
   Epetra_Map* rowMap_;
+  Epetra_CrsMatrix* epetra_crsmatrix_;
   int whichConstructor_;
 };
 

@@ -248,13 +248,13 @@ class Epetra_Object {
  protected:
   string toString(const int& x) const {
      char s[100];
-     std::sprintf(s, "%d", x);
+     sprintf(s, "%d", x);
      return string(s);
 }
 
   string toString(const double& x) const {
      char s[100];
-     std::sprintf(s, "%g", x);
+     sprintf(s, "%g", x);
      return string(s);
 }
   

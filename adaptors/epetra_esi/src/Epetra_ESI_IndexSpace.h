@@ -24,9 +24,10 @@ the type int.
 */
 
 template<class Ordinal>
-class IndexSpace : public virtual esi::IndexSpace<Ordinal>,
-                      public virtual epetra_esi::Object,
-                      public virtual Epetra_Map
+class IndexSpace : public virtual esi::Object,
+                   public virtual esi::IndexSpace<Ordinal>,
+                   public virtual epetra_esi::Object,
+                   public virtual Epetra_Map
 {
  public:
   /** Constructor. */
