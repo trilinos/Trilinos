@@ -278,7 +278,7 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
      if (count < NDO)                     /* what if we have a short count? */
         {
         for (i = 0; i < hg->nVtx; i++)
-            if (match[i] = i)
+            if (match[i] == i)
               break;       
         while (count < NDO)             /* find an unmatched vertex */
            select[count++] = i;         /* fill the rest of the array with it */
