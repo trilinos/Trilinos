@@ -22,7 +22,7 @@
 #   3) If you are running in parallel and need something other than mpirun, 
 #      edit the 'PARALLEL_CMD' variable below.
 #
-PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
+PARALLEL_CMD=`echo /usr/local/mpich-1.2.5/bin/mpirun -machinefile ./machines -np `
 #
 #      Note:
 #      a) Some systems may require that you use a batch queue system to run
@@ -62,7 +62,7 @@ PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 #                                variable that is used in the ML build.
 #
 BENCH_ROOT_DIRECTORY=${HOME}/mlbench
-EXECUTABLE_DIRECTORY=${PWD}/../Obj
+EXECUTABLE_DIRECTORY=${PWD}/../../../sandbox/packages/ml/examples
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
 PARALLEL=TRUE
 BATCH=TRUE
@@ -246,8 +246,8 @@ then
   export CVSROOT
   export CVS_RSH
 
-  /home/jhu/keychain-1.9/keychain -q
-  source ~/.ssh-agent-puffin.ca.sandia.gov
+  /home/jhu/keychain-2.0.3/keychain -q
+  source ~/.keychain/`hostname`-csh
 
   temp=`/usr/bin/ssh-add -l`
   temp=`echo "xx${temp}xx" | sed "s/The agent has no identities\.//g"`

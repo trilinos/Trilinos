@@ -34,20 +34,22 @@ fi
 SESSARGS="-l nodes=${NNODES}:ppn=2 -l walltime=${WALLTIME} ${SCRIPT_DIRECTORY}/${SCRIPTNAME}"
 #echo "session args: ${SESSARGS}"
 JOBID=`qsub ${SESSARGS}`
+JOBNUM=`echo ${JOBID} | sed "s/.puffin.ca.sandia.gov//g"`
 touch ${JOBID}
 #echo "qsub has returned"
-while test -e ${JOBID}
+while ! test -e ${SCRIPTNAME}.e${JOBNUM}
     do
     sleep 15
 done
 #echo "job has finished"
 sleep 5
 rm -f nproc_file
-temp=`echo ${JOBID} | sed "s/.puffin.ca.sandia.gov//g"`
-cat ${SCRIPTNAME}.o${temp} | grep -v "Warning: no access" > xxxxxxx
-rm -f ${SCRIPTNAME}.o${temp}
-cat xxxxxxx | grep -v "Thus no job" > ${SCRIPTNAME}.o${temp}
+JOBNUM=`echo ${JOBID} | sed "s/.puffin.ca.sandia.gov//g"`
+cat ${SCRIPTNAME}.o${JOBNUM} | grep -v "Warning: no access" > xxxxxxx
+rm -f ${SCRIPTNAME}.o${JOBNUM}
+cat xxxxxxx | grep -v "Thus no job" > ${SCRIPTNAME}.o${JOBNUM}
 rm -f xxxxxxx
 SCRATCH_SUBDIR=`cat scratch_subdirectory`
-mv ${SCRIPTNAME}.o${temp} ${SCRATCH_SUBDIR}/xxxxxx${ttt}
-mv ${SCRIPTNAME}.e${temp} ${SCRATCH_SUBDIR}/
+cp ${SCRIPTNAME}.o${JOBNUM} ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+mv ${SCRIPTNAME}.o${JOBNUM} ${SCRATCH_SUBDIR}/
+mv ${SCRIPTNAME}.e${JOBNUM} ${SCRATCH_SUBDIR}/

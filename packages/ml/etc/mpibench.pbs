@@ -8,8 +8,6 @@
 /home/jhu/keychain-2.0.3/keychain -q
 source ~/.keychain/`hostname`-sh
 
-echo "hostname is " `hostname`
-
 cd ${PBS_O_WORKDIR}
 #
 rm -f machines
