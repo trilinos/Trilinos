@@ -393,7 +393,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
  * - \c "output" = 10
  * - \c "PDE equations" = 1
  * - \c "increasing or decreasing" = "decreasing"
- * - \c "aggregation: type" = "Uncoupled-MIS"
+ * - \c "aggregation: type" = "Uncoupled"
  * - \c "aggregation: damping factor" = 1.3333
  * - \c "coarse: max size" = 16
  * - \c "aggregation: threshold" = 0.0
@@ -420,8 +420,8 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"increasing or decreasing","decreasing");
 
-  // aggregation: Uncoupled for first levels, then MIS
-  List.set(Prefix+"aggregation: type","Uncoupled-MIS");
+  // aggregation: Uncoupled for all levels
+  List.set(Prefix+"aggregation: type","Uncoupled");
 
   // optimal value for smoothed aggregation
   List.set(Prefix+"aggregation: damping factor",1.3333);
@@ -465,7 +465,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
  * - \c "output" = 8
  * - \c "PDE equations" = 1
  * - \c "increasing or decreasing" = "increasing"
- * - \c "aggregation: type" = "Uncoupled-MIS"
+ * - \c "aggregation: type" = "Uncoupled"
  * - \c "aggregation: damping factor" = 1.3333
  * - \c "coarse: max size" = 16
  * - \c "aggregation: threshold" = 0.0
@@ -491,8 +491,8 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"increasing or decreasing","increasing");
 
-  // aggregation: Uncoupled for first levels, then MIS
-  List.set(Prefix+"aggregation: type","Uncoupled-MIS");
+  // aggregation: Uncoupled for all levels
+  List.set(Prefix+"aggregation: type","Uncoupled");
   
   // optimal value for smoothed aggregation
   List.set(Prefix+"aggregation: damping factor",1.3333);
