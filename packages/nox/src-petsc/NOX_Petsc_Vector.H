@@ -49,6 +49,12 @@ class Vector : public Abstract::Vector {
   //! Construct by copying map and/or elements of a Petsc Vec.
   Vector(const Vec& source, CopyType type = DeepCopy);
 
+  //! Construct by copying map and/or elements of a Petsc Vec.
+  Vector(const Vec& source, string name="Unnamed", CopyType type = DeepCopy);
+
+  //! Construct by copying a NOX::Petsc::Vector
+  Vector(const Vector& source, CopyType type = DeepCopy);
+
   //! Destruct Vector.
   ~Vector();
 
@@ -132,11 +138,21 @@ class Vector : public Abstract::Vector {
   //@}
 
   virtual int length() const;
+ 
+  string Name() { return name;};
 
- private:
+ protected:
+
+  //@{ \name Protected initialization method used by constructors.
+  virtual int allocate(const Vec& source, CopyType type = DeepCopy);
   
   //! Pointer to Petsc vector owned by this object
-  Vec* petscVec;
+  Vec petscVec;
+
+  //! Flag to indicate if the vector has been allocated
+  bool isAlloc;
+  
+  string name;
 
 };
 } // namespace Petsc

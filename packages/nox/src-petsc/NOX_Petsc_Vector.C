@@ -40,32 +40,36 @@ using namespace NOX::Petsc;
 
 Vector::Vector(const Vec& source, CopyType type)
 {
-  switch (type) {
+  allocate(source, type);
+}
 
-  case DeepCopy:		// default behavior
+Vector::Vector(const Vector& source, CopyType type)
+{
+  allocate(source.getPetscVector(), type);
+}
 
-    petscVec = new Vec;
-    VecDuplicate(source, petscVec);
-    VecCopy(source, *petscVec);
-    break;
-
-  case ShapeCopy:
-
-    petscVec = new Vec;
-    VecDuplicate(source, petscVec);
-    break;  
-
-  }
+Vector::Vector(const Vec& source, string Name, CopyType type) :
+  name(Name)
+{
+  allocate(source, type);
 }
 
 Vector::~Vector()
 {
-  delete petscVec;
+  if(isAlloc)
+  {
+    //cout << "\n\t\tVecDestroy called ....  " << name << "  " << this << "   " 
+    //     << &petscVec << endl;
+    //VecDestroy(petscVec);
+    isAlloc = false;
+  }
 }
 
 Abstract::Vector& Vector::operator=(const Vec& source)
 {
-  VecCopy(source, *petscVec);
+  VecCopy(source, petscVec);
+  name = "Unnamed";
+  isAlloc = true;
   return *this;
 }
 
@@ -76,23 +80,50 @@ Abstract::Vector& Vector::operator=(const Abstract::Vector& source)
 
 Abstract::Vector& Vector::operator=(const Vector& source)
 {
-  VecCopy(source.getPetscVector(), *petscVec);
+  VecCopy(source.getPetscVector(), petscVec);
+  isAlloc = source.isAlloc;
+  name = source.name;
   return *this;
+}
+
+int Vector::allocate(const Vec& source, CopyType type)
+{
+ 
+  int ierr = VecDuplicate(source, &petscVec);
+  isAlloc = true;
+
+  switch (type) {
+
+    case DeepCopy:                // default behavior
+
+    ierr += VecCopy(source, petscVec);
+    break;
+
+  case ShapeCopy:
+
+    break;
+  }
+
+  if(ierr)
+    cout << "ERROR: value " << ierr << " returned during "
+         << "NOX::Petsc::Vector allocation !!" << endl;
+
+  return ierr;
 }
 
 Vec& Vector::getPetscVector()
 {
-  return *petscVec;
+  return petscVec;
 }
 
 const Vec& Vector::getPetscVector() const
 {
-  return *petscVec;
+  return petscVec;
 }
 
 Abstract::Vector& Vector::init(double value)
 {
-  VecSet(&value, *petscVec);
+  VecSet(&value, petscVec);
   return *this;
 }
 
@@ -103,8 +134,8 @@ Abstract::Vector& Vector::abs(const Abstract::Vector& base)
 
 Abstract::Vector& Vector::abs(const Vector& base)
 {
-  VecCopy(base.getPetscVector(), *petscVec);
-  VecAbs(*petscVec);
+  VecCopy(base.getPetscVector(), petscVec);
+  VecAbs(petscVec);
   return *this;
 }
 
@@ -115,14 +146,14 @@ Abstract::Vector& Vector::reciprocal(const Abstract::Vector& base)
 
 Abstract::Vector& Vector::reciprocal(const Vector& base)
 {
-  VecCopy(base.getPetscVector(), *petscVec);
-  VecReciprocal(*petscVec);
+  VecCopy(base.getPetscVector(), petscVec);
+  VecReciprocal(petscVec);
   return *this;
 }
 
 Abstract::Vector& Vector::scale(double alpha)
 {
-  VecScale(&alpha, *petscVec);
+  VecScale(&alpha, petscVec);
   return *this;
 }
 
@@ -133,7 +164,7 @@ Abstract::Vector& Vector::scale(const Abstract::Vector& a)
   
 Abstract::Vector& Vector::scale(const Vector& a)
 {
-  VecPointwiseMult(*petscVec, a.getPetscVector(), *petscVec);
+  VecPointwiseMult(petscVec, a.getPetscVector(), petscVec);
   return *this;
 } 
   
@@ -146,7 +177,7 @@ Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a,
 Abstract::Vector& Vector::update(double alpha, const Vector& a, 
 				 double gammaval)
 {
-  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), *petscVec);
+  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), petscVec);
   return *this;
 }
 
@@ -162,15 +193,15 @@ Abstract::Vector& Vector::update(double alpha, const Vector& a,
 				 double beta, const Vector& b,
 				 double gammaval)
 {
-  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), *petscVec);
-  VecAXPY(&beta, b.getPetscVector(), *petscVec);
+  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), petscVec);
+  VecAXPY(&beta, b.getPetscVector(), petscVec);
   return *this;
 }
 
 
 Abstract::Vector* Vector::clone(CopyType type) const
 {
-  Vector* newVec = new Vector(*petscVec, type);
+  Vector* newVec = new Vector(petscVec, type);
   return newVec;
 }
 
@@ -179,14 +210,14 @@ double Vector::norm(Abstract::Vector::NormType type) const
   double n;
   switch (type) {
   case MaxNorm:
-    VecNorm(*petscVec, NORM_INFINITY, &n);
+    VecNorm(petscVec, NORM_INFINITY, &n);
     break;
   case OneNorm:
-    VecNorm(*petscVec, NORM_1, &n);
+    VecNorm(petscVec, NORM_1, &n);
     break;
   case TwoNorm:
   default:
-   VecNorm(*petscVec, NORM_2, &n);
+   VecNorm(petscVec, NORM_2, &n);
    break;
   }
   return n;
@@ -213,13 +244,13 @@ double Vector::dot(const Abstract::Vector& y) const
 double Vector::dot(const Vector& y) const
 {
   double dotprod;
-  VecDot(y.getPetscVector(), *petscVec, &dotprod);
+  VecDot(y.getPetscVector(), petscVec, &dotprod);
   return dotprod;
 }
 
 int Vector::length() const
 {
   int size;
-  VecGetSize(*petscVec, &size);
+  VecGetSize(petscVec, &size);
   return size;
 }
