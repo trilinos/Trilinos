@@ -81,10 +81,10 @@ if test "$with_ZoltanHome" = _need_to_find ; then
 
    # Where should I search for this file by default ?
    curr_dir=`pwd`;
-   sys_dirs="/usr/local/Zoltan /usr/local/packages/Zoltan"
    hdir=$HOME
-   hdirs=" $hdir/Zoltan $hdir/packages/Zoltan $curr_dir/../"
-   search_path=" $sys_dirs $hdirs "
+   hdirs=" $curr_dir/../ $hdir/Zoltan $hdir/packages/Zoltan "
+   sys_dirs="/usr/local/Zoltan /usr/local/packages/Zoltan"
+   search_path=" $hdirs $sys_dirs "
    AC_FIND_FILE_STRICT_JR(include/zoltan.h, "$search_path ")
 
    #AC_FIND_FILE_STRICT_JR will not return if the file is not found
