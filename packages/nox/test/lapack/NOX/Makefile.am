@@ -53,6 +53,3 @@ broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 
 broyden_LDADD = $(rosenbrock_LDADD)
-                   $(top_builddir)/src/libnox.a \
-                   $(top_builddir)/test/utils/libnoxtestutils.a \
-                   $(LIBS) 
