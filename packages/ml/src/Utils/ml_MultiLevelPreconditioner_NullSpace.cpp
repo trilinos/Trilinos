@@ -6,10 +6,7 @@
 /************************************************************************/
 /*          Utilities for Trilinos/ML users                             */
 /*----------------------------------------------------------------------*/
-/* Authors : Mike Heroux (SNL)                                          */
-/*           Jonathan Hu  (SNL)                                         */
-/*           Ray Tuminaro (SNL)                                         */
-/*           Marzio Sala (SNL)                                          */
+/* Author :  Marzio Sala (SNL)                                          */
 /************************************************************************/
 
 #include "ml_common.h"
@@ -96,12 +93,40 @@ void ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   //    lowest of A, or the largest of I-A). Default space can be added
   //    if required.
   
-  if( option == "default vectors" ) {
+  // FIXME: null space scaling now works only with default vectors...
 
-    // sanity check for default null-space
-    if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
-    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
-			       RowMatrix_->NumMyRows());
+  if (option != "default vectors" && Scaling_) {
+    cerr << ErrorMsg_ << "Scaling the null spaceworks only" << endl
+         << ErrorMsg_ << "for `default vectors' (at present)..." << endl;
+  }
+
+  if (option == "default vectors") {
+
+    if (Scaling_) {
+
+      if (verbose_)
+	cout << PrintMsg_ << "Scaling default null space..." << endl;
+
+      NullSpaceToFree_ = new double[NumPDEEqns_*NumMyRows()];
+      // fill it with normal 0's and 1's for standard vectors
+      for( int i=0 ; i<NumPDEEqns_ ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j )
+	  if (j%NumPDEEqns_ == i) 
+	    NullSpaceToFree_[j + i * NumMyRows()] = 1.0 * (*InvScaling_)[j];
+	  else                     
+	    NullSpaceToFree_[j + i * NumMyRows()] = 0.0;
+
+      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,
+				 NullSpaceToFree_,
+				 RowMatrix_->NumMyRows());
+
+    }
+    else {
+      // sanity check for default null-space
+      if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
+      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
+				 RowMatrix_->NumMyRows());
+    }
     
   } else if( option == "pre-computed" ) {
 
@@ -362,4 +387,128 @@ void ML_Epetra::MultiLevelPreconditioner::SetEigenList()
     
 }
 
+int ML_Operator_GetDiagonal(ML_Operator* Amat,
+			    double* diagonal)
+{
+
+  int allocated = 100;
+  int i;
+  int j;
+  int ierr;
+  int NumNonzeros;
+  int* colInd;
+  double* colVal;
+
+  colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+  colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+  for (i = 0 ; i < Amat->invec_leng ; ++i) {
+
+    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&NumNonzeros);
+
+    if (ierr == 0) {
+      do {
+	ML_free(colInd);
+	ML_free(colVal);
+	allocated *= 2;
+	colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+	colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,
+				  &NumNonzeros);
+      } while (ierr == 0);
+    }
+    for (j = 0 ; j < NumNonzeros ; ++j)
+      if (colInd[j] == i)
+	diagonal[i] = colVal[j];
+
+  }
+  
+  ML_free(colInd);
+  ML_free(colVal);
+
+  return 0;
+}
+
+// ================================================ ====== ==== ==== == =
+
+void ML_Epetra::MultiLevelPreconditioner::SetScaling() 
+{
+  
+  int ierr;
+  string ScalingType;
+ 
+  ScalingType = List_.get("scaling: type", "none");
+
+  if (ScalingType == "none") 
+    return;
+
+  Scaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
+  InvScaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
+  assert(InvScaling_ != 0);
+
+  if (ScalingType == "col sum") {
+
+    ierr = RowMatrix_->InvColSums(*Scaling_);
+    if (ierr) {
+      cerr << endl;
+      cerr << ErrorMsg_ << "Method InvColSums() returns "
+	<< ierr << "." << endl
+	<< ErrorMsg_ << "Is this method implemented in your"
+	<< " Epetra_RowMatrix-derived class?" << endl;
+      cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
+      cerr << endl;
+      return;
+    }
+
+    ierr = InvScaling_->Reciprocal(*Scaling_);
+    assert (ierr == 0);
+
+  }
+  else if (ScalingType == "diagonal" ) {
+
+    InvScaling_->PutScalar(1.0);
+
+    ierr = ML_Operator_GetDiagonal(&(ml_->Amat[LevelID_[0]]),
+				   InvScaling_->Values());
+
+    // FIXME: only for non-VBR matrices??
+    /* ierr = RowMatrix_->ExtractDiagonalCopy(*InvScaling_); */
+
+    if (ierr) {
+      cerr << endl;
+      cerr << ErrorMsg_ << "Method ExtractDiagonalCopy() returns "
+	<< ierr << "." << endl
+	<< ErrorMsg_ << "Is this method implemented in your"
+	<< " Epetra_RowMatrix-derived class?" << endl;
+      cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
+      cerr << endl;
+      return;
+    }
+
+    ierr = Scaling_->Reciprocal(*InvScaling_);
+    assert (ierr == 0);
+
+  }
+  else {
+    cerr << ErrorMsg_ << "Parameter `scaling type' as an incorrect" << endl
+         << ErrorMsg_ << "value (" << ScalingType << "). It can be:" << endl
+	 << ErrorMsg_ << "<none> / <col sum>" << endl;
+    return;
+  }
+
+  if (verbose_)
+    cout << "Scaling type = " << ScalingType << endl;
+
+  // I scale the matrix right now, it will be scaled back
+  // as I return from ComputePreconditioner().
+  // If Scaling_ is different from 0, in SetNullSpace() I
+  // will take care of creating (or scaling) the null space
+  Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
+  ierr = RM->RightScale(*Scaling_);
+  assert(ierr == 0);
+
+  return;
+}
+ 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
