@@ -45,7 +45,7 @@ static PARAM_VARS Parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
         { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
         { "PARMETIS_SEED", NULL, "INT" },
-        { "PARMETIS_ITR", NULL, "FLOAT" },
+        { "PARMETIS_ITR", NULL, "DOUBLE" },
         { "PARMETIS_USE_OBJ_SIZE", NULL, "INT" },
         { "PARMETIS_COARSE_ALG", NULL, "INT" },
         { "PARMETIS_FOLD", NULL, "INT" },
@@ -113,12 +113,14 @@ int Zoltan_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
   int output_level, seed, coarse_alg, fold, use_obj_size;
-  float itr;
+  float itr = 0.0;
+  double pmv3_itr;
 
   /* Set parameters */
 #if PARMETIS_MAJOR_VERSION >= 3
   strcpy(alg, "ADAPTIVEREPART");
-  itr = 100.0;  /* 100 gives about the same partition quality as GDiffusion */
+  pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
+                      100 gives similar partition quality to GDiffusion */
 #else
   strcpy(alg, "REPARTGDIFFUSION");
 #endif
@@ -144,7 +146,7 @@ int Zoltan_ParMetis(
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_SEED", 
                     (void *) &seed);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_ITR",       
-                    (void *) &itr);
+                    (void *) &pmv3_itr);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",       
                     (void *) &use_obj_size);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
@@ -168,6 +170,7 @@ int Zoltan_ParMetis(
     options[PMV3_OPTION_DBGLVL] = output_level; 
     options[PMV3_OPTION_SEED] = seed; 
     options[PMV3_OPT_USE_OBJ_SIZE] = use_obj_size; 
+    itr = pmv3_itr;
   }
   else
 #endif
