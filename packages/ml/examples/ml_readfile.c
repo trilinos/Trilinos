@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int i, j, Nrigid, *garbage, nblocks, *blocks;
+  int i, j, Nrigid, *garbage, nblocks, *blocks = NULL;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
   double *mode, *rigid, alpha;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
    if (proc_config[AZ_node] == 0) {
       ML_Reader_ReadInput("ml_inputfile", &context);
    }
-   else context = (struct reader_context *) malloc(sizeof(struct reader_context));
+   else context = (struct reader_context *) ML_allocate(sizeof(struct reader_context));
    AZ_broadcast((char *) context,  sizeof(struct reader_context), proc_config,
                 AZ_PACK);
    AZ_broadcast((char *) NULL        ,   0          , proc_config, AZ_SEND);
@@ -170,7 +170,8 @@ int main(int argc, char *argv[])
    num_PDE_eqns = context->N_dofPerNode;
 #else
    context = (struct reader_context *) malloc(sizeof(struct reader_context));
-   ML_Reader_InitContext(context);
+   ML_Reader_ReadInput("ml_inputfile", &context);
+   num_PDE_eqns = context->N_dofPerNode;
 
 #endif
   ML_Set_PrintLevel(context->output_level);
@@ -374,7 +375,7 @@ int main(int argc, char *argv[])
   if (Nrigid != 0) {
      ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
   }
-
+  ML_free(rigid);
 
   coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
                                             ML_DECREASING, ag);
@@ -523,15 +524,17 @@ int main(int argc, char *argv[])
    else {
       printf("unknown krylov method %s\n",context->krylov);
    }
+   if (blocks != NULL) ML_free(blocks);
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 500;
+   options[AZ_max_iter] = 100;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
    params[AZ_tol]       = context->tol;
    options[AZ_output]   = context->output;
+   ML_free(context);
 	
    AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
    setup_time = AZ_second() - start_time;
@@ -650,7 +653,6 @@ int main(int argc, char *argv[])
    if (Pmat  != NULL) AZ_precond_destroy(&Pmat);
    free(xxx);
    free(rhs);
-
 
 #ifdef ML_MPI
   MPI_Finalize();
