@@ -361,6 +361,7 @@ int ML_memory_inquire_short(int id)
 int ML_memory_clean( char *name, int inlen )
 {
    int i, j, clean_flag, leng;
+   void *mem_ptr;
 
    leng = inlen;
    if ( inlen > 3 ) leng = 3;
@@ -381,7 +382,8 @@ int ML_memory_clean( char *name, int inlen )
          }
          if ( clean_flag == 0 )
          {
-            ML_free( malloc_addr_log[i] );
+            mem_ptr = (void *) malloc_addr_log[i];
+            ML_free( mem_ptr );
             malloc_leng_log[i] = -1;
          }
       }
