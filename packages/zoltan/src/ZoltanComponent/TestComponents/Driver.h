@@ -33,13 +33,10 @@
 #include <algorithm>
 #include <cctype>
 
-extern "C"
-{
-  // Specific to the driver that Zoltan has in ../../Zoltan/zdrive/
-  // Contains the definition of MESH_INFO, PARIO_INFO, PROB_INFO
+// Specific to the driver that Zoltan has in ../../Zoltan/zdrive/
+// Contains the definition of MESH_INFO, PARIO_INFO, PROB_INFO
 #include "dr_const.h"
 #include "dr_input_const.h"
-}
 
 #include "mpi.h"
 
