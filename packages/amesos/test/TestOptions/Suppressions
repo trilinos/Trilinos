@@ -1,0 +1,55 @@
+#
+#  This file specifies memory errors which we want valgrind to ignore when running 
+#  TestOptions.
+#
+#  These memory errors may be avoidable and do not necessaily represent errors in the
+#  code.  They may, for example, represent errors in the test code.   
+#
+{
+   <Leak in Epetra_MpiComm>
+   Memcheck:Leak
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_ZNK14Epetra_MpiComm5CloneEv
+   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
+}
+{
+   <Leak in MPID>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPID_SBinit
+   fun:MPID_InitQueue
+   fun:MPID_Init
+}
+{
+   <Leak in Trilinos_Util_ReadMatrixMaket2Epetra>
+   Memcheck:Leak
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_Z37Trilinos_Util_ReadMatrixMarket2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+   fun:_Z15CreateCrsMatrixPcR11Epetra_CommbbRP16Epetra_CrsMatrix
+}
+{
+   <Leak in Epetra_Object Set Label>
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZN13Epetra_Object8SetLabelEPKc
+   fun:_ZN13Epetra_ObjectC2EPKci
+}
+{
+   <Leak B in MPID>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPID_SBiAllocate
+   fun:MPID_SBinit
+   fun:MPID_InitQueue
+}
+{
+   <Leak B in Epetra_MpiComm>
+   Memcheck:Leak
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_ZN14Epetra_MpiCommC1Ei
+   fun:main
+}

@@ -55,7 +55,7 @@ int TestOtherClasses(char* AmesosClass,
    if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
 
  }
-  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
+  if (verbose)  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
   
  return NumErrors; 
 }

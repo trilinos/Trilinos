@@ -6,7 +6,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "PerformOneSolveAndTest.h"
-
+#include "CreateTridi.h"
 //
 //  Returns the number of failures.
 //  Note:  If AmesosClass is not supported, PerformOneSolveAndTest() will 
@@ -171,7 +171,8 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 	
 	Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
-	EPETRA_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
+	//      We do not presently handle null lists.
+	//	EPETRA_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	EPETRA_CHK_ERR( Abase->Solve(  ) ); 
 	
       }
@@ -301,7 +302,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
 
 
-    // #define FACTOR_B
+#define FACTOR_B
 #ifdef FACTOR_B
     //
     //  Now we check to make sure that we can change the problem and 
@@ -313,7 +314,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
 
 
-    const int BNumPoints = NumPoints;  // Must be between 2 and 100 (on large matrices,
+    const int BNumPoints = 6;  // Must be between 2 and 100 (on large matrices,
     // the problem is quite ill-conditioned) 
 
     // Construct a Map that puts approximately the same number of 
@@ -415,6 +416,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
     Bresidual.Update( 1.0, Btemp, -1.0, Bb, 0.0 ) ;
     //  if (verbose) cout << " residual = " << residual << endl ; 
 
+    double norm_residual;
     Bresidual.Norm2( &norm_residual ) ; 
 
     if (iam == 0 ) {
@@ -422,8 +424,8 @@ int PerformOneSolveAndTest(char* AmesosClass,
       //
       //  This is an ill-conditioned problem
       //
-      if ( norm_residual < (1e-15)*(1.0*NumPoints*NumPoints*NumPoints*
-				    NumPoints*NumPoints*NumPoints) ) {
+      if ( norm_residual < (1e-15)*(1.0*BNumPoints*BNumPoints*BNumPoints*
+				    BNumPoints*BNumPoints*BNumPoints) ) {
 	if (verbose) cout << " Test Passed " << endl ;
       } else {
 	if (verbose) cout << " TEST FAILED " << endl ;

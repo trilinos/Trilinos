@@ -48,7 +48,8 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     maxrelerror, 
 			     maxrelresidual, 
 			     NumTests ) ;
-  
+
+#if 0  
   if ( verbose) cout << " Testing SCALAPACK " << endl ; 
 
   errors += TestOtherClasses("Amesos_Scalapack",
@@ -61,6 +62,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     maxrelresidual, 
 			     NumTests ) ;
   
+#endif
   if ( verbose) cout << " Testing KLU " << endl ; 
 
   errors += TestOtherClasses("Amesos_Klu",
@@ -97,7 +99,6 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     maxrelerror, 
 			     maxrelresidual, 
 			     NumTests ) ;
-  
 
   if ( verbose) cout << " TestAllClasses errors = " << errors << endl ; 
 

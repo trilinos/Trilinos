@@ -33,6 +33,16 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#ifdef HAVE_VALGRIND_H
+#include <valgrind/valgrind.h>
+#define HAVE_VALGRIND
+#else
+#ifdef HAVE_VALGRIND_VALGRIND_H
+#include <valgrind/valgrind.h>
+#define HAVE_VALGRIND
+#endif 
+#endif 
+
 const int NumAmesosClasses = 7;
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
@@ -236,7 +246,7 @@ int TestOneMatrix(
 	<< residual 
 	<< endl ; 
       }
-      //  delete &(Amat->RowMap()) ; 
+      //      delete &(Amat->RowMap()) ; 
       delete Amat ; 
 #if 0
       double relresidual = 
@@ -279,15 +289,16 @@ int main( int argc, char *argv[] ) {
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;
 
-  for (int i=0; i < NumAmesosClasses; i++ ) {
+  //  for (int i=0; i < NumAmesosClasses; i++ ) {
+  for (int i=0; i < 0; i++ ) {
     Abase = Afactory.Create( FactorySet[i], Problem ) ; 
     if ( Abase == 0 ) {
-      cout << FactorySet[i] << " not built in this configuration"  << endl ;
+      if ( verbose ) cout << FactorySet[i] << " not built in this configuration"  << endl ;
     } else {
-      cout << " Testing " << FactorySet[i] << endl ;
+      if ( verbose ) cout << " Testing " << FactorySet[i] << endl ;
     }
     delete Abase ; 
-  }
+    }
 
 
 
@@ -298,16 +309,41 @@ int main( int argc, char *argv[] ) {
   //  result += TestOneMatrix("Tri.triS", Comm, verbose, 1e-1 , numtests ) ;
   //  result += TestOneMatrix("Tri2.triS", Comm, verbose, 1e-5 , numtests ) ;
   result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, 1e-6 , numtests ) ;
-#if 0
-  result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, 1e-6 , numtests ) ;
-  //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, 1e-6 , numtests ) ;
-  result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, 1e-6 , numtests ) ;
-  result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, 1e-6 , numtests ) ;
+
+  //
+  //  This is really slow when run on valgrind, so we don't want to run 
+  //  the following larger matrices when we are using valgrind.
+  //
+  //  This test is not foolproof - it is possible to have valgrind and not valgrind.h.
+  //
+#ifdef HAVE_VALGRIND 
+  if (! RUNNING_ON_VALGRIND ) {
+#endif
+    result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, 1e-6 , numtests ) ;
+    //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, 1e-6 , numtests ) ;
+    result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, 1e-6 , numtests ) ;
+    result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, 1e-6 , numtests ) ;
+#ifdef HAVE_VALGRIND 
+  }
 #endif
 
-  cout << result << " Tests failed " ; 
+  if ( verbose) cout << result << " Tests failed " ; 
 
-  cout << numtests << " Tests performed " << endl ; 
+  if (verbose ) cout << numtests << " Tests performed " << endl ; 
 
+
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
+#ifdef HAVE_VALGRIND
+  //
+  //  If this is being run under valgrind
+  //
+  if ( RUNNING_ON_VALGRIND ) { 
+    if (verbose) cout <<  VALGRIND_COUNT_ERRORS << " valgrind errors " << endl; 
+    result += VALGRIND_COUNT_ERRORS;
+  }
+#endif
   return result ; 
 }

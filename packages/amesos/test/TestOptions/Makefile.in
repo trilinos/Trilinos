@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(TestOptions_SOURCES)
+SOURCES = Dummy.c $(TestOptions_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) Dummy$(EXEEXT)
 subdir = test/TestOptions
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,7 +74,11 @@ CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = TestOptions$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+Dummy_SOURCES = Dummy.c
+Dummy_OBJECTS = Dummy.$(OBJEXT)
+Dummy_LDADD = $(LDADD)
 am_TestOptions_OBJECTS = TestOptions-TestOptions.$(OBJEXT) \
+	TestOptions-CreateTridi.$(OBJEXT) \
 	TestOptions-TestSuperludist.$(OBJEXT) \
 	TestOptions-TestAllClasses.$(OBJEXT) \
 	TestOptions-PerformOneSolveAndTest.$(OBJEXT) \
@@ -84,23 +88,24 @@ am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Dummy.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-CreateTridi.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllClasses.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOptions.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOtherClasses.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestSuperludist.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestOptions_SOURCES)
-DIST_SOURCES = $(TestOptions_SOURCES)
+SOURCES = Dummy.c $(TestOptions_SOURCES)
+DIST_SOURCES = Dummy.c $(TestOptions_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -135,7 +140,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -157,6 +162,8 @@ HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
+HAVE_VALGRIND_TRUE = @HAVE_VALGRIND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -238,7 +245,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-TEST = TestOptions
+TEST = TestOptions 
 
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
@@ -247,6 +254,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
 
 TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestOptions.h \
+	$(srcdir)/CreateTridi.cpp \
+	$(srcdir)/CreateTridi.h \
 	$(srcdir)/TestSuperludist.cpp \
 	$(srcdir)/TestSuperludist.h \
 	$(srcdir)/TestAllClasses.cpp \
@@ -276,7 +285,7 @@ TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -319,11 +328,29 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Dummy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-CreateTridi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestAllClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOtherClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestSuperludist.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -356,6 +383,22 @@ TestOptions-TestOptions.obj: $(srcdir)/TestOptions.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestOptions.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestOptions.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestOptions.obj `if test -f '$(srcdir)/TestOptions.cpp'; then $(CYGPATH_W) '$(srcdir)/TestOptions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestOptions.cpp'; fi`
+
+TestOptions-CreateTridi.o: $(srcdir)/CreateTridi.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-CreateTridi.o -MD -MP -MF "$(DEPDIR)/TestOptions-CreateTridi.Tpo" -c -o TestOptions-CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo" "$(DEPDIR)/TestOptions-CreateTridi.Po"; else rm -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='TestOptions-CreateTridi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-CreateTridi.Po' tmpdepfile='$(DEPDIR)/TestOptions-CreateTridi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-CreateTridi.o `test -f '$(srcdir)/CreateTridi.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTridi.cpp
+
+TestOptions-CreateTridi.obj: $(srcdir)/CreateTridi.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-CreateTridi.obj -MD -MP -MF "$(DEPDIR)/TestOptions-CreateTridi.Tpo" -c -o TestOptions-CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo" "$(DEPDIR)/TestOptions-CreateTridi.Po"; else rm -f "$(DEPDIR)/TestOptions-CreateTridi.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTridi.cpp' object='TestOptions-CreateTridi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-CreateTridi.Po' tmpdepfile='$(DEPDIR)/TestOptions-CreateTridi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-CreateTridi.obj `if test -f '$(srcdir)/CreateTridi.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTridi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTridi.cpp'; fi`
 
 TestOptions-TestSuperludist.o: $(srcdir)/TestSuperludist.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestSuperludist.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestSuperludist.Tpo" -c -o TestOptions-TestSuperludist.o `test -f '$(srcdir)/TestSuperludist.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuperludist.cpp; \
@@ -583,6 +626,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+Dummy$(EXEEXT):  $(srcdir)/Dummy
+	cp $(srcdir)/Dummy Dummy$(EXEEXT)
+	cp $(srcdir)/Suppressions Suppressions.in 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
