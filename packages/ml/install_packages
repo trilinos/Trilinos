@@ -261,6 +261,12 @@ then
          then
             BLAS="blas1.f blas2.f blas3.f"
          fi
+         mb=`grep "^DEFINES" ../../../etc/flat_Makefile | grep MB_MODIF | wc | \
+             sed "s/^ *//" | sed "s/ .*//"`
+         if test $mb -eq 1
+         then
+            tFLAGS=`${echo} ${tFLAGS}  -DMB_MODIF`
+         fi
          if test `expr ${GOT_LAPACK}` = 'no'
          then
             LA_SRC="blas1.f blas2.f blas3.f"
