@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParams);
   problemManager.registerStatusTest(combo);
 
-  bool doBrusselator = false; // Hard-coded for now
+  bool doBrusselator = true; // Hard-coded for now
 
   // Allow one of two supported tests
   if( doBrusselator ) {

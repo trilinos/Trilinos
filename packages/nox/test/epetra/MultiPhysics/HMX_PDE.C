@@ -138,8 +138,7 @@ void HMX_PDE::initializeSolution(double val)
 bool HMX_PDE::evaluate(
                     NOX::EpetraNew::Interface::Required::FillType flag,
 		    const Epetra_Vector* soln, 
-		    Epetra_Vector* tmp_rhs, 
-		    Epetra_RowMatrix* tmp_matrix)
+		    Epetra_Vector* tmp_rhs)
 {
   // Determine what to fill (F or Jacobian)
   bool fillF = false;

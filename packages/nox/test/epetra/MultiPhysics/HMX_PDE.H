@@ -78,7 +78,7 @@ public:
   // values in solnVector.
   bool evaluate( NOX::EpetraNew::Interface::Required::FillType fill,
                 const Epetra_Vector *solnVector, 
-		Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix);
+		Epetra_Vector *rhsVector);
 
   // Set name of field to use for temperature field
   void setTempFieldName(string name)

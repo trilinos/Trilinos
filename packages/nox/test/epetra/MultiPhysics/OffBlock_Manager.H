@@ -74,7 +74,7 @@ public:
 
   bool evaluate(NOX::EpetraNew::Interface::Required::FillType type,
                const Epetra_Vector *solnVector,
-               Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix);
+               Epetra_Vector *rhsVector);
 
 private:
 

@@ -1094,7 +1094,7 @@ bool Problem_Manager::solveMF()
 bool Problem_Manager::evaluate(
               NOX::EpetraNew::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
-              Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix)
+              Epetra_Vector *rhsVector)
 {
   //Determine what to fill (F or Jacobian)
   bool fillF = false;

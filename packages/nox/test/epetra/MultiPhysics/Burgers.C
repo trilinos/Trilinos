@@ -1,4 +1,3 @@
-#if(0)
 //@HEADER
 // ************************************************************************
 // 
@@ -38,69 +37,42 @@
 #include "Basis.H"
 #include <math.h>
 
-#include "FiniteElementProblem.H"
+#include "Problem_Manager.H"
+#include "Burgers.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& comm) :
+Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
+  GenericEpetraProblem(comm, numGlobalNodes, name_),
   xFactor(100.0),
   viscosity(0.1),
   xmin(-20.0),
   xmax(20.0),
-  dt(1.e-00),
-  Comm(&comm),
-  NumGlobalElements(numGlobalElements)
+  dt(1.e-00)
 {
 
-  // Commonly used variables
-  int i;
-  MyPID = Comm->MyPID();      // Process ID
-  NumProc = Comm->NumProc();  // Total number of processes
+  // Create the nodal coordinates
+  xptr = new Epetra_Vector(*StandardMap);
+  double Length= xmax - xmin;
+  dx=Length/((double) NumGlobalNodes-1);
+  for ( int i = 0; i < NumMyElements; ++i ) {
+    (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
+  }
 
-  // Construct a Source Map that puts approximately the same 
-  // Number of equations on each processor in uniform global ordering
-  StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);
+  // Create extra vector needed for this transient problem
+  oldSolution = new Epetra_Vector(*StandardMap);
 
-  // Get the number of elements owned by this processor
-  NumMyElements = StandardMap->NumMyElements();
+  // Create the Importer needed for FD coloring
+  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 
-  // Construct an overlaped map for the finite element fill *************
-  // For single processor jobs, the overlap and standard map are the same
-  if (NumProc == 1) {
-    OverlapMap = new Epetra_Map(*StandardMap);
-  } else {
+  oldSolution = new Epetra_Vector(*StandardMap);
+  exactSolution = new Epetra_Vector(*StandardMap);
 
-    int OverlapNumMyElements;
-    int OverlapMinMyGID;
-    OverlapNumMyElements = NumMyElements + 2;
-    if ((MyPID == 0) || (MyPID == NumProc - 1)) 
-      OverlapNumMyElements --;
-    
-    if (MyPID==0) 
-      OverlapMinMyGID = StandardMap->MinMyGID();
-    else 
-      OverlapMinMyGID = StandardMap->MinMyGID() - 1;
-    
-    int* OverlapMyGlobalElements = new int[OverlapNumMyElements];
-    
-    for (i = 0; i < OverlapNumMyElements; i ++) 
-      OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
-    
-    OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-			    OverlapMyGlobalElements, 0, *Comm);
-
-    delete [] OverlapMyGlobalElements;
-
-  } // End Overlap map construction *************************************
-
-  // Construct Linear Objects  
-  Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   initialSolution = new Epetra_Vector(*StandardMap);
-  oldsoln = new Epetra_Vector(*StandardMap);
-  exactsoln = new Epetra_Vector(*StandardMap);
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
-
+  initializeSoln();
+  
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
-  generateGraph(*AA);
+  AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
+  generateGraph();
 
   // Create a second matrix using graph of first matrix - this creates a 
   // static graph so we can refill the new matirx after TransformToLocal()
@@ -108,44 +80,37 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->TransformToLocal();
 
-  OverlapNumMyElements = OverlapMap->NumMyElements();
-  int OverlapMinMyGID;
-  if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
-
-  // Create the nodal coordinates
-  xptr = new Epetra_Vector(*StandardMap);
-  double Length= xmax - xmin;
-  dx=Length/((double) NumGlobalElements-1);
-  for (i=0; i < NumMyElements; i++) {
-    (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
-  }
-
-  initializeSoln();
-  
 }
 
 // Destructor
-FiniteElementProblem::~FiniteElementProblem()
+Burgers::~Burgers()
 {
-  delete AA;
   delete A;
+  delete AA;
   delete xptr;
   delete initialSolution;
-  delete Importer;
+  delete oldSolution;
+  delete exactSolution;
+  delete ColumnToOverlapImporter;
   delete OverlapMap;
   delete StandardMap;
 }
 
 // Reset function
-bool FiniteElementProblem::reset(const Epetra_Vector& x) 
+void Burgers::reset(const Epetra_Vector& x) 
 {
-  *oldsoln = x;
-  return true;
+  *oldSolution = x;
+}
+
+// Empty Reset function
+void Burgers::reset()
+{
+  cout << "WARNING: reset called without passing any update vector !!"
+       << endl;
 }
 
 // Set initialSolution to desired initial condition
-bool FiniteElementProblem::initializeSoln()
+bool Burgers::initializeSoln()
 {
   Epetra_Vector& x = *xptr;
 
@@ -159,7 +124,7 @@ bool FiniteElementProblem::initializeSoln()
 }
 
 // Matrix and Residual Fills
-bool FiniteElementProblem::evaluate(
+bool Burgers::evaluate(
              NOX::EpetraNew::Interface::Required::FillType fillType,
              const Epetra_Vector* soln, 
              Epetra_Vector* tmp_rhs) 
@@ -171,15 +136,17 @@ bool FiniteElementProblem::evaluate(
     rhs = tmp_rhs;
   } 
 
+  int numDep = depProblems.size();
+
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
-  u.Import(*soln, *Importer, Insert);
-  uold.Import(*oldsoln, *Importer, Insert);
-  xvec.Import(*xptr, *Importer, Insert);
+  u.Import(*soln, *ColumnToOverlapImporter, Insert);
+  uold.Import(*oldSolution, *ColumnToOverlapImporter, Insert);
+  xvec.Import(*xptr, *ColumnToOverlapImporter, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -189,6 +156,10 @@ bool FiniteElementProblem::evaluate(
   double xx[2];
   double uu[2];
   double uuold[2];
+  vector<double*> ddep(numDep);
+  for( int i = 0; i<numDep; i++)
+    ddep[i] = new double[2];
+  //double *srcTerm = new double[2];
   Basis basis;
 
   // Zero out the objects that will be filled
@@ -208,7 +179,7 @@ bool FiniteElementProblem::evaluate(
       uuold[0]=uold[ne];
       uuold[1]=uold[ne+1];
       // Calculate the basis function at the gauss point
-      basis.getBasis(gp, xx, uu, uuold);
+      basis.getBasis(gp, xx, uu, uuold, ddep);
 	            
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
@@ -264,7 +235,7 @@ bool FiniteElementProblem::evaluate(
     if ((flag == F_ONLY)    || (flag == ALL)) 
       (*rhs)[NumMyElements-1]= (*soln)[OverlapNumMyElements-1] - (-1.0);
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-      row=NumGlobalElements-1;
+      row=NumGlobalNodes-1;
       column=row;
       jac=1.0;
       A->ReplaceGlobalValues(row, 1, &jac, &column);
@@ -283,47 +254,32 @@ bool FiniteElementProblem::evaluate(
   return true;
 }
 
-Epetra_Vector& FiniteElementProblem::getSolution()
+Epetra_Vector& Burgers::getSolution()
 {
   return *initialSolution;
 }
   
-Epetra_Vector& FiniteElementProblem::getExactSoln(double time)
+Epetra_Vector& Burgers::getExactSoln(double time)
 {
   Epetra_Vector& x = *xptr;
 
   for(int i=0; i<NumMyElements; i++)
-    (*exactsoln)[i] = (1.0 - tanh( (x[i]-2.0*time/xFactor)/xFactor )) / 2.0;
+    (*exactSolution)[i] = (1.0 - tanh( (x[i]-2.0*time/xFactor)/xFactor )) / 2.0;
 
-  return *exactsoln;
+  return *exactSolution;
 }
   
-Epetra_CrsGraph& FiniteElementProblem::getGraph()
+Epetra_Vector& Burgers::getOldSoln()
 {
-  return *AA;
-}
-
-Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
-{
-  return *A;
-}
-
-Epetra_Vector& FiniteElementProblem::getMesh()
-{
-  return *xptr;
+  return *oldSolution;
 }
   
-Epetra_Vector& FiniteElementProblem::getOldSoln()
-{
-  return *oldsoln;
-}
-  
-double FiniteElementProblem::getdt()
+double Burgers::getdt()
 {
   return dt;
 }
   
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+void Burgers::generateGraph()
 {
   
   // Declare required variables
@@ -347,14 +303,10 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
 	// If this row is owned by current processor, add the index
 	if (StandardMap->MyGID(row)) {
 	  column=OverlapMap->GID(ne+j);
-	  AA.InsertGlobalIndices(row, 1, &column);
+	  AA->InsertGlobalIndices(row, 1, &column);
 	}
       } 	
     }
   }
-  AA.TransformToLocal();
-//   AA.SortIndices();
-//   AA.RemoveRedundantIndices();
-  return AA;
+  AA->TransformToLocal();
 }
-#endif

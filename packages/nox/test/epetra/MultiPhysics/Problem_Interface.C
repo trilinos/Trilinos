@@ -44,23 +44,23 @@ Problem_Interface::~Problem_Interface()
 
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag)
 {
-  return problem.evaluate(flag, &x, &FVec, 0);
+  return problem.evaluate(flag, &x, &FVec);
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x)
 {
-  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0);
 }
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x)
 {
-  return problem.evaluate(NOX::EpetraNew::Interface::Required::Prec, &x, 0, 0);
+  return problem.evaluate(NOX::EpetraNew::Interface::Required::Prec, &x, 0);
 }
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, 
                        NOX::Parameter::List* precParams)
 {
   // Pass through to let the Problem fill its owned matrix
-  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0);
 }
 //-----------------------------------------------------------------------------
 

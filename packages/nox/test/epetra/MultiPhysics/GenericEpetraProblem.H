@@ -80,8 +80,7 @@ public:
   // values in solnVector.
   virtual bool evaluate( NOX::EpetraNew::Interface::Required::FillType fill,
                            const Epetra_Vector *solnVector, 
-                           Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix)
-                           = 0;
+                           Epetra_Vector *rhsVector ) = 0;
 
   // Virtual methods with defaults provided
 

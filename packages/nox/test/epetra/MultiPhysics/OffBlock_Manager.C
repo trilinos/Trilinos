@@ -145,7 +145,7 @@ OffBlock_Manager::~OffBlock_Manager()
 bool OffBlock_Manager::evaluate(
               NOX::EpetraNew::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
-              Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix)
+              Epetra_Vector *rhsVector)
 {
   // Determine if fill call is valid
   if (rhsVector == 0 || flag != NOX::EpetraNew::Interface::Required::FD_Res) {
