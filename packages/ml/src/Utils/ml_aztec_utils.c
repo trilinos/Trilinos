@@ -3082,12 +3082,15 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
+  /* NOTE: the first level is 0. This means that I have Nevels, the last  */
+  /* one begin Nlevels-1. This also means that I have Nlevels-2 smoothers */
+  /* plus the "smoother" on the coarse grid (handled indendentely).       */
   /*----------------------------------------------------------------------*/
 
   t1 = AZ_second();
-  
+
   Nlevels = ML_Gen_MGHierarchy_UsingAggregation(ml, 0, ML_INCREASING, ag);
-  
+
   /* ********************************************************************** */
   /* choice of the smoother (all but the coarsest level)                    */
   /* ********************************************************************** */
@@ -3095,7 +3098,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   t2 = AZ_second();
 
   for( i=0 ; i<Nlevels-1 ; i++ ) {
-    
+
     num_smoother_steps  = Settings.Level[i].num_smoother_steps;
 
     omega = Settings.Level[i].omega;
@@ -3178,8 +3181,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   case MLAZ_Amesos:
     amesos_solver = Settings.Level[MLAZ_COARSE_LEVEL].amesos_solver;
     max_procs = Settings.Level[MLAZ_COARSE_LEVEL].max_procs;
-    ML_Gen_Smoother_Amesos( ml, Nlevels-1, amesos_solver, max_procs);
-    
+    ML_Gen_Smoother_Amesos( ml, Nlevels-1, amesos_solver, max_procs);    
     break;
     
   default:

@@ -154,6 +154,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       }
     }
     if( NumNonzeros == 0 ) {
+      cout << "*ML*WRN* in ML_Amesos_Gen : \nML*WRN* Global row "
+	   << global_rows_as_int[i]
+	   << " has no nonzero elements (and " << ncnt
+	   << " zero entries)" << endl
+	   << "*ML*WRN* Now put 1 on the diagonal...\n";
       // insert a 1 on the diagonal
       colInd[NumNonzeros] = global_nodes_as_int[i];
       colVal[NumNonzeros] = 1.0;
@@ -171,6 +176,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   
   assert(Amesos_CrsMatrix->FillComplete()==0);
 
+  cout << *Amesos_CrsMatrix;
+  
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
 

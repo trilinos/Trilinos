@@ -204,10 +204,11 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
    of ML's functionalities is currently supported. */
 
 #define MLAZ_MAX_LEVELS 30
+#define MLAZ_COARSE_LEVEL (MLAZ_MAX_LEVELS-1)
 #define MLAZ_ALL -1
 #define MLAZ_yes 1
 #define MLAZ_no 0
-#define MLAZ_COARSE_LEVEL (MLAZ_MAX_LEVELS-1)
+
 /* options */
 #define MLAZ_smoother          1
 #define MLAZ_max_levels         2

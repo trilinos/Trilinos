@@ -415,8 +415,8 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   MPI_Allreduce( &Nrows, &j, 1, MPI_INT, MPI_SUM, orig_comm );
   if( N_parts <= 0 ) N_parts = 1;
-  
-  if( N_parts > j/OPTIMAL_VALUE ) {
+
+  if( (j/OPTIMAL_VALUE>1) && (N_parts > j/OPTIMAL_VALUE) && N_parts != 1 ) {
     i = N_parts;
     N_parts = j/OPTIMAL_VALUE;
     if( N_parts == 0 ) N_parts = 1;
@@ -797,7 +797,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   total_nz = 0;
    int                   count2;
    int Nnonzeros = 0, Nnonzeros2 = 0;
-
+   int optimal_value;
+   
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef CLEAN_DEBUG
@@ -932,7 +933,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
 
    aggr_options = (ML_Aggregate_Options *) ml_ag->aggr_options;
-
+   
    if( aggr_options == NULL ) {
 
      if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
@@ -944,16 +945,40 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #else
      j = Nrows;
 #endif
-     starting_aggr_count = (int)1.0*j/OPTIMAL_VALUE;
+     optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
+     starting_aggr_count = (int)1.0*j/optimal_value;
      if( starting_aggr_count < 1 ) starting_aggr_count = 1;
      /* 'sto xxxcio e` un po` piu` difficile, non ne ho idea, piglio
 	a caso... */
-     desired_aggre_per_proc = ML_min( 100, Nrows );
+     desired_aggre_per_proc = ML_max( 100, Nrows );
        
    } else {
 
      starting_aggr_count = aggr_options[ml_ag->cur_level].Naggregates;
 
+     if( starting_aggr_count == -1 ) {
+
+#ifdef ML_MPI
+       MPI_Allreduce( &Nrows, &j, 1, MPI_INT, MPI_SUM,
+		      Amatrix->comm->USR_comm );
+#else
+       j = Nrows;
+#endif
+
+       if( aggr_options[ml_ag->cur_level].Nnodes_per_aggregate == -1 ) {
+	 optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
+       } else {
+         /* be sure ML_GLOBAL_INDICES are used, so that the following switch
+	    is do-nothing */
+	 aggr_options[ml_ag->cur_level].local_or_global = ML_GLOBAL_INDICES;
+	 optimal_value = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
+       }
+       
+       starting_aggr_count = j/optimal_value;
+       if( starting_aggr_count < 1 ) aggr_count = 1;
+       
+     }
+     
      switch( aggr_options[ml_ag->cur_level].local_or_global ) {
      case ML_LOCAL_INDICES:
        starting_aggr_count *= Nprocs;
@@ -975,11 +1000,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        aggr_options[ml_ag->cur_level].desired_aggre_per_proc;
 
      if( desired_aggre_per_proc == -1 ) {
-       desired_aggre_per_proc = ML_min( 100, Nrows );       
+       desired_aggre_per_proc = ML_max( 100, Nrows );       
      }
      
    }
-   
+
    starting_aggr_count =
      ML_DecomposeGraph_with_ParMETIS( Amatrix, starting_aggr_count,
 				      starting_decomposition,
@@ -990,7 +1015,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf("ParMETIS aggregation: using %d aggregates (globally)\n",
 	    starting_aggr_count );
    }
-      
+   
 #ifdef ML_MPI
    MPI_Bcast( &starting_aggr_count, 1, MPI_INT, 0,
 	      Amatrix->comm->USR_comm );

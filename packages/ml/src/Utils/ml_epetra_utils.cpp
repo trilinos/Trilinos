@@ -413,7 +413,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   // fill Q
   for( int i=0 ; i<StartingNumElements ; i+=NumPDEEqns ) {
     double one = 1.0;
-    int PointCol = reordered_decomposition[i%NumPDEEqns];
+    int PointCol = reordered_decomposition[i/NumPDEEqns];
     for( int j=0 ; j<NumPDEEqns ; ++j ) {
       int GlobalRow = MyGlobalElements[i] + j;
       int GlobalCol = PointCol*NumPDEEqns + j;
@@ -424,7 +424,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
   
   ML_Q2 = ML_Operator_Create( ml_communicator );
-
+  
   double * Start = new double[StartingNumElements*NumPDEEqns];
   double * Reord = new double[ReorderedNumElements*NumPDEEqns];
 
@@ -525,7 +525,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   // Q will be applied to vectors defined on StartingMap,
   // and the output vector will be defined on ReorderdMap
   assert(Qt->FillComplete(ReorderedMap,StartingMap)==0);
-
+  
   ML_Qt2 = ML_Operator_Create( ml_communicator );
 
   Epetra2MLMatrix( Qt, ML_Qt2);
