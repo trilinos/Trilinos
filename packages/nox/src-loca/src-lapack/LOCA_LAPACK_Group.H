@@ -350,6 +350,16 @@ namespace LOCA {
       //! Returns true if system has a mass matrix
       bool hasMass() const;
 
+      //! Return reference to Jacobian matrix
+      NOX::LAPACK::Matrix& getJacobianMatrix() {
+	return jacobianMatrix;
+      }
+
+      //! Return reference to mass matrix
+      NOX::LAPACK::Matrix& getMassMatrix() {
+	return massMatrix;
+      }
+
     protected:
 
       //! resets isValid flags

@@ -40,10 +40,12 @@
 LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK.H \
 	$(srcdir)/LOCA_LAPACK_Group.H \
-	$(srcdir)/LOCA_LAPACK_Interface.H
+	$(srcdir)/LOCA_LAPACK_Interface.H \
+	$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.H
 
 LOCA_LAPACK = \
-	$(srcdir)/LOCA_LAPACK_Group.C
+	$(srcdir)/LOCA_LAPACK_Group.C \
+	$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
 
 # ------------------------------------------------------------------------
 # localapack library specifications
