@@ -845,7 +845,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }      
   }
 
-  *total_nz = count2;
+  *total_nz = count;
   
 #ifdef DUMP_MATLAB_FILE
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
@@ -1329,7 +1329,8 @@ int agg_offset, vertex_offset;
      
      aggr_count = aggr_options[ml_ag->cur_level].Naggregates;
 
-     if( aggr_count < 0 || aggr_count > Nrows ) {
+     if( (aggr_count < 0 || aggr_count > Nrows) && 
+          aggr_options[ml_ag->cur_level].Nnodes_per_aggregate == -1 ) {
 
        j = aggr_count;
        optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
@@ -1337,7 +1338,7 @@ int agg_offset, vertex_offset;
        if( aggr_count < 1 ) aggr_count = 1;
        
        fprintf( stderr,
-		"*ML*ERR* (proc %d) incorrect # aggreagates = %d (N_rows = %d)\n"
+		"*ML*ERR* (proc %d) incorrect # aggregates = %d (N_rows = %d)\n"
 		"*ML*ERR* (proc %d) changing # aggregates to default value (%d)\n",
 		mypid, j,
 		Nrows,
