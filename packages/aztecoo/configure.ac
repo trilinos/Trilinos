@@ -233,9 +233,11 @@ fi
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( aztecoo, tests, [Build AztecOO tests], AZTECOO_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( aztecoo, examples, [Build AztecOO examples], AZTECOO_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------
