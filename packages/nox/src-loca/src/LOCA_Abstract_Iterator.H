@@ -83,6 +83,7 @@ namespace LOCA {
 
       //! Enumerated type for status of the iterator
       enum IteratorStatus {
+	LastIteration = 2,
 	Finished = 1,
 	Failed = 0,
 	NotFinished = -1
@@ -91,7 +92,8 @@ namespace LOCA {
       //! Enumerated type for status of each step of iterator
       enum StepStatus {
 	Successful = 1,
-	Unsuccessful = 0
+	Unsuccessful = 0,
+	Provisional = -1
       };
 
       //! Constructor 
@@ -146,6 +148,17 @@ namespace LOCA {
 
       //! Postprocess step
       virtual StepStatus postprocess(StepStatus) = 0;
+
+      //! Set iterator status as LastIteration
+      virtual void setLastIteration();
+
+      //! Returns true of the iteratorStatus is LastIteration
+      virtual bool isLastIteration();
+
+      //! Compute step, iterator status from status of each component of step
+      virtual StepStatus computeStepStatus(StepStatus preStatus, 
+					   StepStatus compStatus,
+					   StepStatus postStatus);
 
     protected:
 

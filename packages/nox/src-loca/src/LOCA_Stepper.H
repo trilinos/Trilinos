@@ -203,9 +203,6 @@ namespace LOCA {
     //! Maximum number of newton iterations per continuation step,\f$ N_{max} \f$. Defaults to 15.
     int maxNonlinearSteps;
 
-    //! Flag indicating if this is the last step of continuation
-    bool isLastStep;
-
     //! Target parameter value for last step (either maxValue or minValue)
     double targetValue;
 

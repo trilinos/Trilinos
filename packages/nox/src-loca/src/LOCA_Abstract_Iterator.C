@@ -109,16 +109,21 @@ LOCA::Abstract::Iterator::iterate()
 {
   LOCA::Abstract::Iterator::StepStatus stepStatus = 
     LOCA::Abstract::Iterator::Successful;
+  LOCA::Abstract::Iterator::StepStatus preStatus;
+  LOCA::Abstract::Iterator::StepStatus compStatus;
+  LOCA::Abstract::Iterator::StepStatus postStatus;
 
   iteratorStatus = stop(stepStatus);
 
   while (iteratorStatus == LOCA::Abstract::Iterator::NotFinished) {
 
-    stepStatus = preprocess(stepStatus);
+    preStatus = preprocess(stepStatus);
 
-    stepStatus = compute(stepStatus);
+    compStatus = compute(preStatus);
 
-    stepStatus = postprocess(stepStatus);
+    postStatus = postprocess(compStatus);
+
+    stepStatus = computeStepStatus(preStatus, compStatus, postStatus);
 
     ++numTotalSteps;
     if (stepStatus ==  LOCA::Abstract::Iterator::Successful)
@@ -126,17 +131,62 @@ LOCA::Abstract::Iterator::iterate()
     else
       ++numFailedSteps;
 
-    iteratorStatus = stop(stepStatus);
+    if (iteratorStatus != LOCA::Abstract::Iterator::Failed)
+      iteratorStatus = stop(stepStatus);
   }
 
   return iteratorStatus;
 }
 
 LOCA::Abstract::Iterator::IteratorStatus 
-LOCA::Abstract::Iterator::stop(StepStatus stepStatus)
+LOCA::Abstract::Iterator::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (numTotalSteps >= maxSteps)
     return LOCA::Abstract::Iterator::Finished;
   else
     return LOCA::Abstract::Iterator::NotFinished;
+}
+
+void
+LOCA::Abstract::Iterator::setLastIteration() 
+{
+  iteratorStatus = LOCA::Abstract::Iterator::LastIteration;
+  return;
+}
+
+bool
+LOCA::Abstract::Iterator::isLastIteration() 
+{
+  return (iteratorStatus == LOCA::Abstract::Iterator::LastIteration);
+}
+
+LOCA::Abstract::Iterator::StepStatus 
+LOCA::Abstract::Iterator::computeStepStatus(
+		       LOCA::Abstract::Iterator::StepStatus preStatus, 
+		       LOCA::Abstract::Iterator::StepStatus compStatus,
+		       LOCA::Abstract::Iterator::StepStatus postStatus)
+{
+  bool haveProvisional = false;
+  bool haveUnsuccessful = false;
+
+  if (preStatus == LOCA::Abstract::Iterator::Provisional ||
+      compStatus == LOCA::Abstract::Iterator::Provisional ||
+      postStatus == LOCA::Abstract::Iterator::Provisional) {
+    haveProvisional = true;
+  }
+
+  if (preStatus == LOCA::Abstract::Iterator::Unsuccessful ||
+      compStatus == LOCA::Abstract::Iterator::Unsuccessful ||
+      postStatus == LOCA::Abstract::Iterator::Unsuccessful) {
+    haveUnsuccessful = true;
+  }
+
+  if (haveProvisional && haveUnsuccessful) {
+    iteratorStatus = LOCA::Abstract::Iterator::Failed;
+    return LOCA::Abstract::Iterator::Unsuccessful;
+  }
+  else if (haveUnsuccessful)
+    return LOCA::Abstract::Iterator::Unsuccessful;
+  else 
+    return LOCA::Abstract::Iterator::Successful;
 }
