@@ -22,7 +22,7 @@
 #   3) If you are running in parallel and need something other than mpirun, 
 #      edit the 'PARALLEL_CMD' variable below.
 #
-PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
+PARALLEL_CMD=`echo /usr/bin/mpirun -np `
 #
 #      Note:
 #      a) Some systems may require that you use a batch queue system to run
@@ -64,10 +64,11 @@ PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 BENCH_ROOT_DIRECTORY=${HOME}/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
-PARALLEL=FALSE
+PARALLEL=TRUE
 BATCH=FALSE
 CVS_UPDATE=FALSE
 ARCH=PCLINUX
+SUMMARY_FILE=${SCRATCH_ROOT_DIRECTORY}/summary
 #
 # CREATING NEW BENCHMARKS
 # 
@@ -227,6 +228,7 @@ export PARALLEL_CMD
 export BENCH_SUBDIR
 export SCRATCH_SUBDIR
 export ARCH
+export SUMMARY_FILE
 
 #
 # If necessary, update the ml & mlbench directories via cvs.
@@ -247,7 +249,7 @@ then
   temp=`echo $temp | sed "s/ //g"`
   if test `expr "${temp}"` = 'xxxx'
   then
-     echo "Cannot do a cvs checkout without ssh key!"
+     echo "Cannot do a cvs checkout without ssh key!" >> ${SUMMARY_FILE}
      exit
   fi
 #
@@ -286,13 +288,13 @@ then
     cvs update mlbench
     cd ${SCRIPT_DIRECTORY}
   else
-    echo
-    echo "**********************************************" 
-    echo "WARNING: Conflicts detected during cvs update"
-    echo "         of either ml or mlbench. Benchmarks "
-    echo "         cancelled!                          "
-    echo "*********************************************" 
-    echo; echo;
+    echo >> ${SUMMARY_FILE}
+    echo "**********************************************" >> ${SUMMARY_FILE}
+    echo "WARNING: Conflicts detected during cvs update" >> ${SUMMARY_FILE}
+    echo "         of either ml or mlbench. Benchmarks " >> ${SUMMARY_FILE}
+    echo "         cancelled!                          " >> ${SUMMARY_FILE}
+    echo "*********************************************"  >> ${SUMMARY_FILE}
+    echo >> ${SUMMARY_FILE}; echo; >> ${SUMMARY_FILE}
     exit
   fi
 fi
@@ -339,12 +341,12 @@ fi
 # Run program within each subdirectory and compare output
 # with that contained in the corresponding ${BENCH_ROOT_DIRECTORY}.
 #
-rm -f ${SCRATCH_ROOT_DIRECTORY}/summary
-echo " *********** Summary ***************" >> ${SCRATCH_ROOT_DIRECTORY}/summary
-echo >> ${SCRATCH_ROOT_DIRECTORY}/summary
-echo >> ${SCRATCH_ROOT_DIRECTORY}/summary
+rm -f ${SUMMARY_FILE}
+echo " *********** Summary ***************" >> ${SUMMARY_FILE}
+echo >> ${SUMMARY_FILE}
+echo >> ${SUMMARY_FILE}
 echo
-tail -3 ${SCRATCH_ROOT_DIRECTORY}/summary
+tail -3 ${SUMMARY_FILE}
 
 
 cd ${BENCH_ROOT_DIRECTORY}

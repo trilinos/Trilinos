@@ -82,14 +82,14 @@
           rm -f ${SCRATCH_SUBDIR}/xxxxxx${ttt}
           diff -w output${ttt} ${SCRATCH_SUBDIR}/output${ttt} > \
                                     ${SCRATCH_SUBDIR}/difs${ttt}
-          wc ${SCRATCH_SUBDIR}/difs${ttt} >> ${SCRATCH_ROOT_DIRECTORY}/summary
-          tail -1 ${SCRATCH_ROOT_DIRECTORY}/summary
+          wc ${SCRATCH_SUBDIR}/difs${ttt} >> ${SUMMARY_FILE}
+          tail -1 ${SUMMARY_FILE}
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity"
-          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity" >> ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity" >> ${SUMMARY_FILE}
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations"
-          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations" >> ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations" >> ${SUMMARY_FILE}
           cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = "
-          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = " >> ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = " >> ${SUMMARY_FILE}
         fi
       done
       /bin/rm -f ml_inputfile
