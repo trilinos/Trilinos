@@ -172,11 +172,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
         j = (comm_info->neighbors[i]).send_list[ii];
         if (j > Nrows) 
         {
-           printf("Error: the %dth element sent to %d is greater than the\n",
-                  ii+1,comm_info->neighbors[i].ML_id);
-           printf("Error: total number of local elements: %d vs. %d\n",
-                   j, Nrows);
-           exit(1);
+           pr_error("Error: the %dth element sent to %d is greater than the total number of local elements: %d vs. %d\n", ii+1,comm_info->neighbors[i].ML_id,j, Nrows);
         }
         ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &dummy2, 
                           &dummy1, &row_length, 0);
