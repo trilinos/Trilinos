@@ -50,7 +50,7 @@ ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
 	ml_csolve.h          ml_memory.h         ml_krylov.h            \
 	ml_defs.h            ml_op_utils.h       ml_gmres.h             \
 	ml_elementagx.h      ml_operator.h       ml_bicgstabl.h         \
-	mli_solver.h
+	mli_solver.h         ml_superlu.h
 
 #=======================================================================
 # Sample application files
@@ -73,7 +73,7 @@ $(APPLICATION): $(APPLICATION_OBJ) libml.a
 	   $(ARCH_LIBS) -lm
 
 libml.a: $(ML_OBJ)
-	$(AR) rcv libml.a $(ML_OBJ); \
+	$(AR) rc libml.a $(ML_OBJ); \
 	$(RANLIB) libml.a
 
 
