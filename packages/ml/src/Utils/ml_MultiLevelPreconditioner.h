@@ -645,10 +645,13 @@ private:
   const Epetra_RowMatrix* EdgeMatrix_;
   //! aux matrix for Maxwell
   const Epetra_RowMatrix* NodeMatrix_;
+  bool CreatedNodeMatrix_;
   //! Auxiliary matrix used in intermediate step
   ML_Operator* ML_Kn_;
+  bool CreatedML_Kn_;
   //! T matrix for Maxwell
   const Epetra_RowMatrix* TMatrix_;
+  bool CreatedTMatrix_;
   ML_Operator* TMatrixML_;
   ML_Operator* TMatrixTransposeML_;
   ML_Operator** Tmat_array, ** Tmat_trans_array;

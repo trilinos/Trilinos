@@ -170,6 +170,21 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete [] Label_; 
     Label_ = 0; 
   }
+
+  if (CreatedTMatrix_ == true) {
+    delete TMatrix_;
+    TMatrix_ = NULL;
+  }
+
+  if (CreatedML_Kn_ == true) {
+    delete ML_Kn_;
+    ML_Kn_ = NULL;
+  }
+
+  if (CreatedNodeMatrix_ == true) {
+    delete NodeMatrix_;
+    NodeMatrix_ = NULL;
+  }
   
   // stick data in OutputList
 
@@ -402,18 +417,19 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   RowMatrixAllocated_(0)
 {
   ML_Comm *ml_comm;
-
-  ML_Comm_Create(&ml_comm);
-  ML_Kn_ = ML_Operator_Create(ml_comm);
-  AZ_convert_aztec_matrix_2ml_matrix(AZ_NodeMatrix,ML_Kn_,proc_config);
+  ML_Operator *loc_ML_Kn;
 
   int MaxNumNonzeros;
   double CPUTime;
   Epetra_CrsMatrix *NodeMatrix, *TMatrix;
-  ML_Operator2EpetraCrsMatrix(ML_Kn_, NodeMatrix,MaxNumNonzeros,
-                  true,CPUTime);
 
   ML_Operator2EpetraCrsMatrix(ML_TMatrix,TMatrix,MaxNumNonzeros,
+                  true,CPUTime);
+
+  ML_Comm_Create(&ml_comm);
+  loc_ML_Kn = ML_Operator_Create(ml_comm);
+  AZ_convert_aztec_matrix_2ml_matrix(AZ_NodeMatrix,loc_ML_Kn,proc_config);
+  ML_Operator2EpetraCrsMatrix(loc_ML_Kn, NodeMatrix,MaxNumNonzeros,
                   true,CPUTime);
 
   // some sanity checks
@@ -435,8 +451,12 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   // NOTE: RowMatrix_ and EdgeMatrix_ pointer to the same Epetra_RowMatrix
   SolvingMaxwell_ = true;
   NodeMatrix_ = NodeMatrix;
+  CreatedNodeMatrix_ = true;
   TMatrix_ = TMatrix;
+  CreatedTMatrix_ = true;
   EdgeMatrix_ = & EdgeMatrix;
+  ML_Kn_ = loc_ML_Kn;
+  CreatedML_Kn_ = true;
 
   // construct hierarchy
   if (ComputePrec == true) 
@@ -513,13 +533,16 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   // Maxwell stuff is off by default
   SolvingMaxwell_ = false;
   NodeMatrix_ = 0;
+  CreatedNodeMatrix_ = false;
   ML_Kn_ = 0;
+  CreatedML_Kn_ = false;
   EdgeMatrix_ = 0;
   TMatrix_ = 0;
   ml_edges_ = 0;
   ml_nodes_ = 0;
   agg_edge_ = 0;
   TMatrixML_ = 0;
+  CreatedTMatrix_ = false;
   TMatrixTransposeML_ = 0;
   Tmat_array = 0;
   Tmat_trans_array = 0;

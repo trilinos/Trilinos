@@ -90,6 +90,7 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 
   int *Indices;
   double *Values;
+  int MatrixIsRowMatrix = false;
   if (MatrixIsCrsMatrix) {
     // do nothing for Crs
   } else  if( MatrixIsVbrMatrix ) {
@@ -101,6 +102,7 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
     NumPDEEqns = (Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
   } else {
     // general RowMatrix case
+    MatrixIsRowMatrix = true;
     MaxPerRow = Abase->MaxNumEntries();
     Values = new double [MaxPerRow]; 
     Indices = new int [MaxPerRow]; 
@@ -122,36 +124,65 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
       int RowDim;
       int NumBlockEntries;    
       ierr = Avbr->ExtractMyBlockRowView(LocalBlockRow,RowDim,
-					 NumBlockEntries, BlockIndices, Entries);
+                     NumBlockEntries, BlockIndices, Entries);
       // I do here some stuff because Vbr matrices must
       // be treated differently.
-      if (ierr) return(0); 
+      if (ierr) {
+        if (MatrixIsRowMatrix) {
+          delete [] Indices;
+          delete [] Values;
+        }
+        return(0); 
+      }
       NumEntries = NumBlockEntries*NumPDEEqns;
-      if (nz_ptr + NumEntries > allocated_space) return(0);
+      if (nz_ptr + NumEntries > allocated_space) {
+        if (MatrixIsRowMatrix) {
+          delete [] Indices;
+          delete [] Values;
+        }
+        return(0);
+      }
       
       for( int j=0 ; j<NumBlockEntries ; ++j ) {
-	for( int k=0 ; k<NumPDEEqns ; ++k ) {
-	  columns[nz_ptr] = BlockIndices[j]*NumPDEEqns+k;
-	  values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
-	}
+    for( int k=0 ; k<NumPDEEqns ; ++k ) {
+      columns[nz_ptr] = BlockIndices[j]*NumPDEEqns+k;
+      values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
+    }
       }
       row_lengths[i] = NumBlockEntries*NumPDEEqns;      
     }
     else 
       ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
                                       Values, Indices);
-    if (ierr) return(0); //JJH I think this is the correct thing to return if
-                         //    A->ExtractMyRowCopy returns something nonzero ..
+    if (ierr) {
+      if (MatrixIsRowMatrix) {
+        delete [] Indices;
+        delete [] Values;
+      }
+      return(0); //JJH I think this is the correct thing to return if
+                 //    A->ExtractMyRowCopy returns something nonzero ..
+    }
 
     if( !MatrixIsVbrMatrix ) {
       row_lengths[i] = NumEntries;
-      if (nz_ptr + NumEntries > allocated_space) return(0);
+      if (nz_ptr + NumEntries > allocated_space) {
+        if (MatrixIsRowMatrix) {
+          delete [] Indices;
+          delete [] Values;
+        }
+         return(0);
+      }
       
       for (int j=0; j<NumEntries; j++) {
-	columns[nz_ptr] = Indices[j];
-	values[nz_ptr++] = Values[j];
+        columns[nz_ptr] = Indices[j];
+        values[nz_ptr++] = Values[j];
       }
     }
+  }
+
+  if (MatrixIsRowMatrix) {
+    delete [] Indices;
+    delete [] Values;
   }
   
 
