@@ -42,14 +42,11 @@ using namespace NOX::Direction;
 
 Newton::Newton(Parameter::List& p) 
 {
-  predf = NULL;
-  stepdir = NULL;
   reset(p);
 }
 
 Newton::~Newton()
 {
-  delete predf;
 }
 
 bool Newton::reset(Parameter::List& p)
@@ -61,8 +58,8 @@ bool Newton::reset(Parameter::List& p)
 }
 
 bool Newton::compute(Abstract::Vector& dir, 
-			Abstract::Group& soln, 
-			const Solver::Generic& solver)
+		     Abstract::Group& soln, 
+		     const Solver::Generic& solver)
 {
   // Compute F at current solution
   bool ok = soln.computeF();
@@ -97,19 +94,20 @@ bool Newton::compute(Abstract::Vector& dir,
   // It didn't work, but maybe it's ok anyway...
   if (!ok) {
 
-    if (predf == NULL) {
-      predf = soln.getF().clone(ShapeCopy);
-    }
+    double accuracy = soln.getNormNewtonSolveResidual();
 
-    soln.applyJacobian(soln.getNewton(), *predf);    
-    predf->update(-1.0, soln.getF(), 1.0);
-    double accuracy = predf->norm();
+    if (accuracy < 0) {
+      cerr << "NOX::Direction::Newton::compute " 
+	   << "- getNormNewtonSolveResidual returned a negative value" << endl;
+    }
+      
+
     if (accuracy < 1) {
       ok = true;
+      double tolerance = paramsptr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
       if (Utils::doPrint(Utils::Warning)) 
 	cout << "WARNING: NOX::Direction::Newton::compute - Newton solve failure.\n" 
-	     << "Desired accuracy is " 
-	     << Utils::sci(paramsptr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10)) << ".\n"
+	     << "Desired accuracy is " << Utils::sci(tolerance) << ".\n"
 	     << "Using solution with accuracy of " << Utils::sci(accuracy) << "." << endl;
     }
   }
@@ -128,7 +126,9 @@ bool Newton::compute(Abstract::Vector& dir,
 
 
 // protected
-bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter)
+bool Newton::resetForcingTerm(const Abstract::Group& soln, 
+			      const Abstract::Group& oldsoln, 
+			      int niter)
 {
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
@@ -173,27 +173,14 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
     }
     else {
 
-
-      // Create a new vector to be the predicted F
-      if (predf == NULL) {
-	predf = oldsoln.getF().clone(ShapeCopy);
-      }
-      if (stepdir == NULL) {
-	stepdir = oldsoln.getF().clone(ShapeCopy);
-      }
-      
-      // stepdir = X - oldX (i.e., the step times the direction)
-      stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
-      
-      // Compute predf = Jacobian * step * dir
-      oldsoln.applyJacobian(*stepdir, *predf);
-      
-      // Compute predf = FVector + predf (this is the predicted F)
-      predf->update(1.0, oldsoln.getF(), 1.0);
-      
       // Return norm of predicted F
-      const double normpredf = predf->norm();
+      const double normpredf = oldsoln.getNormNewtonSolveResidual();
       
+      if (normpredf < 0) {
+	cerr << "NOX::Direction::Newton::resetForcingTerm " 
+	     << "- getNormNewtonSolveResidual returned a negative value" << endl;
+      }
+
       // Get other norms
       const double normf = soln.getNormF();
       const double normoldf = oldsoln.getNormF();
@@ -254,7 +241,8 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
   else {
 
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Newton::resetForcingTerm - invalid forcing term method (" << method << ")" << endl;
+      cout << "NOX::Direction::Newton::resetForcingTerm "
+	   << "- invalid forcing term method (" << method << ")" << endl;
 
     return false;
   }

@@ -132,7 +132,7 @@ public:
 
   // derived
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-			  const Solver::Generic& solver);
+		       const Solver::Generic& solver);
 
 protected:
 
@@ -145,13 +145,6 @@ private:
 
   //! "Direction" sublist with parameters for the direction vector
   Parameter::List* paramsptr;
-
-  //! Vector containing the predicted RHS
-  Abstract::Vector* predf;
-
-  //! Vector containing the computed direction
-  Abstract::Vector* stepdir;
-
 
 };
 } // namespace Direction
