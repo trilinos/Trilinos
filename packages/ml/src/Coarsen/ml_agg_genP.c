@@ -316,12 +316,15 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
+      ML_memory_check("L%d: RAP end",level);
+MPI_Barrier(MPI_COMM_WORLD);
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE);
+MPI_Barrier(MPI_COMM_WORLD);
 
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
       			    &(ml->Pmat[next]), ML_TRUE);
 
-      ML_memory_check("L%d: RAP end",level);
+      ML_memory_check("L%d: repartition end",level);
 
 #ifdef GEOMETRIC_2D
    csr_data = ml->Amat[next].data;
@@ -585,9 +588,14 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        Pmatrix->matvec = ml->Pmat[clevel].matvec;
        ml->Pmat[clevel].matvec = NULL;
 
+       if (Pmatrix->getrow != NULL) {
+         if (Pmatrix->getrow->pre_comm != NULL)
+           ML_CommInfoOP_Destroy(&(Pmatrix->getrow->pre_comm));
+       } 
        ML_memory_free( (void**)&(Pmatrix->getrow) );
        Pmatrix->getrow = ml->Pmat[clevel].getrow;
        ml->Pmat[clevel].getrow = NULL;
+       if (Pmatrix->label != NULL) ML_free(Pmatrix->label);
        Pmatrix->label = ml->Pmat[clevel].label;
        ml->Pmat[clevel].label = NULL;
 
@@ -691,6 +699,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 #endif
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+
 	 Amat->lambda_max = max_eigen; 
 	 Amat->lambda_min = kdata->ML_eigen_min; 
          ML_Krylov_Destroy( &kdata );
