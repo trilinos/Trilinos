@@ -1894,7 +1894,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
    degree = 1;
 #ifdef newstuff
    if (ml->comm->ML_mypid == 0) {
-     printf("Enter -1 to do MLS or k (where k > 0)\n");
+     printf("Enter -k to do a kth degree MLS or k (where k > 0)\n");
      printf("to do kth degree Cheby over high frequencies\n");
      scanf("%d",&iii);
    }
@@ -1903,6 +1903,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
      fun = ML_Cheby;
      degree = iii;
    }
+   else degree = -iii;
 #endif
 
 	
