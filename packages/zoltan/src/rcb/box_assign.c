@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_box_assign_c = "$Id$";
+#endif
+
 /* Determine which processors a box intersects. */
 /* Currently assumes that partitioning has used RCB, */
 /* but should be modified to support IRB and to return */
@@ -19,16 +37,37 @@ double          zmin,		/* lower z extent of box */
 double          xmax,		/* upper x extent of box */
 double          ymax,		/* upper y extent of box */
 double          zmax,		/* upper z extent of box */
-int            *proc,           /* list of procs that box intersects */
-int            *procnum)        /* number of processors in proc list */
+int            *procs,          /* list of procs that box intersects */
+int            *numprocs)       /* number of processors in proc list */
 {
    RCB_STRUCT *rcb;             /* Pointer to data structures for RCB.  */
    struct rcb_tree *treept;     /* tree of RCB cuts */
    struct rcb_box  box;         /* box data structure */
 
+   if (lb->Method != RCB) {
+     fprintf(stderr, "ERROR: Box_Assign only valid when method is RCB\n");
+     *procs = -1;
+     *numprocs = 0;
+     return(LB_FATAL);
+   }
+   if (lb->Data_Structure == NULL) {
+     fprintf(stderr, "ERROR: No LB_Data_Structure available for Box_Assign\n"); 
+     *procs = -1;
+     *numprocs = 0;
+     return(LB_FATAL);
+   }
+
    rcb = (RCB_STRUCT *) (lb->Data_Structure);
    treept = rcb->Tree_Ptr;
-   *procnum = 0;
+   if (treept[0].dim < 0) {     /* RCB tree was never created. */
+     fprintf(stderr, "ERROR: No RCB tree not saved for Box_Assign.\n");
+     fprintf(stderr, "       Must set parameter RCB_TREE to 1.\n");
+     *procs = -1;
+     *numprocs = 0;
+     return(LB_FATAL);
+   }
+
+   *numprocs = 0;
    box.lo[0] = xmin;
    box.lo[1] = ymin;
    box.lo[2] = zmin;
@@ -36,7 +75,7 @@ int            *procnum)        /* number of processors in proc list */
    box.hi[1] = ymax;
    box.hi[2] = zmax;
 
-   Box_Assign(treept, &box, proc, procnum, 0, lb->Num_Proc - 1);
+   Box_Assign(treept, &box, procs, numprocs, 0, lb->Num_Proc - 1);
 
    return(LB_OK);
 }
@@ -44,8 +83,8 @@ int            *procnum)        /* number of processors in proc list */
 static void Box_Assign(
 struct rcb_tree *treept,        /* RCB tree */
 struct rcb_box  *boxpt,         /* extended box */
-int             *proc,          /* processors that box is in */
-int             *procnum,       /* current number of processors on list */
+int             *procs,         /* processors that box is in */
+int             *numprocs,       /* current number of processors on list */
 int              proclower,     /* lower bound of partition */
 int              procupper)     /* upper bound of partition */
 {
@@ -57,8 +96,8 @@ int              procupper)     /* upper bound of partition */
 /* add processor to list of processors */
 
   if (proclower == procupper) {
-    proc[*procnum] = proclower;
-    (*procnum)++;
+    procs[*numprocs] = proclower;
+    (*numprocs)++;
     return;
   }
 
@@ -74,7 +113,7 @@ int              procupper)     /* upper bound of partition */
   cut = treept[procmid].cut;
 
   if (boxpt->lo[dim] <= cut)
-    Box_Assign(treept, boxpt, proc, procnum, proclower, procmid-1);
+    Box_Assign(treept, boxpt, procs, numprocs, proclower, procmid-1);
   if (boxpt->hi[dim] >= cut)
-    Box_Assign(treept, boxpt, proc, procnum, procmid, procupper);
+    Box_Assign(treept, boxpt, procs, numprocs, procmid, procupper);
 }

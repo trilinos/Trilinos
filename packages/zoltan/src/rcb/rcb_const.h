@@ -66,8 +66,5 @@ typedef struct RCB_Struct {
 extern int LB_RCB_Build_Structure(LB *, int *, int *, int);
 extern void LB_RCB_Free_Structure(LB *);
 extern int LB_Set_RCB_Param(char *, char *);
-extern int LB_Box_Assign(LB *, double, double, double, double, double, double,
-			int *, int *);
-extern int LB_Point_Assign(LB *, double *, int *);
 
 #endif

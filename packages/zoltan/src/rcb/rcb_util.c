@@ -74,8 +74,8 @@ int i, ierr = 0;
     rcb->Box = NULL;
     rcb->Dots = NULL;
 
-    rcb->Tree_Ptr = (struct rcb_tree *) LB_Malloc(
-	lb->Num_Proc* sizeof(struct rcb_tree), __FILE__, __LINE__);
+    rcb->Tree_Ptr = (struct rcb_tree *)
+      LB_MALLOC(lb->Num_Proc* sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
@@ -102,8 +102,7 @@ int i, ierr = 0;
     return(ierr);
   }
   *max_obj = 1.5 * *num_obj + 1;
-  rcb->Dots = (struct rcb_dot *) LB_Malloc((*max_obj)*sizeof(struct rcb_dot),
-      __FILE__, __LINE__);
+  rcb->Dots = (struct rcb_dot *) LB_MALLOC((*max_obj)*sizeof(struct rcb_dot));
   if (rcb->Dots == NULL) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
             lb->Proc, yo);

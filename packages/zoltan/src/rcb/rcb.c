@@ -305,15 +305,15 @@ static int rcb(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
+    dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL)
       RCB_error(lb, dotmax*sizeof(int));
-    coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
+    coord = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
       LB_FREE(&dotmark);
       RCB_error(lb, dotmax*sizeof(int));
     }
-    wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
+    wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       LB_FREE(&dotmark);
       LB_FREE(&coord);
@@ -680,8 +680,14 @@ static int rcb(
       (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }
-  if (gen_tree) MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
-     treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
+  if (gen_tree) {
+    MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
+       treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
+    treept[0].dim = 0;
+  }
+  else {
+    treept[0].dim = -1;
+  }
 
   end_time = LB_Time();
   lb_time[0] += (end_time - start_time);
