@@ -98,9 +98,9 @@ extern AZ_MATRIX   *user_Kn_build(struct user_partition *);
 extern ML_Operator *user_T_build (struct user_partition *, 
                                   struct user_partition *, ML_Operator *, ML_Comm *);
 #ifdef ML_MPI
-  #define COMMUNICATOR   MPI_COMM_WORLD
+#define COMMUNICATOR   MPI_COMM_WORLD
 #else
-  #define COMMUNICATOR   AZ_NOT_MPI
+#define COMMUNICATOR   AZ_NOT_MPI
 #endif
 
 #else

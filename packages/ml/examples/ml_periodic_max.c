@@ -80,9 +80,9 @@ extern int Tmat_matvec(void *, int, double *, int, double *);
 
 
 #ifdef ML_MPI
-  #define COMMUNICATOR   MPI_COMM_WORLD
+#define COMMUNICATOR   MPI_COMM_WORLD
 #else
-  #define COMMUNICATOR   AZ_NOT_MPI
+#define COMMUNICATOR   AZ_NOT_MPI
 #endif
 
 

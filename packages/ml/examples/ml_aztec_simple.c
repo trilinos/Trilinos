@@ -75,9 +75,9 @@ extern void        user_partition(struct user_partition_data *Partition);
 extern AZ_MATRIX   *user_Kn_build(struct user_partition_data *);
 
 #ifdef ML_MPI
-  #define COMMUNICATOR   MPI_COMM_WORLD
+#define COMMUNICATOR   MPI_COMM_WORLD
 #else
-  #define COMMUNICATOR   AZ_NOT_MPI
+#define COMMUNICATOR   AZ_NOT_MPI
 #endif
 
 
