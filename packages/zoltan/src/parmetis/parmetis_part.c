@@ -18,7 +18,7 @@ static char *cvs_parmetis_part_id = "$Id$";
 
 /* Interface routine between Zoltan and ParMetis. */
 
-/* #define LB_DEBUG */ /* turn on debug print statements? */
+/* #define LB_DEBUG*/  /* turn on debug print statements? */
 
 #include <math.h>
 #include <strings.h>
@@ -38,7 +38,7 @@ int LB_ParMetis_Part(
 {
 #ifdef LB_NO_PARMETIS
   fprintf(stderr, "Error: ParMetis requested but not compiled into library.\n");
-  return DLB_FATAL;
+  return LB_FATAL;
 
 #else /* !LB_NO_PARMETIS */
   int i, j, ierr, size, flag, offset, hi, ndims;
@@ -165,14 +165,12 @@ int LB_ParMetis_Part(
   }
 
   if (!global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
-    /* Return not-enough-memory error code */
-#ifdef LB_DEBUG
-    printf("[%1d] Error: Not enough memory!\n", myproc);
-#endif
+    /* Not enough memory */
+    return LB_MEMERR;
   }
   LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
   if (ierr){
-    /* Return error code */
+    /* Return error code ? */
 #ifdef LB_DEBUG
     printf("[%1d] Error: LB_Get_Obj_List failed!\n", myproc);
 #endif
@@ -197,9 +195,6 @@ int LB_ParMetis_Part(
                local_ids[i], &ierr);
       if (ierr){
       }
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: i=%d, nedges = %d\n", myproc, i, nedges);
-#endif
       sum_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
     }
@@ -211,19 +206,17 @@ int LB_ParMetis_Part(
     vtxdist= (idxtype *)LB_SMALLOC((lb->Num_Proc+1)* sizeof(idxtype));
     xadj   = (idxtype *)LB_SMALLOC((num_obj+1)* sizeof(idxtype));
     adjncy = (idxtype *)LB_SMALLOC(sum_edges * sizeof(idxtype));
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Allocating ParMetis space\n", myproc);
-#endif
     if (ewgt_dim) 
       adjwgt = (idxtype *)LB_SMALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
     else
       adjwgt = NULL;
   
     if (!vtxdist || !xadj || !adjncy || (ewgt_dim && !adjwgt)){
-      /* Return not-enough-memory error code */
+      /* Not enough memory */
+      return LB_MEMERR;
     }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Allocated ParMetis space\n", myproc);
+    printf("[%1d] Debug: Successfully allocated ParMetis space\n", myproc);
 #endif
   
     /* Construct ParMETIS graph */
@@ -236,12 +229,10 @@ int LB_ParMetis_Part(
     vtxdist[0] = 0;
   
 #ifdef LB_DEBUG
-    if (myproc<2){
-      printf("[%1d] Debug: vtxdist = ", myproc);
-      for (i99=0; i99<=lb->Num_Proc; i99++)
-        printf("%3d", vtxdist[i99]);
-      printf("\n");
-    }
+    printf("[%1d] Debug: vtxdist = ", myproc);
+    for (i99=0; i99<=lb->Num_Proc; i99++)
+      printf("%3d", vtxdist[i99]);
+    printf("\n");
 #endif
   
     /* Construct local hash table */
@@ -250,7 +241,8 @@ int LB_ParMetis_Part(
     hashtab = (struct LB_hash_node **) LB_SMALLOC(num_obj *
       sizeof(struct LB_hash_node *) );
     if ((!hash_nodes) || (!hashtab)){
-      /* Return not-enough-memory error code */
+      /* Not enough memory */
+      return LB_MEMERR;
     }
     
     for (i=0; i< num_obj; i++){
@@ -273,7 +265,8 @@ int LB_ParMetis_Part(
     proc_list = (struct LB_vtx_list **) LB_SMALLOC(lb->Num_Proc *
       sizeof(struct LB_vtx_list *) );
     if ((!nbors_global) || (!nbors_proc) || (!proc_list)){
-      /* Return not-enough-memory error code */
+      /* Not enough memory */
+      return LB_MEMERR;
     }
   
     /* Initialize pointers */
@@ -298,7 +291,8 @@ int LB_ParMetis_Part(
       }
   
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: local no =%d, nedges =%d\n", myproc, i, nedges);
+    printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", myproc, i, 
+      global_ids[i], local_ids[i], nedges);
 #endif
   
       /* Separate inter-processor edges from the local ones */
@@ -311,11 +305,7 @@ int LB_ParMetis_Part(
   
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
-          *adjptr++ = LB_hash_lookup(hashtab, num_obj, nbors_global[j]);
-#ifdef LB_DEBUG
-          adjptr--; /* Go back a step */
-          printf("[%1d] Debug: found local edge to %d\n", myproc, *adjptr++);
-#endif
+          *adjptr++ = LB_hash_lookup(hashtab, nbors_global[j], num_obj);
         } else {
           /* Inter-processor edge */
           /* Add it to beginning of the list */
@@ -335,7 +325,7 @@ int LB_ParMetis_Part(
 #endif
           }
           new->my_gid = global_ids[i];
-          new->my_gno = LB_hash_lookup(hashtab, num_obj, global_ids[i]);
+          new->my_gno = LB_hash_lookup(hashtab, global_ids[i], num_obj);
           new->nbor_gid = nbors_global[j];
           new->adj = adjptr++;
           proc_list[nbors_proc[j]] = new;
@@ -571,7 +561,7 @@ int LB_ParMetis_Part(
   }
   else {
     printf("Error: Unknown ParMetis algorithm %s\n", alg);
-    /* return DLB_FATAL; */
+    return LB_FATAL;
   }
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", myproc, edgecut);
@@ -619,7 +609,7 @@ int LB_ParMetis_Part(
         j += sizeof(LB_GID);
         memcpy(&sendbuf[j], &local_ids[i], sizeof(LB_LID));
         j += sizeof(LB_LID);
-        memcpy(&sendbuf[j], &part[i], sizeof(int));
+        memcpy(&sendbuf[j], &lb->Proc, sizeof(int));
         j += sizeof(int);
       }
     }
@@ -646,6 +636,7 @@ int LB_ParMetis_Part(
     *imp_procs = (int *)LB_SMALLOC(nrecv * sizeof(int));
     if (!(*imp_gids) || !(*imp_lids) || !(*imp_procs)){
       /* Not enough memory */
+      return LB_MEMERR;
     }
 
 #ifdef LB_DEBUG
@@ -661,15 +652,22 @@ int LB_ParMetis_Part(
         memcpy(&((*imp_procs)[i]), &recvbuf[j], sizeof(int));
         j += sizeof(int);
     }
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: imp_gids= %x, imp_lids=%x, imp_procs=%x\n",
+      myproc, imp_gids, imp_lids, imp_procs);
+    printf("[%1d] Debug: import data (gid,proc) is\n", myproc);
+    for (i99=0; i99<nrecv; i99++){
+      printf(" (%2d,%2d) ", (*imp_gids)[i99], (*imp_procs)[i99]);
+    }
+    printf("\n");
+#endif
+
     /* Free buffers */
     LB_safe_free((void **) &sendbuf);
     LB_safe_free((void **) &recvbuf);
 
   } /* end if (flag>0) */
 
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: almost finished with Parmetis_Part, freeing space...\n", myproc);
-#endif
   /* Free space */
   LB_safe_free((void **) &part);
   LB_safe_free((void **) &local_ids);
@@ -683,7 +681,10 @@ int LB_ParMetis_Part(
   if (get_geom_data){
     LB_safe_free((void **) &xyz);
   }
-  return DLB_OK;
+#ifdef LB_DEBUG
+  printf("[%1d] Debug: exiting ParMetis_Part\n", myproc);
+#endif
+  return LB_OK;
 #endif /* LB_NO_PARMETIS */
 }
 
