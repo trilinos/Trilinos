@@ -74,7 +74,10 @@ static int refine_no (
 
 
 /*****************************************************************************/
-/* 2-way Parallel FM refinement                                              */
+/* 2-way Parallel FM refinement. No data movement between processors,
+ * just relabeling of vertices. In each FM pass we only move in one
+ * direction, from the heavier partition to the lighter one.
+ */
 
 
 #if 0
@@ -114,7 +117,7 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
         int n = hg->vedge[j];
-        int w = hg->ewgt ? hg->ewgt[n] : 1.0;
+        float w = hg->ewgt ? hg->ewgt[n] : 1.0;
     
         --pins[pno][n];
         --lpins[pno][n];
@@ -207,7 +210,7 @@ static void fm2_move_vertex(int v, PHGraph *hg, Partition part, float *gain, HEA
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
         int n = hg->vedge[j];
-        int w = hg->ewgt ? hg->ewgt[n] : 1.0;
+        float w = hg->ewgt ? hg->ewgt[n] : 1.0;
     
         --pins[pno][n];
         --lpins[pno][n];
