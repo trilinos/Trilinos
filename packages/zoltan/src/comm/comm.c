@@ -56,7 +56,7 @@ void comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* malloc buf for largest send */
 
-  buf = (char *) LB_smalloc(nsize*plan->nsendmax*sizeof(char));
+  buf = (char *) LB_SMALLOC(nsize*plan->nsendmax*sizeof(char));
 
 /* send each message, packing buf with needed datums */
 
@@ -119,10 +119,10 @@ struct Comm_Obj *comm_create(
 
 /* allocate plan and work vectors */
 
-  plan = (struct Comm_Obj *) LB_smalloc(sizeof(struct Comm_Obj));
+  plan = (struct Comm_Obj *) LB_SMALLOC(sizeof(struct Comm_Obj));
 
-  list = (int *) LB_smalloc(nprocs*sizeof(int));
-  counts = (int *) LB_smalloc(nprocs*sizeof(int));
+  list = (int *) LB_SMALLOC(nprocs*sizeof(int));
+  counts = (int *) LB_SMALLOC(nprocs*sizeof(int));
 
 /* nrecv = # of messages I receive, not including self
    nself = 0 if no data for self, 1 if there is */
@@ -142,10 +142,10 @@ struct Comm_Obj *comm_create(
 
 /* storage for recv info, not including self */
 
-  procs_from = (int *) LB_smalloc(nrecv*sizeof(int));
-  lengths_from = (int *) LB_smalloc(nrecv*sizeof(int));
-  request = (MPI_Request *) LB_smalloc(nrecv*sizeof(MPI_Request));
-  status = (MPI_Status *) LB_smalloc(nrecv*sizeof(MPI_Status));
+  procs_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  lengths_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  request = (MPI_Request *) LB_SMALLOC(nrecv*sizeof(MPI_Request));
+  status = (MPI_Status *) LB_SMALLOC(nrecv*sizeof(MPI_Status));
 
 /* nsend = # of messages I send, not including self */
 
@@ -159,9 +159,9 @@ struct Comm_Obj *comm_create(
 
 /* storage for send info, including self */
 
-  procs_to = (int *) LB_smalloc((nsend+nself)*sizeof(int));
-  lengths_to = (int *) LB_smalloc((nsend+nself)*sizeof(int));
-  indices_to = (int *) LB_smalloc(n*sizeof(int));
+  procs_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  lengths_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  indices_to = (int *) LB_SMALLOC(n*sizeof(int));
 
 /* set send info in procs_to and lengths_to, including self
    each proc begins with iproc > me, and continues until iproc = me
