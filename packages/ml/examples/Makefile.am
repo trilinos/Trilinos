@@ -21,10 +21,12 @@ else
 
 if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
-                  ml_example1dGS ml_example2d ml_example3d ml_simple_max
+                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
+                  ml_aztec_simple_METIS
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
-                  ml_example1dGS ml_example2d ml_example3d ml_simple_max
+                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
+                  ml_aztec_simple_METIS
 endif
 
 endif
@@ -37,6 +39,7 @@ mlguide_SOURCES = $(srcdir)/mlguide.c
 mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 if !ML_STANDALONE_MODE
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
+ml_aztec_simple_METIS_SOURCES = $(srcdir)/ml_aztec_simple_METIS.c
 ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
 ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
 ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
@@ -129,4 +132,8 @@ ml_example3d_LINK = ${mllink}
 ml_simple_max_CFLAGS = ${ml_common_include_locations}
 ml_simple_max_LDADD = ${ml_libs}
 ml_simple_max_LINK = ${mllink}
+
+ml_aztec_simple_METIS_CFLAGS = ${ml_common_include_locations}
+ml_aztec_simple_METIS_LDADD = ${ml_libs}
+ml_aztec_simple_METIS_LINK = ${mllink}
 endif
