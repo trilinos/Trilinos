@@ -3,12 +3,6 @@
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_LinearPartitioner.h"
-#include "Ifpack_Graph.h"
-
-#include "Epetra_Comm.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Teuchos_ParameterList.hpp"
 
 //==============================================================================
 int Ifpack_LinearPartitioner::ComputePartitions()
