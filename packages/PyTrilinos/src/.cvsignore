@@ -9,3 +9,4 @@ Makefile
 Makefile.in
 PyTrilinos_config.h
 PyTrilinos_config.h.in
+stamp-h1
