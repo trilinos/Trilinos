@@ -42,6 +42,7 @@
 // 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
@@ -215,18 +216,21 @@ int main(int argc, char *argv[]) {
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs);
 	My_LP.SetLeftPrec( &EpetraOpPrec );
 	My_LP.SetBlockSize( block );
+
 	Belos::StatusTestMaxIters<double> test1( maxits );
 	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
 	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	Belos::StatusTestResNorm<double> test4( tol );
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
+
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, length, verbose);
- 	MyBlockGmres.SetDebugLevel(0);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, length);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -250,7 +254,7 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockGmres.Solve(verbose);
+	MyBlockGmres.Solve();
 	My_Test.Print(cout);
 
 	// Release all objects  

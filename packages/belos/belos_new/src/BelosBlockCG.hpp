@@ -61,6 +61,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosStatusTest.hpp"
@@ -83,7 +84,7 @@ public:
   //! %Belos::BlockCG constructor.
   BlockCG(LinearProblemManager<TYPE>& lp,
 	  StatusTest<TYPE>& stest,
-	  bool=false);
+	  OutputManager<TYPE>& om);
   
   //! %BlockCG destructor.
   virtual ~BlockCG();
@@ -123,24 +124,15 @@ public:
     to the original problem.  This method can return unconverged if the maximum number
     of iterations is reached, or numerical breakdown is observed.
   */
-  void Solve(bool);
+  void Solve();
   //@}
     
-  //@{ \name Output methods.
-  
-  /*! \brief This method allows for the user to set the solver's level of visual
-    output during computations.
-  */
-  void SetDebugLevel(const int debuglevel) { _debuglevel = debuglevel; }
-  
-  //@}
-
 private:
 
   void SetCGBlkTols();
   bool QRFactorDef(MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>&,
-		   int[], int&, bool);
-  void CheckCGOrth(MultiVec<TYPE>&, MultiVec<TYPE>&, bool);
+		   int[], int&);
+  void CheckCGOrth(MultiVec<TYPE>&, MultiVec<TYPE>&);
   void PrintCGIterInfo(int[], const int);
 
   //! Linear problem manager [ must be passed in by the user ]
@@ -148,6 +140,9 @@ private:
 
   //! Status test [ must be passed in by the user ]
   StatusTest<TYPE>& _stest; 
+
+  //! Output manager [ must be passed in by the user ]
+  OutputManager<TYPE>& _om;
 
   //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
   MultiVec<TYPE> *_cur_block_sol;
@@ -161,14 +156,14 @@ private:
   //! Vector of the initial residual norms.
   TYPE * _init_resid_norms;
 
-  //! Debuglevel of this solver.
-  int _debuglevel;
-
   //! Current blocksize and iteration number.
   int _blocksize, _iter;
 
   //! Numerical breakdown tolerances.
   TYPE _prec, _dep_tol;
+
+  //! Output stream.
+  ostream& _os;
 };
 
 //
@@ -178,18 +173,19 @@ private:
 template <class TYPE>
 BlockCG<TYPE>::BlockCG(LinearProblemManager<TYPE>& lp,
 		       StatusTest<TYPE>& stest,
-		       bool vb) : 
+		       OutputManager<TYPE>& om) : 
   _lp(lp), 
   _stest(stest),
+  _om(om),
   _cur_block_rhs(0),
   _cur_block_sol(0),
   _blocksize(0), 
   _cur_resid_norms(0), 
   _init_resid_norms(0), 
-  _debuglevel(0),  
   _iter(0),
   _prec(5.0e-15), 
-  _dep_tol(0.75)
+  _dep_tol(0.75),
+  _os(om.GetOStream())
 { 
   //
   // Set the block orthogonality tolerances
@@ -229,7 +225,7 @@ ReturnType BlockCG<TYPE>::GetNativeResidNorms(TYPE *normvec, NormType norm_type)
 }
 
 template <class TYPE>
-void BlockCG<TYPE>::Solve (bool vb) 
+void BlockCG<TYPE>::Solve () 
 {
   //
   int i, j, k, info, num_ind;
@@ -252,11 +248,11 @@ void BlockCG<TYPE>::Solve (bool vb)
   //
   while (_cur_block_sol && _cur_block_rhs ) {
     //
-    if (vb && _debuglevel > 2) {
-      cout << endl;
-      cout << "===================================================" << endl;
-      cout << "Solving linear systems:  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
-      cout << endl;
+    if (_om.doOutput( 0 )) {
+      _os << endl;
+      _os << "===================================================" << endl;
+      _os << "Solving linear system(s):  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
+      _os << endl;
     }	
     //
     // Get the blocksize for this set of linear systems.
@@ -358,19 +354,19 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz, ind_blksz);
       num_ind = 0; exit_flg = false;
-      exit_flg = QRFactorDef(*P_prev, G, cols, num_ind, vb);
+      exit_flg = QRFactorDef(*P_prev, G, cols, num_ind);
       //
       if ( exit_flg ) {
-	if (vb) {
-	  cout << " Exiting Block CG iteration " << endl; 
-	  cout << " Reason: No independent initial direction vectors" << endl;
+	if (_om.doOutput( 0 )) {
+	  _os << " Exiting Block CG iteration " << endl; 
+	  _os << " Reason: No independent initial direction vectors" << endl;
 	}
       }		
       if (num_ind < ind_blksz) {
 	// The initial block of direction vectors are linearly dependent
-	if (vb && _debuglevel > 2) {
-	  cout << " Initial direction vectors are dependent" << endl;
-	  cout << " Adjusting blocks and indices for iteration" << endl;
+	if (_om.doOutput( 0 )) {
+	  _os << " Initial direction vectors are dependent" << endl;
+	  _os << " Adjusting blocks and indices for iteration" << endl;
 	}
 	//
 	ind_blksz = num_ind;
@@ -381,10 +377,10 @@ void BlockCG<TYPE>::Solve (bool vb)
     }  // end if (ind_blksz > 0)
     //		
     else {  // all initial residuals have converged
-      if (vb) {
-	cout << " Exiting Block CG iteration " 
+      if (_om.doOutput( 0 )) {
+	_os << " Exiting Block CG iteration " 
 	     << " -- Iteration# " << _iter << endl;
-	cout << "Reason: All initial residuals have converged" << endl;
+	_os << "Reason: All initial residuals have converged" << endl;
       }
       exit_flg = true;
     }
@@ -393,7 +389,7 @@ void BlockCG<TYPE>::Solve (bool vb)
     // ************************Main CG Loop***************************************
     // ***************************************************************************
     // 
-    if (vb && _debuglevel > 2) cout << "Entering main CG loop" << endl << endl;
+    if (_om.doOutput( 2 )) _os << "Entering main CG loop" << endl << endl;
     //
     int new_blk = 1;
     for (_iter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
@@ -458,12 +454,12 @@ void BlockCG<TYPE>::Solve (bool vb)
       // 2)
       lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
       if (info != 0) {
-	if(vb){
-	  cout << " Exiting Block CG iteration "
+	if(_om.doOutput( 0 )){
+	  _os << " Exiting Block CG iteration "
 	       << " -- Iteration# " << _iter << endl;
-	  cout << " Reason: Cannot compute coefficient matrix alpha" << endl;
-	  cout << " P_prev'* A*P_prev is singular" << endl;
-	  cout << " Solution will be updated upon exiting loop" << endl;
+	  _os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	  _os << " P_prev'* A*P_prev is singular" << endl;
+	  _os << " Solution will be updated upon exiting loop" << endl;
 	}
 	break;
       }
@@ -471,11 +467,11 @@ void BlockCG<TYPE>::Solve (bool vb)
       lapack.POTRS(UPLO, ind_blksz, _blocksize, T2.values(), ind_blksz, alpha.values(), ind_blksz, &info);
       // Note: solution returned in alpha
       if (info != 0) {
-	if(vb){
-	  cout << " Exiting Block CG iteration "
+	if(_om.doOutput( 0 )){
+	  _os << " Exiting Block CG iteration "
 	       << " -- Iteration# " << _iter << endl;
-	  cout << " Reason: Cannot compute coefficient matrix alpha" << endl;
-	  cout << " Solution will be updated upon exiting loop" << endl;
+	  _os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	  _os << " Solution will be updated upon exiting loop" << endl;
 	}
 	break;
       }
@@ -510,18 +506,18 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       // ****************Print iteration information*****************************
       //
-      if (vb && _debuglevel > 2) {
+      if (_om.doOutput( 2 )) {
 	PrintCGIterInfo( ind_idx, ind_blksz );
       }
       //
       // ****************Test for breakdown*************************************
       //
       if (ind_blksz <= 0){
-	if (vb) {
-	  cout << " Exiting Block CG iteration " 
+	if (_om.doOutput( 0 )) {
+	  _os << " Exiting Block CG iteration " 
 	       << " -- Iteration# " << _iter << endl;
-	  cout << " Reason: No more independent direction vectors" << endl;
-	  cout << " Solution will be updated upon exiting loop" << endl;
+	  _os << " Reason: No more independent direction vectors" << endl;
+	  _os << " Solution will be updated upon exiting loop" << endl;
 	}
 	break;
       }
@@ -566,11 +562,11 @@ void BlockCG<TYPE>::Solve (bool vb)
       lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, &info);
       // Note: Solution returned in beta
       if (info != 0) {
-	if (vb) {
-	  cout << " Exiting Block CG iteration " 
+	if (_om.doOutput( 0 )) {
+	  _os << " Exiting Block CG iteration " 
 	       << " -- Iteration# " << _iter << endl;
-	  cout << "Reason: Cannot compute coefficient matrix beta" << endl;
-	  cout << "Solution will be updated upon exiting loop" << endl;
+	  _os << "Reason: Cannot compute coefficient matrix beta" << endl;
+	  _os << "Solution will be updated upon exiting loop" << endl;
 	}
 	break;
       }
@@ -581,11 +577,9 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       // Check A-orthogonality of new and previous blocks of direction vectors
       //
-      if (_debuglevel > 2) {
-	if(vb){
-	  cout << "Orthogonality check" << endl;
-	}
-	CheckCGOrth(*P_prev, *P_new, vb);   
+      if (_om.doOutput( 2 )) {
+	_os << "Orthogonality check" << endl;
+	CheckCGOrth(*P_prev, *P_new);   
       }
       //
       // Compute orthonormal block of direction vectors,
@@ -593,17 +587,17 @@ void BlockCG<TYPE>::Solve (bool vb)
       // independent vectors if needed
       //
       Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz,ind_blksz);
-      exit_flg = QRFactorDef(*P_new, G, cols, num_ind, vb);
+      exit_flg = QRFactorDef(*P_new, G, cols, num_ind);
       //
       // Check if the orthogonalization has failed.
       //
       if ( exit_flg ) {
         ind_blksz = num_ind;
-	if (vb) {
-	  cout  << " Exiting Block CG iteration "  
+	if (_om.doOutput( 0 )) {
+	  _os  << " Exiting Block CG iteration "  
 		<< " -- Iteration# " << _iter << endl;
-	  cout << "Reason: No more linearly independent direction vectors" << endl;
-	  cout << " Solution will be updated upon exiting loop" << endl;
+	  _os << "Reason: No more linearly independent direction vectors" << endl;
+	  _os << " Solution will be updated upon exiting loop" << endl;
 	}
 	break;
       }
@@ -611,13 +605,13 @@ void BlockCG<TYPE>::Solve (bool vb)
       // Check if the new block of direction vectors are linearly dependent
       //
       if (num_ind < ind_blksz) {
-	if (vb && _debuglevel > 2) {
-	  cout << "The new block of direction vectors are dependent " << endl;
-	  cout << "# independent direction vectors: " << num_ind << endl;
-	  cout << " Independent indices: " << endl;
+	if (_om.doOutput( 2 )) {
+	  _os << "The new block of direction vectors are dependent " << endl;
+	  _os << "# independent direction vectors: " << num_ind << endl;
+	  _os << " Independent indices: " << endl;
 	  for (i=0; i<num_ind ; i++)
-	    cout << cols[i] << " ";
-	  cout << endl << endl;
+	    _os << cols[i] << " ";
+	  _os << endl << endl;
 	}
 	ind_blksz = num_ind;
         for (i=0; i<ind_blksz; i++)
@@ -626,11 +620,9 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       // Check A-orthogonality after orthonormalization
       //
-      if (_debuglevel > 2) {
-	if(vb){
-	  cout << "Orthogonality check after orthonormalization " << endl; 
-	}
-	CheckCGOrth(*P_prev, *P_new, vb);
+      if (_om.doOutput( 2 )) {
+	_os << "Orthogonality check after orthonormalization " << endl; 
+	CheckCGOrth(*P_prev, *P_new);
       }
       // 
       // *****Update index of new blocks*****************************************
@@ -652,6 +644,12 @@ void BlockCG<TYPE>::Solve (bool vb)
     //
     _cur_block_sol = _lp.GetCurrLHSVec();
     _cur_block_rhs = _lp.GetCurrRHSVec();
+    //
+    // Print out solver status.
+    //
+    if (_om.doOutput( 0 )) {
+      _stest.Print(_os);
+    }
     //
     // **************Free heap space**************
     //   
@@ -679,7 +677,7 @@ void BlockCG<TYPE>::Solve (bool vb)
 template<class TYPE>
 bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn, 
 				 Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
-				 int cols[], int &num, bool vb) 
+				 int cols[], int &num) 
 {
   int i, j, k;
   int num_orth, num_dep = 0;
@@ -770,8 +768,8 @@ bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn,
     }
     else {
       // 
-      if (vb && _debuglevel > 2){
-	cout << "Rank deficiency at column index: " << j << endl;
+      if (_om.doOutput( 2 )){
+	_os << "Rank deficiency at column index: " << j << endl;
       }
       //
       // Don't normalize qj, enter one on diagonal of R,
@@ -798,7 +796,7 @@ bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn,
 
 
 template<class TYPE>
-void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2, bool vb) 
+void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2) 
 {
   //
   // This routine computes P2^T * A * P1
@@ -807,9 +805,6 @@ void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2, bool vb)
   const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   int i, k;
-  int veclen1 = P1.GetVecLength();
-  int veclen2 = P2.GetVecLength();
-  assert(veclen1 == veclen2);
   //
   int numvecs1 = P1.GetNumberVecs();
   int numvecs2 = P2.GetNumberVecs();
@@ -829,15 +824,11 @@ void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2, bool vb)
     for (i=0; i<numvecs2; i++) {
       column_sum += ptr[i];
     }
-    if (vb) {
-      cout << " P2^T*A*P1 " << " for column "
-	   << k << " is  " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
-    }
+    _os << " P2^T*A*P1 for column "
+	 << k << " is  " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
     ptr += numvecs2;
   }
-  if (vb) {
-    cout << " " << endl;
-  }
+  _os << " " << endl;
   //
   if(AP) { delete AP; AP=0; }  
   //  
@@ -850,12 +841,12 @@ void BlockCG<TYPE>::PrintCGIterInfo( int ind[], const int indsz )
 {
   //
   int i;
-  cout << "# of independent direction vectors: " << indsz << endl;    
-  cout << " Independent indices: " << endl;
+  _os << "# of independent direction vectors: " << indsz << endl;    
+  _os << " Independent indices: " << endl;
   for (i=0; i<indsz; i++){
-    cout << ind[i] << " ";
+    _os << ind[i] << " ";
   }
-  cout << endl << endl;
+  _os << endl << endl;
   //
 } // end Print_CGiter_info
 //

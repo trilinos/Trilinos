@@ -59,6 +59,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
@@ -83,8 +84,8 @@ namespace Belos {
     //! %Belos::BlockGmres constructor.
     BlockGmres(LinearProblemManager<TYPE>& lp, 
 	       StatusTest<TYPE>& stest,
-	       const int length=25, 
-	       bool vb = false);
+               OutputManager<TYPE>& om,
+	       const int length=25);
     
     //! %Belos::BlockGmres destructor.
     virtual ~BlockGmres();
@@ -126,44 +127,38 @@ namespace Belos {
       solutions to the original problem.  This method can return unconverged if the
       maximum number of iterations is reached, or numerical breakdown is observed.
     */
-    void Solve(bool);
+    void Solve();
     //@}
     
-    //@{ \name Output methods.
-    
-    /*! \brief This method allows the user to set the solver's level of visual output
-      during computations.
-    */
-    void SetDebugLevel( const int debuglevel ) { _debuglevel = debuglevel; }
-    
-    //@}
-
   private:
 
     //! Method for setting the basis dependency tolerances for extending the Krylov basis.
     void SetGmresBlkTols();
 
     //! Method for performing the block Krylov decomposition.
-    bool BlockReduction(bool&, bool);
+    bool BlockReduction(bool&);
 
     //! Method for orthogonalization of one block.
     bool QRFactorAug(MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>&,
-		     bool, bool);
+		     bool);
 
     //! Method for block orthogonalization when a dependency has not been detected in the Krylov basis.
-    bool BlkOrth(MultiVec<TYPE>&, bool);
+    bool BlkOrth(MultiVec<TYPE>&);
 
     //! Method for block orthogonalization when a dependency has been detected in the Krylov basis.
-    bool BlkOrthSing(MultiVec<TYPE>&, bool);
+    bool BlkOrthSing(MultiVec<TYPE>&);
 
     //! Method for checking the orthogonality of the Krylov basis.
-    void CheckKrylovOrth(const int, bool);
+    void CheckKrylovOrth(const int);
 
     //! Reference to the linear problem being solver for with the solver. [passed in by user]
     LinearProblemManager<TYPE>& _lp; 
 
     //! Reference to the status test, which provides the stopping criteria for the solver. [passed in by user]
     StatusTest<TYPE>& _stest; 
+
+    //! Reference to the output manager for this linear solver. [passed in by user]
+    OutputManager<TYPE>& _om;
 
     //! Pointers to the Krylov basis constructed by the solver.
     MultiVec<TYPE> *_basisvecs;
@@ -177,10 +172,12 @@ namespace Belos {
     //! Dense vector for holding the right-hand side of the least squares problem.
     Teuchos::SerialDenseMatrix<int,TYPE> _z;
 
+    //! The output stream for sending solver information.
+    ostream& _os;
+
     const int _length;
     int _blocksize;
     int _restartiter, _totaliter, _iter;
-    int _debuglevel;
     TYPE _dep_tol, _blk_tol, _sing_tol;
   };
   //
@@ -191,13 +188,15 @@ namespace Belos {
   template <class TYPE>
   BlockGmres<TYPE>::BlockGmres(LinearProblemManager<TYPE>& lp, 
 			       StatusTest<TYPE>& stest,
-			       const int length, 
-			       bool vb) : 
+			       OutputManager<TYPE>& om,
+			       const int length) : 
     _lp(lp),
     _stest(stest),
+    _om(om),
     _basisvecs(0),     
     _cur_block_rhs(0),
     _cur_block_sol(0),
+    _os(om.GetOStream()),
     _length(length), 
     _blocksize(0), 
     _restartiter(0), 
@@ -290,7 +289,7 @@ namespace Belos {
   }
     
   template <class TYPE>
-  void BlockGmres<TYPE>::Solve (bool vb) 
+  void BlockGmres<TYPE>::Solve () 
   {
     int i,j, maxidx;
     TYPE *beta=0;
@@ -313,11 +312,11 @@ namespace Belos {
     //
     while (_cur_block_sol && _cur_block_sol) {
       //
-      if (vb && _debuglevel > 2) {
-        cout << endl;
-        cout << "===================================================" << endl;
-        cout << "Solving linear systems:  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
-        cout << endl;
+      if (_om.doOutput( 0 )) {
+        _os << endl;
+        _os << "===================================================" << endl;
+        _os << "Solving linear system(s):  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
+        _os << endl;
       }
       //
       // Reset the iteration counter for this block of right-hand sides.
@@ -354,14 +353,14 @@ namespace Belos {
 	//
 	_z.putScalar();
 	Teuchos::SerialDenseMatrix<int,TYPE> G10(Teuchos::View, _z, _blocksize, _blocksize);
-	exit_flg = QRFactorAug( *U_vec, G10, true, vb );
+	exit_flg = QRFactorAug( *U_vec, G10, true );
 	//
 	if (exit_flg){
-	  if (vb){
-	    cout << "Exiting Block GMRES" << endl;
-	    cout << "  Restart iteration# " << _restartiter
+	  if (_om.doOutput( 0 )){
+	    _os << "Exiting Block GMRES" << endl;
+	    _os << "  Restart iteration# " << _restartiter
 		 << "  Iteration# " << _iter << endl;
-	    cout << "  Reason: Failed to compute initial block of orthonormal basis vectors"
+	    _os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
 	  if (U_vec) {delete U_vec; U_vec = 0;}
@@ -374,7 +373,7 @@ namespace Belos {
           // If exit_flg is true, then we need to leave this loop and compute the latest solution.
 	  //
 	  //dep_flg = true;
-	  exit_flg = BlockReduction(dep_flg, vb);
+	  exit_flg = BlockReduction(dep_flg);
 	  if (exit_flg){ 
 	    break;
 	  }
@@ -449,14 +448,12 @@ namespace Belos {
 	//
 	// Print out solver status
 	// 
-	if (_debuglevel>0 && vb) {
-	  _stest.Print(cout);
-	  cout << "  Restart iteration# " << _restartiter 
-	       << "  Iteration# " << _iter << endl;
+	if (_om.doOutput( 0 )) {
+	  _stest.Print(_os);
 	  if (exit_flg) {
-	    cout << " Exiting Block GMRES --- " << endl;
-	    cout << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
-	    cout << "  ***Solution from previous step will be returned***"<< endl<< endl;
+	    _os << " Exiting Block GMRES --- " << endl;
+	    _os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
+	    _os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
 	} 
 	if (U_vec) {delete U_vec; U_vec = 0;}
@@ -488,7 +485,7 @@ namespace Belos {
   
     
   template<class TYPE>
-  bool BlockGmres<TYPE>::BlockReduction ( bool& dep_flg, bool vb ) 
+  bool BlockGmres<TYPE>::BlockReduction ( bool& dep_flg ) 
   {
     //
     int i;	
@@ -507,7 +504,7 @@ namespace Belos {
     //
     bool dep = false;
     if (!dep_flg){
-      dep = BlkOrth(*AU_vec, vb);
+      dep = BlkOrth(*AU_vec);
       if (dep) {
 	dep_flg = true;
       }
@@ -519,7 +516,7 @@ namespace Belos {
     //
     bool flg = false;
     if (dep_flg){
-      flg = BlkOrthSing(*AU_vec, vb);
+      flg = BlkOrthSing(*AU_vec);
     }
     //
     delete U_vec; delete [] index;
@@ -531,7 +528,7 @@ namespace Belos {
   
   
   template<class TYPE>
-  bool BlockGmres<TYPE>::BlkOrth( MultiVec<TYPE>& VecIn, bool vb) 
+  bool BlockGmres<TYPE>::BlkOrth( MultiVec<TYPE>& VecIn ) 
   {
     //
     // Orthogonalization is first done between the new block of 
@@ -617,21 +614,18 @@ namespace Belos {
     for (i=0; i<_blocksize; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	flg = true;
-	if (_debuglevel > 3 && vb){
-	  cout << "Col " << num_prev+i << " is dependent on previous "
+	if (_om.doOutput( 3 )){
+	  _os << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
-	  cout << endl;
+	  _os << endl;
 	}
       }
     } // end for (i=0;...)
       //
-    if (_debuglevel>2) {
-      if (vb){
-	cout << endl;
-	cout << "Checking Orthogonality after BlkOrth()"
+    if (_om.doOutput( 2 )) {
+      _os << "Checking Orthogonality after BlkOrth()"
 	     << " Iteration: " << _iter << endl;
-      }
-      CheckKrylovOrth(_iter, vb);
+      CheckKrylovOrth(_iter);
     }
     //
     // If dependencies have not already been detected, compute
@@ -646,7 +640,7 @@ namespace Belos {
       row_offset = (_iter+1)*_blocksize; col_offset = _iter*_blocksize;
       Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _blocksize, _blocksize,
 							  row_offset, col_offset);
-      flg = QRFactorAug( *F_vec, sub_block_hess, false, vb );
+      flg = QRFactorAug( *F_vec, sub_block_hess, false );
     }
     //
     delete F_vec;
@@ -661,7 +655,7 @@ namespace Belos {
   
   
   template<class TYPE>
-  bool BlockGmres<TYPE>::BlkOrthSing( MultiVec<TYPE>& VecIn, bool vb) 
+  bool BlockGmres<TYPE>::BlkOrthSing( MultiVec<TYPE>& VecIn ) 
   {
     //
     // This is a variant of A. Ruhe's block Arnoldi
@@ -786,9 +780,9 @@ namespace Belos {
       }
       else { 
 	//
-	if (_debuglevel > 3 && vb) {
-	  cout << "Column " << num_prev << " of _basisvecs is dependent" << endl;
-	  cout << endl;
+	if (_om.doOutput( 3 )) {
+	  _os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
+	  _os << endl;
 	}
 	//
 	// Create a random vector and orthogonalize it against all 
@@ -844,13 +838,11 @@ namespace Belos {
 	//
     } // end for (iter=0;...)
       //
-    if (_debuglevel > 2){
-      if (vb){
-	cout << endl;
-	cout << "Checking Orthogonality after BlkOrthSing()"
+    if (_om.doOutput( 2 )){
+      	_os << endl;
+	_os << "Checking Orthogonality after BlkOrthSing()"
 	     << " Iteration: " << _iter << endl;
-      }
-      CheckKrylovOrth(_iter, vb);
+      CheckKrylovOrth(_iter);
     }
     //
     //	free heap space
@@ -870,8 +862,7 @@ namespace Belos {
   template<class TYPE>
   bool BlockGmres<TYPE>::QRFactorAug(MultiVec<TYPE>& VecIn, 
 				     Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
-				     bool blkone, 
-				     bool vb) 
+				     bool blkone) 
   {
     int i,j,k;
     int nb = VecIn.GetNumberVecs(); assert (nb == _blocksize);
@@ -973,8 +964,8 @@ namespace Belos {
 	  // 
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_debuglevel > 3 && vb) {
-	      cout << "Column " << j << " of current block is dependent" << endl;
+	    if (_om.doOutput( 3 )) {
+	      _os << "Column " << j << " of current block is dependent" << endl;
 	    }
 	    flg = true;  
 	    delete qj; delete Qj; delete tptr;
@@ -1050,7 +1041,7 @@ namespace Belos {
   
   
   template<class TYPE>
-  void BlockGmres<TYPE>::CheckKrylovOrth( const int j, bool vb ) 
+  void BlockGmres<TYPE>::CheckKrylovOrth( const int j ) 
   {
     int i,k,m=(j+1)*_blocksize;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
@@ -1080,11 +1071,9 @@ namespace Belos {
     Vj->MvTransMv(one, *Vj, VTV);
     TYPE column_sum;
     //
-    if (vb){
-      cout << " " <<  endl;
-      cout << "********Block Arnoldi iteration******** " << j <<  endl;
-      cout << " " <<  endl;
-    }
+    _os << " " <<  endl;
+    _os << "********Block Arnoldi iteration******** " << j <<  endl;
+    _os << " " <<  endl;
     //
     for (k=0; k<m; k++) {
       column_sum = zero;
@@ -1094,11 +1083,9 @@ namespace Belos {
 	}
 	column_sum += VTV(i,k);
       }
-      if (vb){
-	cout <<  " V^T*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
-      }
+      _os <<  " V^T*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
     }
-    if (vb) {cout << " " <<  endl;}
+    _os << " " <<  endl;
     
     Teuchos::SerialDenseMatrix<int,TYPE> E; E.shape(m,_blocksize);
     
@@ -1110,11 +1097,9 @@ namespace Belos {
 	column_sum += E(i,k);
       }
       if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-      if (vb){
-	cout << " Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
-      }
+      _os << " Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
     }
-    if (vb) {cout << " " <<  endl;}
+    _os << " " <<  endl;
     //
     delete F_vec;
     delete Vj;

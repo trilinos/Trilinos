@@ -43,15 +43,16 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_Time.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestMaxRestarts.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -180,9 +181,12 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	Belos::StatusTestResNorm<double> test4( tol );
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, verbose);
 
-	MyBlockGmres.SetDebugLevel(0);
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
+
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
+
 	//
 	// **********Print out information about problem*******************
 	//
@@ -208,7 +212,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	timer.start();
-	MyBlockGmres.Solve(verbose);
+	MyBlockGmres.Solve();
 	timer.stop();
 	My_Test.Print(cout);
 

@@ -35,6 +35,7 @@
 */
 
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "BelosNormType.hpp"
 #include "BelosReturnType.hpp"
 #include "BelosConfigDefs.hpp"
 
@@ -50,12 +51,6 @@
 */
 
 namespace Belos {
-
-  //! \enum Enumerated list for describing the multivector norm type.
-  enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
-		    TwoNorm,       /*!< Compute the two-norm *\f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each vector. */
-		    InfNorm       /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each vector. */
-  };
 
 template <class TYPE>
 class MultiVec {

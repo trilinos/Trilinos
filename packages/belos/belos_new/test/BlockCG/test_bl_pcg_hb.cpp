@@ -42,14 +42,15 @@
 // 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -76,8 +77,7 @@ int main(int argc, char *argv[]) {
 #endif
 	
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	
+	int NumProc = Comm.NumProc();	
 	bool verbose = (MyPID==0);
 	//
     	if(argc < 2 && verbose) {
@@ -218,6 +218,20 @@ int main(int argc, char *argv[]) {
 	My_LP.SetLeftPrec( &EpetraOpPrec );
 	My_LP.SetBlockSize( block );
 	//
+	//
+	//*******************************************************************
+	// *************Start the block CG iteration*************************
+	//*******************************************************************
+	//
+        Belos::StatusTestMaxIters<double> test1( maxits );
+        Belos::StatusTestResNorm<double> test2( tol );
+        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
+
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
+	//
 	// **********Print out information about problem*******************
 	//
 	if (verbose) {
@@ -229,18 +243,6 @@ int main(int argc, char *argv[]) {
 	   cout << "Relative residual tolerance: " << tol << endl;
        	   cout << endl;
 	}
-	//
-	//
-	//*******************************************************************
-	// *************Start the block CG iteration*************************
-	//*******************************************************************
-	//
-        Belos::StatusTestMaxIters<double> test1( maxits );
-        Belos::StatusTestResNorm<double> test2( tol );
-        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, verbose);
-	MyBlockCG.SetDebugLevel(0);
 
 	if (verbose) {
 	   cout << endl << endl;
@@ -250,7 +252,7 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockCG.Solve(verbose);
+	MyBlockCG.Solve();
 	My_Test.Print(cout);
 	
 // Release all objects  

@@ -18,14 +18,15 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_Time.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -55,8 +56,7 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
-	
-	bool verbose = (MyPID==0);
+	bool verbose = (MyPID == 0);
 	//
     	if(argc < 2 && verbose) {
      	cerr << "Usage: " << argv[0] 
@@ -142,9 +142,7 @@ int main(int argc, char *argv[]) {
 	//  Construct an unpreconditioned linear problem instance.
 	//
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs );
-	cout << "The blocksize of this linear problem manager is : "<< My_LP.GetBlockSize()<< endl;
-	cout << "The number of linear systems to solve is : "<<My_LP.GetNumToSolve()<< endl;
- 	cout << "The RHS index of the current linear system is : "<<My_LP.GetRHSIndex() << endl;
+	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
 	// *************Start the block CG iteration*************************
@@ -154,8 +152,10 @@ int main(int argc, char *argv[]) {
  	Belos::StatusTestResNorm<double> test2( tol );
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	//
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, verbose);
-	MyBlockCG.SetDebugLevel(0);
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
+	//
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 			<< endl << endl;
 	}
 	timer.start();
-	MyBlockCG.Solve(verbose);
+	MyBlockCG.Solve();
 	timer.stop();
 	My_Test.Print(cout);
 

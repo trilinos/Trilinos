@@ -319,6 +319,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   template <class TYPE>
   StatusType StatusTestResNorm<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
   {
+  int i;
   ReturnType ret;
   LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
@@ -346,6 +347,10 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       testvector_ = new TYPE[ numrhs_ ];
       init_res->MvNorm( scalevector_, scalenormtype_ );
     }
+    // Initialize the testvector.
+    for (i=0; i<numrhs_; i++) { testvector_[i] = 1.0; }
+
+    // Return an error if the scaling is zero.
     if (scalevalue_==0.0) {
       status_ = Failed;
       return(status_);
@@ -403,33 +408,30 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   // Compute the new linear system residuals for testing.
   // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
   //
+  status_ = Converged; // This will be set to unconverged or NaN.
   if ( scalevector_ ) {
-    for (int i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
       testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
-      if (testvector_[ i ] > tolerance_) {
+      if (testvector_[ i ] > tolerance_)
 	status_ = Unconverged;
-	return(status_);
-      }
-      else if (testvector_[ i ] < tolerance_)
-	status_ = Converged;
-      else {
+      else if (testvector_[ i ] < tolerance_) { 
+	// do nothing.
+      } else {
 	status_ = NaN;            
-	return(status_);
+	return(status_); // Return immediately if we detect a NaN.
       }
     } 
   }
   else {
-    for (int i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
       testvector_[ i ] = resvector_[ i ] / scalevalue_;
-      if (testvector_[ i ] > tolerance_) {
+      if (testvector_[ i ] > tolerance_)
 	status_ = Unconverged;
-	return(status_);	
-      }
-      else if (testvector_[ i ] < tolerance_)
-	status_ = Converged;
-      else {
+      else if (testvector_[ i ] < tolerance_) { 
+	// do nothing.
+      } else {
 	status_ = NaN;            
-	return(status_);
+	return(status_); // Return immediately if we detect a NaN.
       }
     } 
   }	
