@@ -38,15 +38,15 @@ ml_libs =       $(ML_EXPORT_LIBS)     \
                 $(BLAS_LIBS)          \
                 $(FLIBS)
 
-noinst_PROGRAMS = Communicator
+noinst_PROGRAMS = SelfSmoother
 
-Communicator_SOURCES = $(srcdir)/cxx_main.cpp
+SelfSmoother_SOURCES = $(srcdir)/cxx_main.cpp
 
-Communicator_DEPENDENCIES = $(top_builddir)/src/libml.a
+SelfSmoother_DEPENDENCIES = $(top_builddir)/src/libml.a
 
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-Communicator_CPPFLAGS = ${ml_common_include_locations}
-Communicator_CXXFLAGS = ${ml_common_include_locations}
-Communicator_LDADD = ${ml_libs}
-Communicator_LINK = ${mllink}
+SelfSmoother_CPPFLAGS = ${ml_common_include_locations}
+SelfSmoother_CXXFLAGS = ${ml_common_include_locations}
+SelfSmoother_LDADD = ${ml_libs}
+SelfSmoother_LINK = ${mllink}
