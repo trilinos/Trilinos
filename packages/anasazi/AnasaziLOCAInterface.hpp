@@ -280,19 +280,13 @@ void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& 
 	temp_vec->MvInit(0.0);
 	TYPE one = 1.0;
 //
-//	*this <- beta * (*this)
-//
-	for (i=0; i<mvPtrs.size(); i++) {
-		mvPtrs[i]->scale(beta);
-	}
-//
-//	*this <- alpha * A * B + *this
+//	*this <- alpha * A * B + beta *(*this)
 //
 	for (j=0; j<n; j++) {
 		for (i=0; i<m; i++) {
 			temp_vec->mvPtrs[j]->update(Bvals[j*ldb+i], *(A_vec->mvPtrs[i]),one);
 		}				
-		mvPtrs[j]->update(one,*(temp_vec->mvPtrs[j]),alpha);
+		mvPtrs[j]->update(alpha,*(temp_vec->mvPtrs[j]),beta);
 	}
 	delete temp_vec;
 }
