@@ -33,10 +33,11 @@
 #ifndef NOX_COMMON_H
 #define NOX_COMMON_H
 
-using namespace std;
-
 #include <iostream>
 #include <iomanip>
 #include <string>
+
+using namespace std;
+
 
 #endif
