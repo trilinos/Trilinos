@@ -128,6 +128,12 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define if want to build tpetra-examples */
+#undef HAVE_TPETRA_EXAMPLES
+
+/* Define if want to build tpetra-tests */
+#undef HAVE_TPETRA_TESTS
+
 /* Define if want to build triutils */
 #undef HAVE_TRIUTILS
 

@@ -211,6 +211,7 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, tests, [Build Tpetra tests], TPETRA_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 # ------------------------------------------------------------------------
@@ -218,6 +219,7 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, examples, [Build Tpetra examples], TPETRA_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # Check to see if we should build the EpetraTpetraProfile example. This should only be done if
