@@ -33,7 +33,6 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 #include "LOCA_LAPACK_DataOutput.H"
-#include "LOCA_LAPACK_AlDataOutput.H"
 #include "ChanProblemInterface.H"
 
 int main()

@@ -122,15 +122,13 @@ LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
 	$(srcdir)/LOCA_LAPACK_DataOutput.H \
-	$(srcdir)/LOCA_LAPACK_TPDataOutput.H \
-	$(srcdir)/LOCA_LAPACK_AlDataOutput.H
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.H 
 
 
 LOCA_LAPACK = \
 	$(srcdir)/LOCA_LAPACK_Group.C \
 	$(srcdir)/LOCA_LAPACK_DataOutput.C \
-	$(srcdir)/LOCA_LAPACK_TPDataOutput.C \
-	$(srcdir)/LOCA_LAPACK_AlDataOutput.C 
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.C 
 
 
 
@@ -189,8 +187,7 @@ LIBRARIES = $(lib_LIBRARIES)
 liblocalapack_a_DEPENDENCIES =
 am_liblocalapack_a_OBJECTS = liblocalapack_a-LOCA_LAPACK_Group.$(OBJEXT) \
 	liblocalapack_a-LOCA_LAPACK_DataOutput.$(OBJEXT) \
-	liblocalapack_a-LOCA_LAPACK_TPDataOutput.$(OBJEXT) \
-	liblocalapack_a-LOCA_LAPACK_AlDataOutput.$(OBJEXT)
+	liblocalapack_a-LOCA_LAPACK_TPDataOutput.$(OBJEXT)
 liblocalapack_a_OBJECTS = $(am_liblocalapack_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -200,7 +197,6 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = \
-@AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po \
 @AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po \
 @AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po
@@ -266,8 +262,6 @@ liblocalapack_a-LOCA_LAPACK_DataOutput.$(OBJEXT): \
 	$(srcdir)/LOCA_LAPACK_DataOutput.C
 liblocalapack_a-LOCA_LAPACK_TPDataOutput.$(OBJEXT): \
 	$(srcdir)/LOCA_LAPACK_TPDataOutput.C
-liblocalapack_a-LOCA_LAPACK_AlDataOutput.$(OBJEXT): \
-	$(srcdir)/LOCA_LAPACK_AlDataOutput.C
 liblocalapack.a: $(liblocalapack_a_OBJECTS) $(liblocalapack_a_DEPENDENCIES) 
 	-rm -f liblocalapack.a
 	$(liblocalapack_a_AR) liblocalapack.a $(liblocalapack_a_OBJECTS) $(liblocalapack_a_LIBADD)
@@ -279,7 +273,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po@am__quote@
@@ -334,18 +327,6 @@ liblocalapack_a-LOCA_LAPACK_TPDataOutput.obj: $(srcdir)/LOCA_LAPACK_TPDataOutput
 @AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_TPDataOutput.obj `cygpath -w $(srcdir)/LOCA_LAPACK_TPDataOutput.C`
-
-liblocalapack_a-LOCA_LAPACK_AlDataOutput.o: $(srcdir)/LOCA_LAPACK_AlDataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_AlDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_AlDataOutput.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_AlDataOutput.o `test -f $(srcdir)/LOCA_LAPACK_AlDataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_AlDataOutput.C
-
-liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj: $(srcdir)/LOCA_LAPACK_AlDataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_AlDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj `cygpath -w $(srcdir)/LOCA_LAPACK_AlDataOutput.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)
