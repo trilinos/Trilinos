@@ -8,11 +8,6 @@
 
 namespace Teuchos {
 
-namespace CommandLineProcessorUtilityPack {
-
-}
-
-
 ///
 /** Class that helps parse command line input arguments from <tt>(argc,argv[])</tt>
  * and set options.
