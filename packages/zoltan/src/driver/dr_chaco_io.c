@@ -285,8 +285,8 @@ static int fill_elements(
       mesh->elements[i].connect = (int *) malloc(sizeof(int));
       mesh->elements[i].connect[0] = mesh->elements[i].globalID;
       mesh->elements[i].coord = (float **) malloc(sizeof(float *));
-      mesh->elements[i].coord[0] = (float *) malloc(mesh->num_dims 
-                                                  * sizeof(float));  
+      mesh->elements[i].coord[0] = (float *) calloc(mesh->num_dims,
+                                                    sizeof(float));  
       mesh->elements[i].coord[0][0] = x[i];
       if (mesh->num_dims > 1) {
         mesh->elements[i].coord[0][1] = y[i];

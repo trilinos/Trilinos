@@ -53,6 +53,7 @@ int Test_Multi_Callbacks = 0;  /* Flag indicating whether to use
 int Test_Null_Import_Lists = 0;/* Flag indicating whether to test passing
                                   NULL import lists to Help_Migrate */
 int Gnuplot_Output = 0;
+int Print_Mesh_Info_File = 0;
 int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
 int Debug_Chaco_Input = 0;

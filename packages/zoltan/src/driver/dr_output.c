@@ -209,6 +209,66 @@ int output_results(char *cmd_file,
   fclose(fp);
   free(global_ids);
 
+  if (Print_Mesh_Info_File) {
+
+    ELEM_INFO_PTR current_element;
+    int total_nodes = 0;
+    float *x, *y, *z;
+    int k;
+    int prev_id;
+
+    for (i = 0; i < mesh->num_elems; i++) {
+      total_nodes += mesh->eb_nnodes[mesh->elements[i].elem_blk];
+    }
+    global_ids = (int *) malloc(2 * total_nodes * sizeof(int));
+    index = global_ids + total_nodes;
+    x = (float *) calloc(3 * total_nodes,  sizeof(float));
+    y = x + total_nodes;
+    z = y + total_nodes;
+
+    for (k = 0, i = 0; i < mesh->num_elems; i++) {
+      current_element = &(mesh->elements[i]);
+      for (j = 0; j < mesh->eb_nnodes[current_element->elem_blk]; j++) {
+        global_ids[k] = current_element->connect[j];
+        x[k] = current_element->coord[j][0];
+        if (mesh->num_dims > 1) 
+          y[k] = current_element->coord[j][1];
+        if (mesh->num_dims > 2)
+          z[k] = current_element->coord[j][2];
+        index[k] = k;
+        k++;
+      }
+    }
+
+    sort_index(total_nodes, global_ids, index);
+
+    strcat(par_out_fname, ".mesh");
+    fp = fopen(par_out_fname, "w");
+    fprintf(fp, "Vertex IDs and coordinates\n");
+    prev_id = -1;
+    for (k = 0; k < total_nodes; k++) {
+      j = index[k];
+      if (global_ids[j] == prev_id)
+        continue;
+      prev_id = global_ids[j];
+      fprintf(fp, "  %d  (%e, %e, %e)\n", global_ids[j], x[j], y[j], z[j]);
+    }
+    fprintf(fp, "\n");
+    fprintf(fp, "Element connectivity:\n");
+    for (i = 0; i < mesh->num_elems; i++) {
+      current_element = &(mesh->elements[i]);
+      fprintf(fp, "  %d  (", current_element->globalID);
+      for (j = 0; j < mesh->eb_nnodes[current_element->elem_blk]; j++) {
+        fprintf(fp, "%d  ", current_element->connect[j]);
+      }
+      fprintf(fp, ")\n");
+    }
+    
+    fclose(fp);
+    free(global_ids);
+    free(x);
+  }
+
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }

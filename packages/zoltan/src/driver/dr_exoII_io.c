@@ -371,7 +371,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
           elements[iplace].connect[inode] = lnode;
           cnode++;
 
-          elements[iplace].coord[inode] = (float *) malloc(mesh->num_dims *
+          elements[iplace].coord[inode] = (float *) calloc(mesh->num_dims,
                                                            sizeof(float));
           if (!(elements[iplace].coord[inode])) {
             Gen_Error(0, "fatal: insufficient memory");
