@@ -21,10 +21,9 @@ extern "C" {
 #include "phg.h"
 
 
-#define _DEBUG    
+
     /*
-
-
+#define _DEBUG        
 #define _DEBUG2
 #define _DEBUG3
     */
@@ -284,7 +283,7 @@ static int refine_fm2 (ZZ *zz,
 {
     int    i, j,  *pins[2], *lpins[2], *moves=0, *mark=0, *adj=0, passcnt=0;
     int    best_cutsizeat, cont, successivefails=0;
-    double total_weight, ltotal_weight, weights[2], lweights[2], lmax_weight[2];
+    double total_weight, weights[2], lweights[2], max_weight[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
     double cutsize, best_cutsize, ratio = hg->ratio, best_imbal, best_limbal, imbal, limbal;
     float  *gain=0, *lgain=0;
@@ -332,11 +331,22 @@ static int refine_fm2 (ZZ *zz,
     MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
     total_weight = weights[0] + weights[1];
     targetw0 = total_weight * ratio;
-    ltotal_weight = lweights[0] + lweights[1];
-    ltargetw0 = ltotal_weight * ratio;
-    lmax_weight[0] = ltotal_weight * bal_tol *      ratio;
-    lmax_weight[1] = ltotal_weight * bal_tol * (1 - ratio);
 
+    max_weight[0] = total_weight * bal_tol *      ratio;
+    max_weight[1] = total_weight * bal_tol * (1 - ratio);
+
+    lmax_weight[0] = lweights[0] + (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
+    lmax_weight[1] = lweights[1] + (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
+    ltargetw0 = targetw0 * ( lweights[0] / weights[0] );
+
+
+#ifdef _DEBUG
+    imbal = fabs(weights[0]-targetw0)/targetw0;
+    limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
+    uprintf(hgc, "FM2: W[%.1lf, %.1lf] MW:[%.1lf, %.1lf] I=%.3lf  LW[%.1lf, %.1lf] LMW[%.1lf, %.1lf] LI=%.3lf\n", weights[0], weights[1], max_weight[0], max_weight[1], imbal, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1], limbal);
+#endif
+
+    
     if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(moves    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
@@ -570,6 +580,10 @@ static int refine_fm2 (ZZ *zz,
 
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+        lmax_weight[0] = lweights[0] + (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
+        lmax_weight[1] = lweights[1] + (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
+        ltargetw0 = targetw0 * ( lweights[0] / weights[0] );
+        
         cont = 0;
         MPI_Allreduce(&best_cutsizeat, &cont, 1, MPI_INT, MPI_LOR, hgc->row_comm);
 

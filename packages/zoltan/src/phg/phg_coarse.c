@@ -222,7 +222,7 @@ int Zoltan_PHG_Coarsening
   
       for (j = 0; j < hg->VtxWeightDim; j++)
         c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
-         += hg->vwgt[vertex   * hg->VtxWeightDim + j] ;
+         += hg->vwgt[i        * hg->VtxWeightDim + j] ;
             
       for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
         if (used_edges [hg->vedge[j]] <= i)   {
@@ -311,7 +311,7 @@ int Zoltan_PHG_Coarsening
   for (i = 0; i < hg->nVtx; i++) c_hg->vmap[i] = hg->vmap[i];
   */
   c_hg->vmap = NULL; /* UVC: we don't need vmap in the coarser graphs, it is only
-                        needed in recursive bisection; and hence at the finest level */
+                        needed in recursive bisection; and hence at level 0 */
   
   c_hg->hindex  = NULL;
   c_hg->hvertex = NULL;

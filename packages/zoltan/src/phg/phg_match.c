@@ -98,7 +98,7 @@ char  *yo = "Zoltan_PHG_Matching";
       int limit=hg->nVtx;
       PHGComm *hgc=hg->comm;
       int root_matchcnt, root_rank;
-      
+                
       if (hgp->matching)
           err = hgp->locmatching (zz, hg, match, &limit);
 
@@ -248,7 +248,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, k, lno, loop, vertex, *psums, *tsums, *order;
+  int i, j, lno, loop, vertex, *psums, *tsums, *order;
   int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int ncandidates, nloop;
   int *select, pselect;
