@@ -11,3 +11,8 @@ AMG for Maxwell's equations
 
      Reitzinger Schoeberl AMG.
      Hiptmair smoother.
+
+mystring = ml2_0_0_1 
+
+     MLS polynomial smoother
+         matrix does not need to be scaled.
