@@ -182,14 +182,14 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
   initcomm();
   factor(mat);
   if (nrhs > 0) {
-     if(me == 0 ) printf(" Entering backsolve \n");
+
+    /* Perform the backsolve  */
       free(row2);
       back_solve6(mat, rhs);
 
- /* Permute the results -- undo the torus map    */
-   if(me == 0 ) printf(" Entering perm \n");
-    perm1_((mat+begin_rhs),&my_rhs);    
-      
+    /* Permute the results -- undo the torus map    */
+ 
+    perm1_((mat+begin_rhs),&my_rhs);        
   }
   tsecs = seconds(tsecs);
   run_secs = (double) tsecs;
