@@ -132,17 +132,13 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: local aggregates (level 0)", 16);
   MLList.set("aggregation: local aggregates (level 1)", 2);
 
-  // ============== visualization with OpenDX. ==================
+  // ======================== //
+  // visualization parameters //
+  // ======================== //
+  // 
   // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
   // - set "viz: x-coordinates" to the pointer of x-coor
-  // - set "viz: cycle" to visualize the effect of the ML cycle
-  //   on a random vector (whose components are between 0.5 and 1.0),
-  //   the output is the ratio between the final vector and the 
-  //   starting one);
-  // - set "viz: presmoothed" to visualize the effect of the
-  //   presmoother (for each level) on a random vector;
-  // - set "viz: postsmoother" to visualize the effect of postsmoother
   // - set "viz: equation to plot" to the number of equation to 
   //   be plotted (for vector problems only). Default is -1 (that is,
   //   plot all the equations)
@@ -152,6 +148,12 @@ int main(int argc, char *argv[])
   //   understand whether the smoothed solution is "smooth" 
   //   or not.
   //
+  // NOTE: visualization occurs *after* the creation of the ML preconditioner,
+  // by calling VisualizeAggregates(), VisualizeSmoothers(), and
+  // VisualizeCycle(). However, the user *must* enable visualization 
+  // *before* creating the ML object. This is because ML must store some
+  // additional information about the aggregates.
+  // 
   // NOTE: the options above work only for "viz: output format" == "xyz"
   // (default value). If "viz: output format" == "dx", the user
   // can only plot the aggregates. However, "xyz" works in 2D only.
@@ -159,23 +161,41 @@ int main(int argc, char *argv[])
   MLList.set("viz: enable", true);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
-  MLList.set("viz: cycle", true);
-  MLList.set("viz: presmoother", true);
-  MLList.set("viz: postsmoother", true);
-  MLList.set("viz: equation to plot", -1);
-  MLList.set("viz: print starting solution", true);
 
-  // ============== end of visualization parameters =============
+  // =============================== //
+  // end of visualization parameters //
+  // =============================== //
 
   // create the preconditioner object and compute hierarchy
   // See comments in "ml_example_epetra_preconditioner.cpp"
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+
+  // ============= //
+  // visualization //
+  // ============= //
+
+  // 1.- print out the shape of the aggregates, plus some
+  //     statistics
+  // 2.- print out the effect of presmoother and postsmoother
+  //     on a random vector. Input integer number represent 
+  //     the number of applications of presmoother and postmsoother,
+  //     respectively
+  // 3.- print out the effect of the ML cycle on a random vector.
+  //     The integer parameter represents the number of cycles.
+
+  MLPrec->VisualizeAggregates();
+  MLPrec->VisualizeSmoothers(5,1);
+  MLPrec->VisualizeCycle(10);
+
+  // ==================== //
+  // end of visualization //
+  // ==================== //
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
 
-  // =========================== end of ML part =============================
-  
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
 
@@ -221,3 +241,4 @@ int main(int argc, char *argv[])
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+
