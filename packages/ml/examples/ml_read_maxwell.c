@@ -1,3 +1,4 @@
+#define AZ_CONVR0
 /*
 #define AZ_CONVR0
 #ifdef AZ_CONVRHS
@@ -103,6 +104,10 @@ Output files:
 #include "ml_mat_formats.h"
 #include "ml_aztec_utils.h"
 
+#ifdef BENCHMARK
+#include "ml_read_utils.h"
+#endif
+
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
 int    parasails_sym        = 1;
@@ -117,6 +122,8 @@ int my_proc_id;
 #define OUT        3
 extern int inv2dindex(int index, int *i, int *j, int n, int *hor_or_vert);
 extern int inv2dnodeindex(int index, int *i, int *j, int n);
+extern int inv3dindex(int index, int *i, int *j, int *k, int n,
+                      int *hor_or_vert);
 extern int northeast2d(int i, int j, int n);
 extern int northwest2d(int i, int j, int n);
 extern int southeast2d(int i, int j, int n);
@@ -148,7 +155,7 @@ int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tm
 int    *update, *update_index;
 int *external, *extern_index;
 struct reader_context *context;
-int mls_poly_degree, eig_ratio_tol = 27.;
+int poly_degree, eig_ratio_tol = 27.;
 int reduced_smoother_flag = 0;
 
 #ifdef debugSmoother
@@ -214,10 +221,16 @@ int main(int argc, char *argv[])
   void **edge_args, **nodal_args, *edge_smoother, *nodal_smoother;
   int  edge_its, nodal_its, temp1[4], temp2[4];
   double edge_eig_ratio[25], nodal_eig_ratio[25];
+  int smoothPe_flag = ML_NO;
 #ifndef debugSmoother
   double *xxx;
 #endif
   int Ndirichlet, *dirichlet;
+
+#ifdef BENCHMARK
+  char input[MAX_INPUT_STR_LN];
+  FILE *ifp;
+#endif
 
 #ifdef ML_partition
   FILE *fp2;
@@ -230,12 +243,12 @@ int main(int argc, char *argv[])
 
   nblocks = -1;
   if (argc < 2) {
-    printf("Usage: ml_readfile num_processors\n");
+    printf("Usage: ml_read_maxwell num_processors\n");
     exit(1);
   }
   else sscanf(argv[1],"%d",&nblocks);
   if (nblocks == -1) {
-    printf("Usage: ml_readfile num_processors\n");
+    printf("Usage: ml_read_maxwell num_processors\n");
     exit(1);
   }
 #endif /* ifdef ML_partition */
@@ -277,8 +290,59 @@ int main(int argc, char *argv[])
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
   if (proc_config[AZ_node] == 0)
   {
+#ifndef BENCHMARK
     printf("Enter the total number of elements on a side\n");
     scanf("%d",&Nglobal_edges);
+    printf("Enter value for sigma\n");
+    scanf("%e",&sigma);
+    printf("Smooth Pe?\n"); scanf("%s",&input);
+    if (ML_strcmp(input,"yes") == 0) smoothPe_flag = ML_YES;
+    else smoothPe_flag = ML_NO;
+#else
+      ML_Reader_ReadInput("ml_inputfile", &context);
+      ifp = fopen("ml_inputfile", "r");
+      if (!ML_Reader_LookFor(ifp, "number of elements per side", input, '='))
+        Nglobal_edges = 20;
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%d", &(Nglobal_edges)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+                          "number of elements per side");
+          exit(-1);
+        }
+      }
+      if (!ML_Reader_LookFor(ifp, "conductivity", input, '='))
+        sigma = 1.0;
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%lf", &(sigma)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp double while looking for \"%s\"\n",
+                          "conductivity");
+          exit(-1);
+        }
+      }
+      if (!ML_Reader_LookFor(ifp, "Smooth Pe", input, '='))
+        smoothPe_flag = ML_NO;
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%d", &(smoothPe_flag)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+                          "Smooth Pe");
+          exit(-1);
+        }
+      }
+      if (!ML_Reader_LookFor(ifp, "reduced subsmoothing", input, '='))
+        reduced_smoother_flag = 0;
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%d", &(reduced_smoother_flag)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+                          "reduced smoothing");
+          exit(-1);
+        }
+      }
+      fclose(ifp);
+#endif /*ifndef BENCHMARK*/
 #ifdef HARDWIRE3D
     Nglobal_nodes = Nglobal_edges*Nglobal_edges*Nglobal_edges;
 Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst dirichlet */
@@ -287,7 +351,7 @@ Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst di
 #else
     Nglobal_nodes = Nglobal_edges*Nglobal_edges;
     Nglobal_edges = Nglobal_edges*Nglobal_edges*2;
-#endif
+#endif /*ifdef HARDWIRE3D*/
   }
 #else
   if (proc_config[AZ_node] == 0) {
@@ -351,14 +415,11 @@ Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst di
   /*  3) Stuff the arrays into an Aztec matrix.                       */
   /*------------------------------------------------------------------*/
 
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Reading edge matrix.\n"); fflush(stdout);
   }
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
-  sigma = 1.0e-14;
-  sigma = 0.000000001;
-  sigma = 0.001;
 #ifdef HARDWIRE2D
   nx = (int) sqrt( ((double) Nglobal_nodes) + .00001);
   Ke_bindx = (int    *) malloc((8*Nlocal_edges+5)*sizeof(int));
@@ -762,7 +823,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
                       Nlocal_edges, proc_config);
 #endif
 
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Done reading edge matrix.\n"); fflush(stdout);
   }
@@ -790,7 +851,6 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   fp = fopen("rhsfile","r");
   if (fp == NULL)
   {
-    printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
     if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel())
        printf("taking zero vector for rhs\n");
     fflush(stdout);
@@ -839,14 +899,14 @@ free(xxx);
   else
   {
     fclose(fp);
-    if (proc_config[AZ_node] == 0)
+    if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
     {
        printf("%d: reading rhs from a file\n",proc_config[AZ_node]);
        fflush(stdout);
     }
     AZ_input_msr_matrix("rhsfile", global_edge_inds, &rhs, &garbage, 
 			            Nlocal_edges, proc_config);
-    if (proc_config[AZ_node] == 0)
+    if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
     {
        printf("%d: Done reading rhs from a file\n",proc_config[AZ_node]);
        fflush(stdout);
@@ -885,7 +945,7 @@ free(xxx);
   /*  3) Stuff the arrays into an Aztec matrix.                       */
   /*------------------------------------------------------------------*/
 
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Reading node matrix.\n"); fflush(stdout);
   }
@@ -1016,7 +1076,7 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
 #else
   AZ_input_msr_matrix("Kn_mat.az", global_node_inds, &Kn_val, &Kn_bindx, 
 		      Nlocal_nodes, proc_config);
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Done reading node matrix.\n"); fflush(stdout);
   }
@@ -1046,7 +1106,7 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
 
   /* This copy of Tmat does not contain boundary conditions. */
 
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Reading T matrix\n"); fflush(stdout);
   }
@@ -1113,7 +1173,7 @@ nx = nx--; /* rst dirichlet */
 #else
   AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmat_val, 
 			     &Tmat_bindx,  Nlocal_edges, proc_config);
-  if (proc_config[AZ_node] == 0)
+  if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
   {
      printf("Done reading T matrix\n"); fflush(stdout);
   }
@@ -1209,13 +1269,13 @@ nx = nx--; /* rst dirichlet */
 
      /* Read in a copy of Tmat that will contain boundary conditions. */
    
-     if (proc_config[AZ_node] == 0)
+     if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
      {
         printf("Reading T matrix\n"); fflush(stdout);
      }
      AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmatbc_val, 
    			     &Tmatbc_bindx,  Nlocal_edges, proc_config);
-     if (proc_config[AZ_node] == 0)
+     if (proc_config[AZ_node] == 0 && 5 < ML_Get_PrintLevel() )
      {
         printf("Done reading T matrix\n"); fflush(stdout);
      }
@@ -1254,10 +1314,12 @@ nx = nx--; /* rst dirichlet */
      ML_free(csr_data);
      Tmatbc->data_destroy = ML_CSR_MSRdata_Destroy;
 
-     if (proc_config[AZ_node]== 0) printf("Zeroing out rows of Tmat that "
-                                       "correspond to Dirichlet points.\n");
-     printf("\nProcessor %d owns %d rows of Ke.\n",proc_config[AZ_node],
+     if (proc_config[AZ_node]== 0 && 5 < ML_Get_PrintLevel() ) {
+        printf("Zeroing out rows of Tmat that "
+               "correspond to Dirichlet points.\n");
+        printf("\nProcessor %d owns %d rows of Ke.\n",proc_config[AZ_node],
              Amat->outvec_leng);
+     }
    
      data = (struct ML_CSR_MSRdata *) (Tmatbc->data);
      row_ptr = data->rowptr;
@@ -1603,31 +1665,31 @@ nx = nx--; /* rst dirichlet */
 
   /* Set xxx */
 
-  if (proc_config[AZ_node]== 0)
+  if (proc_config[AZ_node]== 0 && ML_Get_PrintLevel() > 2)
      printf("putting in an edge based initial guess\n");
   fp = fopen("initguessfile","r");
   if (fp != NULL)
   {
     fclose(fp);
     free(xxx);
-    if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
+    if (proc_config[AZ_node]== 0 && ML_Get_PrintLevel() > 2) printf("reading initial guess from file\n");
     AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage,
 			Nlocal_edges, proc_config);
     options[AZ_conv] = AZ_expected_values;
-    printf("done reading initial guess\n");
+    if (ML_Get_PrintLevel() > 2)
+       printf("done reading initial guess\n");
   }
 #endif /* ifdef HierarchyCheck */
   if (Tmat_transbc != NULL)
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
                                  Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.5);
+                                 smoothPe_flag, 1.5);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.5);
-
+                                 smoothPe_flag, 1.5);
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
   ML_Operator_Clean(&(ml_edges->Amat[N_levels-1]));
@@ -1670,6 +1732,23 @@ nx = nx--; /* rst dirichlet */
 	}
       else if (ML_strcmp(context->subsmoother,"MLS") == 0)
 	{
+#ifndef BENCHMARK
+      printf("polynomial degree?\n");
+      scanf("%d",&poly_degree);
+#else
+      ifp = fopen("ml_inputfile", "r");
+      if (!ML_Reader_LookFor(ifp, "polynomial degree", input, '='))
+        poly_degree = 1;
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%d", &(poly_degree)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+                          "polynomial degree");
+          exit(-1);
+        }
+      }
+      fclose(ifp);
+#endif /*ifndef BENCHMARK*/
 	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
@@ -1730,11 +1809,13 @@ nx = nx--; /* rst dirichlet */
 	    if (nodal_eig_ratio[level] < eig_ratio_tol) nodal_eig_ratio[level] = eig_ratio_tol;
 	    ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[level]));
 	    ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[level]));
-        mls_poly_degree = 1;
+        /*
+        poly_degree = 1;
         printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
-                mls_poly_degree);
-	    ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
-	    ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
+                poly_degree);
+        */
+	    ML_Smoother_Arglist_Set(nodal_args, 3, &poly_degree);
+	    ML_Smoother_Arglist_Set(edge_args, 3, &poly_degree);
 	  }
       if (level == N_levels-1)
          ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
@@ -1837,19 +1918,20 @@ nx = nx--; /* rst dirichlet */
     edge_eig_ratio[coarsest_level] = eig_ratio_tol;
     nodal_eig_ratio[coarsest_level] = eig_ratio_tol;
     omega = (double) ML_DEFAULT;
-    if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+    if (edge_smoother == (void *) ML_Gen_Smoother_MLS)
+    {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
-       ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
-       mls_poly_degree = 1;
+       ML_Smoother_Arglist_Set(nodal_args,1,&(nodal_eig_ratio[coarsest_level]));
+       /*poly_degree = 1;
        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
-              mls_poly_degree);
-       ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
-       ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
+              poly_degree);*/
+       ML_Smoother_Arglist_Set(edge_args, 3, &poly_degree);
+       ML_Smoother_Arglist_Set(nodal_args, 3, &poly_degree);
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				Tmat_array, Tmat_trans_array, Tmatbc, 
-edge_smoother,edge_args, nodal_smoother,nodal_args);
+               Tmat_array, Tmat_trans_array, Tmatbc, 
+               edge_smoother,edge_args, nodal_smoother,nodal_args);
     else
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				Tmat_array, Tmat_trans_array, NULL, 
@@ -1860,11 +1942,11 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else if (ML_strcmp(context->coarse_solve,"SymGaussSeidel") == 0) {
     printf("this is GS with %d\n",nsmooth);
-    ML_Gen_Smoother_SymGaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
+    ML_Gen_Smoother_SymGaussSeidel(ml_edges, coarsest_level,ML_BOTH,nsmooth,1.);
   }
   else if (ML_strcmp(context->coarse_solve,"BlockGaussSeidel") == 0) {
-    ML_Gen_Smoother_BlockGaussSeidel(ml_edges, coarsest_level, ML_BOTH, nsmooth,1.,
-				     num_PDE_eqns);
+    ML_Gen_Smoother_BlockGaussSeidel(ml_edges, coarsest_level, ML_BOTH,
+                    nsmooth,1., num_PDE_eqns);
   }
   else if (ML_strcmp(context->coarse_solve,"Aggregate") == 0) {
     ML_Gen_Blocks_Aggregates(ag, coarsest_level, &nblocks, &blocks);
@@ -1995,7 +2077,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 500;
+  options[AZ_max_iter] = 100;
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 130;
   params[AZ_tol]       = context->tol;
@@ -2023,7 +2105,8 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else
   {
-    if (proc_config[AZ_node]== 0) printf("taking random initial guess \n");
+    if (proc_config[AZ_node]== 0 && 5 < ML_Get_PrintLevel() )
+            printf("Taking random initial guess \n");
     AZ_random_vector(xxx, Ke_data_org, proc_config);
   }
   AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
@@ -2220,6 +2303,21 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
 
   if (proc_config[AZ_node] == 0) 
     printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
+
+#ifdef BENCHMARK
+  if (proc_config[AZ_node] == 0) {
+    printf("Printing out a few entries of the solution ...\n");
+    for (i = 0; i < Ke_mat->data_org[AZ_N_internal] +
+      Ke_mat->data_org[AZ_N_border]; i++) {
+      if ((update[i] == 7) || (update[i] == 23) || (update[i] == 47) ||
+      (update[i] == 101) || (update[i] == 171))
+      {
+    printf("solution(gid = %d) = %10.4e\n",
+       update[i],xxx[update_index[i]]);
+      }
+    }
+  }
+#endif /*ifdef BENCHMARK*/
 
   ML_Smoother_Arglist_Delete(&nodal_args);
   ML_Smoother_Arglist_Delete(&edge_args);

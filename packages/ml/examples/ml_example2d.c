@@ -230,6 +230,10 @@ int main(int argc, char *argv[])
      options[AZ_subdomain_solve] = AZ_ilut; 
   } else options[AZ_precond] = AZ_none;
 
+  /*printf("\n\n----------------\nBEFORE SOLVE\n----------------\n\n");
+  AZ_check_input(Amat->data_org,options,params,proc_config);
+  printf("\n\n----------------\nBEFORE SOLVE\n----------------\n\n");*/
+
 
   /* solve the system of equations on the fine grid */
 
@@ -283,6 +287,10 @@ int main(int argc, char *argv[])
 
 
   }
+
+  /*printf("\n\n----------------\nAFTER SOLVE\n----------------\n\n");
+  AZ_check_input(Amat->data_org,options,params,proc_config);
+  printf("\n\n----------------\nAFTER SOLVE\n----------------\n\n");*/
   
   /*
   for (i=0; i<Amat->data_org[AZ_N_internal]+Amat->data_org[AZ_N_border]; i++) {
