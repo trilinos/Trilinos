@@ -24,13 +24,52 @@ namespace MLAPI {
 
 \brief Black-box multilevel adaptive smoothed aggregation preconditioner.
 
-Still to do:
-- store the structure of the aggregates for all phases.
-- set threshold to zero??
+This class implements an adaptive smoothed aggregation preconditioner. 
+An example of usage is reported in file \ref ml_adaptivesa.
+We note that the usage of this class is slightly different from that of 
+MultiLevelSA.
+
+An instance of this class can be created as follows:
+\code
+int NumPDEEqns = 1;
+int MaxLevels = 10;
+MultiLevelAdaptiveSA Prec(FineMatrix, List, NumPDEEqns, MaxLevels);
+\endcode
+
+Important methods of this class:
+- The number of PDE equations on the finest level can be queried using
+  GetInputNumPDEEqns(). 
+- GetNumPDEEqns() returns the number of PDE equations on the current level. 
+  This value can be set via SetNumPDEEqns().
+- GetNullSpace() returns a reference to the internally stored null space;
+  the null space is set using SetNullSpace().
+- GetMaxLevels() returns the number of levels. If called before Compute(), 
+  GetMaxLevels() returns the maximum number of levels used in the
+  constructor, otherwise returns the actual number of levels.
+- GetSmootherType() and GetCoarseType() return the smoother and coarse type.
+- The number of application of the cycle in IncrementNullSpace() is given
+  by GetNumItersCoarse() and GetNumItersFine().
+- Methods \c A(level), \c P(level), \c R(level) and \c S(level) return a 
+  reference to the internally stored operators.
+- Method SetList() can be used at any time to reset the internally stored
+  list.
+
+The general usage is:
+- Specify the null space using SetNullSpace(NS), where NS is a MultiVector,
+  then compute the hierarchy using Compute(), or
+- Compute the first component of the null space using SetupInitialNullSpace(). 
+  This will define a single-vector null space, and store it using
+  SetNullSpace(NS).
+- When a non-empty null space is provided, the user can increment by one 
+  the dimension of the null space by calling IncrementNullSpace().
+- Method AdaptCompute() performs all these operations.
 
 \author Marzio Sala, Ray Tuminaro, Jonathan Hu, Michael Gee, Marian Brezina.
 
 \date Last updated on Mar-05.
+
+\todo store the structure of the aggregates for all phases.
+\todo Current implementation supposes zero threshold.
 
 */
 
@@ -42,460 +81,17 @@ public:
 
   //! Constructs the hierarchy for given Operator and parameters.
   MultiLevelAdaptiveSA(const Operator FineMatrix, Teuchos::ParameterList& List,
-                       const bool ConstructNow = true)
+                       const int NumPDEEqns, const int MaxLevels = 20) :
+    IsComputed_(false)
   {
     FineMatrix_ = FineMatrix;
     List_ = List;
-    if (ConstructNow) Compute();
-  }
-
-  // @}
-  // @{ \name Hierarchy creation methods
-
-  //! Creates an hierarchy using the provided or default null space.
-  void Compute() 
-  {
-
-    ResetTimer();
-    StackPush();
-
-    // get parameter from the input list
-    int         MaxLevels     = List_.get("max levels", 10);
-    int         MaxCoarseSize = List_.get("coarse: max size", 32);
-    MultiVector EmptySpace;
-    int         NumPDEEqns    = List_.get("PDE equations", 1);
-    string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
-    string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
-    
-    // retrive null space
-    MultiVector ThisNS = GetNullSpace();
-
-    // build up the default null space
-    if (ThisNS.GetNumVectors() == 0) {
-      ThisNS.Reshape(FineMatrix_.GetDomainSpace(),NumPDEEqns);
-      ThisNS = 0.0;
-      for (int i = 0 ; i < ThisNS.GetMyLength() ; ++i)
-        for (int j = 0 ; j < NumPDEEqns ;++j)
-          if (i % NumPDEEqns == j)
-            ThisNS(i,j) = 1.0;
-
-      SetNullSpace(ThisNS);
-    }
-
-    MultiVector NextNS;     // contains the next-level null space
-
-    A_.resize(MaxLevels);
-    R_.resize(MaxLevels);
-    P_.resize(MaxLevels);
-    S_.resize(MaxLevels);
-
-    // work on increasing hierarchies only.
-    A_[0] = FineMatrix_;
-
-    Operator A;
-    Operator C;
-    Operator R;
-    Operator P;
-    Operator Ptent;
-    InverseOperator S;
-
-    int level;
-
-    for (level = 0 ; level < MaxLevels - 1 ; ++level) {
-
-      // only an alias
-      A = A_[level];
-
-      if (level)
-        List_.set("PDE equations", ThisNS.GetNumVectors());
-
-      if (GetPrintLevel()) {
-      ML_print_line("-", 80);
-        cout << "current working level   = " << level << endl;
-        cout << "number of global rows   = " << A.GetNumGlobalRows() << endl;
-        cout << "number of global nnz    = " << A.GetNumGlobalNonzeros() << endl;
-        cout << "threshold               = " << List_.get("aggregation: threshold", 0.0) << endl;
-        cout << "number of PDE equations = " << List_.get("PDE equations",-666) << endl;
-        cout << "null space dimension    = " << ThisNS.GetNumVectors() << endl;
-      }
-
-      // load current level into database
-      List_.set("workspace: current level", level);
-
-      GetSmoothedP(A, List_, ThisNS, P, NextNS);
-      ThisNS = NextNS;
-
-      R = GetTranspose(P);
-      C = GetRAP(R,A,P);
-      // build smoothers
-      S.Reshape(A, SmootherType, List_);
-
-      // put operators and inverse in hierarchy
-      R_[level    ] = R;
-      P_[level    ] = P;
-      A_[level + 1] = C;
-      S_[level    ] = S;
-
-      // break if coarse matrix is below specified tolerance
-      if (C.GetNumGlobalRows() <= MaxCoarseSize) {
-        ++level;
-        break;
-      }
-    }
-    List_.set("PDE equations",NumPDEEqns);
-
-    // set coarse solver
-    S.Reshape(A_[level], CoarseType, List_);
-    S_[level] = S;
-    MaxLevels_ = level + 1;
-
-    // set the label
-    SetLabel("SA, L = " + GetString(MaxLevels_) +
-             ", smoother = " + SmootherType);
-
-    if (GetPrintLevel()) {
-      ML_print_line("-", 80);
-      cout << "final level             = " << level << endl;
-      cout << "number of global rows   = " << A_[level].GetNumGlobalRows() << endl;
-      cout << "number of global nnz    = " << A_[level].GetNumGlobalNonzeros() << endl;
-      cout << "coarse solver           = " << CoarseType << endl;
-      cout << "time spent in constr.   = " << GetTime() << " (s)" << endl;
-      ML_print_line("-", 80);
-    }
-
-    StackPop();
-    // FIXME: update flops!
-    UpdateTime();
-
-  }
-
-  //! Setup the adaptive multilevel hierarchy.
-  /* Computes the multilevel hierarchy as specified by the user.
-   *
-   * \param UseDefault - (In) if \c true, the first call to Compute()
-   *                     uses the default null space. Otherwise,
-   *                     one null space component is computed using
-   *                     SetupInitialNullSpace().
-   *
-   * \param AdditionalCandidates - (In) Number of candidates, that is the
-   *                     number of null space components that will be
-   *                     computed using IncrementNullSpace().
-   */
-  void AdaptCompute(const bool UseDefault, const int AdditionalCandidates) 
-  {
-
-    if (UseDefault) 
-      Compute();
-    else {
-      // compute the first guy, supposing that no null space
-      SetupInitialNullSpace();
-      Compute();
-    }
-
-    for (int i = 0 ; i < AdditionalCandidates ; ++i) {
-      IncrementNullSpace();
-      Compute();
-    }
-
-  }
-
-  //! Computes the first component of the null space.
-  void SetupInitialNullSpace() 
-  {
-
-    int    MaxLevels     = List_.get("max levels", 10);
-    int    MaxCoarseSize = List_.get("coarse: max size", 1);
-    string SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
-    string CoarseType    = List_.get("coarse: type", "Amesos-KLU");
-    int    NumPDEs       = List_.get("PDE equations", 1);
-
-    MultiVector NS(A_[0].GetDomainSpace());
-    MultiVector NewNS;
-    for (int v = 0 ; v < NS.GetNumVectors() ; ++v)
-      NS.Random(v);
-
-    NS = (NS + 1.0) / 2.0;
-
-    // zero out everything except for first dof on every  node 
-    for (int j=0; j < NS.GetMyLength(); ++j)
-    {
-      if (j % NumPDEs != 0)
-        NS(j) = 0.;
-    }
-
-    vector<Operator>        A(MaxLevels);
-    vector<Operator>        R(MaxLevels);
-    vector<Operator>        P(MaxLevels);
-    vector<InverseOperator> S(MaxLevels);
-
-    // run pre-smoother
-    MultiVector F(A_[0].GetDomainSpace());
-    F = 0.0;
-
-    S[0].Reshape(A_[0], SmootherType, List_);
-    S[0].Apply(F, NS);
-
-    double MyEnergyBefore = sqrt((A_[0] * NS) * NS);
-    if (MyEnergyBefore == 0.0) {
-      SetNullSpace(NewNS);
-      return;
-    }
-
-    //compare last two iterates on fine level
-    int SweepsBefore = List_.get("smoother: sweeps",1);
-    List_.set("smoother: sweeps",1);
-    S[0].Reshape(A_[0], SmootherType, List_);
-    S[0].Apply(F, NS);
-    double MyEnergyAfter = sqrt((A_[0] * NS) * NS);
-    if (MyEnergyAfter/MyEnergyBefore < 0.1) {
-      SetNullSpace(NewNS);
-      return;
-    }
-
-    List_.set("smoother: sweeps",SweepsBefore);
-
-    A[0] = A_[0];
-
-    int level;
-    for (level = 0 ; level < MaxLevels - 2 ; ++level) {
-
-      if (level)
-        List_.set("PDE equations", NS.GetNumVectors());
-
-      if (GetPrintLevel()) {
-        ML_print_line("-", 80);
-        cout << "current working level   = " << level << endl;
-        cout << "number of global rows   = " 
-          << A[level].GetDomainSpace().GetNumGlobalElements() << endl;
-        cout << "number of PDE equations = " << List_.get("PDE equations",-666) << endl;
-        cout << "null space dimension    = " << NS.GetNumVectors() << endl;
-      }
-
-      GetSmoothedP(A[level], List_, NS, P[level], NewNS);
-      NS = NewNS;
-
-      R[level] = GetTranspose(P[level]);
-      A[level + 1] = GetRAP(R[level],A[level],P[level]);
-      Operator C = A[level + 1];
-      S[level + 1].Reshape(C,SmootherType,List_);
-
-      // break if coarse matrix is below specified size
-      if (A[level + 1].GetDomainSpace().GetNumGlobalElements() <= MaxCoarseSize) {
-        ++level;
-        cout << "test " << level << " Max levels = " << MaxLevels << endl;
-        break;
-      }
-
-      MultiVector F(C.GetDomainSpace());
-      F = 0.0;
-      MyEnergyBefore = sqrt((C * NS) * NS);
-      S[level + 1].Apply(F, NS);
-      MyEnergyAfter = sqrt((C * NS) * NS);
-      cout << "Energy before smoothing = " << MyEnergyBefore << endl;
-      cout << "Energy after smoothing  = " << MyEnergyAfter << endl;
-      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/SweepsBefore) < 0.1) {
-        ++level;
-        break; 
-      }
-    }
-
-    List_.set("PDE equations", NumPDEs);
-
-    if (GetPrintLevel())
-      ML_print_line("-", 80);
-
-    // interpolate candidate back to fine level
-    MaxLevels = level;
-    for (int level = MaxLevels ; level > 0 ; --level) {
-      NS = P[level - 1] * NS;
-    }
-
-    F.Reshape(A_[0].GetDomainSpace());
-    F = 0.0;
-    S[0].Apply(F, NS);
-
-    double norm = NS.NormInf();
-    NS.Scale(1.0 / norm);
-
-    SetNullSpace(NS);
-  }
-
-  // Increments the null space dimension by one.
-  int IncrementNullSpace(const int Nits_fine = 15,
-                         const int Nits_coarse = 5)
-  {
-    ResetTimer();
-    StackPush();
-
-    // get parameter from the input list
-    MultiVector EmptySpace;
-    int         NumPDEEqns    = List_.get("PDE equations", 1);
-    string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
-    string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
-    
-    MultiVector InputNS = GetNullSpace();
-
-    if (InputNS.GetNumVectors() == 0)
-      ML_THROW("Empty null space not allowed", -1);
-
-    Operator A, C, R, P;
-    InverseOperator S;
-
-    int level;
-
-    // create the NS with the Random new candidate in it
-    // NCand is dimension of previous nullspace
-    int NCand = InputNS.GetNumVectors();
-    MultiVector ExpandedNS = InputNS;
-    ExpandedNS.Append();
-
-    // Extract a light-weight copy of the additional component
-    MultiVector AdditionalNS = Extract(ExpandedNS, NCand);
-    AdditionalNS.Random();
-    AdditionalNS = (AdditionalNS + 1.) / 2.0;
-
-    //  zero out in the new candidate everybody but the (Ncand+1)'th guy
-    if (NCand+1 <= NumPDEEqns)
-    {
-      for (int i=0; i< AdditionalNS.GetMyLength(); i++)
-        if ( (i+1) % (NCand+1) != 0) 
-          AdditionalNS(i) = 0;
-    }
-
-   // run the current V-cycle on the candidate
-   MultiVector b0(AdditionalNS.GetVectorSpace());
-
-   for (int i=0; i<Nits_fine; i++)
-     SolveMultiLevelSA(b0,AdditionalNS,0);
-
-   double NormFirst = ExpandedNS.NormInf(0);
-   AdditionalNS.Scale(NormFirst / AdditionalNS.NormInf());
-
-   // NOTE: I need this instruction, since the original pointer
-   // in AdditionalNS could have been changed under the hood
-   for (int i=0; i<AdditionalNS.GetMyLength(); i++)
-     ExpandedNS(i,NCand) = AdditionalNS(i);
-
-   NumPDEEqns = List_.get("PDE equations", -666);
-
-   // ===================== //
-   // cycle over all levels //
-   // ===================== //
-   
-   for (level = 0 ; level < GetMaxLevels() - 2 ; ++level) {
-
-      // only an alias
-      A = A_[level];
-
-      // load current level into database
-      List_.set("workspace: current level", level);
-
-      MultiVector NewNS;
-   
-      // creates smoothed prolongator
-      GetSmoothedP(A, List_, ExpandedNS, P, NewNS);
-      ExpandedNS = NewNS;
-
-      R = GetTranspose(P);
-      C = GetRAP(R,A,P);
-
-      List_.set("PDE equations", NewNS.GetNumVectors());
-
-      // build smoothers
-      if (level != 0)
-        S_[level].Reshape(A, SmootherType, List_);
-
-      // put operators and inverse in hierarchy
-      R_[level    ] = R;
-      P_[level    ] = P;
-      A_[level + 1] = C;
-      
-      S_[level+1].Reshape(C, SmootherType, List_); 
-      
-      AdditionalNS.Reshape(ExpandedNS.GetVectorSpace(),NCand);
-      for (int i=0; i<NCand; i++)
-        for (int j=0; j<AdditionalNS.GetMyLength(); j++)
-          AdditionalNS(j,i) = ExpandedNS(j,i);
-
-      Operator Pbridge;
-      GetSmoothedP(C, List_, AdditionalNS, Pbridge, NewNS);
-
-      P_[level+1] = Pbridge;
-      R_[level+1] = GetTranspose(Pbridge);
-
-      AdditionalNS = Duplicate(Extract(ExpandedNS, NCand));
-
-      double MyEnergyBefore = sqrt((C * AdditionalNS) * AdditionalNS);
-
-      // FIXME scale with something: norm of the matrix, ...;
-      if (MyEnergyBefore < 1e-10) {
-        ++level;
-        break;
-      }
-        
-      b0.Reshape(AdditionalNS.GetVectorSpace());
-      b0 = 0.;
-      
-      for (int i=0; i<Nits_coarse; i++)
-        SolveMultiLevelSA(b0,AdditionalNS,level+1);
-
-      // get norm of the first NS component
-      double maxabs = 0.;
-
-      for (int i=0; i<ExpandedNS.GetMyLength(); ++i)
-         if (maxabs < fabs(ExpandedNS(i,0))) maxabs = fabs(ExpandedNS(i,0));
-
-      double MyEnergyAfter = sqrt((C * AdditionalNS) * AdditionalNS);
-
-      if (MyEnergyAfter == 0.0) {
-        if (AdditionalNS.NormInf() != 0.0) {
-		for (int i=0; i<AdditionalNS.GetMyLength(); i++)
-		  ExpandedNS(i,NCand) = AdditionalNS(i);
-        }
-      }
-      else {
-        for (int i=0; i<AdditionalNS.GetMyLength(); i++) {
-          ExpandedNS(i,NCand) = AdditionalNS(i);
-        }
-      }
-
-      // scale the new candidate
-      double max = ExpandedNS.NormInf(NCand);
-      // FIXME.... ExpandedNS.Scale((maxabs/max, NCand));
-
-      //TODO coarse level
-      cout << "adaptedCompute: EnergyBefore=" << MyEnergyBefore << endl;
-      cout << "adaptedCompute: EnergyAfter =" << MyEnergyAfter << endl;
-
-      // FIXME: still to do:
-      // - scaling of the new computed component
-      // - if MyEnergyAfter is zero, take the previous guy
-
-      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits_coarse) < 0.1) {
-        ++level;
-        break;
-      }
-    }
-    
-    --level;
-    //project back to fine level
-    // FIXME: put scaling on every level in here?
-    for (int i=level; i>=0 ; i--) {
-      AdditionalNS = P_[i] * AdditionalNS;
-    }
-
-    InputNS.Append(AdditionalNS);
-   
-    // reset the number of equations
-    List_.set("PDE equations", NumPDEEqns);
-
-    // set the null space in the class
-    SetNullSpace(InputNS);
-
-    StackPop();
-    // FIXME: update flops!
-    UpdateTime();
-
+    MaxLevels_  = MaxLevels;
+    SetInputNumPDEEqns(NumPDEEqns);
+    SetNumPDEEqns(NumPDEEqns);
+
+    ResizeArrays(MaxLevels);
+    A(0) = FineMatrix;
   }
 
   //! Destructor.
@@ -530,9 +126,21 @@ public:
   }
 
   //! Returns a reference to the restriction operator of level \c i.
+  inline Operator& R(const int i) 
+  {
+    return(R_[i]);
+  }
+
+  //! Returns a reference to the restriction operator of level \c i.
   inline const Operator& R(const int i) const
   {
     return(R_[i]);
+  }
+
+  //! Returns a reference to the operator of level \c i.
+  inline Operator& A(const int i)
+  {
+    return(A_[i]);
   }
 
   //! Returns a reference to the operator of level \c i.
@@ -542,9 +150,21 @@ public:
   }
 
   //! Returns a reference to the prolongator operator of level \c i.
+  inline Operator& P(const int i)
+  {
+    return(P_[i]);
+  }
+
+  //! Returns a reference to the prolongator operator of level \c i.
   inline const Operator& P(const int i) const
   {
     return(P_[i]);
+  }
+
+  //! Returns a reference to the inverse operator of level \c i.
+  inline InverseOperator& S(const int i)
+  {
+    return(S_[i]);
   }
 
   //! Returns a reference to the inverse operator of level \c i.
@@ -559,24 +179,557 @@ public:
     return(MaxLevels_);
   }
 
+  //! Returns the actual number of levels
+  inline void SetMaxLevels(const int MaxLevels)
+  {
+    MaxLevels_ = MaxLevels;
+  }
+
+  //! Gets a reference to the internally stored null space.
   inline const MultiVector& GetNullSpace() const
   {
     return(NullSpace_);
   }
 
+  //! Sets the null space multi-vector to \c NullSpace.
   inline void SetNullSpace(MultiVector& NullSpace)
   {
     NullSpace_ = NullSpace;
   }
 
+  //! Returns \c true if the hierarchy has been successfully computed.
+  inline bool IsComputed() const
+  {
+    return(IsComputed_);
+  }
+
+  //! Sets the internally stored list to \c List.
+  inline void SetList(Teuchos::ParameterList& List)
+  {
+    List_ = List;
+  }
+
+  //! Returns the smoother solver type.
+  inline string GetSmootherType()
+  {
+    return(List_.get("smoother: type", "symmetric Gauss-Seidel"));
+  }
+
+  //! Returns the coarse solver type.
+  inline string GetCoarseType() 
+  {
+    return(List_.get("coarse: type", "Amesos-KLU"));
+  }
+
+  //! Returns the number of PDE equations on the finest level.
+  inline void SetInputNumPDEEqns(const int n) 
+  {
+    NumPDEEqns_ = n;
+  }
+
+  //! Returns the number of PDE equations on the current level.
+  inline int GetInputNumPDEEqns() 
+  {
+    return(NumPDEEqns_);
+  }
+
+  //! Sets the number of PDE equations on the current level.
+  inline int GetNumPDEEqns() 
+  {
+    return(List_.get("PDE equations", 1));
+  }
+
+  inline void SetNumPDEEqns(const int NumPDEEqns)
+  {
+    List_.set("PDE equations", NumPDEEqns);
+  }
+
+  //! Returns the maximum allowed coarse size.
+  inline int GetMaxCoarseSize()
+  {
+    return(List_.get("coarse: max size", 32));
+  }
+
+  //! Returns the maximum allowed reduction.
+  inline double GetMaxReduction()
+  {
+    return(List_.get("adapt: max reduction", 0.1));
+  }
+
+  //! Returns the maximum number of applications on the coarser levels.
+  inline int GetNumItersCoarse()
+  {
+    return(List_.get("adapt: iters coarse", 5));
+  }
+
+  //! Returns the maximum number of applications on the finest level.
+  inline int GetNumItersFine()
+  {
+    return(List_.get("adapt: iters fine", 15));
+  }
+
+
+  // @}
+  // @{ \name Hierarchy construction methods
+
+  // ====================================================================== 
+  //! Creates an hierarchy using the provided or default null space.
+  // ====================================================================== 
+  void Compute() 
+  {
+
+    ResetTimer();
+    StackPush();
+    IsComputed_ = false;
+
+    // get parameter from the input list
+    SetNumPDEEqns(GetInputNumPDEEqns());
+    
+    // retrive null space
+    MultiVector ThisNS = GetNullSpace();
+
+    if (GetPrintLevel()) {
+      cout << endl;
+      ML_print_line("-", 80);
+      cout << "Computing the hierarchy, input null space dimension = "
+           << ThisNS.GetNumVectors() << endl;
+    }
+
+    // build up the default null space
+    if (ThisNS.GetNumVectors() == 0) {
+      ThisNS.Reshape(FineMatrix_.GetDomainSpace(),GetNumPDEEqns());
+      ThisNS = 0.0;
+      for (int i = 0 ; i < ThisNS.GetMyLength() ; ++i)
+        for (int j = 0 ; j < GetNumPDEEqns() ;++j)
+          if (i % GetNumPDEEqns() == j)
+            ThisNS(i,j) = 1.0;
+
+      SetNullSpace(ThisNS);
+    }
+
+    MultiVector NextNS;     // contains the next-level null space
+
+    // work on increasing hierarchies only.
+    A(0) = FineMatrix_;
+
+    int level;
+
+    for (level = 0 ; level < GetMaxLevels() - 1 ; ++level) {
+
+      if (GetPrintLevel()) ML_print_line("-", 80);
+
+      if (level)
+        SetNumPDEEqns(ThisNS.GetNumVectors());
+
+      // load current level into database
+      List_.set("workspace: current level", level);
+
+      GetSmoothedP(A(level), List_, ThisNS, P(level), NextNS);
+      ThisNS = NextNS;
+
+      R(level) = GetTranspose(P(level));
+      A(level + 1) = GetRAP(R(level),A(level),P(level));
+      S(level).Reshape(A(level), GetSmootherType(), List_);
+
+      // break if coarse matrix is below specified tolerance
+      if (A(level + 1).GetNumGlobalRows() <= GetMaxCoarseSize()) {
+        ++level;
+        break;
+      }
+    }
+
+    // set coarse solver
+    S(level).Reshape(A(level), GetCoarseType(), List_);
+    SetMaxLevels(level + 1);
+
+    // set the label
+    SetLabel("SA, L = " + GetString(GetMaxLevels()) +
+             ", smoother = " + GetSmootherType());
+
+    if (GetPrintLevel()) ML_print_line("-", 80);
+
+    IsComputed_ = true;
+
+    StackPop();
+    // FIXME: update flops!
+    UpdateTime();
+
+  }
+
+  // ====================================================================== 
+  //! Setup the adaptive multilevel hierarchy.
+  /* Computes the multilevel hierarchy as specified by the user.
+   *
+   * \param UseDefault - (In) if \c true, the first call to Compute()
+   *                     uses the default null space. Otherwise,
+   *                     one null space component is computed using
+   *                     SetupInitialNullSpace().
+   *
+   * \param AdditionalCandidates - (In) Number of candidates, that is the
+   *                     number of null space components that will be
+   *                     computed using IncrementNullSpace().
+   */
+  // ====================================================================== 
+  void AdaptCompute(const bool UseDefault, const int AdditionalCandidates)
+  {
+
+    // time is tracked within each method.
+    StackPush();
+
+    if (UseDefault) 
+      Compute();
+    else {
+      // compute the first guy, supposing that no null space
+      SetupInitialNullSpace();
+      Compute();
+    }
+
+    for (int i = 0 ; i < AdditionalCandidates ; ++i) {
+      IncrementNullSpace();
+      Compute();
+    }
+
+    StackPop();
+  }
+
+  // ====================================================================== 
+  //! Computes the first component of the null space.
+  // ====================================================================== 
+  void SetupInitialNullSpace() 
+  {
+    ResetTimer();
+    StackPush();
+
+    SetNumPDEEqns(GetInputNumPDEEqns());
+
+    if (GetPrintLevel()) {
+      cout << endl;
+      ML_print_line("-", 80);
+      cout << "Computing the first null space component" << endl;
+    }
+
+    MultiVector NS(A_[0].GetDomainSpace());
+    MultiVector NewNS;
+    for (int v = 0 ; v < NS.GetNumVectors() ; ++v)
+      NS.Random(v);
+
+    NS = (NS + 1.0) / 2.0;
+
+    // zero out everything except for first dof on every  node 
+    for (int j=0; j < NS.GetMyLength(); ++j)
+    {
+      if (j % GetNumPDEEqns() != 0)
+        NS(j) = 0.;
+    }
+
+    // run pre-smoother
+    MultiVector F(A(0).GetDomainSpace());
+    F = 0.0;
+
+    S(0).Reshape(A(0), GetSmootherType(), List_);
+    S(0).Apply(F, NS);
+
+    double MyEnergyBefore = sqrt((A(0) * NS) * NS);
+    if (MyEnergyBefore == 0.0) {
+      SetNullSpace(NewNS);
+      return;
+    }
+
+    //compare last two iterates on fine level
+    int SweepsBefore = List_.get("smoother: sweeps",1);
+    List_.set("smoother: sweeps",1);
+    S(0).Reshape(A(0), GetSmootherType(), List_);
+    S(0).Apply(F, NS);
+    double MyEnergyAfter = sqrt((A(0) * NS) * NS);
+    if (MyEnergyAfter/MyEnergyBefore < GetMaxReduction()) {
+      SetNullSpace(NewNS);
+      return;
+    }
+
+    List_.set("smoother: sweeps",SweepsBefore);
+
+    int level;
+    for (level = 0 ; level < GetMaxLevels() - 2 ; ++level) {
+
+      if (level) SetNumPDEEqns(NS.GetNumVectors());
+
+      if (GetPrintLevel()) {
+        ML_print_line("-", 80);
+        cout << "current working level   = " << level << endl;
+        cout << "number of global rows   = " 
+          << A(level).GetDomainSpace().GetNumGlobalElements() << endl;
+        cout << "number of PDE equations = " << GetNumPDEEqns() << endl;
+        cout << "null space dimension    = " << NS.GetNumVectors() << endl;
+      }
+
+      GetSmoothedP(A(level), List_, NS, P(level), NewNS);
+      NS = NewNS;
+
+      R(level) = GetTranspose(P(level));
+      A(level + 1) = GetRAP(R(level),A(level),P(level));
+      S(level + 1).Reshape(A(level + 1),GetSmootherType(),List_);
+
+      // break if coarse matrix is below specified size
+      if (A(level + 1).GetDomainSpace().GetNumGlobalElements() <= GetMaxCoarseSize()) {
+        ++level;
+        break;
+      }
+
+      MultiVector F(A(level + 1).GetDomainSpace());
+      F = 0.0;
+      MyEnergyBefore = sqrt((A(level + 1) * NS) * NS);
+      S(level + 1).Apply(F, NS);
+      MyEnergyAfter = sqrt((A(level + 1) * NS) * NS);
+      if (GetPrintLevel() == 0) {
+        cout << "Energy before smoothing = " << MyEnergyBefore << endl;
+        cout << "Energy after smoothing  = " << MyEnergyAfter << endl;
+      }
+
+      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/SweepsBefore) < GetMaxReduction()) {
+        ++level;
+        break; 
+      }
+    }
+
+    if (GetPrintLevel())
+      ML_print_line("-", 80);
+
+    // interpolate candidate back to fine level
+    int MaxLevels = level;
+    for (int level = MaxLevels ; level > 0 ; --level) {
+      NS = P(level - 1) * NS;
+    }
+
+    F.Reshape(A(0).GetDomainSpace());
+    F = 0.0;
+    S(0).Apply(F, NS);
+
+    double norm = NS.NormInf();
+    NS.Scale(1.0 / norm);
+
+    SetNullSpace(NS);
+
+    StackPop();
+    UpdateTime();
+  }
+
+  //! Increments the null space dimension by one.
+  bool IncrementNullSpace()
+  {
+    ResetTimer();
+    StackPush();
+
+    SetNumPDEEqns(GetInputNumPDEEqns());
+
+    MultiVector InputNS = GetNullSpace();
+
+    if (InputNS.GetNumVectors() == 0)
+      ML_THROW("Empty null space not allowed", -1);
+
+    if (GetPrintLevel()) {
+      cout << endl;
+      ML_print_line("-", 80);
+      cout << "Incrementing the hierarchy, input null space dimension = "
+           << InputNS.GetNumVectors() << endl;
+    }
+
+    int level;
+
+    // =========================================================== //
+    // InputNS is the currently available (and stored) null space. //
+    // ExpandedNS is InputNS + AdditionalNS.                       //
+    // NCand is dimension of previous nullspace.                   //
+    // AdditionalNS is set to random between 0 and 1.0; however,   //
+    // we might need to zero out in the new candidate everybody    //
+    // but the (Ncand+1)'th guy                                    //
+    // Once the new candidate is set, we run the current V-cycle   //
+    // on it. NOTE: I need the final copy instruction, since the   //
+    // original pointer  in AdditionalNS could have been changed   //
+    // under the hood.                                             //
+    // =========================================================== //
+
+    int NCand = InputNS.GetNumVectors();
+    MultiVector ExpandedNS = InputNS;
+    ExpandedNS.Append();
+
+    MultiVector AdditionalNS = Extract(ExpandedNS, NCand);
+    AdditionalNS.Random();
+    AdditionalNS = (AdditionalNS + 1.) / 2.0;
+
+    if (NCand+1 <= GetNumPDEEqns())
+    {
+      for (int i=0; i< AdditionalNS.GetMyLength(); i++)
+        if ( (i+1) % (NCand+1) != 0) 
+          AdditionalNS(i) = 0;
+    }
+
+    MultiVector b0(AdditionalNS.GetVectorSpace());
+
+    for (int i=0; i< GetNumItersFine() ; i++)
+      SolveMultiLevelSA(b0,AdditionalNS,0);
+
+    double NormFirst = ExpandedNS.NormInf(0);
+    AdditionalNS.Scale(NormFirst / AdditionalNS.NormInf());
+
+    for (int i=0; i<AdditionalNS.GetMyLength(); i++)
+      ExpandedNS(i,NCand) = AdditionalNS(i);
+
+    // ===================== //
+    // cycle over all levels //
+    // ===================== //
+
+    for (level = 0 ; level < GetMaxLevels() - 2 ; ++level) {
+
+      if (GetPrintLevel()) ML_print_line("-", 80);
+
+      List_.set("workspace: current level", level);
+
+      // ======================================================= //
+      // Create a new prolongator operator using the newly       //
+      // available null space. NewNS is a temporary variable,   //
+      // set to ExpandedNS for the next-level null space. We     //
+      // also need to setup the smoother at this level (not on   //
+      // the finest, since the finest-level matrix does not      //
+      // change).                                                //
+      // At this point, we stick the operators in the hierarchy. //
+      // ======================================================= //
+
+      MultiVector NewNS;
+
+      GetSmoothedP(A(level), List_, ExpandedNS, P(level), NewNS);
+      ExpandedNS = NewNS;
+
+      R(level) = GetTranspose(P(level));
+      A(level + 1) = GetRAP(R(level),A(level),P(level));
+
+      SetNumPDEEqns(NewNS.GetNumVectors());
+
+      if (level != 0)
+        S(level).Reshape(A(level), GetSmootherType(), List_);
+
+      S(level + 1).Reshape(A(level + 1), GetSmootherType(), List_); 
+
+      // ======================================================= //
+      // Need to setup the bridge. We need to extract the NCand  //
+      // components of the "old" null space, and set them in a   //
+      // temporary variable, OldNS. NewNS is simply discarded.   //
+      // ======================================================= //
+
+      MultiVector OldNS = ExpandedNS;
+      OldNS.Delete(NCand);
+
+      Operator Pbridge;
+      GetSmoothedP(A(level + 1), List_, OldNS, Pbridge, NewNS);
+
+      P(level + 1) = Pbridge;
+      R(level + 1) = GetTranspose(Pbridge);
+
+      AdditionalNS = Duplicate(Extract(ExpandedNS, NCand));
+
+      double MyEnergyBefore = sqrt((A(level + 1) * AdditionalNS) * AdditionalNS);
+
+      // FIXME scale with something: norm of the matrix, ...;
+      if (MyEnergyBefore < 1e-10) {
+        ++level;
+        break;
+      }
+
+      // ======================================================= //
+      // run Nits_coarse cycles, using AdditionalNS as starting  //
+      // solution, and a zero right hand-side.                   //
+      // ======================================================= //
+
+      b0.Reshape(AdditionalNS.GetVectorSpace());
+      b0 = 0.;
+
+      for (int i=0; i< GetNumItersCoarse() ; i++)
+        SolveMultiLevelSA(b0,AdditionalNS,level+1);
+
+      // ======================================================= //
+      // Get the norm of the first null space component, then    //
+      // analyze the energy after the application of the cycle.  //
+      // If the energy after is zero, we have to check whether   //
+      // the new guy is zero or not.                             //
+      // Then, we scale the new candidate so that its largest    //
+      // entry is of the same magniture of the largest entry of  //
+      // the first component.                                    //
+      // ======================================================= //
+
+      double NormFirstComponent = ExpandedNS.NormInf(0);
+
+      double MyEnergyAfter = sqrt((A(level + 1) * AdditionalNS) * AdditionalNS);
+
+      if (MyEnergyAfter == 0.0) {
+        if (AdditionalNS.NormInf() != 0.0) {
+          for (int i=0; i<AdditionalNS.GetMyLength(); i++)
+            ExpandedNS(i,NCand) = AdditionalNS(i);
+        }
+      }
+      else {
+        for (int i=0; i<AdditionalNS.GetMyLength(); i++) {
+          ExpandedNS(i,NCand) = AdditionalNS(i);
+        }
+      }
+
+      double NormExpanded = ExpandedNS.NormInf(NCand);
+      ExpandedNS.Scale(NormFirstComponent / NormExpanded, NCand);
+
+      if (GetPrintLevel() == 0) {
+        cout << "energy before cycle =" << MyEnergyBefore << endl;
+        cout << "energy after        =" << MyEnergyAfter << endl;
+      }
+
+      // FIXME: still to do:
+      // - scaling of the new computed component
+
+      if (pow(MyEnergyAfter/MyEnergyBefore,1.0 / GetNumItersCoarse()) < GetMaxReduction()) {
+        ++level;
+        break;
+      }
+    }
+
+    --level;
+
+    // ======================================================= //
+    // project back to fine level the AdditionalNS vector.     //
+    // Then, reset the number of PDE equations, and finally    //
+    // set the null space of this object using SetNullSpace(). //
+    // Note that at this point the hierarchy is broken, and    //
+    // must be reconstructed using Compute().                  //
+    // ======================================================= //
+
+    // FIXME: put scaling on every level in here?
+    for (int i=level; i>=0 ; i--) {
+      AdditionalNS = P(i) * AdditionalNS;
+    }
+
+    InputNS.Append(AdditionalNS);
+
+    SetNullSpace(InputNS);
+
+    if (GetPrintLevel()) ML_print_line("-", 80);
+
+    StackPop();
+    UpdateTime();
+
+    IsComputed_ = false;
+
+    return(true);
+  }
+
   // @}
   // @{ \name Mathematical methods
 
+  // ====================================================================== 
   //! Applies the preconditioner to \c b_f, returns the result in \c x_f.
+  // ====================================================================== 
   int Apply(const MultiVector& b_f, MultiVector& x_f) const
   {
     ResetTimer();
     StackPush();
+
+    if (IsComputed() == false)
+      ML_THROW("Method Compute() must be called", -1);
 
     SolveMultiLevelSA(b_f,x_f,0);
 
@@ -586,10 +739,12 @@ public:
     return(0);
   }
 
+  // ====================================================================== 
   //! Recursively called core of the multi level preconditioner.
+  // ====================================================================== 
   int SolveMultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const 
   {
-    if (level == MaxLevels_ - 1) {
+    if (level == GetMaxLevels() - 1) {
       x_f = S(level) * b_f;
       return(0);
     }
@@ -645,6 +800,16 @@ public:
       else
         os << "MFlops rate      = 0.0" << endl;
       os << endl;
+
+      for (int level = 0 ; level < GetMaxLevels() ; ++level) {
+        ML_print_line("-", 80);
+        cout << "Information for level   = " << level;
+        cout << "number of global rows   = " 
+             << A(level).GetNumGlobalRows() << endl;
+        cout << "number of global nnz    = " 
+             << A(level).GetNumGlobalNonzeros() << endl;
+      }
+      ML_print_line("-", 80);
     }
     return(os);
   }
@@ -691,6 +856,14 @@ private:
     return;
   }
 
+  void ResizeArrays(const int MaxLevels) 
+  {
+    A_.resize(MaxLevels);
+    R_.resize(MaxLevels);
+    P_.resize(MaxLevels);
+    S_.resize(MaxLevels);
+  }
+    
   //! Maximum number of levels.
   int MaxLevels_;
   //! Fine-level matrix.
@@ -706,6 +879,10 @@ private:
   Teuchos::ParameterList List_;
   //! Contains the current null space
   MultiVector NullSpace_;
+  //! \c true if a hierarchy has been successfully computed.
+  bool IsComputed_;
+  //! Number of PDE equations on the finest grid.
+  int NumPDEEqns_;
 
 }; // class MultiLevelAdaptiveSA
 
