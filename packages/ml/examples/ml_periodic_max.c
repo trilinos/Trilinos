@@ -216,8 +216,8 @@ update_ghost_edges(xxx, (void *) &Edge_Partition);
 
   Ntotal = Edge_Partition.Nlocal;
   if (Edge_Partition.nprocs == 2) Ntotal += Edge_Partition.Nghost;
-  MLnew_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  Ke_getrow, update_ghost_edges, Ntotal);
-  MLnew_Set_Amatrix_Matvec(ml_edges, MaxMgLevels-1,  Ke_matvec);
+  ML_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  Ke_getrow, update_ghost_edges, Ntotal);
+  ML_Set_Amatrix_Matvec(ml_edges, MaxMgLevels-1,  Ke_matvec);
 
 #endif
 

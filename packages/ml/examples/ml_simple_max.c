@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
   ML_Init_Amatrix      (ml_edges, MaxMgLevels-1, Edge_Partition.Nlocal,
 			Edge_Partition.Nlocal, &Edge_Partition);
 
-  MLnew_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  user_Ke_getrow, 
+  ML_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  user_Ke_getrow, 
 			user_update_ghost_edges,  
 			Edge_Partition.Nlocal + Edge_Partition.Nghost);
 

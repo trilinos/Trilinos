@@ -32,8 +32,8 @@ int main(int argc, char *argv[]){
    ML_Create         (&ml_object, N_grids);
 
    ML_Init_Amatrix      (ml_object, 0,  129, 129, NULL);
-   MLnew_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 129);
-   MLnew_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 129);
+   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
    ML_Set_PrintLevel(10);
 
    ML_Aggregate_Create(&agg_object);

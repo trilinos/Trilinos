@@ -69,9 +69,9 @@ int main(int argc, char *argv[]){
    else               {nlocal = 0; nlocal_allcolumns = 0;}
 
    ML_Init_Amatrix      (ml_object, 0,  nlocal, nlocal, &proc);
-   MLnew_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, Poisson_comm,
+   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, Poisson_comm,
                          nlocal_allcolumns);
-   MLnew_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
 
    ML_Aggregate_Create(&agg_object);
    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);

@@ -388,21 +388,21 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_OutputLevel(my_ml, output_level);
 
    ML_Init_Amatrix      (my_ml, grid1, Nfine, Nfine, (void *) Afine_data);
-   MLnew_Set_Amatrix_Matvec(my_ml, grid1, mymatvec  );
+   ML_Set_Amatrix_Matvec(my_ml, grid1, mymatvec  );
    ML_Set_Amatrix_Diag  (my_ml, grid1, Nfine, diagonal);
    ML_Gen_Smoother_Jacobi(my_ml, grid1, ML_PRESMOOTHER, 2, ML_DEFAULT);
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
-   MLnew_Set_Amatrix_Matvec(my_ml, grid0, mymatvec);
+   ML_Set_Amatrix_Matvec(my_ml, grid0, mymatvec);
    ML_Set_Amatrix_Diag  (my_ml, grid0, Ncoarse, diagonal);
    ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTHER, 200, ML_DEFAULT);
 
 
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse, Nfine, (void*)Pmat_data);
-   MLnew_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
+   ML_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
-   MLnew_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
+   ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
 
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
    free(diagonal);
@@ -432,19 +432,19 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_OutputLevel( my_ml, output_level);
 
    ML_Init_Amatrix      (my_ml, grid1,  Nfine, Nfine,(void *) Afine_data);
-   MLnew_Set_Amatrix_Getrow(my_ml, grid1,  myAgetrow, my_comm, Nfine+1);
-   MLnew_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
+   ML_Set_Amatrix_Getrow(my_ml, grid1,  myAgetrow, my_comm, Nfine+1);
+   ML_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
    ML_Set_Amatrix_Diag  (my_ml, grid1,  Nfine, diagonal);
    ML_Gen_Smoother_BlockGaussSeidel(my_ml, grid1,  ML_PRESMOOTHER, 2, 
 				    ML_DEFAULT, blocksize); 
 	 /*   ML_Gen_SmootherGaussSeidel(my_ml, grid1, ML_PRESMOOTHER, 2);        */
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse,Nfine,(void *)Pmat_data);
-   MLnew_Set_Prolongator_Getrow(my_ml,  grid0, myPgetrow, my_comm, Ncoarse+1);
-   MLnew_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
+   ML_Set_Prolongator_Getrow(my_ml,  grid0, myPgetrow, my_comm, Ncoarse+1);
+   ML_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
-   MLnew_Set_Restrictor_Getrow(my_ml,  grid1, myRgetrow, my_comm, Nfine+1);
-   MLnew_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
+   ML_Set_Restrictor_Getrow(my_ml,  grid1, myRgetrow, my_comm, Nfine+1);
+   ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
 
 
    ML_Gen_AmatrixRAP(my_ml,grid1, grid0);
@@ -480,16 +480,16 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_OutputLevel( my_ml, output_level);
 
    ML_Init_Amatrix      (my_ml, grid1,   Nfine,   Nfine, (void *) Afine_data);
-   MLnew_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
+   ML_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
-   MLnew_Set_Amatrix_Matvec(my_ml, grid0,  mymatvec);
+   ML_Set_Amatrix_Matvec(my_ml, grid0,  mymatvec);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
-   MLnew_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
+   ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
 
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse, Nfine,(void *)Pmat_data);
-   MLnew_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
+   ML_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
 
    ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTHER, (void *)&fsmooth,mysmooth,NULL);
    ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTHER, (void *)&csmooth,mysmooth,NULL);
