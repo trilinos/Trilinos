@@ -69,6 +69,9 @@ namespace LineSearch {
 
   - Initialization of the numerically approximated Hessian is done using
     a backward difference with perturbation (initial step length) of -1.e-5.
+
+  \author Russ Hopper, Org. 9233, Sandia National Labs
+
 */
 
 class Secant : public Generic {
