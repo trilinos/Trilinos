@@ -197,7 +197,7 @@ double max_diag, min_diag, max_sum, sum;
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
 */
 #ifdef MB_MODIF
-  ML_Aggregate_Set_DampingFactor(ag,1.55);
+  ML_Aggregate_Set_DampingFactor(ag,1.50);
 #else
   ML_Aggregate_Set_DampingFactor(ag,1.5);
 #endif
@@ -247,28 +247,7 @@ double max_diag, min_diag, max_sum, sum;
     for (i = 0; i < Nrigid; i++) {
 #ifdef MB_MODIF
        sprintf(filename,"rigid_body_mode%02d",i+1);
-       printf("*** processing file: %s\n", filename);
-       {
-	       int   ndof; 
-	       int   iloc, locrow; 
-	       FILE *fd;
-	       fd = fopen(filename, "r");
-	       fscanf(fd, "%d", &ndof);
-	       mode    = (double *)malloc(ndof*sizeof(double));
-	       garbage = (int *)malloc(ndof*sizeof(int));
-
-	       for (iloc=0; iloc<ndof; iloc++) { 
-		    fscanf(fd, "%d%lg", &locrow, &mode[iloc]);
-		    if (locrow != iloc) { 
-			    printf("*** file %s corrupt.\n", filename);
-		    }
-	       }
-	       fclose(fd);
-	      /*
-	       * modes are scaled later by a call to 
-               * call to ML_Aggregate_Scale_NullSpace(ag, sc_vec, N_update);
-	       */
-       }
+       AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
 #else
        sprintf(filename,"rigid_body_mode%d",i+1);
        AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
