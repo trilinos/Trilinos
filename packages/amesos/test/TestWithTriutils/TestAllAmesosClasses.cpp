@@ -92,7 +92,7 @@ void TestAmesos(char ProblemType[],
     double TimeForSolve = Time.ElapsedTime();
 
     // compute difference between exact solution and Amesos
-    double d;
+    double d = 0.0;
     
     for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
       d += ((*lhs)[0][i] - 1.0) * ((*lhs)[0][i] - 1.0);
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   Amesos A_Factory;
 
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
-  
+    
   // ====================== //
   // KLU -- default options //
   // ====================== //
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
      Teuchos::ParameterList AmesosList;
      TestAmesos("Amesos_Umfpack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
-/*  
+ 
   // ==========================================  //
   // UMFPACK -- default options -- use transpose //
   // =========================================== //
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
      Teuchos::ParameterList AmesosList;
      TestAmesos("Amesos_Scalapack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
-*/
+
   // print out total error
   
   if( Comm.MyPID() == 0 ) {
