@@ -60,7 +60,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int local_or_global,
 					 int offsets[],
 					 int reorder_flag,
-					 int current_level, int *total_nz, int * );
+					 int current_level, int *total_nz);
 /*
 static int find_max(int length, int vector[] );
 static int find_index( int key, int list[], int N );
@@ -110,27 +110,6 @@ int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
 
   return 0;
   
-}
-
-/* ======================================================================== */
-/*!
- \brief Used to set the flag (used in Decompose_with_METIS) to compute
- the radius (based on graph information only) of each aggregate.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-int COMPUTE_GRAPH_RADIUS = ML_NO;
-
-int ML_Get_Compute_GraphRadiusFlag() 
-{
-  return COMPUTE_GRAPH_RADIUS ;
-}
-
-int ML_Set_Compute_GraphRadiusFlag(int i) 
-{
-  COMPUTE_GRAPH_RADIUS = i;
-  return 0;
 }
 
 int USE_DROPPING = ML_YES;
@@ -770,8 +749,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int offsets[],
 					 int reorder_flag,
 					 int current_level,
-					 int *total_nz,
-					 int * radius)
+					 int *total_nz)
 {
 
   int i, j,jj,  count, count2, col;
@@ -1178,40 +1156,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 				    Amatrix->comm->USR_comm );
   }
 
-  /* ********************************************************************** */
-  /* Compute the number of edges one has to walk though to move from the    */
-  /* "center" of each aggregate up to the boundaries. This is done by the   */
-  /* function `ML_Compute_AggregateGraphRadius'. This works on CSR format   */
-  /* (as METIS). I look for nodes on the boundaries of all the aggregates,  */
-  /* and mark them in the `dep' vector with 0. All the other nodes (in the  */
-  /* interior) will be marked -7). I will give                              */
-  /* the entire graph in input; in output, we will have the max radius.     */
-  /* ********************************************************************** */
-
-  if (N_parts && ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
-  
-    dep = (int *) ML_allocate(sizeof(int) * Nrows );
-    for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
-    
-    for( i=0 ; i<NrowsMETIS ; i++ ) {
-      jj = graph_decomposition[i];
-      ok = 0;
-      for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
-	col = adjncy[j];
-	if( graph_decomposition[col] != jj ) {
-	  dep[i] = 0;
-	  break;
-	}
-      }
-    }
-        
-    ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
-				     radius, &NcenterNodes );
-    
-    ML_free( dep );
-    
-  }
-
   /* ------------------- that's all folks --------------------------------- */
 
   ML_free(rowi_col); ML_free(rowi_val);
@@ -1297,7 +1241,6 @@ int agg_offset, vertex_offset;
  int mod, Nprocs;
  int optimal_value;
  char * unamalg_bdry = NULL;
- int radius;
  
 #ifdef EXTREME_DEBUGGING
  set_print(comm->ML_mypid);
@@ -1577,11 +1520,6 @@ int agg_offset, vertex_offset;
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
-   if( ml_ag->aggr_viz_and_stats != NULL ) {
-     radius = -1;
-     ML_Set_Compute_GraphRadiusFlag(ML_YES);     
-   }
-   
    unamalg_bdry = (char *) ML_allocate( sizeof(char) * (Nrows+1) );
 
    if( unamalg_bdry == NULL ) {
@@ -1605,7 +1543,7 @@ int agg_offset, vertex_offset;
 					      aggr_index, unamalg_bdry,
 					      ML_LOCAL_INDICES, NULL,
 					      reorder_flag, ml_ag->cur_level,
-					      &total_nz,&radius);
+					      &total_nz);
 
 
 #ifdef ML_MPI
@@ -1672,7 +1610,6 @@ int agg_offset, vertex_offset;
      aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
      aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
-     aggr_viz_and_stats[ml_ag->cur_level].graph_radius = radius;
    }
 
    /* ********************************************************************** */

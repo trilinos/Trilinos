@@ -69,7 +69,6 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
     info[i].Naggregates = 0;
     info[i].is_filled = ML_NO;
     info[i].local_or_global = -1;
-    info[i].graph_radius = -1;
     info[i].Amatrix = NULL;
   }
 
@@ -730,9 +729,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   char graphfile[132];
   ML_Aggregate_Viz_Stats * info;
   int dim;
-#ifdef COMPUTE_RADIUS
-  int diff;
-#endif
   double dmin, davg, dmax, dstd;
   int  imin, iavg, imax;
   ML_Comm *comm;
@@ -742,7 +738,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int num_PDE_eqns  = ag->num_PDE_eqns;
   double h, H;
   int begin, end;
-  int radius;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
   int Nrows, Naggregates_global, Nrows_global, offset;
@@ -814,9 +809,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
     
     begin = finest_level;
     end   = coarsest_level;
-#ifdef COMPUTE_RADIUS
-    diff  = +1;
-#endif
 
   } else {
 
@@ -828,9 +820,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
     
     begin = coarsest_level+1;
     end   = finest_level+1;
-#ifdef COMPUTE_RADIUS
-    diff  = -1;
-#endif
 
   }
 
@@ -940,10 +929,8 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
       	Nlocal = info[ilevel].Nlocal;
 	Naggregates = info[ilevel].Naggregates;
-	radius = info[ilevel].graph_radius;
 
 	Nrows_global = ML_gsum_int(Nlocal,comm);
-	radius = ML_gsum_int(radius,comm);
 
 	switch( info[ilevel].local_or_global ) {
 	case ML_LOCAL_INDICES:
@@ -1016,11 +1003,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	  printf( "Stats (level %d) : NumNodes per aggr (max)   = %d\n",
 		  ilevel,
 		  imax);
-	  if( info[ilevel].local_or_global == ML_LOCAL_INDICES ) 
-	    printf( "Stats (level %d) : graph radius      (avg)   = %f\n",
-		    ilevel,
-		    1.0*radius/(comm->ML_nprocs) );
-	
 	}
     }
 	
@@ -1032,54 +1014,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
   }
 
-  /* ********************************************************************** */
-  /* some statistics on the aggregates. Note that I need some nodal         */
-  /* coordinates to perform this task. The nodal coordinates of the         */
-  /* current level aggregates are stored in level+1. This means that the    */
-  /* last level will hold only coordinates, and no graph_decomposition.     */
-  /* I allocate/deallocate R and H so that their shape is right for the     */
-  /* level we are considering (and not waste space)                         */
-  /* RorH is a double vector which will contain the radius of each          */
-  /* aggregate, and then its linear size.                                   */
-  /* ********************************************************************** */
-
-#ifdef COMPUTE_RADIUS
-    
-    /* this works only for ML_LOCAL INDICES */
-    for( ilevel=begin ; ilevel<end ; ilevel++ ) {
-      
-      Nlocal = info[ilevel+diff].Nlocal;
-      Naggregates = info[ilevel].Naggregates;
-
-      RorH = (double *) ML_allocate( sizeof(double) * Naggregates );
-    
-      if( RorH == NULL ) {
-	fprintf( stderr,
-		 "*ML*ERR* not enough memory for %d bytes\n"
-		 "*ML*ERR* (file %s, line %d)\n",
-		 sizeof(double) * Nlocal,
-		 __FILE__,
-		 __LINE__ );
-	exit( EXIT_FAILURE );
-      }
-    
-      ML_Aggregate_ComputeRadius( info[ilevel], info[ilevel+diff], RorH );
-      
-      ML_Aggregate_AnalyzeVector( Naggregates, RorH,
-				  &dmin, &dmax, &davg, &dstd, comm );
-      
-      if( comm->ML_mypid == 0 ) {
-	puts("------------------------------------------------------------------------");
-	printf( "Stats : aggregate radius (min) = %f\n",
-		dmin );
-	printf( "Stats : aggregate radius (avg) = %f\n",
-		davg );
-	printf( "Stats : aggregate radius (max) = %f\n",
-		dmax );
-      }
-      
-    }    
-#endif
   if( dim > 0 ) {
 
     for( ilevel=begin ; ilevel<end ; ilevel++ ) {
@@ -1087,7 +1021,6 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
       if( info[ilevel].is_filled == ML_YES ) {
 
 	Naggregates = info[ilevel].Naggregates;
-	radius = info[ilevel].graph_radius;
 
 	switch( info[ilevel].local_or_global ) {
 	case ML_LOCAL_INDICES:
@@ -1546,7 +1479,6 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   int incr_or_decr;
   double h, H;
   int begin, end;
-  int radius;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
   int Naggregates_global, Nrows_global, offset;
@@ -1630,10 +1562,8 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
 
       	Nlocal = info[ilevel].Nlocal;
 	Naggregates = info[ilevel].Naggregates;
-	radius = info[ilevel].graph_radius;
 
 	Nrows_global = ML_gsum_int(Nlocal,comm);
-	radius = ML_gsum_int(radius,comm);
 
 	switch( info[ilevel].local_or_global ) {
 	case ML_LOCAL_INDICES:
@@ -1732,7 +1662,6 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
     if( info[ilevel].is_filled == ML_YES ) {
 
       Naggregates = info[ilevel].Naggregates;
-      radius = info[ilevel].graph_radius;
 
       switch( info[ilevel].local_or_global ) {
       case ML_LOCAL_INDICES:

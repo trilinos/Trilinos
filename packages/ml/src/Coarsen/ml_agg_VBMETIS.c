@@ -67,7 +67,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 					   int local_or_global,
 					   int offsets[],
 					   int reorder_flag,
-					   int current_level, int *total_nz, int * );
+					   int current_level, int *total_nz);
 #define OPTIMAL_VALUE (27*27)
 #define EPS9 (1.0e-09)
 
@@ -1024,7 +1024,6 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int mod, Nprocs;
    int optimal_value;
    char * unamalg_bdry = NULL;
-   int radius;
  
 #ifdef EXTREME_DEBUGGING
  set_print(comm->ML_mypid);
@@ -1322,11 +1321,6 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
-   if( ml_ag->aggr_viz_and_stats != NULL ) {
-     radius = -1;
-     ML_Set_Compute_GraphRadiusFlag(ML_YES);     
-   }
-   
    unamalg_bdry = (char *) ML_allocate( sizeof(char) * (Nrows+1) );
 
    if( unamalg_bdry == NULL ) {
@@ -1351,7 +1345,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 					        aggr_index, unamalg_bdry,
 					        ML_LOCAL_INDICES, NULL,
 					        reorder_flag, ml_ag->cur_level,
-					        &total_nz,&radius);
+					        &total_nz);
 
 
 #ifdef ML_MPI
@@ -1414,7 +1408,6 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
      aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
-     aggr_viz_and_stats[ml_ag->cur_level].graph_radius = radius;
    }
 
    /* ********************************************************************** */
@@ -2062,7 +2055,6 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 \param reorder_flag         int                (input)     flag indicating fill-in reducing reordering with metis
 \param current_level        int                (input)     number of current level
 \param total_nz             int*               (output)    total number of nonzeros
-\param radius               int*               (output)    computes the radius of the aggregates
 
  \sa  ML_Aggregate_Set_CoarsenScheme_VBMETIS ML_Aggregate_CoarsenVBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS
@@ -2070,7 +2062,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
  \note this function is derived from ML_DecomposeGraph_with_METIS
  
  \warning some features of the original routine ML_DecomposeGraph_with_METIS are
-          in here, but they are not tested! E.g. :radius and local_or_global=ML_GLOBAL_INDICES
+          in here, but they are not tested! E.g. local_or_global=ML_GLOBAL_INDICES
 
 */
 /* ------------------------------------------------------------------------ */
@@ -2082,8 +2074,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 					   int offsets[],
 					   int reorder_flag,
 					   int current_level,
-					   int *total_nz,
-					   int * radius)
+					   int *total_nz)
 {
 
   int i, j,jj,  count, count2, col;
@@ -2495,44 +2486,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
          comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);    
     ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs,
 				    Amatrix->comm->USR_comm );
-  }
-
-  /* ********************************************************************** */
-  /* Compute the number of edges one has to walk though to move from the    */
-  /* "center" of each aggregate up to the boundaries. This is done by the   */
-  /* function `ML_Compute_AggregateGraphRadius'. This works on CSR format   */
-  /* (as METIS). I look for nodes on the boundaries of all the aggregates,  */
-  /* and mark them in the `dep' vector with 0. All the other nodes (in the  */
-  /* interior) will be marked -7). I will give                              */
-  /* the entire graph in input; in output, we will have the max radius.     */
-  /* ********************************************************************** */
-
-  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
-  
-    fprintf( stderr,
-         "%s **WRN** on proc %d, ML_Get_Compute_GraphRadiusFlag() not checked for variable blocks\n"
-         "good luck! file %s, line %d\n",str,
-         comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);    
-    dep = (int *) ML_allocate(sizeof(int) * Nrows );
-    for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
-    
-    for( i=0 ; i<NrowsMETIS ; i++ ) {
-      jj = graph_decomposition[i];
-      ok = 0;
-      for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
-	col = adjncy[j];
-	if( graph_decomposition[col] != jj ) {
-	  dep[i] = 0;
-	  break;
-	}
-      }
-    }
-        
-    ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
-				     radius, &NcenterNodes );
-    
-    ML_free( dep );
-    
   }
 
   /* ------------------- that's all folks --------------------------------- */

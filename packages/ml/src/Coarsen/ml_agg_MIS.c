@@ -1578,7 +1578,6 @@ Here is how we do all this:
        aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
        aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
        aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
-       aggr_viz_and_stats[ml_ag->cur_level].graph_radius = -1;
      }
    }
 
