@@ -28,8 +28,10 @@ extern "C" {
 #define NO_DEBUG 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
-#define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on either side of cut */
-#define MAX_ITERATIONS 20     /* Max. no. of iterations in main bisection loop */
+#define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
+                                 either side of cut */
+#define MAX_BISECT_ITER 20    /* Max. no. of iterations in main bisection 
+                                 loop. Avoids potential infinite loops. */
 
 /* Data structure for parallel find bisector routine */
 
@@ -193,27 +195,30 @@ int Zoltan_RB_find_bisector(
     }
   }
 
-  if (k == -nwgts){
-    /* Put all dots in upper half */
-    for (i = 0; i < dotnum; i++)
-       dotmark[i] = 1;
-    for (j=0; j<nwgts; j++){
-      weighthi[j] = weight[j];
-      weightlo[j] = 0.0;
+  /* No early exit if Tflops_Special is set */
+  if (!Tflops_Special){
+    if (k == -nwgts){
+      /* Put all dots in upper half */
+      for (i = 0; i < dotnum; i++)
+         dotmark[i] = 1;
+      for (j=0; j<nwgts; j++){
+        weighthi[j] = weight[j];
+        weightlo[j] = 0.0;
+      }
+      ierr = ZOLTAN_OK;
+      goto End;
     }
-    ierr = ZOLTAN_OK;
-    goto End;
-  }
-  else if (k == nwgts){
-    /* Put all dots in lower half */
-    for (i = 0; i < dotnum; i++)
-       dotmark[i] = 0;
-    for (j=0; j<nwgts; j++){
-      weightlo[j] = weight[j];
-      weighthi[j] = 0.0;
+    else if (k == nwgts){
+      /* Put all dots in lower half */
+      for (i = 0; i < dotnum; i++)
+         dotmark[i] = 0;
+      for (j=0; j<nwgts; j++){
+        weightlo[j] = weight[j];
+        weighthi[j] = 0.0;
+      }
+      ierr = ZOLTAN_OK;
+      goto End;
     }
-    ierr = ZOLTAN_OK;
-    goto End;
   }
 
   /* Normal case: Initialize invfraclo,hi and go to main section. */
@@ -447,7 +452,7 @@ int Zoltan_RB_find_bisector(
                           added for Tflops_Special */
 
     iteration = 0;
-    while (iteration++ < MAX_ITERATIONS){
+    while (iteration++ < MAX_BISECT_ITER){
 
       /* choose bisector value */
       /* use old value on 1st iteration if old cut dimension is the same */
@@ -908,9 +913,9 @@ int Zoltan_RB_find_bisector(
       numlist = k;
   
     }
-    if (iteration == MAX_ITERATIONS){
+    if (iteration == MAX_BISECT_ITER){
       ierr = ZOLTAN_WARN;
-      ZOLTAN_PRINT_WARN(proc, yo, "MAX_ITERATIONS reached. Possible bug in Zoltan/RCB.");
+      ZOLTAN_PRINT_WARN(proc, yo, "MAX_BISECT_ITER reached. Possible bug in Zoltan/RCB.");
     }
   }
   else /* if one processor set all dots to 0 (Tflops_Special) */
