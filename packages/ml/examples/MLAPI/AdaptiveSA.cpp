@@ -31,13 +31,26 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 #include "MLAPI.h"
+#include "MLAPI_SAMIS.h"
 
 using namespace Teuchos;
 using namespace MLAPI;
-//
-// ============== //
-// example driver //
-// ============== //
+
+/* ====================================================================== 
+
+To use this example, create a file, called for instance ml-input, 
+which will contain the values used to built the hierarchy. An example
+of this file is as follows:
+-----(begin)--
+----(end)--
+
+then execute the file as:
+$ AdaptiveSA.exe ml-input
+
+NOTE: The file reader is very rudimental, no trailing or leading white
+spaces are admitted, and words must be separed by exactly one white space.
+
+  ====================================================================== */
 
 int main(int argc, char *argv[])
 {
@@ -46,22 +59,21 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  // Initialize the workspace and set the output level
-  Init();
+  if (argc != 2) {
+    fprintf(stderr, "Usage: `%s InputFile'\n", argv[0]);
+    fprintf(stderr, "An example of input file is reported\n");
+    fprintf(stderr, "in the source of this example\n");
+    exit(EXIT_SUCCESS);
+  }
+
+  string InputFile = argv[1];
 
   try {
 
+    // Initialize the workspace and set the output level
+    Init();
+
     int NX = 1000;
-
-#if 0
-    //Operator NonScaledA = GetShiftedLaplacian1D(NX, 0.99999);
-    Operator NonScaledA = GetShiftedLaplacian2D(NX, NX, 0.99999);
-    //Operator NonScaledA = ReadMatrix(argv[1]);
-
-    // need to get the fine space, it will be used later
-    Space FineSpace = NonScaledA.GetDomainSpace();
-#endif
-
 
     // define the space for fine level vectors and operators.
     Space FineSpace(2*NX);
@@ -89,49 +101,31 @@ int main(int argc, char *argv[])
     // wrap MatA as an Operator
     Operator A(FineSpace, FineSpace, &MatA, false);
 
-#if 0
-    MultiVector Scale(FineSpace);
-    Scale.Random();
-    Scale = Scale + 1.0001;
-
-    Operator S = GetDiagonal(Scale);
-    Operator A = GetRAP(S, NonScaledA, S);
-#else
-    //Operator A = NonScaledA;
-#endif
-
-    Teuchos::ParameterList List;
-    List.set("smoother: type", "symmetric Gauss-Seidel");
-    List.set("smoother: sweeps", 10);
-    List.set("smoother: damping factor", 1.0);
-    List.set("coarse: type", "Amesos-KLU");
-    List.set("coarse: max size", 32);
-    List.set("adapt: max reduction", 0.1);
-    List.get("adapt: iters fine", 15);
-    List.get("adapt: iters coarse", 5);
-
     int NumPDEEqns = 2;
-    int MaxLevels  = 10;
+
+    Teuchos::ParameterList List = ReadParameterList(InputFile.c_str());
+    int MaxLevels = List.get("max levels", 10);
+    int AdditionalCandidates = List.get("additional candidates", 2);
+    bool UseDefaultNullSpace = List.get("use default null space", true);
+
     MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
 
     // =============================================================== //
     // setup the hierarchy:                                            //
-    // - `false' means that no default null space will be considered   //
-    // - AdditionalCandidates = 2' means to compute two additional guy //
+    // - `UseDefaultNullSpace' toggles the use of default candidates.  //
+    // - AdditionalCandidates = 2' means to compute two additionals.   //
     // - the final null space dimension is 3.                          //
     // =============================================================== //
     
-    int AdditionalCandidates = 2;
-    Prec.AdaptCompute(false, AdditionalCandidates);
+    Prec.AdaptCompute(UseDefaultNullSpace, AdditionalCandidates);
 
-    // test the solver
-    MultiVector LHS(FineSpace);
-    MultiVector RHS(FineSpace);
+    MultiVector LHS(A.GetDomainSpace());
+    MultiVector RHS(A.GetRangeSpace());
 
     LHS.Random();
     RHS = 0.0;
 
-    List.set("krylov: type", "fixed point");
+    List.set("krylov: type", "cg");
     Krylov(A, LHS, RHS, Prec, List);
 
     Finalize(); 
