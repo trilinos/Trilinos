@@ -112,6 +112,28 @@ public:
   */
 //  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
+  //! Generic routine for applying Nic method to solve near-singular system
+  virtual NOX::Abstract::Group::ReturnType
+  applyJacobianInverseNic(NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector& input,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector& result) const;
+
+  //! Generic routine for applying Nic method to solve near-singular system
+  virtual NOX::Abstract::Group::ReturnType
+  applyJacobianInverseNicDay(NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector& input,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector& result) const;
+
+  //! Generic routine for applying Iterative Refinement for solving near-singular system
+  virtual NOX::Abstract::Group::ReturnType
+  applyJacobianInverseItRef(NOX::Parameter::List& params,
+                            const NOX::Abstract::Vector& input,
+                            NOX::Abstract::Vector& result) const;
+
   //! Set the parameter list in the group to p (pVector = p).  
   virtual void setParams(const ParameterVector& p) = 0;
 

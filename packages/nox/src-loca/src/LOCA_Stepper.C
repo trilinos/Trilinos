@@ -168,6 +168,9 @@ StatusType Stepper::step()
     stepSize = computeStepSize(Failed);
     curGroupPtr->setStepSize(stepSize);
 
+    // Take (reduced) step in predictor direction, which must be still valid
+    curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
+
   }
   else {
 
@@ -244,7 +247,7 @@ double Stepper::computeStepSize(StatusType solverStatus)
     isLastStep = true;
   }
 
-  if (fabs(prevValue+stepSize-finalValue) < 1.0e-15*fabs(finalValue))
+  if (fabs(prevValue+stepSize-finalValue) <= 1.0e-15*fabs(finalValue))
     isLastStep = true;
 
   return stepSize;

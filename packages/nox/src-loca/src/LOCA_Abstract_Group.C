@@ -72,6 +72,84 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
 }
 
 NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseNic(
+                          NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector& input,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector& result) const
+{
+  double alpha = approxNullVec.dot(input)
+               / approxNullVec.dot(JacApproxNullVec);
+
+  NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
+  tmpInput->update(-alpha, JacApproxNullVec, 1.0);
+
+  NOX::Abstract::Group::ReturnType
+    res = applyJacobianInverse(params, *tmpInput, result);
+
+  delete tmpInput;
+
+  result.update(alpha, approxNullVec, 1.0);
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseNicDay(
+                          NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector& input,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector& result) const
+{
+  double alpha = JacApproxNullVec.dot(input)
+               / JacApproxNullVec.dot(JacApproxNullVec);
+
+  NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
+  tmpInput->update(-alpha, JacApproxNullVec, 1.0);
+
+  NOX::Abstract::Group::ReturnType
+    res = applyJacobianInverse(params, *tmpInput, result);
+
+  delete tmpInput;
+
+  result.update(alpha, approxNullVec, 1.0);
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseItRef(
+                            NOX::Parameter::List& params,
+                            const NOX::Abstract::Vector& input,
+                            NOX::Abstract::Vector& result) const
+{
+  NOX::Abstract::Group::ReturnType 
+    res = applyJacobianInverse(params, input, result);
+
+  NOX::Abstract::Vector* remainder = input.clone(NOX::ShapeCopy);
+
+  res = applyJacobian(result, *remainder);
+
+  // r = b-Ax
+  remainder->update(1.0, input, -1.0);
+
+  NOX::Abstract::Vector* refinement = input.clone(NOX::ShapeCopy);
+
+  // Ay=r
+  res = applyJacobianInverse(params, *remainder, *refinement);
+
+  // x+=y
+  result.update(1.0, *refinement, 1.0);
+  
+  delete remainder;
+  delete refinement;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::computeDfDp(int paramID, NOX::Abstract::Vector& result) 
 {
   return derivPtr->computeDfDp(*this,paramID, result);

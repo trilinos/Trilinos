@@ -224,6 +224,18 @@ public:
 		       const NOX::Abstract::Vector& input, 
 		       NOX::Abstract::Vector& result) const;
 
+  /*! 
+    Applies Jacobian inverse of underlying group on multiple right hand sides
+  */
+  virtual NOX::Abstract::Group::ReturnType 
+  underlyingGroupApplyJacobianInverseManager(NOX::Parameter::List& params, 
+		       const NOX::Abstract::Vector& input1, 
+		       const NOX::Abstract::Vector& input2, 
+                       const NOX::Abstract::Vector& approxNullVec,
+                       const NOX::Abstract::Vector& jacTimesApproxNullVec,
+		       NOX::Abstract::Vector& result1,
+		       NOX::Abstract::Vector& result2) const;
+
   //! Applies the inverse of the diagonal of the Jacobian to the given input vector.
   /*! 
     Only necessary if using NOX::Solver::NonlinearCG.

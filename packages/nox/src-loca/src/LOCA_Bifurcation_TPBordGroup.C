@@ -32,6 +32,7 @@
 
 #include "LOCA_Bifurcation_TPBordGroup.H"
 #include "LOCA_Parameter_Vector.H"
+#include "NOX_Parameter_List.H"
 
 using namespace LOCA;
 using namespace Bifurcation;
@@ -411,45 +412,40 @@ LOCA::Bifurcation::TPBordGroup::applyJacobianInverse(NOX::Parameter::List& param
   Vector *b = input_x.clone(NOX::ShapeCopy);
   Vector *c = input_x.clone(NOX::ShapeCopy);
   Vector *d = input_x.clone(NOX::ShapeCopy);
-  Vector *derivJ = input_x.clone(NOX::ShapeCopy);
+  Vector *derivJa = input_x.clone(NOX::ShapeCopy);
+  Vector *derivJb = input_x.clone(NOX::ShapeCopy);
   
   NOX::Abstract::Group::ReturnType res;
 
   // Solve J*a = input_x
-  res = grpPtr->applyJacobianInverse(params, input_x, *a);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
   // Solve J*b = dR/dp
-  res = grpPtr->applyJacobianInverse(params, *derivResidualParamPtr, *b);
+  res = underlyingGroupApplyJacobianInverseManager(params, input_x,
+            *derivResidualParamPtr, tpXVec.getNullVec(), input_null, *a, *b);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
   // Compute (dJy/dx)*a
   res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *a, 
-				tpFVec.getNullVec(), *derivJ);
+				tpFVec.getNullVec(), *derivJa);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
   // Compute input_null - (dJy/dx)*a
-  *derivJ = derivJ->update(1.0, input_null, -1.0);
-
-  // Solve J*c = input_null - (dJy/dx)*a
-  res = grpPtr->applyJacobianInverse(params, *derivJ, *c);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  *derivJa = derivJa->update(1.0, input_null, -1.0);
 
   // Compute (dJy/dx)*b
   res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *b, 
-				tpFVec.getNullVec(), *derivJ);
+				tpFVec.getNullVec(), *derivJb);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
   // Compute (dJy/dx)*b - dJy/dp
-  *derivJ = derivJ->update(-1.0, *derivNullResidualParamPtr, 1.0);
+  *derivJb = derivJb->update(-1.0, *derivNullResidualParamPtr, 1.0);
 
+  // Solve J*c = input_null - (dJy/dx)*a
   // Solve J*d = (dJy/dx)*b - dJy/dp
-  res = grpPtr->applyJacobianInverse(params, *derivJ, *d);
+  res = underlyingGroupApplyJacobianInverseManager(params, *derivJa, *derivJb,
+                                      tpXVec.getNullVec(), input_null, *c, *d);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
@@ -473,10 +469,79 @@ LOCA::Bifurcation::TPBordGroup::applyJacobianInverse(NOX::Parameter::List& param
   delete b;
   delete c;
   delete d;
-  delete derivJ;
+  delete derivJa;
+  delete derivJb;
 
   return res;
 
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBordGroup::underlyingGroupApplyJacobianInverseManager(
+                       NOX::Parameter::List& params,
+                       const NOX::Abstract::Vector& input1,
+                       const NOX::Abstract::Vector& input2,
+                       const NOX::Abstract::Vector& approxNullVec,
+                       const NOX::Abstract::Vector& jacTimesApproxNullVec,
+                       NOX::Abstract::Vector& result1,
+                       NOX::Abstract::Vector& result2) const
+{
+
+  NOX::Abstract::Group::ReturnType res;
+  string singularSolveOption = params.getParameter("Bifurcation Solve", "Default");
+
+  if (singularSolveOption == "Nic") {
+
+    // Solve of near-singular matrix with Nic method
+    res = grpPtr->applyJacobianInverseNic(params, input1, approxNullVec,
+                                          jacTimesApproxNullVec, result1);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+
+    res = grpPtr->applyJacobianInverseNic(params, input2, approxNullVec,
+                                          jacTimesApproxNullVec, result2);
+
+  }
+  else if (singularSolveOption == "NicDay") {
+
+    // Solve of near-singular matrix with Nic method
+    res = grpPtr->applyJacobianInverseNicDay(params, input1, approxNullVec,
+                                             jacTimesApproxNullVec, result1);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+
+    res = grpPtr->applyJacobianInverseNicDay(params, input2, approxNullVec,
+                                             jacTimesApproxNullVec, result2);
+  }
+  else if (singularSolveOption == "Iterative Refinement") {
+
+    // Solve of near-singular matrix with Nic method
+    res = grpPtr->applyJacobianInverseItRef(params, input1, result1);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+
+    res = grpPtr->applyJacobianInverseItRef(params, input2, result2);
+
+  }
+  else {
+    if (singularSolveOption != "Default") {
+      cout << "WARNING: LOCA::Bifurcation::TPBordGroup::"
+           << "underlyingGroupApplyJacobianInverseManager\n\t"
+           << "Unknown Bifurcation Solve Option<" << singularSolveOption
+           << ">:  Resetting to Default." << endl;
+
+      params.setParameter("Bifurcation Solve", "Default");
+    }
+    
+    // Default solve of matrix that is approaching singular, sequential RHS
+    res = grpPtr->applyJacobianInverse(params, input1, result1);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+
+    res = grpPtr->applyJacobianInverse(params, input2, result2);
+  }
+
+  return res;
 }
 
 NOX::Abstract::Group::ReturnType
