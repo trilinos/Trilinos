@@ -21,87 +21,24 @@
 
 <H2>
 <A NAME="Migration-Help Functions"></A>Migration-Help Functions</H2>
-The following functions are migration-help interface functions; their descriptions
-are included below.
-<BLOCKQUOTE><B><A HREF="#LB_Set_Migration">LB_Set_Migration</A></B>
-<BR><B><A HREF="#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
+If requested, Zoltan can automatically transfer an application's data
+between processors to realize the new decomposition.  This functionality
+will be performed as part of the call to
+<B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B> if
+the <B>AUTO_MIGRATE</B> parameter to TRUE (nonzero) via a call to
+<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
+Alternatively, the application can leave <B>AUTO_MIGRATE</B> FALSE
+and call <B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> itself.
+In either case, <A HREF="ug_query_mig.html#Migration-Help Query Functions">
+routines to pack and unpack object data</A> must be provided by the application.
+See <A HREF="ug_examples_mig.html#Migration Example">Migration Example</A>
+for an example using auto-migration.
+
+The functions are the migration-help interface functions. Their 
+detailed descriptions can be found below.
+<BLOCKQUOTE>
+    <B><A HREF="#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
 <BR><B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B></BLOCKQUOTE>
-
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-
-<TD><A NAME="LB_Set_Migration"></A>int <B>LB_Set_Migration</B>(struct <B>LB_Struct</B>
-* <I>lb</I>, int <I>auto_migrate_flag</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD>FUNCTION <B>LB_Set_Migration</B>(<I>lb,auto_migrate_flag</I>)&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>LOGICAL, INTENT(IN) :: auto_migrate_flag&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%"><B>LB_Set_Migration</B> allows the application to tell
-the load-balancing library to automatically perform data migration for
-it during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
-If automatic migration is desired, routines to pack and unpack object data
-must be provided by the application (see <A HREF="ug_query_mig.html#Migration-Help Query Functions">Migration-Help
-Query Functions</A>). See <A HREF="ug_examples_mig.html#Migration Example">Migration
-Example</A> for an example using auto-migration.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp; lb</I></TD>
-
-<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp; auto_migrate_flag</I></TD>
-
-<TD>&nbsp;If auto_migrate_flag is TRUE, the load-balancing library performs
-migration as part of the call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>;
-otherwise, no migration is performed in <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.</TD>
-</TR>
-
-<TR>
-<TD><B>Returned Value:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
-
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
-
-<TR>
-<TD><B>Default:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD></TD>
-
-<TD><I>auto_migrate_flag </I>= FALSE; the application must explicitly call
-<B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> to use the migration
-help tools.</TD>
-</TR>
-</TABLE>
-&nbsp;
 
 <P>
 <HR WIDTH="100%">

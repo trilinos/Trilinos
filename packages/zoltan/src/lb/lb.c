@@ -366,43 +366,6 @@ int i;
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Set_Migration(struct LB_Struct *lb, int help)
-{
-/*
- *  Function to set a flag indicating whether the application wants the
- *  load-balancer to help with data migration.   If migration help is
- *  wanted, routines to pack and unpack object data must be provided by
- *  the application (see LB_PACK_OBJ_FN, LB_UNPACK_OBJ_FN).
- *
- *  Input:
- *    struct LB_Struct * --  The load balancing object to which this tolerance
- *                           applies.
- *    int                --  TRUE or FALSE to indicate whether the application
- *                           wants migration help.  Default is FALSE.
- *  Output:
- *    struct LB_Struct * --  Appropriate fields set to designated type.
- */
-char *yo = "LB_Set_Migration";
-
-  if (help != TRUE && help != FALSE) {
-    fprintf(stderr, "Error from %s:  Invalid value for Help_Migration:  %d\n", 
-            yo, help);
-    fprintf(stderr, "Value must be between %d or %d.\n", TRUE, FALSE);
-    return (LB_FATAL);
-  }
-
-  lb->Migrate.Help_Migrate = help;
-  if (lb->Proc == 0) {
-    printf("LB:  Load balancing Migration flag = %d\n", help);
-  }
-
-  return (LB_OK);
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
 int LB_Balance(
   LB *lb, 
   int *changes,               /* Set to zero or one depending on if the

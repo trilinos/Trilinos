@@ -59,7 +59,21 @@ weights of vertices it is assigned.  The imbalance is then computed
 as the maximum load divided by the average load.  An value for
 IMBALANCE_TOL of .2 indicates that 20% imbalance is OK; that is the
 max over the average shouldn't exceed 1.2.
+</TD></TR>
+<TR>
+
+<TD></TD>
 </TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>AUTO_MIGRATE</I></TD>
+
+<TD>If this value is set to TRUE (nonzero) then Zoltan will
+automatically perform the data migration 
+during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+A full discussion of automatic migration can be found in the description
+of the <A HREF="ug_interface_mig.html">migration interface functions</A>.
+</TD></TR>
 
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>KEEP_CUTS</I></TD>
@@ -72,7 +86,7 @@ which processor a new object should be assigned to via the
 or <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>
 functions.  If you intend to use these functions, then information about
 the geometric partitioning must be retained by setting KEEP_CUTS to 1.
-</TR>
+</TD></TR>
 
 
 <TR>
@@ -85,6 +99,12 @@ the geometric partitioning must be retained by setting KEEP_CUTS to 1.
 <TD></TD>
 
 <TD><I>IMBALANCE_TOL</I> = .1</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>AUTO_MIGRATE</I> = FALSE</TD>
 </TR>
 
 <TR>

@@ -35,11 +35,13 @@ char *val)			/* value of variable */
     int index;			/* index returned from Check_Param */
     PARAM_VARS key_params[] = {
 	{ "IMBALANCE_TOL", NULL, "DOUBLE" },
+	{ "AUTO_MIGRATE", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, key_params, &result, &index);
 
-    if (status == 0) {		/* Imbalance_Tol */
+    if (status == 0) {
+      if (index == 0) {		/* Imbalance_Tol */
 	if (result.dval > 1.0) {
 	    fprintf(stderr, "WARNING: Invalid Imbalance_Tol value (%g) "
 		"being set to 1.0\n", result.dval);
@@ -52,7 +54,12 @@ char *val)			/* value of variable */
 	}
 	lb->Imbalance_Tol = result.dval;
 	status = 3;		/* Don't add to Params field of LB */
-    }
+      }
+      else if (index == 1) {		/* Help_Migrate */
+	lb->Migrate.Help_Migrate = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+      }
+   }
 
     return(status);
 }
