@@ -111,8 +111,9 @@ private:
 	void SortEvals();
 	void SetInitBlock();
 	void SetBlkTols();
-	void CheckBlkArnRed( const int );
-	Eigenproblem<TYPE> &_problem; // must be passed in by the user
+	void CheckBlkArnRed( const int j );
+        void CheckSchurVecs( const int j ); 
+        Eigenproblem<TYPE> &_problem; // must be passed in by the user
 	MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
 	Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
 	const int _nev, _length, _block, _restarts, _step;
@@ -121,7 +122,7 @@ private:
 	int _restartiter, _iter, _jstart, _jend, _nevblock,_debuglevel, _defblock;
         int _offset, _maxoffset;
 	bool _initialguess, _issym, _isdecompcurrent, _isevecscurrent, exit_flg, dep_flg;
-	TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
+	TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 	string _which;
 	int *_order;
 };
@@ -135,7 +136,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem,
 				const TYPE tol, const int nev, const int length, const int block,
 				const string which, const int step, const int restarts) : 
 				_problem(problem), _basisvecs(0), _evecr(0), _eveci(0), 
-				_nev(nev), _length(length), _block(block), 
+				_nev(nev), _length(length), _block(block), _scalefactor(1.0),
 				_restarts(restarts), _residual_tolerance(tol), _step(step),
 				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), 
 				_iter(0), _jstart(0), _jend(0), _which(which),
@@ -638,8 +639,8 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         // vectors and all previous blocks, then the vectors within the
         // new block are orthogonalized.
         //
-        const TYPE one = 1.0;
-        const TYPE zero = 0.0;
+        const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+        const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
         const int max_num_orth = 2;
         int i, k, row_offset, col_offset;
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
@@ -761,8 +762,8 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         // Arnoldi vectors.
         //
         const int IntOne = 1;
-        const TYPE one = 1.0;
-        const TYPE zero = 0.0;
+        const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+        const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
         int i, k, num_prev;
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
         Teuchos::SerialDenseVector<int,TYPE> dense_vec;
@@ -950,8 +951,8 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 	int nb = VecIn.GetNumberVecs(); assert (nb == _block);
 	int *index = new int[nb]; assert(index!=NULL);
 	const int IntOne=1;
-	const TYPE zero=0.0;
-	const TYPE one=1.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	bool addvec = false, flg = false;
 	ReturnType ret;
 	//
@@ -1124,8 +1125,8 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	int m = _jstart*_block, n=_jstart*_block;
 	int mm1 = (_jstart-1)*_block;
 	int _nevtemp, _nevtemp2, numimag;
-	const TYPE one = 1.0;
-	const TYPE zero = 0.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
 	Teuchos::LAPACK<int,TYPE> lapack;
 	Teuchos::BLAS<int,TYPE> blas;
@@ -1150,8 +1151,9 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	    if (!(numimag % 2)) { _offset = i; break; }
 	  }
 	} else {	
-	  // Create a view into the current hessenberg matrix and
-	  // make a copy.
+	  //
+	  // Create a view into the current hessenberg matrix and make a copy.
+	  //
 	  Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, m, n);
 	  SortSchurForm( Hj, Q );
 	}
@@ -1177,13 +1179,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 		sub_block_q.values(), sub_block_q.stride(), zero, sub_block_b.values(), _block );
 	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b2(Teuchos::View, sub_block_b, _block, _nevtemp2);
         //
-        //  Compute approximate ritzresiduals for each eigenvalue using an approximate
-        //  2-norm to scale.
+        //  Compute approximate ritzresiduals for each eigenvalue and the new scaling factor which
+	//  will provide an approximate 2-norm to scale.
         //
-        TYPE temp, _scalefactor = lapack.LAPY2(_evalr[0],_evali[0]);
-        for (i=1; i<n; i++) {
-                temp = lapack.LAPY2(_evalr[i],_evali[i]);
-                if (temp > _scalefactor) _scalefactor = temp;
+	TYPE tempsf; 
+	_scalefactor = lapack.LAPY2(_evalr[0],_evali[0]);
+	for (i=1; i<n; i++) {
+                tempsf = lapack.LAPY2(_evalr[i],_evali[i]);
+                if (tempsf > _scalefactor) _scalefactor = tempsf;
         }
         _scalefactor = sqrt(_scalefactor);
 	_schurerror = sub_block_b2.normFrobenius()/_scalefactor;
@@ -1219,7 +1222,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 		    for (j=0; j<_nevtemp; j++) {
 			Hjp1(i, j) = sub_block_b(i, j);
 		    }
-		}
+		}      
 		//
 		// Determine whether we need to continue with the computations.
 		//
@@ -1238,8 +1241,8 @@ template<class TYPE>
 void BlockArnoldi<TYPE>::ComputeEvecs() {
 	int i=0,j=0,k=0;
 	int n=_jstart*_block, info=0;
-	const TYPE one = 1.0;
-	const TYPE zero = 0.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	Teuchos::LAPACK<int,TYPE> lapack;
 	Teuchos::BLAS<int,TYPE> blas;
 	MultiVec<TYPE>* basistemp=0;
@@ -1271,6 +1274,11 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  basistemp = _basisvecs->CloneCopy( index, n );
 	}
 	//
+	// Check the Schur form.
+	//
+	if (_debuglevel > 2 )
+	  CheckSchurVecs( _jstart );
+	//
 	//  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
 	//  So, copy the Ritz vectors.  Else, we need to compute the eigenvectors of the
 	//  Schur form to compute the eigenvectors of the non-symmetric operator.
@@ -1294,19 +1302,12 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  assert(info==0);
 	  delete [] work, select, vl;
 	  //
-	  //  The computed eigenvectors are normalized by the infinity norm.
-	  //  Change to euclidean norm.
+	  //  Convert back to approximate eigenvectors of the operator and compute their norms.
 	  //
-	  TYPE enormscale;
-	  for (j=0; j<n; j++) {
-	    enormscale = blas.NRM2(n, Q[j], 1);
-	    blas.SCAL( n, one/enormscale, Q[j], 1 );
-	  }
-	  //
-	  //  Convert back to approximate eigenvectors of the operator.
-	  //
+	  TYPE* evecnrm = new double[ n ];
 	  MultiVec<TYPE>* evecstemp = _basisvecs->Clone( n );
 	  evecstemp->MvTimesMatAddMv( one, *basistemp, Q, zero );
+	  evecstemp->MvNorm( evecnrm );
 	  //
 	  // Sort the eigenvectors.
 	  //
@@ -1317,17 +1318,18 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  int conjprs=0;
 	  int * indexi = new int [ _nev+1 ];
 	  MultiVec<TYPE> *evecstempr, *evecr1;
+	  TYPE t_evecnrm;
 	  i = 0;
 	  while ( i<_nev ) {	
 	    if (_evali[i] != zero) {
+	      t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	      // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	      evecstempr = evecstemp->CloneView( index+i, 1 );
 	      evecr1 = _evecr->CloneView( index+i, 1 );
-	      evecr1->MvAddMv( one/sqrt(2.0), *evecstempr, zero, *evecstempr );
+	      evecr1->MvAddMv( t_evecnrm, *evecstempr, zero, *evecstempr );
 	      delete evecr1; evecr1=0;
 	      evecr1 = _evecr->CloneView( index+i+1, 1 );
-	      evecr1->MvAddMv( one/sqrt(2.0), *evecstempr, zero, *evecstempr );
-	      delete evecr1; evecr1=0;
+	      evecr1->MvAddMv( t_evecnrm, *evecstempr, zero, *evecstempr );
 	      // Note where imaginary part of eigenvector is.
 	      indexi[conjprs] = i+1;
 	      
@@ -1335,13 +1337,16 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	      conjprs++;
 	      i = i+2; 				
 	    } else {
-	      // Copy the real part of the eigenvector, no scaling needed.
+	      // Copy the real part of the eigenvector, scale to be norm one.
 	      // We don't have to do anything for the imaginary
 	      // part since we initialized the vectors to zero.
 	      evecstempr = evecstemp->CloneView( index+i, 1 );
-	      _evecr->SetBlock( *evecstempr, index+i, 1 );
+	      evecr1 = _evecr->CloneView( index+i, 1 );
+	      evecr1->MvAddMv( one/evecnrm[i], *evecstempr, zero, *evecstempr );
+	      // Increment counter.
 	      i++;			
 	    }
+	    delete evecr1, evecr1=0;
 	    delete evecstempr; evecstempr=0;
 	  }
 	  // Set the imaginary part of the eigenvectors if conjugate pairs exist.
@@ -1354,20 +1359,22 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	    // So, when the last eigenvalues is the first of a conjugate pair, that eigenvector will be computed.
 	    //
 	    for (i=0; i<conjprs; i++) {
+	      t_evecnrm = one/lapack.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
 	      evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
 	      eveci1 = _eveci->CloneView( indexi+i, 1 );
-	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/(_evali[indexi[i]]*sqrt(2.0)),
+	      eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]],
 			       *evecstempi, zero, *evecstempi );
 	      delete eveci1; eveci1=0;
 	      // Change index and set non-conjugate part of imag eigenvector.
 	      indexi[i]--;
 	      eveci1 = _eveci->CloneView( indexi+i, 1 );
-	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/(_evali[indexi[i]]*sqrt(2.0)),
+	      eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]],
 			       *evecstempi, zero, *evecstempi );
 	      delete eveci1; eveci1=0;
 	      delete evecstempi; evecstempi=0;
 	    }	      
 	  }
+
 	  // Clean up.
 	  delete evecstemp; 
 	  delete [] indexi; 
@@ -1380,7 +1387,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
-        const TYPE zero = 0.0;
+        const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
         Teuchos::LAPACK<int,TYPE> lapack; 
 	int i, j, info=0;
         int n = H.numRows(), ldh = H.stride(), ldq = Q.stride(); 
@@ -1433,8 +1440,8 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 	// Sort the eigenvalues, this also sorts the _order vector so we know
 	// which ones we want. 
 	//
-	//cout<<"Before sorting (Hj):"<<endl;
-	//Hj.print();	  
+	//cout<<"Before sorting the Schur form (H):"<<endl;
+	//H.print(cout);	  
 	SortEvals();
 	//
 	// Reorder real Schur factorization, remember to add one to the indices for the
@@ -1471,8 +1478,8 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 			1, work, &info );
 	  assert(info==0);
 	}
-	//cout<<"After sorting and reordering (Hj):"<<endl;
-	//Hj.print(); 
+	//cout<<"After sorting and reordering the Schur form (H):"<<endl;
+	//H.print(cout); 
 	//
 	// Determine largest off diagonal element of Schur matrix for symmetric case.
 	//
@@ -1710,6 +1717,27 @@ void BlockArnoldi<TYPE>::SortEvals() {
 }
 
 template<class TYPE>
+void BlockArnoldi<TYPE>::CheckSchurVecs( const int j ) {
+	//
+	// Check the difference between the projection of A with the Schur vectors and the Schur matrix.
+        // 
+        int i, n = j*_block;
+	int* index = new int[ n ];
+	for( i=0; i<n; i++ ) { index[i] = i; } 
+        TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	Teuchos::SerialDenseMatrix<int,TYPE> Hj( Teuchos::View, _hessmatrix, n, n );
+	Teuchos::SerialDenseMatrix<int,TYPE> SchurProj( n, n );
+	MultiVec<TYPE>* Z = _basisvecs->CloneView( index, n );
+	MultiVec<TYPE>* basistemp = _basisvecs->Clone( n );
+	_problem.ApplyOp( *Z, *basistemp );
+	basistemp->MvTransMv( one, *Z, SchurProj );
+	SchurProj.scale( -one );
+	SchurProj += Hj;
+	cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter+1 << " is "<< SchurProj.normFrobenius()/_scalefactor<<" (should be small)"<<endl;
+}
+
+
+template<class TYPE>
 void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         int i,k,m=(j+1)*_block;
         int *index = new int[m];
@@ -1790,7 +1818,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         AVj->MvNorm(ptr_norms);
         
         for ( i=0; i<m; i++ ) { 
-                cout << " Arnoldi relation " << "for column " << i << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(ptr_norms[i]) << endl;        
+	  cout << " Arnoldi relation " << "for column " << i << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(ptr_norms[i])/_scalefactor << endl;  
 	}
         cout << " " << endl;
                 
