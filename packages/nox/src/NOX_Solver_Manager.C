@@ -40,6 +40,7 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
     method = newmethod;
 
     delete ptr;
+    ptr = NULL;
     
     if (method == "Newton") {
       ptr = new Newton(grp, tests, params);
@@ -51,49 +52,93 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
       ptr = new TrustRegion(grp, tests, params);
     } 
     else {
-      cout << "ERROR: NOX::Solver::Manager - invalid choice for nonlinear " 
-	   << "solver!" << endl;
+      cout << "ERROR: NOX::Solver::Manager - Invalid solver choice" << endl;
       throw "NOX Error";
+    }
+
+    if (ptr == NULL) {
+      cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
+      return false;
     }
 
     return true;
   }
-  else 
+  else {
+
+    if (ptr == NULL) {
+      cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
+      return false;
+    }
+
     return ptr->reset(grp, tests, params);
+  }
 }
 
 Status::StatusType Manager::getStatus()
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::getStatus - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+
   return ptr->getStatus();
 }
 
 Status::StatusType Manager::iterate()
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::iterate - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+
   return ptr->iterate();
 }
 
 Status::StatusType Manager::solve()
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::solve - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+
   return ptr->solve();
 }
 
 const Abstract::Group& Manager::getSolutionGroup() const
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::getSolutionGroup - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+
   return ptr->getSolutionGroup();
 }
 
 const Abstract::Group& Manager::getPreviousSolutionGroup() const
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::getPreviousSolutionGroup - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+
   return ptr->getPreviousSolutionGroup();
 }
 
 int Manager::getNumIterations() const
 {
+  if (ptr == NULL)
+    return 0;
+
   return ptr->getNumIterations();
 }
 
-const Parameter::List & Manager::getOutputParameters() const
+const Parameter::List& Manager::getOutputParameters() const
 {
+  if (ptr == NULL) {
+    cout << "NOX::Solver::Manager::getOutputParameters - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+    
   return ptr->getOutputParameters();
 }
 
