@@ -2941,8 +2941,8 @@ static MLAZ_Settings Settings = {0};
     or
     MLAZ_Set_LevelParam
 */
-/* ------------------------------------------------------------------------ */  
-
+/* ------------------------------------------------------------------------ */
+  
 void MLAZ_Iterate( double delta_x[], double resid_vector[],
 		   int options[], double params[],
 		   double status[], int proc_config[],
@@ -3026,12 +3026,12 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
     
     free( (void *) fake_rez);
   }
-  
+
   /* solve with Aztec-2.1 */
   
   AZ_iterate(delta_x, resid_vector, solver_options, solver_params,
-             status, proc_config, Amat, ML_Prec, scaling);
-
+	     status, proc_config, Amat, ML_Prec, scaling);    
+  
   ML_Aggregate_Destroy(&ag);
   ML_Destroy(&ml);
   if( ML_Prec != NULL ) AZ_precond_destroy(&ML_Prec);
@@ -3568,6 +3568,55 @@ void MLAZ_Set_LevelAztecSmoother(int level,
     }
     
   }
+  
+  return;
+  
+}
+
+
+void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
+			       AZ_MATRIX * Amat, int proc_config[],
+			       int choice, int max_procs ) 
+{
+
+  int          MaxMgLevels = 1;
+  ML           *ml = NULL;
+  int N_update, Nlevels;
+  
+  N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
+  
+  ML_Create(&ml, MaxMgLevels);
+
+  ML_Set_PrintLevel(10);  
+  AZ_ML_Set_Amat(ml, MaxMgLevels-1, N_update, 
+		 N_update, Amat, proc_config);
+
+  switch( choice ) {
+  case ML_AMESOS_KLU:
+    break;
+  case ML_AMESOS_SUPERLUDIST:
+    break;
+  case ML_AMESOS_MUMPS:
+    break;
+  case ML_AMESOS_UMFPACK:
+    break;
+  default:
+    fprintf( stderr,
+	     "*ML*ERR* In `MLAZ_Direct_Solve_Amesos', choice has an\n"
+	     "*ML*ERR* improper value (%)\n",
+	     choice );
+    exit( EXIT_FAILURE);
+  }
+  
+  ML_Gen_Smoother_Amesos( ml, 0, choice, max_procs);  
+  
+  ML_Smoother_Amesos(&(ml->post_smoother[0]),
+		     ml->Amat[0].invec_leng,delta_x,
+		     ml->Amat[0].outvec_leng,resid_vector);
+
+  //ML_Smoother_Clean_Amesos((ml->post_smoother[0]).smoother->data);
+
+  ML_Destroy(&ml);
   
   return;
   
