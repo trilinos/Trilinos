@@ -1,10 +1,9 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
-
 #ifdef HAVE_ML_AMESOS
 
 #include "ml_utils.h"
