@@ -7,6 +7,9 @@
 #if defined(ML_NEW_ENRICH)
 double checkit(ML_Operator *A, double *v);
 #endif
+
+#define ML_NUMITS 50
+
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
@@ -15,6 +18,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     ML_Operator ***Tmat_trans_array,
                     int smooth_flag, double smooth_factor)
 {
+ML_CommInfoOP *widget;
+ML_NeighborList *neighbors;
+  char filename[80];
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
   double *Tcoarse_val = NULL, *temp_val = NULL;
@@ -26,6 +32,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   ML     *ml_nodes;
   char   str[80];
+  FILE   *fid;
 /*
   char filename[80];
   FILE *fid2;
@@ -55,13 +62,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   USR_REQ         *request;
   int t1,t2,t3;
 #ifdef ML_NEW_T_PE
-  int    *encoded_dir_node, Pn_ghost = 0;
+  double    *pos_encoded_dir_node;
+  double    *neg_encoded_dir_node;
+  int *encoded_dir_edge;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 #endif
 
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
+  int  k;
+  int  mypid = ml_edges->comm->ML_mypid;
+  int  nprocs = ml_edges->comm->ML_nprocs;
+  int  maxproc, minproc, maxrows, minrows, NumActiveProc, active_proc=0;
 
 
   int nzctr;
@@ -103,8 +116,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   }
   Tfine = Tmat;
   ML_Operator_ChangeToChar(Tfine);
+  ML_Operator_Profile(Tfine, NULL, ML_NUMITS);
   ML_Operator_ChangeToChar(Tmat_trans);
-
+  ML_Operator_Profile(Tmat_trans, NULL, ML_NUMITS);
 
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
@@ -113,6 +127,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros; 
   Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
   ml_edges->ML_finest_level = fine_level;
+  ML_Operator_Profile(ml_edges->Amat+fine_level, "edge", ML_NUMITS);
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
@@ -138,50 +153,97 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   (*Tmat_array)[fine_level] = Tfine;
   (*Tmat_trans_array)[fine_level] = Tmat_trans;
 
-  if (ag->print_flag < ML_Get_PrintLevel()) {
+
+
+  if (ag->print_flag < ML_Get_PrintLevel())
+  {
     Pe = &(ml_edges->Amat[fine_level]);
+    if (Pe->invec_leng > 0) active_proc = 1;
+    else active_proc = 0;
+    NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
     nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
     i = Pe->outvec_leng;
     ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-    if (ml_edges->comm->ML_mypid==0)
-      printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n",
-             fine_level, nz_ptr,i);
+    if (Pe->getrow->pre_comm != NULL && active_proc)  {
+      j = Pe->getrow->pre_comm->N_neighbors;
+      /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
+      }
+    else j = 0;
+    j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+    /* printf("level %d) pid %d owns %d rows of Ke (edge)\n",fine_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
+
+    maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
+    maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+    minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
+                           Pe->comm);
+    minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+
+    if (Pe->getrow->pre_comm != NULL) {
+       ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+       printf("(level %d, pid %d) Ke: Total receive length = %d\n",
+              fine_level, Pe->comm->ML_mypid,
+              Pe->getrow->pre_comm->total_rcv_length);
+    }
+
+    if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+      printf("(level %d) Ke: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
+             fine_level, nz_ptr,i,
+            ((double) j)/((double) NumActiveProc),
+            maxrows, maxproc, minrows, minproc);
   }
 
-  /* this is buggy -- don't use it right now 
-  fid2 = fopen("ML_write_matrix_now","r");
-  if (fid2 != NULL) {
-    i = fscanf(fid2,"%d",&max_matrix_size);
-    fclose(fid2);
-    if (i==EOF || i==0) {
-       sprintf(filename,"T_%d",fine_level);
-       ML_Operator_Print_UsingGlobalOrdering(Tfine,filename);
-       sprintf(filename,"Kn_%d",fine_level);
-       ML_Operator_Print_UsingGlobalOrdering(&(ml_nodes->Amat[fine_level]),filename);
-    }
-    else {
-      ML_Operator_GetGlobalDimensions(Tfine,&nrows,&ncols);
-      if (nrows < i && ncols < i) {
-        sprintf(filename,"T_%d",fine_level);
-        ML_Operator_Print_UsingGlobalOrdering(Tfine,filename);
+  if (ag->print_flag < ML_Get_PrintLevel())
+  {
+    Pe = &(ml_nodes->Amat[fine_level]);
+    ML_Operator_Profile(Pe, "node", ML_NUMITS);
+    if (Pe->invec_leng > 0) active_proc = 1;
+    else active_proc = 0;
+    NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
+    nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+    i = Pe->outvec_leng;
+    ML_gsum_scalar_int(&i,&j,ml_edges->comm);
+    if (Pe->getrow->pre_comm != NULL && active_proc)  {
+      j = Pe->getrow->pre_comm->N_neighbors;
+      /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
       }
-      ML_Operator_GetGlobalDimensions(&(ml_nodes->Amat[fine_level]),&nrows,&ncols);
-      if (nrows < i && ncols < i) {
-        sprintf(filename,"Kn_%d",fine_level);
-        ML_Operator_Print_UsingGlobalOrdering(&(ml_nodes->Amat[fine_level]),filename);
-      }
+    else j = 0;
+    j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+    /*printf("level %d) pid %d owns %d rows of Kn (nodal)\n",fine_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
+
+    maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
+    maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+    minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
+                           Pe->comm);
+    minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+
+    if (Pe->getrow->pre_comm != NULL) {
+       ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+       printf("(level %d, pid %d) Kn: Total receive length = %d\n",
+              fine_level, Pe->comm->ML_mypid,
+              Pe->getrow->pre_comm->total_rcv_length);
+       fflush(stdout);
     }
+
+    if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+      printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
+             fine_level, nz_ptr,i,
+            ((double) j)/((double) NumActiveProc),
+            NumActiveProc,
+            maxrows, maxproc, minrows, minproc);
   }
-  */
-
-
 
 #ifdef ML_VAMPIR
   VT_end(ml_vt_aggregating_state);
 #endif
 
-  sprintf(str,"Tmat_%d",fine_level-1); ML_Operator_Set_Label(Tmat,str);
-  sprintf(str,"Ttrans_%d",fine_level-1); ML_Operator_Set_Label(Tmat_trans,str);
+  sprintf(str,"Tmat_%d",fine_level); ML_Operator_Set_Label(Tmat,str);
+  sprintf(str,"Ttrans_%d",fine_level); ML_Operator_Set_Label(Tmat_trans,str);
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
   /*------------------------------------------------------------------*/
@@ -239,9 +301,21 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      allocated = 100;
      temp_bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
      temp_val   = (double *)  ML_allocate( allocated*sizeof(double));
-     encoded_dir_node = (int *) ML_allocate((Tfine->outvec_leng+1)*sizeof(int));
+     i = ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm);
+     pos_encoded_dir_node = (double *)
+             ML_allocate((Tfine->invec_leng+i)*sizeof(double));
+     for (j=0; j<Tfine->invec_leng+i; j++) pos_encoded_dir_node[j] = 0.0;
 
-     for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
+     neg_encoded_dir_node = (double *)
+             ML_allocate((Tfine->invec_leng+i)*sizeof(double));
+     for (j=0; j<Tfine->invec_leng+i; j++) neg_encoded_dir_node[j] = 0.0;
+
+     encoded_dir_edge = (int *) ML_allocate(Tfine->outvec_leng *
+                                               sizeof(int));
+     for (j=0; j<Tfine->outvec_leng; j++) encoded_dir_edge[j] = 0.0;
+
+     for (i = 0 ; i < Tfine->getrow->Nrows; i++)
+     {
        ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
 			 &row_length, 0);
        if (row_length == 2) {
@@ -257,67 +331,134 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        else if ( (row_length == 1) && (temp_val[0] == 0.)) row_length--;
 
        if (row_length == 1) {
-	     if      (temp_val[0] == 1.) encoded_dir_node[i] = (1 + temp_bindx[0]);
-	     else if (temp_val[0] ==-1.) encoded_dir_node[i] = -(1 + temp_bindx[0]);
-	     else printf("Warning uknown value T(%d,%d) = %e\n",
-		     i,temp_bindx[0],temp_val[0]); 
+	     if (temp_val[0] == 1.0)
+         {
+           pos_encoded_dir_node[temp_bindx[0]] = 1.0;
+           encoded_dir_edge[i] = 1 + temp_bindx[0];
+/*
+           if (grid_level == 1 && Tfine->comm->ML_mypid == 0) {
+             fprintf(stderr,"(pid %d, level %d) pos_encoded_dir_node before[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,temp_bindx[0],pos_encoded_dir_node[temp_bindx[0]]);
+             fprintf(stderr,"(pid %d, level %d) i=%d\n",Tfine->comm->ML_mypid,grid_level,i);
+            }
+*/
+         }
+	     if (temp_val[0] == -1.0)
+         {
+           neg_encoded_dir_node[temp_bindx[0]] =-1.0;
+           encoded_dir_edge[i] = -(1 + temp_bindx[0]);
+/*
+           if (grid_level == 1 && Tfine->comm->ML_mypid == 0) {
+             fprintf(stderr,"(pid %d, level %d) neg_encoded_dir_node before[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,temp_bindx[0],neg_encoded_dir_node[temp_bindx[0]]);
+             fprintf(stderr,"(pid %d, level %d) i=%d\n",Tfine->comm->ML_mypid,grid_level,i);
+           }
+*/
+         }
+	     if (temp_val[0] != -1.0 && temp_val[0] != 1.0)
+           printf("Warning uknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]); 
        }
-       else encoded_dir_node[i] = 0;
+       else encoded_dir_edge[i] = 0;
      }
 
-     if (ml_nodes->Pmat[grid_level].getrow->pre_comm != NULL) {
-       ML_CommInfoOP_Compute_TotalRcvLength(ml_nodes->Pmat[grid_level].getrow->pre_comm);
-       Pn_ghost = ml_nodes->Pmat[grid_level].getrow->pre_comm->total_rcv_length;
-     }
+     j = ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm);
+     sprintf(str,"pos_encoded_dir_node-before.level%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->invec_leng+j; i++)
+        fprintf(fid,"%d %e\n",i,pos_encoded_dir_node[i]);
+     fclose(fid);
 
+     sprintf(str,"neg_encoded_dir_node-before.level%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->invec_leng+j; i++)
+        fprintf(fid,"%d %e\n",i,neg_encoded_dir_node[i]);
+     fclose(fid);
 
-     vec = (double *) ML_allocate(sizeof(double)*(Rn_coarse->invec_leng +
-						  Pn_ghost+1));
+fflush(stdout);
 
-     pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
-						     +1));
-     if (pos_coarse_dirichlet == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
-        exit(1);
-     }
-     for (i = 0; i < Rn_coarse->invec_leng + Pn_ghost; i++) vec[i] = 0.;
-     for (i = 0; i < Tfine->outvec_leng; i++) {
-       if(encoded_dir_node[i] > 0) vec[encoded_dir_node[i]-1] = 1.;
-     }
-     ML_transposed_exchange_bdry(vec,ml_nodes->Pmat[grid_level].getrow->pre_comm, 
-				 -1, Rn_coarse->comm, ML_ADD);
+widget = Tfine->getrow->pre_comm;
+neighbors = widget->neighbors;
+for (k=0; k<ml_nodes->comm->ML_nprocs; k++)
+{
+  if (ml_nodes->comm->ML_mypid == k)
+  {
+    for (i=0; i<widget->N_neighbors; i++)
+    {
+      {
+        printf("(pid %d,level %d) rcv list *to* proc %d (total = %d): ",
+               ml_nodes->comm->ML_mypid,
+               grid_level,
+               neighbors[i].ML_id,
+               neighbors[i].N_rcv);
+        for (j=0; j<neighbors[i].N_rcv; j++)
+          printf("%d  ", neighbors[i].rcv_list[j]);
+        printf("\n");
+      }
+    }
+    fflush(stdout);
+  }
+}
 
-     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
+if (ml_nodes->comm->ML_mypid == 0) {
+  for (i=0; i<widget->N_neighbors; i++) {
+    printf("(pid %d,level %d) rcv list *from* proc %d (total = %d): ",
+             ml_nodes->comm->ML_mypid,
+             grid_level,
+             neighbors[i].ML_id,
+             neighbors[i].N_send);
+    for (j=0; j<neighbors[i].N_send; j++)
+      printf("%d  ", neighbors[i].send_list[j]);
+    printf("\n");
+  }
+fflush(stdout);
+}
+*/
+
+     ML_transposed_exchange_bdry(pos_encoded_dir_node,
+          Tfine->getrow->pre_comm, -1, Tfine->comm, ML_ADD);
+
+     pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng +1));
+     if (pos_coarse_dirichlet == NULL)
+        pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
+
+/*
+     for (i=0; i < Tfine->invec_leng; i++)
+      if (pos_encoded_dir_node[i] != 0) printf("(pid %d, level %d) encoded_dir_node[%d] = %e\n", * Tfine->comm->ML_mypid,grid_level,i,pos_encoded_dir_node[i]);
+*/
+
+     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, pos_encoded_dir_node,
 		       Rn_coarse->outvec_leng,pos_coarse_dirichlet);
      Npos_dirichlet = 0;
-     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+     for (i = 0; i < Rn_coarse->outvec_leng; i++)
        if (pos_coarse_dirichlet[i] != 0) {
-	 Npos_dirichlet++;
+         Npos_dirichlet++;
        }
-     }
 
-     neg_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
-						     +1));
-     if (neg_coarse_dirichlet == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
-        exit(1);
-     }
-     for (i = 0; i < Rn_coarse->invec_leng + Pn_ghost; i++) vec[i] = 0.;
-     for (i = 0; i < Tfine->outvec_leng; i++) {
-       if(encoded_dir_node[i] < 0) vec[-encoded_dir_node[i]-1] = 1.;
-     }
-     ML_transposed_exchange_bdry(vec,ml_nodes->Pmat[grid_level].getrow->pre_comm, 
-				 -1, Rn_coarse->comm, ML_ADD);
+     /******************/
+     /* negative edges */
+     /******************/
+     ML_transposed_exchange_bdry(neg_encoded_dir_node,
+          Tfine->getrow->pre_comm, -1, Tfine->comm, ML_ADD);
 
-     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
-		       Rn_coarse->outvec_leng,neg_coarse_dirichlet);
-     ML_free(vec);
+/*
+     for (i=0; i < Tfine->invec_leng; i++)
+      if (neg_encoded_dir_node[i] != 0) printf("(pid %d, level %d) neg_encoded_dir_node[%d] = %e\n", Tfine->comm->ML_mypid,grid_level,i,neg_encoded_dir_node[i]);
+*/
+
+     neg_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng +1));
+     if (neg_coarse_dirichlet == NULL)
+        pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
+     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, neg_encoded_dir_node,
+               Rn_coarse->outvec_leng,neg_coarse_dirichlet);
      Nneg_dirichlet = 0;
-     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+     for (i = 0; i < Rn_coarse->outvec_leng; i++)
        if (neg_coarse_dirichlet[i] != 0) {
-	 Nneg_dirichlet++;
+         Nneg_dirichlet++;
        }
-     }
+/*
+     printf("(%d, level %d) Nneg_dirichlet = %d, Npos_dirichlet = %d\n",
+         ml_nodes->comm->ML_mypid,grid_level,Nneg_dirichlet,Npos_dirichlet);
+*/
 #endif
 
 
@@ -358,6 +499,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                    counter++;
                 }
              }
+	 /* NOTE: The logic that is used to decide which processor owns */
+	 /*       or needs an edge must match in two places. Search for */
+	 /*       this comment to find the other place in this file that*/
+	 /*       must have the same logic as is used here.             */ 
+
+#ifndef ML_NOTALWAYS_LOWEST
              /* If node i is owned by a smaller processor than
                 node bindx[j] ... */
              else if (pid_coarse_node[i] < pid_coarse_node[temp_bindx[j]])
@@ -369,6 +516,34 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                 Tcoarse_rowptr[counter+1] = nz_ptr;
                 counter++;
              }
+#else
+	     else {
+	       /* Assign an edge to a processor based on whether the sum */
+	       /* of the proc ids is even or odd AND which proc id is    */
+	       /* larger or smaller. The even or odd business is used to */
+	       /* try and distribute the edges more evenly.              */
+	       if ( (((int)(pid_coarse_node[i] + pid_coarse_node[temp_bindx[j]]))%2) == 0) {
+		 if (pid_coarse_node[i] < pid_coarse_node[temp_bindx[j]]) {
+		   Tcoarse_bindx[nz_ptr]  =  temp_bindx[j];
+		   Tcoarse_val[nz_ptr++]  =  1.;
+		   Tcoarse_bindx[nz_ptr]  =  i;
+		   Tcoarse_val[nz_ptr++]  = -1.;
+		   Tcoarse_rowptr[counter+1] = nz_ptr;
+		   counter++;
+		 }
+	       }
+	       else {
+		 if (pid_coarse_node[i] > pid_coarse_node[temp_bindx[j]]) {
+		   Tcoarse_bindx[nz_ptr]  =  temp_bindx[j];
+		   Tcoarse_val[nz_ptr++]  =  1.;
+		   Tcoarse_bindx[nz_ptr]  =  i;
+		   Tcoarse_val[nz_ptr++]  = -1.;
+		   Tcoarse_rowptr[counter+1] = nz_ptr;
+		   counter++;
+		 }
+	       }
+	     }
+#endif
           }
             
         }
@@ -400,22 +575,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_free(pos_coarse_dirichlet);
      ML_free(neg_coarse_dirichlet);
 #endif
+     ML_Operator_Profile(Rn_coarse, "node", ML_NUMITS);
      ML_Operator_Clean(Rn_coarse);
-
-#ifdef DEBUG_T_BUILD
-     else
-       if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7) {
-	  printf("%d (%d): ieqj = %d,\n", Kn_coarse->comm->ML_mypid,
-		 grid_level, ieqj);
-	  printf("Kn_coarse->N_nonzeros = %d, ", Kn_coarse->N_nonzeros);
-	  printf("expected nnz (calc. from bindx) = %d,\n",nzctr);
-	  printf("actual nnz(Tcoarse) = %d,\n"nz_ptr);
-	  printf(" invec_leng = %d, nghost = %d\n",
-		 Kn_coarse->invec_leng,  Nghost);
-	  fflush(stdout);
-       }
-#endif /* ifdef DEBUG_T_BUILD */
-
 
      csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
                                  ML_CSR_MSRdata));
@@ -434,6 +595,52 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
      (*Tmat_array)[grid_level] = Tcoarse;
      ML_memory_check("L%d Tcoarse end",grid_level);
+     ML_Operator_Profile(Kn_coarse, "node", ML_NUMITS);
+
+     if (ag->print_flag < ML_Get_PrintLevel())
+     {
+        Pe = &(ml_nodes->Amat[grid_level]);
+        if (Pe->invec_leng > 0) active_proc = 1;
+        else active_proc = 0;
+        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
+        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        i = Pe->outvec_leng;
+        /* printf("level %d) pid %d owns %d rows of Kn (nodal)\n",grid_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
+        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
+        j = 0;
+        if (Pe->getrow->pre_comm != NULL) {
+          j = Pe->getrow->pre_comm->N_neighbors;
+          /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
+          }
+        j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
+        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
+                           Pe->comm);
+        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+
+        if (Pe->getrow->pre_comm != NULL) {
+          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+          printf("(level %d, pid %d) Kn: Total receive length = %d\n",
+                 grid_level, Pe->comm->ML_mypid,
+                 Pe->getrow->pre_comm->total_rcv_length);
+          fflush(stdout);
+        }
+
+        /* printf("level %d) pid %d owns %d rows of Kn\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
+
+        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+        printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
+          grid_level, nz_ptr,i,
+          ((double) j)/((double)NumActiveProc),
+          NumActiveProc,
+          maxrows, maxproc, minrows, minproc);
+
+     }
+
      ML_Operator_Clean(Kn_coarse);
    
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
@@ -484,22 +691,18 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                                                     /* in Pn for the test. */
      Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
 						     +1));
-     if (Pn_vec == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
-        exit(1);
-     }
+     if (Pn_vec == NULL)
+        pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
 
 
      ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
 		       Pn_coarse->outvec_leng,Pn_vec);
 
      ML_free(vec);
-     Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng
+     Tfine_Pn_vec = (double*) ML_allocate(sizeof(double)*(Tfine->outvec_leng
 							   +1));
-     if (Tfine_Pn_vec == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
-        exit(1);
-     }
+     if (Tfine_Pn_vec == NULL)
+        pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
      ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
 		       Tfine->outvec_leng,Tfine_Pn_vec);
      ML_free(Pn_vec);
@@ -563,8 +766,24 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        if ((row_length > 0) && (pid_fine_node[temp_bindx[0]] != 0.)) 
 	 pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[0]];
        if ((row_length > 1) && (pid_fine_node[temp_bindx[1]] != 0.)) {
+	 /* NOTE: The logic that is used to decide which processor owns */
+	 /*       or needs an edge must match in two places. Search for */
+	 /*       this comment to find the other place in this file that*/
+	 /*       must have the same logic as is used here.             */ 
+#ifndef ML_NOTALWAYS_LOWEST
 	 if ( pid_fine_node[temp_bindx[1]] < pid_fine_node[temp_bindx[0]])
 	   pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[1]];
+#else
+	 if ( (((int)(pid_fine_node[temp_bindx[1]] + pid_fine_node[temp_bindx[0]]))%2) == 0) {
+	   if ( pid_fine_node[temp_bindx[1]] < pid_fine_node[temp_bindx[0]])
+	     pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[1]];
+	 }
+	 else {
+	   if ( pid_fine_node[temp_bindx[1]] > pid_fine_node[temp_bindx[0]])
+	     pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[1]];
+	 }
+#endif
+
        }
        pid_fine_edge[i]--;
      }
@@ -834,7 +1053,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         /*Don't delete Tcoarse because it is necessary for eigenvalue estimate
           in Hiptmair setup.*/
 #ifdef ML_NEW_T_PE
-        ML_free(encoded_dir_node);
+        ML_free(pos_encoded_dir_node);
+        ML_free(neg_encoded_dir_node);
 #endif
         /* Current level "grid_level" cannot be used b/c Tcoarse_trans
            would be used in Hiptmair smoother generation, but Tcoarse_trans
@@ -859,7 +1079,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      ML_Operator_ChangeToSinglePrecision(Tmat_trans);
-     sprintf(str,"Ttrans_%d",grid_level);ML_Operator_Set_Label(Tmat_trans,str);
+     sprintf(str,"Ttrans_%d",grid_level);ML_Operator_Set_Label(Tcoarse_trans,str);
 
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
      ML_memory_check("L%d Ttrans end",grid_level);
@@ -868,49 +1088,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_building_coarse_T_state);
 #endif
 
-   
-     /********************************************************************/
-     /* Here is some code that might work someday to generate Pe without */
-     /* doing a matrix triple product.                                   */
-     /*------------------------------------------------------------------*/
-     /*
-     csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
-     for (i = 0; i < Tfine->outvec_leng; i++)
-     {
-       ML_get_matrix_row(Tfine, 1, &i, &allocated, &bindx, &val,
-                         &row_length, 0);
-       if (row_length == 2)
-       {
-        agg1 = csr_data->columns[bindx[0]];
-        agg2 = csr_data->columns[bindx[1]];
-        printf("%d: agg1 and agg2 %d %d   | %d %d\n",i,agg1,
-               agg2,bindx[0],bindx[1]);
-       
-        agg1 = aggr_num(bindx[0], PnMat);
-        agg2 = aggr_num(bindx[1], PnMat);
-        if (agg1 != agg2) {
-           printf("Pe(%d,%d) = something;\n",i,thecolumn);
-   
-           To get the column suppose we store for each row in Kn_coarse
-           the counter above.
-           Thus, stored_counter[i] indicates the lowest coarse grid edge that
-           is associated with coarse grid node i.
-           To get the edge number we compute 
-                  min_agg = ML_min(agg1,agg2), 
-                  max_agg = ML_max(agg1,agg2);
-           The column that we are looking for is given by 
-             stored_counter[min_agg] + number of nonzeros in row min_agg of
-             Kn_coarse that are greater than min_agg and less than max_agg.
-   
-   
-           'something' is either +1 or -1. To get the sign look at
-           Tcoarse(thecolumn,) and Tfine(i,). My guess is that it is related to 
-           whether agg1 is greater than agg2 (assuming that val[0] =1)
-            }
-        }
-     }
-     */
-   
      /********************************************************************/
      /* Matrix triple product for Pe where result is stuffed into MG     */
      /* hierarchy of the edge system.                                    */
@@ -970,7 +1147,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         ML_Operator_Destroy(&Tcoarse_trans);
         (*Tmat_trans_array)[grid_level] = NULL;
 #ifdef ML_NEW_T_PE
-        ML_free(encoded_dir_node);
+        ML_free(pos_encoded_dir_node);
+        ML_free(neg_encoded_dir_node);
 #endif
         /* Current level "grid_level" cannot be used b/c Tcoarse_trans
            is used in Hiptmair smoother generation, but RAP w/ Tcoarse_trans
@@ -1005,67 +1183,96 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /*------------------------------------------------------------------*/
    
 #ifdef ML_NEW_T_PE
-     i = 0;
-     if (Pe->getrow->pre_comm != NULL) {
-       ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-       i = Pe->getrow->pre_comm->total_rcv_length;
-     }
+     i = ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
      edge_type = (double *) ML_allocate(sizeof(double)*(1+i+Pe->invec_leng));
-     if (edge_type == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to weed out Pe.\n\n");
-        exit(1);
-     }
+     if (edge_type == NULL)
+        pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to weed out Pe.\n\n");
      Nnondirichlet = Pe->invec_leng - Npos_dirichlet - Nneg_dirichlet;
 
      for (i = 0; i < Nnondirichlet; i++) edge_type[i] = 0.;
      for (i = 0; i < Npos_dirichlet; i++) edge_type[i+Nnondirichlet] = 1.;
      for (i = 0; i < Nneg_dirichlet; i++) edge_type[i+Nnondirichlet+
                                                     Npos_dirichlet] = -1.;
-     if (Pe->getrow->pre_comm != NULL) {
-       ML_exchange_bdry(edge_type, Pe->getrow->pre_comm,
-			Pe->invec_leng, Pe->comm,
-			ML_OVERWRITE,NULL);
-     }
+     ML_exchange_bdry(edge_type, Pe->getrow->pre_comm,
+			Pe->invec_leng, Pe->comm, ML_OVERWRITE,NULL);
 #endif
-     for (i = 0; i < Pe->outvec_leng ; i++) {
+/*
+     sprintf(str,"neg_encoded_dir_edge.%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->outvec_leng; i++)
+        fprintf(fid,"%d %e\n",i,neg_encoded_dir_edge[i]);
+     fclose(fid);
+
+     sprintf(str,"neg_encoded_dir_node.%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->invec_leng; i++)
+        fprintf(fid,"%d %e\n",i,neg_encoded_dir_node[i]);
+     fclose(fid);
+
+     sprintf(str,"pos_encoded_dir_edge.%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->outvec_leng; i++)
+        fprintf(fid,"%d %e\n",i,pos_encoded_dir_edge[i]);
+     fclose(fid);
+
+     sprintf(str,"pos_encoded_dir_node.%d.%d",
+             grid_level,Tfine->comm->ML_mypid);
+     fid = fopen(str,"w");
+     for (i=0; i<Tfine->invec_leng; i++)
+        fprintf(fid,"%d %e\n",i,pos_encoded_dir_node[i]);
+     fclose(fid);
+
+     printf("(%d) neg_encoded_dir_node is length %d\n",
+         ml_nodes->comm->ML_mypid,
+         Tfine->invec_leng + 
+         ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm));
+*/
+     for (i = 0; i < Pe->outvec_leng ; i++)
+     {
 #ifdef ML_NEW_T_PE
-       if (encoded_dir_node[i] > 0) {
-	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+       if (encoded_dir_edge[i] > 0) {
+         for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
            if (edge_type[csr_data->columns[j]] != 1.0 ) {
-	     csr_data->values[j] = 0.;
-	   }
-	 }
+             csr_data->values[j] = 0.;
+           }
+         }
        }
-       if (encoded_dir_node[i] < 0) {
-	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+       if (encoded_dir_edge[i] < 0)
+       {
+         for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
            if (edge_type[csr_data->columns[j]] != -1.0 ) {
-	     csr_data->values[j] = 0.;
-	   }
-	 }
+             csr_data->values[j] = 0.;
+           }
+         }
        }
-       if (encoded_dir_node[i] == 0) {
+       if (encoded_dir_edge[i] == 0) {
 #endif
-	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
-	   if (csr_data->values[j] == 2) csr_data->values[j] = 1;
-	   else if (csr_data->values[j] == -2) csr_data->values[j] = -1;
-	   else if (csr_data->values[j] == -1) csr_data->values[j] = 0;
-	   else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
-	   else if (csr_data->values[j] != 0.0)
-	     {
-	       printf("ML_Gen_MGHierarchy_UsingReitzinger:");
-	       printf(" Error in building Pe.   Found entry %e, expecting either +/-1 or -2.\n",csr_data->values[j]);
-	       fflush(stdout);
-	     }
-	 }
+         for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+           if (csr_data->values[j] == 2) csr_data->values[j] = 1;
+           else if (csr_data->values[j] == -2) csr_data->values[j] = -1;
+           else if (csr_data->values[j] == -1) csr_data->values[j] = 0;
+           else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
+           else if (csr_data->values[j] != 0.0)
+           {
+             printf("ML_Gen_MGHierarchy_UsingReitzinger:");
+             printf(" Error in building Pe.   Found entry %e, expecting either +/-1 or -2.\n",csr_data->values[j]);
+             fflush(stdout);
+           }
+         }
 #ifdef ML_NEW_T_PE
        }
 #endif
-     }
+     } /* for (i = 0; i < Pe->outvec_leng ; i++) */
 #ifdef ML_NEW_T_PE
-     ML_free(encoded_dir_node);
+     ML_free(pos_encoded_dir_node);
+     ML_free(neg_encoded_dir_node);
+     ML_free(encoded_dir_edge);
      ML_free(edge_type);
 #endif
-    
+
      /*******************************************************************/
      /* weed out zeros in Pe.                                           */
      /*-----------------------------------------------------------------*/
@@ -1093,14 +1300,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Pe->matvec->func_ptr = CSR_matvec;
      Pe->matvec->ML_id = ML_NONEMPTY;
 
-/*
-     printf("\n\n%%%%%%%%%%%%%%%%%%\n(%d) Tfine->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Tfine->outvec_leng, Tfine->invec_leng);
-     printf("(%d) Pe->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Pe->outvec_leng, Pe->invec_leng);
-     printf("(%d) Pn_coarse->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Pn_coarse->outvec_leng, Pn_coarse->invec_leng);
-     printf("(%d) Kn_coarse->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Kn_coarse->outvec_leng, Kn_coarse->invec_leng);
-     printf("%%%%%%%%%%%%%%%%%%\n");
-     fflush(stdout);
-*/
      ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
                                   *Tmat_trans_array,
                                   grid_level+1, grid_level, ML_TRUE);
@@ -1109,6 +1308,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_build_Pe_state);
 #endif
    
+     ML_Operator_Profile(Pn_coarse, "node", ML_NUMITS);
      ML_Operator_Clean(Pn_coarse);
 
       /***************************
@@ -1328,25 +1528,136 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
      ML_memory_check("L%d Pe enriched",grid_level);
 
-    if (ag->print_flag < ML_Get_PrintLevel()) {
+    if (ag->print_flag < ML_Get_PrintLevel())
+    {
         Pe = &(ml_edges->Pmat[grid_level]);
+        if (Pe->invec_leng > 0) active_proc = 1;
+        else active_proc = 0;
+        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         j = Pe->outvec_leng;
         i = ML_Comm_GsumInt(ml_edges->comm, j);
-        if (Tfine->comm->ML_mypid==0)
-           printf("(level %d) Pe: Global nonzeros = %d, global rows = %d\n", grid_level,nz_ptr, i);
+        j = 0;
+        if (Pe->getrow->pre_comm != NULL) { 
+          j = Pe->getrow->pre_comm->N_neighbors;
+          /*printf("(pid %d) num nbrs = %d, active proc = %d   invec =
+            %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc,Pe->invec_leng);*/
+        }
+        j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+          printf("(level %d) Pe: Global nonzeros = %d, global rows = %d, avg num neighbors = %e\n", 
+                 grid_level,nz_ptr, i,
+                ((double) j)/((double)NumActiveProc));
      }
 
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
-     ML_Operator_ChangeToSinglePrecision(Pe);
+     ML_Operator_ChangeToSinglePrecision(ml_edges->Pmat+grid_level);
+     ML_Operator_Profile(Pe, "edge", ML_NUMITS);
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Operator_ChangeToSinglePrecision(&(ml_edges->Rmat[grid_level+1]));
      ML_memory_check("L%d TransP end",grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+
+     if (ag->print_flag < ML_Get_PrintLevel())
+     {
+        Pe = &(ml_edges->Amat[grid_level]);
+        if (Pe->invec_leng > 0) active_proc = 1;
+        else active_proc = 0;
+        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
+        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        i = Pe->outvec_leng;
+        /* printf("level %d) pid %d owns %d rows of Ke (edge)\n",grid_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
+        ML_gsum_scalar_int(&i,&j,ml_edges->comm);
+        j = 0;
+        if (Pe->getrow->pre_comm != NULL) {
+          j = Pe->getrow->pre_comm->N_neighbors;
+          /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
+          }
+        j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
+        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
+                           Pe->comm);
+        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+
+/*
+        if (Pe->getrow->pre_comm != NULL) {
+          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+          printf("(level %d, pid %d) Ke before repart: Total receive length = %d\n",
+                 grid_level, Pe->comm->ML_mypid,
+                 Pe->getrow->pre_comm->total_rcv_length);
+          fflush(stdout);
+        }
+*/
+
+        /* printf("level %d) pid %d owns %d rows of Ke\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
+
+        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+        printf("(level %d) Ke before repart: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
+        grid_level, nz_ptr,i,
+        ((double) j)/((double)NumActiveProc), NumActiveProc,
+        maxrows, maxproc, minrows, minproc);
+
+     }
+MPI_Barrier(MPI_COMM_WORLD);
+
+     ML_memory_check("L%d EdgeRepartition",grid_level);
+     Pe = Tcoarse;
+/*
+     if (Pe->getrow->pre_comm != NULL) {
+          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+          printf("(level %d, %d before) Tcoarse total receive length = %d\n",
+                 grid_level,
+                 Pe->comm->ML_mypid,
+                 Pe->getrow->pre_comm->total_rcv_length);
+     }
+     printf("(level %d, %d before) Tcoarse       (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
+                                 Tcoarse->invec_leng,Tcoarse->outvec_leng);
+     printf("(level %d, %d before) Tcoarse_trans (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
+                          Tcoarse_trans->invec_leng,Tcoarse_trans->outvec_leng);
+     fflush(stdout);
+*/
+/*
+     sprintf(filename,"T%d_before",grid_level);
+     ML_Operator_Print(Tcoarse,filename);
+     sprintf(filename,"globT%d_before",grid_level);
+     ML_Operator_Dump(Tcoarse,NULL,NULL,filename,1);
+*/
+MPI_Barrier(MPI_COMM_WORLD);
+     ML_repartition_Acoarse_edge(ml_edges, Tcoarse, Tcoarse_trans, grid_level+1, grid_level, ML_TRUE);
+     ML_memory_check("L%d EdgeRepartition end",grid_level);
+     ML_Operator_Profile(Tcoarse, NULL, ML_NUMITS);
+     ML_Operator_Profile(Tcoarse_trans, NULL, ML_NUMITS);
+/*
+     sprintf(filename,"T%d_after",grid_level);
+     ML_Operator_Print(Tcoarse,filename);
+     sprintf(filename,"globT%d_after",grid_level);
+     ML_Operator_Dump(Tcoarse,NULL,NULL,filename,1);
+*/
+     Pe = Tcoarse;
+/*
+     if (Pe->getrow->pre_comm != NULL) {
+          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+          printf("(level %d, %d after) Tcoarse total receive length = %d\n",
+                 grid_level,Pe->comm->ML_mypid,
+                 Pe->getrow->pre_comm->total_rcv_length);
+        }
+     printf("(level %d, %d after) Tcoarse       (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
+                                 Tcoarse->invec_leng,Tcoarse->outvec_leng);
+     printf("(level %d, %d after) Tcoarse_trans (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
+                          Tcoarse_trans->invec_leng,Tcoarse_trans->outvec_leng);
+     fflush(stdout);
+MPI_Barrier(MPI_COMM_WORLD);
+*/
      ML_Operator_ImplicitTranspose(&(ml_edges->Rmat[grid_level+1]),
 				   &(ml_edges->Pmat[grid_level]), ML_TRUE);
+     ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge", ML_NUMITS);
 
      ML_memory_check("L%d RAP end",grid_level);
 
@@ -1388,13 +1699,51 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_Operator_Print(ml_edges->Amat+grid_level,"Amat_after");
      */
 
-     if (ag->print_flag < ML_Get_PrintLevel()) {
+     if (ag->print_flag < ML_Get_PrintLevel())
+     {
         Pe = &(ml_edges->Amat[grid_level]);
+        ML_Operator_Profile(Pe, "edge", ML_NUMITS);
+        if (Pe->invec_leng > 0) active_proc = 1;
+        else active_proc = 0;
+        NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         i = Pe->outvec_leng;
+        /* printf("level %d) pid %d owns %d rows of Ke (edge)\n",grid_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
         ML_gsum_scalar_int(&i,&j,ml_edges->comm);
-        if (Tfine->comm->ML_mypid==0)
-           printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n", grid_level, nz_ptr,i);
+        j = 0;
+        if (Pe->getrow->pre_comm != NULL) {
+          j = Pe->getrow->pre_comm->N_neighbors;
+          /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
+          }
+        j = ML_Comm_GsumInt(ml_edges->comm, j);
+
+        maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
+        maxproc = ML_gmax_int( (maxrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+        minrows = ML_gmin_int( (Pe->outvec_leng > 0 ? Pe->outvec_leng: maxrows),
+                           Pe->comm);
+        minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
+                           Pe->comm);
+
+/*
+        if (Pe->getrow->pre_comm != NULL) {
+          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+          printf("(level %d, pid %d) Ke after repart: Total receive length = %d\n",
+                 grid_level, Pe->comm->ML_mypid,
+                 Pe->getrow->pre_comm->total_rcv_length);
+          fflush(stdout);
+        }
+*/
+
+        /* printf("level %d) pid %d owns %d rows of Ke\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
+
+        if (Tfine->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
+        printf("(level %d) Ke after repart: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
+          grid_level, nz_ptr,i,
+          ((double) j)/((double)NumActiveProc),
+          NumActiveProc,
+          maxrows, maxproc, minrows, minproc);
+
      }
 
      Tfine = Tcoarse;
@@ -1476,6 +1825,7 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level,
 /* ************************************************************************* */
 /* generate smooth prolongator                                               */
 /* ------------------------------------------------------------------------- */
+
 
 int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 			   double smoothP_damping_factor,
