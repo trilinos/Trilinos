@@ -5097,6 +5097,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
@@ -5213,6 +5214,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
