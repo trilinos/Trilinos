@@ -115,9 +115,7 @@ relaxation method.
 ML is designed to be cooperate with other Trilinos project, and in particular with 
 the Aztec-2.1/AztecOO linear solver package developed at
 Sandia National Laboratories. However, ML can also be run stand-alone or the user
-can write their own functions such as an application specific smoother. The ML
-package has been integrated with several other libraries including: lapack, blas,
-SuperLU/SuperLU_DIST, UMFPACK, Mumps, parasails, Trilinos/Epetra, Metis, ParMETIS, ...
+can write their own functions such as an application specific smoother. 
 
 
 \section ml_dev Developers
@@ -130,15 +128,17 @@ The ML developers are:
 \section ml_doc Documentation about ML
 
 ML is a large package. The following documents are suggested to ML users:
-- Sandia report SAND-2004-22195 (ML 3.0 Smoothed Aggregation User's Guide, by M.
+- Sandia report SAND2004-4819 (ML 3.1 Smoothed Aggregation User's Guide, by M.
   Sala, J. Hu and R. Tuminaro) introduces to the use of ML. The guide is focused
-  on smoothed aggregation multilevel methods. However, ML can also be used for
-  geometric multilevel methods.
+  on smoothed aggregation multilevel methods. (However, ML can also be used for
+  geometric multilevel methods.). The guide can be downloaded from the
+  "documentation" page.
 - The doxygen documentation is suggested for an up-to-date overview of the C++
   functionalities of ML. ML has an Epetra interface, and can be used to define
   black-box preconditioners for Epetra_RowMatrix's. The doxygen documentation
   covers the ML/Epetra interface, and does NOT cover the C source files.
-- A developers' guide is in preparation.
+- A developers' guide is available in the ml/doc subdirectory (Sandia
+  report number SAND2004-4821).
 
 Probably, the best way to understand ML is to use it. Several examples are
 provided in the Trilinos/packages/ml/examples subdirectories. Users are suggested
@@ -150,15 +150,13 @@ to start with ML. This is particularly true for the ML/Epetra interface.
 
 Several examples are distributed within ml. You can browse the source file of the
 following examples:
-- \ref mlguide.c is the simplest ML (serial) example;
-- \ref mlguide_par.c is the parallel counterpart of mlguide.c.
-- \ref ml_aztec_simple.c gives an example of the ML/Aztec C interface;
-- \ref ml_aztec_simple_METIS.c used METIS to create the aggregates;
-- \ref ml_example_MultiLevelOperator.cpp presents the use of the
-  MultiLevelOperator class;
-- \ref ml_example_MultiLevelPreconditioner.cpp details the use of ML as a
+- \ref ex_mlguide is the simplest ML (serial) example;
+- \ref ex_mlguide_par is the parallel counterpart of mlguide.c.
+- \ref ex_ml_aztec_simple gives an example of the ML/Aztec C interface;
+- \ref ex_MLO presents the use of the MultiLevelOperator class;
+- \ref ex_MLP details the use of ML as a
   black-box preconditionerr (see also section \ref ml_minitutorial);
-- \ref ml_example_MultiLevelPreconditioner_2level.cpp describes how to define
+- \ref ex_MLP_DD describes how to define
   domain decomposition preconditioners using ML.  
 
 
@@ -690,36 +688,31 @@ Trilinos 4.0 tutorial.
 */
 
 /*! 
-\page mlguide.c 
+\page ex_mlguide mlguide.c 
 \include mlguide.c
 */
 
 /*!
-\page mlguide_par.c
+\page ex_mlguide_par mlguide_par.c
 \include mlguide_par.c
 */
 
 /*!
-\page ml_aztec_simple.c
+\page ex_ml_aztec_simple ml_aztec_simple.c
 \include ml_aztec_simple.c
 */
 
 /*!
-\page ml_aztec_simple_METIS.c
-\include ml_aztec_simple_METIS.c
-*/
-
-/*!
-\page ml_example_MultiLevelOperator.cpp
+\page ex_MLO ml_example_MultiLevelOperator.cpp
 \include ml_example_MultiLevelOperator.cpp
 */
 
 /*!
-\page ml_example_MultiLevelPreconditioner.cpp
+\page ex_MLP ml_example_MultiLevelPreconditioner.cpp
 \include ml_example_MultiLevelPreconditioner.cpp
 */
 
 /*!
-\page ml_example_MultiLevelPreconditioner_2level.cpp
+\page ex_MLP_DD ml_example_MultiLevelPreconditioner_2level.cpp
 \include ml_example_MultiLevelPreconditioner_2level.cpp
 */
