@@ -769,6 +769,18 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   Nrows = Amatrix->getrow->Nrows;
 
+  /* for some Epetra_matrices, N_nonzeros is set to -1.
+     In this case, get all rows to allocate memory for adjncy */
+     
+  if( N_nonzeros == -1 ) {
+    N_nonzeros = 0;
+    for (i = 0; i < Nrows; i++) {  
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+	 	        &rowi_N, 0);
+      N_nonzeros += rowi_N;
+    }  
+  }
+     
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
