@@ -167,6 +167,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		ScalarConstant - Value to use.
 		
     \return Integer error code, set to 0 if successful.
+    \pre None.
+    \post All values in \e this set to ScalarConstant.
   */
 	int PutScalar(double ScalarConstant);
 	
@@ -176,6 +178,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		ScalarConstant - Value to use.
 		
     \return Integer error code, set to 0 if successful.
+    \pre None.
+    \post All values of \e this have been multiplied by ScalarConstant.
   */
 	int Scale(double ScalarConstant);
 	
@@ -266,6 +270,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
     input value will be ignored and a positive warning code will be returned.
+    \pre IndicesAreLocal()==true
+    \post MyRow contains the given list of Values at the given Indices.
   */
 	int ReplaceMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
@@ -283,6 +289,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
     will be returned.
+    \pre IndicesAreLocal()==true
+    \post The given Values at the given Indices have been summed into the
+    entries of MyRow.
   */
 	int SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
@@ -297,6 +306,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Diagonal (In) - New values to be placed in the main diagonal.
 		
     \return Integer error code, set to 0 if successful, 1 of one or more diagonal entries not present in matrix.
+    \pre Filled()==true
+    \post Diagonal values have been replaced with the values of Diagonal.
   */
 	int ReplaceDiagonalValues(const Epetra_Vector& Diagonal);
 	
@@ -412,6 +423,8 @@ or if the number of entries in this row exceed the Length parameter.
 		Diagonal - Extracted main diagonal.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int ExtractDiagonalCopy(Epetra_Vector& Diagonal) const;
 	
@@ -486,6 +499,8 @@ or if the number of entries in this row exceed the Length parameter.
 		y -A Epetra_Vector containing result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const;
 
@@ -499,6 +514,8 @@ or if the number of entries in this row exceed the Length parameter.
 		Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
@@ -516,6 +533,8 @@ or if the number of entries in this row exceed the Length parameter.
 		y -A Epetra_Vector containing result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector& y) const;
 	
@@ -533,6 +552,8 @@ or if the number of entries in this row exceed the Length parameter.
 		Y -A Epetra_MultiVector of dimension NumVectors containing result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 	
@@ -628,6 +649,8 @@ or if the number of entries in this row exceed the Length parameter.
 		x -The Epetra_Vector used for scaling \e this.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post The matrix will be scaled as described above.
   */
 	int RightScale(const Epetra_Vector& x);
   //@}
@@ -822,6 +845,8 @@ or if the number of entries in this row exceed the Length parameter.
 		Y -A Epetra_MultiVector of dimension NumVectors containing result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(Epetra_CrsMatrix::Multiply(Epetra_CrsMatrix::UseTranspose(), X, Y));};
@@ -839,6 +864,8 @@ or if the number of entries in this row exceed the Length parameter.
 		Y -A Epetra_MultiVector of dimension NumVectors containing result.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(Solve(UpperTriangular(), Epetra_CrsMatrix::UseTranspose(), NoDiagonal(), X, Y));};
@@ -867,6 +894,8 @@ or if the number of entries in this row exceed the Length parameter.
 		NumEntries - Number of nonzero values.
 	  
     \return Integer error code, set to 0 if successful.
+    \pre None.
+    \post Unchanged.
   */
 	int NumMyRowEntries(int MyRow, int& NumEntries) const;
 
