@@ -128,7 +128,6 @@ AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
-
 # ------------------------------------------------------------------------
 # Checks for extra flags
 # #np# - You can pull flag checks for languages not used in package 
@@ -269,13 +268,14 @@ AC_CXX_STD_SPRINTF
 # Checks if examples should be built or which ones should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( anasazi, examples, [Build anasazi examples], ANASAZI_EXAMPLES, yes)
-AM_CONDITIONAL(BUILD_ANASAZI_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, examples, [Build Anasazi examples], ANASAZI_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use Belos], BELOS, no)
+TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
 #TAC_ARG_CHECK_DEFAULT_FEATURE(epetra,EPETRA)
