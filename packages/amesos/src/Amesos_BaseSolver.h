@@ -342,7 +342,7 @@ class Amesos_BaseSolver {
     virtual const Epetra_LinearProblem* GetProblem() const = 0;
 
     //! Returns the parameter list
-    virtual const Teuchos::ParameterList* getList() const = 0;
+    //    virtual const Teuchos::ParameterList* getList() const = 0;
 
 #if 0
     //! Returns a character string describing the operator

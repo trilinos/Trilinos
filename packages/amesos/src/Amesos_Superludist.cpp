@@ -62,7 +62,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 
   //=============================================================================
   Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob, 
-					 const Teuchos::ParameterList &ParameterList ) :  
+					 Teuchos::ParameterList &ParameterList ) :  
 
     GridCreated_(0), 
     FactorizationDone_(0), 
@@ -383,11 +383,11 @@ int Amesos_Superludist::Factor( ) {
   for ( int i = 0 ; i < num_my_cols ; i ++ ) { 
     Global_Columns_[i] = SuperluMat_->RowMatrixColMap().GID( i ) ; 
   }
+  Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
   if ( SuperluCrs != 0 ) {
     ColIndicesV_.resize(MaxNumEntries_);
     RowValuesV_.resize(MaxNumEntries_);
   }
-  Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
   for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
     if ( SuperluCrs != 0 ) {
       EPETRA_CHK_ERR( SuperluCrs->
@@ -671,8 +671,8 @@ int Amesos_Superludist::NumericFactorization() {
 
 int Amesos_Superludist::Solve() { 
 
-  NRformat_loc *Astore;
-  Astore = (NRformat_loc *) SuperluA_.Store;
+  //  NRformat_loc *Astore;
+  //  Astore = (NRformat_loc *) SuperluA_.Store;
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 

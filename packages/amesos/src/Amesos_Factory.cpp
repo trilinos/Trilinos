@@ -52,7 +52,7 @@
 
 Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType, 
 			     const Epetra_LinearProblem& LinearProblem, 
-			     const Teuchos::ParameterList &ParameterList ) {
+			     Teuchos::ParameterList &ParameterList ) {
 
   switch( ClassType ) {
   case AMESOS_MUMPS:
@@ -62,7 +62,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Mumps is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   case AMESOS_SCALAPACK:
 #ifdef HAVE_AMESOS_SCALAPACK
     return new Amesos_Scalapack(LinearProblem,ParameterList); 
@@ -70,7 +69,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Scalapack is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   case AMESOS_UMFPACK:
 #ifdef HAVE_AMESOS_UMFPACK
     return new Amesos_Umfpack(LinearProblem,ParameterList); 
@@ -78,7 +76,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Umfpack is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   case AMESOS_DSCPACK:
 #ifdef HAVE_AMESOS_DSCPACK
     return new Amesos_Dscpack(LinearProblem,ParameterList); 
@@ -86,7 +83,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Dscpack is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   case AMESOS_KLU:
 #ifdef HAVE_AMESOS_KLU
     return new Amesos_Klu(LinearProblem,ParameterList); 
@@ -94,7 +90,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Klu is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   case AMESOS_SUPERLUDIST:
 #ifdef HAVE_AMESOS_SUPERLUDIST
     return new Amesos_Superludist(LinearProblem,ParameterList); 
@@ -109,7 +104,6 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     cerr << "Amesos_Superlu is not implemented" << endl ; 
     return 0 ; 
 #endif
-    break;
   default:
     cerr << "Unknown class type" << endl ; 
     return 0 ; 

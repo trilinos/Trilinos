@@ -91,6 +91,8 @@ struct SLUData
 //=============================================================================
 Amesos_Superlu::~Amesos_Superlu(void) {
 
+  using namespace SLU;
+
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
 
@@ -189,7 +191,7 @@ int Amesos_Superlu::ReFactor(){
     Ai_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
     Aval_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 
-    int NumEntriesThisRow;
+
     int NzThisRow ;
     int Ai_index = 0 ; 
     int MyRow;
@@ -281,7 +283,6 @@ int Amesos_Superlu::Factor(){
     Aval_.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 #endif
 
-    int NumEntriesThisRow;
     int NzThisRow ;
     int Ai_index = 0 ; 
     int MyRow;
@@ -453,7 +454,6 @@ int Amesos_Superlu::NumericFactorization() {
 
     SuperLUStat_t SLU_stat ;
     StatInit( &SLU_stat ) ; 
-    int m = NumGlobalElements_ ; 
     assert( SLUopt.Fact == DOFACT); 
     dgssvx( &(SLUopt), &(data_->A), 
 	    &perm_c_[0], &perm_r_[0], &etree_[0], &equed_, &R_[0], 
@@ -609,7 +609,7 @@ int Amesos_Superlu::Solve() {
     data_->SLU_options.Fact = FACTORED ; 
     SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
     if ( UseTranspose() ) 
-      assert( SLUopt.Trans = TRANS ); 
+      SLUopt.Trans = TRANS; 
     else
       assert( SLUopt.Trans == NOTRANS ); 
 

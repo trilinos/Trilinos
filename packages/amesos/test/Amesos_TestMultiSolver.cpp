@@ -315,6 +315,10 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SLUS
     } else if ( SparseSolver == SuperLU ) { 
       Epetra_SLU superluserial( &Problem ) ; 
+      EPETRA_CHK_ERR( superluserial.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( superluserial.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( superluserial.NumericFactorization(  ) ); 
 
       EPETRA_CHK_ERR( superluserial.Solve( ) ); 
 #endif

@@ -105,8 +105,13 @@
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* HAVE_CONFIG_H */
 
+#ifdef TFLOP
+#define SL_INIT_F77  sl_init_
+#define BLACS_GRIDINFO_F77  blacs_gridinfo_
+#else
 #define SL_INIT_F77  F77_FUNC(sl_init_,SL_INIT_)
 #define BLACS_GRIDINFO_F77  F77_FUNC(blacs_gridinfo_,BLACS_GRIDINFO_)
+#endif /* TFLOP */
 #define PDGETRF_F77  F77_FUNC(pdgetrf,PDGETRF)
 #define PDGETRS_F77  F77_FUNC(pdgetrs,PDGETRS)
 #define DESCINIT_F77  F77_FUNC(descinit,DESCINIT)

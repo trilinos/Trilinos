@@ -73,7 +73,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem, Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Superludist Destructor.
   /*! Completely deletes an Amesos_Superludist object.  
@@ -310,7 +310,7 @@ public:
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
-  const Teuchos::ParameterList * ParameterList_ ; 
+  Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */
