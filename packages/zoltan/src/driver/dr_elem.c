@@ -35,7 +35,6 @@
 #include "dr_util_const.h"
 #include "dr_err_const.h"
 
-extern int strncasecmp(char *, char *, int);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -53,12 +52,18 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
 {
 
   E_Type answer;
+  int i;
 
-  if(strncasecmp(elem_name, "SPHERE", 6) == 0)
+  /* Convert elem_name to upper case. */
+  for (i = strlen(elem_name); i>= 0; i--) {
+    elem_name[i] = toupper(elem_name[i]);
+  }
+
+  if(strncmp(elem_name, "SPHERE", 6) == 0)
     answer = SPHERE;
-  else if(strncasecmp(elem_name, "BEAM", 4) == 0 ||
-          strncasecmp(elem_name, "TRUSS", 5) == 0 ||
-          strncasecmp(elem_name, "BAR", 3) == 0)
+  else if(strncmp(elem_name, "BEAM", 4) == 0 ||
+          strncmp(elem_name, "TRUSS", 5) == 0 ||
+          strncmp(elem_name, "BAR", 3) == 0)
   {
     switch(num_nodes)
     {
@@ -73,7 +78,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "QUAD", 4) == 0)
+  else if(strncmp(elem_name, "QUAD", 4) == 0)
   {
     switch(num_nodes)
     {
@@ -91,7 +96,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "HEX", 3) == 0)
+  else if(strncmp(elem_name, "HEX", 3) == 0)
   {
     switch(num_nodes)
     {
@@ -112,7 +117,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "TRI", 3) == 0)
+  else if(strncmp(elem_name, "TRI", 3) == 0)
   {
     switch(num_nodes)
     {
@@ -129,7 +134,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "TET", 3) == 0)
+  else if(strncmp(elem_name, "TET", 3) == 0)
   {
     switch(num_nodes)
     {
@@ -144,7 +149,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "SHELL", 5) == 0)
+  else if(strncmp(elem_name, "SHELL", 5) == 0)
   {
     switch(num_nodes)
     {
@@ -159,7 +164,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
       answer = E_TYPE_ERROR;
     }
   }
-  else if(strncasecmp(elem_name, "WEDGE", 5) == 0)
+  else if(strncmp(elem_name, "WEDGE", 5) == 0)
   {
     switch(num_nodes)
     {
