@@ -8290,7 +8290,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/verySimple/Makefile test/Makefile test/Comm/Makefile test/Distributor/Makefile test/Platform/Makefile"
+                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/verySimple/Makefile test/Makefile test/Comm/Makefile test/Distributor/Makefile test/Platform/Makefile test/ElementSpace/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8884,6 +8884,7 @@ do
   "test/Comm/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;
   "test/Distributor/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Distributor/Makefile" ;;
   "test/Platform/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Platform/Makefile" ;;
+  "test/ElementSpace/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ElementSpace/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Tpetra_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Tpetra_config.h:src/Tpetra_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

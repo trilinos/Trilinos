@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	cout << "*** Starting verySimple example..." << endl;
 
 	// test Object
-	cout << "*** Testing Object..." << endl;
+	cout << "*** Creating Object..." << endl;
   Tpetra::Object obj1;
 	Tpetra::Object obj2("obj2");
 
@@ -43,13 +43,13 @@ int main(int argc, char *argv[])
 	cout << obj1 << endl;
 
 	// test SerialComm
-	cout << "*** Testing SerialComm..." << endl;
+	cout << "*** Creating SerialComm..." << endl;
 	Tpetra::SerialComm<double, int> comm1;
 	int temp2 = comm1.getNumImages();
 	cout << comm1 << endl;
 
 	// test Platform
-	cout << "*** Testing SerialPlatform..." << endl;
+	cout << "*** Creating SerialPlatform..." << endl;
 	Tpetra::SerialPlatform<int, int> platform1;
 	cout << platform1 << endl;
 

@@ -338,6 +338,7 @@ AC_CONFIG_FILES([
 		test/Comm/Makefile
 		test/Distributor/Makefile
 		test/Platform/Makefile
+		test/ElementSpace/Makefile
 		])
 
 AC_OUTPUT()

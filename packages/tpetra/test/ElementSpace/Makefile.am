@@ -32,11 +32,13 @@ noinst_PROGRAMS = ElementSpace_test
 
 ElementSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-ElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a
+ElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
-ElementSpace_test_CXXFLAGS = -I$(top_srcdir)/src
+ElementSpace_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src
 
-ElementSpace_test_LDADD = $(top_builddir)/src/libtpetra.a $(BLAS_LIBS) \
+ElementSpace_test_LDADD = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(FLIBS)
-
 
