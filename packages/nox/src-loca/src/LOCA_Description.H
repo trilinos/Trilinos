@@ -31,12 +31,11 @@
   \mainpage %LOCA:  Library of Continuation Algorithms
   
   %LOCA is short for "Library of Continuation Algorithms". Its 
-  objective is to compute families of solutions to:
+  objective is to compute families of solutions to
   \f[
-  F(x,p)=0.
+  F(x,p)=0
   \f]
-  where \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  %LOCA is designed to be
-  used with the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.
-
+  and their bifurcations, where \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  %LOCA is designed to be used with the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.
 */
+
 

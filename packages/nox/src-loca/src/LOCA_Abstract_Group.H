@@ -37,7 +37,11 @@
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
 
-//! Library of continuation algorithms namespace
+/*! \brief Library of continuation algorithms namespace.
+ */
+/*! All classes, functions, and global variables written for %LOCA reside
+in the LOCA namespace.
+*/
 namespace LOCA { 
 
   //! %LOCA abstract interface namespace
