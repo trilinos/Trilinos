@@ -2,86 +2,114 @@
 
 if ($#argv < 1) then
 
-  echo "Usage: installdox <install location> [nox directory]";
+  echo "Usage: installdox <package name > [install location] [package directory]";
   exit(1);
 
 endif
 
-set INSTALLDIR = $1;
+set PACKAGE = $1;
 
 if ($#argv < 2) then
 
-  set NOXDIR = $HOME/nox
+  set INSTALLDIR = /var/www/html/$1
 
 else
 
-  set NOXDIR = $2;
+  set INSTALLDIR = $2;
 
 endif
 
-echo "*** Installing NOX documentation from $NOXDIR to $INSTALLDIR ***";
+if ($#argv < 3) then
+
+  set PKGDIR = $HOME/$1
+
+else
+
+  set PKGDIR = $2;
+
+endif
+
+echo "*** Installing $1 documentation from $PKGDIR to $INSTALLDIR ***";
 
 # ************************************************************
 
-echo "Updating NOX"
+echo "CVS update for $1"
 
-if (! -d $NOXDIR) then
-  echo "Error: NOX directory ($NOXDIR) does not exist";
+if (! -d $PKGDIR) then
+  echo "Error: package directory ($PKGDIR) does not exist";
   exit(1);
 endif
 
-cd $NOXDIR
-cvs update -d -P >& /dev/null
+cd $PKGDIR
+cvs -q update -d -P > /dev/null
 
 # ************************************************************
 
-echo "Updating NOX documentation"
+echo "Creating distribution"
+configure > /dev/null
+make dist > /dev/null
 
-if (! -d $NOXDIR/doc) then
-  echo "Error: NOX documentation directory ($NOXDIR/doc) does not exist";
+# ************************************************************
+
+echo "Copying distribution to install directory"
+
+if (! -d $INSTALLDIR/downloads) then
+  mkdir $INSTALLDIR/downloads
+endif
+
+if (! -d $INSTALLDIR/downloads) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/downloads)";
+  exit(1);
+endif
+
+cp -pu $PKGDIR/*.tar.gz $INSTALLDIR/downloads
+
+
+# ************************************************************
+
+echo "Running doxygen on $1"
+
+if (! -d $PKGDIR/doc) then
+  echo "Error: package documentation directory ($PKGDIR/doc) does not exist";
   exit(1);
 endif
 
 cd doc
-doxygen >& /dev/null
+doxygen > /dev/null
+#doxygen | grep -i error
 
 # ************************************************************
 
-echo "Creating destination directory"
+echo "Checking for install directory"
 
 if (! -d $INSTALLDIR) then
-  echo "Error: Installation directory ($INSTALLDIR) does not exist";
-  exit(1);
-endif
-
-if (! -d $INSTALLDIR/nox) then
-  mkdir $INSTALLDIR/nox
-endif
-
-if (! -d $INSTALLDIR/nox) then
-  echo "Error: Cannot create install subdirectory ($INSTALLDIR/nox)";
+  echo "Error: Install directory ($INSTALLDIR) does not exist";
   exit(1);
 endif
 
 # ************************************************************
 
-echo "Copying NOX graphics"
+echo "Copying $1 graphics"
 
-if (! -d $INSTALLDIR/nox/images) then
-  mkdir $INSTALLDIR/nox/images
+if (! -d $INSTALLDIR/images) then
+  mkdir $INSTALLDIR/images
 endif
 
-if (! -d $INSTALLDIR/nox/images) then
-  echo "Error: Cannot create install subdirectory ($INSTALLDIR/nox/images)";
+if (! -d $INSTALLDIR/images) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/images)";
   exit(1);
 endif
 
-cp -pu $NOXDIR/doc/includes/images/*.gif $INSTALLDIR/nox/images
+cp -pu $PKGDIR/doc/images/*.gif $INSTALLDIR/images
 
 # ************************************************************
 
 echo "Processing HTML files"
 
-find $NOXDIR/doc/html -type f -exec $NOXDIR/maintenance/seddox $INSTALLDIR $NOXDIR {} \;
+find $PKGDIR/doc/html -type f -exec $PKGDIR/maintenance/seddox $INSTALLDIR $PKGDIR {} \;
 
-chmod -R a+rX $INSTALLDIR/nox
+# ************************************************************
+
+echo "Updating permissions in install directory ($INSTALLDIR)";
+
+chmod -R a+rX $INSTALLDIR

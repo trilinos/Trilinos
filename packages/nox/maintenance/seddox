@@ -1,10 +1,10 @@
 #!/bin/csh
 
 set INSTALLDIR = $1
-set NOXDIR = $2
-set FILENAME = `echo "$3" | sed "s|$NOXDIR/doc/html/||"`
+set PKGDIR = $2
+set FILENAME = `echo "$3" | sed "s|$PKGDIR/doc/html/||"`
 
 #echo $FILENAME
 
-sed 's/\.\.\/includes\/images/images/g' $3 >! $INSTALLDIR/nox/$FILENAME 
+sed 's/\.\.\/images/images/g' $3 >! $INSTALLDIR/$FILENAME 
 
