@@ -828,7 +828,6 @@ Optional Features:
   --enable-loca           compile the loca library
   --enable-loca-epetra    compile the locaepetra library
   --enable-loca-blas      compile the locablas library
-  --enable-examples       compile simple examples
   --enable-lapack-examples
                           compile lapack examples
   --enable-epetra-examples
@@ -3520,7 +3519,7 @@ fi
 rm -f conftest.$ac_objext conftest.$ac_ext
 
 # ------------------------------------------------------------------------
-# LAPACK library?
+# Request compilation of LAPACK support library
 # ------------------------------------------------------------------------
 
 # Check whether --enable-lapack or --disable-lapack was given.
@@ -3538,7 +3537,7 @@ echo "$as_me:$LINENO: result: ${BUILD_LIBNOXLAPACK}" >&5
 echo "${ECHO_T}${BUILD_LIBNOXLAPACK}" >&6
 
 # ------------------------------------------------------------------------
-# Epetra library?
+# Request compilation of Epetra support library
 # ------------------------------------------------------------------------
 
 # Check whether --enable-epetra or --disable-epetra was given.
@@ -3556,7 +3555,7 @@ echo "$as_me:$LINENO: result: ${BUILD_LIBNOXEPETRA}" >&5
 echo "${ECHO_T}${BUILD_LIBNOXEPETRA}" >&6
 
 # ------------------------------------------------------------------------
-# With Petsc
+# Request compilation of Petsc support library
 # ------------------------------------------------------------------------
 
 
@@ -4826,33 +4825,6 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# Checks for building simple examples
-# ------------------------------------------------------------------------
-
-# Check whether --enable-examples or --disable-examples was given.
-if test "${enable_examples+set}" = set; then
-  enableval="$enable_examples"
-  BUILD_EXAMPLES=${enableval}
-else
-  BUILD_EXAMPLES=no
-
-fi;
-
-echo "$as_me:$LINENO: checking whether we should build the basic examples" >&5
-echo $ECHO_N "checking whether we should build the basic examples... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${BUILD_EXAMPLES}" >&5
-echo "${ECHO_T}${BUILD_EXAMPLES}" >&6
-
-
-if test X${BUILD_EXAMPLES} = Xyes; then
-  BUILD_EXAMPLES_TRUE=
-  BUILD_EXAMPLES_FALSE='#'
-else
-  BUILD_EXAMPLES_TRUE='#'
-  BUILD_EXAMPLES_FALSE=
-fi
-
-# ------------------------------------------------------------------------
 # Checks for building lapack examples
 # ------------------------------------------------------------------------
 
@@ -4974,12 +4946,11 @@ echo "${ECHO_T}${BUILD_LOCA_BLAS_EXAMPLES}" >&6
 # Checks for basic libraries for examples and/or lapack support
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EXAMPLES} = yes ||
+if test ${BUILD_LIBNOXLAPACK} = yes ||
    test ${BUILD_LAPACK_EXAMPLES} = yes ||
    test ${BUILD_EPETRA_EXAMPLES} = yes ||
    test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes ||
-   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes ||
-   test ${BUILD_LIBNOXLAPACK} = yes; then
+   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
 
   echo "$as_me:$LINENO: checking for library containing pow" >&5
 echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
@@ -5298,7 +5269,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5301:" \
+echo "$as_me:5272:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5465,7 +5436,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5468: \"$ac_link\") >&5
+(eval echo $as_me:5439: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5544,7 +5515,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5547: \"$ac_link\") >&5
+(eval echo $as_me:5518: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9078,7 +9049,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile example/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-blas/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-blas/Makefile src-loca/example-blas/Chan/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-blas/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-blas/Makefile src-loca/example-blas/Chan/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9567,7 +9538,6 @@ do
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "doc/Doxyfile" ) CONFIG_FILES="$CONFIG_FILES doc/Doxyfile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "src-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-lapack/Makefile" ;;
   "example-lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-lapack/Makefile" ;;
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
@@ -9731,8 +9701,6 @@ s,@BUILD_LIBLOCAEPETRA_TRUE@,$BUILD_LIBLOCAEPETRA_TRUE,;t t
 s,@BUILD_LIBLOCAEPETRA_FALSE@,$BUILD_LIBLOCAEPETRA_FALSE,;t t
 s,@BUILD_LIBLOCABLAS_TRUE@,$BUILD_LIBLOCABLAS_TRUE,;t t
 s,@BUILD_LIBLOCABLAS_FALSE@,$BUILD_LIBLOCABLAS_FALSE,;t t
-s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
-s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t

@@ -141,10 +141,6 @@ Here is a detailed list and explanation of the NOX configuration options.
       <li> This turns on compiler optimization flags. It has not been fully
            tested. As an alternate, specify CXXFLAGS on the configure line.
     </ul>
-  <li> \c --enable-examples       
-    <ul>
-      <li> Compile simple examples. Only requires the blas and lapack libraries.
-    </ul>
   <li> \c --with-cppflags
     <ul>
       <li> Specify additional preprocessor flags (e.g., "-Dflag -Idir")
@@ -208,6 +204,20 @@ library and related examples do depend on MPI.
 
 </ul>
 
+\section lapack_options LAPACK-Related Options
+
+<ul>
+  <li> \c --enable-lapack         
+    <ul>
+      <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-lapack-examples
+    <ul>
+      <li> Compile lapack examples. 
+           Requires \c --enable-lapack.
+    </ul>
+</ul>
+
 \section epetra_options Epetra-Related Options
 
 <ul>
@@ -219,6 +229,20 @@ library and related examples do depend on MPI.
     <ul>
       <li> Compile epetra examples. 
            Requires \c --enable-epetra.
+    </ul>
+</ul>
+
+\section petsc_options PETSc-Related Options
+
+<ul>
+  <li> \c --enable-petsc      
+    <ul>
+      <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-petsc-examples
+    <ul>
+      <li> Compile petsc examples. 
+           Requires \c --enable-petsc.
     </ul>
 </ul>
 
@@ -237,19 +261,6 @@ library and related examples do depend on MPI.
     <ul>
       <li> Compile loca epetra examples. 
            Requires \c --enable-loca, \c --enable-epetra, and \c --enable-loca-epetra.
-    </ul>
-</ul>
-
-\section petsc_config PETSc-Related Options
-
-<ul>
-  <li> \c --enable-petsc          
-    <ul>
-      <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
-    </ul>
-  <li> \c --enable-petsc-examples 
-    <ul>
-      <li> Compile petsc examples.
     </ul>
 </ul>
 
@@ -311,15 +322,15 @@ allow some basic testing of NOX without requiring an interface to a
 more complicated linear algebra system. To enable these examples, type
 
 \verbatim
-configure --enable-examples
+configure --enable-lapack --enable-lapack-examples
 make
 \endverbatim
 
-The compiled examples are located in the \c examples
+The compiled examples are located in the \c example-lapack
 subdirectory.  To run each example, follow the instructions given below.
 
 <ol>
-<li>To run a simple 2D example based on the Rosenbrock function, type
+<li>To run a simple 2 equation example based on the Rosenbrock function, type
 \verbatim
 rosenbrock
 \endverbatim
@@ -1143,19 +1154,24 @@ immediately before the word that is causing the link. For example,
 
   Included with %NOX are three such interfaces:
 
-  - NOX::Example
+  - NOX::LAPACK
   - NOX::Epetra
   - NOX::Petsc
 
-  The \b Example interface is a very simple interface that is not
-  intended for actual computations, but to serve as an
-  easy-to-understand example of how one might interface to %NOX.
+  The \b LAPACK interface is an interface to the BLAS/LAPACK library.
+  It is not intended for large-scale computations, but to serve as an
+  easy-to-understand example of how one might interface to %NOX.  
   
   The \b Epetra interface is an interface to the
-  Trilinos/Epetra library.
+  Trilinos/Epetra library developed by 
+  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
+  for more information see the 
+  <a href="http://software.sandia.gov/Trilinos">Trilinos Home Page</a>.
 
   The \b PETSc interface is an interface with the PETSc library. PETSc
-  was developed at Argonne National Labs; for more information see the
+  was developed at 
+  <a href="http://www.anl.gov">Argonne National Labs</a>; 
+  for more information see the
   <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
 
   All solvers are in the NOX::Solver namespace. The solvers are

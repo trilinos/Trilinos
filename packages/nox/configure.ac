@@ -554,7 +554,7 @@ AC_TRY_COMPILE(
 )
 
 # ------------------------------------------------------------------------
-# LAPACK library?
+# Request compilation of LAPACK support library
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(lapack,
@@ -567,7 +567,7 @@ AC_MSG_CHECKING(whether we should build the noxlapack library)
 AC_MSG_RESULT(${BUILD_LIBNOXLAPACK})
 
 # ------------------------------------------------------------------------
-# Epetra library?
+# Request compilation of Epetra support library
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(epetra,
@@ -580,7 +580,7 @@ AC_MSG_CHECKING(whether we should build the noxepetra library)
 AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
 
 # ------------------------------------------------------------------------
-# With Petsc
+# Request compilation of Petsc support library
 # ------------------------------------------------------------------------
 
 
@@ -808,20 +808,6 @@ AC_MSG_RESULT([${BUILD_LIBLOCABLAS}])
 AM_CONDITIONAL(BUILD_LIBLOCABLAS, test X${BUILD_LIBLOCABLAS} = Xyes)
 
 # ------------------------------------------------------------------------
-# Checks for building simple examples
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(examples,
-[AC_HELP_STRING([--enable-examples],[compile simple examples])],
-[BUILD_EXAMPLES=${enableval}],
-[BUILD_EXAMPLES=no]
-)
-
-AC_MSG_CHECKING(whether we should build the basic examples)
-AC_MSG_RESULT(${BUILD_EXAMPLES})
-AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
-
-# ------------------------------------------------------------------------
 # Checks for building lapack examples
 # ------------------------------------------------------------------------
 
@@ -918,12 +904,11 @@ AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
 # Checks for basic libraries for examples and/or lapack support
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EXAMPLES} = yes || 
+if test ${BUILD_LIBNOXLAPACK} = yes ||
    test ${BUILD_LAPACK_EXAMPLES} = yes ||
    test ${BUILD_EPETRA_EXAMPLES} = yes || 
    test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes || 
-   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes ||
-   test ${BUILD_LIBNOXLAPACK} = yes; then
+   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -1229,7 +1214,6 @@ AC_CONFIG_FILES([
 		doc/Makefile
 		doc/Doxyfile
 		src/Makefile
-		example/Makefile
                 src-lapack/Makefile
 		example-lapack/Makefile
 		src-epetra/Makefile 
