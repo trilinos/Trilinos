@@ -621,10 +621,7 @@ if test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
   AC_LANG_FORTRAN77
   AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
 
-  # Find a valid y12m
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find y12m library]))
-
+  # Determine TRILINOS_TARGET
   AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
   if test -n "${TRILINOS_ARCH}"; then
     AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
@@ -657,6 +654,28 @@ if test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
      TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
      AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
   fi
+
+  # Find a valid y12m
+  AC_LANG_FORTRAN77
+
+  AC_ARG_WITH(y12m-libdir,
+  [  --with-y12m-libdir      specify location of y12m library],
+  [y12m_LIBDIR=$withval])
+
+  AC_MSG_CHECKING(for y12m)
+  if test -n "${y12m_LIBDIR}" && test -f ${y12m_LIBDIR}/liby12m.a; then
+    LDFLAGS="-L${y12m_LIBDIR} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  elif test -f ${TRILINOS_DIR}/external/y12m/lib/${TRILINOS_TARGET}/liby12m.a; then
+    LDFLAGS="-L${TRILINOS_DIR}/external/y12m/lib/${TRILINOS_TARGET} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find y12m library])
+  fi  
+
+  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find y12m library]))
+
 
   # Check for ifpack
   TRILINOS_LIB_CHECK(ifpack)
