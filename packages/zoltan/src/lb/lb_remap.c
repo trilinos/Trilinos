@@ -44,13 +44,12 @@ static int gather_and_build_remap(ZZ *, int *, int, int *);
 static int set_remap_type(ZZ *, int *);
 static int malloc_HEinfo(ZZ *, int, int **);
 static int do_match(ZZ*, HGraph *, int *, int);
-static int matching_mxm(ZZ *, HGraph *, int *, int *);
 static int matching_pgm(ZZ *, HGraph *, int *, int *);
 static int local_HEs_from_import_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
 static int local_HEs_from_export_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
-static void measure_stays(ZZ *, HGraph *, int, char *);
+static float measure_stays(ZZ *, HGraph *, int, char *);
 
 /******************************************************************************/
 
@@ -87,14 +86,6 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
                                  to minimize communication calls.  */
 
   *new_map = 0;
-
-  if (!(zz->LB.Uniform_Parts)) {
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-                     "Remapping does not respect requested non-uniform "
-                     "partition sizes; no remapping done.");
-    ierr = ZOLTAN_WARN;
-    goto End;
-  }
 
   /* Determine type of remapping that is appropriate */
   ierr = set_remap_type(zz, &remap_type);
@@ -425,22 +416,24 @@ static int set_remap_type(
   int *remap_type
 )
 {
-char *yo = "set_remap_type";
 int ierr = ZOLTAN_OK;
 
 /* Set remap type based on distribution of partitions to processors. */
 
-  if (zz->LB.PartDist == NULL) {
-    /* # Partitions == # Processors, uniformly distributed; remap processors */
-    *remap_type = ZOLTAN_LB_REMAP_PROCESSORS;
+  if (!(zz->LB.Uniform_Parts)) {
+    /* Remapping does not respect requested non-uniform partition sizes;
+       no remapping done. */
+    *remap_type = ZOLTAN_LB_REMAP_NONE;
+    ierr = ZOLTAN_WARN;
   }
   else if (!(zz->LB.Single_Proc_Per_Part)) {
-    /* Partitions spread across >1 processor; remapping not supported. */
+    /* Some partitions spread across >1 processor; remapping not supported. */
     *remap_type = ZOLTAN_LB_REMAP_NONE;
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-                      "Remapping is not available when computed partitions "
-                      "are spread across multiple processors.");
     ierr = ZOLTAN_WARN;
+  }
+  else if (zz->LB.PartDist == NULL) {
+    /* # Partitions == # Processors, uniformly distributed; remap processors */
+    *remap_type = ZOLTAN_LB_REMAP_PROCESSORS;
   }
   else {
     /* # Partitions != # processors, or partitions not uniformly distributed */
@@ -461,29 +454,12 @@ static int do_match(
 /* Temporary function; will be replace by a real matching function later. */
 int ierr = ZOLTAN_OK;
 int i;
-int lastvtx = hg->nVtx - 1;
   
   /* Default initialization -- no change in mapping */
   for (i = 0; i < hg->nVtx; i++)
     match[i] = i;
 
-#ifdef KDDKDD_SILLY
-  /* Silly hand-made matching -- reverse partition assignments. */
-  for (i = 0; i < limit; i++) {
-    match[i] = lastvtx - i;
-    match[lastvtx-i] = i;
-  }
-#endif
-
-/*
-  ierr = matching_mxm(zz, hg, match, &limit);
-*/
   ierr = matching_pgm(zz, hg, match, &limit);
-
-  /* Diagnostics -- print matching vector */
-  if (zz->Proc == zz->Debug_Proc)
-    for (i = 0; i < hg->nVtx; i++)
-      printf("%d  MATCH %d<->%d\n", zz->Proc, i, match[i]);
 
   return ierr;
 }
@@ -542,6 +518,9 @@ int *used = NULL;             /* Vector indicating which partitions are used
                                  in the matching. */
 int limit;                    /* Maximum number of matches that are allowed */
 HGraph hg;                    /* Hypergraph for matching */
+float before,                 /* Amount of data that overlaps between old and */
+      after;                  /* new decomposition before and after remapping, 
+                                 respectively. */
 
 
   /* Gather HEs from each processor into a local complete HG. */
@@ -626,7 +605,7 @@ HGraph hg;                    /* Hypergraph for matching */
   }
 
   /* Diagnostics:  put into high Debug_Level later */
-  measure_stays(zz, &hg, max0, "BEFORE");
+  before = measure_stays(zz, &hg, max0, "BEFORE");
 
   /* Do matching */
 
@@ -695,20 +674,23 @@ HGraph hg;                    /* Hypergraph for matching */
     }
   }
 
-  ZOLTAN_FREE(&match);
-
   if (*new_map) {
-    /* Diagnostics:  put into high Debug_Level later */
-    if (zz->Proc == zz->Debug_Proc) 
-      for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-        printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
-      }
+    after = measure_stays(zz, &hg, max0, "AFTER ");
 
-    /* Diagnostics:  put into high Debug_Level later */
-    measure_stays(zz, &hg, max0, "AFTER");
+    if (before >= after) {
+      /* No benefit from remapping; don't keep it! */
+      ZOLTAN_FREE(&zz->LB.Remap);
+      *new_map = 0;
+    }
+
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->Proc == zz->Debug_Proc &&
+        zz->LB.Remap) 
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+        printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
   }
 
 End:
+  ZOLTAN_FREE(&match);
   ZOLTAN_FREE(&each_size);
   ZOLTAN_FREE(&recvbuf);
   Zoltan_HG_HGraph_Free(&hg);
@@ -716,7 +698,7 @@ End:
 }
 
 /******************************************************************************/
-static void measure_stays(
+static float measure_stays(
   ZZ *zz,
   HGraph *hg, 
   int max0,
@@ -741,48 +723,14 @@ int tmp, i;
         stay += hg->ewgt[i];
     }
   }
-  if (zz->Proc == zz->Debug_Proc)
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->Proc == zz->Debug_Proc)
     printf("%d REMAP--%s: TOTAL AMT STAY = %g\n\n",
             zz->Proc, when, stay);
+
+  return(stay);
 }
 
-
-/******************************************************************************/
-
-static int matching_mxm(
-  ZZ *zz, 
-  HGraph *hg, 
-  int *match, 
-  int *limit
-)
-{
-/* Maximal matching, lifted from HG code. */
-int  i, j, edge, vertex, *Hindex = NULL;
-char *yo = "matching_mxm";
-
-  if (!(Hindex = (int*) ZOLTAN_MALLOC (sizeof(int) * (hg->nEdge+1)) )) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-     return ZOLTAN_MEMERR;
-     }
-  for (i = 0; i <= hg->nEdge; i++)
-     Hindex[i] = hg->hindex[i];
-
-  for (i = 0; i < hg->nVtx  &&  *limit > 0; i++)
-     for (j = hg->vindex[i]; match[i] == i && j < hg->vindex[i+1]; j++) {
-        edge = hg->vedge[j];
-        while (Hindex[edge] < hg->hindex[edge+1]) {
-           vertex = hg->hvertex[Hindex[edge]++];
-           if (vertex != i && match[vertex] == vertex) {
-              match[i]      = vertex;
-              match[vertex] = i;
-              (*limit)--;
-              break;   /* terminate while loop */
-              }
-           }
-        }
-  ZOLTAN_FREE ((void**) &Hindex);
-  return ZOLTAN_OK;
-}
 
 /******************************************************************************/
 
