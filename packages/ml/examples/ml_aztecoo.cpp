@@ -25,6 +25,10 @@
 // 
 // ***********************************************************************//@HEADER
 
+#include "ml_include.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+
+
 // Driver to test using ML as a preconditioner to aztecoo.
 // Adapted from example in ../AztecOO.
 // Reads in a data file from the Matrix Market web site.
@@ -44,7 +48,6 @@
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "ml_include.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
@@ -292,3 +295,22 @@ int main(int argc, char *argv[])
 
 return 0 ;
 }
+
+#else
+
+int main(int argc, char *argv[])
+{
+
+#ifdef EPETRA_MPI
+  MPI_Init(&argc,&argv);
+#endif
+  puts("Please configure ML with optinos --enable-epetra");
+  puts("--enable-aztecoo --enable-triutils to run this example");
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
+
+return 0 ;
+}
+
+#endif /* EPETRA and AZTECPP and triutils */
