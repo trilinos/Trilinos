@@ -16,14 +16,11 @@ example_SOURCES = $(srcdir)/Example.C \
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src/libnoxepetra.a
 
-example_CXXFLAGS = @TRILINOS_CXXFLAGS@ \
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src
 
 example_LDADD = \
 	-L$(top_builddir)/src \
 	-lnox -lnoxepetra \
-	@TRILINOS_LDADD@ \
-	-lepetra -laztecoo -lifpack \
-	-L/usr/lib -L/usr/lib/local \
-	-llapack -lspblas -lblas -ly12m -lg2c -lm
+	$(TRILINOS_LDADD) 
 

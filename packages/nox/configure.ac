@@ -79,18 +79,10 @@ dnl AC_REVISION($Revision$)
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(flags,
-[  --with-flags            Specifies flags (\"-Dflag1 -Dflag2 ...\")],
+[  --with-flags            Specify preprocessor flags (\"-Dflag -Idir  ...\")],
 [
 XTRAFLAGS=$withval
 echo Using extra flags: $withval
-]
-)
-
-AC_ARG_WITH(include,
-[  --with-include          Specifies include directories (\"-Idir1 -Idir2 ...\")],
-[
-XTRAINC=$withval
-echo Using extra include directories: $withval
 ]
 )
 
@@ -244,6 +236,45 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
+# Checks for extra flags 
+# ------------------------------------------------------------------------
+
+# IBM test
+case $target in
+  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+    # -qnolm squashes warnings about compiler licences
+    COPTIONS="-qnolm"
+    # -qrtti allows for dynamic casts
+    CXXOPTIONS="-qnolm -qrtti"
+  ;;
+esac
+
+AC_MSG_CHECKING([for extra preprocessor flags])
+if test X$XTRAFLAGS = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT([$XTRAFLAGS])
+fi
+
+AC_MSG_CHECKING([for extra C flags])
+if test X$COPTIONS = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT($COPTIONS)
+fi
+
+AC_MSG_CHECKING([for extra C++ flags])
+if test X$CXXOPTIONS = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT($CXXOPTIONS)
+fi
+
+CFLAGS="${CFLAGS} ${COPTIONS}"
+CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
+CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
+
+# ------------------------------------------------------------------------
 # MPI link check
 # ------------------------------------------------------------------------
 
@@ -272,6 +303,105 @@ if test X${USE_MPI} = Xyes; then
   AC_LANG_RESTORE
 
 fi
+
+# ------------------------------------------------------------------------
+# Checks for header files
+# ------------------------------------------------------------------------
+
+# string
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING([for string])
+AC_TRY_LINK([#include <string>],[],
+[
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_STRING,,[define if we can include <string>])
+], 
+[
+  AC_MSG_RESULT(no)
+  AC_MSG_NOTICE([You do not appear to have string!!])
+]
+)
+
+#iostream
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING([for iostream])
+AC_TRY_LINK([#include <iostream>],[],
+[
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_IOSTREAM,,[define if we can include <iostream>])
+], 
+[
+  AC_MSG_RESULT(no)
+  AC_MSG_CHECKING([for iostream.h])
+  AC_TRY_LINK([#include <iostream.h>],[],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_IOSTREAM_H,,[define if we can include <iostream.h>])
+  ], 
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([You do not appear to have iostream nor iostream.h!!])
+  ]
+  )
+]
+)
+
+#iomanip
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING([for iomanip])
+AC_TRY_LINK([#include <iomanip>],[],
+[
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_IOMANIP,,[define if we can include <iomanip>])
+], 
+[
+  AC_MSG_RESULT(no)
+  AC_MSG_CHECKING([for iomanip.h])
+  AC_TRY_LINK([#include <iomanip.h>],[],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_IOMANIP_H,,[define if we can include <iomanip.h>])
+  ], 
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([You do not appear to have iomanip nor iomanip.h!!])
+  ]
+  )
+]
+)
+
+#cmath
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING([for cmath])
+AC_TRY_LINK([#include <cmath>],[],
+[
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_CMATH,,[define if we can include <cmath>])
+], 
+[
+  AC_MSG_RESULT(no)
+  AC_MSG_CHECKING([for math.h])
+  AC_TRY_LINK([#include <math.h>],[],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_MATH_H,,[define if we can include <math.h>])
+  ], 
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!])
+  ]
+  )
+]
+)
+
+# ------------------------------------------------------------------------
+# Checks for libraries
+# ------------------------------------------------------------------------
+
+AC_SEARCH_LIBS(pow,[m])
+AC_SEARCH_LIBS(sqrt,[m])
+AC_CHECK_FUNCS([pow sqrt])
+
 
 # ------------------------------------------------------------------------
 # Trilinos
@@ -339,9 +469,9 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
       AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
    fi
 
-   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_HOME}/packages/epetra/src -I${TRILINOS_HOME}/packages/aztecoo/src"
-
-   TRILINOS_LDADD="-L${TRILINOS_HOME}/lib/${TRILINOS_TARGET}"
+   TRILINOS_EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
+   TRILINOS_AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
+   TRILINOS_LIB_DIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
 
 fi
 
@@ -366,21 +496,43 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
       TRILINOS_COMM="SERIAL"
    fi
 
-   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_ARCH_DIR}/include/epetra/ -I${TRILINOS_ARCH_DIR}/include/aztecoo/"
-   TRILINOS_LDADD="-L${TRILINOS_ARCH_DIR}/lib/"
+   TRILINOS_EPETRA_INC=${TRILINOS_ARCH_DIR}/include/epetra/
+   TRILINOS_AZTECOO_INC=${TRILINOS_ARCH_DIR}/include/aztecoo/
+   TRILINOS_LIB_DIR=${TRILINOS_ARCH_DIR}/lib/
 
 fi
 
+if test ${USE_TRILINOS} = yes; then
+
+   LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
+   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
+   TRILINOS_LDADD="-lepetra -laztecoo -lifpack -ly12m"
+
+  dnl find a valid blas and lapack library
+  AC_LANG_SAVE
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dcopy,[cxml blas])
+  AC_SEARCH_LIBS(dgetrs,[cxml lapack])
+  AC_LANG_RESTORE
+
+fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
 AC_SUBST(TRILINOS_LDADD)
 
+
+
+# ------------------------------------------------------------------------
+# Checks for types
+# ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Checks for structures
+# ------------------------------------------------------------------------
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
-
-AC_CHECK_LIB([m],[pow])
-AC_CHECK_FUNCS([pow])
 
 # Check that all libraries will link with C++
 if test ${LIBS}; then
@@ -396,23 +548,6 @@ if test ${LIBS}; then
 fi
 
 # ------------------------------------------------------------------------
-# Checks for header files
-# ------------------------------------------------------------------------
-
-AC_CHECK_HEADERS([iostream iostream.h],[break],[],[])
-AC_CHECK_HEADERS([iomanip iomanip.h],[break],[],[])
-AC_CHECK_HEADERS([string],[],[],[])
-AC_CHECK_HEADERS([cmath math.h],[break],[],[])
-
-# ------------------------------------------------------------------------
-# Checks for types
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for structures
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
 
@@ -420,41 +555,6 @@ AC_CXX_NAMESPACES
 AC_CXX_MUTABLE
 AC_CXX_HAVE_STL
 AC_CXX_HAVE_STD
-
-# IBM test
-case $target in
-  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-    # -qnolm squashes warnings about compiler licences
-    COPTIONS="-qnolm"
-    # -qrtti allows for dynamic casts
-    CXXOPTIONS="-qnolm -qrtti"
-  ;;
-esac
-
-AC_MSG_CHECKING([for extra preprocessor flags])
-if test X$XTRAFLAGS = X && test X$XTRAINC = X; then
-AC_MSG_RESULT(none)
-else
-AC_MSG_RESULT([$XTRAFLAGS $XTRAINC])
-fi
-
-AC_MSG_CHECKING([for extra C flags])
-if test X$COPTIONS = X; then
-AC_MSG_RESULT(none)
-else
-AC_MSG_RESULT($COPTIONS)
-fi
-
-AC_MSG_CHECKING([for extra C++ flags])
-if test X$CXXOPTIONS = X; then
-AC_MSG_RESULT(none)
-else
-AC_MSG_RESULT($CXXOPTIONS)
-fi
-
-CFLAGS="${CFLAGS} ${COPTIONS}"
-CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
-CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics

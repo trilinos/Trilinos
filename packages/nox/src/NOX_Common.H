@@ -33,14 +33,17 @@
 #ifndef NOX_COMMON_H
 #define NOX_COMMON_H
 
+#ifdef HAVE_CONFIG_H
 #include "NOX_Config.h"
+#endif
 
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
 #else
-*** MISSING HEADER FILE ***
+// Try to include it anyway
+#include <iostream>
 #endif
 
 #ifdef HAVE_IOMANIP
@@ -48,7 +51,8 @@
 #elif defined(HAVE_IOMANIP_H)
 #include <iomanip.h>
 #else
-*** MISSING HEADER FILE ***
+// Try to include it anyway
+#include <iomanip>
 #endif
 
 #ifdef HAVE_CMATH
@@ -56,13 +60,15 @@
 #elif defined(HAVE_MATH_H)
 #include <math.h>
 #else
-*** MISSING HEADER FILE ***
+// Try to include it anyway
+#include <math.h>
 #endif
 
 #ifdef HAVE_STRING
 #include <string>
 #else
-*** MISSING HEADER FILE ***
+// Try to include it anyway
+#include <string>
 #endif
 
 

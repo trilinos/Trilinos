@@ -1,31 +1,22 @@
 /* src/NOX_Config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if you have the <cmath> header file. */
+/* define if we can include <cmath> */
 #undef HAVE_CMATH
 
-/* Define if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
-/* Define if you have the <iomanip> header file. */
+/* define if we can include <iomanip> */
 #undef HAVE_IOMANIP
 
-/* Define if you have the <iomanip.h> header file. */
+/* define if we can include <iomanip.h> */
 #undef HAVE_IOMANIP_H
 
-/* Define if you have the <iostream> header file. */
+/* define if we can include <iostream> */
 #undef HAVE_IOSTREAM
 
-/* Define if you have the <iostream.h> header file. */
+/* define if we can include <iostream.h> */
 #undef HAVE_IOSTREAM_H
 
-/* Define if you have the `m' library (-lm). */
-#undef HAVE_LIBM
-
-/* Define if you have the <math.h> header file. */
+/* define if we can include <math.h> */
 #undef HAVE_MATH_H
-
-/* Define if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
 
 /* define if the compiler supports the mutable keyword */
 #undef HAVE_MUTABLE
@@ -36,41 +27,20 @@
 /* Define if you have the `pow' function. */
 #undef HAVE_POW
 
+/* Define if you have the `sqrt' function. */
+#undef HAVE_SQRT
+
 /* define if the compiler supports ISO C++ standard library */
 #undef HAVE_STD
-
-/* Define if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
 
 /* define if the compiler supports Standard Template Library */
 #undef HAVE_STL
 
-/* Define if you have the <string> header file. */
+/* define if we can include <string> */
 #undef HAVE_STRING
-
-/* Define if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
-/* Define if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
-/* Define if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
-
-/* Define if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
 
 /* Name of package */
 #undef PACKAGE
-
-/* Define if you have the ANSI C header files. */
-#undef STDC_HEADERS
 
 /* Version number of package */
 #undef VERSION

@@ -173,7 +173,6 @@ SOLVER = \
 
 STATUS_H = \
 	$(srcdir)/NOX_Status_Test.H \
-	$(srcdir)/NOX_Status_All_Tests.H \
 	$(srcdir)/NOX_Status_AbsResid.H \
 	$(srcdir)/NOX_Status_Combo.H \
 	$(srcdir)/NOX_Status_MaxResid.H \
