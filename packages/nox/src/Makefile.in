@@ -121,7 +121,8 @@ am__libnox_a_SOURCES_DIST = $(srcdir)/NOX_Abstract_Vector.C \
 	$(srcdir)/NOX_StatusTest_NormWRMS.C \
 	$(srcdir)/NOX_StatusTest_Stagnation.C \
 	$(srcdir)/NOX_StatusTest_Divergence.C $(srcdir)/NOX_Utils.C \
-	$(srcdir)/NOX_Random.C $(srcdir)/NOX_MultiVector.C
+	$(srcdir)/NOX_Random.C $(srcdir)/NOX_Version.C \
+	$(srcdir)/NOX_MultiVector.C
 am__objects_1 = libnox_a-NOX_Abstract_Vector.$(OBJEXT) \
 	libnox_a-NOX_Abstract_Group.$(OBJEXT)
 am__objects_2 = libnox_a-NOX_LineSearch_Utils_Slope.$(OBJEXT) \
@@ -153,7 +154,7 @@ am__objects_6 = libnox_a-NOX_StatusTest_Generic.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_Stagnation.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_Divergence.$(OBJEXT)
 am__objects_7 = libnox_a-NOX_Utils.$(OBJEXT) \
-	libnox_a-NOX_Random.$(OBJEXT)
+	libnox_a-NOX_Random.$(OBJEXT) libnox_a-NOX_Version.$(OBJEXT)
 @BUILD_NOX_MULTIVECS_TRUE@am__objects_8 =  \
 @BUILD_NOX_MULTIVECS_TRUE@	libnox_a-NOX_MultiVector.$(OBJEXT)
 am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -213,7 +214,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_StatusTest_NormUpdate.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_StatusTest_NormWRMS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_StatusTest_Stagnation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Utils.Po
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Version.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -261,7 +263,7 @@ am__include_HEADERS_DIST = $(srcdir)/NOX.H $(srcdir)/NOX_Common.H \
 	$(srcdir)/NOX_StatusTest_Stagnation.H \
 	$(srcdir)/NOX_StatusTest_Divergence.H $(srcdir)/NOX_Utils.H \
 	$(srcdir)/NOX_SharedObjectTemplate.H $(srcdir)/NOX_Random.H \
-	$(srcdir)/NOX_Abstract_MultiVector.H \
+	$(srcdir)/NOX_Version.H $(srcdir)/NOX_Abstract_MultiVector.H \
 	$(srcdir)/NOX_MultiVector.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -614,11 +616,13 @@ STATUSTEST = \
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
         $(srcdir)/NOX_SharedObjectTemplate.H \
-	$(srcdir)/NOX_Random.H
+	$(srcdir)/NOX_Random.H \
+        $(srcdir)/NOX_Version.H
 
 UTILS = \
 	$(srcdir)/NOX_Utils.C \
-	$(srcdir)/NOX_Random.C
+	$(srcdir)/NOX_Random.C \
+        $(srcdir)/NOX_Version.C
 
 @BUILD_NOX_MULTIVECS_FALSE@MULTIVECS_H = 
 @BUILD_NOX_MULTIVECS_TRUE@MULTIVECS_H = \
@@ -788,6 +792,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_NormWRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_Stagnation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Version.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -1316,6 +1321,22 @@ libnox_a-NOX_Random.obj: $(srcdir)/NOX_Random.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Random.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Random.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Random.obj `if test -f '$(srcdir)/NOX_Random.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Random.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Random.C'; fi`
+
+libnox_a-NOX_Version.o: $(srcdir)/NOX_Version.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Version.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Version.Tpo" -c -o libnox_a-NOX_Version.o `test -f '$(srcdir)/NOX_Version.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Version.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Version.Tpo" "$(DEPDIR)/libnox_a-NOX_Version.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Version.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Version.C' object='libnox_a-NOX_Version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Version.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Version.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Version.o `test -f '$(srcdir)/NOX_Version.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Version.C
+
+libnox_a-NOX_Version.obj: $(srcdir)/NOX_Version.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Version.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Version.Tpo" -c -o libnox_a-NOX_Version.obj `if test -f '$(srcdir)/NOX_Version.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Version.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Version.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Version.Tpo" "$(DEPDIR)/libnox_a-NOX_Version.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Version.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Version.C' object='libnox_a-NOX_Version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Version.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Version.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Version.obj `if test -f '$(srcdir)/NOX_Version.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Version.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Version.C'; fi`
 
 libnox_a-NOX_MultiVector.o: $(srcdir)/NOX_MultiVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_MultiVector.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_MultiVector.Tpo" -c -o libnox_a-NOX_MultiVector.o `test -f '$(srcdir)/NOX_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_MultiVector.C; \
