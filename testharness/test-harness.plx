@@ -2092,13 +2092,16 @@ report($SUMMARY);
 		    $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";		    
 		} else {        
     		# Figure out how to run an mpi job.
-    		my $result;       # success=0, failure=nonzero
+    		my $result = "";
         
     		$result = $ENV{"HOSTNAME"};
     		if (!$result) {
-    		  $result = $ENV{"HOST"};
+    		    $result = $ENV{"HOST"};
     		}
-    		if ($result =~ /stratus/) {
+    		if (!$result) {
+    		    $result = `uname -n`;
+    		}
+    		if ($result =~ m/stratus/) {
     		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
     		} else {
     		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
