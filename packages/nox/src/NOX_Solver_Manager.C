@@ -27,7 +27,7 @@ Manager::Manager(Abstract::Group& initialguess, Status::Test &t,
 
   string method = p.getParameter("Nonlinear Solver", "Newton");
 
-  if (Utils::doPrint(0)) 
+  if (Utils::doPrint(Utils::Parameters)) 
     cout << "Nonlinear Solver: " << method << endl; 
   
   if (method == "Newton") {

@@ -53,12 +53,12 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
   Utils::setUtils(iparams);
 
   // Print out initialization information
-  if (Utils::doPrint(1)) {
+  if (Utils::doPrint(Utils::Parameters)) {
 
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor--\n\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor --\n\n";
     iparams.print(cout,5);
-    cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor--\n\n";
+    cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor --\n\n";
     test.print(cout, 5);
     cout <<"\n" << Utils::fill(72) << "\n";
 
@@ -161,30 +161,32 @@ void Newton::printUpdate()
   double norm_k;
   double norm_newton;
 
-  // All processors participate in the computation of these norms...
-  if (Utils::doAllPrint(1)) {
+  // All processes participate in the computation of these norms...
+  if (Utils::doAllPrint(Utils::OuterIteration)) {
     norm_k = soln.getNormRHS();
     norm_newton = (niter > 0) ? oldsoln.getNewton().norm() : 0;
   }
 
-  // ...But only the print processors actually prints the result.
-  if (Utils::doPrint(1)) {
+  // ...But only the print process actually prints the result.
+  if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "Newton Step " << niter;
-    cout << " : Residual Norm = " << Utils::sci(norm_k);
+    cout << "-- Newton Step " << niter << " -- \n";
+    cout << "Residual Norm = " << Utils::sci(norm_k);
     cout << "  Step = " << Utils::sci(step);
     cout << "  Update Norm = " << Utils::sci(norm_newton);
+    if (status > 0)
+      cout << " (Converged!)";
+    if (status < 0)
+      cout << " (Failed!)";
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
   
-  if ((status > 0) && (Utils::doPrint(1)))
-    cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
-  
-  if ((status < 0) && (Utils::doPrint(1))) 
-    cout << "\n" << "Nonlinear solver failed." << "\n" << endl;
-
-  if ((status != 0) && (Utils::doPrint(1))) 
+  if ((status != 0) && (Utils::doPrint(Utils::OuterIteration))) {
+    cout << Utils::fill(72) << "\n";
+    cout << "-- Final Status Test Results --\n";    
     test.print(cout);
+    cout << Utils::fill(72) << "\n";
+  }
 }
 
 // protected
@@ -214,7 +216,7 @@ void Newton::resetForcingTerm()
 
   string indent = "       ";
 
-  if (Utils::doPrint(1)) {
+  if (Utils::doPrint(Utils::Details)) {
     cout << indent << "CALCULATING FORCING TERM" << endl;
     cout << indent << "Method: " << method << endl;
   }
@@ -247,7 +249,7 @@ void Newton::resetForcingTerm()
     eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
      
     // Some output
-    if (Utils::doPrint(1)) {
+    if (Utils::doPrint(Utils::Details)) {
       cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
       cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
       cout << indent << "Residual Norm k =               " << normrhs << "\n";
@@ -273,7 +275,7 @@ void Newton::resetForcingTerm()
     eta_k = gamma * pow(residual_ratio, alpha);
      
     // Some output
-    if (Utils::doPrint(1)) {
+    if (Utils::doPrint(Utils::Details)) {
       cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
       cout << indent << "Residual Norm k =               " << normrhs << "\n";
       cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
@@ -296,7 +298,7 @@ void Newton::resetForcingTerm()
   // Reset linear solver tolerance
   lsparams.setParameter("Tolerance", eta_k);
 
-  if (Utils::doPrint(1)) {
+  if (Utils::doPrint(Utils::Details)) {
     cout << indent << "Forcing Term: " << eta_k << endl;
   }
 

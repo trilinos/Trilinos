@@ -104,8 +104,8 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
 int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
-  if (Utils::doPrint(1)) {
-   cout << "\n" << Utils::fill(72) << "\n" << " -- More'-Thuente Line Search -- \n";
+  if (Utils::doPrint(Utils::InnerIteration)) {
+   cout << "\n" << Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
    // Set default step
   stp = defaultstep;
@@ -119,8 +119,8 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   double dginit = dgcompute(dir, oldgrp);
 
   if (dginit >= 0.0) {
-    if (Utils::doPrint(1)) {
-      cout << " -- Linesearch Failed! -- (dginit = " << dginit << ")" << endl;
+    if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << "-- Linesearch Failed! -- (dginit = " << dginit << ")" << endl;
     }
     stp = defaultstep;
     newgrp.computeX(oldgrp, dir, stp);
@@ -192,11 +192,10 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     newgrp.computeJacobian();
     nfev ++;
 
-    if (Utils::doPrint(1)) {
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(stp);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(2*finit);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(2*f);
-      cout << endl;
+    if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << "step = " << Utils::sci(stp);
+      cout << " oldf = " << Utils::sci(2*finit);
+      cout << " newf = " << Utils::sci(2*f);
     }
 
     double dg = dgcompute(dir, newgrp);
@@ -227,16 +226,37 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     if ((f <= ftest1) && (fabs(dg) <= gtol*(-dginit))) 
       info = 1;			// Success!!!!
 
-    // Check for termination.
-    if (info != 0) {
-      if (Utils::doPrint(1)) {
-	if (info != 1)
-	  cout << " -- Linesearch Failed! -- (info = " << info << ")" << endl;
-	else
-	  cout << " -- Step Accepted! --" << endl;
-	cout << Utils::fill(72) << "\n" << endl;
+    if (info != 0) {		// Line search is done
+
+      if (info != 1) {		// Line search failed 
+	
+	stp = recoverystep;
+	newgrp.computeX(oldgrp, dir, stp);
+	
+	if (Utils::doPrint(Utils::InnerIteration)) 
+	  cout << " (USING RECOVERY STEP!) \n";
+	
+	if (Utils::doPrint(Utils::Details))
+	    cout << "[Failure info flag = " << info << "]" << endl;
+	    
       }
+      else {			// Line search succeeded
+	
+	if (Utils::doPrint(Utils::InnerIteration)) 
+	  cout << " (STEP ACCEPTED!)" << endl;
+	
+      }
+      
+      if (Utils::doPrint(Utils::InnerIteration)) 
+	cout << Utils::fill(72) << "\n" << endl;
+
+      // Returning the line search flag
       return info;
+
+    } // info != 0
+
+    if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << endl;
     }
 
     // In the first stage we seek a step for which the modified

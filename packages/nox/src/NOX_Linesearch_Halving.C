@@ -64,15 +64,15 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   newgrp.computeRHS();    
   newf = newgrp.getNormRHS();
 
-  if (Utils::doPrint(1)) {
-   cout << "\n" << Utils::fill(72) << "\n" << " -- Interval Halving Line Search -- \n";
+  if (Utils::doPrint(Utils::InnerIteration)) {
+   cout << "\n" << Utils::fill(72) << "\n" << "-- Interval Halving Line Search -- \n";
   }
   while ((newf >= oldf) && (!isfailed)) {
 
-    if (Utils::doPrint(1)) {
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+    if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << "step = " << Utils::sci(step);
+      cout << " oldf = " << Utils::sci(oldf);
+      cout << " newf = " << Utils::sci(newf);
       cout << endl;
     }
 
@@ -88,15 +88,14 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
     newf = newgrp.getNormRHS();
   } 
 
-  if (Utils::doPrint(1)) {
-    cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-    cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
-    cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
-    cout << endl;
+  if (Utils::doPrint(Utils::InnerIteration)) {
+    cout << "step = " << Utils::sci(step);
+    cout << " oldf = " << Utils::sci(oldf);
+    cout << " newf = " << Utils::sci(newf);
     if (isfailed)
-      cout << "--Linesearch Failed!--" << endl;
+      cout << " (USING RECOVERY STEP!)" << endl;
     else
-      cout << "--Step Accepted!--" << endl;
+      cout << " (STEP ACCEPTED!)" << endl;
     cout << Utils::fill(72) << "\n" << endl;
   }
 

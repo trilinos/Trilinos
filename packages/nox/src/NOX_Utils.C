@@ -105,7 +105,7 @@ bool NOX::Utils::doPrint(MsgType type)
   if (type == Error)
     return isPrintProc();
 
-  return (isPrintProc() && (printTest & type != 0));
+  return (isPrintProc() && ((printTest & type) != 0));
 }
 
 bool NOX::Utils::doAllPrint(MsgType type)
@@ -113,7 +113,7 @@ bool NOX::Utils::doAllPrint(MsgType type)
   if (type == Error)
     return true;
 
-  return (printTest & type != 0);
+  return ((printTest & type) != 0);
 }
 
 int NOX::Utils::getMyPID()

@@ -76,16 +76,16 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
   newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
                             // Redefined f(), RH
 
-  if (Utils::doPrint(1)) {
-   cout << "\n" << Utils::fill(72) << "\n" << " -- Polynomial Line Search -- \n";
+  if (Utils::doPrint(Utils::InnerIteration)) {
+   cout << "\n" << Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
   while (newf >= oldf+0.0001*step*oldfprime) {  //Armijo-Goldstein condition, RH
 
-    if (Utils::doPrint(1)) {
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+    if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << "step = " << Utils::sci(step);
+      cout << " oldf = " << Utils::sci(oldf);
+      cout << " newf = " << Utils::sci(newf);
       cout << endl;
     }
 
@@ -133,7 +133,7 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
       cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
       cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
-      cout << " (USING MINSTEP!)" << endl;
+      cout << " (USING RECOVERY STEP!)" << endl;
       cout << Utils::fill(72) << "\n" << endl;
       isfailed = true;
       return(!isfailed);
@@ -146,10 +146,10 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
   } 
 
   
-  if (Utils::doPrint(1)) {
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+  if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << "step = " << Utils::sci(step);
+      cout << " oldf = " << Utils::sci(oldf);
+      cout << " newf = " << Utils::sci(newf);
       cout << " (STEP ACCEPTED!)" << endl;
       cout << Utils::fill(72) << "\n" << endl;
 
