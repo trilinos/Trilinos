@@ -1105,5 +1105,94 @@ int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
    comm_info->total_rcv_length   += comm_info->neighbors[i].N_rcv;
   }
   return 1;
-}
+} 
 
+/******************************************************************************/
+
+void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
+    int start_location, ML_Comm *comm, int overwrite_or_add)
+{
+  double          *send_buf, **rcv_buf, *tempv;
+  int              type, N_neighbors, *temp, i, j, k, rtype;
+  USR_REQ         *request;
+  ML_NeighborList *neighbor;
+
+  /**************************** execution begins ******************************/
+
+  N_neighbors              = comm_info->N_neighbors;
+  if (N_neighbors == 0) return;
+
+  /* Set up send messages: Gather send unknowns from "x" vector */
+
+  if ( N_neighbors > 0 )
+  {
+     request = (USR_REQ  *)  malloc(N_neighbors*sizeof(USR_REQ ));
+     rcv_buf = (double  **)  malloc(N_neighbors*sizeof(double *));
+  } else { request = NULL; rcv_buf = NULL;}
+
+  type = 2001;
+
+  /* post receives for all messages */
+
+  for (i = 0; i < N_neighbors; i++) 
+  {
+    neighbor = &(comm_info->neighbors[i]);
+    rtype = type;   j = sizeof(double)* neighbor->N_send;
+    rcv_buf[i] = (double *)  malloc(j);
+    comm->USR_irecvbytes((void *) rcv_buf[i], (unsigned int)j, 
+		&(neighbor->ML_id), &rtype, comm->USR_comm, request+i);
+  }
+
+  /* write out all messages */
+
+  for (i = 0; i < N_neighbors; i++) 
+  {
+    neighbor = &(comm_info->neighbors[i]);
+    j = sizeof(double)* neighbor->N_rcv;
+    send_buf = (double *)  malloc(j);
+    temp = comm_info->neighbors[i].rcv_list;
+	if (temp == NULL && j != 0)
+	{
+	   printf("In ML_transposed_exchange_bdry: "
+	          "comm_info->neighbors[i].rcv_list cannot be NULL\n");
+	   exit(1);
+    }
+    for (k = 0; k < neighbor->N_rcv; k++) 
+    {
+        send_buf[k] = x[ temp[k] ];
+    }
+    comm->USR_sendbytes((void *) send_buf, (unsigned) j, neighbor->ML_id, 
+                          rtype, comm->USR_comm);
+    if (send_buf != NULL) free(send_buf);
+  }
+
+  /* wait for all messages */
+
+  for (i = 0; i < N_neighbors; i++) 
+  {
+    neighbor = &(comm_info->neighbors[i]);
+    rtype = type;   j = sizeof(double)* neighbor->N_send;
+    k = comm->USR_waitbytes((void *) rcv_buf[i], j, &(neighbor->ML_id),
+                        &rtype, comm->USR_comm, request+i);
+    temp = comm_info->neighbors[i].send_list;
+       if (overwrite_or_add == ML_ADD) 
+       {
+          for (k = 0; k < neighbor->N_send; k++) 
+             x[ temp[k] ] += rcv_buf[i][k];
+       }
+       else 
+       {
+          for (k = 0; k < neighbor->N_send; k++) 
+             x[ temp[k] ] = rcv_buf[i][k];
+       }
+    if (rcv_buf[i] != NULL) free(rcv_buf[i]);
+  }
+  if ( N_neighbors > 0 ) free(rcv_buf);
+  if ( N_neighbors > 0 ) free(request);
+
+  if (comm_info->remap != NULL) 
+  {
+     printf("comm_info->remap != NULL\n");
+	 exit(1);
+  }
+} /* ML_transposed_exchange_bdry */
