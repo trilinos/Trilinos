@@ -40,7 +40,7 @@
 namespace NOX {
 namespace Linesearch {
 
-//! Generic line search interface
+//! %Generic line search interface
 class Generic {
 
 public:
@@ -54,7 +54,8 @@ public:
   //! Reset parameters
   virtual void reset(const Parameter::List& params) = 0;
   
-  //! Perform a line search from oldgrp along dirction dir. newgrp = oldgrp + step * dir.
+  //! Perform a line search from oldgrp along dirction dir. 
+  //! Update newgrp = oldgrp + step * dir.
   virtual bool operator()(Abstract::Group& newgrp, double& step,
 			  const Abstract::Group& oldgrp, 
 			  const Abstract::Vector& dir) = 0;

@@ -39,6 +39,20 @@ namespace NOX {
 namespace Linesearch {
 
 //! Manager for all different line searches
+/*! 
+   The parameters must specify the type of line search as well as all
+   the corresponding parameters for that line search.
+ 
+   <ul>
+   <li> "Method" - Name of the line search. Valid choices are
+   <ul> 
+   <li> "Full Step" (NOX::Linesearch::FullStep)
+   <li> "Interval %Halving" (NOX::Linesearch::Halving)
+   <li> "%Polynomial" (NOX::Linesearch::Polynomial)
+   <li> "More'-Thuente" (NOX::Linesearch::MoreThuente)
+   </ul>
+   </ul>
+ */  
 class Manager : public Generic {
 
 public:
@@ -69,7 +83,7 @@ private:
   string method;
 
   //! Pointer to method
-  Generic* ptr;
+  Linesearch::Generic* ptr;
 
 };
 } // namespace Linesearch

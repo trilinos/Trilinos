@@ -59,7 +59,7 @@ public:
   //! Destructor.
   virtual ~Test() {};
 
-  //! Test stopping criterion, given a generic problem.
+  //! %Test stopping criterion, given a generic problem.
   virtual StatusType operator()(const Solver::Generic& problem) const = 0;
 
   //! Output formatted description of stopping test to output stream.

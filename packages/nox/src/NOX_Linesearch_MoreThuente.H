@@ -38,7 +38,75 @@
 namespace NOX {
 namespace Linesearch {
 
-//! Use quad/cubic polynomial fit from Dennis & Schnabel
+//! More'-Thuente Line Search.
+/*!
+
+  This code is based on the More'-Thuente line search from the 1983
+  MINPACK Project. More specifically, this code is based on Dianne
+  O'Leary's 1991 Matlab-implementation of the More'-Thuente line
+  search. The original comments are preserved in the descriptions of
+  the individual subroutines. What follows is an updated summary.
+
+  The function we are minimizing is given by
+
+  f(x) = 0.5 * F(x)'* F(x)
+
+  The purpose of the More'-Thuente line search is to find a step which
+  satisfies a sufficient decrease condition and a curvature condition.
+  At each stage the subroutine updates an interval of uncertainty with
+  endpoints stx and sty. The interval of uncertainty is initially
+  chosen so that it contains a minimizer of the modified function
+
+  f(x+stp*s) - f(x) - ftol*stp*(gradf(x)'s).
+
+  If a step is obtained for which the modified function has a
+  nonpositive function value and nonnegative derivative, then the
+  interval of uncertainty is chosen so that it contains a minimizer of
+  f(x+stp*s).
+
+  The algorithm is designed to find a step which satisfies the
+  sufficient decrease condition
+
+  f(x+stp*s) <= f(x) + ftol*stp*(gradf(x)'s),
+
+  and the curvature condition
+
+  abs(gradf(x+stp*s)'s)) <= gtol*abs(gradf(x)'s).
+
+  If ftol is less than gtol and if, for example, the function is
+  bounded below, then there is always a step which satisfies both
+  conditions. If no step can be found which satisfies both conditions,
+  then the algorithm usually stops when rounding errors prevent
+  further progress. In this case stp only satisfies the sufficient
+  decrease condition.
+
+  This line search can be called via NOX::Linesearch::Manager.
+ 
+  The following parameters can be specified for this line search:
+ 
+  - "Sufficient Decrease" - The ftol in the sufficient decrease
+    condition (defaults to 1.0e-4)
+
+  - "Curvature Condition" - The gtol in the curvature condition
+    (defaults to 0.9999)
+
+  - "Interval Width" - The maximum width of the interval containing
+    the minimum of the modified function (defaults to 1.0e-15)
+
+  - "Maximum Step" - maximum allowable step lenght (defaults to 1.0e6)
+
+  - "Minimum Step" - minimum allowable step length (defaults to 1.0e-12)
+
+  - "Maximum Fevals" - maximum number of right-hand-side and
+    corresponding Jacobian evaluations (defaults to 20)
+
+  - "Default Step" - starting step length (defaults to 1.0)
+
+  - "Recovery Step" - step to take when the line search fails
+    (defaults to value for "Default Step")
+
+
+*/
 
 class MoreThuente : public Generic {
 

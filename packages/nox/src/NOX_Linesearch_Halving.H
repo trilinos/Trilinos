@@ -38,7 +38,27 @@
 namespace NOX {
 namespace Linesearch {
 
-//! Halve step until reduction in the RHS
+//! Halve the step until we find reduction in the norm of the right hand side.
+/*!  This line search starts with the step length defined by "Default
+  Step". It checks to see if the norm of the right hand side (RHS) has
+  been reduced. It so, it exits successfully. Otherwise, it reduces
+  the step length by a factor of one-half. It continues to repeat this
+  procedure until it either finds a reduction in the norm of the RHS
+  or the step is less than that specified by "Minimum Step". In the
+  later case, the line search has failed, and we take the step defined
+  by "Recovery Step".
+
+  This line search can be called via NOX::Linesearch::Manager.
+ 
+  The following parameters can be specified for this line search:
+ 
+  - "Default Step" - starting step length (defaults to 1.0)
+
+  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
+
+  - "Recovery Step" - step to take when the line search fails
+    (defaults to value for "Default Step")
+ */  
 
 class Halving : public Generic {
 

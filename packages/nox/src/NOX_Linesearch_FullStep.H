@@ -39,6 +39,14 @@ namespace NOX {
 namespace Linesearch {
 
 //! Simplest line search - always take the full step.
+/*! 
+ *  This line search can be called via NOX::Linesearch::Manager.
+ *
+ *  The following parameters can be specified for this line search: 
+ *
+ *  - "Full Step" - length of a full step (defaults to 1.0)
+ */  
+
 class FullStep : public Generic {
 
 public:

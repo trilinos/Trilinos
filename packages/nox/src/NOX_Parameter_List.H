@@ -60,7 +60,7 @@ public:
   //! Deconstructor
   ~List();
 
-  //! List unused parameters
+  //! List %unused parameters
   /*! \todo Need to make this automatically parse sublists. */
   void unused() const;
 

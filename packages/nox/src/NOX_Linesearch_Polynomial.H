@@ -39,6 +39,25 @@ namespace NOX {
 namespace Linesearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel
+/*!
+
+  \todo Russ needs to add a citation for the source of this line
+  search. Is it Alg 6.3.1mod from D&S? We also need to add a basic
+  description of the search.
+  
+  \todo Does this work with non-Newton directions?
+
+  This line search can be called via NOX::Linesearch::Manager.
+ 
+  The following parameters can be specified for this line search:
+ 
+  - "Default Step" - starting step length (defaults to 1.0)
+
+  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
+
+  - "Recovery Step" - step to take when the line search fails
+    (defaults to value for "Default Step")
+*/
 
 class Polynomial : public Generic {
 

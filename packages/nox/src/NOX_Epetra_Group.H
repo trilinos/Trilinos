@@ -42,7 +42,7 @@
 namespace NOX {
 namespace Epetra {
 
-//! Concrete implementation of NOX::Abstract::Group for Epetra.
+//! Concrete implementation of NOX::Abstract::Group for %Epetra.
 class Group : public Abstract::Group {
 
 public:

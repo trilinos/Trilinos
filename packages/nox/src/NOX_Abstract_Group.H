@@ -39,7 +39,7 @@
 namespace NOX { 
 namespace Abstract { 
 
-/*! \brief NOX pure abstract interface to a "group"; i.e., a solution
+/*! \brief %NOX pure abstract interface to a "group"; i.e., a solution
  *  vector and the corresponding RHS, Jacobian, gradient, and Newton
  *  vectors, as well as any shared objects.
  *
@@ -149,7 +149,7 @@ public:
 
   //@{ \name Creating new Groups.
 
-  /*! \brief Create a new Group of the same derived type as this one
+  /*! \brief Create a new %Group of the same derived type as this one
    * by cloning this one, and return a pointer to the new group.  If
    * type is "DeepCopy", then we need to create an exact replica of
    * "this". Otherwise, if type is "CopyShape", we need only replicate
