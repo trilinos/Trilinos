@@ -34,8 +34,8 @@ static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 /*****************************************************************************/
 /***   Local macros:                                                       ***/
 /*****************************************************************************/
-#define SET_PARAM_VAL(datatype,len,value) { \
-  for (i=0; i<len; i++) \
+#define SET_PARAM_VAL(datatype,value) { \
+  for (i=lo; i<hi; i++) \
     ((datatype *) param_ptr->ptr)[i] = value; \
   }
 /*****************************************************************************/
@@ -55,6 +55,7 @@ int print_proc                  /* processor that should perform printing */
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter       */
     int       index;		/* index of parameter entry      */
+    int       lo, hi;		/* lower/upper bounds on index   */
     int       found;		/* is name found?                */
     int       ierr;		/* error code                    */
     int       i;		/* loop variable                 */
@@ -103,46 +104,51 @@ int print_proc                  /* processor that should perform printing */
 
           if (ierr == ZOLTAN_OK) { /* OK so far. */
 
-            if (index == -1)
-              index = param_ptr->length;  /* Set all entries in a vector. */
-            if (index == 0) 
-              index = 1;                  /* Scalar parameter. */
+            if (index == -1){  /* Set all entries in a param vector. */
+              lo = 0;
+              hi = param_ptr->length; 
+              if (hi == 0) hi = 1; /* Special case for scalar parameters. */
+            }
+            else {  /* Set just one entry in the param vector. */
+              lo = index;
+              hi = lo+1;
+            }
 
 	    /* Figure out what type it is and read value. */
 	    if (!strcmp(param_ptr->type, "INT") || 
                 !strcmp(param_ptr->type, "INTEGER")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    SET_PARAM_VAL(int, index, 1)
+		    SET_PARAM_VAL(int, 1)
 		else if (*val == 'F')
-		    SET_PARAM_VAL(int, index, 0)
+		    SET_PARAM_VAL(int, 0)
 		else {
-		    SET_PARAM_VAL(int, index, atoi(val))
+		    SET_PARAM_VAL(int, atoi(val))
 		}
 	    }
 
 	    else if ((!strcmp(param_ptr->type, "FLOAT")) ||
 	             (!strcmp(param_ptr->type, "REAL"))) {
-		SET_PARAM_VAL(float, index, atof(val))
+		SET_PARAM_VAL(float, atof(val))
 	    }
 
 	    else if (!strcmp(param_ptr->type, "DOUBLE")) {
-		SET_PARAM_VAL(double, index, atof(val))
+		SET_PARAM_VAL(double, atof(val))
 	    }
 
 	    else if (!strcmp(param_ptr->type, "LONG")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    SET_PARAM_VAL(long, index, 1)
+		    SET_PARAM_VAL(long, 1)
 		else if (*val == 'F')
-		    SET_PARAM_VAL(long, index, 0)
+		    SET_PARAM_VAL(long, 0)
 		else {
-		    SET_PARAM_VAL(long, index, atol(val))
+		    SET_PARAM_VAL(long, atol(val))
 		}
 	    }
 
 	    else if (!strcmp(param_ptr->type, "CHAR")) {
-		SET_PARAM_VAL(char, index, (*val))
+		SET_PARAM_VAL(char, (*val))
 	    }
 
 	    else if (!strcmp(param_ptr->type, "STRING")) {
