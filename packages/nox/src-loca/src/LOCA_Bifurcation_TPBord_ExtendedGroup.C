@@ -451,13 +451,16 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverse(
 					const NOX::Abstract::Vector& input,
 					NOX::Abstract::Vector& result) const 
 {
+  NOX::Abstract::Group::ReturnType res;
   const NOX::Abstract::Vector* inputs[1];
   NOX::Abstract::Vector* results[1];
 
   inputs[0] = &input;
   results[0] = &result;
 
-  return applyJacobianInverseMulti(params, inputs, results, 1);
+  res =  applyJacobianInverseMulti(params, inputs, results, 1);
+
+  return res;
 }
 
 NOX::Abstract::Group::ReturnType
