@@ -682,14 +682,14 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
     ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
 
     if( ierr == 0 ) {
-      while( ierr == 0 ) {
+      do {
 	delete [] colInd;
 	delete [] colVal;
 	allocated *= 2;
 	colInd = new int[allocated];
 	colVal = new double[allocated];
 	ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
-      }
+      } while( ierr == 0 );
     }
 
     // MS // check out how many nonzeros we have
@@ -721,8 +721,8 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
     CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
 				   colVal, colInd);
     
-    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], ncnt, 
-				   colVal, colInd);
+    //    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], ncnt, 
+    //				   colVal, colInd);
   }
 
   delete [] colInd;
