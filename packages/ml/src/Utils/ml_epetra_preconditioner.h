@@ -108,7 +108,13 @@ public:
   //! Prints unused parameters in the input ParameterList.
   void PrintUnused() 
   {
-    List_.unused();
+    List_.unused(std::cout);
+  }
+
+  //! Prints unused parameters in the input ParameterList.
+  void PrintUnused(ostream & os) 
+  {
+    List_.unused(os);
   }
 
   void PrintUnused(int MyPID);

@@ -4,7 +4,7 @@
 /* ******************************************************************** */
 
 #include "ml_config.h"
-#ifdef HAVE_ML_AMESOS
+#if defined(HAVE_ML_AMESOS) && defined(HAVE_ML_TEUCHOS)
 
 #include "ml_utils.h"
 #include "ml_epetra_utils.h"
@@ -38,7 +38,7 @@ Garbage - ML_MPI and EPETRA_MPI must be the same
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 
   extern "C" { 
   double *SendThisToEMV ; 
@@ -118,16 +118,16 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
 
-  AMESOS::Parameter::List ParamList ;
+  Teuchos::ParameterList ParamList ;
 
-  AMESOS::Parameter::List & SluParamList=ParamList.sublist("Superludist");
+  Teuchos::ParameterList & SluParamList=ParamList.sublist("Superludist");
 
   // this is specific to Superludist-2.0
   if( choice == ML_AMESOS_SUPERLUDIST ) {
     
     if( MaxProcs == -2 ) {
       if( Amesos_CrsMatrix->RowMatrixRowMap().LinearMap() == true ) {
-	ParamList.setParameter("Redistribute",false);
+	ParamList.set("Redistribute",false);
       } else {
 #ifdef TFLOP
 	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
@@ -149,8 +149,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 #endif
       }
     } else {
-      ParamList.setParameter("Redistribute",true);
-      SluParamList.setParameter("MaxProcesses",MaxProcs);
+      ParamList.set("Redistribute",true);
+      SluParamList.set("MaxProcesses",MaxProcs);
     }
   }
 
