@@ -1,4 +1,4 @@
-\documentclass[12pt,relax]{SANDreport}
+ \documentclass[12pt,relax]{SANDreport}
 
 %
 % Set the title, author, and date
@@ -175,7 +175,6 @@ dictate.
 	\end{quote}
 
 	\subsection{What is Covered in this Guide}
-**(see lines 230-243)
 
 The Trilinos Developer's Guide is meant to assist existing, as well as new and
 potential Trilinos developers.  Topics covered include how to configure and 
@@ -187,12 +186,13 @@ chapter entitled ``Suggested practices''.  Finally, a graphical depiction of
 Trilinos package iteroperability is supplied along with a list of platforms 
 that Trilinos has been ported to.
 
-For a higher-level view of the Trilinos project, please see **(Cite An Overview
-of the Trilinos Project by Mike Heroux). 
+For a higher-level view of the Trilinos project, please see An Overview
+of the Trilinos Project by Mike Heroux. 
+%**(Use a citation.)
 
 	\section{Getting Started}
-	**(How to configure and build Trilinos)**
-	**(Need intro! - also include examples!)**
+%	**(How to configure and build Trilinos - Sync this section with AUTOTOOLS_README)**
+%	**(Need intro! - also include examples!)**
 
 \subsection{Trilinos Configuration Options}
 
@@ -357,6 +357,7 @@ or library dependencies to a Trilinos package or conditionally compiling new
 files require a more complicated process.
 \begin{enumerate}
 \item Obtain the supported versions of Autoconf and Automake.
+
 The current supported versions of Autoconf and Automake are documented in 
 the Trilinos repository.  Trilinos/config/AutotoolsVersionInfo contains the 
 information.  The Trilinos team does not attempt to keep up with the latest 
@@ -367,6 +368,7 @@ good machine to bootstrap on.  However, software does not currently have an
 mpi implementation installed.
 
 \item Update source code from Trilinos repository
+
 Obtain the most current version of Trilinos (for the branch being worked on).  
 First, cd to the top Trilinos directory, then type
 \begin{verbatim}
@@ -374,6 +376,7 @@ cvs -q update-dP
 \end{verbatim}
 
 \item Add new files to or remove obsolete files from the Trilinos repository
+
 To add new files abc.cpp and abc.h to the Trilinos repository, cd to the 
 directory in which the files are located in a checked out version of the 
 Trilinos repository and type
@@ -390,6 +393,7 @@ files.  The files will really be added or removed later using ``cvs commit''.
 However, this is a necessary step in the process.
 
 \item List new files in or remove obsolete files from Makefile.am
+
 New source files should be placed into a category in the appropriate 
 Makefile.am.  Typically, the directory in which the new files are located will 
 contain a Makefile.am.  If not, the appropriate Makefile.am will be found in 
@@ -404,16 +408,21 @@ files from the build process, simply delete the file names from the
 appropriate Makefile.am.
 
 \item Bootstrap
+
 First, cd to the top-level directory of the appropriate Trilinos package.  
-For example Trilinos/packages/epetra.  Then type './bootstrap'.  The process 
-should complete without any errors, but the following warnings do commonly 
-occur:
+For example Trilinos/packages/epetra.  Then type 
+\begin{verbatim}
+./bootstrap
+\end{verbatim}
+The process should complete without any errors, but the following warnings do 
+commonly occur:
 \begin{verbatim}
 configure.ac:9: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
 configure.ac:184: warning: do not use m4_regexp: use regexp or m4_bregexp
 \end{verbatim}
 
 \item Test the new code
+
 Reconfigure and rebuild the Trilinos package.  Perform tests associated with 
 the new code, as well as the rest of the tests for the package to insure that 
 both the new code works and existing code has not been broken.  When changes 
@@ -421,6 +430,7 @@ could possibly affect other packages, tests for affected packages should also
 be run.
 
 \item Update source code from Trilinos repository
+
 Didn't we just do this?  Yes, but there are two good reasons to do it again.
 
 Other developers could have committed changes during the past several 
@@ -450,6 +460,7 @@ going to be committed that have not been changed.  A cvs update will check to
 see if the file has really been changed or if it simply has a new timestamp.
 
 \item Commit the changes to the Trilinos repository
+
 Once all of the above steps are completed, the final step is to commit the 
 changes to the repository.  Start by typing
 \begin{verbatim}
@@ -459,7 +470,21 @@ Now, look at the list of files that are to be added, removed  or modified.
 It is easy to inadvertantly commit files.  It is also easy to forget to use 
 ``cvs add''.  If a file has not been added, it will not show up on the list of 
 files to be added.  Conversely, to remove a file, don't forget to use ``cvs 
-remove''.  After verifying that all of the files that are in the list belong 
+remove''.  
+
+Here are a few helpful tips to use when verifying the list of files 
+to be committed.  First, make sure that all files you modified directly appear 
+in the list.  Second, when modifying a Makefile.am, the corresponding 
+Makefile.in will change also.  Third, when modifying configure.ac, configure 
+will also change, but some Makefile.in files may also change when using macros 
+such as AC_SUBST.  Finally, when unsure about whether or not a file should be 
+in the commit list, abort the commit by closing the edior without saving, and 
+chosing ``abort''.  Then, if abc.cpp is in question, type 
+\begin{verbatim}
+cvs diff abc.cpp
+\end{verbatim}
+Then look at the diff output and see if it makes sense for the changes that 
+were made.  After verifying that all of the files that are in the list belong 
 there, and that all files that belong in the list are, in fact, listed, remove 
 unnecessary instances of ``CVS: `` from the log message and enter an 
 appropriate description of the changes that are to be committed.  Don't forget 
@@ -491,11 +516,12 @@ the code will do when complete.
 % start reading Mike's stuff at 243
 
 \section{Package Requirements}
-	**(Req's and how to satisfy them - break into subsections)**
+%	**(Req's and how to satisfy them - break into subsections)**
 
 Stages of integration:
 \begin{enumerate}
 \item Put the package in the Trilinos repository.
+
 This is a minimum requrirement for any package wanting to become a part of 
 Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
 add a new package to Trilinos, there are no prerequisites for adding a new 
@@ -513,7 +539,7 @@ platforms and respond to bug reports in timely manner.
 
 
 \section{Suggested Practices}
-	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
+%	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
 
 There are many ways to define an effective software process.  As a result, the 
 Trilinos project specifies very few {\it requirements}.  At the same time, 
@@ -532,7 +558,7 @@ practices for packages that have few existing practices in place.
 Discussion of how to define bugzilla pieces.  Should discuss common component 
 definitions.  List Heroux or Kolda or Sery as contacts.
 \item Establish Email Lists
-\item Others?
+%\item Others?
 \end{enumerate}
 
 \subsection{Practices to Support Software Lifecycle}
@@ -595,7 +621,7 @@ from a new package.
 	\section{Services Available to Trilinos Packages}
 	A number of services exist for Trilinos packages.
 	\subsection{Configuration Management}
-	**(See Overview Doc pg 12)**
+%	**(See Overview Doc pg 12)**
 Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
 Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
 building software across a broad set of platforms (see also the ``Goat
@@ -629,7 +655,9 @@ testing capabilities.  Within a number of Trilinos packages, we employ
 used and probed.  In addition, Trilinos performs ``black box'' testing
 of packages via the Trilinos Solver Framework (TSF) virtual class
 interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
+Section~\ref{subsect:InteropTSF} below 
+%**(Add this section)), 
+can be tested via this black box
 test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time}
 	\subsection{Periodic Testing}
@@ -647,7 +675,7 @@ The process is discussed in Trilinos/testharness/HowToAddToTestHarness.
 Please note that this document is a work in progress.
 
 \subsection{CVS Repository}
-**Add an appendix for a lot of this info.**
+%**Add an appendix for a lot of this info.**
 Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
 very easy to add new packages to the repository.  Packages that already use 
 CVS can even retain their CVS history!  To access the repository, one must 
@@ -722,7 +750,7 @@ report should be filled out with as much detail as possible.  Likewise, after
 a bug has been resolved, the developer should also provide a detailed 
 description of the solution that was used.
 
-**explain how this is truly useful, and not just busy work.**
+%**explain how this is truly useful, and not just busy work.**
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
@@ -797,11 +825,11 @@ leaders lists for individual packages.
 All 
 tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
 
-**Consider an example showing how tools can work together to fix bugs.**
+%**Consider an example showing how tools can work together to fix bugs.**
 
-	**(Add a section comp to Epetra and TSF: Two special packages - minimixe redundant work.)**
+%	**(Add a section comp to Epetra and TSF: Two special packages - minimixe redundant work.)**
 	\subsection{Portable Interface to BLAS and LAPACK}
-	**(See Overview Doc pg 12)**
+%	**(See Overview Doc pg 12)**
 
 Portable interface to BLAS and LAPACK: The Basic Linear Algebra
 Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
@@ -814,11 +842,11 @@ provide a set of simple, portable interfaces to the BLAS and LAPACK
 that provide uniform access to the BLAS and LAPACK across a broad
 set of platforms.  These interfaces are accessible to
 other packages.
-**(Expand on this)**
+%**(Expand on this)**
 
 
 	\section{Integrating a Package into Trilinos}
-	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
+%	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
 
 
 
@@ -826,7 +854,7 @@ other packages.
 	\section{Interoperability Status for Existing Trilinos Packages}
 
 	\section{Platform Portablility}
-	**(List platforms - encourage script submission)**
+%	**(List platforms - encourage script submission)**
     % ---------------------------------------------------------------------- %
     % References
     %
