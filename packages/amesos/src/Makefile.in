@@ -90,7 +90,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
-	$(top_srcdir)/config/tac_arg_with.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -98,8 +97,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
-	$(top_srcdir)/config/tac_arg_with_sub.m4 \
-	$(top_srcdir)/config/tac_check_file.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,9 +110,9 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libamesos_a_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/AMD/Source/amd_1.c $(srcdir)/AMD/Source/amd_2.c \
-	$(srcdir)/AMD/Source/amd_aat.c \
+am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Dscpack.cpp \
+	$(srcdir)/Amesos_Klu.cpp $(srcdir)/AMD/Source/amd_1.c \
+	$(srcdir)/AMD/Source/amd_2.c $(srcdir)/AMD/Source/amd_aat.c \
 	$(srcdir)/AMD/Source/amd_control.c \
 	$(srcdir)/AMD/Source/amd_defaults.c \
 	$(srcdir)/AMD/Source/amd_dump.c \
@@ -151,7 +148,8 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Klu.cpp \
 	$(srcdir)/ksparse/spsmp.c $(srcdir)/ksparse/sputils.c \
 	$(srcdir)/CrsMatrixTranspose.cpp
 am__objects_1 =
-@HAVE_AMESOS_KLU_TRUE@am__objects_2 = Amesos_Klu.$(OBJEXT) \
+@HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = Amesos_Dscpack.$(OBJEXT)
+@HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_1.$(OBJEXT) amd_2.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_aat.$(OBJEXT) amd_control.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amd_defaults.$(OBJEXT) \
@@ -175,18 +173,18 @@ am__objects_1 =
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_tsolve.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT)
-@HAVE_AMESOS_UMFPACK_TRUE@am__objects_3 = Amesos_Umfpack.$(OBJEXT)
-@HAVE_AMESOS_SCALAPACK_TRUE@am__objects_4 =  \
+@HAVE_AMESOS_UMFPACK_TRUE@am__objects_4 = Amesos_Umfpack.$(OBJEXT)
+@HAVE_AMESOS_SCALAPACK_TRUE@am__objects_5 =  \
 @HAVE_AMESOS_SCALAPACK_TRUE@	Amesos_Scalapack.$(OBJEXT)
-@HAVE_AMESOS_MERIKOS_TRUE@am__objects_5 = Amesos_Merikos.$(OBJEXT)
-@HAVE_AMESOS_MUMPS_TRUE@am__objects_6 = Amesos_Mumps.$(OBJEXT) \
+@HAVE_AMESOS_MERIKOS_TRUE@am__objects_6 = Amesos_Merikos.$(OBJEXT)
+@HAVE_AMESOS_MUMPS_TRUE@am__objects_7 = Amesos_Mumps.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	Amesos_EpetraBaseSolver.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	EpetraExt_Redistor.$(OBJEXT)
-am__objects_7 = Amesos.$(OBJEXT)
-@HAVE_AMESOS_SUPERLU_TRUE@am__objects_8 = Amesos_Superlu.$(OBJEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_9 =  \
+am__objects_8 = Amesos.$(OBJEXT)
+@HAVE_AMESOS_SUPERLU_TRUE@am__objects_9 = Amesos_Superlu.$(OBJEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_10 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_10 =  \
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_11 =  \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	smplinkrows.$(OBJEXT) \
@@ -194,17 +192,18 @@ am__objects_7 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
-am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
-	$(am__objects_5) $(am__objects_6) $(am__objects_7) \
-	$(am__objects_8) $(am__objects_9) $(am__objects_10) \
-	$(am__objects_11)
+am__objects_12 = CrsMatrixTranspose.$(OBJEXT)
+am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
+	$(am__objects_12)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Dscpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_EpetraBaseSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Merikos.Po \
@@ -255,11 +254,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(libamesos_a_SOURCES) $(EXTRA_libamesos_a_SOURCES)
 DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 	$(EXTRA_libamesos_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h DSCPACK = \
-	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/Amesos_Umfpack.h \
-	$(srcdir)/Amesos_Scalapack.h $(srcdir)/Amesos_Merikos.h \
-	$(srcdir)/klu_btf/klu_btf.h $(srcdir)/klu_btf/klu_dump.h \
-	$(srcdir)/klu_kernel/klu_kernel.h \
+am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
+	$(srcdir)/Amesos_Umfpack.h $(srcdir)/Amesos_Scalapack.h \
+	$(srcdir)/Amesos_Merikos.h $(srcdir)/klu_btf/klu_btf.h \
+	$(srcdir)/klu_btf/klu_dump.h $(srcdir)/klu_kernel/klu_kernel.h \
 	$(srcdir)/klu_btf/klu_btf_internal.h \
 	$(srcdir)/klu_kernel/klu.h $(srcdir)/klu_kernel/tictoc.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
@@ -280,7 +278,6 @@ ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
-AMESOS_LIBS = @AMESOS_LIBS@
 AMTAR = @AMTAR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -452,11 +449,12 @@ target_vendor = @target_vendor@
 @NEED_PARAMETER_LIST_TRUE@PARAM = 
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_H = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_H = \
-@HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.h \
+@HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.h
+
+@HAVE_AMESOS_DSCPACK_FALSE@DSCPACK = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK = \
 @HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.cpp
 
-@HAVE_AMESOS_DSCPACK_FALSE@DSCPACK = 
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK_H = 
 @HAVE_AMESOS_UMFPACK_TRUE@UMFPACK_H = \
 @HAVE_AMESOS_UMFPACK_TRUE@	$(srcdir)/Amesos_Umfpack.h
@@ -788,6 +786,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Dscpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_EpetraBaseSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Merikos.Po@am__quote@
@@ -1494,6 +1493,22 @@ sputils.obj: $(srcdir)/ksparse/sputils.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Amesos_Dscpack.o: $(srcdir)/Amesos_Dscpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Dscpack.o -MD -MP -MF "$(DEPDIR)/Amesos_Dscpack.Tpo" -c -o Amesos_Dscpack.o `test -f '$(srcdir)/Amesos_Dscpack.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Dscpack.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Dscpack.Tpo" "$(DEPDIR)/Amesos_Dscpack.Po"; else rm -f "$(DEPDIR)/Amesos_Dscpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Dscpack.cpp' object='Amesos_Dscpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Dscpack.Po' tmpdepfile='$(DEPDIR)/Amesos_Dscpack.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Dscpack.o `test -f '$(srcdir)/Amesos_Dscpack.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Dscpack.cpp
+
+Amesos_Dscpack.obj: $(srcdir)/Amesos_Dscpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Dscpack.obj -MD -MP -MF "$(DEPDIR)/Amesos_Dscpack.Tpo" -c -o Amesos_Dscpack.obj `if test -f '$(srcdir)/Amesos_Dscpack.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Dscpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Dscpack.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Dscpack.Tpo" "$(DEPDIR)/Amesos_Dscpack.Po"; else rm -f "$(DEPDIR)/Amesos_Dscpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Dscpack.cpp' object='Amesos_Dscpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Dscpack.Po' tmpdepfile='$(DEPDIR)/Amesos_Dscpack.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Dscpack.obj `if test -f '$(srcdir)/Amesos_Dscpack.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Dscpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Dscpack.cpp'; fi`
 
 Amesos_Klu.o: $(srcdir)/Amesos_Klu.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Klu.o -MD -MP -MF "$(DEPDIR)/Amesos_Klu.Tpo" -c -o Amesos_Klu.o `test -f '$(srcdir)/Amesos_Klu.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Klu.cpp; \

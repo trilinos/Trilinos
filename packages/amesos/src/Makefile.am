@@ -78,7 +78,7 @@ endif
 
 if HAVE_AMESOS_DSCPACK
 DSCPACK_H = \
-	$(srcdir)/Amesos_Dscpack.h \
+	$(srcdir)/Amesos_Dscpack.h
 DSCPACK = \
 	$(srcdir)/Amesos_Dscpack.cpp
 else

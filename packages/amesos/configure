@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE FLIBS BLAS_LIBS LAPACK_LIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE CPP HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE FLIBS BLAS_LIBS LAPACK_LIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -968,72 +968,6 @@ Optional Packages:
                           directories for -lname
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
-  --with-trilinos3pldir   Set Trilinos3PL directory (default is
-                          trilinos3pldir_not_specified, )
-  --with-amesos-libdir    Set location for all 3PL libraries (at present only
-                          MUMPS supports this feature) (default is
-                          specify_amesos_libdir)
-  --with-amesos-incdir    Set location for all 3PL include files (at present
-                          only MUMPS supports this feature) (default is
-                          specify_amesos_incdir)
-  --with-amesos-superludistdir
-                          Set SuperLU dist directory (default is
-                          ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0, )
-  --with-amesos-superludistlib
-                          Set SuperLU dist library (default is
-                          ${tac_with_amesos_superludistdir}/libsuperludist.a, )
-  --with-amesos-superludistincdir
-                          Set SuperLU dist include directory (default is
-                          ${tac_with_amesos_superludistdir}/SRC, )
-  --with-amesos-dscpackdir
-                          Set DSCPACK directory (default is
-                          ${tac_with_trilinos3pldir}/DSCPACK1.0, )
-  --with-amesos-dscpacklib
-                          Set DSCPACK library (default is
-                          ${tac_with_amesos_dscpackdir}/DSC_LIB/dsclibdbl.a, )
-  --with-amesos-dscpackincdir
-                          Set DSCPACK include directory (default is
-                          ${tac_with_amesos_dscpackdir}/DSC_LIB, )
-  --with-amesos-umfpackdir
-                          Set UMFPACK directory (default is
-                          ${tac_with_trilinos3pldir}/UMFPACKv4.1/, )
-  --with-amesos-umfpacklib
-                          Set UMFPACK library (default is
-                          ${tac_with_amesos_umfpackdir}/UMFPACK/Lib/libumfpack.a, )
-  --with-amesos-umfpackincdir
-                          Set UMFPACK include directory (default is
-                          ${tac_with_amesos_umfpackdir}/UMFPACK/Include, )
-  --with-amesos-blacsdir  Set BLACS directory (default is
-                          ${tac_with_trilinos3pldir}/BLACS/LIB, )
-  --with-amesos-blacslib  Set BLACS library (default is
-                          ${tac_with_amesos_blacsdir}/libblacs.a, )
-  --with-amesos-cblacslib Set CBLACS library (default is
-                          ${tac_with_amesos_blacsdir}/libcblacs.a, )
-  --with-amesos-scalapackdir
-                          Set SCALAPACK directory (default is
-                          ${tac_with_trilinos3pldir}/SCALAPACK, )
-  --with-amesos-scalapacklib
-                          Set SCALAPACK library (default is
-                          ${tac_with_amesos_scalapackdir}/libscalapack.a, )
-  --with-amesos-mumpspordlib
-                          Set MUMPS PORD library. (default is
-                          amesos_libdir/libpord.a, )
-  --with-amesos-mumpsincdir
-                          Set MUMPS include directory. (default is
-                          amesos_incdir, )
-  --with-amesos-mumpslib  Set MUMPS library (default is
-                          amesos_libdir/libmumps.a, )
-  --with-amesos-smumpslib Set single-precision MUMPS library (default is
-                          amesos_libdir/libsmumps.a, )
-  --with-amesos-superludir
-                          Set SuperLU serial directory (default is
-                          ${tac_with_trilinos3pldir}/SuperLU_3.0, )
-  --with-amesos-superlulib
-                          Set SuperLU serial library (default is
-                          ${tac_with_amesos_superludir}/libsuperlu.a, )
-  --with-amesos-superluincdir
-                          Set SuperLU serial include directory (default is
-                          ${tac_with_amesos_superludir}/SRC, )
 
 Some influential environment variables:
   CC          C compiler command
@@ -3903,7 +3837,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3906:" \
+echo "$as_me:3840:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6738,7 +6672,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6741: \"$ac_link\") >&5
+(eval echo $as_me:6675: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6816,7 +6750,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6819: \"$ac_link\") >&5
+(eval echo $as_me:6753: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9333,46 +9267,6 @@ fi
 # ------------------------------------------------------------------------
 
 
-
-# Check whether --with-trilinos3pldir or --without-trilinos3pldir was given.
-if test "${with_trilinos3pldir+set}" = set; then
-  withval="$with_trilinos3pldir"
-  tac_with_trilinos3pldir=$withval
-else
-  tac_with_trilinos3pldir=trilinos3pldir_not_specified
-fi;
-
-
-## echo "  tac_with_trilinos3pldir =  ${tac_with_trilinos3pldir} "
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_trilinos3pldir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_trilinos3pldir}" >&5
-echo $ECHO_N "checking for ${tac_with_trilinos3pldir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_trilinos3pldir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-#
-#  --enable-amesos-slud, --with-amesos-sluddir, --with-amesos-sludlib,
-#    --with-amesos-sludincdir
-#
-
 # Check whether --enable-amesos-superludist or --disable-amesos-superludist was given.
 if test "${enable_amesos_superludist+set}" = set; then
   enableval="$enable_amesos_superludist"
@@ -9690,148 +9584,70 @@ fi
 #  ;;
 #esac
 
-#
-#
-#
-
 # removed:
 #      CXXFLAGS="  ${CXXFLAGS} -I\${top_srcdir}/amd/src/ -I\${top_srcdir}/src/klu"
 #      CFLAGS="  ${CFLAGS} -I\${top_srcdir}/amd/src/"
 
-
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU distributed include directory
-#    Make sure that pdgssvx is in the SuperLU distributed library
-#
-amesos_libs=" "
-# AC_LANG_PUSH
-#  Atlantis fails unless we do the test links with the C compiler (instead of c++)
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+#  Atlantis fails unless we do the test links with the C compiler (instead of c++)
+# AC_LANG([C])
 
-# // MS // specify location of all lib files
+# Fix libraries
 
-
-# Check whether --with-amesos-libdir or --without-amesos-libdir was given.
-if test "${with_amesos_libdir+set}" = set; then
-  withval="$with_amesos_libdir"
-  tac_with_amesos_libdir=$withval
-else
-  tac_with_amesos_libdir=specify_amesos_libdir
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_libdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_libdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_libdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_libdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
+LIBS="${BLAS_LIBS} ${LIBS} ${FLIBS}"
+if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+  LIBS = "${LIBS} ${MPI_LIBS}"
 fi
+
+#  =====  #
+#  K L U  #
+#  =====  #
+
+if test "X$ac_cv_use_amesos_klu" != "Xno" ; then
+
+
+if true ; then
+  HAVE_AMESOS_KLU_TRUE=
+  HAVE_AMESOS_KLU_FALSE='#'
+else
+  HAVE_AMESOS_KLU_TRUE='#'
+  HAVE_AMESOS_KLU_FALSE=
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
 
 
-# // MS // specify location of all include files
 
-
-# Check whether --with-amesos-incdir or --without-amesos-incdir was given.
-if test "${with_amesos_incdir+set}" = set; then
-  withval="$with_amesos_incdir"
-  tac_with_amesos_incdir=$withval
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
 else
-  tac_with_amesos_incdir=specify_amesos_incdir
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_incdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_incdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_incdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_incdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
 fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
 
-
-if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
-
-  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos_Superludist requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details" >&5
-echo "$as_me: error: Amesos_Superludist requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-
-
-# Check whether --with-amesos-superludistdir or --without-amesos-superludistdir was given.
-if test "${with_amesos_superludistdir+set}" = set; then
-  withval="$with_amesos_superludistdir"
-  tac_with_amesos_superludistdir=$withval
 else
-  tac_with_amesos_superludistdir=${tac_with_trilinos3pldir}/SuperLU_DIST_2.0
-fi;
 
 
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superludistdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
+if false ; then
+  HAVE_AMESOS_KLU_TRUE=
+  HAVE_AMESOS_KLU_FALSE='#'
 else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superludistdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
+  HAVE_AMESOS_KLU_TRUE='#'
+  HAVE_AMESOS_KLU_FALSE=
 fi
+
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
 
+#  =============  #
+#  U M F P A C K  #
+#  =============  #
 
-#
-#       1)  First try to compile without specifying the library.  This allows
-#           the user to specify the needed third party library at compile time.
-#
-  SAVE_LIBS="${LIBS}"
-  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -9845,7 +9661,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char pdgssvx ();
+char umfdi_local_search ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -9857,190 +9673,7 @@ char pdgssvx ();
 int
 main ()
 {
-pdgssvx ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  superludist_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-superludist_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-
-
-  if test "X$superludist_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -lsuperludist.  This allows the user to specify
-#           the directory while using the default name for the library
-     LIBS=" -lsuperludist ${LIBS}"
-
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pdgssvx ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-pdgssvx ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  superludist_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-superludist_with_lib="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-     if test "X$superludist_with_lib" == "Xyes"; then
-       amesos_libs="${amesos_libs} -lsuperludist"
-     else
-#       3)  Then try the existing Triliinos3PL scheme.
-#
-
-
-# Check whether --with-amesos-superludistlib or --without-amesos-superludistlib was given.
-if test "${with_amesos_superludistlib+set}" = set; then
-  withval="$with_amesos_superludistlib"
-  tac_with_amesos_superludistlib=$withval
-else
-  tac_with_amesos_superludistlib=${tac_with_amesos_superludistdir}/libsuperludist.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistlib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistlib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superludistlib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superludistlib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-       LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
-     fi
-  fi
-#
-#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
-#   we give up
-
-#   This causes problems when you use build with both superlu and superludist
-#
-#    AC_TRY_LINK_FUNC( set_default_options,
-#                        AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) )
-
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pdgssvx ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-pdgssvx ();
+umfdi_local_search ();
   ;
   return 0;
 }
@@ -10072,17 +9705,13 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/username/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&5
-echo "$as_me: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/username/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-    LIBS="${SAVE_LIBS}"
 
-#
-#  First try to find superlu_ddefs.h without using the SuperLU dist incude directory
-#
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10318,22 +9947,18 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
-for ac_header in superlu_ddefs.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
-  echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+if test "${ac_cv_header_umfpack_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for umfpack.h" >&5
+echo $ECHO_N "checking for umfpack.h... $ECHO_C" >&6
+if test "${ac_cv_header_umfpack_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_umfpack_h" >&5
+echo "${ECHO_T}$ac_cv_header_umfpack_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking umfpack.h usability" >&5
+echo $ECHO_N "checking umfpack.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10341,7 +9966,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <$ac_header>
+#include <umfpack.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -10377,15 +10002,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking umfpack.h presence" >&5
+echo $ECHO_N "checking umfpack.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <$ac_header>
+#include <umfpack.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -10419,25 +10044,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: umfpack.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: umfpack.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: umfpack.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: umfpack.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: umfpack.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: umfpack.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: umfpack.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: umfpack.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: umfpack.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -10448,85 +10073,35 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+echo "$as_me:$LINENO: checking for umfpack.h" >&5
+echo $ECHO_N "checking for umfpack.h... $ECHO_C" >&6
+if test "${ac_cv_header_umfpack_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
+  ac_cv_header_umfpack_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+echo "$as_me:$LINENO: result: $ac_cv_header_umfpack_h" >&5
+echo "${ECHO_T}$ac_cv_header_umfpack_h" >&6
 
 fi
-
-done
-
-
-  if test "X$ac_cv_header_superlu_ddefs_h" != "Xyes"; then
-#
-#   if we can't find supelu_ddefs.h in the include search path, look for it in superludistincir
-#   which defaults to Trilinos3PL/SuperLU_DIST_2.0/SRC
-#
-
-
-# Check whether --with-amesos-superludistincdir or --without-amesos-superludistincdir was given.
-if test "${with_amesos_superludistincdir+set}" = set; then
-  withval="$with_amesos_superludistincdir"
-  tac_with_amesos_superludistincdir=$withval
-else
-  tac_with_amesos_superludistincdir=${tac_with_amesos_superludistdir}/SRC
-fi;
-
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistincdir}/superlu_ddefs.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistincdir}/superlu_ddefs.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superludistincdir}/superlu_ddefs.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superludistincdir}/superlu_ddefs.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
+if test $ac_cv_header_umfpack_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find superlu_ddefs.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find superlu_ddefs.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find header files for UMFPACK (umfpack.h), specify a location using --with-incdirs (ex. --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find header files for UMFPACK (umfpack.h), specify a location using --with-incdirs (ex. --with-incdirs=-I/home/username/include)." >&2;}
    { (exit 1); exit 1; }; }
 fi
- }
-  fi
 
 
-    CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
-  fi
 
 
 
 if true ; then
-  HAVE_AMESOS_SUPERLUDIST_TRUE=
-  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
+  HAVE_AMESOS_UMFPACK_TRUE=
+  HAVE_AMESOS_UMFPACK_FALSE='#'
 else
-  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
-  HAVE_AMESOS_SUPERLUDIST_FALSE=
+  HAVE_AMESOS_UMFPACK_TRUE='#'
+  HAVE_AMESOS_UMFPACK_FALSE=
 fi
 
 
@@ -10543,74 +10118,277 @@ else
 
 
 if false ; then
-  HAVE_AMESOS_SUPERLUDIST_TRUE=
-  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
+  HAVE_AMESOS_UMFPACK_TRUE=
+  HAVE_AMESOS_UMFPACK_FALSE='#'
 else
-  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
-  HAVE_AMESOS_SUPERLUDIST_FALSE=
+  HAVE_AMESOS_UMFPACK_TRUE='#'
+  HAVE_AMESOS_UMFPACK_FALSE=
 fi
 
 fi
 
+#  =============  #
+#  S U P E R L U
+#  =============  #
+
+if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
+
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char SuperLU_timer_ ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+SuperLU_timer_ ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ { echo "$as_me:$LINENO: error: Cannot find the SuperLU library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperlupack.a, or use --with-libs=-lsuperlupack --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the SuperLU library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperlupack.a, or use --with-libs=-lsuperlupack --with-ldflags=-L/home/username/lib)." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+  if test "${ac_cv_header_Cnames_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for Cnames.h" >&5
+echo $ECHO_N "checking for Cnames.h... $ECHO_C" >&6
+if test "${ac_cv_header_Cnames_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_Cnames_h" >&5
+echo "${ECHO_T}$ac_cv_header_Cnames_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking Cnames.h usability" >&5
+echo $ECHO_N "checking Cnames.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <Cnames.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking Cnames.h presence" >&5
+echo $ECHO_N "checking Cnames.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <Cnames.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: Cnames.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: Cnames.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: Cnames.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: Cnames.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: Cnames.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: Cnames.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: Cnames.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: Cnames.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: Cnames.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ---------------------------------- ##
+## Report this to kstanley@cs.utk.edu ##
+## ---------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for Cnames.h" >&5
+echo $ECHO_N "checking for Cnames.h... $ECHO_C" >&6
+if test "${ac_cv_header_Cnames_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_Cnames_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_Cnames_h" >&5
+echo "${ECHO_T}$ac_cv_header_Cnames_h" >&6
+
+fi
+if test $ac_cv_header_Cnames_h = yes; then
+  :
+else
+  { { echo "$as_me:$LINENO: error: Cannot find header files for SuperLU (Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find header files for SuperLU (Cnames.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 
-#
-#  --enable-amesos-dscpack, --with-amesos-dscpackdir, --with-amesos-dscpacklib,
-#    --with-amesos-dscpackincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that dscmain.h is in the directory pointed to by amesos-dscpackincdic
-#    Make sure that DSC_Clock is in the library pointed to by amesos-dscpacklib
-#
-if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
+
+
+
+if true ; then
+  HAVE_AMESOS_SUPERLU_TRUE=
+  HAVE_AMESOS_SUPERLU_FALSE='#'
+else
+  HAVE_AMESOS_SUPERLU_TRUE='#'
+  HAVE_AMESOS_SUPERLU_FALSE=
+fi
+
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
+fi
+
+else
+
+
+if false ; then
+  HAVE_AMESOS_SUPERLU_TRUE=
+  HAVE_AMESOS_SUPERLU_FALSE='#'
+else
+  HAVE_AMESOS_SUPERLU_TRUE='#'
+  HAVE_AMESOS_SUPERLU_FALSE=
+fi
+
+fi
+
+#  =====================  #
+#  S U P E R L U D I S T  #
+#  =====================  #
+
+if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+    { { echo "$as_me:$LINENO: error: Amesos_Superludist requires MPI." >&5
+echo "$as_me: error: Amesos_Superludist requires MPI." >&2;}
    { (exit 1); exit 1; }; }
   fi
 
-
-
-# Check whether --with-amesos-dscpackdir or --without-amesos-dscpackdir was given.
-if test "${with_amesos_dscpackdir+set}" = set; then
-  withval="$with_amesos_dscpackdir"
-  tac_with_amesos_dscpackdir=$withval
-else
-  tac_with_amesos_dscpackdir=${tac_with_trilinos3pldir}/DSCPACK1.0
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_dscpackdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_dscpackdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_dscpackdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_dscpackdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-#
-#       1)  First try to compile without specifying the library.  This allows
-#           the user to specify the needed third party library at compile time.
-#
-  SAVE_LIBS="${LIBS}"
-  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10624,7 +10402,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char DSC_CloseSolver ();
+char pdgssvx ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -10636,275 +10414,7 @@ char DSC_CloseSolver ();
 int
 main ()
 {
-DSC_CloseSolver ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  dscpack_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-dscpack_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-     echo "$as_me:$LINENO: checking 465 " >&5
-echo $ECHO_N "checking 465 ... $ECHO_C" >&6
-     echo "$as_me:$LINENO: result: 465 " >&5
-echo "${ECHO_T}465 " >&6
-
-  if test "X$dscpack_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -ldscdbl.  This allows the user to specify
-#           the directory while using the default name for the library
-     LIBS=" -ldscdbl ${LIBS}"
-
-     echo "$as_me:$LINENO: checking 472 " >&5
-echo $ECHO_N "checking 472 ... $ECHO_C" >&6
-     echo "$as_me:$LINENO: result: 472 " >&5
-echo "${ECHO_T}472 " >&6
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char DSC_CloseSolver ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-DSC_CloseSolver ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  dscpack_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-dscpack_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-     if test "X$dscpack_lib_ok" == "Xyes"; then
-     echo "$as_me:$LINENO: checking 480 " >&5
-echo $ECHO_N "checking 480 ... $ECHO_C" >&6
-     echo "$as_me:$LINENO: result: 480 " >&5
-echo "${ECHO_T}480 " >&6
-       amesos_libs="${amesos_libs} -ldscdbl"
-     else
-#       3)  Then try the existing Triliinos3PL scheme with dsclibdbl.a as the default library
-#
-
-
-# Check whether --with-amesos-dscpacklib or --without-amesos-dscpacklib was given.
-if test "${with_amesos_dscpacklib+set}" = set; then
-  withval="$with_amesos_dscpacklib"
-  tac_with_amesos_dscpacklib=$withval
-else
-  tac_with_amesos_dscpacklib=${tac_with_amesos_dscpackdir}/DSC_LIB/dsclibdbl.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_dscpacklib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_dscpacklib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_dscpacklib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_dscpacklib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-       LIBS="${tac_with_amesos_dscpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char DSC_CloseSolver ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-DSC_CloseSolver ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  dscpack_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-dscpack_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-        if test "X$dscpack_lib_ok" == "Xyes"; then
-     echo "$as_me:$LINENO: checking 488 " >&5
-echo $ECHO_N "checking 488 ... $ECHO_C" >&6
-     echo "$as_me:$LINENO: result: 488 " >&5
-echo "${ECHO_T}488 " >&6
-          amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
-       else
-#         4)  Then try  the existing Triliinos3PL scheme with libdscdbl.a as the default library
-#
-     echo "$as_me:$LINENO: checking 493 " >&5
-echo $ECHO_N "checking 493 ... $ECHO_C" >&6
-     echo "$as_me:$LINENO: result: 493 " >&5
-echo "${ECHO_T}493 " >&6
-          LIBS="${tac_with_amesos_dscpackdir}/DSC_LIB/libdscdbl.a ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-          amesos_libs="${amesos_libs} ${tac_with_amesos_dscpackdir}/DSC_LIB/libdscdbl.a"
-       fi
-     fi
-  fi
-#
-#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
-#   we give up
-#
-
-     echo "$as_me:$LINENO: result: \" :::509 LIBS = ${LIBS} \" " >&5
-echo "${ECHO_T}\" :::509 LIBS = ${LIBS} \" " >&6
-
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char DSC_CloseSolver ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-DSC_CloseSolver ();
+pdgssvx ();
   ;
   return 0;
 }
@@ -10936,33 +10446,25 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/username/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/username/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the SuperLU_dist library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperludist.a, or use --with-libs=-lsuperludist --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the SuperLU_dist library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsuperludist.a, or use --with-libs=-lsuperludist --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-    LIBS="${SAVE_LIBS}"
 
-#
-#  First try to find dscmain.h without using the DSCPACK incude directory
-#
-
-for ac_header in dscmain.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
-  echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  if test "${ac_cv_header_superlu_ddefs_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for superlu_ddefs.h" >&5
+echo $ECHO_N "checking for superlu_ddefs.h... $ECHO_C" >&6
+if test "${ac_cv_header_superlu_ddefs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_superlu_ddefs_h" >&5
+echo "${ECHO_T}$ac_cv_header_superlu_ddefs_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking superlu_ddefs.h usability" >&5
+echo $ECHO_N "checking superlu_ddefs.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10970,7 +10472,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <$ac_header>
+#include <superlu_ddefs.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -11006,15 +10508,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking superlu_ddefs.h presence" >&5
+echo $ECHO_N "checking superlu_ddefs.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <$ac_header>
+#include <superlu_ddefs.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -11048,25 +10550,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: superlu_ddefs.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: superlu_ddefs.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: superlu_ddefs.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: superlu_ddefs.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -11077,85 +10579,35 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+echo "$as_me:$LINENO: checking for superlu_ddefs.h" >&5
+echo $ECHO_N "checking for superlu_ddefs.h... $ECHO_C" >&6
+if test "${ac_cv_header_superlu_ddefs_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
+  ac_cv_header_superlu_ddefs_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+echo "$as_me:$LINENO: result: $ac_cv_header_superlu_ddefs_h" >&5
+echo "${ECHO_T}$ac_cv_header_superlu_ddefs_h" >&6
 
 fi
-
-done
-
-
-  if test "X$ac_cv_header_dscmain_h" != "Xyes"; then
-#
-#   if we can't find dscmain.h in the include search path, look for it in dscmainincdir
-#   which defaults to Trilinos3PL/DSCPACK1.0/SRC
-#
-
-
-# Check whether --with-amesos-dscpackincdir or --without-amesos-dscpackincdir was given.
-if test "${with_amesos_dscpackincdir+set}" = set; then
-  withval="$with_amesos_dscpackincdir"
-  tac_with_amesos_dscpackincdir=$withval
-else
-  tac_with_amesos_dscpackincdir=${tac_with_amesos_dscpackdir}/DSC_LIB
-fi;
-
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_dscpackincdir}/dscmain.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_dscpackincdir}/dscmain.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_dscpackincdir}/dscmain.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_dscpackincdir}/dscmain.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
+if test $ac_cv_header_superlu_ddefs_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find SuperLU_dist header files (superlu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=/home/username/include)." >&5
+echo "$as_me: error: Cannot find SuperLU_dist header files (superlu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=/home/username/include)." >&2;}
    { (exit 1); exit 1; }; }
 fi
- }
-  fi
 
 
-    CXXFLAGS="-I${tac_with_amesos_dscpackincdir} ${CXXFLAGS}"
-  fi
 
 
 
 if true ; then
-  HAVE_AMESOS_DSCPACK_TRUE=
-  HAVE_AMESOS_DSCPACK_FALSE='#'
+  HAVE_AMESOS_SUPERLUDIST_TRUE=
+  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
 else
-  HAVE_AMESOS_DSCPACK_TRUE='#'
-  HAVE_AMESOS_DSCPACK_FALSE=
+  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
+  HAVE_AMESOS_SUPERLUDIST_FALSE=
 fi
 
 
@@ -11172,257 +10624,20 @@ else
 
 
 if false ; then
-  HAVE_AMESOS_DSCPACK_TRUE=
-  HAVE_AMESOS_DSCPACK_FALSE='#'
+  HAVE_AMESOS_SUPERLUDIST_TRUE=
+  HAVE_AMESOS_SUPERLUDIST_FALSE='#'
 else
-  HAVE_AMESOS_DSCPACK_TRUE='#'
-  HAVE_AMESOS_DSCPACK_FALSE=
+  HAVE_AMESOS_SUPERLUDIST_TRUE='#'
+  HAVE_AMESOS_SUPERLUDIST_FALSE=
 fi
 
 fi
 
-#
-#  --enable-amesos-umfpack, --with-amesos-umfpackdir, --with-amesos-umfpacklib,
-# ignored:   --with-amesos-umfpackamdlib,
-#    --with-amesos-umfpackincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that umfmain.h is in the directory pointed to by amesos-umfpackincdic
-#    Make sure that amd.h is in the directory pointed to by amesos-umfpackamdincdic
-#    Make sure that umfpack_di_default is in the library pointed to by amesos-umfpacklib
-#    Make sure that amd_default is in the library pointed to by amesos-umfpackamdlib
-#
-if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+#  =============  #
+#  D S C P A C K  #
+#  =============  #
 
-
-
-# Check whether --with-amesos-umfpackdir or --without-amesos-umfpackdir was given.
-if test "${with_amesos_umfpackdir+set}" = set; then
-  withval="$with_amesos_umfpackdir"
-  tac_with_amesos_umfpackdir=$withval
-else
-  tac_with_amesos_umfpackdir=${tac_with_trilinos3pldir}/UMFPACKv4.1/
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_umfpackdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_umfpackdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_umfpackdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_umfpackdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-#
-#       1)  First try to compile without specifying the library.  This allows
-#           the user to specify the needed third party library at compile time.
-#
-  SAVE_LIBS="${LIBS}"
-  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char umfdi_local_search ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-umfdi_local_search ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  umfpack_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-umfpack_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-  echo "$as_me:$LINENO: result: checkpoint umfpack  A " >&5
-echo "${ECHO_T}checkpoint umfpack  A " >&6
-  echo "$as_me:$LINENO: result: checkpoint umfpack  A " >&5
-echo "${ECHO_T}checkpoint umfpack  A " >&6
-  if test "X$umfpack_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -lumfpack.  This allows the user to specify
-#           the directory while using the default name for the library
-     LIBS=" -lumfpack ${LIBS}"
-
-     echo "$as_me:$LINENO: result: checkpoint umfpack  B " >&5
-echo "${ECHO_T}checkpoint umfpack  B " >&6
-     echo "$as_me:$LINENO: result: checkpoint umfpack  B " >&5
-echo "${ECHO_T}checkpoint umfpack  B " >&6
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char umfdi_local_search ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-umfdi_local_search ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  umfpack_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-umfpack_with_lib="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-     if test "X$umfpack_with_lib" == "Xyes"; then
-       amesos_libs="-lumfpack  ${amesos_libs} "
-       echo "$as_me:$LINENO: result: checkpoint umfpack  C " >&5
-echo "${ECHO_T}checkpoint umfpack  C " >&6
-       echo "$as_me:$LINENO: result: checkpoint umfpack  C " >&5
-echo "${ECHO_T}checkpoint umfpack  C " >&6
-     else
-#       3)  Then try the existing Triliinos3PL scheme.
-#
-       echo "$as_me:$LINENO: result: checkpoint umfpack  D " >&5
-echo "${ECHO_T}checkpoint umfpack  D " >&6
-       echo "$as_me:$LINENO: result: checkpoint umfpack  D " >&5
-echo "${ECHO_T}checkpoint umfpack  D " >&6
-
-
-# Check whether --with-amesos-umfpacklib or --without-amesos-umfpacklib was given.
-if test "${with_amesos_umfpacklib+set}" = set; then
-  withval="$with_amesos_umfpacklib"
-  tac_with_amesos_umfpacklib=$withval
-else
-  tac_with_amesos_umfpacklib=${tac_with_amesos_umfpackdir}/UMFPACK/Lib/libumfpack.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_umfpacklib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_umfpacklib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_umfpacklib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_umfpacklib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-       LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${tac_with_amesos_umfpacklib} ${amesos_libs} "
-     fi
-  fi
+if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -11437,7 +10652,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char umfdi_local_search ();
+char DSC_CloseSolver ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -11449,7 +10664,7 @@ char umfdi_local_search ();
 int
 main ()
 {
-umfdi_local_search ();
+DSC_CloseSolver ();
   ;
   return 0;
 }
@@ -11481,75 +10696,25 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/username/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/username/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdscpack.a, or use --with-libs=-ldscpack --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdscpack.a, or use --with-libs=-ldscpack --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
-
-#    ignored:
-# #
-# #       1)  First try to compile without specifying the library.  This allows
-# #           the user to specify the needed third party library at compile time.
-# #
-#   SAVE_LIBS="${LIBS}"
-#   AC_TRY_LINK_FUNC(amd_defaults,amd_lib_ok="yes",amd_lib_ok="no")
-#
-#   AC_MSG_RESULT( checkpoint amd  A )
-#   AC_MSG_RESULT( checkpoint amd  A )
-#   if test "X$amd_lib_ok" != "Xyes"; then
-# #
-# #       2)  Next try to compile with -lamd.  This allows the user to specify
-# #           the directory while using the default name for the library
-#      LIBS=" -lamd ${LIBS}"
-#
-#      AC_MSG_RESULT( checkpoint amd  B )
-#      AC_MSG_RESULT( checkpoint amd  B )
-#      AC_TRY_LINK_FUNC(amd_defaults,amd_with_lib="yes",amd_with_lib="no")
-#
-#      if test "X$amd_with_lib" == "Xyes"; then
-#        AC_MSG_RESULT( checkpoint amd  C )
-#        AC_MSG_RESULT( checkpoint amd  C )
-#        amesos_libs="${amesos_libs} -lamd"
-#      else
-# #       3)  Then try the existing Triliinos3PL scheme.
-# #
-#        AC_MSG_RESULT( checkpoint amd D )
-#        AC_MSG_RESULT( checkpoint amd D )
-#        TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set AMD library],
-#                          ${tac_with_amesos_umfpackdir}/AMD/Lib/libamd.a )
-#        TAC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
-#        LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-#        amesos_libs="${amesos_libs} ${tac_with_amesos_umfpackamdlib}"
-#      fi
-#   fi
-#
-#   AC_TRY_LINK_FUNC(amd_defaults,,
-#   AC_MSG_ERROR([[Cannot find UMFPACK's AMD library, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpackamdlib=/home/username/Trilinos3PL/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))
-#
-#   LIBS="${SAVE_LIBS}"
-
-#
-#  First try to find umfpack.h without using the UMFPACK incude directory
-#
-
-for ac_header in umfpack.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
-  echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  if test "${ac_cv_header_dscmain_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for dscmain.h" >&5
+echo $ECHO_N "checking for dscmain.h... $ECHO_C" >&6
+if test "${ac_cv_header_dscmain_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_dscmain_h" >&5
+echo "${ECHO_T}$ac_cv_header_dscmain_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dscmain.h usability" >&5
+echo $ECHO_N "checking dscmain.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -11557,7 +10722,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <$ac_header>
+#include <dscmain.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -11593,15 +10758,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dscmain.h presence" >&5
+echo $ECHO_N "checking dscmain.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <$ac_header>
+#include <dscmain.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -11635,25 +10800,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: dscmain.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: dscmain.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: dscmain.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: dscmain.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: dscmain.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: dscmain.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: dscmain.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dscmain.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: dscmain.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -11664,105 +10829,35 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+echo "$as_me:$LINENO: checking for dscmain.h" >&5
+echo $ECHO_N "checking for dscmain.h... $ECHO_C" >&6
+if test "${ac_cv_header_dscmain_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
+  ac_cv_header_dscmain_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+echo "$as_me:$LINENO: result: $ac_cv_header_dscmain_h" >&5
+echo "${ECHO_T}$ac_cv_header_dscmain_h" >&6
 
 fi
-
-done
-
-
-  if test "X$ac_cv_header_umfpack_h" != "Xyes"; then
-#
-#   if we can't find umfpack.h in the include search path, look for it in umfpackincir
-#   which defaults to Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
-#
-
-
-# Check whether --with-amesos-umfpackincdir or --without-amesos-umfpackincdir was given.
-if test "${with_amesos_umfpackincdir+set}" = set; then
-  withval="$with_amesos_umfpackincdir"
-  tac_with_amesos_umfpackincdir=$withval
-else
-  tac_with_amesos_umfpackincdir=${tac_with_amesos_umfpackdir}/UMFPACK/Include
-fi;
-
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_umfpackincdir}/umfpack.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_umfpackincdir}/umfpack.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_umfpackincdir}/umfpack.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_umfpackincdir}/umfpack.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
+if test $ac_cv_header_dscmain_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find umfpack.h in ${tac_with_amesos_umfpackincdir} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find umfpack.h in ${tac_with_amesos_umfpackincdir} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find DSCPACK header files (dscmain.h), specify a location using --with-incdirs (ex., --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find DSCPACK header files (dscmain.h), specify a location using --with-incdirs (ex., --with-incdirs=-I/home/username/include)." >&2;}
    { (exit 1); exit 1; }; }
 fi
- }
-  fi
 
-
-    CXXFLAGS="-I${tac_with_amesos_umfpackincdir} ${CXXFLAGS}"
-  fi
-
-
-# #
-# #  First try to find amd.h without using the UMFPACK AMD incude directory
-# #
-#   AC_CHECK_HEADERS([amd.h],,,)
-#
-#   if test "X$ac_cv_header_amd_h" != "Xyes"; then
-# #
-# #   if we can't find amd.h in the include search path, look for it in umfpackamdincdir
-# #   which defaults to Trilinos3PL/UMFPACKv4.1/AMD/Include
-# #
-#     TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}/AMD/Include )
-#
-#     TAC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
-#       AC_MSG_ERROR([[Cannot find amd.h in ${tac_with_amesos_umfpackamdincdir} , specify a location using --with-amesos-umfpackamdincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
-#
-#     CXXFLAGS="-I${tac_with_amesos_umfpackamdincdir} ${CXXFLAGS}"
-#   fi
 
 
 
 
 if true ; then
-  HAVE_AMESOS_UMFPACK_TRUE=
-  HAVE_AMESOS_UMFPACK_FALSE='#'
+  HAVE_AMESOS_DSCPACK_TRUE=
+  HAVE_AMESOS_DSCPACK_FALSE='#'
 else
-  HAVE_AMESOS_UMFPACK_TRUE='#'
-  HAVE_AMESOS_UMFPACK_FALSE=
+  HAVE_AMESOS_DSCPACK_TRUE='#'
+  HAVE_AMESOS_DSCPACK_FALSE=
 fi
 
 
@@ -11775,113 +10870,26 @@ else
   NEED_PARAMETER_LIST_FALSE=
 fi
 
-#  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
-  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib}"
 else
 
 
 if false ; then
-  HAVE_AMESOS_UMFPACK_TRUE=
-  HAVE_AMESOS_UMFPACK_FALSE='#'
+  HAVE_AMESOS_DSCPACK_TRUE=
+  HAVE_AMESOS_DSCPACK_FALSE='#'
 else
-  HAVE_AMESOS_UMFPACK_TRUE='#'
-  HAVE_AMESOS_UMFPACK_FALSE=
+  HAVE_AMESOS_DSCPACK_TRUE='#'
+  HAVE_AMESOS_DSCPACK_FALSE=
 fi
 
 fi
 
+#  =========  #
+#  B L A C S  #
+#  =========  #
 
-
-
-
-
-
-
-
-
-#
-#  --enable-amesos-klu
-#
-# if test "X$ac_cv_use_amesos_klu" != "Xno" & ; then
-
-
-if true ; then
-  HAVE_AMESOS_KLU_TRUE=
-  HAVE_AMESOS_KLU_FALSE='#'
-else
-  HAVE_AMESOS_KLU_TRUE='#'
-  HAVE_AMESOS_KLU_FALSE=
-fi
-
-
-
-if true ; then
-  NEED_PARAMETER_LIST_TRUE=
-  NEED_PARAMETER_LIST_FALSE='#'
-else
-  NEED_PARAMETER_LIST_TRUE='#'
-  NEED_PARAMETER_LIST_FALSE=
-fi
-
-#  amesos_libs="${amesos_libs} \${top_builddir}/amd/src/libamd.a"
-# else
-#   AM_CONDITIONAL(HAVE_AMESOS_KLU, false )
-# fi
-
-
-
-#   April 23, 2004 - None of the blacs, cblacs, scalapack or mumps stuff is tested at this point.
-
-
-
-#
-#  Look for scalapack, blacs and cblacs libraries
-#    if --enable-amesos-scalapack or --enable-amesos-mumps
-#
 if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
    test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-#
-#   BLACS library
-#
-
-
-# Check whether --with-amesos-blacsdir or --without-amesos-blacsdir was given.
-if test "${with_amesos_blacsdir+set}" = set; then
-  withval="$with_amesos_blacsdir"
-  tac_with_amesos_blacsdir=$withval
-else
-  tac_with_amesos_blacsdir=${tac_with_trilinos3pldir}/BLACS/LIB
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_blacsdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_blacsdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_blacsdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_blacsdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-  SAVE_LIBS="${LIBS}"
-  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-  BASELIBS="${LIBS}"
-  BLACSLIB=""
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -11954,182 +10962,27 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  blacs_lib_ok="yes"
+  :
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-blacs_lib_ok="no"
+{ { echo "$as_me:$LINENO: error: Cannot find the BLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the BLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&2;}
+   { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
-  echo "$as_me:$LINENO: result: checkpoint blacs  A " >&5
-echo "${ECHO_T}checkpoint blacs  A " >&6
-  echo "$as_me:$LINENO: result: checkpoint blacs  A " >&5
-echo "${ECHO_T}checkpoint blacs  A " >&6
-  if test "X$blacs_lib_ok" != "Xyes"; then
-     LIBS=" -lblacs ${BASELIBS}"
-
-     echo "$as_me:$LINENO: result: checkpoint blacs  B " >&5
-echo "${ECHO_T}checkpoint blacs  B " >&6
-     echo "$as_me:$LINENO: result: checkpoint blacs  B " >&5
-echo "${ECHO_T}checkpoint blacs  B " >&6
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $dgebs2d ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-$dgebs2d ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  blacs_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-blacs_with_lib="no"
 fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
 
-     if test "X$blacs_with_lib" == "Xyes"; then
-       BLACSLIB=" -lblacs "
-       echo "$as_me:$LINENO: result: checkpoint blacs  C " >&5
-echo "${ECHO_T}checkpoint blacs  C " >&6
-       echo "$as_me:$LINENO: result: checkpoint blacs  C " >&5
-echo "${ECHO_T}checkpoint blacs  C " >&6
-     else
-       echo "$as_me:$LINENO: result: checkpoint blacs  D " >&5
-echo "${ECHO_T}checkpoint blacs  D " >&6
-       echo "$as_me:$LINENO: result: checkpoint blacs  D " >&5
-echo "${ECHO_T}checkpoint blacs  D " >&6
+#  ===========  #
+#  C B L A C S  #
+#  ===========  #
 
+if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
+   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-# Check whether --with-amesos-blacslib or --without-amesos-blacslib was given.
-if test "${with_amesos_blacslib+set}" = set; then
-  withval="$with_amesos_blacslib"
-  tac_with_amesos_blacslib=$withval
-else
-  tac_with_amesos_blacslib=${tac_with_amesos_blacsdir}/libblacs.a
-fi;
-
-       LIBS=" ${tac_with_amesos_blacslib} ${BASELIBS}"
-       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $dgebs2d ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-$dgebs2d ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  BLACSLIB=${tac_with_amesos_blacslib}
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-       echo "$as_me:$LINENO: result: \"checkpoint blacs  E BLACSLIB= ${tac_with_amesos_blacslib} \" " >&5
-echo "${ECHO_T}\"checkpoint blacs  E BLACSLIB= ${tac_with_amesos_blacslib} \" " >&6
-     fi
-  fi
-
-       echo "$as_me:$LINENO: result: \"checkpoint yo amesos_libs = ${amesos_libs}\" " >&5
-echo "${ECHO_T}\"checkpoint yo amesos_libs = ${amesos_libs}\" " >&6
-       echo "$as_me:$LINENO: result: \"checkpoint yo BLACSLIB = ${BLACSLIB}\" " >&5
-echo "${ECHO_T}\"checkpoint yo BLACSLIB = ${BLACSLIB}\" " >&6
-
-  LIBS="${BLACSLIB} ${BASELIBS}"
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12143,7 +10996,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $dgebs2d ();
+char Cdgebs2d ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -12155,7 +11008,7 @@ char $dgebs2d ();
 int
 main ()
 {
-$dgebs2d ();
+Cdgebs2d ();
   ;
   return 0;
 }
@@ -12187,261 +11040,18 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the BLACS library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacslib=/home/username/Trilinos3PL/BLACS/LIB/libblacs.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find the BLACS library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacslib=/home/username/Trilinos3PL/BLACS/LIB/libblacs.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
-
-#
-#      CBLACS library
-#  Look for the cblacs library - some implementations of either ScaLAPACK or MUMPS may need
-#  the cblacs library.  Other implementations do not.  If we find the cblacs, we include it
-#  in the search path, if we don't, we hope for the best.
-#
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char Cblacs_pinfo ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-Cblacs_pinfo ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  cblacs_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-cblacs_lib_ok="no"
 fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  echo "$as_me:$LINENO: result: checkpoint cblacs  A " >&5
-echo "${ECHO_T}checkpoint cblacs  A " >&6
-  echo "$as_me:$LINENO: result: checkpoint cblacs  A " >&5
-echo "${ECHO_T}checkpoint cblacs  A " >&6
-  if test "X$cblacs_lib_ok" != "Xyes"; then
-     LIBS=" -lcblacs ${BLACSLIB} ${BASELIBS}"
 
-     echo "$as_me:$LINENO: result: checkpoint cblacs  B " >&5
-echo "${ECHO_T}checkpoint cblacs  B " >&6
-     echo "$as_me:$LINENO: result: checkpoint cblacs  B " >&5
-echo "${ECHO_T}checkpoint cblacs  B " >&6
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char Cblacs_pinfo ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-Cblacs_pinfo ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  cblacs_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-cblacs_with_lib="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-     if test "X$cblacs_with_lib" == "Xyes"; then
-       CBLACSLIB=" -lcblacs ${BLACSLIB} "
-       echo "$as_me:$LINENO: result: \"checkpoint yy CBLACSLIB = ${CBLACSLIB}\" " >&5
-echo "${ECHO_T}\"checkpoint yy CBLACSLIB = ${CBLACSLIB}\" " >&6
-       echo "$as_me:$LINENO: result: checkpoint cblacs  C " >&5
-echo "${ECHO_T}checkpoint cblacs  C " >&6
-       echo "$as_me:$LINENO: result: checkpoint cblacs  C " >&5
-echo "${ECHO_T}checkpoint cblacs  C " >&6
-     else
-       echo "$as_me:$LINENO: result: checkpoint cblacs  D " >&5
-echo "${ECHO_T}checkpoint cblacs  D " >&6
-       echo "$as_me:$LINENO: result: checkpoint cblacs  D " >&5
-echo "${ECHO_T}checkpoint cblacs  D " >&6
-
-
-# Check whether --with-amesos-cblacslib or --without-amesos-cblacslib was given.
-if test "${with_amesos_cblacslib+set}" = set; then
-  withval="$with_amesos_cblacslib"
-  tac_with_amesos_cblacslib=$withval
-else
-  tac_with_amesos_cblacslib=${tac_with_amesos_blacsdir}/libcblacs.a
-fi;
-
-       LIBS=" ${tac_with_amesos_cblacslib} ${BLACSLIB} ${BASELIBS}"
-       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char Cblacs_pinfo ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-Cblacs_pinfo ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  CBLACSLIB=" ${tac_with_amesos_cblacslib}  ${BLACSLIB} "
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-       echo "$as_me:$LINENO: result: \"checkpoint cblacs  E CBLACSLIB=${tac_with_amesos_cblacslib}\" " >&5
-echo "${ECHO_T}\"checkpoint cblacs  E CBLACSLIB=${tac_with_amesos_cblacslib}\" " >&6
-     fi
-  fi
-fi
-#
-#  No check here because not all implementations require the cblacs library
-#
-
-       echo "$as_me:$LINENO: result: \"checkpoint yoyo CBLACSLIB = ${CBLACSLIB}\" " >&5
-echo "${ECHO_T}\"checkpoint yoyo CBLACSLIB = ${CBLACSLIB}\" " >&6
-#
-#    SCALAPACK library
-#
-
-
-# Check whether --with-amesos-scalapackdir or --without-amesos-scalapackdir was given.
-if test "${with_amesos_scalapackdir+set}" = set; then
-  withval="$with_amesos_scalapackdir"
-  tac_with_amesos_scalapackdir=$withval
-else
-  tac_with_amesos_scalapackdir=${tac_with_trilinos3pldir}/SCALAPACK
-fi;
+#  =================  #
+#  S C A L A P A C K  #
+#  =================  #
 
 if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
 
@@ -12464,234 +11074,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-  LIBS=" ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-  SCALAPACKLIB=""
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $pdgetrf ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-$pdgetrf ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  scalapack_lib_ok="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-scalapack_lib_ok="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  echo "$as_me:$LINENO: result: checkpoint scalapack  A " >&5
-echo "${ECHO_T}checkpoint scalapack  A " >&6
-  echo "$as_me:$LINENO: result: checkpoint scalapack  A " >&5
-echo "${ECHO_T}checkpoint scalapack  A " >&6
-  if test "X$scalapack_lib_ok" != "Xyes"; then
-     LIBS=" -lscalapack ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-
-     echo "$as_me:$LINENO: result: checkpoint scalapack  B " >&5
-echo "${ECHO_T}checkpoint scalapack  B " >&6
-     echo "$as_me:$LINENO: result: checkpoint scalapack  B " >&5
-echo "${ECHO_T}checkpoint scalapack  B " >&6
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $pdgetrf ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-$pdgetrf ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  scalapack_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-scalapack_with_lib="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-     if test "X$scalapack_with_lib" == "Xyes"; then
-       SCALAPACKLIB=" -lscalapack "
-       echo "$as_me:$LINENO: result: checkpoint scalapack  C " >&5
-echo "${ECHO_T}checkpoint scalapack  C " >&6
-       echo "$as_me:$LINENO: result: checkpoint scalapack  C " >&5
-echo "${ECHO_T}checkpoint scalapack  C " >&6
-     else
-       echo "$as_me:$LINENO: result: checkpoint scalapack  D " >&5
-echo "${ECHO_T}checkpoint scalapack  D " >&6
-       echo "$as_me:$LINENO: result: checkpoint scalapack  D " >&5
-echo "${ECHO_T}checkpoint scalapack  D " >&6
-
-
-# Check whether --with-amesos-scalapacklib or --without-amesos-scalapacklib was given.
-if test "${with_amesos_scalapacklib+set}" = set; then
-  withval="$with_amesos_scalapacklib"
-  tac_with_amesos_scalapacklib=$withval
-else
-  tac_with_amesos_scalapacklib=${tac_with_amesos_scalapackdir}/libscalapack.a
-fi;
-
-       LIBS=" ${tac_with_amesos_scalapacklib} ${CBLACSLIB} ${BLACSLIB} ${BASELIBS}"
-       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $pdgetrf ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-$pdgetrf ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  SCALAPACKLIB=" ${tac_with_amesos_scalapacklib} "
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-       echo "$as_me:$LINENO: result: \"checkpoint scalapack  E SCALACAPKLIB=${tac_with_amesos_scalapcklib}\" " >&5
-echo "${ECHO_T}\"checkpoint scalapack  E SCALACAPKLIB=${tac_with_amesos_scalapcklib}\" " >&6
-     fi
-  fi
-
-  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-  echo "$as_me:$LINENO: result: \"checkpoint yoyoyo CBLACSLIB = ${CBLACSLIB}\" " >&5
-echo "${ECHO_T}\"checkpoint yoyoyo CBLACSLIB = ${CBLACSLIB}\" " >&6
-  amesos_libs=" ${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${amesos_libs} "
-  echo "$as_me:$LINENO: result: \"LIBS = ${LIBS}\" " >&5
-echo "${ECHO_T}\"LIBS = ${LIBS}\" " >&6
 
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -12750,14 +11132,13 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/username/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/username/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib)." >&5
+echo "$as_me: error: Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
-  LIBS="${SAVE_LIBS}"
 
 
 if true ; then
@@ -12778,7 +11159,6 @@ else
   NEED_PARAMETER_LIST_FALSE=
 fi
 
-
 else
 
 
@@ -12792,152 +11172,161 @@ fi
 
 fi
 
-if test "X$ac_cv_use_amesos_merikos" != "Xno"; then
+#  =========  #
+#  M U M P S  #
+#  =========  #
 
+# PORD (required by both MUMPS and SMUMPS)
 
-if true ; then
-  HAVE_AMESOS_MERIKOS_TRUE=
-  HAVE_AMESOS_MERIKOS_FALSE='#'
+if test "X$ac_cv_use_amesos_mumps" != "Xno" ||
+  test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
+
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char newMultisector ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+newMultisector ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
 else
-  HAVE_AMESOS_MERIKOS_TRUE='#'
-  HAVE_AMESOS_MERIKOS_FALSE=
-fi
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-
-if true ; then
-  NEED_PARAMETER_LIST_TRUE=
-  NEED_PARAMETER_LIST_FALSE='#'
-else
-  NEED_PARAMETER_LIST_TRUE='#'
-  NEED_PARAMETER_LIST_FALSE=
-fi
-
-
-else
-
-
-if false ; then
-  HAVE_AMESOS_MERIKOS_TRUE=
-  HAVE_AMESOS_MERIKOS_FALSE='#'
-else
-  HAVE_AMESOS_MERIKOS_TRUE='#'
-  HAVE_AMESOS_MERIKOS_FALSE=
-fi
-
-fi
-
-
-#########
-# MUMPS #
-#########
-
-# ================================== #
-# Check for PORD (required by MUMPS) #
-# ================================== #
-
-if test "X$ac_cv_use_amesos_mumps" != "Xno" && test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
-  echo "WARNING: your configure script has both --enable-ameso-smumps and"
-  echo "WARNING: --enable-amesos-smumps. We proceed with the single precision"
-  echo "WARNING: version of MUMPS only..."
-fi
-
-if test "X$ac_cv_use_amesos_mumps" != "Xno" || test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
-
-
-
-# Check whether --with-amesos-mumpspordlib or --without-amesos-mumpspordlib was given.
-if test "${with_amesos_mumpspordlib+set}" = set; then
-  withval="$with_amesos_mumpspordlib"
-  tac_with_amesos_mumpspordlib=$withval
-else
-  tac_with_amesos_mumpspordlib=amesos_libdir/libpord.a
-fi;
-
-  if test "X$tac_with_amesos_mumpspordlib" == "Xamesos_libdir/libpord.a"; then
-    tac_with_amesos_mumpspordlib=${tac_with_amesos_libdir}/libpord.a
-  fi
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpspordlib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpspordlib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpspordlib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the PORD library (the default ordering, required by MUMPS), specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libpord.a, or use --with-libs=-lpord --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the PORD library (the default ordering, required by MUMPS), specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libpord.a, or use --with-libs=-lpord --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpspordlib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
 fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
 
+# DMUMPS
 
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
 
-# Check whether --with-amesos-mumpsincdir or --without-amesos-mumpsincdir was given.
-if test "${with_amesos_mumpsincdir+set}" = set; then
-  withval="$with_amesos_mumpsincdir"
-  tac_with_amesos_mumpsincdir=$withval
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char dmumps_c ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+dmumps_c ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
 else
-  tac_with_amesos_mumpsincdir=amesos_incdir
-fi;
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-  if test "X$tac_with_amesos_mumpsinclib" == "Xamesos_incdir"; then
-    tac_cv_use_amesos_mumpsinclib=${tac_with_amesos_incdir}
-  fi
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpsincdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpsincdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpsincdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the double precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdmumps.a, or use --with-libs=-ldmumps --with-ldflags=-L/hhome/username/lib)." >&5
+echo "$as_me: error: Cannot find the double precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libdmumps.a, or use --with-libs=-ldmumps --with-ldflags=-L/hhome/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpsincdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
 fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
 
-
-#
-# This is a bad way to check for dmumps_c.h, it won't pick dmumps_c.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
-#
-
-for ac_header in dmumps_c.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
-  echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+if test "${ac_cv_header_dmumps_c_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for dmumps_c.h" >&5
+echo $ECHO_N "checking for dmumps_c.h... $ECHO_C" >&6
+if test "${ac_cv_header_dmumps_c_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+echo "$as_me:$LINENO: result: $ac_cv_header_dmumps_c_h" >&5
+echo "${ECHO_T}$ac_cv_header_dmumps_c_h" >&6
 else
   # Is the header compilable?
-echo "$as_me:$LINENO: checking $ac_header usability" >&5
-echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dmumps_c.h usability" >&5
+echo $ECHO_N "checking dmumps_c.h usability... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12945,7 +11334,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 $ac_includes_default
-#include <$ac_header>
+#include <dmumps_c.h>
 _ACEOF
 rm -f conftest.$ac_objext
 if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
@@ -12981,15 +11370,15 @@ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
 echo "${ECHO_T}$ac_header_compiler" >&6
 
 # Is the header present?
-echo "$as_me:$LINENO: checking $ac_header presence" >&5
-echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking dmumps_c.h presence" >&5
+echo $ECHO_N "checking dmumps_c.h presence... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <$ac_header>
+#include <dmumps_c.h>
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -13023,25 +11412,25 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
   yes:no: )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: dmumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: dmumps_c.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: dmumps_c.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: dmumps_c.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: dmumps_c.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: dmumps_c.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: dmumps_c.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmumps_c.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: dmumps_c.h: in the future, the compiler will take precedence" >&2;}
     (
       cat <<\_ASBOX
 ## ---------------------------------- ##
@@ -13052,84 +11441,27 @@ _ASBOX
       sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
-echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Header+set}\" = set"; then
+echo "$as_me:$LINENO: checking for dmumps_c.h" >&5
+echo $ECHO_N "checking for dmumps_c.h... $ECHO_C" >&6
+if test "${ac_cv_header_dmumps_c_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  eval "$as_ac_Header=\$ac_header_preproc"
+  ac_cv_header_dmumps_c_h=$ac_header_preproc
 fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
-
-fi
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+echo "$as_me:$LINENO: result: $ac_cv_header_dmumps_c_h" >&5
+echo "${ECHO_T}$ac_cv_header_dmumps_c_h" >&6
 
 fi
-
-done
-
-
-  if test "X$ac_cv_header_dmumps_c_h" != "Xyes"; then
-#
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpsincdir}/dmumps_c.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpsincdir}/dmumps_c.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpsincdir}/dmumps_c.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpsincdir}/dmumps_c.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
+if test $ac_cv_header_dmumps_c_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsincdir or --with-amesos-incdir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&5
-echo "$as_me: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsincdir or --with-amesos-incdir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find header files for MUMPS (dmumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find header files for MUMPS (dmumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
    { (exit 1); exit 1; }; }
 fi
- }
-  fi
 
 
-    CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
-  fi
 
-#
-#    The following attempt to confirm that libmumps.a and lidpord.a are the right libraries
-#    fails - presumably because we need to link other libraries in (either fortran
-#    scalapack or blacs libraries.)
-#
-
-#    SAVE_LIBS="${LIBS}"
-#      LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
-#      AC_TRY_LINK_FUNC(dmumps_164_,,
-#      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/username/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))
-#    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
-#      AC_TRY_LINK_FUNC(qsortUpInts,,
-#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-mumpslib=/home/username/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))
-#    LIBS="${SAVE_LIBS}"
-#
-#  Notes for running with the Intel fortran 90 compiler (ifort):
-#
-#    We may need the following to run in serial:
-#      ${tac_with_amesos_mumpsmpiseqlib}
-#    amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib}  -llapack -lblas -lg2c  -L/opt/intel_fc_80/lib -lifport -lifcoremt  -lunwind"
-#
 
 
 if true ; then
@@ -13163,308 +11495,11 @@ fi
 
 fi
 
-# ================ #
-# Check for DMUMPS #
-# ================ #
+# SMUMPS
 
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-
-  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-
-
-
-# Check whether --with-amesos-mumpslib or --without-amesos-mumpslib was given.
-if test "${with_amesos_mumpslib+set}" = set; then
-  withval="$with_amesos_mumpslib"
-  tac_with_amesos_mumpslib=$withval
-else
-  tac_with_amesos_mumpslib=amesos_libdir/libmumps.a
-fi;
-
-
-  if test "X$tac_with_amesos_mumpslib" == "Xamesos_libdir/libdmumps.a"; then
-    tac_with_amesos_mumpslib=${tac_with_amesos_libdir}/libdmumps.a
-  fi
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpslib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpslib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_mumpslib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_mumpslib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-fi
-
-# ================ #
-# Check for SMUMPS #
-# ================ #
-
-# SMUMPS overwrites DMUMPS if specified
 if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
 
-  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-#
-
-
-# Check whether --with-amesos-smumpslib or --without-amesos-smumpslib was given.
-if test "${with_amesos_smumpslib+set}" = set; then
-  withval="$with_amesos_smumpslib"
-  tac_with_amesos_smumpslib=$withval
-else
-  tac_with_amesos_smumpslib=amesos_libdir/libsmumps.a
-fi;
-
-
-  if test "X$tac_with_amesos_smumpslib" == "Xamesos_libdir/libsmumps.a"; then
-    tac_with_amesos_mumpslib="${tac_with_amesos_libdir}/libsmumps.a"
-  fi
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_smumpslib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_smumpslib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_smumpslib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_smumpslib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-# SMUMPS still requires HAVE_AMESOS_MUMPS to work. But now the dmumps
-# library is no longer needed.
-
-
-if true ; then
-  HAVE_AMESOS_SMUMPS_TRUE=
-  HAVE_AMESOS_SMUMPS_FALSE='#'
-else
-  HAVE_AMESOS_SMUMPS_TRUE='#'
-  HAVE_AMESOS_SMUMPS_FALSE=
-fi
-
-else
-
-
-if false ; then
-  HAVE_AMESOS_SMUMPS_TRUE=
-  HAVE_AMESOS_SMUMPS_FALSE='#'
-else
-  HAVE_AMESOS_SMUMPS_TRUE='#'
-  HAVE_AMESOS_SMUMPS_FALSE=
-fi
-
-fi
-
-# finally specify the MUMPS library. `tac_with_amesos_mumpslib' contains either dmumps or
-# smumps. At this stage, the code cannot handle both dmumps and smumps simultaneously.
-amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_scalapacklib}"
-
-# ======= #
-# SuperLU #
-# ======= #
-
-if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
-
-
-
-# Check whether --with-amesos-superludir or --without-amesos-superludir was given.
-if test "${with_amesos_superludir+set}" = set; then
-  withval="$with_amesos_superludir"
-  tac_with_amesos_superludir=$withval
-else
-  tac_with_amesos_superludir=${tac_with_trilinos3pldir}/SuperLU_3.0
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superludir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superludir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-
-
-# Check whether --with-amesos-superlulib or --without-amesos-superlulib was given.
-if test "${with_amesos_superlulib+set}" = set; then
-  withval="$with_amesos_superlulib"
-  tac_with_amesos_superlulib=$withval
-else
-  tac_with_amesos_superlulib=${tac_with_amesos_superludir}/libsuperlu.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superlulib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superlulib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superlulib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superlulib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-
-
-# Check whether --with-amesos-superluincdir or --without-amesos-superluincdir was given.
-if test "${with_amesos_superluincdir+set}" = set; then
-  withval="$with_amesos_superluincdir"
-  tac_with_amesos_superluincdir=$withval
-else
-  tac_with_amesos_superluincdir=${tac_with_amesos_superludir}/SRC
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superluincdir}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superluincdir}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superluincdir}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superluincdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-#
-# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
-#
-
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superluincdir}/supermatrix.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superluincdir}/supermatrix.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superluincdir}/supermatrix.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superluincdir}/supermatrix.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superluincdir}/supermatrix.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superluincdir}/supermatrix.h" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superluincdir}/supermatrix.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superluincdir}/supermatrix.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-  :
-else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_superluincdir} , specify a location using --with-amesos-superluincdir, --with-amesos-superludir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_superluincdir} , specify a location using --with-amesos-superluincdir, --with-amesos-superludir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details. " >&2;}
-   { (exit 1); exit 1; }; }
-fi
- }
-  fi
-
-
-
-##  LDFLAGS="${tac_with_amesos_superlulib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_superluincdir} ${CXXFLAGS}"
-
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_superlulib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     cat >conftest.$ac_ext <<_ACEOF
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -13477,7 +11512,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char SuperLU_timer_ ();
+char smumps_c ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -13489,7 +11524,7 @@ char SuperLU_timer_ ();
 int
 main ()
 {
-SuperLU_timer_ ();
+smumps_c ();
   ;
   return 0;
 }
@@ -13521,38 +11556,230 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-superlulib, (ex. --with-amesos-superlulib=/home/username/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&5
-echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-superlulib, (ex. --with-amesos-superlulib=/home/username/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib)." >&5
+echo "$as_me: error: Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib)." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-    LIBS="${SAVE_LIBS}"
-  amesos_libs=" ${tac_with_amesos_superlulib} ${amesos_libs}"
+
+  if test "${ac_cv_header_smumps_c_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for smumps_c.h" >&5
+echo $ECHO_N "checking for smumps_c.h... $ECHO_C" >&6
+if test "${ac_cv_header_smumps_c_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_smumps_c_h" >&5
+echo "${ECHO_T}$ac_cv_header_smumps_c_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking smumps_c.h usability" >&5
+echo $ECHO_N "checking smumps_c.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <smumps_c.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking smumps_c.h presence" >&5
+echo $ECHO_N "checking smumps_c.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <smumps_c.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: smumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: smumps_c.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: smumps_c.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: smumps_c.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: smumps_c.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: smumps_c.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: smumps_c.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: smumps_c.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: smumps_c.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ---------------------------------- ##
+## Report this to kstanley@cs.utk.edu ##
+## ---------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for smumps_c.h" >&5
+echo $ECHO_N "checking for smumps_c.h... $ECHO_C" >&6
+if test "${ac_cv_header_smumps_c_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_smumps_c_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_smumps_c_h" >&5
+echo "${ECHO_T}$ac_cv_header_smumps_c_h" >&6
+
+fi
+if test $ac_cv_header_smumps_c_h = yes; then
+  :
+else
+  { { echo "$as_me:$LINENO: error: Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
+echo "$as_me: error: Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
 
 
 
 if true ; then
-  HAVE_AMESOS_SUPERLU_TRUE=
-  HAVE_AMESOS_SUPERLU_FALSE='#'
+  HAVE_AMESOS_SMUMPS_TRUE=
+  HAVE_AMESOS_SMUMPS_FALSE='#'
 else
-  HAVE_AMESOS_SUPERLU_TRUE='#'
-  HAVE_AMESOS_SUPERLU_FALSE=
+  HAVE_AMESOS_SMUMPS_TRUE='#'
+  HAVE_AMESOS_SMUMPS_FALSE=
+fi
+
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
 fi
 
 else
 
 
 if false ; then
-  HAVE_AMESOS_SUPERLU_TRUE=
-  HAVE_AMESOS_SUPERLU_FALSE='#'
+  HAVE_AMESOS_SMUMPS_TRUE=
+  HAVE_AMESOS_SMUMPS_FALSE='#'
 else
-  HAVE_AMESOS_SUPERLU_TRUE='#'
-  HAVE_AMESOS_SUPERLU_FALSE=
+  HAVE_AMESOS_SMUMPS_TRUE='#'
+  HAVE_AMESOS_SMUMPS_FALSE=
 fi
 
 fi
 
+#  =============  #
+#  M E R I K O S  #
+#  =============  #
+
+if test "X$ac_cv_use_amesos_merikos" != "Xno"; then
+
+
+if true ; then
+  HAVE_AMESOS_MERIKOS_TRUE=
+  HAVE_AMESOS_MERIKOS_FALSE='#'
+else
+  HAVE_AMESOS_MERIKOS_TRUE='#'
+  HAVE_AMESOS_MERIKOS_FALSE=
+fi
+
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
+fi
+
+else
+
+
+if false ; then
+  HAVE_AMESOS_MERIKOS_TRUE=
+  HAVE_AMESOS_MERIKOS_FALSE='#'
+else
+  HAVE_AMESOS_MERIKOS_TRUE='#'
+  HAVE_AMESOS_MERIKOS_FALSE=
+fi
+
+fi
 
 #
 #  --enable-amesos-kundert
@@ -13620,9 +11847,11 @@ fi
 fi
 
 
-# AC_LANG_POP
-
-AMESOS_LIBS=${amesos_libs}
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 # ------------------------------------------------------------------------
@@ -13685,7 +11914,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13688: \"$ac_link\") >&5
+(eval echo $as_me:11917: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13763,7 +11992,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13766: \"$ac_link\") >&5
+(eval echo $as_me:11995: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13929,11 +12158,11 @@ echo "${ECHO_T}$ac_cv_f77_libs" >&6
 FLIBS="$ac_cv_f77_libs"
 
 
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 # -- DEC CXX --
@@ -14155,69 +12384,6 @@ echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_DSCPACK_TRUE}" && test -z "${HAVE_AMESOS_DSCPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_DSCPACK_TRUE}" && test -z "${HAVE_AMESOS_DSCPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_UMFPACK_TRUE}" && test -z "${HAVE_AMESOS_UMFPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_UMFPACK_TRUE}" && test -z "${HAVE_AMESOS_UMFPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${HAVE_AMESOS_KLU_TRUE}" && test -z "${HAVE_AMESOS_KLU_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -14232,6 +12398,97 @@ echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_AMESOS_KLU_TRUE}" && test -z "${HAVE_AMESOS_KLU_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_UMFPACK_TRUE}" && test -z "${HAVE_AMESOS_UMFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_UMFPACK_TRUE}" && test -z "${HAVE_AMESOS_UMFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLU_TRUE}" && test -z "${HAVE_AMESOS_SUPERLU_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLU_TRUE}" && test -z "${HAVE_AMESOS_SUPERLU_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_SUPERLUDIST_TRUE}" && test -z "${HAVE_AMESOS_SUPERLUDIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLUDIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_DSCPACK_TRUE}" && test -z "${HAVE_AMESOS_DSCPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_DSCPACK_TRUE}" && test -z "${HAVE_AMESOS_DSCPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_DSCPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_AMESOS_SCALAPACK_TRUE}" && test -z "${HAVE_AMESOS_SCALAPACK_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -14250,27 +12507,6 @@ if test -z "${HAVE_AMESOS_SCALAPACK_TRUE}" && test -z "${HAVE_AMESOS_SCALAPACK_F
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_SCALAPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_MERIKOS_TRUE}" && test -z "${HAVE_AMESOS_MERIKOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_MERIKOS_TRUE}" && test -z "${HAVE_AMESOS_MERIKOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14302,6 +12538,13 @@ echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_AMESOS_SMUMPS_TRUE}" && test -z "${HAVE_AMESOS_SMUMPS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -14309,17 +12552,24 @@ echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_AMESOS_SUPERLU_TRUE}" && test -z "${HAVE_AMESOS_SUPERLU_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+if test -z "${HAVE_AMESOS_MERIKOS_TRUE}" && test -z "${HAVE_AMESOS_MERIKOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+echo "$as_me: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_AMESOS_SUPERLU_TRUE}" && test -z "${HAVE_AMESOS_SUPERLU_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SUPERLU\" was never defined.
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_MERIKOS_TRUE}" && test -z "${HAVE_AMESOS_MERIKOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_MERIKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14966,28 +13216,27 @@ s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@NEED_PARAMETER_LIST_TRUE@,$NEED_PARAMETER_LIST_TRUE,;t t
 s,@NEED_PARAMETER_LIST_FALSE@,$NEED_PARAMETER_LIST_FALSE,;t t
+s,@HAVE_AMESOS_KLU_TRUE@,$HAVE_AMESOS_KLU_TRUE,;t t
+s,@HAVE_AMESOS_KLU_FALSE@,$HAVE_AMESOS_KLU_FALSE,;t t
 s,@CPP@,$CPP,;t t
+s,@HAVE_AMESOS_UMFPACK_TRUE@,$HAVE_AMESOS_UMFPACK_TRUE,;t t
+s,@HAVE_AMESOS_UMFPACK_FALSE@,$HAVE_AMESOS_UMFPACK_FALSE,;t t
+s,@HAVE_AMESOS_SUPERLU_TRUE@,$HAVE_AMESOS_SUPERLU_TRUE,;t t
+s,@HAVE_AMESOS_SUPERLU_FALSE@,$HAVE_AMESOS_SUPERLU_FALSE,;t t
 s,@HAVE_AMESOS_SUPERLUDIST_TRUE@,$HAVE_AMESOS_SUPERLUDIST_TRUE,;t t
 s,@HAVE_AMESOS_SUPERLUDIST_FALSE@,$HAVE_AMESOS_SUPERLUDIST_FALSE,;t t
 s,@HAVE_AMESOS_DSCPACK_TRUE@,$HAVE_AMESOS_DSCPACK_TRUE,;t t
 s,@HAVE_AMESOS_DSCPACK_FALSE@,$HAVE_AMESOS_DSCPACK_FALSE,;t t
-s,@HAVE_AMESOS_UMFPACK_TRUE@,$HAVE_AMESOS_UMFPACK_TRUE,;t t
-s,@HAVE_AMESOS_UMFPACK_FALSE@,$HAVE_AMESOS_UMFPACK_FALSE,;t t
-s,@HAVE_AMESOS_KLU_TRUE@,$HAVE_AMESOS_KLU_TRUE,;t t
-s,@HAVE_AMESOS_KLU_FALSE@,$HAVE_AMESOS_KLU_FALSE,;t t
 s,@HAVE_AMESOS_SCALAPACK_TRUE@,$HAVE_AMESOS_SCALAPACK_TRUE,;t t
 s,@HAVE_AMESOS_SCALAPACK_FALSE@,$HAVE_AMESOS_SCALAPACK_FALSE,;t t
-s,@HAVE_AMESOS_MERIKOS_TRUE@,$HAVE_AMESOS_MERIKOS_TRUE,;t t
-s,@HAVE_AMESOS_MERIKOS_FALSE@,$HAVE_AMESOS_MERIKOS_FALSE,;t t
 s,@HAVE_AMESOS_MUMPS_TRUE@,$HAVE_AMESOS_MUMPS_TRUE,;t t
 s,@HAVE_AMESOS_MUMPS_FALSE@,$HAVE_AMESOS_MUMPS_FALSE,;t t
 s,@HAVE_AMESOS_SMUMPS_TRUE@,$HAVE_AMESOS_SMUMPS_TRUE,;t t
 s,@HAVE_AMESOS_SMUMPS_FALSE@,$HAVE_AMESOS_SMUMPS_FALSE,;t t
-s,@HAVE_AMESOS_SUPERLU_TRUE@,$HAVE_AMESOS_SUPERLU_TRUE,;t t
-s,@HAVE_AMESOS_SUPERLU_FALSE@,$HAVE_AMESOS_SUPERLU_FALSE,;t t
+s,@HAVE_AMESOS_MERIKOS_TRUE@,$HAVE_AMESOS_MERIKOS_TRUE,;t t
+s,@HAVE_AMESOS_MERIKOS_FALSE@,$HAVE_AMESOS_MERIKOS_FALSE,;t t
 s,@HAVE_AMESOS_KUNDERT_TRUE@,$HAVE_AMESOS_KUNDERT_TRUE,;t t
 s,@HAVE_AMESOS_KUNDERT_FALSE@,$HAVE_AMESOS_KUNDERT_FALSE,;t t
-s,@AMESOS_LIBS@,$AMESOS_LIBS,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t

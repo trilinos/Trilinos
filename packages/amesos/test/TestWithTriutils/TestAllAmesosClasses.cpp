@@ -9,6 +9,7 @@ bool TestUMFPACK     = true;
 bool TestSuperLU     = true;
 bool TestSuperLUdist = true;
 bool TestMUMPS       = true;
+bool TestDSCPACK     = true;
 bool TestScaLAPACK   = true;
 const bool verbose         = true;
 const int OutputLevel      = 2;
@@ -154,6 +155,7 @@ int main(int argc, char *argv[]) {
   
   CommandLineParser CLP(argc,argv);
   CrsMatrixGallery Gallery("", Comm);
+  CrsMatrixGallery GallerySym("", Comm); // used mainly by DSCPACK
   
   // default values for problem type and size
   if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "recirc_2d" ); 
@@ -165,10 +167,18 @@ int main(int argc, char *argv[]) {
   if( CLP.Has("-disable-superlu")     == true ) TestSuperLU     = false;
   if( CLP.Has("-disable-superludist") == true ) TestSuperLUdist = false;
   if( CLP.Has("-disable-mumps" )      == true ) TestMUMPS       = false;
+  if( CLP.Has("-disable-dscpack" )    == true ) TestDSCPACK     = false;
   if( CLP.Has("-disable-scalapack" )  == true ) TestScaLAPACK   = false;
 
+  // create non-symmetric problem
   Gallery.Set(CLP);
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+
+  // create the symmetric problem
+  CLP.Set("-problem_type", "laplace_3d" ); 
+  CLP.Set("-problem_size", "8000");
+  GallerySym.Set(CLP);
+  Epetra_LinearProblem * ProblemSym = GallerySym.GetLinearProblem();
 
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
     
@@ -385,7 +395,6 @@ int main(int argc, char *argv[]) {
     
      Teuchos::ParameterList AmesosList;
      
-     AmesosList.set("OutputLevel",0);
      AmesosList.set("MaxProcs",-2);
      AmesosList.set("MaxProcsMatrix",-2);
      AmesosList.set("OutputLevel",OutputLevel);
@@ -403,7 +412,6 @@ int main(int argc, char *argv[]) {
     
      Teuchos::ParameterList AmesosList;
      
-     AmesosList.set("OutputLevel",0);
      AmesosList.set("MaxProcs",-3);
      AmesosList.set("MaxProcsMatrix",-3);
      AmesosList.set("OutputLevel",OutputLevel);
@@ -421,7 +429,6 @@ int main(int argc, char *argv[]) {
     
      Teuchos::ParameterList AmesosList;
      
-     AmesosList.set("OutputLevel",0);
      AmesosList.set("MaxProcs",4);
      AmesosList.set("MaxProcsMatrix",2);
      AmesosList.set("OutputLevel",OutputLevel);
@@ -429,6 +436,31 @@ int main(int argc, char *argv[]) {
      TestAmesos("Amesos_Mumps", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
 
+  // ========================== //
+  // DSCPACK -- default options //
+  // ========================== //
+  
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestDSCPACK ) {
+    
+    Teuchos::ParameterList AmesosList;
+    TestAmesos("Amesos_Dscpack", AmesosList, false, *ProblemSym, TotalErrorResidual, TotalErrorExactSol );
+  }
+    
+  // ==================== //
+  // DSCPACK -- options 1 //
+  // ==================== //
+  
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestDSCPACK ) {
+    
+    Teuchos::ParameterList AmesosList;
+    AmesosList.set("OutputLevel",OutputLevel);
+
+    TestAmesos("Amesos_Dscpack", AmesosList, false, *ProblemSym, TotalErrorResidual, TotalErrorExactSol );
+  }
   // ========= //
   // Scalapack //
   // ========= //
