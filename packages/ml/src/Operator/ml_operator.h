@@ -121,7 +121,7 @@ extern "C" {
 extern int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, 
         int *nblk, int *pnode_part, int *ndwts /*=NULL*/, int *egwts/*=NULL*/, int nedges /*= 0*/ );
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
-extern int ML_Operator_Destroy(ML_Operator *);
+extern int ML_Operator_Destroy(ML_Operator **);
 
 extern ML_Operator *ML_Operator_halfClone( ML_Operator *original);
 extern int ML_Operator_halfClone_Init(ML_Operator *mat,

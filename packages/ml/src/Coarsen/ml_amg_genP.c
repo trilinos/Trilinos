@@ -217,7 +217,7 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
       printf("AMG at level %2d = %d\n", level, gNcoarse);
    if ( gNcoarse == 0 || (1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05 )
    {
-      ML_Operator_Destroy(Pmatrix);
+      ML_Operator_Destroy(&Pmatrix);
       return -1;
    }
    AMGIdentity = ML_Operator_Create(ml->comm);
@@ -228,8 +228,8 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
                           ML_AMG_Identity_Getrows);
    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),Amat->getrow->pre_comm);
    ML_2matmult(AMGIdentity, Pmatrix, &(ml->Pmat[clevel]) );
-   ML_Operator_Destroy(AMGIdentity);
-   ML_Operator_Destroy(Pmatrix);
+   ML_Operator_Destroy(&AMGIdentity);
+   ML_Operator_Destroy(&Pmatrix);
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 

@@ -916,7 +916,7 @@ void ML_XYTfree(void *temp)
   ML_Operator *matrix_data;
 
   matrix_data = (ML_Operator *) ML_XYT_free((xyt_ADT) temp);
-  ML_Operator_Destroy(matrix_data);
+  ML_Operator_Destroy(&matrix_data);
 #else
   printf("Error: XYT not linked.\n");
 #endif

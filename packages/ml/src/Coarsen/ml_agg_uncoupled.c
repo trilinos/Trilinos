@@ -384,7 +384,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index);
    }
-   ML_Operator_Destroy(Cmatrix);
+   ML_Operator_Destroy(&Cmatrix);
    ML_free(csr_data);
    ML_free( bdry_array );
 

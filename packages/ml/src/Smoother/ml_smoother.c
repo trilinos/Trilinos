@@ -2756,13 +2756,13 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
    ml_data = (ML_Sm_Hiptmair_Data *) data;
  
    if ( ml_data->ATmat_trans != NULL )
-      ML_Operator_Destroy(ml_data->ATmat_trans);
+      ML_Operator_Destroy(&(ml_data->ATmat_trans));
  
    if ( ml_data->TtAT_diag != NULL )
       ML_free(ml_data->TtAT_diag);
  
    if ( ml_data->TtATmat != NULL )
-      ML_Operator_Destroy(ml_data->TtATmat);
+      ML_Operator_Destroy(&(ml_data->TtATmat));
 
    if ( ml_data->res_edge != NULL )
       ML_free(ml_data->res_edge);
@@ -3166,7 +3166,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
             val_ptr[k] = 0.0;
       }
       ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
-      ML_Operator_Destroy(tmpmat2);
+      ML_Operator_Destroy(&tmpmat2);
    }
    else
    {
@@ -3344,7 +3344,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
 	  else dataptr->TtAT_diag[i] = tmpdiag[i];
 
-   ML_Operator_Destroy(tmpmat);
+   ML_Operator_Destroy(&tmpmat);
 
    /* Force the diagonal to not be zero */
 

@@ -387,7 +387,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    free(Asqrd_sndleng); free(Asqrd_rcvleng);  free(Asqrd_sndbuf);
    free(Asqrd_rcvbuf);  free(Asqrd_recvlist); free(Asqrd_sendlist);
    free(Asqrd_neigh);
-   ML_Operator_Destroy(Asqrd);
+   ML_Operator_Destroy(&Asqrd);
 
 
    /* Make a new aggr_index[] corresponding to Amatrix as opposed to the one  */

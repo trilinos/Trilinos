@@ -613,7 +613,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                   Tcoarse->comm->ML_mypid,grid_level,fine_level,coarsest_level);
            fflush(stdout);
         }
-        ML_Operator_Destroy(Tcoarse_trans);
+        ML_Operator_Destroy(&Tcoarse_trans);
         (*Tmat_trans_array)[grid_level] = NULL;
 #ifdef NEW_T_PE
         ML_free(encoded_dir_node);
@@ -787,7 +787,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_free(vec); ML_free(Tfine_Pn_vec);
 
 #ifdef LEASTSQ_SERIAL
-     ML_Operator_Destroy(SPn_mat);
+     ML_Operator_Destroy(&SPn_mat);
 #endif
 
 
@@ -937,7 +937,7 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
     {
        for (level = finest_level; level >= coarsest_level; level--)
        {
-          ML_Operator_Destroy((*Tmat_array)[level]);
+          ML_Operator_Destroy((*Tmat_array)+level);
           (*Tmat_array)[level] = NULL;
        }
        ML_free(*Tmat_array);
@@ -948,7 +948,7 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
     {
        for (level = finest_level; level >= coarsest_level; level--)
        {
-          ML_Operator_Destroy((*Tmat_trans_array)[level]);
+          ML_Operator_Destroy((*Tmat_trans_array)+level);
           (*Tmat_trans_array)[level] = NULL;
        }
        ML_free(*Tmat_trans_array);
@@ -1010,7 +1010,7 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 		       widget.Amat->getrow->pre_comm);
 
    ML_2matmult(AGGsmoother, Pmatrix, SPn_mat);
-   ML_Operator_Destroy(AGGsmoother);
+   ML_Operator_Destroy(&AGGsmoother);
 
    return 0;
 }

@@ -31,12 +31,12 @@ ML_Operator *ML_Operator_Create(ML_Comm *comm)
 /* destructor                                                           */
 /************************************************************************/
 
-int ML_Operator_Destroy( ML_Operator *mat)
+int ML_Operator_Destroy( ML_Operator **mat)
 {
-   if (mat != NULL)
+   if (*mat != NULL)
    {
-      ML_Operator_Clean(mat);
-      ML_free(mat);
+      ML_Operator_Clean(*mat);
+      ML_free(*mat);
    }
    return 0;
 }
@@ -135,7 +135,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif
 
-   if (mat->sub_matrix != NULL) ML_Operator_Destroy(mat->sub_matrix);
+   if (mat->sub_matrix != NULL) ML_Operator_Destroy(&(mat->sub_matrix));
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
 		 /*printf("ready to call destroy %u\n",mat->data); */
       mat->data_destroy(mat->data);
@@ -1325,7 +1325,7 @@ int ML_Operator_ArrayDestroy( void *array, int length)
   int i;
 
   op_array = (ML_Operator **) array;
-  for (i = 0; i < length; i++) ML_Operator_Destroy(op_array[i]);
+  for (i = 0; i < length; i++) ML_Operator_Destroy(op_array+i);
   ML_free(op_array);
 
   return 1;

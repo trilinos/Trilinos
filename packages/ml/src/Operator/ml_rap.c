@@ -87,7 +87,7 @@ fflush(stdout);
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(Pcomm);
-      ML_Operator_Destroy(Pcomm);
+      ML_Operator_Destroy(&Pcomm);
    }
 
    if (Amat->getrow->post_comm != NULL) {
@@ -119,7 +119,7 @@ fflush(stdout);
 #endif
 
    ML_RECUR_CSR_MSRdata_Destroy(AP2comm);
-   ML_Operator_Destroy(AP2comm);
+   ML_Operator_Destroy(&AP2comm);
 
    if (Rmat->getrow->post_comm != NULL) 
       ML_exchange_rows( RAPmat, &RAPcomm, Rmat->getrow->post_comm);
@@ -140,7 +140,7 @@ fflush(stdout);
    else pr_error("ML_RAP: unknown matrix type\n");
 
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
-   ML_Operator_Destroy(RAPcomm);
+   ML_Operator_Destroy(&RAPcomm);
 #ifdef DEBUG
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap ends.\n");

@@ -991,7 +991,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(Mat2comm);
-      ML_Operator_Destroy(Mat2comm);
+      ML_Operator_Destroy(&Mat2comm);
    }
 
    if (Mat1->getrow->post_comm != NULL) {
@@ -1002,7 +1002,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
 
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
-   ML_Operator_Destroy(Mat1Mat2comm);
+   ML_Operator_Destroy(&Mat1Mat2comm);
 }
 
 int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
@@ -1860,13 +1860,13 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(Mat2comm);
-      ML_Operator_Destroy(Mat2comm);
+      ML_Operator_Destroy(&Mat2comm);
    }
 
    ML_back_to_csrlocal(Mat1Mat2, Result, max_per_proc);
 
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2);
-   ML_Operator_Destroy(Mat1Mat2);
+   ML_Operator_Destroy(&Mat1Mat2);
 }
 
 #endif

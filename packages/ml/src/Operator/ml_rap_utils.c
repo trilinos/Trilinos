@@ -84,7 +84,7 @@ void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(temp2);
-      ML_Operator_Destroy(temp2);
+      ML_Operator_Destroy(&temp2);
    }
    if (matrix->getrow->post_comm != NULL) {
       tptr = temp4;
@@ -92,12 +92,12 @@ void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(temp4);
-      ML_Operator_Destroy(temp4);
+      ML_Operator_Destroy(&temp4);
    }
 
-   ML_Operator_Destroy(temp);
+   ML_Operator_Destroy(&temp);
    ML_RECUR_CSR_MSRdata_Destroy(temp3);
-   ML_Operator_Destroy(temp3);
+   ML_Operator_Destroy(&temp3);
 }
 
 /*********************************************************************/

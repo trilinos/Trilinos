@@ -1827,12 +1827,12 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
      ML_Krylov_Destroy( &kdata );
      rho = Amat->lambda_max;
 #ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(t3);
-     if (t2 != NULL) ML_Operator_Destroy(t2);
+     if (t3 != NULL) ML_Operator_Destroy(&t3);
+     if (t2 != NULL) ML_Operator_Destroy(&t2);
 #else
      if (symmetrize == ML_TRUE) {
-       if (t3 != NULL) ML_Operator_Destroy(t3);
-       if (t2 != NULL) ML_Operator_Destroy(t2);
+       if (t3 != NULL) ML_Operator_Destroy(&t3);
+       if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
 #endif
    }
@@ -2016,12 +2016,12 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      Amat->lambda_min = kdata->ML_eigen_min; 
      ML_Krylov_Destroy( &kdata );
 #ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(t3);
-     if (t2 != NULL) ML_Operator_Destroy(t2);
+     if (t3 != NULL) ML_Operator_Destroy(&t3);
+     if (t2 != NULL) ML_Operator_Destroy(&t2);
 #else
      if (ml->symmetrize_matrix == ML_TRUE) {
-       if (t3 != NULL) ML_Operator_Destroy(t3);
-       if (t2 != NULL) ML_Operator_Destroy(t2);
+       if (t3 != NULL) ML_Operator_Destroy(&t3);
+       if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
 #endif
 

@@ -530,7 +530,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
            ml->Pmat[clevel].data = Pmatrix->data;
            Pmatrix->data = NULL;
         }
-        ML_Operator_Destroy(Pmatrix);
+        ML_Operator_Destroy(&Pmatrix);
      }
      return -1;
    }
@@ -644,15 +644,15 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
 
 #ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(t3);
-     if (t2 != NULL) ML_Operator_Destroy(t2);
+     if (t3 != NULL) ML_Operator_Destroy(&t3);
+     if (t2 != NULL) ML_Operator_Destroy(&t2);
 #else
      if (ml->symmetrize_matrix == ML_TRUE) {
-       if (t3 != NULL) ML_Operator_Destroy(t3);
-       if (t2 != NULL) ML_Operator_Destroy(t2);
+       if (t3 != NULL) ML_Operator_Destroy(&t3);
+       if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
 #endif
-     if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(Pmatrix);
+     if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(&Pmatrix);
      else {
        if (prev_P_tentatives == NULL) {
 	 ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
@@ -662,7 +662,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        prev_P_tentatives[clevel] = Pmatrix;
      }
 
-     ML_Operator_Destroy(AGGsmoother);
+     ML_Operator_Destroy(&AGGsmoother);
    }
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
@@ -1306,7 +1306,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    for ( i = 0; i < ap_ncols; i++ ) free( ap_aa[i] );
    free( ap_aa );
    ML_Destroy(&newml);
-   ML_Operator_Destroy(tentP);
+   ML_Operator_Destroy(&tentP);
 
    i = 1;
    j = ML_gmax_int(i, ml->comm );
@@ -1740,8 +1740,8 @@ tentP = ML_Operator_Create(ml->comm);
 
    ML_2matmult(AGGsmoother, tentP, &(ml->Pmat[clevel]) );
 
-   ML_Operator_Destroy(tentP);
-   ML_Operator_Destroy(AGGsmoother);
+   ML_Operator_Destroy(&tentP);
+   ML_Operator_Destroy(&AGGsmoother);
 /*###*/
 
 #ifdef ML_TIMING
