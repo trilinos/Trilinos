@@ -74,8 +74,8 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
 // Destructor
 FiniteElementProblem::~FiniteElementProblem()
 {
-  delete AA;
   delete A;
+  delete AA;
   delete initialSolution;
   delete Importer;
   delete OverlapMap;
