@@ -178,9 +178,14 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Epetra_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
+AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cassert assert.h], [break],)
+AC_CHECK_HEADERS([cmath math.h], [break],)
+AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
+AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([malloc.h],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
@@ -212,6 +217,13 @@ else
     AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  ml requires at least one or the other.]])
   fi
 fi  
+
+if test "X$ac_cv_header_malloc_h" != "Xyes"; then
+ AC_FUNC_MALLOC
+ #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+ #  AC_MSG_ERROR([malloc function not working, needed by TriUtils.])
+ #fi
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -259,7 +271,6 @@ AC_CXX_STD_SPRINTF
 #JJHnp try this option with ML_WITH_EPETRA
 #TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
 #AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-# TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Aztec support], EPETRA, yes)
 
 
 # ------------------------------------------------------------------------
@@ -292,7 +303,6 @@ AC_CXX_STD_SPRINTF
 #####################################
 # Following options are ON by default
 #####################################
-
 
 TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
 
@@ -350,9 +360,11 @@ TAC_ARG_WITH_PACKAGE(ml_arpack, [Enable ARPACK support. See notes for --with-ml_
 #
 TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-ml_metis.], ML_PARPACK, no) 
 #
-############################################
-#### interfaces to other Trilinos packages
-############################################
+TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
+#
+# ------------------------------------------------------------------------
+# Interfaces to other Trilinos packages
+# ------------------------------------------------------------------------
 #
 TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
 #
@@ -383,23 +395,39 @@ AM_CONDITIONAL(ML_USING_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 #(See ml/examples/Makefile.am.)
 AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_aztecoo" != "Xyes")
 
-#############################################
-
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-#AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+# Embedded version of tac_arg_enable_feature_sub_check.m4 to support
+# deprecated --enable-ml_examples and also --enable-ml-examples
 
-TAC_ARG_ENABLE_FEATURE(ml_examples,
-             AC_HELP_STRING([Build examples for ML package]),
-             EXAMPLES,
-             yes)
+AC_ARG_ENABLE(examples, AC_HELP_STRING([--enable-examples], [Build examples for all Trilinos packages (not all packages are sensitive to this option) (default is yes)]), ac_cv_use_examples=$enableval, ac_cv_use_examples=yes)
+
+AC_ARG_ENABLE(ml_examples, AC_HELP_STRING([--enable-ml_examples], [Build ML examples (deprecated, use --enable-ml-examples)]), ac_cvs_use_ml_examples=$enableval, ac_cv_use_ml_examples=${ac_cv_use_examples})
+
+AC_ARG_ENABLE([ml-examples],
+AC_HELP_STRING([--enable-ml-examples],[Build ML examples (default is yes if --disable-examples is not specified)]),
+ac_cv_use_ml_examples=$enableval, )
+
+AC_MSG_CHECKING(whether to use ml-examples)
+
+if test "X$ac_cv_use_ml_examples" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_ML_EXAMPLES],,[Define if want to build ml-examples])
+else
+  AC_MSG_RESULT(no)
+fi
+
 AM_CONDITIONAL(ML_BUILD_EXAMPLES, test "X$ac_cv_use_ml_examples" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(tests, [Build tests for ML package], TESTS, no)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+# End of embedded tac_arg_enable_feature_sub_check.m4
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB( ml, tests, [Build ML tests], ML_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ml_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -419,6 +447,10 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_ml_tests" != "Xno" || test "X$ac_cv_use_ml_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
 # with the name of an entry point in that library.
@@ -434,6 +466,10 @@ TAC_ARG_WITH_LAPACKLIB
 # find or choose to supply valid blas and lapack libraries
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -510,9 +546,17 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export
 		src/Makefile
 		examples/Makefile
                 test/Makefile
+                test/MultiLevelPreconditioner_NonSym/Makefile
+		test/MultiLevelPreconditioner_Sym/Makefile
+		test/MultiLevelPreconditioner_Maxwell/Makefile
+		test/ML_Operator2Epetra_RowMatrix/Makefile
+		test/VerySimple/Makefile
+		test/AztecSimple/Makefile
+		test/2d_Poisson/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
