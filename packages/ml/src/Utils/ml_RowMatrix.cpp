@@ -94,6 +94,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
     int ncnt; // ma che cavolo di nome e`???
     MaxMyNumEntries = 0;
+    double MyNormInf = -1.0;
 
     // Note: I do not compute norm inf any more, it was quite
     // expensive.
@@ -119,6 +120,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
       if (ncnt > MaxMyNumEntries) 
         MaxMyNumEntries = ncnt;
 
+      double tmp = 0.0;
+
       // extract diagonal element
       // NOTE: the diagonal value is set to zero if not present
       Diagonal_[i] = 0.0;
@@ -126,10 +129,15 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
         if (Indices_[j] == i) {
           Diagonal_[i] = Values_[j];
           ++NumMyDiagonals_;
-          break;
         }
+        tmp += fabs(Values_[j]);
       }
+
+      if (tmp > MyNormInf) MyNormInf = tmp;
+
     } // for each row
+
+    Comm().MaxAll(&MyNormInf, &NormInf_, 1);
   }
 
   // fix a couple of global integers

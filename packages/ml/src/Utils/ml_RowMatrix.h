@@ -217,7 +217,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     */ 
     virtual double NormOne() const
     {
-      ML_RETURN(-1.0);
+      return(-1.0);
     }
 
     //! Returns the number of nonzero entries in the global matrix.
@@ -283,6 +283,11 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
   //@}
+
+  void SetLabel(const char* label) 
+  {
+    strcpy(Label_,label);
+  };
 
   const char* Label() const{
     return(Label_);
