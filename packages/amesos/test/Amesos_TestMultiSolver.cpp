@@ -333,7 +333,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) { 
-      Teuchos::Param5BeterList ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Mumps mumps( Problem ) ; 
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
     
