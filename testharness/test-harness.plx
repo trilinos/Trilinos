@@ -583,24 +583,31 @@ report($SUMMARY);
                 chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
                 my @testDirs = `find packages/ -name test -print`; 
                 
-                ################################################################
-                # Removed in favor of new config-file option
-                ################################################################
-                
-        		# Figure out how to run an mpi job.
-        		#my $result;       # success=0, failure=nonzero
-            
-        		#$result = $ENV{"HOSTNAME"};
-        		#if (!$result) {
-        		#  $result = $ENV{"HOST"};
-        		#}
-        		#if ($result =~ /stratus/) {
-        		#  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
-        		#} else {
-        		#  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
-        		#}
+                # Resolve MPIGO_CMD ============================================
         		
-        		$ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'TRILINOS_DIR'}[0]";
+        		# use config-file-supplied option if present, else, guess.
+        		
+        		if (defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} && 
+        		    defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'}[0]) {
+        		    
+        		    $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";
+        		    
+        		} else {
+                
+            		# Figure out how to run an mpi job.
+            		my $result;       # success=0, failure=nonzero
+                
+            		$result = $ENV{"HOSTNAME"};
+            		if (!$result) {
+            		  $result = $ENV{"HOST"};
+            		}
+            		if ($result =~ /stratus/) {
+            		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
+            		} else {
+            		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
+            		}
+        		
+        		}
  
                 # run all tests 
                 foreach my $testDir (@testDirs) {
@@ -2484,7 +2491,7 @@ report($SUMMARY);
             print outFile "# Specify the command (and options) for executing an MPI process. \n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: YES if MPI_DIR is supplied\n";
+            print outFile "# - value required: NO\n";
             print outFile "# - The final option MUST be the option that specifies the number of processors,\n"; 
             print outFile "#   but MUST omit the actual number--the individual tests will provide the\n";
             print outFile "#   number of processors to be used.\n";
