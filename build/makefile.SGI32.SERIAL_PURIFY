@@ -21,6 +21,9 @@ FC=/Net/pecos/rf_crew/Moved_to_806_netapp/pure/purify-4.5-irix6/purify \
 CXX=/Net/pecos/rf_crew/Moved_to_806_netapp/pure/purify-4.5-irix6/purify \
     -follow-child-processes=yes -log-file=petralog CC
 
+AR= CC -ar
+ARFLAGS= -W,l -W,s -o
+
 #Define include directories (remember to use -Idirectory_name)
 
 MPI_INCLUDES = 

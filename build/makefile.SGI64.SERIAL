@@ -19,6 +19,9 @@ CC=cc
 FC=f77
 CXX=CC
 
+AR= CC -ar
+ARFLAGS= -W,l -W,s -o
+
 #Define include directories (remember to use -Idirectory_name)
 
 MPI_INCLUDES = 

@@ -20,6 +20,9 @@ FC=/Net/pecos/rf_crew/pure/purify-4.1-irix6/purify \
 CXX=/Net/pecos/rf_crew/pure/purify-4.1-irix6/purify \
     -follow-child-processes=yes CC
 
+AR= CC -ar
+ARFLAGS= -W,l -W,s -o
+
 #Define include directories (remember to use -Idirectory_name)
 
 MPI_INCLUDES = 
