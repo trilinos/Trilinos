@@ -167,7 +167,7 @@ main(int argc, char **argv)
   char *LongOutputFileName = (char *) "SST.log" ;
 
   bool summary = MyPID == 0 ;
-  bool verbose = MyPID == 0 ; 
+  bool verbose = ( MyPID == 0 ) && false ; 
   bool log = MyPID == 0 ; 
 #ifdef SOLARIS
   //  log = false ;                                     // On Solaris mpich, the second ofstream.open fails 
@@ -176,7 +176,7 @@ main(int argc, char **argv)
   FILE *matrix_fd;
   ofstream summary_file;
 
-  if ( verbose ) { 
+  if ( ( MyPID == 0 )  ) { 
     matrix_fd = fopen( argv[2], "r" ) ; 
     if ( matrix_fd == NULL ) {
       cerr << "Unable to open " << argv[2] << " for reading" << endl ; 
@@ -233,7 +233,7 @@ main(int argc, char **argv)
   else if  ( Sprogram == "SuperLU" ) 
     SparseSolver = SuperLU ; 
   else {
-    if (verbose) cerr << "Unknown program: " << Sprogram << endl ; 
+    if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
     exit_value = -1 ; 
   }
 
@@ -271,65 +271,65 @@ main(int argc, char **argv)
 
   const int MaxNumSolves = 3200 ; 
   if ( MatType < 0 || MatType > 1  ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << " MatType must be 0 or 1, is: " 
 	<< MatType << endl ; 
     exit_value = -1 ; 
   }
   if ( special < 0 || special > 1000  ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << " Special must be 0 or 1, is: " 
 	<< special << endl ; 
     exit_value = -1 ; 
   }
   if ( numsolves< -MaxNumSolves || numsolves > MaxNumSolves ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "The number of solves must be between 0 and " << MaxNumSolves 
 	<< " is: "
 	  << numsolves << endl ; 
     exit_value = -1 ; 
   }
   if ( MatType == 1 && numsolves != 1 ) {
-    if ( verbose ) {
+    if ( ( MyPID == 0 )  ) {
       cerr << "MatType == 1 (distributed) is only supported for numsolves == 1.   " <<
 	" Here numsolves = " << numsolves << endl ; 
     }
     exit_value = -1 ;     
   }
   if ( transpose< 0 ||  transpose > 1) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "transpose must be 0 (no trans) or 1" 
 	<< ", it is: "
 	  << transpose << endl ; 
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == SPOOLESSERIAL ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "Our use of SPOOLESSERIAL does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == SuperLU ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "Our use of SuperLU serial does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == KUNDERT ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "Our use of KUNDERT does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == Aztec ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "Our use of AZTEC does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
   if ( NumMpiProcs != 1 && MatType != 1 && SparseSolver == Aztec ) { 
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "AZTEC accepts only distributed matrices on multiple processes" << endl ;
     exit_value = -1 ; 
   }
   if ( numsolves != 1 &&  SparseSolver != SuperLU && SparseSolver != SuperLUdist  && SparseSolver != DSCPACK ) {
-    if ( verbose ) 
+    if ( ( MyPID == 0 )  ) 
       cerr << "Only SuperLU, SuperLUdist and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
@@ -379,16 +379,18 @@ main(int argc, char **argv)
       flush( summary_file ) ; 
     }
     if (MyPID == 0 ) { 
-      cerr << endl << setw(12) << hostname
-		   << setw(12) <<  argv[1] 
-		   << " " << setw(-1) << timebuffer
-		   << setw(15) << argv[2] << setw(6)
-		   << MatType << " " 
-		   << special << " " 
-		   << NumMpiProcs <<  setw(6) 
-		   << numsolves << setw(3) << transpose << setprecision(12) ;
-      if ( maxresid == -2 && maxerror == -2 ) cerr << "Failure OK" ; 
-      flush( cerr ) ; 
+      if ( verbose ) {
+	cerr << endl << setw(12) << hostname
+	     << setw(12) <<  argv[1] 
+	     << " " << setw(-1) << timebuffer
+	     << setw(15) << argv[2] << setw(6)
+	     << MatType << " " 
+	     << special << " " 
+	     << NumMpiProcs <<  setw(6) 
+	     << numsolves << setw(3) << transpose << setprecision(12) ;
+	if ( maxresid == -2 && maxerror == -2 ) cerr << "Failure OK" ; 
+	flush( cerr ) ; 
+      }
     }
     //
     //  Perform the test
@@ -436,13 +438,14 @@ main(int argc, char **argv)
       }
       if (summary ) { 
 	SparseDirectTimingVars::SS_Result.PrintSummary(summary_file) ;
-	SparseDirectTimingVars::SS_Result.PrintSummary(cerr) ;
+	if ( verbose ) 
+	  SparseDirectTimingVars::SS_Result.PrintSummary(cerr) ;
 	bool ErrorOK = maxerror <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Error() < maxerror ;
 	bool ResidualOK = maxresid <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Residual() < maxresid ;
 	if ( ErrorOK && ResidualOK ) summary_file << " OK" ; 
-	if ( ErrorOK && ResidualOK ) cerr << " OK" ; 
+	if ( ErrorOK && ResidualOK && verbose ) cerr << " OK" ; 
 	if ( ! ErrorOK ) {
 	  summary_file << " Error too large is: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
@@ -466,17 +469,21 @@ main(int argc, char **argv)
 	  summary_file << " Error TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " is allowed to be " << maxerror  ; 
-	  cerr << " Error TOLERANCE is too large: " << 
-	    SparseDirectTimingVars::SS_Result.Get_Error() <<
-	    " is allowed to be " << maxerror  ; 
+	  if ( verbose ) { 
+	    cerr << " Error TOLERANCE is too large: " << 
+	      SparseDirectTimingVars::SS_Result.Get_Error() <<
+	      " is allowed to be " << maxerror  ; 
+	  }
 	}
 	if ( ! ResidualOK ) {
 	  summary_file << " Residual too large is:" <<
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " should be < " << maxresid  ; 
-	  cerr << " Residual too large is:" <<
-	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
-	    " should be < " << maxresid  ; 
+	  if ( verbose) { 
+	    cerr << " Residual too large is:" <<
+	      SparseDirectTimingVars::SS_Result.Get_Residual() <<
+	      " should be < " << maxresid  ; 
+	  }
 	}
 
 	if (maxresid == 1e30 ) maxresid = 10 ; 
@@ -485,21 +492,25 @@ main(int argc, char **argv)
 	  summary_file << " Residual TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " is allowed to be " << maxresid  ; 
-	  cerr << " Residual TOLERANCE is too large: " << 
-	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
-	    " is allowed to be " << maxresid  ; 
+	  if ( verbose ) { 
+	    cerr << " Residual TOLERANCE is too large: " << 
+	      SparseDirectTimingVars::SS_Result.Get_Residual() <<
+	      " is allowed to be " << maxresid  ; 
+	  }
 	}
-
-      flush( summary_file ) ; 
-      cerr << endl ; // Atlantis won't print anything without this.
-      flush( cerr ) ; 
+	
+	flush( summary_file ) ; 
+	if ( verbose ) { 
+	  cerr << endl ; // Atlantis won't print anything without this.
+	  flush( cerr ) ; 
+	}
       }
     }
     catch(string errormsg)
       {
 	if ( summary ) { summary_file << errormsg ; } 
 	if ( log ) SparseDirectTimingVars::log_file << errormsg ; 
-	if ( verbose || summary ) cerr << errormsg << endl;
+	if ( ( verbose )  || summary ) cerr << errormsg << endl;
       }
 
   }
