@@ -16,14 +16,13 @@
 #include "Ifpack_SparsityFilter.h"
 #include "Ifpack_SingletonFilter.h"
 #include "Ifpack_Utils.h"
+#include "Ifpack_OverlappingRowMatrix.h"
 #include "Epetra_CombineMode.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Time.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
@@ -298,7 +297,7 @@ public:
 
 protected:
 
-  //! Sets up LocalizedMatrix_, Importer and Exporter_.
+  //! Sets up the localized matrix and the singleton filter.
   int Setup();
   
   //! Destroys all allocated data
@@ -307,7 +306,7 @@ protected:
   //! Pointers to the matrix to be preconditioned.
   const Epetra_RowMatrix* Matrix_;
   //! Pointers to the overlapping matrix.
-  Epetra_CrsMatrix* OverlappingMatrix_;
+  Ifpack_OverlappingRowMatrix* OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
   Ifpack_LocalFilter* LocalizedMatrix_;
   //! Contains the label of \c this object.
@@ -321,8 +320,6 @@ protected:
   //! If true, overlapping is used
   bool IsOverlapping_;
   int OverlapLevel_;
-  Epetra_Import* Importer_;
-  Epetra_Export* Exporter_;
   //! Stores a copy of the list given in SetParameters()
   Teuchos::ParameterList List_;
   //! Combine mode for off-process elements (only if overlap is used)
@@ -335,6 +332,7 @@ protected:
   Ifpack_Reordering* Reordering_;
   Ifpack_ReorderFilter* ReorderedLocalizedMatrix_;
   bool UseFilter_;
+  bool FilterSingletons_;
   Epetra_RowMatrix* FilteredMatrix_;
   Ifpack_SingletonFilter* SingletonFilter_;
  
@@ -373,14 +371,13 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   Inverse_(0),
   OverlapLevel_(OverlapLevel),
   IsOverlapping_(false),
-  Importer_(0),
-  Exporter_(0),
   CombineMode_(Add),
   Condest_(-1.0),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
   Reordering_(0),
   UseFilter_(false),
+  FilterSingletons_(true),
   FilteredMatrix_(0),
   SingletonFilter_(0),
   NumInitialize_(0),
@@ -415,14 +412,13 @@ Ifpack_AdditiveSchwarz(const Ifpack_AdditiveSchwarz& RHS) :
   Inverse_(0),
   OverlapLevel_(RHS.OverlapLevel()),
   IsOverlapping_(RHS.IsOverlapping()),
-  Importer_(0),
-  Exporter_(0),
   CombineMode_(Add),
   Condest_(-1.0),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
   Reordering_(0),
   UseFilter_(false),
+  FilterSingletons_(true),
   FilteredMatrix_(0),
   SingletonFilter_(0),
   NumInitialize_(0),
@@ -472,14 +468,6 @@ void Ifpack_AdditiveSchwarz<T>::Destroy()
     delete LocalizedMatrix_;
   LocalizedMatrix_ = 0;
 
-  if (Importer_)
-    delete Importer_;
-  Importer_ = 0;
-
-  if (Exporter_)
-    delete Exporter_;
-  Exporter_ = 0;
-
   if (ReorderedLocalizedMatrix_)
     delete ReorderedLocalizedMatrix_;
   ReorderedLocalizedMatrix_ = 0;
@@ -506,7 +494,8 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Setup()
 {
 
-  double AddToDiag = List_.get("filter: add to diagonal", 1e-6);
+  double AddToDiag = List_.get("filter: add to diagonal", 0.0);
+  Epetra_RowMatrix* MatrixPtr;
 
   if (OverlappingMatrix_)
     LocalizedMatrix_ = new Ifpack_LocalFilter(OverlappingMatrix_,
@@ -518,17 +507,20 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   if (LocalizedMatrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
-  // FIXME: Add a check to verify that one singleton is present
-  SingletonFilter_ = new Ifpack_SingletonFilter(LocalizedMatrix_);
-
-  Epetra_RowMatrix* MatrixPtr = SingletonFilter_;
+  // users may want to skip singleton check
+  if (FilterSingletons_) {
+    SingletonFilter_ = new Ifpack_SingletonFilter(LocalizedMatrix_);
+    MatrixPtr = SingletonFilter_;
+  }
+  else
+    MatrixPtr = LocalizedMatrix_;
 
   if (UseReordering_) {
 
     // create reordeing and compute it
-    if (ReorderingType_ == "RCM")
+    if (ReorderingType_ == "rcm")
       Reordering_ = new Ifpack_RCMReordering();
-    else if (ReorderingType_ == "METIS")
+    else if (ReorderingType_ == "metis")
       Reordering_ = new Ifpack_METISReordering();
     else {
       cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
@@ -573,15 +565,6 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-1);
 
-  if (IsOverlapping()) {
-    Importer_ = new Epetra_Import(OverlappingMatrix_->RowMatrixRowMap(), 
-				  Matrix_->RowMatrixRowMap());
-    Exporter_ = new Epetra_Export(Matrix_->RowMatrixRowMap(),
-				  OverlappingMatrix_->RowMatrixRowMap());
-    if ((Importer_ == 0) || (Exporter_ == 0))
-      IFPACK_CHK_ERR(-1);
-  }
-
   return(0);
 }
 
@@ -592,8 +575,9 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
  
   CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
   UseReordering_ = List.get("schwarz: use reordering", UseReordering_);
-  ReorderingType_ = List.get("schwarz: reordering type", "RCM");
+  ReorderingType_ = List.get("schwarz: reordering type", "rcm");
   UseFilter_ = List.get("schwarz: use filter", UseFilter_);
+  FilterSingletons_ = List.get("schwarz: filter singletons", FilterSingletons_);
 
   // This copy may be needed by Amesos or other preconditioners.
   List_ = List;
@@ -619,8 +603,8 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
-    OverlappingMatrix_ = Ifpack_CreateOverlappingCrsMatrix(Matrix_,
-							   OverlapLevel_);
+    OverlappingMatrix_ = 
+      new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_);
     if (OverlappingMatrix_ == 0)
       IFPACK_CHK_ERR(-1);
   }
@@ -752,7 +736,6 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int NumVectors = X.NumVectors();
 
-  // FIXME: Only One between Import and Export
   if (NumVectors != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
 
@@ -772,21 +755,22 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     OverlappingX = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
 					  X.NumVectors());
     OverlappingY = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
-					  Y.NumVectors());
+                                          Y.NumVectors());
     assert (OverlappingY != 0);
 
-    IFPACK_CHK_ERR(OverlappingX->Export(X,*Exporter_,Insert));
+    IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX));
   }
   else {
     OverlappingX = (Epetra_MultiVector*)&X;
     OverlappingY = &Y;
   }
 
-  // process singleton filter
-  Epetra_MultiVector ReducedX(SingletonFilter_->Map(),NumVectors);
-  Epetra_MultiVector ReducedY(SingletonFilter_->Map(),NumVectors);
-  SingletonFilter_->SolveSingletons(*OverlappingX,*OverlappingY);
-  SingletonFilter_->CreateReducedRHS(*OverlappingY,*OverlappingX,ReducedX);
+  if (FilterSingletons_) {
+    // process singleton filter
+    Epetra_MultiVector ReducedX(SingletonFilter_->Map(),NumVectors);
+    Epetra_MultiVector ReducedY(SingletonFilter_->Map(),NumVectors);
+    IFPACK_CHK_ERR(SingletonFilter_->SolveSingletons(*OverlappingX,*OverlappingY));
+    IFPACK_CHK_ERR(SingletonFilter_->CreateReducedRHS(*OverlappingY,*OverlappingX,ReducedX));
 
   // process reordering
   if (!UseReordering_) {
@@ -801,11 +785,25 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
 
   // finish up with singletons
-  SingletonFilter_->UpdateLHS(ReducedY,*OverlappingY);
-  
-  // export data (FIXME: option to avoid this?)
+  IFPACK_CHK_ERR(SingletonFilter_->UpdateLHS(ReducedY,*OverlappingY));
+  }
+  else {
+    // process reordering
+    if (!UseReordering_) {
+      IFPACK_CHK_ERR(Inverse_->ApplyInverse(*OverlappingX,*OverlappingY));
+    }
+    else {
+      Epetra_MultiVector ReorderedX(*OverlappingX);
+      Epetra_MultiVector ReorderedY(*OverlappingY);
+      IFPACK_CHK_ERR(Reordering_->P(*OverlappingX,ReorderedX));
+      IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReorderedX,ReorderedY));
+      IFPACK_CHK_ERR(Reordering_->Pinv(ReorderedY,*OverlappingY));
+    }
+  }
+
   if (IsOverlapping()) {
-    IFPACK_CHK_ERR(Y.Export(*OverlappingY,*Importer_,CombineMode_));
+    IFPACK_CHK_ERR(OverlappingMatrix_->ExportMultiVector(*OverlappingY,Y,
+                                                         CombineMode_));
     delete OverlappingX;
     delete OverlappingY;
   }
