@@ -1,0 +1,13 @@
+To tag a version, simply do
+     cvs tag mystring ml
+To checkout a version simply do
+     cvs checkout -r mystring ml
+Sometimes useful: cvs status -v ml_rap.c
+
+
+mystring = ml2_0_0_0 
+
+AMG for Maxwell's equations
+
+     Reitzinger Schoeberl AMG.
+     Hiptmair smoother.
