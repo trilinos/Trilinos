@@ -588,7 +588,7 @@
 \renewcommand\appendix{
   \setboolean{inAppendix}{true}
   \par
-  \setcounter{chapter}{0}
+  %\setcounter{chapter}{0}
   \setcounter{section}{0}
   \setcounter{subsection}{0}
   \setcounter{subsubsection}{0}
@@ -957,7 +957,7 @@
 % Trilinos Header style
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
-\lhead[\fancyplain{}{OO Parallel Data Redistribution}]%
+\lhead[\fancyplain{}{\TrilinosTM{} Developers Guide}]%
 {\fancyplain{}{\rightmark}}
 \rhead[\fancyplain{}{\leftmark}]
-{\fancyplain{}{OO Parallel Data Redistribution}}
+{\fancyplain{}{\TrilinosTM{} Developers Guide}}

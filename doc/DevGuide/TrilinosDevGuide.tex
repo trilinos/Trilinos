@@ -3,20 +3,22 @@
 %
 % Set the title, author, and date
 %
-    \title{Trilinos Developer's Guide}
+    \title{Trilinos Developers Guide}
 \SANDsubtitle{}
 
-    \author{James Willenbring\\
-       Computational Mathematics \& Algorithms \\
-	  Sandia National Laboratories\\
-	  P.O. Box 5800\\
-	  Albuquerque, NM 87185-1110 \\
-	  jmwille@sandia.gov \\
+    \author{Michael A. Heroux \\
+	    James M. Willenbring\\
+      	    Computational Mathematics \& Algorithms \\
+	    Sandia National Laboratories\\
+	    P.O. Box 5800\\
+	    Albuquerque, NM 87185-1110 \\
+	    maherou@sandia.gov \\
+	    jmwille@sandia.gov \\
 	 }
 
     % There is a "Printed" date on the title page of a SAND report, so
     % the generic \date should generally be empty.
-    \date{}
+    \date{\today} % Remove ``\today'' in final version
 
     % While this document is under active development, the date
     % field will reflect the current date, eventually a final date
@@ -24,8 +26,8 @@
 %    \today - Latex spits out errors when this is used here
 
 \SANDnum{SAND2003-xxxx}
-\SANDprintDate{March 2003}
-\SANDauthor{James Willenbring, Sandia National Laboratories}
+\SANDprintDate{April 2003}
+\SANDauthor{Michael A. Heroux, James M. Willenbring, Sandia National Laboratories}
 
 
 \SANDreleaseType{Unlimited Release}
@@ -33,180 +35,171 @@
 
 \SANDdistcategory{UC-999}     % DOE mandates it, but many reports don't have it
 
-
-%
-% Start the document
-%
 \begin{document}
-    \maketitle
+\maketitle
 
-    % ------------------------------------------------------------------------ %
-    % An Abstract is required for SAND reports
-    %
-    \begin{abstract}
+\begin{abstract}
 
-Research efforts in advanced solution algorithms and parallel solver libraries 
-have historically had a large impact on engineering and scientific computing.  
-Algorithmic advances increase the range of tractable problems and reduce the 
-cost of solving existing problems.  Well-designed solver libraries provide a 
-mechanism for leveraging solver development across a broad set of applications 
-and minimize the cost of solver integration.  Emphasis is required in both new 
-algorithms and new software in order to achieve the maximum impact of efforts.
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+A new software capability is introduced into Trilinos as a {\it
+package}.  A Trilinos package is an integral unit usually developed by
+a small team of experts in a particular algorithms area such as
+algebraic preconditioners, nonlinear solvers, etc.
 
-The Trilinos project encompasses a variety of efforts that are to some extent 
-self-contained but at the same time inter-related.  The Trilinos design allows 
-individual packages to grow and mature autonomously to the extent the 
-algorithms and package developers dictate. 
-
-The Trilinos Developer's Guide is meant to assist existing, as well as new and
-potential Trilinos developers.  Topics covered include how to configure and 
+The Trilinos Developers Guide is a resource for new and existing
+Trilinos package developers.  Topics covered include how to configure and 
 build Trilinos, what is required to integrate an existing package into Trilinos
-and examples of how those requirements can be met, as well as what tools are 
+and examples of how those requirements can be met, as well as what
+tools and services are 
 available to Trilinos packages.  Also discussed are some common practices that 
-are followed by many Trilinos package developers.  Finally, a graphical 
-depiction of Trilinos package iteroperability is supplied along with a list of 
-platforms that Trilinos has been ported to.
+are followed by many Trilinos package developers.  Finally, a snapshot
+of current Trilinos packages and their iteroperability status
+is provided, along with a list of supported computer platforms.
 
 \end{abstract}
 
-%
-% Page style chosen that prints chapter heading and page number in the 
-% header on each page.
-%
 
-    % -------------------------------------------------- %
-    % Acknowledgement section
-    % Use \section* since we don't want it in the table of context
-    %
-    %\clearpage - this is the beginning of the document
-    \section*{Acknowledgement}
+\section*{Acknowledgement}
 The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
-contributors: Michael Heroux, Teri Barth, David Day, Bob Heaphy, 
+contributors: Teri Barth, Roscoe A. Bartlett, David Day, Bob Heaphy, 
 Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, 
 Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Ken Stanley, Ray 
-Tuminaro, Jim Willenbring, and Alan Williams.
+Tuminaro and Alan Williams.
 
-    % --------------------------------------------------------- %
-    % The table of contents and list of figures and tables
-    % Comment out \listoffigures and \listoftables if there are no
-    % figures or tables. Make sure this starts on an odd numbered page
-    %
-    \clearpage
-    \tableofcontents
-    \listoffigures
-    \listoftables
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
 
-    % ---------------------------------------------------------------------- %
-    % An optional glossary. We don't want it to be numbered
-    \clearpage
-    \section*{Nomenclature}
-    \addcontentsline{toc}{section}{Nomenclature}
-    \begin{itemize}
-	\item[Package]
-	    A collection of software focused on one primary class of numerical
-          methods.
-	\item[Trilinos]
-	    A Greek term that loosely translated means ``a string of pearls,'' 
-          meant to evoke an image that each Trilinos package is a pearl in its 
-          own right, but is even more valuable when combined with other 
-          packages.
-	\item[Petra]
-	    A Greek term meaning ``foundation.''  Trilinos has three Petra 
-          libraries: Epetra, Tpetra and Jpetra (discussed in 
-          Section~\ref{subsect:PetraObjectModel}) that provide basic classes 
-          for constructing and manipulating matrix, graph and vector objects.
-        \item[AztecOO] 
-            Linear solver package based on preconditioned Krylov methods.  A 
-          follow-on to the Aztec solver package.  Supports all Aztec 
-          interfaces and functionality, but also provides significant new 
-          functionality.
-	\item[TSF]
-	\item[NOX]
-	\item[ML]
-	\item[Komplex] 
-           Complex linear equation solver using equivalent real formulations,
-	 built on top of Aztec.
-	\item[Ifpack] 
-           Object-oriented algebraic preconditioner, compatible with 
-	Epetra and AztecOO.
-    \end{itemize}
+\clearpage
+
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+\begin{itemize}
+\item[Package]
+A collection of software focused on one primary class of numerical
+methods.  Also a fundamental, integral unit in the Trilinos framework.
+\item[Trilinos]
+The name of the project.  Also a Greek term which,
+loosely translated means ``a string of pearls,'' 
+meant to evoke an image that each Trilinos package is a pearl in its 
+own right, but is even more valuable when combined with other 
+packages.
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra 
+libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+\item[AztecOO] 
+Linear solver package based on preconditioned Krylov methods.  A 
+follow-on to the Aztec solver package~\cite{Aztec2.1}.  
+Supports all Aztec 
+interfaces and functionality, but also provides significant new 
+functionality.
+\item[TSF]
+Composed of several packages.  TSFCore provides 
+a basic collection of abstract interfaces to vectors, linear
+operators, solvers, etc.  These interfaces provide a common
+interface for applications to access one or more packages that
+implement the abstract interface.  These interfaces can also be used
+by other packages in Trilinos to accomplish the same purpose.
+TSF Extensions builds on top of TSFCore, providing implicit
+aggregation capabilities and overloaded operators.
+\item[NOX]
+A collection of nonlinear solvers, designed to be easily integrated
+into an application and used with many different linear solvers.
+\item[ML]
+Algebraic multi-level preconditioner package.  Provides scalable
+preconditioning capabilities for a variety of problem classes.
+\item[Komplex] 
+Complex linear equation solver using equivalent real formulations,
+built on top of Epetra and AztecOO.
+\item[Ifpack] 
+Object-oriented algebraic preconditioner, compatible with 
+Epetra and AztecOO.
+\end{itemize}
 
 
-    % ---------------------------------------------------------------------- %
-    % This is where the body of the report begins; usually with an Introduction
-    %
-    %\SANDmain		% Start the main part of the report
+\section{Introduction}
+\label{Section:Introduction}
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+Trilinos provides a framework and set of tools for document and source code control,
+software issue tracking, developer and user communication, automatic
+testing, portable configuration and building, and software
+distribution.  Trilinos also provides a set of core utility libraries
+that provide common vector, graph and matrix capabilities, as well as
+a common abstract interface for applications to access any appropriate
+Trilinos package.
 
-% ------------------------------------------- %
-% Introduction to Developer's Guide
-%
-    \section{Introduction}
-	\subsection{Briew Overview}
-The Trilinos Project is an effort to develop parallel solver algorithms and 
-libraries within 
-an object-oriented software framework for the solution of large-scale, complex
-multi-physics engineering and scientific applications.   Our emphasis is on 
-developing robust, scalable algorithms in a software framework, using abstract 
-interfaces for flexible interoperability of components and providing a 
-full-featured set of concrete classes that implement all abstract interfaces. 
-Trilinos components are primarily written in C++, but provide essential C and 
-Fortran user interface support.  We provide an open architecture that allows 
-easy integration with other solver packages and we deliver our software to 
-the outside community via the Gnu Lesser General Public License
-(LGPL)~\cite{gnu-license-site}.
+A new software capability is introduced into Trilinos as a {\it
+package}.  A Trilinos package is an integral unit usually developed by
+a small team of experts in a particular algorithms area such as
+algebraic preconditioners, nonlinear solvers, etc.
 
-	\subsection{Motivation}
+The overall objective of Trilinos is to promote rapid development and
+deployment of high-quality, state-of-the-art mathematical software in
+an environment that supports interoperability of packages while
+preserving package independence.  The Trilinos design allows 
+individual packages to grow and mature autonomously to the extent the 
+algorithms and package developers dictate. 
 
-Research efforts in advanced solution algorithms and parallel solver
-libraries have historically had a large impact on engineering and
-scientific computing.  Algorithmic advances increase the range
-of tractable problems and reduce the cost of solving existing
-problems.  Well-designed solver libraries provide a mechanism for
-leveraging solver development across a broad set of applications and
-minimize the cost of solver integration.  Emphasis is
-required in both new algorithms and new software in order
-to achieve the maximum impact of efforts.
-
-The Trilinos project encompasses a variety of efforts that are to some
-extent self-contained but at the same time inter-related.  The
-Trilinos design allows individual packages to grow and mature
-autonomously to the extent the algorithms and package developers
-dictate. 
-
-	\subsection{What is Covered in this Guide}
-
-The Trilinos Developer's Guide is meant to assist existing, as well as new and
-potential Trilinos developers.  Topics covered include how to configure and 
+The Trilinos Developers Guide is meant to assist new and existing
+Trilinos package developers.  Topics covered include how to configure and 
 build Trilinos, what is required to integrate an existing package into Trilinos
-and examples of how those requirements can be met, as well as what tools are 
+and examples of how those requirements can be met, as well as what
+tools and services are 
 available to Trilinos packages.  Also discussed are some common practices that 
-are followed by many Trilinos package developers; these are found in the 
-chapter entitled ``Suggested practices''.  Finally, a graphical depiction of 
-Trilinos package iteroperability is supplied along with a list of platforms 
-that Trilinos has been ported to.
+are followed by many Trilinos package developers.  Finally, a snapshot
+of current Trilinos packages and their iteroperability status
+is provided, along with a list of supported computer platforms.
 
 For a higher-level view of the Trilinos project, please see An Overview
-of the Trilinos Project by Mike Heroux. 
-%**(Use a citation.)
+of the Trilinos Project~\cite{TrilinosOverview}. 
 
-	\section{Getting Started}
+\subsection{How To Use This Guide}
 
+This guide supports three types of development activities:
+\begin{enumerate}
+\item New Project: Development of a new package using little or no
+existing software as a base.  All sections of this guide are
+appropriate reading.
+\item Integration of an existing third-party software: In this case,
+existing software is being imported into the Trilinos framework.  It
+is likely that a directory structure, build process and documentation
+already exist.  In this case,
+\item Ongoing development:
+\end{enumerate}
+Sections~\ref{Section:PackageRequirements}
+and~\ref{Section:AvailableServices} are best read first
+
+\section{Getting Started}
+\label{Section:GettingStarted}
 This chapter covers some of the basics that a developer will need to know when 
 beginning to work on the Trilinos project.  We address how to configure and 
 build Trilinos, as well as how to add files to an existing package.
 
-\subsection{Recommended Directory Structure}
+\subsection{Recommended Directory Structure for Building Trilinos}
 
-Two useful terms:
+Via Autoconf and Automake the Trilinos configuration facilities
+provide a great deal of flexibility for configuring and building the
+existing Trilinos packages.  However, unless you have prior experience
+with Autotools, we recommend the following process to build and
+maintain your local builds of Trilinos
 
-Source tree - The directory structure where source files are found.  A source 
-	tree is obtained by expanding a distribution tar ball, or by checking 
-	out a copy of the Trilinos repository.  
-Build tree - The directory structure where object and library files, as well 
-	as executables are located.  
+To start, we defined two useful terms:
+\begin{itemize}
+\item Source tree - The directory structure where source files are found.  A source 
+tree is obtained by expanding a distribution tar ball, or by checking 
+out a copy of the Trilinos repository.  
+\item Build tree - The directory structure where object and library files, as well 
+as executables are located.  
+\end{itemize}
 
-Please note: typing "configure --help=recursive" from the top level of the 
+Please note: typing \Example{configure --help=recursive} from the top level of the 
 source tree will display the help page for the Trilinos level as well as all 
 Trilinos packages that use autoconf and automake.  The output from this command
 is quite extensive.  To view the help page for an individual package, cd to 
@@ -632,7 +625,7 @@ the code will do when complete.
 % start reading Mike's stuff at 243
 
 \section{Package Requirements}
-%	**(Req's and how to satisfy them - break into subsections)**
+\label{Section:PackageRequirements}
 The Trilinos team makes a conscious effort to minimize the requirements that 
 are placed on Trilinos packages.  Packages can be integrated into Trilinos in 
 a gradual manner.  Listed below are four levels of requirement compliance.  
@@ -667,7 +660,7 @@ encouraged to consider using Bugzilla, which is discussed in
 Section~\ref{subsect:Bugzilla}.
 
 \section{Suggested Practices}
-%	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
+\label{Section:SuggestPractices}
 
 There are many ways to define an effective software process.  As a result, the 
 Trilinos project specifies very few {\it requirements}.  At the same time, 
@@ -746,8 +739,9 @@ In general, we will be very slow to omit a package, or version of a package,
 that is in use unless there is equivalent interface and functionality support 
 from a new package.
 
-	\section{Services Available to Trilinos Packages}
-	A number of services exist for Trilinos packages.  Many of these 
+\section{Services Available to Trilinos Packages}
+\label{Section:AvailableServices}
+A number of services exist for Trilinos packages.  Many of these 
 services relate directly to some of the requirements and suggested practices 
 for Trilinos packages.  For example the CVS repository is discussed below, and 
 Trilinos packages must make use of this repository.  Also, Bonsai, Bugzilla 
@@ -758,7 +752,7 @@ Using these tools together, along with the CVS repository, has led to a more
 time and cost effective code development process.)  For more information about 
 any of the below services, please contact the Trilinos Project Leader.
 
-	\subsection{Configuration Management}
+\subsection{Configuration Management}
 Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and Libtool~\cite{Libtool} 
 provide a robust, full-featured set of tools for building software across a 
 broad set of platforms (see also the ``Goat Book''~\cite{GoatBook}).  Although 
@@ -783,7 +777,7 @@ defined MPI C compiler.  The macros can be found in the Trilinos CVS
 repository in Trilinos/config.  These macros minimize the amount of redudant
  effort in using Autotools, and make it easier to apply a general change to 
 the configure process for all packages.
-	\subsection{Regression Testing}
+\subsection{Regression Testing}
 Trilinos provides a variety of regression
 testing capabilities.  Within a number of Trilinos packages, we employ
 ``white box'' testing where detailed information about the software is
@@ -978,7 +972,7 @@ other packages.
 %**(Expand on this)**
 
 \section{Epetra and TSF: Two Special Trilinos Packages}
-\label{sect:EpetraAndTSF}
+\label{Section:EpetraAndTSF}
 In order to understand what Trilinos provides beyond the
 contributions of each Trilinos package, we briefly discuss two special
 Trilinos packages: Epetra and TSF.  These two packages are complimentary,
@@ -1021,22 +1015,24 @@ light-weight construction of composite objects from a set of
 existing objects.  As a result, TSF users gain easy access to many
 solvers and can bring multiple solvers to bear on a single problem.
 
-	\section{Integrating a Package into Trilinos}
+\section{Integrating a Package into Trilinos}
+\label{Section:IntegratingPackages}
 %	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
 	
-	\section{Interoperability Status for Existing Trilinos Packages}
+\section{Interoperability Status for Existing Trilinos Packages}
 
-	\section{Platform Portablility}
+\section{Platform Portablility}
 %	**(List platforms - encourage script submission)**
-    % ---------------------------------------------------------------------- %
-    % References
-    %
-    \clearpage
-    \bibliographystyle{plain}
-    \bibliography{TrilinosDevGuide}
-    \addcontentsline{toc}{section}{References}
 
-% Include Appendices??  If they are needed, they go here.
+\section{Commonly Used CVS Commands}
+\label{Section:CVS}
+\section{Common Bugzilla Tasks}
+\label{Section:Bugzilla}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{TrilinosDevGuide}
+\addcontentsline{toc}{section}{References}
 
 
 \end{document}
