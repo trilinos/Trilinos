@@ -807,7 +807,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   comm = Amatrix->comm;
 
   /* forget dropping for a moment */
-  /* better to avoid this part ???
+  /* better to avoid this part ??? */
   if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
     
     if( comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() ) {
@@ -819,7 +819,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     temp->scaled_diag = NULL;
     
   }
-  */
+  
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
