@@ -67,7 +67,9 @@ char *yo = "Zoltan_HG";
 struct Zoltan_HGraph *zoltan_hg = NULL;
 int ierr = ZOLTAN_OK;
 int nVtx;                       /* Temporary variable for base graph. */
+
 HGPartParams hgp;               /* Hypergraph parameters. */
+
 Partition output_parts = NULL;  /* Output partition from HG partitioner. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -151,7 +153,7 @@ static int Zoltan_HG_Initialize_Params(
 int ierr = ZOLTAN_OK;
 
   /* Bind storage with parameter. */
-  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LIMIT", 
+  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LIMIT",
                                 (void *) &(hgp->redl));
   Zoltan_Bind_Param(HG_params, "HG_REDUCTION_METHOD", 
                                 (void *) hgp->redm_str);
