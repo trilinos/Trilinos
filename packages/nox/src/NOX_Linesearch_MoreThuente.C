@@ -56,7 +56,7 @@ void MoreThuente::reset(const Parameter::List& params)
   ftol = params.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = params.getParameter("Curvature Condition", 0.9999);
   xtol = params.getParameter("Interval Width", 1.0e-15);
-  stpmin = params.getParameter("Minimum Step", 1.0e-4);
+  stpmin = params.getParameter("Minimum Step", 1.0e-12);
   stpmax = params.getParameter("Maximum Step", 1.0e+6);
   maxfev = params.getParameter("Maximum Fevals", 20);
   defaultstep = params.getParameter("Default Step", 1.0);
@@ -137,7 +137,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   bool brackt = false;		// has the soln been bracketed?
   bool stage1 = true;		// are we in stage 1?
   int nfev = 0;			// number of function evaluations
-  double finit = oldgrp.getNormRHS(); // initial function value
+  double finit = 0.5 * oldgrp.getNormRHS(); // initial function value
   double dgtest = ftol * dginit; // rhs for curvature condition
   double width = stpmax - stpmin; // interval width
   double width1 = 2*width;	// ???
@@ -193,14 +193,14 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
     newgrp.computeX(oldgrp, dir, stp);
     newgrp.computeRHS();
-    double f = newgrp.getNormRHS();
+    double f = 0.5 * newgrp.getNormRHS();
     newgrp.computeJacobian();
     nfev ++;
 
     if (Utils::doPrint(1)) {
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(stp);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(finit);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(f);
+      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(2*finit);
+      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(2*f);
       cout << endl;
     }
 
