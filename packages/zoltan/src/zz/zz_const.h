@@ -63,7 +63,6 @@ struct Param_List;
 #define TRUE  (1)
 #endif /* !TRUE */
 
-
 /*
  *  Define the debug levels allowed.
  *    ZOLTAN_DEBUG_NONE = 0           - quiet mode; no debugging information.
@@ -543,6 +542,10 @@ typedef struct Zoltan_Struct ZZ;
 /* PROTOTYPES */
 extern int Zoltan_Get_Obj_List(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
                                int, float**, int **);
+
+extern int Zoltan_Copy_Obj_List( ZZ *, ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
+  ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
+  int , float *, float **, int *, int **, int *);
 
 extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, double **);

@@ -184,6 +184,108 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/* 
+ * This function copies the global and local IDs, the object weights,
+ * and object partition array to new arrays.  It returns the number
+ * of objects in the arrays, or 0 on error.  Any of the arrays can
+ * be set to NULL in the argument list and they will be skipped.
+ */
+
+int Zoltan_Copy_Obj_List(
+  ZZ *zz,
+  ZOLTAN_ID_PTR fromGids,
+  ZOLTAN_ID_PTR *toGids,
+  ZOLTAN_ID_PTR fromLids,
+  ZOLTAN_ID_PTR *toLids,
+  int wdim,
+  float *fromWeights,
+  float **toWeights,
+  int *fromParts,
+  int **toParts,
+  int *num_obj
+)
+{
+  int len;
+  char *yo = "Zoltan_Copy_Obj_List";
+  int ierr = ZOLTAN_OK;
+  if (toGids) *toGids = NULL;
+  if (toLids) *toLids = NULL;
+  if (toWeights) *toWeights = NULL;
+  if (toParts) *toParts = NULL;
+ 
+  if (zz->Get_Num_Obj != NULL) {
+    *num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_Obj.");
+      return ZOLTAN_FATAL;
+    }
+  }
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_NUM_OBJ_FN.");
+    return ZOLTAN_FATAL;
+  }
+
+  if (*num_obj < 1){
+    return ZOLTAN_OK;
+  }
+
+  if (fromGids && toGids){
+    *toGids = ZOLTAN_MALLOC_GID_ARRAY(zz, *num_obj);
+    if (!*toGids){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
+      ierr = ZOLTAN_MEMERR;
+      goto Mem_Err;
+    }
+    ZOLTAN_COPY_GID_ARRAY(*toGids, fromGids, zz, *num_obj);
+  }
+
+  if (fromLids && toLids){
+    *toLids = ZOLTAN_MALLOC_LID_ARRAY(zz, *num_obj);
+    if (!*toLids){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
+      ierr = ZOLTAN_MEMERR;
+      goto Mem_Err;
+    }
+    ZOLTAN_COPY_LID_ARRAY(*toLids, fromLids, zz, *num_obj);
+  }
+
+  if (wdim && fromWeights && toWeights){
+    len = sizeof(float) * wdim * *num_obj;
+    *toWeights = (float *)ZOLTAN_MALLOC(len);
+    if (!*toWeights){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
+      ierr = ZOLTAN_MEMERR;
+      goto Mem_Err;
+    }
+    memcpy(*toWeights, fromWeights, len);
+  }
+
+  if (fromParts && toParts){
+    len = sizeof(int) * *num_obj;
+    *toParts = (int *)ZOLTAN_MALLOC(len);
+    if (!*toParts){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
+      ierr = ZOLTAN_MEMERR;
+      goto Mem_Err;
+    }
+    memcpy(*toParts, fromParts, len);
+  }
+
+Mem_Err:
+  if (ierr == ZOLTAN_MEMERR){
+    if (toGids && *toGids) ZOLTAN_FREE(toGids);
+    if (toLids && *toLids) ZOLTAN_FREE(toLids);
+    if (toWeights && *toWeights) ZOLTAN_FREE(toWeights);
+    if (toParts && *toParts) ZOLTAN_FREE(toParts);
+    *num_obj = 0;
+  }
+
+  return ierr;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
