@@ -402,13 +402,15 @@ namespace Tpetra {
 				}
 			}
 			
-			ElementSpace<OrdinalType> * compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, VGID, elementSpace().getIndexBase(), 
+			ElementSpace<OrdinalType> * compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, VGID, elementSpace().getIndexBase(),
 																																								elementSpace().platform());
 			
 			delete[] VGID;
 			return(compatibleES);
-			//return(0);
 		};
+
+		//! Assignment operator (declared but not defined, do not use)
+		BlockElementSpace<OrdinalType>& operator = (BlockElementSpace<OrdinalType> const& Source);
 		
 		//@}
 		

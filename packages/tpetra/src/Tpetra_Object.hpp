@@ -160,6 +160,9 @@ protected:
 private:
 	
   char* label_;
+
+	//! Assignment operator (declared but not defined, do not use)
+	Object& operator = (Object const& Source);
 	
 }; // class Object
 

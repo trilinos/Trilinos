@@ -159,6 +159,9 @@ Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuc
 
 // private functions
 void directorySetup();
+	
+	//! Assignment operator (declared but not defined, do not use)
+	ElementSpace<OrdinalType>& operator = (ElementSpace<OrdinalType> const& Source);
 
 }; // ElementSpace class
 

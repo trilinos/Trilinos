@@ -60,6 +60,12 @@ class BlockElementSpaceData : public Object {
 	OrdinalType const* elementSizeList_;
 	OrdinalType const* pointToElementList_;
 	OrdinalType const* firstPointList_;
+	
+ private:
+	//! Copy constructor (declared but not defined, do not use)
+	BlockElementSpaceData(BlockElementSpaceData<OrdinalType> const& Source);
+	//! Assignment operator (declared but not defined, do not use)
+	BlockElementSpaceData<OrdinalType>& operator = (BlockElementSpaceData<OrdinalType> const& Source);
 
 }; // class BlockElementSpaceData
 

@@ -58,6 +58,9 @@ class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
  private:
   ElementSpace<OrdinalType> const* ElementSpace_;
 
+	//! Assignment operator (declared but not defined, do not use)
+	SerialDirectory<OrdinalType>& operator = (SerialDirectory<OrdinalType> const& Source);
+
 }; // class SerialDirectory
 
 

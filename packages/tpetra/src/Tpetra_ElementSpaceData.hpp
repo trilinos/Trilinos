@@ -90,6 +90,11 @@ class ElementSpaceData : public Object {
 		return(global);
 	}
 
+	//! Copy constructor (declared but not defined, do not use)
+	ElementSpaceData(ElementSpaceData<OrdinalType> const& Source);
+	//! Assignment operator (declared but not defined, do not use)
+	ElementSpaceData<OrdinalType>& operator = (ElementSpaceData<OrdinalType> const& Source);
+
 }; // class ElementSpaceData
 
 } // namespace Tpetra
