@@ -53,12 +53,12 @@ MoreThuente::~MoreThuente()
 
 void MoreThuente::reset(const Parameter::List& params)
 { 
-  ftol = params.getParameter("Sufficient Decrease", 1.0e-10);
+  ftol = params.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = params.getParameter("Curvature Condition", 0.9999);
   xtol = params.getParameter("Interval Width", 1.0e-15);
-  stpmin = params.getParameter("Minimum Step", 1.0e-15);
-  stpmax = params.getParameter("Maximum Step", 1.0e+15);
-  maxfev = params.getParameter("Maximum Fevals", 10);
+  stpmin = params.getParameter("Minimum Step", 1.0e-4);
+  stpmax = params.getParameter("Maximum Step", 1.0e+6);
+  maxfev = params.getParameter("Maximum Fevals", 20);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
 
@@ -74,7 +74,7 @@ void MoreThuente::reset(const Parameter::List& params)
 
 
 bool MoreThuente::operator()(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
+			     const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
   int info = cvsrch(newgrp, step, oldgrp, dir);
   return (info == 1);
