@@ -50,7 +50,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     static char *yo = "LB_Comm_Create";
 
     if (comm == MPI_COMM_NULL){
-      COMM_ERROR("Invalid communicator: MPI_COMM_NULL.", yo, my_proc);
+      COMM_ERROR("Invalid communicator: MPI_COMM_NULL.", yo, -1);
       return COMM_FATAL;
     }
 
