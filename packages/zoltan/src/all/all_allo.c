@@ -43,6 +43,8 @@ static struct malloc_debug_data {
   int       order;			/* which malloc call is it? */
   int       size;			/* size of malloc invocation */
   double   *ptr;			/* memory location returned */
+  char  file[MAX_PARAM_STRING_LEN+1];   /* file name */
+  int       line;                       /* line number */
   struct malloc_debug_data *next;	/* pointer to next element */
 } *top = NULL;
 
@@ -308,6 +310,8 @@ double *LB_Malloc(int n, char *filename, int lineno)
     new->order = nmalloc;
     new->size = n;
     new->ptr = pntr;
+    strncpy(new->file, filename, MAX_PARAM_STRING_LEN);
+    new->line = lineno;
     new->next = top;
     top = new;
     bytes_used += n;
@@ -319,8 +323,8 @@ double *LB_Malloc(int n, char *filename, int lineno)
   if (DEBUG_MEMORY > 2) {
     /* Print out details of allocation. */
     MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx\n",
-      proc, nmalloc, n, (long) pntr);
+    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx, file=%s, line=%d\n",
+      proc, nmalloc, n, (long) pntr, filename, lineno);
   }
 
 
@@ -347,7 +351,7 @@ double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
   }
   else {
     if (n == 0) {
-      LB_Free((void **) &ptr);
+      LB_Free((void **) &ptr, filename, lineno);
       p = NULL;
     }
     else {
@@ -390,7 +394,7 @@ double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Free (void **ptr)
+void LB_Free (void **ptr, char *filename, int lineno)
 {
   struct malloc_debug_data *dbptr;   /* loops through debug list */
   struct malloc_debug_data **prev;   /* holds previous pointer */
@@ -416,7 +420,8 @@ void LB_Free (void **ptr)
     if (dbptr == NULL) {
       MPI_Comm_rank(MPI_COMM_WORLD, &proc);
       fprintf(stderr, "Proc %d: Memory error: In free, address (0x%lx) "
-	"not found in debug list\n", proc, (long) *ptr);
+	"not found in debug list. File=%s, line=%d.\n", proc, 
+        (long) *ptr, filename, lineno);
    }
    else {
        *prev = dbptr->next;
@@ -432,6 +437,47 @@ void LB_Free (void **ptr)
 
 }  /* LB_Free */
 
+
+#if 0 /* Not sure we need this feature */
+
+/* Free n pointers. Variable number of arguments is allowed.  */
+
+#ifdef __STDC__
+
+void LB_Multifree(char *filename, int lineno, int n, ...)
+{
+  int i;
+  va_list va;
+  
+  va_start(va, n);
+  for (i=0; i<n; i++){
+    LB_Free(va_arg(va, void **), filename, lineno);
+  }
+  va_end(va);
+}
+
+#else
+
+void LB_Multifree(va_alist)
+va_decl
+{
+  int i, n, lineno;
+  char *filename;
+  va_list va;
+   
+  va_start(va);
+  filename = va_arg(va, char *);
+  lineno = va_arg(va, int);
+  n = va_arg(va, int);
+  for (i=0; i<n; i++){
+    LB_Free(va_arg(va, void **), filename, lineno);
+  }
+  va_end(va);
+}
+
+#endif
+
+#endif /* if 0 */
 
 /* Print out status of malloc/free calls.  Flag any memory leaks. */
 
@@ -453,8 +499,9 @@ void      LB_Memory_Stats()
 	if (top != NULL) {
 	    fprintf(stderr, "Proc %d: Remaining allocations:\n", proc);
 	    for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
-		fprintf(stderr, " order=%d, size=%d, location=0x%lx\n", dbptr->order,
-			dbptr->size, (long) dbptr->ptr);
+		fprintf(stderr, " order=%d, size=%d, location=0x%lx, file=%s, line=%d\n", 
+                  dbptr->order, dbptr->size, (long) dbptr->ptr,
+                  dbptr->file, dbptr->line);
 	    }
 	}
     }
