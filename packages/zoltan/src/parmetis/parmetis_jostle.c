@@ -282,7 +282,7 @@ int LB_Jostle(
   LB_PRINT_ERROR(lb->Proc, yo, "ParMETIS/Jostle error."); \
   LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
   LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
-  LB_FREE(&float_vwgt); LB_FREE(&xyz); \
+  LB_FREE(&float_vwgt); LB_FREE(&ewgt); LB_FREE(&xyz); \
   LB_FREE(&sendbuf); LB_FREE(&recvbuf); \
   LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
   LB_FREE(&nbors_proc); LB_FREE(&nbors_global); \
@@ -311,9 +311,9 @@ static int LB_ParMetis_Jostle(
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part, *part2;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2;
   int tmp_num_obj;
-  float *float_vwgt, *xyz, *imb_tols; 
+  float *float_vwgt, *ewgt, *xyz, *imb_tols, *eptr; 
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -346,7 +346,7 @@ static int LB_ParMetis_Jostle(
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
   local_ids = NULL;
   global_ids = NULL;
-  float_vwgt = xyz = imb_tols = NULL;
+  float_vwgt = ewgt = xyz = imb_tols = NULL;
   ptr = proc_list = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
@@ -574,9 +574,11 @@ static int LB_ParMetis_Jostle(
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
+    if (comm_wgt_dim && num_edges)
+      ewgt = (float *)LB_MALLOC(comm_wgt_dim * num_edges * sizeof(float));
 
-    if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (!plist)){
+    if ((max_edges && ((!nbors_global) || (!nbors_proc))) || (!plist)
+                       || (comm_wgt_dim && !ewgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -625,7 +627,7 @@ static int LB_ParMetis_Jostle(
     nsend = 0;      /* Number of objects we need to send info about */
     offset = 0;     /* Index of next available node in proc_list */
     ptr = proc_list;
-    ewgt = NULL;
+    eptr = NULL;
     xadj[0] = 0;
     jj = 0;
   
@@ -634,9 +636,9 @@ static int LB_ParMetis_Jostle(
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
       if (comm_wgt_dim)
-          ewgt = &adjwgt[jj*comm_wgt_dim];
+          eptr = &ewgt[jj*comm_wgt_dim];
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, comm_wgt_dim, ewgt, &ierr);
+          nbors_global, nbors_proc, comm_wgt_dim, eptr, &ierr);
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
@@ -873,6 +875,27 @@ static int LB_ParMetis_Jostle(
       LB_FREE(&float_vwgt);
     }
 
+    /* Get edge weights if needed */
+    if (comm_wgt_dim){
+      if (lb->Debug_Level >= LB_DEBUG_ALL){
+        printf("[%1d] Debug: Edge weights are (before scaling) = \n", lb->Proc);
+        for (j=0; j<num_edges; j++)
+          printf("%f ", ewgt[j]);
+        printf("\n");
+      }
+      /* Scale and round edge weights to integers */
+      scale_round_weights(ewgt, adjwgt, num_edges, comm_wgt_dim, 1,
+                          (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
+
+      if (lb->Debug_Level >= LB_DEBUG_ALL){
+        printf("[%1d] Debug: Edge weights are (after scaling) = \n", lb->Proc);
+        for (j=0; j<num_edges; j++)
+          printf("%d ", adjwgt[j]);
+        printf("\n");
+      }
+      LB_FREE(&ewgt);
+    }
+
   } /* end get_graph_data */
 
   if (get_geom_data){
@@ -968,7 +991,7 @@ static int LB_ParMetis_Jostle(
   /* Select the desired ParMetis or Jostle function */
 
 #ifndef BETA_PARMETIS
-  if (obj_wgt_dim >= 2) {
+  if ((obj_wgt_dim >= 2) && strcmp(alg, "JOSTLE")) {
     LB_PRINT_ERROR(lb->Proc, yo, 
       "You need the newest beta version of ParMETIS to use multi-weights.\n"
       "If you have this installed, please define BETA_PARMETIS and "
@@ -1101,7 +1124,8 @@ static int LB_ParMetis_Jostle(
     LB_FREE(&vwgt);
     LB_FREE(&imb_tols);
   }
-  if (comm_wgt_dim) LB_FREE(&adjwgt);
+  /* if (comm_wgt_dim) */
+    LB_FREE(&adjwgt);
 
   /* If we have been using a scattered graph, convert partition result back to original distribution */
   if (scatter){

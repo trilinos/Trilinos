@@ -68,7 +68,8 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        sum = 0;
        for (k=0; k<vwgt_dim; k++){
          if (vwgt[i*vwgt_dim+k] < 0) {
-            sprintf(msg, "Negative object weight of %d.", vwgt[i*vwgt_dim+k]);
+            sprintf(msg, "Negative object weight of %d for object %d.", 
+                    vwgt[i*vwgt_dim+k], i);
             LB_PRINT_ERROR(proc, yo, msg);
             ierr = LB_FATAL;
             goto barrier1;
@@ -76,7 +77,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
          sum += vwgt[i*vwgt_dim+k];
        }
        if (sum == 0){
-          sprintf(msg, "Zero weight sum for object %d (after scaling).", i);
+          sprintf(msg, "Zero vertex weights for object %d.", i);
           LB_PRINT_WARN(proc, yo, msg);
           ierr = LB_WARN;
        }
@@ -90,7 +91,8 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       sum = 0;
       for (k=0; k<ewgt_dim; k++){
         if (adjwgt[j*ewgt_dim+k] < 0) {
-          sprintf(msg, "Negative communication weight of %d.", vwgt[j]);
+          sprintf(msg, "Negative communication weight of %d in edge %d.", 
+                  adjwgt[j*ewgt_dim+k], j);
           LB_PRINT_ERROR(proc, yo, msg);
           ierr = LB_FATAL;
           goto barrier1;
@@ -98,7 +100,8 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         sum += adjwgt[j*ewgt_dim+k];
       }
       if (sum == 0){
-         LB_PRINT_WARN(proc, yo, "Zero communication weight.");
+         sprintf(msg, "Zero communication weights for edge %d.", j);
+         LB_PRINT_WARN(proc, yo, msg);
          ierr = LB_WARN;
       }
     }
