@@ -1348,7 +1348,6 @@ void AZ_mk_context(int options[], double params[], int data_org[],
 
 
   AZ_mk_identifier(params,options,data_org, tag);
-
   precond->context = (struct context *) AZ_manage_memory(sizeof(struct context),
                                                          AZ_ALLOC,
                                                          data_org[AZ_name],
@@ -1743,7 +1742,7 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
                            (precond->Pmat->data_org)[AZ_name],
                             "kvecs", (int *) 0);
   }
-  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name],
+  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id,
                           (char *) 0, (int *) 0);
 
   /* output solver, scaling, and preconditioning options */
@@ -1769,7 +1768,7 @@ void AZ_iterate_finish(int options[], AZ_MATRIX *Amat, AZ_PRECOND *precond)
                             (char *) 0,(int *) 0);
   }
 
-  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, (char *) 0, (int *) 0);
 }
 
 int AZ_initialize(double x[], double b[], int options[],

@@ -62,6 +62,17 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& b,
                         bool verbose);
 
+int create_and_transform_simple_diag_MSR(int N, int* proc_config,
+                                         AZ_MATRIX*& Amat,
+                                         int*& external, int*& update_index,
+                                         int*& external_index);
+
+int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose);
+
+int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
+
+void destroy_MSR(AZ_MATRIX*& Amat);
+
 int main(int argc, char *argv[])
 {
 #ifdef EPETRA_MPI
@@ -141,6 +152,18 @@ int main(int argc, char *argv[])
     cout << "test_azoo_with_ilut err, test FAILED."<<endl;
     return(err);
   }
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
+    return(err);
+  }
+
+//  err = test_AZ_iterate_then_AZ_scale_f(comm, verbose);
+//  if (err != 0) {
+//    cout << "test_AZ_iterate_then_AZ_scale_f err, test FAILED."<<endl;
+//    return(err);
+//  }
 
   cout << "********* Test passed **********" << endl;
 
@@ -307,5 +330,203 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   delete azoo0;
 
   return(0);
+}
+
+int create_and_transform_simple_diag_MSR(int N, int* proc_config,
+                                         AZ_MATRIX*& Amat,
+                                         int*& external, int*& update_index,
+                                         int*& external_index)
+{
+  Amat = AZ_matrix_create(N);
+
+  int* update = new int[N];
+  int i;
+  int first_eqn = proc_config[AZ_node]*N;
+  for(i=0; i<N; ++i) {
+    update[i] = first_eqn+i;
+  }
+
+  int* data_org;
+
+  int nnz = N;
+  double* val = new double[nnz+1];
+  int* bindx = new int[nnz+1];
+
+  for(i=0; i<nnz+1; ++i) {
+    val[i] = 1.0;
+    bindx[i] = N+1;
+  }
+
+  int* dummy = 0;
+  int* dummy2 = 0;
+  AZ_transform(proc_config, &external, bindx, val, update, &update_index,
+               &external_index, &data_org, N, dummy, dummy, dummy,
+               &dummy2, AZ_MSR_MATRIX);
+
+  AZ_set_MSR(Amat, bindx, val, data_org, N, update, AZ_LOCAL);
+
+  Amat->must_free_data_org = 1;
+
+  return(0);
+}
+
+int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose)
+{
+  if (verbose) {
+    cout << "testing successive solves with 'old' Aztec (AZ_keep_info and AZ_reuse)"<<endl;
+  }
+  int numProcs = Comm.NumProc();
+  int localProc = Comm.MyPID();
+
+  int* proc_config = new int[AZ_PROC_SIZE];
+
+#ifdef EPETRA_MPI
+  AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+  AZ_set_comm(proc_config, MPI_COMM_WORLD);
+#endif
+
+  int *external, *update_index, *external_index;
+
+  int i, N = 5;
+  AZ_MATRIX* Amat = NULL;
+  int err = create_and_transform_simple_diag_MSR(N, proc_config, Amat,
+                                                 external, update_index,
+                                                 external_index);
+
+  int* options = new int[AZ_OPTIONS_SIZE];
+  double* params = new double[AZ_PARAMS_SIZE];
+  double* status = new double[AZ_STATUS_SIZE];
+  AZ_defaults(options, params);
+  options[AZ_solver] = AZ_gmres;
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilut;
+  options[AZ_scaling] = AZ_none;
+  if (verbose) {
+    options[AZ_output] = 1;
+  }
+  else {
+    options[AZ_output] = 0;
+  }
+
+  double* x = new double[N];
+  double* b = new double[N];
+
+  for(i=0; i<N; ++i) {
+    x[i] = 0.0;
+    b[i] = 1.0;
+  }
+
+  AZ_PRECOND* Pmat = AZ_precond_create(Amat, AZ_precondition, NULL);
+  AZ_SCALING* Scal = AZ_scaling_create();
+
+  options[AZ_pre_calc] = AZ_calc;
+  options[AZ_keep_info] = 1;
+
+  AZ_iterate(x, b, options, params, status, proc_config,
+             Amat, Pmat, Scal);
+
+  for(i=0; i<N; ++i) {
+    x[i] = 0.0;
+  }
+
+  options[AZ_pre_calc] = AZ_reuse;
+
+  AZ_iterate(x, b, options, params, status, proc_config,
+             Amat, Pmat, Scal);
+
+  AZ_scaling_destroy(&Scal);
+  AZ_precond_destroy(&Pmat);
+  destroy_MSR(Amat);
+
+  delete [] x;
+  delete [] b;
+
+  delete [] options;
+  delete [] params;
+  delete [] status;
+  delete [] proc_config;
+  free(update_index);
+  free(external);
+  free(external_index);
+
+  return(0);
+}
+
+int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
+{
+  int numProcs = Comm.NumProc();
+  int localProc = Comm.MyPID();
+
+  int* proc_config = new int[AZ_PROC_SIZE];
+
+#ifdef EPETRA_MPI
+  AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+  AZ_set_comm(proc_config, MPI_COMM_WORLD);
+#endif
+
+  int *external, *update_index, *external_index;
+
+  int i, N = 5;
+  AZ_MATRIX* Amat = NULL;
+  int err = create_and_transform_simple_diag_MSR(N, proc_config, Amat,
+                                                 external, update_index,
+                                                 external_index);
+ 
+  int* options = new int[AZ_OPTIONS_SIZE];
+  double* params = new double[AZ_PARAMS_SIZE];
+  double* status = new double[AZ_STATUS_SIZE];
+  AZ_defaults(options, params);
+  options[AZ_scaling] = AZ_sym_diag;
+  if (verbose) {
+    options[AZ_output] = 1;
+  }
+  else {
+    options[AZ_output] = 0;
+  }
+  
+  double* x = new double[N];
+  double* b = new double[N];
+
+  for(i=0; i<N; ++i) {
+    x[i] = 0.0;
+    b[i] = 1.0;
+  }
+
+  AZ_PRECOND* Pmat = AZ_precond_create(Amat, AZ_precondition, NULL);
+  AZ_SCALING* Scal = AZ_scaling_create();
+
+  options[AZ_keep_info] = 1;
+
+  AZ_iterate(x, b, options, params, status, proc_config,
+             Amat, Pmat, Scal);
+
+  //now set options[AZ_pre_calc] = AZ_reuse and try to call AZ_scale_f.
+  options[AZ_pre_calc] = AZ_reuse;
+
+  AZ_scale_f(AZ_SCALE_MAT_RHS_SOL, Amat, options, b, x, proc_config, Scal);
+
+  AZ_scaling_destroy(&Scal);
+  AZ_precond_destroy(&Pmat);
+  destroy_MSR(Amat);
+
+  delete [] options;
+  delete [] params;
+  delete [] status;
+  delete [] proc_config;
+  free(&update_index);
+  free(&external);
+  free(&external_index);
+
+  return(0);
+}
+
+void destroy_MSR(AZ_MATRIX*& Amat)
+{
+  delete [] Amat->update;
+  delete [] Amat->val;
+  delete [] Amat->bindx;
+
+  AZ_matrix_destroy(&Amat);
+  Amat = NULL;
 }
 
