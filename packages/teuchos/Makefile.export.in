@@ -40,8 +40,8 @@
 ##########################################################################
 
 TEUCHOS_EXPORT_LIBS = -L$(TEUCHOS_BUILD_DIRECTORY)/src  -lteuchos \
-                      -L$(TEUCHOS_XML_LIBDIR) $(TEUCHOS_XML_LIBS) \
-                      -L$(TEUCHOS_MPI_LIBDIR) $(TEUCHOS_MPI_LIBS)
+                      $(TEUCHOS_XML_LIBDIR) $(TEUCHOS_XML_LIBS) \
+                      $(TEUCHOS_MPI_LIBDIR) $(TEUCHOS_MPI_LIBS)
 
 
 
