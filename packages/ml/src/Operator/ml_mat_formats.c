@@ -72,6 +72,15 @@ void ML_RECUR_CSR_MSRdata_Destroy(ML_Operator *matrix)
       ML_RECUR_CSR_MSRdata_Destroy(matrix->sub_matrix);
    ML_CSR_MSRdata_Destroy(matrix->data);
 }
+void ML_OnlyFreeTopLevelDataPtr(void *data)
+{
+  struct ML_CSR_MSRdata *temp;
+  temp = (struct ML_CSR_MSRdata *) data;
+
+  if (temp != NULL) {
+    ML_free(temp);
+  }
+}
 
 void ML_CSR_MSRdata_Destroy(void *data)
 {

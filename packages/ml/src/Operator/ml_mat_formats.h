@@ -69,6 +69,7 @@ extern "C" {
 
 
 extern void ML_RECUR_CSR_MSRdata_Destroy(ML_Operator *matrix);
+extern void ML_OnlyFreeTopLevelDataPtr(void *data);
 extern void ML_CSR_MSRdata_Destroy(void *data);
 extern void ML_CSR_MSRdata_Destroy_StructOnly(void *data);
 
