@@ -425,7 +425,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
  *    - pnode_part[nLocalNd]: local nodes to block map (out)
  *
  */
-#ifdef METIS
+#ifdef HAVE_ML_METIS
 #include "metis.h"
 #endif
 int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
@@ -433,7 +433,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
                          int *ndwts /*=NULL*/, int *egwts/*=NULL*/,
                          int nedges /*= 0*/ )
 {
-#ifdef METIS
+#ifdef HAVE_ML_METIS
   int locid, ii, numadjac, *bindx = NULL;
   idxtype *xadj, *adjncy, *blks;
   int options[5]={0,3,1,1,0};
@@ -931,4 +931,46 @@ int ML_Operator_Dump(ML_Operator *Ke, double *x, double *rhs,
   ML_free(global_nodes);
   ML_free(global_rows);
   return 0;
+}
+
+int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
+{
+  int allocated_space, *cols, i, j, n;
+  double *vals, *tdiag;
+   if (Amat->diagonal == NULL) 
+   {
+      if (Amat->getrow->ML_id == ML_EMPTY) 
+         pr_error("Error(ML_Jacobi): Need diagonal\n");
+      else 
+      {
+         allocated_space = 30;
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+         for (i = 0; i < Amat->outvec_leng; i++) 
+         {
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
+                                     cols,vals,&n) == 0) 
+            {
+               allocated_space = 2*allocated_space + 1;
+               ML_free(vals); ML_free(cols); 
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
+               if (vals == NULL)
+               {
+                  printf("Not enough space to get matrix row. Row length of\n");
+                  printf("%d was not sufficient\n",(allocated_space-1)/2);
+                  exit(1);
+               }
+            }
+            for (j = 0; j < n; j++) 
+               if (cols[j] == i) tdiag[i] = vals[j];
+         }
+         ML_free(cols); ML_free(vals);
+         ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
+         ML_free(tdiag);
+      } 
+   }
+   ML_DVector_GetDataPtr( Amat->diagonal, diagonal);
+   return 0;
 }
