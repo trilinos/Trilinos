@@ -298,6 +298,9 @@ AC_PROG_CXX(CC c++ g++ gcc cxx)
 AC_PROG_CXXCPP
 AC_PROG_RANLIB
 
+# Check for doxygen dot program.  Used in doxygen config files Doxyfile.in
+AC_CHECK_PROG(HAVE_DOXYGEN_DOT, dot, "YES", "NO")
+
 # ------------------------------------------------------------------------
 # Checks for special compiler options
 # ------------------------------------------------------------------------
@@ -1308,6 +1311,8 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Brusselator/Makefile
 		src-loca/example-lapack/ThermoSyphon/Makefile
 		src-loca/example-lapack/ThermoSyphon/therm/Makefile
+		src-loca/example-lapack/ThermoSyphon/therm/in
+		src-loca/example-lapack/ThermoSyphon/therm/oldfile
 		])
 
 AC_OUTPUT()
