@@ -2717,7 +2717,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
 
   *pglobal_numbering = global_numbering;
   
-  free( dtemp ); dtemp = NULL;
+  ML_free( dtemp ); dtemp = NULL;
 
   return 0;
     

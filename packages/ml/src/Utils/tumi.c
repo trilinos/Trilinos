@@ -406,7 +406,7 @@ char str [80];
 
   for (i = 0; i < Nlocal_edges; i++) ERF_x[i] = copy_ERF_x[i];
 
-  free(Dir_bdry);
+  ML_free(Dir_bdry);
 
   /********************************************************************/
   /*                      Set up Tmat_trans                           */
@@ -846,13 +846,13 @@ char str [80];
   ML_Destroy2(&ml_ERF);
   AZ_matrix_destroy(&ERF_AZmat);
   AZ_precond_destroy(&Prec);
-  free(wrap_real_greg_data);
-  free(wrap_imag_greg_data);
-  free(AZ_MAT_blockmat_data);
-  free(ERF_x);
-  free(ERF_y);
-  free(wrap_grad_greg_data);
-  free(grad_scale);
+  ML_free(wrap_real_greg_data);
+  ML_free(wrap_imag_greg_data);
+  ML_free(AZ_MAT_blockmat_data);
+  ML_free(ERF_x);
+  ML_free(ERF_y);
+  ML_free(wrap_grad_greg_data);
+  ML_free(grad_scale);
 
   return;
 }
@@ -881,7 +881,7 @@ void aztec_matvec_wrap_of_greg(double *x, double *y, AZ_MATRIX *Amat,
 		wrap_greg_data->nodes, wrap_greg_data->nput,
 		wrap_greg_data->nget,  wrap_greg_data->nsol,
 		wrap_greg_data->proc);
-  free(temp);
+  ML_free(temp);
 }
 
 /******************************************************************************/
@@ -965,7 +965,7 @@ int ml_grad_matvec_wrap_of_greg(void *data, int inlen, double x[],
 		wrap_greg_data->nodes, wrap_greg_data->nput,
 		wrap_greg_data->nget,  wrap_greg_data->nsol,
                 &Nghost, wrap_greg_data->proc);
-  free(temp);
+  ML_free(temp);
 
   return 0;
 }
@@ -1304,7 +1304,7 @@ int setup_agg_MIS_dump(ML_Operator *Kn, int Nghost_nodes)
     external[i] =  (int) dupdate[i + N_nodes];
   }
 
-  free(dupdate);
+  ML_free(dupdate);
 
   return 0;
 }
@@ -1371,6 +1371,6 @@ void ML_JANUS_FORT(ray_matvec_)(/* ML_Operator *Amat,*/double complex_x[],double
     complex_Ax[2*i+1] = (Ke_diag[i]*ERF_y[i+Nsize] - M_diag[i]*ERF_y[i])*denom;
   }
 
-  free(ERF_x);
-  free(ERF_y);
+  ML_free(ERF_x);
+  ML_free(ERF_y);
 }

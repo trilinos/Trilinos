@@ -347,7 +347,7 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
 	     __LINE__ );
   }
 
-  free( count ); count=NULL;
+  ML_free( count ); count=NULL;
 
   return;
   
@@ -798,7 +798,7 @@ int ML_Aggregate_Visualize( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
 	ML_Aggregate_AnalyzeVector( Naggregates, RorH,
 				    &dmin, &dmax, &davg, &dstd, comm );
 	
-	free( RorH );
+	ML_free( RorH );
 	
 	if( comm->ML_mypid != 0 ) continue;
       
@@ -881,7 +881,7 @@ int ML_Aggregate_Visualize( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
       ML_Aggregate_AnalyzeVector( Naggregates, RorH,
 				  &dmin, &dmax, &davg, &dstd, comm );
       
-      free( RorH );
+      ML_free( RorH );
       
       if( comm->ML_mypid != 0 ) continue;
       
@@ -907,7 +907,7 @@ int ML_Aggregate_Visualize( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
       ML_Aggregate_AnalyzeVector( Naggregates, RorH,
 				  &dmin, &dmax, &davg, &dstd, comm );
 
-      free( RorH );
+      ML_free( RorH );
 
       if( comm->ML_mypid != 0 ) continue;
       
@@ -1175,8 +1175,8 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
   *pradius = radius;
   *pNcenter = Ncenter;
   
-  free( (void *) center );
-  free( orig_dep ); orig_dep = NULL;
+  ML_free( center );
+  ML_free( orig_dep ); orig_dep = NULL;
 
   return 0;
   

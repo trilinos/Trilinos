@@ -718,10 +718,10 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   
   /* ------------------- that's all folks --------------------------------- */
 
-  free( xadj2 ) ;
-  free( adjncy2 );
-  free( perm );
-  free( iperm );
+  ML_free( xadj2 ) ;
+  ML_free( adjncy2 );
+  ML_free( perm );
+  ML_free( iperm );
 
   t0 = GetClock() - t0;
 
@@ -1146,7 +1146,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 				     &radius, &NcenterNodes );
     printf("Max radius of aggregates (based on graph): %d\n", radius );
     
-    free((void *) dep );
+    ML_free( dep );
     
   }
 
@@ -1156,13 +1156,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
 
-  if( options != NULL ) free( (void *)options );
-  if( wgtflag != NULL ) free( (void *)wgtflag );
-  if( adjncy != NULL  ) free( (void *)adjncy  );
-  if( xadj != NULL    ) free( (void *)xadj    );
-  if( part != NULL    ) free( (void *)part    );
-  if( perm != NULL    ) free( (void *)perm    );
-  if( nodes_per_aggre != NULL ) free( (void *)nodes_per_aggre );
+  if( options != NULL ) ML_free( options );
+  if( wgtflag != NULL ) ML_free( wgtflag );
+  if( adjncy != NULL  ) ML_free( adjncy  );
+  if( xadj != NULL    ) ML_free( xadj    );
+  if( part != NULL    ) ML_free( part    );
+  if( perm != NULL    ) ML_free( perm    );
+  if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
 
   t0 = GetClock() - t0;
 
@@ -2249,7 +2249,7 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 	   i, check[i] );
 #endif
 
-  free( check ); check=NULL;  
+  ML_free( check ); check=NULL;  
   return 0;
   
 } /* ML_Aggregates_CheckAggregates */

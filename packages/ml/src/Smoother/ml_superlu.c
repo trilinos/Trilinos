@@ -2653,8 +2653,8 @@ for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ ) {
      Destroy_LU(n, mygrid, LUstruct);
      ScalePermstructFree(ScalePermstruct);
      LUstructFree(LUstruct);
-     free(LUstruct);
-     free(ScalePermstruct);
+     ML_free(LUstruct);
+     ML_free(ScalePermstruct);
      solver->PERMspl = NULL;
      solver->LUspl = NULL;
      superlu_gridexit(mygrid);

@@ -36,7 +36,7 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] += offsets[comm->ML_mypid];
   
-  free( offsets ); offsets=NULL;
+  ML_free( offsets ); offsets=NULL;
 
   return 0;
   
@@ -56,7 +56,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] -= offsets[comm->ML_mypid];
 
-  free( offsets ); offsets=NULL;
+  ML_free( offsets ); offsets=NULL;
 
   return 0;
   
@@ -315,8 +315,8 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
   /* ------------------- that's all folks --------------------------------- */
 
-  free( values ); values=NULL;
-  free( Nnz_row ); Nnz_row=NULL;
+  ML_free( values ); values=NULL;
+  ML_free( Nnz_row ); Nnz_row=NULL;
   ML_free(rowi_col); ML_free(rowi_val);
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
