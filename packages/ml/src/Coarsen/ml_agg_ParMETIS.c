@@ -66,7 +66,7 @@ static ML_Operator * ML_BuildQ( int StartingNumElements,
 			 double StartingBdry[], double ReorderedBdry[],
 			 USR_COMM mpi_communicator,
 			 ML_Comm *ml_communicator );
-{
+
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */
 /* used functions. By default, idxtype is defined as int, so in principle */
