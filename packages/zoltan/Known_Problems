@@ -74,7 +74,7 @@ Description:
    (which don't seem to care about the divide-by-zero), but cause an FPE 
    signal on DEC (Compaq) machines.
 Reported: 1/23/2003.
-Status: Fixed in ParMetis 3.1, but new problem appeared.
+Status: Fixed in ParMetis 3.1, but new problem appeared (see above).
 
 Name: ParMETIS_V3_AdaptiveRepart crashes when no edges.
 Version: ParMETIS 3.0
