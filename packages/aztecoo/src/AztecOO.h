@@ -374,6 +374,12 @@ class AztecOO {
   */
   int recursiveIterate(int MaxIters, double Tolerance);
 
+  //! Return the Aztec status after iterating.
+  /*! Returns pointer to the underlying Aztec Status array
+	  (of length AZ_STATUS_SIZE).  See the Aztec documenation.
+   */
+  const double *GetAztecStatus() const { return status_; };
+
   //@}
 
   //@{ \name Adaptive Solve methods.
