@@ -76,24 +76,6 @@ AC_REVISION($Revision$)
 # Configure command line options
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(trilinos,
-[  --disable-trilinos           Do not use TRILINOS],
-[
-case $enableval in
-  yes)
-    USE_TRILINOS=yes
-  ;;
-  no)
-    USE_TRILINOS=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --disable-trilinos ($enableval)])
-  ;;
-esac
-],
-[USE_TRILINOS=yes]
-)
-
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -186,11 +168,6 @@ fi
 # ------------------------------------------------------------------------
 
 AC_SUBST(ac_aux_dir)
-AC_SUBST(TRILINOS_HOME)
-AC_SUBST(TRILINOS_ARCH)
-AC_SUBST(TRILINOS_COMM)
-AC_SUBST(TRILINOS_ID)
-AC_SUBST(TRILINOS_TARGET)
 
 # ------------------------------------------------------------------------
 # Output files
