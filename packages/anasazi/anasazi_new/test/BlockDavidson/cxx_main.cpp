@@ -87,8 +87,11 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 50;
 
-  //  Create default output manager 
+  // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+
+  // Set verbosity level
+  MyOM->SetVerbosity( 2 );
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -124,7 +127,10 @@ int main(int argc, char *argv[])
   
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->SetNEV( nev );
-  
+
+  // Inform the eigenproblem that you are finishing passing it information
+  assert( MyProblem->SetProblem() == 0 );
+
   // Create the eigensolver
 
   Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, tol,
@@ -133,6 +139,7 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   MySolver.solve();
 
+  MySolver.currentStatus();
 
 
   return 0;
