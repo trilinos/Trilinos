@@ -50,3 +50,5 @@ $(TARGET):	$(DEP_LIBS) $(LIB_NAME) $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
 		@echo "linking driver"
 		@$(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
 
+#		@purify -best_effort -follow-child-processes=yes -cache-dir=/tmp/purify $(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
+
