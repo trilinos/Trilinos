@@ -61,6 +61,7 @@ public:
   virtual int SetUseTranspose(bool UseTranspose)
   {
     UseTranspose_ = UseTranspose;
+    return(0);
   }
 
   //@}
@@ -228,6 +229,7 @@ protected:
   inline int SetPrintFrequency(const int PrintFrequency)
   {
     PrintFrequency_ = PrintFrequency;
+    return(0);
   }
 
   inline int PrintFrequency() const

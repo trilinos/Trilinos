@@ -96,7 +96,6 @@ int Ifpack_Amesos::Compute()
 int Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
 {
   IFPACK_CHK_ERR(-99); // not implemented
-  return(-99);
 }
 
 //==============================================================================
@@ -105,6 +104,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   // check for maps ???
   IFPACK_CHK_ERR(Matrix_->Apply(X,Y));
+  return(0);
 }
 
 //==============================================================================
@@ -172,4 +172,13 @@ const Epetra_Map & Ifpack_Amesos::OperatorRangeMap() const
   return(Matrix_->OperatorRangeMap());
 }
 
+//==============================================================================
+std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
+{
+  if (Matrix().Comm().MyPID())
+    return(os);
+
+  os << "*** Ifpack_Amesos" << endl;
+  return(os);
+}
 #endif // HAVE_IFPACK_AMESOS && HAVE_IFPACK_TEUCHOS

@@ -146,6 +146,18 @@ public:
     return(0);
   }
 
+  //! Not implemented.
+  virtual int SetParameter(const string Name, const int value)
+  {
+    return(-1);
+  }
+
+  //! Not implemented.
+  virtual int SetParameter(const string Name, const double value)
+  {
+    return(-1);
+  }
+
   //! Computes the preconditioners.
   /*! Computes the preconditioners: 
    *
@@ -185,9 +197,9 @@ public:
     return(DampingFactor_);
   }
 
-  virtual Epetra_RowMatrix* Matrix() const
+  virtual Epetra_RowMatrix& Matrix() const
   {
-    return(Matrix_);
+    return(*Matrix_);
   }
 
   virtual int PrintLevel() const
@@ -200,6 +212,20 @@ public:
     PrintLevel_ = PrintLevel;
     return(0);
   }
+
+  virtual double Condest() const
+  {
+    return(-1.0);
+  }
+
+  std::ostream& Print(std::ostream& os) const
+  {
+    if (Matrix().Comm().MyPID())
+      return(os);
+    os << "*** Ifpack_BlockPreconditioner" << endl;
+    return(os);
+  }
+
   //@}
 
 protected:
@@ -278,7 +304,7 @@ int Ifpack_BlockPreconditioner<T>::
 Apply(const Epetra_MultiVector& X, 
       Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Matrix_->Apply(X,Y));
+  IFPACK_RETURN(Matrix().Apply(X,Y));
 }
 
 //==============================================================================
@@ -286,7 +312,7 @@ template<typename T>
 const Epetra_Comm& Ifpack_BlockPreconditioner<T>::
 Comm() const
 {
-  return(Matrix_->Comm());
+  return(Matrix().Comm());
 }
 
 //==============================================================================
@@ -294,7 +320,7 @@ template<typename T>
 const Epetra_Map& Ifpack_BlockPreconditioner<T>::
 OperatorDomainMap() const
 {
-  return(Matrix_->OperatorDomainMap());
+  return(Matrix().OperatorDomainMap());
 }
 
 //==============================================================================
@@ -302,7 +328,7 @@ template<typename T>
 const Epetra_Map& Ifpack_BlockPreconditioner<T>::
 OperatorRangeMap() const
 {
-  return(Matrix_->OperatorRangeMap());
+  return(Matrix().OperatorRangeMap());
 }
 
 //==============================================================================
@@ -334,7 +360,7 @@ ExtractSubmatrices()
       Containers_[i]->ID(j) = LRID;
     }
 
-    IFPACK_CHK_ERR(Containers_[i]->Extract(Matrix()));
+    IFPACK_CHK_ERR(Containers_[i]->Extract(&Matrix()));
     IFPACK_CHK_ERR(Containers_[i]->SetParameters(List_));
     IFPACK_CHK_ERR(Containers_[i]->Compute());
 
@@ -348,7 +374,7 @@ template<typename T>
 int Ifpack_BlockPreconditioner<T>::Compute()
 {
 
-  if (Matrix()->NumGlobalRows() != Matrix()->NumGlobalCols())
+  if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
     IFPACK_CHK_ERR(-1); // only square matrices
 
   IFPACK_CHK_ERR(ExtractSubmatrices());

@@ -116,11 +116,30 @@ public:
   //! Sets all the parameters for the preconditioner.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
+  //! Not implemented, as Amesos requires Teuchos.
+  virtual int SetParameter(const string Name, const int value)
+  {
+    return(-1);
+  }
+
+  //! Not implemented, as Amesos requires Teuchos.
+  virtual int SetParameter(const string Name, const double value)
+  {
+    return(-1);
+  }
+
   virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
   
+  virtual double Condest() const
+  {
+    return(-1.0);
+  }
+  
+  virtual std::ostream& Print(std::ostream& os) const;
+
 private:
 
   //! Pointers to the matrix to be preconditioned.

@@ -134,6 +134,7 @@ public:
     }
 
     IFPACK_CHK_ERR(Apply(X,Y));
+    return(0);
   }
 
   //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).

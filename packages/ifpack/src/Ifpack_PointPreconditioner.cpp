@@ -80,6 +80,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-3);
 
   IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
+  return(0);
 }
 
 //==============================================================================
@@ -123,24 +124,24 @@ ostream& Ifpack_PointPreconditioner::Print(ostream & os) const
   if (Comm().MyPID())
     return(os);
 
-  cout << endl;
-  cout << "*** " << Label() << endl << endl;
-  cout << "*** " << "Number of global rows = " 
+  os << endl;
+  os << "*** " << Label() << endl << endl;
+  os << "*** " << "Number of global rows = " 
        << Matrix().NumGlobalRows() << endl;
-  cout << "*** " << "Number of global cols = " 
+  os << "*** " << "Number of global cols = " 
        << Matrix().NumGlobalCols() << endl;
-  cout << "*** " << "Print frequency = " << PrintFrequency() << endl;
-  cout << "*** " << "IsComputed()    = " << IsComputed() << endl;
-  cout << "*** " << "Use zero starting solution  = " 
+  os << "*** " << "Print frequency = " << PrintFrequency() << endl;
+  os << "*** " << "IsComputed()    = " << IsComputed() << endl;
+  os << "*** " << "Use zero starting solution  = " 
        << ZeroStartingSolution_ << endl;
   if (IsComputed()) {
-    cout << "*** " << "Minimum value on diagonal = " << MinVal << endl;
-    cout << "*** " << "Maximum value on diagonal = " << MaxVal << endl;
-    cout << "*** " << "Average value on diagonal = " << MeanVal << endl;
-    cout << "*** Note: Jacobi and Gauss-Seidel reported values refer" << endl;
-    cout << "***       to the inverse of the diagonal" << endl;
+    os << "*** " << "Minimum value on diagonal = " << MinVal << endl;
+    os << "*** " << "Maximum value on diagonal = " << MaxVal << endl;
+    os << "*** " << "Average value on diagonal = " << MeanVal << endl;
+    os << "*** Note: Jacobi and Gauss-Seidel reported values refer" << endl;
+    os << "***       to the inverse of the diagonal" << endl;
   }
-  cout << endl;
+  os << endl;
 
   return(os);
 }

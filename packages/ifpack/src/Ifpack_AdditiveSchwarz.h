@@ -153,6 +153,18 @@ public:
   //! Sets the parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
+  //! Sets an integer parameters. Not implemented.
+  virtual int SetParameter(const string Name, const int Value)
+  {
+    return(-1);
+  }
+
+  //! Sets a double parameters. Not implemented.
+  virtual int SetParameter(const string Name, const double Value)
+  {
+    return(-1);
+  }
+
   //! Computes the preconditioners.
   /*! Computes the preconditioners: 
    *
@@ -166,9 +178,14 @@ public:
    */
   virtual int Compute();
 
-  virtual const Epetra_RowMatrix* Matrix() const
+  virtual double Condest() const
   {
-    return(Matrix_);
+    return(-1.0);
+  }
+
+  virtual const Epetra_RowMatrix& Matrix() const
+  {
+    return(*Matrix_);
   }
 
   virtual bool IsOverlapping() const
@@ -176,6 +193,8 @@ public:
     return(IsOverlapping_);
   }
 
+  virtual std::ostream& Print(std::ostream&) const;
+  
 protected:
 
   //! Sets up LocalizedMatrix_, Importer and Exporter_.
@@ -404,4 +423,16 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
  
 }
 
+//==============================================================================
+// FIXME
+template<typename T>
+std::ostream& Ifpack_AdditiveSchwarz<T>::
+Print(std::ostream& os) const
+{
+  if( Matrix().Comm().MyPID())
+    return(os);
+
+  os << "*** Ifpack_AdditiveSchwarz" << endl;
+  return(os);
+}
 #endif // IFPACK_ADDITIVESCHWARZ_H

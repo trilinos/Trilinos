@@ -174,5 +174,6 @@ ApplySSOR(Epetra_MultiVector& X) const
 
     }
   }
+  return(0);
 }
 
