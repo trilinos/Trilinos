@@ -171,6 +171,7 @@ int main(int argc, char *argv[])
    ML_Reader_InitContext(context);
 
 #endif
+  ML_Set_PrintLevel(context->output_level);
 
   /* read in the number of matrix equations */
   leng = 0;
