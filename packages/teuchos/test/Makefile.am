@@ -27,11 +27,10 @@
 #@HEADER
 
 if HAVE_TEUCHOS_EXTENDED
-
-SUBDIRS = scripts BLAS Containers DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time XML
-
-else
-
-SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time
-
+CONTAINERS_SUBDIR = Containers
+XML_SUBDIR = XML
 endif
+
+SUBDIRS = scripts BLAS $(CONTAINERS_SUBDIR) DenseMatrix dyn_cast LAPACK \
+	  ParameterList RefCountPtr Time $(XML_SUBDIR)
+
