@@ -286,7 +286,7 @@ private:
     try {
       getValue<T>(entry(i));
     }
-    catch( exception& e ) {
+    catch( std::exception& e ) {
       return false;
   }
     // If no exception was thrown, we should be OK.
@@ -306,7 +306,7 @@ private:
     try {
       getValue<T>(entry(i));
     }
-    catch( exception& e ) {
+    catch( std::exception& e ) {
       return false;
     }
     // If no exception was thrown, we should be OK.
