@@ -925,7 +925,7 @@ Optional Features:
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
-  --enable-ml-tests       Build ML tests (default is )
+  --enable-ml-tests       Build ML tests (default is no)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -8141,7 +8141,7 @@ if test "${enable_ml_tests+set}" = set; then
   enableval="$enable_ml_tests"
   ac_cv_use_ml_tests=$enableval
 else
-  ac_cv_use_ml_tests=
+  ac_cv_use_ml_tests=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ml-tests" >&5
