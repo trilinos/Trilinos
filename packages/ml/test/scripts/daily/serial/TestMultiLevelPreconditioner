@@ -84,7 +84,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell ML_Operator2Epetra_RowMatrix IFPACKSmoothers Scalability )
+foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell ML_Operator2Epetra_RowMatrix IFPACKSmoothers Scalability MLAPICompare )
 	cd $f
     touch fakefile.exe
     set tt = (*.exe)
@@ -101,7 +101,7 @@ foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPre
 		      if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True
-			    echo "[TEST] ERROR: Test w/ 1 proc failed!" >>& ../$file
+			    echo "[TEST] ERROR: Test w/ 1 proc failed" >>& ../$file
                             echo "[TEST] ERROR: now re-running with output" >>& ../$file
                             ./$g >>& ../$file
 			    echo "[TEST] Errors for script " $g " are listed above." >>& ../$file2

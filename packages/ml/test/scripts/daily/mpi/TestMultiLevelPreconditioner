@@ -95,8 +95,8 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell ML_Operator2Epetra_RowMatrix IFPACKSmoothers Scalability )
-	cd $f
+foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell ML_Operator2Epetra_RowMatrix IFPACKSmoothers Scalability MLAPICompare )
+    cd $f
     touch fakefile.exe
     set tt = (*.exe)
     # get rid of spaces

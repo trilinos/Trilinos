@@ -96,7 +96,7 @@ echo `uname -a` >>& $file
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
 cd ../examples
-foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell MultipleRHS Other StandAlone TwoLevelDD Visualization )
+foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell MultipleRHS Other StandAlone TwoLevelDD Visualization MLAPI )
   cd $f
   touch fakefile.exe
   set tt = (*.exe)
@@ -115,7 +115,7 @@ foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwel
            if( $status != 0 ) then
              # A test failed.
              set AnError = True
-             echo "[TestExamples] ERROR: Test w/ 2 proc failed!!" >>& ../$file
+             echo "[TestExamples] ERROR: Test w/ 2 proc failed" >>& ../$file
              echo "[TestExamples] ERROR: now re-running with output" >>& ../$file
              $mpigo 2 ./$g >>& ../$file
              echo "[TestExamples] Errors for script " $g " are listed above." >>& ../$file2
