@@ -104,7 +104,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/config/tac_arg_with_sub.m4 \
 	$(top_srcdir)/config/tac_check_file.m4 \
 	$(top_srcdir)/configure.ac
@@ -329,8 +328,6 @@ HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
-HAVE_AMESOS_MPI_C2F_FALSE = @HAVE_AMESOS_MPI_C2F_FALSE@
-HAVE_AMESOS_MPI_C2F_TRUE = @HAVE_AMESOS_MPI_C2F_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@

@@ -327,6 +327,8 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KL
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
 		AMESOS_MUMPS, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUS, no)
 
@@ -537,16 +539,6 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
 fi
-
-#
-# MPI communicator C to FORTRAN conversion (required by MUMPS)
-#
-
-TAC_ARG_WITH_PACKAGE(amesos-mpi-c2f, [Enable conversion from C MPI communicator to FORTRAN MPI communicator. If enabled, the MUMPS interface can create sub-communicators.],  AMESOS_MPI_C2F, yes )
-AM_CONDITIONAL(HAVE_AMESOS_MPI_C2F, true )
-
-
-
 
 #
 #  --enable-amesos-umfpack, --with-amesos-umfpackdir, --with-amesos-umfpacklib, 
