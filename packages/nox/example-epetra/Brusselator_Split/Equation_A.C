@@ -93,6 +93,7 @@ void Equation_A::initializeSolution()
   
   *oldSolution = soln;
 
+/*
   // Fill Equation_B solution from file (obtained from Brusselator)
   char file_name[] = "EqB_soln.dat";
   int idum;
@@ -106,6 +107,7 @@ void Equation_A::initializeSolution()
   fclose(ifp);
 
 //  cout << *auxSolution << endl;
+*/
 } 
 
 // Matrix and Residual Fills

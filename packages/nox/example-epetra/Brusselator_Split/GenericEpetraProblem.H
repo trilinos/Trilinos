@@ -52,6 +52,9 @@ public:
 
   virtual void reset(const Epetra_Vector& x) {};
 
+  // Set auxillary (other problem variables) vector
+  virtual void setAuxillarySolution(const Epetra_Vector&); 
+
   // Create Standard and Overlap (ghost) maps
   virtual void createMaps(); 
 
@@ -95,16 +98,15 @@ protected:
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;
   Epetra_Comm *Comm;
+  Epetra_Vector *auxSolution; // Auxillary data; solution from other Equation
+                              // used to debug this Equation
+
+public: // for now
 
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
 
   int NumMyNodes;         // Number of nodes owned by this process
   int NumGlobalNodes;     // Total Number of nodes
-
-public: // This is a temporary data used for debugging and will be managed later
-
-  Epetra_Vector *auxSolution; // Auxillary data; solution from other Equation
-                              // used to debug this Equation
 };
 #endif

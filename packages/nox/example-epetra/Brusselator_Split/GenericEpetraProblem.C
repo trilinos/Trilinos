@@ -24,6 +24,7 @@ GenericEpetraProblem::GenericEpetraProblem(int numGlobalNodes,
   OverlapMap(0),
   xptr(0),
   initialSolution(0),
+  auxSolution(0),
   AA(0),  
   A(0) 
 {
@@ -103,6 +104,7 @@ GenericEpetraProblem::~GenericEpetraProblem()
   delete A; A = 0;
   delete AA; AA = 0;
   delete initialSolution; initialSolution = 0;
+  delete auxSolution; auxSolution = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -172,6 +174,15 @@ Epetra_CrsMatrix& GenericEpetraProblem::getJacobian()
     cout << "ERROR: No valid Jacobian exists for this problem !!" << endl;
     return *A;
   }
+}
+
+void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)
+{
+  // Create the auxillary vector if needed
+  if(!auxSolution)
+    auxSolution = new Epetra_Vector(data);
+  else
+    *auxSolution = data;
 }
 
 bool GenericEpetraProblem::computePrecMatrix(const Epetra_Vector& solnVector,
