@@ -3,7 +3,8 @@
 
 #define name2(a,b) a ## b
 
-#ifdef CRAY
+#if defined(CRAY) || defined(matched) || \
+    defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
 #define F77NAME(x) x
 #else
 #define F77NAME(x) name2(x,_)

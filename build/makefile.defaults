@@ -1,7 +1,7 @@
 
 # Fortran underscore flag:  Used to indicate that the Fortran name mangling
 # on the target platform puts a trailing underscore after original name of the routine.
-# Default is TRILINOS_HAVE_FORTRAN_UNDERSCORE
+# Default is TRILINOS_HAVE_FORTRAN_UNDERSCORE for most platforms
 # Other option is TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
 TRILINOS_FORTRAN_UNDERSCORE = TRILINOS_HAVE_FORTRAN_UNDERSCORE 
 

@@ -4,9 +4,9 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 
 
 # Define architecture specific flags for C++, C and Fortran
-ARCH_CXXFLAGS= -cougar -O3
-ARCH_CFLAGS= -cougar -O3
-ARCH_FFLAGS= -cougar -O3
+ARCH_CXXFLAGS= -cougar -g -Wc,-tlocal
+ARCH_CFLAGS= -cougar -g
+ARCH_FFLAGS= -cougar -g
 
 # Define library directory name
 ARCH_LIBDIR = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
