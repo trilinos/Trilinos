@@ -88,7 +88,7 @@ NonlinearCG::~NonlinearCG()
 bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
                           const Solver::Generic& solver)
 {
-  bool status = false;
+  bool ok = false;
 
   // Initialize vector memory if haven't already
   if(oldDirPtr==NULL)
@@ -114,15 +114,27 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   // Construct Residual and precondition (if desired) as first step in 
   // getting new search direction
-  /* NOTE FROM TAMMY: Need to check the return status! */
 
-  soln.computeF();
+  ok = soln.computeF();
+  if (!ok) {
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
+           << endl;
+    return false;
+  }
   dir = soln.getF();  
   if(paramsPtr->isParameterEqual("Precondition", "On")) {
     if(!soln.isJacobian())
-      soln.computeJacobian();
+      ok = soln.computeJacobian();
+      if (!ok) {
+        if (Utils::doPrint(Utils::Warning))
+          cout << "NOX::Direction::Newton::compute - "
+               << "Unable to compute Jacobian." << endl;
+        return false;
+      }
     tmpVec = dir;
-    //    status = soln.applyJacobianDiagonalInverse(tmpVec, dir);
+    // RHooper --> still need to convert to applyRightPreconditioning
+    //    ok = soln.applyJacobianDiagonalInverse(tmpVec, dir);
   }
 
   dir.scale(-1.0);
@@ -148,7 +160,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
       beta = diffVec.dot(soln.getF()) / denominator;
 
     // Constrain beta >= 0
-      if(beta<0.0) {
+      if(beta < 0.0) {
         if (Utils::doPrint(Utils::OuterIteration))
           cout << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
         beta = 0.0;
@@ -183,8 +195,6 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   oldDir = dir;
 
-  status = true;
-
-  return status;
+  return ok;
 }
 
