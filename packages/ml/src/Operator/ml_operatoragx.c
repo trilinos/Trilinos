@@ -877,8 +877,8 @@ int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
 {
    ML_CommInfoAGX *com;
    int            i, j, k, kk, flag, step;
-   int            send_count, recv_count, *send_data, *recv_data, *neighbors,
-		  Nneighbors, *remap;
+   int            send_count, recv_count, *send_data = NULL, *recv_data = NULL, 
+                  *neighbors = NULL, Nneighbors, *remap;
 
    step       = vop->AGX_stride;
    com        = vop->com;
@@ -956,5 +956,9 @@ int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
       ML_CommInfoOP_Set_exch_info(Rmat->getrow->post_comm,neighbors[i],
                                   recv_count, recv_data,send_count, send_data);
    }
+   if (neighbors != NULL) ML_free(neighbors);
+   if (recv_data != NULL) ML_free(recv_data);
+   if (send_data != NULL) ML_free(send_data);
+
    return 0;
 }
