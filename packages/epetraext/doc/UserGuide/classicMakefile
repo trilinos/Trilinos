@@ -1,23 +1,15 @@
 TARGET=EpetraExtUserGuide
 
-$(TARGET).dvi: $(TARGET).tex
-	latex $(TARGET)
+$(TARGET).pdf: $(TARGET).tex SingletonFilters.tex
+	pdflatex $(TARGET)
 	bibtex $(TARGET)
-	latex $(TARGET)
-	latex $(TARGET)
+	pdflatex $(TARGET)
+	pdflatex $(TARGET)
 
-view: $(TARGET).dvi
-	xdvi $(TARGET) &
-
-ps: $(TARGET).dvi
-	dvips -o $(TARGET).ps $(TARGET)
-
-pdf: ps
-	ps2pdf $(TARGET).ps $(TARGET).pdf
-
-print: $(TARGET).dvi
-	dvips $(TARGET)
+view: $(TARGET).pdf
+	acroread $(TARGET).pdf &
 
 clean:
-	rm -f *.ps *.pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
            *.bbl *.blg *.lof *.lot *.tex~
+
