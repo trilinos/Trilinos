@@ -268,10 +268,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
         if (compute_part){
           if (nbors_proc[j] == zz->Proc){
-            /* Need to find the nbors_global ID in global_ids.
+            /* Need to find the nbors_global ID in global_ids
+             * in order to determine the partition numbers.
              * For now, look through the global_id list and compare
-             * every time. This is quite slow, O(n^2), so
-             * in the future we should use a hash table.
+             * every time. This is quite slow, O(n1*n2) where
+             * n1, n2 are the length of the lists, so
+             * in the future we should use a hash table
+             * or the Ddirectory.
              */
             found = -1;
             for (i=0; i<num_obj; i++){
@@ -292,6 +295,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           else
             p = -1; /* Assume remote data belong to different partition. */
                     /* EBEB: This is not necessarily true! */
+                    /* Answers may be incorrect. Fix: Use Ddirectory. */
 
           if (p != part[k]){
             cut_arr[part[k]]++;
