@@ -48,7 +48,7 @@ static struct malloc_debug_data {
 
 
 
-int LB_Malloc_Set_Param(
+int LB_Set_Malloc_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
