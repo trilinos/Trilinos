@@ -54,10 +54,13 @@ LOCA_EPETRA = \
 LOCA_EPETRANEW_H = \
 	$(srcdir)/LOCA_EpetraNew_Group.H \
 	$(srcdir)/LOCA_EpetraNew_Interface_Required.H \
+	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.H \
+	$(srcdir)/LOCA_EpetraNew_Interface_MassMatrix.H \
         $(srcdir)/LOCA_EpetraNew_Interface_TimeDependent.H
  
 LOCA_EPETRANEW = \
-	$(srcdir)/LOCA_EpetraNew_Group.C 
+	$(srcdir)/LOCA_EpetraNew_Group.C \
+	$(srcdir)/LOCA_EpetraNew_Interface_xyzt.C 
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications

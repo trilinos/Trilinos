@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,19 +27,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_EPETRANEW_INTERFACE_REQUIRED_H
-#define LOCA_EPETRANEW_INTERFACE_REQUIRED_H
+#ifndef LOCA_EPETRANEW_INTERFACE_MASSMATRIX_H
+#define LOCA_EPETRANEW_INTERFACE_MASSMATRIX_H
 
 #include "NOX_Common.H"
-#include "NOX_EpetraNew_Interface_Required.H"
-#include "NOX_Epetra_Vector.H"
+#include "NOX_Abstract_Group.H"
   
 // Forward declarations
 class Epetra_Vector;
-
-namespace LOCA {
-  class ParameterVector;
-}
 
 namespace LOCA {
   namespace EpetraNew {
@@ -50,43 +42,40 @@ namespace LOCA {
 
       /*! \brief 
        * Used by LOCA::EpetraNew::Group to provide a link to the
-       * external code for RHS and Jacobian fills if needed. 
+       * external code for the MassMatrix (coefficient of time dependent
+       * terms).  This is used for: Hopf bifurcation tracking, linear
+       * stability analysis, and space-time solutions (xyzt).
       */
-      /*!
-       * This interface is derived from the 
-       * NOX::EpetraNew::Interface::Required and additionally provides a 
-       * method for setting problem parameters.
-      */
-      class Required : public virtual NOX::EpetraNew::Interface::Required {
+      class MassMatrix  {
 
       public:
  
 	//! Constructor
-	Required() {};
+	MassMatrix() {};
 
 	//! Destructor
-	virtual ~Required() {};
+	virtual ~MassMatrix() {};
 
-	/*! 
-	 * \brief Set the parameters in the user's app prior to calling one 
-	 * of the compute functions.
-	 */
-	virtual void setParameters(const ParameterVector& p) = 0;
+        /*! Compute MassMatrix given the specified input vector x.  Returns
+         *  true if computation was successful.
+         *  */
+        virtual bool computeMassMatrix(const Epetra_Vector& x) = 0;
 
-	//! Call user's own print routine for vector-parameter pair
-	virtual void printSolution(const Epetra_Vector& x_, 
-				   double conParam) {}
-
-	//! Projects solution to a few scalars for multiparameter continuation
-	/*! Default implementation is the max norm 
-	 */
-	virtual void projectToDraw(const NOX::Epetra::Vector& x,
-				   double *px) const {
-	  px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
-	}
-	
-	//! Returns the dimension of the project to draw array
-	virtual int projectToDrawDimension() const { return 1; }
+        /*! Routine to reset the old solution, the one from the previous
+	 * time step. Different routine for first step, where the old
+	 * solution is set by the user and not part of the solution vector.
+	 * These routines are used by space-time (xyzt) problems, where the
+	 * MassMatrix is calculated as a function of a different solution
+	 * vector then the Jacobian (that is, the previous time step).
+         */
+        virtual void setOldSolution(const Epetra_Vector& x) { cout <<
+           "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolution"
+           << "\n\tempty default implementation not overloaded!" << endl;
+	};
+        virtual void setOldSolutionFirstStep() { cout << 
+           "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolutionFirstStep"
+           << "\n\tempty default implementation not overloaded!" << endl;
+	};
 
       };
     } // namespace Interface
