@@ -54,10 +54,10 @@ int VectorToMatrixMarketFile( const char *filename, const Epetra_Vector & A,
 
 int VectorToHandle(FILE * handle, const Epetra_Vector & A) {
 
-  return(MultiVectorToHandle(handle, A));
+  return(MultiVectorToHandle(handle, A, true));
 }
 int writeVector(FILE * handle, const Epetra_Vector & A) {
 
-  return(writeMultiVector(handle, A));
+  return(writeMultiVector(handle, A, true));
 }
 } // namespace EpetraExt

@@ -66,15 +66,8 @@ int main(int argc, char *argv[]) {
 
   int MyPID = comm.MyPID();
 
-  bool verbose = true; 
+  bool verbose = false; 
   if (MyPID==0) verbose = true;
-
-  if(argc < 2 && verbose) {
-    cerr << "Usage: " << argv[0] 
-	 << " HB_filename" << endl;
-    return(1);
-
-  }
 
   // Uncomment the next three lines to debug in mpi mode
   //int tmp;
@@ -97,15 +90,25 @@ int main(int argc, char *argv[]) {
   // Call routine to read in HB problem
   Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, comm, map, A, x, b, xexact);
 
+  double residual;
+  residual = A->NormInf();
+  if (verbose) cout << "Inf Norm of A                                                     = " << residual << endl;
+  residual = A->NormOne();
+  if (verbose) cout << "One Norm of A                                                     = " << residual << endl;
+  xexact->Norm2(&residual);
+  if (verbose) cout << "Norm of xexact                                                    = " << residual << endl;
   Epetra_Vector tmp1(*map);
   A->Multiply(false, *xexact, tmp1);
+  tmp1.Norm2(&residual);
+  if (verbose) cout << "Norm of Ax                                                        = " << residual << endl;
+  b->Norm2(&residual);
+  if (verbose) cout << "Norm of b (should equal norm of Ax)                               = " << residual << endl;
   tmp1.Update(1.0, *b, -1.0);
-  double residual;
   tmp1.Norm2(&residual);
   if (verbose) cout << "Norm of difference between compute Ax and Ax from file            = " << residual << endl;
   comm.Barrier();
 
-  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", *A, "test matrix", "This is a test matrix");
+  EpetraExt::RowMatrixToMatrixMarketFile("A.mm", *A, "test matrix", "This is a test matrix");
 				       
   delete A;
   delete x;

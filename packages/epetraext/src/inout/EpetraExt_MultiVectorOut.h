@@ -30,24 +30,18 @@
 namespace EpetraExt {
  
   //! Writes an Epetra_MultiVector object to a Matrix Market format file
-  /*! This function takes any matrix that implements the Epetra_MultiVector interface and writes it
-      to the specified file.  The matrix can be distributed or serial.  The user can provide
-      a strings containing the matrix name, a matrix description, and specify that header information
+  /*! This function takes an Epetra_MultiVector object and writes it
+      to the specified file.  The multivector can be distributed or serial.  The user can provide
+      a strings containing the object name, a description, and specify that header information
       should or should not be printed to the file.
 
       \param filename (In) A filename, including path if desired.  If a file with this name already exists,
                       it will be deleted.  On exit, this file will contained any requested header information
-		      followed by the matrix coefficients.  The file will contain a row for each matrix entry
-		      The first column is the global row index, using base 1, the second column is the global
-		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_MultiVector Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_RowMatrix interface can be passed in.  In particular, the 
-		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
-		    classes are compatible with this interface.
+		      followed by the matrix coefficients.  The file will contain a row for each entry.  All entries
+		      for a column are listed before going to the next column.
+      \param A (In) An Epetra_MultiVector Object containing the user matrix to be dumped to file.
       \param matrixName (In) A C-style string pointer to a name that will be stored in the comment field of the file.
-                         This is not a required argument.  Note that it is possible to pass in the method A.Label() if 
-			 the matrix is one of the four types: Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, 
-			 Epetra_FEVbrMatrix.
+                         This is not a required argument.  Note that it is possible to pass in the method A.Label().
       \param matrixDescription (In) A C-style string pointer to a matrix description that will be stored in the comment 
                                     field of the file.
       \param writeHeader (In) If true, the header will be written, otherwise only the matrix entries will be written.
@@ -67,23 +61,16 @@ namespace EpetraExt {
       and convert to it to a Matlab sparse matrix:
       <ol>
       <li> load \e filename;
-      <li> matrix_name = spconvert(filename_root);
       </ol>
       For example:
       <ol>
       <li> load A.dat;
-      <li> A = spconvert(filename_root);
       </ol>
-      The above produces a sparse matrix A.
+      The above produces a dense matrix A with each vector in the multivector as a column in A.
 
       \param filename (In) A filename, including path if desired.  If a file with this name already exists,
-                      it will be deleted.  On exit, this file will contain a row for each matrix entry
-		      The first column is the global row index, using base 1, the second column is the global
-		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_MultiVector Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_MultiVector interface can be passed in.  In particular, the 
-		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
-		    classes are compatible with this interface.
+                      it will be deleted.  On exit, this file will contain a row for each row of the multivector.
+      \param A (In) An Epetra_MultiVector Object containing the user matrix to be dumped to file. 
 
       \return Returns 0 if no error, -1 if any problems with file system.
 
@@ -91,24 +78,34 @@ namespace EpetraExt {
   int MultiVectorToMatlabFile( const char *filename, const Epetra_MultiVector & A);
    
 
-  //! Writes an Epetra_MultiVector object to a format file that is compatible with Matlab.
-  /*! This function takes any matrix that implements the Epetra_MultiVector interface and writes it
-      to the specified file handle.  The matrix can be distributed or serial.  This function is a convenience wrapper 
-      around MultiVectorToMatrixMarketFile.
+  //! Writes an Epetra_MultiVector object that is compatible with Matrix Market array format to a file handle.
+  /*! This function takes an Epetra_MultiVector and writes it
+      to the specified file handle.
 
       \param handle (In) A C-style file handle, already opened.  On exit, the file associated with this handle will
-                      have appended to it a row for each matrix entry
-		      The first column is the global row index, using base 1, the second column is the global
-		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_MultiVector Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_MultiVector interface can be passed in.  In particular, the 
-		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
-		    classes are compatible with this interface.
+                      have appended to it a row for each multivector row.
+      \param A (In) An Epetra_MultiVector Object containing the user object to be dumped to file.
 
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A);
-  int writeMultiVector(FILE * handle, const Epetra_MultiVector & A);
+  int MultiVectorToMatrixMarketHandle(FILE * handle, const Epetra_MultiVector & A);
+
+  //! Writes an Epetra_MultiVector object that is compatible with Matlab to a file handle.
+  /*! This function takes an Epetra_MultiVector and writes it
+      to the specified file handle.
+
+      \param handle (In) A C-style file handle, already opened.  On exit, the file associated with this handle will
+                      have appended to it a row for each multivector row.
+      \param A (In) An Epetra_MultiVector Object containing the user object to be dumped to file.
+
+      \return Returns 0 if no error, -1 if any problems with file system.
+
+  */
+  int MultiVectorToMatlabHandle(FILE * handle, const Epetra_MultiVector & A);
+
+  // Internal functions
+  int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
+  int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
 
 } // namespace EpetraExt

@@ -42,8 +42,16 @@ namespace EpetraExt {
 
 int MultiVectorToMatlabFile( const char *filename, const Epetra_MultiVector & A) {
 
-  // Simple wrapper to make it clear what can be used to write to Matlab format
-  return(MultiVectorToMatrixMarketFile(filename, A, 0, 0, false));
+  FILE * handle = 0;
+  if (A.Map().Comm().MyPID()==0) { // Only PE 0 does this section
+    handle = fopen(filename,"w");
+    if (!handle) return(-1);
+  }
+  if (MultiVectorToMatlabHandle(handle, A)) return(-1); // Everybody calls this routine
+
+  if (A.Map().Comm().MyPID()==0) // Only PE 0 opened a file
+    if (fclose(handle)) return(-1);
+  return(0);
 }
 
 int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVector & A, 
@@ -76,25 +84,42 @@ int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVecto
     }
   }
     
-  if (MultiVectorToHandle(handle, A)) return(-1); // Everybody calls this routine
+  if (MultiVectorToMatrixMarketHandle(handle, A)) return(-1); // Everybody calls this routine
 
   if (A.Map().Comm().MyPID()==0) // Only PE 0 opened a file
     if (fclose(handle)) return(-1);
   return(0);
 }
 
-int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A) {
+int MultiVectorToMatlabHandle(FILE * handle, const Epetra_MultiVector & A) {
+  return(MultiVectorToHandle(handle, A, false));
+}
+int MultiVectorToMatrixMarketHandle(FILE * handle, const Epetra_MultiVector & A) {
+  return(MultiVectorToHandle(handle, A, true));
+}
+int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
 
   Epetra_BlockMap bmap = A.Map();
   const Epetra_Comm & comm = bmap.Comm();
   int numProc = comm.NumProc();
 
   if (numProc==1)
-    writeMultiVector(handle, A);
+    writeMultiVector(handle, A, mmFormat);
   else {
 
+    // In the case of more than one column in the multivector, and writing to MatrixMarket
+    // format, we call this function recursively, passing each vector of the multivector
+    // individually so that we can get all of it written to file before going on to the next 
+    // multivector
+    if (A.NumVectors()>1 && mmFormat) {
+      for (int i=0; i<A.NumVectors(); i++)
+	if (MultiVectorToHandle(handle, *(A(i)), mmFormat)) return(-1);
+      return(0);
+    }
+
     Epetra_Map map(-1, bmap.NumMyPoints(), 0, comm);
-    Epetra_MultiVector A1(View, map, A.Pointers(), A.NumVectors()); // Create a veiw of this multivector using a map (instead of block map)
+    // Create a veiw of this multivector using a map (instead of block map)
+    Epetra_MultiVector A1(View, map, A.Pointers(), A.NumVectors());
     int numRows = map.NumMyElements();
     
     Epetra_Map allGidsMap(-1, numRows, 0,comm);
@@ -135,12 +160,12 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A) {
       if (importA.Import(A1, importer, Insert)) return(-1); 
 
       // Finally we are ready to write this strip of the matrix to ostream
-      if (writeMultiVector(handle, importA)) return(-1);
+      if (writeMultiVector(handle, importA, mmFormat)) return(-1);
     }
   }
   return(0);
 }
-int writeMultiVector(FILE * handle, const Epetra_MultiVector & A) {
+int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
 
   // The multivector will be written to file in transpose form, so that
  //  we can write all contributions from a processor at once
@@ -156,8 +181,12 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A) {
     for (int i=0; i<length; i++) {
       for (int j=0; j<numVectors; j++) {
 	double val = A[j][i];
-	fprintf(handle, "%22.16e\n", val);
+	if (mmFormat)
+	  fprintf(handle, "%22.16e\n", val);
+	else
+	  fprintf(handle, "%22.16e ", val);
       }
+      if (!mmFormat) fprintf(handle, "\n");
     }
   }
   int ierrGlobal;
