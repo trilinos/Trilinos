@@ -125,20 +125,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 				 RowMatrix_->NumMyRows());
     }
     
-  } else if( option == "pre-computed" ) {
+  } else if (option == "pre-computed") {
 
     NullSpaceDim = List_.get(Prefix_ + "null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get(Prefix_ + "null space: vectors", NullSpacePtr);
 
-    if( NullSpacePtr == 0 ) {
-      if( Comm().MyPID() == 0 ) cerr << ErrorMsg_ << "Null space vectors is NULL!" << endl;
-      exit( EXIT_FAILURE );
+    if (verbose_) {
+      cout << PrintMsg_ << "Using pre-computed null space of dimension "
+           << NullSpaceDim << endl;
+    }
+    if (NullSpacePtr == 0) {
+      if (Comm().MyPID() == 0) 
+        cerr << ErrorMsg_ << "Null space vectors is NULL!" << endl;
+      ML_EXIT(EXIT_FAILURE);
     }
     
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
 			       RowMatrix_->NumMyRows());
   
-  } else if( option == "enriched" ) {
+  } else if (option == "enriched") {
 
     NullSpaceDim = List_.get(Prefix_ + "null space: vectors to compute", 1);
 
