@@ -206,6 +206,7 @@ void BlockCG<TYPE>::SetInitGuess(Anasazi::MultiVec<TYPE>& iguess) {
 			_solutions->SetBlock( iguess, index, _numrhs );
 		}
 		_startblock = true;
+		delete [] index;
 	}
 }
 //
@@ -216,7 +217,7 @@ void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 				     int num_to_solve) {
 	//
 	int i,j;
-	int *index = new int[_blocksize + _numrhs]; assert(index!=NULL);
+	int *index = new int[_blocksize]; assert(index!=NULL);
 	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
@@ -242,11 +243,8 @@ void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		// Put the next _blocksize of the initial guesses
 		// into the sol_block
 		//
-		tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
-		sol_block.MvAddMv(one, *tptr, zero, *tptr);
-		if (tptr) {
-			delete tptr; tptr = 0;
-		}
+		tptr2 = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
+		sol_block.MvAddMv(one, *tptr2, zero, *tptr2);
 	}
 	else {
 		// More involved. This is the case where the number of right-hand
@@ -257,48 +255,28 @@ void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		// of the right-hand side block.
 		//
 		rhs_block.MvRandom();
-	
+		int *index2 = new int[num_to_solve];
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
 		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr!=NULL);
 		//
 		for (i=0; i<num_to_solve; i++) {
-			index[i] = i;
+			index2[i] = i;
 		}
-		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
-		tptr2->MvAddMv(one, *tptr, zero, *tptr);
-		//
-        	// Fill up the sol_block and the with random vectors, then
-		// place the remaining (unsolved) initial guesses into the initial portion
-		// of the sol_block.
-		//
-		//sol_block.MvRandom();
+		rhs_block.SetBlock(*tptr, index2, num_to_solve);
 		//
 		// Fill up sol_block with zero vectors.
 		//
 		sol_block.MvInit( 0.0 );
 		//
-		for ( i=0; i<num_to_solve; i++ ) {
-			index[i] = _rhs_iter*_blocksize + i;
-		}
-        	tptr = _solutions->CloneView(index, num_to_solve); assert(tptr!=NULL);
+        	tptr2 = _solutions->CloneView(index, num_to_solve); assert(tptr!=NULL);
+		 sol_block.SetBlock( *tptr2, index2, num_to_solve);
 		//
-		for (i=0; i<num_to_solve; i++) {
-			index[i] = i;
-		}
-		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
-		tptr2->MvAddMv(one, *tptr, zero, *tptr);
-		//
-		// Delete the temporary views
-		//
-		if (tptr) {
-			delete tptr; tptr = 0;
-		}
-		if (tptr2) {
-			delete tptr2; tptr2 = 0;
-		}
+		delete [] index2; index2=0;		
 	}
+	if (tptr) delete tptr; tptr = 0;
+	if (tptr2) delete tptr2; tptr2 = 0;
 	delete [] index; index=0;
 	//
 }
@@ -436,19 +414,20 @@ template <class TYPE>
 void BlockCG<TYPE>::Solve (bool vb) {
     //
 	int i,j,k,num_ind;
+	int cur_blksz, ind_blksz, prev_ind_blksz, num_conv, numrhs_to_solve;
 	bool pflg, exit_flg = false;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
 	Anasazi::MultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
 	Anasazi::MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0, *AP_prev=0;
-	Anasazi::MultiVec<TYPE> *temp_block=0, *PC_resid;
+	Anasazi::MultiVec<TYPE> *temp_block=0, *PC_resid=0;
 	Anasazi::MultiVec<TYPE> *precond_resid=0, *cur_sol=0;
 	TYPE * ptr_T1 = 0;
 	TYPE * ptr_T2 = 0;
-	TYPE * cur_resid_norms=0;
-	TYPE * init_resid_norms=0; 
+	TYPE * cur_resid_norms = new TYPE[cur_blksz]; assert(cur_resid_norms!=NULL);
+	TYPE * init_resid_norms= new TYPE[_blocksize]; assert(init_resid_norms!=NULL);
 	int *index1 = new int[_numrhs + _blocksize]; assert(index1!=NULL);
-    int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
+       int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
     //
 	//********************************************************************************
 	//
@@ -456,6 +435,23 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	// solve for all right-hand sides (_numrhs), _blocksize at a time.
 	//
 	int max_rhs_iters = (_numrhs+_blocksize-1) / _blocksize;
+	//
+	// Make room for current blocks of solutions and right-hand sides
+	//
+	 cur_block_sol = _rhs.Clone(_blocksize); assert(cur_block_sol!=NULL);
+	 cur_block_rhs = _rhs.Clone(_blocksize); assert(cur_block_rhs!=NULL);
+        //
+	 // Make additional space needed during iteration
+	 //
+       temp_block = _rhs.Clone(_blocksize); assert(temp_block!=NULL);
+	 PC_resid = _rhs.Clone(_blocksize); assert(PC_resid!=NULL);
+        //
+	 // Additional initialization
+	 //
+	 int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
+	 int *cur_idx = new int[_blocksize]; assert(cur_idx!=NULL);
+	 int *conv_idx = new int[_blocksize]; assert(conv_idx!=NULL);
+	 int *cols = new int[_blocksize]; assert(cols!=NULL);	//
 	//
 	//  Start executable statements. 
     //
@@ -468,10 +464,10 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   cout << endl;
 		}	
 		//
-		int cur_blksz = _blocksize;
-	    int ind_blksz = _blocksize;
-		int prev_ind_blksz = _blocksize;
-		int num_conv = 0;
+		cur_blksz = _blocksize;
+	       ind_blksz = _blocksize;
+		prev_ind_blksz = _blocksize;
+		num_conv = 0;
 		//
 		// If not provided, and if _rhs_iter = 0, 
 		// set initial guesses to AX = B to random vectors
@@ -481,15 +477,9 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			_solutions->MvRandom();
 			_startblock = true;
 		}
-		
-		// Make room for current blocks of solutions and right-hand sides
-		//
-		 cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol!=NULL);
-		 cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs!=NULL);
-		 //
+	 	//
 		 // Compute the number of right-hand sides remaining to be solved 
 	     //
-		 int numrhs_to_solve;
 	     if ( _blocksize < _numrhs ) {
 		     numrhs_to_solve = _numrhs - (_rhs_iter * _blocksize);
 		 }
@@ -500,18 +490,6 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		 // Put the current initial guesses and right-hand sides into current blocks
 		 //
          SetUpBlocks(*cur_block_sol, *cur_block_rhs, numrhs_to_solve);
-         //
-		 // Make additional space needed during iteration
-		 //
-         temp_block = _solutions->Clone(_blocksize); assert(temp_block!=NULL);
-		 PC_resid = _solutions->Clone(_blocksize); assert(PC_resid!=NULL);
-         //
-		 // Additional initialization
-		 //
-		 int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
-		 int *cur_idx = new int[_blocksize]; assert(cur_idx!=NULL);
-		 int *conv_idx = new int[_blocksize]; assert(conv_idx!=NULL);
-		 int *cols = new int[_blocksize]; assert(cols!=NULL);
 		 //
 		 for (i=0;i<_blocksize;i++){
 			 ind_idx[i] = i; cur_idx[i] = i; conv_idx[i] = 0;
@@ -527,7 +505,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			index1[i] = i;
 		}
 		P_prev = _basisvecs->CloneView(index1, _blocksize); assert(P_prev!=NULL);
-        R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev!=NULL);
+             R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev!=NULL);
 		AP_prev = temp_block->CloneView(index1, _blocksize); assert(AP_prev!=NULL);
 		cur_sol = cur_block_sol->CloneView(index1, _blocksize); assert(cur_sol!=NULL);
         //
@@ -548,8 +526,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		//
 		//*******Compute and save the initial residual norms*******
 		//
-		init_resid_norms = new TYPE[_blocksize]; assert(init_resid_norms!=NULL);
-        R_prev->MvNorm(init_resid_norms);
+             R_prev->MvNorm(init_resid_norms);
 		//
         // Update indices of current (independent) blocks.
 		// If a residual is too small, it will be dropped from
@@ -593,6 +570,9 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		    for (i=0; i< cur_blksz; i++){
 			    index1[i] = cur_idx[i];
 			}
+		    delete R_prev; R_prev=0;
+		    delete P_prev, P_prev=0;
+		    delete precond_resid, precond_resid=0;
 		    R_prev = _residvecs->CloneView(index1,cur_blksz);
 		    P_prev = _basisvecs->CloneView(index1,cur_blksz);
 		    precond_resid = PC_resid->CloneView(index1,cur_blksz);
@@ -646,6 +626,11 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			}
 			exit_flg = true;
 		}
+	   //  Clean up before entering main loop
+	   delete AP_prev; AP_prev=0;
+	   delete P_prev; P_prev=0;
+	   delete R_prev; R_prev=0;
+	   delete cur_sol; cur_sol=0;
         // ***************************************************************************
         // ************************Main CG Loop***************************************
 		// ***************************************************************************
@@ -748,7 +733,6 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   //
 		   // ****Compute the Current Relative Residual Norms and the Block Error****
            //
-		   cur_resid_norms = new TYPE[cur_blksz]; assert(cur_resid_norms!=NULL);
            R_new->MvNorm(cur_resid_norms);
 		   for (i=0; i<cur_blksz; i++){
 			   cur_resid_norms[i] = cur_resid_norms[i]/init_resid_norms[cur_idx[i]];
@@ -758,9 +742,6 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			   _residerrors[_rhs_iter*_blocksize + cur_idx[i]] = cur_resid_norms[i];
 		   }
 		   //
-		   if (cur_resid_norms) {
-			   delete [] cur_resid_norms; cur_resid_norms=0;
-		   }  
 		   prev_ind_blksz = ind_blksz; // Save old ind_blksz of P_prev
 		   //
 		   // Update the number of residuals in current block, their indices,
@@ -840,12 +821,15 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   for (i=0; i<ind_blksz; i++){
 			   index1[i] = ind_idx[i]; index2[i] = _blocksize + ind_idx[i];
 		   }
+		   delete R_new; R_new=0;
+		   if(precond_resid) delete precond_resid; precond_resid=0;
+
 		   if (new_blk == 2) {
 		      R_new = _residvecs->CloneView(index2,ind_blksz);
 		      P_new = _basisvecs->CloneView(index2,ind_blksz);
 		   }
 		   else {
-              R_new = _residvecs->CloneView(index1,ind_blksz);
+              	R_new = _residvecs->CloneView(index1,ind_blksz);
 		      P_new = _basisvecs->CloneView(index1,ind_blksz);
 		   }
 		   precond_resid = PC_resid->CloneView(index1,ind_blksz);
@@ -952,6 +936,14 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			   new_blk = 2;
 		   }
 		   //
+	 	if (P_prev) {delete P_prev; P_prev=0;}
+		 if (P_new) {delete P_new; P_new=0; }
+	 	if (R_prev) { delete R_prev; R_prev=0;}
+     	   if (R_new) { delete R_new; R_new=0;}
+	 	if (AP_prev) { delete AP_prev; AP_prev=0;}
+        	if (cur_sol) { delete cur_sol; cur_sol=0;}
+	 	if (precond_resid) {delete precond_resid; precond_resid=0;}
+
      } // end of the main CG loop -- for(_iter = 0;...)
 	 //*******************************************************************************
 	 //
@@ -975,28 +967,24 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	 // continue if we have more right-hand sides to solve for
 	 //
 	 ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);	 
-     //
-     // ****************Free heap space***********************************************
-	 //
-	 if (P_prev) {delete P_prev; P_prev=0;}
-	 if (P_new) { delete P_new; P_new=0;}
-     if (R_prev) { delete R_prev; R_prev=0;}
-     if (R_new) { delete R_new; R_new=0;}
-	 if (AP_prev) { delete AP_prev; AP_prev=0;}
-	 if (PC_resid) {delete PC_resid; PC_resid=0;}
-	 if (precond_resid) {delete precond_resid; precond_resid=0;}
-	 if (temp_block) { delete temp_block; temp_block=0;}
-     if (cur_block_sol) { delete cur_block_sol; cur_block_sol=0;}
-	 if (cur_sol) { delete cur_sol; cur_sol=0;}
-	 if (cur_block_rhs) { delete cur_block_rhs; cur_block_rhs=0;}
-	 if (ind_idx) { delete [] ind_idx; ind_idx=0;}
-	 if (cur_idx) { delete [] cur_idx; cur_idx=0;}
-	 if (cols) { delete [] cols; cols=0;}
-	 if (init_resid_norms) { delete [] init_resid_norms; init_resid_norms=0;}
 	 //
   } // end if ( _rhs_iter = 0;... )
   //**********************************************************************************
   //
+    //
+    // ****************Free heap space***********************************************
+ //
+
+  if (PC_resid) {delete PC_resid; PC_resid=0;}
+  if (temp_block) { delete temp_block; temp_block=0;}
+  if (cur_block_sol) { delete cur_block_sol; cur_block_sol=0;}
+  if (cur_block_rhs) { delete cur_block_rhs; cur_block_rhs=0;}
+  if (ind_idx) { delete [] ind_idx; ind_idx=0;}
+  if (cur_idx) { delete [] cur_idx; cur_idx=0;}
+  if (conv_idx) { delete [] conv_idx; conv_idx=0; }
+  if (cols) { delete [] cols; cols=0;}
+  if (init_resid_norms) { delete [] init_resid_norms; init_resid_norms=0;}
+  if (cur_resid_norms) { delete [] cur_resid_norms; cur_resid_norms=0; }  
   if (index1) { delete [] index1; index1=0;}
   if (index2) { delete [] index2; index2=0;}
   //
@@ -1263,3 +1251,4 @@ void BlockCG<TYPE>::CheckCGResids(Anasazi::MultiVec<TYPE>& X, Anasazi::MultiVec<
 
 #endif
 // End of file BelosBlockCG.hpp
+
