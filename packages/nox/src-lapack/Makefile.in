@@ -46,6 +46,8 @@
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
 SHELL = @SHELL@
 
@@ -118,7 +120,6 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-# ------------------------------------------------------------------------
 NOX_LAPACK_H = \
 	$(srcdir)/NOX_LAPACK.H \
 	$(srcdir)/NOX_LAPACK_Matrix.H \
@@ -483,8 +484,6 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-pkgincludeHEADERS
 
-
-:q# the list of all source and any other header files.
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -34,7 +34,7 @@
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside NOX. The first is
-:q# the list of all source and any other header files.
+# the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
 NOX_LAPACK_H = \
