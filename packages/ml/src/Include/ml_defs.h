@@ -148,4 +148,14 @@
 #endif
 typedef ML_BIG_INT ml_big_int;
 
+/* Eigenvalue options */
+#define ML_DIAGSCALE           1
+#define ML_NO_SCALE            0
+#define ML_SYMMETRIC           0
+#define ML_NONSYMM             1
+#define ML_SYMMETRIZE_MATRIX   1
+#define ML_NO_SYMMETRIZE       0
+
+
+
 #endif
