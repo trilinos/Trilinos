@@ -69,6 +69,38 @@ LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
 
 }
 
+LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
+				   const LOCA::Abstract::Group& g,
+				   const NOX::Abstract::Vector& randomVector) :
+  grpPtr(dynamic_cast<LOCA::Abstract::Group*>(g.clone(NOX::DeepCopy))),
+  gVecPtr(g.getF().clone(NOX::ShapeCopy)),
+  randomVecPtr(gVecPtr->clone(NOX::ShapeCopy)),
+  newtonVecPtr(0),
+  gradVecPtr(0),
+  paramVec(grpPtr->getParams()),
+  conParam(0.0),
+  conParamID(-1),
+  conParamLabel("Homotopy Continuation Parameter")
+{
+  // construct a random vector for the problem 
+  *randomVecPtr = randomVector;
+
+  // Set the isValid flags to false
+  resetIsValidFlags();
+
+  // Set the homotopy parameter as a parameter in the ParameterVector.
+  // This will allow us to do an invasive homotopy since the app can now 
+  // get access to the homotopy continuation parameter.
+  paramVec.addParameter(conParamLabel, conParam);
+  grpPtr->setParams(paramVec);
+
+  // Set up paramID
+  conParamID = paramVec.getIndex(conParamLabel);
+
+  setStepperParameters(locaSublist);
+
+}
+
 LOCA::HomotopyGroup::HomotopyGroup(const LOCA::HomotopyGroup& source, 
 				   NOX::CopyType type) : 
   grpPtr(dynamic_cast<LOCA::Abstract::Group*>(source.grpPtr->clone(type))),
