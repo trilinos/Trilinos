@@ -322,7 +322,8 @@ void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
   int i;                                  /* index counter */
 
   if (nrectags == 0) {
-    *import_global_ids = *import_local_ids = NULL;
+    *import_global_ids = NULL;
+    *import_local_ids = NULL;
     *import_procs = NULL;
   }
   else {
@@ -342,8 +343,8 @@ void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 
     /* for each region imported, look at its originating processor */
     for(i=0; i<nrectags; i++) {
-      (*import_global_ids)[i] = import_regs[i].Tag.Global_ID;
-      (*import_local_ids)[i]  = import_regs[i].Tag.Local_ID;
+      LB_SET_GID((*import_global_ids)[i], import_regs[i].Tag.Global_ID);
+      LB_SET_LID((*import_local_ids)[i], import_regs[i].Tag.Local_ID);
       (*import_procs)[i]      = import_regs[i].Tag.Proc;
     }
   }

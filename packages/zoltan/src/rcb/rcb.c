@@ -755,8 +755,8 @@ void lb_rcb(
 
     for (i = 0; i < *num_import; i++) {
       ii = i + dottop;
-      (*import_global_ids)[i] = dotpt[ii].Tag.Global_ID;
-      (*import_local_ids)[i]  = dotpt[ii].Tag.Local_ID;
+      LB_SET_GID((*import_global_ids)[i], dotpt[ii].Tag.Global_ID);
+      LB_SET_LID((*import_local_ids)[i], dotpt[ii].Tag.Local_ID);
       (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }

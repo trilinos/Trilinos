@@ -382,8 +382,8 @@ void POC_addRegion(pOctant oct, pRegion region) {
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
-  entry->Tag.Global_ID = region->Tag.Global_ID;
-  entry->Tag.Local_ID = region->Tag.Local_ID;
+  LB_SET_GID(entry->Tag.Global_ID, region->Tag.Global_ID);
+  LB_SET_LID(entry->Tag.Local_ID, region->Tag.Local_ID);
   entry->Tag.Proc = region->Tag.Proc;
 
   /* attach region to region list */
@@ -403,7 +403,7 @@ void POC_remRegion(pOctant oct, pRegion region) {
   tmp = oct->list;
   /* iterate through region list to find region to be removed */
   while(tmp != NULL) {
-    if(tmp->Tag.Global_ID == region->Tag.Global_ID) {
+    if (LB_EQ_GID(tmp->Tag.Global_ID, region->Tag.Global_ID)) {
       if(tmp == oct->list)
 	oct->list = tmp->next;
       else

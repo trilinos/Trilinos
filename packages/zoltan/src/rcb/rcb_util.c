@@ -160,8 +160,8 @@ static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id,
  *  global ID, coordinates and weight provided by the application.  
  */
 
-  dot->Tag.Global_ID = global_id;
-  dot->Tag.Local_ID = local_id;
+  LB_SET_GID(dot->Tag.Global_ID, global_id);
+  LB_SET_LID(dot->Tag.Local_ID, local_id);
   dot->Tag.Proc = LB_Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Geom(global_id, local_id, dot->X);

@@ -230,8 +230,8 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
     npids2[i] = npids[i];
     vector_set(regions2[i].Coord, regions[i]->Coord);
     regions2[i].Weight = regions[i]->Weight;
-    regions2[i].Tag.Global_ID = regions[i]->Tag.Global_ID;
-    regions2[i].Tag.Local_ID = regions[i]->Tag.Local_ID;
+    LB_SET_GID(regions2[i].Tag.Global_ID, regions[i]->Tag.Global_ID);
+    LB_SET_LID(regions2[i].Tag.Local_ID, regions[i]->Tag.Local_ID);
     regions2[i].Tag.Proc = regions[i]->Tag.Proc;
     regions2[i].attached = 0;
   }
@@ -267,8 +267,8 @@ void copy_info(pRegion src, pRegion *dest) {
   /* copy all important information */
   vector_set(copy->Coord, src->Coord);
   copy->Weight = src->Weight;
-  copy->Tag.Global_ID = src->Tag.Global_ID;
-  copy->Tag.Local_ID = src->Tag.Local_ID;
+  LB_SET_GID(copy->Tag.Global_ID, src->Tag.Global_ID);
+  LB_SET_LID(copy->Tag.Local_ID, src->Tag.Local_ID);
   copy->Tag.Proc = src->Tag.Proc;
   copy->attached = 0;
 }
