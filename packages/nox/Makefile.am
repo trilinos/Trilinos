@@ -42,9 +42,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
+EXTRA_DIST = 
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -62,7 +60,12 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-SUBDIRS = src src-epetra example-epetra
+SUBDIRS = doc src src-epetra example-epetra
 
 
+## #######################################################################
+## Documentation
+## #######################################################################
 
+dox:
+	cd doc;	$(MAKE) dox

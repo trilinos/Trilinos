@@ -107,10 +107,7 @@ ACLOCAL = aclocal -I config
 
 AUTOMAKE_OPTIONS = foreign
 
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
-
+EXTRA_DIST = 
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 
@@ -120,7 +117,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
-SUBDIRS = src src-epetra example-epetra
+SUBDIRS = doc src src-epetra example-epetra
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -415,6 +412,9 @@ uninstall-info: uninstall-info-recursive
 	uninstall-am uninstall-info-am uninstall-info-recursive \
 	uninstall-recursive
 
+
+dox:
+	cd doc;	$(MAKE) dox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
