@@ -66,6 +66,10 @@ static void Zoltan_reduce_bisector(int, int, int, int, struct bisector*, struct 
 static void Zoltan_bisector_copy(struct bisector*, struct bisector*);
 static double Zoltan_norm(int mcnorm, int n, double *x, double *scal);
 static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
+static double eval_cut_quality(int, double *, double *, double *, double *, 
+              int);
+static void compute_weight_sums( int, int *, int, double *, 
+            double *, double *, MPI_Comm, int, int, int, int);
 #endif /* RB_MAX_WGTS > 1 */
 
 /*****************************************************************************/
@@ -106,7 +110,7 @@ int Zoltan_RB_find_bisector(
   double *weight,       /* weight of entire partition (input) */
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
-  double *norm_max,     /* norm of largest partition (output) */
+  double *quality,      /* quality of the cut (output) */
   int    *dotlist,      /* list of active dots. */
   int rectilinear       /* if 1, all dots with same value on same side of cut*/
 )
@@ -204,7 +208,6 @@ int Zoltan_RB_find_bisector(
         weighthi[j] = weight[j];
         weightlo[j] = 0.0;
       }
-      *norm_max = MYHUGE; /* Overestimate so any other bisection is better. */
       ierr = ZOLTAN_OK;
       goto End;
     }
@@ -217,7 +220,6 @@ int Zoltan_RB_find_bisector(
         weightlo[j] = weight[j];
         weighthi[j] = 0.0;
       }
-      *norm_max = MYHUGE; /* Overestimate so any other bisection is better. */
       ierr = ZOLTAN_OK;
       goto End;
     }
@@ -407,10 +409,10 @@ int Zoltan_RB_find_bisector(
 
   /* Verify that input 'weight' equals computed 'wtsum'. */
   for (j=0; j<nwgts; j++){
-#ifdef DEBUG_BISECT
+#ifdef DEBUG_BISECT 
       printf("[%2d] Debug: computed wtsum[%1d] = %lf, input weight = %lf\n", proc, j, wtsum[j], weight[j]);
-#endif
-    /* Disable sanity check because 'weight' is sometimes incorrect. */
+#endif 
+    /* Disable sanity check (for now) because 'weight' is sometimes incorrect. */
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       if (wtsum[j] != weight[j])
         printf("[%2d] Warning: computed wtsum[%1d] %lf does not match "
@@ -925,10 +927,17 @@ int Zoltan_RB_find_bisector(
   printf("[%2d] Final bisector valuehalf = %lf\n", proc, *valuehalf);
 #endif
 
-  /* return norm of largest half */
-  *norm_max = (normlo>=normhi ? normlo : normhi);
-
 End:
+  /* Recompute weightlo/hi. This is only necessary because
+     there is a bug so weightlo/hi aren't always correct.
+     Remove this step later! */
+  compute_weight_sums(dotnum, dotmark, nwgts, wgts, weightlo, weighthi,
+    local_comm, Tflops_Special, proclower, rank, num_procs);
+
+  /* Evaluate cut quality. */
+  *quality = eval_cut_quality(nwgts, scalelo, scalehi, weightlo, weighthi, 
+             mcnorm);
+
   /* free all memory */
   ZOLTAN_FREE(&med);
   ZOLTAN_FREE(&medme);
@@ -949,6 +958,78 @@ End:
 }
 
 #if (RB_MAX_WGTS > 1) 
+
+/* Compute weight sums in lower/upper part. */
+static void compute_weight_sums(
+  int dotnum,           /* Number of dots (local) */
+  int *dotmark,         /* 0 for lo, 1 for hi. */
+  int nwgts,            /* Number of weights (per dot). */
+  double *wgts,         /* Weights array */
+  double *weightlo,     /* Sum of weights in lower (output) */
+  double *weighthi,     /* Sum of weights in upper (output) */
+  MPI_Comm local_comm,  /* MPI communicator */
+  int ts,               /* Tflops special */
+  int proclower,
+  int rank,
+  int num_procs)
+{
+  double sumlo[MAX_BISECT_WGTS];
+  double sumhi[MAX_BISECT_WGTS];
+  int i,j;
+
+  for (j=0; j<nwgts; j++){
+    sumlo[j] = 0.0;
+    sumhi[j] = 0.0;
+  }
+
+  for (i=0; i<dotnum; i++){
+    for (j=0; j<nwgts; j++){
+      if (dotmark[i]==0)
+        sumlo[j] += wgts[i*nwgts+j];
+      else
+        sumhi[j] += wgts[i*nwgts+j];
+    }
+  }
+
+  /* Sum local sums into global sums. */
+  if (ts){
+    Zoltan_RB_sum_double(sumlo, nwgts, proclower, rank, num_procs, local_comm);
+    Zoltan_RB_sum_double(sumhi, nwgts, proclower, rank, num_procs, local_comm);
+    for (j=0; j<nwgts; j++){
+      weightlo[j] = sumlo[j];
+      weighthi[j] = sumhi[j];
+    }
+  }
+  else{
+    MPI_Allreduce(sumlo, weightlo, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
+    MPI_Allreduce(sumhi, weighthi, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
+  }
+
+  return;
+}
+
+/* MAX should be in some header file? */
+#define MAX(a,b) ((a)>(b) ? (a) : (b))
+
+/* Evaluate cut quality. */
+static double eval_cut_quality(
+  int nwgts,          /* Number of weights per dot. */
+  double *scalelo,    /* Scale vector for lower part. */
+  double *scalehi,    /* Scale vector for upper part. */
+  double *weightlo,   /* Sum of weights in lower part. */
+  double *weighthi,   /* Sum of weights in upper part. */
+  int norm)           /* Type of norm (1,2,3) */
+{
+  double tmp, temp[MAX_BISECT_WGTS];
+  int i;
+
+  for (i=0; i<nwgts; i++)
+     temp[i] = MAX(scalelo[i]*weightlo[i], scalehi[i]*weighthi[i]);
+
+  return Zoltan_norm(norm, nwgts, temp, NULL);
+}
+
+
 /* merge bisector data structure */
 /* on input:
    in,inout->totallo, totalhi = weight in both partitions on this proc
