@@ -47,11 +47,11 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     *CF_array, *sort_array, sortleng, bitindex,intindex;
    int     printflag, sizeint, logsizeint, offnrows, *offibuffer, *offmap;
    int     *offmap2, *offlengths, numCi, *Ci_array, *int_array, *int_buf;
-   int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row;
+   int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
    int     msgtype, mypid, nprocs, *send_leng=NULL, *recv_leng=NULL;
-   int     N_neighbors, *neighbors=NULL, *send_list=NULL;
+   int     N_neighbors, *neighbors=NULL, *send_list=NULL, sys_unk_filter;
    int     *recv_list=NULL, total_recv_leng=0, total_send_leng=0;
-   int     A_ntotal, A_Nneigh, *A_rcvleng=NULL, *A_sndleng=NULL;
+   int     A_ntotal, A_Nneigh, *A_rcvleng=NULL, *A_sndleng=NULL, *sys_info;
    int     *A_neigh=NULL, Nghost, **A_sndbuf=NULL, **A_rcvbuf=NULL;
    int     **A_sendlist=NULL, **A_recvlist=NULL, **proclist, *templist;
    int     new_Nsend, new_Nrecv, *new_send_leng, *new_recv_leng;
@@ -68,12 +68,33 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* get the machine information and matrix references             */
    /* ============================================================= */
 
-   mypid        = comm->ML_mypid;
-   nprocs       = comm->ML_nprocs;
-   epsilon      = ml_amg->threshold;
-   num_PDE_eqns = ml_amg->num_PDE_eqns;
-   printflag    = ml_amg->print_flag;
-   Nrows        = Amatrix->outvec_leng;
+   mypid          = comm->ML_mypid;
+   nprocs         = comm->ML_nprocs;
+   epsilon        = ml_amg->threshold;
+   num_PDE_eqns   = ml_amg->num_PDE_eqns;
+   printflag      = ml_amg->print_flag;
+   Nrows          = Amatrix->outvec_leng;
+   sys_unk_filter = 0;
+   mat_comm       = Amatrix->getrow->pre_comm;
+
+   /* ============================================================= */
+   /* if system AMG (unknown approach) is requested, communicate    */
+   /* the degree of freedom information                             */
+   /* ============================================================= */
+
+   if (ml_amg->amg_scheme == ML_AMG_SYSTEM_UNKNOWN && num_PDE_eqns > 1) 
+   {
+      sys_unk_filter = 1;
+      count    = Nrows + 1;
+      if ( mat_comm != NULL) count += mat_comm->total_rcv_length;
+      darray = (double *) malloc(sizeof(double) * count);
+      for (i = 0; i < Nrows; i++) darray[i] = (double) ml_amg->blk_info[i];
+      if ( mat_comm != NULL )
+         ML_exchange_bdry(darray,mat_comm,Nrows,comm,ML_OVERWRITE);
+      sys_info = (int *) malloc(sizeof(double) * count);
+      for (i = 0; i < count; i++) sys_info[i] = (int) darray[i];
+      free(darray);
+   } else sys_info = NULL;
 
    /* ============================================================= */
    /* check the system size                                         */
@@ -92,18 +113,9 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    }
 
    /* ============================================================= */
-   /* compress the matrix into a block matrix                       */
+   /* fetch getrow/comm information of the Amat                     */
    /* ============================================================= */
 
-   if ( num_PDE_eqns > 1 ) 
-      ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
-   Nrows /= num_PDE_eqns;
-
-   /* ============================================================= */
-   /* fetch getrow/comm information of the SYSTEM Amat              */
-   /* ============================================================= */
-
-   mat_comm    = Amatrix->getrow->pre_comm;
    A_Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
    if ( A_Nneigh > 0 )
    {
@@ -250,6 +262,11 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    {
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
+      if ( sys_unk_filter )
+      {
+         for (j = 0; j < rowi_N; j++) 
+            if (sys_info[rowi_col[j]] != sys_info[i]) rowi_val[j] = 0.0; 
+      } 
       rowmax = 0.0;
       for (j = 0; j < rowi_N; j++) 
          if ( rowi_col[j] != i && dabs(rowi_val[j]) > rowmax ) 
@@ -257,7 +274,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       rowmax *= epsilon;
       for (j = 0; j < rowi_N; j++) 
       {
-         if ( dabs(rowi_val[j]) > rowmax ) 
+         if ( rowi_val[j] != 0 && dabs(rowi_val[j]) > rowmax ) 
          {
             values[total_nnz]   = rowi_val[j];
             column[total_nnz++] = rowi_col[j];
@@ -407,7 +424,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    if ( int_buf != NULL ) free(int_buf);
 /*
 for ( i = 0; i < Nrows; i++ )
-   if ( CF_array[i] >= 0 ) printf("%d : F point = %d\n",mypid,i);
+   if ( CF_array[i] >= 0 ) printf("%d : C point = %d\n",mypid,i);
 */
 
    /* ============================================================= */
@@ -639,9 +656,30 @@ for ( i = 0; i < Nrows; i++ )
    }
 /*
 for ( i = 0; i < Nrows; i++ )
-   if ( CF_array[i] >= 0 ) printf("%d : F point = %d\n",mypid,i);
+   if ( CF_array[i] >= 0 ) printf("%d : C point = %d\n",mypid,i);
 */
 
+   /* ============================================================= */
+   /* register system information for the next level, as needed by  */
+   /* the unknown approach.                                         */
+   /* ------------------------------------------------------------- */
+
+   if ( ml_amg->amg_scheme == ML_AMG_SYSTEM_UNKNOWN &&
+        ml_amg->blk_info != NULL && num_PDE_eqns > 1 )
+   {
+      sys_array = ml_amg->blk_info;
+      if ( Ncoarse > 0 ) 
+      {
+         nbytes = Ncoarse * sizeof(int);
+         ML_memory_alloc((void**)&(ml_amg->blk_info), nbytes, "AM2");
+      }
+      else ml_amg->blk_info = NULL;
+      m = 0;
+      for ( i = 0; i < Nrows; i++ )
+         if ( CF_array[i] >= 0 ) ml_amg->blk_info[m++] = sys_array[i];
+      ML_memory_free((void**) &sys_array);
+   }
+       
    /* ============================================================= */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
@@ -825,7 +863,19 @@ for ( i = 0; i < Nrows; i++ )
       {
          /* ----- fetch the row i ----- */
 
+         diag = 0.0;
          ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+         if ( sys_unk_filter )
+         {
+            for (j = 0; j < rowi_N; j++) 
+            {
+               if (sys_info[rowi_col[j]] != sys_info[i]) 
+               {
+                  diag += rowi_val[j];
+                  rowi_val[j] = 0.0; 
+               } 
+            } 
+         } 
 
          /* ----- compute row max and find number of C's connected ----- */
 
@@ -866,7 +916,6 @@ for ( i = 0; i < Nrows; i++ )
 
          /* ----- examine each of i's neighbors ----- */
 
-         diag = 0.0;
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
@@ -1087,13 +1136,14 @@ MPI_Barrier(MPI_COMM_WORLD);
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   if ( offibuffer  != NULL ) free( offibuffer );
-   if ( offlengths  != NULL ) free( offlengths );
-   if ( offdbuffer  != NULL ) free( offdbuffer );
-   if ( rowptr      != NULL ) free( rowptr );
-   if ( column      != NULL ) free( column );
-   if ( values      != NULL ) free( values );
-   if ( CF_array    != NULL ) free( CF_array );
+   if ( offibuffer != NULL ) free( offibuffer );
+   if ( offlengths != NULL ) free( offlengths );
+   if ( offdbuffer != NULL ) free( offdbuffer );
+   if ( rowptr     != NULL ) free( rowptr );
+   if ( column     != NULL ) free( column );
+   if ( values     != NULL ) free( values );
+   if ( CF_array   != NULL ) free( CF_array );
+   if ( sys_info   != NULL ) free( sys_info );
    if ( new_Nsend > 0 )
    {
       ML_memory_free((void**) &new_send_leng);
