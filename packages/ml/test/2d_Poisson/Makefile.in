@@ -100,18 +100,18 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
 2d_Poisson_OBJECTS = $(am_2d_Poisson_OBJECTS)
-@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
+@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
+@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a \
 @ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../teuchos/src/libteuchos.a
-am__DEPENDENCIES_4 =
-am__DEPENDENCIES_5 = $(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_4)
+@ML_USING_EPETRA_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../epetra/src/libepetra.a
+@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
+am__DEPENDENCIES_6 =
+am__DEPENDENCIES_7 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
+	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6) \
+	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -183,6 +183,8 @@ ML_USING_ANASAZI_FALSE = @ML_USING_ANASAZI_FALSE@
 ML_USING_ANASAZI_TRUE = @ML_USING_ANASAZI_TRUE@
 ML_USING_AZTECOO_FALSE = @ML_USING_AZTECOO_FALSE@
 ML_USING_AZTECOO_TRUE = @ML_USING_AZTECOO_TRUE@
+ML_USING_EPETRA_FALSE = @ML_USING_EPETRA_FALSE@
+ML_USING_EPETRA_TRUE = @ML_USING_EPETRA_TRUE@
 ML_USING_IFPACK_FALSE = @ML_USING_IFPACK_FALSE@
 ML_USING_IFPACK_TRUE = @ML_USING_IFPACK_TRUE@
 ML_USING_TEUCHOS_FALSE = @ML_USING_TEUCHOS_FALSE@
@@ -255,6 +257,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@ML_USING_EPETRA_FALSE@epetra_lib = 
+@ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
+@ML_USING_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
 @ML_USING_TEUCHOS_FALSE@teuchos_lib = 
 
 # One of the input options for this example is the coarse direct solver KLU.
@@ -274,10 +280,10 @@ EXTRA_DIST = 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 ba
 #2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-    ${amesos_lib} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-    ${teuchos_lib} \
+	$(aztecoo_lib) \
+        ${amesos_lib} \
+	$(epetra_lib) \
+        ${teuchos_lib} \
 	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
@@ -298,11 +304,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../amesos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib) \
                 ${ifpack_lib} \
-	            ${amesos_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
-	            ${teuchos_lib} \
+	        ${amesos_lib} \
+                $(epetra_lib) \
+	        ${teuchos_lib} \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

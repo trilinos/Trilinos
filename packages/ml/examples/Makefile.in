@@ -118,7 +118,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_2level$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelMultiLevelOOperator$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelOperator$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_filtering$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_vbr$(EXEEXT) \
@@ -164,22 +164,18 @@ am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
 am__DEPENDENCIES_6 =
 @ML_STANDALONE_MODE_FALSE@am__DEPENDENCIES_7 =  \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_1) \
+@ML_STANDALONE_MODE_FALSE@	$(aztecoo_lib} $(am__DEPENDENCIES_1) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_3) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_4) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) \
-@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) $(epetra_lib} \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
@@ -490,6 +486,8 @@ ML_USING_ANASAZI_FALSE = @ML_USING_ANASAZI_FALSE@
 ML_USING_ANASAZI_TRUE = @ML_USING_ANASAZI_TRUE@
 ML_USING_AZTECOO_FALSE = @ML_USING_AZTECOO_FALSE@
 ML_USING_AZTECOO_TRUE = @ML_USING_AZTECOO_TRUE@
+ML_USING_EPETRA_FALSE = @ML_USING_EPETRA_FALSE@
+ML_USING_EPETRA_TRUE = @ML_USING_EPETRA_TRUE@
 ML_USING_IFPACK_FALSE = @ML_USING_IFPACK_FALSE@
 ML_USING_IFPACK_TRUE = @ML_USING_IFPACK_TRUE@
 ML_USING_TEUCHOS_FALSE = @ML_USING_TEUCHOS_FALSE@
@@ -598,9 +596,6 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
 # essential.)
-ml_integrated_dependencies = $(top_builddir)/../aztecoo/src/libaztecoo.a \
-                       $(top_builddir)/../epetra/src/libepetra.a
-
 
 # This is not working.  
 # It should be ok to omit it because when _DEPENDENCIES is not
@@ -638,13 +633,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 @ML_STANDALONE_MODE_TRUE@mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 #
 @ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
-@ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${ifpack_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${amesos_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${anasazi_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${teuchos_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${triutils_lib} \
-@ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../epetra/src/libepetra.a \
+@ML_STANDALONE_MODE_FALSE@                $(epetra_lib} \
 @ML_STANDALONE_MODE_FALSE@                $(LIBS) \
 @ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)                            \
 @ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)                            \
@@ -656,17 +651,14 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 @ML_STANDALONE_MODE_TRUE@                $(BLAS_LIBS)                            \
 @ML_STANDALONE_MODE_TRUE@                $(FLIBS)
 
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_FALSE@epetra_lib = 
+@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_FALSE@amesos_lib = 
-
-# Amesos require Teuchos
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
-
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_FALSE@anasazi_lib = 
-# Anasazi require Teuchos
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
-
+@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
 @ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_FALSE@triutils_lib = 

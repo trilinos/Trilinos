@@ -100,20 +100,20 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_MultiLevelPreconditioner_NonSym_OBJECTS = MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.$(OBJEXT)
 MultiLevelPreconditioner_NonSym_OBJECTS =  \
 	$(am_MultiLevelPreconditioner_NonSym_OBJECTS)
-@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a
-@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a
-@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_6 =
-am__DEPENDENCIES_7 = $(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6) \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6)
+am__DEPENDENCIES_1 =
+@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
+@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_USING_EPETRA_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
+am__DEPENDENCIES_8 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
+	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_7) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -186,6 +186,8 @@ ML_USING_ANASAZI_FALSE = @ML_USING_ANASAZI_FALSE@
 ML_USING_ANASAZI_TRUE = @ML_USING_ANASAZI_TRUE@
 ML_USING_AZTECOO_FALSE = @ML_USING_AZTECOO_FALSE@
 ML_USING_AZTECOO_TRUE = @ML_USING_AZTECOO_TRUE@
+ML_USING_EPETRA_FALSE = @ML_USING_EPETRA_FALSE@
+ML_USING_EPETRA_TRUE = @ML_USING_EPETRA_TRUE@
 ML_USING_IFPACK_FALSE = @ML_USING_IFPACK_FALSE@
 ML_USING_IFPACK_TRUE = @ML_USING_IFPACK_TRUE@
 ML_USING_TEUCHOS_FALSE = @ML_USING_TEUCHOS_FALSE@
@@ -258,12 +260,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@ML_USING_EPETRA_FALSE@epetra_lib = 
+@ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
 @ML_USING_AMESOS_FALSE@amesos_lib = 
-
-# Amesos require Teuchos
 @ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_AZTECOO_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
 @ML_USING_ANASAZI_FALSE@anasazi_lib = 
-# Anasazi require Teuchos
 @ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 @ML_USING_TEUCHOS_FALSE@teuchos_lib = 
 @ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
@@ -274,7 +277,8 @@ target_vendor = @target_vendor@
 MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
 MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
+    ${aztecoo_lib} \
+    ${epetra_lib} \
     ${triutils_lib} \
     ${amesos_lib} \
     ${anasazi_lib} \
@@ -301,13 +305,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 #
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib)    \
                 ${ifpack_lib} \
                 ${amesos_lib} \
                 ${anasazi_lib} \
                 ${teuchos_lib} \
                 ${triutils_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
+                $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
