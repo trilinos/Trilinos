@@ -151,7 +151,7 @@ of current Trilinos packages and their iteroperability status
 is provided, along with a list of supported computer platforms.
 
 For a higher-level view of the Trilinos project, please see An Overview
-of the Trilinos Project~\cite{TrilinosOverview}. The current set of
+of the Trilinos Project~\cite{Trilinos-Overview}. The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 
 \begin{figure}
@@ -1353,6 +1353,17 @@ configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
 These warnings will be fixed in the future.
 
 \item Test and debug Autoconf and Automake files.
+
+Run \InlineCommand{configure} with the appropriate options in a clean BUILD 
+directory.  For information about configuring Trilinos, see 
+Section~\ref{Subsection:ConfiguringTrilinos}.  Testing and debugging can 
+become a long iterative process.  To save time, consider disabling all of the 
+packages that do not need to be built for the current task.  When debugging 
+the configure.ac script for np, consider configuring at the np level, as 
+libraries that np is dependent on are not needed at the configure stage.  
+(To do this, make sure to point at the np configure script from the build 
+directory.)
+%at echo paragraph, make sure to mention make'ing make a tips section.
 
 \item Add all Autoconf and Automake files to the Trilinos CVS repository.
 
