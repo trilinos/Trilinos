@@ -31,8 +31,8 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 
 /* Definitions for the GGB method */
 #if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
-#define GGBcycSecond     /* #define GGBcycFirst */
-/*#define store_AQ*/        /* May not be defined if storage is an issue (but slower) */ 
+#define GGBcycSecond     /* #define GGBcycFirst  */
+#define store_AQ        /* May not be defined if storage is an issue (but slower) */
 #define newrap              /* Should always be defined for better performance */
 #define ML_ggb_SymmetricCycle  /* May not be defined. In my experence is better */
 #endif
@@ -2951,10 +2951,9 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    /* ------------------------------------------------------------ */
 
    if (ml->void_options == NULL)
-     
      ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
 		 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
-
+   
    else
      {
        
@@ -5911,8 +5910,7 @@ int ML_build_ggb(ML *ml, void *data)
   Ncols = mydata->Ncols;
   Nrows = mydata->Nrows;
   Nnz   = mydata->Nnz;
-
-
+  
   /* Imported information of the Prolongator */
   csr_data->rowptr  =  mydata->rowptr;
   csr_data->columns =  mydata->columns;
@@ -6056,11 +6054,12 @@ int ML_build_ggb(ML *ml, void *data)
   
   
   if (ml_ggb->comm->ML_mypid == 0) 
-    ML_Operator_Set_ApplyFuncData(Qtilde, Ncols, Nrows, ML_EMPTY, Qtilde_data,
+    ML_Operator_Set_ApplyFuncData(Qtilde, Ncols, Nrows, Qtilde_data,
 				  Nrows, NULL, 0);
+  
   else 
     
-    ML_Operator_Set_ApplyFuncData(Qtilde, 0, Nrows, ML_EMPTY, Qtilde_data,
+    ML_Operator_Set_ApplyFuncData(Qtilde, 0, Nrows, Qtilde_data,
 				  Nrows, NULL, 0);
   
   
@@ -6137,11 +6136,13 @@ int ML_build_ggb(ML *ml, void *data)
   /*
     printf("before the dump\n"); fflush(stdout); 
     ML_Operator_Print(&(ml_ggb->Amat[0]), "RAP_print");
-    ML_CommInfoOP_Print( ml_ggb->Amat[0].getrow->pre_comm,  "RAPcomm");
-    ML_Operator_Dump(&(ml_ggb->Amat[0]), NULL, NULL,"RAP", ML_TRUE);
-    printf("after the dump\n"); fflush(stdout);      
   */
-  
+    /*
+      ML_CommInfoOP_Print( ml_ggb->Amat[0].getrow->pre_comm,  "RAPcomm");
+      ML_Operator_Dump(&(ml_ggb->Amat[0]), NULL, NULL,"RAP", ML_TRUE);
+      printf("after the dump\n"); fflush(stdout);      
+    */
+    
   
   /* Free work arrays */
   ML_free(zdata);
