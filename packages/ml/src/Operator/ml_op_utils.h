@@ -64,15 +64,6 @@ extern int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows,
 					 int *Nexternal_allocated);
 extern int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
 		      ML_CommInfoOP **nonOverlapped_2_Overlapped);
-extern int ML_Operator_Analyze(ML_Operator *Op, char *name);
-extern int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
-				     char* FileName,
-				     int PrintDecomposition,
-				     int NumPDEEqns);
-int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
-				  double* Er,
-				  double* Ei,
-				  double* vectors);
 extern void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel);
 extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
 extern void ML_Operator_Profile_SetIterations(int numits);
