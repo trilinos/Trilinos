@@ -23,7 +23,6 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN matching_no;   /* template -- matching */
 
-static double sim (PHGraph*, int, int);
 
 /* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
 /* static int graph_connected_components (int, int*, int*, int);             */
@@ -49,10 +48,7 @@ int Zoltan_PHG_Matching (
   ZZ *zz,
   PHGraph *hg,
   Matching match,
-  PHGPartParams *hgp,
-  int *limit,
-  Par_info *par_info,
-  int *par_count)
+  PHGPartParams *hgp)
 {
 float *old_ewgt = NULL, *new_ewgt = NULL;
 int   err;
@@ -74,7 +70,7 @@ char  *yo = "Zoltan_PHG_Matching";
 
   /* Do the matching */
   if (hgp->matching) {
-     err = hgp->matching (zz, hg, match, limit, par_info, par_count);
+     err = hgp->matching (zz, hg, match);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
         goto End;
      }
@@ -96,10 +92,8 @@ End:
 
 /*****************************************************************************/
 /* template for matching, hypergraph version */
-static int matching_no (ZZ *zz, PHGraph *hg, Matching match, int *limit,
-                        Par_info* par_info, int *par_count)
+static int matching_no (ZZ *zz, PHGraph *hg, Matching match)
 {
-  *par_count = 0;
   return ZOLTAN_OK;
 }
 

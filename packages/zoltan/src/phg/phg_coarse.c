@@ -29,15 +29,15 @@ extern "C" {
   hyperedge with combined weight. The array LevelMap is the mapping of the old
   vertices to the new vertices. It will be used to pass a partition of the coarse
   graph back to the original graph. Time O(|I|*log(|I|)), due to sorting. */
+  
+
 
 int Zoltan_PHG_Coarsening
 ( ZZ *zz,             /* the Zoltan data structure */
   PHGraph  *hg,
   int      *match,      /* Matching, Packing or Grouping array */
   PHGraph  *c_hg,       /* points to a working copy of hg structure */
-  int      *LevelMap,
-  Par_info *par_info,
-  int      *par_count)
+  int      *LevelMap)
 {
   int i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins, *hsize=NULL;
   int *sum=NULL, *used_vertices=NULL, *sorted=NULL, *c_hindex=NULL; 
@@ -52,6 +52,25 @@ int Zoltan_PHG_Coarsening
   c_hg->ratio = hg->ratio;
   c_hg->redl  = hg->redl;
 
+/* RTHRTH:  CHANGES FOR PARALLEL FOR THIS ROUTINE: */  
+/* Assume that the entire column has the matching information at this point */
+/* Process entire match array.  For each entry that is not local and I own, 
+/* (bottom bit of sum of global matched vertices)c
+/* create a message (requesting vertex information) to its processor.
+/* Send all messages using unstructured communications
+/* Process received messages:  create response message with GID, weight, edge list
+/* Use hash table to associate external GIDs with the response information
+/* Scan match array to create LevelMap assuming local matching, packing, grouping but
+/* external vertices may only be matched.
+/* Instead of processing edge list with vertex pins (serial code), process vertex list
+/*  with hyperedge pins. Use same trick to insure each edge is added once.
+/* If vertex is external, use hash lookup to get its info.  Add hyperedge pins and
+/*  sum vertex weights.
+/* Create mirror for opposite information.
+  
+  
+  
+  
   /* Calculate the number of coarse vertices. match[vertex] -> -match[vertex]-1 */
   c_hg->nVtx = 0;
   for (i = 0; i < hg->nVtx; i++)

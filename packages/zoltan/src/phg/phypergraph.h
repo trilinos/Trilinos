@@ -38,11 +38,6 @@ extern "C" {
 #define EPS           1e-6        /* small value, like a machine epsilon */
 
 
-typedef struct {
-   float weight;
-   int   owner;  /* 1 means this proc is owner, 0 means external owner */
-   int   gid;    /* vertex global identification at current level */
-} Par_info;
 
 typedef int *Matching;  /* length |V|, matching information of vertices */
 /* If a vertex i is not being contracted (matched) with other vertices,  
@@ -58,13 +53,11 @@ typedef struct {
    Partition part;
    Matching  match;
    LevelMap  lmap;
-   Par_info  *par;  /* new information for parallel extension */
 } PHGraphLevel;
 
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
-typedef int ZOLTAN_PHG_MATCHING_FN   (ZZ*, PHGraph*, Matching, int*, Par_info*,
-                                      int*);
+typedef int ZOLTAN_PHG_MATCHING_FN   (ZZ*, PHGraph*, Matching);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, PHGraph*, int, Partition,
                                      struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_REFINEMENT_FN  (ZZ*, PHGraph*, int, Partition,
@@ -123,13 +116,11 @@ int Zoltan_PHG_Scale_HGraph_Weight (ZZ*, PHGraph*, float*, int);
 int Zoltan_PHG_Scale_Graph_Weight  (ZZ*, PGraph*,  float*, int);
 
 /* Matching functions */
-int Zoltan_PHG_Matching (ZZ*, PHGraph*, Matching, PHGPartParams*, int*,
-                         Par_info*, int*);
+int Zoltan_PHG_Matching (ZZ*, PHGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 
 /* Coarsening */
-int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Matching, PHGraph*, int*, Par_info*,
-                             int*);
+int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Matching, PHGraph*, int*);
 
 /* Coarse Partitioning functions */
 int Zoltan_PHG_CoarsePartition (ZZ*, PHGraph*, int, Partition, PHGPartParams*);

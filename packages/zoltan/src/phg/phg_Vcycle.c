@@ -121,28 +121,21 @@ int Zoltan_PHG_HPart_Lib (
       return err;
   }
   else {        /* normal multilevel situation */
-    int *match = NULL, *LevelMap = NULL, *c_part = NULL, limit, par_count;
-    Par_info *par_info;
+    int *match = NULL, *LevelMap = NULL, *c_part = NULL, limit;
     PHGraph c_hg;
 
     /* Allocate and initialize Matching Array */
-    if (!(match = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int)))) {
+    if (!(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory for Matching array");
       return ZOLTAN_MEMERR;
     }
     for (i = 0; i < hg->nVtx; i++)
       match[i] = i;
-      
-    /* Allocate Par_info array */      
-    if (!(par_info = (Par_info*) ZOLTAN_MALLOC (hg->nVtx * sizeof(Par_info)))) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory for Par_info");
-      return ZOLTAN_MEMERR;
-    }
-    
+          
     /* Calculate matching (packing or grouping) */
     limit = hg->nVtx - hg->redl;
     if (hgp->matching)  {
-      err = Zoltan_PHG_Matching (zz, hg, match, hgp, &limit, par_info, &par_count);
+      err = Zoltan_PHG_Matching (zz, hg, match, hgp);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         ZOLTAN_FREE ((void**) &match);
         return err;
@@ -157,8 +150,7 @@ int Zoltan_PHG_HPart_Lib (
     }
 
     /* Construct coarse hypergraph and LevelMap */
-    err = Zoltan_PHG_Coarsening (zz, hg, match, &c_hg, LevelMap, par_info, 
-                                 &par_count);
+    err = Zoltan_PHG_Coarsening (zz, hg, match, &c_hg, LevelMap);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &match, &LevelMap);
       goto End;
