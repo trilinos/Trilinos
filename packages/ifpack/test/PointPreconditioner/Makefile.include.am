@@ -28,13 +28,13 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = TestPointPreconditioner
+noinst_PROGRAMS = TestRelaxation
 
-TestPointPreconditioner_SOURCES = $(srcdir)/cxx_main.cpp
+TestRelaxation_SOURCES = $(srcdir)/cxx_main.cpp
 
-TestPointPreconditioner_DEPENDENCIES = $(IFPACK_LIBS)
+TestRelaxation_DEPENDENCIES = $(IFPACK_LIBS)
 
-TestPointPreconditioner_CXXFLAGS = $(IFPACK_INCLUDES)  \
+TestRelaxation_CXXFLAGS = $(IFPACK_INCLUDES)  \
 	-I$(top_srcdir)/../triutils/src \
 	-I$(top_builddir)/../triutils/src
 
@@ -44,7 +44,7 @@ else
 triutils_lib = 
 endif
 
-TestPointPreconditioner_LDADD = $(triutils_lib) \
+TestRelaxation_LDADD = $(triutils_lib) \
 	$(IFPACK_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
