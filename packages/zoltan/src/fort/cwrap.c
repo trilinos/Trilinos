@@ -15,6 +15,7 @@
 #define LB_fw_Initialize1                lb_fw_initialize1
 #define LB_fw_Create                     lb_fw_create       
 #define LB_fw_Destroy                    lb_fw_destroy       
+#define LB_fw_Memory_Stats               lb_fw_Memory_Stats       
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f
@@ -60,6 +61,7 @@
 #define LB_fw_Initialize1                LB_FW_INITIALIZE1
 #define LB_fw_Create                     LB_FW_CREATE       
 #define LB_fw_Destroy                    LB_FW_DESTROY       
+#define LB_fw_Memory_Stats               LB_FW_MEMORY_STATS  
 #define LB_fw_Set_Fn0f                   LB_FW_SET_FN0F
 #define LB_fw_Set_Fn1f                   LB_FW_SET_FN1F
 #define LB_fw_Set_Fn2f                   LB_FW_SET_FN2F
@@ -105,6 +107,7 @@
 #define LB_fw_Initialize1                lb_fw_initialize1_
 #define LB_fw_Create                     lb_fw_create_
 #define LB_fw_Destroy                    lb_fw_destroy_
+#define LB_fw_Memory_Stats               lb_fw_memory_stats_
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f_
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f_
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f_
@@ -150,6 +153,7 @@
 #define LB_fw_Initialize1                lb_fw_initialize1__
 #define LB_fw_Create                     lb_fw_create__
 #define LB_fw_Destroy                    lb_fw_destroy__
+#define LB_fw_Memory_Stats               lb_fw_memory_stats__
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f__
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f__
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f__
@@ -460,13 +464,15 @@ int LB_fw_Initialize(float *ver)
    char **myArgv;
    int result;
    myArgc = 1;
-   myArgv = (char **) LB_Malloc((myArgc+1)*sizeof(char *),__FILE__,__LINE__);
-   myArgv[0] = (char *) LB_Malloc(8*sizeof(char),__FILE__,__LINE__);
+   myArgv = (char **) LB_MALLOC((myArgc+1)*sizeof(char *));
+   myArgv[0] = (char *) LB_MALLOC(8*sizeof(char));
    myArgv[0] = "unknown";
    myArgv[1] = NULL;
    result = LB_Initialize(myArgc,myArgv,ver);
 /* TEMP should myArgv be freed or kept? */
-/* LB_FREE((void **)&myArgv); */
+/* KDD -- try freeing it */
+   LB_FREE(&(myArgv[0]));
+   LB_FREE(&myArgv);
    return result;
 }
 
@@ -474,10 +480,9 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
 {
    int i, j, result;
    char **myArgv;
-   myArgv = (char **) LB_Malloc(((*argc)+1)*sizeof(char *),__FILE__,__LINE__);
+   myArgv = (char **) LB_MALLOC(((*argc)+1)*sizeof(char *));
    for (i=0; i<(*argc); i++) {
-      myArgv[i] = (char *) LB_Malloc((starts[i+1]-starts[i]+1)*sizeof(char),
-                                     __FILE__,__LINE__);
+      myArgv[i] = (char *) LB_MALLOC((starts[i+1]-starts[i]+1)*sizeof(char));
       for (j=0; j<starts[i+1]-starts[i]; j++) {
          myArgv[i][j] = (char) argv[starts[i]+j-1];
       }
@@ -485,7 +490,9 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
    }
    myArgv[*argc] = NULL;
    result = LB_Initialize(*argc,myArgv,ver);
-   LB_FREE((void **)&myArgv);
+   for (i=0; i<(*argc); i++) 
+     LB_FREE(&(myArgv[i]));
+   LB_FREE(&myArgv);
    return result;
 }
 
@@ -510,6 +517,11 @@ void LB_fw_Destroy(int *addr_lb, int *nbytes)
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Destroy(&lb);
+}
+
+void LB_fw_Memory_Stats()
+{
+   LB_Memory_Stats();
 }
 
 int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
@@ -733,14 +745,14 @@ int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
    char *str;
    unsigned char *p;
    int i, result;
-   str = (char *)LB_Malloc(*len+1,__FILE__,__LINE__);
+   str = (char *)LB_MALLOC(*len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
    for (i=0; i<(*len); i++) str[i] = (char)int_str[i];
    str[*len] = '\0';
    result = LB_Set_Method(lb, str);
-   LB_FREE((void **)&str);
+   LB_FREE(&str);
    return result;
 }
 
@@ -750,9 +762,9 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    struct LB_Struct *lb;
    char *param_name, *new_value;
    unsigned char *p;
-   int i;
-   param_name = (char *)LB_Malloc(*param_name_len+1,__FILE__,__LINE__);
-   new_value = (char *)LB_Malloc(*new_value_len+1,__FILE__,__LINE__);
+   int i, result;
+   param_name = (char *)LB_MALLOC(*param_name_len+1);
+   new_value = (char *)LB_MALLOC(*new_value_len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
@@ -760,7 +772,10 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
    new_value[*new_value_len] = '\0';
-   return LB_Set_Param(lb, param_name, new_value);
+   result = LB_Set_Param(lb, param_name, new_value);
+   LB_FREE(&param_name);
+   LB_FREE(&new_value);
+   return result;
 }
 
 int LB_fw_Balance11(int *addr_lb, int *nbytes, int *changes, int *num_import,

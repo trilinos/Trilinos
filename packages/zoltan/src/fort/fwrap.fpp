@@ -83,6 +83,7 @@ public :: &
    LB_Initialize, &
    LB_Create, &
    LB_Destroy, &
+   LB_Memory_Stats, &
    LB_Set_Fn, &
    LB_Set_Method, &
    LB_Set_Param, &
@@ -268,6 +269,15 @@ implicit none
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
 end subroutine LB_fw_Destroy
+end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_memory_stats"
+subroutine LB_fw_Memory_Stats()
+use zoltan_types
+use lb_user_const
+implicit none
+end subroutine LB_fw_Memory_Stats
 end interface
 
 interface
@@ -956,6 +966,10 @@ interface LB_Destroy
    module procedure f90LB_Destroy
 end interface
 
+interface LB_Memory_Stats
+   module procedure f90LB_Memory_Stats
+end interface
+
 interface LB_Set_Fn
    module procedure f90LB_Set_Fn0f
    module procedure f90LB_Set_Fn1f
@@ -1186,6 +1200,10 @@ call LB_fw_Destroy(lb_addr,nbytes)
 deallocate(lb)
 nullify(lb)
 end subroutine f90LB_Destroy
+
+subroutine f90LB_Memory_Stats()
+call LB_fw_Memory_Stats()
+end subroutine f90LB_Memory_Stats
 
 function f90LB_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Fn0f
