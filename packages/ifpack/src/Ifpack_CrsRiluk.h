@@ -231,20 +231,7 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   // Mathematical functions.
   
   
-  //! Returns the result of a Ifpack_CrsRiluk forward/back solve on a Epetra_Vector x in y.
-  /*! 
-    \param In
-    Trans -If true, solve transpose problem.
-    \param In
-    x -A Epetra_Vector to solve for.
-    \param Out
-    y -A Epetra_Vector containing result.
-    
-    \return Integer error code, set to 0 if successful.
-  */
-  int Solve(bool Trans, const Epetra_Vector& x, Epetra_Vector& y) const;
-  
-  //! Returns the result of a Ifpack_CrsRiluk forward/back solve on a Epetra_MultiVector X in Y.
+  //! Returns the result of a Ifpack_CrsRiluk forward/back solve on a Epetra_MultiVector X in Y (works for Epetra_Vectors also).
   /*! 
     \param In
     Trans -If true, solve transpose problem.
@@ -406,11 +393,19 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   int AllocateCrs();
   int AllocateVbr();
   int InitAllValues(const Epetra_RowMatrix & A, int MaxNumEntries);
+  int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap);
+  int GenerateXY(bool Trans, 
+		 const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
+		 Epetra_MultiVector * & Xout, Epetra_MultiVector * & Yout) const;
   bool UserMatrixIsVbr_;
   bool UserMatrixIsCrs_;
   bool IsOverlapped_;
   const Ifpack_IlukGraph & Graph_;
   Epetra_Map * IlukRowMap_;
+  Epetra_Map * IlukDomainMap_;
+  Epetra_Map * IlukRangeMap_;
+  const Epetra_Map * U_DomainMap_;
+  const Epetra_Map * L_RangeMap_;
   const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * L_;
   Epetra_CrsMatrix * U_;
@@ -430,6 +425,8 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
 
   mutable Epetra_MultiVector * OverlapX_;
   mutable Epetra_MultiVector * OverlapY_;
+  mutable Epetra_MultiVector * VbrX_;
+  mutable Epetra_MultiVector * VbrY_;
   Epetra_CombineMode OverlapMode_;
 
 

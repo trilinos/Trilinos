@@ -624,7 +624,7 @@ int Epetra_VbrMatrix::TransformToLocal() {
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap) {
+int Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap) {
   
   if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(*DomainMap, *RangeMap));
   SortEntries();  // Sort column entries from smallest to largest

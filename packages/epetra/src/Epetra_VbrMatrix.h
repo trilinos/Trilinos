@@ -295,7 +295,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
 	               matrix range.
     */
-    int TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap);
+    int TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap);
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     bool Filled() const {return(Graph_->Filled());};

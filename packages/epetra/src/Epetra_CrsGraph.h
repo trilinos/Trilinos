@@ -215,7 +215,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   int TransformToLocal();
 
   //! Tranform to local index space using specified Domain/Range maps.  Perform other operations to allow optimal matrix operations.
-  int TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap);
+  int TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap);
 
     //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
     int OptimizeStorage();
@@ -537,11 +537,11 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
 
   // Defined by TransformToLocal and related
-  Epetra_BlockMap * DomainMap_;
-  Epetra_BlockMap * RangeMap_;
-  Epetra_BlockMap * ColMap_;
-  Epetra_Import * Importer_;
-  Epetra_Export * Exporter_;
+  const Epetra_BlockMap * DomainMap_;
+  const Epetra_BlockMap * RangeMap_;
+  const Epetra_BlockMap * ColMap_;
+  const Epetra_Import * Importer_;
+  const Epetra_Export * Exporter_;
 
   bool Filled_;
   bool Allocated_;

@@ -483,7 +483,7 @@ int Epetra_CrsGraph::TransformToLocal() {
 }
 
 //==========================================================================
-int Epetra_CrsGraph::TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap) {
+int Epetra_CrsGraph::TransformToLocal(const Epetra_BlockMap *DomainMap, const Epetra_BlockMap *RangeMap) {
 
   DomainMap_ = DomainMap;
   RangeMap_ = RangeMap;

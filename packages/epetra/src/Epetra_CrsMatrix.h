@@ -276,7 +276,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
 	               matrix range.
     */
-    int TransformToLocal(Epetra_Map *DomainMap, Epetra_Map *RangeMap);
+    int TransformToLocal(const Epetra_Map *DomainMap, const Epetra_Map *RangeMap);
     
     //! Sort column entries, row-by-row, in ascending order.
     int SortEntries();

@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Uncomment the next line to debug in mpi mode
-  int tmp=0; if (MyPID==0) { cout << "Type any key plus enter to continue" << endl; cin >> tmp; } Comm.Barrier();
+  //int tmp=0; if (MyPID==0) { cout << "Type any key plus enter to continue" << endl; cin >> tmp; } Comm.Barrier();
 
   Epetra_BlockMap * readMap;
   Epetra_VbrMatrix * readA; 
