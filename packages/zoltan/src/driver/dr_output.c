@@ -28,7 +28,7 @@ extern "C" {
 
 
 /* Prototypes */
-static void echo_cmd_file(FILE *fp, char *cmd_file);
+static void echo_cmd_file(FILE *fp, const char *cmd_file);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -150,8 +150,8 @@ ELEM_INFO_PTR current_elem;
 /*--------------------------------------------------------------------------*/
 /* Author(s):  Matthew M. St.John (9226)                                    */
 /*--------------------------------------------------------------------------*/
-int output_results(char *cmd_file,
-                   char *tag,
+int output_results(const char *cmd_file,
+                   const char *tag,
                    int Proc,
                    int Num_Proc,
                    PROB_INFO_PTR prob,
@@ -164,7 +164,7 @@ int output_results(char *cmd_file,
  */
 {
   /* Local declarations. */
-  char  *yo = "output_results";
+  const char  *yo = "output_results";
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
 
   int   *global_ids = NULL;
@@ -292,12 +292,12 @@ int output_results(char *cmd_file,
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void echo_cmd_file(FILE *fp, char *cmd_file)
+static void echo_cmd_file(FILE *fp, const char *cmd_file)
 {
 /* Routine to echo the input file into the output results (so that
  * we know what conditions were used to produce a given result).
  */
-char *yo = "echo_cmd_file";
+const char *yo = "echo_cmd_file";
 char cmsg[256];
 char inp_line[MAX_INPUT_STR_LN + 1];
 FILE *cmd_fp;

@@ -38,7 +38,7 @@ float   **y,
 float   **z
 )
 {
-    char     *yo = "chaco_input_geom";
+    const char     *yo = "chaco_input_geom";
     float     xc, yc, zc;	/* first x, y, z coordinate */
     int       nread;		/* number of lines of coordinates read */
     int       flag;		/* any bad data at end of file? */

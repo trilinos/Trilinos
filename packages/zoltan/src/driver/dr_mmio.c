@@ -444,7 +444,7 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 char  *mm_typecode_to_str(MM_typecode matcode)
 {
     static char buffer[MM_MAX_LINE_LENGTH];
-    char *types[4];
+    const char *types[4];
 
     /* check for MTX type */
     if (mm_is_matrix(matcode)) 

@@ -45,7 +45,7 @@ static ERROR_MSG_PTR error_info;
  *
  * A level 0 error indicates a fatal error, otherwise it's a warning.
  *****************************************************************************/
-void error_add(int level, char *message, char *filename, int line_no)
+void error_add(int level, const char *message, const char *filename, int line_no)
 {
 
   if(error_cnt == 0)

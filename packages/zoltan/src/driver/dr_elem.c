@@ -811,7 +811,7 @@ int get_elem_info(const int req, const E_Type etype, const int sid)
 int get_side_id(E_Type etype, const int *connect, const int nsnodes,
                 int side_nodes[])
 {
-  char *func_name="get_side_id";
+  const char *func_name="get_side_id";
   char  err_buff[300];
 
   int nnodes, i, j, num;
@@ -1630,7 +1630,7 @@ int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
 /*****************************************************************************/
 /*****************************************************************************/
 
-char *get_elem_name(int itype) {
+const char *get_elem_name(int itype) {
 /* Function to return the name of an element given its type.
  * Inverse of get_elem_type().
  */

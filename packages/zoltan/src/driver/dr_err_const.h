@@ -43,8 +43,8 @@ typedef struct error_message *ERROR_MSG_PTR;
 extern
 void error_add(
   int   level,
-  char *message,	/* The message to add to the error list */
-  char *filename,	/* The filename in which the error occured */
+  const char *message,	/* The message to add to the error list */
+  const char *filename,	/* The filename in which the error occured */
   int   line		/* The line number in filename where the error
                          * was reported */
   );

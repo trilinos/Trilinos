@@ -24,7 +24,6 @@
 
 #include "zoltanCPP.h"
 
-using namespace MPI;
 using namespace Zoltan;
 using namespace std;
 
@@ -49,7 +48,7 @@ static void initialize_mesh(MESH_INFO_PTR);
 int main(int argc, char *argv[])
 {
 /* Local declarations. */
-  char  *cmd_file;
+  const char  *cmd_file;
   char   cmesg[256]; /* for error messages */
   int    error, gerror;
   int    print_output = 1;

@@ -42,7 +42,7 @@ extern "C" {
  */
 
 int read_cmd_file (
- char *filename,            /* The name of the command file. */
+ const char *filename,            /* The name of the command file. */
  PROB_INFO_PTR prob,
  PARIO_INFO_PTR pio_info)   /* pio_info - parallel I/O information. */
 {

@@ -89,7 +89,7 @@ typedef struct Parallel_IO *PARIO_INFO_PTR;
 
 /* Function prototypes */
 extern int read_cmd_file(
-  char *filename,
+  const char *filename,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info
 );

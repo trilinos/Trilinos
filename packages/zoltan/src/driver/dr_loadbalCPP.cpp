@@ -38,7 +38,6 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 
 using namespace Zoltan;
 using namespace std;
-using namespace MPI;
 
 static int Num_GID = 1, Num_LID = 1;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan::Zoltan_Object &);
@@ -88,7 +87,7 @@ int setup_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
                  MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
-  char *yo = "setup_zoltan";
+  const char *yo = "setup_zoltan";
   int ierr;                      /* Error code */
   char errmsg[128];              /* Error message */
 
@@ -410,7 +409,7 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
                MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
 {
 /* Local declarations. */
-  char *yo = "run_zoltan";
+  const char *yo = "run_zoltan";
 
   /* Variables returned by Zoltan */
   ZOLTAN_ID_PTR import_gids = NULL;  /* Global nums of objs to be imported   */

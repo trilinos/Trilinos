@@ -29,16 +29,17 @@ extern void print_distributed_mesh(
 );
 
 extern int output_results(
-  char *cmd_file,
-  char *tag,
+  const char *cmd_file,
+  const char *tag,
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
   MESH_INFO_PTR mesh);
 
-extern int output_gnu(char *cmd_file,
-  char *tag,
+extern int output_gnu(
+  const char *cmd_file,
+  const char *tag,
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,

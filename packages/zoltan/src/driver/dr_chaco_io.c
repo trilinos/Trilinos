@@ -48,7 +48,7 @@ int read_chaco_file(int Proc,
                     MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
-  char  *yo = "read_chaco_mesh";
+  const char  *yo = "read_chaco_mesh";
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
@@ -190,7 +190,7 @@ int chaco_setup_mesh_struct(
   int       no_geom              /* flag indicating whether coords are avail. */
 )
 {
-char *yo = "chaco_setup_mesh_struct";
+const char *yo = "chaco_setup_mesh_struct";
 int i;
 
   DEBUG_TRACE_START(Proc, yo);
@@ -307,7 +307,7 @@ int chaco_fill_elements(
   int i, j, k, elem_id, *local_ids = NULL;
   int num_vtx, min_vtx, max_vtx; 
   int *vtx_list = NULL;
-  char *yo = "chaco_fill_elements";
+  const char *yo = "chaco_fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);

@@ -48,7 +48,7 @@ int HG_readfile (
   int *base)
 {
   char string[BUF_LEN];
-  char *yo = "HG_readfile";
+  const char *yo = "HG_readfile";
 
   /* Initialize return values in case of error. */
   *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = *base = 0;
@@ -97,7 +97,7 @@ static int readfile (
   int i, j, pin;
   char string[BUF_LEN];
   float *p;
-  char *yo = "readfile";
+  const char *yo = "readfile";
 
   if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
    || !(*vertex = (int*) malloc ((*nPins    * sizeof(int)))))

@@ -52,7 +52,7 @@ int create_random_input(
   MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
-  char  *yo = "create_random_input";
+  const char  *yo = "create_random_input";
 
   int    i, j, nvtxs, gnvtxs;
   int    vwgt_dim=0, ewgt_dim=0;

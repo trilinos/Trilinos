@@ -62,7 +62,7 @@ int read_exoII_file(int Proc,
 
 #else /* ZOLTAN_NEMESIS */
   /* Local declarations. */
-  char  *yo = "read_exoII_mesh";
+  const char  *yo = "read_exoII_mesh";
   char   par_nem_fname[FILENAME_MAX+1], title[MAX_LINE_LENGTH+1];
   char   cmesg[256];
 
@@ -260,7 +260,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
                           MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
-  char  *yo = "read_elem_info";
+  const char  *yo = "read_elem_info";
   int    iblk, ielem, inode, lnode, cnode, iplace, len;
   int    max_nsur = 0;
   int    i;
@@ -745,7 +745,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
                               MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
-  char *yo = "read_comm_map_info";
+  const char *yo = "read_comm_map_info";
   int  ielem, imap, loc_elem, iblk, max_len, offset, index;
   int  nnodei, nnodeb, nnodee, nelemi, nelemb, nncmap;
   int *int_elem, *bor_elem;
@@ -961,7 +961,6 @@ float *vars;
 char par_nem_fname[FILENAME_MAX+1];
 char tmp_nem_fname[FILENAME_MAX+1];
 char cmesg[256];
-char *str = "Proc";
 
   /* generate the parallel filename for this processor */
   int Num_Proc = 0;
@@ -986,10 +985,16 @@ char *str = "Proc";
     return 0;
   }
 
+  char *str = new char [64];
+  strcpy(str, "Proc");
+
   if (ex_put_var_names(pexoid, "e", 1, &str) < 0) {
     Gen_Error(0, "Error returned from ex_put_var_names.");
+    delete [] str;
     return 0;
   }
+
+  delete [] str;
 
   /* Get max number of elements in an element block; alloc vars array to size */
   for (iblk = 0; iblk < mesh->num_el_blks; iblk++)

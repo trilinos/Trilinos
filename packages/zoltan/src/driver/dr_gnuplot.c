@@ -34,8 +34,8 @@ extern "C" {
 /*--------------------------------------------------------------------------*/
 /* Purpose: Output the element assignments in gnuplot format.               */
 /*--------------------------------------------------------------------------*/
-int output_gnu(char *cmd_file,
-               char *tag,
+int output_gnu(const char *cmd_file,
+               const char *tag,
                int Proc,
                int Num_Proc,
                PROB_INFO_PTR prob,
@@ -65,11 +65,11 @@ int output_gnu(char *cmd_file,
  */
 {
   /* Local declarations. */
-  char  *yo = "output_gnu";
+  const char  *yo = "output_gnu";
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
   ELEM_INFO *current_elem, *nbor_elem;
   int    nbor, num_nodes;
-  char  *datastyle;
+  const char  *datastyle;
   int    i, j;
   int    prev_part = -1;
   int    max_part = -1;

@@ -54,7 +54,7 @@ int chaco_dist_graph(
   short   **assignments         /* assignments from Chaco file; may be NULL */
 )
 {
-  char *yo = "chaco_dist_graph";
+  const char *yo = "chaco_dist_graph";
   int nprocs, myproc, i, j, k, n, p, nedges, nsend, max_nvtxs, v, adj_cnt;
   int offset, use_graph, nvtx_edges;
   int *old_xadj = NULL, *old_adjncy = NULL, *size = NULL;

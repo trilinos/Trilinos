@@ -72,7 +72,7 @@ int read_hypergraph_file(
 )
 {
   /* Local declarations. */
-  char  *yo = "read_hypergraph_file";
+  const char  *yo = "read_hypergraph_file";
   char   cmesg[256];
 
   int    i, gnvtxs; 
@@ -332,7 +332,7 @@ static int dist_hyperedges(
  * and fresh memory is allocated for the distributed hyperedges.
  */
 
-char *yo = "dist_hyperedges";
+const char *yo = "dist_hyperedges";
 int nprocs, myproc, i, h, p;
 int *old_hindex = NULL, *old_hvertex = NULL, *old_hvertex_proc = NULL; 
 int *size = NULL, *num_send = NULL;

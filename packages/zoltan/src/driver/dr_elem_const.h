@@ -35,7 +35,7 @@ E_Type get_elem_type(
 );
 
 extern 
-char *get_elem_name(
+const char *get_elem_name(
   int         itype             /* ExodusII element type */
 );
 

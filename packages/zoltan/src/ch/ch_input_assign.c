@@ -56,7 +56,7 @@ char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
 {
-    char *yo = "input_assign_normal";
+    const char *yo = "input_assign_normal";
     int       flag;		/* logical conditional */
     int       end_flag;		/* return flag from read_int() */
     int       i, j;		/* loop counter */
@@ -139,7 +139,7 @@ char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
 {
-    char *yo = "input_assign_inv";
+    const char *yo = "input_assign_inv";
     int       set;		/* set number being read */
     int       size;		/* number of vertices in set */
     int       total;		/* total number of vertices read */

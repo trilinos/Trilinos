@@ -51,7 +51,7 @@ int MM_readfile (
 {
 int err = ZOLTAN_OK;
 int prev_edge;
-char *yo = "MM_readfile";
+const char *yo = "MM_readfile";
 int ret_code;
 MM_typecode matcode;
 int M, N, nz;   

@@ -40,7 +40,7 @@ int      *ewgt_dim,		/* # of edge weights per edge */
 float   **eweights 		/* edge weight list data */
 )
 {
-    char     *yo = "chaco_input_graph";
+    const char     *yo = "chaco_input_graph";
     int      *adjptr;		/* loops through adjacency data */
     float    *ewptr;		/* loops through edge weight data */
     int       narcs;		/* number of edges expected in graph */
