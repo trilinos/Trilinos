@@ -83,3 +83,5 @@ cp -pu $NOXDIR/doc/includes/images/*.gif $INSTALLDIR/nox/images
 echo "Processing HTML files"
 
 find $NOXDIR/doc/html -type f -exec $NOXDIR/maintenance/seddox $INSTALLDIR $NOXDIR {} \;
+
+chmod -R a+rX $INSTALLDIR/nox
