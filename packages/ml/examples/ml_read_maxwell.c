@@ -752,8 +752,7 @@ int main(int argc, char *argv[])
   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
     {
       ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
-			       nsmooth,1.,&(Tmat_array[coarsest_level]),
-			       &(Tmat_trans_array[coarsest_level]));
+			       nsmooth,1.,Tmat_array, Tmat_trans_array);
     }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
