@@ -164,7 +164,7 @@ public:
         (*j).second *= scalarThis;
     }
 
-    // update flops counter: n
+    // update flops counter: nnz
     updateFlops(data().numMyNonzeros_);
   }
 
@@ -325,7 +325,9 @@ public:
 
     // do Kokkos apply operation
     axy.apply(kx, ky);
-    
+
+    // update flops counter: 2 * nnz
+    updateFlops(data().numMyNonzeros_);
   }
   
   //! Returns the global one norm of the matrix

@@ -26,6 +26,7 @@
 // ************************************************************************
 //@HEADER
 
+// Epetra includes
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
@@ -37,10 +38,16 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+// TriUtils includes
 #include "Trilinos_Util.h"
+// Tpetra includes
+#include "Tpetra_SerialPlatform.hpp"
+#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_VectorSpace.hpp"
+#include "Tpetra_CisMatrix.hpp"
 
-void testEpetra(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
-								Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
+void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
+					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
 
 int main(int argc, char *argv[]) {
 
@@ -104,7 +111,7 @@ int main(int argc, char *argv[]) {
 	// start of performance testing
 	// ------------------------------------------------------------------
 
-	testEpetra(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
+	test(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
 
 	// ------------------------------------------------------------------
 	// end of performance testing
@@ -124,11 +131,44 @@ int main(int argc, char *argv[]) {
 	return(0);
 }
 
-// ------------------------------------------------------------------
-// ------------------------------------------------------------------
 
-void testEpetra(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact, 
-								Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem) {
+//=========================================================================================
+void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact, 
+					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem) {
+	// ------------------------------------------------------------------
+	// create Tpetra versions of map, xexact, and b
+	// ------------------------------------------------------------------
+
+	// create Tpetra VectorSpace<int, double> , named vectorspace
+	// should be compatible with map.
+	if(!map->LinearMap())
+		cerr << "*** Epetra_Map is not contiguous, can't create VectorSpace (yet). ***" << endl;
+	Tpetra::SerialPlatform<int, double> platformV;
+	Tpetra::SerialPlatform<int, int> platformE;
+	Tpetra::ElementSpace<int> elementspace(map->NumGlobalElements(), map->NumMyElements(), map->IndexBase(), platformE);
+	Tpetra::VectorSpace<int, double> vectorspace(elementspace, platformV);
+
+	// create Tpetra Vector<int, double>, named xexact_t
+	// should be identical to xexact
+	Tpetra::Vector<int, double> xexact_t(xexact->Values(), xexact->GlobalLength(), vectorspace);
+
+	// create Tpetra Vector<int, double>, named b_t
+	// should be identical to b
+	Tpetra::Vector<int, double> b_t(b->Values(), b->GlobalLength(), vectorspace);
+
+	/*cout << "=============================================================" << endl;
+	cout << "map:" << endl << *map << endl; 
+	cout << "vectorspace:" << endl << vectorspace << endl; 
+	cout << "xexact:" << endl << *xexact << endl; 
+	cout << "xexact_t:" << endl << xexact_t << endl; 
+	cout << "b:" << endl << *b << endl; 
+	cout << "b_t:" << endl << b_t << endl; 
+	cout << "=============================================================" << endl;*/
+
+	// ------------------------------------------------------------------
+	// other initialization stuff
+	// ------------------------------------------------------------------
+
   Epetra_Time timer(comm);
   comm.Barrier();
 
@@ -136,52 +176,129 @@ void testEpetra(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetr
   double* values;
   int* indices;
 
+	// ------------------------------------------------------------------
+	// measure time to do creation and insertions
+	// ------------------------------------------------------------------
+
   double tstart = timer.ElapsedTime();
   Epetra_CrsMatrix Ae(Copy, *map, 0);
-  for (int i=0; i< dim; i++) {
+  for (int i = 0; i < dim; i++) {
     A->ExtractMyRowView(i, numEntries, values, indices);
     Ae.InsertGlobalValues(i, numEntries, values, indices);
   }
   double epetraInsertTime = timer.ElapsedTime() - tstart;
+
+	tstart = timer.ElapsedTime();
+  Tpetra::CisMatrix<int, double> At(vectorspace);
+  for (int i = 0; i < dim; i++) {
+    A->ExtractMyRowView(i, numEntries, values, indices);
+    At.submitEntries(Tpetra::Insert, i, numEntries, values, indices);
+  }
+  double tpetraInsertTime = timer.ElapsedTime() - tstart;
+
+	// ------------------------------------------------------------------
+	// measure time to do fillComplete
+	// ------------------------------------------------------------------
+
   Ae.FillComplete();
-  double epetraFillCompleteTime = timer.ElapsedTime() - epetraInsertTime;
+  double epetraFillCompleteTime = timer.ElapsedTime() - tpetraInsertTime;
+
+	At.fillComplete();
+	double tpetraFillCompleteTime = timer.ElapsedTime() - epetraFillCompleteTime;
+
+	/*cout << "=============================================================" << endl;
+	cout << "A:" << endl << *A << endl;
+	cout << "Ae:" << endl << Ae << endl;
+	cout << "At:" << endl << At << endl; 
+	cout << "=============================================================" << endl;*/
+
+	// ------------------------------------------------------------------
+	// measure time to do multiply/apply
+	// ------------------------------------------------------------------
 
   // Next, compute how many times we should call the Multiply method, assuming a rate of 100 MFLOPS and a desired time of 1 second total.
   int niters = (int) (100000000.0/((double) 2*nnz));
 
   Epetra_Flops counter;
-  Epetra_Vector bcomp(*map);
+  Epetra_Vector bcomp_e(*map);
   Ae.SetFlopCounter(counter);
   tstart = timer.ElapsedTime();
-  for (int i=0; i<niters; i++) Ae.Multiply(false, *xexact, bcomp);
+  for(int i = 0; i < niters; i++) 
+		Ae.Multiply(false, *xexact, bcomp_e);
   double epetraMatvecTime = timer.ElapsedTime() - tstart;
-  double numFlops = Ae.Flops(); // Total number of FLOPS in Multiplies
+  double epetraNumFlops = Ae.Flops(); // Total number of Epetra FLOPS in Multiplies
+
+  Teuchos::Flops flops;
+  Tpetra::Vector<int, double> bcomp_t(vectorspace);
+  At.setFlopCounter(flops);
+  tstart = timer.ElapsedTime();
+  for(int i = 0; i < niters; i++) 
+		At.apply(xexact_t, bcomp_t);
+  double tpetraMatvecTime = timer.ElapsedTime() - tstart;
+  double tpetraNumFlops = At.getFlops(); // Total number of Tpetra FLOPS in Multiplies
+
+	cout << "=============================================================" << endl;
+	cout << "bcomp_e:" << endl << bcomp_e << endl;
+	cout << "bcomp_t:" << endl << bcomp_t << endl;
+	cout << "xexact:" << endl << *xexact << endl;
+	cout << "xexact_t:" << endl << xexact_t << endl;
+	cout << "=============================================================" << endl;
+
+	// ------------------------------------------------------------------
+	// output results
+	// ------------------------------------------------------------------
+
   if (verbose)
     cout << "\n\n****************************************************" << endl
-	 << "    Epetra Insertion  time (sec)           = " << epetraInsertTime<< endl
-	 << "    Epetra FillComplete time (sec)         = " << epetraFillCompleteTime << endl
-	 << "    Epetra time for " << niters << " Matvecs (sec) = " << epetraMatvecTime << endl
-	 << "    Epetra Total time (sec)           = " 
-	 << epetraInsertTime+epetraFillCompleteTime+epetraMatvecTime  << endl
-	 << "    Epetra MFLOPS = " << numFlops/epetraMatvecTime/1000000 << endl<<endl;
+				 << "    Epetra Insertion  time (sec)           = " << epetraInsertTime<< endl
+				 << "    Epetra FillComplete time (sec)         = " << epetraFillCompleteTime << endl
+				 << "    Epetra time for " << niters << " Matvecs (sec) = " << epetraMatvecTime << endl
+				 << "    Epetra Total time (sec)           = " 
+				 << epetraInsertTime+epetraFillCompleteTime+epetraMatvecTime  << endl
+				 << "    Epetra Total flops = " << epetraNumFlops << endl
+				 << "    Epetra MFLOPS = " << epetraNumFlops/epetraMatvecTime/1000000 << endl<<endl;
 
-  
+  if (verbose)
+    cout << "\n\n****************************************************" << endl
+				 << "    Tpetra Insertion  time (sec)           = " << tpetraInsertTime<< endl
+				 << "    Tpetra FillComplete time (sec)         = " << tpetraFillCompleteTime << endl
+				 << "    Tpetra time for " << niters << " Matvecs (sec) = " << tpetraMatvecTime << endl
+				 << "    Tpetra Total time (sec)           = " 
+				 << tpetraInsertTime+tpetraFillCompleteTime+tpetraMatvecTime  << endl
+				 << "    Tpetra Total flops = " << tpetraNumFlops << endl
+				 << "    Tpetra MFLOPS = " << tpetraNumFlops/tpetraMatvecTime/1000000 << endl<<endl;
+
   if (smallProblem)
-  cout << " X          = " << endl << *xexact << endl
-       << " B expected = " << endl << *b << endl
-       << " B computed = " << endl << bcomp << endl;
+		cout << " X          = " << endl << *xexact << endl
+				 << " B expected = " << endl << *b << endl
+				 << " B computed (Epetra) = " << endl << bcomp_e << endl
+				 << " B computed (Tpetra) = " << endl << bcomp_t << endl;
+	
+	// ------------------------------------------------------------------
+	// calculate & output residuals
+	// ------------------------------------------------------------------
 
-  Epetra_Vector resid(bcomp);
+  Epetra_Vector resid_e(bcomp_e);
+	Tpetra::Vector<int, double> resid_t(bcomp_t);
 
-  resid.Update(1.0, *b, -1.0, bcomp, 0.0); // resid = xcomp - xexact
-  double residual;
-  resid.Norm2(&residual);
-  double normb, normbexact;
-  bcomp.Norm2(&normb);
-  b->Norm2(&normbexact);
+  resid_e.Update(1.0, *b, -1.0, bcomp_e, 0.0); // resid = xcomp - xexact
+	resid_t.update(1.0, b_t, -1.0, bcomp_t, 0.0);
+	cout << "=============================================================" << endl;
+	cout << "resid_e:" << endl << resid_e << endl;
+	cout << "resid_t:" << endl << resid_t << endl;
+	cout << "=============================================================" << endl;
+  double residual_e, residual_t;
+  resid_e.Norm2(&residual_e);   // residual_e = 2norm or resid_e
+	residual_t = resid_t.norm2(); // residual_t = 2norm of resid_t
+  double normb_e, normb_t, normb_exact;
+  bcomp_e.Norm2(&normb_e);   // normb_e = 2norm of bcomp_e
+	normb_t = bcomp_t.norm2(); // normb_t = 2norm of bcomp_t
+  b->Norm2(&normb_exact);    // normb_exact = 2norm of b
 
   if (verbose) 
-    cout << "2-norm of computed RHS                               = " << normb << endl
-	 << "2-norm of exact RHS                                  = " << normbexact << endl
-	 << "2-norm of difference between computed and exact RHS  = " << residual << endl;
+    cout << "2-norm of computed RHS (Epetra)                              = " << normb_e << endl
+				 << "2-norm of computed RHS (Tpetra)                              = " << normb_t << endl
+				 << "2-norm of exact RHS                                          = " << normb_exact << endl
+				 << "2-norm of difference between computed and exact RHS (Epetra) = " << residual_e << endl
+				 << "2-norm of difference between computed and exact RHS (Tpetra) = " << residual_t << endl;
 }
