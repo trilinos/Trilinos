@@ -132,6 +132,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_GreedyPartitioner.h      \
 	$(srcdir)/Ifpack_METISPartitioner.h       \
 	$(srcdir)/Ifpack_EquationPartitioner.h    \
+	$(srcdir)/Ifpack_UserPartitioner.h      \
 	$(srcdir)/Ifpack_Amesos.h                 \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
@@ -170,6 +171,7 @@ COMP = \
 	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \
 	$(srcdir)/Ifpack_METISPartitioner.cpp       \
 	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
+	$(srcdir)/Ifpack_UserPartitioner.cpp      \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
 	$(srcdir)/Ifpack_METISReordering.cpp        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
