@@ -34,17 +34,24 @@
 #include "LOCA_LAPACK.H"
 #include "ChanProblemInterface.H"
 
-int main()
+int main(int argc, char *argv[])
 {
   int n = 100;
   double alpha = 0.0;
   double beta = 0.0;
   double scale = 1.0;
   int maxNewtonIters = 20;
+  int ierr = 0;
 
   alpha = alpha / scale;
 
   try {
+
+    bool verbose = false;
+    // Check for verbose output
+    if (argc>1) 
+      if (argv[1][0]=='-' && argv[1][1]=='v') 
+	verbose = true;
 
     // Create output file to save solutions
     ofstream outFile("ChanContinuation.dat");
@@ -118,24 +125,34 @@ int main()
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-   			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::Parameters +
-			       LOCA::Utils::SolverDetails);
+    if (verbose) {
+      locaUtilsList.setParameter("Output Information", 
+				 LOCA::Utils::Error + 
+				 LOCA::Utils::Warning +
+				 LOCA::Utils::StepperIteration +
+				 LOCA::Utils::StepperDetails +
+				 LOCA::Utils::Solver +
+				 LOCA::Utils::Parameters +
+				 LOCA::Utils::SolverDetails);
+      //locaUtilsList.setParameter("Output Precision", 10);
+    }
+    else
+      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("Output Information", 
-			  NOX::Utils::Details +
-			  NOX::Utils::OuterIteration + 
-			  NOX::Utils::InnerIteration + 
-			  NOX::Utils::Warning);
+    if (verbose)
+       nlPrintParams.setParameter("Output Information", 
+				  NOX::Utils::Error +
+				  NOX::Utils::Details +
+				  NOX::Utils::OuterIteration + 
+				  NOX::Utils::InnerIteration + 
+				  NOX::Utils::Warning);
+     else
+       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
     // Set up the status tests
     NOX::StatusTest::NormF normF(1.0e-8);
@@ -150,8 +167,12 @@ int main()
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    // Check for convergence
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      ierr = 1;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error))
+	cout << "Stepper failed to converge!" << endl;
+    }
 
     // Get the final solution from the stepper
     const LOCA::LAPACK::Group& finalGroup = 
@@ -168,6 +189,41 @@ int main()
     }
 
     outFile.close();
+
+    // Check some statistics on the solution
+    if (verbose)
+      cout << "***** Checking solutions statistics *****" << endl;
+  
+    // Check number of steps
+    int numSteps = stepper.getStepNumber();
+    int numSteps_expected = 32;
+    ierr += testValue(numSteps, numSteps_expected, 0.0,
+		      "number of continuation steps", verbose);
+
+    // Check number of failed steps
+    int numFailedSteps = stepper.getNumFailedSteps();
+    int numFailedSteps_expected = 0;
+    ierr += testValue(numFailedSteps, numFailedSteps_expected, 0.0, 
+		      "number of failed continuation steps", verbose);
+
+    // Check final value of continuation parameter
+    double alpha_final = finalGroup.getParam("alpha");
+    double alpha_expected = 5.0;
+    ierr += testValue(alpha_final, alpha_expected, 1.0e-14,
+		      "final value of continuation parameter", verbose);
+ 
+    // Check norm of solution
+    double norm_x = finalSolution.norm();
+    double norm_x_expected = 203.1991024;
+    ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
+		      "norm of final solution", verbose);
+
+    if (verbose) {
+      if (ierr == 0)
+	cout << "All tests passed!" << endl;
+      else
+	cout << ierr << " test(s) failed!" << endl;
+    }
   }
 
   catch (string& s) {
@@ -180,5 +236,5 @@ int main()
     cout << "Caught unknown exception!" << endl;
   }
 
-  return 0;
+  return ierr;
 }

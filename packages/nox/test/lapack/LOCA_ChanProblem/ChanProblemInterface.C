@@ -34,6 +34,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Matrix.H"
+#include "LOCA_Utils.H"
 
 ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
 					   double s)  : 
@@ -130,24 +131,56 @@ void
 ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
                                     const double conParam)
 {
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "At parameter value: " << conParam 
+	 << "   the solution vector is\n";
 
-   cout << "At parameter value: " << conParam << "   the solution vector is\n";
+    if (n < 8) {
+      for (int i=0; i<n; i++)  cout << " " << x(i);
+    }
+    else {
+      for (int i=0; i<6; i++)  cout << " " << x(i);
+      cout << " ...";
+      for (int i=n-2; i<n; i++)  cout << " " << x(i);
+    }
+    cout << endl;
+  }
 
-   if (n < 8) {
-     for (int i=0; i<n; i++)  cout << " " << x(i);
-   }
-   else {
-     for (int i=0; i<6; i++)  cout << " " << x(i);
-     cout << " ...";
-     for (int i=n-2; i<n; i++)  cout << " " << x(i);
-   }
-   cout << endl;
+  if (outputFilePtr != NULL) {
+    (*outputFilePtr) << conParam << " ";
+    for (int i=0; i<n; i++)
+      (*outputFilePtr) << x(i) << " ";
+    (*outputFilePtr) << endl << endl;
+  }
 
-   if (outputFilePtr != NULL) {
-     (*outputFilePtr) << conParam << " ";
-     for (int i=0; i<n; i++)
-       (*outputFilePtr) << x(i) << " ";
-     (*outputFilePtr) << endl << endl;
-   }
+}
 
+int testValue(double value, double value_expected, double tolerance,
+	      const string& name, bool verbose) 
+{
+  bool passed;
+
+  if (fabs(value-value_expected) > tolerance)
+    passed = false;
+  else
+    passed = true;
+
+  if (verbose) {
+    cout << endl
+	 << "\tChecking " << name << ":  ";
+    if (passed)
+      cout << "Passed." << endl;
+    else
+      cout << "Failed." << endl;
+    cout << "\t\tExpected value:  " << LOCA::Utils::Sci(value_expected) << endl
+	 << "\t\tComputed value:  " << LOCA::Utils::Sci(value) << endl
+	 << "\t\tTolerance     :  " << LOCA::Utils::Sci(tolerance) << endl 
+	 << "\t\tDifference    :  " 
+	 << LOCA::Utils::Sci(fabs(value-value_expected)) << endl;
+  }
+  
+  if (passed)
+    return 0;
+  else
+    return 1;
 }

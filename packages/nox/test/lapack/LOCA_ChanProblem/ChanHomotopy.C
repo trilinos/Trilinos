@@ -34,17 +34,24 @@
 #include "LOCA_LAPACK.H"
 #include "ChanProblemInterface.H"
 
-int main()
+int main(int argc, char *argv[])
 {
   int n = 100;
   double alpha = 10.0;
   double beta = 0.0;
   double scale = 1.0;
   int maxNewtonIters = 50;
+  int ierr = 0;
 
   alpha = alpha / scale;
 
   try {
+
+    bool verbose = false;
+    // Check for verbose output
+    if (argc>1) 
+      if (argv[1][0]=='-' && argv[1][1]=='v') 
+	verbose = true;
 
     // Set up the problem interface
     ChanProblemInterface chan(n, alpha, beta, scale);
@@ -105,28 +112,34 @@ int main()
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::Parameters +
-			       LOCA::Utils::SolverDetails);
+    if (verbose) {
+      locaUtilsList.setParameter("Output Information", 
+				 LOCA::Utils::Error + 
+				 LOCA::Utils::Warning +
+				 LOCA::Utils::StepperIteration +
+				 LOCA::Utils::StepperDetails +
+				 LOCA::Utils::Solver +
+				 LOCA::Utils::Parameters +
+				 LOCA::Utils::SolverDetails);
+      //locaUtilsList.setParameter("Output Precision", 10);
+    }
+     else
+       locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("Output Information", 
-			       NOX::Utils::Details +
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::InnerIteration + 
-			       NOX::Utils::Warning +
-			       NOX::Utils::Error);
-
-    //NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
+    if (verbose)
+      nlPrintParams.setParameter("Output Information", 
+				 NOX::Utils::Details +
+				 NOX::Utils::OuterIteration + 
+				 NOX::Utils::InnerIteration + 
+				 NOX::Utils::Warning +
+				 NOX::Utils::Error);
+    else
+       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
@@ -137,14 +150,16 @@ int main()
     LOCA::Homotopy::Group hGrp(locaParamsList, grp);
 
     // Create the stepper  
-    //LOCA::Stepper stepper(grp, combo, paramList);
     LOCA::Stepper stepper(hGrp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      ierr = 1;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error))
+	cout << "Stepper failed to converge!" << endl;
+    }
 
     // Get the final solution from the solver
     const LOCA::Homotopy::Group& finalGroup = 
@@ -158,6 +173,42 @@ int main()
 	   << "****************" << endl;
       stepper.getParameterList().print(cout);
       cout << endl;
+    }
+
+    // Check some statistics on the solution
+    if (verbose)
+      cout << "***** Checking solutions statistics *****" << endl;
+  
+    // Check number of steps
+    int numSteps = stepper.getStepNumber();
+    int numSteps_expected = 8;
+    ierr += testValue(numSteps, numSteps_expected, 0.0,
+		      "number of continuation steps", verbose);
+
+    // Check number of failed steps
+    int numFailedSteps = stepper.getNumFailedSteps();
+    int numFailedSteps_expected = 1;
+    ierr += testValue(numFailedSteps, numFailedSteps_expected, 0.0, 
+		      "number of failed continuation steps", verbose);
+
+    // Check final value of continuation parameter
+    double alpha_final = 
+      finalGroup.getParam("Homotopy Continuation Parameter");
+    double alpha_expected = 1.0;
+    ierr += testValue(alpha_final, alpha_expected, 1.0e-14,
+		      "final value of continuation parameter", verbose);
+ 
+    // Check norm of solution
+    double norm_x = finalSolution.norm();
+    double norm_x_expected =  456.0303417;
+    ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
+		      "norm of final solution", verbose);
+
+    if (verbose) {
+      if (ierr == 0)
+	cout << "All tests passed!" << endl;
+      else
+	cout << ierr << " test(s) failed!" << endl;
     }
   }
 

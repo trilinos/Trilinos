@@ -119,4 +119,7 @@ private:
 
 };
 
+int testValue(double value, double value_expected, double tolerance,
+	      const string& name, bool verbose);
+
 #endif

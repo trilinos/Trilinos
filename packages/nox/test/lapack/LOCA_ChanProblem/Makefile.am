@@ -32,14 +32,10 @@
 #EXEEXT = .exe
 
 CHANCONT = chanContinuation_exe
-CHANTP = chanTP_exe
 CHANTPCONT = chanTPContinuation_exe
 CHANHOMOTOPY = chanHomotopy_exe
-CHANTPMOD = chanTP_ModifiedBordering_exe
-CHANTPCONTMOD = chanTPContinuation_ModifiedBordering_exe
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
-	          $(CHANTPMOD) $(CHANTPCONTMOD)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) $(CHANHOMOTOPY) 
 
 chanContinuation_exe_SOURCES = \
                 $(srcdir)/ChanContinuation.C \
@@ -68,17 +64,6 @@ chanContinuation_exe_LDADD = \
                 -lnoxlapack -lnox \
                 $(LIBS) $(FLIBS)
 
-chanTP_exe_SOURCES = \
-                $(srcdir)/ChanTP.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-
-chanTP_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanTP_exe_LDADD = $(chanContinuation_exe_LDADD)
-
 chanTPContinuation_exe_SOURCES = \
                 $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -100,26 +85,3 @@ chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
 
 chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
-
-chanTP_ModifiedBordering_exe_SOURCES = \
-                $(srcdir)/ChanTP_ModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_ModifiedBordering_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-
-chanTP_ModifiedBordering_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanTP_ModifiedBordering_exe_LDADD = $(chanContinuation_exe_LDADD)
-
-chanTPContinuation_ModifiedBordering_exe_SOURCES = \
-		$(srcdir)/ChanTPContinuation_ModifiedBordering.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTPContinuation_ModifiedBordering_exe_DEPENDENCIES = \
-	$(chanContinuation_exe_DEPENDENCIES)
-
-chanTPContinuation_ModifiedBordering_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanTPContinuation_ModifiedBordering_exe_LDADD = $(chanContinuation_exe_LDADD)
