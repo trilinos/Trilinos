@@ -128,7 +128,6 @@ install_sh = @install_sh@
 TRANSFORM_H = \
 	$(srcdir)/Epetra_Transform.h \
         $(srcdir)/Epetra_Transform_Composite.h \
-        $(srcdir)/EDT_Permutation.h \
 	$(srcdir)/EDT_CrsGraph_View.h \
 	$(srcdir)/EDT_CrsMatrix_View.h \
 	$(srcdir)/EDT_MultiVector_View.h \
@@ -142,7 +141,6 @@ TRANSFORM_H = \
 
 
 TRANSFORM = \
-	$(srcdir)/EDT_Permutation.cpp \
 	$(srcdir)/EDT_CrsGraph_View.cpp \
 	$(srcdir)/EDT_CrsMatrix_View.cpp \
 	$(srcdir)/EDT_MultiVector_View.cpp \
@@ -319,7 +317,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libepetraext_trans_a_DEPENDENCIES =
-am__objects_1 = EDT_Permutation.$(OBJEXT) EDT_CrsGraph_View.$(OBJEXT) EDT_CrsMatrix_View.$(OBJEXT) \
+am__objects_1 = EDT_CrsGraph_View.$(OBJEXT) EDT_CrsMatrix_View.$(OBJEXT) \
 	EDT_MultiVector_View.$(OBJEXT) EDT_CrsGraph_Transpose.$(OBJEXT) \
 	EDT_CrsGraph_MapColoring.$(OBJEXT) \
 	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
@@ -353,7 +351,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/EDT_CrsGraph_BTF.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EDT_CrsGraph_MapColoring.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/EDT_Permutation.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EDT_CrsGraph_Overlap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po \
@@ -431,7 +428,6 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-EDT_Permutation.$(OBJEXT): $(srcdir)/EDT_Permutation.cpp
 EDT_CrsGraph_View.$(OBJEXT): $(srcdir)/EDT_CrsGraph_View.cpp
 EDT_CrsMatrix_View.$(OBJEXT): $(srcdir)/EDT_CrsMatrix_View.cpp
 EDT_MultiVector_View.$(OBJEXT): $(srcdir)/EDT_MultiVector_View.cpp
