@@ -34,6 +34,10 @@ class Epetra_LinearProblem;
 #include "ml_include.h"
 #include <iostream>
 
+#ifndef ML_CPP
+extern "C" {
+#endif
+
 // ====================================================================== 
 //! Matrix-vector function for Epetra matrices.
 /*! This is the ML matrix-vector wrap for Epetra matrices.
@@ -92,6 +96,10 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
                    and communication information.
  */ 
 int Epetra_ML_comm_wrapper(double vec[], void *data);
+
+#ifndef ML_CPP
+}
+#endif
 
 //! Wraps an Epetra_RowMatrix into an ML_Operators.
 /*! This function creates an ML_Operator that is based on the input 
