@@ -51,7 +51,7 @@ class Epetra_IntSerialDenseMatrix;
 
 namespace EpetraExt {
 
-//! MatlabEngine: 
+//! A class which provides data and command access to Matlab from Epetra.
 /*! The EpetraExt_MatlabEngine class allows Epetra data objects to be
 exported to Matlab and then operated on within Matlab using Matlab commands. 
 
@@ -86,10 +86,10 @@ class MatlabEngine {
   /*! MatlabEngine constructor which creates a MatlabEngine object with a connection to an instance of the
  	  application Matlab by starting a new Matlab process. 
 
-    \param Comm In
-           An Epetra Communicator 
+    \param Comm
+           An Epetra_Comm object.
 
-    \return  MatlabEngine object
+    \return MatlabEngine object
   */
   MatlabEngine(const Epetra_Comm& Comm);
   //! MatlabEngine destructor which closes the connection to Matlab which causes the Matlab process to also exit.
@@ -107,10 +107,10 @@ class MatlabEngine {
   //@{ \name Epetra to Matlab Data Transfer Methods
   //! Put a copy of the serial or distributed MultiVector into the Matlab workspace.
   /*!
-	\param const Epetra_MultiVector& A
+	\param A
 	       the Epetra_MultiVector to put into Matlab
 		  
-	\param const char* variableName
+	\param variableName
 	       the variable name in the Matlab workspace of the Matlab double array (matrix)
 		   that will contain the values of the MultiVector
 
@@ -120,14 +120,14 @@ class MatlabEngine {
 
   //! Put a copy of the serial or distributed RowMatrix into the Matlab workspace.
   /*!
-	\param const Epetra_RowMatrix& A
-	       the 	\param const Epetra_RowMatrix& A to put into Matlab
+	\param A
+	       the Epetra_RowMatrix to put into Matlab
 		  
-	\param const char* variableName
+	\param variableName
 	       the variable name in the Matlab workspace of the Matlab sparse double array (matrix)
 		   that will contain the values of the RowMatrix
 
-	\param bool transA
+	\param transA
 	       if true then the transpose of A is put into Matlab
 		   NOTE: It is faster to put the transpose of A into Matlab since Matlab stores matrices
 		         in column-major form whereas Epetra stores them in row-major form.
@@ -139,14 +139,14 @@ class MatlabEngine {
 
   //! Put a copy of the SerialDenseMatrix into the Matlab workspace.
   /*!
-	\param const Epetra_SerialDenseMatrix& A
+	\param A
 	       the Epetra_SerialDenseMatrix to put into Matlab
 		  
-	\param const char* variableName
+	\param variableName
 	       the variable name in the Matlab workspace of the Matlab double array (matrix)
 		   that will contain the values of the SerialDenseMatrix
 
-	\param int proc
+	\param proc
 	       for serial environment set to 0
 		   for a parallel environment set to the process ID that owns the SerialDenseMatrix
 		   WARNING: the same parameters must be passed to each process
@@ -157,14 +157,14 @@ class MatlabEngine {
 
   //! Put a copy of the IntSerialDenseMatrix into the Matlab workspace.
   /*!
-	\param const Epetra_IntSerialDenseMatrix& A
+	\param A
 	       the Epetra_IntSerialDenseMatrix to put into Matlab
 		  
-	\param const char* variableName
+	\param variableName
 	       the variable name in the Matlab workspace of the Matlab double array (matrix)
 		   that will contain the values of the IntSerialDenseMatrix
 
-	\param int proc
+	\param proc
 	       for serial environment set to 0
 		   for a parallel environment set to the process ID that owns the IntSerialDenseMatrix
 		   WARNING: the same parameters must be passed to each process
@@ -187,10 +187,10 @@ class MatlabEngine {
 	  information on how to use mxArrays see Matlab's documentation (type helpdesk at the Matlab command prompt)
 	  and see the External API Reference section.
 
-	  \param const char* variableName
+	  \param variableName
 	      the name for the mxArray once it has been put into the Matlab workspace
 
-	  \param mxArray* matlabA
+	  \param matlabA
 	      the mxArray to put into the Matlab workspace
 
 	  \return Matlab error code from engPutVariable for Matlab versions >= 6.5 or fromm engPutArray for all other versions
