@@ -69,6 +69,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->TransformToLocal();
+  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 }
 
 // Destructor
@@ -86,7 +87,8 @@ FiniteElementProblem::~FiniteElementProblem()
 bool FiniteElementProblem::evaluate(FillType f, 
 				    const Epetra_Vector* soln, 
 				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+				    Epetra_RowMatrix* tmp_matrix,
+				    NOX::Epetra::Interface::FillType fillFlag)
 {
   flag = f;
 
@@ -108,7 +110,36 @@ bool FiniteElementProblem::evaluate(FillType f,
   Epetra_Vector x(*OverlapMap);
 
   // Export Solution to Overlap vector
-  u.Import(*soln, *Importer, Insert);
+  // If the vector to be used in the fill is already in the Overlap form,
+  // we simply need to map on-processor from column-space indices to
+  // OverlapMap indices.
+  if( fillFlag == NOX::Epetra::Interface::FiniteDifferenceF)
+  {
+/*
+    // This copy should be possible using an Epetra_Import or Epetra_Export
+    // object, but there seems to be an issue when no off-processor
+    // transfers are needed.  So, for now we do it manually.
+    assert( u.MyLength() == soln->MyLength() );
+    int myGID, solnLID;
+    for (int i=0; i<u.MyLength(); i++)
+    {
+      myGID = u.Map().GID(i);
+      solnLID = soln->Map().LID(myGID);
+      if (solnLID < 0) {
+        cout << "ERROR: Column space and Overlap space not one-to-one !!" 
+             << endl;
+        exit(0);
+      }
+      u[i] = (*soln)[solnLID];
+    }
+*/
+    u.Export(*soln, *ColumnToOverlapImporter, Insert);
+  }
+  // If the incoming vector used in the fill has not been scattered to 
+  // OverlapMap (ghosted) entities, do it now.  This potentially involves
+  // interprocessor communication unlike the previous condition.
+  else
+    u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -152,8 +183,6 @@ bool FiniteElementProblem::evaluate(FillType f,
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
 	row=OverlapMap->GID(ne+i);
-	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	//     MyPID, row, ne+i,StandardMap.MyGID(row));
 	if (StandardMap->MyGID(row)) {
 	  if ((flag == F_ONLY)    || (flag == ALL)) {
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
@@ -198,7 +227,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   Comm->Barrier();
  
   A->TransformToLocal();
-
+ 
   return true;
 }
 
