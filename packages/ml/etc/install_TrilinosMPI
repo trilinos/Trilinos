@@ -22,7 +22,7 @@ ARCHITECTURE                     PCLINUX
 #                 General Libraries: mpi, blas, lapack, ...
 #############################################################
 USE MPI                          yes  # [yes, no]
-LOCATION OF MPICC                /home/tuminaro/mpich-1.2.4/bin/mpicc   # (e.g. /usr/local/mpi/mpicc)
+LOCATION OF MPICC                /usr/local/mympi/bin/mpicc   # (e.g. /usr/local/mpi/mpicc)
                                            #############################
                                            # LEAVE BLANK IF YOU DO NOT #
                                            # WANT TO USE mpicc, default#
