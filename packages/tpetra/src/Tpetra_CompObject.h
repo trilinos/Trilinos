@@ -3,6 +3,13 @@
 #ifndef _TPETRA_COMPOBJECT_H_
 #define _TPETRA_COMPOBJECT_H_
 
+#include "Tpetra_Object.h"
+#include "Tpetra_Flops.h"
+
+namespace Tpetra
+{
+
+
 //! Tpetra_CompObject: Functionality and data that is common to all computational classes.
 
 /*! The Tpetra_CompObject is a base class for all Tpetra computational objects.  It provides the basic
@@ -10,13 +17,6 @@
     should be noted that currently, Tpetra_CompObject is an almost exact duplicate of Epetra_CompObject.
 */
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Flops.h"
-
-namespace Tpetra
-{
-
-//==========================================================================
 class CompObject
 {
 

@@ -5,14 +5,14 @@
 #ifndef _TPETRA_BLOCKELEMENTSPACE_H_
 #define _TPETRA_BLOCKELEMENTSPACE_H_
 
-//! Tpetra::BlockElementSpace: A class for constructing and using template<ordinalType> BlockElementSpaces.
-/*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, a Tpetra::ElementSpace object should probably be used instead. Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require a Tpetra_ElementSpace object, as well as a Tpetra_Comm object. */
 
 #include "Tpetra_Object.h"
 #include "Tpetra_ElementSpace.h"
 
 namespace Tpetra {
 
+//! Tpetra::BlockElementSpace: A class for constructing and using template<ordinalType> BlockElementSpaces.
+/*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, a Tpetra::ElementSpace object should probably be used instead. Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require a Tpetra_ElementSpace object, as well as a Tpetra_Comm object. */
 template<class ordinalType> 
 class BlockElementSpace : public Object {
 

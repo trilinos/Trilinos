@@ -5,12 +5,12 @@
 #    3) (Optional) Set TRILINOS_ID to make unique version for same 
 #       architecture and communication mode.
 #
-
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
 LIBPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libpetra.a
 
-include $(TRILINOS_HOME)/etc/makefile.$(TRILINOS_TARGET)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 # Petra communication defines
 PETRA_COMM_SERIAL          = SERIAL
@@ -25,8 +25,7 @@ TSF_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
 DEFINES= -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(PETRA_COMM) -D$(TSF_COMM)
 
 INCLUDES = $(ARCH_INCLUDES) \
-	   -I$(TRILINOS_HOME)/src/tpetra \
-           -I$(TRILINOS_HOME)/src/petra \
+	      $(TPETRA_INCLUDES) \
            $(BLAS_INCLUDES) 
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
@@ -36,7 +35,7 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= $(LIBPETRA_TSF) $(LIBPETRA) $(LIBTPETRA) $(LIBBLAS)
+LIB_PATHS= $(LIBBLAS)
 
 #=======================================================================
 # Petra test source files
@@ -68,7 +67,7 @@ TARGET_C = $(TARGET_C_$(TRILINOS_COMM))
 TARGET_CC = $(TARGET_CC_$(TRILINOS_COMM))
 TARGET_F = $(TARGET_F_$(TRILINOS_COMM))
 
-all: $(TARGET_C) $(TARGET_CC) $(TARGET_F)
+all: cc
 
 c: $(TARGET_C)
 cc: $(TARGET_CC)

@@ -9,7 +9,10 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-/* To time a section of code, place it in between calls to resetStartTime and elapsedTime. 
+namespace Tpetra {
+
+//! Tpetra::Time class, utility for timing code segments.
+/*! To time a section of code, place it in between calls to resetStartTime and elapsedTime. 
    Note that resetStartTime is called by the constructor, so it is also possible to time a section of code 
    by placing it in between the creation of the Tpetra::Time object, and a call to elapsedTime. 
    A call to resetStartTime must be used for all subsequent timings though.
@@ -17,27 +20,25 @@
    A Tpetra::Comm object is also required to use Tpetra::Time, although I don't know why.
 */
 
-namespace Tpetra {
-
 class Time : public Tpetra::Object {
 
 public:
-  // Default constructor
+  //! Default constructor
   Time(const Tpetra::Comm &comm);
   
-  // Copy Constructor
+  //! Copy Constructor
   Time(const Tpetra::Time &time);
   
-  // Destructor
+  //! Destructor
   virtual ~Time();
   
-  // returns current wall-clock time in seconds
+  //! returns current wall-clock time in seconds
   double wallTime() const;
   
-  // resets the timer to the current walltime
+  //! resets the timer to the current walltime
   void resetStartTime();
   
-  // returns the elapsed time in between when the timer was set, and the current walltime.
+  //! returns the elapsed time in between when the timer was set, and the current walltime.
   double elapsedTime() const;
 
 

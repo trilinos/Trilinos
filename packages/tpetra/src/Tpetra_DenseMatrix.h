@@ -3,6 +3,12 @@
 #ifndef _TPETRA_DENSEMATRIX_H_
 #define _TPETRA_DENSEMATRIX_H_
 
+#include "Tpetra_CompObject.h"
+#include "Tpetra_BLAS.h"
+
+namespace Tpetra
+{
+
 //! Tpetra::DenseMatrix: A class for constructing and using template<scalarType> general dense matrices.
 
 /*! The Tpetra::DenseMatrix class enables the construction and use of general template<scalarType>
@@ -54,12 +60,6 @@ numbers.
 
 
 */
-#include "Tpetra_CompObject.h"
-#include "Tpetra_BLAS.h"
-
-namespace Tpetra
-{
-
 //=========================================================================
 template<class scalarType>
 class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>

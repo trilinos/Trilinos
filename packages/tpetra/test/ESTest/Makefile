@@ -18,7 +18,8 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= $(LIBEPETRA) $(LIBLAPACK) $(LIBBLAS)
+#LIB_PATHS= $(LIBEPETRA) $(LIBLAPACK) $(LIBBLAS)
+LIB_PATHS= $(LIBLAPACK) $(LIBBLAS)
 
 #=======================================================================
 # Petra test source files

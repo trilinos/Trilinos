@@ -3,6 +3,11 @@
 #ifndef _TPETRA_LAPACK_H_
 #define _TPETRA_LAPACK_H_
 
+#include "Tpetra_Object.h"
+
+namespace Tpetra
+{
+
 //! Tpetra::LAPACK:  The Tpetra LAPACK Wrapper Class.
 /*! The Tpetra::LAPACK class is a wrapper that encapsulates LAPACK
     (Linear Algebra Package).  LAPACK provides portable, high-
@@ -22,11 +27,6 @@
     LAPACK are only specified for serial execution (or shared memory parallel).
 */
 
-#include "Tpetra_Object.h"
-
-
-namespace Tpetra
-{
 class LAPACK
 {    
   public:

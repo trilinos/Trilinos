@@ -9,6 +9,9 @@
 #include "Tpetra_CombineMode.h"
 #include "Tpetra_DataAccess.h"
 
+namespace Tpetra
+{
+
 
 //! Tpetra::Object:  The base Tpetra class.
 /*! The Tpetra::Object class provides capabilities common to all Tpetra objects,
@@ -16,9 +19,6 @@
     enum types.
   
 */
-
-namespace Tpetra
-{
 
 class Object
 {

@@ -3,9 +3,11 @@
 #ifndef _TPETRA_BLAS_WRAPPERS_H_
 #define _TPETRA_BLAS_WRAPPERS_H_
 
-//! Tpetra_BLAS_Wrappers:  The Templated Petra BLAS Class.
-/*! Lots of cryptic Fortranish #defines here.  More info on how and why 
-  to be added at a later date when Paul gets around to it.
+/*! \file Tpetra_BLAS_wrappers.h  
+    \brief The Templated Petra BLAS Class.
+
+    Lots of cryptic Fortranish #defines here.  More info on how and why 
+    to be added at a later date when Paul gets around to it.
 */
 
 

@@ -15,6 +15,15 @@
 #ifndef _TPETRA_ELEMENTSPACE_H_
 #define _TPETRA_ELEMENTSPACE_H_
 
+#include "Tpetra_Object.h"
+#include "Tpetra_Directory.h"
+#include <map>
+
+namespace Tpetra {
+
+// forward declarations
+template<typename OrdinalType> class Comm;
+
 //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Comm object. Local IDs (LIDs) are always in the range indexBase to numMyElements - indexBase.
 
@@ -30,14 +39,6 @@ ElementSpace error codes (positive for non-fatal, negative for fatal):
   <li> -99 Internal ElementSpace error.  Contact developer.
   </ol>*/
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Directory.h"
-#include <map>
-
-namespace Tpetra {
-
-// forward declarations
-template<typename OrdinalType> class Comm;
 
 template<typename OrdinalType>
 class ElementSpace : public Tpetra::Object {

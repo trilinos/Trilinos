@@ -3,6 +3,9 @@
 #ifndef _TPETRA_FLOPS_H_
 #define _TPETRA_FLOPS_H_
 
+namespace Tpetra
+{
+
 //! Tpetra_Flops:  The Tpetra Floating Point Operations Class.
 /*! The Tpetra_Flops class provides basic support and consistent interfaces
     for counting and reporting floating point operations performed in 
@@ -11,9 +14,6 @@
     method for an Tpetra_CompObject. It should be noted that currently, Tpetra_Flops is an
     almost exact duplicate of Epetra_Flops.
 */
-
-namespace Tpetra
-{
 
 class Flops
 {

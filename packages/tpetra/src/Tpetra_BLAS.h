@@ -2,6 +2,8 @@
 #ifndef _TPETRA_BLAS_H_
 #define _TPETRA_BLAS_H_
 
+namespace Tpetra
+{
 //! Tpetra_BLAS: The Templated Petra BLAS Class.
 /*! The Tpetra_BLAS class provides functionality similar to the BLAS
     (Basic Linear Algebra Subprograms).  The BLAS provide portable, high-
@@ -24,8 +26,6 @@
     (or shared memory parallel).
 */
 
-namespace Tpetra
-{
   template<class scalarType>
   class BLAS
   {

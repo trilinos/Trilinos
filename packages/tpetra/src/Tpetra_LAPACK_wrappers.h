@@ -3,9 +3,10 @@
 #ifndef _TPETRA_LAPACK_WRAPPERS_H_
 #define _TPETRA_LAPACK_WRAPPERS_H_
 
-//! Tpetra_LAPACK_wrappers: We're sure they do something.
-/*! It should be noted that Tpetra_LAPACK_wrappers.h is an almost 
-    exact duplicate of Epetra_LAPACK_wrappers.h. More info on how/why to be added 
+/*! \file Tpetra_LAPACK_wrappers.h
+    \brief It should be noted that Tpetra_LAPACK_wrappers.h is an almost 
+    exact duplicate of Epetra_LAPACK_wrappers.h. 
+    More info on how/why to be added 
     at a later date, when Paul gets around to it, and once he has a better idea 
     of what's going on here.
 */
