@@ -274,7 +274,7 @@ void GenericEpetraProblem::doTransfer()
   // Do transfers from each dependent problem to this one
   for( int i = 0; i<depProblems.size(); i++) {
     int depId = depProblems[i];
-    XferOp* xfer = xferOperators.find(depId)->second;
+    XferOp* xfer = (*xferOperators.find(depId)).second;
 
     if( !xfer ) {
       cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
@@ -286,7 +286,7 @@ void GenericEpetraProblem::doTransfer()
       // solution vector which may not be the same as in each respective
       // group.
       Epetra_Vector& fromVec = myManager->getProblem(depId).getSolution();
-      Epetra_Vector& toVec = *(depSolutions.find(depId)->second);
+      Epetra_Vector& toVec = *( (*(depSolutions.find(depId))).second );
       xfer->transferField(toVec, fromVec); 
     }  
   }

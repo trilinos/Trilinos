@@ -177,7 +177,7 @@ bool Equation_B::evaluate(
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
   {
-    dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
+    dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
     //cout << "depSoln[" << i << "] :" << dep[i] << endl;
   }
@@ -223,7 +223,22 @@ bool Equation_B::evaluate(
     id_temp = 0; // First dependent field
   }
   else
-    id_temp = id_ptr->second;
+    id_temp = (*id_ptr).second;
+
+  //
+  id_ptr = nameToMyIndex.find("Burgers");
+  if( id_ptr == nameToMyIndex.end() ) {
+    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\" !!" << endl;
+    throw "Equation_A (Species) ERROR";
+  }
+  else
+    id_vel = (*id_ptr).second;
+    //
+
+  // Zero out the objects that will be filled
+  if ( fillMatrix ) A->PutScalar(0.0);
+  if ( fillF ) rhs->PutScalar(0.0);
 
   //
   id_ptr = nameToMyIndex.find("Burgers");

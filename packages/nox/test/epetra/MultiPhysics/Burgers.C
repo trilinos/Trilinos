@@ -153,7 +153,7 @@ bool Burgers::evaluate(
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
   {
-    dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
+    dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
     //cout << "depSoln[" << i << "] :" << dep[i] << endl;
   }
@@ -193,7 +193,7 @@ bool Burgers::evaluate(
     throw "Burgers ERROR";
   }
   else
-    id_temp = id_ptr->second;
+    id_temp = (*id_ptr).second;
     //
 
   // Zero out the objects that will be filled

@@ -120,14 +120,14 @@ Problem_Manager::~Problem_Manager()
 
   while( iter != last)
   {
-    delete (SolversIter++)->second;
-    delete (GroupsIter++)->second;
+    delete (*(SolversIter++)).second;
+    delete (*(GroupsIter++)).second;
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
-    delete (MatrixOperatorsIter++)->second;
-    delete (TmpMapColoringsIter++)->second;
-    delete (ColorMapsIter++)->second;
-    delete (ColorMapIndexSetsIter++)->second;
+    delete (*(MatrixOperatorsIter++)).second;
+  delete (*(TmpMapColoringsIter++)).second;
+  delete (*(ColorMapsIter++)).second;
+  delete (*(ColorMapIndexSetsIter++)).second;
     //delete *ColumnsSetsIter++;
 #endif
 #endif
@@ -161,7 +161,7 @@ void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 GenericEpetraProblem& Problem_Manager::getProblem(int id_)
 {
   // Get a problem given its unique id
-  GenericEpetraProblem* problem = Problems.find(id_)->second;
+  GenericEpetraProblem* problem = (*(Problems.find(id_))).second;
   if( !problem ) {
     cout << "ERROR: Problem with id --> " << id_ << " not registered with "
          << "Problem_Manager !!" << endl;
@@ -183,13 +183,13 @@ GenericEpetraProblem& Problem_Manager::getProblem(string name)
     throw "Problem_Manager ERROR";
   }
   else
-    return getProblem( iter->second );
+    return getProblem( (*iter).second );
 }
 
 NOX::EpetraNew::Group& Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id
-  NOX::EpetraNew::Group* group = Groups.find(id_)->second;
+  NOX::EpetraNew::Group* group = (*(Groups.find(id_))).second;
   if( !group ) {
     cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
          << " !!" << endl;
@@ -212,16 +212,16 @@ Epetra_Vector& Problem_Manager::getCompositeSoln()
 void Problem_Manager::createDependency(string nameA, string nameB)
 {
   // Create a dependence of Problem A equations on Problem B variables
-  int probId_A = NameLookup.find(nameA)->second;
-  int probId_B = NameLookup.find(nameB)->second;
+  int probId_A = (*(NameLookup.find(nameA))).second;
+  int probId_B = (*(NameLookup.find(nameB))).second;
   if( !probId_A || !probId_B ) {
     cout << "ERROR: Could not create dependency of \"" << nameA << "\" on \""
          << nameB << "\" !!" << endl;
     throw "Problem_Manager ERROR";
   }
  
-  GenericEpetraProblem &probA = *Problems.find(probId_A)->second,
-                       &probB = *Problems.find(probId_B)->second;
+  GenericEpetraProblem &probA = *(*(Problems.find(probId_A))).second,
+                       &probB = *(*(Problems.find(probId_B))).second;
 
   createDependency(probA, probB);
 }
@@ -299,7 +299,7 @@ void Problem_Manager::registerComplete()
 
     // Create index mapping for this problem into the composite problem
     ProblemToCompositeIndices[probId] = new Epetra_IntVector(*problem.StandardMap);
-    Epetra_IntVector &indices = *ProblemToCompositeIndices.find(probId)->second;
+    Epetra_IntVector &indices = *(*(ProblemToCompositeIndices.find(probId))).second;
 
     for (int i=0; i<problem.NumMyNodes; i++) {
       int compositeId = runningMaxGlobalId + problem.StandardMap->GID(i);
@@ -325,7 +325,7 @@ void Problem_Manager::registerComplete()
     Interfaces[probId] = new Problem_Interface(problem);
     NOX::EpetraNew::Interface::Required& reqInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Required&>
-         (*Interfaces.find(probId)->second);
+      (*(*(Interfaces.find(probId))).second);
 
     NOX::Epetra::Vector nox_soln( problem.getSolution() );
 
@@ -333,7 +333,7 @@ void Problem_Manager::registerComplete()
 #ifndef USE_FD
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>
-         (*Interfaces.find(probId)->second);
+      (*(*(Interfaces.find(probId))).second);
     LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
@@ -346,7 +346,7 @@ void Problem_Manager::registerComplete()
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.find(probId)->second );
+      *(*(LinearSystems.find(probId))).second );
 
     // OR use this to fill matrices using Finite-Differences with Coloring
 #else
@@ -357,32 +357,32 @@ void Problem_Manager::registerComplete()
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
       EpetraExt::CrsGraph_MapColoring::GREEDY;
     TmpMapColorings[probId] = new EpetraExt::CrsGraph_MapColoring(algType);
-    ColorMaps[probId] = &((*TmpMapColorings.find(probId)->second)(problem.getGraph()) );
-    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.find(probId)->second );
-    ColumnsSets[probId] = &(*ColorMapIndexSets.find(probId)->second)(problem.getGraph() );
+    ColorMaps[probId] = &((*(*(TmpMapColorings.find(probId))).second)(problem.getGraph()) );
+    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex(*(*(ColorMaps.find(probId))).second );
+    ColumnsSets[probId] = &(*(*(ColorMapIndexSets.find(probId))).second)(problem.getGraph() );
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
     MatrixOperators[probId] = new NOX::EpetraNew::FiniteDifferenceColoring(
-        *Interfaces.find(probId)->second, 
-        problem.getSolution(), problem.getGraph(), *ColorMaps.find(probId)->second, 
-        *ColumnsSets.find(probId)->second );
+	*(*(Interfaces.find(probId))).second, 
+        problem.getSolution(), problem.getGraph(), *(*(ColorMaps.find(probId))).second, 
+        *(*(ColumnsSets.find(probId))).second );
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.find(probId)->second);
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*(*(MatrixOperators.find(probId))).second);
     LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
-      *MatrixOperators.find(probId)->second,
+      *(*(MatrixOperators.find(probId))).second,
       problem.getSolution() );
 
     Groups[probId] = new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.find(probId)->second );
+      *(*(LinearSystems.find(probId))).second );
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -391,9 +391,9 @@ void Problem_Manager::registerComplete()
 #endif
 
     // Needed to establish initial convergence state
-    Groups.find(probId)->second->computeF(); 
+    (*(Groups.find(probId))).second->computeF(); 
    
-    Solvers[probId] = new NOX::Solver::Manager(*Groups.find(probId)->second, 
+    Solvers[probId] = new NOX::Solver::Manager(*(*(Groups.find(probId))).second, 
 					*statusTest, *nlParams );
     iter++;
   }
@@ -438,19 +438,19 @@ void Problem_Manager::setAlldt( double dt )
   // Loop over each problem being managed and set the corresponding group
   // solution vector (used by NOX) with the problem's (used by application)
   for( ; problemIter != problemLast; ++problemIter)
-    problemIter->second->setdt(dt);
+    (*problemIter).second->setdt(dt);
 }
 
 void Problem_Manager::setGroupX(int probId)
 {
-  GenericEpetraProblem *problem = Problems.find(probId)->second;
+  GenericEpetraProblem *problem = (*(Problems.find(probId))).second;
   if( !problem ) {
     cout << "ERROR: Could not get requested Problem to use with group.setX "
          << endl;
     throw "Problem_Manager ERROR";
   }
 
-  NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+  NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
   if( !grp ) {
     cout << "ERROR: Could not get appropriate group for use in setX !!"
          << endl;
@@ -474,7 +474,7 @@ void Problem_Manager::setAllGroupX()
   // Loop over each problem being managed and set the corresponding group
   // solution vector (used by NOX) with the problem's (used by application)
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
 
     setGroupX(probId);
   }
@@ -492,7 +492,7 @@ void Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
   // with the incoming vector
   for( ; offBlockIter != offBlockLast; offBlockIter++) {
 
-    vector<OffBlock_Manager*> managerVec = offBlockIter->second;
+    vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
 
     for( unsigned int i = 0; i<managerVec.size(); i++ )
       managerVec[i]->getGroup().setX(inVec);
@@ -527,7 +527,7 @@ void Problem_Manager::computeAllF()
   // Loop over each problem being managed and invoke the corresponding group's
   // residual evaluation
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
 
     computeGroupF(probId);
   }
@@ -535,7 +535,7 @@ void Problem_Manager::computeAllF()
 
 void Problem_Manager::computeGroupF(int probId)
 {
-  NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+  NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
   if( !grp ) {
     cout << "ERROR: Could not get a group for problem with id --> "
          << probId << endl;
@@ -555,8 +555,8 @@ void Problem_Manager::computeAllJacobian()
   // Loop over each problem being managed and invoke its computeJacobian
   // method
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
-    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    int probId = (*problemIter).first;
+    NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
     if( !grp ) {
       cout << "ERROR: Could not find valid group for compouteJacobian !!"
            << endl;
@@ -578,7 +578,7 @@ void Problem_Manager::computeAllJacobian()
       fillTime.ResetStartTime();
   
       vector<OffBlock_Manager*> &offBlocksVec =
-        OffBlock_Managers.find(probId)->second;
+        (*(OffBlock_Managers.find(probId))).second;
 
       for( unsigned int i = 0; i<offBlocksVec.size(); i++ ) {
         
@@ -597,14 +597,14 @@ void Problem_Manager::updateWithFinalSolution(int probId)
 {
   // Copy final solution from NOX solver into the problem's solution vector
 
-  GenericEpetraProblem *problem = Problems.find(probId)->second;
+  GenericEpetraProblem *problem = (*(Problems.find(probId))).second;
   if( !problem ) {
     cout << "ERROR: Could not get requested Problem to update with final "
          << "solution" << endl;
     throw "Problem_Manager ERROR";
   }
 
-  NOX::Solver::Manager* solver = Solvers.find(probId)->second;
+  NOX::Solver::Manager* solver = (*(Solvers.find(probId))).second;
   if( !solver ) {
     cout << "ERROR: Could not get appropriate Solver for use in update !!"
          << endl;
@@ -628,7 +628,7 @@ void Problem_Manager::updateAllWithFinalSolution()
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
 
     updateWithFinalSolution(probId);
   }
@@ -648,11 +648,11 @@ void Problem_Manager::copyCompositeToProblems(
   // Loop over each problem being managed and copy into the correct 
   // problem vector
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
     switch (vecType) {
 
       case SOLUTION :
-        problemVec = &(problemIter->second->getSolution());
+        problemVec = &((*problemIter).second->getSolution());
 	break;
 
       case GROUP_F :
@@ -680,16 +680,16 @@ void Problem_Manager::copyProblemsToComposite(
   // Loop over each problem being managed and copy from the correct 
   // problem vector
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
     switch (vecType) {
 
       case SOLUTION :
-        problemVec = &(problemIter->second->getSolution());
+        problemVec = &((*problemIter).second->getSolution());
 	break;
 
       case GROUP_F :
         problemVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                     (Groups.find(probId)->second->getF()).getEpetraVector());
+		       ((*(Groups.find(probId))).second->getF()).getEpetraVector());
 	break;
 
       default :
@@ -708,7 +708,7 @@ void Problem_Manager::copyCompositeToVector(
                       Epetra_Vector& problemVec)
 {
   // Copy part of a composite problem vector to a problem's vector
-  Epetra_IntVector& indices = *ProblemToCompositeIndices.find(id)->second;
+  Epetra_IntVector& indices = *(*(ProblemToCompositeIndices.find(id))).second;
   // This map is needed to get correct LID of indices
   const Epetra_BlockMap &map = compositeVec.Map();
 
@@ -721,7 +721,7 @@ void Problem_Manager::copyVectorToComposite(
                       const Epetra_Vector& problemVec)
 {
   // Copy a vector from a problem into part of a composite problem vector
-  Epetra_IntVector& indices = *ProblemToCompositeIndices.find(id)->second;
+  Epetra_IntVector& indices = *(*(ProblemToCompositeIndices.find(id))).second;
   for (int i=0; i<problemVec.MyLength(); i++)
     compositeVec[indices[i]] = problemVec[i];
 }
@@ -742,18 +742,18 @@ void Problem_Manager::copyProblemJacobiansToComposite()
   // the composite diagonal blocks
   for( ; problemIter != problemLast; problemIter++) {
 
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
 
     // Get the problem, its Jacobian graph and its linear system
-    GenericEpetraProblem &problem = *(problemIter->second);
+    GenericEpetraProblem &problem = *((*problemIter).second);
     Epetra_CrsGraph &problemGraph = problem.getGraph();
     NOX::EpetraNew::LinearSystemAztecOO &problemLinearSystem = 
-            *LinearSystems.find(probId)->second;
+      *(*(LinearSystems.find(probId))).second;
 
     // Get the indices map for copying data from this problem into 
     // the composite problem
     Epetra_IntVector& indices = 
-            *ProblemToCompositeIndices.find(probId)->second;
+      *(*(ProblemToCompositeIndices.find(probId))).second;
 
 
     // Each problem's Jacobian will be determined by type 
@@ -834,7 +834,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
         // simply copy values directly from the off-block matrices to the
         // composite Jacobian matrix
 	Epetra_CrsMatrix *offMatrixPtr = 
-          &( (OffBlock_Managers.find(probId)->second)[k]->getMatrix() );
+          &( ((*(OffBlock_Managers.find(probId))).second)[k]->getMatrix() );
 	if( !offMatrixPtr ) {
           cout << "ERROR: Unable to get FDColoring underlying matrix for "
                << "dependence of problem " << probId << " on problem "
@@ -879,9 +879,9 @@ double Problem_Manager::getNormSum()
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; problemIter++) {
-    int probId = problemIter->first;
+    int probId = (*problemIter).first;
 
-    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    NOX::EpetraNew::Group *grp = (*(Groups.find(probId))).second;
     if( !grp ) {
       cout << "ERROR: Could not get appropriate group for use in NormSum !!"
            << endl;
@@ -943,8 +943,8 @@ bool Problem_Manager::solve()
       GenericEpetraProblem& problem = *(*problemIter).second;
       int probId = problem.getId();
 
-      NOX::EpetraNew::Group &problemGroup = *Groups.find(probId)->second;
-      NOX::Solver::Manager &problemSolver = *Solvers.find(probId)->second;
+      NOX::EpetraNew::Group &problemGroup = *(*(Groups.find(probId))).second;
+      NOX::Solver::Manager &problemSolver = *(*(Solvers.find(probId))).second;
     
       // Sync all dependent data with this problem 
       problem.doTransfer();
@@ -1176,7 +1176,7 @@ void Problem_Manager::generateGraph()
     // Get the indices map for copying data from this problem into 
     // the composite problem
     Epetra_IntVector& problemIndices = 
-            *ProblemToCompositeIndices.find(probId)->second;
+      *(*(ProblemToCompositeIndices.find(probId))).second;
 
     int problemRow, compositeRow, numCols;
 
@@ -1229,7 +1229,7 @@ void Problem_Manager::generateGraph()
       // Get the indices map for copying data from this problem into 
       // the composite problem
       Epetra_IntVector& problemIndices = 
-              *ProblemToCompositeIndices.find(probId)->second;
+	*(*(ProblemToCompositeIndices.find(probId))).second;
   
       // Create containers for the off-block objects
 //      vector<Epetra_CrsGraph*> offGraphs;
@@ -1255,9 +1255,9 @@ void Problem_Manager::generateGraph()
 
         // Get the needed objects for the depend problem
         GenericEpetraProblem &dependProblem = 
-          *(Problems.find(problem.depProblems[k])->second);
+          *((*(Problems.find(problem.depProblems[k]))).second);
         int dependId = dependProblem.getId();
-        XferOp *xferOpPtr = problem.xferOperators.find(dependId)->second;
+        XferOp *xferOpPtr = (*(problem.xferOperators.find(dependId))).second;
 	if( !xferOpPtr ) {
           cout << "ERROR: Unable to get Xfer_Operator for dependence of "
                << "problem \"" << problem.getName() << "\" on problem "
@@ -1270,7 +1270,7 @@ void Problem_Manager::generateGraph()
         // Get the indices map for copying data from the dependent problem into 
         // the composite problem
         Epetra_IntVector& dependIndices = 
-                *ProblemToCompositeIndices.find(dependId)->second;
+	  *(*(ProblemToCompositeIndices.find(dependId))).second;
 
         // Dimension nonzero columns index array with upper bound which is
 	// the previous definition * 2 since each node in problem could
@@ -1300,7 +1300,7 @@ void Problem_Manager::generateGraph()
                 = depNodesMap.equal_range(columnIndices[j]);
             multimap<int, int>::iterator iterN;
             for( iterN = rangeN.first; iterN != rangeN.second; iterN++)
-              dependentColIndices[numDepCols++] = dependIndices[iterN->second];
+              dependentColIndices[numDepCols++] = dependIndices[(*iterN).second];
           }
           AA->InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
           offGraph.InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
@@ -1376,12 +1376,12 @@ void Problem_Manager::outputStatus()
   for( ; problemIter != problemLast; problemIter++) {
 
     GenericEpetraProblem& problem = *(*problemIter).second;
-    cout << "\tProblem \"" << problem.getName() << "\" (" << problemIter->first
+    cout << "\tProblem \"" << problem.getName() << "\" (" << (*problemIter).first
          << ")\t Depends on:" << endl;
     
     for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) {
       dependIter = Problems.find( problem.depProblems[j] );
-      cout << "\t\t-------------> \t\t\"" << dependIter->second->getName() 
+      cout << "\t\t-------------> \t\t\"" << (*dependIter).second->getName() 
            << "\"" << endl;
     }
     cout << endl;

@@ -184,7 +184,7 @@ bool HMX_PDE::evaluate(
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
-    dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
+    dep[i].Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
@@ -299,11 +299,11 @@ bool HMX_PDE::evaluate(
                           srcTermIter != srcTermEnd; srcTermIter++) {
               HMX_PDE &srcTermProb = 
                        dynamic_cast<HMX_PDE&>(
-                       myManager->getProblem(srcTermIter->first) );
+			       myManager->getProblem((*srcTermIter).first) );
               srcTermProb.computeSourceTerm(2, depVars, srcTerm);
               (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
                 +basis.wt*basis.dx
-                *( basis.phi[i] * ( - srcTermIter->second * srcTerm[i] ));
+                *( basis.phi[i] * ( - (*srcTermIter).second * srcTerm[i] ));
             }
 	    //
 	  }
@@ -450,7 +450,7 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
     throw "HMX_PDE ERROR";
   }
   else
-    TvecPtr = iter->second;
+    TvecPtr = (*iter).second;
 
   Epetra_Vector &T = *TvecPtr;
 
@@ -478,17 +478,17 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
       for( requiredFieldIter = SrcTermExponent.begin();
            requiredFieldIter != requiredFieldEnd; requiredFieldIter++) {
 
-        iter = fields.find( requiredFieldIter->first );
+        iter = fields.find( (*requiredFieldIter).first );
         if( iter == fields.end() ) {
           cout << "ERROR: Cannot find required field \"" 
-               << requiredFieldIter->first 
+               << (*requiredFieldIter).first 
                << "\" for use in computeSourceTerm for problem \""
                << getName() << endl;
           throw "HMX_PDE ERROR";
         }
-	Epetra_Vector &reqFieldVec = *(iter->second);
+	Epetra_Vector &reqFieldVec = *((*iter).second);
 
-        result[i] *= pow( reqFieldVec[i], requiredFieldIter->second );
+        result[i] *= pow( reqFieldVec[i], (*requiredFieldIter).second );
       }
       result[i] *= rateK;
     }
@@ -513,7 +513,7 @@ void HMX_PDE::computeSourceTerm(int arraySize,
     throw "HMX_PDE ERROR";
   }
   else
-    T = iter->second;
+    T = (*iter).second;
 
   // If this problem is the temperature equation, don't compute a source
   // term.  This would be where a volumetric heating term would go.
@@ -541,17 +541,17 @@ void HMX_PDE::computeSourceTerm(int arraySize,
       for( requiredFieldIter = SrcTermExponent.begin();
            requiredFieldIter != requiredFieldEnd; requiredFieldIter++) {
 
-        iter = fields.find( requiredFieldIter->first );
+        iter = fields.find( (*requiredFieldIter).first );
         if( iter == fields.end() ) {
           cout << "ERROR: Cannot find required field \"" 
-               << requiredFieldIter->first 
+               << (*requiredFieldIter).first 
                << "\" for use in computeSourceTerm for problem \""
                << getName() << "\"" << endl;
           throw "HMX_PDE ERROR";
         }
-	double *reqFieldVec = iter->second;
+	double *reqFieldVec = (*iter).second;
 
-        result[i] *= pow( reqFieldVec[i], requiredFieldIter->second );
+        result[i] *= pow( reqFieldVec[i], (*requiredFieldIter).second );
       }
       result[i] *= rateK;
     }
