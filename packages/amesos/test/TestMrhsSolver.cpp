@@ -271,28 +271,12 @@ int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passx->Norm2( &xnorm[0] ) ; 
   SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 
-  cout << " TestMrhsSolver.cpp " << endl ; 
-  for ( int i = 0 ; i< numsolves; i++ ) {
-    cout << "i=" << i 
-	 << " error = " << error[i] 
-	 << " xnorm = " << xnorm[i] 
-	 << " residual = " << residual[i] 
-	 << " bnorm = " << bnorm[i] 
-	 << endl ; 
-
-  }
-  
-  cout << endl << " max_resid = " << max_resid ; 
-  cout << " max_error = " << max_error << endl ; 
-
   delete readA;
   delete readx;
   delete readb;
   delete readxexact;
   delete readMap;
-  
-  cout << " Get_residual() again = " << SparseDirectTimingVars::SS_Result.Get_Residual() << endl ;
 
   Comm.Barrier();
-
+   return 0;
 }

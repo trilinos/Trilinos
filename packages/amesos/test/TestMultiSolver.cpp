@@ -249,13 +249,7 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passx->Norm2( &xnorm[0] ) ; 
   SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 
-#if 0
-  cout << "passb = " << *passb << endl ; 
-  cout << "passx = " << *passx << endl ; 
-  cout << "passxexact = " << *passxexact << endl ; 
-#endif
-
-  if ( iam == 0 ) { 
+  if ( false && iam == 0 ) { 
     cout << " TestMutliSolver.cpp " << endl ; 
     for ( int i = 0 ; i< numsolves && i < 10 ; i++ ) {
       cout << "i=" << i 
