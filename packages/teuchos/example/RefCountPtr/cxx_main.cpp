@@ -18,15 +18,16 @@ int main(int argc, char* argv[])
 
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
-  // Create some reference-counted pointers.
+  /* Create some reference-counted pointers.
+   */
   // Create a reference-counted NULL pointer of type A.
   RefCountPtr<A>	           a_null_ptr;
   // Create a reference-counted pointer of non-const type A.
-  RefCountPtr<A>             a_ptr = rcp(new A);
+  RefCountPtr<A>             a_ptr   = rcp(new A);
   // Create a reference-counted pointer of const type A.
-  RefCountPtr<const A>       ca_ptr = rcp(new A);
+  RefCountPtr<const A>       ca_ptr  = rcp(new A);
   // Create a const reference-counted pointer of non-const type A.
-  const RefCountPtr<A>       a_cptr = rcp(new A); 
+  const RefCountPtr<A>       a_cptr  = rcp(new A); 
   // Create a const reference-counted pointer of const type A.
   const RefCountPtr<const A> ca_cptr = rcp(new A); 
 
@@ -37,13 +38,13 @@ int main(int argc, char* argv[])
   /* Other non-implicit type conversions like static, dynamic, or const casts
      can be taken care of by non-member template functions.
   */
-  RefCountPtr<const C> c_ptr = rcp(new C);
+  RefCountPtr<const C>  c_ptr     = rcp(new C);
   // Implicit cast from C to B2.
-  RefCountPtr<const B2> b2_ptr = c_ptr;                              
+  RefCountPtr<const B2> b2_ptr    = c_ptr;                              
   // Safe cast, type-checked, from C to A.
-  RefCountPtr<const A> ca_ptr1 = rcp_dynamic_cast<const A>(c_ptr); 
+  RefCountPtr<const A>  ca_ptr1   = rcp_dynamic_cast<const A>(c_ptr); 
   // Unsafe cast, non-type-checked, from C to A.
-  RefCountPtr<const A> ca_ptr2 = rcp_static_cast<const A>(c_ptr);  
+  RefCountPtr<const A>  ca_ptr2   = rcp_static_cast<const A>(c_ptr);  
   // Cast away const from B2.
   RefCountPtr<B2>       nc_b2_ptr = rcp_const_cast<B2>(b2_ptr);           
 
@@ -51,10 +52,10 @@ int main(int argc, char* argv[])
      of the operations that are common to both are:
   */
   RefCountPtr<A>
-    a_ptr2 = rcp(new A), // Initialize reference-counted pointers.
-    a_ptr3 = rcp(new A); // ""
+    a_ptr2 = rcp(new A),  // Initialize reference-counted pointers.
+    a_ptr3 = rcp(new A);  // ""
   A  *ra_ptr2 = new A,    // Initialize non-reference counted pointers.
-    *ra_ptr3 = new A;    // ""
+    *ra_ptr3 = new A;     // ""
   a_ptr2 = rcp(ra_ptr3);  // Assign from a raw pointer (only do this once!)
   a_ptr3 = a_ptr1;        // Assign one smart pointer to another.
   a_ptr2 = rcp(ra_ptr2);  // Assign from a raw pointer (only do this once!)
@@ -67,4 +68,5 @@ int main(int argc, char* argv[])
   A* true_ptr = a_ptr1.get();
 
   return 0;
+
 }

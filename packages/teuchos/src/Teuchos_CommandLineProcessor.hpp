@@ -36,6 +36,7 @@
 	\brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
 */
 #include "Teuchos_map.hpp"
+#include "Teuchos_any.hpp"
 #include "Teuchos_CompileTimeAssert.hpp"
 
 namespace Teuchos {
@@ -334,13 +335,13 @@ private:
 	//
 	struct opt_val_val_t {
 		opt_val_val_t()
-			:opt_type(OPT_NONE),opt_val(NULL)
+			:opt_type(OPT_NONE)
 			{}
-		opt_val_val_t( EOptType opt_type_in, void* opt_val_in )
+		opt_val_val_t( EOptType opt_type_in, const any& opt_val_in )
 			:opt_type(opt_type_in),opt_val(opt_val_in)
 			{}
 		EOptType     opt_type;
-		void         *opt_val; // Will be bool*, int*, double*, string* or a small int (for OPT_ENUM_INT)
+		any          opt_val; // Will be bool*, int*, double*, string* or a small int (for OPT_ENUM_INT)
 	};
 
 	//
@@ -352,7 +353,7 @@ private:
 			:opt_type(OPT_NONE)
 			{}
 		opt_doc_t(EOptType opt_type_in, const std::string& opt_name_in, const std::string& opt_name_false_in
-					  ,const std::string &documentation_in, void* default_val_in )
+					  ,const std::string &documentation_in, const any &default_val_in )
 			:opt_type(opt_type_in),opt_name(opt_name_in),opt_name_false(opt_name_false_in)
 			,documentation(documentation_in),default_val(default_val_in)
 			{}
@@ -360,7 +361,7 @@ private:
 		std::string  opt_name;
 		std::string  opt_name_false; // only for bool
 		std::string  documentation;
-		void         *default_val;
+		any          default_val;
 	};
 	
 	//

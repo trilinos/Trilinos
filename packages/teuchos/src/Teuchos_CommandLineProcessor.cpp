@@ -182,22 +182,22 @@ CommandLineProcessor::parse(
 		const opt_val_val_t &opt_val_val = (*itr).second;
 		switch( opt_val_val.opt_type ) {
 			case OPT_BOOL_TRUE:
-				*((bool*)opt_val_val.opt_val) = true;
+				*(any_cast<bool*>(opt_val_val.opt_val)) = true;
 				break;
 			case OPT_BOOL_FALSE:
-				*((bool*)opt_val_val.opt_val) = false;
+				*(any_cast<bool*>(opt_val_val.opt_val)) = false;
 				break;
 			case OPT_INT:
-				*((int*)opt_val_val.opt_val) = ::atoi(opt_val_str.c_str());
+				*(any_cast<int*>(opt_val_val.opt_val)) = ::atoi(opt_val_str.c_str());
 				break;
 			case OPT_DOUBLE:
-				*((double*)opt_val_val.opt_val) = ::atof(opt_val_str.c_str());
+				*(any_cast<double*>(opt_val_val.opt_val)) = ::atof(opt_val_str.c_str());
 				break;
 			case OPT_STRING:
-				*((std::string*)opt_val_val.opt_val) = remove_quotes(opt_val_str);
+				*(any_cast<std::string*>(opt_val_val.opt_val)) = remove_quotes(opt_val_str);
 				break;
 			case OPT_ENUM_INT:
-				if( !set_enum_value( i, argv, opt_name, (int)opt_val_val.opt_val, remove_quotes(opt_val_str), errout ) )
+				if( !set_enum_value( i, argv, opt_name, any_cast<int>(opt_val_val.opt_val), remove_quotes(opt_val_str), errout ) )
 					return PARSE_UNRECOGNIZED_OPTION;
 				break;
 			default:
@@ -272,7 +272,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 				<< "  "
 				<< setw(opt_name_w) << ""
 				<< setw(opt_type_w) << "";
-			print_enum_opt_names( (int)itr->default_val, out );
+			print_enum_opt_names( any_cast<int>(itr->default_val), out );
 			out
 				<< endl;
 		}
@@ -294,7 +294,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 			<< "(default: ";
 		switch( itr->opt_type ) {
 			case OPT_BOOL_TRUE:
-				out << "--" << ( (*((bool*)itr->default_val)) ? itr->opt_name : itr->opt_name_false );
+				out << "--" << ( (*(any_cast<bool*>(itr->default_val))) ? itr->opt_name : itr->opt_name_false );
 				break;
 			case OPT_INT:
 			case OPT_DOUBLE:
@@ -309,16 +309,16 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 			case OPT_BOOL_TRUE:
 				break;
 			case OPT_INT:
-				out << "=" << (*((int*)itr->default_val));
+				out << "=" << (*(any_cast<int*>(itr->default_val)));
 				break;
 			case OPT_DOUBLE:
-				out <<  "=" << (*((double*)itr->default_val));
+				out <<  "=" << (*(any_cast<double*>(itr->default_val)));
 				break;
 			case OPT_STRING:
-				out <<  "=" << add_quotes(*((std::string*)itr->default_val));
+				out <<  "=" << add_quotes(*(any_cast<std::string*>(itr->default_val)));
 				break;
 			case OPT_ENUM_INT:
-				out <<  "=" << add_quotes(enum_opt_default_val_name(itr->opt_name,(int)itr->default_val,&out));
+				out <<  "=" << add_quotes(enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
 				break;
 			default:
 				TEST_FOR_EXCEPT(true); // Local programming error only
@@ -348,7 +348,7 @@ void CommandLineProcessor::setEnumOption(
 	enum_opt_data_list_.push_back(
 		enum_opt_data_t(enum_option_val,num_enum_opt_values,enum_opt_values,enum_opt_names)
 		);
-	void* opt_id = reinterpret_cast<void*>(static_cast<int>(enum_opt_data_list_.size()-1));
+	const int opt_id = enum_opt_data_list_.size()-1;
 	options_list_[std::string(enum_option_name)]
 		= opt_val_val_t(OPT_ENUM_INT,opt_id);
 	options_documentation_list_.push_back(
