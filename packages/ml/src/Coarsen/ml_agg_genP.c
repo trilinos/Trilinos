@@ -1346,8 +1346,6 @@ tentP = ML_Operator_Create(ml->comm);
                           widget.Amat->getrow->pre_comm);
 
    ML_2matmult(AGGsmoother, tentP, &(ml->Pmat[clevel]) );
-if ( ml->comm->ML_mypid == 1 )
-ML_Operator_Print(&(ml->Pmat[clevel]), "Pmat2");
 
    ML_Operator_Destroy(tentP);
    ML_Operator_Destroy(AGGsmoother);
