@@ -32,18 +32,14 @@ Epetra_LocalMap::Epetra_LocalMap(int NumMyElements, int IndexBase,
   // LocalMap is just a special case of Map
 : Epetra_Map(NumMyElements, NumMyElements, IndexBase, Comm) {
   SetLabel("Epetra::LocalMap");
-  if (CheckInput()!=0) {
-    cout << "Replicated Local Map not the same size on all PEs" << endl;
-    abort();
-  }
+  if (CheckInput()!=0)
+    throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap& map)
 : Epetra_Map(map) {
-  if (CheckInput()!=0) {
-    cout << "Replicated Local Map not the same size on all PEs" << endl;
-    abort();
-  }
+  if (CheckInput()!=0)
+    throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
  
 //============================================================================

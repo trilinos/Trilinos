@@ -806,10 +806,8 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
 	int GID = Indices_[i][j];
 	int LID = LCID(GID);
 	if (LID!=-1) Indices_[i][j] = LID;
-	else {
-	  cout << "Internal error in TransformToLocal " << endl; 
-	  abort();
-	}
+	else 
+	  throw ReportError("Internal error in TransformToLocal ",-1); 
 	
       }
     }

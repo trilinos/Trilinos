@@ -481,13 +481,7 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 
   int prec_allocated = 0;
   if (Prec_ == 0) {
-    if (options_[AZ_precond] == AZ_user_precond) {
-      if (proc_config_[AZ_node] == 0) {
-	printf("AZ_iterate: Can not use NULL for precond argument when\n");
-	printf("            options[AZ_precond] == AZ_user_precond.\n");
-      }
-      exit(1);
-    }
+    if (options_[AZ_precond] == AZ_user_precond) EPETRA_CHK_ERR(-10); // Cannot have user prec==0
     Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
     prec_allocated = 1;
   }
