@@ -429,7 +429,7 @@ zscript:
 	@echo RANLIB='"$$2"' >> zoltan_script
 	@echo ZOLTAN_ARCH='"$${3:-generic}"' >> zoltan_script
 	@echo ZOLTAN_LIB_DIR='"$$4"' >> zoltan_script
-	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
+	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$PARMETIS_INCPATH $$JOSTLE_INCPATH"' >> zoltan_script
 	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
 	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script
