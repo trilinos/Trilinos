@@ -127,10 +127,10 @@ class Permutation : public Epetra_IntVector,
   /** Destructor */
   virtual ~Permutation();
 
-  typedef typename EpetraExt::Permutation<T>::NewTypeRef NewTypeRef;
-  typedef typename EpetraExt::Permutation<T>::OriginalTypeRef OriginalTypeRef;
-  typedef typename EpetraExt::Permutation<T>::NewTypePtr NewTypePtr;
-  typedef typename EpetraExt::Permutation<T>::OriginalTypePtr OriginalTypePtr;
+  typedef typename EpetraExt::Permutation<T>::NewTypeRef NewTypeR;
+  typedef typename EpetraExt::Permutation<T>::OriginalTypeRef OriginalTypeR;
+  typedef typename EpetraExt::Permutation<T>::NewTypePtr NewTypeP;
+  typedef typename EpetraExt::Permutation<T>::OriginalTypePtr OriginalTypeP;
 
   /** This method creates a new object which is a permuted copy of
       the input argument. Note that the new object will be destroyed by this
@@ -138,7 +138,7 @@ class Permutation : public Epetra_IntVector,
 
       @param orig Input Matrix to be permuted.
   */
-  NewTypeRef operator()( OriginalTypeRef orig );
+  NewTypeR operator()( OriginalTypeR orig );
 
   /** This method creates a new object which is a permuted copy of
       the input argument. Note: Column permutations are not yet implemented.
@@ -152,14 +152,14 @@ class Permutation : public Epetra_IntVector,
       performed (result = P*orig), a value of true means that a
       column-permutation will be performed (result = orig*P).
   */
-  NewTypeRef operator()( OriginalTypeRef orig,
+  NewTypeR operator()( OriginalTypeR orig,
 			 bool column_permutation );
 
  private:
   bool isTypeSupported();
 
-  NewTypePtr newObj_;
-  OriginalTypePtr origObj_;
+  NewTypeP newObj_;
+  OriginalTypeP origObj_;
 };
 
 }//namespace EpetraExt
