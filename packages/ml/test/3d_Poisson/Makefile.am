@@ -29,32 +29,6 @@
 
 EXEEXT = .exe
 
-EXTRA_DIST= 3d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
-
-noinst_PROGRAMS = 3d_Poisson
-
-3d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example3d.c
-
-3d_Poisson$(EXT): $(3d_Poisson_SOURCES)
-
-#copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
-	cp -f $(srcdir)/3d_Poisson.csh .
-	cp -f $(srcdir)/baseline1 .
-	cp -f $(srcdir)/baseline2 .
-	cp -f $(srcdir)/baseline3 .
-	cp -f $(srcdir)/baseline5 .
-	cp -f $(srcdir)/baseline6 .
-	cp -f $(srcdir)/baseline7 .
-	cp -f $(srcdir)/ml_inputfile1 .
-	cp -f $(srcdir)/ml_inputfile2 .
-	cp -f $(srcdir)/ml_inputfile3 .
-	cp -f $(srcdir)/ml_inputfile5 .
-	cp -f $(srcdir)/ml_inputfile6 .
-	cp -f $(srcdir)/ml_inputfile7 .
-
-#3d_Poisson$(REALEXT): $(3d_Poisson_SOURCES)
-
 if ML_USING_EPETRA
 epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
 else
@@ -66,6 +40,9 @@ aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
 else
 aztecoo_lib =
 endif
+
+# One of the input options for this example is the coarse direct solver KLU.
+# KLU is part of amesos, which in turn needs teuchos.
 
 if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
@@ -84,6 +61,32 @@ ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 else
 ifpack_lib =
 endif
+
+EXTRA_DIST= 3d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
+
+noinst_PROGRAMS = 3d_Poisson
+
+3d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
+
+3d_Poisson$(EXT): $(3d_Poisson_SOURCES)
+
+#copy these files over to the build area
+GetNecessaryFiles: $(EXTRA_DIST)
+	@if (! [ -e 3d_Poisson.csh ] ); then cp -f $(srcdir)/3d_Poisson.csh .; fi
+	@if (! [ -e baseline1 ] ); then cp -f $(srcdir)/baseline1 .; fi
+	@if (! [ -e baseline2 ] ); then cp -f $(srcdir)/baseline2 .; fi
+	@if (! [ -e baseline3 ] ); then cp -f $(srcdir)/baseline3 .; fi
+	@if (! [ -e baseline5 ] ); then cp -f $(srcdir)/baseline5 .; fi
+	@if (! [ -e baseline6 ] ); then cp -f $(srcdir)/baseline6 .; fi
+	@if (! [ -e baseline7 ] ); then cp -f $(srcdir)/baseline7 .; fi
+	@if (! [ -e ml_inputfile1 ] ); then cp -f $(srcdir)/ml_inputfile1 .; fi
+	@if (! [ -e ml_inputfile2 ] ); then cp -f $(srcdir)/ml_inputfile2 .; fi
+	@if (! [ -e ml_inputfile3 ] ); then cp -f $(srcdir)/ml_inputfile3 .; fi
+	@if (! [ -e ml_inputfile5 ] ); then cp -f $(srcdir)/ml_inputfile5 .; fi
+	@if (! [ -e ml_inputfile6 ] ); then cp -f $(srcdir)/ml_inputfile6 .; fi
+	@if (! [ -e ml_inputfile7 ] ); then cp -f $(srcdir)/ml_inputfile7 .; fi
+
+#3d_Poisson$(REALEXT): $(3d_Poisson_SOURCES)
 
 3d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
@@ -111,11 +114,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../amesos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(epetra_lib) \
+                $(aztecoo_lib) \
                 $(ifpack_lib) \
-                $(amesos_lib) \
+	        $(amesos_lib) \
                 $(epetra_lib) \
-                $(teuchos_lib) \
+	        $(teuchos_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

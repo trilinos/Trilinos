@@ -88,12 +88,17 @@ else
       # grep the dif file for significant changes:
       #   operator complexity, number of iterations, or solution entries
       cat difs${testnum} | grep "complexity" >> ${SUMMARY_FILE}
-      set check1="$?"
+      set tempo=`egrep complexity difs${testnum} | wc | sed "s/ //g"`
+      set check1=1
+      if ( ${tempo} != '000' ) set check1=0
       cat difs${testnum} | grep "gid = " >> ${SUMMARY_FILE}
-      set check2="$?"
-      grep "total iterations" difs${testnum} >> ${SUMMARY_FILE}
-      set check3="$?"
-  
+      set tempo=`egrep 'gid = ' difs${testnum} | wc | sed "s/ //g"`
+      set check2=1
+      if ( ${tempo} != '000' ) set check2=0
+      cat difs${testnum} | grep "total iterations" >> ${SUMMARY_FILE}
+      set tempo=`egrep 'total iterations' difs${testnum} | wc | sed "s/ //g"`
+      set check3=1
+      if ( ${tempo} != '000' ) set check3=0
   
       # If any diffs occured, then the test fails.
       #if ( "${check3}" == "0" ) then
