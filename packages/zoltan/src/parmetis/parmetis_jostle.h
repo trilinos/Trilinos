@@ -69,7 +69,8 @@ typedef int idxtype;
 #define TAG7  32007
 
 /* Misc. local constants */
-#define CHUNKSIZE 20  /* Number of nodes to allocate in one chunk. */
+#define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
+#define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
 
 /* ParMETIS data types and definitions. */
 

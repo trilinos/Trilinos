@@ -135,7 +135,7 @@ int Zoltan_ParMetis(
   /* Set the default option values. */
   output_level = 0;
   coarse_alg = 2;
-  use_obj_size = 0;
+  use_obj_size = 1;
   fold = 0;
   seed = GLOBAL_SEED;
 
@@ -708,9 +708,9 @@ static int Zoltan_ParMetis_Jostle(
     /* proc_list[i] will contain a struct with data to send
      * to another processor.  proc_list_nbor[i*num_gid_entries] contains
      * the global ID of the neighboring object.
-     * We don't know yet the total number
-     * of inter-proc edges so we may have to adjust the size of proc_list and
-     * proc_list_nbor through REALLOC.  We add a chunk of space at a time.
+     * We don't know yet the total number of inter-proc edges so we may 
+     * have to adjust the size of proc_list and proc_list_nbor through
+     * REALLOC.  We increase the size by a factor REALLOC_FACTOR each time.
      * The motivation for this design is to reduce the number of calls
      * to REALLOC.  We could have reduced it into a single MALLOC 
      * if we were willing to call the query function get_edge_list 
@@ -791,10 +791,10 @@ static int Zoltan_ParMetis_Jostle(
           if (offset == max_proc_list_len){
             if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
               printf("[%1d] Debug: Allocating more list space, "
-                     "max_proc_list_len = %d, increasing by %d\n", 
-                     zz->Proc, max_proc_list_len, CHUNKSIZE);
+                     "max_proc_list_len = %d, increasing by factor %f\n", 
+                     zz->Proc, max_proc_list_len, REALLOC_FACTOR);
 
-            max_proc_list_len += CHUNKSIZE;
+            max_proc_list_len *= REALLOC_FACTOR;
             proc_list = (struct Edge_Info *) ZOLTAN_REALLOC(proc_list,
                          max_proc_list_len*sizeof(struct Edge_Info));
             proc_list_nbor = ZOLTAN_REALLOC_GID_ARRAY(zz, proc_list_nbor,
