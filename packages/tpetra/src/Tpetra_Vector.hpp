@@ -42,8 +42,9 @@ public:
 
   //! Sets all vector entries to zero.
   Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace) 
-		: BLAS_()
-		//, VectorSpace_(VectorSpace)
+		: Object("Tpetra::Vector")
+		, BLAS_()
+		, VectorSpace_(VectorSpace)
 	{
 		cout << "vector constructor called" << endl;
 	};
@@ -52,9 +53,10 @@ public:
 	//Vector(ScalarType* vectorEntries, VectorSpace<OrdinalType, ScalarType> const& vectorSpace);
 
 	//! Copy constructor.
-  Vector(Vector<OrdinalType, ScalarType> const& Vector)
-		: BLAS_(Vector.BLAS_)
-		//, VectorSpace_(Vector.vectorSpace_)
+  Vector(Vector<OrdinalType, ScalarType> const& Source)
+		: Object(Source.label())
+		, BLAS_(Source.BLAS_)
+		, VectorSpace_(Source.vectorSpace_)
 	{
 		cout << "vector copy constructor called" << endl;
 	};
@@ -86,14 +88,14 @@ public:
 
 	//! Returns number of vector entries owned by this image.
 	OrdinalType getNumMyEntries() const {
-		//return(VectorSpace().getNumMyEntries());
 		cout << "getNumMyEntries called" << endl;
+		return(vectorSpace().getNumMyEntries());
 	};
 
 	//! Returns number of vector entries across all images.
-	OrdinalType getNumEntries() const {
-		//return(VectorSpace().getNumMyEntries());
-		cout << "getNumEntries called" << endl;
+	OrdinalType getNumGlobalEntries() const {
+		cout << "getNumGlobalEntries called" << endl;
+		return(vectorSpace().getNumGlobalEntries());
 	};
 
 	//@}
@@ -109,14 +111,13 @@ public:
 
 private:
 
-	//VectorSpace<OrdinalType, ScalarType> const& VectorSpace() const {
-	//	return(&VectorSpace_);
-	//};
+	//! Returns a const reference to the VectorSpace this Vector belongs to.
+	VectorSpace<OrdinalType, ScalarType> const& vectorSpace() const {
+		return(VectorSpace_);
+	};
 
 	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
-	//VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-	//OrdinalType NumMyEntries_;
-	//OrdinalType NumGlobalEntries_;
+	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
 
 }; // class Vector
 

@@ -10,8 +10,6 @@
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
 
-//Tpetra::ElementSpace<ORDINALTYPE>* esCreator(int constructorNum, bool verbose, bool debug);
-
 int main(int argc, char* argv[]) {
 	bool verbose = false;
 	bool debug = false;
@@ -24,42 +22,83 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  const Tpetra::SerialPlatform<int, int> platformE;
-	const Tpetra::ElementSpace<int> elementspace(10, 2, platformE);
+	int returnierr = 0;
+	int ierr = 0;
 
-  const Tpetra::SerialPlatform<int, float> platformV;
+  const Tpetra::SerialPlatform<int, int> platformE;
+	const Tpetra::SerialPlatform<int, float> platformV;
+
+	//
+	// code coverage section - just call functions, no testing
+	//
+
+	// ctr and cpy ctr
+	const Tpetra::ElementSpace<int> elementspace(10, 2, platformE);
 	Tpetra::VectorSpace<int, float> vectorspace(elementspace, platformV);
 	Tpetra::VectorSpace<int, float> v2(vectorspace);
 
+	// print
+	cout << vectorspace << endl;
+
+	// attribute access
+	int temp = 0;
+	temp = vectorspace.getNumGlobalEntries();
+	temp = vectorspace.getNumMyEntries();
+	temp = vectorspace.getIndexBase();
+	temp = vectorspace.getMinLocalIndex();
+	temp = vectorspace.getMaxLocalIndex();
+	temp = vectorspace.getMinGlobalIndex();
+	temp = vectorspace.getMaxGlobalIndex();
+	temp = 0;
+	temp = vectorspace.getGlobalIndex(temp);
+	temp = vectorspace.getLocalIndex(temp);
+
+	// accessors to other classes
+	v2.platform().printInfo(cout);
+	temp = v2.comm().getNumImages();
+
+	//
+	// actual testing section - affects return code
+	//
+
+	// compatibleVector
 	Tpetra::Vector<int, float> vector(vectorspace);
+	if(!vectorspace.compatibleVector(vector))
+		ierr++;
+	const Tpetra::ElementSpace<int> differentES(15, 2, platformE);
+	Tpetra::VectorSpace<int, float> differentVS(differentES, platformV);
+	if(differentVS.compatibleVector(vector))
+		ierr++;
+	if(ierr == 0) 
+		cout << "Compatibility test passed" << endl;
+	else
+		cout << "Compatibility test failed" << endl;
+	returnierr += ierr;
+	ierr = 0;
 
-	return(0);
+	// vector creation
+	Tpetra::Vector<int, float>* vecptr = vectorspace.createVector();
+	temp = vecptr->getNumMyEntries();
+	delete vecptr;
+
+	// isSameAs
+	bool same = vectorspace.isSameAs(v2);
+	if(!same)
+		ierr++;
+	same = vectorspace.isSameAs(differentVS);
+	if(same)
+		ierr++;
+	if(ierr == 0) 
+		cout << "IsSameAs test passed" << endl;
+	else
+		cout << "IsSameAs test failed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+
+	// finish up
+	if(returnierr == 0)
+		cout << "VectorSpaceTest passed." << endl;
+	else
+		cout << "VectorSpaceTest failed." << endl;
+	return(returnierr);
 }
-
-/*Tpetra::ElementSpace<ORDINALTYPE>* esCreator(int constructorNum, bool verbose, bool debug) {
-  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform; 
-	ORDINALTYPE eList[10] = {1,4,7,8,9,15,22,54,55,58}; 
-	ORDINALTYPE eSize = 10; 
-	ORDINALTYPE iB = 0; 
-	Tpetra::ElementSpace<ORDINALTYPE>* es = 0; 
-	
-	switch(constructorNum) { 
-	case 1: 
-		if(verbose) cout << "Creating es1(contiguous, tpetra-defined)..."; 
-		es = new Tpetra::ElementSpace<ORDINALTYPE>(eSize, iB, platform); 
-		break; 
-	case 2: 
-		if(verbose) cout << "Creating es2(contiguous, user-defined)..."; 
-		es = new Tpetra::ElementSpace<ORDINALTYPE>(-1, eSize, iB, platform); 
-		break; 
-	case 3: 
-		if(verbose) cout << "Creating es3(noncontiguous)..."; 
-		es = new Tpetra::ElementSpace<ORDINALTYPE>(-1, eSize, eList, iB, platform); 
-		break; 
-	}; 
-
-	if(verbose) cout << "Successful." << endl; 
-	if(debug) cout << es << endl; 
-
-	return(es); 
-	}*/

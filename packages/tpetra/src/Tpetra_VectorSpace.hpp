@@ -7,9 +7,11 @@
 #include "Tpetra_BlockElementSpace.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Comm.hpp"
-//#include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
+
+// forward declaration of Vector, needed to prevent circular inclusions
+template<typename OrdinalType, typename ScalarType> class Vector;
 
 //! Tpetra::VectorSpace
 /*! VectorSpace serves two purposes. In addition to creating Tpetra::Vectors,
@@ -124,25 +126,38 @@ public:
 	//@{ \name Vector Creation
 	
 	//! Creates a Tpetra::Vector, with all entries set to 0.
-	//Vector<OrdinalType, ScalarType>* createVector() const {
-	//	Vector<OrdinalType, ScalarType>* vector = new Vector<OrdinalType, ScalarType>(this);
-	//	return(vector);
-	//};
+	Vector<OrdinalType, ScalarType>* createVector() const {
+		Vector<OrdinalType, ScalarType>* vector = new Vector<OrdinalType, ScalarType>(*this);
+		return(vector);
+	};
 	
 	//@{ \name Boolean Tests
 	
 	//! Returns true if the Vector passed in is compatible with this VectorSpace.
-	//bool compatibleVector(Vector<ScalarType, OrdinalType> const& Vector) const {};
+	bool compatibleVector(Vector<OrdinalType, ScalarType> const& Vector) const {
+		// first check global length and local lenght on this image
+		if(Vector.getNumGlobalEntries() != getNumGlobalEntries() ||
+			 Vector.getNumMyEntries() != getNumMyEntries())
+			return(false);
+
+		// then check to make sure distribution is the same
+		ScalarType sameNumLocal = 1.0; // we already know the length matches on this image
+		ScalarType sameNumGlobal = 0.0;
+		if(Vector.getNumMyEntries() == getNumMyEntries())
+			sameNumLocal = 1.0;
+		comm().minAll(&sameNumLocal, &sameNumGlobal, 1);
+		return(sameNumGlobal == 1.0);
+	};
 	
 	//! Returns true if the VectorSpace passed in is identical to this VectorSpace. Also implemented through the == and != operators.
-	bool isSameAs(VectorSpace<ScalarType, OrdinalType> const& vectorSpace) const {
+	bool isSameAs(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {
 		if(blockspace_)
 			return(blockElementSpace().isSameAs(vectorSpace.blockElementSpace())); // compare BlockElementSpaces
 		else
 			return(elementSpace().isSameAs(vectorSpace.elementSpace())); // compare ElementSpaces
 	};
-	bool operator==(VectorSpace<ScalarType, OrdinalType> const& vectorSpace) const {return(isSameAs(vectorSpace));};
-	bool operator!=(VectorSpace<ScalarType, OrdinalType> const& vectorSpace) const {return(!isSameAs(vectorSpace));};
+	bool operator==(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {return(isSameAs(vectorSpace));};
+	bool operator!=(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {return(!isSameAs(vectorSpace));};
 	
 	//@}
 	
@@ -180,7 +195,7 @@ public:
 	
 	//! Access function for the Tpetra::Platform and Tpetra::Comm communicators.
 	Platform<OrdinalType, ScalarType> const& platform() const {return(*Platform_);};
-	Comm<ScalarType, OrdinalType> const& comm() const {return(*Comm_);};
+	Comm<ScalarType, OrdinalType> const& comm() const {return(*Comm_);}; // Comm is <ST, OT> because ST represents PT
 	
 	//! Assignment operator (declared but not defined, do not use)
 	VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source);
@@ -201,11 +216,13 @@ private:
 	Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
 	Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
 	Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
-	Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_;
+	Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> const > Comm_; // Comm is <ST, OT> because ST represents PT
 
 	
 }; // VectorSpace class
 
 } // Tpetra namespace
+
+#include "Tpetra_Vector.hpp"
 
 #endif // _TPETRA_VECTORSPACE_HPP_
