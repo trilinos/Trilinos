@@ -944,6 +944,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Smoother_MSR_SGSdamping(dataptr->sm_nodal, TtATmat->invec_leng,
                       x_nodal, TtATmat->outvec_leng, rhs_nodal);
 #else
+      /*
+      ML_Smoother_Apply(&(dataptr->ml_nodal->pre_smoother[0]),
+			TtATmat->invec_leng, x_nodal,
+			TtATmat->outvec_leng, rhs_nodal,ML_ZERO);
+      */
       ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
 #endif
@@ -2710,6 +2715,8 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->max_eig = 0.0;
    ml_data->omega = 1.0;
    ml_data->output_level = 2;
+   ml_data->ml_nodal = NULL;
+   ml_data->ml_edge = NULL;
    return(0);
 }
  
@@ -2751,6 +2758,19 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
 
    if ( ml_data->sm_nodal != NULL )
       ML_Smoother_Destroy(&(ml_data->sm_nodal));
+
+   if ( ml_data->ml_nodal != NULL ){
+     if (&(ml_data->ml_nodal->Amat[0]) != NULL)
+       ml_data->ml_nodal->Amat[0].getrow->pre_comm = NULL;
+     ML_Destroy(&(ml_data->ml_nodal));
+   }
+
+   if ( ml_data->ml_edge != NULL ) {
+     if (&(ml_data->ml_edge->Amat[0]) != NULL)
+       ml_data->ml_edge->Amat[0].getrow->pre_comm = NULL;
+     ML_Destroy(&(ml_data->ml_edge));
+   }
+
 
    ML_memory_free((void**) &ml_data);
 }                                                                               
@@ -3163,6 +3183,21 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr->sm_nodal->my_level->Amat = tmpmat;
    dataptr->sm_nodal->my_level->comm = tmpmat->comm;
    dataptr->TtATmat = tmpmat;
+#ifdef willbeadded_soon
+   ML_Create(&(dataptr->ml_nodal),1);
+   ML_Init_Amatrix(dataptr->ml_nodal, 0, tmpmat->invec_leng, 
+		   tmpmat->outvec_leng, tmpmat->data);
+it looks like we switched from MSR to CSR ... but fix this ....
+   ML_Operator_Set_ApplyFunc (&(dataptr->ml_nodal->Amat[0]), ML_INTERNAL, CSR_matvec);
+
+   ML_Operator_Set_Getrow(&(dataptr->ml_nodal->Amat[0]), ML_EXTERNAL, 
+			  tmpmat->outvec_leng, CSR_getrows);
+   dataptr->ml_nodal->Amat[0].getrow->pre_comm = tmpmat->getrow->pre_comm;
+   ML_Gen_Smoother_MLS(dataptr->ml_nodal, 0, ML_PRESMOOTHER,1);
+matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
+ printf("data widget %u and rowptr %u\n", matdata, matdata->rowptr);
+
+#endif
 
 
    /* Allocate some work vectors that are needed in the smoother. */
@@ -5678,7 +5713,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
    ML_1Level       *from = Amat->from; 
    struct MLSthing *widget;
-   int              deg, lv, dg, n = outlen, i;
+   int              deg, lv, dg, n, i;
    double          *res0, *res, *y, cf, over, *mlsCf;
 
 #ifdef RST_MODIF
@@ -5687,6 +5722,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    struct DinvA_widget DinvA_widget;
    int j;
 #endif
+   n = outlen;
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
    deg    = widget->mlsDeg;
@@ -5709,15 +5745,6 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; 
 #ifdef RST_MODIF
 
-   DinvA_widget.ML_id = Amat->matvec->ML_id;
-   DinvA_widget.internal = Amat->matvec->internal;
-   DinvA_widget.external = Amat->matvec->external;
-   DinvA_widget.data     = Amat->data;
-   DinvA_widget.Amat     = Amat;
-   Amat->matvec->ML_id    = ML_EXTERNAL;
-   Amat->matvec->external = DinvA;
-   Amat->data             = &DinvA_widget;
-
    /* ----------------------------------------------------------------- */
    /* extract diagonal using getrow function if not found               */
    /* ----------------------------------------------------------------- */
@@ -5725,7 +5752,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    if (Amat->diagonal == NULL) 
    {
       if (Amat->getrow->ML_id == ML_EMPTY) 
-         pr_error("Error(ML_Jacobi): Need diagonal\n");
+         pr_error("Error(MLS_Apply): Need diagonal\n");
       else 
       {
          allocated_space = 30;
@@ -5735,7 +5762,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
          for (i = 0; i < Amat->outvec_leng; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
-                                     cols,vals,&n) == 0) 
+                                     cols,vals,&nn) == 0) 
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols); 
@@ -5748,8 +5775,9 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
                   exit(1);
                }
             }
-            for (j = 0; j < n; j++) 
+            for (j = 0; j < nn; j++) 
                if (cols[j] == i) tdiag[i] = vals[j];
+	    if (tdiag[i] == 0.) tdiag[i] = 1.;
          }
          free(cols); free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
@@ -5757,7 +5785,20 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
       } 
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+
+   DinvA_widget.ML_id = Amat->matvec->ML_id;
+   DinvA_widget.internal = Amat->matvec->internal;
+   DinvA_widget.external = Amat->matvec->external;
+   DinvA_widget.data     = Amat->data;
+   DinvA_widget.Amat     = Amat;
+   Amat->matvec->ML_id    = ML_EXTERNAL;
+   Amat->matvec->external = DinvA;
+   Amat->data             = &DinvA_widget;
+
+
+
    for (i = 0; i < Amat->outvec_leng; i++) res0[i] = res0[i]/diagonal[i];
+
 #endif
 
 
@@ -5768,8 +5809,8 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
        for (i=0; i<n; i++) x[i] += cf * res0[i]; 
 #ifdef 	MB_FORNOW
-       // @@@ clean up later in destructor, right now clean in here ....
-       // @@@ must deallocate here if we decide to stick with local allocations
+       /* @@@ clean up later in destructor, right now clean in here .... */
+       /* @@@ must deallocate here if we decide to stick with local allocations */
        if (y)    { ML_free(   y);    y = NULL; } 
        if (res)  { ML_free( res);  res = NULL; } 
        if (res0) { ML_free(res0); res0 = NULL; }
@@ -5800,8 +5841,8 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    for (i=0; i < n; i++) x[i] += over * y[i];
 
 #ifdef 	MB_FORNOW
-   // @@@ clean up later in destructor, right now clean in here ....
-   // @@@ must deallocate here if we decide to stick with local allocations
+   /* @@@ clean up later in destructor, right now clean in here .... */
+   /* @@@ must deallocate here if we decide to stick with local allocations*/
    if (y)    { ML_free(   y);    y = NULL; } 
    if (res)  { ML_free( res);  res = NULL; } 
    if (res0) { ML_free(res0); res0 = NULL; }
