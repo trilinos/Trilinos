@@ -34,6 +34,7 @@
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
 #include "LOCA_Utils.H"
+#include "Teuchos_LAPACK.hpp"
 
 LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
 			   bool hasMassMat) : 
@@ -517,29 +518,30 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
   int *piv = new int[n];
 
   // Copy all input vectors into one (complex) matrix
-  NOX::LAPACK::Matrix B(2*n,m);
+  complex<double>* B = new complex<double>[n*m];
   const NOX::LAPACK::Vector* constVecPtrR;
   const NOX::LAPACK::Vector* constVecPtrI;
   for (int j=0; j<m; j++) {
     constVecPtrR = dynamic_cast<const NOX::LAPACK::Vector*>(inputs_real[j]);
     constVecPtrI = dynamic_cast<const NOX::LAPACK::Vector*>(inputs_imag[j]);
     for (int i=0; i<n; i++) {
-      B(2*i,j) = (*constVecPtrR)(i);
-      B(2*i+1,j) = (*constVecPtrI)(i);
+      B[i+n*j] = complex<double>((*constVecPtrR)(i), (*constVecPtrI)(i));
     }
   }
 
   // Create complex matrix J+i*w*M
-  NOX::LAPACK::Matrix A(2*n,n);
+  complex<double>* A = new complex<double>[n*n];
   for (int j=0; j<n; j++) {
     for (int i=0; i<n; i++) {
-      A(2*i,j) = jacobianMatrix(i,j);
-      A(2*i+1,j) = frequency*massMatrix(i,j);
+      A[i+n*j] = 
+	complex<double>(jacobianMatrix(i,j), frequency*massMatrix(i,j));
     }
   }
 
   // Solve A*X = B
-  ZGESV_F77(&n, &m, &A(0,0), &n, piv, &B(0,0), &n, &info);
+  Teuchos::LAPACK< int,complex<double> > L;
+  L.GESV(n, m, A, n, piv, B, n, &info);
+  //ZGESV_F77(&n, &m, &A(0,0), &n, piv, &B(0,0), &n, &info);
 
   if (info != 0)
       return NOX::Abstract::Group::Failed;
@@ -551,12 +553,14 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
     vecPtrR = dynamic_cast<NOX::LAPACK::Vector*>(results_real[j]);
     vecPtrI = dynamic_cast<NOX::LAPACK::Vector*>(results_imag[j]);
     for (int i=0; i<n; i++) {
-      (*vecPtrR)(i) = B(2*i,j);
-      (*vecPtrI)(i) = B(2*i+1,j);
+      (*vecPtrR)(i) = B[i+n*j].real();
+      (*vecPtrI)(i) = B[i+n*j].imag();
     }
   }
 
   delete [] piv;
+  delete [] A;
+  delete [] B;
 
   return NOX::Abstract::Group::Ok;
 }

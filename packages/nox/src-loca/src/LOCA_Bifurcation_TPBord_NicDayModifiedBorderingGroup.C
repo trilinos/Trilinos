@@ -34,8 +34,8 @@
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_LAPACK_Wrappers.H"
 #include "LOCA_ErrorCheck.H"
+#include "Teuchos_LAPACK.hpp"
 
 LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup::NicDayModifiedBorderingGroup(
 			       LOCA::Bifurcation::TPBord::AbstractGroup& g,
@@ -252,7 +252,9 @@ LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup::applyJacobianInverse(
   int three = 3;
   int piv[3];
   int info;
-  DGESV_F77(&three, &one, A, &three, piv, B, &three, &info);
+  Teuchos::LAPACK<int,double> L;
+  L.GESV(three, one, A, three, piv, B, three, &info);
+  //DGESV_F77(&three, &one, A, &three, piv, B, &three, &info);
   if (info != 0) {
     LOCA::ErrorCheck::throwError(callingFunction,
 				 "Solve of 3x3 coefficient matrix failed!");

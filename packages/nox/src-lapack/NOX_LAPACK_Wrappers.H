@@ -40,7 +40,6 @@ extern "C" {
 #endif
 
 #define DGESV_F77 F77_FUNC(dgesv,DGESV)
-#define ZGESV_F77 F77_FUNC(zgesv,ZGESV)
 #define DGETRF_F77 F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77 F77_FUNC(dgetrs,DGETRS)
 #define DGEEV_F77 F77_FUNC(dgeev,DGEEV)
@@ -55,10 +54,6 @@ extern "C" {
 
 /* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U */
 void DGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
-	       int *piv, double *B, const int *ldb, int *info);
-
-/* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U, A, B Complex*16 */
-void ZGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
 	       int *piv, double *B, const int *ldb, int *info);
 
 /* A <- [L,U], piv <- P where P*A = L*U */
