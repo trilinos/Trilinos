@@ -408,7 +408,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           ML_Aggregate* ag,Epetra_CrsMatrix** P, 
                           ML_NOX::Ml_Nox_Fineinterface& interface,
                           Epetra_Comm& comm,  const Epetra_Vector& xfine, 
-                          bool ismatrixfree, bool isnlnCG, 
+                          bool ismatrixfree, bool isnlnCG, int nitersCG,
                           string fsmoothertype, string smoothertype, string coarsesolvetype, 
                           int *nsmooth, double conv_normF, 
                           double conv_nupdate, int conv_maxiter,
@@ -448,12 +448,17 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    isnlnCG_          = isnlnCG;
    azlinSys_         = 0;
    clone_            = 0;
+   nitersCG_         = nitersCG;
    
-   if (isnlnCG_==false)
+   if (isnlnCG_==false && 
+      (fsmoothertype   == "Jacobi" || 
+       smoothertype    == "Jacobi" || 
+       coarsesolvetype == "Jacobi" ))
    {
       cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
            << "**ERR**: Modified Newton's method not supported for \n"
-           << "**ERR**: ismatrixfree_==true && matfreelev0_==false\n"
+           << "**ERR**: ismatrixfree_==true && smoothertype == Jacobi-Smoother\n"
+           << "**ERR**: because no full Jacobian exists!\n"
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
    }
    if (ismatrixfree_==false)
@@ -619,42 +624,97 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
 
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
   NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
-  searchParams.setParameter("Method", "NonlinearCG");
-  NOX::Parameter::List& dirParams = nlParams_->sublist("Direction"); 
-  dirParams.setParameter("Method", "NonlinearCG");
-  NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-  nlcgParams.setParameter("Restart Frequency", 50);                         
-  nlcgParams.setParameter("Precondition", "On");
-  nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-  //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+  NOX::Parameter::List* lsParamsptr  = 0;
+  if (isnlnCG_)
+  {
+     searchParams.setParameter("Method", "NonlinearCG");
+     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction"); 
+     dirParams.setParameter("Method", "NonlinearCG");
+     NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+     nlcgParams.setParameter("Restart Frequency", 10);                         
+     nlcgParams.setParameter("Precondition", "On");
+     nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
+     //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
-  NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");     
-  lsParams.setParameter("Aztec Solver", "CG"); 
-  lsParams.setParameter("Max Iterations", 1);  
-  lsParams.setParameter("Tolerance", 1e-11);
-  lsParams.setParameter("Output Frequency", 50);   
-  lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");   
-  lsParams.setParameter("Preconditioner","User Defined");
+     NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");     
+     lsParams.setParameter("Aztec Solver", "CG"); 
+     lsParams.setParameter("Max Iterations", 1);  
+     lsParams.setParameter("Tolerance", 1e-11);
+     lsParams.setParameter("Output Frequency", 0);   
+     lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");   
+     lsParams.setParameter("Preconditioner","User Defined");
+  }
+  else // Newton's method using ML-preconditioned Aztec as linear solver
+  {
+     searchParams.setParameter("Method", "Full Step");
+     // Sublist for direction
+     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction");
+     dirParams.setParameter("Method", "Newton");
+     NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+     newtonParams.setParameter("Forcing Term Method", "Constant");
+     //newtonParams.setParameter("Forcing Term Method", "Type 1");
+     //newtonParams.setParameter("Forcing Term Method", "Type 2");
+     newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
+     newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+
+     NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+     lsParamsptr = &lsParams;
+     lsParams.setParameter("Aztec Solver", "CG"); 
+     lsParams.setParameter("Max Iterations", nitersCG_);  
+     lsParams.setParameter("Tolerance", conv_normF_); // FIXME? is this correct?
+     if (ml_printlevel_>8)
+        lsParams.setParameter("Output Frequency", 50);   
+     else
+        lsParams.setParameter("Output Frequency", 0);   
+     lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
+     lsParams.setParameter("Preconditioner","User Defined");
+  }
    
-  // create the matrixfree operator used in the nlnCG
-  thislevel_A_ = new NOX::EpetraNew::MatrixFree(*coarseinterface_,*xthis_,false);
-  
-  // create the necessary interfaces
-  NOX::EpetraNew::Interface::Preconditioner* iPrec = 0; 
-  NOX::EpetraNew::Interface::Required*       iReq  = coarseinterface_;
-  NOX::EpetraNew::Interface::Jacobian*       iJac  = thislevel_A_;
-  
-  // create the linear system 
-  thislevel_linSys_ = new ML_NOX::Ml_Nox_LinearSystem(
-                                 *iJac,*thislevel_A_,*iPrec,*thislevel_prec_,
-                                 *xthis_,ismatrixfree_,level_,ml_printlevel_);
-
   // create the initial guess   
   initialGuess_ = new NOX::Epetra::Vector(*xthis_, NOX::DeepCopy, true);
   // NOTE: do not delete xthis_, it's used and destroyed by initialGuess_
 
-  // create the group
-  group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*thislevel_linSys_);
+  // create the necessary interfaces
+  NOX::EpetraNew::Interface::Preconditioner* iPrec = 0; 
+  NOX::EpetraNew::Interface::Required*       iReq  = 0;
+  NOX::EpetraNew::Interface::Jacobian*       iJac  = 0;
+
+  if (isnlnCG_)
+  {
+     // create the matrixfree operator used in the nlnCG
+     thislevel_A_ = new NOX::EpetraNew::MatrixFree(*coarseinterface_,*xthis_,false);
+  
+     // create the necessary interfaces
+     iPrec = 0; 
+     iReq  = coarseinterface_;
+     iJac  = thislevel_A_;
+  
+     // create the linear system 
+     thislevel_linSys_ = new ML_NOX::Ml_Nox_LinearSystem(
+                                    *iJac,*thislevel_A_,*iPrec,*thislevel_prec_,
+                                    *xthis_,ismatrixfree_,level_,ml_printlevel_);
+
+     // create the group
+     group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*thislevel_linSys_);
+  }
+  else // Modified Newton's method
+  {
+     // create the necessary interfaces   
+     iPrec = this; 
+     iReq  = coarseinterface_;
+     iJac  = this;
+     
+     // create the initial guess vector
+     clone_  = new Epetra_Vector(*xthis_);
+
+     // create the linear system 
+     azlinSys_ = new NOX::EpetraNew::LinearSystemAztecOO(printParams,*lsParamsptr,
+                                                         *iJac,*SmootherA_,*iPrec,
+                                                         *thislevel_prec_,*clone_);
+     // create the group
+     group_ = new NOX::EpetraNew::Group(printParams,*iReq,*initialGuess_,*azlinSys_);
+  }
+
 
   // create convergence test
   create_Nox_Convergencetest(conv_normF_,conv_nupdate_,conv_maxiter_);

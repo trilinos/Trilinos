@@ -260,9 +260,9 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
-                                     interface_,comm_,xfine,ismatrixfree_, isnlnCG_, 
-                                     ml_fsmoothertype_,ml_smoothertype_,ml_coarsesolve_,
-                                     ml_nsmooth_,FAS_normF_,FAS_nupdate_,
+                                     interface_,comm_,xfine,ismatrixfree_, isnlnCG_,
+                                     nitersCG_,ml_fsmoothertype_,ml_smoothertype_,
+                                     ml_coarsesolve_,ml_nsmooth_,FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim,tmpMat,
                                      coarseinterface);
       else

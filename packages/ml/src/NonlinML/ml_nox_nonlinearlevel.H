@@ -124,7 +124,8 @@ public:
   explicit ML_Nox_NonlinearLevel(
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
-       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, bool isnlnCG, 
+       Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree, 
+       bool isnlnCG, int nitersCG, 
        string fsmoothertype, string smoothertype, string coarsesolvetype, 
        int *nsmooth, double conv_normF, double conv_nupdate, int conv_maxiter,
        int numPDE, int nullspdim, Epetra_CrsMatrix* Mat, 
