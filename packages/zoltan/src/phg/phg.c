@@ -180,7 +180,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
             errexit("invalid partvec[%d]=%d", i, parts[i]);
 
     if (hgp.output_level >= PHG_DEBUG_LIST)     
-      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
+      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
        "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
        hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
        Zoltan_PHG_Compute_Balance(zz, hg, p, parts),

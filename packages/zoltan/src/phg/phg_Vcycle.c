@@ -214,7 +214,7 @@ int Zoltan_PHG_Partition (
       prevVcnt=hg->dist_x[hgc->nProc_x];
         
       if (hgp->output_level >= PHG_DEBUG_LIST) {
-          uprintf(hgc,"START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
+          uprintf(hgc,"START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
                   hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                   hgp->coarsepartition_str, hgp->refinement_str, p);
           if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -305,7 +305,7 @@ int Zoltan_PHG_Partition (
   }
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
-    uprintf(hgc, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
+    uprintf(hgc, "START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
      hgp->coarsepartition_str, hgp->refinement_str, p);
     if (hgp->output_level > PHG_DEBUG_LIST) {
@@ -353,7 +353,7 @@ int Zoltan_PHG_Partition (
                         hg->comm->Communicator);
 
     if (hgp->output_level >= PHG_DEBUG_LIST)     
-      uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
+      uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
               hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
               hgp->coarsepartition_str, hgp->refinement_str, p,
               Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->Part),
@@ -462,7 +462,7 @@ double Zoltan_PHG_Compute_NetCut(
 )
 {
 /* Calculates the cutsize of a partition by summing the weight of all edges
- * which span more than one part. Time O(|I|). 
+ * which span more than one part. Time O(|H|). 
  * Results are returned on all processors of hgc->Communicator. 
  */
   int i, j, *netpart, *allparts;    
@@ -578,7 +578,7 @@ double Zoltan_PHG_Compute_ConCut(
 {
 /* Calculates the cutsize of a partition. For each edge it calculates the number
  * of parts it spans across. This value minus one is the cutsize of this edge
- * and the total cutsize is the sum of the single cutsizes. Time O(|I|). 
+ * and the total cutsize is the sum of the single cutsizes. Time O(|H|). 
  * NOTE:  non-zero result is returned ONLY on processor (0,0) of the 2D
  * decomposition (i.e., processor zero overall).
  */
