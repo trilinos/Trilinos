@@ -75,7 +75,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    double  epsilon, *col_val, *tmp_vect = NULL;
    double  dcompare1, dcompare2, *new_val=NULL, *diagonal=NULL;
    double  *nullspace_vect=NULL, *new_null=NULL, *work=NULL, *qr_tmp=NULL;
-   double  largest, thesign, dtemp;
+   double  /*largest,*/ thesign, dtemp;
    char    *col_entered;
    struct  ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
@@ -624,7 +624,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
       for (j = 0; j < agg_sizes[i]; j++)
       {
-         largest = 0.0; thesign = 1.;
+         /*largest = 0.0;*/ thesign = 1.;
 /* this is a bad bug. -mb.
          for (k = 0; k < nullspace_dim; k++) 
          {
