@@ -23,7 +23,7 @@ NLS_ParameterList::~NLS_ParameterList()
 void NLS_ParameterList::unused() const
 {
   // Warn about any unused parameters
-  for (PCIterator i = params.begin(); i != params.end(); ++i) {
+  for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
     if (!(i->second.isUsed())) {
       cout << "WARNING: Parameter \"" << i->first << "\" " << i->second
 	   << " is unused" << endl;
@@ -56,36 +56,10 @@ void NLS_ParameterList::setParameter(const string& name, const string& value)
   params[name].setValue(value);
 }
 
-//PRIVATE
-bool NLS_ParameterList::isRecursive(const NLS_ParameterList& l) const
-{
-  // Check if l or any of its sublists points to "this"
-  if (&l == this)
-    return true;
-
-  for (PCIterator i = l.params.begin(); i != l.params.end(); ++i) {
-    if ((i->second.isList()) && 
-	(isRecursive(i->second.getListValue())))
-      return true;
-  }
-
-  return false;
-}
-
-bool NLS_ParameterList::setParameter(const string& name, const NLS_ParameterList& value)
-{
-  // Cannot add this list if it or any of its sublists is this!
-  if (isRecursive(value)) 
-    return false;
-
-  params[name].setValue(value);
-  return true;
-}
-
 
 bool NLS_ParameterList::getParameter(const string& name, bool nominal) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isBool()))
     return i->second.getBoolValue();
   return nominal;
@@ -93,7 +67,7 @@ bool NLS_ParameterList::getParameter(const string& name, bool nominal) const
 
 int NLS_ParameterList::getParameter(const string& name, int nominal) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isInt()))
     return i->second.getIntValue();
   return nominal;
@@ -101,7 +75,7 @@ int NLS_ParameterList::getParameter(const string& name, int nominal) const
 
 double NLS_ParameterList::getParameter(const string& name, double nominal) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isDouble()))
     return i->second.getDoubleValue();
   return nominal;
@@ -109,7 +83,7 @@ double NLS_ParameterList::getParameter(const string& name, double nominal) const
 
 const string& NLS_ParameterList::getParameter(const string& name, const char* nominal) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isString()))
     return i->second.getStringValue();
 
@@ -120,21 +94,12 @@ const string& NLS_ParameterList::getParameter(const string& name, const char* no
 
 const string& NLS_ParameterList::getParameter(const string& name, const string& nominal) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isString()))
     return i->second.getStringValue();
   return nominal;
 }
   
-const NLS_ParameterList& NLS_ParameterList::getParameter(const string& name, const NLS_ParameterList& nominal) const
-{
-  PCIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isList()))
-    return i->second.getListValue();
-  return nominal;
-}
-  
-
 bool NLS_ParameterList::isParameter(const string& name) const
 {
   return (params.find(name) != params.end());
@@ -142,7 +107,7 @@ bool NLS_ParameterList::isParameter(const string& name) const
 
 bool NLS_ParameterList::isParameterEqual(const string& name, bool value) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isBool()))
     return (i->second.getBoolValue() == value);
   return false;
@@ -150,7 +115,7 @@ bool NLS_ParameterList::isParameterEqual(const string& name, bool value) const
 
 bool NLS_ParameterList::isParameterEqual(const string& name, int value) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isInt()))
     return (i->second.getIntValue() == value);
   return false;
@@ -158,7 +123,7 @@ bool NLS_ParameterList::isParameterEqual(const string& name, int value) const
 
 bool NLS_ParameterList::isParameterEqual(const string& name, double value) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isDouble()))
     return (i->second.getDoubleValue() == value);
   return false;
@@ -166,7 +131,7 @@ bool NLS_ParameterList::isParameterEqual(const string& name, double value) const
 
 bool NLS_ParameterList::isParameterEqual(const string& name, const char* value) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isString()))
     return (i->second.getStringValue() == value);
   return false;
@@ -174,16 +139,35 @@ bool NLS_ParameterList::isParameterEqual(const string& name, const char* value) 
 
 bool NLS_ParameterList::isParameterEqual(const string& name, const string& value) const
 {
-  PCIterator i = params.find(name);
+  PCConstIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isString()))
     return (i->second.getStringValue() == value);
   return false;
 }
 
 
+NLS_ParameterList& NLS_ParameterList::sublist(const string& name)
+{
+  // Find name in list, if it exists.
+  PCIterator i = params.find(name);
+
+  // If it does exist and is a list, return the list value.
+  // Otherwise, throw an error.
+  if (i != params.end()) {
+    if (i->second.isList())
+      return i->second.getListValue();
+    else
+      cerr << "ERROR: Parameter " << name << " is not a list." << endl;
+      throw;
+  }
+
+  // If it does not exist, create a new empty list and return a reference
+  return params[name].setList();
+}
+  
 ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
 {
-  for (PCIterator i = params.begin(); i != params.end(); ++i) {
+  for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
     for (int j = 0; j < indent; j ++)
       stream << ' ';
     stream << i->first << " = " << i->second << endl;

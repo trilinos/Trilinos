@@ -38,12 +38,6 @@ public:
   //! String constructor
   NLS_Parameter(const string& value);
 
-  //! List constructor. 
-  /*! This object only stores a pointer to this NLS_ParameterList.
-    It's up to the calling program not to destruct p before
-    destructing this object. */
-  NLS_Parameter(const NLS_ParameterList& p);
-
   //! Destructor
   ~NLS_Parameter();
 
@@ -59,7 +53,15 @@ public:
   void setValue(double value);
   void setValue(const char* value);
   void setValue(const string& value);
-  void setValue(const NLS_ParameterList& p);
+  //@}
+
+  /** @name ParameterList parameters
+   *
+   * Functions for handling parameters that are themselves lists.  */
+  //@{
+  NLS_ParameterList& setList();
+  NLS_ParameterList& getListValue();
+  const NLS_ParameterList& getListValue() const;
   //@}
 
   /** @name Is functions. 
@@ -86,8 +88,9 @@ public:
   int getIntValue() const;
   double getDoubleValue() const;
   const string& getStringValue() const;
-  const NLS_ParameterList& getListValue() const;
   //@}
+
+
 
   //! Return whether or not the value is used; i.e., whether or not
   //! the value has been retrieved via a get function.
@@ -121,7 +124,7 @@ private:
   string sval;
 
   //! Pointer to list, if this is of type LIST
-  const NLS_ParameterList* lval;		
+  NLS_ParameterList* lval;		
 
   //! Has this parameter been accessed by a "get" function?
   mutable bool isused;

@@ -9,6 +9,7 @@
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
 #include "NLS_Parameter.H"
+#include "NLS_ParameterList.H"
 
 NLS_Parameter::NLS_Parameter() : 
   type(NONE),
@@ -65,20 +66,10 @@ NLS_Parameter::NLS_Parameter(const string& value) :
 {
 }
 
-NLS_Parameter::NLS_Parameter(const NLS_ParameterList& value) : 
-  type(LIST),
-  bval(false),
-  ival(0),
-  dval(0),
-  sval(""), 
-  lval(&value),
-  isused(false) 
-{
-}
-
 NLS_Parameter::~NLS_Parameter() 
 {
-  // Do not delete list - the calling program is responsible for that.
+  if (type == LIST)
+    delete lval;
 }
 
 void NLS_Parameter::setValue(bool value)
@@ -116,11 +107,12 @@ void NLS_Parameter::setValue(const string& value)
   isused = false;
 }
 
-void NLS_Parameter::setValue(const NLS_ParameterList& value)
+NLS_ParameterList& NLS_Parameter::setList()
 {
   type = LIST;
-  lval = &value;
-  isused = false;
+  lval = new NLS_ParameterList();
+  isused = true;
+  return *lval;
 }
 
 
@@ -171,6 +163,12 @@ const string& NLS_Parameter::getStringValue() const
 {
   isused = true;
   return sval;
+}
+
+NLS_ParameterList& NLS_Parameter::getListValue() 
+{
+  isused = true;
+  return *lval;
 }
 
 const NLS_ParameterList& NLS_Parameter::getListValue() const
