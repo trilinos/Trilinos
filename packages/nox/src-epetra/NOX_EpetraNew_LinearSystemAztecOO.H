@@ -37,6 +37,7 @@
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (string)
+#include "Epetra_Time.h"        // class data element
 
 // Forward declares
 namespace NOX {
@@ -393,6 +394,12 @@ public:
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
+  //! Returns the total time (sec.) spent in createPreconditioner(). 
+  double getTimeCreatePreconditioner() const;
+
+  //! Returns the total time (sec.) spent in applyJacobianInverse(). 
+  double getTimeApplyJacobianInverse() const;
+
 protected:
 
   //! Parse the parameter list and set the corresponding options in the AztecOO solver onject.
@@ -515,6 +522,16 @@ protected:
   
   //! Parameter to determine whether or not to recompute Preconditioner
   int maxAgeOfPrec;
+
+  //! Epetra_Time object
+  Epetra_Time timer;
+
+  //! Total time spent in createPreconditioner (sec.).
+  mutable double timeCreatePreconditioner;
+
+  //! Total time spent in applyJacobianInverse (sec.).
+  mutable double timeApplyJacbianInverse;
+
 };
 
 } // namespace Epetra

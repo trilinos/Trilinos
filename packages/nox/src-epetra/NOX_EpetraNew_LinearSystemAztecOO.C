@@ -84,9 +84,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  isPrecConstructed(false)
+  timer(cloneVector.Comm()),
+  timeCreatePreconditioner(0.0),
+  timeApplyJacbianInverse(0.0)
 {
   // Neither Jacobian or Preconditioner are supplied
   createJacobianOperator(linearSolverParams, iReq, cloneVector);
@@ -121,9 +124,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  isPrecConstructed(false)
+  timer(cloneVector.Comm()),
+  timeCreatePreconditioner(0.0),
+  timeApplyJacbianInverse(0.0)
 {
   // Jacobian operator is supplied 
   jacType = getOperatorType(*jacPtr);
@@ -159,9 +165,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  isPrecConstructed(false)
+  timer(cloneVector.Comm()),
+  timeCreatePreconditioner(0.0),
+  timeApplyJacbianInverse(0.0)
 {
   // Jacobian operator is not supplied
   createJacobianOperator(linearSolverParams, iReq, cloneVector);
@@ -198,9 +207,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  isPrecConstructed(false),
   precQueryCounter(0),
   maxAgeOfPrec(1),
-  isPrecConstructed(false)
+  timer(cloneVector.Comm()),
+  timeCreatePreconditioner(0.0),
+  timeApplyJacbianInverse(0.0)
 {
   // Both operators are supplied
   jacType = getOperatorType(*jacPtr);
@@ -524,6 +536,8 @@ applyJacobianInverse(Parameter::List &p,
 		     const NOX::Epetra::Vector& input, 
 		     NOX::Epetra::Vector& result)
 {
+  double startTime = timer.WallTime();
+
   // Need non-const version of the input vector
   // Epetra_LinearProblem requires non-const versions so we can perform
   // scaling of the linear problem.
@@ -594,6 +608,9 @@ applyJacobianInverse(Parameter::List &p,
 			    (prevLinIters + curLinIters));
     outputList.setParameter("Achieved Tolerance", achievedTol);
   }
+
+  double endTime = timer.WallTime();
+  timeApplyJacbianInverse += (endTime - startTime);
 
   if (aztecStatus != 0) 
     return false;
@@ -713,6 +730,7 @@ bool NOX::EpetraNew::LinearSystemAztecOO::
 createPreconditioner(Epetra_Vector& x, Parameter::List& p, 
 		     bool recomputeGraph) const
 {
+  double startTime = timer.WallTime();  
 
   if (precAlgorithm == None_) {
     return true;
@@ -768,6 +786,9 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   // Unscale the linear system
   if (scaling != 0)
     scaling->unscaleLinearSystem(Problem);
+
+  double endTime = timer.WallTime();
+  timeCreatePreconditioner += (endTime - startTime);
 
   return true;
 }
@@ -1003,4 +1024,18 @@ bool NOX::EpetraNew::LinearSystemAztecOO::checkPreconditionerReuse()
     }
     else
       return true;
+}
+
+//***********************************************************************
+double 
+NOX::EpetraNew::LinearSystemAztecOO::getTimeCreatePreconditioner() const
+{
+  return timeCreatePreconditioner;
+}
+
+//***********************************************************************
+double 
+NOX::EpetraNew::LinearSystemAztecOO::getTimeApplyJacobianInverse() const
+{
+  return timeApplyJacbianInverse;
 }
