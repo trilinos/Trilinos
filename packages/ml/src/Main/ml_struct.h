@@ -251,10 +251,10 @@ extern int ML_Solve_MGFull( ML *ml , double *din, double *dout);
 extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
 			     double *rhs);
 
-extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
-                     int approx_all_zeros, ML_Comm *comm, int);
+extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
+                     int approx_all_zeros, ML_Comm *comm, int, ML *ml);
 extern double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
-                     int approx_all_zeros, ML_Comm *comm, int);
+                     int approx_all_zeros, ML_Comm *comm, int, ML *ml);
 extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
 extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm);
@@ -263,4 +263,6 @@ extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 }
 #endif
 #endif
+
+
 
