@@ -14,7 +14,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     # file2 is the log that is created and put into a results email if 
     # errors occur.
     set file2 = ../../../../logErrors.txt
-    echo $file2
+    rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
     echo "Package being tested: Epetra  " >>& $file2
@@ -23,6 +23,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     echo `uname -a` >>& $file2
     #'file' is a shorter log that is retained even if all tests pass.
     set file = ../../../../log`eval uname`.txt
+    rm -f $file
+    # IMPORTANT: Specify the script owner(s) on the following line
+    # For one owner type "owner@abc.com", for multiple owners
+    # "owner1@abc.com; owner2@def.com"
+    echo "jmwille@sandia.gov" >>& $file
+    echo "Script owner(s) is listed on the previous line." >>& $file
     echo "Package being tested: Epetra  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
 else
