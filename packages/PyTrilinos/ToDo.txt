@@ -95,14 +95,12 @@
 
 ****** Remove SWIG requirement for distribution
     ------ Save *_wrap.cxx files in repository
-    ------ Compile SWIG runtime library locally and omit requirement
-           of system-installed library
 
 ****** Move individual package modules to corresponding directories
     ------ Prototype with new_package
-    ------ Epetra
+    [Done] Epetra
     ------ EpetraExt
-    ------ NOX
+    [Done] NOX
 
 ==================================================
 Summer, 2005, List of Project Tasks (Tentative)
@@ -114,10 +112,8 @@ Summer, 2005, List of Project Tasks (Tentative)
   - Unit tests
 
 * Move python modules to package directories
-  - epetra
   - new_package
   - epetraext
-  - nox
 
 * Documentation
   - Manual: differences in C++/python implementations

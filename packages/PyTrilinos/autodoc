@@ -13,9 +13,9 @@ options: -h | --help      Print this message
 filename1 ...             A list of SWIG interface files
 """
 
-__version__ = "1.0"
+__version__ = "1.1"
 __author__  = "Bill Spotz"
-__date__    = "Feb 24 2005"
+__date__    = "Apr 1 2005"
 
 # System imports
 from   getopt   import *
@@ -35,6 +35,8 @@ ignoreHeaders = ["Callback.h", "Epetra_NumPyVector.h", "Epetra_VectorHelper.h",
 
 # Define a regular expression
 includeRE = re.compile(r"%include\s+['\"<](.+)['\">]")
+moduleRE  = re.compile(r"%module(\(.+\))?\s+(.+)")
+packageRE = re.compile(r"package\s*=\s*['\"](.+)['\"]")
 
 ######################################################
 
@@ -76,9 +78,26 @@ def main():
         text = file.readlines()
         file.close()
 
-        # Build the list of header files
-        headerList = [ ]
+        # Loop over the lines of text, determine the complete module package
+        # name and build the list of header files
+        headerList  = [ ]
+        moduleName  = ""
+        packageName = ""
         for line in text:
+
+            # Look for %module(package="...") ...
+            match = moduleRE.search(line)
+            if match:
+                moduleOptions = match.group(1)
+                moduleName    = match.group(2)
+                if moduleName[:3] == "Raw":
+                    moduleName = moduleName[3:]
+                if moduleOptions:
+                    match = packageRE.search(moduleOptions)
+                    if match:
+                        moduleName = match.group(1) + "." + moduleName
+
+            # Look for %include ...
             match = includeRE.search(line)
             if match:
                 includeFile = match.group(1)
@@ -88,18 +107,19 @@ def main():
                     headerList.append(includeFile)
         headerList.sort()
 
-        # Construct the module name
-        (dirs,base) = os.path.split(interfaceFile)
-        dirs = dirs.replace("/",".")
-        if base[:3] == "Raw":
-            base = base[3:]
-        base = os.path.splitext(base)[0]
-        if dirs == "":
-            moduleName = base
-        else:
-            moduleName = string.join((dirs,base), ".")
-        if moduleName[:4] == "src.":
-            moduleName = moduleName[4:]
+        # Construct the module name if not found
+        if moduleName == "":
+            (dirs,base) = os.path.split(interfaceFile)
+            dirs = dirs.replace("/",".")
+            if base[:3] == "Raw":
+                base = base[3:]
+            base = os.path.splitext(base)[0]
+            if dirs == "":
+                moduleName = base
+            else:
+                moduleName = string.join((dirs,base), ".")
+            if moduleName[:4] == "src.":
+                moduleName = moduleName[4:]
 
         # Store the module wrapper information
         wrapperDict[moduleName] = headerList
