@@ -672,12 +672,19 @@ library and related examples do depend on MPI.
   <li> \c --enable-nox-petsc      
     <ul>
       <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
+      <li> Requires exising PETSc source specified by environemnt variables, 
+           \c PETSC_DIR and \c PETSC_ARCH
     </ul>
   <li> \c --enable-nox-petsc-examples
     <ul>
       <li> Compile petsc examples. 
            Requires \c --enable-nox-petsc.
+      <li> Requires exising PETSc libraries specified by environment variables,
+           \c PETSC_DIR,  \c PETSC_ARCH and \c PETSC_BOPT
     </ul>
+
+  See \ref petsc_interface for more information regarding building 
+       %NOX with PETSc
 </ul>
 
 \section loca_config LOCA-Related Options
@@ -1578,7 +1585,58 @@ immediately before the word that is causing the link. For example,
 
 /*! \page petsc_interface Using the petsc-support interface
 
-    Russ - put your stuff here!
+At present, %NOX supports a concrete implementation of the 
+<b>%NOX::Abstract::Group</b> and <b>%NOX::Abstract::Vector</b> using PETSc 
+data structures.  The current implementation has been tested against 
+PETSc 2.1.6. 
+
+\subsection build_nox_petsc_library Building the Library
+
+To compile the %NOX/PETSc library \c libnoxpetsc.a, use the following 
+configuration sequence:
+
+\verbatim
+setenv PETSC_DIR ${HOME}/petsc-2.1.6
+setenv PETSC_ARCH linux
+configure --enable-nox-petsc
+\endverbatim
+This will build \c libnoxpetsc.a using a pre-built PETSc
+version 2.1.6 installed in the user's home directory on a linux machine:
+
+If the environment variables \c PETSC_DIR and \c PETSC_ARCH have already been
+defined, simply use:
+\verbatim
+configure --enable-nox-petsc
+\endverbatim
+
+A third option is to specify \c PETSC_DIR and \c PETSC_ARCH as arguments
+to the configure script, eg
+\verbatim
+configure --enable-nox-petsc PETSC_DIR=${HOME}/petsc-2.1.6 PETSC_ARCH=linux
+\endverbatim
+
+
+\subsection build_nox_petsc_examples Building the Examples
+
+To compile the examples for %NOX/PETSc, an additional environment variable,
+\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
+user's PETSc installation.  For example, for PETSc previously built 
+debug-enabled for C++ using BOPT=g_c++, simply set PETSC_BOPT=g_c++.  
+The configure script then allows the examples to be built using the following:
+\verbatim
+configure --enable-nox-petsc --enable-nox-petsc-examples.
+\endverbatim
+
+
+\subsection additional_nox_petsc_build_information Additional Information
+
+Depending on the user's PETSc build, dynamically linked libraries may be used.
+If an error occurs when trying to run the example executable, make sure the
+environment variable \c LD_LIBRARY_PATH points to the PETSc library directory.
+From the example above, setting the path would likely require:
+\verbatim
+setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib_${PETSC_BOPT}/${PETSC_ARCH}
+\endverbatim
 
 
 */
@@ -1721,47 +1779,6 @@ configure --with-mpi-include="/home/jdoe/mpich/include" \
 \endverbatim
 
 </ul>
-
-\section petsclub Building the %NOX/PETSc Library</h5>
-
-To compile the %NOX/PETSc library \c libnoxpetsc.a, use 
-the following configuration option.
-
-This will automatically use the environmental variables 
-\c PETSC_DIR and \c PETSC_ARCH 
-to find the necessary headers.
-\verbatim
-configure --enable-petsc
-\endverbatim
-
-For example, to build \c libnoxpetsc.a using a pre-built PETSc
-version 2.1.3 installed in the user's home directory on a linux machine:
-\verbatim
-setenv PETSC_DIR ${HOME}/petsc-2.1.3
-setenv PETSC_ARCH linux
-configure --enable-petsc
-\endverbatim
-
-\section petscexamples Building the %NOX/PETSc Examples</h5>
-
-To compile the examples for %NOX/PETSc, an additional environment variable,
-\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
-user's PETSc installation.  For example, for a debug-enabled C++ PETSc build, 
-BOPT=g_c++ so that PETSC_BOPT=g_c++.  The configure script then allows
-the examples to be built using the following:
-
-\verbatim
-configure --enable-petsc --enable-petsc-examples.
-\endverbatim
-
-
-Depending on the user's PETSc build, dynamically linked libraries may be used.
-If an error occurs when trying to run the example executable, make sure the
-environment variable \c LD_LIBRARY_PATH points to the PETSc library directory.
-From the example above, setting the path would likely require:
-\verbatim
-setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
-\endverbatim
 
 
 */
