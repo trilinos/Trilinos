@@ -76,6 +76,7 @@
 
 #define ML_MPI_MSG_NUM 2391
 
+#define ML_FUNCTION_NAME ML_exchange_rows
 void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended, 
                       ML_CommInfoOP *comm_info)
 {
@@ -94,6 +95,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   ML_Comm     *comm;
   int Nghost;
   int rcv_list_exists = 0, count = 0;
+  int mypid = Pmatrix->comm->ML_mypid;
 
   /**************************** execution begins ****************************/
 
@@ -140,9 +142,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   start_send_proc    = (int *) ML_allocate( (Nneighbors+1)*sizeof(int));
   rowptr_new         = (int *) ML_allocate( (Nrows_new+1)*sizeof(int));
   if (rowptr_new == NULL) {
-     fprintf(stderr,"Out of space in ML_exchange_rows\n");
-     printf("   tried to allocate %d ints for rowptr_new\n",Nrows_new+1);
-     exit(1);
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, Nrows_new+1);
   }
 
   /* compute the row lengths of the external rows    */
@@ -160,9 +160,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   
   if (dtemp == NULL) 
   {
-     printf("out of space in ML_exchange_rows\n");
-     printf("   tried to allocate %d + %d doubles for dtemp\n",Nrows,Nghost);
-     exit(1);
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d + %d doubles\n",mypid,__FILE__,__LINE__,ML_FUNCTION_NAME,Nrows,Nghost);
   }
    
   for (j = 0; j < Nrows+Nghost + 1; j++) dtemp[j] = -1.;
@@ -259,9 +257,7 @@ example (with nonutilized ghost variables still works
   dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
   if (dbuff == NULL) 
   {
-     printf("out of space in ML_exchange_rows\n");
-     printf("   tried to allocate %d doubles for dbuff\n",allocated_space);
-     exit(1);
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
   }
 
   /* pack up the integer information to be sent and send it */
@@ -484,6 +480,9 @@ example (with nonutilized ghost variables still works
      (*Pappended)->outvec_leng   = i+1;
   }
 } /* ML_exchange_rows */
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /******************************************************************************/
 /******************************************************************************/
@@ -517,6 +516,7 @@ example (with nonutilized ghost variables still works
  *                    of the matrix.
  ******************************************************************************/
 
+#define ML_FUNCTION_NAME ML_add_appended_rows
 void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix, 
                           int orig_rows, int total_rcvd, int appended_nzs)
 {
@@ -757,7 +757,11 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    temp->rowptr           = C_ptr;
 
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
+#define ML_FUNCTION_NAME ML_globalcsr2localcsr
 void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 {
   int    lower, upper, col, i, j, k, Nexternal;
@@ -766,6 +770,7 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
    struct ML_CSR_MSRdata *temp;
    int    allocated, row_length;
    ML_Comm *comm;
+   int mypid  = imatrix->comm->ML_mypid;
 
    comm  = imatrix->comm;
    lower = max_per_proc*comm->ML_mypid;
@@ -774,8 +779,8 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
    allocated = 100;
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
-   if (val == NULL) 
-     pr_error("ML_back_to_csrlocal: out of space\n");
+   if (val == NULL)
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles\n",mypid,__FILE__,__LINE__,ML_FUNCTION_NAME,allocated);
 
    Nexternal = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
@@ -817,6 +822,9 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
    ML_free(externals);
 
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 
 /******************************************************************************/
@@ -838,6 +846,7 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
  *                 and where received information is stored locally.
  ******************************************************************************/
 
+#define ML_FUNCTION_NAME ML_back_to_csrlocal
 void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
                          int max_per_proc)
 {
@@ -847,6 +856,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    struct ML_CSR_MSRdata *temp;
    int    allocated, row_length;
    ML_Comm *comm;
+   int mypid = imatrix->comm->ML_mypid;
 
    comm  = imatrix->comm;
    lower = max_per_proc*comm->ML_mypid;
@@ -856,8 +866,10 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    rowptr = (int   *)  ML_allocate( (1+imatrix->getrow->Nrows)*sizeof(int));
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
-   if (val == NULL) 
-     pr_error("ML_back_to_csrlocal: out of space\n");
+   if (val == NULL)  {
+     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles\n",mypid,__FILE__,__LINE__,ML_FUNCTION_NAME,allocated);
+
+   }
 
    Nexternal = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
@@ -932,6 +944,9 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_free(externals);
 
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /******************************************************************************/
 /* Create a map between local variables on this processor and a unique
@@ -952,6 +967,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
  *                 and where received information is stored locally.
  ******************************************************************************/
 
+#define ML_FUNCTION_NAME ML_back_to_local
 void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
                       int max_per_proc)
 {
@@ -1082,6 +1098,9 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_free(externals);
 
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /*******************************************************************************
   Perform initializations so that local communication can occur to update the
@@ -1126,6 +1145,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 
 *******************************************************************************/
 
+#define ML_FUNCTION_NAME ML_set_message_info
 void ML_set_message_info(int N_external, int external[], int max_per_proc, 
                          ML_Operator *matrix)
 
@@ -1370,10 +1390,14 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
    ML_free(rcv_list);
 
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 /*********************************************************************/
 /*********************************************************************/
 /*********************************************************************/
 
+#define ML_FUNCTION_NAME ML_convert_data_org
 void ML_convert_data_org(ML_Operator *matrix, int data_org[],
         int rcv_list[], int remap[], int leng, int add_or_not)
 {
@@ -1407,4 +1431,7 @@ void ML_convert_data_org(ML_Operator *matrix, int data_org[],
        }
     }
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
