@@ -408,6 +408,8 @@ void MLsmoother_precondition(double ff[], int options[], int proc_config[],
   ML_Smoother_Apply(pre_smoother, invec_leng, ff, invec_leng,rhs, ML_ZERO);
   ML_free(rhs);
 }
+
+#ifdef ML_NEWNORM
 void new_norm(AZ_PRECOND *prec, double res[], double *result)
 {
   ML          *ml;
@@ -437,6 +439,7 @@ void new_norm(AZ_PRECOND *prec, double res[], double *result)
   ML_free(temp);
 
 }
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
