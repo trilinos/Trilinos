@@ -35,9 +35,6 @@ static char *cvs_parmetis_part_id = "$Id$";
 #define OPTION_DBGLVL           3
 #define MAX_OPTIONS             4
 
-/* Function prototypes */
-int LB_ParMetis_Set_Param(char *, char *);
-
 
 /******** Interface routine between Zoltan and ParMetis. ************/
 
@@ -678,7 +675,7 @@ int LB_ParMetis_Part(
 
 /*********************************************************************/
 
-int LB_ParMetis_Set_Param(
+int LB_Set_ParMetis_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
@@ -722,4 +719,3 @@ char *val)                      /* value of variable */
 
     return(status);
 }
-

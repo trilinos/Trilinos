@@ -70,6 +70,6 @@ typedef struct RCB_Struct {
 } RCB_STRUCT;
 
 extern void LB_rcb_build_data_structure(LB *, int *, int *, int);
-extern int LB_RCB_Set_Param(char *, char *);
+extern int LB_Set_RCB_Param(char *, char *);
 
 #endif

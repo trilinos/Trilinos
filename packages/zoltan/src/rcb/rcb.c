@@ -65,7 +65,7 @@ static int RCB_STATS = 1;
 
 /*---------------------------------------------------------------------------*/
 
-int LB_RCB_Set_Param(
+int LB_Set_RCB_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
