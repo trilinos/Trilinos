@@ -1,8 +1,9 @@
 Decomposition Method 	= bsfc
-Zoltan Parameters	= 
+Zoltan Parameters       = debug_level=10
 File Type		= Chaco
 File Name		= nograph
 Parallel Disk Info	= number=0
+zdrive debug level      = 4
 Global element ids assigned to processor 0
 1
 2
