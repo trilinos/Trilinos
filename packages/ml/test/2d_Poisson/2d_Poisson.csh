@@ -68,16 +68,18 @@ else
     ${RM} -f ml_inputfile
   end #foreach j ( ml_inputfile* )
 
-  foreach j ( output* )
-    set testnum=`echo $j | sed "s/output//"`
-    echo "" >> ${SUMMARY_FILE}
-    echo "=============================================================================" >> ${SUMMARY_FILE}
-    echo "==               output of failed regression test #${testnum}                 ==" >> ${SUMMARY_FILE}
-    echo "=============================================================================" >> ${SUMMARY_FILE}
-    cat ${j} >> ${SUMMARY_FILE}
-    
-    ${RM} -f ${j}
-  end #foreach j ( ml_inputfile* )
+  if ( ${EXITCODE} == 1 ) then
+    foreach j ( output* )
+      set testnum=`echo $j | sed "s/output//"`
+      echo "" >> ${SUMMARY_FILE}
+      echo "=============================================================================" >> ${SUMMARY_FILE}
+      echo "==               output of failed regression test #${testnum}                 ==" >> ${SUMMARY_FILE}
+      echo "=============================================================================" >> ${SUMMARY_FILE}
+      cat ${j} >> ${SUMMARY_FILE}
+
+      ${RM} -f ${j}
+    end #foreach j ( ml_inputfile* )
+  endif
 
 endif  #if test `expr ${VERBOSE}` = '-vtt'
 
