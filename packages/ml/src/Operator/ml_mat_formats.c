@@ -249,92 +249,6 @@ int MSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
   }
    return(1);
 }
-#ifdef out
-int MSR_gxtrows(void *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
-{
-   int    *bindx, i, j, count = 0, row;
-   double *val;
-   struct ML_CSR_MSRdata *input_matrix;
-
-   input_matrix = (struct ML_CSR_MSRdata *) data;
-   bindx  = input_matrix->columns;
-   val    = input_matrix->values;
-
-   for (i = 0; i < N_requested_rows; i++) {
-      row            = requested_rows[i];
-      row_lengths[i] = bindx[row+1] - bindx[row] + 1;
-      if (count+row_lengths[i] > allocated_space) return(0);
-
-      /* diagonal */
-
-      columns[count  ] = row;
-      values[count++]  = val[row];
-
-      /* off-diagonals */
-
-      for (j = bindx[row] ; j < bindx[row+1] ; j++) {
-         columns[count  ]   = bindx[j];
-         values[count++] = val[j];
-      }
-   }
-   return(1);
-}
-/* Get some matrix rows ( requested_rows[0 ... N_requested_rows-1] ) */
-/* from the user's matrix and return this information  in            */
-/* 'row_lengths, columns, values'.  If there is not enough space to  */
-/* complete this operation, return 0.  Otherwise, return 1.          */
-/*                                                                   */
-/* Parameters                                                        */
-/* ==========                                                        */
-/* data             On input, points to user's data containing       */
-/*                  matrix values.                                   */
-/* N_requested_rows On input, number of rows for which nonzero are   */
-/*                  to be returned.                                  */
-/* requested_rows   On input, requested_rows[0...N_requested_rows-1] */
-/*                  give the row indices of the rows for which       */
-/*                  nonzero values are returned.                     */
-/* row_lengths      On output, row_lengths[i] is the number of       */
-/*                  nonzeros in the row 'requested_rows[i]'          */
-/*                  ( 0 <= i < N_requested_rows). NOTE: this         */
-/*                  array is of size 'N_requested_rows'.             */
-/* columns,values   On output, columns[k] and values[k] contains the */
-/*                  column number and value of a matrix nonzero where*/
-/*                  all the nonzeros for requested_rows[0] appear    */
-/*                  first followed by the nonzeros for               */
-/*                  requested_rows[1], etc. NOTE: these arrays are   */
-/*                  of size 'allocated_space'.                       */
-/* allocated_space  On input, indicates the space available in       */
-/*                  'columns' and 'values' for storing nonzeros. If  */
-/*                  more space is needed, return 0.                  */
-/*********************************************************************/
-
-int CSR_getro2s(void *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
-{
-   int    *bindx, *rowptr, i, j, count = 0, row;
-   double *val;
-   struct ML_CSR_MSRdata *input_matrix;
-
-   input_matrix = (struct ML_CSR_MSRdata *) data;
-   bindx  = input_matrix->columns;
-   val    = input_matrix->values;
-   rowptr = input_matrix->rowptr;
-
-
-   for (i = 0; i < N_requested_rows; i++) {
-      row            = requested_rows[i];
-      row_lengths[i] = rowptr[row+1] - rowptr[row];
-      if (count+row_lengths[i] > allocated_space) return(0);
-
-      for (j = rowptr[row] ; j < rowptr[row+1] ; j++) {
-         columns[count  ]   = bindx[j];
-         values[count++] = val[j];
-      }
-   }
-   return(1);
-}
-#endif
 
 int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
@@ -497,13 +411,14 @@ int CSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
 /* getrows() function for a vector (i.e. matrix with 1 column).      */
 /*********************************************************************/
 
-int VECTOR_getrows(void *data, int N_requested_rows, int requested_rows[],
+int VECTOR_getrows(ML_Operator *mat, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    double *temp;
    int    i;
 
-   temp = (double *) data;
+
+   temp = (double *) ML_Get_MyGetrowData(mat);
 
    if (allocated_space < N_requested_rows) return(0);
 

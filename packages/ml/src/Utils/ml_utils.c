@@ -2939,7 +2939,7 @@ int ML_Operator_Lump(ML_Operator *A, ML_Operator **B)
   for (i=0; i<nn+1; i++) csr_data->columns[i] = nn+1;
 
   ML_Operator_Set_ApplyFuncData( *B, mm, nn,
-                  ML_EXTERNAL, csr_data, nn, MSR_matvec, 0);
+                  ML_INTERNAL, csr_data, nn, MSR_matvec, 0);
 
   ML_free(vin);
 }
