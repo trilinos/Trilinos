@@ -44,11 +44,11 @@ the spectral properties of the linear system matrix
 $A$~\cite{axelsson94iterative,saad96iterative,QSS}. Hence, the
 original system~(\ref{eq:linear_sys}) is often replaced by
 \[
-P^{-1} A{u} = P^{-1} {f}
+P^{-1} A{u} = P^{-1} {b}
 \]
 (left-preconditioning), or by
 \[
-A P^{-1} P {u} = {f}
+A P^{-1} P {u} = {b}
 \]
 (right-preconditioning), using a linear transformation $P^{-1}$,
 called {\sl preconditioner}, in order to improve the spectral properties of
@@ -82,24 +82,41 @@ preconditioning techniques for large classes of problems. \ifpack\ aims to
 fill the need for general, black-box preconditioners, by providing a set of
 robust algebraic preconditioners for parallel large scale applications.
 
-\ifpack\ contains four main classes of preconditioners:
+Single-level algebraic preconditioners can be classified as follows:
 \begin{enumerate}
-\item {\bf Simple point preconditioners}, 
-  like Jacobi, Gauss-Seidel, SOR and SSOR.
+\item {\bf Relaxation schemes},
+  like Jacobi, Gauss-Seidel and symmetric Gauss-Seidel (point or block versions)~\cite{varga00matrix}.
   These schemes seldomly provide satisfactory performances as stand-alone
   preconditioner, but can be very effective if used as smoothers in
   multilevel methods (like, for example, ML~\cite{ml-guide});
 \item {\bf Polynomial preconditioner}, like Neumann, Least-Square, and
-Chebyshev (currently under development);
+Chebyshev~\cite{saad96iterative}.
 \item {\bf Incomplete Factorizations preconditioner}, like ILU(k), RILU(k);
 \item {\bf One-level domain decomposition preconditioners of Schwarz type},
-  with minimal or larger overlap among the subdomains. The local linear problems
+  with minimal or wider overlap among the subdomains~\cite{smith96parallel,
+    QV2}. The local linear problems
   can be solved with exact factorizations, incomplete factorizations, or
   {\sl any} other \ifpack\ preconditioner documented in this manual. 
   For example, each subdomain matrix
   can be furtherly decomposed into subdomains, and block preconditioner can be
   applied to solve the local problem. 
+\item {\bf Sparse Approximate Inverses} (like SPAI, AINV).
 \end{enumerate}
+\ifpack\ aims to define preconditioners belonging to groups 1, 3 and 4.
+Preconditioners of class 2 can be accessed through AztecOO. Libraries like
+ParaSails or SPAI are available to define preconditioners of class 5 
+(see for instance~\cite{grote97parallel,benzi98sparse}).
+
+\begin{remark}
+Single-level preconditioners can be used as stand-alone preconditioners, on in
+conjunction with multilevel preconditioners. In this latter case, the
+single-level preconditioner is reinterpreted as a smoother for the multilevel
+hierarchy. Two families of methods have been
+proposed in the literature:
+the classical Ruge-Stuben multigrid (AMG), or smoothed aggregation (SA).
+The preconditioning package Hypre can be used to define AMG preconditioners,
+  while the Trilinos package ML can be used to build SA preconditioners.
+\end{remark}
 
 \smallskip
 
@@ -107,17 +124,15 @@ The goal of this document is to provide an overview of all \ifpack\
   preconditioners. Several examples are reported to illustrate how to define
   and use \ifpack\ objects. Further details can be found on the Doxygen
   documentation.
-
-FIXME.... The manuscript is organized as follows. A general description of \ifpack\
+The manuscript is organized as follows. Section\ref{sec:theo} briefly outlines
+the theoretical background. A general description of \ifpack\
   preconditioners is reported in Section~\ref{sec:prec}.
-Section~\ref{sec:point} presents the point preconditioners. 
-Section~\ref{sec:block} details the block preconditioners.
-Section~\ref{sec:ilu} outlines the incomplete factorizations of \ifpack.
-Section~\ref{sec:additive} describes how to define additive Schwarz 
-preconditioner, with minimal or wider overlap. 
-Finally, Section~\ref{sec:config}
-illustrates the configuration option of \ifpack. 
-
+Parameters for \ifpack~preconditioners are reported in
+Section~\ref{sec:parameters}. The \ifpack\ factory class is detailed in
+Section~\ref{sec:factory}. Several examples of usage are reported in
+Section~\ref{sec:usage}. The analysis tools of \ifpack\ are reported in
+Section~\ref{sec:analysis}. Configuration and building are detailed in
+Section~\ref{sec:config}.
 
 %-----------------------------------------------------------------------------
 \section{Theoretical background}
@@ -136,7 +151,8 @@ referred to the existing literature for a comprehensive presentation.
 \label{sec:point}
 %-----------------------------------------------------------------------------
 
-\ifpack\ contains a set of simple point preconditioners based on relaxation.
+\ifpack\ contains a set of simple point preconditioners based on relaxation
+methods.
 Beginning with a given approximate solution, these methods modify the
 components of the approximation, one or a few at a time and in a certain order,
 until convergence is reached. Although still popular in some application
@@ -162,7 +178,7 @@ Given a starting solution $x^{(0)}$, the (damped) Jacobi method determines
 the $i-$th component of 
 solution of (\ref{eq:linear_sys}) at step $k \geq 1$ as
 \[
-a_{i,i} x^{(k)}_i = \omega \; \left[  \;- \sum_{j \neq n} a_{i,j} x^{(k-1)} + b_i
+a_{i,i} x^{(k)}_i = \omega \; \left[  \;- \sum_{j \neq i} a_{i,j} x^{(k-1)} + b_i
 \; \right]
 \]
 where $\omega$ is the damping parameter\footnote{Clearly, is used as a
@@ -176,12 +192,12 @@ x^{(k)} = \omega \; \left[ \; D^{-1} (E+F) x ^{(k-1)} + D^{-1} b \; \right],
 or, equivalently,
 \begin{equation}
 \label{eq:jacobi}
-x^{(k)} = x^{(k-1)} + \omega D^{-1} (b - A x ^{(k-1)} ) ,
+x^{(k)} = x^{(k-1)} + \omega D^{-1} (b - A x ^{(k-1)} ) =
+          x^{(k-1)} + \omega D^{-1} r^{(k-1)},
 \end{equation}
 where $r^{(k-1)} = b - A x ^{(k-1)}$ is the residual at step $k-1$. 
 
-If used as a preconditioner, the Jacobi method results in
-a symmetric preconditioner.
+This preconditioner is symmetric.
 
 %-----------------------------------------------------------------------------
 \subsubsection{Point Gauss-Seidel Preconditioner}
@@ -201,7 +217,7 @@ where $\omega$ is the damping parameter. In vector form, one has
 x^{(k)} = x^{(k-1)} + \omega (D - E)^{-1} (b - A x ^{(k-1)} ) ,
 \end{equation}
 which requires, at each step $k$, the solution of a (lower) triangular 
-linear system. The resulting preconditioner is non-symmetric.
+linear system. This preconditioner is non-symmetric.
 
 %-----------------------------------------------------------------------------
 \subsubsection{Point SOR Preconditioner}
@@ -225,7 +241,7 @@ so that (\ref{eq:sor}) can also be written as
 \omega F + (1 - \omega ) D
 \right] x^{(k-1)} + \omega b.
 \]
-The resulting preconditioner is non-symmetric.
+This preconditioner is non-symmetric.
 
 %-----------------------------------------------------------------------------
 \subsubsection{Point SSOR Preconditioner}
@@ -241,7 +257,15 @@ a backward SOR,
 (D - \omega F) x^{(k)} &=& [ \omega E - (1 - \omega)D] x^{(k-1/2)} + \omega b .
 \end{array}
 \end{equation}
-The resulting preconditioner is symmetric. When $\omega = 1$, the method
+This preconditioner is symmetric. When $\omega = 1$, we obtain
+\begin{equation}
+\label{eq:sgs}
+\begin{array}{rcl}
+(D - E) x^{(k-1/2)} &= & F x^{(k-1)} + b \\
+(D - F) x^{(k)}     &= & E  x^{(k-1/2)} + b .
+\end{array}
+\end{equation}
+This method
 is often called symmetric Gauss-Seidel.
 
 %-----------------------------------------------------------------------------
@@ -287,11 +311,11 @@ b_{m}
 \end{array}
 \right),
 \end{equation}
-in which the partitioning of $x$ and $b$ block $m$ blocks is compatible with the partitioning
+in which the partitioning of $x$ and $b$ into $m$ blocks is compatible with the partitioning
 of $A$. Also, it is supposed that the diagonal blocks $A_{i,i}$ are square
 and assumed nonsingular.
 
-Now, splitting (\ref{eq:splitting}) can still be used to define block Jacobi
+Splitting (\ref{eq:splitting}) can still be used to define block Jacobi
 and block Gauss-Seidel algorithms, with the following definitions of $D$, $E$
 and $F$:
 \begin{equation}
@@ -301,7 +325,7 @@ D =
 \begin{array}{c c c c c}
 A_{1,1} &         &         &        &          \\
         & A_{2,2} &         &        &          \\
-        &         & A_{1,3} &        &          \\
+        &         & A_{3,3} &        &          \\
         &         &         & \ddots &         \\
         &         &         &        & A_{m,m} \\
 \end{array}
@@ -336,24 +360,11 @@ F =  -
 
 Using definitions (\ref{eq:D}), (\ref{eq:E}) and (\ref{eq:F}), the block
 Jacobi method is simply as reported in equation (\ref{eq:jacobi}). Analogously,
-the block Gauss-Seidel is still described by equation (\ref{eq:gs}).
+the block Gauss-Seidel is still described by equation (\ref{eq:gs}), and
+the symmetric Gauss-Seidel by equation (\ref{eq:sgs}).
 
-\bigskip
-
-Preconditioners of Section~\ref{sec:block} are defined on minimal overlapping
-partitions. Indeed, \ifpack\ block preconditioners can be defined in more
-general terms. The block preconditioners of \ifpack\ 
-allow two kinds of overlap:
-\begin{itemize}
-\item Overlap among the processors (subdomains);
-\item Overlap among the blocks, within the local graph.
-\end{itemize}
-The first overlap can be handled by \verb!Ifpack_AdditiveSchwarz! (and
-derived) classes. The second one is handled by \verb!Ifpack_Partitioner!
-objects.
-
-To fix the notation, let us suppose to partition the set of (local) rows of 
-the (overlapping) matrix into $m$ sets $S_i, i=1, \ldots,m$, such that
+Let us suppose to partition the set of rows of 
+the matrix into $m$ sets $S_i, i=1, \ldots,m$, such that
 \[
 S_i \subseteq S, \quad \cup_i S_i = S.
 \]
@@ -368,11 +379,11 @@ V_{i,j} = \left\{
 \end{array}
   \right.
 \]
-A general block Jacobi iteration can be defined as follows:
+A general (damped) block Jacobi iteration can be defined as follows:
 \begin{eqnarray}
 && \mbox{On each processor, for each block $i$, Do} \\
 && \label{eq:gen_b_jacobi}
-x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k-1)}).
+x^{(k)} = x^{(k-1)} + \omega V_i^T A_{i,i}^{-1} V_i(b - A x^{(k-1)}).
 \end{eqnarray}
 In Equation (\ref{eq:gen_b_jacobi}), it is understood that the $x$ vectors
 refer to the local components.
@@ -383,17 +394,17 @@ overlap among blocks.
 \begin{center}
 \includegraphics[width=6cm]{bj.eps}
 \end{center}
-\caption{THe block Jacobi matrix with overlapping blocks.}
+\caption{The block Jacobi matrix with overlapping blocks.}
 \label{fig:bj}
 \end{figure}
 
-The block Gauss-Seidel algorithm easily derives from
+The (damped) block Gauss-Seidel algorithm easily derives from
 (\ref{eq:gen_b_jacobi}), by immediately updating the solution vector to
 compute the residual. The algorithm is as follows:
 \begin{eqnarray}
 && \mbox{On each processor, for each block $i$, Do} \\
 && \label{eq:gen_b_gs}
-x^{(k)} = x^{(k-1)} + V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}).
+x^{(k)} = x^{(k-1)} + \omega V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}).
 \end{eqnarray}
 
 %-----------------------------------------------------------------------------
@@ -419,20 +430,20 @@ In overlapping Schwarz preconditioner, the computational domain is
 subdivided into {\sl overlapping} subdomains, and local Dirichlet-type
 problems are then solved on each subdomain.  The communication between the
 solutions on the different subdomains is here guaranteed by the overlapping
-region. More details can be found, for instance, in books
-\cite{QV} and~\cite{smith96parallel}.
+region. 
 
 The additive Schwarz preconditioner can be written as:
 \begin{equation}
 \label{eq:as}
-P_{AS}^{-1} = \sum_{i=1}^M R_i^T A_i^{-1} R_i ,
+P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i ,
 \end{equation}
 where $M$ is the number of subdomains (that is, the number of processors in
 the computation), $R_i$ is an operator that restricts the global 
-vector to the vector lying on subdomain $i$, and
+vector to the vector lying on subdomain $\Omega_i$, $P_i$ is an operator that
+prolongate from subdomain $\Omega_i$ to $\Omega$, and
 \begin{equation}
 \label{eq:Ai}
-A_i = R_i A R_i^T.
+A_i = R_i A P_i.
 \end{equation}
 
 \ifpack\ supports two major cases:
@@ -444,15 +455,15 @@ of a suitable overlapping matrix.
 \end{itemize}
 In both cases, each processor is responsible for exactly one subdomain.
 
-In the minimal overlap case, the $R_i$'s are not implemented, since the
-required components of the residual vector are already local. If a wider overlap
-is used, instead, each application of $R_i$ requires the importing of
-off-process data, and each application of $R_i^T$ the exporting of local data.
-
-Besides, in the minimal overlap case, (\ref{eq:Ai}) can simply obtained from
-the local rows of $A$, by dropping all nonzeros corresponding to non-local
-columns. Wider overlaps, instead, involve importing of non-local rows, to
-explicitly form the overlapping matrix.
+In the minimal overlap case, the $R_i$'s and $P_i$'s are not implemented, since the
+required components of the residual vector are already local. Besides, matrix
+(\ref{eq:Ai}) can be easily extracted from the local matrix, by dropping all
+nonzeros corresponding to non-local columns.
+communications between processors. If a wider overlap
+is used, instead, each application of $R_i$ and $P_i$ may require the
+importing or exporting of
+off-process data, and the construction of (\ref{eq:Ai}) requires
+communications.
 
 \smallskip
 
@@ -460,9 +471,9 @@ Once matrices (\ref{eq:Ai}) have been formed, the user still need to define a
 strategy to apply the inverse of $A_i$ in (\ref{eq:as}). At this purpose,
 any \ifpack\ preconditioner can be adopted. Common choices can be:
 \begin{itemize}
-\item To solve exactly on each subdomain, using the \verb!Ifpack_Amesos!
+\item To solve exactly on each subdomain with an complete LU factorization, using the \verb!Ifpack_Amesos!
 preconditioner. This is shown in Section~\ref{sec:as_amesos}.
-\item To solve using an ILU factorization, as presented in
+\item To solve using an incomplete LU factorization, as presented in
 Section~\ref{sec:as_ilu}.
 \item To furtherly decompose the local domain into smaller subdomains,
   then apply a block Jacobi or block Gauss-Seidel preconditioner. This is
@@ -523,18 +534,15 @@ $\tilde{L}$ and $\tilde{U}$ matrices, and then keep only a certain
 number of the largest
 entries. In this way, the amount of fill-in is
 controlled; however, the structure of the resulting matrices is
-undefined. These factorizations are usually referred to as ILUT, and a
-variant which performs pivoting is called ILUTP.  
+undefined. These factorizations are usually referred to as ILUT($k$).
 
-When solving a single linear system, ILUT methods can be more effective
+When solving a single linear system, ILUT($k$) methods can be more effective
 than ILU($k$).  However, in many situations a sequence of linear systems
 must be solved where the pattern of the matrix $A$ in each system is
 identical but the values of changed.  In these situations, ILU($k$) is 
 typically much more effective because the pattern of ILU($k$) will also
 be the same for each linear system and the overhead of computing the
 pattern is amortized.
-
-FIXME: Diagonal Perturbations
 
 %-----------------------------------------------------------------------------
 \section{General Description of \ifpack\ Preconditioners}
@@ -544,15 +552,15 @@ FIXME: Diagonal Perturbations
 All \ifpack\ preconditioners described in this document
 are reported in Table~\ref{tab:all_prec}. They are all derived from the 
 \verb!Ifpack_Preconditioner.h!
-class (see Figure~\ref{fig:if_prec}).
+class.
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=15cm]{Ifpack_Preconditioner.eps}
-\caption{FIXME: UML diagram of  several \ifpack\ preconditioners.}
-\label{fig:if_prec}
-\end{center}
-\end{figure}
+%\begin{figure}
+%\begin{center}
+%\includegraphics[width=15cm]{Ifpack_Preconditioner.eps}
+%\caption{FIXME: UML diagram of  several \ifpack\ preconditioners.}
+%\label{fig:if_prec}
+%\end{center}
+%\end{figure}
 
 \begin{sidewaystable}
 \begin{center}
@@ -594,8 +602,7 @@ on threshold. \\
 \caption{Description of all the \ifpack\ preconditioners reported in this
   document. In the Table, `Overlap' indicates the overlap (with 0 being the
   minimal overlap case, `any' means that the code can construct the
-  overlapping matrix, `user' means that the user has to provide the
-  overlapping matrix as well.).}
+  overlapping matrix for any given positive value).}
 \label{tab:all_prec}
 \end{center}
 \end{sidewaystable}
@@ -631,7 +638,7 @@ an \verb!Ifpack_Preconditioner! derived object\footnote{For example, {\tt
   AztecOO} objects can use {\tt Ifpack\_Preconditioner} objects as
     preconditioners.}.
 %
-\item Method \verb!IsInitialize()! returns {\tt true} is the preconditioner has
+\item Method \verb!IsInitialized()! returns {\tt true} is the preconditioner has
 been successfully initialized, {\tt false} otherwise.
 %
 \item Method \verb!IsComputed()! returns {\tt true} is the preconditioner has
@@ -678,9 +685,10 @@ be used unless the accurate value of the condition number is required.}.
 
 \begin{remark}
 Some \ifpack\ preconditioners may require to copy the input \verb!List! object
-given in input to \\ \verb!SetParameters()!. As the input list is copied, the
+given in input to \\ \verb!SetParameters()!. In any case, the
 user-provided list can go out of scope before \verb!Compute()! is called.
-Besides, changes to user-provided list will not affect the preconditioner,
+Note that changes to user-provided list after the call to
+\verb!SetParameters()! will not affect the preconditioner,
   unless \verb!SetParameters()!  is re-called.
 \end{remark}
 
@@ -690,110 +698,10 @@ Basic information about a given preconditioner can be obtained by simply
 using an instruction of the type: \verb!cout << Prec!.
 \end{remark}
 
-
-
-
-
-
-
-%-----------------------------------------------------------------------------
-\section{Parameters for \ifpack\ preconditioners}
-\label{sec:parameters}
-%-----------------------------------------------------------------------------
-
-The parameters that affect the \ifpack\ preconditioners are reported
-below\footnote{We note that parameters for all \ifpack\ preconditioners must be spelled as indicated.
-  Misspelled parameters will be ignored. Parameters are case sensitive. Words
-  are separated by one space only.}.
-
-\smallskip
-
-For more details about the \teuchos\ parameters list we refer to the
-\teuchos\ documentation.  Table~\ref{tab:teuchos} briefly reports the most
-important methods of this class.
-\ifpack\ requires just a very basic usage of parameters list.
-Input parameters are set via method \verb!set(Name,Value)!, where
-\verb!Name! is a string containing the parameter name, and \verb!Value! is the
-specified parameter value, whose type can be any C++ object or pointer. 
-
-\begin{table}[htbp]
-  \centering
-  \begin{tabular}{| p{4cm} | p{10cm} |}
-    \hline
-    \verb!set(Name,Value)! & Add entry \verb!Name! with value and type
-    specified by \verb!Value!. Any C++ type (like int, double, a
-    pointer, etc.) is valid. \\
-    \verb!get(Name,DefValue)! & Get value (whose type is automatically
-    specified by \verb!DefValue!). If not present, return
-    \verb!DefValue!. \\
-    \verb!subList(Name)! & Get a reference to sublist \verb!List!. If not
-    present, create the sublist. \\
-    \hline
-  \end{tabular}
-  \caption{Some methods of Teuchos::ParameterList class.}
-  \label{tab:teuchos}
-\end{table}
-
-\smallskip
-
-\choicebox{\tt point: sweeps}{[{\tt int}] Number of sweeps (or steps) of the
-  preconditioner. Default: {\tt 1}.}
-
-\choicebox{\tt point: damping factor}{[{\tt double}] This is the value for $\omega$ 
-  in formulae (\ref{eq:jacobi}), (\ref{eq:gs}), (\ref{eq:sor}) and
-    (\ref{eq:ssor}). Default: {\tt 1.0}.}
-				 
-\choicebox{\tt point: zero starting solution}{[{\tt bool}] If {\tt true},
-  the starting solution is always the zero vector. If {\tt false} and 
-   {\tt point:~sweeps} is greater than one, the starting solution is
-  as specified by the user in method {\tt ApplyInverse()}.
-    Default: {\tt true}.}
-
-\choicebox{\tt point: compute condest}{[{\tt bool}] If {\tt true},
-compute the estimated condition number of the preconditioned system.
-  Default: {\tt false}.}
-
-\smallskip
-
-\choicebox{\tt block: sweeps}{[{\tt int}] Number of sweeps (or steps) of the
-  preconditioner. Default: {\tt 1}.}
-
-\choicebox{\tt block: damping factor}{[{\tt double}] This is the value for $\omega$ 
-  in the block counterpart of formulae (\ref{eq:jacobi}), (\ref{eq:gs}), (\ref{eq:sor}) and
-    (\ref{eq:ssor}). Default: {\tt 1.0}.}
-
-\choicebox{\tt block: zero starting solution}{[{\tt bool}] If {\tt true},
-  the starting solution is always the zero vector. If {\tt false} and 
-   {\tt point: sweeps} is greater than one, the starting solution is
-  as specified by the user in method {\tt ApplyInverse()}.
-    Default: {\tt true}.}
-
-\smallskip
-
-\choicebox{\tt schwarz: combine mode}{[{\tt Epetra\_CombineMode}].
-Default: {\tt Insert}.
-It can assume one of the following values:
-{\tt Add}: Components on the receiving processor will be added together;
-{\tt Zero}: Off-processor components will be ignored;
-{\tt Insert}: Off-processor components will be inserted into locations on
-receiving processor replacing existing values.
-{\tt Average}: Off-processor components will be averaged with existing;
-{\tt AbsMax}: Magnitudes of Off-processor components will be
-maxed with magnitudes of existing components on the receiving
-processor.}
-
-% FIXME
-\choicebox{\tt schwarz: compute condest}{[{\tt bool}]. If {\tt true}, 
-  method {\tt Compute()} will
-  estimate the condition number of the preconditioner.
-  Default: {\tt false}.}
-
 %-----------------------------------------------------------------------------
 \section{The Factory Class}
 \label{sec:factory}
 %-----------------------------------------------------------------------------
-
-FIXME: Table with all supported preconditioners \\
 
 The easiest way to use \ifpack\ is through its factory class. Let us consider
 the following fragment of code:
@@ -806,6 +714,7 @@ Ifpack Factory;
 Ifpack_Preconditioner* Prec;
 string PrecType = "ILU";
 int OverlapLevel = 0;
+// create the preconditioner using Create()
 Prec = Factory.Create(PrecType, OverlapLevel);
 assert (Prec != 0);
 
@@ -824,7 +733,8 @@ Problem.SetPrec(Prec);
 \end{verbatim}
 
 The list of options for {\tt PrecType} is reported in
-Table~\ref{tab:factory}.
+Table~\ref{tab:factory}. Note that only one word in the above fragment of code
+has to be changed to define, for instance, the Gauss-Seidel preconditioner.
 
 \begin{table}
 \begin{center}
@@ -833,7 +743,27 @@ Table~\ref{tab:factory}.
 {\tt PrecType} & Description \\
 \hline
 \hline
-Jacobi & \\
+\tt point relaxation & Point relaxation preconditioner, like Jacobi, Gauss-Seidel,
+  and symmetric Gauss-Seidel.\\
+\hline
+\tt block relaxation & Block relaxation preconditioner, like Jacobi, Gauss-Seidel,
+  and symmetric Gauss-Seidel. LAPACK is used to apply the inverse of each
+  diagonal block. \\
+\hline
+\tt block relaxation (Amesos) & Block relaxation preconditioner, like Jacobi, Gauss-Seidel,
+  and symmetric Gauss-Seidel. Amesos is used to apply the inverse of each
+  block. Requires \ifpack\ support for \amesos. \\
+\hline
+\tt IC & Incomplete Cholesky factorization on each subdomain. \\
+\hline
+\tt ICT & Incomplete Cholesky with threshold on each subdomain. \\
+\hline
+\tt ILU & Incomplete LU factorization on each subdomain. \\
+\hline
+\tt ILUT & Incomplete LU with threshold on each subdomain. \\
+\hline
+\tt Amesos & Complete LU factorization on each subdomain. Requires \ifpack\
+  support for \amesos. \\
 \hline
 \end{tabular}
 \end{center}
@@ -846,12 +776,17 @@ Jacobi & \\
 \label{sec:usage}
 %-----------------------------------------------------------------------------
 
+This section contains several examples of usage of \ifpack\ preconditioners. A
+detailed list of \ifpack\ parameters is reported in
+section~\ref{sec:parameters}.
+
 %-----------------------------------------------------------------------------
 \subsection{Point Preconditioners}
 \label{sec:point_ex}
 %-----------------------------------------------------------------------------
 
-For example, a Gauss-Seidel preconditioner can be constructed and used as follows:
+An example of usage of point relaxation preconditioners (in this case, Gauss-Seidel) is as
+follows:
 \begin{verbatim}
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_PointRelaxation.h"
@@ -888,7 +823,7 @@ return value if different from 0, the macro prints out a warning message on
 
 %-----------------------------------------------------------------------------
 \subsection{Block Preconditioners}
-\label{sec:point_ex}
+\label{sec:block_ex}
 %-----------------------------------------------------------------------------
 
 From the point of view of the implementation block preconditioner
@@ -917,20 +852,20 @@ Let us start with the definition of the blocks.
 It is important to note that all blocks are {\sl local} -- that is, 
   all partitioner schemes will {\sl always} decompose the local graph 
   only\footnote{If used in conjuction with class {\tt Ifpack\_AdditiveSchwarz},
-    blocks can span more than one processor. See
-      Section~\ref{sec:additive}.}
+    blocks can span more than one processor. }
 
 All \ifpack\ partitioners are derived from the pure virtual class
 \verb!Ifpack_Partitioner!, and all require in the constructor phase
 an \verb!Ifpack_Graph! object. \verb!Ifpack_Graph!'s can be easily
 created (as light-weigth) conversions from \verb!Epetra_RowMatrix!'s
-and \verb!Epetra_CrsGraph!'s, as follows At this point, we can create teh
+and \verb!Epetra_CrsGraph!'s, as follows At this point, we can create the
 preconditioner as
 \begin{verbatim}
 #include "Ifpack_Graph.h"
 #include "Ifpack_Graph_Epetra_CrsGraph.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 
+// use either CsrA or RowA, depending on your application
 Epetra_CrsMatrix* CrsA;
 Epetra_RowMatrix* RowA;
 
@@ -951,7 +886,7 @@ The following fragment of code shows how to use a greedy partitioner to define
 \begin{verbatim}
 #include "Ifpack_Graph.h"
 #include "Ifpack_GreedyPartitioner.h"
-#include "Ifpack_BlockJacobi.h"
+#include "Ifpack_BlockRelaxation.h"
 #include "Teuchos_ParameterList.hpp"
 ...
 
@@ -959,7 +894,7 @@ Ifpack_Graph* Graph;
 // Graph is created here
 
 Teuchos::ParameterList List;
-List.set("partitioner: local blocks", 4);
+List.set("partitioner: local parts", 4);
 Ifpack_Partitioner Partitioner = new Ifpack_GreedyPartitioner(Graph);
 
 // set the parameters (in this case the # of blocks only)
@@ -968,18 +903,6 @@ Partitioner->SetParameters(List);
 // compute the partition
 Partitioner->Compute();
 \end{verbatim}
-
-The list of parameters accepted by \verb!Ifpack_Partitioner! objects is
-reported below.
-
-\medskip
-
-\choicebox{\tt partitioner: local blocks}{[{\tt int}] Number of local blocks.
-  Default: {\tt 1}.}
-
-\choicebox{\tt partitioner: root node}{[{\tt int}] Root node, for greedy
-  partitioners only. Default: {\tt 0}.}
-\medskip
 
 Once an \verb!Ifpack_Partitioner! is created, we are ready to
 compute the block preconditioner. This requires the extraction of
@@ -1007,8 +930,8 @@ Ifpack_Preconditioner* Prec =
   new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(A);
 
 Teuchos::ParameterList List;
-List.set("block: sweeps", 2);
-List.set("block: damping parameter", 0.67);
+List.set("relaxation: sweeps", 2);
+List.set("relaxation: damping parameter", 0.67);
 Prec->SetParameters(List);
 Prec->Compute();
 \end{verbatim}
@@ -1028,7 +951,7 @@ of Amesos (through class \verb!Ifpack_Amesos!\footnote{This requires \ifpack\
 	   to be configured with option {\tt --enable-amesos}.}) with sparse containers. The preconditioner will be a block Gauss-Seidel one.
 
 \begin{verbatim}
-#include "Ifpack_GaussSeidel.h"
+#include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
 ...
@@ -1040,7 +963,7 @@ Ifpack_Preconditioner* Prec =
   new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >(A);
 
 Teuchos::ParameterList List;
-List.set("block: sweeps", 2);
+List.set("relaxation: sweeps", 2);
 List.set("amesos: solver type", "Amesos_Klu");
 Prec->SetParameters(List);
 Prec->Compute();
@@ -1050,7 +973,7 @@ Option \verb!amesos: solver type! specifies the \amesos\ solver that
 has to be adopted. If the selected solver is not available, then
 \verb!Ifpack_Amesos! will create an \verb!Amesos_Klu! solver\footnote{KLU is
   compiled by default with \amesos. Please consult the \amesos\ documentation
-    for more details.}
+    for more details.}.
 As {\sl any} \ifpack\ preconditioner can be used, one can also adopt, for
 instance, a point Gauss-Seidel algorithm in each block:
 \begin{verbatim}
@@ -1182,37 +1105,26 @@ for all \ifpack\ objects:
 \begin{verbatim}
 Teuchos::ParameterList List;
 \end{verbatim}
-As we wish to use a block Jacobi method to solve the {\sl local} problems, we
-need to create a graph, and then a partitioner:
-\begin{verbatim}
-Ifpack_Graph* Graph = 
-  new Ifpack_Graph_Epetra_RowMatrix(A);
-
-Ifpack_Partitioner* Partitioner = 
-  new Ifpack_METISPartitioner(Graph);
-
-IFPACK_CHK_ERR(Partitioner->SetParameters(List));
-IFPACK_CHK_ERR(Partitioner->Compute());
-\end{verbatim}
-The partitioner object has to be stored in the list:
-\begin{verbatim}
-List.set("block: partitioner object", &Partitioner);
-\end{verbatim}
 At this point we can create the block Jacobi preconditioner as follows:
 \begin{verbatim}
 Ifpack_Preconditioner Prec = 
-  new Ifpack_AdditiveSchwarz<Ifpack_BlockJacobi<Ifpack_DenseContainer> >(A);
+  new Ifpack_AdditiveSchwarz<Ifpack_BlockPreconditioner<Ifpack_DenseContainer> >(A);
 
 Prec->SetParameters(List);
+Prec->Initialize();
 Prec->Compute();
 \end{verbatim}
-
+As we have used {\tt Ifpack\_DenseContainer}, blocks are stored are dense
+matrices, and LAPACK is used to apply the inverse of each block. This can be a
+limiting factor for large blocks. In this latter case, it is preferable to
+store the blocks are sparse matrices, and use a sparse solver to apply their
+inverse. This can be done by resorting to {\tt Ifpack\_SparseContainer}. 
 Sparse containers can be used with minor modifications. The only difference is
 that we also have to specify how to apply the inverse of each block, for
 instance using the exact factorizations of \amesos:
 \begin{verbatim}
 Ifpack_Preconditioner Prec = 
-  new Ifpack_AdditiveSchwarz<Ifpack_BlockJacobi
+  new Ifpack_AdditiveSchwarz<Ifpack_BlockPreconditioner
     <Ifpack_SparseContainer<Ifpack_Amesos> > >(A);
 \end{verbatim}
 
@@ -1221,23 +1133,154 @@ block is defined by partitioning the local graph of the overlapping matrix),
 he/she could proceed as follows:
 \begin{verbatim}
 Teuchos::ParameterList List;
-List.set("block: damping factor", .67);
-List.set("block: sweeps",5);
-List.set("block: local blocks", 4);
-List.set("block: overlap level", OverlapLevel);
-List.set("block: print level", 0);
+List.set("relaxation: damping factor", .67);
+List.set("relaxation: sweeps",5);
+List.set("partitioner: local parts", 4);
+List.set("partitioner: overlap", OverlapLevel);
 
 Epetra_RowMatrix* A; // A is FillComplete()'d.
 
 Ifpack_Preconditioner* Prec =
-  new Ifpack_AdditiveSchwarz<Ifpack_BlockJacobi
+  new Ifpack_AdditiveSchwarz<Ifpack_BlockPreconditioner
       <Ifpack_SparseContainer<Ifpack_Amesos> > >(A,OverlapLevel);
 
 IFPACK_CHK_ERR(Prec->SetParameters(List));
 IFPACK_CHK_ERR(Prec->Compute());
 \end{verbatim}
 
-\bigskip
+%-----------------------------------------------------------------------------
+\section{Parameters for \ifpack\ preconditioners}
+\label{sec:parameters}
+%-----------------------------------------------------------------------------
+
+The parameters that affect the \ifpack\ preconditioners are reported
+below. It is important to note that parameters for all \ifpack\
+preconditioners must be spelled as indicated:
+misspelled parameters will be ignored, parameters are case sensitive, and words
+  are separated by one space only.
+
+\smallskip
+
+For more details about the \teuchos\ parameters list we refer to the
+\teuchos\ documentation.  Table~\ref{tab:teuchos} briefly reports the most
+important methods of this class.
+\ifpack\ requires just a very basic usage of the parameters list.
+Input parameters are set via method \verb!set(Name,Value)!, where
+\verb!Name! is a string containing the parameter name, and \verb!Value! is the
+specified parameter value, whose type can be any C++ object or pointer. 
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+    \verb!set(Name,Value)! & Add entry \verb!Name! with value and type
+    specified by \verb!Value!. Any C++ type (like int, double, a
+    pointer, etc.) is valid. \\
+    \verb!get(Name,DefValue)! & Get value (whose type is automatically
+    specified by \verb!DefValue!). If not present, return
+    \verb!DefValue!. \\
+    \verb!subList(Name)! & Get a reference to sublist \verb!List!. If not
+    present, create the sublist. \\
+    \hline
+  \end{tabular}
+  \caption{Some methods of Teuchos::ParameterList class.}
+  \label{tab:teuchos}
+\end{table}
+
+\smallskip
+
+\choicebox{\tt relaxation: type}{[{\tt string}] Relaxation scheme. Valid
+  choices are: {\tt Jacobi}, {\tt Gauss-Seidel}, {\tt symmmetric
+    Gauss-Seidel}. Default: {\tt Jacobi}.}
+
+\choicebox{\tt relaxation: sweeps}{[{\tt int}] Number of sweeps of
+  the point relaxation preconditioner. Default: {\tt 1}.}
+
+\choicebox{\tt relaxation: damping factor}{[{\tt double}] This is the value for $\omega$ 
+  in formulae (\ref{eq:jacobi}), (\ref{eq:gs}), (\ref{eq:sor}) and
+    (\ref{eq:ssor}). Default: {\tt 1.0}.}
+				 
+\choicebox{\tt relaxation: min diagonal value}{[{\tt double}] Replace diagonal
+  values whose absolute value is less than the specified value by this value
+    (for point relaxation methods only). Default: {\tt 1e-9}.}
+
+\choicebox{\tt relaxation: zero starting solution}{[{\tt bool}] If {\tt true},
+  the starting solution is always the zero vector. If {\tt true},
+  then the input values in the preconditioned vector will be used as starting solution.
+  Default: {\tt true}.}
+
+\choicebox{\tt partitioner: type}{[{\tt string}] Defines how to build the
+  local blocks for block relaxation methods only. Valid choices are:
+  {\tt linear} (use a simple linear decomposition), {\tt greedy} 
+  (use a greedy algorithm to partition the local graph), 
+  or {\tt METIS} (call METIS on the local graph). Default: {\tt linear}.}
+
+\choicebox{\tt partitioner: local parts}{[{\tt int}] Number of (local)
+  subgraphs, for block relaxation methods only. Default: 4.}
+
+\choicebox{\tt partitioner: overlap}{[{\tt int}] Overlap among blocks. Only
+  for block Jacobi methods. Default: 0.}
+
+\choicebox{\tt partitioner: root node}{[{\tt int}] Root node, for greedy
+  algorithm only. Default: 0}
+
+\choicebox{\tt schwarz: combine mode}{[{\tt Epetra\_CombineMode}].
+Default: {\tt Zero}\footnote{Note that, for non-zero overlap values, the preconditioner is in general
+  non-symmetric, due to the handling of the overlapping region. Set this parameter to {\tt Insert} if a
+    symmetric preconditioner is required.}.
+It can assume one of the following values:
+{\tt Add}: Components on the receiving processor will be added together;
+{\tt Zero}: Off-processor components will be ignored;
+{\tt Insert}: Off-processor components will be inserted into locations on
+receiving processor replacing existing values.
+{\tt Average}: Off-processor components will be averaged with existing;
+{\tt AbsMax}: Magnitudes of Off-processor components will be
+maxed with magnitudes of existing components on the receiving
+processor.}
+
+\choicebox{\tt amesos: solver type}{[{\tt string}]. Defines the Amesos solver to be
+  used by class Ifpack\_Amesos. Valid values are:
+{\tt Amesos\_Lapack},
+{\tt Amesos\_Klu},
+{\tt Amesos\_Umfpack},
+{\tt Amesos\_Superlu},
+{\tt Amesos\_Mumps},
+{\tt Amesos\_Dscpack}.}
+
+\choicebox{\tt fact: level-of-fill}{[{\tt int}] Level-of-fill for IC and ILU.}
+
+\choicebox{\tt fact: ict level-of-fill}{[{\tt double}] Level-of-fill for ICT.}
+
+\choicebox{\tt fact: ilut level-of-fill}{[{\tt double}] Level-of-fill for
+  ILUT.}
+
+\smallskip
+
+It is often convenient to compute the incomplete factorization of a given
+matrix, say $A$, by ``filtering'' this matrix, so that it behaves ``well''
+during the factorization process. The idea to filter the matrix is very
+simple: instead of using matrix $A$, we perform the factorization  on 
+a modified matrix $B$\footnote{This matrix is never built. The code modifies
+  the {\tt ExtractMyRowCopy()} method, and updated the diagonal value.}, whose elements are defined as
+\begin{equation}
+\label{eq:B}
+\begin{array}{lcr}
+B_{i,j} = A_{i,j} \quad \quad i \neq j \\
+B_{i,i} = \alpha \; \; sgn(A_{i,i}) + \rho A_{i,i},
+  \end{array}
+\end{equation}
+where $\alpha$ and $\rho$ are two real parameters, to be determined by the
+user. $\alpha$ represents and absolute threshold added to the matrix, while
+$\rho$ is a relative threshold (that is, the actual diagonal value of the matrix to
+be factored is $\rho$ times the original value).. 
+
+\choicebox{\tt fact: absolute threshold}{[{\tt double}] Value $\bar\rho$ in equation (\ref{eq:B}). }
+
+\choicebox{\tt fact: relative threshold}{[{\tt double}] Value $\rho$ in
+  equation (\ref{eq:B}). }
+
+\choicebox{\tt fact: relax value}{[{\tt double}] Relaxation value.}
+
 
 %-----------------------------------------------------------------------------
 \section{Analysis Tools}
@@ -1246,7 +1289,8 @@ IFPACK_CHK_ERR(Prec->Compute());
 
 \ifpack\ contains the following tools to analyze a linear system matrix:
 \begin{itemize}
-\item Function {\tt Ifpack\_Analyze()}...
+\item Function {\tt Ifpack\_Analyze()} reports some information about the
+structure of the matrix, its diagonal elements, and others.
 \item Function {\tt Ifpack\_PrintSparsity()} prints on a PostScript file the
 sparsity pattern of a given {\tt Epetra\_RowMatrix}.
 \item Function {\tt Ifpack\_PrintSparsitySimple()}, to be used only with small
@@ -1292,7 +1336,7 @@ The user may type
 \begin{verbatim}
 % configure --help
 \end{verbatim}
-in the \ifpack source directory for a complete list. Here, we briefly report
+in the \ifpack\ source directory for a complete list. Here, we briefly report
 the list of packages (included or not in Trilinos) that are supported 
 by \ifpack:
 

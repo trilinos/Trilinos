@@ -39,7 +39,7 @@
 \def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{1.8in}{\sf
 #1}\parbox[t]{4.5in}{#2}\\[0.8em]}
 
-\author{Michael Heroux and Marzio Sala \\
+\author{Marzio Sala and Michael Heroux\\
 Computational Mathematics and Algorithms Department \\
 Sandia National Laboratories \\
 P.O. Box 5800 \\
@@ -49,7 +49,7 @@ Albuquerque, NM 87185-1110
 \title{IFPACK 3.0 User's Guide}
 \SANDnum{SAND2005-XXXX}
 \SANDauthor{
-Michael Heroux, Marzio Sala}
+Marzio Sala, Michael Heroux}
 
 \SANDprintDate{January 2005}
 \SANDreleaseType{Unlimited Release}
@@ -90,15 +90,14 @@ Michael Heroux, Marzio Sala}
 \ifpack~provides a suite of object-oriented algebraic preconditioners
 for the solution of preconditioned iterative solvers.  \ifpack~constructors 
 expect the (distributed) real sparse matrix to be an Epetra\_RowMatrix object.
+\ifpack\ can be used to define point and block relaxation preconditioners,
+various flavors of incomplete factorizations for symmetric and non-symmetric
+matrices, and one-level additive Schwarz preconditioners with variable
+overlap. Exact LU factorizations of the local submatrix can be accessed through the \amesos\ packages.
+
 \ifpack~, as part of the Trilinos Solver Project,
 interacts well with other Trilinos packages. In particular, \ifpack~objects
 can be used as preconditioners for \aztecoo, and as smoothers for \ml. 
-
-\ifpack\ can be used to define point and block relaxation preconditioners,
-  various flavors of incomplete factorizations for symmetric and non-symmetric
-  matrices, and one-level additive Schwarz preconditioners with variable
-  overlap. Exact LU factorizations can be accessed through the \amesos\
-  packages.
 
 \ifpack\ is mainly written in C++, but only  a limited subset of C++ features
 is used, in order to enhance portability.
