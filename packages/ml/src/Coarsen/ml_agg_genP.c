@@ -317,9 +317,13 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
       ML_memory_check("L%d: RAP end",level);
+#ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
+#endif
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE);
+#ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
       			    &(ml->Pmat[next]), ML_TRUE);
