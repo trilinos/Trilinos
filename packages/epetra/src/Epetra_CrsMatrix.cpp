@@ -1512,11 +1512,12 @@ int Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector& x) const {
   int * NumEntriesPerRow = NumEntriesPerRow_;
   double ** Values = Values_;
   double * xp = (double*)x.Values();
-  Epetra_Vector x_tmp(RowMap());
+  Epetra_Vector* x_tmp = 0;
   if (Graph().RangeMap().SameAs(x.Map())) {
     if (Exporter() != 0) {
       needExport = true; //Having this information later avoids a .SameAs
-      xp = (double*)x_tmp.Values();
+      x_tmp = new Epetra_Vector(RowMap()); // Create import vector if needed
+      xp = (double*)x_tmp->Values();
     }
   }
   else if (!Graph().RowMap().SameAs(x.Map())) {
@@ -1537,7 +1538,8 @@ int Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector& x) const {
   }
   if(needExport) {
     x.PutScalar(0.0);
-    EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Insert)); // Fill x with values from temp vector
+    EPETRA_CHK_ERR(x.Export(*x_tmp, *Exporter(), Insert)); // Fill x with values from temp vector
+    delete x_tmp;
   }
   UpdateFlops(NumGlobalNonzeros());
   EPETRA_CHK_ERR(ierr);
