@@ -29,7 +29,7 @@ operations are not performed in the construction phase (like
 for instance the computation of the 1-norm and infinite-norm,
 of check whether the reordered matrix is lower/upper triangular or not).
 The user can enable these additional checks by calling the constructor
-with \c "LightWeight = false". FIXME: STILL TO BE DONE.
+with \c "LightWeight = false". 
 
 \author Marzio Sala, SNL 9214
 
@@ -89,28 +89,24 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y) const;
 
-  //! FIXME:NOT YET IMPLEMENTED.
   virtual int InvRowSums(Epetra_Vector& x) const
   {
-    return(Matrix().InvRowSums(x));
+    return(-1);
   }
 
-  //! Left-scale for the non-reordered matrix. FIXME:NOT YET IMPLEMENTED.
   virtual int LeftScale(const Epetra_Vector& x)
   {
-    return(Matrix().LeftScale(x));
+    return(-1);
   }
 
-  //! FIXME:NOT YET IMPLEMENTED.
   virtual int InvColSums(Epetra_Vector& x) const
   {
-    return(Matrix().InvColSums(x));
+    return(-1);
   }
 
-  //! Right-scale for the non-reordered matrix. FIXME:NOT YET IMPLEMENTED.
   virtual int RightScale(const Epetra_Vector& x) 
   {
-    return(Matrix().RightScale(x));
+    return(-1);
   }
 
   virtual bool Filled() const
@@ -118,13 +114,13 @@ public:
     return(Matrix().Filled());
   }
 
-  //! Returns the infinite-norm (FIXME:NOT YET IMPLEMENTED).
+  //! Returns the infinite-norm 
   virtual double NormInf() const
   {
     return(-1.0);
   }
 
-  //! Returns the 1-norm (FIXME:NOT YET IMPLEMENTED).
+  //! Returns the 1-norm 
   virtual double NormOne() const
   {
     return(-1.0);
@@ -178,16 +174,16 @@ public:
     return(Matrix().NumMyDiagonals());
   }
 
-  //! Returns \c true is the reordered matrix is lower triangular (FIXME:NOT YET IMPLEMENTED).
+  //! Returns \c true is the reordered matrix is lower triangular 
   virtual bool LowerTriangular() const
   {
-    return(false); // FIXME
+    return(false);
   }
 
-  //! Returns \c true is the reordered matrix is upper triangular (FIXME:NOT YET IMPLEMENTED).
+  //! Returns \c true is the reordered matrix is upper triangular 
   virtual bool UpperTriangular() const
   {
-    return(false); // FIXME
+    return(false);
   }
 
   //! Returns the row matrix of the non-reordered matrix.

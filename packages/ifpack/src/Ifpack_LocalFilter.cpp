@@ -7,8 +7,15 @@
 #include "Ifpack_LocalFilter.h"
 
 //==============================================================================
-Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
-  Matrix_(Matrix)
+Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
+				       const double AddToDiag) :
+  Matrix_(Matrix),
+  NumRows_(0),
+  Map_(0),
+  Diagonal_(0),
+  MaxNumEntries_(0),
+  NumNonzeros_(0),
+  AddToDiag_(AddToDiag)
 {
   sprintf(Label_,"Ifpack_LocalFilter");
 
@@ -18,52 +25,70 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   SerialComm_ = new Epetra_SerialComm;
 #endif
 
+  // localized matrix has all the local rows of Matrix
   NumRows_ = Matrix->NumMyRows();
-  // FIXME: compute the local ones
-  NumCols_ = NumRows_;
+
+  // build a linear map, based on the serial communicator
   Map_ = new Epetra_Map(NumRows_,0,*SerialComm_);
 
+  // NumEntries_ will contain the actual number of nonzeros
+  // for each localized row (that is, without external nodes,
+  // and always with the diagonal entry)
   NumEntries_.resize(NumRows_);
 
-  // FIXME: not all combinations of RowMatrixRowMap() and RangeMap() are
-  // allowed... (Same for columns)
-  // loop over all local rows to compute the nonzeros in each row
+  // want to store the diagonal vector (diagonal elements
+  // are augmented by AddToDiag_)
+  Diagonal_ = new Epetra_Vector(*Map_);
+  assert (Diagonal_ != 0);
+  
+  // tentative value for MaxNumEntries
+  MaxNumEntries_ = Matrix->MaxNumEntries();
 
-  MaxNumEntries_ = Matrix_->MaxNumEntries();
-  NumDiagonals_ = 0;
-  NumNonzeros_ = 0;
+  // ExtractMyRowCopy() will use these vectors
+  Indices_.resize(MaxNumEntries_);
+  Values_.resize(MaxNumEntries_);
 
-  Indices_ = new int[MaxNumEntries_];
-  Values_ = new double[MaxNumEntries_];
+  // now compute:
+  // - the number of nonzero per row
+  // - the total number of nonzeros
+  // - the diagonal entries
+
+  // ExtractMyRowCopy() uses Indices_ and Values_ for
+  // its internal operators, here I need two other vectors
+  vector<int> Ind(MaxNumEntries_);
+  vector<double> Val(MaxNumEntries_);
+
+  // compute nonzeros (total and per-row), and store the
+  // diagonal entries (already modified)
+  int ActualMaxNumEntries = 0;
 
   for (int i = 0 ; i < NumRows_ ; ++i) {
     
     NumEntries_[i] = 0;
     int Nnz;
-    Matrix_->ExtractMyRowCopy(i,MaxNumEntries_,Nnz,Values_,Indices_);
+    ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]);
+
+    if (Nnz > ActualMaxNumEntries)
+      ActualMaxNumEntries = Nnz;
+
+    NumNonzeros_ += Nnz;
+    NumEntries_[i] = Nnz;
 
     for (int j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] == i)
-	++NumDiagonals_;
-      if (Indices_[j] < NumRows_ ) {
-	++NumNonzeros_;
-	NumEntries_[i]++;
-      }
+	(*Diagonal_)[i] = Values_[j];
     }
   }
-
-  // compute MaxNumEntries_ for the local matrix
-  MaxNumLocalEntries_ = 0;
-  for (int i = 0 ; i < NumRows_ ; ++i) {
-    if (NumEntries_[i] > MaxNumLocalEntries_)
-      MaxNumLocalEntries_ = NumEntries_[i];
-  }
-
+  MaxNumEntries_ = ActualMaxNumEntries;
 }
 
 //==============================================================================
 Ifpack_LocalFilter::~Ifpack_LocalFilter()
 {
+  if (Map_)
+    delete Map_;
+  if (Diagonal_)
+    delete Diagonal_;
 }
 
 //==============================================================================
@@ -83,24 +108,34 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   // the user (for the external nodes)
   int Nnz;
   int ierr = Matrix_->ExtractMyRowCopy(MyRow,MaxNumEntries_,Nnz,
-				       Values_,Indices_);
+				       &Values_[0],&Indices_[0]);
 
-  // this should never happen
-  if (ierr < 0) {
-    IFPACK_CHK_ERR(ierr);
-  }
+  IFPACK_CHK_ERR(ierr);
 
-  // populate the user's vectors
+  // populate the user's vectors, add diagonal if not found
   NumEntries = 0;
+  bool FoundDiag = false;
+
   for (int j = 0 ; j < Nnz ; ++j) {
+    // only local indices
     if (Indices_[j] < NumRows_ ) {
       Indices[NumEntries] = Indices_[j];
       Values[NumEntries] = Values_[j];
+      // diagonal found, add AddToDiag_
+      if (Indices_[j] == MyRow) {
+	FoundDiag = true;
+	Values[NumEntries] += AddToDiag_;
+      }
       ++NumEntries;
     }
   }
     
-  assert (NumEntries == NumEntries_[MyRow]);
+  // need to add the diagonal value, not found before
+  if (FoundDiag == false) {
+    Values[NumEntries] = AddToDiag_;
+    Indices[NumEntries] = MyRow;
+    ++NumEntries;
+  }
 
   return(0);
 
@@ -109,26 +144,10 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 //==============================================================================
 int Ifpack_LocalFilter::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  if (!Map_->SameAs(Diagonal.Map())) {
-    IFPACK_CHK_ERR(-1); 
-  }
-
-  for (int i = 0 ; i < NumRows_ ; ++i) {
-    
-    int Nnz;
-    Matrix_->ExtractMyRowCopy(i,MaxNumEntries_,Nnz,
-			      Values_,Indices_);
-
-    assert (Nnz = NumEntries_[i]);
-
-    for (int j = 0 ; j < Nnz ; ++j) {
-      if (Indices_[j] == i )
-	Diagonal[i] = Values_[j];
-    }
-  }
-
+  if (!Diagonal.Map().SameAs(*Map_))
+    IFPACK_CHK_ERR(-1);
+  Diagonal = *Diagonal_;
   return(0);
-
 }
 
 //==============================================================================
@@ -154,7 +173,8 @@ int Ifpack_LocalFilter::Apply(const Epetra_MultiVector& X,
   for (int i = 0 ; i < NumRows_ ; ++i) {
     
     int Nnz;
-    Matrix_->ExtractMyRowCopy(i,MaxNumEntries_,Nnz,Values_,Indices_);
+    Matrix_->ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Values_[0],
+			      &Indices_[0]);
 
     for (int j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] < NumRows_ ) {

@@ -17,8 +17,7 @@ class Ifpack_DropFilter : public virtual Epetra_RowMatrix {
 public:
   //! Constructor.
   Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
-		    double DropTop, double MinDiagValue = 0.0,
-		    double AddToDiag = 0.0);
+		    double DropTop);
 
   //! Destructor.
   virtual ~Ifpack_DropFilter();
@@ -26,7 +25,8 @@ public:
   //! Returns the number of entries in MyRow.
   virtual inline int NumMyRowEntries(int MyRow, int & NumEntries) const
   {
-    return(A_.NumMyRowEntries(MyRow, NumEntries));
+    NumEntries = NumEntries_[MyRow];
+    return(0);
   }
 
   //! Returns the maximum number of entries.
@@ -54,7 +54,7 @@ public:
 
   virtual int InvRowSums(Epetra_Vector& x) const
   {
-    return(A_.InvRowSums(x));
+    return(-1);
   }
 
   virtual int LeftScale(const Epetra_Vector& x)
@@ -64,7 +64,7 @@ public:
 
   virtual int InvColSums(Epetra_Vector& x) const
   {
-    return(A_.InvColSums(x));
+    return(-1);
   }
 
   virtual int RightScale(const Epetra_Vector& x) 
@@ -79,62 +79,62 @@ public:
 
   virtual double NormInf() const
   {
-    return(NormInf_);
+    return(-1.0);
   }
 
   virtual double NormOne() const
   {
-    return(NormOne_);
+    return(-1.0);
   }
 
   virtual int NumGlobalNonzeros() const
   {
-    return(A_.NumGlobalNonzeros());
+    return(NumNonzeros_);
   }
 
   virtual int NumGlobalRows() const
   {
-    return(A_.NumGlobalRows());
+    return(NumRows_);
   }
 
   virtual int NumGlobalCols() const
   {
-    return(A_.NumGlobalCols());
+    return(NumRows_);
   }
 
   virtual int NumGlobalDiagonals() const
   {
-    return(A_.NumGlobalDiagonals());
+    return(NumRows_);
   }
 
   virtual int NumMyNonzeros() const
   {
-    return(A_.NumMyNonzeros());
+    return(NumNonzeros_);
   }
 
   virtual int NumMyRows() const
   {
-    return(A_.NumMyRows());
+    return(NumRows_);
   }
 
   virtual int NumMyCols() const
   {
-    return(A_.NumMyCols());
+    return(NumRows_);
   }
 
   virtual int NumMyDiagonals() const
   {
-    return(A_.NumMyDiagonals());
+    return(NumRows_);
   }
 
   virtual bool LowerTriangular() const
   {
-    return(LowerTriangular_);
+    return(false);
   }
 
   virtual bool UpperTriangular() const
   {
-    return(UpperTriangular_);
+    return(false);
   }
 
   virtual const Epetra_Map & RowMatrixRowMap() const
@@ -152,13 +152,6 @@ public:
     return(A_.RowMatrixImporter());
   }
 
-#ifdef FIXME
-  int SetOwnership(bool ownership)
-  {
-    return(A_.SetOwnership(ownership));
-  }
-#endif
-
   int SetUseTranspose(bool UseTranspose)
   {
     return(A_.SetUseTranspose(UseTranspose));
@@ -171,7 +164,7 @@ public:
 
   bool HasNormInf() const
   {
-    return(true);
+    return(false);
   }
 
   const Epetra_Comm & Comm() const
@@ -204,29 +197,13 @@ private:
   Epetra_RowMatrix& A_;
   //! Drop tolerance.
   double DropTol_;
-  //! This value will be added to all diagonal entries.
-  double AddToDiag_;
-  //! Minimum abs of diagonal value.
-  double MinDiagValue_;
   //! Maximum entries in each row.
   int MaxNumEntries_;
+  int MaxNumEntriesA_;
+  int NumRows_;
   
-  //! If \c true, the dropped matrix is upper triangular.
-  bool UpperTriangular_;
-  //! If \c true, the dropped matrix is lower triangular.
-  bool LowerTriangular_;
-  //! Inserse of row sum for the dropped matrix.
-  Epetra_Vector* InvRowSum_;
-  //! Inserse of colum sum for the dropped matrix.
-  Epetra_Vector* InvColSum_;
-  //! Number of local nonzeros for the dropped matrix.
-  int NumMyNonzeros_;
-  //! Number of global nonzeros for the dropped matrix.
-  int NumGlobalNonzeros_;
-  //! Infinite norm of the dropped matrix.
-  double NormInf_;
-  //! 1-norm of the dropped matrix.
-  double NormOne_;
+  //! Number of nonzeros for the dropped matrix.
+  int NumNonzeros_;
 
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable vector<int> Indices_;
@@ -234,6 +211,7 @@ private:
   mutable vector<double> Values_;
   //! Label for \c this object.
   char Label_[80];
+  vector<int> NumEntries_;
 
 };
 

@@ -11,6 +11,7 @@
 #include <vector>
 class Epetra_Map;
 class Epetra_MultiVector;
+class Epetra_Vector;
 class Epetra_Import;
 class Epetra_BlockMap;
 
@@ -56,7 +57,8 @@ class Ifpack_LocalFilter : public virtual Epetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix);
+  Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
+		     const double AddToDiag = 0.0);
 
   //@}
   //@{ \name Destructor.
@@ -84,7 +86,7 @@ public:
   //! Returns the maximum of NumMyRowEntries() over all rows.
   virtual int MaxNumEntries() const
   {
-    return(MaxNumLocalEntries_);
+    return(MaxNumEntries_);
   }
 
   //! Returns a copy of the specified local row in user-provided arrays.
@@ -217,13 +219,13 @@ public:
   //! Returns the number of global matrix columns.
   virtual int NumGlobalCols() const
   {
-    return(NumCols_);
+    return(NumRows_);
   }
 
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
   virtual int NumGlobalDiagonals() const
   {
-    return(NumDiagonals_);
+    return(NumRows_);
   }
 
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
@@ -241,13 +243,13 @@ public:
   //! Returns the number of matrix columns owned by the calling processor.
   virtual int NumMyCols() const
   {
-    return(NumCols_);
+    return(NumRows_);
   }
 
   //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
   virtual int NumMyDiagonals() const
   {
-    return(NumDiagonals_);
+    return(NumRows_);
   }
 
   //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
@@ -351,27 +353,27 @@ private:
   Epetra_Map* Map_;
   //! Number of rows in the local matrix.
   int NumRows_;
-  //! Number of cols in the local matrix.
-  int NumCols_;
   //! Number of nonzeros in the local matrix.
   int NumNonzeros_;
-  //! Maximum number of nonzero entries in a row for Matrix_.
+  //! Maximum number of nonzero entries in a row for the filtered matrix.
   int MaxNumEntries_;
-  //! Maximum number of nonzero entries in a row for local matrix.
-  int MaxNumLocalEntries_;
+  //! Maximum number of nonzero entries in a row for Matrix_.
+  int MaxNumEntriesA_;
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   vector<int> NumEntries_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  int* Indices_;
+  mutable vector<int> Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  double* Values_;
-  //! Number of non-zero diagonal elements.
-  int NumDiagonals_;
+  mutable vector<double> Values_;
   //! If true, the tranpose of the local matrix will be used.
   bool UseTranspose_;
   //! Label for \c this object.
   char Label_[80];
+  double AddToDiag_;
+  Epetra_Vector* Diagonal_;
+  double NormOne_;
+  double NormInf_;
 
-  };
+};
 
 #endif /* IFPACK_LOCALFILTER_H */
