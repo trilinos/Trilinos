@@ -94,7 +94,8 @@ namespace LOCA {
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
 
     //! Finalize iterator
-    virtual LOCA::Abstract::Iterator::IteratorStatus finish();
+    virtual LOCA::Abstract::Iterator::IteratorStatus 
+    finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus);
 
     //! Preprocess step
     virtual LOCA::Abstract::Iterator::StepStatus 

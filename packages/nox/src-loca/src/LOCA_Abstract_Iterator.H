@@ -136,7 +136,7 @@ namespace LOCA {
       virtual IteratorStatus start() = 0;
 
       //! Finalize iterator
-      virtual IteratorStatus finish() = 0;
+      virtual IteratorStatus finish(IteratorStatus) = 0;
 
       //! Preprocess step
       virtual StepStatus preprocess(StepStatus) = 0;

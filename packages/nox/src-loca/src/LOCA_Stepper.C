@@ -269,7 +269,7 @@ LOCA::Stepper::start() {
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Stepper::finish()
+LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
 {
 
   //
@@ -281,11 +281,15 @@ LOCA::Stepper::finish()
   // Copy last solution
   *curGroupPtr = solverPtr->getSolutionGroup();
 
+  // Return if iteration failed (reached max number of steps)
+  if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
+    return iteratorStatus;
+
   // Do one additional step using natural continuation to hit target value
   double value = curGroupPtr->getContinuationParameter();
 
   if (abs(value-targetValue) > 1.0e-15*(1.0 + targetValue)) {
-
+      
     isTargetStep = true;
 
     // Save previous successful step information
@@ -307,7 +311,7 @@ LOCA::Stepper::finish()
     //conGroupManagerPtr->reset(lastStepperParams);
     delete conGroupManagerPtr;
     conGroupManagerPtr = new LOCA::Continuation::Manager(lastStepperParams);
-
+      
     // Reset predictor manager
     predictorManagerPtr->reset(lastStepperParams.sublist("Predictor"));
 
@@ -315,14 +319,14 @@ LOCA::Stepper::finish()
     delete curGroupPtr;
 
     curGroupPtr = conGroupManagerPtr->createContinuationGroup(underlyingGroup, lastStepParams.sublist("NOX").sublist("Direction").sublist("Linear Solver"));
-
+      
     // Set step size
     stepSize = targetValue - value;
     curGroupPtr->setStepSize(stepSize);
 
     // Get predictor direction
     predictorManagerPtr->compute(*curGroupPtr, *curGroupPtr, *curPredictorPtr);
-
+      
     // Set previous solution vector in current solution group
     curGroupPtr->setPrevX(curGroupPtr->getX());
 
@@ -330,7 +334,7 @@ LOCA::Stepper::finish()
     curGroupPtr->computeX(*curGroupPtr, *curPredictorPtr, stepSize);
 
     printStartStep();
-
+      
     // Create new solver
     delete solverPtr;
     solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
@@ -488,7 +492,7 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
         >= LOCA::Abstract::Iterator::maxSteps) {
     cout << "\n\tContinuation run stopping: reached maximum number of steps "
          << LOCA::Abstract::Iterator::maxSteps << endl;
-    return LOCA::Abstract::Iterator::Finished;
+    return LOCA::Abstract::Iterator::Failed;
   }
 
   return LOCA::Abstract::Iterator::NotFinished;
