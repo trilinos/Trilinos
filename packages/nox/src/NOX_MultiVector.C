@@ -75,7 +75,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
   }
 }
 
-NOX::MultiVector::MultiVector(const NOX::MultiVector::MultiVector& source,
+NOX::MultiVector::MultiVector(const NOX::MultiVector& source,
 			      NOX::CopyType type) :
   vecs(source.vecs.size()), ownsVecs(source.vecs.size())
 {
@@ -318,7 +318,7 @@ void
 NOX::MultiVector::dot(double alpha, const NOX::Abstract::MultiVector& y,
 		      NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  return dot(alpha, dynamic_cast<const NOX::MultiVector&>(y), b);
+  dot(alpha, dynamic_cast<const NOX::MultiVector&>(y), b);
 }
 
 void 
