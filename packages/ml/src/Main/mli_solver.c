@@ -17,6 +17,8 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #include "ml_struct.h"
+#include "ml_amg_genP.h"
+#include "ml_agg_genP.h"
 #include "mli_solver.h"
 
 extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*, 

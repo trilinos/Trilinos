@@ -596,6 +596,8 @@ int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml,/* AZ_MATRIX *Amat, */
    else if (incr_or_decrease == ML_INCREASING)
    {
       printf("ML_INCREASING not implemented yet.\n"); exit(1);
+      /* to fix compiler warning, as long as ML_INCREASING isn't implemented. */
+      coarsest_level = 0;
       for (grid_level = fine_level-1; grid_level <= coarsest_level;
            grid_level++)
       {

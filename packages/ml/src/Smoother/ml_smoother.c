@@ -3021,7 +3021,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    ML_Krylov   *kdata;
    struct ML_CSR_MSRdata *matdata;
    int *row_ptr, /* *bindx,*/ i, j, k;
-   double *val_ptr, /* *vals=NULL*/;
+   double *val_ptr /* ,*vals=NULL*/;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3047,15 +3047,15 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       ML_Krylov_Destroy(&kdata);
       if (Amat->comm->ML_mypid == 0)
       {
-         printf("E:Calculated max eigenvalue of %lf.\n",dataptr->max_eig);
-         printf("E:Using Hiptmair damping factor of %lf.\n",dataptr->omega);
+         printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
+         printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
          fflush(stdout);
       }  
    }
    else
    {
       if (Amat->comm->ML_mypid == 0)
-         printf("Using user-provided Hiptmair damping factor of %lf.\n",omega);
+         printf("Using user-provided Hiptmair damping factor of %f.\n",omega);
       dataptr->max_eig = 1.0;
       dataptr->omega = omega;
    }

@@ -941,7 +941,11 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
 #endif
   while ( hash_list[index] != new_val) {
     if (hash_list[index] == -1) { (*hash_used)++; break;}
-    index = (++index)%hash_length;
+    /* JJH */
+    /*index = (++index)%hash_length;*/
+    index++;
+    index = (index)%hash_length;
+    /* --JJH */
 #ifdef charles
     if (origindex == index)
        fprintf(stderr,"ML_hash_it: looped around"
