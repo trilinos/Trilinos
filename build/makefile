@@ -95,7 +95,7 @@ libclobber:
 	@echo "Removing $(CUR_LIB) library for the target:" $(TRILINOS_TARGET)
 	@echo "--------------------------------------------------------------"
 	@echo " "
-	cd $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET); rm -f lib$(CUR_LIB).a
+	cd $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET); rm -f lib$(CUR_LIB).$(LIB_EXT)
 
 clobber_aztecoo: clean_aztecoo
 	$(MAKE) libclobber CUR_LIB=aztecoo
