@@ -480,7 +480,7 @@ following, assuming %NOX was installed in /usr/local.
 nox_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib 
 LIBS = -lnox
-CXXFLAGS = -I$(NOX_PREFIX)/include/nox
+CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
 \section step4_epetra Compiling with Epetra
@@ -491,8 +491,7 @@ We assume that Epetra, Aztec, and Ifpack are installed in the same place as %NOX
 nox_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib 
 LIBS = -lnox -lnox-epetra -laztecoo -lifpack -lepetra  -llapack -lblas 
-CXXFLAGS = -I$(NOX_PREFIX)/include/nox -I$(NOX_PREFIX)/include/epetra \
-           -I$(NOX_PREFIX)/include/ifpack -I$(NOX_PREFIX)/include/aztecoo
+CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
 \section step4_problems If you have problems...
