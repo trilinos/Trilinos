@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   if(argc < 2 && verbose) {
     cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+	 << " HPC_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
 	 << "level_fill         - The amount of fill to use for ILU(k) preconditioner (default 0)" << endl
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
 	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
 	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "ifpackHbSerialMsr.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
+	 << "ifpackHpcSerialMsr.exe mymatrix.hpc 1  - loads mymatrix.hpc, uses level fill of one, all other values are defaults" << endl
 	 << endl;
     return(1);
 
@@ -69,70 +69,23 @@ int main(int argc, char *argv[]) {
   if (MyPID==0) cin >> tmp;
   Comm.Barrier();
 
-  Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
-  Epetra_Vector * readb;
-  Epetra_Vector * readxexact;
-   
-  // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra(argv[1], Comm, readMap, readA, readx, readb, readxexact);
+  Epetra_Map * map;
+  Epetra_CrsMatrix * A; 
+  Epetra_Vector * x; 
+  Epetra_Vector * b;
+  Epetra_Vector * xexact;
 
-  // Create uniform distributed map
-  Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
+  Trilinos_Util_ReadHpc2Epetra(argv[1], Comm, map, A, x, b, xexact);
 
-  // Create Exporter to distribute read-in matrix and vectors
+  bool smallProblem = false;
+  if (A->RowMap().NumGlobalElements()<100) smallProblem = true;
 
-  Epetra_Export exporter(*readMap, map);
-  Epetra_CrsMatrix A(Copy, map, 0);
-  Epetra_Vector x(map);
-  Epetra_Vector b(map);
-  Epetra_Vector xexact(map);
+  if (smallProblem)
+    cout << "Original Matrix = " << endl << *A   << endl;
 
-  Epetra_Time FillTimer(Comm);
-  x.Export(*readx, exporter, Add);
-  b.Export(*readb, exporter, Add);
-  xexact.Export(*readxexact, exporter, Add);
-  Comm.Barrier();
-  double vectorRedistributeTime = FillTimer.ElapsedTime();
-  A.Export(*readA, exporter, Add);
-  Comm.Barrier();
-  double matrixRedistributeTime = FillTimer.ElapsedTime() - vectorRedistributeTime;
-  assert(A.TransformToLocal()==0);    
-  Comm.Barrier();
-  double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
-  if (verbose)	{
-    cout << "\n\n****************************************************" << endl;
-    cout << "\n Vector redistribute  time (sec) = " << vectorRedistributeTime<< endl;
-    cout << "    Matrix redistribute time (sec) = " << matrixRedistributeTime << endl;
-    cout << "    Transform to Local  time (sec) = " << fillCompleteTime << endl<< endl;
-  }
-  Epetra_Vector tmp1(*readMap);
-  Epetra_Vector tmp2(map);
-  readA->Multiply(false, *readxexact, tmp1);
+  x->PutScalar(0.0);
 
-  A.Multiply(false, xexact, tmp2);
-  double residual;
-  tmp1.Norm2(&residual);
-  if (verbose) cout << "Norm of Ax from file            = " << residual << endl;
-  tmp2.Norm2(&residual);
-  if (verbose) cout << "Norm of Ax after redistribution = " << residual << endl << endl << endl;
-
-  //cout << "A from file = " << *readA << endl << endl << endl;
-
-  //cout << "A after dist = " << A << endl << endl << endl;
-
-  delete readA;
-  delete readx;
-  delete readb;
-  delete readxexact;
-  delete readMap;
-
-  Comm.Barrier();
-
-  x.PutScalar(0.0);
-
-  Epetra_LinearProblem FullProblem(&A, &x, &b); 
+  Epetra_LinearProblem FullProblem(A, x, b); 
   
   Epetra_Time ReductionTimer(Comm);
   Epetra_ReducedLinearProblem SingletonFilter(&FullProblem);
@@ -160,12 +113,9 @@ int main(int argc, char *argv[]) {
   Epetra_Vector * bp = (*ReducedProblem->GetRHS())(0);
   Epetra_Vector * xp = (*ReducedProblem->GetLHS())(0);
   
-  bool smallProblem = false;
-  if (Ap->RowMap().NumGlobalElements()<100) smallProblem = true;
 
   if (smallProblem)
-    cout << "Original Matrix = " << endl << A   << endl
-	 << " Reduced Matrix = " << endl << *Ap << endl
+    cout << " Reduced Matrix = " << endl << *Ap << endl
 	 << " LHS before sol = " << endl << *xp << endl
 	 << " RHS            = " << endl << *bp << endl;
 
@@ -233,6 +183,7 @@ int main(int argc, char *argv[]) {
 
   elapsed_time = timer.ElapsedTime();
 
+  double residual;
   BiCGSTAB(*Ap, *xp, *bp, ILUK, Maxiter, Tolerance, &residual, verbose);
 
   elapsed_time = timer.ElapsedTime() - elapsed_time;
@@ -247,12 +198,12 @@ int main(int argc, char *argv[]) {
 
   if (smallProblem)
   cout << " Reduced LHS after sol = " << endl << *xp << endl
-       << " Full    LHS after sol = " << endl << x << endl
-       << " Full  Exact LHS         = " << endl << xexact << endl;
+       << " Full    LHS after sol = " << endl << *x << endl
+       << " Full  Exact LHS         = " << endl << *xexact << endl;
 
-  Epetra_Vector resid(x);
+  Epetra_Vector resid(*x);
 
-  resid.Update(1.0, x, -1.0, xexact, 0.0); // resid = xcomp - xexact
+  resid.Update(1.0, *x, -1.0, *xexact, 0.0); // resid = xcomp - xexact
 
   resid.Norm2(&residual);
 
@@ -263,8 +214,8 @@ int main(int argc, char *argv[]) {
     cout << "Difference between computed and exact solution appears large..." << endl
       << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
       << endl;
-    assert(A.Multiply(false, resid, b)==0);
-    assert(b.Norm2(&residual)==0);
+    assert(A->Multiply(false, resid, *b)==0);
+    assert(b->Norm2(&residual)==0);
   if (verbose) 
     cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
     
