@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <complex>
+#include <cassert>
 #include "Kokkos_DenseMultiVector.hpp"
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
@@ -13,8 +14,8 @@
 using namespace std;
 using namespace Kokkos;
 
-#define OTYPE long long
-#define STYPE double
+#define OTYPE short
+#define STYPE float
 #define MULTCLASS BaseSparseMultiply
 
 template<typename TYPE>
