@@ -19,7 +19,14 @@
 #include "mpi.h"
 #endif
 
-extern int SuperLU_Solve(void *,int,double *,int,double *);
+#ifdef SUPERLU
+extern int SuperLU_Solve(void *, int, double *, int, double *);
+extern int SuperLU_SolveLocal(void *, double *, double *);
+#elif DSUPERLU
+extern int SuperLU_Solve(void *, int, double *, int, double *);
+extern int SuperLU_SolveLocal(void *, double *, double *);
+#endif
+
 
 /* ************************************************************************* */
 /* create and initialize a ML object                                         */
@@ -2947,8 +2954,6 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 #include "superlu_ddefs.h"
 #endif
 
-extern int SuperLU_Solve(void *, int, double *, int, double *);
-extern int SuperLU_SolveLocal(void *, double *, double *);
 
 /*****************************************************************************/
 /* Form global matrix in CSR                                                 */
@@ -3100,8 +3105,11 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
    func->internal( vsolver, 0, NULL, 0, NULL);
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL) {
-      printf("Clean has not been written for DSuperLU\n");
+      Destroy_CompCol_Matrix(Amat);
+      ML_memory_free((void**) &Amat);
    }
+   solver->Mat1 = NULL;
+
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
@@ -3326,9 +3334,9 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
 #elif DSUPERLU
    int               i, offset, N_local;
    int               reuse, coarsest_level, flag, space, *cols, nz_ptr;
-   int               getrow_flag, osize, *row_ptr, length, num_proc;
+   int               getrow_flag, osize, *row_ptr, length;
    int               j, k, k1, k2, next,*ia, *ja;
-   int_t             nprow, npcol, *mat_ia, *mat_ja, nrows, nnz;
+   int_t             *mat_ia, *mat_ja, nrows, nnz;
    double            *mat_val, *vals, dsize, di, *aa;
    void              *data;
    ML_1Level         *sl;
@@ -3336,8 +3344,6 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    ML_Operator       *op;
    SuperMatrix       *A;
    ML_Matrix_DCSR    *csr_mat, *csr2_mat;
-   LUstruct_t        *LUstruct;
-   ScalePermstruct_t *ScalePermstruct;
 
    /* ----------------------------------------------------------------- */
    /* extract local matrix using getrow function and store it into a    */
