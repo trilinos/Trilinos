@@ -7,6 +7,9 @@ Useful Terminology:
 			new_package serves as a guide for adding new packages
 			to the Trilinos Autotools configure/build process.
 
+	np - The generic name for a new package that is used 
+			throughout this README.  The source code for np will be
+			located in Trilinos/packages/np.  
 	autotool'ed
 
 The Trilinos/packages/new_package package was created as a tool for developers
@@ -32,16 +35,29 @@ files for more details.  Instructions for customizing are listed behind
 '#np#'.
 (Details for all files not yet available.)  
 
-2. Generate necessary Autoconf and Automake files.
+2. Create generated Autoconf and Automake files.
 
-After customizing ...
+Before starting this phase, please see Trilinos/config/AutotoolsVersionInfo
+and obtain the correct version of both Autoconf and Automake.
+
+After customizing the necessary Autoconf and Automake files, cd to the top 
+level of the new package and type 'bootstrap'.  This command will generate
+files necessary for the configure and build processes.  Each of these files
+MUST be added to the repository with a 'cvs add'.  The bootstrap should
+complete without any errors, however, at this time it is not uncommon to have
+the following warnings:
+
+configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
+
+These warnings will be fixed in the future.
 
 3. Connect the new package to the Trilinos Autotools configure/build process.
    (Establish build default=no)
 
 This step involves...
 
-4. Test and wait
+4. Perform tests and request new Mailman lists.
 
 
 
