@@ -82,7 +82,7 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   int restart = aList.getParameter("Restarts",1);    //  This is the number of restarts allowed
   int freq =    aList.getParameter("Frequency",1);    // How often to recalculate eigenvalues
   int debug =   aList.getParameter("Debug Level",1);  // Anasazi Debug level
-  string which="LM";   //  Which eigenvalues are of interest.
+  string which= aList.getParameter("Sorting Order","LM");   //  Which eigenvalues are of interest.
 
   // Check if eigenvalues are requested this continuation step
   if (eigenvalCounter++%freq != 0) {
