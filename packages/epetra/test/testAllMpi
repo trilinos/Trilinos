@@ -11,6 +11,7 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map Multi
 		echo "############" $g "##############" >>& ../$file
 		mpigo $g 8 -v >>& ../$file
 	end
+
 	make $1 $2 $3 $4 clobber
 	cd ..
 end

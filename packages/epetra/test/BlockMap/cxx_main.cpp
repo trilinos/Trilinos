@@ -42,13 +42,6 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int tmp;
-  if (Comm.MyPID()==0) {
-    cout << "Press a key and Enter to continue..." << endl;
-    cin >> tmp;
-  }
-  Comm.Barrier();
-
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();

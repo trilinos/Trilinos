@@ -210,8 +210,7 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
       if (Map.MyGID(GIDlist[i])) {
 	if (PIDlist[i] != MyPID) return(-44);
 	if (!Map.MyLID(Map.LID(GIDlist[i])) || Map.LID(GIDlist[i]) != LIDlist[i] || Map.GID(LIDlist[i]) != GIDlist[i]) return(-45);
-	cout << SizeList[i]  << "  " << Map.ElementSize(Map.LID(GIDlist[i])) << "  " << Map.LID(GIDlist[i]) << "  " << LIDlist[i] << "  " << GIDlist[i] << endl;
-	//if (SizeList[i] != Map.ElementSize(LIDlist[i])) return(-46);
+	if (SizeList[i] != Map.ElementSize(LIDlist[i])) return(-46);
       }
       else {
 	if (PIDlist[i] == MyPID) return(-47); // If MyGID comes back false, the PID listed should be that of another proc
