@@ -244,6 +244,7 @@ AC_CXX_MUTABLE
 AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
+AC_CXX_TEMPLATE_QUALIFIER
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built

@@ -164,6 +164,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* define if the compiler accepts the "template" qualifier */
+#undef HAVE_TEMPLATE_QUALIFIER
+
 /* Define if want to build tests */
 #undef HAVE_TESTS
 

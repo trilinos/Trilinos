@@ -187,13 +187,15 @@ int main(int argc, char *argv[])
 	FailedTests++;
     }  
 
+    bool tempMeth;
+#ifdef HAVE_TEMPLATE_QUALIFIER
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
+    // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
-    int max_iters, def_step;
+    int max_iters;
     string nonlin_solver;
-    double alpha_fact;
-    bool tempMeth = true;
+    tempMeth = true;
     try {
       max_iters = PL_My_Polynomial.template get<int>("Max Iters");
       nonlin_solver = PL_Main.template get<string>("Nonlinear Solver");
@@ -208,6 +210,7 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
+    // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
     float mbf;
     tempMeth = false;
@@ -225,9 +228,13 @@ int main(int argc, char *argv[])
     if (tempMeth) { if (verbose) cout << "no" << endl; }
     else { if (verbose) cout << "yes" << endl; }
 
+#endif // HAVE_TEMPLATE_QUALIFIER
+
     //-----------------------------------------------------------
     // Check the 'getParameter' helper function.
     //-----------------------------------------------------------
+    int def_step;
+    double alpha_fact;
     tempMeth = true;
     try {
     	def_step = getParameter<int>(PL_Polynomial, "Default Step");
@@ -240,10 +247,13 @@ int main(int argc, char *argv[])
     if (tempMeth) { if (verbose) cout << "yes" << endl; }
     else { if (verbose) cout << "no" << endl; FailedTests++; }
 
+#ifdef HAVE_TEMPLATE_QUALIFIER
+
     //-----------------------------------------------------------
     // Check templated isType functionality
+    // (This will only be tested if the compiler excepts "template" as a qualifier)
     //-----------------------------------------------------------
-    bool PT1, PT2, PT3, PT4, PT5;
+    bool PT1, PT2, PT3;
     PT1 = PL_Polynomial.template isType<int>("Default Step");
     PT2 = PL_Polynomial.template isType<long int>("Default Step");
     PT3 = PL_Polynomial.template isType<string>("Interpolation Type");
@@ -264,6 +274,12 @@ int main(int argc, char *argv[])
     if (PT3) { if (verbose) cout<< "yes" << endl; }
     else { if (verbose) cout<< "no" << endl; FailedTests++; }
 
+#endif // HAVE_TEMPLATE_QUALIFIER
+
+    //-----------------------------------------------------------
+    // Check the 'isParameterType' helper function.
+    //-----------------------------------------------------------
+    bool PT4, PT5;
     PT4 = isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
     PT5 = isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
     if (verbose) {
