@@ -21,7 +21,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include "ml_struct.h" 
 #include "ml_common.h"
 #include "ml_mat_formats.h" 
 struct ML_Eigenvalue_Struct  {
@@ -30,6 +29,12 @@ struct ML_Eigenvalue_Struct  {
   int Arnoldi;
   double Residual_Tol;
 };
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 
 
 void  ML_ARPACK_driver(char which[],
@@ -45,3 +50,9 @@ extern void ML_ARPACK_GGB(
 		    struct ML_CSR_MSRdata *mydata);
 
 
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+}
+#endif
+#endif
