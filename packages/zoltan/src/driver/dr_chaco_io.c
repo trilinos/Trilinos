@@ -96,8 +96,6 @@ int read_chaco_mesh(int Proc,
       return 0;
     }
 
-    fclose (fp);
-
     /* Read Chaco geometry file, if provided. */
     sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
     fp = fopen(chaco_fname, "r");

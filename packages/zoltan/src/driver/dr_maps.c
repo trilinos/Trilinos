@@ -184,6 +184,12 @@ struct map_list_head {
     }
   }
 
+  /* 
+   * If no communication maps, don't need to do anything else. 
+   */
+
+  if (Mesh.necmap == 0) return 1;
+
   /*
    * Allocate data structure for element communication map arrays.
    */
