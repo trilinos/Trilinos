@@ -287,7 +287,7 @@ then
     echo
     cvs update ml
     # Make sure the ml/Obj directory is up to date.
-    cd ${SCRIPT_DIRECTORY}/etc
+    cd ${SCRIPT_DIRECTORY}
     ./flatten >& /dev/null
     cd ${BENCH_ROOT_DIRECTORY}/..
     echo
