@@ -70,15 +70,15 @@ Marzio Sala
 Marzio  Sala \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
-P.O.~Box 5800 \\
+P.O.~Box 5800, MS 1110 \\
 Albuquerque, NM 87185-1110
 \end{center}
 
 \vspace{20pt}
 
 \begin{abstract}
-  This document describes the main functionalities of the Amesos package,
-  version 2.0. Amesos, a Trilinos package, provides an
+  This document describes the main functionalities of the \amesos\ package,
+  version 2.0. \amesos, a Trilinos package, provides an
   object-oriented interface to several serial and parallel sparse direct
   solvers libraries, for the solution of the linear systems of equations
   \begin{equation}
@@ -90,7 +90,7 @@ Albuquerque, NM 87185-1110
   Epetra\_MultiVector objects. Supported libraries include:
   LAPACK, KLU, UMFPACK, SuperLU, SuperLU\_DIST, MUMPS, DSCPACK.
   
-  Amesos provides a common look-and-feel to several direct solvers,
+  \amesos\ provides a common look-and-feel,
   insulating the user from each package's details, such as matrix and
   vector formats, and data distribution.
 \end{abstract}
@@ -103,7 +103,7 @@ Albuquerque, NM 87185-1110
 \section*{Acknowledgments}
 %-----------------------------------------------------------------------------
 The authors would like to acknowledge the support of the ASCI and LDRD programs
-that funded development of Amesos.
+that funded development of \amesos.
 
 \clearpage
 
@@ -119,27 +119,30 @@ that funded development of Amesos.
 \label{sec:intro}
 %-----------------------------------------------------------------------------
 
-Aim of the Amesos package is to provide an object-oriented interface to
-several sparse direct solvers\footnote{Amesos is an interface to other
+Aim of the \amesos\ package is to provide an object-oriented interface to
+several sparse direct solvers\footnote{\amesos\ is an interface to other
   packages, mainly developed outside the Trilinos framework. In order to
   use those packages, the user should carefully check copyright and
   licensing of those third-party codes.  Please refer to the web page or
-  the documentation of each particular package for details.}. For each
-solver, Amesos provides a C++ interface. All the interfaces have the
-same look-and-feel, and accept matrices defined as Epetra\_RowMatrix
-objects\footnote{Most interfaces take advantage of linear system matrices 
-  that can be casted to {\tt Epetra\_CrsMatrix} or {\tt Epetra\_VbrMatrix}.}, 
-  and vectors defined as Epetra\_MultiVector objects. Amesos
-makes easy for users to switch from one direct solver library from
-another.
+  the documentation of each particular package for details.}. 
+\amesos\ is developed by (in alphabetical order) T. Davis, R. Hoekstra,
+M. Heroux, M. Sala, K. Stanley.
 
-Amesos contains several classes, as reported in table~\ref{tab:classes}.
+For each solver, \amesos\ provides a C++ interface. All the interfaces
+have the same look-and-feel, and accept matrices defined as
+Epetra\_RowMatrix objects\footnote{Most interfaces take advantage of
+  linear system matrices that can be casted to {\tt Epetra\_CrsMatrix}
+  or {\tt Epetra\_VbrMatrix}.}, and vectors defined as
+Epetra\_MultiVector objects. \amesos\ makes easy for users to switch
+from one direct solver library from another.
+
+\amesos\ contains several classes, as reported in table~\ref{tab:classes}.
 The classes covered in this guide are:
 \begin{itemize}
 \item \verb!Amesos_LAPACK!: Interface to LAPACK's dense solvers (in
   Section~\ref{sec:lapack}). This class is the only interface to
   dense solver in \amesos;
-\item \verb!Amesos_KLU!: Interface to Amesos's internal solver KLU (in
+\item \verb!Amesos_KLU!: Interface to \amesos's internal solver KLU (in
   Section~\ref{sec:klu});
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
   UMFPACK~\cite{umfpack-home-page}, version 4.3 (in Section~\ref{sec:umfpack});
@@ -153,8 +156,8 @@ The classes covered in this guide are:
 (in Section~\ref{sec:dscpack}).
 \end{itemize}
 
-A simple fragment of code using Amesos can read as follows. First,
-  we need to include the header files for Amesos:
+A simple fragment of code using \amesos\ can read as follows. First,
+  we need to include the header files for \amesos:
 \begin{verbatim}
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
@@ -172,7 +175,7 @@ Epetra_MultiVector* RHS;        // right-hand side
 
 All \amesos\ object (derived from pure virtual class 
 \verb!Amesos_BaseSolver!\footnote{A pure virtual class is a class that
-defines interfaces only, and no code. Pure virtual classes cannot
+defines interfaces only, and contains no executable code. Pure virtual classes cannot
 be instantiated; however, it is possible to declare and use pointers and
 references to a pure virtual class, as normally done with class
 {\tt Amesos\_BaseSolver}.})
@@ -183,7 +186,7 @@ classes can be used, for example, to create objects.}, as follows:
 Amesos_BaseSolver * Solver;
 Amesos Factory;
 char* SolverType = "Amesos_Klu";
-Solver = Factory.Create(SolverType, *Problem);
+Solver = Factory.Create(SolverType, Problem);
 \end{verbatim}
 The complete list of parameters recognized by \verb!Create()! is reported
 in Table~\ref{tab:classes}.
@@ -214,7 +217,7 @@ parameters list, whose
 definition requires the input file \verb!Teuchos_ParameterList.hpp!. For
 a detailed description, we refer to the Teuchos documentation. We report
 the most important methods of this class in Table~\ref{tab:teuchos}.
-However, in most cases, users can proceed without calling
+The user may decide to proceed without calling
 \verb!SetParameters()!.
 
 \begin{table}[htbp]
@@ -253,18 +256,20 @@ dedicated to that solver.
 
 \medskip
 
-Note that \verb!Problem! is still empty. After setting the pointer to
+After setting in \verb!Problem! the pointer to
 the linear system matrix, we can perform the symbolic factorization
 of the linear system matrix:
 \begin{verbatim}
+Solver->SetOperator(A);
 AMESOS_CHK_ERR(Solver->SymbolicFactorization());
 \end{verbatim}
 This phase does not require the numerical values of \verb!A!, that can
 therefore be changed after the call to \verb!SymbolicFactorization()!.
 However,  the nonzero pattern of \verb!A! {\em cannot} be
-changed\footnote{The values of {\tt A} must
-  be set before calling {\tt SymbolicFactorization()} and not changed
-  if the user specify a threshold different from {\tt 0.0}.}.
+changed.
+%\footnote{The values of {\tt A} must
+%  be set before calling {\tt SymbolicFactorization()} and not changed
+%  if the user specify a threshold different from {\tt 0.0}.}.
 \verb!AMESOS_CHK_ERR! is a macro (defined in \verb!Amesos_ConfigDefs.h!)
 that checks the return code. If this return code is not zero, the
 macro prints out an error message, and returns.
@@ -282,30 +287,29 @@ Problem.SetRHS(RHS);
 AMESOS_CHK_ERR(Solver->Solve());
 \end{verbatim}
 
-Should the user need to re-factorize the matrix, he or she must call
+Should users need to re-factorize the matrix, they must call
 \verb!NumericFactorization()!. If the structure of the matrix is changed,
-he or she must call \verb!SymbolicFactorization()!. However, it is supposed
+they must call \verb!SymbolicFactorization()!. However, it is supposed
 that the linear system matrix and the solution and right-hand side vectors
 are still defined with the same \verb!Epetra_Map!.
 
 \begin{table}[tbhp]
   \centering
-  \begin{tabular}{| l | l l l | }
+  \begin{tabular}{| l | l l | l | }
     \hline
-    Class &   &  & Interface to \\
+    Class & Communicator  & Matrix type & Interface to \\
     \hline
     \tt Amesos\_Klu          & serial   & general & KLU \\
     \tt Amesos\_Umfpack      & serial   & general & UMFPACK 4.3 \\
-    \tt Amesos\_Lapack       & serial   & general & LAPACK \\
     \tt Amesos\_Superlu      & serial   & general & SuperLU 3.0 \\
-    \tt  Amesos\_Superludist & parallel & general & SuperLU\_DIST 2.0 \\
+    \tt Amesos\_Superludist & parallel & general & SuperLU\_DIST 2.0 \\
     \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
     \tt Amesos\_Dscpack      & parallel & symmetric & DSCPACK 1.0 \\
     \hline
   \end{tabular}
   \caption{Supported interfaces. ``serial'' means that the supported
     direct solver is serial. When solving with 
-    more than one processor, the linear problem is exported to process
+    more than one processor, the linear problem is gathered to process
     0, here solved, then the solution is broadcasted to the distributed
     solution 
     vector. ``parallel'' means that a subset or all the processes in the current
@@ -318,11 +322,11 @@ are still defined with the same \verb!Epetra_Map!.
 \end{table}
 
 %-----------------------------------------------------------------------------
-\section{Configuring and Installation Amesos}
+\section{Configuring and Installation \amesos}
 \label{sec:configuration}
 %-----------------------------------------------------------------------------
 
-Amesos is distributed through the Trilinos project, and can be
+\amesos\ is distributed through the Trilinos project, and can be
 downloaded from the web site
 \begin{verbatim}
 http://software.sandia.gov/trilinos/packages/amesos
@@ -332,14 +336,14 @@ http://software.sandia.gov/trilinos/packages/amesos
 
 Each of the \amesos\ classes provides an interface to a third-party direct
 sparse solver code\footnote{Exception to this rule is KLU, which is
-  distributed within Amesos.}. In order to configure and compile a given
+  distributed within \amesos.}. In order to configure and compile a given
 interface, the user must first install the underlying direct sparse
 solver code. Generally, the BLAS library is required. Some solvers may
-need CBLACS, LAPACK, BLACS, ScaLAPACK. Amesos also requires Epetra and
+need CBLACS, LAPACK, BLACS, ScaLAPACK. \amesos\ also requires Epetra and
 Teuchos (both part of Trilinos).
 
-Amesos is configured and built using the GNU autoconf~\cite{Autoconf}
-and automake~\cite{Automake} tools. To configure Amesos from the
+\amesos\ is configured and built using the GNU autoconf~\cite{Autoconf}
+and automake~\cite{Automake} tools. To configure \amesos\ from the
 Trilinos top directory, a possible procedure is as follows.  Let
 \verb!$TRILINOS_HOME! be a shell variable representing the location
 of the Trilinos source directory, and \verb!%! the shell prompt sign.  
@@ -414,18 +418,18 @@ format, `--' means that it doesn't.
   \centering
   \begin{tabular}{| p{3.5cm} | c | c | c | c | }
     \hline
-    Class & Transp & Epetra\_RowMatrix & Epetra\_CrsMatrix & Epetra\_VrbMatrix \\
+    Class & Transp & Epetra\_RowMatrix & Epetra\_CrsMatrix & Epetra\_VbrMatrix \\
     \hline
     Amesos\_Lapack       & yes & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Klu          & yes & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Umfpack      & yes & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Superlu      & no  & $\bullet$ & $\bullet$ & -- \\
     Amesos\_Superludist  & no  & $\bullet$ & $\bullet$ & -- \\
-    Amesos\_Mumps        & yes & $\bullet$ & $\bullet$ & $\bullet$ \\
-    Amesos\_Dscpack      & yes & --        & $\bullet$ & -- \\
+    Amesos\_Mumps        & yes & $\bullet$ & -- & -- \\
+    Amesos\_Dscpack      & yes & $\bullet$        & -- & -- \\
     \hline
   \end{tabular}
-  \caption{Supported matrix formats. ``Transp'' means that \amesos
+  \caption{Supported matrix formats. ``Transp'' means that \amesos\
     can solve both the linear system with the linear system matrix and with its
 transpose.
 `$\bullet$' means that the interface
@@ -438,7 +442,7 @@ transpose.
 \label{sec:parameters}
 %-----------------------------------------------------------------------------
 
-We now list all the parameters that may affect all the Amesos solvers.
+We now list all the parameters that may affect all the \amesos\ solvers.
 To know whether a specific interface supports a given parameter, we
 refer to table~\ref{tab:options}.
 
@@ -461,10 +465,10 @@ refer to table~\ref{tab:options}.
   to the diagonal if not present.}
 
 \choicebox{\tt PrintTiming}{Print some timing information when the
-  Amesos object is destoyed.}
+  \amesos\ object is destroyed.}
 
 \choicebox{\tt PrintStatus}{Print some information about the linear
-  system and the solver when the Amesos object is destoyed.}
+  system and the solver when the \amesos\ object is destroyed.}
 
 \choicebox{\tt ComputeVectorNorms}{After solution, compute the 2-norm of
   each vector in the Epetra\_MultiVector $B$ and $X$. }
@@ -475,16 +479,16 @@ refer to table~\ref{tab:options}.
 \choicebox{\tt MaxProcs}{If positive, the linear system matrix will be
   distributed on the specified number of processes only (or the all the
   processes in the MPI communicator if the specified number is greater).
-  If {\tt MaxProcs=-1}, Amesos will estimate using internal heuristics
+  If {\tt MaxProcs=-1}, \amesos\ will estimate using internal heuristics
   the optimal number of processes that can efficiently solve the linear
-  system. If {\tt MaxProcs=-2}, Amesos will use the square root of the
+  system. If {\tt MaxProcs=-2}, \amesos\ will use the square root of the
   number of processes.  If {\tt MaxProcs=-3}, all processes in the
   communicator will be used. \\ This option may require the conversion
   of a C++ MPI communicator to a FORTRAN MPI communicator. If this is
   not supported, the specified value of {\tt MaxProcs} will be ignored,
   and all the processes in {\tt MPI\_COMM\_WORLD} will be used.}
 
-\choicebox{\tt OutpuLevel}{If {\tt 0}, no output is printed on the
+\choicebox{\tt OutputLevel}{If {\tt 0}, no output is printed on the
   standard output. If {\tt 1}, output is reported as specified by other
   parameters. If {\tt 2}, all output is printed (this is equivalent to
   {\tt PrintTiming == true}, {\tt PrintStatus == true}, {\tt
@@ -494,7 +498,7 @@ refer to table~\ref{tab:options}.
   ``Refactorization'' of a matrix refers to the use of a prior
   symbolic and numeric factorization (including row and column
   ordering), to factorize a subsequent matrix using the same
-  pivot ordering.  This can be signicantly faster, but the
+  pivot ordering.  This can be significantly faster, but the
   numerical quality of the factorization may suffer.
   If {\tt true}, then attempt to re-use the existing
   symbolic and numeric factorization, to factorize a new matrix using
@@ -532,9 +536,11 @@ means to use its 2nd alternative method, and so on.}
     % -------------------------------------------------------------------
      \tt MatrixType         & \tt string & \tt general& --        & -- & -- & $\bullet$ & -- & -- \\
     % -------------------------------------------------------------------
-     \tt Threshold          & \tt double & \tt 0.0    & --        & -- & -- & $\bullet$ & -- & --  \\
+     \tt Threshold          & \tt double & \tt 0.0    & --        & -- & -- &
+     --& -- & --  \\
     % -------------------------------------------------------------------
-     \tt AddZeroToDiag      & \tt bool   & \tt false  & --        & -- & $\bullet$ & $\bullet$ & -- & -- \\
+     \tt AddZeroToDiag      & \tt bool   & \tt false  & --        & -- &
+     $\bullet$ & -- & -- & -- \\
     % -------------------------------------------------------------------
      \tt PrintTiming        & \tt bool   & \tt false  & $\bullet$ & $\bullet$ & -- & $\bullet$ & $\bullet$ & $\bullet$ \\
     % -------------------------------------------------------------------
@@ -580,7 +586,39 @@ Parameters and sublists not recognized are simply ignored. Recall that
 spaces are important, and that parameters list is case sensitive!
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to KLU}
+\section{\amesos\ Interface to LAPACK}
+\label{sec:lapack}
+%-----------------------------------------------------------------------------
+
+In some cases, the linear system matrix can be of relatively small size,
+  or it can be quite dense, or both. If this happens, it may be convenient
+  to convert the sparse matrix to dense format, then use LAPACK routines.
+
+\smallskip
+
+In order to use LAPACK, \amesos\ must be configured with the options
+\begin{verbatim}
+--enable-amesos-lapack 
+\end{verbatim}
+Header files and library are automatically located by {\tt configure}.
+
+\smallskip
+
+LAPACK is a (suite of) serial solver(s). \amesos\ will gather all matrix rows on processor
+zero before the symbolic factorization, and all matrix values before the
+numeric factorization. On process 0, the matrix will be converted
+to dense storage, using \verb!Epetra_SerialDenseMatrix! objects.
+A call to \verb!Solve()! requires a gather
+of the right-hand side on process 0, the local solution of the linear
+system, and finally a scatter operation, to redistribute as necessary the
+solution vector.
+
+\smallskip
+
+No specific parameters are available for this class.
+
+%-----------------------------------------------------------------------------
+\section{\amesos\ Interface to KLU}
 \label{sec:klu}
 %-----------------------------------------------------------------------------
 
@@ -599,11 +637,11 @@ not help, and the asymptotic run-time is of practical importance.
 
 \smallskip
 
-In order to use KLU, Amesos must be configured with the options
+In order to use KLU, \amesos\ must be configured with the options
 \begin{verbatim}
 --enable-amesos-klu
 \end{verbatim}
-The KLU sources are distributed with the Amesos package. We strongly encourage
+The KLU sources are distributed with the \amesos\ package. We strongly encourage
 to configure \amesos\ with KLU support. KLU is the only interface that is
 turned on by default.
 
@@ -613,15 +651,15 @@ No specific parameters are available for this class.
 
 \smallskip
 
-KLU is a serial solver. Amesos will gather all matrix rows on processor
+KLU is a serial solver. \amesos\ will gather all matrix rows on processor
 zero before the symbolic factorization, and all matrix values before the
 numeric factorization. A call to \verb!Solve()! requires a gather
-or all the right-hand side on process 0, the local solution of the linear
+of the right-hand side on process 0, the local solution of the linear
 system, and finally a scatter operation, to redistribute as necessary the
 solution vector.
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to UMFPACK 4.3}
+\section{\amesos\ Interface to UMFPACK 4.3}
 \label{sec:umfpack}
 %-----------------------------------------------------------------------------
 
@@ -631,7 +669,7 @@ can be obtained at the web page
   http://www.cise.ufl.edu/research/sparse/umfpack
 \end{verbatim}
 
-In order to use UMFPACK, Amesos must be configured with the options
+In order to use UMFPACK, \amesos\ must be configured with the options
 \begin{verbatim}
 --enable-amesos-umfpack 
 \end{verbatim}
@@ -646,21 +684,20 @@ No specific parameters are available for this class.
 
 \smallskip
 
-UMFPACK is a serial solver. Amesos will gather all matrix rows on processor
+UMFPACK is a serial solver. \amesos\ will gather all matrix rows on processor
 zero before the symbolic factorization, and all matrix values before the
 numeric factorization. A call to \verb!Solve()! requires a gather
-or all the right-hand side on process 0, the local solution of the linear
+of the right-hand side on process 0, the local solution of the linear
 system, and finally a scatter operation, to redistribute as necessary the
 solution vector.
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to SuperLU 3.0}
+\section{\amesos\ Interface to SuperLU 3.0}
 \label{sec:superlu}
 %-----------------------------------------------------------------------------
 
-SuperLU, written by Xiaoye S. Li, is a serial solver.
-SuperLU is written in ANSI C, using MPI
-for communication. It is copyrighted by The Regents of the University of
+SuperLU, written by Xiaoye S. Li, is a serial solver.  SuperLU is
+written in ANSI C. It is copyrighted by The Regents of the University of
 California, through Lawrence Berkeley National Laboratory.  We refer to
 the web site
 \begin{verbatim}
@@ -671,10 +708,10 @@ information.
 
 \medskip
 
-In order to interface with SuperLU\_DIST 2.0, Amesos must be configured with
+In order to interface with SuperLU\_DIST 2.0, \amesos\ must be configured with
 the options
 \begin{verbatim}
---enable-amesos-superludist 
+--enable-amesos-superlu 
 \end{verbatim}
 Location of the header files should be specified using \verb!--with-incdirs!,
 location of the library with \verb!--with-ldflags!, and the library
@@ -687,34 +724,25 @@ No specific parameters are available for this class.
 
 \smallskip
 
-SuperLU 3.0 is a serial solver. Amesos will gather all matrix rows on processor
+SuperLU 3.0 is a serial solver. \amesos\ will gather all matrix rows on processor
 zero before the symbolic factorization, and all matrix values before the
 numeric factorization. A call to \verb!Solve()! requires a gather
-or all the right-hand side on process 0, the local solution of the linear
+of the right-hand side on process 0, the local solution of the linear
 system, and finally a scatter operation, to redistribute as necessary the
 solution vector.
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to SuperLU\_DIST 2.0}
+\section{\amesos\ Interface to SuperLU\_DIST 2.0}
 \label{sec:superludist}
 %-----------------------------------------------------------------------------
 
 SuperLU\_DIST, written by Xiaoye S. Li, is a parallel extension to the
 serial SuperLU library.  SuperLU\_DIST is written in ANSI C, using MPI
 for communication, and it is targeted for the distributed memory
-parallel machines. It is copyrighted by The Regents of the University of
-California, through Lawrence Berkeley National Laboratory.  We refer to
-the web site
-\begin{verbatim}
-http://www.nersc.gov/~xiaoye/SuperLU
-\end{verbatim}
-and to the SuperLU\_DIST manual~\cite{superlu-manual} for more
-information.
-
-SuperLU\_DIST includes routines to handle both real and complex matrices
-in double precision. However, as Amesos is currently based on the Epetra
-package (that does not handle complex matrices), only double precision
-matrices can be considered.
+parallel machines.  SuperLU\_DIST includes routines to handle both real
+and complex matrices in double precision. However, as \amesos\ is
+currently based on the Epetra package (that does not handle complex
+matrices), only double precision matrices can be considered.
 
 Amesos\_Superludist can solve the linear system on a subset of the
 processes, as specified in the parameters list. This is done by
@@ -723,7 +751,7 @@ Epetra\_Comm object, with function \verb!superlu_gridinit()!.
 
 \medskip
 
-In order to interface with SuperLU\_DIST 2.0, Amesos must be configured with
+In order to interface with SuperLU\_DIST 2.0, \amesos\ must be configured with
 the options
 \begin{verbatim}
 --enable-amesos-superludist 
@@ -745,7 +773,7 @@ values are as reported in the SuperLU\_DIST manual.
 \vskip .1in
 
 \choicebox{\tt Fact}{({\tt string}) Specifies whether or not the factored form
-  of the matrix $A$ is supplied onentry and, if not, how the matrix will
+  of the matrix $A$ is supplied on entry and, if not, how the matrix will
   be factored. It can be: {\tt DOFACT, SamePattern,
     SamePattern\_SameRowPerm, FACTORED}. Default: {\tt
     SamePattern\_SameRowPerm}.}
@@ -776,7 +804,7 @@ values are as reported in the SuperLU\_DIST manual.
     DOUBLE}.}
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to MUMPS 4.3.1}
+\section{\amesos\ Interface to MUMPS 4.3.1}
 \label{sec:mumps}
 %-----------------------------------------------------------------------------
 
@@ -787,11 +815,6 @@ of the MUMPS package can be obtained from the Web page
 \begin{verbatim}
 http://www.enseeiht.fr/apo/MUMPS/
 \end{verbatim}
-Here, for the sake of completeness, we briefly present a broad view of
-the MUMPS package, so that the reader can better understand the
-Amesos\_Mumps interface. For details about the algorithms and the
-implementation, as well as of the input parameters, we refer
-to~\cite{mumps-manual}
 
 MUMPS can solve the original system~(\ref{eq:linear_system}), as well as
 the transposed system, given an assembled or elemental matrix. Note that
@@ -801,6 +824,9 @@ the original matrix, Schur complement with respect to a prescribed
 subset of rows. Reordering techniques can take advantage of PORD
 (distributed within MUMPS), or METIS~\cite{METIS}\footnote{At this time,
   METIS ordering is not supported by Amesos\_Mumps.}. 
+For details about the algorithms and the
+implementation, as well as of the input parameters, we refer
+to~\cite{mumps-manual}
 
 Amesos\_Mumps is based on the distributed double-precision version of
 MUMPS (which requires MPI, BLAS, BLACS
@@ -808,7 +834,7 @@ and ScaLAPACK~\cite{scalapack}).
 
 \medskip
 
-In order to interface with MUMPS 4.3.1, Amesos must be configured with
+In order to interface with MUMPS 4.3.1, \amesos\ must be configured with
 the options\footnote{The MUMPS interface can take be used on a subset of
   the processes. To that aim, it must be possible to convert from a C++
   MPI communicator to a FORTRAN MPI communicator. Such a conversion is
@@ -835,13 +861,13 @@ is \amesos\ is used to solve the coarse problem in multilevel
 preconditioners, like \ml~\cite{ml-guide}. In this case, users may decide
 to use single-precision solves of the coarse problem
 to save memory and computational time. As
-Amesos is based on the Epetra\_LinearProblem class
+\amesos\ is based on the Epetra\_LinearProblem class
 (defined for double precision only), this interface
 still requires double-precision matrix and vectors.
 After the solver phase, the single precision vector
 is copied into the double-precision solution vector
-of the given Epetra\_LinearProblem. If enabled,
-disabled double-precision version of MUMPS.
+of the given Epetra\_LinearProblem. If the single precision interface is 
+enabled, this automatically disables the double-precision one.
 
 \medskip
 
@@ -880,7 +906,7 @@ or by using the functions reported at the end of this section.
 
 \bigskip
 
-Other functions are avaiable to retrive the output values. The following
+Other functions are available to check the output values. The following
 Amesos\_Mumps methods are {\sl not} supported by the Amesos\_BaseSolver
 class; hence, the user must create an Amesos\_Mumps object in order to
 take advantage of them.
@@ -936,7 +962,7 @@ Epetra_CrsMatrix * GetCrsSchurComplement();
 \end{verbatim}
 This method returns the Schur complement in an Epetra\_CrsMatrix, on host
 only. No checks are performed to see whether this action is legal or not
-(that is, if the call comes after the solver has been invocated).
+(that is, if the call comes after the solver has been invoked).
 The returned Epetra\_CrsMatrix must be freed by the user.
 
 \medskip
@@ -950,7 +976,7 @@ This method returns the Schur complement as a Epetra\_SerialDenseMatrix
 \medskip
 
 
-As an example, the following frament of code shows how to use MUMPS to
+As an example, the following fragment of code shows how to use MUMPS to
 obtain the Schur complement matrix with respect to a given subsets of
 nodes.  First, we need to create an parameter list, and an Amesos\_Mumps
 object.
@@ -989,39 +1015,7 @@ The Schur complement matrix can be obtain after the solver phase:
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to LAPACK}
-\label{sec:lapack}
-%-----------------------------------------------------------------------------
-
-In some cases, the linear system matrix can be of relatively small size,
-  or it can be quite dense, or both. If this happens, it may be convenient
-  to convert the sparse matrix to dense format, then use LAPACK routines.
-
-\smallskip
-
-In order to use LAPACK, Amesos must be configured with the options
-\begin{verbatim}
---enable-amesos-lapack 
-\end{verbatim}
-Header files and library is automatically located by {\tt configure}.
-
-\smallskip
-
-LAPACK is a (suite of) serial solver(s). Amesos will gather all matrix rows on processor
-zero before the symbolic factorization, and all matrix values before the
-numeric factorization. On process 0, the matrix will be converted
-to dense storage, using \verb!Epetra_SerialDenseMatrix! objects.
-A call to \verb!Solve()! requires a gather
-or all the right-hand side on process 0, the local solution of the linear
-system, and finally a scatter operation, to redistribute as necessary the
-solution vector.
-
-\smallskip
-
-No specific parameters are available for this class.
-
-%-----------------------------------------------------------------------------
-\section{Amesos Interface to DSCPACK}
+\section{\amesos\ Interface to DSCPACK}
 \label{sec:dscpack}
 %-----------------------------------------------------------------------------
 
@@ -1042,7 +1036,7 @@ information.
 
 \smallskip
 
-In order to use DSCPACK, Amesos must be configured with the options
+In order to use DSCPACK, \amesos\ must be configured with the options
 \begin{verbatim}
 --enable-amesos-dscpack 
 \end{verbatim}
@@ -1073,7 +1067,7 @@ No specific parameters are available for this class.
   \ifpack\ documentation for more details.
 
 \begin{remark}
-\amesos\ is also used by another \trilinos\ package, \ml. \ml takes
+\amesos\ is also used by another \trilinos\ package, \ml. \ml\ takes
 advantages of the \amesos\ interfaces to solve the coarse problem
 that arises in multilevel preconditioners; see the \ml\ guide for more
 details~\cite{ml-guide}.
