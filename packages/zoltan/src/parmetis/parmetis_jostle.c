@@ -853,12 +853,21 @@ static int LB_ParMetis_Jostle(
 
   /* Create export lists */
   if (nsend>0){
-    *exp_gids = (LB_GID *)LB_MALLOC(nsend * sizeof(LB_GID));
-    *exp_lids = (LB_LID *)LB_MALLOC(nsend * sizeof(LB_LID));
-    *exp_procs = (int *)LB_MALLOC(nsend * sizeof(int));
-    if (!(*exp_gids) || !(*exp_lids) || !(*exp_procs)){
-      /* Not enough memory */
+    if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+    if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+    if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
+      LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
       FREE_MY_MEMORY;
       return LB_MEMERR;
     }
