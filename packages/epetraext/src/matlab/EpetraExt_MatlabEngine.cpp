@@ -585,7 +585,13 @@ int EpetraExt_MatlabEngine::GetmxArrayDimensions(mxArray* matlabA, bool& isSpars
 //=============================================================================
 int EpetraExt_MatlabEngine::GetmxArray(const char* variableName, mxArray** matlabA) {
   if (Comm_.MyPID() == 0) {
-    *matlabA = engGetVariable(Engine_, variableName);
+#ifdef USE_ENGPUTARRAY
+  // for matlab versions < 6.5 (release 13)
+  *matlabA = engGetArray(Engine_, variableName);
+#else
+  // for matlab versions >= 6.5 (release 13)
+  *matlabA = engGetVariable(Engine_, variableName);
+#endif
     if (matlabA == NULL) {
       return(-5);
     }
