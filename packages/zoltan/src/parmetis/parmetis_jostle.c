@@ -1032,8 +1032,13 @@ static int LB_ParMetis_Jostle(
         &numflag, &num_proc, options, &edgecut, part, &comm);
     else /* obj_wgt_dim >= 2 */
       /* Beta version of multiconstraint ParMetis. Interface may change! */
+#ifdef BETA_PARMETIS
       Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc +1));
+#else
+      fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
+        "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
+#endif BETA_PARMETIS
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
@@ -1066,9 +1071,14 @@ static int LB_ParMetis_Jostle(
       ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, options, &edgecut, part, &comm);
     else { /* obj_wgt_dim >= 2 */
+#ifdef BETA_PARMETIS
       /* Beta version of multiconstraint ParMetis. Interface may change! */
       Moc_ParMETIS_SR (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, NULL,
         &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc+1));
+#else
+      fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
+        "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
+#endif BETA_PARMETIS
     }
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
