@@ -11,7 +11,6 @@
 // LOCA Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
-#include "LOCA_Abstract_DataOutput.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -82,20 +81,42 @@ int main(int argc, char *argv[])
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  NOX::Parameter::List locaParamsList;
+  NOX::Parameter::List paramList;
+
+  // Create LOCA sublist
+  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
+  locaStepperList.setParameter("Continuation Method", "Natural");
+  //locaStepperList.setParameter("Continuation Method", "Arc Length");
   locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
-  locaStepperList.setParameter("Stepper Method", "Zero Order");
   locaStepperList.setParameter("Initial Value", 0.0);
-  locaStepperList.setParameter("Final Value", 10000.0);
-  locaStepperList.setParameter("Initial Step Size", 500.0);
-  locaStepperList.setParameter("Min Step Size", 100.0);
-  locaStepperList.setParameter("Max Step Size", 2000.0);
-  locaStepperList.setParameter("Step Size Aggressiveness", 0.0);
-  locaStepperList.setParameter("Max Continuation Steps", 30);
+  locaStepperList.setParameter("Max Value", 10000.0);
+  locaStepperList.setParameter("Min Value", 0.0);
+  locaStepperList.setParameter("Max Steps", 30);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
+  locaStepperList.setParameter("Goal g", 0.5);
+  locaStepperList.setParameter("Max g", 0.7);
+  locaStepperList.setParameter("Initial Scale Factor", 1.0);
+  locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
+  locaStepperList.setParameter("Min Tangent Factor", -1.0);
+  locaStepperList.setParameter("Tangent Factor Exponent",1.0);
+  
+  // Create predictor sublist
+  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+  predictorList.setParameter("Method", "Constant");
+  //predictorList.setParameter("Method", "Tangent");
+  //predictorList.setParameter("Method", "Secant");
+
+  // Create step size sublist
+  NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+  //stepSizeList.setParameter("Method", "Constant");
+  stepSizeList.setParameter("Method", "Adaptive");
+  stepSizeList.setParameter("Initial Step Size", 500.0);
+  stepSizeList.setParameter("Min Step Size", 100.0);
+  stepSizeList.setParameter("Max Step Size", 2000.0);
+  stepSizeList.setParameter("Aggressiveness", 0.5);
 
   // Set the LOCA Utilities
   NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
@@ -108,7 +129,7 @@ int main(int argc, char *argv[])
 			     LOCA::Utils::SolverDetails);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
+  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
@@ -133,11 +154,11 @@ int main(int argc, char *argv[])
   // Create the "Direction" sublist for the "Line Search Based" solver
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
-    dirParams.setParameter("Forcing Term Method", "Constant");
-    //dirParams.setParameter("Forcing Term Method", "Type 1");
-    //dirParams.setParameter("Forcing Term Method", "Type 2");
-    //dirParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //dirParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+  dirParams.setParameter("Forcing Term Method", "Constant");
+  //dirParams.setParameter("Forcing Term Method", "Type 1");
+  //dirParams.setParameter("Forcing Term Method", "Type 2");
+  //dirParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+  //dirParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
 
   // Create the "Linear Solver" sublist for the "Direction" sublist
   NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
@@ -192,15 +213,15 @@ int main(int argc, char *argv[])
   grp.computeF();
 
   // Create the Solver convergence test
-  NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
+  //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
+  NOX::StatusTest::NormF wrms(1.0e-8);
   NOX::StatusTest::MaxIters maxiters(800);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(wrms);
   combo.addStatusTest(maxiters);
 
   // Create the stepper  
-  LOCA::Abstract::DataOutput dataOut;
-  LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
+  LOCA::Stepper stepper(grp, combo, paramList);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished)

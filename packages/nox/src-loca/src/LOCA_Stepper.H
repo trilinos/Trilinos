@@ -142,8 +142,8 @@ namespace LOCA {
     //! Pointer to the status test.  This is used for resetting the nonlinear solver in between steps.
     NOX::StatusTest::Generic* statusTestPtr;
 
-    //! Deep copy of the parameter list supplied initially in the constuctor. This can be changed via a call to the reset() method.
-    NOX::Parameter::List paramList;
+    //! Pointer to parameter list passed in constructor/reset method
+    NOX::Parameter::List* paramListPtr;
 
     //! Solver (a.k.a corrector)
     NOX::Solver::Manager* solverPtr;
