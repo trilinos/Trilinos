@@ -31,6 +31,10 @@
 #define HASHTABLE_DIVIDER 20
 #define MAX_CUTS_PER_BIN 10 /* maximum amount of cuts in a coarse level bin */
 
+void create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
+			   int wgt_dim, float* total_weight_array, float* work_percent_array,
+			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr);
+
 int sfc_create_bins(LB* lb, int num_local_objects, 
 		    int wgt_dim, SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[], int* amount_of_bits_used,
 		    int sfc_keylength, int size_of_unsigned, unsigned imax, 
@@ -118,7 +122,6 @@ int LB_sfc(
   int number_of_cuts = 0; /* amount of cuts in the coarse bin that gets a cut */
   int bins_per_proc = 10;  /* bring this in as a parameter later on... */
   int amount_of_bits_used = 0;
-  int bin_level = SFC_FIRST_LEVEL_FLAG;
   int hashtable_divider;
   COMM_OBJ *plan;
   int comm_tag = 8765; /* randomly chosen communication tag */
@@ -304,32 +307,56 @@ int LB_sfc(
   }
 
   /* for debugging */
-/*  if(lb->Proc ==0) {
+  if(lb->Proc ==0) {
     printf("input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
-      scanf("%d",&balanced_flag);
-      printf("\n");    
-  }
-  i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);*/
+    scanf("%d",&balanced_flag);
+    printf("\n");    
+  } 
+  i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);
   /* done debugging */
-  printf("this routine will only do the coarse bin partitioning\n)");
-  balanced_flag = SFC_BALANCED;
-  /* refine bins until a satisfactory partition tolerance is attained */
-  while(balanced_flag != SFC_BALANCED) {  
-    int ll_bins_head[MAX_CUTS_PER_BIN]; /* used to indicate the beginning of the linklist
-					   after refinement */
-    printf("****doing refinement of the bins****\n");
 
-    ierr = sfc_refine_partition_level(lb, &balanced_flag, &amount_of_bits_used,
-				      &bin_level, num_vert_in_cut, vert_in_cut_ptr,
-				      SFC_KEYLENGTH, size_of_unsigned, imax, wgt_dim,
-				      wgts_in_cut_ptr, work_percent_array,
-				      total_weight_array, global_actual_work_allocated, 
-				      &number_of_cuts, ll_bins_head);
-    if(ierr != LB_OK && ierr != LB_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
-      return(ierr);
+  if(balanced_flag != SFC_BALANCED) { 
+    int local_balanced_flag = SFC_NOT_BALANCED; /* assume that if coarse bin partition is not balanced
+						   that all partitions need to be rebalanced */
+    int max_cuts_in_bin;
+    int* ll_bins_head;  /* used to indicate the beginning of the linklist */
+    if(num_vert_in_cut == 0 || lb->Proc == 0) 
+      local_balanced_flag = SFC_BALANCED;
+    create_refinement_info(lb, &number_of_cuts, global_actual_work_allocated, wgt_dim,
+			   total_weight_array, work_percent_array, num_vert_in_cut, vert_in_cut_ptr);
+    max_cuts_in_bin = number_of_cuts;
+    ll_bins_head = (int*) LB_MALLOC(sizeof(int) * number_of_cuts);
+    if(ll_bins_head == NULL && number_of_cuts > 0) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      return(LB_MEMERR);
     }
+    if(ll_bins_head != NULL)
+       ll_bins_head[0] = 0;  /* the first link list starts off at array location 0 ! */
+    for(i=1;i<number_of_cuts;i++)
+      ll_bins_head[i] = -1;
+    /* refine bins until a satisfactory partition tolerance is attained */
+    while(balanced_flag != SFC_BALANCED) { 
+      /* if this partition is balanced, we do not need to refine the partition */
+      if(local_balanced_flag == SFC_NOT_BALANCED) {
+	ierr = sfc_refine_partition_level(lb, &local_balanced_flag, &amount_of_bits_used,
+					  num_vert_in_cut, vert_in_cut_ptr,
+					  SFC_KEYLENGTH, size_of_unsigned, imax, wgt_dim,
+					  wgts_in_cut_ptr, work_percent_array,
+					  total_weight_array, global_actual_work_allocated, 
+					  number_of_cuts, &max_cuts_in_bin, ll_bins_head);
+	if(ierr != LB_OK && ierr != LB_WARN) {
+	  LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
+	  return(ierr);
+	}
+      }
+      /* check if any partition does not meet the imbalance tolerance */
+      j = local_balanced_flag;
+      i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT, MPI_MAX, lb->Communicator);
+      balanced_flag = SFC_BALANCED; /* take this out!!! */
+    }
+    LB_FREE(&ll_bins_head);
   }
+  
   /* if the objects were moved to different processors, we need to move them back now */
   if(plan != NULL) {
     SFC_VERTEX_PTR recv_buf = NULL;
@@ -359,7 +386,6 @@ int LB_sfc(
   LB_FREE(&global_actual_work_allocated);
   LB_FREE(&work_percent_array);  
   LB_FREE(&total_weight_array);
-  LB_FREE(&objs_wgt);
 
 
   /* add up stuff to export */
@@ -374,11 +400,44 @@ int LB_sfc(
   j = 0;
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
-      *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
+      /* check to see that a destination proc is between 0 and Num_Proc */
+      if(sfc_vert_ptr[i].destination_proc > -1 && sfc_vert_ptr[i].destination_proc < lb->Num_Proc)
+	*((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
+      else {
+	printf("i'm sending to proc %d for i=%d on proc %d --------- oops\n",  
+	       sfc_vert_ptr[i].destination_proc,i, lb->Proc);
+	if(lb->Proc != 0)
+	  *((*export_procs)+j) = 0;
+	else 
+	  *((*export_procs)+j) = 1;
+      }
       LB_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
       LB_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
       j++;
     }
+
+  /* debug:  check weights */
+  {
+    float* chk_wgt;
+    float* chk_wgt_gl;
+    chk_wgt = (float*) LB_MALLOC(sizeof(float*) * lb->Num_Proc);
+    chk_wgt_gl = (float*) LB_MALLOC(sizeof(float*) * lb->Num_Proc);
+    for(i=0;i<lb->Num_Proc;i++)
+      chk_wgt[i] = 0;
+
+    for(i=0;i<num_local_objects;i++)
+      chk_wgt[sfc_vert_ptr[i].destination_proc] += objs_wgt[i*wgt_dim];
+    i = MPI_Allreduce(chk_wgt, chk_wgt_gl, lb->Num_Proc, MPI_FLOAT, MPI_SUM, lb->Communicator);
+    if(lb->Proc == 0) {
+	printf("the current balance is ");
+	for(i=0;i<lb->Num_Proc;i++)
+	  printf("%d = %e ",i, chk_wgt_gl[i]);
+	printf("\n");
+    }
+    LB_FREE(&chk_wgt);
+    LB_FREE(&chk_wgt_gl);
+  }
+  LB_FREE(&objs_wgt);
   
   LB_FREE(&global_ids);
   LB_FREE(&local_ids);
@@ -392,3 +451,32 @@ int LB_sfc(
 
 
 
+/* create info before starting the multi-level refinement of the bins */
+
+void create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
+			   int wgt_dim, float* total_weight_array, float* work_percent_array,
+			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr)
+{
+
+  float my_work;
+  int i = 0;
+
+  /* find out how many cuts are in this bin */
+  my_work = global_actual_work_allocated[(lb->Proc)*wgt_dim];
+  while(my_work > total_weight_array[0] * work_percent_array[lb->Proc-i])
+    i++;
+  *number_of_cuts = i;
+  if(num_vert_in_cut == 0 || lb->Proc ==0) {
+    *number_of_cuts = 0;
+    return;
+  }
+  printf("originally I count %d cuts on proc %d\n",*number_of_cuts,lb->Proc);
+
+  /* create link list for objects in the array.  link list is set up so that
+     the objects in the array are traversed consecutively */
+  for(i=0;i<(num_vert_in_cut-1);i++)
+    vert_in_cut_ptr[i].next_sfc_vert_index = i+1;
+  vert_in_cut_ptr[num_vert_in_cut-1].next_sfc_vert_index = -1;
+   
+  return;
+}

@@ -23,7 +23,7 @@ typedef struct sfc_vertex SFC_VERTEX;
 typedef struct sfc_vertex * SFC_VERTEX_PTR;
 
 struct sfc_hash_obj {
-  int id;
+  unsigned id;
   int destination_proc;
   struct sfc_hash_obj * next;
   float* weight_ptr;
@@ -67,12 +67,12 @@ void sfc_create_info(LB *lb, double min_bounding_box[], double max_bounding_box[
 		     int num_dims, int num_local_objects, int wgt_dim, 
 		     SFC_VERTEX_PTR sfc_vert_ptr, int sfc_keylength);
 
-int sfc_refine_partition_level(LB* lb, int* balanced_flag, int *amount_of_used_bits,
-			       int* bin_level, int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
+int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_used_bits,
+			       int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
 			       int sfc_keylength, int size_of_unsigned, unsigned imax, int wgt_dim,
 			       float* wgts_in_cut_ptr, float* work_percent_array,
 			       float* total_weight_array, float* global_actual_work_allocated,
-			       int* number_of_cuts, int* ll_bins_head);
+			       int number_of_cuts, int* max_cuts_in_bin, int* ll_bins_head);
 
 
 #endif /* _LB_SFC_H */

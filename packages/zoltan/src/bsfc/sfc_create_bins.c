@@ -78,10 +78,17 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   number_of_bins = pow(2,i);
   *amount_of_bits_used = amount_of_bits;
 
+  if(lb->Proc == 0)
+    printf("******** i'm using %d bits on the coarse bins\n",amount_of_bits);
+
   /*hash table */
   if(hashtable_divider<1) /* hashtable_divider must be >= 1 */
     hashtable_divider = 1;
   hashtable_length = number_of_bins/hashtable_divider + 1;  
+  if(lb->Proc==0)
+    printf("hashtable length is %d !!!!!!!!!!!!\n",hashtable_length);
+//  if(lb->Proc == 3)
+  //  hashtable_length = 2;
 
   sfc_hash_ptr = (SFC_HASH_OBJ_PTR *) LB_MALLOC(sizeof(SFC_HASH_OBJ_PTR) * hashtable_length);
   for(i=0;i<hashtable_length;i++)
@@ -96,7 +103,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
       array_location = LB_Hash(&(sfc_vert_ptr[i].my_bin), 1, hashtable_length);
       ierr = put_in_hashtable(sfc_hash_ptr, array_location, &(sfc_vert_ptr[i]),
-			      wgt_dim, &(objs_wgt[i*wgt_dim]));
+			      wgt_dim, (objs_wgt+i*wgt_dim));
       if(ierr != LB_OK) {
 	LB_PRINT_ERROR(lb->Proc, yo, "Zoltan error in put_in_hashtable function.");
 	return(ierr);
@@ -104,11 +111,11 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     }
     else {
       for(j=0;j<wgt_dim;j++)
-	binned_weight_array[(sfc_vert_ptr[i].my_bin % (2*bins_per_proc))*wgt_dim+j] +=
+	binned_weight_array[((sfc_vert_ptr[i].my_bin % (2*bins_per_proc))*wgt_dim)+j] +=
 	  objs_wgt[i*wgt_dim+j];
     }
   }
-    
+
   off_proc_objects = 0;
   for(i=0;i<hashtable_length;i++) {
     if(sfc_hash_ptr[i] != NULL) {
@@ -166,9 +173,10 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 	rcv_buffer[j].weight;
       
   }
-  for(i=0;i<2*bins_per_proc;i++)
-    printf("weight[%d] on proc %d is %e \n",i+lb->Proc*bins_per_proc*2,
-	   lb->Proc, binned_weight_array[i]);
+
+/*  for(i=0;i<2*bins_per_proc;i++)
+    printf("weight[%d] on proc %d is %e *************\n",i+lb->Proc*bins_per_proc*2,
+	   lb->Proc, binned_weight_array[i]);*/
 
   ierr = LB_Comm_Destroy(plan);
   *plan = NULL; 
@@ -178,6 +186,31 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   LB_FREE(&send_buffer);
   LB_FREE(&rcv_buffer);
   LB_FREE(&proclist);
+
+  /*debug stuff */
+  {
+    float* dbg1, *dbg2;
+    dbg1 = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc * bins_per_proc*2);
+    for(i=0;i<lb->Num_Proc * bins_per_proc*2;i++)
+      dbg1[i] = 0;
+    for(i=0;i<num_local_objects;i++) 
+      dbg1[sfc_vert_ptr[i].my_bin] += objs_wgt[i];
+    
+    dbg2 = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc * bins_per_proc*2);
+    
+    i = MPI_Allreduce(dbg1, dbg2, lb->Num_Proc * bins_per_proc*2, MPI_FLOAT, MPI_SUM, lb->Communicator);
+
+/*    if(lb->Proc==0)
+      for(i=0;i<lb->Num_Proc * bins_per_proc*2;i++)
+	printf("global sum wgt array: bin = %d wgt = %e\n",i, dbg2[i]);*/
+
+    LB_FREE(&dbg1);
+    LB_FREE(&dbg2);
+  }
+
+
+
+  /* done debug stuff */
 
   /* global distributed array has been created, now perform the scan operation on it */
   
@@ -201,6 +234,9 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   for(i=0;i<lb->Num_Proc;i++)
     extra_float_array[i] = 0.0;
   extra_float_array[lb->Proc] = my_work_percent;
+  /* make sure that proc 0 gets all of the rest of the work percent */
+  if(lb->Proc==0)
+    extra_float_array[lb->Proc] = 1.1;    
 
   ierr = MPI_Allreduce(extra_float_array, work_percent_array, 
 		       lb->Num_Proc, MPI_FLOAT, MPI_SUM, lb->Communicator);
@@ -208,10 +244,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   for(i=lb->Num_Proc-2;i>=0;i--)
     work_percent_array[i] += work_percent_array[i+1];
 
-  /* each processor needs to know which bins get partitioned into which processor */
-  bin_proc_array = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc); /* lists max bin that a processor should get */
-  for(i=0;i<lb->Num_Proc;i++)
-    bin_proc_array[i] = 0.;
+
   
   for(i=0;i<wgt_dim;i++)
     extra_float_array[i] = 0.;
@@ -233,13 +266,16 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   /* make scan start from proc(num_proc - 1) and finish at proc(0) */
   for(i=0;i<wgt_dim;i++) {
     scanned_work_prev_allocated[i] = total_weight_array[i] - scanned_work_prev_allocated[i];
-    printf("proc %d scanned_prev is %e my work is %e total is %e\n", lb->Proc, 
-	   scanned_work_prev_allocated[i], extra_float_array2[i], total_weight_array[i]);
+ /*   printf("proc %d scanned_prev is %e my work is %e total is %e\n", lb->Proc, 
+	   scanned_work_prev_allocated[i], extra_float_array2[i], total_weight_array[i]);*/
   }
   LB_FREE(&extra_float_array);
   LB_FREE(&extra_float_array2);
   
-
+  /* each processor needs to know which bins get partitioned into which processor */
+  bin_proc_array = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc); /* lists max bin that a processor should get */
+  for(i=0;i<lb->Num_Proc;i++)
+    bin_proc_array[i] = 2*number_of_bins;
 
   if(wgt_dim == 1) {
     current_proc = lb->Num_Proc-1;
@@ -274,7 +310,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   
   global_bin_proc_array = (int*) LB_MALLOC(sizeof(int)*lb->Num_Proc);
   ierr = MPI_Allreduce(bin_proc_array, global_bin_proc_array, lb->Num_Proc, MPI_INT, 
-		       MPI_MAX, lb->Communicator);
+		       MPI_MIN, lb->Communicator);
 
   LB_FREE(&bin_proc_array);
   if(lb->Proc == 0)
@@ -291,7 +327,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     while((int) sfc_vert_ptr[i].my_bin < global_bin_proc_array[j])
       j--;
     sfc_vert_ptr[i].destination_proc = j;
-    if(sfc_vert_ptr[i].my_bin != global_bin_proc_array[j])
+    if((int) sfc_vert_ptr[i].my_bin != global_bin_proc_array[j])
       sfc_vert_ptr[i].cut_bin_flag = SFC_NO_CUT;
     else
       sfc_vert_ptr[i].cut_bin_flag = SFC_CUT;
@@ -370,29 +406,28 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
   for(i=number_of_bins-1;i>=0;i--) {
     work_prev_allocated += binned_weight_array[i*wgt_dim];
     if(work_prev_allocated >= total_weight_array[0]*work_percent_array[current_loc]) {
+      actual_work_allocated[current_loc*wgt_dim] = work_prev_allocated;
       if(level_flag != SFC_COARSE_LEVEL_FLAG)
 	bin_proc_array[current_loc] = i;
       else
 	bin_proc_array[current_loc] = number_of_bins*(lb->Proc) + i;
-      actual_work_allocated[current_loc*wgt_dim] = work_prev_allocated;
       number_of_cuts2 = 1;
-      if(current_loc-number_of_cuts2 < 0)
-	printf("problem here !!!\n");
+    /*  if(current_loc-number_of_cuts2 < 0)
+	printf("problem here !!!\n"); */ 
       while(current_loc-number_of_cuts2 >=0 && work_prev_allocated > 
 	    total_weight_array[0]*work_percent_array[current_loc-number_of_cuts2] ) {
 	actual_work_allocated[(current_loc-number_of_cuts2)*wgt_dim] = work_prev_allocated;
 	number_of_cuts2++;
       }
-      current_loc--;
+      current_loc=current_loc-number_of_cuts2;
+    
+      if(*number_of_cuts < number_of_cuts2)
+	*number_of_cuts = number_of_cuts2;
     }
-    if(*number_of_cuts < number_of_cuts2)
-      *number_of_cuts = number_of_cuts2;
 
   }
-  /* make sure that on the coarse level partition, 
-     the last proc (proc 0) gets the rest of the work */
-  if(level_flag == SFC_COARSE_LEVEL_FLAG)
-    bin_proc_array[0] = -1;
+  /* make sure that the last bin gets the rest of the work */
+  bin_proc_array[0] = -1;
 
   return;
 
@@ -438,7 +473,12 @@ int put_in_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr, int array_location,
     while(extra_hash_ptr->next != NULL && extra_hash_ptr->id != sfc_vert_ptr->my_bin) 
       extra_hash_ptr = extra_hash_ptr->next;
 
-    if(extra_hash_ptr->next == NULL) {
+    if(extra_hash_ptr->id == sfc_vert_ptr->my_bin) {
+      for(i=0;i<wgt_dim;i++)
+	extra_hash_ptr->weight_ptr[i] += obj_wgt[i];
+    }      
+    
+    else {
       extra_hash_ptr->next = (SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
       extra_hash_ptr = extra_hash_ptr->next;
       extra_hash_ptr->id = sfc_vert_ptr->my_bin;
@@ -448,11 +488,6 @@ int put_in_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr, int array_location,
       for(i=0;i<wgt_dim;i++)
 	extra_hash_ptr->weight_ptr[i] = obj_wgt[i];
     }
-    else {
-      extra_hash_ptr = extra_hash_ptr->next;
-      for(i=0;i<wgt_dim;i++)
-	extra_hash_ptr->weight_ptr[i] += obj_wgt[i];
-    }      
   }
   
   return LB_OK;
