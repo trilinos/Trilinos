@@ -45,7 +45,8 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_PacketTraits.hpp \
-        $(srcdir)/Tpetra_Version.hpp
+  $(srcdir)/Tpetra_Version.hpp \
+	$(srcdir)/Tpetra_Util.hpp
 
 UTIL =
 
@@ -64,12 +65,14 @@ SERIAL_H = \
 
 SERIAL = 
 
-EXTRA_MPI_H =
+EXTRA_MPI_H = 
 
 EXTRA_MPI = 
 
 if HAVE_MPI 
 MPI_H = \
+	$(srcdir)/Tpetra_MpiPlatform.hpp \
+	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(EXTRA_MPI_H)
 MPI = \
 	$(EXTRA_MPI)

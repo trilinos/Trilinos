@@ -74,7 +74,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/Tpetra_config.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -119,6 +119,26 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
 DIST_SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
+	$(srcdir)/Tpetra_Platform.hpp $(srcdir)/Tpetra_Comm.hpp \
+	$(srcdir)/Tpetra_Distributor.hpp \
+	$(srcdir)/Tpetra_Directory.hpp $(srcdir)/Tpetra_ConfigDefs.hpp \
+	$(srcdir)/Tpetra_PacketTraits.hpp $(srcdir)/Tpetra_Version.hpp \
+	$(srcdir)/Tpetra_Util.hpp $(srcdir)/Tpetra_CombineMode.hpp \
+	$(srcdir)/Tpetra_SerialPlatform.hpp \
+	$(srcdir)/Tpetra_SerialComm.hpp \
+	$(srcdir)/Tpetra_SerialDistributor.hpp \
+	$(srcdir)/Tpetra_SerialDirectory.hpp \
+	$(srcdir)/Tpetra_ElementSpace.hpp \
+	$(srcdir)/Tpetra_ElementSpaceData.hpp \
+	$(srcdir)/Tpetra_BlockElementSpace.hpp \
+	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
+	$(srcdir)/Tpetra_VectorSpace.hpp \
+	$(srcdir)/Tpetra_VectorSpaceData.hpp \
+	$(srcdir)/Tpetra_Vector.hpp $(srcdir)/Tpetra_VectorData.hpp \
+	$(srcdir)/Tpetra_CisMatrix.hpp \
+	$(srcdir)/Tpetra_CisMatrixData.hpp \
+	$(srcdir)/Tpetra_MpiPlatform.hpp $(srcdir)/Tpetra_MpiComm.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -250,7 +270,8 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_PacketTraits.hpp \
-        $(srcdir)/Tpetra_Version.hpp
+  $(srcdir)/Tpetra_Version.hpp \
+	$(srcdir)/Tpetra_Util.hpp
 
 UTIL = 
 ENUM_H = \
@@ -269,6 +290,8 @@ EXTRA_MPI_H =
 EXTRA_MPI = 
 @HAVE_MPI_FALSE@MPI_H = 
 @HAVE_MPI_TRUE@MPI_H = \
+@HAVE_MPI_TRUE@	$(srcdir)/Tpetra_MpiPlatform.hpp \
+@HAVE_MPI_TRUE@	$(srcdir)/Tpetra_MpiComm.hpp \
 @HAVE_MPI_TRUE@	$(EXTRA_MPI_H)
 
 @HAVE_MPI_FALSE@MPI = 

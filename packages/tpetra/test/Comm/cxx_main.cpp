@@ -27,6 +27,7 @@
 // @HEADER
 
 #include <iostream>
+
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_Version.hpp"
 
