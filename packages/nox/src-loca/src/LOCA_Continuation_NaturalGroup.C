@@ -347,7 +347,7 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
   result_param = input_param;
 
   // If result_param = 0, just solve J*result_x = input_x
-  if (result_param = 0.0) {
+  if (result_param == 0.0) {
     res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params,
 								  input_x,
 								  result_x);
@@ -391,7 +391,7 @@ LOCA::Continuation::NaturalGroup::applyRightPreconditioning(NOX::Parameter::List
   result_param = input_param;
 
   // If result_param = 0, just solve J*result_x = input_x
-  if (result_param = 0.0) {
+  if (result_param == 0.0) {
     res = LOCA::Continuation::Group::grpPtr->applyRightPreconditioning(params,
 								       input_x,
 								       result_x);

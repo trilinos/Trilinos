@@ -163,7 +163,7 @@ LOCA::Abstract::Group::applyJacobianInverseNicDayMulti(
   NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
 
   for (int i=0; i<nVecs; i++) {
-    alphas[i] = JacApproxNullVec.dot(*(inputs[i]));
+    alphas[i] = JacApproxNullVec.dot(*(inputs[i]))/denom;
     tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
     tmpInputs[i]->update(-alphas[i], JacApproxNullVec, 1.0);
   }

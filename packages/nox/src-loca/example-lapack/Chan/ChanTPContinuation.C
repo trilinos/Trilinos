@@ -136,7 +136,7 @@ int main()
     searchParams.setParameter("Method", "Full Step");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-7, NOX::StatusTest::NormF::Scaled);
+    NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 

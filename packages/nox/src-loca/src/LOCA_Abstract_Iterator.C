@@ -92,15 +92,13 @@ LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Abstract::Iterator::run() 
 {
   iteratorStatus = start();
-  if (iteratorStatus == LOCA::Abstract::Iterator::Finished ||
-      iteratorStatus == LOCA::Abstract::Iterator::Failed)
+  if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
     return iteratorStatus;
 
   stepNumber++;
 
   iteratorStatus = iterate();
-  if (iteratorStatus == LOCA::Abstract::Iterator::Finished ||
-      iteratorStatus == LOCA::Abstract::Iterator::Failed)
+  if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
     return iteratorStatus;
 
   iteratorStatus = finish();

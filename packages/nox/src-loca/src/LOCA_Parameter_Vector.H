@@ -79,19 +79,19 @@ public:
   ParameterVector& operator=(const ParameterVector& y);
 
   //! Return a reference to the i-th element.  Will throw an error if index is out of range.
-  double& operator[] (int i);
+  double& operator[] (unsigned int i);
 
   //! Return a reference to the i-th element (no l-value type).  Will throw an error if index is out of range.
-  const double& operator[] (int i) const;
+  const double& operator[] (unsigned int i) const;
 
   //! Set the value of the parameter with index i.  Will throw an error if index is out of range.
-  void setValue(int i, double value);
+  void setValue(unsigned int i, double value);
 
   //! Set the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
   void setValue(string label, double value);
 
   //! Returns the value of the parameter with index i.  Will throw an error if index is out of range.
-  double getValue(int i) const;
+  double getValue(unsigned int i) const;
 
   //! Returns the value of the parameter with the corresponding label.  Will throw an error if "label" is not valid.
   double getValue(string label) const;
@@ -106,7 +106,7 @@ public:
   bool isParameter(string label) const;
 
   //! Returns the label of the parameter with index i.
-  string getLabel(int i) const;
+  string getLabel(unsigned int i) const;
 
   //! Returns the length of parameter vector.
   int length() const;

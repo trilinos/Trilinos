@@ -178,6 +178,12 @@ namespace LOCA {
     //! Flag indicating if this is the last step of continuation
     bool isLastStep;
 
+    //! Target parameter value for last step (either maxValue or minValue)
+    double targetValue;
+
+    //! Flag indicating if this is an extra step to hit target value
+    bool isTargetStep;
+
     //! Tangent factor
     double tangentFactor;
 

@@ -34,11 +34,11 @@
 
 PitchforkProblemInterface::PitchforkProblemInterface(int N, double a, 
 						     double b, double l)  : 
-  n(N),
   initialGuess(N),
   alpha(a),
   beta(b),
-  lambda(l)
+  lambda(l),
+  n(N)
 {
   for (int i=0; i<n; i++) 
     initialGuess(i) = lambda/alpha + 0.01;

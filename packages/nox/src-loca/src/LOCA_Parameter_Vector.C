@@ -116,9 +116,9 @@ LOCA::ParameterVector::operator=(const LOCA::ParameterVector& source)
 }
 
 double& 
-LOCA::ParameterVector::operator[] (int i)
+LOCA::ParameterVector::operator[] (unsigned int i)
 {
-  if ((i < 0) || (i >= x.size())) {
+  if (i >= x.size()) {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::operator[] - index is out "
 	   << "of range!" << endl;
@@ -129,9 +129,9 @@ LOCA::ParameterVector::operator[] (int i)
 }
 
 const double& 
-LOCA::ParameterVector::operator[] (int i) const
+LOCA::ParameterVector::operator[] (unsigned int i) const
 {
-  if ((i < 0) || (i >= x.size())) {
+  if (i >= x.size()) {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::operator[] const - index is "
 	   << "out of range!" << endl;
@@ -142,9 +142,9 @@ LOCA::ParameterVector::operator[] (int i) const
 }
 
 void 
-LOCA::ParameterVector::setValue(int i, double value)
+LOCA::ParameterVector::setValue(unsigned int i, double value)
 {
-  if ((i < 0) || (i >= x.size())) {
+  if (i >= x.size()) {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::setValue() - index is "
 	   << "out of range!" << endl;
@@ -176,9 +176,9 @@ LOCA::ParameterVector::setValue(string label, double value)
 }
 
 double 
-LOCA::ParameterVector::getValue(int i) const
+LOCA::ParameterVector::getValue(unsigned int i) const
 {
-  if ((i < 0) || (i >= x.size())) {
+  if (i >= x.size()) {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::getValue(int) - index is "
 	   << "out of range!" << endl;
@@ -238,7 +238,7 @@ LOCA::ParameterVector::isParameter(string label) const
 }
 
 string 
-LOCA::ParameterVector::getLabel(int i) const
+LOCA::ParameterVector::getLabel(unsigned int i) const
 {
   return l[i];
 }

@@ -62,12 +62,13 @@ LOCA::Stepper::Stepper(LOCA::Abstract::Group& initialGuess,
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
   statusTestPtr(NULL),
+  paramListPtr(NULL),
   solverPtr(NULL),
   predictorManagerPtr(NULL),
   curPredictorPtr(NULL),
   prevPredictorPtr(NULL),
-  stepSizeManagerPtr(NULL),
-  paramListPtr(NULL)
+  stepSizeManagerPtr(NULL)
+  
 {
   // Initialize the utilities
   Utils::setUtils(p.sublist("LOCA").sublist("Utilities"));
@@ -92,6 +93,8 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   stepSize(s.stepSize),
   maxNonlinearSteps(s.maxNonlinearSteps),
   isLastStep(s.isLastStep),
+  targetValue(s.targetValue),
+  isTargetStep(s.isTargetStep),
   tangentFactor(s.tangentFactor),
   minTangentFactor(s.minTangentFactor),
   tangentFactorExponent(s.tangentFactorExponent)
@@ -136,6 +139,10 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
   delete prevGroupPtr;
   delete curPredictorPtr;
   delete prevPredictorPtr;
+  delete conGroupManagerPtr;
+  delete predictorManagerPtr;
+  delete stepSizeManagerPtr;
+  delete solverPtr;
 
   statusTestPtr = &t;
   paramListPtr = &p;
@@ -188,6 +195,8 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
   maxNonlinearSteps = stepperList.getParameter("Max Nonlinear Iterations", 15);
 
   isLastStep = false;
+  targetValue = 0.0;
+  isTargetStep = false;
   tangentFactor = 1.0;
   minTangentFactor = stepperList.getParameter("Min Tangent Factor",0.1);
   tangentFactorExponent = 
@@ -260,9 +269,91 @@ LOCA::Stepper::start() {
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::finish()
 {
+
+  //
+  // We don't need to check if the last step was successful since finish
+  // is never called if it wasn't.  We might want to change that if there is
+  // some post processing we want to do even if the run failed.
+  //
+
   // Get last solution
   *curGroupPtr 
     = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
+
+  // Do one additional step using natural continuation to hit target value
+  double value = curGroupPtr->getContinuationParameter();
+
+  if (abs(value-targetValue) > 1.0e-15*(1.0 + targetValue)) {
+
+    isTargetStep = true;
+
+    // Save previous successful step information
+    *prevGroupPtr = *curGroupPtr;
+
+    // Get underyling solution group
+    LOCA::Abstract::Group* underlyingGroupPtr 
+      = dynamic_cast<LOCA::Abstract::Group*>(getSolutionGroup().clone());
+
+    // Make a copy of the parameter list, change continuation method to 
+    // natural, predictor method to constant
+    NOX::Parameter::List lastStepParams(*paramListPtr);
+    NOX::Parameter::List& lastStepperParams 
+      = lastStepParams.sublist("LOCA").sublist("Stepper");
+    lastStepperParams.setParameter("Continuation Method", "Natural");
+    lastStepperParams.sublist("Predictor").setParameter("Method", "Random");
+
+    // Reset continuation manager
+    //conGroupManagerPtr->reset(lastStepperParams);
+    delete conGroupManagerPtr;
+    conGroupManagerPtr = new LOCA::Continuation::Manager(lastStepperParams);
+
+    // Reset predictor manager
+    predictorManagerPtr->reset(lastStepperParams.sublist("Predictor"));
+
+    // Get new continuation group
+    delete curGroupPtr;
+
+    curGroupPtr = conGroupManagerPtr->createContinuationGroup(*underlyingGroupPtr, lastStepParams.sublist("NOX").sublist("Direction").sublist("Linear Solver"));
+
+    delete underlyingGroupPtr;
+
+    // Set step size
+    stepSize = targetValue - value;
+    curGroupPtr->setStepSize(stepSize);
+
+    // Get predictor direction
+    predictorManagerPtr->compute(*curGroupPtr, *curGroupPtr, *curPredictorPtr);
+
+    // Set previous solution vector in current solution group
+    curGroupPtr->setPrevX(curGroupPtr->getX());
+
+    // Take step in predictor direction
+    curGroupPtr->computeX(*curGroupPtr, *curPredictorPtr, stepSize);
+
+    printStartStep();
+
+    // Create new solver
+    delete solverPtr;
+    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+					 lastStepParams.sublist("NOX"));
+
+    // Solve step
+    NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
+
+    // Get solution
+    *curGroupPtr 
+      = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
+
+    if (solverStatus == NOX::StatusTest::Failed) {
+      printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
+      return LOCA::Abstract::Iterator::Failed;
+    }
+
+    printEndStep(LOCA::Abstract::Iterator::Successful);
+
+    curGroupPtr->printSolution();
+
+  }
 
   return LOCA::Abstract::Iterator::Finished;
 }
@@ -334,7 +425,7 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
 
-  if (getStepNumber() > 0) {
+  if (getStepNumber() > 1) {
     //tangentFactor = curPredictorPtr->dot(*prevPredictorPtr) 
     //  / (curPredictorPtr->norm() * prevPredictorPtr->norm());
 
@@ -364,16 +455,19 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     
     double value = curGroupPtr->getContinuationParameter();
+    double paramStep = value - prevGroupPtr->getContinuationParameter();
 
     // See if we went past bounds for parameter
-    if ( value >= maxValue*(1.0 - 1.0e-15)) {
+    if ( value >= maxValue*(1.0 - 1.0e-15) && paramStep > 0 ) {
       cout << "\n\tContinuation run stopping: parameter reached bound of "
            << maxValue << endl;
+      targetValue = maxValue;
       return LOCA::Abstract::Iterator::Finished;
     }
-    if ( value <= minValue*(1.0 + 1.0e-15) ) {
+    if ( value <= minValue*(1.0 + 1.0e-15) && paramStep < 0 ) {
       cout << "\n\tContinuation run stopping: parameter reached bound of "
            << minValue << endl;
+      targetValue = minValue;
       return LOCA::Abstract::Iterator::Finished;
     }
 
@@ -415,10 +509,12 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
   double dpds = curPredictorPtr->getParam();
   if ( (prevValue+stepSize*dpds > maxValue*(1.0 - 1.0e-15)) ) {
     stepSize = (maxValue - prevValue)/dpds;
+    targetValue = maxValue;
     isLastStep = true;
   }
   if ( (prevValue+stepSize*dpds < minValue*(1.0 + 1.0e-15)) ) {
     stepSize = (minValue - prevValue)/dpds;
+    targetValue = minValue;
     isLastStep = true;
   }
 
@@ -461,6 +557,9 @@ LOCA::Stepper::printStartStep()
     cout << "Start of Continuation Step " << stepNumber << endl;
     if (stepNumber==0) {
       cout << "Attempting to converge initial guess at initial parameter values." << endl;
+    }
+    else if (isTargetStep) {
+      cout << "Attempting to hit final target value " << targetValue << endl;
     }
     else {
       cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;

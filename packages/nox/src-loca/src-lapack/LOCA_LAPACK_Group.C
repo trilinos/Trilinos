@@ -108,8 +108,6 @@ LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** outputs, int nVecs) const
 {
-  NOX::Abstract::Group::ReturnType res;
-
   if (nVecs < 1)
     return NOX::Abstract::Group::Failed;
 

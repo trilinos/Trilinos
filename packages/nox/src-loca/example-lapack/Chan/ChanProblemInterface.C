@@ -34,11 +34,11 @@
 
 ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
 					   double s)  : 
-  n(N),
   initialGuess(N),
   alpha(a),
   beta(b),
-  scale(s)
+  scale(s),
+  n(N)
 {
   for (int i=0; i<n; i++) 
     initialGuess(i) = 

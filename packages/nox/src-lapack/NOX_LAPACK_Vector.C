@@ -67,7 +67,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(const NOX::LAPACK::Vector&
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::init(double value)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = value;
   return *this;
 }
@@ -77,7 +77,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, double seed)
   if (useSeed)
     urand.setSeed(seed);
 
-  for (int i = 0; i < x.size(); i ++) 
+  for (unsigned int i = 0; i < x.size(); i ++) 
     x[i] = urand();
 
   return *this;
@@ -90,7 +90,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(const NOX::Abstract::Vector& bas
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(const NOX::LAPACK::Vector& base)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = fabs(base[i]);
   return *this;
 }
@@ -102,14 +102,14 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(const NOX::Abstract::Vect
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(const NOX::LAPACK::Vector& base)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = 1.0 / base[i];
   return *this;
 }
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(double alpha)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] *= alpha;
   return *this;
 }
@@ -123,7 +123,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::Abst
 NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::LAPACK::Vector& a, 
 						   double gamma)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = alpha * a[i] + gamma * x[i];
   return *this;
 }
@@ -140,7 +140,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::LAPA
 						   double beta, const NOX::LAPACK::Vector& b,
 						   double gamma)
 {
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = alpha * a[i] + beta * b[i] + gamma * x[i];
   return *this;
 }
@@ -152,7 +152,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::Abstract::Vector& a
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::LAPACK::Vector& a)
 {  
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = a[i] * x[i];
   return *this;
 }
@@ -259,7 +259,7 @@ const double& NOX::LAPACK::Vector::operator() (int i) const
 ostream& NOX::LAPACK::Vector::leftshift(ostream& stream) const
 {
   stream << "[ ";
-  for (int i = 0; i < x.size(); i ++)
+  for (unsigned int i = 0; i < x.size(); i ++)
     stream << x[i] << " ";
   stream << "]";
   return stream;

@@ -275,7 +275,6 @@ LOCA::Bifurcation::PitchforkBordGroup::computeF()
   const NOX::Abstract::Vector& x_x = pfXVec.getXVec();
   const NOX::Abstract::Vector& x_null = pfXVec.getNullVec();
   double x_slack = pfXVec.getSlackVar();
-  double x_param = pfXVec.getBifParam();
 
   NOX::Abstract::Vector& f_x = pfFVec.getXVec();
   NOX::Abstract::Vector& f_null = pfFVec.getNullVec();
@@ -393,9 +392,6 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
   // Temporary vector
   NOX::Abstract::Vector *tmp = input_null.clone(NOX::ShapeCopy);
 
-  // Value of bifurcation parameter
-  double bifParam = getBifParam();
-
   // Return value
   NOX::Abstract::Group::ReturnType res;
 
@@ -405,8 +401,8 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
     return res;
 
   // compute J*x + sigma*psi + p*dR/dp
-  result_x.update(bifParam, *derivResidualParamPtr, input_slack, *asymVecPtr,
-		  1.0);
+  result_x.update(input_param, *derivResidualParamPtr, input_slack, 
+		  *asymVecPtr, 1.0);
 
   // compute J*y
   res = grpPtr->applyJacobian(input_null, result_null);
@@ -414,7 +410,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
     return res;
 
   // compute J*y + p*dJy/dp
-  result_null.update(bifParam, *derivNullResidualParamPtr, 1.0);
+  result_null.update(input_param, *derivNullResidualParamPtr, 1.0);
 
   // compute (dJy/dx)*x
   res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), input_x, 

@@ -125,8 +125,8 @@ int main()
 			       NOX::Utils::Warning +
 			       NOX::Utils::Error);
 
-    NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
+    //NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+    //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
 
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);

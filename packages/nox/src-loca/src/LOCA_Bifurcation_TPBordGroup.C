@@ -362,9 +362,6 @@ LOCA::Bifurcation::TPBordGroup::applyJacobian(const NOX::Abstract::Vector& input
   // Temporary vector
   NOX::Abstract::Vector *tmp = input_null.clone(NOX::ShapeCopy);
 
-  // Value of bifurcation parameter
-  double bifParam = getBifParam();
-
   // Return value
   NOX::Abstract::Group::ReturnType res;
 
@@ -374,7 +371,7 @@ LOCA::Bifurcation::TPBordGroup::applyJacobian(const NOX::Abstract::Vector& input
     return res;
 
   // compute J*x + p*dR/dp
-  result_x.update(bifParam, *derivResidualParamPtr, 1.0);
+  result_x.update(input_param, *derivResidualParamPtr, 1.0);
 
   // compute J*y
   res = grpPtr->applyJacobian(input_null, result_null);
@@ -382,7 +379,7 @@ LOCA::Bifurcation::TPBordGroup::applyJacobian(const NOX::Abstract::Vector& input
     return res;
 
   // compute J*y + p*dJy/dp
-  result_null.update(bifParam, *derivNullResidualParamPtr, 1.0);
+  result_null.update(input_param, *derivNullResidualParamPtr, 1.0);
 
   // compute (dJy/dx)*x
   res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), input_x, 

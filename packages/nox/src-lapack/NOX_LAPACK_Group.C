@@ -38,8 +38,8 @@
 NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   xVector(interface.getInitialGuess()),	// deep copy      
   fVector(xVector, ShapeCopy),	// new vector of same size
-  gradientVector(xVector, ShapeCopy),   // new vector of same size
   newtonVector(xVector, ShapeCopy),	// new vector of same size
+  gradientVector(xVector, ShapeCopy),   // new vector of same size
   jacobianMatrix(xVector.length(), xVector.length()),	// create a Jacobian matrix
   jacobianLUFact(xVector.length(), xVector.length()),   // create factorization of Jacobian matrix
   pivots(xVector.length(),0),  // create array of pivots
@@ -51,9 +51,9 @@ NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
 
 NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) :
   xVector(source.xVector, type), 
-  fVector(source.fVector, type), 
-  gradientVector(source.gradientVector, type), 
+  fVector(source.fVector, type),  
   newtonVector(source.newtonVector, type),
+  gradientVector(source.gradientVector, type),
   jacobianMatrix(source.jacobianMatrix, type),   
   jacobianLUFact(source.jacobianLUFact, type),
   pivots(source.pivots),
