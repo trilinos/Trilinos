@@ -1,0 +1,24 @@
+#!/bin/sh
+
+\rm -f capper /tmp/undefs /tmp/undefs2 /tmp/thedefs
+cc -o capper capper.c
+pwd
+$1 -I ../Obj -c lapack_driver.c
+$2 lapack_driver.o $3 2> /tmp/undefs
+cat /tmp/undefs |  grep reference | sed "s/^.*: //" > /tmp/undefs2
+tt=`grep MLFORTRAN lapack_driver.c | grep void | sed "s/^.*MLFORTRAN(//"| \
+   sed "s/).*//"`
+echo $tt
+for i in $tt
+do
+bb=`grep -i $i /tmp/undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
+echo $i $bb
+if test $bb -eq 0
+then
+NAME=`echo $i | capper`
+${echo} "\\" >> /tmp/thedefs
+${echo} -n "-DML_${NAME}_FUNC ">> /tmp/thedefs
+fi
+done
+${echo} >> /tmp/thedefs
+

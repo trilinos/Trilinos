@@ -1,0 +1,65 @@
+#!/bin/sh
+
+#
+#  Aztec but no superlu
+#
+etc/clean_all
+cd Obj
+make clean
+cd ..
+./installer<<END
+PCLINUX
+no
+no
+no
+yes
+
+no
+yes
+no
+yes
+no
+no
+END
+
+#
+#  Aztec with superlu
+#
+etc/clean_all
+cd Obj
+make clean
+cd ..
+./installer<<END
+PCLINUX
+no
+no
+no
+yes
+
+no
+yes
+yes
+
+yes
+no
+no
+END
+
+#
+#  no Aztec no superlu
+#
+etc/clean_all
+cd Obj
+make clean
+cd ..
+./installer<<END
+PCLINUX
+no
+no
+no
+no
+no
+no
+no
+no
+END
