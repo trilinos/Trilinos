@@ -35,6 +35,8 @@
 #endif
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_LinearProblem.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
