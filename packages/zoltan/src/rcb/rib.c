@@ -365,20 +365,24 @@ static int rib_fn(
     for (i = 0; i < dotnum; i++) {
       wgts[i] = dotpt[i].Weight;
     }
-    if (old_nprocs > 1)      /* for Tflops_Special */
-    switch (rib->Num_Geom) {
-       case 3:
-          ierr = LB_inertial3d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
-                               local_comm, proc, old_nprocs, proclower);
-          break;
-       case 2:
-          ierr = LB_inertial2d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
-                               local_comm, proc, old_nprocs, proclower);
-          break;
-       case 1:
-          ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
-          break;
+    if (old_nprocs > 1) {    /* for Tflops_Special */
+       switch (rib->Num_Geom) {
+          case 3:
+             ierr = LB_inertial3d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
+                                  local_comm, proc, old_nprocs, proclower);
+             break;
+          case 2:
+             ierr = LB_inertial2d(lb, dotpt, dotnum, wgtflag, cm, evec, value,
+                                  local_comm, proc, old_nprocs, proclower);
+             break;
+          case 1:
+             ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
+             break;
+       }
     }
+    else                      /* For Tflops_Special initialize value */
+       for (i = 0; i < dotmax; i++)
+          value[i] = 0.0;
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
       time2 = LB_Time(lb->Timer);
