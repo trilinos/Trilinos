@@ -469,16 +469,8 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
     prob->read_coord = 1;
     prob->gen_graph = 0;
   }
-  else if (strcasecmp(prob->method, "PARMETIS_PART") == 0) {
-    prob->read_coord = 0;
-    prob->gen_graph = 1;
-  }
-  else if (strcasecmp(prob->method, "PARMETIS_REPART") == 0) {
-    prob->read_coord = 0;
-    prob->gen_graph = 1;
-  }
-  else if (strcasecmp(prob->method, "PARMETIS_REFINE") == 0) {
-    prob->read_coord = 0;
+  else if (strcasecmp(prob->method, "PARMETIS") == 0) {
+    prob->read_coord = 0; /* Check param to decide whether to read coords. */
     prob->gen_graph = 1;
   }
   /*

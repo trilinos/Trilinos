@@ -77,9 +77,7 @@ typedef enum LB_Method {
   RCB,
   OCTPART,
   WHEAT,
-  PARMETIS_PART,
-  PARMETIS_REPART,
-  PARMETIS_REFINE,
+  PARMETIS,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
@@ -271,7 +269,7 @@ struct LB_Struct {
 extern LB_FN LB_rcb;
 extern LB_FN lb_wheat;
 extern LB_FN LB_octpart;
-extern LB_FN LB_ParMetis_Part;
+extern LB_FN LB_ParMetis;
 
 #include "par_const.h"
 
