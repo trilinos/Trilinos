@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_PRERELEASE
+
 #include "NOX_LineSearch_Secant.H"
 
 #include "NOX_Common.H"
@@ -146,3 +148,4 @@ bool Secant::compute(Abstract::Group& newgrp,
   return true;
 }
 
+#endif

@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_PRERELEASE
+
 #ifndef SOLVER_NONLINEARCG_H
 #define SOLVER_NONLINEARCG_H
 
@@ -161,4 +163,4 @@ private:
 } // namespace NOX
 
 #endif
-
+#endif

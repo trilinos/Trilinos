@@ -78,9 +78,12 @@ nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
+	$(srcdir)/NOX_LineSearch_Secant.H \
+	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
 	$(srcdir)/NOX_Direction_Broyden.H \
-	$(srcdir)/NOX_Direction_ModifiedNewton.H
+	$(srcdir)/NOX_Direction_ModifiedNewton.H 
+
 
 nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_Tensor.C \
@@ -88,9 +91,11 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
+	$(srcdir)/NOX_LineSearch_Secant.C \
+	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
 	$(srcdir)/NOX_Direction_Broyden.C \
-	$(srcdir)/NOX_Direction_ModifiedNewton.C
+	$(srcdir)/NOX_Direction_ModifiedNewton.C 
 
 endif
 
@@ -138,8 +143,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
-	$(srcdir)/NOX_LineSearch_Polynomial.H \
-	$(srcdir)/NOX_LineSearch_Secant.H 
+	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
@@ -149,21 +153,18 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
-	$(srcdir)/NOX_LineSearch_Polynomial.C \
-	$(srcdir)/NOX_LineSearch_Secant.C 
+	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 PARAMETER_H = \

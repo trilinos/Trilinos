@@ -34,11 +34,11 @@
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Direction_Newton.H"
-#include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
 #include "NOX_Parameter_DirectionConstructor.H"
 
 #ifdef WITH_PRERELEASE
+#include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_Tensor.H"
 #include "NOX_Direction_ModifiedNewton.H"
 #include "NOX_Direction_QuasiNewton.H"
@@ -83,11 +83,11 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
   
   if (method == "Newton")
     ptr = new Newton(utils, params);
-  else if (method == "NonlinearCG")
-    ptr = new NonlinearCG(utils, params);
   else if (method == "Steepest Descent")
     ptr = new SteepestDescent(utils, params);
 #ifdef WITH_PRERELEASE
+  else if (method == "NonlinearCG")
+    ptr = new NonlinearCG(utils, params);
   else if (method == "Tensor")
     ptr = new Tensor(utils, params);
   else if (method == "Modified-Newton")

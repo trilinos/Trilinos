@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_PRERELEASE
+
 #ifndef NOX_LINESEARCH_SECANT_H
 #define NOX_LINESEARCH_SECANT_H
 
@@ -122,4 +124,5 @@ private:
 };
 } // namespace LineSearch
 } // namespace NOX
+#endif
 #endif

@@ -43,8 +43,8 @@
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
 #include "NOX_LineSearch_MoreThuente.H"
-#include "NOX_LineSearch_Secant.H"
 #ifdef WITH_PRERELEASE
+#include "NOX_LineSearch_Secant.H"
 #include "NOX_LineSearch_Quadratic.H"
 #include "NOX_LineSearch_PolynomialWalker.H"
 #include "NOX_LineSearch_MoreThuente2.H"
@@ -85,9 +85,9 @@ bool NOX::LineSearch::Manager::reset(Parameter::List& params)
     ptr = new Polynomial(utils, params);
   else if (method == "More'-Thuente")
     ptr = new MoreThuente(utils, params);
+#ifdef WITH_PRERELEASE
   else if (method == "Secant")
     ptr = new Secant(utils, params);
-#ifdef WITH_PRERELEASE
   else if (method == "Quadratic")
     ptr = new Quadratic(utils, params);
   else if (method == "PolynomialWalker")

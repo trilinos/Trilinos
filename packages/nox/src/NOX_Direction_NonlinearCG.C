@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_PRERELEASE
+
 #include "NOX_Direction_NonlinearCG.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -204,3 +206,4 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   return (ok == Abstract::Group::Ok);
 }
 
+#endif
