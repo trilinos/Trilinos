@@ -100,6 +100,10 @@ int main()
     predictorList.setParameter("Method", "Tangent");
     //predictorList.setParameter("Method", "Secant");
 
+    NOX::Parameter::List& firstStepPredictorList = 
+      predictorList.sublist("First Step Predictor");
+    firstStepPredictorList.setParameter("Method", "Constant");
+
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
     //stepSizeList.setParameter("Method", "Constant");

@@ -155,11 +155,11 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
   nlPrintParams.setParameter("MyPID", MyPID); 
   nlPrintParams.setParameter("Output Information", 
-			     //NOX::Utils::OuterIteration + 
-			     //NOX::Utils::OuterIterationStatusTest + 
-			     //NOX::Utils::InnerIteration +
+			     NOX::Utils::OuterIteration + 
+			     NOX::Utils::OuterIterationStatusTest + 
+			     NOX::Utils::InnerIteration +
 			     //NOX::Utils::Parameters + 
-			     //NOX::Utils::Details + 
+			     NOX::Utils::Details + 
 			     NOX::Utils::Warning);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 100);  
   lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 0);    
+  lsParams.setParameter("Output Frequency", 50);    
   lsParams.setParameter("Scaling", "None");             
   //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   

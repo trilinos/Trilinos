@@ -105,12 +105,14 @@ int main()
 
     NOX::Parameter::List& firstStepPredictor 
       = predictorList.sublist("First Step Predictor");
-    firstStepPredictor.setParameter("Method", "Random");
+    //firstStepPredictor.setParameter("Method", "Random");
+    firstStepPredictor.setParameter("Method", "Constant");
     firstStepPredictor.setParameter("Epsilon", 1.0e-3);
 
     NOX::Parameter::List& lastStepPredictor 
       = predictorList.sublist("Last Step Predictor");
-    lastStepPredictor.setParameter("Method", "Random");
+    //lastStepPredictor.setParameter("Method", "Random");
+    lastStepPredictor.setParameter("Method", "Constant");
     lastStepPredictor.setParameter("Epsilon", 1.0e-3);
 
     // Create step size sublist
@@ -131,6 +133,7 @@ int main()
 			       LOCA::Utils::StepperDetails +
 			       LOCA::Utils::Solver +
 			       LOCA::Utils::SolverDetails);
+    locaUtilsList.setParameter("Output Precision", 10);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = paramList.sublist("NOX");
@@ -138,12 +141,13 @@ int main()
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			       //NOX::Utils::OuterIteration + 
-			       //NOX::Utils::OuterIterationStatusTest + 
+			       NOX::Utils::OuterIteration + 
+			       NOX::Utils::OuterIterationStatusTest + 
 			       //NOX::Utils::InnerIteration +
 			       //NOX::Utils::Parameters +
 			       //NOX::Utils::Details + 
 			       NOX::Utils::Warning);
+    nlPrintParams.setParameter("Output Precision", 10);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
