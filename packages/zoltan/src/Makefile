@@ -31,7 +31,7 @@
 #    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
 ##############################################################################
 
-TARGET=zdrive
+TARGET=zdrive 
 LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
                          # in Utilities/Makefile
 LIB_TARGET=zoltan
