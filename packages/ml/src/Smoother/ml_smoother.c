@@ -7021,6 +7021,12 @@ double tmp;
    deg    = widget->mlsDeg;
    if (deg == 0) return 0;
 
+   /* This is meant for the case when the matrix is the identity.*/
+   if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
+     for (i = 0; i < Amat->outvec_leng; i++) x[i] = rhs[k];
+     return 0;
+   }
+
    pAux  = (double *) ML_allocate((n+1)*sizeof(double));
    dk     = (double *) ML_allocate((n+1)*sizeof(double));
 
