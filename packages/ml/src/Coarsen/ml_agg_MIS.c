@@ -825,7 +825,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 #endif /* ifndef MAXWELL */
       else                  { j = i              ; k = i+vertex_offset;}
       if (aggr_index[j] >= 0)
-         fprintf(fp,"%d %d\n",k, aggr_index[j]+agg_offset);
+         fprintf(fp,"%5d %5d\n",k, aggr_index[j]+agg_offset);
    }
 
    dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
@@ -847,7 +847,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 
       else                 { j = i+nvertices    ; k = (int) dtemp[i+nvertices];}
       if (aggr_index[j] >= 0)
-         fprintf(fp,"%d %d\n", k, aggr_index[j]+agg_offset);
+         fprintf(fp,"%5d %5d\n", k, aggr_index[j]+agg_offset);
    }
    fclose(fp);
    level_count++;
@@ -1606,8 +1606,10 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 
    dtemp = (double *) ML_allocate(sizeof(double)*(*Pmatrix)->invec_leng);
    d2temp = (double *) ML_allocate(sizeof(double)*(*Pmatrix)->outvec_leng);
+   for (i = 0; i < (*Pmatrix)->outvec_leng; i++) d2temp[i] = 0.;
    for (i = 0; i < (*Pmatrix)->invec_leng; i++)
       dtemp[i] = (double) (i+agg_offset);
+
    sprintf(fname,"PP%d_%d",comm->ML_mypid,level_count);
    fp = fopen(fname,"w");
    ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp, 
@@ -1644,7 +1646,6 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    */
 
 #endif
-
    return Ncoarse*nullspace_dim;
 }
 #include "ml_ggraph.h"
