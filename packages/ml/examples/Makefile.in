@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_MultiLevelOperator_SOURCES) $(ml_example_MultiLevelPreconditioner_SOURCES) $(ml_example_MultiLevelPreconditioner_2level_SOURCES) $(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) $(ml_example_MultiLevelPreconditioner_analyze_SOURCES) $(ml_example_MultiLevelPreconditioner_filtering_SOURCES) $(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) $(ml_example_MultiLevelPreconditioner_vbr_SOURCES) $(ml_example_MultiLevelPreconditioner_viz_SOURCES) $(ml_example_elasticity_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) $(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) $(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -57,15 +57,15 @@ host_triplet = @host@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_2level$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelOperator$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_filtering$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_vbr$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
@@ -83,15 +83,15 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_2level$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelOperator$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_filtering$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_vbr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
@@ -108,22 +108,22 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_2level$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelOperator$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_filtering$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_vbr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
 EXTRA_PROGRAMS = ml_read_maxwell$(EXEEXT) mlguide_par$(EXEEXT)
 subdir = examples
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -154,9 +154,10 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
-@ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
-ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
+am__ml_2level_DD_SOURCES_DIST = $(srcdir)/ml_2level_DD.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_2level_DD_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_2level_DD-ml_2level_DD.$(OBJEXT)
+ml_2level_DD_OBJECTS = $(am_ml_2level_DD_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
 @ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
@@ -184,6 +185,29 @@ am__DEPENDENCIES_8 =
 @ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
 @ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
 @ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8)
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_AztecMsr_SOURCES_DIST = $(srcdir)/ml_AztecMsr.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_AztecMsr_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr-ml_AztecMsr.$(OBJEXT)
+ml_AztecMsr_OBJECTS = $(am_ml_AztecMsr_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_EpetraVbr_SOURCES_DIST = $(srcdir)/ml_EpetraVbr.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_EpetraVbr_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr-ml_EpetraVbr.$(OBJEXT)
+ml_EpetraVbr_OBJECTS = $(am_ml_EpetraVbr_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_analyze_SOURCES_DIST = $(srcdir)/ml_analyze.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_analyze_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_analyze-ml_analyze.$(OBJEXT)
+ml_analyze_OBJECTS = $(am_ml_analyze_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_analyze_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
+@ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
+ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example1d_SOURCES_DIST = $(srcdir)/ml_example1d.c
@@ -209,79 +233,39 @@ am__ml_example3d_SOURCES_DIST = $(srcdir)/ml_example3d.c
 ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example3d_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelOperator_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelOperator.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelOperator_OBJECTS = ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.$(OBJEXT)
-ml_example_MultiLevelOperator_OBJECTS =  \
-	$(am_ml_example_MultiLevelOperator_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_OBJECTS = ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_2level_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_2level_OBJECTS = ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_2level_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_2level_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS = ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_analyze_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_analyze_OBJECTS = ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_analyze_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_analyze_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_filtering_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_filtering_OBJECTS = ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_filtering_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_filtering_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_maxwell_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_maxwell_OBJECTS = ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_maxwell_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_maxwell_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_vbr_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_vbr_OBJECTS = ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_vbr_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_vbr_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_MultiLevelPreconditioner_viz_SOURCES_DIST =  \
-	$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_viz_OBJECTS = ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.$(OBJEXT)
-ml_example_MultiLevelPreconditioner_viz_OBJECTS =  \
-	$(am_ml_example_MultiLevelPreconditioner_viz_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_elasticity_SOURCES_DIST =  \
 	$(srcdir)/ml_example_elasticity.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example_elasticity_OBJECTS = ml_example_elasticity-ml_example_elasticity.$(OBJEXT)
 ml_example_elasticity_OBJECTS = $(am_ml_example_elasticity_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_elasticity_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_filtering_SOURCES_DIST = $(srcdir)/ml_filtering.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_filtering_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_filtering-ml_filtering.$(OBJEXT)
+ml_filtering_OBJECTS = $(am_ml_filtering_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_filtering_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_maxwell_SOURCES_DIST = $(srcdir)/ml_maxwell.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_maxwell_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_maxwell-ml_maxwell.$(OBJEXT)
+ml_maxwell_OBJECTS = $(am_ml_maxwell_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_multiple_rhs_SOURCES_DIST = $(srcdir)/ml_multiple_rhs.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_multiple_rhs_OBJECTS = ml_multiple_rhs-ml_multiple_rhs.$(OBJEXT)
 ml_multiple_rhs_OBJECTS = $(am_ml_multiple_rhs_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_operator_SOURCES_DIST = $(srcdir)/ml_operator.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_operator_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_operator-ml_operator.$(OBJEXT)
+ml_operator_OBJECTS = $(am_ml_operator_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_operator_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_preconditioner_SOURCES_DIST = $(srcdir)/ml_preconditioner.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_preconditioner_OBJECTS = ml_preconditioner-ml_preconditioner.$(OBJEXT)
+ml_preconditioner_OBJECTS = $(am_ml_preconditioner_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_read_elas_SOURCES_DIST = $(srcdir)/ml_read_elas.c
 @ML_STANDALONE_MODE_FALSE@am_ml_read_elas_OBJECTS =  \
@@ -321,6 +305,10 @@ am__ml_simple_max_SOURCES_DIST = $(srcdir)/ml_simple_max.c
 ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_simple_max_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_viz_SOURCES_DIST = $(srcdir)/ml_viz.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_viz_OBJECTS = ml_viz-ml_viz.$(OBJEXT)
+ml_viz_OBJECTS = $(am_ml_viz_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_viz_DEPENDENCIES = $(am__DEPENDENCIES_9)
 am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
 mlguide_OBJECTS = $(am_mlguide_OBJECTS)
 mlguide_DEPENDENCIES = $(am__DEPENDENCIES_9)
@@ -330,23 +318,21 @@ mlguide_par_DEPENDENCIES = $(am__DEPENDENCIES_9)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_analyze-ml_analyze.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1d-ml_example1d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_filtering-ml_filtering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_maxwell-ml_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_operator-ml_operator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
@@ -354,6 +340,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_viz-ml_viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -365,47 +352,40 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) \
+SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) \
+	$(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) \
+	$(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
-	$(ml_example3d_SOURCES) \
-	$(ml_example_MultiLevelOperator_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_2level_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_analyze_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_filtering_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_vbr_SOURCES) \
-	$(ml_example_MultiLevelPreconditioner_viz_SOURCES) \
-	$(ml_example_elasticity_SOURCES) $(ml_multiple_rhs_SOURCES) \
-	$(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) \
-	$(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) \
-	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
-	$(ml_simple_max_SOURCES) $(mlguide_SOURCES) \
-	$(mlguide_par_SOURCES)
-DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
+	$(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) \
+	$(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) \
+	$(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) \
+	$(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) \
+	$(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) \
+	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
+	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
+	$(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+DIST_SOURCES = $(am__ml_2level_DD_SOURCES_DIST) \
+	$(am__ml_AztecMsr_SOURCES_DIST) \
+	$(am__ml_EpetraVbr_SOURCES_DIST) \
+	$(am__ml_analyze_SOURCES_DIST) \
+	$(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_example1d_SOURCES_DIST) \
 	$(am__ml_example1dGS_SOURCES_DIST) \
 	$(am__ml_example2d_SOURCES_DIST) \
 	$(am__ml_example3d_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelOperator_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_2level_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_analyze_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_filtering_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_maxwell_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_vbr_SOURCES_DIST) \
-	$(am__ml_example_MultiLevelPreconditioner_viz_SOURCES_DIST) \
 	$(am__ml_example_elasticity_SOURCES_DIST) \
+	$(am__ml_filtering_SOURCES_DIST) \
+	$(am__ml_maxwell_SOURCES_DIST) \
 	$(am__ml_multiple_rhs_SOURCES_DIST) \
+	$(am__ml_operator_SOURCES_DIST) \
+	$(am__ml_preconditioner_SOURCES_DIST) \
 	$(am__ml_read_elas_SOURCES_DIST) \
 	$(am__ml_read_matrix_AIJ_SOURCES_DIST) \
 	$(am__ml_read_maxwell_SOURCES_DIST) \
 	$(am__ml_read_salsa_SOURCES_DIST) \
 	$(am__ml_readfile_SOURCES_DIST) $(am__ml_recirc_SOURCES_DIST) \
-	$(am__ml_simple_max_SOURCES_DIST) $(mlguide_SOURCES) \
-	$(mlguide_par_SOURCES)
+	$(am__ml_simple_max_SOURCES_DIST) $(am__ml_viz_SOURCES_DIST) \
+	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -558,15 +538,15 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 @ML_STANDALONE_MODE_FALSE@ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_SOURCES = $(srcdir)/ml_example_MultiLevelOperator.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_SOURCES = $(srcdir)/ml_2level_DD.cpp
+@ML_STANDALONE_MODE_FALSE@ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
+@ML_STANDALONE_MODE_FALSE@ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_SOURCES = $(srcdir)/ml_EpetraVbr.cpp
+@ML_STANDALONE_MODE_FALSE@ml_viz_SOURCES = $(srcdir)/ml_viz.cpp
+@ML_STANDALONE_MODE_FALSE@ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
 @ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_SOURCES = $(srcdir)/ml_read_matrix_AIJ.cpp
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
@@ -624,17 +604,17 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include \
 #specified in AM_CFLAGS, CFLAGS, AM_LDFLAGS, and LDFLAGS.
 @ML_STANDALONE_MODE_TRUE@mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 #
-@ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
-@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(ifpack_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(amesos_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(anasazi_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(teuchos_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(triutils_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(epetra_lib) \
-@ML_STANDALONE_MODE_FALSE@                $(LIBS) \
-@ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)                            \
-@ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)                            \
+@ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a \
+@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib)        \
+@ML_STANDALONE_MODE_FALSE@                $(ifpack_lib)         \
+@ML_STANDALONE_MODE_FALSE@                $(amesos_lib)         \
+@ML_STANDALONE_MODE_FALSE@                $(anasazi_lib)        \
+@ML_STANDALONE_MODE_FALSE@                $(teuchos_lib)        \
+@ML_STANDALONE_MODE_FALSE@                $(triutils_lib)       \
+@ML_STANDALONE_MODE_FALSE@                $(epetra_lib)         \
+@ML_STANDALONE_MODE_FALSE@                $(LIBS)               \
+@ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)        \
+@ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)          \
 @ML_STANDALONE_MODE_FALSE@                $(FLIBS)
 
 @ML_STANDALONE_MODE_TRUE@ml_libs = $(top_builddir)/src/libml.a        \
@@ -699,46 +679,46 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_LDADD = ${ml_libs} 
+@ML_STANDALONE_MODE_FALSE@ml_preconditioner_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_LDADD = ${ml_libs} 
+@ML_STANDALONE_MODE_FALSE@ml_2level_DD_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_LDADD = ${ml_libs} 
+@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_operator_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_operator_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_operator_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_operator_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_filtering_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_filtering_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_filtering_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_filtering_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_viz_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_viz_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_viz_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_viz_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_analyze_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_analyze_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_analyze_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_analyze_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_maxwell_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_LDADD = ${ml_libs}
@@ -785,6 +765,18 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+ml_2level_DD$(EXEEXT): $(ml_2level_DD_OBJECTS) $(ml_2level_DD_DEPENDENCIES) 
+	@rm -f ml_2level_DD$(EXEEXT)
+	$(ml_2level_DD_LINK) $(ml_2level_DD_LDFLAGS) $(ml_2level_DD_OBJECTS) $(ml_2level_DD_LDADD) $(LIBS)
+ml_AztecMsr$(EXEEXT): $(ml_AztecMsr_OBJECTS) $(ml_AztecMsr_DEPENDENCIES) 
+	@rm -f ml_AztecMsr$(EXEEXT)
+	$(ml_AztecMsr_LINK) $(ml_AztecMsr_LDFLAGS) $(ml_AztecMsr_OBJECTS) $(ml_AztecMsr_LDADD) $(LIBS)
+ml_EpetraVbr$(EXEEXT): $(ml_EpetraVbr_OBJECTS) $(ml_EpetraVbr_DEPENDENCIES) 
+	@rm -f ml_EpetraVbr$(EXEEXT)
+	$(ml_EpetraVbr_LINK) $(ml_EpetraVbr_LDFLAGS) $(ml_EpetraVbr_OBJECTS) $(ml_EpetraVbr_LDADD) $(LIBS)
+ml_analyze$(EXEEXT): $(ml_analyze_OBJECTS) $(ml_analyze_DEPENDENCIES) 
+	@rm -f ml_analyze$(EXEEXT)
+	$(ml_analyze_LINK) $(ml_analyze_LDFLAGS) $(ml_analyze_OBJECTS) $(ml_analyze_LDADD) $(LIBS)
 ml_aztec_simple$(EXEEXT): $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_DEPENDENCIES) 
 	@rm -f ml_aztec_simple$(EXEEXT)
 	$(ml_aztec_simple_LINK) $(ml_aztec_simple_LDFLAGS) $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_LDADD) $(LIBS)
@@ -800,39 +792,24 @@ ml_example2d$(EXEEXT): $(ml_example2d_OBJECTS) $(ml_example2d_DEPENDENCIES)
 ml_example3d$(EXEEXT): $(ml_example3d_OBJECTS) $(ml_example3d_DEPENDENCIES) 
 	@rm -f ml_example3d$(EXEEXT)
 	$(ml_example3d_LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
-ml_example_MultiLevelOperator$(EXEEXT): $(ml_example_MultiLevelOperator_OBJECTS) $(ml_example_MultiLevelOperator_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelOperator$(EXEEXT)
-	$(ml_example_MultiLevelOperator_LINK) $(ml_example_MultiLevelOperator_LDFLAGS) $(ml_example_MultiLevelOperator_OBJECTS) $(ml_example_MultiLevelOperator_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner$(EXEEXT): $(ml_example_MultiLevelPreconditioner_OBJECTS) $(ml_example_MultiLevelPreconditioner_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_LINK) $(ml_example_MultiLevelPreconditioner_LDFLAGS) $(ml_example_MultiLevelPreconditioner_OBJECTS) $(ml_example_MultiLevelPreconditioner_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_2level$(EXEEXT): $(ml_example_MultiLevelPreconditioner_2level_OBJECTS) $(ml_example_MultiLevelPreconditioner_2level_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_2level$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_2level_LINK) $(ml_example_MultiLevelPreconditioner_2level_LDFLAGS) $(ml_example_MultiLevelPreconditioner_2level_OBJECTS) $(ml_example_MultiLevelPreconditioner_2level_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT): $(ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS) $(ml_example_MultiLevelPreconditioner_AztecMSR_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_AztecMSR$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_AztecMSR_LINK) $(ml_example_MultiLevelPreconditioner_AztecMSR_LDFLAGS) $(ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS) $(ml_example_MultiLevelPreconditioner_AztecMSR_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_analyze$(EXEEXT): $(ml_example_MultiLevelPreconditioner_analyze_OBJECTS) $(ml_example_MultiLevelPreconditioner_analyze_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_analyze$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_analyze_LINK) $(ml_example_MultiLevelPreconditioner_analyze_LDFLAGS) $(ml_example_MultiLevelPreconditioner_analyze_OBJECTS) $(ml_example_MultiLevelPreconditioner_analyze_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_filtering$(EXEEXT): $(ml_example_MultiLevelPreconditioner_filtering_OBJECTS) $(ml_example_MultiLevelPreconditioner_filtering_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_filtering$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_filtering_LINK) $(ml_example_MultiLevelPreconditioner_filtering_LDFLAGS) $(ml_example_MultiLevelPreconditioner_filtering_OBJECTS) $(ml_example_MultiLevelPreconditioner_filtering_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT): $(ml_example_MultiLevelPreconditioner_maxwell_OBJECTS) $(ml_example_MultiLevelPreconditioner_maxwell_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_maxwell_LINK) $(ml_example_MultiLevelPreconditioner_maxwell_LDFLAGS) $(ml_example_MultiLevelPreconditioner_maxwell_OBJECTS) $(ml_example_MultiLevelPreconditioner_maxwell_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_vbr$(EXEEXT): $(ml_example_MultiLevelPreconditioner_vbr_OBJECTS) $(ml_example_MultiLevelPreconditioner_vbr_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_vbr$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_vbr_LINK) $(ml_example_MultiLevelPreconditioner_vbr_LDFLAGS) $(ml_example_MultiLevelPreconditioner_vbr_OBJECTS) $(ml_example_MultiLevelPreconditioner_vbr_LDADD) $(LIBS)
-ml_example_MultiLevelPreconditioner_viz$(EXEEXT): $(ml_example_MultiLevelPreconditioner_viz_OBJECTS) $(ml_example_MultiLevelPreconditioner_viz_DEPENDENCIES) 
-	@rm -f ml_example_MultiLevelPreconditioner_viz$(EXEEXT)
-	$(ml_example_MultiLevelPreconditioner_viz_LINK) $(ml_example_MultiLevelPreconditioner_viz_LDFLAGS) $(ml_example_MultiLevelPreconditioner_viz_OBJECTS) $(ml_example_MultiLevelPreconditioner_viz_LDADD) $(LIBS)
 ml_example_elasticity$(EXEEXT): $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_DEPENDENCIES) 
 	@rm -f ml_example_elasticity$(EXEEXT)
 	$(ml_example_elasticity_LINK) $(ml_example_elasticity_LDFLAGS) $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_LDADD) $(LIBS)
+ml_filtering$(EXEEXT): $(ml_filtering_OBJECTS) $(ml_filtering_DEPENDENCIES) 
+	@rm -f ml_filtering$(EXEEXT)
+	$(ml_filtering_LINK) $(ml_filtering_LDFLAGS) $(ml_filtering_OBJECTS) $(ml_filtering_LDADD) $(LIBS)
+ml_maxwell$(EXEEXT): $(ml_maxwell_OBJECTS) $(ml_maxwell_DEPENDENCIES) 
+	@rm -f ml_maxwell$(EXEEXT)
+	$(ml_maxwell_LINK) $(ml_maxwell_LDFLAGS) $(ml_maxwell_OBJECTS) $(ml_maxwell_LDADD) $(LIBS)
 ml_multiple_rhs$(EXEEXT): $(ml_multiple_rhs_OBJECTS) $(ml_multiple_rhs_DEPENDENCIES) 
 	@rm -f ml_multiple_rhs$(EXEEXT)
 	$(ml_multiple_rhs_LINK) $(ml_multiple_rhs_LDFLAGS) $(ml_multiple_rhs_OBJECTS) $(ml_multiple_rhs_LDADD) $(LIBS)
+ml_operator$(EXEEXT): $(ml_operator_OBJECTS) $(ml_operator_DEPENDENCIES) 
+	@rm -f ml_operator$(EXEEXT)
+	$(ml_operator_LINK) $(ml_operator_LDFLAGS) $(ml_operator_OBJECTS) $(ml_operator_LDADD) $(LIBS)
+ml_preconditioner$(EXEEXT): $(ml_preconditioner_OBJECTS) $(ml_preconditioner_DEPENDENCIES) 
+	@rm -f ml_preconditioner$(EXEEXT)
+	$(ml_preconditioner_LINK) $(ml_preconditioner_LDFLAGS) $(ml_preconditioner_OBJECTS) $(ml_preconditioner_LDADD) $(LIBS)
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
 	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
@@ -854,6 +831,9 @@ ml_recirc$(EXEEXT): $(ml_recirc_OBJECTS) $(ml_recirc_DEPENDENCIES)
 ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
 	@rm -f ml_simple_max$(EXEEXT)
 	$(ml_simple_max_LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
+ml_viz$(EXEEXT): $(ml_viz_OBJECTS) $(ml_viz_DEPENDENCIES) 
+	@rm -f ml_viz$(EXEEXT)
+	$(ml_viz_LINK) $(ml_viz_LDFLAGS) $(ml_viz_OBJECTS) $(ml_viz_LDADD) $(LIBS)
 mlguide$(EXEEXT): $(mlguide_OBJECTS) $(mlguide_DEPENDENCIES) 
 	@rm -f mlguide$(EXEEXT)
 	$(mlguide_LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
@@ -867,22 +847,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_analyze-ml_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1d-ml_example1d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering-ml_filtering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_maxwell-ml_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator-ml_operator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
@@ -890,6 +869,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max-ml_simple_max.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz-ml_viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide_par-mlguide_par.Po@am__quote@
 
@@ -1149,149 +1129,101 @@ mlguide_par-mlguide_par.obj: $(srcdir)/mlguide_par.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o: $(srcdir)/ml_example_MultiLevelOperator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelOperator_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelOperator_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo" -c -o ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o `test -f '$(srcdir)/ml_example_MultiLevelOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelOperator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo" "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelOperator.cpp' object='ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.TPo' @AMDEPBACKSLASH@
+ml_2level_DD-ml_2level_DD.o: $(srcdir)/ml_2level_DD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -MT ml_2level_DD-ml_2level_DD.o -MD -MP -MF "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" -c -o ml_2level_DD-ml_2level_DD.o `test -f '$(srcdir)/ml_2level_DD.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_2level_DD.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po"; else rm -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_2level_DD.cpp' object='ml_2level_DD-ml_2level_DD.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po' tmpdepfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelOperator_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelOperator_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.o `test -f '$(srcdir)/ml_example_MultiLevelOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelOperator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -c -o ml_2level_DD-ml_2level_DD.o `test -f '$(srcdir)/ml_2level_DD.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_2level_DD.cpp
 
-ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.obj: $(srcdir)/ml_example_MultiLevelOperator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelOperator_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelOperator_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo" -c -o ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.obj `if test -f '$(srcdir)/ml_example_MultiLevelOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelOperator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo" "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelOperator.cpp' object='ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.TPo' @AMDEPBACKSLASH@
+ml_2level_DD-ml_2level_DD.obj: $(srcdir)/ml_2level_DD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -MT ml_2level_DD-ml_2level_DD.obj -MD -MP -MF "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" -c -o ml_2level_DD-ml_2level_DD.obj `if test -f '$(srcdir)/ml_2level_DD.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_2level_DD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_2level_DD.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po"; else rm -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_2level_DD.cpp' object='ml_2level_DD-ml_2level_DD.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po' tmpdepfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelOperator_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelOperator_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.obj `if test -f '$(srcdir)/ml_example_MultiLevelOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelOperator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -c -o ml_2level_DD-ml_2level_DD.obj `if test -f '$(srcdir)/ml_2level_DD.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_2level_DD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_2level_DD.cpp'; fi`
 
-ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.o: $(srcdir)/ml_example_MultiLevelPreconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo" -c -o ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner.cpp' object='ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.TPo' @AMDEPBACKSLASH@
+ml_AztecMsr-ml_AztecMsr.o: $(srcdir)/ml_AztecMsr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.o -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp
 
-ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.obj: $(srcdir)/ml_example_MultiLevelPreconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo" -c -o ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner.cpp' object='ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.TPo' @AMDEPBACKSLASH@
+ml_AztecMsr-ml_AztecMsr.obj: $(srcdir)/ml_AztecMsr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.obj -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`
 
-ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.o: $(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_2level_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_2level_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo" -c -o ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp' object='ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.TPo' @AMDEPBACKSLASH@
+ml_EpetraVbr-ml_EpetraVbr.o: $(srcdir)/ml_EpetraVbr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.o -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_2level_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_2level_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp
 
-ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_2level_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_2level_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo" -c -o ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp' object='ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.TPo' @AMDEPBACKSLASH@
+ml_EpetraVbr-ml_EpetraVbr.obj: $(srcdir)/ml_EpetraVbr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.obj -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_2level_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_2level_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`
 
-ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.o: $(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo" -c -o ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp' object='ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.TPo' @AMDEPBACKSLASH@
+ml_analyze-ml_analyze.o: $(srcdir)/ml_analyze.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.o -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp
 
-ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo" -c -o ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp' object='ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.TPo' @AMDEPBACKSLASH@
+ml_analyze-ml_analyze.obj: $(srcdir)/ml_analyze.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.obj -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`
 
-ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.o: $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo" -c -o ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp' object='ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.TPo' @AMDEPBACKSLASH@
+ml_filtering-ml_filtering.o: $(srcdir)/ml_filtering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.o -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp
 
-ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo" -c -o ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp' object='ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.TPo' @AMDEPBACKSLASH@
+ml_filtering-ml_filtering.obj: $(srcdir)/ml_filtering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.obj -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`
 
-ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.o: $(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo" -c -o ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp' object='ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.TPo' @AMDEPBACKSLASH@
+ml_maxwell-ml_maxwell.o: $(srcdir)/ml_maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp
 
-ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo" -c -o ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp' object='ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.TPo' @AMDEPBACKSLASH@
+ml_maxwell-ml_maxwell.obj: $(srcdir)/ml_maxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp'; fi`
-
-ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.o: $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo" -c -o ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp' object='ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
-
-ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo" -c -o ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp' object='ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp'; fi`
-
-ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.o: $(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo" -c -o ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp' object='ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
-
-ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo" -c -o ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp' object='ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp'; fi`
-
-ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.o: $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_viz_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.o -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo" -c -o ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp' object='ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_viz_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.o `test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
-
-ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.obj: $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_viz_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.obj -MD -MP -MF "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo" -c -o ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo" "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po"; else rm -f "$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp' object='ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po' tmpdepfile='$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_MultiLevelPreconditioner_viz_CPPFLAGS) $(CPPFLAGS) $(ml_example_MultiLevelPreconditioner_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.obj `if test -f '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`
 
 ml_multiple_rhs-ml_multiple_rhs.o: $(srcdir)/ml_multiple_rhs.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -MT ml_multiple_rhs-ml_multiple_rhs.o -MD -MP -MF "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo" -c -o ml_multiple_rhs-ml_multiple_rhs.o `test -f '$(srcdir)/ml_multiple_rhs.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_multiple_rhs.cpp; \
@@ -1309,6 +1241,38 @@ ml_multiple_rhs-ml_multiple_rhs.obj: $(srcdir)/ml_multiple_rhs.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -c -o ml_multiple_rhs-ml_multiple_rhs.obj `if test -f '$(srcdir)/ml_multiple_rhs.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_multiple_rhs.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_multiple_rhs.cpp'; fi`
 
+ml_operator-ml_operator.o: $(srcdir)/ml_operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.o -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp
+
+ml_operator-ml_operator.obj: $(srcdir)/ml_operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.obj -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`
+
+ml_preconditioner-ml_preconditioner.o: $(srcdir)/ml_preconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.o -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp
+
+ml_preconditioner-ml_preconditioner.obj: $(srcdir)/ml_preconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`
+
 ml_read_matrix_AIJ-ml_read_matrix_AIJ.o: $(srcdir)/ml_read_matrix_AIJ.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -MT ml_read_matrix_AIJ-ml_read_matrix_AIJ.o -MD -MP -MF "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.o `test -f '$(srcdir)/ml_read_matrix_AIJ.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_matrix_AIJ.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po"; else rm -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo"; exit 1; fi
@@ -1324,6 +1288,22 @@ ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj: $(srcdir)/ml_read_matrix_AIJ.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`
+
+ml_viz-ml_viz.o: $(srcdir)/ml_viz.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.o -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp
+
+ml_viz-ml_viz.obj: $(srcdir)/ml_viz.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.obj -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
