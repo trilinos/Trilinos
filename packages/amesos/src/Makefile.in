@@ -138,7 +138,8 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Klu.cpp \
 	$(srcdir)/klu_btf/klu_btf_tsolve.c \
 	$(srcdir)/klu_btf/klu_dump.c $(srcdir)/klu_kernel/klu.c \
 	$(srcdir)/klu_kernel/klu_kernel.c $(srcdir)/Amesos_Umfpack.cpp \
-	$(srcdir)/Amesos_Scalapack.cpp $(srcdir)/Amesos_Mumps.cpp \
+	$(srcdir)/Amesos_Scalapack.cpp $(srcdir)/Amesos_Merikos.cpp \
+	$(srcdir)/Amesos_Mumps.cpp \
 	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
 	$(srcdir)/EpetraExt_Redistor.cpp $(srcdir)/Amesos.cpp \
 	$(srcdir)/Amesos_Superlu.cpp $(srcdir)/Amesos_Superludist.cpp \
@@ -177,14 +178,15 @@ am__objects_1 =
 @HAVE_AMESOS_UMFPACK_TRUE@am__objects_3 = Amesos_Umfpack.$(OBJEXT)
 @HAVE_AMESOS_SCALAPACK_TRUE@am__objects_4 =  \
 @HAVE_AMESOS_SCALAPACK_TRUE@	Amesos_Scalapack.$(OBJEXT)
-@HAVE_AMESOS_MUMPS_TRUE@am__objects_5 = Amesos_Mumps.$(OBJEXT) \
+@HAVE_AMESOS_MERIKOS_TRUE@am__objects_5 = Amesos_Merikos.$(OBJEXT)
+@HAVE_AMESOS_MUMPS_TRUE@am__objects_6 = Amesos_Mumps.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	Amesos_EpetraBaseSolver.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	EpetraExt_Redistor.$(OBJEXT)
-am__objects_6 = Amesos.$(OBJEXT)
-@HAVE_AMESOS_SUPERLU_TRUE@am__objects_7 = Amesos_Superlu.$(OBJEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_8 =  \
+am__objects_7 = Amesos.$(OBJEXT)
+@HAVE_AMESOS_SUPERLU_TRUE@am__objects_8 = Amesos_Superlu.$(OBJEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_9 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_9 =  \
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_10 =  \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	smplinkrows.$(OBJEXT) \
@@ -192,11 +194,12 @@ am__objects_6 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-am__objects_10 = CrsMatrixTranspose.$(OBJEXT)
+am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
 	$(am__objects_5) $(am__objects_6) $(am__objects_7) \
-	$(am__objects_8) $(am__objects_9) $(am__objects_10)
+	$(am__objects_8) $(am__objects_9) $(am__objects_10) \
+	$(am__objects_11)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -204,6 +207,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_EpetraBaseSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Merikos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Scalapack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superlu.Po \
@@ -253,8 +257,9 @@ DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 	$(EXTRA_libamesos_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h DSCPACK = \
 	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/Amesos_Umfpack.h \
-	$(srcdir)/Amesos_Scalapack.h $(srcdir)/klu_btf/klu_btf.h \
-	$(srcdir)/klu_btf/klu_dump.h $(srcdir)/klu_kernel/klu_kernel.h \
+	$(srcdir)/Amesos_Scalapack.h $(srcdir)/Amesos_Merikos.h \
+	$(srcdir)/klu_btf/klu_btf.h $(srcdir)/klu_btf/klu_dump.h \
+	$(srcdir)/klu_kernel/klu_kernel.h \
 	$(srcdir)/klu_btf/klu_btf_internal.h \
 	$(srcdir)/klu_kernel/klu.h $(srcdir)/klu_kernel/tictoc.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
@@ -262,8 +267,9 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h DSCPACK = \
 	$(srcdir)/EpetraExt_Redistor.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/Epetra_CrsKundertSparse.h Amesos_BaseSolver.h \
-	Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
-	$(srcdir)/Amesos_BaseSolver.h
+	Amesos_ComponentBaseSolver.h Amesos_ConfigDefs.h \
+	$(srcdir)/CrsMatrixTranspose.h $(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Amesos_ComponentBaseSolver.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -311,6 +317,8 @@ HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
+HAVE_AMESOS_MERIKOS_FALSE = @HAVE_AMESOS_MERIKOS_FALSE@
+HAVE_AMESOS_MERIKOS_TRUE = @HAVE_AMESOS_MERIKOS_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
@@ -465,6 +473,14 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_SCALAPACK_TRUE@SCALAPACK = \
 @HAVE_AMESOS_SCALAPACK_TRUE@	$(srcdir)/Amesos_Scalapack.cpp
 
+@HAVE_AMESOS_MERIKOS_FALSE@MERIKOS_H = 
+@HAVE_AMESOS_MERIKOS_TRUE@MERIKOS_H = \
+@HAVE_AMESOS_MERIKOS_TRUE@	$(srcdir)/Amesos_Merikos.h
+
+@HAVE_AMESOS_MERIKOS_FALSE@MERIKOS = 
+@HAVE_AMESOS_MERIKOS_TRUE@MERIKOS = \
+@HAVE_AMESOS_MERIKOS_TRUE@	$(srcdir)/Amesos_Merikos.cpp
+
 @HAVE_AMESOS_KLU_FALSE@KLU_H = 
 
 #-------------------------------------------------------------------------------
@@ -554,6 +570,7 @@ target_vendor = @target_vendor@
 #	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
 	Amesos_BaseSolver.h \
+	Amesos_ComponentBaseSolver.h \
 	Amesos_ConfigDefs.h \
 	$(srcdir)/CrsMatrixTranspose.h 
 
@@ -604,6 +621,7 @@ AMESOS_H = \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
 	$(SCALAPACK_H) \
+	$(MERIKOS_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
 	$(FACTORY_H) \
@@ -611,7 +629,8 @@ AMESOS_H = \
 	$(SUPERLUDIST_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
-	$(srcdir)/Amesos_BaseSolver.h
+	$(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Amesos_ComponentBaseSolver.h
 
 libamesos_a_SOURCES = \
 	$(PARAM) \
@@ -619,6 +638,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(SCALAPACK) \
+	$(MERIKOS) \
 	$(MUMPS) \
 	$(FACTORY) \
 	$(SUPERLU) \
@@ -770,6 +790,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_EpetraBaseSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Merikos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Scalapack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superlu.Po@am__quote@
@@ -1521,6 +1542,22 @@ Amesos_Scalapack.obj: $(srcdir)/Amesos_Scalapack.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Scalapack.Po' tmpdepfile='$(DEPDIR)/Amesos_Scalapack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Scalapack.obj `if test -f '$(srcdir)/Amesos_Scalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Scalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Scalapack.cpp'; fi`
+
+Amesos_Merikos.o: $(srcdir)/Amesos_Merikos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Merikos.o -MD -MP -MF "$(DEPDIR)/Amesos_Merikos.Tpo" -c -o Amesos_Merikos.o `test -f '$(srcdir)/Amesos_Merikos.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Merikos.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Merikos.Tpo" "$(DEPDIR)/Amesos_Merikos.Po"; else rm -f "$(DEPDIR)/Amesos_Merikos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Merikos.cpp' object='Amesos_Merikos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Merikos.Po' tmpdepfile='$(DEPDIR)/Amesos_Merikos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Merikos.o `test -f '$(srcdir)/Amesos_Merikos.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Merikos.cpp
+
+Amesos_Merikos.obj: $(srcdir)/Amesos_Merikos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Merikos.obj -MD -MP -MF "$(DEPDIR)/Amesos_Merikos.Tpo" -c -o Amesos_Merikos.obj `if test -f '$(srcdir)/Amesos_Merikos.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Merikos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Merikos.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Merikos.Tpo" "$(DEPDIR)/Amesos_Merikos.Po"; else rm -f "$(DEPDIR)/Amesos_Merikos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Merikos.cpp' object='Amesos_Merikos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Merikos.Po' tmpdepfile='$(DEPDIR)/Amesos_Merikos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Merikos.obj `if test -f '$(srcdir)/Amesos_Merikos.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Merikos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Merikos.cpp'; fi`
 
 Amesos_Mumps.o: $(srcdir)/Amesos_Mumps.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Mumps.o -MD -MP -MF "$(DEPDIR)/Amesos_Mumps.Tpo" -c -o Amesos_Mumps.o `test -f '$(srcdir)/Amesos_Mumps.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Mumps.cpp; \

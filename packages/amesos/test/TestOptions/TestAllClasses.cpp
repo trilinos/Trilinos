@@ -4,6 +4,7 @@
 #include "TestOtherClasses.h"
 #include "TestSuperludist.h"
 #include "TestScalapack.h"
+#include "TestKlu.h"
  
 int TestAllClasses(vector<string> AmesosClasses,
 		   vector<bool> AmesosClassesInstalled,
@@ -63,15 +64,14 @@ int TestAllClasses(vector<string> AmesosClasses,
       } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
 	if ( verbose) cout << " Testing KLU " << endl ; 
 
-	errors += TestOtherClasses("Amesos_Klu",
-				   Amat, 
-				   transpose, 
-				   verbose, 
-				   Levels, 
-				   Rcond, 
-				   maxrelerror, 
-				   maxrelresidual, 
-				   NumTests ) ;
+	errors += TestKlu( Amat, 
+			   transpose, 
+			   verbose, 
+			   Levels, 
+			   Rcond, 
+			   maxrelerror, 
+			   maxrelresidual, 
+			   NumTests ) ;
   
       } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
 	if ( verbose) cout << " Testing SUPERLU " << endl ; 

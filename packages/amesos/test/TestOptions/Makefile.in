@@ -82,6 +82,7 @@ am_TestOptions_OBJECTS = TestOptions-TestOptions.$(OBJEXT) \
 	TestOptions-CreateTridi.$(OBJEXT) \
 	TestOptions-TestSuperludist.$(OBJEXT) \
 	TestOptions-TestScalapack.$(OBJEXT) \
+	TestOptions-TestKlu.$(OBJEXT) \
 	TestOptions-TestAllClasses.$(OBJEXT) \
 	TestOptions-PerformOneSolveAndTest.$(OBJEXT) \
 	TestOptions-TestOtherClasses.$(OBJEXT)
@@ -93,6 +94,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/TestOptions-CreateTridi.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllClasses.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestKlu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOptions.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOtherClasses.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestScalapack.Po \
@@ -152,6 +154,8 @@ HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
+HAVE_AMESOS_MERIKOS_FALSE = @HAVE_AMESOS_MERIKOS_FALSE@
+HAVE_AMESOS_MERIKOS_TRUE = @HAVE_AMESOS_MERIKOS_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
@@ -263,6 +267,9 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/CreateTridi.h \
 	$(srcdir)/TestSuperludist.cpp \
 	$(srcdir)/TestScalapack.cpp \
+	$(srcdir)/TestScalapack.h \
+	$(srcdir)/TestKlu.cpp \
+	$(srcdir)/TestKlu.h \
 	$(srcdir)/TestSuperludist.h \
 	$(srcdir)/TestAllClasses.cpp \
 	$(srcdir)/TestAllClasses.h \
@@ -341,6 +348,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-CreateTridi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestAllClasses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestKlu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOtherClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestScalapack.Po@am__quote@
@@ -425,6 +433,22 @@ TestOptions-TestScalapack.obj: $(srcdir)/TestScalapack.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestScalapack.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestScalapack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestScalapack.obj `if test -f '$(srcdir)/TestScalapack.cpp'; then $(CYGPATH_W) '$(srcdir)/TestScalapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestScalapack.cpp'; fi`
+
+TestOptions-TestKlu.o: $(srcdir)/TestKlu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestKlu.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestKlu.Tpo" -c -o TestOptions-TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestKlu.Tpo" "$(DEPDIR)/TestOptions-TestKlu.Po"; else rm -f "$(DEPDIR)/TestOptions-TestKlu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestOptions-TestKlu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestKlu.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestKlu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestKlu.o `test -f '$(srcdir)/TestKlu.cpp' || echo '$(srcdir)/'`$(srcdir)/TestKlu.cpp
+
+TestOptions-TestKlu.obj: $(srcdir)/TestKlu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestKlu.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestKlu.Tpo" -c -o TestOptions-TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestKlu.Tpo" "$(DEPDIR)/TestOptions-TestKlu.Po"; else rm -f "$(DEPDIR)/TestOptions-TestKlu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestKlu.cpp' object='TestOptions-TestKlu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestKlu.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestKlu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestKlu.obj `if test -f '$(srcdir)/TestKlu.cpp'; then $(CYGPATH_W) '$(srcdir)/TestKlu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestKlu.cpp'; fi`
 
 TestOptions-TestAllClasses.o: $(srcdir)/TestAllClasses.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" -c -o TestOptions-TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp; \

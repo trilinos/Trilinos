@@ -314,6 +314,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
 		AMESOS_SCALAPACK, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, merikos, [Enable Amesos interface support for MERIKOS], 
+		AMESOS_MERIKOS, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
 		AMESOS_UMFPACK, no)
 
@@ -872,6 +875,15 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
 fi
+
+if test "X$ac_cv_use_amesos_merikos" != "Xno"; then
+  AM_CONDITIONAL(HAVE_AMESOS_MERIKOS, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+
+else
+  AM_CONDITIONAL(HAVE_AMESOS_MERIKOS, false ) 
+fi
+
 
 #########
 # MUMPS #

@@ -143,6 +143,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	Amat->Multiply( transpose, xexact, cAx ) ; 
+
 	val[0] = - Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -161,6 +162,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	Amat->Multiply( transpose, cAx, cAAx ) ; //  x2 = A' x1
+
 	val[0] = - Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 

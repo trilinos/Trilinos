@@ -1,4 +1,54 @@
 /* 
+Task list:
+    Amesos_Merikos.h
+    Amesos_Merikos.cpp
+      Partition the matrix - store L as L^T?
+      Build tree
+      Initial data redistribution
+      Change row and column ownership (pass them up to the parent)
+    Amesos_Component_Solver.h
+    Amesos_BTF.h 
+    Amesos_BTF.cpp
+
+
+
+  Communications issues/challenges:
+  **  Redistributing the original matrix to the arrowhead form that we need, options:
+      1)  Two matrices:  L^T and U
+      2)  One matrix:  U | L^T 
+      3)  Intermediate "fat" matrix - the way that I did Scalapack
+
+  **  Adding the Schur complements SC_0 and SC_1 to the original 
+          trailing matirx A_2, owned by the parent
+      1)  Precompute the final size and shape of A_2 + SC_0 + SC_1
+      2)  Perform A_2 + SC_0 + SC_1 in an empty matrix of size n by n 
+          and extract the non-empty rows.
+      CHALLENGES:
+        A)  Only process 0/1 knows the size and map for SC_0/SC_1
+        B)  It would be nice to allow SC_0 and SC_1 to be sent as soon as 
+	    they are available
+	C)  It would be nice to have just one copy of the matrix on the
+            parent.  Hence, it would be nice to know the shape of 
+	    A_2 + SC_0 + SC_1 in advance. 
+        D)  An import would do the trick provided that we know both maps
+            in advance.  But, neither map is available to us in advance. 
+            The original map (which has SC_0 on process 0 and SC_1 on 
+	    process 1) is not known 
+      QUESTION:
+        Should the maps be in some global address space or should they be 
+	in a local address space?
+	I'd like to keep them in the global address space as long as possible,
+	but we can't do the import of the A_2 + SC_0 + SC_1 in a global 
+	address space because that would require a map that changes at each 
+
+  **  Redistributing the right hand side vector, b
+      If we create a map that reflects the post-pivoting reality, assigning
+      each row of U and each column of L to the process that owns the diagonal 
+      entry, we can redistribute the right hand side vector, b, to the 
+      processes where the values of b will first be used, in a single, efficient, 
+      import operation.  
+
+
 Observations:
 1)  Although this algorithm is recursive, a non-recursive implementation 
     might be cleaner.  If it is done recursively, it should be done in place,
@@ -93,7 +143,7 @@ updating the rows and columns of the separator which belong to it and forming th
 
 <br /><br /><p>Merikos updates the trailing block of the matrix and then factors it.  
 
-<br /><br /><p>Merikos is the Greek word for partial, reflecting the
+<br /><br /><p>Merikos is a Greek word for partial, reflecting the
 fact that Amesos_Merikos uses a series of partial LU factorizations,
 performed in parallel, to piece together the full LU decomposition.
 
@@ -126,6 +176,9 @@ public:
 
     \return Integer error code, set to 0 if successful.
   */
+    int RedistributeA() ;
+    int ConvertToScalapack() ;
+    int PerformNumericFactorization() ;
     int SymbolicFactorization() ;
 
     //! Performs NumericFactorization on the matrix A.
@@ -250,8 +303,7 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  //! SetUseTranpose() controls whether to compute AX=B or A<sup>T</sup>X = 
-B
+  //! SetUseTranpose() controls whether to compute AX=B or A<sup>T</sup>X = B
   /*! 
   */  
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
@@ -281,6 +333,9 @@ B
   bool UseTranspose_;
   const Epetra_LinearProblem * Problem_;
 
+  Epetra_CrsMatrix *L;
+  Epetra_CrsMatrix *U;
+
   bool PrintTiming_;
   bool PrintStatus_;
   bool ComputeVectorNorms_;
@@ -302,6 +357,45 @@ B
   int NumSolve_;  
 
   Epetra_Time * Time_;
+
+
+
+//
+//  These allow us to use the Scalapack based Merikos code
+//
+  Epetra_Map *ScaLAPACK1DMap_ ;          //  Points to a 1D Map which matches a ScaLAPACK 1D
+                                         //  blocked (not block cyclic) distribution
+  Epetra_CrsMatrix *ScaLAPACK1DMatrix_ ; //  Points to a  ScaLAPACK 1D
+                                         //  blocked (not block cyclic) distribution
+  Epetra_Map *VectorMap_ ;               //  Points to a Map for vectors X and B
+  vector<double> DenseA_;                //  The data in a ScaLAPACK 1D blocked format
+  vector<int> Ipiv_ ;                    //  ScaLAPACK pivot information
+  int NumOurRows_ ;
+  int NumOurColumns_ ;
+
+
+  //
+  //  Control of the data distribution
+  //
+  bool TwoD_distribution_;  // True if 2D data distribution is used
+  int grid_nb_;             // Row and Column blocking factor (only used in 2D distribution)  
+  int mypcol_;              // Process column in the ScaLAPACK2D grid
+  int myprow_;              // Process row in the ScaLAPACK2D grid
+  Epetra_CrsMatrix* FatOut_;//
+
+  //
+  //  Blocking factors (For both 1D and 2D data distributions)
+  //
+  int nb_;
+  int lda_;
+
+int iam_;
+int nprow_;
+int npcol_;
+int NumGlobalElements_;
+int m_per_p_;
+
+
   
 };  // End of  class Amesos_Merikos  
 #endif /* _AMESOS_MERIKOS_H_ */

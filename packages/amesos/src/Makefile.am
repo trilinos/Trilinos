@@ -106,6 +106,16 @@ SCALAPACK_H =
 SCALAPACK =
 endif
 
+if HAVE_AMESOS_MERIKOS
+MERIKOS_H = \
+	$(srcdir)/Amesos_Merikos.h
+MERIKOS = \
+	$(srcdir)/Amesos_Merikos.cpp
+else
+MERIKOS_H =
+MERIKOS =
+endif
+
 #-------------------------------------------------------------------------------
 #  Here is where we will add Tim Davis' files 
 #
@@ -204,6 +214,7 @@ endif
 #	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
 	Amesos_BaseSolver.h \
+	Amesos_ComponentBaseSolver.h \
 	Amesos_ConfigDefs.h \
 	$(srcdir)/CrsMatrixTranspose.h 
 COMP = \
@@ -258,6 +269,7 @@ AMESOS_H = \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
 	$(SCALAPACK_H) \
+	$(MERIKOS_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
 	$(FACTORY_H) \
@@ -265,7 +277,8 @@ AMESOS_H = \
 	$(SUPERLUDIST_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
-	$(srcdir)/Amesos_BaseSolver.h
+	$(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Amesos_ComponentBaseSolver.h
 
 
 libamesos_a_SOURCES = \
@@ -274,6 +287,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(SCALAPACK) \
+	$(MERIKOS) \
 	$(MUMPS) \
 	$(FACTORY) \
 	$(SUPERLU) \

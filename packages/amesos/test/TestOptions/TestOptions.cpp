@@ -3,7 +3,9 @@
 //  valgrind --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
 //  test/scripts/daily/serial/TestMemoryLeaks[.exe] performs an automated test for memory leaks
-//  using valgrind and this code.
+//  using valgrind and this code.  To run TestMemoryLeaks, cd to test/TestOptions in the
+//  build directory and type ../scripts/daily/serial/TestMemoryLeaks.exe.  The output is stored
+//  in amesos/logLinux.txt.
 //
 //
 
@@ -426,11 +428,14 @@ int NextMain( int argc, char *argv[] ) {
   //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
   //  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
   //  result += TestOneMatrix( AmesosClassesInstalled, "../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+#if 0
       result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+#endif
       result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+#if 0
       result += TestOneMatrix( AmesosClassesInstalled, "../Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-
+#endif
 
   //
   //  This is really slow when run on valgrind, so we don't want to run 

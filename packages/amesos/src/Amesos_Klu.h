@@ -341,7 +341,7 @@ private:
 
   Epetra_Map *SerialMap_ ;               //  Points to a Serial Map (unused if IsLocal == 1 ) 
   Epetra_CrsMatrix *SerialCrsMatrixA_ ;  //  Points to a Serial Copy of A (unused if IsLocal==1)
-  Epetra_CrsMatrix *SerialMatrix_ ;      //  Points to a Serial Copy of A 
+  Epetra_RowMatrix *SerialMatrix_ ;      //  Points to a Serial Copy of A 
                                          //  IsLocal==1 - Points to the original matix 
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
   Epetra_CrsMatrix *TransposeMatrix_ ;   //  Points to a Serial Transposed Copy of A 
@@ -351,7 +351,7 @@ private:
   //
 #define USE_VIEW
 #ifdef USE_VIEW
-  Epetra_CrsMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
+  Epetra_RowMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
 #else
   Epetra_RowMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
 #endif                                         //  the values passed to Klu
@@ -367,6 +367,9 @@ private:
   
   int verbose_;
   int debug_;
+
+  vector<int>ColIndicesV_;   // Only used for RowMatrices
+  vector<double>RowValuesV_; // Only used for RowMatrices
 
   bool refactorize_;	    // if true, and if the Symbolic and Numeric
 			    // objects have already been created, then

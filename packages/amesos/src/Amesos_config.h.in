@@ -23,6 +23,9 @@
 /* Define if want to build amesos-kundert */
 #undef HAVE_AMESOS_KUNDERT
 
+/* Define if want to build amesos-merikos */
+#undef HAVE_AMESOS_MERIKOS
+
 /* Define if want to build amesos-mumps_mpi_c2f */
 #undef HAVE_AMESOS_MPI_C2F
 
