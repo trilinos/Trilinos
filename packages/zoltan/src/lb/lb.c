@@ -221,6 +221,7 @@ int i;
   else if (strcasecmp(method_name, "OCTPART") == 0) {
     lb->Method = OCTPART;
     lb->LB_Fn = oct_init;
+    LB_Debug = 7;
   }
   else if (strcasecmp(method_name, "NONE") == 0) {
     lb->Method = NONE;
@@ -391,7 +392,7 @@ int num_keep;                  /* Set to the number of objects the processor
 int gmax_imports;              /* Maximum number of imported objects over 
                                   all processors.                           */
 double LB_start_time, LB_end_time;
-double LB_time[2], LB_max_time[2];
+double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
   LB_start_time = MPI_Wtime();
 
