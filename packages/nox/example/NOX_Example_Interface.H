@@ -63,7 +63,7 @@ public:
   virtual const Vector& getSolution() = 0;
 
   //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
-  virtual bool computeF(Vector& rhs, const Vector &x) = 0;
+  virtual bool computeF(NOX::Example::Vector& rhs, const NOX::Example::Vector &x) = 0;
   
   //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
   virtual bool computeJacobian(Matrix& J, Vector & x) = 0;
