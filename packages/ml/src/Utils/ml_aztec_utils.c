@@ -530,9 +530,9 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    int            length, zero_flag, j, offset, nrows, *sub_proc_config;
    double         *vals, dsize, di;
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
-   #ifdef ML_MPI
+#ifdef ML_MPI
       MPI_AZComm *tptr;
-   #endif
+#endif
 #ifdef ML_EXPERIMENT
    /* invoke Aztec once to build preconditioner. */
    int size;
@@ -666,10 +666,10 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       sub_proc_config = (int *) malloc(AZ_PROC_SIZE*sizeof(int));
       sub_proc_config[AZ_node] = 0;
       sub_proc_config[AZ_N_procs] = 1;
-   #ifdef ML_MPI
+#ifdef ML_MPI
       tptr = AZ_get_comm(proc_config);
       AZ_set_comm(sub_proc_config, *tptr);
-   #endif
+#endif
       context->proc_config    = sub_proc_config;
       context->offset         = offset;
    
