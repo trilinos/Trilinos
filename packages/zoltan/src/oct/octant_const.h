@@ -80,7 +80,9 @@ extern int HILBERT;
 extern void    POC_init(int pid, int dim);
 extern pOctant POC_new();
 extern void    POC_free(pOctant oct);
+#ifdef LGG_MIGOCT
 extern void    POC_setID(pOctant oct, int id);
+#endif /* LGG_MIGOCT */
 extern int     POC_id(pOctant oct);
 extern void    POC_setparent(pOctant oct, pOctant parent, int ppid);
 extern void    POC_setchildnum(pOctant oct, int childnum);

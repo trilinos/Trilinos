@@ -71,10 +71,13 @@ void insert_orphan(Region reg) {
   rflag = 0;
   while(rootlist != NULL) {
     rflag = 1;
-    /* fprintf(stderr, "(%d) attempting to insert %lf %lf %lf in octant %d\n",
-     *       msg_mypid, reg.Coord[0], reg.Coord[1], reg.Coord[2],
-     *       POC_id(rootlist->oct));
-     */
+    /* if(LB_Proc == 1)
+     *   fprintf(stderr, "(%d) %lf %lf %lf in (%lf %lf %lf, %lf %lf %lf)\n",
+     *     LB_Proc, reg.Coord[0], reg.Coord[1], reg.Coord[2],
+     *     (rootlist->oct)->min[0], (rootlist->oct)->min[1], 
+     *     (rootlist->oct)->min[2], (rootlist->oct)->max[0],
+     *     (rootlist->oct)->max[1], (rootlist->oct)->max[2]);
+     */     
     /* for each of the x,y,z-coordinates check if region fits in the octant */
     for (j=0; j<i; j++) {
       lower = rootlist->oct->min[j];
@@ -92,7 +95,8 @@ void insert_orphan(Region reg) {
   
   if(rootlist == NULL) {                                      /* error check */
     fprintf(stderr,
-	    "ERROR: migreg_migrate_regions could not insert region\n");
+	    "(%d) ERROR: migreg_migrate_regions could not insert region\n",
+	    LB_Proc);
     abort();
   }
   else                                     /* found a place to insert region */
@@ -132,13 +136,17 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
 
   ptr = RegionList;
   n = nreg = 0;
-  while(ptr != NULL && nregions > 0) {
+  while((ptr != NULL) && (nregions > 0)) {
     if(ptr->attached == 1) {
       /* if region already attached to an octant, then skip to next region */
       ptr = ptr->next;
       continue;
     }
 
+    /*
+     * fprintf(stderr,"(%d) %lf %lf %lf\n", LB_Proc,
+     *	    ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
+     */
     /* region not attached, have to find which processor to send to */
     j=0;
     vector_set(min, gmin);
@@ -155,12 +163,16 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
 	j = j * 8;
       k = child_which(origin, ptr->Coord);
       if(HILBERT) {
-	new_num = change_to_hilbert(min, max, origin, k);
+	if(dimension == 3) 
+	  new_num = change_to_hilbert(min, max, origin, k);
+	else 
+	  new_num = change_to_hilbert2d(min, max, origin, k);
       }
       else if(GRAY)
 	new_num = convert_to_gray(k);
       else
 	new_num = k;
+
       j += new_num;
       child_bounds(min, max, origin, k, cmin, cmax);
       vector_set(min, cmin);

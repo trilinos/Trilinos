@@ -126,6 +126,14 @@ void POC_free(pOctant oct) {
   free(oct);
 }
 
+#ifdef LGG_MIGOCT
+/*
+ * ATTN!! :
+ * Manually setting the octant's id number is necessary if octants are 
+ * being migrated this is not the case with the current implementation 
+ * of the code references are left here in case it does become necessary
+ * to do so again.
+ */
 /*
  * void POC_setID(pOctant octant, int id)
  *
@@ -133,6 +141,7 @@ void POC_free(pOctant oct) {
  */
 void POC_setID(pOctant oct, int id) 
 { oct->id=id; }
+#endif /* LGG_MIGOCT */
 
 /*
  * void POC_id(pOctant octant)

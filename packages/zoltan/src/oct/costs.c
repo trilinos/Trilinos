@@ -78,7 +78,9 @@ float costs_subtree_compute(pOctant octant, int *seq) {
   float *data;                               /* COST data attached to octant */
   int i;                                     /* index counter */
 
+#ifdef LGG_MIGOCT
   POC_setID(octant,(*seq)++);               /* set new ID for local ordering */
+#endif /* LGG_MIGOCT */
   c=0;                                           /* initialize cost variable */
 
   if (!POC_isTerminal(octant)) {
@@ -124,14 +126,15 @@ float costs_global_compute() {
   int nroot;                                  /* number of local roots */
   pOctant *root;                              /* root of a subtree */
   void *temp;                                 /* temp var used for iterating */
-  pRList localroots;                          /* list of all local roots */
+  pRList lroots;                              /* list of all local roots */
   pOctant lr,                                 /* a local root */
           oct;                                /* an octant of a subtree */
 
   /* initialize variables */
   seq=0;
   totcost=0;
-  
+
+#ifdef LGG_MIGOCT
   /* get the roots in order */
   oct_roots_in_order(&root,&nroot);
   {
@@ -145,8 +148,21 @@ float costs_global_compute() {
        */
     }
   }
-
   free(root);
+#else
+  lroots = POC_localroots();
+  while(lroots != NULL) {
+    /* initialize octants for COST and NPID data tags */
+    costs_init(lroots->oct);
+    /* calculate cost of all the subtree */
+    totcost+=costs_subtree_compute(lroots->oct, &seq);
+    /* fprintf(stderr, "Computing costs on local root %d.%d seq=%d tot=%f\n",
+     *         OCT_localpid, POC_id(lroots->oct), seq, totcost);
+     */
+    lroots = lroots->next;
+  }
+
+#endif /* LGG_MIGOCT */
 
   return(totcost);
 }

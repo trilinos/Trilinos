@@ -122,7 +122,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   /* set up tags for migrations */
   time1 = MPI_Wtime();
   dfs_migrate(&export_regs, &nsentags, &import_regs, &nrectags, 
-	      &c[2], &c[3], &counters[3], &counters[4]);
+	      &c[2], &c[3], &counters[3], &counters[5]);
   fix_tags(&export_tags, &nsentags, &import_tags, &nrectags, 
 	   import_regs, export_regs);
   time2 = MPI_Wtime();
@@ -146,7 +146,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   *pobjtop = count - nsentags;
   *pobjnum = *pobjtop + nrectags;
 
-  counters[5] = nrectags;
+  counters[4] = nsentags;
   MPI_Barrier(MPI_COMM_WORLD);
   timestop = MPI_Wtime();
 
@@ -345,6 +345,15 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     if(OCT_rootlist->oct != root)
       POC_delTree(root);
   }
+
+  /*
+   *  if(LB_Proc == 0)
+   *    for(i=0; i<hold; i++)
+   *      fprintf(stderr,"(%d) %lf %lf %lf, %lf %lf %lf\n", array[i].npid,
+   *	      array[i].min[0], array[i].min[1], array[i].min[2],
+   *	      array[i].max[0], array[i].max[1], array[i].max[2]);
+   *  msg_sync();
+   */
 
   /* 
    * attach the regions to the root... oct_fix will create the octree
@@ -739,7 +748,9 @@ void oct_terminal_refine(pOctant oct,int count) {
     POC_setparent(child[i], oct, msg_mypid);   /* set the child->parent link */
     POC_setchildnum(child[i], i);               /* which child of the parent */
     POC_setchild(oct, i, child[i]);            /* set the parent->child link */
+#ifdef LGG_MIGOCT
     POC_setID(child[i], oct_nextId());                /* set child id number */
+#endif /* LGG_MIGOCT */
     POC_setbounds(child[i],cmin,cmax);                   /* set child bounds */
     POC_setCpid(oct, i, msg_mypid);      /* set child to be a local octant */
     /*    POC_setOrientation(child[i], 
@@ -920,6 +931,7 @@ void oct_terminal_coarsen(pOctant oct) {
   }
 }
 
+#ifdef LGG_MIGOCT
 void oct_resetIdCount(int start_count)
 {
   IDcount = start_count;
@@ -1004,7 +1016,6 @@ void oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
   free(rootid);
 }
 
-
 /*
  * pOctant oct_findId(int id)
  *
@@ -1025,6 +1036,7 @@ pOctant oct_findId(int id)
 
   return(NULL);
 }
+#endif /* LGG_MIGOCT */
 
 #if 0
 /*

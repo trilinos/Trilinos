@@ -47,9 +47,9 @@ void dfs_partition(int *counter, float *c1) {
           oct;                      /* pointer to an octant */
 
   count = 0;
-  /* Note: set root oct id's first so costs_global_compute() can know order */
-  *c1 = mycost = costs_global_compute();         /* sets ids in order from 0 */
+  *c1 = mycost = costs_global_compute();
  
+#ifdef LGG_MIGOCT
   /* gets the number of octants from the previous processors */
   nprevoct=msg_int_scan(POC_nOctants());
 
@@ -61,6 +61,7 @@ void dfs_partition(int *counter, float *c1) {
     dfs_SetIds(localroots->oct, nprevoct);
     localroots = localroots->next;
   }
+#endif /* LGG_MIGOCT */
 
   /* Sum a value from each processor, and return sum to all processors */
   globalcost=msg_double_sum(mycost);
@@ -91,6 +92,8 @@ void dfs_partition(int *counter, float *c1) {
   (*counter) = count;
 }
 
+
+#ifdef LGG_MIGOCT
 /*
  * int dfs_SetIds(pOctant octant, int number_of_previous_octants)
  *
@@ -116,6 +119,7 @@ int dfs_SetIds(pOctant oct, int nprevoct) {
   }
   return 0;
 }
+#endif /* LGG_MIGOCT */
 
 /*
  * void visit_all_subtrees()
