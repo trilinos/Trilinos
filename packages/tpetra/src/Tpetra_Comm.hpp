@@ -54,16 +54,11 @@ class Comm {
   //! Destructor
   virtual ~Comm() {};
   //@}
-
-	//@{ \name Image Info Methods
-	//! getMyImageID
-	virtual int getMyImageID() const = 0;
-	//! getNumImages
-	virtual int getNumImages() const = 0;
-	//@}
   
   //@{ \name Barrier Methods
-  //! Barrier. Each image must stop until all images have reached the barrier.
+  //! Barrier. 
+  /*! Each image must stop until all images have reached the barrier.
+   */
   virtual void barrier() const = 0;
   //@}
 
@@ -73,9 +68,9 @@ class Comm {
     \param myVals InOut
            On entry, the root image contains the list of values.  On exit,
 	   all images will have the same list of values.  Note that values must be
-	   aalocated on all images before the broadcast.
+	   allocated on all images before the broadcast.
     \param count In
-           On entry, contains the length of the list of myVals.
+           On entry, contains the length of myVals.
     \param root In
            On entry, contains the imageID from which all images will receive a copy of myVals.
   */
@@ -91,7 +86,7 @@ class Comm {
     \param allVals Out
            On exit, contains the list of values from all images. Must be of size numImages*count.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of myVals.
   */
   virtual void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const = 0;
   //@}
@@ -106,7 +101,7 @@ class Comm {
     \param globalSums Out
            On exit, contains the list of values summed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialSums.
   */
   virtual void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const = 0;
   //@}
@@ -121,7 +116,7 @@ class Comm {
     \param globalMaxs Out
            On exit, contains the list of maxs computed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialMaxs.
   */
   virtual void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const = 0;
   //! Global Min function.
@@ -133,7 +128,7 @@ class Comm {
     \param globalMins Out
            On exit, contains the list of mins computed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialMins.
   */
   virtual void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const = 0;
   //@}
@@ -148,7 +143,7 @@ class Comm {
     \param scanSums Out
            On exit, contains the list of values summed across images 0 through i.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of myVals.
   */
   virtual void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const = 0;
   //@}

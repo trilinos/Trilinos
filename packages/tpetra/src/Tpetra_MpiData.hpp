@@ -1,4 +1,4 @@
-//@HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //          Tpetra: Templated Linear Algebra Services Package
@@ -24,40 +24,49 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
 
-#include "Tpetra_Object.hpp"
-#include "Tpetra_SerialComm.hpp"
-#include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_Version.hpp"
+#ifndef TPETRA_MPIDATA_HPP
+#define TPETRA_MPIDATA_HPP
 
-int main(int argc, char *argv[])
-{
-	cout << "*** Starting verySimple example..." << endl;
+#include <mpi.h>
 
-	cout << Tpetra::Tpetra_Version() << endl;
+namespace Tpetra {
+	
+  //! MpiData: Inner data class for MpiPlatform and MpiComm.
 
-	// test Object
-	cout << "*** Creating Object..." << endl;
-  Tpetra::Object obj1;
-	Tpetra::Object obj2("obj2");
+  class MpiData : public Object {
+    template<typename OrdinalType, typename ScalarType>
+    friend class MpiPlatform;
+    template<typename PacketType, typename OrdinalType>
+    friend class MpiComm;
+  public:
+    // default constructor
+    MpiData(MPI_Comm Comm)
+      : Object("Tpetra::MpiData")
+      , MpiComm_(Comm)
+  	{
+      // we would prefer to do this in a member initialization, but that's not possible
+      MPI_Comm_size(Comm, &size_);
+      MPI_Comm_rank(Comm, &rank_);
+    };
+    
+    // destructor
+    ~MpiData() {};
+    
+  protected:
+    MPI_Comm MpiComm_;
+    int rank_;
+    int size_;
+    
+  private:
+    //! Copy constructor (declared but not defined, do not use)
+    MpiData(MpiData const& rhs);
+    //! Assignment operator (declared but not defined, do not use)
+    MpiData& operator = (MpiData const& rhs);
+    
+  }; // class MpiData
+  
+} // namespace Tpetra
 
-	int temp1 = obj1.getTracebackMode();
-	cout << obj1 << endl;
-
-	// test SerialComm
-	cout << "*** Creating SerialComm..." << endl;
-	Tpetra::SerialComm<double, int> comm1;
-	cout << comm1 << endl;
-
-	// test Platform
-	cout << "*** Creating SerialPlatform..." << endl;
-	Tpetra::SerialPlatform<int, int> platform1;
-  int temp2 = platform1.getNumImages();
-	cout << platform1 << endl;
-
-	cout << "*** Finished." << endl;
-
-  return(0);
-}
-
+#endif // TPETRA_MPIDATA_HPP

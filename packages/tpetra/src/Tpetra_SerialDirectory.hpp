@@ -84,7 +84,7 @@ class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
 	//@}
 
  private:
-  ElementSpace<OrdinalType> const* ElementSpace_;
+  ElementSpace<OrdinalType> const ElementSpace_;
 
 	//! Assignment operator (declared but not defined, do not use)
 	SerialDirectory<OrdinalType>& operator = (SerialDirectory<OrdinalType> const& Source);
@@ -98,8 +98,8 @@ class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
 // default constructor
 template<typename OrdinalType>
 SerialDirectory<OrdinalType>::SerialDirectory(ElementSpace<OrdinalType> const& elementSpace) 
-	: Object("Tpetra::Directory[Serial]") 
-	, ElementSpace_(&elementSpace) {}
+	: Object("Tpetra::SerialDirectory") 
+	, ElementSpace_(elementSpace) {}
 
 // copy constructor
 template<typename OrdinalType>
@@ -117,13 +117,13 @@ void SerialDirectory<OrdinalType>::getDirectoryEntries(OrdinalType numEntries,
 																											 OrdinalType const* globalEntries, 
 																											 OrdinalType* images, 
 																											 OrdinalType* localEntries) const {
-	int imageID = ElementSpace_->comm().getMyImageID();
+	int imageID = ElementSpace_.platform().getMyImageID();
 	for(OrdinalType i = 0; i < numEntries; i++) {
-		if(!ElementSpace_->isMyGID(globalEntries[i]))
+		if(!ElementSpace_.isMyGID(globalEntries[i]))
 			throw reportError("Global ID " + toString(globalEntries[i]) + " was not found in this ElementSpace.", 1);
 		else {
 			images[i] = imageID;
-			localEntries[i] = ElementSpace_->getLID(globalEntries[i]);
+			localEntries[i] = ElementSpace_.getLID(globalEntries[i]);
 		}
 	}
 }

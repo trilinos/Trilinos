@@ -49,6 +49,28 @@ namespace Tpetra {
     }
   }
 
+  // type conversion functions
+  template<typename OrdinalType, typename ScalarType>
+  void ordinalToScalar(OrdinalType const& source, ScalarType& dest) {
+    dest = static_cast<ScalarType>(source);
+  }
+  template<typename OrdinalType, typename ScalarType>
+  void scalarToOrdinal(ScalarType const& source, OrdinalType& dest) {
+    dest = static_cast<OrdinalType>(source);
+  }
+
+  // print contents of std::vector object
+  template<typename T>
+  void printVector(ostream& os, std::vector<T> const& vector) {
+    os << "{";
+    if(!vector.empty()) {
+      os << vector[0];
+      for(int i = 1; i < vector.size(); i++)
+        os << "," << vector[i];
+    }
+    os << "}" << endl;
+  }
+ 
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

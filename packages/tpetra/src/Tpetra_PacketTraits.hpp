@@ -30,7 +30,6 @@
 #define TPETRA_PACKETTRAITS_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <mpi.h>
 
 namespace Tpetra {
   /** The Tpetra PacketTraits file.
@@ -50,31 +49,26 @@ namespace Tpetra {
 	struct PacketTraits {
 		static inline int packetSize()              {return UndefinedPacketTraits<T>::notDefined();};
 		static inline std::string name()            {return UndefinedPacketTraits<T>::notDefined();};
-    static inline MPI_Datatype mpiDataType()    {return UndefinedPacketTraits<T>::notDefined();};
 	};
 	
 	template<>
 	struct PacketTraits<int> {
 		static inline int packetSize()              {return(sizeof(int));};
 		static inline std::string name()            {return("int");};
-    static inline MPI_Datatype mpiDataType()    {return(MPI_INT);}; 
 	};
 
 	template<>
 	struct PacketTraits<float> {
 		static inline int packetSize()              {return(sizeof(float));};
 		static inline std::string name()            {return("float");};
-    static inline MPI_Datatype mpiDataType()    {return(MPI_FLOAT);}; 
 	};
 
 	template<>
 	struct PacketTraits<double> {
 		static inline int packetSize()              {return(sizeof(double));};
 		static inline std::string name()            {return("double");};
-    static inline MPI_Datatype mpiDataType()    {return(MPI_DOUBLE);}; 
 	};
-
-  /*
+ 
 #if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H))
 
 	template<>
@@ -90,7 +84,7 @@ namespace Tpetra {
 	};
 
 #endif // HAVE_COMPLEX || HAVE_COMPLEX_H
-*/
+
    
 } // namespace Tpetra
 

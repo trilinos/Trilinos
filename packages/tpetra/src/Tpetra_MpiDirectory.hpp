@@ -53,7 +53,7 @@ namespace Tpetra {
     //@{ \name Constructors/Destructor.
     //! constructor
     MpiDirectory(ElementSpace<OrdinalType> const& elementSpace)	
-      : Object("Tpetra::Directory[MPI]") 
+      : Object("Tpetra::MpiDirectory") 
       , ElementSpace_(&elementSpace) 
     {};
     

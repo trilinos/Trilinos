@@ -479,8 +479,8 @@ public:
 
 	//! Print method, used by overloaded << operator.
 	void print(ostream& os) const {
-		OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
-		OrdinalType const numImages = vectorSpace().comm().getNumImages();
+		OrdinalType const myImageID = vectorSpace().platform().getMyImageID();
+		OrdinalType const numImages = vectorSpace().platform().getNumImages();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		
 		for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {

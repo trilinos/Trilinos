@@ -49,15 +49,14 @@ namespace Tpetra {
   //@{ \name Constructor/Destructor
 
   //! Default Constructor.
-  SerialDistributor() : Object("Tpetra::Distributor[Serial]") {};
+  SerialDistributor() : Object("Tpetra::SerialDistributor") {};
 
   //! Copy Constructor
   SerialDistributor(SerialDistributor<PacketType, OrdinalType> const& plan) : Object(plan.label()) {};
 
   //! Clone method
 	Distributor<PacketType, OrdinalType>* clone() {
-		Distributor<PacketType, OrdinalType>* distributor = static_cast<Distributor<PacketType, OrdinalType>*>
-			(new SerialDistributor<PacketType, OrdinalType>(*this)); 
+		SerialDistributor<PacketType, OrdinalType>* distributor = new SerialDistributor<PacketType, OrdinalType>(*this); 
 		return(distributor); 
 	};
 
@@ -126,9 +125,9 @@ namespace Tpetra {
 
 	//@{ \name I/O Methods
 	//! print method inherited from Object
-  void print(ostream& os) const {os << label();};
+    void print(ostream& os) const {};
 	//! printInfo method inherited from Distributor
-  void printInfo(ostream& os) const {print(os);};
+  void printInfo(ostream& os) const {os << *this;};
 	//@}
 
 }; // class SerialDistributor

@@ -285,7 +285,6 @@ public:
 
 			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
 			OrdinalType numMyElements = secondaryIndices.size();
-			OrdinalType* elementList = &secondaryIndices.front(); // address of first element in secondaryIndices
 
       /*cout << "********** create secondary dist. diag info **********" << endl;
       cout << "indx_: "; 
@@ -300,7 +299,7 @@ public:
 
 			OrdinalType indexBase = getPrimaryDist().getIndexBase();
 			Platform<OrdinalType, OrdinalType> const& platformO = getPrimaryDist().elementSpace().platform();
-			ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, elementList, indexBase, platformO);
+			ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, secondaryIndices, indexBase, platformO);
 			// then create vectorspace using it
 			Platform<OrdinalType, ScalarType> const& platformS = platform();
 			VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);

@@ -123,9 +123,8 @@ void esTester(bool verbose, bool debug, int size, int rank) {
   std::vector<OrdinalType> eList(nME); // allocate to size nME
   for(OrdinalType i = 0; i < nME; i++)
     eList[i] = 10 * (i + rank) + rank;
-  OrdinalType* ePtr = &eList[0];
   
-	Tpetra::ElementSpace<OrdinalType> es3(-1, nME, ePtr, 0, platform);
+	Tpetra::ElementSpace<OrdinalType> es3(-1, nME, eList, 0, platform);
 	if(verbose) cout << "Successful." << endl;
 	if(debug) cout << es3 << endl;
 	
@@ -137,10 +136,10 @@ void esTester(bool verbose, bool debug, int size, int rank) {
 	}
 	
 	if(verbose) cout << "Testing isSameAs (noncontig)...";
-	Tpetra::ElementSpace<OrdinalType> es3a(nGE, nME, ePtr, es3.getIndexBase(), platform); // should be same as es3
+	Tpetra::ElementSpace<OrdinalType> es3a(nGE, nME, eList, es3.getIndexBase(), platform); // should be same as es3
 	assert(es3.isSameAs(es3a) == true);
 	eList[(nME / 2)] *= 10;
-	Tpetra::ElementSpace<OrdinalType> es3b(nGE, nME, ePtr , es3.getIndexBase(), platform); // should be different than es3 & es3a
+	Tpetra::ElementSpace<OrdinalType> es3b(nGE, nME, eList, es3.getIndexBase(), platform); // should be different than es3 & es3a
 	assert(es3.isSameAs(es3b) == false);
 	if(verbose) cout << "Successful." << endl;
 
@@ -160,15 +159,15 @@ void esTester(bool verbose, bool debug, int size, int rank) {
   if(verbose) cout << "Running in MPI mode, not testing getRemoteIDList." << endl;
 #else
 	if(verbose) cout << "Testing getRemoteIDList...";
-	const int len = 4;
+	int const len = 4;
   std::vector<OrdinalType> gList(len);
   gList[0] = eList[1]; 
   gList[1] = eList[3]; 
   gList[2] = eList[5];
   gList[3] = eList[0];
-	OrdinalType pList[len] = {5,5,5,5};
-	OrdinalType lList[len] = {0,0,0,0};
-	es3.getRemoteIDList(len, &gList[0], pList, lList);
+  std::vector<OrdinalType> pList(len, 5);
+  std::vector<OrdinalType> lList(len, 0);
+	es3.getRemoteIDList(len, gList, pList, lList);
 	if(debug) cout << "\nGID PID LID getLID" << endl;
 	for(int i = 0; i < len; i++) {
 		if(debug) cout << setw(3) << gList[i] << setw(4) << pList[i] << setw(4) << lList[i] << setw(4) << es3.getLID(gList[i]) << endl;

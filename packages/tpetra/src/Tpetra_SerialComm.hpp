@@ -29,6 +29,7 @@
 #ifndef TPETRA_SERIALCOMM_HPP
 #define TPETRA_SERIALCOMM_HPP
 
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Object.hpp"
 
@@ -49,27 +50,20 @@ public:
     will execute in serial.  The access functions return the number of
     memory images to be 1 and the image ID to be 0.
   */
-  SerialComm();
+  SerialComm() : Object("Tpetra::SerialComm") {};
   
   //! Copy constructor
   /*! Makes an exact copy of an existing SerialComm instance.
   */
-  SerialComm(SerialComm<PacketType, OrdinalType> const& comm);
+  SerialComm(SerialComm<PacketType, OrdinalType> const& comm) : Object(comm.label()) {};
   
   //! Destructor.
   /*! Completely deletes a SerialComm object.  
     \warning Note:  All objects that depend on a SerialComm instance 
     should be destroyed prior to calling this function.
   */
-  ~SerialComm();
+  ~SerialComm() {};
   //@}
-
-	//@{ \name Image Info Methods
-	//! getMyImageID - In serial mode, always returns 0.
-	int getMyImageID() const {return(0);};
-	//! getNumImages - In serial mode, always returns 1.
-	int getNumImages() const {return(1);};
-	//@}
 
   //@{ \name Barrier Methods
   //! Barrier function. 
@@ -86,7 +80,7 @@ public:
 	   all images will have the same list of values.  Note that values must be
 	   allocated on all images before the broadcast.
     \param count In
-           On entry, contains the length of the list of myVals.
+           On entry, contains the length of myVals.
     \param root In
            On entry, contains the imageID from which all images will receive a copy of myVals.
   */
@@ -101,9 +95,11 @@ public:
     \param allVals Out
            On exit, contains the list of values from all images. Must by of size numImages*count.
     \param count In
-           On entry, contains the length of the list of myVals.
+           On entry, contains the length of myVals.
   */
-  void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const;
+  void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
+    copy(myVals, allVals, count);
+  };
   //@}
 
   //@{ \name Sum Methods
@@ -115,34 +111,40 @@ public:
     \param globalSums Out
            On exit, contains the list of values summed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialSums.
   */
-  void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const;
+  void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
+    copy(partialSums, globalSums, count);
+  };
   //@}
 	
   //@{ \name Max/Min Methods
   //! SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param partialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all images.
+           On entry, contains the list of values, usually partial maxs computed locally;
+	   using these Partial Maxs, the max across all images will be computed.
     \param globalMaxs Out
-           On exit, contains the list of values summed across all images.
+           On exit, contains the list of maxs computed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialMaxs.
   */
-  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const;
+  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
+    copy(partialMaxs, globalMaxs, count);
+  };
   //! SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param partialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all images.
+           On entry, contains the list of values, usually partial mins computed locally;
+	   using these Partial Mins, the min across all images will be computed.
     \param globalMins Out
-           On exit, contains the list of values summed across all images.
+           On exit, contains the list of mins computed across all images.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of partialMins.
   */
-  void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const;
+  void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
+    copy(partialMins, globalMins, count);
+  };
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -153,74 +155,27 @@ public:
     \param scanSums Out
            On exit, contains the list of values summed across images 0 through i.
     \param count In
-           On entry, contains the length of the list of values.
+           On entry, contains the length of myVals.
   */
-  void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const;
+  void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
+    copy(myVals, scanSums, count);
+  };
   //@}
 
 	//@{ \name I/O Methods
 	//! Print methods
-	void print(ostream& os) const {os << "::Memory Image " << getMyImageID() << " of " << getNumImages() << " total images" << endl;};
-	void printInfo(ostream& os) const {print(os);};
+	void print(ostream& os) const {};
+	void printInfo(ostream& os) const {os << *this;};
 	//@}
 
+private:
+  // convenience function for copying
+  void copy(PacketType* source, PacketType* dest, OrdinalType const count) const {
+    for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < count; i++)
+      dest[i] = source[i];
+  }
+
 }; // class SerialComm
-
-
-// begin Tpetra_SerialComm.cpp
-//=============================================================================
-
-  // default constructor
-  template<typename PacketType, typename OrdinalType>
-  SerialComm<PacketType, OrdinalType>::SerialComm() 
-    : Object("Tpetra::Comm[Serial]") {}
-  
-  // copy constructor
-  template<typename PacketType, typename OrdinalType>
-  SerialComm<PacketType, OrdinalType>::SerialComm(SerialComm<PacketType, OrdinalType> const& comm) 
-    : Object(comm.label()) {}
-  
-  // destructor
-  template<typename PacketType, typename OrdinalType>
-  SerialComm<PacketType, OrdinalType>::~SerialComm() {}
-  
-  // gather all
-  template<typename PacketType, typename OrdinalType>
-  void SerialComm<PacketType, OrdinalType>::gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
-    for(OrdinalType i = 0; i < count; i++)
-      allVals[i] = myVals[i];
-  }
-  
-  // sum
-  template<typename PacketType, typename OrdinalType>
-  void SerialComm<PacketType, OrdinalType>::sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
-    for(OrdinalType i = 0; i < count; i++)
-      globalSums[i] = partialSums[i];
-  }
-  
-  // min/max
-  template<typename PacketType, typename OrdinalType>
-  void SerialComm<PacketType, OrdinalType>::maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
-    for(OrdinalType i = 0; i < count; i++)
-      globalMaxs[i] = partialMaxs[i];
-  }
-  template<typename PacketType, typename OrdinalType>
-  void SerialComm<PacketType, OrdinalType>::minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
-    for(OrdinalType i = 0; i < count; i++)
-      globalMins[i] = partialMins[i];
-  }
-  
-  // scansum
-  template<typename PacketType, typename OrdinalType>
-  void SerialComm<PacketType, OrdinalType>::scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
-    for(OrdinalType i = 0; i < count; i++)
-      scanSums[i] = myVals[i];
-  }
-
-	// print
-
-//=============================================================================
-// end Tpetra_SerialComm.cpp
 
 } // namespace Tpetra
 

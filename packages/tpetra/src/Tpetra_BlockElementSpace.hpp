@@ -357,8 +357,8 @@ namespace Tpetra {
 			OrdinalType const* firstPointList1 = getFirstPointInElementList(); 
 			OrdinalType const* pointToElementList1 = getPointToElementList(); 
 			
-			int myImageID = elementSpace().comm().getMyImageID();
-			int numImages = elementSpace().comm().getNumImages();
+			int myImageID = elementSpace().platform().getMyImageID();
+			int numImages = elementSpace().platform().getNumImages();
 			
 			for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
 				if(myImageID == imageCtr) {
@@ -416,9 +416,9 @@ namespace Tpetra {
 			OrdinalType nME = elementSpace().getNumMyElements();
 			OrdinalType const VGIDSize = getNumMyPoints();
 			OrdinalType const maxElementSize = getMaxElementSize();
-			OrdinalType const * const elementSizeList = getElementSizeList();
+			OrdinalType const* const elementSizeList = getElementSizeList();
 			
-			OrdinalType* const VGID = new OrdinalType[VGIDSize];
+      std::vector<OrdinalType> VGID(VGIDSize);
 			OrdinalType curPos = 0;
 			
 			for(OrdinalType i = 0; i < nME; i++) { // i == current LID
@@ -430,10 +430,9 @@ namespace Tpetra {
 				}
 			}
 			
-			ElementSpace<OrdinalType> * compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, VGID, elementSpace().getIndexBase(),
+			ElementSpace<OrdinalType>* compatibleES = new ElementSpace<OrdinalType> (-1, VGIDSize, VGID, elementSpace().getIndexBase(),
 																																								elementSpace().platform());
 			
-			delete[] VGID;
 			return(compatibleES);
 		};
 

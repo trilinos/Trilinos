@@ -162,7 +162,7 @@ int unitTests(bool verbose, bool debug) {
 	// accessors to other classes
 	if(verbose) cout << "Class member accessors..." << endl;
 	if(verbose) v2.platform().printInfo(cout);
-	temp = v2.comm().getNumImages();
+	temp = v2.platform().getNumImages();
 
 	if(verbose) cout << "Code coverage section finished." << endl;
 

@@ -144,12 +144,14 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
+	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_ImportData.hpp \
 	$(srcdir)/Tpetra_Vector.hpp $(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_MpiPlatform.hpp $(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp
+	$(srcdir)/Tpetra_MpiDirectory.hpp $(srcdir)/Tpetra_MpiData.hpp \
+	$(srcdir)/Tpetra_MpiTraits.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -304,7 +306,9 @@ EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp
+	$(srcdir)/Tpetra_MpiDirectory.hpp \
+	$(srcdir)/Tpetra_MpiData.hpp \
+	$(srcdir)/Tpetra_MpiTraits.hpp 
 
 EXTRA_MPI = 
 @HAVE_MPI_FALSE@MPI_H = 
@@ -324,7 +328,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_BlockElementSpace.hpp \
 	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
-	$(srcdir)/Tpetra_VectorSpaceData.hpp
+	$(srcdir)/Tpetra_VectorSpaceData.hpp \
+	$(srcdir)/Tpetra_Import.hpp \
+	$(srcdir)/Tpetra_ImportData.hpp
 
 DIST = 
 COMP_H = \

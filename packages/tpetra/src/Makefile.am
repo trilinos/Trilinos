@@ -70,11 +70,14 @@ EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
-	$(srcdir)/Tpetra_MpiDirectory.hpp
+	$(srcdir)/Tpetra_MpiDirectory.hpp \
+	$(srcdir)/Tpetra_MpiData.hpp \
+	$(srcdir)/Tpetra_MpiTraits.hpp 
 
 EXTRA_MPI = 
 
 if HAVE_MPI 
+
 MPI_H = \
 	$(EXTRA_MPI_H)
 MPI = \
@@ -100,7 +103,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_BlockElementSpace.hpp \
 	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
-	$(srcdir)/Tpetra_VectorSpaceData.hpp
+	$(srcdir)/Tpetra_VectorSpaceData.hpp \
+	$(srcdir)/Tpetra_Import.hpp \
+	$(srcdir)/Tpetra_ImportData.hpp
 
 DIST = 
 

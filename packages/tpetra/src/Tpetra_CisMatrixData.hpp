@@ -50,11 +50,10 @@ class CisMatrixData : public Object {
 	  , rowOriented_(rowOriented)
     , fillCompleted_(false)
     , numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-  {
-	  platform_ = Teuchos::rcp(primaryDist.platform().clone());
-	  comm_ = Teuchos::rcp(primaryDist.platform().createScalarComm());
-    ordinalComm_ = Teuchos::rcp(primaryDist.platform().createOrdinalComm());
-	}
+    , platform_(primaryDist.platform().clone())
+    , comm_(primaryDist.platform().createScalarComm())
+    , ordinalComm_(primaryDist.platform().createOrdinalComm())
+  {};
 
 	CisMatrixData(VectorSpace<OrdinalType, ScalarType> primaryDist, VectorSpace<OrdinalType, ScalarType> secondaryDist, bool rowOriented)
 	  : Object("Tpetra::CisMatrixData")
@@ -70,11 +69,10 @@ class CisMatrixData : public Object {
 	  , rowOriented_(rowOriented)
     , fillCompleted_(false)
     , numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-  {
-	  platform_ = Teuchos::rcp(primaryDist.platform().clone());
-	  comm_ = Teuchos::rcp(primaryDist.platform().createScalarComm());
-    ordinalComm_ = Teuchos::rcp(primaryDist.platform().createOrdinalComm());
-	}
+    , platform_(primaryDist.platform().clone())
+    , comm_(primaryDist.platform().createScalarComm())
+    , ordinalComm_(primaryDist.platform().createOrdinalComm())
+  {};
 
     // destructor. no heap-data, so no need to override
 	~CisMatrixData() {}

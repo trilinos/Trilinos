@@ -29,6 +29,7 @@
 #ifndef TPETRA_SERIALPLATFORM_HPP
 #define TPETRA_SERIALPLATFORM_HPP
 
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
@@ -48,62 +49,70 @@ template<typename OrdinalType> class ElementSpace;
 
 		//@{ \name Constructor/Destructor Methods
 		//! Constructor
-		SerialPlatform() : Object("Tpetra::Platform[Serial]") {};
+		SerialPlatform() : Object("Tpetra::SerialPlatform") {};
 		//! Copy constructor
 		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
 		//! Destructor
 		~SerialPlatform() {};
 		//! Clone constructor
-		Platform<OrdinalType, ScalarType>* clone() const {
-			Platform<OrdinalType, ScalarType>* platform = static_cast<Platform<OrdinalType, ScalarType>*>
-				(new SerialPlatform<OrdinalType, ScalarType>(*this));
+		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
+      Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > platform;
+      platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
 			return(platform);
 		};
 		//@}
 
+    //@{ \name Image Info Methods
+
+    //! getMyImageID - In serial mode, always returns 0.
+    int getMyImageID() const {return(0);};
+
+    //! getNumImages - In serial mode, always returns 1.
+    int getNumImages() const {return(1);};
+
+    //@}
+
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		Comm<ScalarType, OrdinalType>* createScalarComm() const {
-			// static_cast casts SerialComm* to Comm*
-			Comm<ScalarType, OrdinalType>* comm = static_cast<Comm<ScalarType, OrdinalType>*>(new SerialComm<ScalarType, OrdinalType>());
+		Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
+			Teuchos::RefCountPtr< SerialComm<ScalarType, OrdinalType> > comm;
+      comm = Teuchos::rcp(new SerialComm<ScalarType, OrdinalType>());
 			return(comm);
 		};
-		Comm<OrdinalType, OrdinalType>* createOrdinalComm() const {
-			// static_cast casts SerialComm* to Comm*
-			Comm<OrdinalType, OrdinalType>* comm = static_cast<Comm<OrdinalType, OrdinalType>*>(new SerialComm<OrdinalType, OrdinalType>());
+		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
+			Teuchos::RefCountPtr< SerialComm<OrdinalType, OrdinalType> > comm;
+      comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
 			return(comm);
 		};
 
 		//! Distributor Instances
-		Distributor<ScalarType, OrdinalType>* createScalarDistributor() const {
-			// static_cast casts SerialDistributor* to Distributor*
-			Distributor<ScalarType, OrdinalType>* distributor = 
-				static_cast<Distributor<ScalarType, OrdinalType>*>(new SerialDistributor<ScalarType, OrdinalType>());
+		Teuchos::RefCountPtr< Distributor<ScalarType, OrdinalType> > createScalarDistributor() const {
+			Teuchos::RefCountPtr< SerialDistributor<ScalarType, OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new SerialDistributor<ScalarType, OrdinalType>());
 			return(distributor);
 		};
-		Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const {
-			// static_cast casts SerialDistributor* to Distributor*
-			Distributor<OrdinalType, OrdinalType>* distributor = 
-				static_cast<Distributor<OrdinalType, OrdinalType>*>(new SerialDistributor<OrdinalType, OrdinalType>());
+		Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > createOrdinalDistributor() const {
+			Teuchos::RefCountPtr< SerialDistributor<OrdinalType, OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new SerialDistributor<OrdinalType, OrdinalType>());
 			return(distributor);
 		};
 
 		//! Directory Instance
-		Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-		  // static_cast casts SerialDirectory* to Directory*
-		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(elementSpace)); 
-			return(dir);
+		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
+      Teuchos::RefCountPtr< SerialDirectory<OrdinalType> > directory;
+      directory = Teuchos::rcp(new SerialDirectory<OrdinalType>(elementSpace)); 
+			return(directory);
 		};
 
 		//@}
 
 		//@{ \name I/O Methods
 		//! print - implements Tpetra::Object virtual print method.
-		void print(ostream& os) const { os << label() << endl;};
+		void print(ostream& os) const {};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
-		void printInfo(ostream& os) const {print(os);};
+		void printInfo(ostream& os) const {os << *this;};
 		//@}
 
 	}; // SerialPlatform class

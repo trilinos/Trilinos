@@ -26,8 +26,24 @@
 # ************************************************************************
 #@HEADER
 
-#if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Comm ElementSpace Distributor ImportExport BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest scripts
-#endif
+EXEEXT = .exe
 
-SUBDIRS = $(STANDARD_SUBDIRS)
+noinst_PROGRAMS = ImportExport_test
+
+ImportExport_test_SOURCES = \
+	$(srcdir)/cxx_main.cpp
+
+ImportExport_test_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+ImportExport_test_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src
+
+ImportExport_test_LDADD = \
+	$(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LIBS) $(FLIBS)
+

@@ -29,101 +29,185 @@
 #ifndef TPETRA_MPICOMM_HPP
 #define TPETRA_MPICOMM_HPP
 
+#include <mpi.h>
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
-#include "Tpetra_PacketTraits.hpp"
-#include <mpi.h>
+#include "Tpetra_MpiTraits.hpp"
 
 namespace Tpetra {
+
+// forward declaration of MpiData, needed to prevent circular inclusions
+// actual #include statement at the end of this file
+class MpiData;
 
 	template<typename PacketType, typename OrdinalType>
 	class MpiComm : public Object, public virtual Comm<PacketType, OrdinalType> {
 	public:
     
     //@{ \name Constructor/Destructor Methods
+    //! default constuctor
+    /*! This is used when the user wants to create an MpiComm instance directly.
+      \param In
+      Comm - MPI_Comm communicator we will use.
+     */
 		MpiComm(MPI_Comm Comm) 
-      : Object("Tpetra::Comm[MPI]") 
-      , MpiComm_(Comm)
+      : Object("Tpetra::MpiComm") 
+      , MpiData_()
     {
-        MPI_Comm_size(Comm, &size_);
-        MPI_Comm_rank(Comm, &rank_);
+      MpiData_ = Teuchos::rcp(new MpiData(Comm));
     };
 
+    //! platform constructor
+    /*! This is used by MpiPlatform to create an MpiComm instance. It should
+      not be called directly by the user.
+      \param In
+      MpiData - MpiData inner data class passed in by MpiPlatform.
+     */
+    MpiComm(Teuchos::RefCountPtr<MpiData> const& data)
+      : Object("Tpetra::MpiComm")
+      , MpiData_(data)
+    {};
+
+    //! copy constructor
     MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
       : Object(comm.label())
-      , MpiComm_(comm.MpiComm_)
-      , size_(comm.size_)
-      , rank_(comm.rank_)
+      , MpiData_(comm.MpiData_)
     {};
 
 		~MpiComm() {};
     //@}
     
-    //@{ \name Image Info Methods
-    int getMyImageID() const {return(rank_);};
-    int getNumImages() const {return(size_);};
-    //@}
-    
     //@{ \name Barrier Methods
+    //! MpiComm barrier function.
+    /*! Causes each image in the communicator to wait until all images have arrived.
+     */
     void barrier() const {
-      MPI_Barrier(MpiComm_);
+      MPI_Barrier(getMpiComm());
     };
     //@}
     
     //@{ \name Broadcast Methods
+    //! MpiComm Broadcast function.
+    /*!Takes list of input values from the root image and sends to all other images.
+      \param myVals InOut
+      On entry, the root image contains the list of values.  On exit,
+      all images will have the same list of values.  Note that values must be
+      allocated on all images before the broadcast.
+      \param count In
+      On entry, contains the length of myVals.
+      \param root In
+      On entry, contains the image from which all images will receive a copy of myVals.
+    */
     void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {
-      MPI_Bcast(myVals, count, PacketTraits<PacketType>::mpiDataType(), root, MpiComm_);
+      MPI_Bcast(myVals, count, MpiTraits<PacketType>::dataType(), root, getMpiComm());
     };
     //@}
     
     //@{ \name Gather Methods
+    //! MpiComm All Gather function.
+    /*! Takes list of values from all images in the communicator and creates an ordered contiguous list of 
+      those values on each image.
+      \param myVals In
+      On entry, contains the list of values, to be sent to all images.
+      \param allVals Out
+      On exit, contains the list of values from all images. Must by of size numImages*count.
+      \param count In
+      On entry, contains the length of myVals.
+    */
     void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
-      MPI_Allgather(myVals, count, PacketTraits<PacketType>::mpiDataType(), allVals, count, PacketTraits<PacketType>::mpiDataType(), MpiComm_);
+      MPI_Allgather(myVals, count, MpiTraits<PacketType>::dataType(), allVals, count, MpiTraits<PacketType>::dataType(), getMpiComm());
     };
     //@}
     
     //@{ \name Sum Methods
+    //! MpiComm Global Sum function.
+    /*! Takes list of input values from all images in the communicator, computes the sum and returns the
+      sum to all images.
+      \param partialSums In
+      On entry, contains the list of values, usually partial sums computed locally,
+      to be summed across all images.
+      \param globalSums Out
+      On exit, contains the list of values summed across all images.
+      \param count In
+      On entry, contains the length of partialSums.
+    */
     void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
-      MPI_Allreduce(partialSums, globalSums, count, PacketTraits<PacketType>::mpiDataType(), MPI_SUM, MpiComm_);
+      MPI_Allreduce(partialSums, globalSums, count, MpiTraits<PacketType>::dataType(), MPI_SUM, getMpiComm());
     };
     //@}
     
     //@{ \name Max/Min Methods
+    //! MpiComm Global Max function.
+    /*! Takes list of input values from all images in the communicator, computes the max and returns the 
+      max to all images.
+      \param partialMaxs In
+      On entry, contains the list of values to compute the max for.
+      \param globalMaxs Out
+      On exit, contains the list of max values across all images.
+      \param count In
+      On entry, contains the length of partialMaxs.
+    */
     void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
-      MPI_Allreduce(partialMaxs, globalMaxs, count, PacketTraits<PacketType>::mpiDataType(), MPI_MAX, MpiComm_);
+      MPI_Allreduce(partialMaxs, globalMaxs, count, MpiTraits<PacketType>::dataType(), MPI_MAX, getMpiComm());
     };
+    //! MpiComm Global Min function.
+    /*! Takes list of input values from all images in the communicator, computes the min and returns the 
+      min to all images.
+      \param partialMins In
+      On entry, contains the list of values to compute the min for.
+      \param globalMins Out
+      On exit, contains the list of min values across all images.
+      \param count In
+      On entry, contains the length of partialMins.
+    */
     void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
-      MPI_Allreduce(partialMins, globalMins, count, PacketTraits<PacketType>::mpiDataType(), MPI_MIN, MpiComm_);
+      MPI_Allreduce(partialMins, globalMins, count, MpiTraits<PacketType>::dataType(), MPI_MIN, getMpiComm());
     };
     //@}
     
     //@{ \name Parallel Prefix Methods
+    //! MpiComm Scan Sum function.
+    /*! Takes list of input values from all images in the communicator, computes the scan sum and returns it
+      to all images such that image i receives the sum of values from image 0 up to and including image i.
+      \param myVals In
+      On entry, contains the list of values to be summed across all images.
+      \param scanSums Out
+      On exit, contains the list of values summed across images 0 through i.
+      \param count In
+      On entry, contains the length of myVals.
+    */
     void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
-      MPI_Scan(myVals, scanSums, count, PacketTraits<PacketType>::mpiDataType(), MPI_SUM, MpiComm_);
+      MPI_Scan(myVals, scanSums, count, MpiTraits<PacketType>::dataType(), MPI_SUM, getMpiComm());
     };
     //@}
     
     //@{ \name I/O Methods
     //! Print methods
-    void print(ostream& os) const {os << "Image " << getMyImageID() << " of " << getNumImages() << " total images." << endl;};
-    void printInfo(ostream& os) const {print(os);};
+    void print(ostream& os) const {};
+    void printInfo(ostream& os) const {os << *this;};
     //@}
     
     //@{ \name MPI-specific methods, not inherited from Tpetra::Comm
     //! Access method to the MPI Communicator we're using.
     MPI_Comm getMpiComm() const {
-      return(MpiComm_);
+      return(data().MpiComm_);
     };
     
     //@}
     
-private:
-    MPI_Comm MpiComm_; // The MPI Communicator passed in at construction (actually a new one cpy ctr'd from it).
-    int rank_;
-    int size_;
+  private:
+    
+    Teuchos::RefCountPtr<MpiData> MpiData_;
+    
+    // convenience functions for returning inner data class, both const and nonconst versions.
+    MpiData& data() {return(*MpiData_);}
+    MpiData const& data() const {return(*MpiData_);}
     
 	}; // MpiComm class
   
 } // namespace Tpetra
+
+#include "Tpetra_MpiData.hpp"
 
 #endif // TPETRA_MPICOMM_HPP

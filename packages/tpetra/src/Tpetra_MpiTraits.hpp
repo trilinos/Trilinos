@@ -1,4 +1,4 @@
-//@HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //          Tpetra: Templated Linear Algebra Services Package
@@ -24,40 +24,47 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
 
-#include "Tpetra_Object.hpp"
-#include "Tpetra_SerialComm.hpp"
-#include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_Version.hpp"
+#ifndef TPETRA_MPITRAITS_HPP
+#define TPETRA_MPITRAITS_HPP
 
-int main(int argc, char *argv[])
-{
-	cout << "*** Starting verySimple example..." << endl;
+#include "Tpetra_ConfigDefs.hpp"
+#include <mpi.h>
 
-	cout << Tpetra::Tpetra_Version() << endl;
+namespace Tpetra {
+  /** The Tpetra MPITraits file.
+			
+	This is a traits file used by MpiComm. It provides traits
+	specializations for the built-in types that MPI can handle.
+  */	
 
-	// test Object
-	cout << "*** Creating Object..." << endl;
-  Tpetra::Object obj1;
-	Tpetra::Object obj2("obj2");
+  template<class T>
+  struct UndefinedScalarTraits {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
+  };
+  
+	template<class T>
+	struct MpiTraits {
+    	static inline MPI_Datatype dataType()    {return UndefinedScalarTraits<T>::notDefined();};
+	};
+	
+	template<>
+	struct MpiTraits<int> {
+    	static inline MPI_Datatype dataType()    {return(MPI_INT);}; 
+	};
 
-	int temp1 = obj1.getTracebackMode();
-	cout << obj1 << endl;
+	template<>
+	struct MpiTraits<float> {
+    	static inline MPI_Datatype dataType()    {return(MPI_FLOAT);}; 
+	};
 
-	// test SerialComm
-	cout << "*** Creating SerialComm..." << endl;
-	Tpetra::SerialComm<double, int> comm1;
-	cout << comm1 << endl;
+	template<>
+	struct MpiTraits<double> {
+    	static inline MPI_Datatype dataType()    {return(MPI_DOUBLE);}; 
+	};
+   
+} // namespace Tpetra
 
-	// test Platform
-	cout << "*** Creating SerialPlatform..." << endl;
-	Tpetra::SerialPlatform<int, int> platform1;
-  int temp2 = platform1.getNumImages();
-	cout << platform1 << endl;
-
-	cout << "*** Finished." << endl;
-
-  return(0);
-}
-
+#endif // TPETRA_MPITRAITS_HPP

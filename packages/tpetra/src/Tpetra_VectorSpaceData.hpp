@@ -46,14 +46,11 @@ class VectorSpaceData : public Object {
     , indexBase_(indexBase)
     , numMyEntries_(numMyEntries)
     , numGlobalEntries_(numGlobalEntries)
-    , Platform_()
-    , Comm_()
+    , Platform_(platform.clone())
+    , Comm_(platform.createScalarComm())
 		, ElementSpace_()
 		, BlockElementSpace_()
-    {
-        Platform_ = Teuchos::rcp(platform.clone());
-        Comm_ = Teuchos::rcp(platform.createScalarComm());
-    };
+    {};
 
     // destructor. no heap-data, so no need to override
 	~VectorSpaceData() {};

@@ -29,13 +29,13 @@
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include "Tpetra_Version.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #include "Tpetra_MpiDistributor.hpp"
 #else
 #include "Tpetra_SerialDistributor.hpp"
 #endif // TPETRA_MPI
-#include "Tpetra_Version.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -100,11 +100,11 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int rank, int size) {
-	int ierr = 0;
-	int returnierr = 0;
 	if(verbose) cout << "Starting unit tests for Distributor<" 
 									 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
 									 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
+	int ierr = 0;
+	int returnierr = 0;
 	
 	// ======================================================================
 	// code coverage section - just call functions, no testing
@@ -114,7 +114,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	// constructors
 	if(debug) cout << "Constructors..." << endl;
 #ifdef TPETRA_MPI
-  Tpetra::MpiDistributor<OrdinalType, OrdinalType> distrib;
+  Tpetra::MpiDistributor<OrdinalType, OrdinalType> distrib(MPI_COMM_WORLD);
 #else
   Tpetra::SerialDistributor<OrdinalType, OrdinalType> distrib;
 #endif // TPETRA_MPI
@@ -136,17 +136,17 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	// actual testing section - affects return code
 	// ======================================================================
 	
-	if(verbose) cout << "Starting actual testing section..." << endl;
+	if(verbose) cout << "Starting actual testing section...(none to do)" << endl;
 	
 	// finish up
-	if(verbose)
+	if(verbose) {
+    cout << "DistributorTest <" 
+         << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+         << Teuchos::ScalarTraits<ScalarType>::name() << "> ";
 		if(returnierr == 0)
-			cout << "DistributorTest <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
+			cout << "passed." << endl;
 		else
-			cout << "DistributorTest <" 
-			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
-			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
+			cout << "failed." << endl;
+  }
 	return(returnierr);
 }

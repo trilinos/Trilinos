@@ -1,4 +1,4 @@
-//@HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //          Tpetra: Templated Linear Algebra Services Package
@@ -24,40 +24,17 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
 
-#include "Tpetra_Object.hpp"
-#include "Tpetra_SerialComm.hpp"
-#include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_Version.hpp"
+#ifndef TPETRA_TEST_UTIL_HPP
+#define TPETRA_TEST_UTIL_HPP
 
-int main(int argc, char *argv[])
-{
-	cout << "*** Starting verySimple example..." << endl;
+/*! \file tpetra_test_util.hpp
+    \brief This file contains utility functions used by the Tpetra Tests.
+*/
 
-	cout << Tpetra::Tpetra_Version() << endl;
+namespace TpetraTestUtil {
+  
+} // namespace TpetraTestUtil
 
-	// test Object
-	cout << "*** Creating Object..." << endl;
-  Tpetra::Object obj1;
-	Tpetra::Object obj2("obj2");
-
-	int temp1 = obj1.getTracebackMode();
-	cout << obj1 << endl;
-
-	// test SerialComm
-	cout << "*** Creating SerialComm..." << endl;
-	Tpetra::SerialComm<double, int> comm1;
-	cout << comm1 << endl;
-
-	// test Platform
-	cout << "*** Creating SerialPlatform..." << endl;
-	Tpetra::SerialPlatform<int, int> platform1;
-  int temp2 = platform1.getNumImages();
-	cout << platform1 << endl;
-
-	cout << "*** Finished." << endl;
-
-  return(0);
-}
-
+#endif // TPETRA_TEST_UTIL_HPP

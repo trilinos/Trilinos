@@ -29,14 +29,19 @@
 #ifndef TPETRA_MPIPLATFORM_HPP
 #define TPETRA_MPIPLATFORM_HPP
 
+#include <mpi.h>
+#include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_MpiDirectory.hpp"
 #include "Tpetra_MpiDistributor.hpp"
-#include <mpi.h>
 
 namespace Tpetra {
+
+// forward declaration of MpiData, needed to prevent circular inclusions
+// actual #include statement at the end of this file
+class MpiData;
 
 	//! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
 
@@ -48,55 +53,75 @@ namespace Tpetra {
 
 		//! Constructor
 		MpiPlatform(MPI_Comm Comm) 
-      : Object("Tpetra::Platform[MPI]")
-      , MpiComm_(Comm)
+      : Object("Tpetra::MpiPlatform")
+      , MpiData_()
     {
+      MpiData_ = Teuchos::rcp(new MpiData(Comm));
     };
 
     //! Copy Constructor
     MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
       : Object(platform.label())
-      , MpiComm_(platform.MpiComm_)
-    {
-    };
+      , MpiData_(platform.MpiData_)
+    {};
 
     //! Destructor
 		~MpiPlatform() {};
 
     //! Clone Constructor - implements Tpetra::Platform virtual clone method.
-		Platform<OrdinalType, ScalarType>* clone() const {
-      MpiPlatform<OrdinalType, ScalarType>* platform = new MpiPlatform<OrdinalType, ScalarType>(*this);
+		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
+      Teuchos::RefCountPtr< MpiPlatform<OrdinalType, ScalarType> > platform;
+      platform = Teuchos::rcp(new MpiPlatform<OrdinalType, ScalarType>(*this));
       return(platform);
 		};
+
+    //@}
+
+    //@{ \name Image Info Methods
+
+    //! getMyImageID
+    /*! returns the rank of the calling image in the MPI communicator we are using. (Obtained by calling MPI_Comm_rank.)
+     */
+    int getMyImageID() const {return(data().rank_);};
+
+    //! getNumImages - returns the MPI size
+    /*! returns the size of the MPI communicator we are using. (Obtained by calling MPI_Comm_size.)
+     */
+    int getNumImages() const {return(data().size_);};
 
     //@}
 
     //@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-    Comm<ScalarType, OrdinalType>* createScalarComm() const {
-			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>(getMpiComm());
+    Teuchos::RefCountPtr< Comm<ScalarType, OrdinalType> > createScalarComm() const {
+			Teuchos::RefCountPtr< MpiComm<ScalarType, OrdinalType> > comm;
+      comm = Teuchos::rcp(new MpiComm<ScalarType, OrdinalType>(MpiData_));
       return(comm);
 		};
-		Comm<OrdinalType, OrdinalType>* createOrdinalComm() const {
-			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>(getMpiComm());
+		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
+			Teuchos::RefCountPtr< MpiComm<OrdinalType, OrdinalType> > comm;
+      comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
       return(comm);
 		};
 
     //! Distributor Instances
-		Distributor<ScalarType, OrdinalType>* createScalarDistributor() const {
-			MpiDistributor<ScalarType, OrdinalType>* distributor = new MpiDistributor<ScalarType, OrdinalType>();
+		Teuchos::RefCountPtr< Distributor<ScalarType, OrdinalType> > createScalarDistributor() const {
+			Teuchos::RefCountPtr< MpiDistributor<ScalarType, OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new MpiDistributor<ScalarType, OrdinalType>(MpiData_));
       return(distributor);
 		};
-		Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const {
-			MpiDistributor<OrdinalType, OrdinalType>* distributor = new MpiDistributor<OrdinalType, OrdinalType>();
+		Teuchos::RefCountPtr< Distributor<OrdinalType, OrdinalType> > createOrdinalDistributor() const {
+			Teuchos::RefCountPtr< MpiDistributor<OrdinalType, OrdinalType> > distributor;
+      distributor = Teuchos::rcp(new MpiDistributor<OrdinalType, OrdinalType>(MpiData_));
       return(distributor);
 		};
 
 		//! Directory Instance
-		Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
-		  MpiDirectory<OrdinalType>* dir = new MpiDirectory<OrdinalType>(elementSpace); 
-      return(dir);
+		Teuchos::RefCountPtr< Directory<OrdinalType> > createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
+		  Teuchos::RefCountPtr< MpiDirectory<OrdinalType> > directory;
+      directory = Teuchos::rcp(new MpiDirectory<OrdinalType>(elementSpace)); 
+      return(directory);
 		};
 
     //@}
@@ -104,25 +129,31 @@ namespace Tpetra {
 		//@{ \name I/O Methods
 
 		//! print - implements Tpetra::Object virtual print method.
-		void print(ostream& os) const { os << label() << endl;};
+		void print(ostream& os) const {};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
-		void printInfo(ostream& os) const {print(os);};
+		void printInfo(ostream& os) const {os << *this;};
 
 		//@}
     
-    //@{ \name MPI-specific methods, not inherited from Tpetra::Comm
+    //@{ \name MPI-specific methods, not inherited from Tpetra::Platform
     //! Access method to the MPI Communicator we're using.
     MPI_Comm getMpiComm() const {
-      return(MpiComm_);
+      return(data().MpiComm_);
     };
     //@}
     
 private:
-    MPI_Comm MpiComm_;
+	Teuchos::RefCountPtr<MpiData> MpiData_;
+  
+  // convenience functions for returning inner data class, both const and nonconst versions.
+  MpiData& data() {return(*MpiData_);}
+  MpiData const& data() const {return(*MpiData_);}
     
 	}; // MpiPlatform class
   
 } // namespace Tpetra
+
+#include "Tpetra_MpiData.hpp"
 
 #endif // TPETRA_MPIPLATFORM_HPP
