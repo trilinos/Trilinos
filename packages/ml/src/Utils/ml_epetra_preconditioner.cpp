@@ -445,7 +445,7 @@ int ML_Epetra::Set(Teuchos::ParameterList & List,
 {
  
   if( CLP.Has("-ml_defaults") )
-    SetDefaults(CLP.Get("-defaults","DD"),List);
+    SetDefaults(CLP.Get("-ml_defaults","DD"),List);
 
   // general
   if( CLP.Has("-ml_num_levels") )
@@ -576,6 +576,11 @@ int ML_Epetra::Set(Teuchos::ParameterList & List,
   if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
     List.set("aggregation: compute field of values for non-scaled", true);
   
+  // preconditioning type
+  if( CLP.Has("-ml_prec_type") ) {
+    List.set("prec type", CLP.Get("-ml_prec_type","full-MGV"));
+  }
+
   // coarse
   if( CLP.Has("-ml_coarse_type") )
     List.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
@@ -761,6 +766,9 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     cout << PrintMsg_ << "***" << endl;
     cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
 	 << " rows, distributed over " << Comm().NumProc() << " process(es)" << endl;
+    if( List_.isParameter("default values") ){
+      cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << endl;
+    }
     cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
     if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
     else                               cout << PrintMsg_ << "Using decreasing levels. ";
@@ -1558,12 +1566,12 @@ void MultiLevelPreconditioner::SetPreconditioner()
   sprintf(parameter,"%sprec type", Prefix_);
   string str = List_.get(parameter,"MGV");
 
-  if( str == "1-level postsmoothing only" ) {
+  if( str == "one-level-postsmoothing" ) {
     
     sprintf(Label_, "1-level postsmoothing only");
     ml_->ML_scheme = ML_ONE_LEVEL_DD;
 
-  } else if( str == "two-level additive DD" ) {
+  } else if( str == "two-level-additive" ) {
 
     sprintf(Label_, "two-level additive DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_ADD;
@@ -1574,7 +1582,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
       }
     }
 
-  } else if( str == "two-level hybrid DD") {
+  } else if( str == "two-level-hybrid") {
 
     sprintf(Label_, "two-level hybrid DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID;
@@ -1585,7 +1593,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
       }
     }
 
-  } else if( str == "two-level hybrid DD (2)") {
+  } else if( str == "two-level-hybrid2") {
 
     sprintf(Label_, "two-level hybrid DD (2)");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
@@ -1596,7 +1604,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
       }
     }
 
-  } else if( str == "full MGV" ) {
+  } else if( str == "full-MGV" ) {
     ml_->ML_scheme = ML_MGFULLV;
 
   } else if( str == "MGV" ) {
@@ -1606,8 +1614,8 @@ void MultiLevelPreconditioner::SetPreconditioner()
 
     if( Comm().MyPID() == 0 ) {
       cerr << ErrorMsg_ << "`prec type' has an incorrect value. It should be" << endl
-	   << ErrorMsg_ << "<1-level postsmoothing only> / <two-level additive DD>" << endl
-	   << ErrorMsg_ << "<two-level hybrid DD> / <two-level hybrid DD (2)>" << endl;
+	   << ErrorMsg_ << "<one-level-postsmoothing> / <two-level-additive>" << endl
+	   << ErrorMsg_ << "<two-level-hybrid> / <two-level-hybrid2>" << endl;
     }
     exit( EXIT_FAILURE );
     
@@ -2162,6 +2170,9 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
 
   char parameter[80];
 
+  sprintf(parameter,"%sdefault values", Prefix);
+  List.set(parameter,"DD");
+
   sprintf(parameter,"%smax levels", Prefix);
   List.set(parameter,2);
 
@@ -2242,6 +2253,9 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
 
   char parameter[80];
 
+  sprintf(parameter,"%sdefault values", Prefix);
+  List.set(parameter,"DD-LU");
+
   sprintf(parameter,"%smax levels", Prefix);
   List.set(parameter,2);
 
@@ -2321,6 +2335,9 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
 {
 
   char parameter[80];
+
+  sprintf(parameter,"%sdefault values", Prefix_);
+  List.set(parameter,"DD-ML");
 
   sprintf(parameter,"%smax levels", Prefix_);
   List.set(parameter,3);
@@ -2411,6 +2428,9 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_)
   char parameter[80];
   int MaxLevels = 10;
   
+  sprintf(parameter,"%sdefault values", Prefix_);
+  List.set(parameter,"maxwell");
+
   sprintf(parameter,"%smax levels", Prefix_);
   List.set(parameter,MaxLevels);
 
@@ -2481,6 +2501,9 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_)
   char parameter[80];
   int MaxLevels = 16;
   
+  sprintf(parameter,"%sdefault values", Prefix_);
+  List.set(parameter,"SA");
+
   sprintf(parameter,"%smax levels", Prefix_);
   List.set(parameter,MaxLevels);
 
