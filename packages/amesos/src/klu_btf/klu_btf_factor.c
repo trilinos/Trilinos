@@ -3,6 +3,7 @@
 /* ========================================================================== */
 
 /* Factor the matrix, after ordering and analyzing it with klu_btf_analyze
+ * or klu_btf_analyze_given
  *
  * TODO: provide a user switch to control scaling (none, row-sum, max row).
  * TODO: error checking of inputs.
@@ -184,7 +185,6 @@ static int klu_btf_factor2
 	    {
 		/* COLAMD was used - no estimate of fill-in */
 		/* use 10 times the nnz in A, plus n */
-		/* TODO: compute nnz in each block in klu_btf_analyze */
 		klu_Control [KLU_LSIZE] = -initmem_colamd ;
 		klu_Control [KLU_USIZE] = klu_Control [KLU_LSIZE] ;
 	    }
@@ -345,7 +345,7 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
 {
     double *Info, Info2 [KLU_BTF_INFO], tol, growth, initmem_amd,
 	initmem_colamd ;
-    int n, nzoff, nblocks, maxblock, maxnz, result, i, *R, block, k1, k2, nk,
+    int n, nzoff, nblocks, maxblock, result, i, *R, block, k1, k2, nk,
 	**Lbp, **Ubp ;
     klu_numeric *Numeric ;
 
@@ -369,10 +369,9 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     nzoff = Symbolic->nzoff ;
     nblocks = Symbolic->nblocks ;
     maxblock = Symbolic->maxblock ;
-    maxnz = Symbolic->maxnz ;
     R = Symbolic->R ;
-    PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d maxnz %d\n",
-	n, nzoff, nblocks, maxblock, maxnz)) ;
+    PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
+	n, nzoff, nblocks, maxblock)) ;
 
     /* ---------------------------------------------------------------------- */
     /* get control parameters and make sure they are in the proper range */

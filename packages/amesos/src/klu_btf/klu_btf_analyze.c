@@ -2,7 +2,9 @@
 /* === klu_btf_analyze ====================================================== */
 /* ========================================================================== */
 
-/* Order the matrix using BTF (or not), and then AMD or COLAMD on the blocks */
+/* Order the matrix using BTF (or not), and then AMD or COLAMD on the blocks.
+ * Does not support using the given ordering (use klu_btf_analyze_given
+ * for that case). */
 
 #include "klu_btf_internal.h"
 
@@ -28,16 +30,15 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
     int P [ ],		/* size n */
     int Q [ ],		/* size n */
     double Lnz [ ],	/* size n, but only Lnz [0..nblocks-1] is used */
-    int *p_maxnz,
     int *p_nzoff,
     double *p_lnz,
 
     /* workspace, not defined on input or output */
     int Pamd [ ],	/* size maxblock */
     int Cp [ ],		/* size maxblock+1 */
-    int Ci [ ],		/* size maxnz */
+    int Ci [ ],		/* size nz */
     int Ep [ ],		/* size maxblock+1 */
-    int Ei [ ],		/* size maxnz */
+    int Ei [ ],		/* size nz */
     int Pinv [ ],	/* size maxblock */
 
     double Info [ ]	/* output statistics */ 
@@ -306,7 +307,6 @@ static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
 
     /* return estimates of # of nonzeros in L including diagonal */
     *p_lnz = lnz ;				/* EMPTY if COLAMD used */
-    *p_maxnz = maxnz ;
     *p_nzoff = nzoff ;
     Info [KLU_BTF_INFO_EST_FLOPS] = flops ;	/* EMPTY if COLAMD used */
     return (KLU_OK) ;
@@ -329,7 +329,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 )
 {
     int nblocks, *Qbtf, nz, *Cp, *Ci, *Pinv, *Pamd, *Ep, *Ei, *Pbtf,
-	block, maxblock, k1, k2, nk, maxnz, *P, *Q, *R, nzoff, result, j, i, p,
+	block, maxblock, k1, k2, nk, *P, *Q, *R, nzoff, result, j, i, p,
 	pend, do_btf, nzdiag, ordering, k, nfound ;
     klu_symbolic *Symbolic ;
     double *Lnz, lnz, Info2 [KLU_BTF_INFO], *Info ;
@@ -552,9 +552,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     Symbolic->nblocks = nblocks ;
     Info [KLU_BTF_INFO_NBLOCKS] = nblocks ;
 
-    /* TODO: Ci and Ei could be of size max (nnz of blocks of A) */
-    maxnz = nz ;
-    PRINTF (("maxblock size %d maxnz %d\n", maxblock, maxnz)) ;
+    PRINTF (("maxblock size %d\n", maxblock)) ;
     Symbolic->maxblock = maxblock ;
     Info [KLU_BTF_INFO_MAXBLOCK] = maxblock ;
 
@@ -567,8 +565,8 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     Pamd = (int *) ALLOCATE (maxblock * sizeof (int)) ;
     Cp = (int *) ALLOCATE ((maxblock+1) * sizeof (int)) ;
     Ep = (int *) ALLOCATE ((maxblock+1) * sizeof (int)) ;
-    Ci = (int *) ALLOCATE ((maxnz+1) * sizeof (int)) ;
-    Ei = (int *) ALLOCATE ((maxnz+1) * sizeof (int)) ;
+    Ci = (int *) ALLOCATE ((nz+1) * sizeof (int)) ;
+    Ei = (int *) ALLOCATE ((nz+1) * sizeof (int)) ;
     Pinv = (int *) ALLOCATE (n * sizeof (int)) ;
 
     result = ((Pamd != (int *) NULL) &&
@@ -586,7 +584,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     {
 	PRINTF (("calling klu_btf_analyze_worker\n")) ;
 	result = klu_btf_analyze_worker (n, Ap, Ai, nblocks, Pbtf, Qbtf, R,
-	    ordering, P, Q, Lnz, &maxnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei,
+	    ordering, P, Q, Lnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei,
 	    Pinv, Info) ;
 	PRINTF (("klu_btf_analyze_worker done\n")) ;
 	if (!do_btf) ASSERT (nzoff == 0) ;
@@ -621,10 +619,8 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     {
 	Symbolic->lnz = lnz ;
 	Symbolic->unz = lnz ;	/* estimated fill-in is symmetric, currently */
-	Symbolic->maxnz = maxnz ;
 	Symbolic->nzoff = nzoff ;
 	Info [KLU_BTF_INFO_EST_LNZ] = lnz ;
-	Info [KLU_BTF_INFO_MAXNZ] = maxnz ;
 	Info [KLU_BTF_INFO_NZOFF] = nzoff ;
 	return (Symbolic) ;
     }

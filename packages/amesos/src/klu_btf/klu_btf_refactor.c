@@ -27,7 +27,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     double *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, ukk, ujk, *Lx, *Ux, *X ;
     int k1, k2, nk, k, block, oldcol, pend, oldrow, n, p, newrow, *P, *Q, *R,
 	nblocks, poff, *Pnum, *Lp, *Up, *Offp, *Offi, **Lbp, **Lbi, **Ubp,
-	**Ubi, maxnz, result, i, j, up, upend, upstart, *Ui, *Li, *Pinv,
+	**Ubi, result, i, j, up, upend, upstart, *Ui, *Li, *Pinv,
 	maxblock ;
 
     /* ---------------------------------------------------------------------- */
@@ -41,7 +41,6 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     R = Symbolic->R ;
     Lnz = Symbolic->Lnz ;
     nblocks = Symbolic->nblocks ;
-    maxnz = Symbolic->maxnz ;
     maxblock = Symbolic->maxblock ;
 
     /* get the contents of the Numeric object */
@@ -60,8 +59,8 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     Pinv = Numeric->Pinv ;
     X = Numeric->Xwork ;
 
-    PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d maxnz %d\n",
-	n, Symbolic->nzoff, nblocks, maxblock, maxnz)) ;
+    PRINTF (("klu_btf_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
+	n, Symbolic->nzoff, nblocks, maxblock)) ;
 
 #ifdef TESTING
     /* randomly mangle the numerical values to test the refactor code */

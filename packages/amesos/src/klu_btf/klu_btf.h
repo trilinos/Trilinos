@@ -28,7 +28,6 @@ typedef struct
 	*R,		/* size n+1, but only R [0..nblocks] is used */
 	nzoff,		/* nz in off-diagonal blocks */
 	nblocks,	/* number of blocks */
-	maxnz,		/* max nz in any block */
 	maxblock,	/* size of largest block */
 	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
 	do_btf ;	/* whether or not BTF preordering was requested */
@@ -94,6 +93,25 @@ klu_symbolic *klu_btf_analyze
     double Control [ ],
     /* output: */
     double Info [ ]
+) ;
+
+/* -------------------------------------------------------------------------- */
+/* klu_btf_analyze_given: analyzes a matrix using given P and Q */
+/* -------------------------------------------------------------------------- */
+
+/* NULL array for Puser or Quser interpreted as the identity permutation */
+
+klu_symbolic *klu_btf_analyze_given
+(
+    /* inputs, not modified */
+    int n,		/* A is n-by-n */
+    int Ap [ ],		/* size n+1, column pointers */
+    int Ai [ ],		/* size nz, row indices */
+    int Puser [ ],	/* size n, user's row permutation (may be NULL) */
+    int Quser [ ],	/* size n, user's column permutation (may be NULL) */
+    double Control [ ],	/* optional; may be NULL */
+    /* output: */
+    double User_Info [ ]	/* optional; may be NULL */
 ) ;
 
 /* -------------------------------------------------------------------------- */

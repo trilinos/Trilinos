@@ -2,11 +2,11 @@
 /* === klu_btf_solve ======================================================== */
 /* ========================================================================== */
 
-/* Solve Ax=b using the symbolic and numeric objects from klu_btf_analyze and
- * klu_btf_factor.  Note that no iterative refinement is performed.
- * Uses Numeric->Xwork as workspace (undefined on input and output),
- * of size 4n double's (note that columns 2 to 4 of Xwork overlap with
- * Numeric->Iwork).
+/* Solve Ax=b using the symbolic and numeric objects from klu_btf_analyze
+ * (or klu_btf_analyze_given) and klu_btf_factor.  Note that no iterative
+ * refinement is performed.  Uses Numeric->Xwork as workspace (undefined on
+ * input and output), of size 4n double's (note that columns 2 to 4 of Xwork
+ * overlap with Numeric->Iwork).
  *
  * TODO: add iterative refinement?
  * TODO: solve A'x=b
