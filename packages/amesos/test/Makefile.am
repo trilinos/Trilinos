@@ -37,4 +37,4 @@ SUBDIRS = scripts \
 	  Test_SuperLU \
 	  Test_SuperLU_DIST \
 	  Test_MUMPS \
-	  Test_DSCPACK
+	  Test_DSCPACK TestOptions
