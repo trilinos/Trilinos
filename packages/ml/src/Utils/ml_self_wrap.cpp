@@ -18,6 +18,7 @@
 #include "ml_self_wrap.h"
 #include "ml_RowMatrix.h"
 #include "ml_Ifpack_ML.h"
+#include "Ifpack_AdditiveSchwarz.h"
 
 using namespace ML_Epetra;
 
@@ -97,6 +98,8 @@ int ML_Self_Gen(ML *ml, int Overlap, int curr_level,
   Prec = new Ifpack_AdditiveSchwarz<Ifpack_ML>(Self_Matrix, Overlap);
   assert (Prec != 0);
 
+  List.set("zero starting solution", true);
+  List.set("schwarz: compute condest", false);
   Prec->SetParameters(List);
   ML_CHK_ERR(Prec->Initialize());
   ML_CHK_ERR(Prec->Compute());

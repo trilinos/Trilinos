@@ -21,10 +21,11 @@ int ML_Smoother_Self(ML_Smoother *sm,int inlen,double x[],int outlen,
                      double rhs[])
 {
 
-  ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
-  void *Self_Handle = smooth_ptr->smoother->data;
+  int i;
+  void *Self_Handle = sm->smoother->data;
 
   ML_Self_Solve(Self_Handle, x, rhs);
+
   return 0;
 
 } /* ML_Smoother_Self */
