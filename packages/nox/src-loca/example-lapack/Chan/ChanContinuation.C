@@ -90,15 +90,15 @@ int main()
     stepperList.setParameter("Goal g", 0.5);
     stepperList.setParameter("Max g", 0.7);
     stepperList.setParameter("Initial Scale Factor", 1.0);
-    stepperList.setParameter("Min Scale Factor", 1.0e-3);
+    stepperList.setParameter("Min Scale Factor", 1.0e-8);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");
-    predictorList.setParameter("Method", "Tangent");
-    //predictorList.setParameter("Method", "Secant");
+    //predictorList.setParameter("Method", "Tangent");
+    predictorList.setParameter("Method", "Secant");
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");

@@ -40,12 +40,12 @@ int main()
 {
 
   try {
-    //int n = 100;
-    int n = 10;
-    double alpha = 3.0;
+    int n = 100;
+    double alpha = 4.0;
     double beta = 0.0;
     double scale = 1.0;
     int maxNewtonIters = 20;
+    //int maxNewtonIters = 6;
 
     // Set up the problem interface
     ChanProblemInterface chan(n, alpha, beta, scale);
@@ -82,23 +82,32 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
-    stepperList.setParameter("Continuation Method", "Natural");
+    //stepperList.setParameter("Continuation Method", "Natural");
+    stepperList.setParameter("Continuation Method", "Arc Length");
     stepperList.setParameter("Continuation Parameter", "beta");
     stepperList.setParameter("Initial Value", beta);
     stepperList.setParameter("Max Value", 0.8);
     stepperList.setParameter("Min Value", 0.0);
-    stepperList.setParameter("Max Steps", 100);
+    stepperList.setParameter("Max Steps", 20);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
     stepperList.setParameter("Goal g", 0.5);
     stepperList.setParameter("Max g", 0.7);
     stepperList.setParameter("Initial Scale Factor", 1.0);
-    stepperList.setParameter("Min Scale Factor", 1.0e-3);
+    stepperList.setParameter("Min Scale Factor", 1.0e-8);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-    predictorList.setParameter("Method", "Constant");
+    //predictorList.setParameter("Method", "Constant");
+    predictorList.setParameter("Method", "Secant");
+    //predictorList.setParameter("Method", "Random");
+    //predictorList.setParameter("Epsilon", 1.0e-3);
+
+    NOX::Parameter::List& firstStepPredictor 
+      = predictorList.sublist("First Step Predictor");
+    firstStepPredictor.setParameter("Method", "Random");
+    firstStepPredictor.setParameter("Epsilon", 1.0e-3);
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
@@ -118,22 +127,24 @@ int main()
 			       LOCA::Utils::SolverDetails);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = locaParamsList.sublist("NOX");
+    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-    nlParams.setParameter("Output Information", 
-			  //NOX::Utils::OuterIteration + 
-			  //NOX::Utils::OuterIterationStatusTest + 
-			  //NOX::Utils::InnerIteration +
-			  //NOX::Utils::Parameters +
-			  NOX::Utils::Details + 
-			  NOX::Utils::Warning);
+
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.setParameter("Output Information", 
+			       //NOX::Utils::OuterIteration + 
+			       //NOX::Utils::OuterIterationStatusTest + 
+			       //NOX::Utils::InnerIteration +
+			       //NOX::Utils::Parameters +
+			       //NOX::Utils::Details + 
+			       NOX::Utils::Warning);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(tpgrp, 1.0e-8);
+    NOX::StatusTest::NormF statusTestA(1.0e-7, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
