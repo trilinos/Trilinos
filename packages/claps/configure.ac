@@ -238,32 +238,12 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------
-# #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files  - ie 
-# conditional compilation which requires a change to the makefile.
-# If configure is called with "--enable-newp_swahili", it will place 
-# a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source 
-# and header files as specified in Makefile.am 
-#
-# To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
-# Look for SWAHILI in both files listed above.
-#
-# TAC_ARG_ENABLE_OPTION performs several tasks, including:
-#   1)  Setting a help string
-#   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in New_Package_config.h)
-#
-# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
-# ------------------------------------------------------------------------
-#
-#TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-#AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
+TAC_ARG_ENABLE_FEATURE_SUB( claps, clop, [enable Clop solver], CLAPS_CLOP, no)
+AM_CONDITIONAL(HAVE_CLOP, [test "X$ac_cv_use_claps_clop" != "Xno"])
 
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( claps, sclop, [enable Sandia Clop interface (requires Salinas header files)], CLAPS_SCLOP, no)
+AM_CONDITIONAL(HAVE_SCLOP, [test "X$ac_cv_use_claps_sclop" != "Xno"])
+
 
 #
 #  #np# - These options are specific to Epetra and are left only as examples.
@@ -398,9 +378,8 @@ AC_SUBST(ac_aux_dir)
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
 AC_CONFIG_FILES([
-		Makefile 
+		Makefile
 		src/Makefile
-		src/clop/Makefile
 		])
 
 AC_OUTPUT()

@@ -29,6 +29,12 @@
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
+/* Define if want to build claps-clop */
+#undef HAVE_CLAPS_CLOP
+
+/* Define if want to build claps-sclop */
+#undef HAVE_CLAPS_SCLOP
+
 /* Define to 1 if you have the <climits> header file. */
 #undef HAVE_CLIMITS
 

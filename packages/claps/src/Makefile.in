@@ -41,6 +41,18 @@
 # 
 # ************************************************************************
 # @HEADER
+
+#np# Note the following paragraph.
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside New_Package. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+
+SOURCES = $(libclaps_a_SOURCES) $(EXTRA_libclaps_a_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -63,8 +75,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(srcdir)/Claps_config.h.in $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Claps_config.h.in \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -76,6 +88,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -89,17 +102,63 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(mkdir_p)
 CONFIG_HEADER = Claps_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-exec-recursive install-info-recursive \
-	install-recursive installcheck-recursive installdirs-recursive \
-	pdf-recursive ps-recursive uninstall-info-recursive \
-	uninstall-recursive
+AR = ar
+ARFLAGS = cru
+am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+libclaps_a_DEPENDENCIES =
+am__libclaps_a_SOURCES_DIST = $(srcdir)/clop/CLOP_constraint.cpp \
+	$(srcdir)/clop/CLOP_graph.cpp $(srcdir)/clop/CLOP_solver.cpp \
+	$(srcdir)/clop/CLOP_sub.cpp $(srcdir)/clop/CRD_utils.cpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp \
+	$(srcdir)/clop/sparse_lu.cpp \
+	$(srcdir)/salinas/SCLOP_interface.cpp \
+	$(srcdir)/salinas/SCLOP_solver.cpp
+am__objects_1 = CLOP_constraint.$(OBJEXT) CLOP_graph.$(OBJEXT) \
+	CLOP_solver.$(OBJEXT) CLOP_sub.$(OBJEXT) CRD_utils.$(OBJEXT) \
+	EpetraExtCD_MatrixMatrix.$(OBJEXT) sparse_lu.$(OBJEXT)
+am__objects_2 = $(am__objects_1)
+am__objects_3 = SCLOP_interface.$(OBJEXT) SCLOP_solver.$(OBJEXT)
+am__objects_4 = $(am__objects_3)
+@HAVE_MPI_TRUE@am__objects_5 = $(am__objects_2) $(am__objects_4)
+am_libclaps_a_OBJECTS = $(am__objects_5)
+libclaps_a_OBJECTS = $(am_libclaps_a_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CLOP_constraint.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/CLOP_graph.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/CLOP_solver.Po ./$(DEPDIR)/CLOP_sub.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/CRD_utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SCLOP_interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SCLOP_solver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/sparse_lu.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(libclaps_a_SOURCES) $(EXTRA_libclaps_a_SOURCES)
+DIST_SOURCES = $(am__libclaps_a_SOURCES_DIST) \
+	$(EXTRA_libclaps_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/clop/CLOP_constraint.hpp \
+	$(srcdir)/clop/CLOP_graph.hpp $(srcdir)/clop/CLOP_solver.hpp \
+	$(srcdir)/clop/CLOP_sub.hpp $(srcdir)/clop/CRD_utils.hpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.hpp \
+	$(srcdir)/clop/my_feti_sparse_solver.hpp \
+	$(srcdir)/clop/myzero.hpp $(srcdir)/clop/sparse_lu.hpp \
+	$(srcdir)/salinas/SCLOP_solver.hpp
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -130,8 +189,12 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+HAVE_CLOP_FALSE = @HAVE_CLOP_FALSE@
+HAVE_CLOP_TRUE = @HAVE_CLOP_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_SCLOP_FALSE = @HAVE_SCLOP_FALSE@
+HAVE_SCLOP_TRUE = @HAVE_SCLOP_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -210,11 +273,184 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = clop
+
+#
+#np# There is, at present, no distinction between most of the categories, 
+#np# other than those which start with EXTRA_.  All categories which do not
+#np# start with EXTRA_ are included in all builds.  Categories which start
+#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# --with-xyz or --without-xyz)
+#
+#np# Make sure to list all source files in one of the following categories.
+EXTRA_CLOP_H = \
+	$(srcdir)/clop/CLOP_constraint.hpp \
+	$(srcdir)/clop/CLOP_graph.hpp \
+	$(srcdir)/clop/CLOP_solver.hpp \
+	$(srcdir)/clop/CLOP_sub.hpp \
+	$(srcdir)/clop/CRD_utils.hpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.hpp \
+	$(srcdir)/clop/my_feti_sparse_solver.hpp \
+	$(srcdir)/clop/myzero.hpp \
+	$(srcdir)/clop/sparse_lu.hpp
+
+EXTRA_CLOP = \
+	$(srcdir)/clop/CLOP_constraint.cpp \
+	$(srcdir)/clop/CLOP_graph.cpp \
+	$(srcdir)/clop/CLOP_solver.cpp \
+	$(srcdir)/clop/CLOP_sub.cpp \
+	$(srcdir)/clop/CRD_utils.cpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp \
+	$(srcdir)/clop/sparse_lu.cpp
+
+EXTRA_SCLOP_H = \
+	$(srcdir)/salinas/SCLOP_solver.hpp
+
+EXTRA_SCLOP = \
+	$(srcdir)/salinas/SCLOP_interface.cpp \
+	$(srcdir)/salinas/SCLOP_solver.cpp
+
+
+#if HAVE_SCLOP
+SCLOP = $(EXTRA_SCLOP)
+SCLOP_H = $(EXTRA_SCLOP_H)
+CLOP = $(EXTRA_CLOP)
+CLOP_H = $(EXTRA_CLOP_H)
+@HAVE_MPI_FALSE@MPI_H = 
+
+#else
+#if HAVE_CLOP
+
+#CLOP = $(EXTRA_CLOP)
+#CLOP_H = $(EXTRA_CLOP_H)
+#SCLOP = 
+#SCLOP_H = 
+
+#else
+
+#CLOP = 
+#CLOP_H =
+#SCLOP = 
+#SCLOP_H = 
+
+#endif
+#endif
+
+#
+#np#  Files which are included in select builds are typically have
+#np#  names that start with EXTRA
+#
+#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#np#  set up by TAC_ARC_CONFIG_MPI 
+#
+@HAVE_MPI_TRUE@MPI_H = \
+@HAVE_MPI_TRUE@	$(CLOP_H) \
+@HAVE_MPI_TRUE@	$(SCLOP_H)
+
+@HAVE_MPI_FALSE@MPI = 
+@HAVE_MPI_TRUE@MPI = \
+@HAVE_MPI_TRUE@	$(CLOP) \
+@HAVE_MPI_TRUE@	$(SCLOP)
+
+
+#np# This section should come out, or be modified to reflect options in the 
+#np# package being autotool'ed
+
+#np# List locations of include files within Trilinos but outside of this 
+#np# package
+#np# - Add packages that this package is dependent on
+#np#   Remove epetra if this package does not need it
+#  
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(srcdir)/clop
+
+#np# The following section can be duplicated for building multiple libraries -
+#np# make sure to list the correct categories with each library.
+#np# replace new_package with the name of the package being autotool'ed here
+# ------------------------------------------------------------------------
+# New_Package library specifications
+# ------------------------------------------------------------------------
+#np# replace new_package with the name of the package being autotool'ed here
+CLAPS_LIB = libclaps.a
+
+#np# replace new_package with the name of the package being autotool'ed here
+CLAPS_H = \
+	$(MPI_H) 
+
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_SOURCES = \
+	$(MPI) 
+
+
+#np# replace new_package with the name of the package being autotool'ed here
+EXTRA_libclaps_a_SOURCES = \
+	$(EXTRA_CLOP) \
+	$(EXTRA_CLOP_H) \
+	$(EXTRA_SCLOP) \
+        $(EXTRA_SCLOP_H) 
+
+
+#np# replace new_package with the name of the package being autotool'ed here
+@USE_ALTERNATE_AR_FALSE@libclaps_a_AR = $(AR) cru
+
+#We need the following to support separate build directories
+#AM_CPPFLAGS=-I$(builddir)/src
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+#np# replace new_package with the name of the package being autotool'ed here
+@USE_ALTERNATE_AR_TRUE@libclaps_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+lib_LIBRARIES = $(CLAPS_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+include_HEADERS = $(CLAPS_H) 
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+# SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+
+# All Trilinos headers are now installed in the same directory
+execincludedir = $(exec_prefix)/include
+#np# replace new_package with the name of the package being autotool'ed here
+nodist_execinclude_HEADERS = Claps_config.h
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 all: Claps_config.h
-	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -261,65 +497,249 @@ $(srcdir)/Claps_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f Claps_config.h stamp-h1
-uninstall-info-am:
-
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
 	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libclaps.a: $(libclaps_a_OBJECTS) $(libclaps_a_DEPENDENCIES) 
+	-rm -f libclaps.a
+	$(libclaps_a_AR) libclaps.a $(libclaps_a_OBJECTS) $(libclaps_a_LIBADD)
+	$(RANLIB) libclaps.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_constraint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_graph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_sub.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRD_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLOP_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLOP_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparse_lu.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+CLOP_constraint.o: $(srcdir)/clop/CLOP_constraint.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_constraint.o -MD -MP -MF "$(DEPDIR)/CLOP_constraint.Tpo" -c -o CLOP_constraint.o `test -f '$(srcdir)/clop/CLOP_constraint.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_constraint.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_constraint.Tpo" "$(DEPDIR)/CLOP_constraint.Po"; else rm -f "$(DEPDIR)/CLOP_constraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_constraint.cpp' object='CLOP_constraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_constraint.Po' tmpdepfile='$(DEPDIR)/CLOP_constraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_constraint.o `test -f '$(srcdir)/clop/CLOP_constraint.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_constraint.cpp
+
+CLOP_constraint.obj: $(srcdir)/clop/CLOP_constraint.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_constraint.obj -MD -MP -MF "$(DEPDIR)/CLOP_constraint.Tpo" -c -o CLOP_constraint.obj `if test -f '$(srcdir)/clop/CLOP_constraint.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_constraint.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_constraint.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_constraint.Tpo" "$(DEPDIR)/CLOP_constraint.Po"; else rm -f "$(DEPDIR)/CLOP_constraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_constraint.cpp' object='CLOP_constraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_constraint.Po' tmpdepfile='$(DEPDIR)/CLOP_constraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_constraint.obj `if test -f '$(srcdir)/clop/CLOP_constraint.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_constraint.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_constraint.cpp'; fi`
+
+CLOP_graph.o: $(srcdir)/clop/CLOP_graph.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_graph.o -MD -MP -MF "$(DEPDIR)/CLOP_graph.Tpo" -c -o CLOP_graph.o `test -f '$(srcdir)/clop/CLOP_graph.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_graph.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_graph.Tpo" "$(DEPDIR)/CLOP_graph.Po"; else rm -f "$(DEPDIR)/CLOP_graph.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_graph.cpp' object='CLOP_graph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_graph.Po' tmpdepfile='$(DEPDIR)/CLOP_graph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_graph.o `test -f '$(srcdir)/clop/CLOP_graph.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_graph.cpp
+
+CLOP_graph.obj: $(srcdir)/clop/CLOP_graph.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_graph.obj -MD -MP -MF "$(DEPDIR)/CLOP_graph.Tpo" -c -o CLOP_graph.obj `if test -f '$(srcdir)/clop/CLOP_graph.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_graph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_graph.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_graph.Tpo" "$(DEPDIR)/CLOP_graph.Po"; else rm -f "$(DEPDIR)/CLOP_graph.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_graph.cpp' object='CLOP_graph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_graph.Po' tmpdepfile='$(DEPDIR)/CLOP_graph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_graph.obj `if test -f '$(srcdir)/clop/CLOP_graph.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_graph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_graph.cpp'; fi`
+
+CLOP_solver.o: $(srcdir)/clop/CLOP_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_solver.o -MD -MP -MF "$(DEPDIR)/CLOP_solver.Tpo" -c -o CLOP_solver.o `test -f '$(srcdir)/clop/CLOP_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_solver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_solver.Tpo" "$(DEPDIR)/CLOP_solver.Po"; else rm -f "$(DEPDIR)/CLOP_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_solver.cpp' object='CLOP_solver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_solver.Po' tmpdepfile='$(DEPDIR)/CLOP_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_solver.o `test -f '$(srcdir)/clop/CLOP_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_solver.cpp
+
+CLOP_solver.obj: $(srcdir)/clop/CLOP_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_solver.obj -MD -MP -MF "$(DEPDIR)/CLOP_solver.Tpo" -c -o CLOP_solver.obj `if test -f '$(srcdir)/clop/CLOP_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_solver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_solver.Tpo" "$(DEPDIR)/CLOP_solver.Po"; else rm -f "$(DEPDIR)/CLOP_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_solver.cpp' object='CLOP_solver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_solver.Po' tmpdepfile='$(DEPDIR)/CLOP_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_solver.obj `if test -f '$(srcdir)/clop/CLOP_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_solver.cpp'; fi`
+
+CLOP_sub.o: $(srcdir)/clop/CLOP_sub.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_sub.o -MD -MP -MF "$(DEPDIR)/CLOP_sub.Tpo" -c -o CLOP_sub.o `test -f '$(srcdir)/clop/CLOP_sub.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_sub.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_sub.Tpo" "$(DEPDIR)/CLOP_sub.Po"; else rm -f "$(DEPDIR)/CLOP_sub.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_sub.cpp' object='CLOP_sub.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_sub.Po' tmpdepfile='$(DEPDIR)/CLOP_sub.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_sub.o `test -f '$(srcdir)/clop/CLOP_sub.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CLOP_sub.cpp
+
+CLOP_sub.obj: $(srcdir)/clop/CLOP_sub.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLOP_sub.obj -MD -MP -MF "$(DEPDIR)/CLOP_sub.Tpo" -c -o CLOP_sub.obj `if test -f '$(srcdir)/clop/CLOP_sub.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_sub.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_sub.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLOP_sub.Tpo" "$(DEPDIR)/CLOP_sub.Po"; else rm -f "$(DEPDIR)/CLOP_sub.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CLOP_sub.cpp' object='CLOP_sub.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLOP_sub.Po' tmpdepfile='$(DEPDIR)/CLOP_sub.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLOP_sub.obj `if test -f '$(srcdir)/clop/CLOP_sub.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CLOP_sub.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CLOP_sub.cpp'; fi`
+
+CRD_utils.o: $(srcdir)/clop/CRD_utils.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRD_utils.o -MD -MP -MF "$(DEPDIR)/CRD_utils.Tpo" -c -o CRD_utils.o `test -f '$(srcdir)/clop/CRD_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CRD_utils.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CRD_utils.Tpo" "$(DEPDIR)/CRD_utils.Po"; else rm -f "$(DEPDIR)/CRD_utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CRD_utils.cpp' object='CRD_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CRD_utils.Po' tmpdepfile='$(DEPDIR)/CRD_utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRD_utils.o `test -f '$(srcdir)/clop/CRD_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/CRD_utils.cpp
+
+CRD_utils.obj: $(srcdir)/clop/CRD_utils.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRD_utils.obj -MD -MP -MF "$(DEPDIR)/CRD_utils.Tpo" -c -o CRD_utils.obj `if test -f '$(srcdir)/clop/CRD_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CRD_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CRD_utils.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CRD_utils.Tpo" "$(DEPDIR)/CRD_utils.Po"; else rm -f "$(DEPDIR)/CRD_utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/CRD_utils.cpp' object='CRD_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CRD_utils.Po' tmpdepfile='$(DEPDIR)/CRD_utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRD_utils.obj `if test -f '$(srcdir)/clop/CRD_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/CRD_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/CRD_utils.cpp'; fi`
+
+EpetraExtCD_MatrixMatrix.o: $(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExtCD_MatrixMatrix.o -MD -MP -MF "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo" -c -o EpetraExtCD_MatrixMatrix.o `test -f '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo" "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po"; else rm -f "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp' object='EpetraExtCD_MatrixMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExtCD_MatrixMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExtCD_MatrixMatrix.o `test -f '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp
+
+EpetraExtCD_MatrixMatrix.obj: $(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExtCD_MatrixMatrix.obj -MD -MP -MF "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo" -c -o EpetraExtCD_MatrixMatrix.obj `if test -f '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo" "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po"; else rm -f "$(DEPDIR)/EpetraExtCD_MatrixMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp' object='EpetraExtCD_MatrixMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExtCD_MatrixMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExtCD_MatrixMatrix.obj `if test -f '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp'; fi`
+
+sparse_lu.o: $(srcdir)/clop/sparse_lu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparse_lu.o -MD -MP -MF "$(DEPDIR)/sparse_lu.Tpo" -c -o sparse_lu.o `test -f '$(srcdir)/clop/sparse_lu.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/sparse_lu.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sparse_lu.Tpo" "$(DEPDIR)/sparse_lu.Po"; else rm -f "$(DEPDIR)/sparse_lu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/sparse_lu.cpp' object='sparse_lu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sparse_lu.Po' tmpdepfile='$(DEPDIR)/sparse_lu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparse_lu.o `test -f '$(srcdir)/clop/sparse_lu.cpp' || echo '$(srcdir)/'`$(srcdir)/clop/sparse_lu.cpp
+
+sparse_lu.obj: $(srcdir)/clop/sparse_lu.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparse_lu.obj -MD -MP -MF "$(DEPDIR)/sparse_lu.Tpo" -c -o sparse_lu.obj `if test -f '$(srcdir)/clop/sparse_lu.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/sparse_lu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/sparse_lu.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sparse_lu.Tpo" "$(DEPDIR)/sparse_lu.Po"; else rm -f "$(DEPDIR)/sparse_lu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/clop/sparse_lu.cpp' object='sparse_lu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sparse_lu.Po' tmpdepfile='$(DEPDIR)/sparse_lu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparse_lu.obj `if test -f '$(srcdir)/clop/sparse_lu.cpp'; then $(CYGPATH_W) '$(srcdir)/clop/sparse_lu.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clop/sparse_lu.cpp'; fi`
+
+SCLOP_interface.o: $(srcdir)/salinas/SCLOP_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SCLOP_interface.o -MD -MP -MF "$(DEPDIR)/SCLOP_interface.Tpo" -c -o SCLOP_interface.o `test -f '$(srcdir)/salinas/SCLOP_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/salinas/SCLOP_interface.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SCLOP_interface.Tpo" "$(DEPDIR)/SCLOP_interface.Po"; else rm -f "$(DEPDIR)/SCLOP_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/salinas/SCLOP_interface.cpp' object='SCLOP_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SCLOP_interface.Po' tmpdepfile='$(DEPDIR)/SCLOP_interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SCLOP_interface.o `test -f '$(srcdir)/salinas/SCLOP_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/salinas/SCLOP_interface.cpp
+
+SCLOP_interface.obj: $(srcdir)/salinas/SCLOP_interface.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SCLOP_interface.obj -MD -MP -MF "$(DEPDIR)/SCLOP_interface.Tpo" -c -o SCLOP_interface.obj `if test -f '$(srcdir)/salinas/SCLOP_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/salinas/SCLOP_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/salinas/SCLOP_interface.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SCLOP_interface.Tpo" "$(DEPDIR)/SCLOP_interface.Po"; else rm -f "$(DEPDIR)/SCLOP_interface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/salinas/SCLOP_interface.cpp' object='SCLOP_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SCLOP_interface.Po' tmpdepfile='$(DEPDIR)/SCLOP_interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SCLOP_interface.obj `if test -f '$(srcdir)/salinas/SCLOP_interface.cpp'; then $(CYGPATH_W) '$(srcdir)/salinas/SCLOP_interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/salinas/SCLOP_interface.cpp'; fi`
+
+SCLOP_solver.o: $(srcdir)/salinas/SCLOP_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SCLOP_solver.o -MD -MP -MF "$(DEPDIR)/SCLOP_solver.Tpo" -c -o SCLOP_solver.o `test -f '$(srcdir)/salinas/SCLOP_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/salinas/SCLOP_solver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SCLOP_solver.Tpo" "$(DEPDIR)/SCLOP_solver.Po"; else rm -f "$(DEPDIR)/SCLOP_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/salinas/SCLOP_solver.cpp' object='SCLOP_solver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SCLOP_solver.Po' tmpdepfile='$(DEPDIR)/SCLOP_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SCLOP_solver.o `test -f '$(srcdir)/salinas/SCLOP_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/salinas/SCLOP_solver.cpp
+
+SCLOP_solver.obj: $(srcdir)/salinas/SCLOP_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SCLOP_solver.obj -MD -MP -MF "$(DEPDIR)/SCLOP_solver.Tpo" -c -o SCLOP_solver.obj `if test -f '$(srcdir)/salinas/SCLOP_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/salinas/SCLOP_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/salinas/SCLOP_solver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SCLOP_solver.Tpo" "$(DEPDIR)/SCLOP_solver.Po"; else rm -f "$(DEPDIR)/SCLOP_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/salinas/SCLOP_solver.cpp' object='SCLOP_solver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SCLOP_solver.Po' tmpdepfile='$(DEPDIR)/SCLOP_solver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SCLOP_solver.obj `if test -f '$(srcdir)/salinas/SCLOP_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/salinas/SCLOP_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/salinas/SCLOP_solver.cpp'; fi`
+uninstall-info-am:
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	done
+install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(execincludedir)
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f"; \
+	  $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f; \
+	done
+
+uninstall-nodist_execincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(execincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(execincludedir)/$$f; \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -332,21 +752,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES) Claps_config.h.in $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES) Claps_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if (etags --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	else \
-	  include_option=--include; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS) Claps_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -357,7 +766,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES) Claps_config.h.in $(TAGS_DEPENDENCIES
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES) Claps_config.h.in $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES) Claps_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -380,6 +789,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/clop $(distdir)/salinas
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -406,33 +816,20 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || mkdir "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="../$(top_distdir)" \
-	        distdir="../$(distdir)/$$subdir" \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile Claps_config.h
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS) Claps_config.h
+installdirs:
+	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -448,65 +845,71 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-hdr distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES \
+	install-nodist_execincludeHEADERS
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-uninstall-info: uninstall-info-recursive
-
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-recursive ctags ctags-recursive \
-	distclean distclean-generic distclean-hdr distclean-recursive \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-hdr distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man \
+	install-nodist_execincludeHEADERS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

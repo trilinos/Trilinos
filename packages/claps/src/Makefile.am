@@ -26,4 +26,196 @@
 # ************************************************************************
 # @HEADER
 
-SUBDIRS = clop
+#np# Note the following paragraph.
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside New_Package. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+#
+#np# There is, at present, no distinction between most of the categories, 
+#np# other than those which start with EXTRA_.  All categories which do not
+#np# start with EXTRA_ are included in all builds.  Categories which start
+#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# --with-xyz or --without-xyz)
+#
+#np# Make sure to list all source files in one of the following categories.
+EXTRA_CLOP_H = \
+	$(srcdir)/clop/CLOP_constraint.hpp \
+	$(srcdir)/clop/CLOP_graph.hpp \
+	$(srcdir)/clop/CLOP_solver.hpp \
+	$(srcdir)/clop/CLOP_sub.hpp \
+	$(srcdir)/clop/CRD_utils.hpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.hpp \
+	$(srcdir)/clop/my_feti_sparse_solver.hpp \
+	$(srcdir)/clop/myzero.hpp \
+	$(srcdir)/clop/sparse_lu.hpp
+
+EXTRA_CLOP = \
+	$(srcdir)/clop/CLOP_constraint.cpp \
+	$(srcdir)/clop/CLOP_graph.cpp \
+	$(srcdir)/clop/CLOP_solver.cpp \
+	$(srcdir)/clop/CLOP_sub.cpp \
+	$(srcdir)/clop/CRD_utils.cpp \
+	$(srcdir)/clop/EpetraExtCD_MatrixMatrix.cpp \
+	$(srcdir)/clop/sparse_lu.cpp
+
+EXTRA_SCLOP_H = \
+	$(srcdir)/salinas/SCLOP_solver.hpp
+
+EXTRA_SCLOP = \
+	$(srcdir)/salinas/SCLOP_interface.cpp \
+	$(srcdir)/salinas/SCLOP_solver.cpp
+
+#if HAVE_SCLOP
+
+SCLOP = $(EXTRA_SCLOP)
+SCLOP_H = $(EXTRA_SCLOP_H)
+CLOP = $(EXTRA_CLOP)
+CLOP_H = $(EXTRA_CLOP_H)
+
+#else
+#if HAVE_CLOP
+
+#CLOP = $(EXTRA_CLOP)
+#CLOP_H = $(EXTRA_CLOP_H)
+#SCLOP = 
+#SCLOP_H = 
+
+#else
+
+#CLOP = 
+#CLOP_H =
+#SCLOP = 
+#SCLOP_H = 
+
+#endif
+#endif
+
+#
+#np#  Files which are included in select builds are typically have
+#np#  names that start with EXTRA
+#
+#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#np#  set up by TAC_ARC_CONFIG_MPI 
+#
+
+if HAVE_MPI 
+MPI_H = \
+	$(CLOP_H) \
+	$(SCLOP_H)
+MPI = \
+	$(CLOP) \
+	$(SCLOP)
+
+else
+
+MPI_H =
+MPI =
+
+endif
+#np# This section should come out, or be modified to reflect options in the 
+#np# package being autotool'ed
+
+#np# List locations of include files within Trilinos but outside of this 
+#np# package
+#np# - Add packages that this package is dependent on
+#np#   Remove epetra if this package does not need it
+#  
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(srcdir)/clop
+
+#np# The following section can be duplicated for building multiple libraries -
+#np# make sure to list the correct categories with each library.
+#np# replace new_package with the name of the package being autotool'ed here
+# ------------------------------------------------------------------------
+# New_Package library specifications
+# ------------------------------------------------------------------------
+#np# replace new_package with the name of the package being autotool'ed here
+CLAPS_LIB = libclaps.a
+
+#np# replace new_package with the name of the package being autotool'ed here
+CLAPS_H = \
+	$(MPI_H) 
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_SOURCES = \
+	$(MPI) 
+
+#np# replace new_package with the name of the package being autotool'ed here
+EXTRA_libclaps_a_SOURCES = \
+	$(EXTRA_CLOP) \
+	$(EXTRA_CLOP_H) \
+	$(EXTRA_SCLOP) \
+        $(EXTRA_SCLOP_H) 
+
+#We need the following to support separate build directories
+#AM_CPPFLAGS=-I$(builddir)/src
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_AR = $(ALTERNATE_AR)
+else
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+libclaps_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+lib_LIBRARIES = $(CLAPS_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+include_HEADERS = $(CLAPS_H) 
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+# SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+
+# All Trilinos headers are now installed in the same directory
+execincludedir = $(exec_prefix)/include
+#np# replace new_package with the name of the package being autotool'ed here
+nodist_execinclude_HEADERS = Claps_config.h
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+
+
+
+
+
