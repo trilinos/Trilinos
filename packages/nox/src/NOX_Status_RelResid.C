@@ -42,6 +42,7 @@ RelResid::RelResid(double initnorm, double tolerance)
   reltol = tolerance;
   normrhszero = initnorm;
   tol = reltol * normrhszero;
+  status = Unconverged;
 }
 
 RelResid::~RelResid()
@@ -53,15 +54,16 @@ StatusType RelResid::operator()(const Solver::Generic& problem)
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();
   if (normrhs < tol)
-    return Converged;
-  else
-    return Unconverged;
+    status = Converged;
+  return status;
 }
 
 ostream& RelResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Relative Residual Norm with Tolerance = " << reltol << endl;
+  stream << "Relative Residual Norm with Tolerance = " << reltol;
+  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << endl;
   return stream;
 }

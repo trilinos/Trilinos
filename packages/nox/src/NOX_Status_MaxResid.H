@@ -59,6 +59,9 @@ private:
   //! Maximum residual tolerance.
   double tol;
 
+  //! Current %status of this test
+  StatusType status;
+
 };
 
 } // namespace Status

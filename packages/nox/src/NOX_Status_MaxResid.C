@@ -40,6 +40,7 @@ using namespace NOX::Status;
 MaxResid::MaxResid(double tolerance)
 {
   tol = tolerance;
+  status = Unconverged;
 }
 
 MaxResid::~MaxResid()
@@ -51,15 +52,16 @@ StatusType MaxResid::operator()(const Solver::Generic& problem)
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = (tmp.getRHS()).norm(Abstract::Vector::INF);
   if (normrhs < tol)
-    return Converged;
-  else
-    return Unconverged;
+    status = Converged;
+  return status;
 }
 
 ostream& MaxResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Maximum-Norm Residual with Tolerance = " << tol << endl;
+  stream << "Maximum-Norm Residual with Tolerance = " << tol;
+  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << endl;
   return stream;
 }

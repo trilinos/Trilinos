@@ -47,11 +47,12 @@ Combo& Combo::addTest(Test& a)
     tests.push_back(&a);
   else 
     if (Utils::doPrint(1)) {
+      const int indent = 2;
       cout << "\n*** WARNING! ***\n";
       cout << "This combo test currently consists of the following:\n";
-      this->print(cout, 2);
+      this->print(cout, indent);
       cout << "Unable to add the following test:\n";
-      a.print(cout, 2);
+      a.print(cout, indent);
       cout << "\n";
     }
   return *this;
@@ -93,9 +94,9 @@ void Combo::orOp(const Solver::Generic& problem)
   for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
     StatusType s = (*i)->operator()(problem);
-    if (s != Unconverged) {
+
+    if ((status == Unconverged) && (s != Unconverged)) {
       status = s;
-      return;
     }
 
   }
@@ -105,17 +106,27 @@ void Combo::orOp(const Solver::Generic& problem)
 
 void Combo::andOp(const Solver::Generic& problem)
 {
-  vector<Test*>::const_iterator i = tests.begin();
-  StatusType s = (*i)->operator()(problem);
+  bool isUnconverged = false;
 
-  if (s == Unconverged)
-    return;
+  for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-  for (; i != tests.end(); ++i) 
-    if (s != (*i)->operator()(problem))
-      return;
-  
-  status = s;
+    StatusType s = (*i)->operator()(problem);
+
+    // If any of the tests are unconverged, then the AND test is
+    // unconverged.
+    if (s == Unconverged) {
+      isUnconverged = true;
+      status = Unconverged;
+    }
+
+    // If this is the first test and it's converged/failed, copy its
+    // status to the combo status.
+    if ((!isUnconverged) && (status == Unconverged)) {
+      status = s;
+    }
+
+  }
+
   return;
 }
 

@@ -59,7 +59,7 @@ private:
   //! Tolerance for convergence.
   double tol;
 
-  //! Status
+  //! %Status
   StatusType status;
 
 };

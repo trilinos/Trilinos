@@ -39,12 +39,30 @@ namespace NOX {
 namespace Status {
 
   //! Combination of tests.
+  /*!
+    We always runs through all tests, even if we don't need to. This
+    is useful so that the user knows which tests have and have not be
+    satisfied.
+
+    In the AND combination, the result is UNCONVERGED if any of the
+    tests is UNCONVERGED. Otherwise, the result is equal to the result
+    of the first test in the list (either CONVERGED or FAILED). In
+    general, one does not imagine mixing CONVERGED and FAILED tests in
+    the same AND combination.
+
+    In the OR combination, the result is UNCONVERGED if all of the
+    tests are UNCONVERGED. Otherwise, it is the result of the first
+    test in the list that is either CONVERGED or FAILED. Therefore, it
+    will generally make sense to put the FAILED-type tests at the end
+    of the OR list.
+  */
 class Combo : public Test {
 
 public:
 
   /*! \brief The test can be either the AND of all the component
-   *  tests, or the OR of all the component tests. */
+    tests, or the OR of all the component tests.
+  */
   enum ComboType {AND, OR};
 
   //! Constructor with a single test.
@@ -77,7 +95,7 @@ protected:
   //! Vector of tests
   vector<Test*> tests;
 
-  //! Status
+  //! %Status
   StatusType status;
 
 };

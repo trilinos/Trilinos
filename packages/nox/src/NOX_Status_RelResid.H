@@ -62,6 +62,8 @@ private:
   double reltol;
   //! Absolute tolerance = reltol * normrhszero.
   double tol;
+  //! Current %status of this test
+  StatusType status;
 };
 
 } // namespace Status
