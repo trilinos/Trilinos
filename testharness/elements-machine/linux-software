@@ -1,0 +1,2 @@
+--with-cxxflags=-DLAM_BUILDING
+--with-lapack=/space/Trilinos3PL/liblapack.a
