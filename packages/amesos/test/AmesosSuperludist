@@ -45,7 +45,7 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SUPERLUDIST SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -81,100 +81,110 @@ echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.sum
 echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
 
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SUPERLUDIST
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 5e-14  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 5e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SUPERLUDIST
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   fidapm05.rua 0 1 1 0  1000000000000 1e-0 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 0  1000000000000 1e-0  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 2 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 4 1  1000000000000000 1e-1 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 4 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 0 1 1 0  1000000000000 1e-0 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 0  1000000000000 1e-0  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 2 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 4 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 4 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1  >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 1 0 1e-11 5e-12 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 1 0 1e-11 5e-12  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 3 1 1e-11 5e-12  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 1 1e-11 5e-12  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 3 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 1 0 1e-11 5e-12 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 1 0 1e-11 5e-12  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 3 1 1e-11 5e-12  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 1 1e-11 5e-12  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 3 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 4 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 4 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 4 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 4 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 4 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 4 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 4 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 4 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 4 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 0 1e-11 5e-12  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 1 1e-9  1e-11  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 4 0 1e-10 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 0 1e-11 5e-12  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 1 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 0 1e-12 1e-13  >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 5 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 1 1e-12 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 0 1e-11 5e-12  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 0 1e-12 1e-13  >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 1 1e-12 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 0 1e-11 5e-12  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 2 1 1e-9  1e-11 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 4 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 6 0 1e-11 5e-12  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 2 1 1e-9  1e-11 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 4 0 1e-10 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 6 0 1e-11 5e-12  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 5 amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -3 1 1e-12 1e-13  >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -3 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 -1 0 1e-11 5e-12  >>SST.stdout
-# COMMENT fails on herouxsmp but works on claire, atlantis and paunchy # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
-# COMMENT fails on herouxsmp but works on claire, atlantis and paunchy # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT fails on Claire # COMMENT mpirun -np 4 amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -3 1 1e-12 1e-13  >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -3 0 1e-12 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 -1 0 1e-11 5e-12  >>SST.stdout
+# COMMENT fails on herouxsmp but works on claire, atlantis and paunchy # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
+# COMMENT fails on herouxsmp but works on claire, atlantis and paunchy # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT fails on Claire # COMMENT $mpigo 4 ./amesos_test.exe SUPERLUDIST   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
 
 
 #
@@ -182,32 +192,32 @@ mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 -1 0 1e-11 5e-12  >>S
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-# COMMENT fails on herouxsmp mpirun -np 3 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+# COMMENT fails on herouxsmp $mpigo 3 ./amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
-mpirun -np 6 amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+$mpigo 6 ./amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
 
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 6 amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
-# COMMENT SUPERLUDIST does not handle transpose mpirun  -np 6 amesos_test.exe SUPERLUDIST K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 6 ./amesos_test.exe SUPERLUDIST K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT SUPERLUDIST does not handle transpose $mpigo 6 ./amesos_test.exe SUPERLUDIST K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
 
-# COMMENT SUPERLUDIST fails on Khead.triS fails on atlantis and mpirun -np 1 amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+# COMMENT SUPERLUDIST fails on Khead.triS fails on atlantis and $mpigo 1 ./amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 #
 #  A couple more matrices
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
-# COMMENT fails on herouxsmp # COMMENT mpirun -np 1 amesos_test.exe SUPERLUDIST meg1_out.rua 0 1 3 0 1e-04 1e-03 >>SST.stdout 
+$mpigo 1 ./amesos_test.exe SUPERLUDIST 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+# COMMENT fails on herouxsmp # COMMENT $mpigo 1 ./amesos_test.exe SUPERLUDIST meg1_out.rua 0 1 3 0 1e-04 1e-03 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosSuperludist.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosSuperludist.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo AmesosSuperludist.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

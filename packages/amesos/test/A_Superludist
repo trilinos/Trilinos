@@ -46,7 +46,7 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SUPERLUDIST SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -82,114 +82,124 @@ echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.sum
 echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
 
 #
 #  Test 27 matrices on one process, one right hand side 
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST utm300.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST lop163.rua 0 1 1 0 1e-09 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST shl__200.rua 0 1 1 0 1e-10 5e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fs_541_1.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bp___200.rua 0 1 1 0 1e-11 5e-13 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST utm300.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST lop163.rua 0 1 1 0 1e-09 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST shl__200.rua 0 1 1 0 1e-10 5e-11 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fs_541_1.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bp___200.rua 0 1 1 0 1e-11 5e-13 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST qh768.rua 0 1 1 0 1e-5 5e-3 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST pores_1.rua 0 1 1 0 1e-12 5e-9 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST olm1000.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST nnc261.rua 0 1 1 0 200000 5000 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST tols2000.rua 0 1 1 0 1e-14 5e-9 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST qh768.rua 0 1 1 0 1e-5 5e-3 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST pores_1.rua 0 1 1 0 1e-12 5e-9 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST olm1000.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST nnc261.rua 0 1 1 0 200000 5000 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST tols2000.rua 0 1 1 0 1e-14 5e-9 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST rw136.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST odep400a.rua 0 1 1 0 3e-11 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mhd416a.rua 0 1 1 0 7000 5e-9 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST lns__131.rua 0 1 1 0 1e-10 5e-6 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST gre__185.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST rw136.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST odep400a.rua 0 1 1 0 3e-11 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mhd416a.rua 0 1 1 0 7000 5e-9 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST lns__131.rua 0 1 1 0 1e-10 5e-6 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST gre__185.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST fs_760_3.rua 0 1 1 0 1 2e-07 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fs_680_2.rua 0 1 1 0 1e-11 5e-2 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fs_183_4.rua 0 1 1 0 6e-7 5e-8 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fs_183_1.rua 0 1 1 0 1e-5 5e-9 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mahindas.rua 0 1 1 0 1e-9 2e-8 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fs_760_3.rua 0 1 1 0 1 2e-07 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fs_680_2.rua 0 1 1 0 1e-11 5e-2 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fs_183_4.rua 0 1 1 0 6e-7 5e-8 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fs_183_1.rua 0 1 1 0 1e-5 5e-9 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mahindas.rua 0 1 1 0 1e-9 2e-8 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST dwa512.rua 0 1 1 0 1e-12 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity02.rua 0 1 1 0 1e-8 5e-16 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST jpwh_991.rua 0 1 1 0 1e-13 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST ck400.rua 0 1 1 0 1e-11 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST west0156.rua 0 1 1 0 1e-8 5e-9 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST dwa512.rua 0 1 1 0 1e-12 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity02.rua 0 1 1 0 1e-8 5e-16 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST jpwh_991.rua 0 1 1 0 1e-13 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST ck400.rua 0 1 1 0 1e-11 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST west0156.rua 0 1 1 0 1e-8 5e-9 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST west0132.rua 0 1 1 0 1e-9 5e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST west0067.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST west0132.rua 0 1 1 0 1e-9 5e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST west0067.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
 
 #
 #  Test 27 matrices on four processes, one right hand side 
 #
-mpirun -np 4 amesos_test.exe SUPERLUDIST utm300.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST lop163.rua 0 1 1 0 4e-09 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST shl__200.rua 0 1 1 0 1e-10 5e-11 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST fs_541_1.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST bp___200.rua 0 1 1 0 1e-11 5e-13 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST utm300.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST lop163.rua 0 1 1 0 4e-09 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST shl__200.rua 0 1 1 0 1e-10 5e-11 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST fs_541_1.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST bp___200.rua 0 1 1 0 1e-11 5e-13 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST qh768.rua 0 1 1 0 1e-5 5e-3 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST pores_1.rua 0 1 1 0 1e-12 5e-9 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST olm1000.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST nnc261.rua 0 1 1 0 200000 5000 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST tols2000.rua 0 1 1 0 1e-14 5e-9 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST qh768.rua 0 1 1 0 1e-5 5e-3 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST pores_1.rua 0 1 1 0 1e-12 5e-9 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST olm1000.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST nnc261.rua 0 1 1 0 200000 5000 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST tols2000.rua 0 1 1 0 1e-14 5e-9 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST rw136.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST odep400a.rua 0 1 1 0 3e-11 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mhd416a.rua 0 1 1 0 7000 5e-9 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST lns__131.rua 0 1 1 0 1e-10 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST gre__185.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST rw136.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST odep400a.rua 0 1 1 0 3e-11 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mhd416a.rua 0 1 1 0 7000 5e-9 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST lns__131.rua 0 1 1 0 1e-10 5e-6 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST gre__185.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST fs_760_3.rua 0 1 1 0 1 2e-07 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST fs_680_2.rua 0 1 1 0 1e-11 5e-2 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST fs_183_4.rua 0 1 1 0 8e-7 5e-8 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST fs_183_1.rua 0 1 1 0 1e-5 5e-9 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mahindas.rua 0 1 1 0 1e-9 2e-8 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST fs_760_3.rua 0 1 1 0 1 2e-07 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST fs_680_2.rua 0 1 1 0 1e-11 5e-2 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST fs_183_4.rua 0 1 1 0 8e-7 5e-8 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST fs_183_1.rua 0 1 1 0 1e-5 5e-9 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mahindas.rua 0 1 1 0 1e-9 2e-8 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST dwa512.rua 0 1 1 0 1e-12 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity02.rua 0 1 1 0 1e-8 5e-16 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST jpwh_991.rua 0 1 1 0 1e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST ck400.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST west0156.rua 0 1 1 0 1e-8 5e-9 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST dwa512.rua 0 1 1 0 1e-12 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity02.rua 0 1 1 0 1e-8 5e-16 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST jpwh_991.rua 0 1 1 0 1e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST ck400.rua 0 1 1 0 1e-10 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST west0156.rua 0 1 1 0 1e-8 5e-9 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST west0132.rua 0 1 1 0 1e-9 5e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST west0067.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST west0132.rua 0 1 1 0 1e-9 5e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST west0067.rua 0 1 1 0 1e-14 5e-14 >>SST.stdout
 
 #
 #  Test 27 matrices on three processes, multiple right hand sides 
 #
-mpirun -np 3 amesos_test.exe SUPERLUDIST utm300.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST lop163.rua 1 1 -4 0  1e-8  5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST shl__200.rua 1 1 -4 0  1e-10 5e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST fs_541_1.rua 1 1 -4 0  1e-14 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST bp___200.rua 1 1 -4 0  1e-11 5e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST utm300.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST lop163.rua 1 1 -4 0  1e-8  5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST shl__200.rua 1 1 -4 0  1e-10 5e-11 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST fs_541_1.rua 1 1 -4 0  1e-14 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST bp___200.rua 1 1 -4 0  1e-11 5e-13 >>SST.stdout
 
-mpirun -np 3 amesos_test.exe SUPERLUDIST qh768.rua 1 1 -4 0  1e-5 5e-3 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST pores_1.rua 1 1 -4 0  1e-12 8e-8 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST olm1000.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST nnc261.rua 1 1 -4 0  200000 5000 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST tols2000.rua 1 1 -4 0  1e-14 5e-9 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST qh768.rua 1 1 -4 0  1e-5 5e-3 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST pores_1.rua 1 1 -4 0  1e-12 8e-8 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST olm1000.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST nnc261.rua 1 1 -4 0  200000 5000 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST tols2000.rua 1 1 -4 0  1e-14 5e-9 >>SST.stdout
 
-mpirun -np 3 amesos_test.exe SUPERLUDIST rw136.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST odep400a.rua 1 1 -4 0  3e-11 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST mhd416a.rua 1 1 -4 0  7000 5e-9 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST lns__131.rua 1 1 -4 0  1e-10 5e-6 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST gre__185.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST rw136.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST odep400a.rua 1 1 -4 0  3e-11 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST mhd416a.rua 1 1 -4 0  7000 5e-9 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST lns__131.rua 1 1 -4 0  1e-10 5e-6 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST gre__185.rua 1 1 -4 0  1e-10 5e-14 >>SST.stdout
 
-mpirun -np 3 amesos_test.exe SUPERLUDIST fs_760_3.rua 1 1 -4 0  1 2e-07 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST fs_680_2.rua 1 1 -4 0  1e-11 5e-2 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST fs_183_4.rua 1 1 -4 0  1e-6 5e-7 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST fs_183_1.rua 1 1 -4 0  1e-3 5e-7 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST mahindas.rua 1 1 -4 0  1e-9 2e-8 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST fs_760_3.rua 1 1 -4 0  1 2e-07 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST fs_680_2.rua 1 1 -4 0  1e-11 5e-2 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST fs_183_4.rua 1 1 -4 0  1e-6 5e-7 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST fs_183_1.rua 1 1 -4 0  1e-3 5e-7 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST mahindas.rua 1 1 -4 0  1e-9 2e-8 >>SST.stdout
 
-mpirun -np 3 amesos_test.exe SUPERLUDIST dwa512.rua 1 1 -4 0  1e-12 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST cavity02.rua 1 1 -4 0  1e-8 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST jpwh_991.rua 1 1 -4 0  1e-13 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST ck400.rua 1 1 -4 0  6e-11 5e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST west0156.rua 1 1 -4 0  1e-8 5e-9 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST dwa512.rua 1 1 -4 0  1e-12 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST cavity02.rua 1 1 -4 0  1e-8 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST jpwh_991.rua 1 1 -4 0  1e-13 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST ck400.rua 1 1 -4 0  6e-11 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST west0156.rua 1 1 -4 0  1e-8 5e-9 >>SST.stdout
 
-mpirun -np 3 amesos_test.exe SUPERLUDIST west0132.rua 1 1 -4 0  1e-9 5e-10 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST west0067.rua 1 1 -4 0  1e-14 5e-14 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST west0132.rua 1 1 -4 0  1e-9 5e-10 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST west0067.rua 1 1 -4 0  1e-14 5e-14 >>SST.stdout
 
 echo "" >> SST.summary 
 echo "COMMENT End A_Superludist.exe" >> SST.summary 
@@ -197,7 +207,7 @@ echo "COMMENT End A_Superludist.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun A_Superludist.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo A_Superludist.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

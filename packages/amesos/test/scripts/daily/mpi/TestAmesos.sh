@@ -34,6 +34,17 @@
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 set error = None
 set AnError = False
 set printexitvalue
@@ -99,7 +110,7 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Te
       echo "############" $g "##############" >>& ../$file
       if( "$2" == "True" ) then
         /bin/rm -f Amesos_FAILED
-        mpirun -np 1 ./$g >>& ../$file
+        $mpigo 1 ./$g >>& ../$file
         # ================== #
         # run with 1 process #		    
         # ================== #
@@ -116,7 +127,7 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Te
         # run with 4 processes #		    
         # ==================== #
         /bin/rm -f Amesos_FAILED
-        mpirun -np 4 ./$g >>& ../$file
+        $mpigo 4 ./$g >>& ../$file
         if( $status != 0 || -f Amesos_FAILED ) then
           # A test failed.
           set AnError = True

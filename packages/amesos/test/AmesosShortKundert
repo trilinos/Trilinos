@@ -55,7 +55,7 @@
 #
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe KUNDERT SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 3 ./amesos_test.exe KUNDERT SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     KUNDERT SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -92,47 +92,57 @@ echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.sum
 echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
 
 #
 #  Test one process tiny serial matrix, on KUNDERT
 #
-mpirun -np 1 amesos_test.exe KUNDERT SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe KUNDERT SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
 #  Test tiny distributed matrix, on KUNDERT
 #
-#  COMMENT FAILS mpirun -np 1 amesos_test.exe KUNDERT   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
+#  COMMENT FAILS $mpigo 1 ./amesos_test.exe KUNDERT   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
 #
 #  Test some more small matrices
 #
-# COMMENT fails mpirun -np 1 amesos_test.exe KUNDERT   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 1 amesos_test.exe KUNDERT   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-# COMMENT fails mpirun -np 1 amesos_test.exe KUNDERT   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 1 amesos_test.exe KUNDERT   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+# COMMENT fails $mpigo 1 ./amesos_test.exe KUNDERT   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
+$mpigo 1 ./amesos_test.exe KUNDERT   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+# COMMENT fails $mpigo 1 ./amesos_test.exe KUNDERT   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+$mpigo 1 ./amesos_test.exe KUNDERT   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
 #
 #
 #  Test blocked right hand sides
 #
-# COMMENT BRHS not tested yet mpirun -np 1 amesos_test.exe KUNDERT   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
+# COMMENT BRHS not tested yet $mpigo 1 ./amesos_test.exe KUNDERT   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-# COMMENT BRHS not tested yet mpirun -np 1 amesos_test.exe KUNDERT   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+# COMMENT BRHS not tested yet $mpigo 1 ./amesos_test.exe KUNDERT   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 amesos_test.exe KUNDERT SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe KUNDERT SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT FAILS mpirun -np 1 amesos_test.exe KUNDERT Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+# COMMENT FAILS $mpigo 1 ./amesos_test.exe KUNDERT Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "\nCOMMENT End AmesosShortKundert.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosShortKundert.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo AmesosShortKundert.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

@@ -55,7 +55,7 @@
 #
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13
+#COMMENT       $mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13
 #  where:
 #     SUPERLUDIST SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -92,32 +92,42 @@ echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.sum
 echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
 
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SUPERLUDIST
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13 >>SST.stdout
-# COMMENT fails on herouxsmp works on atlantis and claire mpirun -np 3 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13 >>SST.stdout
+# COMMENT fails on herouxsmp works on atlantis and claire $mpigo 3 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-13  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SUPERLUDIST
 #
 #
 #   Superludist does not seem to handle fidapm05
-mpirun -np 1 amesos_test.exe SUPERLUDIST   fidapm05.rua 0 1 1 0  1000000000000 1e-0 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 0  1000000000000 1e-0 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 0 1 1 0  1000000000000 1e-0 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   fidapm05.rua 1 1 1 0  1000000000000 1e-0 >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 0 1e-9  1e-11  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 1 0 1e-10 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 1 0 1e-10 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 1 0 1e-10 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 1 0 1e-12 1e-13  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (OK, distributed has little meaning on one process, but ...)
@@ -128,39 +138,39 @@ mpirun -np 3 amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 1 0 1e-12 1e-13  >>SS
 #
 #  Test blocked right hand sides
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 4 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 0 1e-9  1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 0 1 4 0 1e-10 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 6 0 1e-9  1e-10 >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 0 1e-9  1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 0 1 -2 0 1e-12 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 0 1 -3 0 1e-9  1e-10 >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 4 0 1e-9  1e-10 >>SST.stdout
-mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 3 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 2 0 1e-9  1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolA.rua 1 1 4 0 1e-9  1e-10 >>SST.stdout
+$mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 3 0 1e-10 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolE.rua 1 1 2 0 1e-9  1e-10 >>SST.stdout
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -1 0 1e-12 1e-13 >>SST.stdout
-# COMMENT fails on paunchy no purify mpirun -np 5 amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 -3 0 1e-10 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SUPERLUDIST   ImpcolC.rua 1 1 -4 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST   ImpcolD.rua 1 1 -1 0 1e-12 1e-13 >>SST.stdout
+# COMMENT fails on paunchy no purify $mpigo 5 ./amesos_test.exe SUPERLUDIST   ImpcolB.rua 1 1 -3 0 1e-10 1e-13  >>SST.stdout
+$mpigo 2 ./amesos_test.exe SUPERLUDIST   ImpcolC.rua 1 1 -4 0 1e-12 1e-13  >>SST.stdout
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-# COMMENT fails on herouxsmp mpirun -np 3 amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+# COMMENT fails on herouxsmp $mpigo 3 ./amesos_test.exe SUPERLUDIST SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT fails on atlantis but runs on claire mpirun -np 1 amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
-#  COMMENT FAILS ON claire - signal 11   mpirun -np 4 amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+# COMMENT fails on atlantis but runs on claire $mpigo 1 ./amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+#  COMMENT FAILS ON claire - signal 11   $mpigo 4 ./amesos_test.exe SUPERLUDIST Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 
 echo "" >> SST.summary 
@@ -169,7 +179,7 @@ echo "COMMENT End AmesosSuperludistShort.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosSuperludistShort.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo AmesosSuperludistShort.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

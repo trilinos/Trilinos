@@ -46,7 +46,7 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SUPERLUDIST SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -82,77 +82,89 @@ echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.sum
 echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
-# COMMENT Singular mpirun -np 1 amesos_test.exe SUPERLUDIST mbeause.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
-# COMMENT Singular mpirun -np 1 amesos_test.exe SUPERLUDIST mbeaflw.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
-# COMMENT Singular mpirun -np 1 amesos_test.exe SUPERLUDIST mbeacxc.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST watt__1.rua 0 0 1 0 1e-12 5e-16 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST utm5940.rua 0 0 1 0 4e-8 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST utm1700b.rua 0 0 1 0 4e-9 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST sherman5.rua 0 0 1 0 4e-12 5e-12 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST rbs480b.rua 0 0 1 0 1e-12 5e-12 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST olm5000.rua 0 0 1 0 1e-12 5e-13 >>SST.stdout
-# COMMENT fails mpirun -np 1 amesos_test.exe SUPERLUDIST rw5151.rua 0 0 1 0 1e+37 5e+20 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mhd3200a.rua 0 0 1 0 1000000000 5e-4 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST add20.rua 0 0 1 0 1e-11 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 5e-13 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST watt__1.rua 0 0 1 0 1e-12 5e-16 >>SST.stdout
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
+# COMMENT Singular $mpigo 1 ./amesos_test.exe SUPERLUDIST mbeause.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
+# COMMENT Singular $mpigo 1 ./amesos_test.exe SUPERLUDIST mbeaflw.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
+# COMMENT Singular $mpigo 1 ./amesos_test.exe SUPERLUDIST mbeacxc.rua 0 0 1 0 1e-14 5e-14 >>SST.stdout
+
+$mpigo 1 ./amesos_test.exe SUPERLUDIST watt__1.rua 0 0 1 0 1e-12 5e-16 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST utm5940.rua 0 0 1 0 4e-8 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST utm1700b.rua 0 0 1 0 4e-9 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST sherman5.rua 0 0 1 0 4e-12 5e-12 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST rbs480b.rua 0 0 1 0 1e-12 5e-12 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST olm5000.rua 0 0 1 0 1e-12 5e-13 >>SST.stdout
+# COMMENT fails $mpigo 1 ./amesos_test.exe SUPERLUDIST rw5151.rua 0 0 1 0 1e+37 5e+20 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mhd3200a.rua 0 0 1 0 1000000000 5e-4 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST add20.rua 0 0 1 0 1e-11 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 5e-13 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
+
+$mpigo 4 ./amesos_test.exe SUPERLUDIST watt__1.rua 0 0 1 0 1e-12 5e-16 >>SST.stdout
 # COMMENT utm5940.rua fails on stratus error=1e-5, resid=5e-11
-mpirun -np 4 amesos_test.exe SUPERLUDIST utm5940.rua 0 0 1 0 4e-8 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST utm1700b.rua 0 0 1 0 4e-9 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST sherman5.rua 0 0 1 0 4e-12 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST utm5940.rua 0 0 1 0 4e-8 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST utm1700b.rua 0 0 1 0 4e-9 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST sherman5.rua 0 0 1 0 4e-12 5e-12 >>SST.stdout
 # COMMENT rbs480b fails on stratus error=3e-5 resid=4e-5
-mpirun -np 4 amesos_test.exe SUPERLUDIST rbs480b.rua 0 0 1 0 1e-12 5e-12 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST olm5000.rua 0 0 1 0 1e-12 5e-13 >>SST.stdout
-# COMMENT fails mpirun -np 4 amesos_test.exe SUPERLUDIST rw5151.rua 0 0 1 0 1e+37 5e+20 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mhd3200a.rua 0 0 1 0 1000000000 5e-4 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST add20.rua 0 0 1 0 1e-11 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST rbs480b.rua 0 0 1 0 1e-12 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST olm5000.rua 0 0 1 0 1e-12 5e-13 >>SST.stdout
+# COMMENT fails $mpigo 4 ./amesos_test.exe SUPERLUDIST rw5151.rua 0 0 1 0 1e+37 5e+20 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mhd3200a.rua 0 0 1 0 1000000000 5e-4 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST add20.rua 0 0 1 0 1e-11 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
 # COMMENT fails on stratus error=1300 resid=62
-mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 2e-13 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 2e-13 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
 # COMMENT fails on stratus error=11 resid=1
-mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST watt__1.rua 1 1 -10 0 1e-12 5e-16 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST watt__1.rua 1 1 -10 0 1e-12 5e-16 >>SST.stdout
 # COMMENT fails on stratus error=5e-5 resid=5e-10 
-mpirun -np 4 amesos_test.exe SUPERLUDIST utm5940.rua 1 1 -10 0 4e-8 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST utm5940.rua 1 1 -10 0 4e-8 5e-14 >>SST.stdout
 # COMMENT fails on stratus error=resid=4e-12 
-mpirun -np 4 amesos_test.exe SUPERLUDIST utm1700b.rua 1 1 -10 0 4e-9 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST sherman5.rua 1 1 -10 0 4e-12 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST utm1700b.rua 1 1 -10 0 4e-9 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST sherman5.rua 1 1 -10 0 4e-12 5e-12 >>SST.stdout
 # COMMENT fails on stratus error=9e-5 resid=1e-4
-mpirun -np 4 amesos_test.exe SUPERLUDIST rbs480b.rua 1 1 -10 0 1e-12 5e-12 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST olm5000.rua 1 1 -10 0 1e-12 5e-13 >>SST.stdout
-# COMMENT fails mpirun -np 4 amesos_test.exe SUPERLUDIST rw5151.rua 1 1 -10 0 1e+37 5e+20 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mhd3200a.rua 1 1 -10 0 1000000000 5e-4 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST add20.rua 1 1 -10 0 1e-11 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 1 1 -10 0 1e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 1 1 -10 0 1e-10 5e-12 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 1 1 -10 0 3e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST rbs480b.rua 1 1 -10 0 1e-12 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST olm5000.rua 1 1 -10 0 1e-12 5e-13 >>SST.stdout
+# COMMENT fails $mpigo 4 ./amesos_test.exe SUPERLUDIST rw5151.rua 1 1 -10 0 1e+37 5e+20 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mhd3200a.rua 1 1 -10 0 1000000000 5e-4 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST add20.rua 1 1 -10 0 1e-11 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST add32.rua 1 1 -10 0 1e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST gemat12.rua 1 1 -10 0 1e-10 5e-12 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST orani678.rua 1 1 -10 0 3e-13 5e-14 >>SST.stdout
 # COMMENT fails on stratus error=1100 resid=100
-mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 1 1 -10 0 4e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 1 1 -10 0 1e-10 2e-13 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST dw2048.rua 1 1 -10 0 4e-13 5e-14 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity13.rua 1 1 -10 0 1e-10 2e-13 >>SST.stdout
 # COMMENT fails on stratus error=1e5 resid=9000
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 1 1 -10 0 8e-6 5e-6 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity09.rua 1 1 -10 0 8e-6 5e-6 >>SST.stdout
 # COMMENT fails on stratus error=2e4 resid=1700
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 6e-9 2e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 6e-9 2e-10 >>SST.stdout
 # COMMENT fails on stratus error=127 resid =26
-mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 1 1 -10 0 3e-3 5e-11 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 1 1 -10 0 5e-13 1000 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cry10000.rua 1 1 -10 0 3e-3 5e-11 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mcfe.rua 1 1 -10 0 5e-13 1000 >>SST.stdout
+
 
 
 
@@ -162,7 +174,7 @@ echo "COMMENT End B_Superludist.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun B_Superludist.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo B_Superludist.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
