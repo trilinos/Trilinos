@@ -419,7 +419,7 @@ void Problem_Manager::registerComplete()
 
 }
 
-bool Problem_Manager::syncAllProblems()
+void Problem_Manager::syncAllProblems()
 {
   if(Problems.empty()) {
     cout << "ERROR: No problems registered with Problem_Manager !!"
@@ -435,7 +435,7 @@ bool Problem_Manager::syncAllProblems()
     (*problemIter).second->doTransfer();
 }
 
-bool Problem_Manager::setGroupX(int probId)
+void Problem_Manager::setGroupX(int probId)
 {
   GenericEpetraProblem *problem = Problems.find(probId)->second;
   if( !problem ) {
@@ -454,7 +454,7 @@ bool Problem_Manager::setGroupX(int probId)
   grp->setX(problem->getSolution());
 }
 
-bool Problem_Manager::setAllGroupX()
+void Problem_Manager::setAllGroupX()
 {
   if(Problems.empty()) {
     cout << "ERROR: No problems registered with Problem_Manager !!"
@@ -475,7 +475,7 @@ bool Problem_Manager::setAllGroupX()
 }
 
 #ifdef HAVE_NOX_EPETRAEXT
-bool Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
+void Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 {
   map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = 
                                                    OffBlock_Managers.begin();
@@ -507,7 +507,7 @@ void Problem_Manager::resetProblems()
   }
 }
 
-bool Problem_Manager::computeAllF()
+void Problem_Manager::computeAllF()
 {
   if(Problems.empty()) {
     cout << "ERROR: No problems registered with Problem_Manager !!"
@@ -527,7 +527,7 @@ bool Problem_Manager::computeAllF()
   }
 }
 
-bool Problem_Manager::computeGroupF(int probId)
+void Problem_Manager::computeGroupF(int probId)
 {
   NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
   if( !grp ) {
@@ -538,7 +538,7 @@ bool Problem_Manager::computeGroupF(int probId)
   grp->computeF();
 }
 
-bool Problem_Manager::computeAllJacobian()
+void Problem_Manager::computeAllJacobian()
 {
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();

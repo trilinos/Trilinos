@@ -91,18 +91,18 @@ public:
 
   // Have each problem receive dependent data from every other problem 
   // on which it depends
-  bool syncAllProblems();
+  void syncAllProblems();
 
   // Set the solver group solution using the current solution contained 
   // in the problem
-  bool setGroupX(int id);
+  void setGroupX(int id);
 
   // Set all groups with the current solution contained in each problem
-  bool setAllGroupX();
+  void setAllGroupX();
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
   // Set all off-block groups with the current composite-size solution
-  bool setAllOffBlockGroupX(const Epetra_Vector&);
+  void setAllOffBlockGroupX(const Epetra_Vector&);
 #endif
 
   // Reset all problems by copying the current solution into the old solution
@@ -110,13 +110,13 @@ public:
   void resetProblems();
 
   // Compute residual (F) in solution groups for all registered problems
-  bool computeAllF();
+  void computeAllF();
 
   // Compute residual (F) in solution group specified by id
-  bool computeGroupF(int id);
+  void computeGroupF(int id);
 
   // Compute Jacobian in solution groups for all registered problems
-  bool computeAllJacobian();
+  void computeAllJacobian();
 
   // Compute sum of norms of each problem residual
   double getNormSum();
