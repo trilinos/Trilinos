@@ -213,6 +213,9 @@ extern int Zoltan_PHG_gather_slice(
 /* Other Function Prototypes */
 /*****************************/
 
+extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, PHGraph *,
+                               PHGPartParams *, int);
+    
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_HPart_Lib(ZZ*, PHGraph*, int, Partition, PHGPartParams*, 
                                 int);

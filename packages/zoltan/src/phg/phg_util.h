@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 
-
+#include <stdarg.h>
 #include "zz_const.h"
 #include "phg.h"
 
@@ -42,7 +42,11 @@ extern unsigned int Zoltan_PHG_Rand (void);
 extern void         Zoltan_PHG_Srand (unsigned int);
 extern void         Zoltan_PHG_Rand_Perm_Int (int*, int);
 
-
+    /* UVC: some utility functions not particularly related to hypergraph */
+extern char *uMe(PHGComm *);
+extern void uprintf(PHGComm *, char *,...);
+extern void errexit(char *,...);
+    
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

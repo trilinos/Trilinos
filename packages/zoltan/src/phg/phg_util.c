@@ -659,6 +659,49 @@ void Zoltan_PHG_Rand_Perm_Int (int *data, int n)
 
 
 
+char *uMe(PHGComm *hgc)
+{
+    static char msg[1024];
+
+    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->Proc, hgc->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
+    return msg;
+}
+
+void uprintf(PHGComm *hgc, char *f_str,...)
+{
+va_list argp;
+
+fflush(stdout);
+fflush(stderr);
+printf("%s", uMe(hgc)); 
+va_start(argp, f_str);
+vfprintf(stdout, f_str, argp);
+va_end(argp);
+fflush(stdout);
+}
+
+/*************************************************************************
+* -------------------------- Error Exit ----------------------------------
+**************************************************************************/
+void errexit(char *f_str,...)
+{
+va_list argp;
+
+fflush(stdout);
+fflush(stderr);
+fprintf(stderr, "\n****** Error:\n");
+va_start(argp, f_str);
+vfprintf(stderr, f_str, argp);
+va_end(argp);
+
+fprintf(stderr," ******\n");
+fflush(stderr);
+exit(1);
+}
+
+
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -21,7 +21,6 @@ extern "C" {
 #include "phg.h"
 
 
-static ZOLTAN_PHG_MATCHING_FN matching_no;   /* template -- matching */
 static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
 
@@ -34,30 +33,22 @@ static void print_matrix(int*, int*, int, int, int);
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
-   hgp->matching = NULL;
-   if (!strcasecmp(hgp->redm_str, "no"))        hgp->matching = NULL;
-   else if (!strcasecmp(hgp->redm_str, "loc"))  hgp->matching = matching_loc;    
-   else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
-   else         
-      return ZOLTAN_FATAL;
-       
-   return ZOLTAN_OK;
-}
-
-
-
-static char *uMe(PHGComm *hgc)
-{
-   static char msg[1024];
-
-   sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->Proc, hgc->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
-   return msg;
+    int exist=1;
+    
+    if (!strcasecmp(hgp->redm_str, "no"))        hgp->matching = NULL;
+    else if (!strcasecmp(hgp->redm_str, "loc"))  hgp->matching = matching_loc;    
+    else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
+    else {
+        exist = 0;
+        hgp->matching = NULL;
+    }
+    
+    return exist;
 }
 
 
 
 /*****************************************************************************/
-
 int Zoltan_PHG_Matching (
   ZZ *zz,
   PHGraph *hg,
@@ -179,12 +170,6 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
     return ZOLTAN_OK;
 }
     
-/*****************************************************************************/
-/* template for matching, hypergraph version */
-static int matching_no (ZZ *zz, PHGraph *hg, Matching match)
-{
-  return ZOLTAN_OK;
-}
 
 
 
@@ -207,7 +192,7 @@ static int matching_no (ZZ *zz, PHGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, edge, maxpsum, maxindex, *psums, *tsums;
+  int i, j, lno, loop, vertex, maxpsum, *psums, *tsums;
   int count, size, *ip, bestv, bestsum, edgecount, index, *cmatch;
   int NDO, NLOOP;
   int *select, pselect;
@@ -228,10 +213,11 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
   pselect = 0;  /* marks position (count) of my processed vertices */
        
   /* local slice of global matching array.  It uses local numbering (zero-based)
-  /* initially, match[i] = i.  After matching, match[i]=i indicates an unmatched
-  /* vertex. A matching between vertices i & j is indicated by match[i] = j &
-  /* match [j] = i.  NOTE: a match to an off processor vertex is indicated my a
-  /* negative number, -(gno+1), which must use global numbers (gno's). */
+     initially, match[i] = i.  After matching, match[i]=i indicates an unmatched
+     vertex. A matching between vertices i & j is indicated by match[i] = j &
+     match [j] = i.  NOTE: a match to an off processor vertex is indicated my a
+     negative number, -(gno+1), which must use global numbers (gno's).
+  */
 
   if (!(psums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
    || !(tsums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
@@ -256,25 +242,27 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
      }
         
   /* Loop processing NDO vertices per column each pass. Each loop has 4 phases:
-  /* Phase 1: send NDO candidates for global matching - horizontal communication
-  /* Phase 2: sum  inner products, find best         - vertical communication
-  /* Phase 3: return best sums to owning column      - horizontal communication
-  /* Phase 4: return actual matches                  - horizontal communication */
+     Phase 1: send NDO candidates for global matching - horizontal communication
+     Phase 2: sum  inner products, find best         - vertical communication
+     Phase 3: return best sums to owning column      - horizontal communication
+     Phase 4: return actual matches                  - horizontal communication
+  */
   for (loop = 0; loop < NLOOP; loop++)
      {
      /************************ PHASE 1: ***************************************/
      
      /* Select next NDO unmatched vertices to globally match.  Here many choices
-     /* can be made for alternative algorithms: sequential, random, weight order,
-     /* (hypergraph) vertex size, etc.  This version uses seqential: pick the
-     /* next NDO unmatched vertices in natural lno order. */ 
+        can be made for alternative algorithms: sequential, random, weight order,
+        (hypergraph) vertex size, etc.  This version uses seqential: pick the
+        next NDO unmatched vertices in natural lno order.
+     */ 
      for (count = 0; pselect < hg->nVtx && count < NDO; pselect++)
         if (match[pselect] == pselect)    /* unmatched */
            select[count++] = pselect;     /* select it */
      if (count < NDO)                     /* what if we have a short count? */
         {
         for (i = 0; i < hg->nVtx; i++)
-           if (match[i] = i)
+            if (match[i] = i)
               break;       
         while (count < NDO)             /* find an unmatched vertex */
            select[count++] = i;         /* fill the rest of the array with it */
@@ -378,7 +366,8 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
            psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;   
         
         /* Want to use sparse communication with explicit summing later but
-        /* for now, all procs in my column have same complete inner products */ 
+           for now, all procs in my column have same complete inner products
+        */ 
         MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);
                          
         /* each proc computes best, all rows in a column compute same answer */ 
@@ -480,7 +469,8 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
      
   Zoltan_Multifree (__FILE__, __LINE__, 4, &psums, &tsums, &select, &cmatch); 
   Zoltan_Multifree (__FILE__, __LINE__, 5, &m_vindex, &m_vedge, &m_gno,
-   &m_bestsum, &m_bestv);         
+   &m_bestsum, &m_bestv);
+  return ZOLTAN_OK;
 }
 
 
