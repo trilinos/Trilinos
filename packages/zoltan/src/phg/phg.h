@@ -135,7 +135,7 @@ struct PHGPartParamsStruct {
                          * See levels PHG_DEBUG_* below.  */
   PHGComm comm;   /* UVCUVC: although this is not a paramater; we'll keep it here
                      for now; later we can move it out */
-  int num_coarse_tries;  /* Number of coarse partitions to try on each proc. */
+  int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;

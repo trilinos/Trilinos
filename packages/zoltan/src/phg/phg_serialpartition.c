@@ -108,7 +108,7 @@ int Zoltan_PHG_CoarsePartition(
  */
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
-int i, si;
+int i, si, j;
 
   /* take care of all special cases first */
 
@@ -149,10 +149,16 @@ int i, si;
       }
     }
 
+#define NUM_PART_KEEP 5            /* No. of partition vectors to keep. */
+                                   /* Only partially implemented so far. */
     static PHGComm scomm;          /* Serial communicator info */
     static int first_time = 1;
     HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
-    int *spart = NULL;             /* Partition vector for shg. */
+    int *spart = NULL;             /* Partition vectors for shg. */
+    int *new_part = NULL;          /* Ptr to new partition vector. */
+    float *bestvals = NULL;        /* Best cut values found so far */
+    int worst, new_cand;
+    float bal, worst_cut;
 
     if (phg->comm->nProc == 1) {
       /* Serial and parallel hgraph are the same. */
@@ -188,32 +194,72 @@ int i, si;
      * Allocate partition array spart for the serial hypergraph shg
      * and partition shg.
      */
-    spart = (int *) ZOLTAN_MALLOC(shg->nVtx * hgp->num_coarse_tries *
+    spart = (int *) ZOLTAN_CALLOC(shg->nVtx * (NUM_PART_KEEP+1),
                                     sizeof(int));
-    if (!spart) {
+    bestvals = (float *) ZOLTAN_MALLOC((NUM_PART_KEEP+1)*sizeof(int)); 
+    if ((!spart) || (!bestvals)) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
     
     /* Compute several coarse partitionings. */
+    /* Keep the NUM_PART_KEEP best ones around. */
+    /* Currently, only the best one is used. */
+
     /* KDDKDD Set RNG so different procs compute different parts. */
     /* KDDKDD For now, use same seed everywhere for debugging. */
 
-    for (i=0; i<hgp->num_coarse_tries; i++){
+    new_cand = 0;
+    new_part = spart;
+
+    for (i=0; i<hgp->num_coarse_iter; i++){
+
+      /* Overwrite worst partition with new candidate. */
       ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
-               spart+i*(shg->nVtx), hgp);
+               new_part, hgp);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                          "Error returned from CoarsePartition.");
         goto End;
       }
+
+      /* Refine new candidate. */
+      Zoltan_PHG_Refinement(zz, shg, numPart, new_part, hgp);
+
+      /* Decide if candidate is in the top tier or not. */
+      /* Selection criteria should be the same as in pick_best()! */
+      bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); 
+      bestvals[new_cand] = Zoltan_PHG_hcut_size_links(shg->comm, 
+             shg, new_part, numPart);
+      if (i<NUM_PART_KEEP)
+        new_cand = i+1;
+      else {
+        /* find worst partition vector */
+        /* possible optimization: keep bestvals sorted */
+        worst = 0;
+        worst_cut = bestvals[0];
+        for (j=1; j<NUM_PART_KEEP+1; j++){
+          if (worst_cut < bestvals[j]){
+            worst_cut = bestvals[j];
+            worst = j;
+          }
+        }
+        new_cand = worst;
+      }
+      new_part = spart+new_cand*(shg->nVtx);
+    }
+    /* Copy last partition vector such that all the best ones
+       are contiguous starting at spart.                     */
+    for (i=0; i<shg->nVtx; i++){
+      new_part[i] = spart[NUM_PART_KEEP*(shg->nVtx)+i];
     }
 
-    /* Evaluate and select the best */
-    /* EBEB Should we do a refinement before picking best? */
+    /* Evaluate and select the best. */
+    /* For now, only pick the best one, in the future we pick the k best. */
 
-    pick_best(zz, phg->comm, shg, numPart, hgp->num_coarse_tries, spart);
+    pick_best(zz, phg->comm, shg, numPart, 
+              MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart);
   
     if (phg->comm->nProc > 1) {
       /* Map gathered partition back to 2D distribution */
@@ -231,6 +277,7 @@ int i, si;
         part[i] = spart[i];
     }
     ZOLTAN_FREE(&spart);
+    ZOLTAN_FREE(&bestvals);
   }
   
 End:
@@ -908,14 +955,6 @@ float cut, bal;
   for (i=0; i<shg->nVtx; i++)
     spart[i] = spart[mybest*(shg->nVtx)+i];
 
-  /* KDDKDD DEBUGGING */
-/*
-  printf("%d KDDB %f %f\n", zz->Proc, local[0].val, local[1].val);
-  printf("%d KDDB", zz->Proc);
-  for (int i = 0; i < shg->nVtx; i++) printf(" %d", spart[i]);
-  printf("\n");
-*/
-
   MPI_Allreduce(local, global, 2, MPI_FLOAT_INT, MPI_MINLOC, 
                 phg_comm->Communicator);
 
@@ -923,13 +962,6 @@ float cut, bal;
   MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 
             phg_comm->Communicator);
 
-  /* KDDKDD DEBUGGING */
-/*
-  printf("%d KDDA %f %f on %d\n", zz->Proc, global[0].val, global[1].val, global[1].rank);
-  printf("%d KDDA", zz->Proc);
-  for (int i = 0; i < shg->nVtx; i++) printf(" %d", spart[i]);
-  printf("\n");
-*/
 }
 
 #ifdef __cplusplus
