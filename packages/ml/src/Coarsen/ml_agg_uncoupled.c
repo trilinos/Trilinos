@@ -240,6 +240,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 	 }
      mat_indx[i+1] = nz_cnt;
      if ( m <= 1 ) mat_indx[i] = -mat_indx[i]; /*JJH checking for Dir. b.c.*/
+                                               /*hmmm ... mat_indx = 0 ?   */
    }
    ML_free(col_ind);
    ML_free(col_val);
