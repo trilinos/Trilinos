@@ -215,20 +215,18 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
             /* for every other vertex in the hyperedge */
             for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
-                /* 
-                if(match[v2] != v2) {
-                     row swapping goes here
-                } 
-                */
-                if (lips[v2]==0.0)   /* v2 is a new neighbor */
-                    adj[nadj++] = v2;
-                lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                if (match[v2] == v2) {
+                    /* v2 is not matched yet */
+                    if (lips[v2]==0.0)   /* v2 is a new neighbor */
+                        adj[nadj++] = v2;
+                    lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                }
             }
         }
 
         /* sum up local inner products along proc column */
-        /* to do: 1) ignore vertices already matched 
-                  2) use sparse communication for a chunk of vertices */
+        /* currently we communicate for just one vertex at a time */
+        /* future: use sparse communication for a chunk of vertices */
 
 #ifdef DEBUG_EB
         printf("[%1d] Debug: %d out of %d entries are nonzero\n", 
@@ -335,7 +333,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
             printf("Debug: v1=%d, gips=\n", v1);
 #endif
             for (i = 0; i < hg->nVtx; i++) {
-              v2 = i;
+              v2 = order[i];
 #ifdef DEBUG_EB
               if (gips[v2]>0) printf(" %d=%4.2f, ", v2, gips[v2]);
 #endif
@@ -357,11 +355,11 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 #ifdef DEBUG_EB
               if (gips[v2]>0) printf(" %d=%4.2f, ", v2, gips[v2]);
 #endif
-              /* Choose lowest numbered vertex if tied.
-               * This seems to work slightly better and is consistent
-               * with earlier implementations. */
-              if (((gips[v2] > maxip) || (gips[v2]==maxip && v2<best_vertex))
-                 && v2 != v1 && match[v2] == v2) {
+              /* Tie-breaking strategy makes a difference!
+               * Random or using the order array seem to work well. */
+              if (((gips[v2] > maxip) || (gips[v2]==maxip && 
+                order[v2] < order[best_vertex]))
+                && v2 != v1 && match[v2] == v2) {
                   maxip = gips[v2];
                   best_vertex = v2;
               }
