@@ -128,7 +128,7 @@ extern void clearerr();
 #    endif /* clearerr */
 #  endif /* HAS_CLEARERR */
 
-#if defined(LINUX) || defined(FREEBSD) || defined(NMcplant)
+#if defined(LINUX) || defined(FREEBSD) || defined(NMcplant) || defined(DEC)
 extern void bzero();
 #else
 #ifndef bzero

@@ -35,6 +35,10 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 
 #include <stdio.h>
 
+#ifndef HAS_BCOPY
+#define bzero(s,n) memset(s,0,n)
+#endif
+
 /* Malloc num bytes and initialize to zero. Fatal error if the space can't
  * be malloc'd.   Return NULL for a request for 0 bytes.
  */

@@ -20,7 +20,6 @@ void FingerPrint (double *, int *, int *, int);
 */
 
 #include <sys/types.h>
-#include <sys/times.h>
 /*====================================================================
  * ------------------------
  * | CVS File Information |
