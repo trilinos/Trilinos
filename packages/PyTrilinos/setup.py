@@ -5,16 +5,21 @@ from   distutils.core import *
 from   distutils      import sysconfig
 import commands
 import os
+import string
 import sys
 
 # Build the python library directory name and library name
 pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
 pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
 
-# Package, PyTrilinos, source and NOX directories
-f = open("SRCDIR")
-pyTDir = f.readline()[:-1]
+# Read the dictionary from file setup.txt
+f = open("setup.txt")
+makeInfo = f.readlines()
 f.close()
+makeInfo = eval(string.join(makeInfo))
+
+# Package, PyTrilinos, source and NOX directories
+pyTDir = makeInfo['srcdir']
 pakDir = os.path.split(pyTDir      )[0]
 srcDir = os.path.join( pyTDir,"src")
 noxDir = os.path.join( srcDir,"NOX")

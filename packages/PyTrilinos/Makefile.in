@@ -681,13 +681,15 @@ all-recursive: build
 wrappers:
 	cd src && make
 
-SRCDIR:
-	@echo $(srcdir) > $@
+setup.txt:
+	@echo "{"                         >  $@
+	@echo "  'srcdir' : '$(srcdir)'"  >> $@
+	@echo "}"                         >> $@
 
 $(tempdir):
 	mkdir -p $@
 
-build: wrappers SRCDIR $(tempdir)
+build: wrappers setup.txt $(tempdir)
 	$(srcdir)/setup.py build
 
 install: build
