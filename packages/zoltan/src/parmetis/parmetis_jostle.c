@@ -45,7 +45,7 @@ static PARAM_VARS Parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
         { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
         { "PARMETIS_SEED", NULL, "INT" },
-        { "PARMETIS_IPC2REDIST", NULL, "FLOAT" },
+        { "PARMETIS_ITR", NULL, "FLOAT" },
         { "PARMETIS_USE_OBJ_SIZE", NULL, "INT" },
         { "PARMETIS_COARSE_ALG", NULL, "INT" },
         { "PARMETIS_FOLD", NULL, "INT" },
@@ -74,11 +74,11 @@ static PARAM_VARS Graph_params[] = {
 
 static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, float *ipc2r);
+  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, float *itr);
 static int hash_lookup (ZZ *, struct Hash_Node **, ZOLTAN_ID_PTR, int);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
-#if PARMETIS_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
 static int pmv3method(char *alg);
 #endif
 
@@ -113,12 +113,12 @@ int Zoltan_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
   int output_level, seed, coarse_alg, fold, use_obj_size;
-  float ipc2redist;
+  float itr;
 
   /* Set parameters */
-#if PARMETIS_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
   strcpy(alg, "ADAPTIVEREPART");
-  ipc2redist = 100.0;  /* 100 gives about the same partition quality as GDiffusion */
+  itr = 100.0;  /* 100 gives about the same partition quality as GDiffusion */
 #else
   strcpy(alg, "REPARTGDIFFUSION");
 #endif
@@ -143,8 +143,8 @@ int Zoltan_ParMetis(
                     (void *) &output_level);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_SEED", 
                     (void *) &seed);
-  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_IPC2REDIST",       
-                    (void *) &ipc2redist);
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_ITR",       
+                    (void *) &itr);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",       
                     (void *) &use_obj_size);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
@@ -156,7 +156,13 @@ int Zoltan_ParMetis(
                            zz->Proc, zz->Debug_Proc);
 
   /* Copy option values to ParMetis options array */
-#if PARMETIS_VERSION >= 3
+
+#if PARMETIS_MAJOR_VERSION >= 3
+  /* In this version of Zoltan, processors and partitions are coupled. */
+  /* This will likely change in future releases, and then the options  */
+  /* value should change to DISCOUPLED.                                */
+  options[PMV3_OPTION_PSR] = COUPLED; 
+
   if (pmv3method(alg)){
     /* ParMetis 3.0 options */
     options[PMV3_OPTION_DBGLVL] = output_level; 
@@ -175,17 +181,20 @@ int Zoltan_ParMetis(
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options, &ipc2redist);
+            alg, options, &itr);
 
 #endif /* ZOLTAN_PARMETIS */
 }
 
-#if PARMETIS_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
 static int pmv3method( char *alg)
 {
-   /* Check if alg is a ParMetis 3.0 method */
-   return ((!strcmp(alg, "PARTKWAY")) || (!strcmp(alg, "PARTGEOMKWAY"))
-          || (!strcmp(alg, "ADAPTIVEREPART")));
+   /* Check if alg is a supported ParMetis 3.0 method */
+   return ((!strcmp(alg, "PARTKWAY")) 
+           || (!strcmp(alg, "PARTGEOMKWAY"))
+           || (!strcmp(alg, "ADAPTIVEREPART")) 
+           || (!strcmp(alg, "REFINEKWAY"))
+          );
 }
 #endif
 
@@ -360,7 +369,7 @@ static int Zoltan_ParMetis_Jostle(
   int **exp_procs,      /* list of processors to export to */
   char *alg,            /* algorithm to use */
   int  *options,        /* option array */
-  float *ipc2redist     /* ParMetis 3.0 parameter */
+  float *itr     	/* ParMetis 3.0 parameter for adaptive repart. */
 )
 {
   static char *yo = "Zoltan_ParMetis_Jostle";
@@ -1086,9 +1095,9 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
-#if (PARMETIS_VERSION >= 3)
+#if (PARMETIS_MAJOR_VERSION >= 3) 
   /* Get object sizes if requested */ 
-  if (options[PMV3_OPT_USE_OBJ_SIZE] && zz->Migrate.Get_Obj_Size){
+  if (options[PMV3_OPT_USE_OBJ_SIZE] && zz->Get_Obj_Size){
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
     if (num_obj && !vsize){
       /* Not enough space */
@@ -1098,7 +1107,7 @@ static int Zoltan_ParMetis_Jostle(
     }
     for (i=0; i<num_obj; i++){
       lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
-      vsize[i] = zz->Migrate.Get_Obj_Size(zz->Migrate.Get_Obj_Size_Data, 
+      vsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data, 
                      num_gid_entries, num_lid_entries,
                      &(global_ids[i*num_gid_entries]), 
                      lid, &ierr);
@@ -1198,7 +1207,7 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Select the desired ParMetis or Jostle function */
 
-#if (PARMETIS_VERSION >= 3)
+#if (PARMETIS_MAJOR_VERSION >= 3)
   tpwgt = (float *) ZOLTAN_MALLOC(ncon*num_proc * sizeof(float));
   if (!tpwgt){
     /* Not enough memory */
@@ -1209,7 +1218,7 @@ static int Zoltan_ParMetis_Jostle(
   /* For now, all desired partition sizes are equal */
   for (i=0; i<ncon*num_proc; i++)
     tpwgt[i] = 1.0/num_proc;
-#else /* PARMETIS_VERSION < 3 */
+#else /* PARMETIS_MAJOR_VERSION < 3 */
   if ((ncon >= 2) && strcmp(alg, "JOSTLE")) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
       "You need ParMETIS version 3.0 or higher to use multi-weights.\n"
@@ -1256,7 +1265,8 @@ static int Zoltan_ParMetis_Jostle(
     return ZOLTAN_FATAL;
 #endif /* ZOLTAN_JOSTLE */
   }
-#if PARMETIS_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
+  /* First check for ParMetis 3 routines */
   else if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, 
@@ -1271,14 +1281,26 @@ static int Zoltan_ParMetis_Jostle(
       imb_tols, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
+  else if (strcmp(alg, "PARTGEOM") == 0){
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_PartGeom (vtxdist, &ndims, xyz, part, &comm);
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+  }
   else if (strcmp(alg, "ADAPTIVEREPART") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_AdaptiveRepart (vtxdist, xadj, adjncy, vwgt, vsize, adjwgt, 
       &wgtflag, &numflag, &ncon, &num_proc, tpwgt, imb_tols, 
-      ipc2redist, options, &edgecut, part, &comm);
+      itr, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
-#endif  /* PARMETIS_VERSION >= 3 */
+  else if (strcmp(alg, "REFINEKWAY") == 0){
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, 
+      &wgtflag, &numflag, &ncon, &num_proc, tpwgt, imb_tols,
+      options, &edgecut, part, &comm);
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+  }
+#endif  /* PARMETIS_MAJOR_VERSION >= 3 */
   /* Check for ParMetis 2.0 routines */
   else if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
@@ -1329,7 +1351,7 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else {
-    /* This should never happen! */
+    /* Sanity check: This should never happen! */
     sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     FREE_MY_MEMORY;
