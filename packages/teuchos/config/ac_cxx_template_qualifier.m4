@@ -12,10 +12,10 @@ ac_cv_cxx_template_qualifier,
  AC_TRY_COMPILE([
 class DummyClass {
   public:
-    DummyClass() : dummyint( 1 ) {};
-    ~DummyClass() {};
+    DummyClass() : dummyint( 1 ) {}
+    ~DummyClass() {}
     template<typename T>
-    T get() { return( (T) dummyint ); };
+    T get() { return( (T) dummyint ); }
   private:
     int dummyint;
 };
