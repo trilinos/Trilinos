@@ -275,7 +275,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   const Epetra_Map & OperatorRangeMap() const {return(*RowMap_);};
   //@}
 
-  char* Label() const{
+  const char* Label() const{
     return(Label_);
   };
 

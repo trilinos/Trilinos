@@ -248,7 +248,7 @@ public:
   //@{ \name Query functions
 
   //! Prints label associated to this object.
-  char * Label() const{return(Label_);};  
+  const char * Label() const{return(Label_);};  
   
   //! Prints unused parameters in the input ParameterList on standard output. */
   void PrintUnused() const
