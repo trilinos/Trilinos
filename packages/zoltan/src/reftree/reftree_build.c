@@ -2225,7 +2225,7 @@ void LB_Reftree_Print(LB *lb, LB_REFTREE *subroot, int level)
 
 /* TEMP child_order */
 
-void get_child_order_recur(LB *lb, LB_REFTREE *subroot, int *isub, int *order)
+static void get_child_order_recur(LB *lb, LB_REFTREE *subroot, int *isub, int *order)
 {
 
   /*
