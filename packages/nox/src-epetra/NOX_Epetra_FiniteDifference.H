@@ -25,7 +25,9 @@
 #ifndef _EPETRA_FINITEDIFFERENCE_H_
 #define _EPETRA_FINITEDIFFERENCE_H_
 
-#include "Epetra_RowMatrix.h"
+#include "Epetra_RowMatrix.h"    // base class
+
+#include "NOX_Common.H"          // for <string>
 
 // Forward Declarations
 class Epetra_Comm;
@@ -48,20 +50,36 @@ namespace Epetra {
 
   /*! \brief Concrete implementation for creating an Epetra_RowMatrix Jacobian via finite differencing of the residual.
   
-The Jacobian entries are calculated via 1st order finite differencing:
+The Jacobian entries are calculated via 1st order finite differencing.  This requires \f$ N  + 1 \f$ calls to computeF() where \f$ N \f$ is the number of unknowns in the problem.
 
-  \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta) - F_i(x)}{\delta}  \f]
+  \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta\mathbf{e}_j) - F_i(x)}{\delta}  \f]
 
 where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, and \f$\delta\f$ is a small perturbation to the \f$x_j\f$ entry.
 
-  Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems.
+The perturbation, \f$ \delta \f$, is calculated based on one of the following equations:
+
+\f[ \delta = \alpha * | x_j | + \beta \f]
+\f[ \delta = \alpha * | x_j | + \beta_j \f]
+
+where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ can be either a scalar or a vector (defaults to a scalar value of 1.0e-6).  The choice is defined by the type of constructor used.  All parameters are supplied in the constructor.  
+
+  Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems but only for debugging purposes.
   */
 class FiniteDifference : public Epetra_RowMatrix {
       
  public:
 
   //! Constructor 
-  FiniteDifference(Interface& i, const Epetra_Vector& x);
+  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor
+  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_Vector& beta, double alpha = 1.0e-4);
+
+  //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_CrsGraph& g, double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, const Epetra_CrsGraph& g, const Epetra_Vector& beta, double alpha = 1.0e-4);
 
   //! Pure virtual destructor
   virtual ~FiniteDifference();
@@ -176,21 +194,21 @@ class FiniteDifference : public Epetra_RowMatrix {
 
 protected:
 
-  //! Construct the Epetra_RowMatrix for the Jacobian
-  Epetra_CrsMatrix* createJacobian(Interface& i, const Epetra_Vector& x);
+  //! Constructs an Epetra_CrsGraph and Epetra_RowMatrix for the Jacobian.  This is only called if the user does not supply an Epetra_CrsGraph.
+  Epetra_CrsMatrix* createGraphAndJacobian(Interface& i, const Epetra_Vector& x);
 
 protected:
-  
+
   //! Map that contains element distribution data
   const Epetra_BlockMap& map;
 
-  //! Pointer to the Jacobian graph
+  //! Pointer to the Jacobian graph.
   Epetra_CrsGraph* graph;
 
-  //! Pointer to the Jacobian
+  //! Pointer to the Jacobian.
   Epetra_CrsMatrix* jacobian;
 
-  //! User provided interface function
+  //! User provided interface function.
   Interface& interface;
 
   //! Perturbed solution vector - a work array that needs to be mutable. 
@@ -204,6 +222,24 @@ protected:
 
   //! Column vector of the jacobian - a work array that needs to be mutable.
   mutable Epetra_Vector Jc;
+
+  //! Constant for the perturbation calculation.
+  double alpha;
+
+  //! Constant for the perturbation calculation.
+  double beta;
+
+  //! Vector for the perturbation calculation.
+  const Epetra_Vector* betaVector;
+
+  //! Define types for the \f$ \beta \f$ parameter during the computation of the perturbation parameter \f$ \delta\f$. 
+  enum BetaType {Scalar, Vector};
+
+  //! Flag that sets whether \f$ \beta \f$ is a scalar or a vector.
+  BetaType betaType;
+
+  //! label for the Epetra_RowMatrix
+  string label;
 
 };
 }  // namespace Epetra

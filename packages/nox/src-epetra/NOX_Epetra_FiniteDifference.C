@@ -37,16 +37,84 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x) :
+FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, double beta_, double alpha_) :
   map(x.Map()),
+  graph(0),
+  jacobian(0),
   interface(i),
   x_perturb(x),
   fo(x),
   fp(x),
-  Jc(x)
+  Jc(x),
+  alpha(alpha_),
+  beta(beta_),
+  betaVector(0),
+  betaType(Scalar),
+  label("NOX::FiniteDifference Jacobian")
 {
   // Create the finite difference Jacobian matrix
-  jacobian = createJacobian(i, x);
+  jacobian = createGraphAndJacobian(i, x);
+}
+
+FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const Epetra_Vector& beta_, double alpha_) :
+  map(x.Map()),
+  graph(0),
+  jacobian(0),
+  interface(i),
+  x_perturb(x),
+  fo(x),
+  fp(x),
+  Jc(x),
+  alpha(alpha_),
+  beta(0),
+  betaVector(&beta_),
+  betaType(Vector),
+  label("NOX::FiniteDifference Jacobian")
+{
+  // Create the finite difference Jacobian matrix
+  jacobian = createGraphAndJacobian(i, x);
+}
+
+FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const Epetra_CrsGraph& userGraph, double beta_, double alpha_) :
+  map(x.Map()),
+  graph(0),
+  jacobian(0),
+  interface(i),
+  x_perturb(x),
+  fo(x),
+  fp(x),
+  Jc(x),
+  alpha(alpha_),
+  beta(beta_),
+  betaVector(0),
+  betaType(Scalar),
+  label("NOX::FiniteDifference Jacobian")
+{
+  // Create the finite difference Jacobian matrix directly using a 
+  // user supplied graph.
+  jacobian = new Epetra_CrsMatrix(Copy, userGraph);
+  jacobian->TransformToLocal();
+}
+
+FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const Epetra_CrsGraph& userGraph, const Epetra_Vector& beta_, double alpha_) :
+  map(x.Map()),
+  graph(0),
+  jacobian(0),
+  interface(i),
+  x_perturb(x),
+  fo(x),
+  fp(x),
+  Jc(x),
+  alpha(alpha_),
+  beta(0),
+  betaVector(&beta_),
+  betaType(Vector),
+  label("NOX::FiniteDifference Jacobian")
+{
+  // Create the finite difference Jacobian matrix directly using a 
+  // user supplied graph.
+  jacobian = new Epetra_CrsMatrix(Copy, userGraph);
+  jacobian->TransformToLocal();
 }
 
 FiniteDifference::~FiniteDifference()
@@ -57,7 +125,7 @@ FiniteDifference::~FiniteDifference()
 
 char* FiniteDifference::Label () const
 {
-  return jacobian->Label();
+  return const_cast<char*>(label.c_str());
 }
 
 int FiniteDifference::SetUseTranspose(bool UseTranspose) 
@@ -261,7 +329,12 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     // this processor
     int proc = 0;
     if (map.MyGID(k)) {
-      eta = 1.0e-4*x[map.LID(k)] + 1.0e-4;
+
+      if (betaType == Scalar) 
+	eta = alpha*x[map.LID(k)] + beta;
+      else
+	eta = alpha*x[map.LID(k)] + (*betaVector)[map.LID(k)];
+
       x_perturb[map.LID(k)] += eta;
       proc = map.Comm().MyPID();
     }  
@@ -301,7 +374,7 @@ bool FiniteDifference::computePreconditioner(const Epetra_Vector& x, Epetra_RowM
   return computeJacobian(x, M);
 }
 
-Epetra_CrsMatrix*  FiniteDifference::createJacobian(Interface& i, 
+Epetra_CrsMatrix*  FiniteDifference::createGraphAndJacobian(Interface& i, 
 						  const Epetra_Vector& x)
 {
 
@@ -324,7 +397,12 @@ Epetra_CrsMatrix*  FiniteDifference::createJacobian(Interface& i,
     // Perturb the solution vector via local IDs only if it is owned by 
     // this processor
     if (map.MyGID(k)) {
-      eta = 1.0e-4*x[map.LID(k)] + 1.0e-6;
+
+      if (betaType == Scalar) 
+	eta = alpha*x[map.LID(k)] + beta;
+      else
+	eta = alpha*x[map.LID(k)] + (*betaVector)[map.LID(k)];
+      
       x_perturb[map.LID(k)] += eta;
     }  
 
