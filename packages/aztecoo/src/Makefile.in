@@ -100,7 +100,6 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
-XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@

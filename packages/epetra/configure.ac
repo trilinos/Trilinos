@@ -104,7 +104,6 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
-BASE_CXX=${CXX}
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
@@ -273,19 +272,14 @@ TAC_ARG_WITH_LAPACKLIB
 AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
-dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-dnl    XTRALDADD="cxx_repository/*.o"
-dnl fi
+case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+esac
 
-dnl AC_MSG_CHECKING([for extra object files to be linked])
-dnl if test X$XTRALDADD = X; then
-dnl AC_MSG_RESULT(none)
-dnl else
-dnl AC_MSG_RESULT($XTRALDADD)
-dnl fi
-
-#AC_HELP_STRING([TRILINOS_TEMPLATE_OBJS], 
-#[template object file location - often needed on DEC - try 'cxx_repository/*.o'])
 AC_MSG_CHECKING([for template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
  AC_MSG_RESULT(none)
@@ -295,10 +289,6 @@ fi
 
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
-if test "X$EPETRA_TEMPLATE_OBJS" != "X"; then
- AC_MSG_ERROR([[EPETRA_TEMPLATE_OBJS is obsolete, use TRILINOS_TEMPLATE_OBJS]])
-fi
-AC_SUBST(XTRALDADD)
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------

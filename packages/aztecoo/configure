@@ -8341,10 +8341,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 # -- DEC CXX --
+case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+esac
 
-
-#AC_HELP_STRING([TRILINOS_TEMPLATE_OBJS],
-#[Template object files.  For DEC only.])
 echo "$as_me:$LINENO: checking for template-specific object files to be linked" >&5
 echo $ECHO_N "checking for template-specific object files to be linked... $ECHO_C" >&6
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
@@ -9032,7 +9036,6 @@ s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
-s,@XTRALDADD@,$XTRALDADD,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF
 

@@ -281,19 +281,14 @@ AC_F77_WRAPPERS
 AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
-dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-dnl    XTRALDADD="cxx_repository/*.o"
-dnl fi
+case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+esac
 
-dnl AC_MSG_CHECKING([for extra object files to be linked])
-dnl if test X$XTRALDADD = X; then
-dnl AC_MSG_RESULT(none)
-dnl else
-dnl AC_MSG_RESULT($XTRALDADD)
-dnl fi
-
-#AC_HELP_STRING([TRILINOS_TEMPLATE_OBJS],
-#[Template object files.  For DEC only.])
 AC_MSG_CHECKING([for template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
  AC_MSG_RESULT(none)
@@ -302,7 +297,7 @@ else
 fi
 
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
-AC_SUBST(XTRALDADD)
+
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
