@@ -742,7 +742,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
 void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 {
-  int    lower, upper, next_nz, col, i, j, k, Nexternal;
+  int    lower, upper, col, i, j, k, Nexternal;
    int    *bindx, *externals;
    double *val;
    struct ML_CSR_MSRdata *temp;
@@ -780,7 +780,6 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 
    temp = (struct ML_CSR_MSRdata *) imatrix->data;
 
-   next_nz   = 0;
    for (i = 0 ; i < temp->rowptr[imatrix->getrow->Nrows]; i++) {
      col   = temp->columns[i];
      if ( (col >= lower) && (col < upper) ) col -= lower;

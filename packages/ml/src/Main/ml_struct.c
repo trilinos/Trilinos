@@ -1767,8 +1767,6 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    double       aux_om, om_loc[MLS_MAX_DEG], coord, samplej;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
-   int          j_max;
-   double       x_max;
    ML_Krylov   *kdata;
 #ifdef SYMMETRIZE
    ML_Operator *t3;
@@ -1836,8 +1834,6 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
 
    rho2  = 0.e0;
-   j_max = 0;
-   x_max = 0.e0;
    for (j=0; j<nGrid; j++)  {
 	   coord   = (double)(j+1) * gridStep;
            samplej = 1.e0 - om_loc[0] * coord;
@@ -1845,12 +1841,10 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 		   samplej *= samplej * coord;
 	   }
 	   samplej *= samplej * coord; 
-if (samplej > rho2) {rho2 = samplej; j_max = j;}
+if (samplej > rho2) {rho2 = samplej; }
    }
 
    
-   x_max = (double)j_max * gridStep;
-
    if (deg < 2) {
 	   widget->mlsBoost = 1.019e0;
    } else {

@@ -805,7 +805,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
-  int iter, kk, Nrows,ntimes, init_guess;
+  int iter, kk, Nrows, init_guess;
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
    double *res_edge, *edge_update,
           *rhs_nodal, *x_nodal;
@@ -5553,7 +5553,7 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, n = outlen;
+    int              i, n = outlen;
     double           cf, om2, over;
     double          *pAux, *y;      
 #ifdef RST_MODIF
@@ -5562,7 +5562,6 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
-    deg    = widget->mlsDeg;
     om2    = widget->mlsOm2;
     over   = widget->mlsOver;
     cf     = over * om2; 

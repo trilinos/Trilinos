@@ -154,6 +154,7 @@ double ML_GetCoarseGridConst(ML_Operator *Amat, ML_Operator *Rmat,
    int          i;
 
    /* Solve for e_H. */
+   RPmat = ML_Operator_Create(Amat->comm);
    ML_2matmult(Rmat,Pmat,RPmat);
    rhs = (double *) ML_allocate( Rmat->outvec_leng * sizeof(double) );
    ML_allocate_check(rhs);
