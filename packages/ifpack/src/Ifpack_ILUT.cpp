@@ -29,7 +29,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
-#include "Ifpack_vRiluk.h"
+#include "Ifpack_ILUT.h"
 #include "Ifpack_Condest.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -46,7 +46,7 @@
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
-Ifpack_vRiluk::Ifpack_vRiluk(const Epetra_RowMatrix* A) :
+Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(Comm()),
   L_(0),
@@ -54,7 +54,7 @@ Ifpack_vRiluk::Ifpack_vRiluk(const Epetra_RowMatrix* A) :
   Condest_(-1.0),
   Athresh_(0.0),
   Rthresh_(0.0),
-  LevelOfFill_(0),
+  LevelOfFill_(1.0),
   IsInitialized_(false),
   IsComputed_(false),
   UseTranspose_(false),
@@ -70,7 +70,7 @@ Ifpack_vRiluk::Ifpack_vRiluk(const Epetra_RowMatrix* A) :
 }
 
 //==============================================================================
-Ifpack_vRiluk::Ifpack_vRiluk(const Ifpack_vRiluk& rhs) :
+Ifpack_ILUT::Ifpack_ILUT(const Ifpack_ILUT& rhs) :
   A_(rhs.Matrix()),
   Comm_(Comm()),
   L_(0),
@@ -94,7 +94,7 @@ Ifpack_vRiluk::Ifpack_vRiluk(const Ifpack_vRiluk& rhs) :
 }
 
 //==============================================================================
-Ifpack_vRiluk::~Ifpack_vRiluk()
+Ifpack_ILUT::~Ifpack_ILUT()
 {
 
   if (L_)
@@ -109,15 +109,18 @@ Ifpack_vRiluk::~Ifpack_vRiluk()
 
 #ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
-int Ifpack_vRiluk::SetParameters(Teuchos::ParameterList& List)
+int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 {
 
-  LevelOfFill_ = List.get("fact: level-of-fill",LevelOfFill());
+  LevelOfFill_ = List.get("fact: ilut level-of-fill",LevelOfFill());
+  if (LevelOfFill_ <= 0.0)
+    IFPACK_CHK_ERR(-1); // must be greater than 0.0
+
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
 
   // set label
-  sprintf(Label_, "vRILUK (fill=%d, athr=%f, rthr=%f)",
+  sprintf(Label_, "IFPACK ILUT (fill=%f, athr=%f, rthr=%f)",
 	  LevelOfFill(), AbsoluteThreshold(), 
 	  RelativeThreshold());
   return(0);
@@ -125,7 +128,7 @@ int Ifpack_vRiluk::SetParameters(Teuchos::ParameterList& List)
 #endif
 
 //==========================================================================
-int Ifpack_vRiluk::Initialize()
+int Ifpack_ILUT::Initialize()
 {
   IsInitialized_ = false;
   Time_.ResetStartTime();
@@ -156,7 +159,7 @@ int Ifpack_vRiluk::Initialize()
 
 //==========================================================================
 #include "float.h"
-int Ifpack_vRiluk::Compute() {
+int Ifpack_ILUT::Compute() {
 
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
@@ -200,10 +203,10 @@ int Ifpack_vRiluk::Compute() {
         U_size[i]++;
     }
 
-    LI[i].resize(L_size[i] * LevelOfFill());
-    LV[i].resize(L_size[i] * LevelOfFill());
-    UI[i].resize(U_size[i] * LevelOfFill() + 1);
-    UV[i].resize(U_size[i] * LevelOfFill() + 1);
+    LI[i].resize((int)(LevelOfFill() * L_size[i]));
+    LV[i].resize((int)(LevelOfFill() * L_size[i]));
+    UI[i].resize((int)(LevelOfFill() * (U_size[i] + 1)));
+    UV[i].resize((int)(LevelOfFill() * (U_size[i] + 1)));
 
     int L_count = 0;
     int U_count = 0;
@@ -341,8 +344,8 @@ int Ifpack_vRiluk::Compute() {
       ++u_count;
     }
 
-    int l_LOF = LevelOfFill() * L_size[i];
-    int u_LOF = LevelOfFill() * U_size[i];
+    int l_LOF = (int)(LevelOfFill() * L_size[i]);
+    int u_LOF = (int)(LevelOfFill() * U_size[i]);
     double l_cutoff = 0.0;
     double u_cutoff = 0.0;
     // sort in ascending order the entries for this row
@@ -445,7 +448,7 @@ int Ifpack_vRiluk::Compute() {
 }
 
 //=============================================================================
-int Ifpack_vRiluk::ApplyInverse(const Epetra_MultiVector& X, 
+int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X, 
 			     Epetra_MultiVector& Y) const
 {
 
@@ -469,7 +472,7 @@ int Ifpack_vRiluk::ApplyInverse(const Epetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_vRiluk::Apply(const Epetra_MultiVector& X, 
+int Ifpack_ILUT::Apply(const Epetra_MultiVector& X, 
 		      Epetra_MultiVector& Y) const 
 {
 
@@ -492,7 +495,7 @@ int Ifpack_vRiluk::Apply(const Epetra_MultiVector& X,
 }
 
 //=============================================================================
-double Ifpack_vRiluk::Condest(const Ifpack_CondestType CT, 
+double Ifpack_ILUT::Condest(const Ifpack_CondestType CT, 
                             const int MaxIters, const double Tol,
 			    Epetra_RowMatrix* Matrix)
 {
@@ -508,9 +511,9 @@ double Ifpack_vRiluk::Condest(const Ifpack_CondestType CT,
 
 //=============================================================================
 std::ostream&
-Ifpack_vRiluk::Print(std::ostream& os) const
+Ifpack_ILUT::Print(std::ostream& os) const
 {
-  os << endl << "*** Ifpack_vRiluk : " << Label() << endl << endl;
+  os << endl << "*** Ifpack_ILUT : " << Label() << endl << endl;
   os << "Level-of-fill      = " << LevelOfFill() << endl;
   os << "Absolute threshold = " << AbsoluteThreshold() << endl;
   os << "Relative threshold = " << RelativeThreshold() << endl;

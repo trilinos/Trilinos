@@ -28,9 +28,10 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
+#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
-#include "Ifpack_gIct.h"
-#include "Ifpack_gIct_Utils.h"
+#include "Ifpack_IC.h"
+#include "Ifpack_IC_Utils.h"
 #include "Ifpack_Condest.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -39,13 +40,10 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
-
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
-#endif
 
 //==============================================================================
-Ifpack_gIct::Ifpack_gIct(Epetra_RowMatrix* A) :
+Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(A->Comm()),
   U_(0),
@@ -77,7 +75,7 @@ Ifpack_gIct::Ifpack_gIct(Epetra_RowMatrix* A) :
 
 }
 //==============================================================================
-Ifpack_gIct::~Ifpack_gIct(){
+Ifpack_IC::~Ifpack_IC(){
 
 
   delete U_;
@@ -100,9 +98,8 @@ Ifpack_gIct::~Ifpack_gIct(){
   IsComputed_ = false;
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
-int Ifpack_gIct::SetParameters(Teuchos::ParameterList& List)
+int Ifpack_IC::SetParameters(Teuchos::ParameterList& List)
 {
 
   Lfil_ = List.get("fact: level-of-fill",Lfil_);
@@ -111,14 +108,13 @@ int Ifpack_gIct::SetParameters(Teuchos::ParameterList& List)
   Droptol_ = List.get("fact: drop tolerance", Droptol_);
 
   // set label
-  sprintf(Label_, "graph-based ICT (fill=%d, drop=%f)",
+  sprintf(Label_, "IFPACK IC (fill=%d, drop=%f)",
 	  Lfil_, Droptol_);
   return(0);
 }
-#endif
 
 //==========================================================================
-int Ifpack_gIct::Initialize()
+int Ifpack_IC::Initialize()
 {
 
   IsInitialized_ = false;
@@ -129,7 +125,7 @@ int Ifpack_gIct::Initialize()
 }
 
 //==========================================================================
-int Ifpack_gIct::ComputeSetup()
+int Ifpack_IC::ComputeSetup()
 {
   // (re)allocate memory for ICT factors
   if (U_) 
@@ -219,7 +215,7 @@ int Ifpack_gIct::ComputeSetup()
 }
 
 //==========================================================================
-int Ifpack_gIct::Compute() {
+int Ifpack_IC::Compute() {
 
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
@@ -281,18 +277,17 @@ int Ifpack_gIct::Compute() {
   }
 
   U_->TransformToLocal(&(A_.OperatorDomainMap()), &(A_.OperatorRangeMap()));
-  
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
-  // Add up flops
  
   double current_flops = 2 * nz; // Just an estimate
   double total_flops = 0;
     
   A_.Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
 
+  ComputeFlops_ += total_flops; // FIXME: not so sure...
   // Now count the rest
-  total_flops += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
-  total_flops += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
+  ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
+  ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 
   IsComputed_ = true;
 
@@ -302,7 +297,7 @@ int Ifpack_gIct::Compute() {
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_gIct::ApplyInverse(const Epetra_MultiVector& X, 
+int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X, 
 			     Epetra_MultiVector& Y) const
 {
 
@@ -320,12 +315,16 @@ int Ifpack_gIct::ApplyInverse(const Epetra_MultiVector& X,
   U_->Solve(Upper, true, UnitDiagonal, X, Y);
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
+
+  ++NumApplyInverse_;
+  ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
+  ApplyInverseFlops_ += D_->GlobalLength();
   return(0);
 
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_gIct::Apply(const Epetra_MultiVector& X, 
+int Ifpack_IC::Apply(const Epetra_MultiVector& X, 
 		      Epetra_MultiVector& Y) const 
 {
 
@@ -344,7 +343,7 @@ int Ifpack_gIct::Apply(const Epetra_MultiVector& X,
   return(0);
 }
 //=============================================================================
-double Ifpack_gIct::Condest(const Ifpack_CondestType CT, 
+double Ifpack_IC::Condest(const Ifpack_CondestType CT, 
                             const int MaxIters, const double Tol,
                             Epetra_RowMatrix* Matrix)
 {
@@ -356,3 +355,4 @@ double Ifpack_gIct::Condest(const Ifpack_CondestType CT,
 
   return(Condest_);
 }
+#endif // HAVE_IFPACK_TEUCHOS

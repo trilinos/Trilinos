@@ -41,7 +41,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 #include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_vIct.h"
+#include "Ifpack_ICT.h"
 
 using namespace Trilinos_Util;
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix (must be a square number)
-  const int NumPoints = 90000;
+  const int NumPoints = 10000;
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
@@ -76,17 +76,23 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList List;
 
   // builds an Ifpack_AdditiveSchwarz. This is templated with
-  // the local solvers, in this case Ifpack_Ict. Note that any
+  // the local solvers, in this case Ifpack_ICT. Note that any
   // other Ifpack_Preconditioner-derived class can be used
-  // instead of Ifpack_Ict.
+  // instead of Ifpack_ICT.
 
   // In this example the overlap is zero. Use
   // Prec(A,OverlapLevel) for the general case.
-  Ifpack_AdditiveSchwarz<Ifpack_vIct> Prec(A);
+  Ifpack_AdditiveSchwarz<Ifpack_ICT> Prec(A);
 
-  List.set("fact: level-of-fill", 5);
+  // `1.0' means that the factorization should approximatibely
+  // kep the same number of nonzeros per row of the original matrix.
+  List.set("fact: ict level-of-fill", 1.0);
   List.set("fact: absolute threshold", 0.0);
   List.set("fact: relative threshold", 0.0);
+  // matrix `laplace_2d_bc' is not symmetric because of
+  // the boundary conditions. We can filter the singletons,
+  // and end up with a symmetric matrix (as ICT requires).
+  List.set("schwarz: filter singletons", true);
 
   // sets the parameters
   IFPACK_CHK_ERR(Prec.SetParameters(List));
@@ -133,12 +139,8 @@ int main(int argc, char *argv[])
   // one iteration.
   Solver.Iterate(1550,1e-8);
 
-  // Prints out several information about the preconditioner
-  // Note that methods NumInitialize(), NumCompute(),
-  // NumApplyInverse(), InitializeTime(), ComputeTime(),
-  // ApplyInverseTime() can be used to extract information
-  // from the Prec object.
-  cout << *(Prec.Inverse());
+  // Prints out some information about the preconditioner
+  cout << Prec;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

@@ -28,7 +28,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_CondestType.h"
-#include "Ifpack_gRiluk.h"
+#include "Ifpack_ILU.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -43,7 +43,7 @@
 #endif
 
 //==============================================================================
-Ifpack_gRiluk::Ifpack_gRiluk(Epetra_RowMatrix* Matrix) :
+Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
   A_(Matrix),
   Graph_(0),
   CrsGraph_(0),
@@ -73,7 +73,7 @@ Ifpack_gRiluk::Ifpack_gRiluk(Epetra_RowMatrix* Matrix) :
 }
 
 //==============================================================================
-Ifpack_gRiluk::~Ifpack_gRiluk()
+Ifpack_ILU::~Ifpack_ILU()
 {
 
   delete L_;
@@ -101,7 +101,7 @@ Ifpack_gRiluk::~Ifpack_gRiluk()
 
 #ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
-int Ifpack_gRiluk::SetParameters(Teuchos::ParameterList& List)
+int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 {
   RelaxValue_ = List.get("fact: relax value", RelaxValue_);
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
@@ -109,14 +109,14 @@ int Ifpack_gRiluk::SetParameters(Teuchos::ParameterList& List)
   LevelOfFill_ = List.get("fact: level-of-fill", LevelOfFill_);
 
   // set label
-  sprintf(Label_, "RILUK (fill=%d, relax=%f)",
+  sprintf(Label_, "IFPACK ILU (fill=%d, relax=%f)",
 	  LevelOfFill_, RelaxValue_);
   return(0);
 }
 #endif
 
 //==========================================================================
-int Ifpack_gRiluk::ComputeSetup() 
+int Ifpack_ILU::ComputeSetup() 
 {
 
   if (L_)
@@ -261,7 +261,7 @@ int Ifpack_gRiluk::ComputeSetup()
 }
 
 //==========================================================================
-int Ifpack_gRiluk::Initialize() 
+int Ifpack_ILU::Initialize() 
 {
   IsInitialized_ = false;
 
@@ -322,7 +322,7 @@ int Ifpack_gRiluk::Initialize()
 }
 
 //==========================================================================
-int Ifpack_gRiluk::Compute() 
+int Ifpack_ILU::Compute() 
 {
 
   if (!IsInitialized()) 
@@ -472,7 +472,7 @@ int Ifpack_gRiluk::Compute()
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_gRiluk::Solve(bool Trans, const Epetra_MultiVector& X, 
+int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X, 
 			Epetra_MultiVector& Y) const 
 {
 
@@ -502,7 +502,7 @@ int Ifpack_gRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_gRiluk::Multiply(bool Trans, const Epetra_MultiVector& X, 
+int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X, 
 				Epetra_MultiVector& Y) const 
 {
   if (!IsComputed())
@@ -534,7 +534,7 @@ int Ifpack_gRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
   return(0);
 }
 //=============================================================================
-double Ifpack_gRiluk::Condest(const Ifpack_CondestType CT, 
+double Ifpack_ILU::Condest(const Ifpack_CondestType CT, 
                               const int MaxIters, const double Tol,
                               Epetra_RowMatrix* Matrix)
 {

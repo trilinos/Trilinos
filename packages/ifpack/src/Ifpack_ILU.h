@@ -27,8 +27,8 @@
 //@HEADER
 */
 
-#ifndef IFPACK_GRILUK_H
-#define IFPACK_GRILUK_H
+#ifndef IFPACK_ILU_H
+#define IFPACK_ILU_H
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
@@ -52,9 +52,9 @@ namespace Teuchos {
 }
 #endif
 
-//! Ifpack_gRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
+//! Ifpack_ILU: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
-/*! The Ifpack_gRiluk class computes a "Relaxed" ILU factorization with level k fill 
+/*! The Ifpack_ILU class computes a "Relaxed" ILU factorization with level k fill 
     of a given Epetra_CrsMatrix.  The factorization 
     that is produced is a function of several parameters:
 <ol>
@@ -86,7 +86,7 @@ namespace Teuchos {
        handled using the Epetra_CombineMode enum.  The default is to zero out all values of y for rows that
        were not part of the original matrix row distribution.
 
-  <li> Fraction of relaxation - Ifpack_gRiluk computes the ILU factorization row-by-row.  As entries at a given
+  <li> Fraction of relaxation - Ifpack_ILU computes the ILU factorization row-by-row.  As entries at a given
        row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
        The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
        SetRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
@@ -152,17 +152,17 @@ to the function.  The Flops() function returns this number as a double precision
 information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
 
-\warning A Epetra_Map is required for the Ifpack_gRiluk constructor.
+\warning A Epetra_Map is required for the Ifpack_ILU constructor.
 
 */    
 
-class Ifpack_gRiluk: public Ifpack_Preconditioner {
+class Ifpack_ILU: public Ifpack_Preconditioner {
       
  public:
-  Ifpack_gRiluk(Epetra_RowMatrix* A);
+  Ifpack_ILU(Epetra_RowMatrix* A);
   
-  //! Ifpack_gRiluk Destructor
-  ~Ifpack_gRiluk();
+  //! Ifpack_ILU Destructor
+  ~Ifpack_ILU();
 
   int Initialize();
   
@@ -219,7 +219,7 @@ class Ifpack_gRiluk: public Ifpack_Preconditioner {
   int Multiply(bool Trans, const Epetra_MultiVector& X, 
 	       Epetra_MultiVector& Y) const;
 
-  //! Returns the result of a Ifpack_gRiluk forward/back solve on a Epetra_MultiVector X in Y (works for Epetra_Vectors also).
+  //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y (works for Epetra_Vectors also).
   /*! 
     \param In
     Trans -If true, solve transpose problem.
@@ -332,7 +332,7 @@ class Ifpack_gRiluk: public Ifpack_Preconditioner {
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   {
-    return(Solve(Ifpack_gRiluk::UseTranspose(), X, Y));
+    return(Solve(Ifpack_ILU::UseTranspose(), X, Y));
   };
 
     //! Returns 0.0 because this class cannot compute Inf-norm.
@@ -405,12 +405,12 @@ virtual ostream& Print(ostream& os) const
     return(ApplyInverseTime_);
   }
 
-  virtual long int ComputeFlops() const
+  virtual double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
-  virtual long int ApplyInverseFlops() const
+  virtual double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
@@ -464,10 +464,10 @@ private:
   double ApplyInverseTime_;
 
   //! Contains the number of flops for Compute().
-  long int ComputeFlops_;
+  double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  long int ApplyInverseFlops_;
+  double ApplyInverseFlops_;
 
 };
 
-#endif /* IFPACK_GRILUK_H */
+#endif /* IFPACK_ILU_H */

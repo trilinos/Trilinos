@@ -1,5 +1,5 @@
-#ifndef IFPACK_ICT_UTILS_H
-#define IFPACK_ICT_UTILS_H
+#ifndef IFPACK_IC_UTILS_H
+#define IFPACK_IC_UTILS_H
 
 typedef struct {
     double *val;  /* also known as A  */
