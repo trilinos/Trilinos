@@ -862,10 +862,10 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    static int            matrix_name = 7911;
    void           *data;
    ML_Operator    *op;
-   int            osize, *row_ptr, space, getrow_flag, flag, *cols, nz_ptr;
+   int            osize, *row_ptr, space, getrow_flag, flag, *cols = NULL, nz_ptr;
    int            length, zero_flag, j, offset, nrows, *sub_proc_config;
    int N_ghost;
-   double         *vals, dsize, di;
+   double         *vals = NULL, dsize, di;
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
 #ifdef ML_MPI
       MPI_AZComm *tptr;
@@ -2839,7 +2839,7 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
     break;
 
   case 3:
-    nx = (int) pow((double)N,0.3333334);
+    nx = (int) pow((double) N,0.3333334);
     ny = nx;
     nz = nx;
     
@@ -3818,7 +3818,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   int   G_update=0, gnblocks=0, *gblocks=NULL, *gblock_pde=NULL, block, pde;
   char  buffer[200],*buffptr=NULL;
   int   bsize;
-  int   firstrow,lastrow,faligned=0,laligned=0,*tmp;
+  int   firstrow,lastrow,faligned=0,laligned=0;
   /*********************** BEGIN EXECUTION ***********************************/
   proc   = proc_config[AZ_node];
   nprocs = proc_config[AZ_N_procs];
@@ -3840,8 +3840,9 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   }
   
   if (*N_update <= 0 || (*update)==NULL) {
-    (void) fprintf(stderr,"no update vector present for reading blocks\n",
-                          "%s:%d\n",__FILE__,__LINE__);
+    (void) fprintf(stderr,
+		   "no update vector present for reading blocks\n%s:%d\n",
+		   __FILE__,__LINE__);
     fflush(stderr);
     exit(EXIT_FAILURE);
   }
@@ -3852,8 +3853,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   gblocks    = (int*)ML_allocate(G_update*sizeof(int));
   if (gblocks == NULL)
   {
-     (void) fprintf(stderr,"not enough space to read blocks\n",
-                           "%s:%d\n",__FILE__,__LINE__);
+     (void) fprintf(stderr,"not enough space to read blocks\n%s:%d\n",
+		    __FILE__,__LINE__);
      exit(EXIT_FAILURE);
   }
   
@@ -3862,8 +3863,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      ifp = fopen(cmd_file_name, "r");
      if (ifp==NULL) 
      {
-        (void) fprintf(stderr,"could not open file\n"
-                              "%s:%d\n",__FILE__,__LINE__);
+        (void) fprintf(stderr,"could not open file\n%s:%d\n",
+		       __FILE__,__LINE__);
         exit(EXIT_FAILURE);
      }
      fgets(buffer,199,ifp);
@@ -3875,8 +3876,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      {
         if (fgets(buffer,199,ifp)==NULL)
         {
-           printf("***ERR***error reading file %s\n",cmd_file_name,
-                  "%s:%d\n",__FILE__,__LINE__);
+           printf("***ERR***error reading file %s\n%s:%d\n",
+		  cmd_file_name,__FILE__,__LINE__);
            exit(EXIT_FAILURE);
         }
         bsize = strtol(buffer,&buffptr,10);
@@ -3892,16 +3893,17 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      if (G_update != count)
      {
         (void) fprintf(stderr,"number of dofs in file %s ",cmd_file_name);
-        (void) fprintf(stderr,"does not match total number of dofs\n"
-                              "%s:%d\n",__FILE__,__LINE__);
+        (void) fprintf(stderr,
+		       "does not match total number of dofs\n%s:%d\n",
+		       __FILE__,__LINE__);
         fflush(stderr); exit(EXIT_FAILURE);
      }
      fclose(ifp);
      ifp=NULL;
   }
   AZ_broadcast((char*)(&gnblocks),         sizeof(int),proc_config,AZ_PACK);
-  AZ_broadcast((char*)gblocks    ,G_update*sizeof(int),proc_config,AZ_PACK);
-  AZ_broadcast((char*)gblock_pde ,G_update*sizeof(int),proc_config,AZ_PACK);
+  AZ_broadcast((char*)gblocks    , (signed int) (G_update*sizeof(int)),proc_config,AZ_PACK);
+  AZ_broadcast((char*)gblock_pde , (signed int) (G_update*sizeof(int)),proc_config,AZ_PACK);
   AZ_broadcast(NULL,                                 0,proc_config,AZ_SEND);
 
   /* check that the pointers in gbptr are aligned with the length of update */
@@ -3914,8 +3916,9 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
     count2++;
     if (count2>5)
     {
-       fprintf(stderr,"Cannot align update vector to block distribution\n"
-                      "%s:%d\n",__FILE__,__LINE__);
+       fprintf(stderr,
+	       "Cannot align update vector to block distribution\n%s:%d\n",
+	       __FILE__,__LINE__);
        fflush(stderr);
        exit(EXIT_FAILURE);
     }
@@ -3980,8 +3983,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
        }
        *update = (int*)AZ_realloc((void*)(*update),(*N_update+count)*sizeof(int));
        if (*update==NULL) {
-       fprintf(stderr,"Allocation of memory failed\n"
-                      "%s:%d\n",__FILE__,__LINE__); 
+       fprintf(stderr,"Allocation of memory failed\n%s:%d\n",
+	       __FILE__,__LINE__); 
        fflush(stderr); exit(EXIT_FAILURE);
        }
        for (i=*N_update; i<*N_update+count; i++)
@@ -4001,8 +4004,9 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   (*blocks)    = (int*)ML_allocate((*N_update)*sizeof(int));
   if (*blocks==NULL)
   {
-     (void) fprintf(stderr,"not enough space to allocate blocks: *blocks\n"
-                           "%s:%d\n",__FILE__,__LINE__);
+     (void) fprintf(stderr,
+		    "not enough space to allocate blocks: *blocks\n%s:%d\n",
+		    __FILE__,__LINE__);
      fflush(stderr);
      exit(EXIT_FAILURE);
   }
@@ -4038,8 +4042,9 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   {
         if (proc==0) 
         {
-          (void) fprintf(stderr,"***ERR*** global number of variable blocks wrong\n"
-                                "%s:%d\n",__FILE__,__LINE__);
+          (void) fprintf(stderr,
+			 "***ERR*** global number of variable blocks wrong\n%s:%d\n",
+			 __FILE__,__LINE__);
           fflush(stderr);
         }
         exit(EXIT_FAILURE);
