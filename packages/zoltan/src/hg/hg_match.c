@@ -33,6 +33,7 @@ static ZOLTAN_HG_MATCHING_FN matching_lhm;  /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
 static ZOLTAN_HG_MATCHING_FN matching_ipm;  /* inner product matching */
+static ZOLTAN_HG_MATCHING_FN matching_agm;  /* better greedy matching */
 
 static double sim (HGraph*, int, int);
 void print_debug(HGraph*);
@@ -59,6 +60,7 @@ int found = 1;
   else if (!strcasecmp(hgp->redm_str, "lhm"))  hgp->matching = matching_lhm;
   else if (!strcasecmp(hgp->redm_str, "pgm"))  hgp->matching = matching_pgm;
   else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
+  else if (!strcasecmp(hgp->redm_str, "agm"))  hgp->matching = matching_agm;
   else if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = NULL;
   else                            { found = 0; hgp->matching = NULL;}
 
@@ -786,7 +788,8 @@ char  *yo = "matching_pgm";
    but rhm uses a scaled inner product. */
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, k, n, v1, v2, edge, maxip, maxindex;
+    int   i, j, k, n, v1, v2, edge, maxindex;
+    float maxip;
     int   *adj = NULL;
     int   *order = NULL;
     float *ips = NULL; 
@@ -800,8 +803,6 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         return ZOLTAN_MEMERR;
     }
     
-    /*print_debug(hg);*/
-
     for (i = 0; i < hg->nVtx; i++){
         ips[i] = .0;
         order[i] = i;
@@ -826,14 +827,14 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             /* for every other vertex in the hyperedge */
             for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
-                /*
-                  if(match[v2] != v2) {
-                       row swapping goes here
-                  }
-                */
-                if (ips[v2]==0.0)
-                    adj[n++] = v2;
-                ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                if (match[v2] != v2) {
+                    /* row swapping goes here */
+                }
+                else {
+                    if (ips[v2]==0.0)
+                        adj[n++] = v2;
+                    ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                }
             }
         }
 
@@ -871,6 +872,163 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     */
 
     Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+    return ZOLTAN_OK;
+}
+
+/* AGM = Another Greedy Matching uses the inner product similarity measure,
+ * but the matching technique is different from the previous greedy
+ * methods. It roughly follows the greedy 2-approximation algorithm for
+ * maximum weight graph matching that greedily selects the
+ * heaviest remaining edge. Since our "edges" are inner products
+ * between hypergraph vertices, we can't afford to form and
+ * store the entire graph. Instead we sparsify the graph by
+ * storing only the top MAX_EDGES_PER_VTX edges per vertex.
+ * A final cleanup phase at the end matches vertices that are unmatched.
+ *
+ * By Erik Boman, Dec. 2004.
+ */
+#define MAX_EDGES_PER_VTX 5 /* higher value means more memory cost
+                               and perhaps better quality matching */
+typedef struct {
+  int u;
+  int v;
+} edge_type;
+
+static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
+{
+    int   i, j, k, nadj, v1, v2, edge, maxindex, nheavy, pass;
+    float maxip;
+    int   *adj = NULL;
+    int   *order = NULL;
+    int   *sorted = NULL;
+    float *ips = NULL; 
+    float *wgts = NULL; 
+    char  *yo = "matching_agm";
+    edge_type *heavy_edges=NULL;
+    edge_type *ptr=NULL;
+
+    if (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
+     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    
+    if (!(heavy_edges = (edge_type*) ZOLTAN_MALLOC(MAX_EDGES_PER_VTX*
+          hg->nVtx * sizeof(edge_type)))
+      || (!(wgts= (float*) ZOLTAN_MALLOC(MAX_EDGES_PER_VTX*
+          hg->nVtx * sizeof(float))))    
+      || (!(sorted= (int*) ZOLTAN_MALLOC(MAX_EDGES_PER_VTX*
+          hg->nVtx * sizeof(int)))) ) {
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+
+    for (i = 0; i < hg->nVtx; i++){
+        ips[i] = .0;
+        order[i] = i;
+    }
+ 
+    /* random node visit order is default */
+    /* other options may be added later */
+    Zoltan_Rand_Perm_Int (order, hg->nVtx);
+
+    /* We could do multiple "greedy" passes to match more vertices,
+       but a single pass followed by a clean-up phase seems to be OK.
+       One drawback of multiple passes is that we have to recompute some 
+       inner products (similarities) because we can't store them all! */
+#define MAX_PASSES 1
+    for (pass=0; pass<MAX_PASSES; pass++){
+      nheavy = 0;
+      ptr = heavy_edges; 
+  
+      /* for every vertex */
+      for (k = 0; k < hg->nVtx  &&  *limit > 0; k++) {
+          v1 = order[k];
+  
+          if (match[v1] != v1)
+              continue;
+          
+          nadj = 0; /* number of neighbors */
+          /* for every hyperedge containing the vertex */
+          for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
+              edge = hg->vedge[i];
+                  
+              /* for every other vertex in the hyperedge */
+              for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                  v2 = hg->hvertex[j];
+                  /*
+                    if(match[v2] != v2) {
+                         row swapping goes here
+                    }
+                  */
+                  if (match[v2]==v2){
+                      if (ips[v2]==0.0)
+                          adj[nadj++] = v2;
+                      ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                  }
+              }
+          }
+  
+          /* now choose the top MAX_EDGES_PER_VTX with greatest inner product */
+          for (j=0; j<MAX_EDGES_PER_VTX; j++){
+              maxip = 0;
+              maxindex = -1;
+              for (i = 0; i < nadj; i++) {
+                  v2 = adj[i];
+                  if (ips[v2] > maxip && v2 != v1 ) {
+                      maxip = ips[v2];
+                      maxindex = v2;
+                  }
+              }
+              /* add to heaviest edge list */
+              if (maxip>0){
+                  ptr->u = v1;
+                  ptr->v = maxindex;
+                  ptr++;
+                  wgts[nheavy++] = maxip;
+                  ips[maxindex] = .0;
+              }
+          }
+          /* clear ips array */
+          for (i = 0; i < nadj; i++)
+              ips[adj[i]] = .0;
+      }
+  
+      /* sort heavy graph edges by weight */
+      for (i=0; i<nheavy; i++)
+        sorted[i] = i;
+      Zoltan_quicksort_pointer_dec_float (sorted, wgts, 0, nheavy-1);
+  
+      /* greedily pick heaviest edges */
+      for (i=0; i<nheavy; i++){
+        j = sorted[i];
+        v1 = heavy_edges[j].u; 
+        v2 = heavy_edges[j].v; 
+        /* printf("Debug: heavy edge %d is (%1d,%1d) with weight %f\n",
+                 i, v1, v2, wgts[j]); */
+  
+        /* match (v1,v2) if both are unmatched */
+        if ((match[v1]==v1) && (match[v2]==v2) && *limit ){
+            match[v1] = v2;
+            match[v2] = v1;
+            (*limit)--;
+        } 
+      }
+    }
+  
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &wgts, &heavy_edges, &sorted);
+
+    /* call maximal matching to match vertices that are unmatched */
+    /* we could also use ipm here, but it would be slower and the best
+       matches should already have been made in the greedy phase  */
+    i = *limit;
+    matching_mxm(zz, hg, match, limit);
+    /* printf("Debug: mxm matched %d vertices\n", i - *limit); */
+
     return ZOLTAN_OK;
 }
 
