@@ -30,13 +30,13 @@
 
 #include <EpetraExt_ConfigDefs.h>
 
+#include "Epetra_Time.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
 
 #include "Epetra_SerialComm.h"
-#include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "EpetraExt_BTF_CrsGraph.h"
