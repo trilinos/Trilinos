@@ -1,8 +1,8 @@
 @HEADER
 c ***********************************************************************
 c 
-c            Trilinos: An Object-Oriented Solver Framework
-c                 Copyright (2001) Sandia Corporation
+c                Pliris: Parallel Dense Solver Package 
+c                 Copyright (2004) Sandia Corporation
 c 
 c Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 c license for use of this work by or on behalf of the U.S. Government.
