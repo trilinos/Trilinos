@@ -2299,7 +2299,7 @@ int i;
   }
 }
 
-void LB_Get_Child_Order(LB *lb, int *order, int *ierr)
+void Zoltan_LB_Get_Child_Order(LB *lb, int *order, int *ierr)
 {
 /*
  * Return the order of the children in the refinement tree.

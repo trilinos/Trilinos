@@ -83,6 +83,6 @@ extern void LB_Reftree_Hash_Remove(LB *lb, LB_REFTREE *reftree_node,
 extern void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
                                  int size);
 
-extern void LB_Get_Child_Order(LB *lb, int *order, int *ierr); /* TEMP child_order */
+extern void Zoltan_LB_Get_Child_Order(LB *lb, int *order, int *ierr); /* TEMP child_order */
 
 #endif /* __REFTREE_CONST_H */
