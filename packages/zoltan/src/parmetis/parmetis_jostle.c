@@ -78,12 +78,17 @@ int LB_ParMetis(
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
 
-  LB_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     (void *) alg);
-  LB_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", (void *) &(options[OPTION_IPART]));
-  LB_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       (void *) &(options[OPTION_FOLDF]));
-  LB_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", (void *) &(options[OPTION_DBGLVL]));
+  LB_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     
+               (void *) alg);
+  LB_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
+                (void *) &(options[OPTION_IPART]));
+  LB_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       
+                (void *) &(options[OPTION_FOLDF]));
+  LB_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", 
+                (void *) &(options[OPTION_DBGLVL]));
 
-  LB_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc);
+  LB_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc,
+                       lb->Debug_Proc);
 
   /* Set options[0] to 1 if any of the low level ParMetis options were set,
      or 0 otherwise. This is required by ParMetis. */
@@ -167,13 +172,19 @@ int LB_Jostle(
   gather_threshold = 0;
   matching[0] = '\0';
   reduction[0] = '\0';
-  LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", (void *) &option;
-  LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    (void *) threshold;
-  LB_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", (void *) gather_threshold;
-  LB_Bind_Param(Jostle_params, "JOSTLE_MATCHING",     (void *) matching;
-  LB_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    (void *) reduction;
+  LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
+                (void *) &option;
+  LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
+                (void *) threshold;
+  LB_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", 
+                (void *) gather_threshold;
+  LB_Bind_Param(Jostle_params, "JOSTLE_MATCHING",     
+                (void *) matching;
+  LB_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    
+                (void *) reduction;
 
-  LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc); 
+  LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
+                       lb->Debug_Proc); 
 
   /* Set Jostle parameters using jostle_env() */
   if (threshold){
