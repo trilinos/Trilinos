@@ -32,6 +32,9 @@ static ZOLTAN_HG_GLOBAL_PART_FN global_gr3;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr4;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr5;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr6;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr7;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr8;
+
 
 /****************************************************************************/
 
@@ -50,6 +53,8 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   else if (!strcasecmp(str, "gr4")) return global_gr4;
   else if (!strcasecmp(str, "gr5")) return global_gr5;
   else if (!strcasecmp(str, "gr6")) return global_gr6;
+  else if (!strcasecmp(str, "gr7")) return global_gr7;
+  else if (!strcasecmp(str, "gr8")) return global_gr8;
   else                              return NULL;
 }
 
@@ -554,7 +559,7 @@ static int greedy_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank; 
-  int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
+  int esize1, *vtx_count=NULL, *visited=NULL, *cut[2];
   int ierr=ZOLTAN_OK;
   float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   float *gain = NULL, *edge_sum = NULL;
@@ -566,8 +571,8 @@ static int greedy_order (
   pnumber = 0;    /* Assign next vertex this partition number */
 
   /* Allocate arrays. */
-  if (!(rank  = (int *)     ZOLTAN_CALLOC (sizeof (int), hg->nVtx)) ||
-      !(gain  = (float *)   ZOLTAN_CALLOC (sizeof (float), hg->nVtx)) ) {
+  if (!(rank  = (int *)     ZOLTAN_CALLOC (hg->nVtx, sizeof (int))) ||
+      !(gain  = (float *)   ZOLTAN_CALLOC (hg->nVtx, sizeof (float))) ) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -575,8 +580,8 @@ static int greedy_order (
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
 
-  if ((priority_mode==2) || (priority_mode==4) || (priority_mode==6)){
-    if (!(edge_sum = (float *)  ZOLTAN_CALLOC (sizeof (float), hg->nVtx))){
+  if (priority_mode && (!(priority_mode&1))){ /* 2,4,6,... */
+    if (!(edge_sum = (float *)  ZOLTAN_CALLOC (hg->nVtx, sizeof (float)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr =  ZOLTAN_MEMERR;
       goto error;
@@ -612,7 +617,7 @@ static int greedy_order (
     cut[0] = cut[1] = NULL;
 
   if (priority_mode>=3){
-    if (!(vtx_count = (int *)  ZOLTAN_CALLOC (sizeof (int), hg->nEdge))){
+    if (!(vtx_count = (int *)  ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr =  ZOLTAN_MEMERR;
       goto error;
@@ -712,23 +717,37 @@ rank[vtx]);
     else {
       for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
         edge = hg->vedge[j];
-        esize = hg->hindex[edge+1] - hg->hindex[edge];
+        esize1 = hg->hindex[edge+1] - hg->hindex[edge] -1; /* Edge size -1 */
         if (vtx_count) vtx_count[edge]++;
         for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
           nbor = hg->hvertex[i];
           if (rank[nbor] <0){
-             if (priority_mode==1)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/esize;
-             else if (priority_mode==2)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/(edge_sum[nbor]*esize);
-             else if (priority_mode==3)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize-vtx_count[edge]));
-             else if (priority_mode==4)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize-vtx_count[edge]))/edge_sum[nbor];
-             else if (priority_mode==5)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize-vtx_count[edge]));
-             else if (priority_mode==6)
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize-vtx_count[edge]))/edge_sum[nbor];
+             switch (priority_mode){
+             case 1:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/esize1;
+               break;
+             case 2:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/(edge_sum[nbor]*esize1);
+               break;
+             case 3:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]));
+               break;
+             case 4:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/edge_sum[nbor];
+               break;
+             case 5:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/esize1;
+               break;
+             case 6:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/(edge_sum[nbor]*esize1);
+               break;
+             case 7:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize1-vtx_count[edge]))/esize1;
+               break;
+             case 8:
+               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize1-vtx_count[edge]))/(edge_sum[nbor]*esize1);
+               break;
+             }
   
              heap_change_value(h, nbor, gain[nbor]);
           }
@@ -840,6 +859,16 @@ static int global_gr5 (ZZ *zz, HGraph *hg, int p, Partition part)
 static int global_gr6 (ZZ *zz, HGraph *hg, int p, Partition part)
 { 
   return global_greedy(zz, hg, p, part, 6);
+}
+
+static int global_gr7 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 7);
+}
+
+static int global_gr8 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 8);
 }
 
 #ifdef __cplusplus
