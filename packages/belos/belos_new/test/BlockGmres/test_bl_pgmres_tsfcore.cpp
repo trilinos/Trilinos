@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     //
     // call the ctor for the preconditioning object
     //
-    TSFCore::EpetraLinearOp Prec(rcp( &prec, false ));
+    TSFCore::EpetraLinearOp Prec( rcp(&prec,false), TSFCore::NOTRANS, TSFCore::EPETRA_OP_APPLY_APPLY_INVERSE );
     //
     // ********Other information used by block solver***********
     // *****************(can be user specified)******************
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     if (verbose) {
       cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
       for ( int i=0; i<numrhs; i++) {
-	cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+				cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
       }
     }
     // Release all objects  
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
       std::cerr << "*** Caught an unknown exception!\n";
     success = false;
   }
-
+	
   if (verbose)
     cout << "Solution time: "<< timer.totalElapsedTime()<<endl;
   
