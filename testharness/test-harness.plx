@@ -41,7 +41,7 @@ my $SUMMARY = 8;                      # test-harness summary
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
 
-print "\nTEST - UPDATED VERSION 004\n\n";
+print "\nTEST - UPDATED VERSION 006\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -276,7 +276,7 @@ report($SUMMARY);
     #   - returns: 
 
     sub cvsUpdate {
-        my @programArguments = $_[0]
+        my @programArguments = @_;
         
         # If -u flag is not set and CVS_UPDATE is set to YES, continue to update...
         # If -u flag is set, we've already updated and we've been replaced by
