@@ -95,11 +95,9 @@ LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
       *(vectorPtrs[i]) = *(y.vectorPtrs[i]);
 
     numScalars = y.numScalars;
-    //*scalarsPtr = *y.scalarsPtr;
-    // copy scalars.  We don't use operator= because it does the wrong thing
-    // when either of the scalar arrays are views
-    for (int i=0; i<numScalars; i++)
-      (*scalarsPtr)(i,0) = (*y.scalarsPtr)(i,0);
+
+    // Copy scalars (don't use operator= since it destroys views)
+    scalarsPtr->assign(*y.scalarsPtr);
 
   }
   return *this;
@@ -263,8 +261,7 @@ LOCA::Extended::Vector::scale(const NOX::Abstract::Vector& y)
   
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->scale(*(Y.vectorPtrs[i]));
-  for (int i=0; i<numScalars; i++)
-    (*scalarsPtr)(i,0) *= (*Y.scalarsPtr)(i,0);
+  scalarsPtr->scale(*Y.scalarsPtr);
 
   return *this;
 }
@@ -279,7 +276,8 @@ LOCA::Extended::Vector::update(double alpha, const NOX::Abstract::Vector& y,
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), gamma);
   for (int i=0; i<numScalars; i++)
-    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + gamma*((*scalarsPtr)(i,0));
+    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + 
+      gamma*((*scalarsPtr)(i,0));
 
   return *this;
 }
@@ -299,8 +297,8 @@ LOCA::Extended::Vector::update(double alpha,
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), beta, *(B.vectorPtrs[i]),
 			  gamma);
   for (int i=0; i<numScalars; i++)
-    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + beta*((*B.scalarsPtr)(i,0)) + 
-      gamma*((*scalarsPtr)(i,0));
+    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + 
+      beta*((*B.scalarsPtr)(i,0)) + gamma*((*scalarsPtr)(i,0));
 
   return *this;
 }

@@ -93,7 +93,7 @@ LOCA::Extended::MultiVector::MultiVector(
 {
   // Check indices are valid
   for (unsigned int j=0; j<index.size(); j++) 
-    checkIndex("LOCA::Extended::MultiVector()", index[j]);
+    source.checkIndex("LOCA::Extended::MultiVector()", index[j]);
 
   for (int i=0; i<numColumns; i++) {
     extendedVectorPtrs[i] = NULL;
@@ -210,12 +210,8 @@ LOCA::Extended::MultiVector::operator=(
     for (int i=0; i<numMultiVecRows; i++)
       *(multiVectorPtrs[i]) = *(source.multiVectorPtrs[i]);
 
-    // Copy scalars.  We don't use operator= because it does the wrong thing
-    // when either of the scalar arrays are views
-    for (int j=0; j<numColumns; j++)
-      for (int i=0; i<numScalarRows; i++)
-      (*scalarsPtr)(i,j) = (*source.scalarsPtr)(i,j);
-    //*scalarsPtr = *source.scalarsPtr;
+    // Copy scalars (don't use operator= since it destroys views)
+    scalarsPtr->assign(*source.scalarsPtr);
   }
 
   return *this;

@@ -331,7 +331,7 @@ LOCA::BorderedSystem::Bordering::applyInverse(
     if (!isZeroG && !isZeroT1)
       Y += *G;
     else if (!isZeroG)
-      Y = *G;
+      Y.assign(*G);  // don't use operator= (it destroys views)
 
     // compute C - B^T*X2
     if (!isZeroC && !isZeroT2) {

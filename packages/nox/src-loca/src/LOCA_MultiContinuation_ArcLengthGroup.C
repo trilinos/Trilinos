@@ -106,7 +106,7 @@ LOCA::MultiContinuation::ArcLengthGroup::operator=(
   // Protect against A = A
   if (this != &source) {
     LOCA::MultiContinuation::ExtendedGroup::operator=(source);
-    constraints = source.constraints;
+    constraints.assign(source.constraints);
     isValidConstraints = source.isValidConstraints;
     isValidConstraintDerivatives = source.isValidConstraintDerivatives;
     theta = source.theta;

@@ -308,6 +308,11 @@ LOCA::NewStepper::start() {
   prevPredictorPtr = 
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(curGroupPtr->getPredictorDirection(0).clone(NOX::ShapeCopy));
 
+  // Create new solver using new continuation groups and combo status test
+  delete solverPtr;
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+				       LOCA::Utils::getSublist("NOX"));
+
   return LOCA::Abstract::Iterator::NotFinished;
 }
 

@@ -268,7 +268,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeF()
   if (!isConstraints()) {
     status = computeConstraints();
   }
-  fVec->getScalars() = getConstraints();
+  fVec->getScalars().assign(getConstraints());
   
   isValidF = true;
 
@@ -310,7 +310,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeJacobian()
   }
 
   if (!isConstraintDerivativesPZero())
-    dfdpMultiVec->getScalars() = *getConstraintDerivativesP();
+    dfdpMultiVec->getScalars().assign(*getConstraintDerivativesP());
   else
     dfdpMultiVec->getScalars().putScalar(0.0);
 
@@ -910,7 +910,7 @@ LOCA::MultiContinuation::ExtendedGroup::setupViews()
 {
   index_f[0] = 0;
   for (int i=0; i<numParams; i++)
-    index_dfdp[i] = i;
+    index_dfdp[i] = i+1;
 
   
   xVec = dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&xMultiVec[0]);

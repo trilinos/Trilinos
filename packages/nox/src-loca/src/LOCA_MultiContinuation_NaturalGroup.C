@@ -87,8 +87,8 @@ LOCA::MultiContinuation::NaturalGroup::operator=(
   // Protect against A = A
   if (this != &source) {
     LOCA::MultiContinuation::ExtendedGroup::operator=(source);
-    constraints = source.constraints;
-    dgdp = source.dgdp;
+    constraints.assign(source.constraints);
+    dgdp.assign(source.dgdp);
     isValidConstraints = source.isValidConstraints;
   }
 
