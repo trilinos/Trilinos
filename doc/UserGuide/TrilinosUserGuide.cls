@@ -225,8 +225,8 @@
           \begin{flushleft}
             \Huge\scalefont{1.1}\@title
           \end{flushleft}
-          \vspace{-1em}
-          \Thicklines\raggedleft\line(1,0){400} \\[0.5em]
+%          \vspace{-1em}
+%          \Thicklines\raggedleft\line(1,0){400} \\[0.5em]
           \LARGE\bf \SANDsubtitleVar
         }
 
