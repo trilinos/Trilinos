@@ -16,14 +16,9 @@ int Ifpack_LinearPartitioner::ComputePartitions()
   
   int mod = NumMyRows() / NumLocalParts_;
   for (int i = 0 ; i < NumMyRows() ; ++i) {
-    // Dirichlet nodes get -1
-    if (Mask_[i] == -1)
-      Partition_[i] = -1;
-    else {
-      Partition_[i] = i / mod;
-      if (Partition_[i] >= NumLocalParts_)
-	Partition_[i] = NumLocalParts_ - 1;
-    }
+    Partition_[i] = i / mod;
+    if (Partition_[i] >= NumLocalParts_)
+      Partition_[i] = NumLocalParts_ - 1;
   }
 
   return(0);

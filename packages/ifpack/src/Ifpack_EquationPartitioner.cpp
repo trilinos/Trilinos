@@ -19,12 +19,7 @@ int Ifpack_EquationPartitioner::ComputePartitions()
     IFPACK_CHK_ERR(-1); // rows must be multiples of number of equations
 
   for (int i = 0 ; i < NumMyRows() ; ++i) {
-    // Dirichlet nodes get -1
-    if (Mask_[i] == -1)
-      Partition_[i] = -1;
-    else {
-      Partition_[i] = i % mod;
-    }
+    Partition_[i] = i % mod;
   }
 
   return(0);

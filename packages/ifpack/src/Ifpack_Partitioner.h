@@ -111,12 +111,6 @@ public:
    */
   virtual int operator() (int MyRow) const = 0;
 
-  //! Returns the number of singletons in Graph.
-  virtual int NumSingletons() const = 0;
-
-  //! Returns a pointer to the internally-stored list of singletons (TO DO).
-  virtual const int* SingletonList() const = 0;
-  
   //! Returns the local overlapping partition ID of the j-th node in partition i.
   virtual int operator() (int i, int j) const = 0;
 

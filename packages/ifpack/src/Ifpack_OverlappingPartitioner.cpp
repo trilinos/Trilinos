@@ -18,8 +18,7 @@ Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph) :
   IsComputed_(false),
   verbose_(2),
   PrintMsg_("(Ifpack_Partitioner) "),
-  ErrorMsg_("Ifpack_Partitioner ERROR "),
-  NumMyNonDirichletRows_(0)
+  ErrorMsg_("Ifpack_Partitioner ERROR ")
 {
 }
 
@@ -75,39 +74,15 @@ int Ifpack_OverlappingPartitioner::Compute()
   if (NumLocalParts_ < 1)
     IFPACK_CHK_ERR(-2); // value not valid
  
-  // 3.- localize Dirichlet nodes. Mask_[i] will contain either
-  //     -1 (node is Dirichlet), or the local ID (without
-  //     counting the Dirichlet nodes).
-
-  Mask_.resize(NumMyRows());
-
-  NumMyNonDirichletRows_ = 0;
-  int NumIndices;
-  vector <int> Indices;
-  Indices.resize(MaxNumEntries());
-
-  for (int i = 0; i < NumMyRows() ; ++i) {  
-
-    int ierr;
-    ierr = Graph_->ExtractMyRowCopy(i, MaxNumEntries(), NumIndices, &Indices[0]);
-    IFPACK_CHK_ERR(ierr);
-    
-    if (NumIndices <= 1) {
-      Mask_[i] = -1;
-    } else {
-      Mask_[i] = NumMyNonDirichletRows_++;
-    }
-  }
-
-  // 2.- perform non-overlapping partition
+  // 3.- perform non-overlapping partition
  
   IFPACK_CHK_ERR(ComputePartitions());
 
-  // 3.- compute the partitions with overlapping
+  // 4.- compute the partitions with overlapping
   
   IFPACK_CHK_ERR(ComputeOverlappingPartitions());
 
-  // 4.- return to the user
+  // 5.- return to the user
  
   IsComputed_ = true;
 
@@ -226,12 +201,6 @@ const int Ifpack_OverlappingPartitioner::NumMyRows() const
 const int Ifpack_OverlappingPartitioner::NumMyNonzeros() const
 {
   return(Graph_->NumMyNonzeros());
-}
-
-//============================================================================
-const int Ifpack_OverlappingPartitioner::NumMyNonDirichletRows() const
-{
-  return(NumMyNonDirichletRows_);
 }
 
 //============================================================================

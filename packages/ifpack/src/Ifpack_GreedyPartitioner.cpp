@@ -48,21 +48,6 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
   int RootNode = RootNode_;
 
-  bool FirstCycle = true;
-
-  while (Mask_[RootNode] == -1) {
-    
-    RootNode++;
-    if (RootNode >= NumMyRows()) {
-      if (FirstCycle == true) {
-	RootNode = 0;
-	FirstCycle = false;
-      }	else {
-	IFPACK_CHK_ERR(-10); // cannot find a root node that is not Dirichlet
-      }
-    }
-  }
-
   // start from row 0, assigned to domain 0
   Partition_[RootNode] = 0;      
 
@@ -86,10 +71,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 	continue;
 
       // filter for Dirichlet
-      int col = Mask_[Indices[j]];
-
-      if (col == -1)
-	continue;
+      int col = Indices[j];
 
       if (count[CurrentPart] == ElementsPerPart[CurrentPart]) {
 	CurrentPart++;
@@ -113,8 +95,6 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
     if (ok == false) {
       for (int j = 0 ; j < NumMyRows() ; ++j) {
-	if (Mask_[j] == -1)
-	  continue;
 
 	if (Partition_[j] == -1 ) {
 	  RootNode = j;

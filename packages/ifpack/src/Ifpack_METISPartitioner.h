@@ -33,7 +33,8 @@ public:
 
   //! Constructor.
   Ifpack_METISPartitioner(const Ifpack_Graph* Graph) :
-    Ifpack_OverlappingPartitioner(Graph)
+    Ifpack_OverlappingPartitioner(Graph),
+    UseSymmetricGraph_(false)
   {}
 
   //! Destructor.
@@ -42,11 +43,17 @@ public:
   //! Sets all the parameters for the partitioner (none at moment).
   int SetPartitionParameters(Teuchos::ParameterList& List)
   {
+    UseSymmetricGraph_ = List.get("partitioner: use symmetric graph", 
+				  UseSymmetricGraph_);
+
     return(0);
   }
 
   //! Computes the partitions. Returns 0 if successful.
   int ComputePartitions();
+
+private:
+  bool UseSymmetricGraph_;
 
 }; // class Ifpack_METISPartitioner
 

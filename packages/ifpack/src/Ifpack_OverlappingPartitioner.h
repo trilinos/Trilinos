@@ -72,18 +72,6 @@ public:
     return(Partition_[MyRow]);
   }
 
-  //! Returns the number of singletons in Graph.
-  int NumSingletons() const
-  {
-    return(NumMyRows() - NumMyNonDirichletRows());
-  }
-
-  //! Returns a pointer to the internally-stored list of singletons (TO DO).
-  const int* SingletonList() const
-  {
-    return(0);
-  }
-  
   //! Returns the local overlapping partition ID of the j-th node in partition i.
   int operator() (int i, int j) const
   {
@@ -153,9 +141,6 @@ protected:
   //! Returns the number of local nonzero elements.
   const int NumMyNonzeros() const;
 
-  //! Returns the number of local non-Dirichlet rows.
-  const int NumMyNonDirichletRows() const;
-
   //! Returns the number of local rows.
   const int NumGlobalRows() const;
 
@@ -198,10 +183,6 @@ protected:
   int verbose_;
   string PrintMsg_;
   string ErrorMsg_;
-
-  // Dirichlet rows
-  int NumMyNonDirichletRows_;
-  vector<int> Mask_;
 
 }; // class Ifpack_Partitioner
 
