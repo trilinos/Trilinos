@@ -149,6 +149,13 @@ $(srcdir)/Utils/ml_MultiLevelOperator.h \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
 $(srcdir)/Utils/ml_RowMatrix.h \
 $(srcdir)/Utils/ml_DD_prec.h \
+$(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \
+$(srcdir)/NonlinML/ml_nox_fineinterface.H \
+$(srcdir)/NonlinML/ml_nox_coarseinterface.H \
+$(srcdir)/NonlinML/ml_nox_linearsystem.H \
+$(srcdir)/NonlinML/ml_nox_matrixfreelevel.H \
+$(srcdir)/NonlinML/ml_nox_nonlinearlevel.H \
+$(srcdir)/NonlinML/ml_nox_preconditioner.H \
 $(srcdir)/MLAPI/MLAPI.h                \
 $(srcdir)/MLAPI/MLAPI_Aggregation.h          \
 $(srcdir)/MLAPI/MLAPI_BaseObject.h           \
@@ -203,7 +210,14 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp \
 $(srcdir)/Utils/ml_RowMatrix.cpp \
-$(srcdir)/Utils/ml_DD_prec.cpp
+$(srcdir)/Utils/ml_DD_prec.cpp \
+$(srcdir)/NonlinML/ml_nox_coarseinterface.cpp \
+$(srcdir)/NonlinML/ml_nox_linearsystem.cpp \
+$(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp \
+$(srcdir)/NonlinML/ml_nox_nonlinearlevel.cpp \
+$(srcdir)/NonlinML/ml_nox_preconditioner1.cpp \
+$(srcdir)/NonlinML/ml_nox_preconditioner2.cpp
+
 
 ENUM_H = 
 
@@ -319,9 +333,17 @@ else
 epetra_incdir =
 endif
 if ML_USING_EPETRAEXT
-epetraext_incdir = -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
+epetraext_incdir = -I$(top_srcdir)/../epetraext/src/inout \
+                   -I$(top_srcdir)/../epetraext/src/coloring \
+                   -I$(top_srcdir)/../epetraext/src/transform \
+                   -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src
 else
 epetraext_incdir =
+endif
+if ML_USING_NOX
+nox_incdir = -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
+else
+nox_incdir =
 endif
   
 AM_CPPFLAGS = -I$(srcdir)/Comm \
@@ -341,7 +363,8 @@ AM_CPPFLAGS = -I$(srcdir)/Comm \
 	$(anasazi_incdir)   \
 	$(triutils_incdir)  \
 	$(epetra_incdir)    \
-        $(epetraext_incdir)
+        $(epetraext_incdir) \
+        $(nox_incdir)
 
 
 

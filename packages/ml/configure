@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1031,8 +1031,12 @@ Optional Packages:
                           --with-ml_metis. (default is no)
   --with-ml_parasails     Enable Parasails support. See notes for
                           --with-ml_metis. (default is no)
-  --with-ml_nox           Enable ML_NOX support. See notes for
-                          --with-ml_metis. (default is no)
+  --with-ml_nox           Enable ML_NOX support. --with-ml_nox requires that
+                          configure and make with --enable-nox
+                          --enable-prerelease --enable-nox-epetra
+                          --enable-epetraext have been run before, otherwise
+                          it won't find necessary headers and won't link.
+                          (default is no)
   --with-ml_zoltan        Enable Zoltan support. This option requires that MPI
                           be enabled. See notes for --with-ml_metis. (default
                           is no)
@@ -3939,7 +3943,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3942:" \
+echo "$as_me:3946:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7871,6 +7875,16 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+
+
+if test "X$ac_cv_use_ml_nox" = "Xyes"; then
+  ML_USING_NOX_TRUE=
+  ML_USING_NOX_FALSE='#'
+else
+  ML_USING_NOX_TRUE='#'
+  ML_USING_NOX_FALSE=
+fi
+
 #
 
 
@@ -8470,7 +8484,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8473: \"$ac_link\") >&5
+(eval echo $as_me:8487: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8548,7 +8562,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8551: \"$ac_link\") >&5
+(eval echo $as_me:8565: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11501,7 +11515,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11504: \"$ac_link\") >&5
+(eval echo $as_me:11518: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11579,7 +11593,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11582: \"$ac_link\") >&5
+(eval echo $as_me:11596: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11983,6 +11997,13 @@ if test -z "${ML_BENCHMARKING_TRUE}" && test -z "${ML_BENCHMARKING_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_BENCHMARKING\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ML_BENCHMARKING\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ML_USING_NOX_TRUE}" && test -z "${ML_USING_NOX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_NOX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_USING_NOX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12708,6 +12729,8 @@ s,@ML_CFUNC_TRUE@,$ML_CFUNC_TRUE,;t t
 s,@ML_CFUNC_FALSE@,$ML_CFUNC_FALSE,;t t
 s,@ML_BENCHMARKING_TRUE@,$ML_BENCHMARKING_TRUE,;t t
 s,@ML_BENCHMARKING_FALSE@,$ML_BENCHMARKING_FALSE,;t t
+s,@ML_USING_NOX_TRUE@,$ML_USING_NOX_TRUE,;t t
+s,@ML_USING_NOX_FALSE@,$ML_USING_NOX_FALSE,;t t
 s,@ML_USING_EPETRA_TRUE@,$ML_USING_EPETRA_TRUE,;t t
 s,@ML_USING_EPETRA_FALSE@,$ML_USING_EPETRA_FALSE,;t t
 s,@ML_USING_AMESOS_TRUE@,$ML_USING_AMESOS_TRUE,;t t

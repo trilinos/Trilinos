@@ -416,7 +416,8 @@ TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-m
 #
 TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
 #
-TAC_ARG_WITH_PACKAGE(ml_nox, [Enable ML_NOX support. See notes for --with-ml_metis.], ML_NOX, no) 
+TAC_ARG_WITH_PACKAGE(ml_nox, [Enable ML_NOX support. --with-ml_nox requires that configure and make with --enable-nox --enable-prerelease --enable-nox-epetra --enable-epetraext have been run before, otherwise it won't find necessary headers and won't link. ], ML_NOX, no) 
+AM_CONDITIONAL(ML_USING_NOX, test "X$ac_cv_use_ml_nox" = "Xyes")
 #
   TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires
 that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
