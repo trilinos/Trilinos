@@ -1,0 +1,270 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+"""
+numSavvyDiff - A 'smart' version of diff that will compare text files and report
+line differences, unless those differences are substrings that represent
+numbers, and those numbers are 'close' to one another (or equal, but formatted
+differently).
+
+usage: numSavvyDiff [-t tolerance] file1 file2
+
+"""
+
+# System imports
+from   difflib import *
+from   getopt  import getopt
+import sys
+
+########################################################################
+
+def extractNumber(text, index):
+    """Given a line of text and an index into that text, extract a string
+    representation of a number that starts at the index or to its left, and ends
+    at the index or to its right.  Return a tuple of start and end indexes
+    describing the location of the number string.  If a number string does not
+    exist at the index location, return (None, None)."""
+
+    # Index sanity checks
+    if (index < 0): index = len(text) + index      # Negative index references
+                                                   #   backwards from end
+    if (index < 0):          return (None, None)   # Index too negative -> not found
+    if (index >= len(text)): return (None, None)   # Index too large -> not found
+
+    # Comparison strings
+    expChars = "dDeEfFgG"
+    decPoint = "."
+    signs    = "+-"
+
+    # Counters
+    numExp = 0
+    numDec = 0
+
+    # Find the left index
+    iLeft = index
+    found = False
+    while not found:
+        char = text[iLeft]
+        #print "Examining text[" + str(iLeft) + "] = '" + char + "'"
+        if (char.isdigit()):
+            iLeft -= 1
+        elif (char in expChars):
+            if (numExp == 0):
+                numExp = 1
+                iLeft -= 1
+            else:
+                iLeft += 1
+                found = True
+        elif (char in decPoint):
+            if numDec == 0:
+                numDec = 1
+                iLeft -= 1
+            else:
+                iLeft += 1
+                found = True
+        elif (char in signs):
+            if ((iLeft > 0) and (text[iLeft-1] in expChars)):
+                iLeft -= 1
+            else:
+                found = True
+        else:
+            found = True
+            iLeft += 1
+        if (iLeft < 0):
+            iLeft = 0
+            found = True
+
+    # Find the right index
+    iRight = index + 1
+    found  = not (iRight < len(text))
+    while not found:
+        char = text[iRight]
+        #print "Examining text[" + str(iRight) + "] = '" + char + "'"
+        if (char.isdigit()):
+            iRight += 1
+        elif (char in expChars):
+            if (numExp == 0):
+                numExp = 1
+                iRight += 1
+            else:
+                found = True
+        elif (char in decPoint):
+            if numDec == 0:
+                numDec = 1
+                iRight += 1
+            else:
+                found = True
+        elif (char in signs):
+            if (numExp == 0):
+                found = True
+            else:
+                if ((iRight > 0) and (text[iRight-1] in expChars)):
+                    iRight += 1
+                else:
+                    found = True
+        else:
+            found = True
+        if (iRight >= len(text)):
+            iRight = len(text)
+            found  = True
+
+    if (text[iLeft] in expChars):
+        if (iLeft == index):
+            iLeft  = None
+            iRight = None
+        else:
+            iLeft += 1
+
+    if (iLeft >= iRight):
+        iLeft  = None
+        iRight = None
+    elif ((iRight-iLeft == 1) and ((text[iLeft] in expChars) or
+                                   (text[iLeft] in decPoint) or
+                                   (text[iLeft] in signs   )   )):
+        iLeft  = None
+        iRight = None
+
+    return (iLeft,iRight)
+    
+########################################################################
+
+def testExtractNumber():
+    """Call extractNumber() to set various cases of numbers embedded in
+    strings."""
+
+    assert(extractNumber("1" ,0) == (0,1))
+    assert(extractNumber(" 2",1) == (1,2))
+    assert(extractNumber("3 ",0) == (0,1))
+    for i in range(1,9):
+        assert(extractNumber(" 1.23e-01 ",i) == (1,9))
+    for i in range(1,10):
+        assert(extractNumber(" -4.56e+02 ",i) == (1,10))
+    for i in range(1,10):
+        assert(extractNumber(" +7.89e-03 ",i) == (1,10))
+    assert(extractNumber("Age21",2) == (None,None))
+    assert(extractNumber("Age21",3) == (3,5))
+    assert(extractNumber("Age21",4) == (3,5,))
+
+########################################################################
+
+def numSavvyTextMatch(isJunk, text0, text1, tol):
+    """Compare two strings.  If the differences between the two strings are
+    substrings that are numbers, and those numbers are within tol of one
+    another, then report the strings as equal.  The function isJunk is passed
+    directly to the SequenceMatcher object."""
+
+    # Initialization
+    s = SequenceMatcher(isJunk, text0, text1)
+    opcodes = s.get_opcodes()
+    firstDiff = 0
+
+    # Ignore first opcode if it is equal
+    if (opcodes[firstDiff][0] == "equal"):
+        if (len(opcodes) == 1): return True
+        else:                   firstDiff = 1
+
+    # Determine indexes based on opcode
+    if (opcodes[firstDiff][0] == "insert"):
+        i0 = opcodes[firstDiff][1] - 1
+        i1 = opcodes[firstDiff][3]
+    elif (opcodes[firstDiff][0] == "replace" or
+          opcodes[firstDiff][0] == "delete"    ):
+        i0 = opcodes[firstDiff][1]
+        i1 = opcodes[firstDiff][3]
+    else:
+        return False    # Shouldn't get here
+
+    # Perform the number-savvy text match
+    (start0,end0) = extractNumber(text0, i0)
+    if (None in (start0,end0)): return False
+    (start1,end1) = extractNumber(text1, i1)
+    if (None in (start1,end1)): return False
+    num0 = float(text0[start0:end0])
+    #print num0
+    num1 = float(text1[start1:end1])
+    #print num1
+    if (abs(num1 - num0) > tol): return False
+
+    # If OK so far, process the rest of the text
+    return numSavvyTextMatch(isJunk, text0[end0:], text1[end1:], tol)
+
+########################################################################
+
+def main():
+
+    # Initialization
+    tolerance = 1.0e-14
+    exitCode  = 0
+
+    # Command-line arguments
+    options = "t:"
+    long_options = ["test"]
+    (opts, args) = getopt(sys.argv[1:], options, long_options)
+    for flag in opts:
+        if flag[0] == "-t":
+            tolerance = float(flag[1])
+        elif flag[0] == "--test":
+            testExtractNumber()
+            sys.exit()
+        else:
+            raise RuntimeError, "Unrecognized option: " + str(flag[0])
+    if len(args) != 2:
+        raise RuntimeError, "Missing operand"
+    text0 = open(args[0], "r").readlines()
+    text1 = open(args[1], "r").readlines()
+
+    # Difference engine
+    d = Differ()
+    results = list(d.compare(text0,text1))
+
+    # Loop over the results
+    line0 = 0
+    line1 = 0
+    i     = 0
+    while i < len(results):
+        text0 = results[i]
+
+        # Lines are equal
+        if text0[0:2] == "  ":
+            line0 += 1
+            line1 += 1
+
+        # Text0 is unique
+        elif text0[0:2] == "- ":
+            line0 += 1
+            output = str(line0) + "> " + text0[2:]
+            if (i < len(results)):
+                i += 1
+                text1 = results[i]
+                if text1[0:2] == "? ":
+                    if (i < len(results)):
+                        i += 1
+                        text1 = results[i]
+                if text1[0:2] == "+ ":
+                    line1 += 1
+                    if numSavvyTextMatch(None,text0[2:],text1[2:],tolerance):
+                        output = None
+                    else:
+                        output += str(line1) + "< " + text1[2:]
+                        exitCode = 1
+                else:
+                    exitCode = 1
+                    i -= 1
+            if output: print output,
+
+        # Text1 is unique
+        elif text0[0:2] == "+ ":
+            line1 += 1
+            exitCode = 1
+            print str(line1) + "< " + text0[2:],
+
+        # Go to the next line
+        i += 1
+
+    # Exit
+    sys.exit(exitCode)
+
+########################################################################
+
+if __name__ == "__main__":
+    main()

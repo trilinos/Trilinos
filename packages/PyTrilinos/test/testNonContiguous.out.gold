@@ -1,0 +1,871 @@
+----
+Test non-contiguous to contiguous NumPy array translation
+----
+
+--------------
+Create a (2, 2, 3) array:
+pyArray length         = 12
+pyArray.shape          = (2, 2, 3)
+pyArray.typecode()     = d
+pyArray.iscontiguous() = 1
+pyArray = [[[  0.   1.   2.]
+  [  3.   4.   5.]]
+ [[  6.   7.   8.]
+  [  9.  10.  11.]]]
+pyArray[0,0,0] =  0.0
+pyArray[0,0,1] =  1.0
+pyArray[0,0,2] =  2.0
+pyArray[0,1,0] =  3.0
+pyArray[0,1,1] =  4.0
+pyArray[0,1,2] =  5.0
+pyArray[1,0,0] =  6.0
+pyArray[1,0,1] =  7.0
+pyArray[1,0,2] =  8.0
+pyArray[1,1,0] =  9.0
+pyArray[1,1,1] =  10.0
+pyArray[1,1,2] =  11.0
+
+--------------
+Create a NumPyArray from above pyArray:
+numPyArray =
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = True
+Strides for each dimension = (6, 3, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 1
+[0,0,2] (2) = 2
+[0,1,0] (3) = 3
+[0,1,1] (4) = 4
+[0,1,2] (5) = 5
+[1,0,0] (6) = 6
+[1,0,1] (7) = 7
+[1,0,2] (8) = 8
+[1,1,0] (9) = 9
+[1,1,1] (10) = 10
+[1,1,2] (11) = 11
+
+--------------
+Reorder axes of pyArray to create pyArray_2
+and then use it to create numPyarray_2.
+This creates a non-contiguous array WITHOUT 
+stride-one acces on the last dimenssion:
+pyArray_2 = [[[  0.   6.]
+  [  3.   9.]]
+ [[  1.   7.]
+  [  4.  10.]]
+ [[  2.   8.]
+  [  5.  11.]]]
+numPyArray_2 =
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (3, 2, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 3, 6)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 6
+[0,1,0] (2) = 3
+[0,1,1] (3) = 9
+[1,0,0] (4) = 1
+[1,0,1] (5) = 7
+[1,1,0] (6) = 4
+[1,1,1] (7) = 10
+[2,0,0] (8) = 2
+[2,0,1] (9) = 8
+[2,1,0] (10) = 5
+[2,1,1] (11) = 11
+
+--------------
+Reorder axes of pyArray to create pyArray_3
+and then use it to create numPyarray_3:
+This creates a non-contiguous array WITH 
+stride-one acces on the last dimenssion:
+pyArray_3 = [[[  0.   1.   2.]
+  [  6.   7.   8.]]
+ [[  3.   4.   5.]
+  [  9.  10.  11.]]]
+numPyArray_3 =
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = False
+Strides for each dimension = (3, 6, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 1
+[0,0,2] (2) = 2
+[0,1,0] (3) = 6
+[0,1,1] (4) = 7
+[0,1,2] (5) = 8
+[1,0,0] (6) = 3
+[1,0,1] (7) = 4
+[1,0,2] (8) = 5
+[1,1,0] (9) = 9
+[1,1,1] (10) = 10
+[1,1,2] (11) = 11
+
+-- Epetra Load Test ----------------------
+
+----------------------------------------
+-- Load Tests --------------------------
+----------------------------------------
+
+-- 1-D Contiguous ----------------------
+numPyArray1DCon     = 
+Total length               = 12
+Number of dimensions       = 1
+Length in each dimension   = (12)
+Is contiguous              = True
+Strides for each dimension = (1)
+[0] (0) = 0
+[1] (1) = 1
+[2] (2) = 2
+[3] (3) = 3
+[4] (4) = 4
+[5] (5) = 5
+[6] (6) = 6
+[7] (7) = 7
+[8] (8) = 8
+[9] (9) = 9
+[10] (10) = 10
+[11] (11) = 11
+epetraVector1DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9
+         0            10                      10
+         0            11                      11
+
+-- 2-D Contiguous ----------------------
+numPyArray2DCon     = 
+Total length               = 12
+Number of dimensions       = 2
+Length in each dimension   = (2, 6)
+Is contiguous              = True
+Strides for each dimension = (6, 1)
+[0,0] (0) = 0
+[0,1] (1) = 1
+[0,2] (2) = 2
+[0,3] (3) = 3
+[0,4] (4) = 4
+[0,5] (5) = 5
+[1,0] (6) = 6
+[1,1] (7) = 7
+[1,2] (8) = 8
+[1,3] (9) = 9
+[1,4] (10) = 10
+[1,5] (11) = 11
+epetraVector2DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9
+         0            10                      10
+         0            11                      11
+
+-- 2-D Non-Contiguous ------------------
+numPyArray2DNonCon  = 
+Total length               = 12
+Number of dimensions       = 2
+Length in each dimension   = (6, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 6)
+[0,0] (0) = 0
+[0,1] (1) = 6
+[1,0] (2) = 1
+[1,1] (3) = 7
+[2,0] (4) = 2
+[2,1] (5) = 8
+[3,0] (6) = 3
+[3,1] (7) = 9
+[4,0] (8) = 4
+[4,1] (9) = 10
+[5,0] (10) = 5
+[5,1] (11) = 11
+epetraVector2DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       6
+         0             2                       1
+         0             3                       7
+         0             4                       2
+         0             5                       8
+         0             6                       3
+         0             7                       9
+         0             8                       4
+         0             9                      10
+         0            10                       5
+         0            11                      11
+
+-- 3-D Contiguous ----------------------
+numPyArray3DCon     = 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = True
+Strides for each dimension = (6, 3, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 1
+[0,0,2] (2) = 2
+[0,1,0] (3) = 3
+[0,1,1] (4) = 4
+[0,1,2] (5) = 5
+[1,0,0] (6) = 6
+[1,0,1] (7) = 7
+[1,0,2] (8) = 8
+[1,1,0] (9) = 9
+[1,1,1] (10) = 10
+[1,1,2] (11) = 11
+epetraVector3DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9
+         0            10                      10
+         0            11                      11
+
+-- 3-D Non-Contiguous ------------------
+numPyArray3DNonCon  = 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (3, 2, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 3, 6)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 6
+[0,1,0] (2) = 3
+[0,1,1] (3) = 9
+[1,0,0] (4) = 1
+[1,0,1] (5) = 7
+[1,1,0] (6) = 4
+[1,1,1] (7) = 10
+[2,0,0] (8) = 2
+[2,0,1] (9) = 8
+[2,1,0] (10) = 5
+[2,1,1] (11) = 11
+epetraVector3DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       6
+         0             2                       3
+         0             3                       9
+         0             4                       1
+         0             5                       7
+         0             6                       4
+         0             7                      10
+         0             8                       2
+         0             9                       8
+         0            10                       5
+         0            11                      11
+
+-- 3-D Non-Contiguous Stride 1 ---------
+numPyArray3DNonCon Stride 1= 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = False
+Strides for each dimension = (3, 6, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 1
+[0,0,2] (2) = 2
+[0,1,0] (3) = 6
+[0,1,1] (4) = 7
+[0,1,2] (5) = 8
+[1,0,0] (6) = 3
+[1,0,1] (7) = 4
+[1,0,2] (8) = 5
+[1,1,0] (9) = 9
+[1,1,1] (10) = 10
+[1,1,2] (11) = 11
+epetraVector3DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       6
+         0             4                       7
+         0             5                       8
+         0             6                       3
+         0             7                       4
+         0             8                       5
+         0             9                       9
+         0            10                      10
+         0            11                      11
+
+-- 4-D Contiguous ----------------------
+numPyArray4DCon     = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (2, 2, 2, 3)
+Is contiguous              = True
+Strides for each dimension = (12, 6, 3, 1)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 1
+[0,0,0,2] (2) = 2
+[0,0,1,0] (3) = 3
+[0,0,1,1] (4) = 4
+[0,0,1,2] (5) = 5
+[0,1,0,0] (6) = 6
+[0,1,0,1] (7) = 7
+[0,1,0,2] (8) = 8
+[0,1,1,0] (9) = 9
+[0,1,1,1] (10) = 10
+[0,1,1,2] (11) = 11
+[1,0,0,0] (12) = 12
+[1,0,0,1] (13) = 13
+[1,0,0,2] (14) = 14
+[1,0,1,0] (15) = 15
+[1,0,1,1] (16) = 16
+[1,0,1,2] (17) = 17
+[1,1,0,0] (18) = 18
+[1,1,0,1] (19) = 19
+[1,1,0,2] (20) = 20
+[1,1,1,0] (21) = 21
+[1,1,1,1] (22) = 22
+[1,1,1,2] (23) = 23
+epetraVector4DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9
+         0            10                      10
+         0            11                      11
+         0            12                      12
+         0            13                      13
+         0            14                      14
+         0            15                      15
+         0            16                      16
+         0            17                      17
+         0            18                      18
+         0            19                      19
+         0            20                      20
+         0            21                      21
+         0            22                      22
+         0            23                      23
+
+-- 4-D Non-Contiguous ------------------
+numPyArray4DNonCon  = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (3, 2, 2, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 6, 3, 12)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 12
+[0,0,1,0] (2) = 3
+[0,0,1,1] (3) = 15
+[0,1,0,0] (4) = 6
+[0,1,0,1] (5) = 18
+[0,1,1,0] (6) = 9
+[0,1,1,1] (7) = 21
+[1,0,0,0] (8) = 1
+[1,0,0,1] (9) = 13
+[1,0,1,0] (10) = 4
+[1,0,1,1] (11) = 16
+[1,1,0,0] (12) = 7
+[1,1,0,1] (13) = 19
+[1,1,1,0] (14) = 10
+[1,1,1,1] (15) = 22
+[2,0,0,0] (16) = 2
+[2,0,0,1] (17) = 14
+[2,0,1,0] (18) = 5
+[2,0,1,1] (19) = 17
+[2,1,0,0] (20) = 8
+[2,1,0,1] (21) = 20
+[2,1,1,0] (22) = 11
+[2,1,1,1] (23) = 23
+epetraVector4DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      12
+         0             2                       3
+         0             3                      15
+         0             4                       6
+         0             5                      18
+         0             6                       9
+         0             7                      21
+         0             8                       1
+         0             9                      13
+         0            10                       4
+         0            11                      16
+         0            12                       7
+         0            13                      19
+         0            14                      10
+         0            15                      22
+         0            16                       2
+         0            17                      14
+         0            18                       5
+         0            19                      17
+         0            20                       8
+         0            21                      20
+         0            22                      11
+         0            23                      23
+
+-- 4-D Non-Contiguous Stride 1 ---------
+numPyArray4DNonCon Stride 1 = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (2, 2, 2, 3)
+Is contiguous              = False
+Strides for each dimension = (6, 12, 3, 1)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 1
+[0,0,0,2] (2) = 2
+[0,0,1,0] (3) = 3
+[0,0,1,1] (4) = 4
+[0,0,1,2] (5) = 5
+[0,1,0,0] (6) = 12
+[0,1,0,1] (7) = 13
+[0,1,0,2] (8) = 14
+[0,1,1,0] (9) = 15
+[0,1,1,1] (10) = 16
+[0,1,1,2] (11) = 17
+[1,0,0,0] (12) = 6
+[1,0,0,1] (13) = 7
+[1,0,0,2] (14) = 8
+[1,0,1,0] (15) = 9
+[1,0,1,1] (16) = 10
+[1,0,1,2] (17) = 11
+[1,1,0,0] (18) = 18
+[1,1,0,1] (19) = 19
+[1,1,0,2] (20) = 20
+[1,1,1,0] (21) = 21
+[1,1,1,1] (22) = 22
+[1,1,1,2] (23) = 23
+epetraVector4DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                      12
+         0             7                      13
+         0             8                      14
+         0             9                      15
+         0            10                      16
+         0            11                      17
+         0            12                       6
+         0            13                       7
+         0            14                       8
+         0            15                       9
+         0            16                      10
+         0            17                      11
+         0            18                      18
+         0            19                      19
+         0            20                      20
+         0            21                      21
+         0            22                      22
+         0            23                      23
+
+----------------------------------------
+-- Unload Tests ------------------------
+----------------------------------------
+
+-- 1-D Contiguous ----------------------
+epetraVector1DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       3
+         0             2                       6
+         0             3                       9
+         0             4                      12
+         0             5                      15
+         0             6                      18
+         0             7                      21
+         0             8                      24
+         0             9                      27
+         0            10                      30
+         0            11                      33
+numPyArray1DCon     = 
+Total length               = 12
+Number of dimensions       = 1
+Length in each dimension   = (12)
+Is contiguous              = True
+Strides for each dimension = (1)
+[0] (0) = 0
+[1] (1) = 3
+[2] (2) = 6
+[3] (3) = 9
+[4] (4) = 12
+[5] (5) = 15
+[6] (6) = 18
+[7] (7) = 21
+[8] (8) = 24
+[9] (9) = 27
+[10] (10) = 30
+[11] (11) = 33
+
+-- 2-D Contiguous ----------------------
+epetraVector2DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       5
+         0             2                      10
+         0             3                      15
+         0             4                      20
+         0             5                      25
+         0             6                      30
+         0             7                      35
+         0             8                      40
+         0             9                      45
+         0            10                      50
+         0            11                      55
+numPyArray2DCon     = 
+Total length               = 12
+Number of dimensions       = 2
+Length in each dimension   = (2, 6)
+Is contiguous              = True
+Strides for each dimension = (6, 1)
+[0,0] (0) = 0
+[0,1] (1) = 5
+[0,2] (2) = 10
+[0,3] (3) = 15
+[0,4] (4) = 20
+[0,5] (5) = 25
+[1,0] (6) = 30
+[1,1] (7) = 35
+[1,2] (8) = 40
+[1,3] (9) = 45
+[1,4] (10) = 50
+[1,5] (11) = 55
+
+-- 2-D Non-Contiguous ------------------
+epetraVector2DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      42
+         0             2                       7
+         0             3                      49
+         0             4                      14
+         0             5                      56
+         0             6                      21
+         0             7                      63
+         0             8                      28
+         0             9                      70
+         0            10                      35
+         0            11                      77
+numPyArray2DNonCon  = 
+Total length               = 12
+Number of dimensions       = 2
+Length in each dimension   = (6, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 6)
+[0,0] (0) = 0
+[0,1] (1) = 42
+[1,0] (2) = 7
+[1,1] (3) = 49
+[2,0] (4) = 14
+[2,1] (5) = 56
+[3,0] (6) = 21
+[3,1] (7) = 63
+[4,0] (8) = 28
+[4,1] (9) = 70
+[5,0] (10) = 35
+[5,1] (11) = 77
+
+-- 3-D Contiguous ----------------------
+epetraVector3DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      11
+         0             2                      22
+         0             3                      33
+         0             4                      44
+         0             5                      55
+         0             6                      66
+         0             7                      77
+         0             8                      88
+         0             9                      99
+         0            10                     110
+         0            11                     121
+numPyArray3DCon     = 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = True
+Strides for each dimension = (6, 3, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 11
+[0,0,2] (2) = 22
+[0,1,0] (3) = 33
+[0,1,1] (4) = 44
+[0,1,2] (5) = 55
+[1,0,0] (6) = 66
+[1,0,1] (7) = 77
+[1,0,2] (8) = 88
+[1,1,0] (9) = 99
+[1,1,1] (10) = 110
+[1,1,2] (11) = 121
+
+-- 3-D Non-Contiguous ------------------
+epetraVector3DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      78
+         0             2                      39
+         0             3                     117
+         0             4                      13
+         0             5                      91
+         0             6                      52
+         0             7                     130
+         0             8                      26
+         0             9                     104
+         0            10                      65
+         0            11                     143
+numPyArray3DNonCon  = 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (3, 2, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 3, 6)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 78
+[0,1,0] (2) = 39
+[0,1,1] (3) = 117
+[1,0,0] (4) = 13
+[1,0,1] (5) = 91
+[1,1,0] (6) = 52
+[1,1,1] (7) = 130
+[2,0,0] (8) = 26
+[2,0,1] (9) = 104
+[2,1,0] (10) = 65
+[2,1,1] (11) = 143
+
+-- 3-D Non-Contiguous Stride 1 ---------
+epetraVector3DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      17
+         0             2                      34
+         0             3                     102
+         0             4                     119
+         0             5                     136
+         0             6                      51
+         0             7                      68
+         0             8                      85
+         0             9                     153
+         0            10                     170
+         0            11                     187
+numPyArray3DNonCon Stride 1= 
+Total length               = 12
+Number of dimensions       = 3
+Length in each dimension   = (2, 2, 3)
+Is contiguous              = False
+Strides for each dimension = (3, 6, 1)
+[0,0,0] (0) = 0
+[0,0,1] (1) = 17
+[0,0,2] (2) = 34
+[0,1,0] (3) = 102
+[0,1,1] (4) = 119
+[0,1,2] (5) = 136
+[1,0,0] (6) = 51
+[1,0,1] (7) = 68
+[1,0,2] (8) = 85
+[1,1,0] (9) = 153
+[1,1,1] (10) = 170
+[1,1,2] (11) = 187
+
+-- 4-D Contiguous ----------------------
+epetraVector4DCon   = 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      19
+         0             2                      38
+         0             3                      57
+         0             4                      76
+         0             5                      95
+         0             6                     114
+         0             7                     133
+         0             8                     152
+         0             9                     171
+         0            10                     190
+         0            11                     209
+         0            12                     228
+         0            13                     247
+         0            14                     266
+         0            15                     285
+         0            16                     304
+         0            17                     323
+         0            18                     342
+         0            19                     361
+         0            20                     380
+         0            21                     399
+         0            22                     418
+         0            23                     437
+numPyArray4DCon     = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (2, 2, 2, 3)
+Is contiguous              = True
+Strides for each dimension = (12, 6, 3, 1)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 19
+[0,0,0,2] (2) = 38
+[0,0,1,0] (3) = 57
+[0,0,1,1] (4) = 76
+[0,0,1,2] (5) = 95
+[0,1,0,0] (6) = 114
+[0,1,0,1] (7) = 133
+[0,1,0,2] (8) = 152
+[0,1,1,0] (9) = 171
+[0,1,1,1] (10) = 190
+[0,1,1,2] (11) = 209
+[1,0,0,0] (12) = 228
+[1,0,0,1] (13) = 247
+[1,0,0,2] (14) = 266
+[1,0,1,0] (15) = 285
+[1,0,1,1] (16) = 304
+[1,0,1,2] (17) = 323
+[1,1,0,0] (18) = 342
+[1,1,0,1] (19) = 361
+[1,1,0,2] (20) = 380
+[1,1,1,0] (21) = 399
+[1,1,1,1] (22) = 418
+[1,1,1,2] (23) = 437
+
+-- 4-D Non-Contiguous ------------------
+epetraVector4DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                     276
+         0             2                      69
+         0             3                     345
+         0             4                     138
+         0             5                     414
+         0             6                     207
+         0             7                     483
+         0             8                      23
+         0             9                     299
+         0            10                      92
+         0            11                     368
+         0            12                     161
+         0            13                     437
+         0            14                     230
+         0            15                     506
+         0            16                      46
+         0            17                     322
+         0            18                     115
+         0            19                     391
+         0            20                     184
+         0            21                     460
+         0            22                     253
+         0            23                     529
+numPyArray4DNonCon  = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (3, 2, 2, 2)
+Is contiguous              = False
+Strides for each dimension = (1, 6, 3, 12)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 276
+[0,0,1,0] (2) = 69
+[0,0,1,1] (3) = 345
+[0,1,0,0] (4) = 138
+[0,1,0,1] (5) = 414
+[0,1,1,0] (6) = 207
+[0,1,1,1] (7) = 483
+[1,0,0,0] (8) = 23
+[1,0,0,1] (9) = 299
+[1,0,1,0] (10) = 92
+[1,0,1,1] (11) = 368
+[1,1,0,0] (12) = 161
+[1,1,0,1] (13) = 437
+[1,1,1,0] (14) = 230
+[1,1,1,1] (15) = 506
+[2,0,0,0] (16) = 46
+[2,0,0,1] (17) = 322
+[2,0,1,0] (18) = 115
+[2,0,1,1] (19) = 391
+[2,1,0,0] (20) = 184
+[2,1,0,1] (21) = 460
+[2,1,1,0] (22) = 253
+[2,1,1,1] (23) = 529
+
+-- 4-D Non-Contiguous Stride 1 ---------
+epetraVector4DNonCon= 
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      27
+         0             2                      54
+         0             3                      81
+         0             4                     108
+         0             5                     135
+         0             6                     324
+         0             7                     351
+         0             8                     378
+         0             9                     405
+         0            10                     432
+         0            11                     459
+         0            12                     162
+         0            13                     189
+         0            14                     216
+         0            15                     243
+         0            16                     270
+         0            17                     297
+         0            18                     486
+         0            19                     513
+         0            20                     540
+         0            21                     567
+         0            22                     594
+         0            23                     621
+numPyArray4DNonCon Stride 1 = 
+Total length               = 24
+Number of dimensions       = 4
+Length in each dimension   = (2, 2, 2, 3)
+Is contiguous              = False
+Strides for each dimension = (6, 12, 3, 1)
+[0,0,0,0] (0) = 0
+[0,0,0,1] (1) = 27
+[0,0,0,2] (2) = 54
+[0,0,1,0] (3) = 81
+[0,0,1,1] (4) = 108
+[0,0,1,2] (5) = 135
+[0,1,0,0] (6) = 324
+[0,1,0,1] (7) = 351
+[0,1,0,2] (8) = 378
+[0,1,1,0] (9) = 405
+[0,1,1,1] (10) = 432
+[0,1,1,2] (11) = 459
+[1,0,0,0] (12) = 162
+[1,0,0,1] (13) = 189
+[1,0,0,2] (14) = 216
+[1,0,1,0] (15) = 243
+[1,0,1,1] (16) = 270
+[1,0,1,2] (17) = 297
+[1,1,0,0] (18) = 486
+[1,1,0,1] (19) = 513
+[1,1,0,2] (20) = 540
+[1,1,1,0] (21) = 567
+[1,1,1,1] (22) = 594
+[1,1,1,2] (23) = 621

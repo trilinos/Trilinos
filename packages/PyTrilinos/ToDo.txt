@@ -1,0 +1,20 @@
+[Done] Convert to use distutils
+    [Done] Check local installation
+    [Done] Update CVS repository
+
+****** Get working on Linux
+
+[Done] Remove byteCompile script and usage
+
+[Done] Move pyLocate.py to pyLocate
+
+****** Clean up interface between Numeric arrays, double *'s and Epetra
+       objects.
+
+****** Have PyInterface automatically set the associated attribute in the
+       Problem class, or come up with a cleaner solution.
+
+****** Treat int arrays the same way as double arrays.  That is, convert
+       int NumPy arrays to int * the same way double NumPy arrays are
+       converted to double *.
+    ------ Clean up %typemap(in) (int * Indices)

@@ -1,0 +1,611 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+"""
+AUTODEP - Automatically determine the nested includes of a source file and
+output a dependency statement suitable for inclusion in a Makefile.  System
+includes, specified within angle brackets (<>), are not processed.
+
+usage: autodep [options] inputFile [outputFile]
+
+options: -h | --help           Print this message
+         -a | --all            Output all include files, including system
+                               headers (default off)
+         -d | --debug          Print debugging information (experts only)
+         -D name[=definition]  Define a macro
+         -I include_directory  Append an include directory to the search list
+         -n | --nopath         Do not include the path to the header file
+                               when forming the dependency list
+         -P prefix             Prefix to be added to target file name
+         -S suffix             Suffix to be added to target file name
+                               (default = .o)
+         -U name               Undefine a macro
+         -v | --version        Print the version number
+
+If no outputFile is specified, output is to standard output.  For the case
+where outputFile is specified, the file name is included as part of the target,
+thus insuring that the dependency file will also be recreated if any of its
+dependencies are modified.
+"""
+
+__copyright__ = """
+----------------------------------------------------------------------
+(c) Copyright by Sandia National Laboratories, 2003
+"""
+
+__version__ = "1.0"
+__author__  = "Bill Spotz"
+__date__    = "Apr 24 2003"
+__url__     = ""
+
+import commands
+import getopt
+import os
+import os.path
+import stat
+import sys
+
+##############################################################
+
+def main():
+
+    # Get the program directory and name
+    (progDir,progName) = os.path.split(sys.argv[0])
+
+    # Initialization
+    options      = "adD:hI:nP:S:U:v"
+    long_options = ["all", "debug", "help", "nopath", "version"]
+    definitions  = {"__LINE__"         : "1", \
+                    "__FILE__"         : "1", \
+                    "__DATE__"         : "1", \
+                    "__TIME__"         : "1", \
+                    "__STDC__"         : "1", \
+                    "__STDC_VERSION__" : "1"}
+    undefines    = []
+    inc_dirs     = [os.curdir]
+    nopath       = False
+    includes     = []
+    allHeaders   = False
+    debug        = False
+    prefix       = ""
+    suffix       = ".o"
+
+    # Get the options and arguments from the command line
+    (opts,args)  = getopt.getopt(sys.argv[1:], options, long_options)
+
+    # Loop over the options and implement
+    for flag in opts:
+        ## Help ##
+        if (flag[0] == "-h" or flag[0] == "--help"):
+            print progName, __version__, __date__
+            print __doc__
+            sys.exit()
+        ## Output all headers ##
+        elif (flag[0] == "-a" or flag[0] == "--all"):
+            allHeaders = True
+        ## Debug ##
+        elif (flag[0] == "-d" or flag[0] == "--debug"):
+            debug = True
+        ## Definitions ##
+        elif (flag[0] == "-D"):
+            dList = flag[1].split("=",1)
+            key   = dList[0]
+            if (len(dList) > 1):
+                value = dList[1]
+            else:
+                value = "1"
+            definitions[key] = value
+        ## Include Directories ##
+        elif (flag[0] == "-I"):
+            inc_dirs.append(flag[1])
+        ## No Path ##
+        elif (flag[0] == "-n" or flag[0] == "--nopath"):
+            nopath = True
+        ## Prefix ##
+        elif (flag[0] == "-P"):
+            prefix = flag[1]
+        ## Suffix ##
+        elif (flag[0] == "-S"):
+            suffix = flag[1]
+        ## Undefines ##
+        elif (flag[0] == "-U"):
+            undefines.append(flag[1])
+        ## Version ##
+        elif (flag[0] == "-v" or flag[0] == "--version"):
+            print progName, __version__, __date__
+            sys.exit()
+
+    # Undefine the specified macros
+    for key in undefines:
+        if (definitions.has_key(key)):
+            del definitions[key]
+
+    # Update the include directories for SWIG files
+    if (definitions.has_key("SWIG")):
+        inc_dirs.extend(getSwigPath())
+
+    # Get the number of arguments
+    argc = len(args)
+    if (argc < 1 or argc > 2):
+        print __doc__
+        sys.exit(1)
+
+    # Get the input file name
+    inFileName = args[0]
+
+    # Print the startup infomation
+    if (debug):
+        print "DEFINITIONS:"
+        for key in definitions.keys():
+            print "   ", key, "=", definitions[key]
+        print "INCLUDES:"
+        for dir in inc_dirs:
+            print "   ", dir
+        print "PREFIX =", prefix
+        print "SUFFIX =", suffix
+
+    # Process the input file.  This routine will update definitions as #define
+    # and #undef statements are encountered, and append includes as #include
+    # statements are encountered.  Include files are processed recursively.
+    try:
+        processFile(inFileName, inc_dirs, definitions, includes, debug)
+    except RuntimeError, errString:
+        print errString
+        sys.exit(1)
+
+    # Remove duplicates from the list of include files
+    includes.sort()
+    i = 0
+    while (i < len(includes)-1):
+        if (includes[i] == includes[i+1]):
+            del includes[i]
+        else:
+            i += 1
+
+    # Set up the output
+    if (argc == 1):
+        outFile = sys.stdout
+    else:
+        outFileName = args[1]
+        outFile     = open(outFileName,'w')
+
+    # Generate the target string
+    (inFileDir, inFileBase) = os.path.split   (inFileName)
+    (inFileBase,inFileExt ) = os.path.splitext(inFileBase)
+    targetName = ""
+    if (argc == 2):
+        targetName += outFileName + " "
+    targetName += os.path.join(prefix, inFileBase + suffix)
+    indent = len(targetName) + 2
+
+    # Generate the indentation string
+    indentString = ""
+    for i in range(indent):
+        indentString += " "
+
+    # Generate the output string
+    outputString = targetName + ": " + inFileName
+    for file in includes:
+        if (allHeaders or
+            (file[0:4] != "/lib" and 
+             file[0:3] != "/sw"  and
+             file[0:4] != "/usr"    )):  # Ignore most sysytem files
+            outputString += " \\" + "\n" + indentString
+            if (nopath):
+                outputString += os.path.basename(file)
+            else:
+                outputString += file
+    outputString += "\n"
+
+    outFile.write(outputString)
+
+    # Close the output file
+    outFile.close()
+
+#######################################################################
+
+def processFile(inFileName, inc_dirs, definitions, includes, debug=False):
+    """Process the input file specified by the string inFileName.  As #define
+    and #undef statements are encountered, update the definitions dictionary.
+    As #include statements are encountered, update the includes list and call
+    this routine recursively.  If "SWIG" is a key in the definitions dictionary,
+    update the includes list when %import or %include directives are
+    encountered.  All #if blocks are processed as expected."""
+
+    # Print the input file name
+    if (debug): print "Processing", inFileName
+
+    # Verify the input file
+    if (os.access(inFileName, os.F_OK)):
+        if (not os.access(inFileName, os.R_OK)):
+            raise RuntimeError, inFileName + ": permission denied"
+    else:
+        raise RuntimeError, inFileName + ": not found"
+
+    # Open the input file
+    inFile = open(inFileName)
+
+    # Store all of the lines of input
+    lines = inFile.readlines();
+
+    ### Main Loop ###
+    for i in range(len(lines)):
+        (cmd,arg) = getPreprocessorCommand(lines[i], definitions)
+        if (cmd is not None):
+            ## Define ##
+            if (cmd == "#define"):
+                if (arg == ""):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": #define with no argument"
+                argList = arg.split(" ",1)
+                key = argList[0]
+                if (len(argList) > 1):
+                    value = argList[1]
+                else:
+                    value = "1"
+                definitions[key] = value
+                lines[i] = "\n"  # Do not increment i!
+            ## Undef ##
+            elif (cmd == "#undef"):
+                if (arg == ""):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": #undef with no argument"
+                if (definitions.has_key(arg)):
+                    del definitions[key]
+                lines[i] = "\n"  # Do not increment i!
+            ## Include ##
+            elif (cmd == "#include"):
+                argList = arg.split(" ",1)
+                header  = argList[0]
+                # System header file
+                if (header[0] == "<"):
+                    lines[i] = "\n"  # Do not increment i!
+                # User header file
+                elif (header.count('"') > 1):
+                    header = header[1:]
+                    header = header.split('"',1)[0]
+                    found  = False
+                    for dir in inc_dirs:
+                        if (dir == os.curdir):
+                            fullPath = header
+                        else:
+                            fullPath = os.path.join(dir,header)
+                        if (os.access(fullPath, os.R_OK)):
+                            includes.append(fullPath)
+                            found = True
+                            ## Call self recursively on include file ##
+                            try:
+                                processFile(fullPath,    \
+                                            inc_dirs,    \
+                                            definitions, \
+                                            includes,    \
+                                            debug         )
+                            except RuntimeError, errString:
+                                if (str(errString).endswith("not found")):
+                                    pass  # If we can't find the include file,
+                                          # it doesn't mean the compiler can't.
+                                          # We just won't be able to process it.
+                                else:
+                                    raise RuntimeError, "In file included from " + \
+                                          inFileName + ":" + str(i+1) + ":\n"    + \
+                                          str(errString)
+                            break
+                    if (not found):
+                        pass    # If we can't find the include file,
+                                # it doesn't mean the compiler can't.
+                                # We just won't be able to process it.
+                    lines[i] = "\n"  # Do not increment i!
+                # Syntax error
+                else:
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": #include syntax error"
+            ## If ##
+            elif (cmd == "#if"):
+                argList = arg.split(" ")
+                if (argList[0][0:7] == "defined"):
+                    if (argList[0][7:8] == "("):
+                        if (argList[0].endswith(")")):
+                            end = len(argList[0]) - 2
+                            key = argList[0][8:end]
+                        else:
+                            raise RuntimeError, inFileName + ":" + str(i+1) + \
+                                  ": missing parenthesis"
+                    else:
+                        key = argList[1]
+                    (end,blockEnd) = findEnd(lines,i)
+                    if (end is None or blockEnd is None):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": open #if defined block"
+                    if (definitions.has_key(key)):
+                        for j in range(end,blockEnd+1): lines[j] = "\n"
+                        lines[i] = "\n"      # Do not increment i!
+                    else:
+                        for j in range(i,end): lines[j] = "\n"
+                else:
+                    if (argList[0] == ""):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": #if with no argument"
+                    key = argList[0]
+                    (end,blockEnd) = findEnd(lines,i)
+                    if (end is None or blockEnd is None):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": open #if block"
+                    if (definitions.has_key(key) and \
+                        definitions[key] != "0"):
+                        for j in range(end,blockEnd+1): lines[j] = "\n"
+                        lines[i] = "\n"      # Do not increment i!
+                    else:
+                        for j in range(i,end): lines[j] = "\n"
+            ## Ifdef ##
+            elif (cmd == "#ifdef"):
+                if (arg == ""):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": #ifdef with no argument"
+                argList = arg.split(" ")
+                key = argList[0]
+                (end,blockEnd) = findEnd(lines,i)
+                if (end is None or blockEnd is None):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": open #ifdef block"
+                if (definitions.has_key(key)):
+                    for j in range(end,blockEnd+1): lines[j] = "\n"
+                    lines[i] = "\n"      # Do not increment i!
+                else:
+                    for j in range(i,end): lines[j] = "\n"
+            ## Ifndef ##
+            elif (cmd == "#ifndef"):
+                if (arg == ""):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": #ifndef with no argument"
+                argList = arg.split(" ")
+                key = argList[0]
+                (end,blockEnd) = findEnd(lines,i)
+                if (end is None or blockEnd is None):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": open #ifndef block"
+                if (definitions.has_key(key)):
+                    for j in range(i,end): lines[j] = "\n"
+                else:
+                    for j in range(end,blockEnd+1): lines[j] = "\n"
+                    lines[i] = "\n"      # Do not increment i!
+            ## Else ##
+            elif (cmd == "#else"):
+                (end,blockEnd) = findEnd(lines,i)
+                if (end is None or blockEnd is None):
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": open #ifndef block"
+                assert(end == blockEnd)
+                lines[end] = "\n"
+                lines[i]   = "\n"  # Do not increment i!
+            ## Elif ##
+            elif (cmd == "#elif"):
+                argList = arg.split(" ")
+                if (argList[0][0:7] == "defined"):
+                    if (argList[0][7:8] == "("):
+                        if (argList[0].endswith(")")):
+                            end = len(argList[0]) - 2
+                            key = argList[0][8:end]
+                        else:
+                            raise RuntimeError, inFileName + ":" + str(i+1) + \
+                                  ": missing parenthesis"
+                    else:
+                        key = argList[1]
+                    (end,blockEnd) = findEnd(lines,i)
+                    if (end is None or blockEnd is None):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": open #elif defined block"
+                    if (definitions.has_key(key)):
+                        for j in range(end,blockEnd+1): lines[j] = "\n"
+                        lines[i] = "\n"      # Do not increment i!
+                    else:
+                        for j in range(i,end): lines[j] = "\n"
+                else:
+                    if (argList[0] == ""):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                                  ": #elif with no argument"
+                    key = argList[0]
+                    (end,blockEnd) = findEnd(lines,i)
+                    if (end is None or blockEnd is None):
+                        raise RuntimeError, inFileName + ":" + str(i+1) + \
+                              ": open #elif block"
+                    if (definitions.has_key(key) and \
+                        definitions[key] != "0"):
+                        for j in range(end,blockEnd+1): lines[j] = "\n"
+                        lines[i] = "\n"      # Do not increment i!
+                    else:
+                        for j in range(i,end): lines[j] = "\n"
+            ## SWIG %import and %include ##
+            elif (cmd == "%import" or cmd == "%include"):
+                argList = arg.split(" ",1)
+                header  = argList[0]
+                # System header file
+                if (header[0] == "<"):
+                    lines[i] = "\n"  # Do not increment i!
+                # User header file
+                elif (header.count('"') > 1):
+                    header = header[1:]
+                    header = header.split('"', 1)[0]
+                    found  = False
+                    for dir in inc_dirs:
+                        if (dir == os.curdir):
+                            fullPath = header
+                        else:
+                            fullPath = os.path.join(dir,header)
+                        if (os.access(fullPath, os.R_OK)):
+                            includes.append(fullPath)
+                            found = True
+                            break
+                    if (not found):
+                        pass    # If we can't find the include file,
+                                # it doesn't mean the compiler can't.
+                                # We just won't be able to process it.
+                    lines[i] = "\n"  # Do not increment i!
+                # Syntax error
+                else:
+                    raise RuntimeError, inFileName + ":" + str(i+1) + \
+                          ": " + cmd + " syntax error"
+            ## Other commands: move to the next line ##
+            else:
+                i += 1
+        ## Cmd is None: regular code line, move to next
+        else:
+            i += 1
+
+    inFile.close()
+
+##############################################################
+
+def getPreprocessorCommand(line, definitions):
+    """Given a line of source code, check if it is a preprocessor #-command.
+    If so, return the #-command as the first entry in the return tuple.  The
+    second entry in the tuple contains the rest of the source line.  If "SWIG"
+    is a key in the definitions dictionary, do the same for swig %-directives.
+    If the line is not a prepocessor command nor a swig directive, return the
+    tuple (None,None)."""
+
+    # Initialize
+    (cmd,arg) = (None,None)
+
+    # Check for C preprocessor commands
+    if (line[0:1] == "#"):
+        commandList = ["#define",  \
+                       "#undef",   \
+                       "#include", \
+                       "#ifdef",   \
+                       "#ifndef",  \
+                       "#if",      \
+                       "#else",    \
+                       "#endif",   \
+                       "#line",    \
+                       "#elif",    \
+                       "#pragma",  \
+                       "#error"     ]
+        strippedLine = "#" + line[1:].strip()
+        for command in commandList:
+            lenCommand = len(command)
+            if (strippedLine[0:lenCommand] == command):
+                cmd = command
+                arg = strippedLine[lenCommand:].strip()
+                break
+
+    # Check for SWIG directives
+    elif (definitions.has_key("SWIG")):
+          strippedLine = line.strip()
+          if (strippedLine[0:1] == "%"):
+              commandList = ["%addmethods",    \
+                             "%alpha",         \
+                             "%apply",         \
+                             "%disabledoc",    \
+                             "%enabledoc",     \
+                             "%except",        \
+                             "%extend",        \
+                             "%extern",        \
+                             "%ignore",        \
+                             "%import",        \
+                             "%include",       \
+                             "%init",          \
+                             "%inline",        \
+                             "%localstyle",    \
+                             "%module",        \
+                             "%name",          \
+                             "%native",        \
+                             "%raw",           \
+                             "%readonly",      \
+                             "%readwrite",     \
+                             "%rename",        \
+                             "%section",       \
+                             "%style",         \
+                             "%subsection",    \
+                             "%subsubsection", \
+                             "%text",          \
+                             "%title",         \
+                             "%typedef",       \
+                             "%typemap",       \
+                             "%val",           \
+                             "%wrapper",       \
+                             "%{",             \
+                             "%}"               ]
+              for command in commandList:
+                  lenCommand = len(command)
+                  if (strippedLine[0:lenCommand] == command):
+                      cmd = command
+                      arg = strippedLine[lenCommand:].strip()
+                      break
+          
+    return (cmd,arg)
+
+##############################################################
+
+def findEnd(lines,start):
+    """Given a list of source lines and a starting index, check that the start
+    line is the beginning of a #if, #elif or #else block and then return a tuple
+    indicating the ending index of the immediate block and the ending index of
+    the entire block.  If there are errors, then the tuple (None,None) is
+    returned."""
+
+    # Routine initialization
+    dummyDefs = { }
+    (end,blockEnd) = (None,None)
+
+    # Get the preprocessor command for the start line
+    (cmd,arg) = getPreprocessorCommand(lines[start], dummyDefs)
+    if (cmd is None):
+        return (end,blockEnd)
+
+    # Check the first line for "#if", "#elif" or "#else"
+    if (cmd[0:3] == "#if" or \
+        cmd      == "#elif"):
+        blockType = "#if"
+    elif (cmd == "#else"):
+        blockType = "#else"
+    else:
+        # No starting "#if", "#elif" or "#else": return Nones
+        return (end,blockEnd)
+
+    # Loop initialization
+    nestedIfBlocks = 0
+    i = start + 1
+
+    ### Main Loop ###
+    while (blockEnd is None):
+        # Check for end of lines
+        if (i >= len(lines)):
+            break
+        # Extract the preprocessor command from the line, if it exists
+        (cmd,arg) = getPreprocessorCommand(lines[i], dummyDefs)
+        if (cmd is not None):
+            if (cmd[0:3] == "#if"):
+                nestedIfBlocks += 1
+            elif (nestedIfBlocks == 0):
+                if (cmd[0:6] == "#endif"):
+                    if (end is None): end = i
+                    blockEnd = i
+                elif ((cmd      == "#elif"  or  \
+                       cmd      == "#else") and \
+                      blockType == "#if"         ):
+                    if (end is None): end = i
+            else:
+                if (cmd[0:6] == "#endif"):
+                    nestedIfBlocks -= 1
+        # Go to the next line
+        i += 1
+
+    return (end,blockEnd)
+
+##############################################################
+
+def getSwigPath():
+    """Return a list of path names used by swig to search for include files"""
+    swigPath     = [ commands.getoutput("swig -swiglib") ]
+    swigContents = os.listdir(swigPath[0])
+    for file in swigContents:
+        path = os.path.join(swigPath[0], file)
+        if (stat.S_ISDIR(os.stat(path)[stat.ST_MODE])):  # True if path is a dir
+            swigPath.append(path)
+    return swigPath
+
+##############################################################
+
+# Call main if invoked from command line
+if (__name__ == "__main__"):
+    main()
