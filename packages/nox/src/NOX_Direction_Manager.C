@@ -57,7 +57,7 @@ Manager::~Manager()
 
 bool Manager::reset(Parameter::List& params)
 {
-   string newmethod = params.getParameter("Method", "None");
+   string newmethod = params.getParameter("Method", "Newton");
 
   if (method != newmethod) {
     
