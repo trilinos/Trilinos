@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
 // Simple Power method algorithm
 double power_method(const Epetra_CrsMatrix& A) {  
   // variable needed for iteration
@@ -22,7 +25,8 @@ double power_method(const Epetra_CrsMatrix& A) {
     A.Multiply(false, q, z); // Compute z = A*q
     q.Dot(z, &lambda); // Approximate maximum eigenvalue
     if (iter%10==0 || iter+1==niters) {
-      resid.Update(1.0, z, -lambda, q, 0.0); // Compute A*q - lambda*q
+      // Compute A*q - lambda*q every 10 iterations
+      resid.Update(1.0, z, -lambda, q, 0.0);
       resid.Norm2(&residual);
       cout << "Iter = " << iter << "  Lambda = " << lambda 
 	   << "  Two-norm of A*q - lambda*q = " 
