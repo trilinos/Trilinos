@@ -705,7 +705,7 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_compute_destinations"
-function LB_fw_Compute_Destinations(lb,nbytes,num_gid_entries,num_lid_entries, &
+function LB_fw_Compute_Destinations(lb,nbytes, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
@@ -715,7 +715,6 @@ implicit none
 integer(LB_INT) :: LB_fw_Compute_Destinations
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import
 integer(LB_INT), intent(out) :: num_export
 integer(LB_INT), dimension(*) INTENT_IN import_global_ids
@@ -729,7 +728,7 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_help_migrate"
-function LB_fw_Help_Migrate(lb,nbytes,num_gid_entries,num_lid_entries, &
+function LB_fw_Help_Migrate(lb,nbytes, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
@@ -739,7 +738,6 @@ implicit none
 integer(LB_INT) :: LB_fw_Help_Migrate
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import, num_export
 integer(LB_INT), dimension(*) INTENT_IN import_global_ids, export_global_ids
 integer(LB_INT), dimension(*) INTENT_IN import_local_ids, export_local_ids
@@ -1351,7 +1349,7 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 f90LB_Balance = LB_fw_Balance(lb_addr,nbytes,int_changes, &
-                             num_gid_entries,num_lid_entries, &
+                             num_gid_entries, num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
@@ -1494,13 +1492,12 @@ f90LB_Box_Assign = LB_fw_Box_Assign(lb_addr,nbytes,xmin,ymin,zmin,xmax,ymax, &
                                     zmax,procs,numprocs)
 end function f90LB_Box_Assign
 
-function f90LB_Compute_Destinations(lb,num_gid_entries,num_lid_entries, &
+function f90LB_Compute_Destinations(lb, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Compute_Destinations
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import
 integer(LB_INT), intent(out) :: num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
@@ -1519,20 +1516,18 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 f90LB_Compute_Destinations = LB_fw_Compute_Destinations(lb_addr,nbytes, &
-                             num_gid_entries,num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
 end function f90LB_Compute_Destinations
 
 
-function f90LB_Help_Migrate(lb,num_gid_entries,num_lid_entries, &
+function f90LB_Help_Migrate(lb, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Help_Migrate
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
@@ -1598,7 +1593,6 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 f90LB_Help_Migrate = LB_fw_Help_Migrate(lb_addr,nbytes, &
-                             num_gid_entries,num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)

@@ -357,9 +357,13 @@ int LB_Next_Border_Obj_Fort_Wrapper(void *data,
                                                   next_obj_wgt, ierr);
 }
 
-int LB_Obj_Size_Fort_Wrapper(void *data, int *ierr)
+int LB_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
+            int num_lid_entries, LB_ID_PTR global_id, 
+            LB_ID_PTR local_id, int *ierr)
 {
-   return LB_Current_lb->Migrate.Get_Obj_Size_Fort(data,ierr);
+   return LB_Current_lb->Migrate.Get_Obj_Size_Fort(data,
+             num_gid_entries, num_lid_entries,
+             global_id, local_id, ierr);
 }
 
 void LB_Pre_Migrate_Fort_Wrapper(void *data, 
@@ -914,7 +918,7 @@ int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes,
 
 /* call LB_Balance */
 
-   return LB_Balance(lb, changes, num_gid_entries, num_lid_entries,
+   return LB_Balance(lb, changes, num_gid_entries, num_lid_entries, 
                      num_import, temp_imp_gid, temp_imp_lid,
                      temp_imp_proc, num_export, temp_exp_gid, temp_exp_lid,
                      temp_exp_proc);
@@ -1027,7 +1031,7 @@ int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes,
 
 /* call LB_Compute_Destinations */
 
-   return LB_Compute_Destinations(lb, *num_gid_entries, *num_lid_entries,
+   return LB_Compute_Destinations(lb, 
                      *num_import, import_global_ids,
                      import_local_ids, import_procs, 
                      num_export, temp_exp_gid, temp_exp_lid,
@@ -1036,7 +1040,7 @@ int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes,
 
 
 int LB_fw_Help_Migrate(int *addr_lb, int *nbytes, 
-                    int *num_gid_entries, int *num_lid_entries, int *num_import,
+                    int *num_import,
                     LB_ID_PTR import_global_ids, LB_ID_PTR import_local_ids,
                     int *import_procs, int *num_export,
                     LB_ID_PTR export_global_ids, LB_ID_PTR export_local_ids,
@@ -1048,7 +1052,7 @@ int LB_fw_Help_Migrate(int *addr_lb, int *nbytes,
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
-   return LB_Help_Migrate(lb,*num_gid_entries,*num_lid_entries,
+   return LB_Help_Migrate(lb,
                           *num_import,import_global_ids,import_local_ids,
                           import_procs,*num_export,export_global_ids,
                           export_local_ids,export_procs);
