@@ -864,16 +864,16 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
    }
    if (pre_or_post == ML_PRESMOOTHER) {
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, data,
-			     func, NULL, 1,(double) ML_DEFAULT, tptr));
+			     func, 1,(double) ML_DEFAULT, tptr));
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, data,
-			     func, NULL, 1, (double) ML_DEFAULT, tptr));
+			     func, 1, (double) ML_DEFAULT, tptr));
    else if (pre_or_post == ML_BOTH)  {
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, data,
-                      func, NULL, 1,(double) ML_DEFAULT, tptr);
+                      func, 1,(double) ML_DEFAULT, tptr);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, data,
-                             func, NULL, 1, (double) ML_DEFAULT, tptr));
+                             func, 1, (double) ML_DEFAULT, tptr));
    }
    else return(pr_error("ML_Set_Smoother: unknown pre_or_post choice\n"));
 }
@@ -903,23 +903,23 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
       for (i = start_level; i <= end_level; i++) {
        sprintf(str,"Jac_pre%d",i);
        status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                             fun, NULL, ntimes, omega, str);
+                             fun, ntimes, omega, str);
       }
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
       for (i = start_level; i <= end_level; i++) {
        sprintf(str,"Jac_post%d",i);
        status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                             fun, NULL, ntimes,omega, str);
+                             fun, ntimes,omega, str);
       }
    else if (pre_or_post == ML_BOTH) {
       for (i = start_level; i <= end_level; i++) {
         sprintf(str,"Jac_pre%d",i);
         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                             fun, NULL, ntimes, omega, str);
+                             fun, ntimes, omega, str);
         sprintf(str,"Jac_post%d",i);
         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                             fun, NULL, ntimes,omega, str);
+                             fun, ntimes,omega, str);
       }
    }
    else return(pr_error("ML_Gen_Smoother_Jacobi: unknown pre_or_post choice\n"));
@@ -951,24 +951,24 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
       for (i = start_level; i <= end_level; i++) {
              sprintf(str,"GS_pre%d",i);
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                      fun, NULL, ntimes, omega, str);
+                                      fun, ntimes, omega, str);
       }
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
              sprintf(str,"GS_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,NULL,
-                             fun, NULL, ntimes, omega, str);
+                             fun, ntimes, omega, str);
       }
    }
    else if (pre_or_post == ML_BOTH) {
       for (i = start_level; i <= end_level; i++) {
              sprintf(str,"GS_pre%d",i);
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                      fun, NULL, ntimes, omega, str);
+                                      fun, ntimes, omega, str);
              sprintf(str,"GS_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,NULL,
-                             fun, NULL, ntimes, omega, str);
+                             fun, ntimes, omega, str);
       }
    }
    else return(pr_error("ML_Gen_Gauss-Seidel: unknown pre_or_post choice\n"));
@@ -1048,22 +1048,22 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       if (pre_or_post == ML_PRESMOOTHER) {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-                                  sgs_nums, fun, NULL, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, omega, str);
 	 ml->pre_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_POSTSMOOTHER) {
          sprintf(str,"SGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-                                  sgs_nums, fun, NULL, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, omega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_BOTH) {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-                                  sgs_nums, fun, NULL, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, omega, str);
          sprintf(str,"SGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-                                  sgs_nums, fun, NULL, ntimes, omega, str);
+                                  sgs_nums, fun, ntimes, omega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
       else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1102,22 +1102,22 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
       {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega, str);
+                                  fun, ntimes, omega, str);
       }
       else if (pre_or_post == ML_POSTSMOOTHER)
       {
          sprintf(str,"SGS_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega, str);
+                                  fun, ntimes, omega, str);
       }
       else if (pre_or_post == ML_BOTH)
       {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega, str);
+                                  fun, ntimes, omega, str);
          sprintf(str,"SGS_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega, str);
+                                  fun, ntimes, omega, str);
       }
       else return(pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n"));
    }
@@ -1192,13 +1192,13 @@ sgs_nums[3] = (double *) extra;
    if (pre_or_post == ML_PRESMOOTHER)
       for (i = start_level; i <= end_level; i++) {
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, sgs_nums,
-				  fun, NULL, ntimes, omega, NULL);
+				  fun, ntimes, omega, NULL);
 	 ml->pre_smoother[i].data_destroy = fun2;
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
       for (i = start_level; i <= end_level; i++) {
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, sgs_nums,
-                             fun, NULL, ntimes, omega, NULL);
+                             fun, ntimes, omega, NULL);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1236,7 +1236,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
          ML_Smoother_Gen_Ordering(&(ml->Amat[i]), &ordering);
          ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_OrderedSGS;
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-                         (void *) ordering, fun, NULL, ntimes, omega, NULL);
+                         (void *) ordering, fun, ntimes, omega, NULL);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
@@ -1250,7 +1250,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
          ML_Smoother_Gen_Ordering(&(ml->Amat[i]), &ordering);
          ml->post_smoother[i].data_destroy = ML_Smoother_Clean_OrderedSGS;
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-                         (void *) ordering, fun, NULL, ntimes, omega, NULL);
+                         (void *) ordering, fun, ntimes, omega, NULL);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
@@ -1293,7 +1293,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-		                 (void *) data, fun, NULL, ntimes, omega, str);
+		                 (void *) data, fun, ntimes, omega, str);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
@@ -1307,7 +1307,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-			      (void *) data, fun, NULL, ntimes, omega, str);
+			      (void *) data, fun, ntimes, omega, str);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
@@ -1320,14 +1320,14 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
          sprintf(str,"BGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-		                 (void *) data, fun, NULL, ntimes, omega, str);
+		                 (void *) data, fun, ntimes, omega, str);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
 #endif
          sprintf(str,"BGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-			      (void *) data, fun, NULL, ntimes, omega, str);
+			      (void *) data, fun, ntimes, omega, str);
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
       }
    }
@@ -1367,22 +1367,22 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
       sprintf(str,"VBJ_pre%d",nl);
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, myomega, str));
+                        (void *) data, fun, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       sprintf(str,"VBJ_post%d",nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega, str));
+                             (void *) data, fun, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       sprintf(str,"VBJ_pre%d",nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, myomega, str);
+                        (void *) data, fun, ntimes, myomega, str);
       sprintf(str,"VBJ_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega, str));
+                             (void *) data, fun, ntimes, myomega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1416,22 +1416,22 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, omega, str));
+                        (void *) data, fun, ntimes, omega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str));
+                             (void *) data, fun, ntimes, omega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, omega, str);
+                        (void *) data, fun, ntimes, omega, str);
       sprintf(str,"VBSGS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str));
+                             (void *) data, fun, ntimes, omega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1465,22 +1465,22 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str));
+                             (void *) data, fun, ntimes, omega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str));
+                             (void *) data, fun, ntimes, omega, str));
    }
    if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str);
+                             (void *) data, fun, ntimes, omega, str);
       sprintf(str,"VBSGSS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, omega, str));
+                             (void *) data, fun, ntimes, omega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1517,22 +1517,22 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega,str));
+                             (void *) data, fun, ntimes, myomega,str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega, str));
+                             (void *) data, fun, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega,str);
+                             (void *) data, fun, ntimes, myomega,str);
       sprintf(str,"VBKJ_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, myomega, str));
+                             (void *) data, fun, ntimes, myomega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1602,22 +1602,22 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, 1, 0.0,str));
+                        (void *) data, fun, 1, 0.0,str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, 1, 0.0,str));
+                             (void *) data, fun, 1, 0.0,str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, 1, 0.0,str);
+                        (void *) data, fun, 1, 0.0,str);
       sprintf(str,"ODDILUT_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, 1, 0.0,str));
+                             (void *) data, fun, 1, 0.0,str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1712,22 +1712,22 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, 0.0, str));
+                        (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                      (void *) data, fun, NULL, ntimes, 0.0, str);
+                      (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBASz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -1821,22 +1821,22 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, 0.0, str));
+                        (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
-                        (void *) data, fun, NULL, ntimes, 0.0, str);
+                        (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBMSz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -2177,7 +2177,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
            sprintf(str,"MLS_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				  (void *) widget, fun, NULL,
+				  (void *) widget, fun, 
 				   ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
@@ -2190,7 +2190,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
 	   sprintf(str,"MLS_post%d",i);
 	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				  (void *) widget, fun, NULL,
+				  (void *) widget, fun, 
 				  ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
@@ -2205,11 +2205,11 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	   sprintf(str,"MLS_pre%d",i);
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-                        (void *) widget, fun, NULL, ntimes,
+                        (void *) widget, fun, ntimes,
 			0.0, str);
 	   sprintf(str,"MLS_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-               (void *) widget, fun, NULL, ntimes, 0.0, str);
+               (void *) widget, fun, ntimes, 0.0, str);
 
 
 	   /* set up the values needed for MLS  */
@@ -2274,21 +2274,21 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
 	 if (pre_or_post == ML_PRESMOOTHER) {
            sprintf(str,"ERF_1STEP_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				  NULL, fun, NULL, ntimes, 0.0, str);
+				  NULL, fun, ntimes, 0.0, str);
 	 }
 	 else if (pre_or_post == ML_POSTSMOOTHER) {
            sprintf(str,"ERF_1STEP_post%d",i);
 	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				  NULL, fun, NULL, ntimes, 0.0, str);
+				  NULL, fun, ntimes, 0.0, str);
 	 }
 	 else if (pre_or_post == ML_BOTH) {
            sprintf(str,"ERF_1STEP_pre%d",i);
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-			   NULL, fun, NULL, ntimes, 0.0, str);
+			   NULL, fun, ntimes, 0.0, str);
            sprintf(str,"ERF_1STEP_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				     NULL, fun, NULL, ntimes, 0.0, str);
+				     NULL, fun, ntimes, 0.0, str);
 	 }
 	 else return(pr_error("Print unknown pre_or_post choice\n"));
 
@@ -2409,10 +2409,10 @@ for (j = 0; j < row_length; j++)
          widget->ps                   = ps;
 
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-			      (void *) widget, fun1, NULL, ntimes, 0.0,NULL);
+			      (void *) widget, fun1, ntimes, 0.0,NULL);
 
 	 status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-			      (void *) widget, fun2, NULL, ntimes, 0.0,NULL);
+			      (void *) widget, fun2, ntimes, 0.0,NULL);
 
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
@@ -5702,7 +5702,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
@@ -5718,7 +5718,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 	  {
              sprintf(str,"Hiptmair_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
@@ -5745,11 +5745,11 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 			                            ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
@@ -5819,7 +5819,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
@@ -5844,7 +5844,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
@@ -5871,11 +5871,11 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 			                            ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, 1.0, str);
+				      (void *) data, fun, ntimes, 1.0, str);
          ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING

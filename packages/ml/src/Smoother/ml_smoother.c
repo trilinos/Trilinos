@@ -101,7 +101,6 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ML_memory_alloc((void**)&(ml_sm->smoother),sizeof(ML_SmootherFunc),"SF2");
    ml_sm->smoother->ML_id = ML_EMPTY; 
    ml_sm->smoother->internal = NULL; 
-   ml_sm->smoother->external = NULL; 
    ml_sm->smoother->data = NULL; 
    ml_sm->data_destroy = NULL;
    ml_sm->build_time = 0.0;
@@ -322,7 +321,6 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
 
 int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
                     int (*internal)(ML_Smoother*,int,double*,int,double *),
-                    int (*external)(void*,int,double*,int,double *), 
                     int ntimes, double omega, char *str)
 {
   smoo->smoother->internal = internal;

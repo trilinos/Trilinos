@@ -1081,10 +1081,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
     
      Pe->getrow->internal = CSR_getrow;
-     Pe->getrow->external = NULL;
      Pe->getrow->ML_id    = ML_INTERNAL;
      Pe->matvec->internal = CSR_matvec;
-     Pe->matvec->external = NULL;
      Pe->matvec->ML_id = ML_INTERNAL;
 
 /*

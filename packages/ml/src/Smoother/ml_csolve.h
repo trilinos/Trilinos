@@ -45,7 +45,6 @@ struct ML_CSolveFunc_Struct
 {
    int ML_id;
    int (*internal)(ML_Solver *, int, double *, int, double *);
-   int (*external)(void *, int, double *, int, double *);
 };
 
 struct ML_CSolve_Struct 

@@ -2216,22 +2216,22 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
-                        (void *) data, fun, NULL, ntimes, 0.0, str));
+                        (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
-                      (void *) data, fun, NULL, ntimes, 0.0, str);
+                      (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBASz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
@@ -2325,22 +2325,22 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
-                        (void *) data, fun, NULL, ntimes, 0.0, str));
+                        (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
-                        (void *) data, fun, NULL, ntimes, 0.0, str);
+                        (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBMSz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
-                             (void *) data, fun, NULL, ntimes, 0.0, str));
+                             (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }

@@ -36,7 +36,6 @@ int ML_CSolve_Create(ML_CSolve **cs)
    ML_memory_alloc((void**) &(ml_cs->func),sizeof(ML_CSolveFunc),"CF1" );
    ml_cs->func->ML_id = ML_EMPTY;
    ml_cs->func->internal = NULL;
-   ml_cs->func->external = NULL;
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
@@ -58,7 +57,6 @@ int ML_CSolve_Init(ML_CSolve *ml_cs)
    ML_memory_alloc((void**) &(ml_cs->func),sizeof(ML_CSolveFunc),"CF2" );
    ml_cs->func->ML_id = ML_EMPTY;
    ml_cs->func->internal = NULL;
-   ml_cs->func->external = NULL;
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
