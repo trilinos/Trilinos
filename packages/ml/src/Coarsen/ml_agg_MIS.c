@@ -652,6 +652,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (k >= aggr_count) aggr_count = k+1;
    }
    fclose(fp);
+   printf("Read in %d aggregates\n\n",aggr_count);
 #endif /*ifdef ML_AGGR_INAGGR*/
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
@@ -865,7 +866,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    {
 #ifndef MAXWELL
 #ifdef ALEGRA
-      if (level_count == 0) { j = i; k = i;}
+      if (level_count == 0) { j = i; k = i+vertex_offset;}
 #else
       if (level_count == 0) { j = update_index[i]; k = update[i];}
 #endif /*ifdef ALEGRA*/
