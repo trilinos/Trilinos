@@ -16,6 +16,9 @@ Singleton columns are defined to be columns that have a single nonzero entry in 
 
 By removing singleton rows and columns, we can often produce a reduced system that is smaller and far less dense, and in general having better numerical properties.
 
+\subsection{Mathematical Description}
+\subsection{Overview of Usage}
+
 The basic procedure for using this class is as follows:
 \begin{EpetraItemize}
 \item Construct full problem: 
@@ -62,3 +65,39 @@ values: It is often the case that the
      case, the UpdateReducedProblem(
 
 \end{EpetraItemize}
+
+\subsection{Description of Parallel Algorithm}
+
+Although removal of singletons is conceptually easy, implementation requires careful
+consideration of a number of scenarios, including distributed memory issues,
+that may not be immediately apparent.  In this section we present the parallel algorithm
+and highlight the subtle design issues.
+
+\begin{enumerate}
+\item Construct integer vector ColProfiles to record the number of nonzero entries in each
+column. Initialize vector to zero.
+\item Construct an integer vector ColHasRowWithSingleton to record a count of how many
+singleton rows have their only nonzero associated with a given column. Initialize vector
+to zero.
+\item Construct an integer vector RowIDs that will be used below to 
+contain the local row index of the row associated with a singleton column.
+\item Construct RowMapColors and ColMapColors objects to record which rows and columns
+will belong to the reduced system.  At the end of the analysis, rows and columns that
+are colored 0 will be part of the reduced system, those with color 1 are eliminated as
+singletons. Initialize all indices to have color 0.
+\item For each row i:
+\begin{enumerate}
+\item For each nonzero entry j in row i:
+\begin{enumerate}
+\item Increment ColProfiles[j] by one.
+\item Set RowIDs[j] = i.
+\end{enumerate}
+\item If row i has a single nonzero entry:
+\begin{enumerate}
+\item Increment ColHasRowWithSingleton[j] by one.
+\item Set RowMapColors[i] = 1 to indicate that row i will be eliminated.
+\item Set ColMapColors[j] = 1 to indicate that column j will be eliminated.
+\item Increment count of singleton rows by one.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
