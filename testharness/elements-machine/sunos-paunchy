@@ -1,6 +1,10 @@
 --with-libs="/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
-/local/homes/jmwille/Trilinos3PL/SuperLU/libsuperlu.a"
+/local/homes/jmwille/Trilinos3PL/SuperLU/libsuperlu.a
+/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
+/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
 --with-incdirs="-I/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB
--I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC"
+-I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC
+-I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
+-I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Include"
 LDFLAGS="-xlic_lib=sunperf"
 CXXFLAGS="-g -pto"
