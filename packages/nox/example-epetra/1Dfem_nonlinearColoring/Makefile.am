@@ -49,7 +49,7 @@ example_SOURCES = \
 	$(srcdir)/nox_EDT_CrsGraph_Transpose.C \
         $(srcdir)/nox_EDT_CrsGraph_Transpose.H \
         $(srcdir)/nox_Epetra_DistTransform.H \
-        nox_Epetra_Transform.H
+        $(srcdir)/nox_Epetra_Transform.H
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
