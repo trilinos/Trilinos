@@ -2032,8 +2032,10 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     temp->rowptr = NULL;
   }
 
-  printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
-	 perm_mat->invec_leng);
+  if (ML_Get_PrintLevel() > 4) {
+    printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
+	       perm_mat->invec_leng);
+  }
 
   permuted_Amat = ML_Operator_Create(comm);
 
