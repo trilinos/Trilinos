@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_rcbutilc_id = "$Id$";
+#endif
+
 
 #include "lb_const.h"
 #include "rcb_const.h"

@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_commc_id = "$Id$";
+#endif
+
 /* irregular communiction functions for C and F77 - Apr 1998
 
    Steve Plimpton, MS 1111, Dept 9221, Sandia National Labs  (505) 845-7873

@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_rcbc_id = "$Id$";
+#endif
+
 /* Recursive coordinate bisectioning (RCB) routine
    operates on "dots" as defined in rcb.h
 */
