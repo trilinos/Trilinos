@@ -50,8 +50,7 @@ void Epetra_datfile(const Epetra_CrsMatrix* A, char fname[])
 void spmat_datfile(int nrow, int rowbegp [], int colidxp [],
 				 double val[], char fname[])
 {
-  int i, j, nnz;
-  nnz = rowbegp[nrow];
+  int i, j;
   ofstream fout;
   sprintf(fname, "%s.dat", fname);
   fout.open(fname);

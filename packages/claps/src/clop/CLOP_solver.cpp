@@ -154,8 +154,7 @@ void CLOP_solver::zero_pointers()
 
 void CLOP_solver::process_constraints()
 {
-  int i, j, nrow, ncol, col, NumEntries, *Indices, ierr;
-  double *Values;
+  int i;
   //
   // set pointers and return if there are no constraint equations
   //
@@ -185,7 +184,7 @@ void CLOP_solver::process_constraints()
   //
   // transform constraints to standard form
   //
-  ierr = transform_constraints();
+  int ierr = transform_constraints();
   //
   // calculate reduced stiffness matrix
   //
@@ -415,7 +414,7 @@ void CLOP_solver::construct_Overlap()
 void CLOP_solver::construct_subdomains()
 {
   if (print_flag > 9) fout << "in construct_subdomains" << endl;
-  int i, j, partition_option(0);
+  int i, partition_option(0);
   ndof_overlap = AOverlap->NumMyRows();
   count1 = new int[ndof_overlap];
   imap = new int[ndof_overlap];
@@ -456,7 +455,7 @@ void CLOP_solver::construct_subdomains()
 int CLOP_solver::initialize_subdomains()
 {
   if (print_flag > 9) fout << "in initialize_subdomains" << endl;
-  int i, j, max_nnz(0), nnz, dof, gdof, ipres, ipres_max, *locdof;
+  int i, max_nnz(0), nnz, ipres, ipres_max, *locdof;
   max_ndof = 0; gmres_flag = 0;
   //
   // determine if pressure degrees of freedom present
@@ -941,9 +940,9 @@ void CLOP_solver::assemble_Phi()
   Phi->Export(Phi_Overlap, *ExporterO2ST, Insert);
   //  Phi->Export(Phi_Overlap, newExporter, Insert);
   Phi->FillComplete(PhiTRowMap, ASt_red->RowMap());
+  /*
   int *Indices, NumEntries;
   double *Values;
-  /*
   for (i=0; i<Phi->NumMyRows(); i++) {
     double dsum = 0;
     Phi->ExtractMyRowView(i, NumEntries, Values, Indices);
@@ -997,7 +996,7 @@ void CLOP_solver::gather_coarse_stiff()
 void CLOP_solver::factor_coarse_stiff()
 {
   if (print_flag > 9) fout << "factoring coarse matrix" << endl;
-  int i, j;
+  int i;
   Kc_gathered->MakeDataContiguous();
   int *rowbeg_KC, *colidx_KC, NumEntries;
   double *KC;
@@ -1125,7 +1124,7 @@ void CLOP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 			    int & num_iter, int & pcg_status)
 {
-  int i, j, iflag(1), pcg_iter, max_iter_new;
+  int i, iflag(1), pcg_iter, max_iter_new;
   double dprod, rorig, beta, roldzold(0), pAp, alpha, rcurr, ractual;
   double norm_rconstraint, norm_conerror;
   orthog_option = 2;
@@ -1292,8 +1291,8 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 void CLOP_solver::gmres_solve(Epetra_Vector* uStand, 
           const Epetra_Vector* fStand, int & num_iter, int & gmres_status)
 {
-  int i, j, iflag(1), gmres_iter;
-  double dprod, rorig, beta, normb, rcurr, ractual;
+  int i, iflag(1), gmres_iter;
+  double dprod, rorig, normb, rcurr, ractual;
   double norm_rconstraint, norm_conerror;
   //
   // determine reduced residual
@@ -1668,7 +1667,7 @@ void CLOP_solver::store_search(double pAp)
     EB.SCAL(M, ALPHA, &AP[ibeg]);
     n_orthog_used++;
     if (orthog_option == 2) {
-      char TRANSA('T'), TRANSB('N');
+      char TRANSA('T');
       ALPHA = 1; double BETA(0);
       int N = n_orthog_used; int Nt2 = N*2; int Nt3 = N*3;
       int ibeg = M*(N - 1);
@@ -1726,8 +1725,8 @@ void CLOP_solver::coarse_correction(const Epetra_Vector* r, Epetra_Vector* u)
 void CLOP_solver::calculate_multipliers(Epetra_Vector* uStand, 
                 double & norm_rconstraint, double & norm_conerror)
 {
-  int i, j, NumEntries, *Indices;
-  double *Values, rconstraint;
+  int i;
+  double *Values;
   vStand->ExtractView(&Values);
   for (i=0; i<nmycon; i++) {
     lambda_local[i] = 0;

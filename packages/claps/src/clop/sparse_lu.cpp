@@ -1,4 +1,5 @@
 #include "sparse_lu.hpp"
+#include "my_feti_sparse_solver.hpp"
 
 sparse_lu::sparse_lu()
 {
@@ -47,7 +48,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   }
   int NNZA, NADJ, IWMAX, IWSIZE, IFLAG, MAXSUP, NTOT, RWSIZE, LDNS;
   int NNZL, NSUB, NLNZ, TMPSIZ, MAXDEF, ASDEF;
-  double ANORM, EPS, TOL, MXCOMP;
+  double ANORM, EPS, TOL;
   int OPTIONS[8];
   //
   OPTIONS[0]=0; // use default values for options
@@ -300,7 +301,7 @@ void sparse_lu::inpnv(int &n , int colptr[], int rowidx[], double values[],
 
 int sparse_lu::small_factor(int rowbeg[], int colidx[], double vals[])
 {
-  int i, j, INFO, LDA, col;
+  int i, j, INFO, col;
   LNZ = new double[N*N]; for (i=0; i<N*N; i++) LNZ[i] = 0;
   XSUPER = new int[N];
   for (i=0; i<N; i++) {

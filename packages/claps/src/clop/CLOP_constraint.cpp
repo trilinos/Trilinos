@@ -743,7 +743,7 @@ void CLOP_constraint::get_cols_and_sfacs(int col, int icol, int dir)
 
 void CLOP_constraint::remove_zero(int col2)
 {
-  int i, j, nnz(0), row;
+  int i, j, nnz(0);
   i = find_column(col2);
   for (j=0; j<nnzcol[i]; j++) {
     if (colrows[i][j] != my_best_row) {

@@ -278,7 +278,6 @@ void CLOP_sub::genpu(const Epetra_IntVector *LD,
   //
   Edof = new double[ndof];
   TRANSA = 'N';
-  int INCX = 1, INCY = 1;
   for (i=0; i<ndof; i++) {
     for (j=0; j<nrhs; j++) sol_sol[j] = sol[i+j*ndof];
     EB.GEMV(TRANSA, nrhs, nrhs, ALPHA, rhs, nrhs,
