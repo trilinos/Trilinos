@@ -1749,6 +1749,8 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   char* bptr;
   char buffer[1000];
   char filename2[1000];
+  char fileoutm[100];
+  char fileoutr[100];
   
   int  numeq_total = map.NumGlobalElements();
   int  numeq       = map.NumMyElements();
@@ -1772,7 +1774,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (proc) delete [] gvalues;
   
   // ---------------------------------------------------open all files
-  // copy filename not to midfy it 
+  // copy filename not to modify it 
   strcpy(filename2,filename);
   int   ok    = 0;
   FILE* fin   = 0;
@@ -1789,43 +1791,29 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      delete [] gvalues;
      return false;
   } 
-  if (proc==0)
-  {
-     bptr=strpbrk(filename2,"/");
-     if (!bptr) ok = 0;
-  }
-  comm.Broadcast(&ok,1,0);
-  if (!ok)
-  {
-     delete [] gvalues;
-     return false;
-  } 
   bool newresfile=true;
   if (proc==0)
   {
-     bptr++;
-     sprintf(bptr,"data.flavia.msh");
      // try to open the mesh file for read to see whether it exists
-     foutm = fopen(filename2,"r");
+     foutm = fopen("data.flavia.msh","r");
      if (foutm) // mesh exists, don't have to recreate
      {
         fclose(foutm); foutm = 0;
      }
      else // mesh file does not exist, create      
-        foutm = fopen(filename2,"w");
+        foutm = fopen("data.flavia.msh","w");
      
      // try to open the mesh file for read to see whether it exists
-     sprintf(bptr,"data.flavia.res");
-     foutr = fopen(filename2,"r");
+     foutr = fopen("data.flavia.res","r");
      if (foutr) // result file exists, attach to it
      {
         fclose(foutr);
-        foutr = fopen(filename2,"a+w");
+        foutr = fopen("data.flavia.res","a+w");
         newresfile=false;
      }
      else // result file does nopt exist yet, create it
      {
-        foutr = fopen(filename2,"w");
+        foutr = fopen("data.flavia.res","w");
         newresfile=true;
      }
   }
@@ -2078,7 +2066,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      delete [] dof[0]; delete [] dof;
      delete [] top[0]; delete [] top;        
      delete [] gvalues; 
-     fclose(foutr);
+     fflush(foutr); fclose(foutr);
   }
   return true;
 }                           
