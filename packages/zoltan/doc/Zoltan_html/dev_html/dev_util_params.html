@@ -1,0 +1,139 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Utilities</TITLE>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Memory"></A>Parameter Setting Utilities</H2>
+<!--
+	Check params & place in data structure
+	Evaluate at time of invocation
+	Describe data structures for doing this.
+	Mention that parameters can be undocumented
+	Mention that static variables can be set instead.
+
+
+Several memory allocation and deallocation routines are provided in the
+load-balancing library. They are defined in the file <I>all/all_allo.c</I>;
+their prototypes for inclusion in other files are in <I>all/all_allo_const.h</I>.
+The use of these routines is not mandatory in algorithm development, but
+the routines provide helpful error-checking and
+<A HREF="#Debug_Memory"> debugging capabilities</A>,
+and the use of them is strongly suggested.
+
+<P>The routines included in the utility are listed below.
+<BLOCKQUOTE><B><A HREF="#LB_Array_Alloc">LB_Array_Alloc</A></B>:&nbsp;
+allocates arrays of dimension <I>n</I>, <I>n</I>=0,1,...,4
+<BR><B><A HREF="#LB_Malloc">LB_Malloc</A></B>:&nbsp; wrapper for system
+malloc.
+<BR><B><A HREF="#LB_Realloc">LB_Realloc</A></B>:&nbsp; wrapper for system
+realloc.
+<BR><B><A HREF="#LB_Free">LB_Free</A></B>:&nbsp; frees memory
+and sets the pointer to NULL.</BLOCKQUOTE>
+
+
+<P>
+<HR><A NAME="LB_Malloc"></A>double *<B>LB_Malloc</B>(int <I>n</I>,
+char *<I> file</I> , int <I>line</I>);&nbsp;
+<HR>
+
+<P>The <B>LB_Malloc</B> function is a wrapper around the standard C malloc
+routine. It allocates a block of memory of size <I>n</I> bytes.
+The principle advantage of using the wrapper is that it allows you
+to track memory leaks via the DEBUG_MEMORY parameter.
+
+<P>A macro <B>LB_MALLOC</B> is defined in <I>all/all_allo_const.h</I>.
+It takes the argument <I>n</I>, and adds the <I>__FILE__</I> and <I>__LINE__</I>
+macros to the argument list of the <B>LB_Malloc</B> call:
+<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_MALLOC</B>(<I>n</I>)
+&nbsp;&nbsp;&nbsp; <B>LB_Malloc</B>((<I>n</I>),
+<I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
+Using this macro, the developer gains the file and line debugging information
+without having to type file and line information in each memory allocation
+call.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I> n</I></TD>
+
+<TD>The size (in bytes) of the memory-allocation request.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; file</I></TD>
+
+<TD>A string containing the name of the file calling the function. The
+<I>__FILE__</I> macro can be passed as this argument. This argument is
+useful for debugging memory allocation problems.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; line</I></TD>
+
+<TD>The line number within <I>file</I> of the call to the function. The
+<I>__LINE__</I> macro can be passed as this argument. This argument is
+useful for debugging memory allocation problems.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; double *</TD>
+
+<TD>A pointer to the starting address of memory allocated.&nbsp; NULL is
+returned if <I>n</I> = 0 or the routine is unsuccessful.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Example:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>struct <B>LB_Struct</B> *<I>b</I> = (struct <B>LB_Struct</B> *) <B>LB_MALLOC</B>(<I>sizeof</I>(struct
+<B>LB_Struct</B>));</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>Allocates memory for one <B>LB_Struct</B> data structure.&nbsp;</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+-->
+
+<HR><A NAME="Set_Param"></A>int <B>LB_Set_param</B>(<I>struct <B>LB_Struct</B> 
+* <I>lb</I>, char * <I>param_name</I>, char * <I>new_val</I>); <BR>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util_comm.html">Next:&nbsp;
+Irregular Communication Library</A>&nbsp; |&nbsp; <A HREF="dev_util_mem.html">Previous:&nbsp;
+Memory Management Utilities</A>]
+</BODY>
+</HTML>
