@@ -46,9 +46,10 @@ int main(int argc, char* argv[])
   // Parameters can be retrieved from the parameter list in quite a few ways:
   // Get method that creates and sets the parameter if it doesn't exist.
   int its = My_List.get("Max Iters", 1200);
+  float tol;
 #ifdef HAVE_TEMPLATE_QUALIFIER
   // Get method that retrieves a parameter of a particular type.
-  float tol = My_List.template get<float>("Tolerance");
+  tol = My_List.template get<float>("Tolerance");
 
   /* In the above example, the first ``get'' method is a safe way of
      obtaining a parameter when its existence is indefinite but required.
