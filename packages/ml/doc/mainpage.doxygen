@@ -155,13 +155,13 @@ to start with ML. This is particularly true for the ML/Epetra interface.
 
 Several examples are distributed within ml. You can browse the source file of the
 following examples:
-- \ref ex_mlguide is the simplest ML (serial) example;
-- \ref ex_mlguide_par is the parallel counterpart of mlguide.c.
-- \ref ex_ml_aztec_simple gives an example of the ML/Aztec C interface;
-- \ref ex_MLO presents the use of the MultiLevelOperator class;
-- \ref ex_MLP details the use of ML as a
+- \ref mlguide_c is the simplest ML (serial) example;
+- \ref mlguide_par_c is the parallel counterpart of mlguide.c.
+- \ref ml_aztec_simple_c gives an example of the ML/Aztec C interface;
+- \ref ml_operator_cpp presents the use of the MultiLevelOperator class;
+- \ref ml_preconditioner_cpp details the use of ML as a
   black-box preconditionerr (see also section \ref ml_minitutorial);
-- \ref ex_MLP_DD describes how to define
+- \ref ml_2level_DD_cpp  describes how to define
   domain decomposition preconditioners using ML.  
 
 
@@ -185,8 +185,8 @@ following classes (both in the ML_Epetra namespace):
 - Function ML_Epetra::SetDefaults() can be used to set the default values.
 
 Detailed examples are reported in:
-- \ref ex_mlp
-- \ref ex_mlo
+- \ref ml_preconditioner_cpp
+- \ref ml_operator_cpp
 
 
 \section ml_MLP The ML_Epetra::MultiLevelPreconditioner class
@@ -374,7 +374,7 @@ USA
 
 /*!
 
-\page ex_mlp Example of use ML_Epetra::MultiLevelPreconditioner
+\page ml_preconditioner_cpp Example of use ML_Epetra::MultiLevelPreconditioner
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
@@ -516,7 +516,7 @@ At this point, we can compute the true residual, and quit.
 
 */
 
-/*! \page ex_mlo Example of use of ML_Epetra::MultiLevelOperator
+/*! \page ml_operator_cpp Example of use of ML_Epetra::MultiLevelOperator
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
@@ -564,7 +564,8 @@ by the ML source. Class Trilinos_Util::CrsMatrixGallery is used to create an
 example matrix. This Epetra_CrsMatrix is then converted to an ML_Operator
 (heavy-weight conversion).
 
-\note ML accepts Epetra_RowMatrix's; please refer to \ref ex_mlp.
+\note ML accepts Epetra_RowMatrix's; please refer to \ref
+ml_preconditioner_cpp.
 
 \code
 using namespace ML_Epetra;
@@ -692,31 +693,41 @@ Trilinos 4.0 tutorial.
 */
 
 /*! 
-\page ex_mlguide mlguide.c 
+\page mlguide_c mlguide.c 
 \include mlguide.c
 */
 
 /*!
-\page ex_mlguide_par mlguide_par.c
+\page mlguide_par_c mlguide_par.c
 \include mlguide_par.c
 */
 
 /*!
-\page ex_ml_aztec_simple ml_aztec_simple.c
+\page ml_aztec_simple_c ml_aztec_simple.c
 \include ml_aztec_simple.c
 */
 
 /*!
-\page ex_MLO ml_operator.cpp
+\page ml_operator_cpp ml_operator.cpp
 \include ml_operator.cpp
 */
 
 /*!
-\page ex_MLP ml_preconditioner.cpp
+\page ml_preconditioner_cpp ml_preconditioner.cpp
 \include ml_preconditioner.cpp
 */
 
 /*!
-\page ex_MLP_DD ml_2level_DD.cpp
+\page ml_2level_DD_cpp ml_2level_DD.cpp
 \include ml_2level_DD.cpp
+*/
+
+/*!
+\page ml_viz_cpp ml_viz.cpp
+\include ml_viz.cpp
+*/
+
+/*!
+\page ml_maxwell_cpp ml_maxwell.cpp
+\include ml_maxwell.cpp
 */
