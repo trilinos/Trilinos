@@ -44,6 +44,7 @@ struct ML_Krylov_Struct
    ML_Comm       *ML_com;
    int           ML_eigen;
    double        ML_eigen_max;
+   double        ML_eigen_min;
    int           (*ML_precfcn)(void*, int, double*, int, double*);
 };
 
