@@ -228,7 +228,7 @@ char msg[256];
       /* Both maps already available; nothing to do. */;
     else {
       /* Compute export map */
-      error = LB_Compute_Destinations(lb, *num_gid_entries, *num_lid_entries,
+      error = LB_Compute_Destinations(lb,
                                       *num_import_objs, *import_global_ids, 
                                       *import_local_ids, *import_procs,
                                       num_export_objs, export_global_ids,
@@ -245,7 +245,7 @@ char msg[256];
   else { /* if (*num_import_objs < 0) */
     if (*num_export_objs >= 0) {
       /* Compute export map */
-      error = LB_Compute_Destinations(lb, *num_gid_entries, *num_lid_entries,
+      error = LB_Compute_Destinations(lb, 
                                       *num_export_objs, *export_global_ids, 
                                       *export_local_ids, *export_procs,
                                       num_import_objs, import_global_ids,
@@ -300,7 +300,7 @@ char msg[256];
     LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
 
     start_time = LB_Time(lb->Timer);
-    error = LB_Help_Migrate(lb, *num_gid_entries, *num_lid_entries,
+    error = LB_Help_Migrate(lb,
                             *num_import_objs, *import_global_ids,
                             *import_local_ids, *import_procs,
                             *num_export_objs, *export_global_ids,

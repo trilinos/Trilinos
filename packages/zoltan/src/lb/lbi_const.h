@@ -1325,10 +1325,6 @@ extern int LB_Balance(struct LB_Struct *lb, int *changes,
  *  Input:
  *    struct LB_Struct *lb         --  Load balancing structure for current 
  *                                     balance.
- *    int num_gid_entries          --  number of entries of type LB_ID_TYPE
- *                                     in a global ID
- *    int num_lid_entries          --  number of entries of type LB_ID_TYPE
- *                                     in a local ID
  *    int num_import               --  Number of non-local objects assigned to 
  *                                     the processor in the new decomposition.
  *    LB_ID_PTR import_global_ids  --  Array of global IDs for non-local objects
@@ -1359,7 +1355,6 @@ extern int LB_Balance(struct LB_Struct *lb, int *changes,
 
 
 extern int LB_Compute_Destinations(struct LB_Struct *lb,
-                                   int num_gid_entries, int num_lid_entries,
                                    int num_import, 
                                    LB_ID_PTR import_global_ids,
                                    LB_ID_PTR import_local_ids, 
@@ -1388,10 +1383,6 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *  Input:
  *    struct LB_Struct *lb       --  Load balancing structure for current 
  *                                   balance.
- *    int num_gid_entries        --  number of entries of type LB_ID_TYPE
- *                                   in a global ID
- *    int num_lid_entries        --  number of entries of type LB_ID_TYPE
- *                                   in a local ID
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
  *    LB_ID_PTR import_global_ids--  Array of global IDs for non-local objects
@@ -1422,7 +1413,6 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  */
 
 extern int LB_Help_Migrate(struct LB_Struct *lb, 
-                           int num_gid_entries, int num_lid_entries,
                            int num_import, LB_ID_PTR import_global_ids,
                            LB_ID_PTR import_local_ids, int *import_procs,
                            int num_export, LB_ID_PTR export_global_ids,

@@ -29,10 +29,6 @@
 
 int LB_Compute_Destinations(
   LB *lb,                      /* Load balancing structure.                  */
-  int num_gid_entries,         /* Number of array entries of type LB_ID_TYPE
-                                  in a global ID.                            */
-  int num_lid_entries,         /* Number of array entries of type LB_ID_TYPE
-                                  in a local ID.                             */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
   LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
@@ -74,6 +70,7 @@ int *import_proc_list = NULL;
                             /* Array containing owning processor IDs of import
                                objects; used to request objs from other procs.*/
 int msgtag, msgtag2;        /* Message tags for communication routines */
+int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
 int i;
 int ierr = LB_OK;
 
@@ -86,6 +83,30 @@ int ierr = LB_OK;
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
     LB_TRACE_EXIT(lb, yo);
     return (LB_OK);
+  }
+
+  /*
+   *  Check that all procs use the same id types.
+   */
+
+  MPI_Allreduce(&(lb->Num_GID), &num_gid_entries, 1,
+                MPI_INT, MPI_MAX, lb->Communicator);
+  if (lb->Num_GID != num_gid_entries){
+    sprintf(msg, "Inconsistent global id sizes: Num_GID = %d "
+      "but global max is %d\n", lb->Num_GID, num_gid_entries);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_TRACE_EXIT(lb, yo);
+    return LB_FATAL;
+  }
+
+  MPI_Allreduce(&(lb->Num_LID), &num_lid_entries, 1,
+                MPI_INT, MPI_MAX, lb->Communicator);
+  if (lb->Num_LID != num_lid_entries){
+    sprintf(msg, "Inconsistent local id sizes: Num_LID = %d "
+      "but global max is %d\n", lb->Num_LID, num_lid_entries);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_TRACE_EXIT(lb, yo);
+    return LB_FATAL;
   }
 
   /*
@@ -179,7 +200,7 @@ int ierr = LB_OK;
 
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
-                    (int) (sizeof(LB_ID_TYPE)*num_gid_entries), 
+                    (int) (sizeof(LB_ID_TYPE)*(num_gid_entries)), 
                     (char *) *export_global_ids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
@@ -236,10 +257,6 @@ int ierr = LB_OK;
 
 int LB_Help_Migrate(
   LB *lb,                      /* Load balancing structure.                  */
-  int num_gid_entries,         /* Number of array entries of type LB_ID_TYPE
-                                  in a global ID.                            */
-  int num_lid_entries,         /* Number of array entries of type LB_ID_TYPE
-                                  in a local ID.                             */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
   LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
@@ -283,6 +300,7 @@ int LB_Help_Migrate(
 
 char *yo = "LB_Help_Migrate";
 char msg[256];
+int num_gid_entries, num_lid_entries;  /* lengths of global & local ids */
 int *sizes = NULL;       /* sizes (in bytes) of the object data for export. */
 int id_size;             /* size (in bytes) of LB_GID + padding for 
                             alignment                                       */
@@ -296,7 +314,6 @@ int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 LB_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
 COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
-int max_size;            /* Max size of any object                          */
 int total_send_size;     /* Total size of outcoming message (in #items)     */
 int total_recv_size;     /* Total size of incoming message (in #items)      */
 int size;                /* size (in bytes) of an object                    */
@@ -315,6 +332,33 @@ int ierr = 0;
     return (LB_OK);
   }
 
+  /*
+   *  Check that all procs use the same id types.
+   */
+
+  MPI_Allreduce(&(lb->Num_GID), &num_gid_entries, 1,
+                MPI_INT, MPI_MAX, lb->Communicator);
+  if (lb->Num_GID != num_gid_entries){
+    sprintf(msg, "Inconsistent global id sizes: Num_GID = %d "
+      "but global max is %d\n", lb->Num_GID, num_gid_entries);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_TRACE_EXIT(lb, yo);
+    return LB_FATAL;
+  }
+
+  MPI_Allreduce(&(lb->Num_LID), &num_lid_entries, 1,
+                MPI_INT, MPI_MAX, lb->Communicator);
+  if (lb->Num_LID != num_lid_entries){
+    sprintf(msg, "Inconsistent local id sizes: Num_LID = %d "
+      "but global max is %d\n", lb->Num_LID, num_lid_entries);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_TRACE_EXIT(lb, yo);
+    return LB_FATAL;
+  }
+
+  /*
+   *  Check that all necessary query functions are available.
+   */
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
@@ -386,16 +430,14 @@ int ierr = 0;
                  &(export_global_ids[i*num_gid_entries]), 
                  &(export_local_ids[i*num_lid_entries]), 
                  &ierr);
+    if (ierr) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                      "Migrate.Get_Obj_Size function.");
+      LB_TRACE_EXIT(lb, yo);
+      return (LB_FATAL);
+    }
     sizes[i] = size + LB_pad_for_alignment(size);
     total_send_size += sizes[i] + tag_size;
-    if (sizes[i] > max_size) max_size = sizes[i];
-  }
-
-  if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
-                    "Migrate.Get_Obj_Size function.");
-    LB_TRACE_EXIT(lb, yo);
-    return (LB_FATAL);
   }
 
 
