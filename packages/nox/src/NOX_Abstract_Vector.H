@@ -44,7 +44,13 @@ namespace NOX {
     ShapeCopy 
   };
 
-//! %NOX abstract interface for vector and group
+/*! 
+  \brief %NOX abstract interface for vector and group
+
+  The user should implement their own concrete implementation of this
+  class or use one of the implementations provided by us, as defined
+  in the NOX::Epetra and NOX::LAPACK namespaces.
+*/
 namespace Abstract {
 
 /*! 
