@@ -55,7 +55,7 @@ namespace Bifurcation {
   \author Eric Phipps (SNL 9233)
 */
 
-class TPBordGroup : public LOCA::Abstract::Group {
+class TPBordGroup : public virtual LOCA::Abstract::Group {
 
 public:
   
@@ -87,7 +87,7 @@ public:
     "this". Otherwise, if type is \c ShapeCopy, we need only replicate
     the shape of "this". Returns \c NULL if clone is not supported.
   */
-  virtual LOCA::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Set the parameter list in the group to p (pVector = p).  
   virtual bool setParams(const ParameterVector& p);
@@ -301,6 +301,8 @@ public:
   virtual double getNormNewtonSolveResidual() const;
 
   //@}
+
+  virtual bool print() const;
 
 protected:
 

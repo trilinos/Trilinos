@@ -41,8 +41,8 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
 					    const Vector& lenVec,
 					    int paramId,
 					    const DerivUtils& d)
-  : grpPtr(g.clone(NOX::DeepCopy)), 
-    tpXVec(lenVec, lenVec, 0.0),
+  : grpPtr(dynamic_cast<Abstract::Group*>(g.clone(NOX::DeepCopy))), 
+    tpXVec(g.getX(), lenVec, 0.0),
     tpFVec(lenVec, lenVec, 0.0),
     tpNewtonVec(lenVec, lenVec, 0.0),
     lengthVecPtr(lenVec.clone(NOX::ShapeCopy)), 
@@ -52,10 +52,13 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     derivPtr(d.clone(NOX::DeepCopy)), 
     isValidF(false),
     isValidJacobian(false),
-    isValidNewton(false) {}
+    isValidNewton(false) 
+{
+  tpXVec.getBifParam() = getBifParam();
+}
 
 LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source)
-  : grpPtr(source.grpPtr->clone(NOX::DeepCopy)), 
+  : grpPtr(dynamic_cast<Abstract::Group*>(source.grpPtr->clone(NOX::DeepCopy))), 
     tpXVec(source.tpXVec),
     tpFVec(source.tpFVec),
     tpNewtonVec(source.tpNewtonVec),
@@ -107,7 +110,7 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     delete derivPtr;
 
     // Copy values
-    grpPtr = source.grpPtr->clone(type);
+    grpPtr = dynamic_cast<Abstract::Group*>(source.grpPtr->clone(type));
     tpXVec = source.tpXVec;
     tpFVec = source.tpFVec;
     tpNewtonVec = source.tpNewtonVec;
@@ -124,7 +127,7 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
   return *this;
 }
 
-Abstract::Group*
+NOX::Abstract::Group*
 LOCA::Bifurcation::TPBordGroup::clone(NOX::CopyType type) const 
 {
   return new TPBordGroup(*this);
@@ -232,13 +235,15 @@ LOCA::Bifurcation::TPBordGroup::computeF()
 {
   bool res = true;
 
-  if (isValidF == false)
-    res = res & grpPtr->computeF(); {
-    res = res & grpPtr->computeJacobian();
+  if (isValidF == false) {
+    res = res & grpPtr->computeF();
+    tpFVec.getXVec() = grpPtr->getF();
 
+    res = res & grpPtr->computeJacobian();
     res = res & grpPtr->applyJacobian(tpXVec.getNullVec(), 
 				      tpFVec.getNullVec());
-    tpFVec.getBifParam() = tpFVec.getNullVec().dot(*lengthVecPtr) - 1.0;
+
+    tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
     
     isValidF = true;
     
@@ -283,6 +288,7 @@ LOCA::Bifurcation::TPBordGroup::computeNewton(NOX::Parameter::List& params)
   if (isValidNewton == false) {
     applyJacobianInverse(params, tpFVec, tpNewtonVec);
     tpNewtonVec.scale(-1.0);
+    isValidNewton = true;
   }
 
   return res;
@@ -565,3 +571,61 @@ LOCA::Bifurcation::TPBordGroup::getNormNewtonSolveResidual() const
   residual = residual.update(1.0, tpFVec, 1.0);
   return residual.norm();
 }
+
+bool
+LOCA::Bifurcation::TPBordGroup::print() const 
+{
+  cout << "Beginning TPBordGroup.print:" << endl;
+  cout << "Group = " << endl;
+  grpPtr->print();
+
+  cout << endl;
+
+  cout << "tpXVec = " << endl;
+  tpXVec.print();
+
+  cout << endl;
+
+  if (isValidF) {
+    cout << "tpFVec = " << endl;
+    tpFVec.print();
+  }
+  else
+    cout << "tpFVec not computed" << endl;
+
+  cout << endl;
+
+  if (isValidNewton) {
+    cout << "tpNewtonVec = " << endl;
+    tpNewtonVec.print();
+  }
+  else
+    cout << "tpNewtonVec not computed" << endl;
+
+  cout << endl;
+
+  cout << "lengthVec = " << endl;
+  lengthVecPtr->print();
+
+  cout << endl;
+
+  cout << "bifParmId = " << bifParamId << endl;
+
+  cout << endl;
+
+  if (isValidJacobian) {
+    cout << "derivResdiualParam = " << endl;
+    derivResidualParamPtr->print();
+    cout << endl;
+    cout << "derivNullResidualParam = " << endl;
+    derivNullResidualParamPtr->print();
+  }
+  else
+    cout << "deriv vectors not computed" << endl;
+
+  cout << "End TPBordGroup.print:" << endl;
+  cout << endl;
+
+  return true;
+}
+

@@ -84,12 +84,14 @@ NOX::Abstract::Vector& TPBordVector::abs(const NOX::Abstract::Vector& y)
 
 NOX::Abstract::Vector& TPBordVector::operator=(const NOX::Abstract::Vector& y)
 {
-  const TPBordVector* tpY = 0;
-  tpY = dynamic_cast<const TPBordVector*>(&y);
-  
-  *xVectorPtr = *(tpY->xVectorPtr);
-  *nullVectorPtr = *(tpY->nullVectorPtr);
-  bifParam = tpY->bifParam;
+  return operator=(dynamic_cast<const TPBordVector&>(y));
+}
+
+TPBordVector& TPBordVector::operator=(const TPBordVector& y)
+{ 
+  *xVectorPtr = *(y.xVectorPtr);
+  *nullVectorPtr = *(y.nullVectorPtr);
+  bifParam = y.bifParam;
   return *this;
 }
 
@@ -130,7 +132,7 @@ NOX::Abstract::Vector& TPBordVector::update(double alpha, const NOX::Abstract::V
   
   xVectorPtr->update(alpha, *(tpY->xVectorPtr), gamma);
   nullVectorPtr->update(alpha, *(tpY->nullVectorPtr), gamma);
-  bifParam = alpha * tpY->bifParam + gamma;
+  bifParam = alpha * tpY->bifParam + gamma*bifParam;
   return *this;
 }
 
@@ -151,7 +153,7 @@ NOX::Abstract::Vector& TPBordVector::update(double alpha,
   nullVectorPtr->update(alpha, *(tpY->nullVectorPtr), beta, 
 			*(tpB->nullVectorPtr), gamma);
 
-  bifParam = alpha * tpY->bifParam + beta * tpB->bifParam + gamma;
+  bifParam = alpha * tpY->bifParam + beta * tpB->bifParam + gamma*bifParam;
   return *this;
 }
 
