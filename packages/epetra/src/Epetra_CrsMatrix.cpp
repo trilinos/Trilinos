@@ -37,6 +37,17 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
+#ifdef EPETRA_CACHE_BYPASS
+// Turn cache bypass on or off for a given memory range.
+// address is the starting address of the range
+// length is the length in bytes of the range
+// bypassCache is a bool: true if cache should be bypassed for this range, false otherwise
+// NOTES:  
+// 1) It is assumed that memory references are cached by default.
+// 2) The function Epetra_SetCacheBypassRange is an external function that must be provided by the 
+//    person wishing to bypass cache.
+void Epetra_SetCacheBypassRange( void * address, int length, bool bypassCache); 
+#endif
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
@@ -2370,9 +2381,27 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), true); // Set matrix values to bypass cache
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), true); // Set graph index offsets to bypass cache
+      Epetra_SetCacheBypassRange(y, NumMyRows_*sizeof(double), true); // Set y vector to bypass cache
+    }
+#endif
 
     int izero = 0;
     EPETRA_DCRSMV_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, x, y);
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), false); // Reset
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), false);
+      Epetra_SetCacheBypassRange(y, NumMyRows_*sizeof(double), false); 
+    }
+#endif
     return;
   }
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
@@ -2421,8 +2450,27 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
-    int ione = 1;
+ #ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      int numMyColumns = Graph().ColMap().NumMyElements();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), true); // Set matrix values to bypass cache
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(x, numMyColumns*sizeof(double), true); // Set y vector to bypass cache
+    }
+#endif
+   int ione = 1;
     EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, x, y);
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      int numMyColumns = Graph().ColMap().NumMyElements();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), false); // Reset
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(x, numMyColumns*sizeof(double), false); 
+    }
+#endif
     return;
   }
   for(int i = 0; i < NumCols; i++) 
@@ -2476,6 +2524,15 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), true); // Set matrix values to bypass cache
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(*Y, LDY*NumVectors*sizeof(double), true); // Set Y vector(s) to bypass cache
+    }
+#endif
     if (LDX!=0 && LDY!=0) {
     int izero = 0;
     EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
@@ -2493,6 +2550,15 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 	Y[k][i] = sum;
       }
     }
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), false); // Reset
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(*Y, LDY*NumVectors*sizeof(double), false); 
+    }
+#endif
   }
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
 
@@ -2537,8 +2603,26 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       double * Values = All_Values_;
       int * Indices = Graph().All_Indices();
       int * IndexOffset = Graph().IndexOffset();
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), true); // Set matrix values to bypass cache
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), true); // Set graph indices to bypass cache
+      Epetra_SetCacheBypassRange(*X, LDX*NumVectors*sizeof(double), true); // Set Y vector(s) to bypass cache
+    }
+#endif
       int ione = 1;
       EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+#ifdef EPETRA_CACHE_BYPASS
+    { // make sure variables are local
+      int numMyEntries = Graph().NumMyEntries();
+      Epetra_SetCacheBypassRange(Values, numMyEntries*sizeof(double), false); // Reset
+      Epetra_SetCacheBypassRange(Indices, numMyEntries*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(IndexOffset, NumMyRows_*sizeof(int), false); 
+      Epetra_SetCacheBypassRange(*X, LDX*NumVectors*sizeof(double), false);
+    }
+#endif
       return;
     }
   }
