@@ -21,6 +21,7 @@ static long malloc_initialized=-1;
 static long malloc_leng_log[MAX_MALLOC_LOG];
 static long malloc_addr_log[MAX_MALLOC_LOG];
 static char malloc_name_log[MAX_MALLOC_LOG][3];
+void *ml_void_mem_ptr;
 
 /* ******************************************************************** */
 /* memory allocation function                                           */
