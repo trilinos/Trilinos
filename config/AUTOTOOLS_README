@@ -1,5 +1,9 @@
 A Tutorial For Configuring and Building Trilinos Using Autotools
 
+FOR THE MOST RECENT VERSION OF THIS DOCUMENT, SEE THE "Getting Started" 
+CHAPETER IN THE TRILINOS DEVELOPER'S GUIDE.  THIS DOCUMENT CAN BE FOUND IN
+"Trilinos/doc/DevGuide"
+
 Additional questions and any suggestions can be directed to 
 Jim Willenbring (jmwille@sandia.gov).  If the concern is a bug or enhancement
 request for the Autotools system, please submit a bug report to Bugzilla.
