@@ -121,13 +121,11 @@ int Zoltan_RIB(
   double overalloc;           /* amount to overallocate by when realloc
                               of dot array must be done.
                               1.0 = no extra; 1.5 = 50% extra; etc. */
-  int wgtflag;                /* (0) do not (1) do use weights.
-                              Multidimensional weights not supported */
+  int wgtflag;                /* No. of weights per dot. */
   int check_geom;             /* Check input & output for consistency? */
   int stats;                  /* Print timing & count summary? */
   int gen_tree;               /* (0) don't (1) generate whole treept to use
                               later for point and box drop. */
-  float *work_fraction=NULL;/* Partition sizes -- one weight per partition */
   int i, ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
@@ -139,7 +137,7 @@ int Zoltan_RIB(
   check_geom = DEFAULT_CHECK_GEOM;
   stats = RIB_DEFAULT_OUTPUT_LEVEL;
   gen_tree = 0;
-  wgtflag = (zz->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
+  wgtflag = zz->Obj_Weight_Dim;
 
   Zoltan_Assign_Param_Vals(zz->Params, RIB_params, zz->Debug_Level, zz->Proc,
                     zz->Debug_Proc);
@@ -148,31 +146,10 @@ int Zoltan_RIB(
   *num_import = -1;
   *num_export = -1;  /* We don't compute the export map. */
 
-  if (zz->Obj_Weight_Dim <= 1)
-    work_fraction = part_sizes;
-  else {
-    /* Multi-dimensional partition sizes not permitted yet;
-       reduce to one weight per partition.  
-       This reduction will not be needed once multi-constraint partitioning
-       is implemented. */
-    work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) *
-                                            zz->LB.Num_Global_Parts);
-    if (work_fraction == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      return(ZOLTAN_MEMERR);
-    }
-
-    /* RIB supports only the first weight; pick out the appropriate
-       part_sizes entries for the first weight. */
-    for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
-       work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
-  }
-
   ierr = rib_fn(zz, num_import, import_global_ids, import_local_ids,
                 import_procs, import_to_part,
-                overalloc, wgtflag, check_geom, stats, gen_tree, work_fraction);
+                overalloc, wgtflag, check_geom, stats, gen_tree, part_sizes);
 
-  if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE(&work_fraction);
   return(ierr);
 
 }
@@ -198,8 +175,7 @@ static int rib_fn(
   double overalloc,             /* amount to overallocate by when realloc
                                 of dot array must be done.
                                   1.0 = no extra; 1.5 = 50% extra; etc. */
-  int wgtflag,                  /* (0) do not (1) do use weights.
-                                Multidimensional weights not supported */
+  int wgtflag,                  /* No. of weights per dot. */
   int check_geom,               /* Check input & output for consistency? */
   int stats,                    /* Print timing & count summary? */
   int gen_tree,                 /* (0) do not (1) do generate full treept */
@@ -254,7 +230,7 @@ static int rib_fn(
                                  4 = most dot memory this proc ever allocs
                                  5 = # of times a previous cut is re-used
                                  6 = # of reallocs of dot array */
-  int     i;                  /* local variables */
+  int     i, j;               /* local variables */
   int     use_ids;            /* When true, global and local IDs will be
                                  stored along with dots in the RCB_STRUCT.
                                  When false, storage, manipulation, and
@@ -275,9 +251,9 @@ static int rib_fn(
   int old_nparts;             /* added for Tflops_Special */
   double valuelo;             /* smallest value of value[i] */
   double valuehi;             /* largest value of value[i] */
-  double weight;              /* weight for current set */
-  double weightlo;            /* weight of lower side of cut */
-  double weighthi;            /* weight of upper side of cut */
+  double weight[RB_MAX_WGTS]; /* weight for current set */
+  double weightlo[RB_MAX_WGTS]; /* weight of lower side of cut */
+  double weighthi[RB_MAX_WGTS]; /* weight of upper side of cut */
   int *dotlist = NULL;        /* list of dots for find_median.
                                  allocated above find_median for
                                  better efficiency (don't necessarily
@@ -367,13 +343,18 @@ static int rib_fn(
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
   if (!wgtflag) {
-    for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
-    weightlo = (double) dotnum;
+    wgtflag = 1;
+    for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
+    weightlo[0] = (double) dotnum;
   }
-  else
-    for (weightlo = 0.0, i=0; i < dotnum; i++)
-       weightlo += dotpt[i].Weight;
-  MPI_Allreduce(&weightlo, &weight, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  else {
+    for (j=0; j<wgtflag; j++) weightlo[j] = 0.0;
+    for (i=0; i < dotnum; i++){
+      for (j=0; j<wgtflag; j++)
+        weightlo[j] += dotpt[i].Weight[j];
+    }
+  }
+  MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
@@ -453,7 +434,7 @@ static int rib_fn(
     }
 
     for (i = 0; i < dotnum; i++) {
-      wgts[i] = dotpt[i].Weight;
+      wgts[i] = dotpt[i].Weight[0];
     }
     if (old_nparts > 1 && old_nprocs > 1) { /* test added for Tflops_Special;
                                                compute values only if looping
@@ -483,8 +464,8 @@ static int rib_fn(
                    zz->Tflops_Special, value, wgts, dotmark, dotnum, proc, 
                    fractionlo, local_comm, &valuehalf, first_guess,
                    &(counters[0]), nprocs, old_nprocs, proclower, old_nparts,
-                   wgtflag, valuelo, valuehi, weight, &weightlo,
-                   &weighthi, dotlist, rectilinear_blocks)) {
+                   wgtflag, valuelo, valuehi, weight[0], weightlo,
+                   weighthi, dotlist, rectilinear_blocks)) {
       ZOLTAN_PRINT_ERROR(proc, yo,
         "Error returned from Zoltan_RB_find_median.");
       ierr = ZOLTAN_FATAL;
@@ -492,9 +473,9 @@ static int rib_fn(
     }
 
     if (set)    /* set weight for current partition */
-      weight = weighthi;
+      for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
     else
-      weight = weightlo;
+      for (j=0; j<wgtflag; j++) weight[j] = weightlo[j];
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
@@ -632,7 +613,7 @@ static int rib_fn(
       dindx[i] = i;
 
     ierr = serial_rib(zz, dotpt, dotmark, dotlist, old_set, root, rib->Num_Geom,
-                      weight, dotnum, num_parts,
+                      weight[0], dotnum, num_parts,
                       &(dindx[0]), &(tmpdindx[0]), partlower,
                       proc, wgtflag, stats, gen_tree,
                       counters, treept, value, wgts, part_sizes);
@@ -938,8 +919,7 @@ static int serial_rib(
   int *tmpdindx,             /* Temporary memory used in reordering dindx. */
   int partlower,             /* smallest partition number to be created. */
   int proc,                  /* processor number. */
-  int wgtflag,                /* (0) do not (1) do use weights.
-                                 Multidimensional weights not supported */
+  int wgtflag,               /* No. of weights per dot. */
   int stats,                 /* Print timing & count summary?             */
   int gen_tree,              /* (0) do not (1) do generate full treept    */
   int counters[],            /* diagnostic counts */
@@ -975,7 +955,7 @@ int i;
                                &partlower, &partmid, &fractionlo);
 
     for (i = 0; i < dotnum; i++) {
-      wgts[i] = dotpt[dindx[i]].Weight;
+      wgts[i] = dotpt[dindx[i]].Weight[0];
     }
 
     ierr = compute_rib_direction(zz, 0, num_geom, &valuelo, &valuehi, 

@@ -32,7 +32,8 @@ extern "C" {
    operates on "dots" as defined in shared_const.h
 */
 
-/* Steve Plimpton, Sandia National Labs, ABQ, NM  87185
+/* Original version was written by
+   Steve Plimpton, Sandia National Labs, ABQ, NM  87185
    Dept 9221, MS 1111
    (505) 845-7873
    sjplimp@cs.sandia.gov
@@ -143,8 +144,7 @@ int Zoltan_RCB(
                                  1.0 = no extra; 1.5 = 50% extra; etc. */
     int reuse;                /* (0) don't use (1) use previous cuts
                                  stored in treept at initial guesses.  */
-    int wgtflag;              /* (0) do not (1) do use weights.
-                                 Multidimensional weights not supported */
+    int wgtflag;              /* no. of weights per dot. */
     int check_geom;           /* Check input & output for consistency? */
     int stats;                /* Print timing & count summary? */
     int gen_tree;             /* (0) don't (1) generate whole treept to use
@@ -155,7 +155,6 @@ int Zoltan_RCB(
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
-    float *work_fraction=NULL;/* Partition sizes -- one weight per partition */
     int i, ierr;
 
 
@@ -174,7 +173,7 @@ int Zoltan_RCB(
     check_geom = DEFAULT_CHECK_GEOM;
     stats = RCB_DEFAULT_OUTPUT_LEVEL;
     gen_tree = 0;
-    wgtflag = (zz->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
+    wgtflag = zz->Obj_Weight_Dim;
     reuse_dir = 0;
     preset_dir = 0;
     rectilinear_blocks = 0;
@@ -186,32 +185,11 @@ int Zoltan_RCB(
     *num_import = -1;
     *num_export = -1;  /* We don't compute the export map. */
 
-    if (zz->Obj_Weight_Dim <= 1)
-      work_fraction = part_sizes;
-    else {
-      /* Multi-dimensional partition sizes not permitted yet;
-         reduce to one weight per partition.  
-         This reduction will not be needed once multi-constraint partitioning
-         is implemented. */
-      work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) *
-                                              zz->LB.Num_Global_Parts);
-      if (work_fraction == NULL) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-        return(ZOLTAN_MEMERR);
-      }
-
-      /* RCB supports only the first weight; pick out the appropriate
-         part_sizes entries for the first weight. */
-      for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
-         work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
-    }
-
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
-                 rectilinear_blocks, work_fraction);
+                 rectilinear_blocks, part_sizes);
 
-    if (zz->Obj_Weight_Dim > 1) ZOLTAN_FREE(&work_fraction);
     return(ierr);
 }
 
@@ -238,8 +216,7 @@ static int rcb_fn(
                                    1.0 = no extra; 1.5 = 50% extra; etc.     */
   int reuse,                    /* (0) don't use (1) use previous cuts
                                    stored in treept at initial guesses.      */
-  int wgtflag,                  /* (0) do not (1) do use weights.
-                                   Multidimensional weights not supported    */
+  int wgtflag,                  /* No. of weights per dot                    */
   int check_geom,               /* Check input & output for consistency?     */
   int stats,                    /* Print timing & count summary?             */
   int gen_tree,                 /* (0) do not (1) do generate full treept    */
@@ -250,8 +227,8 @@ static int rcb_fn(
                                     4: yxz,        5: zxy,      6: zyx  */
   int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
   float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
-                                   containing the percentage of work to be
-                                   assigned to each partition.               */
+                                   * wgtflag containing the percentage of work 
+                                   to be assigned to each partition.    */
 )
 {
   char    yo[] = "rcb_fn";
@@ -321,9 +298,9 @@ static int rcb_fn(
                                        parallel partitioning.  */
   int    old_nprocs;                /* added for Tflops_Special */
   int    old_nparts;                /* added for Tflops_Special */
-  double weight;                    /* weight for current set */
-  double weightlo;                  /* weight of lower side of cut */
-  double weighthi;                  /* weight of upper side of cut */
+  double weight[RB_MAX_WGTS];       /* weight for current set */
+  double weightlo[RB_MAX_WGTS];     /* weight of lower side of cut */
+  double weighthi[RB_MAX_WGTS];     /* weight of upper side of cut */
   int *dotlist = NULL;              /* list of dots used only in find_median;
                                        allocated above find_median for 
                                        better efficiency (don't necessarily
@@ -334,6 +311,7 @@ static int rcb_fn(
   int *dim_spec = NULL;             /* specified direction for preset_dir */
   int fp;                           /* first partition assigned to this proc */
   int np;                           /* number of parts assigned to this proc */
+  char msg[128];                    /* buffer for error messages */
 
   /* MPI data types and user functions */
 
@@ -361,6 +339,13 @@ static int rcb_fn(
   MPI_Op_create(&Zoltan_RCB_box_merge,1,&box_op);
 
   /* initializations */
+
+  /* Check how many weights per dot there are. */
+  if (wgtflag>RB_MAX_WGTS){
+    sprintf(msg, "Too many weights (%1d) were given; only the first %1d will be used.", wgtflag, RB_MAX_WGTS);
+    ZOLTAN_PRINT_WARN(proc, yo, msg);
+    wgtflag = RB_MAX_WGTS;
+  }
 
   /* 
    * Determine whether to store, manipulate, and communicate global and 
@@ -494,13 +479,18 @@ static int rcb_fn(
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
   if (!wgtflag) {
-    for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
-    weightlo = (double) dotnum;
+    wgtflag = 1;
+    for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
+    weightlo[0] = (double) dotnum;
   }
-  else
-    for (weightlo = 0.0, i=0; i < dotnum; i++)
-       weightlo += dotpt[i].Weight;
-  MPI_Allreduce(&weightlo, &weight, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  else {
+    for (j=0; j<wgtflag; j++) weightlo[j] = 0.0;
+    for (i=0; i < dotnum; i++){
+      for (j=0; j<wgtflag; j++)
+        weightlo[j] += dotpt[i].Weight[j];
+    }
+  }
+  MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
@@ -624,7 +614,7 @@ static int rcb_fn(
                         preset_dir, dim_spec, &level, rcbbox);
     for (i = 0; i < dotnum; i++) {
       coord[i] = dotpt[i].X[dim];
-      wgts[i] = dotpt[i].Weight;
+      wgts[i] = dotpt[i].Weight[0];
     }
 
     /* determine if there is a first guess to use */
@@ -644,7 +634,7 @@ static int rcb_fn(
                 fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
                 nprocs, old_nprocs, proclower, old_nparts, 
                 wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
-                weight, &weightlo, &weighthi,
+                weight[0], weightlo, weighthi,
                 dotlist, rectilinear_blocks)) {
       ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
       ierr = ZOLTAN_FATAL;
@@ -652,9 +642,9 @@ static int rcb_fn(
     }
 
     if (set)    /* set weight for current partition */
-       weight = weighthi;
+      for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
     else
-       weight = weightlo;
+      for (j=0; j<wgtflag; j++) weight[j] = weightlo[j];
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
@@ -793,7 +783,7 @@ static int rcb_fn(
     for (i = 0; i < dotnum; i++)
       dindx[i] = i;
     ierr = serial_rcb(zz, dotpt, dotmark, dotlist, old_set, root,
-               rcbbox, weight, dotnum, num_parts,
+               rcbbox, weight[0], dotnum, num_parts,
                &(dindx[0]), &(tmpdindx[0]), partlower, 
                proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                preset_dir, 
@@ -1138,7 +1128,7 @@ static int serial_rcb(
   int *tmpdindx,             /* Temporary memory used in reordering dindx. */
   int partlower,             /* smallest partition number to be created. */
   int proc,                  /* processor number. */
-  int wgtflag,               /* (0) do not (1) do use weights. */
+  int wgtflag,               /* No. of weights per dot. */
   int lock_direction,        /* flag indicating whether directions are locked */
   int reuse,                 /* (0) don't use (1) use previous cuts
                                 stored in treept at initial guesses.      */
@@ -1186,7 +1176,7 @@ struct rcb_box tmpbox;
 
     for (i = 0; i < dotnum; i++) {
       coord[i] = dotpt[dindx[i]].X[dim];
-      wgts[i] = dotpt[dindx[i]].Weight;
+      wgts[i] = dotpt[dindx[i]].Weight[0];
     }
 
     if (reuse && dim == treept[partmid].dim) {

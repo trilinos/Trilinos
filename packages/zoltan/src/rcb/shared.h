@@ -24,12 +24,13 @@ extern "C" {
 /* Definitions shared by parallel RCB and RIB */
 #define DEFAULT_CHECK_GEOM 1
 #define TINY 1.0e-6
+#define RB_MAX_WGTS 4
 
 /* Data structures shared by parallel RCB and RIB */
 /* dot to balance on for RCB and RIB */ 
 struct Dot_Struct {	        /* dot = point in 3-space */
-  double    X[3];		/* location of dot */
-  double    Weight;             /* weight of dot - if used must be > 0 */
+  double  X[3];			/* location of dot */
+  double  Weight[RB_MAX_WGTS];  /* weight of dot - if used must be >= 0 */
   int Proc;                     /* Processor ID for processor owning a dot.
                                    For now, we'll keep it with a dot, even 
                                    though the global and local ids are now

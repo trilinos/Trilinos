@@ -71,9 +71,9 @@ int Zoltan_RIB_inertial2d(
         wgt_sum = 0.0;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           wgt_sum += dotpt[i].Weight;
-           xcm += dotpt[i].Weight*dotpt[i].X[0];
-           ycm += dotpt[i].Weight*dotpt[i].X[1];
+           wgt_sum += dotpt[i].Weight[0];
+           xcm += dotpt[i].Weight[0]*dotpt[i].X[0];
+           ycm += dotpt[i].Weight[0]*dotpt[i].X[1];
         }
      }
      else {
@@ -109,9 +109,9 @@ int Zoltan_RIB_inertial2d(
            i = (dindx ? dindx[j] : j);
            xdif = dotpt[i].X[0] - xcm;
            ydif = dotpt[i].X[1] - ycm;
-           xx += dotpt[i].Weight*xdif*xdif;
-           yy += dotpt[i].Weight*ydif*ydif;
-           xy += dotpt[i].Weight*xdif*ydif;
+           xx += dotpt[i].Weight[0]*xdif*xdif;
+           yy += dotpt[i].Weight[0]*ydif*ydif;
+           xy += dotpt[i].Weight[0]*xdif*ydif;
         }
      else
         for (j = 0; j < dotnum; j++) {

@@ -74,10 +74,10 @@ int Zoltan_RIB_inertial3d(
         wgt_sum = 0;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           wgt_sum += dotpt[i].Weight;
-           cm[0] += dotpt[i].Weight*dotpt[i].X[0];
-           cm[1] += dotpt[i].Weight*dotpt[i].X[1];
-           cm[2] += dotpt[i].Weight*dotpt[i].X[2];
+           wgt_sum += dotpt[i].Weight[0];
+           cm[0] += dotpt[i].Weight[0]*dotpt[i].X[0];
+           cm[1] += dotpt[i].Weight[0]*dotpt[i].X[1];
+           cm[2] += dotpt[i].Weight[0]*dotpt[i].X[2];
         }
      }
      else {
@@ -114,12 +114,12 @@ int Zoltan_RIB_inertial3d(
            xdif = dotpt[i].X[0] - cm[0];
            ydif = dotpt[i].X[1] - cm[1];
            zdif = dotpt[i].X[2] - cm[2];
-           xx += dotpt[i].Weight*xdif*xdif;
-           yy += dotpt[i].Weight*ydif*ydif;
-           zz += dotpt[i].Weight*zdif*zdif;
-           xy += dotpt[i].Weight*xdif*ydif;
-           xz += dotpt[i].Weight*xdif*zdif;
-           yz += dotpt[i].Weight*ydif*zdif;
+           xx += dotpt[i].Weight[0]*xdif*xdif;
+           yy += dotpt[i].Weight[0]*ydif*ydif;
+           zz += dotpt[i].Weight[0]*zdif*zdif;
+           xy += dotpt[i].Weight[0]*xdif*ydif;
+           xz += dotpt[i].Weight[0]*xdif*zdif;
+           yz += dotpt[i].Weight[0]*ydif*zdif;
         }
      else
         for (j = 0; j < dotnum; j++) {

@@ -49,7 +49,7 @@ int Zoltan_RB_Build_Structure(
                                    allocated on this processor. */
   int *num_geom,                /* # values per object used to describe
                                    the geometry.                       */
-  int wgtflag,                  /* true is dot weights are to be used. */
+  int wgtflag,                  /* number of weights per dot. */
   int use_ids                   /* true if global and local IDs are to be
                                    kept for RCB or RIB.  In all cases, the 
                                    IDs are allocated and used in Zoltan 
@@ -169,8 +169,8 @@ char *yo = "initialize_dot";
       dot->X[j] = geom_vec[tmp + j];
     for (j = *num_geom; j < 3; j++)
       dot->X[j] = 0.;
-    if (wgtflag)
-       dot->Weight = wgt[i];
+    for (j=0; j<wgtflag; j++)
+      dot->Weight[j] = wgt[i*wgtflag+j];
   }
 End:
   ZOLTAN_FREE(&geom_vec);
@@ -737,22 +737,18 @@ int Zoltan_RB_check_geom_input(
 {
 /* Routine to check input to geometric methods for consistency. */
   char *yo = "Zoltan_RB_check_geom_input";
-  int i, j, k;
+  int i, j, k, count;
   char msg[256];
   int proc = zz->Proc;
   int ierr = ZOLTAN_OK;
 
   /* Error check the weights. */
-  for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
-  MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,zz->Communicator);
-  if (k > 0 && proc == 0) {
-     sprintf(msg, "%d dot weights are equal to 0.", k);
-     ZOLTAN_PRINT_WARN(proc, yo, msg);
-     ierr = ZOLTAN_WARN;
-  }
-
-  for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
-  MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,zz->Communicator);
+  count = 0;
+  for (i = 0; i < dotnum; i++)
+    for (j=0; j<zz->Obj_Weight_Dim; j++)
+      if (dotpt[i].Weight[j] < 0.0) 
+        count++;
+  MPI_Allreduce(&count,&k,1,MPI_INT,MPI_SUM,zz->Communicator);
   if (k > 0) {
     if (proc == 0) {
       sprintf(msg, "%d dot weights are < 0.",k);
@@ -809,8 +805,8 @@ int Zoltan_RB_check_geom_output(
 
   wtpp = (double *) ZOLTAN_CALLOC(2*(1+ngp),sizeof(double));
   for (i = 0; i < dotnum; i++) {
-    wtpp[ngp] += dotpt[i].Weight;
-    wtpp[dotpt[i].Part] += dotpt[i].Weight;
+    wtpp[ngp] += dotpt[i].Weight[0];
+    wtpp[dotpt[i].Part] += dotpt[i].Weight[0];
   }
   wtsum = wtpp + (1+ngp);
 
@@ -875,13 +871,15 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     printf("Partitioning total time: %g (secs)\n", timetotal);
 
   if (stats) {
+    /* EBEB Do we need stats inside RCB? LB_Eval can do this better. */
     if (proc == print_proc) printf("Partitioning Statistics:\n");
 
     MPI_Barrier(zz->Communicator);
 
     /* distribution info */
+    /* multiple weights not supported. */
   
-    for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight;
+    for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight[0];
     MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
     MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
@@ -897,7 +895,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       printf("    Proc %d has weight = %g\n",proc,weight);
 
     for (i = 0, weight = 0.0; i < dotnum; i++) 
-      if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
+      if (dotpt[i].Weight[0] > weight) weight = dotpt[i].Weight[0];
     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
   
     if (proc == print_proc) 
