@@ -84,7 +84,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     RowPerm_("NATURAL"),
     perm_c_(0),
     perm_r_(0),
-    IterRefine_("NO"),
+    IterRefine_("DOUBLE"),
     ReplaceTinyPivot_(false),
     FactorizationOK_(false), 
     UseTranspose_(false),
