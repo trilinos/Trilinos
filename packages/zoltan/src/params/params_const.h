@@ -12,12 +12,13 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_paramsconsth_id = "$Id$";
-#endif
 
 #ifndef PARAMS_CONST_H
 #define PARAMS_CONST_H
+
+#ifndef lint
+static char *cvs_paramsconsth_id = "$Id$";
+#endif
 
 #include "lb_const.h"
 
