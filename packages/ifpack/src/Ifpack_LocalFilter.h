@@ -328,10 +328,7 @@ public:
   }
   //@}
 
-const Epetra_BlockMap& Map() const 
-{
-  return(*Map_);
-}
+const Epetra_BlockMap& Map() const;
 
 char* Label() const{
   return((char*)Label_);

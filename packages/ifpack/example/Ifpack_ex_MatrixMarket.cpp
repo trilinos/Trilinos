@@ -37,6 +37,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Import.h"
+#include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AztecOO.h"

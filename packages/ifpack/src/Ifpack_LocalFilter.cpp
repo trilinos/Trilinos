@@ -194,3 +194,8 @@ int Ifpack_LocalFilter::ApplyInverse(const Epetra_MultiVector& X,
   IFPACK_CHK_ERR(-1); // not implemented
 }
 
+//==============================================================================
+const Epetra_BlockMap& Map() const
+{
+  return(*Map_);
+}
