@@ -49,7 +49,6 @@
 
 #define CHECK_RESIDUALS
 #define DEBUG_LEVEL 0
-#define ALPHA   // Idea for ensuring that tensor model has a root
 
 NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
 				      NOX::StatusTest::Generic& t,
@@ -80,9 +79,6 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
   havePrePostOperator(false)
 {
   init();
-#ifdef ALPHA    
-  printf("Using ALPHA scaling\n");
-#endif
 }
 
 // Protected
@@ -159,14 +155,10 @@ void NOX::Solver::TensorBased::init()
   }
 
   ///////////////////////////////////////////////////
-  
-  NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
-  //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
-  // bwb: Probably want to move this to outside of the Linear Solver parameter
-  // list or just use Method instead of this.  Then we could have separate
-  // parameter lists for this one.
-  string choice = localParams.getParameter("Compute Step", "Tensor");
+  // bwb: Do we just want to use Method instead of "Compute Step"?
+  // Then we could have separate parameter lists for this one.
+  string choice = dirParams.getParameter("Compute Step", "Tensor");
   if (choice == "Tensor")
   {
     requestedBaseStep = TensorStep;
@@ -182,8 +174,16 @@ void NOX::Solver::TensorBased::init()
 	 << "\"Compute Step\" \nparameter \"" << choice
 	 << "\" is invalid.  Using \"Tensor\" instead." << endl;
     requestedBaseStep = TensorStep;
-    localParams.setParameter("Compute Step", "Tensor");
+    dirParams.setParameter("Compute Step", "Tensor");
   }
+
+  bool useModifiedMethod =
+    dirParams.getParameter("Use Modified Bouaricha", true);
+  if (useModifiedMethod)
+    printf("Using ALPHA scaling\n");
+  
+  NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
+  //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
   
   // **** NOX::LineSearch::Tensor::reset(Parameter::List& params)  ****
@@ -621,20 +621,21 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     printf(" sctjf = %e  sctja = %e\n", sctjf, sctja);
     printf(" norm(s) = %e  norm(a) = %e\n", scVec.norm(), acVecPtr->norm());
     
-#ifdef ALPHA    
-    double alpha2 = lambdaBar;
-    printf(" Beta = %e   Alpha2 = %e\n", beta, alpha2);
-    if (alpha2 != 1.0)
+    if (useModifiedMethod)
     {
-      printf("   *** Scaling tensor term a ***\n");
-      acVecPtr->scale(alpha2);
-      tmpVec.scale(alpha2);
-      sctja *= alpha2;
-      beta /= alpha2;
-      lambdaBar = 1.0;
-      qval = 0;
+      double alpha2 = lambdaBar;
+      printf(" Beta = %e   Alpha2 = %e\n", beta, alpha2);
+      if (alpha2 != 1.0)
+      {
+	printf("   *** Scaling tensor term a ***\n");
+	acVecPtr->scale(alpha2);
+	tmpVec.scale(alpha2);
+	sctja *= alpha2;
+	beta /= alpha2;
+	lambdaBar = 1.0;
+	qval = 0;
+      }
     }
-#endif
     
     // Form the tensor step
     tensorVec.update(1.0, newtonVec, -beta*beta, tmpVec, 0.0);

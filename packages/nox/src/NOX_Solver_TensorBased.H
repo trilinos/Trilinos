@@ -266,30 +266,23 @@ protected:
 protected:
 
   //! Subroutine for computing the tensor and Newton directions
-  bool NOX::Solver::TensorBased::computeTensorDirection(
-			 NOX::Abstract::Group& soln,
-			 const NOX::Solver::Generic& solver);  
+  bool computeTensorDirection(NOX::Abstract::Group& soln,
+			      const NOX::Solver::Generic& solver);  
 
   //! Subroutine for calculating beta
-  double NOX::Solver::TensorBased::calculateBeta(double qa,
-						 double qb,
-						 double qc,
-						 double& qval,
-						 double& lambdaBar,
-						 double lambda=1.0) const;
+  double calculateBeta(double qa, double qb, double qc, double& qval,
+		       double& lambdaBar, double lambda=1.0) const;
 
   //! Subroutine for computing the curvilinear step
-  bool NOX::Solver::TensorBased::computeCurvilinearStep(
-				     NOX::Abstract::Vector& dir,
-				     const NOX::Abstract::Group& soln,
-				     const NOX::Solver::Generic& s,
-				     double& lambda);
+  bool computeCurvilinearStep(NOX::Abstract::Vector& dir,
+			      const NOX::Abstract::Group& soln,
+			      const NOX::Solver::Generic& s,
+			      double& lambda);
 
   //! Subroutine for executing the tensor linesearch
-  bool NOX::Solver::TensorBased::implementGlobalStrategy(
-				      NOX::Abstract::Group& newGrp,
-				      double& step,
-				      const NOX::Solver::Generic& s);
+  bool implementGlobalStrategy(NOX::Abstract::Group& newGrp,
+			       double& step,
+			       const NOX::Solver::Generic& s);
     
   
   //! Performs a standard tensor linesearch (tensor or Newton direction)
@@ -299,29 +292,27 @@ protected:
 			 const NOX::Solver::Generic& s);
 
   //! Compute the residual norm of the local model
-  double NOX::Solver::TensorBased::getNormModelResidual(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln,
-				       bool isTensorModel) const;
+  double getNormModelResidual(const NOX::Abstract::Vector& dir,
+			      const NOX::Abstract::Group& soln,
+			      bool isTensorModel) const;
 
   //! Print pertinent information about the direction
-  void NOX::Solver::TensorBased::printDirectionInfo(char* dirName,
-					  const NOX::Abstract::Vector& dir,
-					  const NOX::Abstract::Group& soln,
-					  bool isTensorModel) const;
+  void printDirectionInfo(char* dirName,
+			  const NOX::Abstract::Vector& dir,
+			  const NOX::Abstract::Group& soln,
+			  bool isTensorModel) const;
 
   //! Calculate the directional derivative
-  double NOX::Solver::TensorBased::getDirectionalDerivative(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln) const;
+  double getDirectionalDerivative(const NOX::Abstract::Vector& dir,
+				  const NOX::Abstract::Group& soln) const;
 
   //! Select lambda for linesearch (quadratic or halving)
   double selectLambda(double newf, double oldf,
 		      double oldfprime, double lambda);
 
   //! Throw an error with a method's name and error message
-  void NOX::Solver::TensorBased::throwError(const string& functionName,
-					    const string& errorMsg) const;
+  void throwError(const string& functionName,
+		  const string& errorMsg) const;
   
 protected:
   
@@ -335,42 +326,42 @@ protected:
   //! Previous solution reference.
   NOX::Abstract::Group& oldSoln;	
 
-  //! Current Newton direction.pointer.
+  //! Current Newton direction (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* newtonVecPtr;
-  //! Current Newton direction.reference.
+  //! Current Newton direction (reference).
   NOX::Abstract::Vector& newtonVec;
 
-  //! Current tensor direction.pointer.
+  //! Current tensor direction (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* tensorVecPtr;
-  //! Current tensor direction.reference.
+  //! Current tensor direction (reference).
   NOX::Abstract::Vector& tensorVec;
 
-  //! Current tensor term vector.pointer.
+  //! Current tensor term vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* acVecPtr;
-  //! Current tensor term vector
+  //! Current tensor term vector (reference).
   NOX::Abstract::Vector& acVec;
 
-  //! Vector to previous point.pointer.
+  //! Vector to previous point (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* scVecPtr;
-  //! Vector to previous point
+  //! Vector to previous point (reference).
   NOX::Abstract::Vector& scVec;
 
-  //! Working vector.pointer.
+  //! Working vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* tmpVecPtr;
-  //! Working vector
+  //! Working vector (reference).
   NOX::Abstract::Vector& tmpVec;
 
-  //! Residual vector.pointer.
+  //! Residual vector (pointer).
   NOX::Abstract::Vector* residualVecPtr;
 
   //! Stopping test.
@@ -451,6 +442,9 @@ protected:
 
   //! Flag for lambda selection (Halving/Quadratic)
   LambdaSelectionType lambdaSelection;
+
+  //! Flag for using modifications that force quadratic to have real root
+  bool useModifiedMethod;
 
   //! Flag for Newton direction
   bool isNewtonDirection;
