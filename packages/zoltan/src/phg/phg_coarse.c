@@ -21,14 +21,162 @@ extern "C" {
 #include "phg.h"
 #include "zoltan_comm.h"
 
-#define USE_NEW_COARSENING  0
-
+    
+//#define USE_NEW_COARSENING  
+#define REMOVE_IDENTICAL_NETS
+    
+    
 #define PIN_OVER_ALLOC 1.2  /* Overallocate pins by 20% */
 #define PLAN_TAG 32010      /* tag for comm plan */
 
 
 
-#if USE_NEW_COARSENING
+#ifdef USE_NEW_COARSENING
+
+
+
+typedef struct _TagSortItem
+{
+int id;
+unsigned long val;
+} SortItem;
+    
+/* UVC:
+   Following quicksort routines are modified from
+   Numerical Recipes Software
+   these versions of quicksort seems to perform
+   better than the ones that exist in Zoltan
+*/
+    
+#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
+
+#define M             7
+#define NSTACK        50
+
+static void uqsort(int n, SortItem *arr)
+{
+    int           i, ir=n, j, k, l=1;
+    int           jstack=0, istack[NSTACK];
+    unsigned long aval;
+    SortItem      a, temp;
+    
+    --arr;
+    for (;;) {
+        if (ir-l < M) {
+            for (j=l+1;j<=ir;j++) {
+                a=arr[j];
+                aval = a.val;
+                for (i=j-1;i>=1;i--) {
+                    if (arr[i].val <= aval) 
+                        break;
+                    arr[i+1] = arr[i];
+                }
+                arr[i+1]=a;
+            }
+            if (jstack == 0) 
+                break;
+            ir=istack[jstack--];
+            l=istack[jstack--];
+        } else {
+            k=(l+ir) >> 1;
+            SWAP(arr[k],arr[l+1]);
+            if (arr[l+1].val > arr[ir].val) 
+                SWAP(arr[l+1],arr[ir]);
+            if (arr[l].val > arr[ir].val) 
+                SWAP(arr[l],arr[ir]);
+            if (arr[l+1].val > arr[l].val) 
+                SWAP(arr[l+1],arr[l]);
+
+            i=l+1;
+            j=ir;
+            a=arr[l];
+            aval = a.val;
+            for (;;) {
+                do i++; while (arr[i].val < aval);
+                do j--; while (arr[j].val > aval);
+                if (j < i) break;
+                SWAP(arr[i],arr[j]);
+            }
+            arr[l]=arr[j];
+            arr[j]=a;
+            jstack += 2;
+            if (jstack > NSTACK) 
+                errexit("uqsort: NSTACK too small in sort.");
+            if (ir-i+1 >= j-l) {
+                istack[jstack]=ir;
+                istack[jstack-1]=i;
+                ir=j-1;
+            } else {
+                istack[jstack]=j-1;
+                istack[jstack-1]=l;
+                l=i;
+            }
+        }
+    }
+}
+
+
+static void uqsorti(int n, int *arr)
+{
+    int         i, ir=n, j, k, l=1;
+    int         jstack=0, istack[NSTACK];
+    int         a, temp;
+    
+    --arr;
+    for (;;) {
+        if (ir-l < M) {
+            for (j=l+1;j<=ir;j++) {
+                a=arr[j];
+                for (i=j-1;i>=1;i--) {
+                    if (arr[i] <= a) 
+                        break;
+                    arr[i+1] = arr[i];
+                }
+                arr[i+1]=a;
+            }
+            if (jstack == 0) 
+                break;
+            ir=istack[jstack--];
+            l=istack[jstack--];
+        } else {
+            k=(l+ir) >> 1;
+            SWAP(arr[k],arr[l+1]);
+            if (arr[l+1] > arr[ir]) 
+                SWAP(arr[l+1], arr[ir]);
+            if (arr[l] > arr[ir]) 
+                SWAP(arr[l], arr[ir]);
+            if (arr[l+1] > arr[l]) 
+                SWAP(arr[l+1], arr[l]);
+            i=l+1;
+            j=ir;
+            a=arr[l];
+            for (;;) {
+                do i++; while (arr[i] < a);
+                do j--; while (arr[j] > a);
+                if (j < i) break;
+                SWAP(arr[i], arr[j]);
+            }
+            arr[l]=arr[j];
+            arr[j]=a;
+            jstack += 2;
+            if (jstack > NSTACK) 
+                errexit("uqsort: NSTACK too small in sort.");
+            if (ir-i+1 >= j-l) {
+                istack[jstack]=ir;
+                istack[jstack-1]=i;
+                ir=j-1;
+            } else {
+                istack[jstack]=j-1;
+                istack[jstack-1]=l;
+                l=i;
+            }
+        }
+    }
+}
+
+#undef M
+#undef NSTACK
+#undef SWAP
 
 static long hashValue(int n, int *ar)
 {
@@ -42,6 +190,7 @@ static long hashValue(int n, int *ar)
     }
     return l;
 }
+
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
    match are clustered to a single vertex. Currently, we allow more
@@ -64,14 +213,15 @@ int Zoltan_PHG_Coarsening
     )   
 {
   char *yo = "Zoltan_PHG_Coarsening";
-  int  ierr=ZOLTAN_OK, i, j, count, size, me, idx;
+  int  ierr=ZOLTAN_OK, i, j, count, size, me, idx, ni;
   int  *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
   int  *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL;
-  int  *c_hindex=NULL, *c_hvertex=NULL;
   float *c_ewgt=NULL;
   unsigned long *hash=NULL, *lhash=NULL;
   char *buffer=NULL, *rbuffer=NULL;
   PHGComm          *hgc = hg->comm;
+  struct Zoltan_Comm_Obj  *plan=NULL;
+  SortItem *slist=NULL;
   
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->comm    = hg->comm;         /* set communicators */
@@ -92,11 +242,15 @@ int Zoltan_PHG_Coarsening
   if (hg->nVtx > 0 && !(vmark = (int*) ZOLTAN_CALLOC(hg->nVtx,  sizeof(int))))
       MEMORY_ERROR;
 
+  size = MAX(count, hg->nEdge);
+  if (size && (
+      !(listproc  = (int*) ZOLTAN_MALLOC (size * sizeof(int)))
+   || !(msg_size  = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
+      MEMORY_ERROR;
+
   if (count > 0 && (
       !(listgno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
    || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
-   || !(listproc  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
-   || !(msg_size  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
    || !(*LevelData= (int*) ZOLTAN_MALLOC (count * sizeof(int) * 2))))
       MEMORY_ERROR;
 
@@ -171,16 +325,15 @@ int Zoltan_PHG_Coarsening
 
   /* Allocate receive buffer. */
   /* size is the size of the received data, measured in #ints */
-  if (size > 0 && (
-          !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))
-          || !(ahvertex = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
+  if (size  && (
+       !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))
+    || !(ahvertex = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
       MEMORY_ERROR;
   if (hg->nEdge && (
-      !(ahindex = (int *) ZOLTAN_CALLOC(hg->nEdge+1, sizeof(int)))
-      || !(hlsize = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
-      || !(hsize = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
-      || !(lhash = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
-      || !(hash = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
+       !(ahindex = (int *) ZOLTAN_CALLOC(hg->nEdge+1, sizeof(int)))
+    || !(hlsize  = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
+    || !(lhash   = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
+    || !(hash    = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
           ))
       MEMORY_ERROR;
 
@@ -218,7 +371,7 @@ int Zoltan_PHG_Coarsening
     i += sz;
   }
   for (i=0; i<hg->nEdge; ++i) /* prefix sum over ahindex */
-      ahindex[i+1] += ahindex[i];
+    ahindex[i+1] += ahindex[i];
   /* now prepare ahvertex */
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, lno=VTX_GNO_TO_LNO (hg, ip[i+1]);
@@ -254,6 +407,7 @@ int Zoltan_PHG_Coarsening
   memset(vmark, 0xff, sizeof(int)*c_hg->nVtx);
   idx = 0;
   for (i=0; i < hg->nEdge; ++i) { /* loop over edges */
+      int sidx=idx;
       c_hg->hindex[i] = idx;
       /* first go over local vertices */
       for (j=hg->hindex[i]; j<hg->hindex[i+1]; ++j) {
@@ -271,54 +425,137 @@ int Zoltan_PHG_Coarsening
               vmark[nvno] = i;
           }
       }          
+      /* in qsort start and end indices are inclusive */
+      /*    Zoltan_quicksort_list_inc_int(&c_hg->hvertex[sidx], 0, idx-sidx-1); */
+      /* UVC my qsort code is a little bit faster :) */
+#ifdef REMOVE_IDENTICAL_NETS
+      uqsorti(idx-sidx, &c_hg->hvertex[sidx]);
+#endif
   }
   c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
-  ZOLTAN_FREE(&vmark);
+  Zoltan_Multifree(__FILE__, __LINE__, 3, &vmark, &ahvertex, &ahindex);
 
+
+#ifdef REMOVE_IDENTICAL_NETS
   for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
       hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
       lhash[i] = hashValue(hlsize[i], &c_hg->hvertex[c_hg->hindex[i]]);
   }
-  MPI_Allreduce(hlsize, hsize, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+
   /* UVC TODO to compute global hash; right now we'll use bitwise xor;
      we need to check if this is good, if not we need to find a better way */
-  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_LONG, MPI_BXOR, hgc->row_comm);
+  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_LONG, MPI_PROD, hgc->row_comm);
 
-#if 1
-  for (i=0; i<hg->nEdge; ++i) /* discard size-1 or 0 nets */
-      if (hsize[i]<2) {
-          c_hg->nPins -= hlsize[i];
-          hsize[i]=0;        /* hsize=-1 will be used as marker */
-          --c_hg->nEdge;      /*      by IdenticalNets as well */
-      }
+
+  for (i=0; i < hg->nEdge; ++i)  /* decide where to send */
+      listproc[i] = (int) (hash[i] % hgc->nProc_y);
   
-  if (c_hg->nEdge < hg->nEdge) { /* we need to reduce the hypergraph */
-      int ni, idx=0;
-      
-      c_hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
-      if (c_hg->nPins &&
-          !(c_hvertex=(int*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(int))))
-          MEMORY_ERROR;
-      if (c_hg->nEdge &&
-          !(c_ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
-          MEMORY_ERROR;
-      
-      for (ni=i=0; i<hg->nEdge; ++i)
-          if (hsize[i]) {
-              c_hindex[ni] = idx;
-              memcpy(&c_ewgt[ni], &c_hg->ewgt[i], c_hg->EdgeWeightDim*sizeof(float));
-              memcpy(&c_hvertex[idx], &c_hg->hvertex[c_hg->hindex[i]], hlsize[i]*sizeof(int));
-              ++ni;
-              idx += hlsize[i];
-          }
-      c_hindex[c_hg->nEdge] = idx;
-      Zoltan_Multifree (__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
-      c_hg->hindex = c_hindex;     c_hindex = NULL;
-      c_hg->hvertex = c_hvertex;   c_hvertex = NULL;
-      c_hg->ewgt = c_ewgt;         c_ewgt = NULL;
-  }
-#endif
+  Zoltan_Comm_Create(&plan, c_hg->nEdge, listproc, hgc->col_comm, PLAN_TAG+10, 
+                     &size);
 
+  /* send hash values */
+  if (size > hg->nEdge) {
+      Zoltan_Multifree(__FILE__, __LINE__, 2, &lhash, &listproc);
+      if (!(lhash=(unsigned long *) ZOLTAN_MALLOC(size * sizeof(unsigned long)))
+          || !(listproc=(int *) ZOLTAN_MALLOC(size * sizeof(int))))
+          MEMORY_ERROR;
+  }
+  Zoltan_Comm_Do(plan, PLAN_TAG+11, (char *) hash, sizeof(unsigned long), (char *) lhash);
+  ZOLTAN_FREE(&hash); /* we don't need it anymore */
+
+  /* now local sizes */
+  if (size && (
+       !(ip      = (int *)  ZOLTAN_MALLOC(size * sizeof(int)))
+    || !(hsize =   (int *)  ZOLTAN_MALLOC(size * sizeof(int)))       
+    || !(ahindex = (int *)  ZOLTAN_MALLOC((1+size) * sizeof(int)))
+    || !(c_ewgt  = (float *)ZOLTAN_MALLOC(size * sizeof(float)*c_hg->EdgeWeightDim)))) 
+      MEMORY_ERROR;
+
+  Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) hlsize, sizeof(int), (char *) ip);
+  /* now ewgt sizes */
+  Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) c_hg->ewgt, sizeof(int), (char *) c_ewgt);
+
+  /* now vertices of hyperedges */
+  Zoltan_Comm_Resize(plan, hlsize, PLAN_TAG+13, &idx);
+  if (idx && !(ahvertex = (int *) ZOLTAN_MALLOC(idx * sizeof(int))))
+      MEMORY_ERROR; 
+  Zoltan_Comm_Do(plan, PLAN_TAG+14, (char *) c_hg->hvertex, sizeof(int), (char *) ahvertex);
+  ZOLTAN_FREE(&hlsize);    hlsize=ip;
+
+  Zoltan_Comm_Destroy (&plan);
+
+  if (size && !(slist = (SortItem *) ZOLTAN_MALLOC(size * sizeof(SortItem))))
+      MEMORY_ERROR;
+  ahindex[0] = 0;
+  for (i=0; i<size; ++i) {
+      ahindex[1+i] = ahindex[i] + hlsize[i];
+      slist[i].id = i;
+      slist[i].val = lhash[i];
+  }
+  uqsort(size, slist);
+      
+  idx = 0;
+  memset(listproc, 0, sizeof(int)*size);
+  for (j=0, i=1; i<size; ++i) {
+      while (i<size && slist[j].val==slist[i].val) {
+          int n1=slist[j].id, n2=slist[i].id;
+
+          if (hlsize[n1]==hlsize[n2] &&
+              !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]], sizeof(int)*hlsize[n1])) {
+              listproc[n2] = 1+n1;
+              ++idx;
+          }
+          ++i;
+      }
+      j = i;
+  }  
+  ZOLTAN_FREE(&slist);
+  ip = (int *) lhash; /* UVC: should be safe; it is always sizeof(int)<=sizeof(long) */
+  MPI_Allreduce(listproc, ip, size, MPI_INT, MPI_LAND, hgc->row_comm);
+  MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
+  
+  c_hg->nPins = 0;
+  c_hg->nEdge = 0;
+  for (i=0; i<size; ++i) {
+      if (ip[i]) { /* identical net */
+          int n1=listproc[i]-1; /* i is identical to n1 */
+          for (j=0; j<c_hg->EdgeWeightDim; ++j)
+              c_ewgt[n1*c_hg->EdgeWeightDim + j] += c_ewgt[i*c_hg->EdgeWeightDim + j];
+          ip[i] = 0; /* ignore */
+      } else if (hsize[i]>1) { /* size not 0/1 and NOT identical */          
+          c_hg->nPins += hlsize[i];
+          ++c_hg->nEdge;
+          ip[i] = 1; /* Don't ignore */
+      } else 
+          ip[i] = 0; /* ignore */
+  }
+  
+  Zoltan_Multifree(__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
+
+  c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
+  if (c_hg->nPins &&
+      !(c_hg->hvertex=(int*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(int))))
+      MEMORY_ERROR;
+  if (c_hg->nEdge &&
+      !(c_hg->ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
+      MEMORY_ERROR;
+
+  
+  for (idx=ni=i=0; i<size; ++i)
+      if (ip[i]) {
+          c_hg->hindex[ni] = idx;
+          memcpy(&c_hg->ewgt[ni], &c_ewgt[i], c_hg->EdgeWeightDim*sizeof(float));
+          memcpy(&c_hg->hvertex[idx], &ahvertex[ahindex[i]], hlsize[i]*sizeof(int));
+          ++ni;
+          idx += hlsize[i];
+      }
+  c_hg->hindex[c_hg->nEdge] = idx;
+
+#ifdef _DEBUG
+  if (idx!=c_hg->nPins || ni!=c_hg->nEdge)
+      errexit("idx(%d)!=c_hg->nPins(%d) || ni(%d)!=c_hg->nEdge(%d)", idx, c_hg->nPins, ni, c_hg->nEdge);
+#endif
+#endif
 
   /* We need to compute dist_x, dist_y */
   if (!(c_hg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
@@ -338,8 +575,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_Multifree (__FILE__, __LINE__, 14,
                     &listgno, &listlno, &listproc, &msg_size,
                     &buffer, &rbuffer, &ahindex, &ahvertex, &vmark,
-                    &hlsize, &hsize, &lhash, &hash,
-                    &c_hindex, &c_hvertex, &c_ewgt 
+                    &hlsize, &hsize, &lhash, &hash, &c_ewgt 
                     );
   return ierr;
 }
