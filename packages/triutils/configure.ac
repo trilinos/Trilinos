@@ -240,6 +240,28 @@ TAC_ARG_WITH_BLASLIB
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
+
+# -- DEC CXX --
+# MS # Add the following 29-Apr-04
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+  case $target in
+    alpha*)
+      if test $CXX = cxx; then
+        TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+      fi
+    ;;
+  esac
+fi
+
+AC_MSG_CHECKING([for template-specific object files to be linked])
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ AC_MSG_RESULT(none)
+else
+ AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+fi
+
+AC_SUBST(TRILINOS_TEMPLATE_OBJS)
+
 # -- DEC CXX --
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
 dnl    XTRALDADD="cxx_repository/*.o"
