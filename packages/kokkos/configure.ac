@@ -271,6 +271,7 @@ AC_CONFIG_FILES([
 		test/BaseSparseSolve/Makefile
 		test/DenseMultiVector/Makefile
 		test/HbMatrix/Makefile
+		test/Permutation/Makefile
 		example/Makefile])
 
 AC_OUTPUT()
