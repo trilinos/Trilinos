@@ -74,7 +74,7 @@ public:
   virtual bool reset(Parameter::List& params);
 
   // derived
-  virtual bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
 			  const Solver::Generic& solver);
 
 protected:
@@ -90,7 +90,7 @@ private:
   Parameter::List* paramsptr;
 
   //! Vector containing the predicted RHS
-  Abstract::Vector* predrhs;
+  Abstract::Vector* predf;
 
   //! Vector containing the computed direction
   Abstract::Vector* stepdir;

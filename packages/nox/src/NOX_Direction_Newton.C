@@ -42,14 +42,14 @@ using namespace NOX::Direction;
 
 Newton::Newton(Parameter::List& p) 
 {
-  predrhs = NULL;
+  predf = NULL;
   stepdir = NULL;
   reset(p);
 }
 
 Newton::~Newton()
 {
-  delete predrhs;
+  delete predf;
 }
 
 bool Newton::reset(Parameter::List& p)
@@ -60,16 +60,16 @@ bool Newton::reset(Parameter::List& p)
   return true;
 }
 
-bool Newton::operator()(Abstract::Vector& dir, 
+bool Newton::compute(Abstract::Vector& dir, 
 			Abstract::Group& soln, 
 			const Solver::Generic& solver)
 {
-  // Compute RHS at current solution
-  bool ok = soln.computeRHS();
+  // Compute F at current solution
+  bool ok = soln.computeF();
 
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Newton::operator() - Unable to compute RHS." << endl;
+      cout << "NOX::Direction::Newton::compute - Unable to compute F." << endl;
     return false;
   }
 
@@ -77,7 +77,7 @@ bool Newton::operator()(Abstract::Vector& dir,
   ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations());
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Newton::operator() - Unable to set Forcing term." << endl;
+      cout << "NOX::Direction::Newton::compute - Unable to set Forcing term." << endl;
     return false;
   }
 
@@ -86,7 +86,7 @@ bool Newton::operator()(Abstract::Vector& dir,
 
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Newton::operator() - Unable to compute Jacobian." << endl;
+      cout << "NOX::Direction::Newton::compute - Unable to compute Jacobian." << endl;
     return false;
   }
   
@@ -97,17 +97,17 @@ bool Newton::operator()(Abstract::Vector& dir,
   // It didn't work, but maybe it's ok anyway...
   if (!ok) {
 
-    if (predrhs == NULL) {
-      predrhs = soln.getRHS().clone(CopyShape);
+    if (predf == NULL) {
+      predf = soln.getF().clone(ShapeCopy);
     }
 
-    soln.applyJacobian(soln.getNewton(), *predrhs);    
-    predrhs->update(-1.0, soln.getRHS(), 1.0);
-    double accuracy = predrhs->norm();
+    soln.applyJacobian(soln.getNewton(), *predf);    
+    predf->update(-1.0, soln.getF(), 1.0);
+    double accuracy = predf->norm();
     if (accuracy < 1) {
       ok = true;
       if (Utils::doPrint(Utils::Warning)) 
-	cout << "WARNING: NOX::Direction::Newton::operator() - Newton solve failure.\n" 
+	cout << "WARNING: NOX::Direction::Newton::compute - Newton solve failure.\n" 
 	     << "Desired accuracy is " 
 	     << Utils::sci(paramsptr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10)) << ".\n"
 	     << "Using solution with accuracy of " << Utils::sci(accuracy) << "." << endl;
@@ -116,7 +116,7 @@ bool Newton::operator()(Abstract::Vector& dir,
 
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Newton::operator() - Unable to compute Newton direction." << endl;
+      cout << "NOX::Direction::Newton::compute - Unable to compute Newton direction." << endl;
     return false;
   }
   
@@ -171,38 +171,38 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
     else {
 
 
-      // Create a new vector to be the predicted RHS
-      if (predrhs == NULL) {
-	predrhs = oldsoln.getRHS().clone(CopyShape);
+      // Create a new vector to be the predicted F
+      if (predf == NULL) {
+	predf = oldsoln.getF().clone(ShapeCopy);
       }
       if (stepdir == NULL) {
-	stepdir = oldsoln.getRHS().clone(CopyShape);
+	stepdir = oldsoln.getF().clone(ShapeCopy);
       }
       
       // stepdir = X - oldX (i.e., the step times the direction)
       stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
       
-      // Compute predrhs = Jacobian * step * dir
-      oldsoln.applyJacobian(*stepdir, *predrhs);
+      // Compute predf = Jacobian * step * dir
+      oldsoln.applyJacobian(*stepdir, *predf);
       
-      // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
-      predrhs->update(1.0, oldsoln.getRHS(), 1.0);
+      // Compute predf = FVector + predf (this is the predicted F)
+      predf->update(1.0, oldsoln.getF(), 1.0);
       
-      // Return norm of predicted RHS
-      const double normpredrhs = predrhs->norm();
+      // Return norm of predicted F
+      const double normpredf = predf->norm();
       
       // Get other norms
-      const double normrhs = soln.getNormRHS();
-      const double normoldrhs = oldsoln.getNormRHS();
+      const double normf = soln.getNormF();
+      const double normoldf = oldsoln.getNormF();
       
       // Compute forcing term
-      eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
+      eta_k = fabs(normf - normpredf) / normoldf;
       
       // Some output
       if (Utils::doPrint(Utils::Details)) {
-	cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-	cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
-	cout << indent << "Residual Norm k =               " << normrhs << "\n";
+	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
+	cout << indent << "Residual Norm Linear Model k =  " << normpredf << "\n";
+	cout << indent << "Residual Norm k =               " << normf << "\n";
 	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
       }
       
@@ -224,18 +224,18 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
     }
     else {
 
-      const double normrhs = soln.getNormRHS();
-      const double normoldrhs = oldsoln.getNormRHS();
+      const double normf = soln.getNormF();
+      const double normoldf = oldsoln.getNormF();
       const double alpha = paramsptr->getParameter("Forcing Term Alpha", 1.5);
       const double gamma = paramsptr->getParameter("Forcing Term Gamma", 0.9);
-      const double residual_ratio = normrhs / normoldrhs;
+      const double residual_ratio = normf / normoldf;
       
       eta_k = gamma * pow(residual_ratio, alpha);
       
       // Some output
       if (Utils::doPrint(Utils::Details)) {
-	cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-	cout << indent << "Residual Norm k =               " << normrhs << "\n";
+	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
+	cout << indent << "Residual Norm k =               " << normf << "\n";
 	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
       }
       

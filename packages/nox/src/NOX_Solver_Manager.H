@@ -44,18 +44,18 @@ public:
     \brief Generic interface. On input, the grp should contain the
     initial guess. On output it will contain the solution. 
   */
-  Manager(Abstract::Group& grp, Status::Test &t, const Parameter::List& p);
+  Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p);
 
   //! Destructor.
   ~Manager();
 
-  bool reset(Abstract::Group& grp, Status::Test &t, const Parameter::List& p);
+  bool reset(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p);
 
-  Status::StatusType getStatus();
+  StatusTest::StatusType getStatus();
 
-  Status::StatusType iterate();
+  StatusTest::StatusType iterate();
 
-  Status::StatusType solve();
+  StatusTest::StatusType solve();
 
   const Abstract::Group& getSolutionGroup() const;
   

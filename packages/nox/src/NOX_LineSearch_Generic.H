@@ -69,7 +69,7 @@ public:
   
   //! Perform a line search from oldgrp along dirction dir. 
   //! Update newgrp = oldgrp + step * dir.
-  virtual bool operator()(Abstract::Group& newgrp, double& step,
+  virtual bool compute(Abstract::Group& newgrp, double& step,
 			  const Abstract::Group& oldgrp, 
 			  const Abstract::Vector& dir) = 0;
 

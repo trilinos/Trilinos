@@ -74,34 +74,28 @@ bool Manager::reset(Parameter::List& params)
       ptr = new Newton(params);
     else if (method == "Steepest Descent")
       ptr = new SteepestDescent(params);
-    /*
-    else if (method == "Dogleg") {
-      //ptr = new Dogleg(params);
-    }
-    else if (method == "Broyden") {
-      //ptr = new Broyden(params);
-    }
-    */
     else {
       ptr = NULL;
-      cerr << "ERROR: NOX::Direction::Manager::reset() - invalid choice \"" 
-	   << method << "\" for direction method " << endl;
-      throw "NOX Error";
+      if (Utils::doPrint(NOX::Utils::Warning)) {
+	cerr << "NOX::Direction::Manager::reset() - invalid choice (" 
+	     << method << ") for direction method " << endl;
+      }
+      return false;
     }
   }
 
   return ptr->reset(params);
 }
 
-bool Manager::operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
 			 const Solver::Generic& solver) 
 {
   if (ptr == NULL) {
     if (Utils::doPrint(NOX::Utils::Warning)) 
-      cout << "Calling NOX::Direction::Manager::operator() on uninitialized direction" << endl;
+      cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
   }
 
-  return ptr->operator()(dir, grp, solver);
+  return ptr->compute(dir, grp, solver);
 }
 

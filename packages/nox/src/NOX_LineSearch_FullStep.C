@@ -58,7 +58,7 @@ bool FullStep::reset(Parameter::List& params)
   return true;
 }
 
-bool FullStep::operator()(Abstract::Group& newgrp, double& step, 
+bool FullStep::compute(Abstract::Group& newgrp, double& step, 
 			  const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
   step = fullstep;

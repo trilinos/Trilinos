@@ -60,11 +60,11 @@ bool Secant::reset(Parameter::List& params)
   return true;
 }
 
-bool Secant::operator()(Abstract::Group& newgrp, double& step, 
+bool Secant::compute(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
 
-  double oldf = 0.5*oldgrp.getNormRHS()*oldgrp.getNormRHS();  
+  double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
   double fmin = 10.0*oldf; // Allowable proximity to oldf for bestStep
   double newf = 0.;
   bool isfailed = false;
@@ -72,10 +72,10 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
   alpha = 1.e-5; // Used in a backward difference approximation for
 		 // initialization of the numerical hessian
   newgrp.computeX(oldgrp, dir, -alpha);
-  newgrp.computeRHS(); // Assumed gradient direction for this linesearch
-  newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+  newgrp.computeF(); // Assumed gradient direction for this linesearch
+  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
 
-  double etaOld = dir.dot(newgrp.getRHS());
+  double etaOld = dir.dot(newgrp.getF());
   double eta;
 
   int niters = 1;
@@ -89,8 +89,8 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
 
   while ((abs(alpha)>1.e-8) && (niters<=maxiters)) { 
 
-    newgrp.computeRHS();
-    newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+    newgrp.computeF();
+    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
 
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
@@ -101,7 +101,7 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
       cout << endl;
     }
 
-    eta = dir.dot(newgrp.getRHS());
+    eta = dir.dot(newgrp.getF());
 
     if(newf < fmin) {
       bestStep = step;
@@ -120,8 +120,8 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
   } // end while loop
 
 
-  newgrp.computeRHS();
-  newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+  newgrp.computeF();
+  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
 
   if ((newf < oldf) && (abs(step)>minstep)) {
     if (Utils::doPrint(Utils::InnerIteration)) {
@@ -138,8 +138,8 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
   else {
     step = bestStep; // Could also use Recovery step here
     newgrp.computeX(oldgrp, dir, step);
-    newgrp.computeRHS();
-    newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+    newgrp.computeF();
+    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << Utils::fill(5,' ') << "alpha = " << Utils::sci(alpha);
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);

@@ -78,7 +78,7 @@ public:
   bool reset(Parameter::List& params);
 
   // derived
-  bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+  bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
 		  const Solver::Generic& solver);
 
 private:

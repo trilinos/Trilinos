@@ -91,10 +91,10 @@ bool Manager::reset(Parameter::List& params)
   return ptr->reset(params);
 }
 
-bool Manager::operator()(Abstract::Group& newgrp, double& step, 
+bool Manager::compute(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
-  return ptr->operator()(newgrp, step, oldgrp, dir);
+  return ptr->compute(newgrp, step, oldgrp, dir);
 }
 
 

@@ -75,7 +75,7 @@ bool MoreThuente::reset(Parameter::List& params)
 }
 
 
-bool MoreThuente::operator()(Abstract::Group& newgrp, double& step, 
+bool MoreThuente::compute(Abstract::Group& newgrp, double& step, 
 			     const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
   int info = cvsrch(newgrp, step, oldgrp, dir);
@@ -84,12 +84,12 @@ bool MoreThuente::operator()(Abstract::Group& newgrp, double& step,
 
 double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group& grp)
 {
-  if (grp.isGrad()) {
-    return dir.dot(grp.getGrad());
+  if (grp.isGradient()) {
+    return dir.dot(grp.getGradient());
   }
 
   if (tmpvecptr == NULL) {
-    tmpvecptr = grp.getX().clone(CopyShape);
+    tmpvecptr = grp.getX().clone(ShapeCopy);
   }
 
   // tmpvec = J * dir
@@ -100,12 +100,12 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
     throw "NOX Error";
   }
 
-  if (!grp.isRHS()) {
-    cout << "NOX::LineSearch::MoreThuente::dgcompute - Invalid RHS" << endl;
+  if (!grp.isF()) {
+    cout << "NOX::LineSearch::MoreThuente::dgcompute - Invalid F" << endl;
     throw "NOX Error";
   }
 
-  return (tmpvecptr->dot(grp.getRHS()));
+  return (tmpvecptr->dot(grp.getF()));
 }
 
 int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
@@ -139,8 +139,8 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   bool brackt = false;		// has the soln been bracketed?
   bool stage1 = true;		// are we in stage 1?
   int nfev = 0;			// number of function evaluations
-  double finit = 0.5 * oldgrp.getNormRHS(); // initial function value
-  double dgtest = ftol * dginit; // rhs for curvature condition
+  double finit = 0.5 * oldgrp.getNormF(); // initial function value
+  double dgtest = ftol * dginit; // f for curvature condition
   double width = stpmax - stpmin; // interval width
   double width1 = 2*width;	// ???
 
@@ -194,8 +194,8 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     // and compute the directional derivative.
 
     newgrp.computeX(oldgrp, dir, stp);
-    newgrp.computeRHS();
-    double f = 0.5 * newgrp.getNormRHS();
+    newgrp.computeF();
+    double f = 0.5 * newgrp.getNormF();
     newgrp.computeJacobian();
     nfev ++;
 

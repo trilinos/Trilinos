@@ -46,9 +46,8 @@ namespace NOX {
 namespace Abstract { 
 
 /*!  \brief %NOX pure abstract interface to a "group"; i.e., a
-  solution vector and the corresponding right hand side (RHS),
-  Jacobian, gradient, and Newton vectors, as well as any shared
-  objects.
+  solution vector and the corresponding F-vector, Jacobian matrix,
+  gradient vector, and Newton vector.
 */
 /*! 
   This class groups together the objects relating to a particular
@@ -65,8 +64,7 @@ namespace Abstract {
   \min f(x) \equiv \frac{1}{2} F(x)^T F(x).
   \f]
 
-  We let \f$x\f$ denote the solution (i.e., \b X) associated with this
-  group. The \b RHS is denoted by \f$F \equiv F(x)\f$. The \b Jacobian
+  The \b Jacobian
   is denoted by \f$J\f$, and defined by
   \f[
   J_{ij} = \frac{\partial F_i}{\partial x_j} (x).
@@ -108,9 +106,11 @@ public:
   */
   virtual bool computeX(const Group& grp, const Vector& d, double step) = 0;
 
-  //! Compute and return RHS. (Usually also computes and stores norm of RHS.)
-  /*! In other words, return \f$F \equiv F(x)\f$. */
-  virtual bool computeRHS() = 0;
+  //! Compute and return F(x). 
+  /*! In other words, return \f$F \equiv F(x)\f$. It's generally
+    useful to also compute and stores norm of F(x) at this point for
+    later access by the getNormF function. */
+  virtual bool computeF() = 0;
 
   //! Compute Jacobian.
   /*! In other words, compute \f$  J_{ij} = \frac{\partial F_i}{\partial x_j} (x)\f$.
@@ -118,15 +118,17 @@ public:
   virtual bool computeJacobian() = 0;
 
   //! Compute and return gradient.
-  //! Returns \c false if RHS and/or Jacobian have not been computed.
-  /*! In other words, return \f$g = J^T F\f$. */
-  virtual bool computeGrad() = 0;
+  //! Returns \c false if either F or the Jacobian have not been computed.
+  /*! In other words, compute \f$g = J^T F\f$. */
+  virtual bool computeGradient() = 0;
 
   //! Compute and return Newton direction, using parameters for nonlinear solve.
-  //! Returns \c false if RHS and/or Jacobian have not been computed.
-  /*! Solve \f$Js = -F\f$ for \f$s\f$. The parameter "Tolerance" may
-    be included in the list of parameters - this is the ideal solution
-    tolerance. */
+  //! Returns \c false if F and/or the Jacobian have not been computed.
+  /*! Solve \f$Js = -F\f$ for \f$s\f$.  
+
+    \note The parameter "Tolerance" may be included in the list of
+    parameters - this is the ideal solution tolerance. 
+  */
   virtual bool computeNewton(Parameter::List& params) = 0;
 
   //@}
@@ -181,12 +183,12 @@ public:
 
   //@{
   
-  //! Return \c true if the RHS is valid.
-  virtual bool isRHS() const = 0;
+  //! Return \c true if F is valid.
+  virtual bool isF() const = 0;
   //! Return \c true if the Jacobian is valid.
   virtual bool isJacobian() const = 0;
   //! Return \c true if the gradient is valid.
-  virtual bool isGrad() const = 0;
+  virtual bool isGradient() const = 0;
   //! Return \c true if the Newton direction is valid.
   virtual bool isNewton() const = 0;
 
@@ -202,15 +204,15 @@ public:
   //! Return solution vector.  
   virtual const Vector& getX() const = 0;
 
-  //! Return right-hand-side (RHS). 
-  virtual const Vector& getRHS() const = 0;
+  //! Return F(x)
+  virtual const Vector& getF() const = 0;
 
-  //! Return 2-norm of RHS. 
+  //! Return 2-norm of F(x). 
   /*! In other words, \f[ \sqrt{\sum_{i=1}^n F_i^2} \f] */
-  virtual double getNormRHS() const = 0;
+  virtual double getNormF() const = 0;
 
   //! Return gradient.
-  virtual const Vector& getGrad() const = 0;
+  virtual const Vector& getGradient() const = 0;
 
   //! Return Newton direction.
   virtual const Vector& getNewton() const = 0;
@@ -225,7 +227,7 @@ public:
     cloning this one, and return a pointer to the new group.  
 
     If type is \c DeepCopy, then we need to create an exact replica of
-    "this". Otherwise, if type is \c CopyShape, we need only replicate
+    "this". Otherwise, if type is \c ShapeCopy, we need only replicate
     the shape of "this". Returns \c NULL if clone is not supported.
   */
   virtual Group* clone(CopyType type = DeepCopy) const = 0;

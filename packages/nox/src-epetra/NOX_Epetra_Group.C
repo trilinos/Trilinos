@@ -52,9 +52,9 @@ using namespace NOX::Epetra;
 Group::Group(const Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J):
   xVector(x), // deep copy x     
-  RHSVector(x, CopyShape), // new vector of same size
-  gradVector(x, CopyShape), // new vector of same size
-  NewtonVector(x, CopyShape), // new vector of same size
+  RHSVector(x, ShapeCopy), // new vector of same size
+  gradVector(x, ShapeCopy), // new vector of same size
+  NewtonVector(x, ShapeCopy), // new vector of same size
   tmpVectorPtr(NULL),
   sharedJacobianPtr(new SharedJacobian(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
@@ -68,9 +68,9 @@ Group::Group(const Parameter::List& params, Interface& i,
 Group::Group(const Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M):
   xVector(x), // deep copy x     
-  RHSVector(x, CopyShape), // new vector of same size
-  gradVector(x, CopyShape), // new vector of same size
-  NewtonVector(x, CopyShape), // new vector of same size
+  RHSVector(x, ShapeCopy), // new vector of same size
+  gradVector(x, ShapeCopy), // new vector of same size
+  NewtonVector(x, ShapeCopy), // new vector of same size
   tmpVectorPtr(NULL),
   sharedJacobianPtr(new SharedJacobian(J, M)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
@@ -112,7 +112,7 @@ Group::Group(const Group& source, CopyType type) :
 
     break;
 
-  case CopyShape:
+  case ShapeCopy:
     resetIsValid();
     break;
 
@@ -315,17 +315,17 @@ bool Group::computeX(const Group& grp, const Vector& d, double step)
   return true;
 }
 
-bool Group::computeRHS() 
+bool Group::computeF() 
 {
-  if (isRHS())
+  if (isF())
     return true;
 
   bool status = false;
   
-  status = userInterface.computeRHS(xVector.getEpetraVector(), RHSVector.getEpetraVector());
+  status = userInterface.computeF(xVector.getEpetraVector(), RHSVector.getEpetraVector());
 
   if (status == false) {
-    cout << "ERROR: Epetra::Group::computeRHS() - fill failed!!!"
+    cout << "ERROR: Epetra::Group::computeF() - fill failed!!!"
 	 << endl;
     throw "NOX Error: Fill Failed";
   } 
@@ -377,18 +377,18 @@ bool Group::computeJacobian()
   return status;
 }
 
-bool Group::computeGrad() 
+bool Group::computeGradient() 
 {
-  if (isGrad())
+  if (isGradient())
     return true;
   
-  if (!isRHS()) {
-    cerr << "ERROR: NOX::Epetra::Group::computeGrad() - RHS is out of date wrt X!" << endl;
+  if (!isF()) {
+    cerr << "ERROR: NOX::Epetra::Group::computeGradient() - RHS is out of date wrt X!" << endl;
     throw "NOX Error";
   }
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::Epetra::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
+    cerr << "ERROR: NOX::Epetra::Group::computeGradient() - Jacobian is out of date wrt X!" << endl;
     throw "NOX Error";
   }
   
@@ -414,7 +414,7 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   if (isNewton())
     return true;
 
-  if (!isRHS()) {
+  if (!isF()) {
     cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid RHS" << endl;
     throw "NOX Error";
   }
@@ -591,7 +591,7 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 
 
 
-bool Group::isRHS() const 
+bool Group::isF() const 
 {   
   return isValidRHS;
 }
@@ -601,7 +601,7 @@ bool Group::isJacobian() const
   return ((sharedJacobian.isOwner(this)) && (isValidJacobian));
 }
 
-bool Group::isGrad() const 
+bool Group::isGradient() const 
 {   
   return isValidGrad;
 }
@@ -616,30 +616,30 @@ const Abstract::Vector& Group::getX() const
   return xVector;
 }
 
-const Abstract::Vector& Group::getRHS() const 
+const Abstract::Vector& Group::getF() const 
 {  
-  if (!isRHS()) {
-    cerr << "ERROR: NOX::Epetra::Group::getRHS() - invalid RHS" << endl;
+  if (!isF()) {
+    cerr << "ERROR: NOX::Epetra::Group::getF() - invalid RHS" << endl;
     throw "NOX Error";
   }
     
   return RHSVector;
 }
 
-double Group::getNormRHS() const
+double Group::getNormF() const
 {
-  if (!isRHS()) {
-    cerr << "ERROR: NOX::Epetra::Group::getNormRHS() - invalid RHS" << endl;
+  if (!isF()) {
+    cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << endl;
     throw "NOX Error";
   }
     
   return normRHS;
 }
 
-const Abstract::Vector& Group::getGrad() const 
+const Abstract::Vector& Group::getGradient() const 
 { 
-  if (!isGrad()) {
-    cerr << "ERROR: NOX::Epetra::Group::getGrad() - invalid gradient" << endl;
+  if (!isGradient()) {
+    cerr << "ERROR: NOX::Epetra::Group::getGradient() - invalid gradient" << endl;
     throw "NOX Error";
   }
     

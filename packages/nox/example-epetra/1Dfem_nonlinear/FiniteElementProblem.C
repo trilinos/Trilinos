@@ -91,7 +91,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   flag = f;
 
   // Set the incoming linear objects
-  if (flag == RHS_ONLY) {
+  if (flag == F_ONLY) {
     rhs = tmp_rhs;
   } else if (flag == MATRIX_ONLY) {
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
@@ -134,7 +134,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   
   // Zero out the objects that will be filled
   if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
-  if ((flag == RHS_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
+  if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -155,7 +155,7 @@ bool FiniteElementProblem::evaluate(FillType f,
 	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
 	//     MyPID, row, ne+i,StandardMap.MyGID(row));
 	if (StandardMap->MyGID(row)) {
-	  if ((flag == RHS_ONLY)    || (flag == ALL)) {
+	  if ((flag == F_ONLY)    || (flag == ALL)) {
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
 	      +basis.wt*basis.dx
 	      *((1.0/(basis.dx*basis.dx))*basis.duu*
@@ -179,10 +179,10 @@ bool FiniteElementProblem::evaluate(FillType f,
     }
   } 
 
-  // Insert Boundary Conditions and modify Jacobian and function (RHS)
+  // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(0)=1
   if (MyPID==0) {
-    if ((flag == RHS_ONLY)    || (flag == ALL)) 
+    if ((flag == F_ONLY)    || (flag == ALL)) 
       (*rhs)[0]= (*soln)[0] - 1.0;
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       column=0;

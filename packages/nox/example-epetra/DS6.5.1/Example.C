@@ -146,20 +146,18 @@ int main(int argc, char *argv[])
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
-  grp.computeRHS();
+  grp.computeF();
 
   // Create the convergence tests
-  NOX::Status::AbsResid absresid(1.0e-6);
-  NOX::Status::MaxIters maxiters(10);
-  NOX::Status::Combo combo(NOX::Status::Combo::OR);
-  combo.addTest(absresid);
-  combo.addTest(maxiters);
+  NOX::StatusTest::NormF testNormF(1.0e-6);
+  NOX::StatusTest::MaxIters testMaxIters(10);
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
 
   // Create the method
   NOX::Solver::Manager solver(grp, combo, nlParams);
-  NOX::Status::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver.solve();
 
-  if (status != NOX::Status::Converged)
+  if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
       cout << "Nonlinear solver failed to converge!" << endl;
 

@@ -45,7 +45,7 @@ Vector::Vector(const Epetra_Vector& source, CopyType type)
     epetraVec = new Epetra_Vector(source); 
     break;
 
-  case CopyShape:
+  case ShapeCopy:
 
     epetraVec = new Epetra_Vector(source.Map()); 
     break;  
@@ -169,13 +169,13 @@ double Vector::norm(Abstract::Vector::NormType type) const
 {
   double n;
   switch (type) {
-  case INF:
+  case MaxNorm:
     epetraVec->NormInf(&n);
     break;
-  case ONE:
+  case OneNorm:
     epetraVec->Norm1(&n);
     break;
-  case TWO:
+  case TwoNorm:
   default:
    epetraVec->Norm2(&n);
    break;

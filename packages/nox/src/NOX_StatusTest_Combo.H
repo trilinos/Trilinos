@@ -30,19 +30,19 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_STATUS_COMBO_H
-#define NOX_STATUS_COMBO_H
+#ifndef NOX_STATUSTEST_COMBO_H
+#define NOX_STATUSTEST_COMBO_H
 
-#include "NOX_Status_Test.H"	// base class
+#include "NOX_StatusTest_Generic.H" // base class
 #include "NOX_Common.H"		// class data element (vector)
 namespace NOX {
-namespace Status {
+namespace StatusTest {
 
 /*!
   \brief Arbitrary combination of status tests.
 
-  In the \c AND (see NOX::Status::Combo::ComboType) combination, the
-  result is \c Unconverged (see NOX::Status::StatusType) if \e any of
+  In the \c AND (see NOX::StatusTest::Combo::ComboType) combination, the
+  result is \c Unconverged (see NOX::StatusTest::StatusType) if \e any of
   the tests is \c Unconverged. Otherwise, the result is equal to the
   result of the \e first test in the list that is either \c Converged
   or \c Failed. It is not recommended to mix \c Converged and \c
@@ -60,7 +60,7 @@ namespace Status {
 
   \author Tammy Kolda (SNL 8950)
 */
-class Combo : public Test {
+class Combo : public Generic {
 
 public:
 
@@ -71,38 +71,43 @@ public:
   enum ComboType {AND, OR};
 
   //! Constructor
-  Combo(ComboType t = OR);
+  Combo(ComboType t);
 
   //! Constructor with a single test.
-  Combo(Test& a, ComboType t = OR);
+  Combo(ComboType t, Generic& a);
+
+  //! Constructor with two tests.
+  Combo(ComboType t, Generic& a, Generic& b);
 
   //! Add another test to this combination.
-  virtual Combo& addTest(Test& a);
+  virtual Combo& addStatusTest(Generic& a);
 
   //! Destructor
   virtual ~Combo();
 
-  virtual StatusType operator()(const Solver::Generic& problem);
+  virtual StatusType checkStatus(const Solver::Generic& problem);
+
+  virtual StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
   
 protected:
 
-  //! Use this for operator() when this is an OR type combo. Updates status.
+  //! Use this for checkStatus when this is an OR type combo. Updates status.
   virtual void orOp(const Solver::Generic& problem);
 
-  //! Use this for operator() when this is an AND type combo. Updates status.
+  //! Use this for checkStatus when this is an AND type combo. Updates status.
   virtual void andOp(const Solver::Generic& problem);
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool isSafe(Test& a);
+  bool isSafe(Generic& a);
 
   //! Type of test
   ComboType type;
 
-  //! Vector of tests
-  vector<Test*> tests;
+  //! Vector of generic status tests
+  vector<Generic*> tests;
 
   //! %Status
   StatusType status;

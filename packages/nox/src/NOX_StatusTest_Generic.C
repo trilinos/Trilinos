@@ -30,22 +30,20 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_Test.H"
+#include "NOX_StatusTest_Generic.H"
 #include "NOX_Common.H"
-using namespace NOX;
-using namespace NOX::Status;
 
-ostream& operator<<(ostream& os, StatusType type)
+ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type)
 {
   os << setiosflags(ios::left) << setw(13) << setfill('.');
   switch (type) {
-  case Failed:
+  case  NOX::StatusTest::Failed:
     os << "Failed";
     break;
-  case Converged:
+  case  NOX::StatusTest::Converged:
     os << "Converged";
     break;
-  case Unconverged:
+  case  NOX::StatusTest::Unconverged:
   default:
     os << "**";
     break;

@@ -13,9 +13,9 @@ Problem_Interface::Problem_Interface(DennisSchnabel& Problem) :
 Problem_Interface::~Problem_Interface()
 { }
 
-bool Problem_Interface::computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS)
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F)
 {
-  return problem.evaluate(RHS_ONLY, &x, &RHS, NULL);
+  return problem.evaluate(F_ONLY, &x, &F, NULL);
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)

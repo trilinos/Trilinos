@@ -66,7 +66,7 @@
 namespace NOX {
 
   //! Specify whether to copy using deep copy or just copy by shape.
-  enum CopyType { DeepCopy, CopyShape };
+  enum CopyType { DeepCopy, ShapeCopy };
 
 //! %NOX abstract interface for vector and group
 namespace Abstract {
@@ -88,7 +88,7 @@ class Vector {
 public:
   
   //! Norm types.
-  enum NormType {TWO, ONE, INF};
+  enum NormType {TwoNorm, OneNorm, MaxNorm};
 
   //! %Vector constructor.
   Vector() {};
@@ -143,7 +143,7 @@ public:
   /*! \brief Create a new %Vector of the same underlying type by
     cloning "this", and return a pointer to the new vector.  */
   /*! If type is \c DeepCopy, then we need to create an exact replica
-    of "this". Otherwise, if type is \c CopyShape, we need only
+    of "this". Otherwise, if type is \c ShapeCopy, we need only
     replicate the shape of "this". Returns \c NULL if clone is not
     supported. */
   virtual Vector* clone(CopyType type = DeepCopy) const = 0;
@@ -160,7 +160,7 @@ public:
     <li>\c INF : infinity- or max-norm \f[ \max_{i} |x_i| \f]
     </uL>
   */
-  virtual double norm(NormType type = TWO) const = 0;
+  virtual double norm(NormType type = TwoNorm) const = 0;
 
   //! Weighted 2-Norm.
   /*! Defined as 

@@ -30,10 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_Combo.H"
+#include "NOX_StatusTest_Combo.H"
 #include "NOX_Utils.H"
 
-using namespace NOX::Status;
+using namespace NOX::StatusTest;
 
 Combo::Combo(ComboType t)
 {
@@ -41,14 +41,22 @@ Combo::Combo(ComboType t)
   status = Unconverged;
 }
 
-Combo::Combo(Test& a, ComboType t)
+Combo::Combo(ComboType t, Generic& a)
 {
   type = t;
   tests.push_back(&a);
   status = Unconverged;
 }
 
-Combo& Combo::addTest(Test& a)
+Combo::Combo(ComboType t, Generic& a, Generic& b)
+{
+  type = t;
+  tests.push_back(&a);
+  addStatusTest(b);
+  status = Unconverged;
+}
+
+Combo& Combo::addStatusTest(Generic& a)
 {
   if (isSafe(a))
     tests.push_back(&a);
@@ -65,7 +73,7 @@ Combo& Combo::addTest(Test& a)
   return *this;
 }
 
-bool Combo::isSafe(Test& a)
+bool Combo::isSafe(Generic& a)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (&a == this)
@@ -73,7 +81,7 @@ bool Combo::isSafe(Test& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<Test*>::iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Generic*>::iterator i = tests.begin(); i != tests.end(); ++i) {
     
     Combo* ptr = dynamic_cast<Combo*>(*i);
     if (ptr != NULL)
@@ -89,7 +97,7 @@ Combo::~Combo()
 {
 }
 
-StatusType Combo::operator()(const Solver::Generic& problem)
+StatusType Combo::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
 
@@ -101,13 +109,18 @@ StatusType Combo::operator()(const Solver::Generic& problem)
   return status;
 }
 
+StatusType Combo::getStatus() const
+{
+  return status;
+}
+
 void Combo::orOp(const Solver::Generic& problem)
 {
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
-  for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    StatusType s = (*i)->operator()(problem);
+    StatusType s = (*i)->checkStatus(problem);
 
     if ((status == Unconverged) && (s != Unconverged)) {
       status = s;
@@ -122,9 +135,9 @@ void Combo::andOp(const Solver::Generic& problem)
 {
   bool isUnconverged = false;
 
-  for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    StatusType s = (*i)->operator()(problem);
+    StatusType s = (*i)->checkStatus(problem);
 
     // If any of the tests are unconverged, then the AND test is
     // unconverged.
@@ -161,7 +174,7 @@ ostream& Combo::print(ostream& stream, int indent) const
   stream << " Combination";
   stream << " -> " << endl;
 
-  for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
     (*i)->print(stream, indent+2);
     
   return stream;

@@ -45,7 +45,7 @@ namespace Epetra {
 
   /*! \brief Used by NOX::Epetra::Group to provide a link to the
    *  external code for RHS and Jacobian fills ()if needed. */
-  /*! At a minimum the user must supply a computeRHS().  
+  /*! At a minimum the user must supply a computeF().  
    * If the user is supplying their own Epetra_RowMatrix for the Jacobian,
    * then they must supply a computeJacobian().  If computeJacobian is
    * not supplied, a Matrix-Free or Finite Differencing Epetra_RowMatrix
@@ -63,7 +63,7 @@ public:
   virtual ~Interface() {};
 
   //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
-  virtual bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
+  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
   
   //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) = 0;

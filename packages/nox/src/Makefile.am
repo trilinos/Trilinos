@@ -89,25 +89,19 @@ SOLVER = \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
 	$(srcdir)/NOX_Solver_NonlinearCG.C 
 
-STATUS_H = \
-	$(srcdir)/NOX_Status_Test.H \
-	$(srcdir)/NOX_Status_AbsResid.H \
-	$(srcdir)/NOX_Status_Combo.H \
-	$(srcdir)/NOX_Status_MaxResid.H \
-	$(srcdir)/NOX_Status_RelResid.H \
-	$(srcdir)/NOX_Status_MaxIters.H \
-	$(srcdir)/NOX_Status_RelUpdate.H \
-        $(srcdir)/NOX_Status_WRMS.H 
+STATUSTEST_H = \
+	$(srcdir)/NOX_StatusTest_Generic.H \
+	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_Combo.H \
+	$(srcdir)/NOX_StatusTest_MaxIters.H \
+        $(srcdir)/NOX_StatusTest_WRMS.H 
 
-STATUS = \
-	$(srcdir)/NOX_Status_Test.C \
-	$(srcdir)/NOX_Status_AbsResid.C \
-	$(srcdir)/NOX_Status_Combo.C \
-	$(srcdir)/NOX_Status_MaxResid.C \
-	$(srcdir)/NOX_Status_RelResid.C \
-	$(srcdir)/NOX_Status_MaxIters.C \
-	$(srcdir)/NOX_Status_RelUpdate.C \
-        $(srcdir)/NOX_Status_WRMS.C  
+STATUSTEST = \
+	$(srcdir)/NOX_StatusTest_Generic.C \
+	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_Combo.C \
+	$(srcdir)/NOX_StatusTest_MaxIters.C \
+        $(srcdir)/NOX_StatusTest_WRMS.C  
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H 
@@ -129,7 +123,7 @@ NOX_H = \
 	$(DIRECTION_H) \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
-	$(STATUS_H) \
+	$(STATUSTEST_H) \
 	$(UTILS_H) 
 
 
@@ -138,7 +132,7 @@ libnox_a_SOURCES = \
 	$(DIRECTION) \
 	$(PARAMETER) \
 	$(SOLVER) \
-	$(STATUS) \
+	$(STATUSTEST) \
 	$(UTILS) 
 
 

@@ -1,5 +1,5 @@
 // Finite Element Problem Class
-/* Provides function (RHS) and Jacobian evaluations for the following equation 
+/* Provides function (F) and Jacobian evaluations for the following equation 
  * via a 1D linear finite element discretization with Epetra objects.
  *
  * d2u 
@@ -21,7 +21,7 @@ class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
 // Flag to tell the evaluate routine what objects to fill
-enum FillType {RHS_ONLY, MATRIX_ONLY, ALL}; 
+enum FillType {F_ONLY, MATRIX_ONLY, ALL}; 
 
 // Finite Element Problem Class
 class FiniteElementProblem { 
@@ -33,7 +33,7 @@ public:
   // Dstructor
   ~FiniteElementProblem();
 
-  // Evaluates the function (RHS) and/or the Jacobian using the solution 
+  // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
   bool evaluate(FillType f, const Epetra_Vector *solnVector, 
 		Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix);

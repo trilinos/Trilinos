@@ -65,15 +65,15 @@ class LineSearchBased : public Generic {
 public:
 
   //! %LineSearchBased-method constructor. 
-  LineSearchBased(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  LineSearchBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
 
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
-  virtual Status::StatusType getStatus();
-  virtual Status::StatusType iterate();
-  virtual Status::StatusType solve();
+  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  virtual StatusTest::StatusType getStatus();
+  virtual StatusTest::StatusType iterate();
+  virtual StatusTest::StatusType solve();
   virtual const Abstract::Group& getSolutionGroup() const;
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
@@ -107,7 +107,7 @@ protected:
   Abstract::Vector& dir;
 
   //! Stopping test.
-  Status::Test* testptr;		
+  StatusTest::Generic* testptr;		
 
   //! Input parameters.
   Parameter::List iparams;	
@@ -128,7 +128,7 @@ protected:
   int niter;                    
 
   //! %Status of nonlinear solver.
-  Status::StatusType status;
+  StatusTest::StatusType status;
 
 };
 } // namespace Solver

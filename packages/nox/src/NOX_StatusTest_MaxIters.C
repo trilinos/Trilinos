@@ -30,16 +30,16 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_MaxIters.H" // class definition
+#include "NOX_StatusTest_MaxIters.H" // class definition
 #include "NOX_Common.H"
 #include "NOX_Solver_Generic.H"
 
-using namespace NOX::Status;
+using namespace NOX::StatusTest;
 
 MaxIters::MaxIters(int maxiterations)
 {
   if (maxiterations < 1) {
-    cout << "Error: Must choose maxiterations > 1 in NOX::Status::MaxIters" << endl;
+    cout << "Error: Must choose maxiterations > 1 in NOX::StatusTest::MaxIters" << endl;
     throw;
   }
     
@@ -51,12 +51,17 @@ MaxIters::~MaxIters()
 {
 }
 
-StatusType MaxIters::operator()(const Solver::Generic& problem)
+StatusType MaxIters::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
   int niters = problem.getNumIterations();
   if (niters >= maxiters)
     status = Failed;
+  return status;
+}
+
+StatusType MaxIters::getStatus() const
+{
   return status;
 }
 

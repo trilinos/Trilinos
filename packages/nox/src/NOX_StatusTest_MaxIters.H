@@ -30,42 +30,44 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_MaxResid.H" // class definition
+#ifndef NOX_STATUS_MAXITERS_H
+#define NOX_STATUS_MAXITERS_H
 
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Common.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Utils.H"
+#include "NOX_StatusTest_Generic.H"	// base class
 
-using namespace NOX::Status;
+namespace NOX {
 
-MaxResid::MaxResid(double tolerance)
-{
-  tol = tolerance;
-  status = Unconverged;
-}
+namespace StatusTest {
 
-MaxResid::~MaxResid()
-{
-}
+//! Failure test based on the maximum number of nonlinear solver iterations.
+class MaxIters : public Generic {
 
-StatusType MaxResid::operator()(const Solver::Generic& problem)
-{
-  status = Unconverged;
-  const Abstract::Group& tmp = problem.getSolutionGroup();
-  double normrhs = (tmp.getRHS()).norm(Abstract::Vector::INF);
-  if (normrhs < tol)
-    status = Converged;
-  return status;
-}
+public:
 
-ostream& MaxResid::print(ostream& stream, int indent) const
-{
-  for (int j = 0; j < indent; j ++)
-    stream << ' ';
-  stream << status;
-  stream << "Residual Max-Norm < " << Utils::sci(tol);
-  stream << endl;
-  return stream;
-}
+  //! Constructor. Specify the maximum number of nonlinear solver iterations.
+  MaxIters(int maxiterations);
+
+  //! Destructor.
+  virtual ~MaxIters();
+
+  virtual StatusType checkStatus(const Solver::Generic& problem);
+
+  virtual StatusType getStatus() const;
+
+  virtual ostream& print(ostream& stream, int indent = 0) const;
+
+private:
+
+  //! Maximum number of iterations
+  int maxiters;
+
+  //! %Status
+  StatusType status;
+
+
+};
+
+} // namespace Status
+} // namespace NOX
+
+#endif

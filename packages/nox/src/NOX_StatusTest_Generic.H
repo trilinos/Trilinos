@@ -30,42 +30,51 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_STATUS_MAXITERS_H
-#define NOX_STATUS_MAXITERS_H
+#ifndef NOX_STATUSTEST_GENERIC_H
+#define NOX_STATUSTEST_GENERIC_H
 
-#include "NOX_Status_Test.H"	// base class
+#include "NOX_Common.H"		// for ostream
 
 namespace NOX {
 
-namespace Status {
+namespace Solver
+{
+class Generic;			// forward declaration (included below)
+}
 
-//! Failure test based on the maximum number of nonlinear solver iterations.
-class MaxIters : public Test {
+//! %Status checkers.
+namespace StatusTest {
+
+  //! Status type.
+  enum StatusType { Unconverged = 0, Converged = 1, Failed = -1 };
+
+//! Generic status test.
+class Generic {
 
 public:
 
-  //! Constructor. Specify the maximum number of nonlinear solver iterations.
-  MaxIters(int maxiterations);
+  //! Constructor.
+  Generic() {};
 
   //! Destructor.
-  virtual ~MaxIters();
+  virtual ~Generic() {};
 
-  virtual StatusType operator()(const Solver::Generic& problem);
+  //! %Test stopping criterion, given a generic problem.
+  virtual StatusType checkStatus(const Solver::Generic& problem) = 0;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  //! Return the result of the most recent checkStatus call
+  virtual StatusType getStatus() const = 0;
 
-private:
-
-  //! Maximum number of iterations
-  int maxiters;
-
-  //! %Status
-  StatusType status;
-
+  //! Output formatted description of stopping test to output stream.
+  virtual ostream& print(ostream& stream, int indent = 0) const = 0;
 
 };
 
-} // namespace Status
+} // namespace StatusTest
 } // namespace NOX
 
+ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type);
+
+
 #endif
+

@@ -175,26 +175,20 @@ SOLVER = \
 	$(srcdir)/NOX_Solver_NonlinearCG.C 
 
 
-STATUS_H = \
-	$(srcdir)/NOX_Status_Test.H \
-	$(srcdir)/NOX_Status_AbsResid.H \
-	$(srcdir)/NOX_Status_Combo.H \
-	$(srcdir)/NOX_Status_MaxResid.H \
-	$(srcdir)/NOX_Status_RelResid.H \
-	$(srcdir)/NOX_Status_MaxIters.H \
-	$(srcdir)/NOX_Status_RelUpdate.H \
-        $(srcdir)/NOX_Status_WRMS.H 
+STATUSTEST_H = \
+	$(srcdir)/NOX_StatusTest_Generic.H \
+	$(srcdir)/NOX_StatusTest_NormF.H \
+	$(srcdir)/NOX_StatusTest_Combo.H \
+	$(srcdir)/NOX_StatusTest_MaxIters.H \
+        $(srcdir)/NOX_StatusTest_WRMS.H 
 
 
-STATUS = \
-	$(srcdir)/NOX_Status_Test.C \
-	$(srcdir)/NOX_Status_AbsResid.C \
-	$(srcdir)/NOX_Status_Combo.C \
-	$(srcdir)/NOX_Status_MaxResid.C \
-	$(srcdir)/NOX_Status_RelResid.C \
-	$(srcdir)/NOX_Status_MaxIters.C \
-	$(srcdir)/NOX_Status_RelUpdate.C \
-        $(srcdir)/NOX_Status_WRMS.C  
+STATUSTEST = \
+	$(srcdir)/NOX_StatusTest_Generic.C \
+	$(srcdir)/NOX_StatusTest_NormF.C \
+	$(srcdir)/NOX_StatusTest_Combo.C \
+	$(srcdir)/NOX_StatusTest_MaxIters.C \
+        $(srcdir)/NOX_StatusTest_WRMS.C  
 
 
 UTILS_H = \
@@ -219,7 +213,7 @@ NOX_H = \
 	$(DIRECTION_H) \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
-	$(STATUS_H) \
+	$(STATUSTEST_H) \
 	$(UTILS_H) 
 
 
@@ -228,7 +222,7 @@ libnox_a_SOURCES = \
 	$(DIRECTION) \
 	$(PARAMETER) \
 	$(SOLVER) \
-	$(STATUS) \
+	$(STATUSTEST) \
 	$(UTILS) 
 
 
@@ -298,11 +292,11 @@ am_libnox_a_OBJECTS = NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) \
 	NOX_Solver_LineSearchBased.$(OBJEXT) \
 	NOX_Solver_TrustRegionBased.$(OBJEXT) \
-	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_Test.$(OBJEXT) \
-	NOX_Status_AbsResid.$(OBJEXT) NOX_Status_Combo.$(OBJEXT) \
-	NOX_Status_MaxResid.$(OBJEXT) NOX_Status_RelResid.$(OBJEXT) \
-	NOX_Status_MaxIters.$(OBJEXT) NOX_Status_RelUpdate.$(OBJEXT) \
-	NOX_Status_WRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
+	NOX_Solver_NonlinearCG.$(OBJEXT) \
+	NOX_StatusTest_Generic.$(OBJEXT) NOX_StatusTest_NormF.$(OBJEXT) \
+	NOX_StatusTest_Combo.$(OBJEXT) \
+	NOX_StatusTest_MaxIters.$(OBJEXT) NOX_StatusTest_WRMS.$(OBJEXT) \
+	NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -326,14 +320,12 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_NonlinearCG.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TrustRegionBased.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_AbsResid.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Combo.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxIters.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxResid.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelResid.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelUpdate.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_WRMS.Po $(DEPDIR)/NOX_Utils.Po
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Combo.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Generic.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_MaxIters.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormF.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_WRMS.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -432,14 +424,11 @@ NOX_Solver_LineSearchBased.$(OBJEXT): \
 NOX_Solver_TrustRegionBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C
 NOX_Solver_NonlinearCG.$(OBJEXT): $(srcdir)/NOX_Solver_NonlinearCG.C
-NOX_Status_Test.$(OBJEXT): $(srcdir)/NOX_Status_Test.C
-NOX_Status_AbsResid.$(OBJEXT): $(srcdir)/NOX_Status_AbsResid.C
-NOX_Status_Combo.$(OBJEXT): $(srcdir)/NOX_Status_Combo.C
-NOX_Status_MaxResid.$(OBJEXT): $(srcdir)/NOX_Status_MaxResid.C
-NOX_Status_RelResid.$(OBJEXT): $(srcdir)/NOX_Status_RelResid.C
-NOX_Status_MaxIters.$(OBJEXT): $(srcdir)/NOX_Status_MaxIters.C
-NOX_Status_RelUpdate.$(OBJEXT): $(srcdir)/NOX_Status_RelUpdate.C
-NOX_Status_WRMS.$(OBJEXT): $(srcdir)/NOX_Status_WRMS.C
+NOX_StatusTest_Generic.$(OBJEXT): $(srcdir)/NOX_StatusTest_Generic.C
+NOX_StatusTest_NormF.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormF.C
+NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
+NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
+NOX_StatusTest_WRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_WRMS.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
@@ -467,14 +456,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_NonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TrustRegionBased.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_AbsResid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Combo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxIters.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxResid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelResid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelUpdate.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_WRMS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Combo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Generic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_MaxIters.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormF.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_WRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
 
 distclean-depend:
@@ -672,101 +658,65 @@ NOX_Solver_NonlinearCG.obj: $(srcdir)/NOX_Solver_NonlinearCG.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_NonlinearCG.obj `cygpath -w $(srcdir)/NOX_Solver_NonlinearCG.C`
 
-NOX_Status_Test.o: $(srcdir)/NOX_Status_Test.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Test.C' object='NOX_Status_Test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Test.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Test.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_Generic.o: $(srcdir)/NOX_StatusTest_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Generic.C' object='NOX_StatusTest_Generic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_Generic.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_Generic.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Test.o `test -f $(srcdir)/NOX_Status_Test.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_Test.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_Generic.o `test -f $(srcdir)/NOX_StatusTest_Generic.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Generic.C
 
-NOX_Status_Test.obj: $(srcdir)/NOX_Status_Test.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Test.C' object='NOX_Status_Test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Test.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Test.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_Generic.obj: $(srcdir)/NOX_StatusTest_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Generic.C' object='NOX_StatusTest_Generic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_Generic.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_Generic.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Test.obj `cygpath -w $(srcdir)/NOX_Status_Test.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_Generic.obj `cygpath -w $(srcdir)/NOX_StatusTest_Generic.C`
 
-NOX_Status_AbsResid.o: $(srcdir)/NOX_Status_AbsResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_AbsResid.C' object='NOX_Status_AbsResid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_AbsResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_AbsResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_NormF.o: $(srcdir)/NOX_StatusTest_NormF.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormF.C' object='NOX_StatusTest_NormF.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormF.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormF.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_AbsResid.o `test -f $(srcdir)/NOX_Status_AbsResid.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_AbsResid.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormF.o `test -f $(srcdir)/NOX_StatusTest_NormF.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_NormF.C
 
-NOX_Status_AbsResid.obj: $(srcdir)/NOX_Status_AbsResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_AbsResid.C' object='NOX_Status_AbsResid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_AbsResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_AbsResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_NormF.obj: $(srcdir)/NOX_StatusTest_NormF.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_NormF.C' object='NOX_StatusTest_NormF.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormF.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormF.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_AbsResid.obj `cygpath -w $(srcdir)/NOX_Status_AbsResid.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormF.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormF.C`
 
-NOX_Status_Combo.o: $(srcdir)/NOX_Status_Combo.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Combo.C' object='NOX_Status_Combo.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Combo.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Combo.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_Combo.o: $(srcdir)/NOX_StatusTest_Combo.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Combo.C' object='NOX_StatusTest_Combo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_Combo.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_Combo.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Combo.o `test -f $(srcdir)/NOX_Status_Combo.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_Combo.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_Combo.o `test -f $(srcdir)/NOX_StatusTest_Combo.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Combo.C
 
-NOX_Status_Combo.obj: $(srcdir)/NOX_Status_Combo.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Combo.C' object='NOX_Status_Combo.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Combo.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Combo.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_Combo.obj: $(srcdir)/NOX_StatusTest_Combo.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Combo.C' object='NOX_StatusTest_Combo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_Combo.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_Combo.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Combo.obj `cygpath -w $(srcdir)/NOX_Status_Combo.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_Combo.obj `cygpath -w $(srcdir)/NOX_StatusTest_Combo.C`
 
-NOX_Status_MaxResid.o: $(srcdir)/NOX_Status_MaxResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxResid.C' object='NOX_Status_MaxResid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_MaxIters.o: $(srcdir)/NOX_StatusTest_MaxIters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_MaxIters.C' object='NOX_StatusTest_MaxIters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_MaxIters.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxResid.o `test -f $(srcdir)/NOX_Status_MaxResid.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_MaxResid.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_MaxIters.o `test -f $(srcdir)/NOX_StatusTest_MaxIters.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_MaxIters.C
 
-NOX_Status_MaxResid.obj: $(srcdir)/NOX_Status_MaxResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxResid.C' object='NOX_Status_MaxResid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_MaxIters.obj: $(srcdir)/NOX_StatusTest_MaxIters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_MaxIters.C' object='NOX_StatusTest_MaxIters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_MaxIters.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxResid.obj `cygpath -w $(srcdir)/NOX_Status_MaxResid.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_MaxIters.obj `cygpath -w $(srcdir)/NOX_StatusTest_MaxIters.C`
 
-NOX_Status_RelResid.o: $(srcdir)/NOX_Status_RelResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_RelResid.C' object='NOX_Status_RelResid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_RelResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_RelResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_WRMS.o: $(srcdir)/NOX_StatusTest_WRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_WRMS.C' object='NOX_StatusTest_WRMS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_WRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_RelResid.o `test -f $(srcdir)/NOX_Status_RelResid.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_RelResid.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_WRMS.o `test -f $(srcdir)/NOX_StatusTest_WRMS.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_WRMS.C
 
-NOX_Status_RelResid.obj: $(srcdir)/NOX_Status_RelResid.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_RelResid.C' object='NOX_Status_RelResid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_RelResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_RelResid.TPo' @AMDEPBACKSLASH@
+NOX_StatusTest_WRMS.obj: $(srcdir)/NOX_StatusTest_WRMS.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_WRMS.C' object='NOX_StatusTest_WRMS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_WRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_RelResid.obj `cygpath -w $(srcdir)/NOX_Status_RelResid.C`
-
-NOX_Status_MaxIters.o: $(srcdir)/NOX_Status_MaxIters.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxIters.C' object='NOX_Status_MaxIters.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxIters.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxIters.o `test -f $(srcdir)/NOX_Status_MaxIters.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_MaxIters.C
-
-NOX_Status_MaxIters.obj: $(srcdir)/NOX_Status_MaxIters.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxIters.C' object='NOX_Status_MaxIters.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxIters.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxIters.obj `cygpath -w $(srcdir)/NOX_Status_MaxIters.C`
-
-NOX_Status_RelUpdate.o: $(srcdir)/NOX_Status_RelUpdate.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_RelUpdate.C' object='NOX_Status_RelUpdate.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_RelUpdate.Po' tmpdepfile='$(DEPDIR)/NOX_Status_RelUpdate.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_RelUpdate.o `test -f $(srcdir)/NOX_Status_RelUpdate.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_RelUpdate.C
-
-NOX_Status_RelUpdate.obj: $(srcdir)/NOX_Status_RelUpdate.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_RelUpdate.C' object='NOX_Status_RelUpdate.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_RelUpdate.Po' tmpdepfile='$(DEPDIR)/NOX_Status_RelUpdate.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_RelUpdate.obj `cygpath -w $(srcdir)/NOX_Status_RelUpdate.C`
-
-NOX_Status_WRMS.o: $(srcdir)/NOX_Status_WRMS.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_WRMS.C' object='NOX_Status_WRMS.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_Status_WRMS.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_WRMS.o `test -f $(srcdir)/NOX_Status_WRMS.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_WRMS.C
-
-NOX_Status_WRMS.obj: $(srcdir)/NOX_Status_WRMS.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_WRMS.C' object='NOX_Status_WRMS.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_WRMS.Po' tmpdepfile='$(DEPDIR)/NOX_Status_WRMS.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_WRMS.obj `cygpath -w $(srcdir)/NOX_Status_WRMS.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_WRMS.obj `cygpath -w $(srcdir)/NOX_StatusTest_WRMS.C`
 
 NOX_Utils.o: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Utils.C' object='NOX_Utils.o' libtool=no @AMDEPBACKSLASH@

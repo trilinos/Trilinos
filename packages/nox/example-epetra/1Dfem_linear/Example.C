@@ -100,11 +100,11 @@ int main(int argc, char *argv[])
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Method", "Full Step");
   //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
   //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "More'-Thuente");
+  searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0000);
   searchParams.setParameter("Recovery Step", 0.0001);
   searchParams.setParameter("Minimum Step", 0.0001);
@@ -149,26 +149,27 @@ int main(int argc, char *argv[])
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
-  grp.computeRHS();
+  grp.computeF();
 
   // Create the convergence tests
-  NOX::Status::AbsResid absresid(1.0e-6);
-  NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
-  NOX::Status::Combo converged(NOX::Status::Combo::AND);
-  converged.addTest(absresid);
-  converged.addTest(relresid);
-  NOX::Status::MaxResid maxresid(1.0e-10);
-  NOX::Status::MaxIters maxiters(2);
-  NOX::Status::Combo combo(NOX::Status::Combo::OR);
-  combo.addTest(converged);
-  combo.addTest(maxresid);
-  combo.addTest(maxiters);
+
+  // Create a combination AND test
+  NOX::StatusTest::NormF testA1(1.0e-6);
+  NOX::StatusTest::NormF testA2(grp, 1.0e-2);
+  NOX::StatusTest::Combo testA(NOX::StatusTest::Combo::AND, testA1, testA2);
+
+  NOX::StatusTest::NormF testB(1.0e-10);
+  NOX::StatusTest::MaxIters testC(2);
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  combo.addStatusTest(testA);
+  combo.addStatusTest(testB);
+  combo.addStatusTest(testC);
 
   // Create the method
   NOX::Solver::Manager solver(grp, combo, nlParams);
-  NOX::Status::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver.solve();
 
-  if (status != NOX::Status::Converged)
+  if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
       cout << "Nonlinear solver failed to converge!" << endl;
 

@@ -56,17 +56,17 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
+NonlinearCG::NonlinearCG(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p) :
   solnptr(&xgrp),		// reference to xgrp
   oldSolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnptr),		// reference to just-created pointer
-  dirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  dirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
-  oldDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  oldDirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
   oldDir(*oldDirptr),		// reference to just-created pointer
-  preconditionedDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
-  preconditionedOldDirptr(xgrp.getX().clone(CopyShape)), // create via clone 
-  diffVector(xgrp.getX().clone(CopyShape)), // create via clone 
+  preconditionedDirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  preconditionedOldDirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
+  diffVector(xgrp.getX().clone(ShapeCopy)), // create via clone 
   testptr(&t),			// reference to t
   iparams(p),			// copy p
   oparams(),			// empty list
@@ -77,7 +77,7 @@ NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter
   outputFrequency(p.getParameter("Output Frequency", 1)),
 				// initialize local variables to minimize 
 				// Parameter::List access
-  status(Status::Unconverged)	// initialize convergence status
+  status(StatusTest::Unconverged)	// initialize convergence status
 {
   init();
 }
@@ -95,11 +95,11 @@ void NonlinearCG::init()
     iparams.print(cout,5);
   }
 
-  // Compute RHS of initital guess
-  solnptr->computeRHS();
+  // Compute F of initital guess
+  solnptr->computeF();
 
   // Test the initial guess
-  status = testptr->operator()(*this);
+  status = testptr->checkStatus(*this);
 
   if (Utils::doPrint(Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -120,32 +120,31 @@ NonlinearCG::~NonlinearCG()
   delete diffVector;
 }
 
-bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
+bool NonlinearCG::reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
   iparams = p;
   linesearch.reset(iparams.sublist("Line Search"));
   niter = 0;
-  status = Status::Unconverged;
+  status = StatusTest::Unconverged;
   init();
   return true;
 }
 
-NOX::Status::StatusType NonlinearCG::getStatus()
+NOX::StatusTest::StatusType NonlinearCG::getStatus()
 {
-  status = testptr->operator()(*this);
+  status = testptr->checkStatus(*this);
   return status;
 }
 
-NOX::Status::StatusType NonlinearCG::iterate()
+NOX::StatusTest::StatusType NonlinearCG::iterate()
 {
   // Copy pointers into temporary references
   Abstract::Group& soln = *solnptr;
-  Status::Test& test = *testptr;
 
   // Construct Residual as first step in getting new search direction
-  soln.computeRHS();  
+  soln.computeF();  
 
   // Compute NonlinearCG direction for current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
@@ -153,18 +152,18 @@ NOX::Status::StatusType NonlinearCG::iterate()
   //  orthogonalization: 
   if(iparams.isParameterEqual("NLCGdirection", "Richardson"))
   {
-    dir = soln.getRHS();  // Richardson direction
+    dir = soln.getF();  // Richardson direction
     if(niter!=0) 
-      oldDescentDirptr = &oldSoln.getRHS();
+      oldDescentDirptr = &oldSoln.getF();
   }
   else
   {
     soln.computeJacobian();
-    soln.computeGrad(); 
-    dir = soln.getGrad(); // Steepest Descent direction for 
+    soln.computeGradient(); 
+    dir = soln.getGradient(); // Steepest Descent direction for 
                           // f = 1/2 Trans(R).R
     if(niter!=0) 
-      oldDescentDirptr = &oldSoln.getGrad();
+      oldDescentDirptr = &oldSoln.getGradient();
   }
   dir.scale(-1.0);
 
@@ -239,28 +238,28 @@ NOX::Status::StatusType NonlinearCG::iterate()
 
   // Do line search and compute new soln.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  linesearch(soln, step, oldSoln, dir); // niter needs to be added, RH
+  linesearch.compute(soln, step, oldSoln, dir); // niter needs to be added, RH
 
-  // Compute RHS for new current solution.
-  soln.computeRHS();
+  // Compute F for new current solution.
+  soln.computeF();
 
   // Update iteration count.
   niter ++;
 
   // Evaluate the current status.
-  status = test(*this);
+  status = testptr->checkStatus(*this);
 
   // Return status.
   return status;
 }
 
-NOX::Status::StatusType NonlinearCG::solve()
+NOX::StatusTest::StatusType NonlinearCG::solve()
 {
-  status = testptr->operator()(*this);
+  status = testptr->checkStatus(*this);
   printUpdate();
 
   // Iterate until converged or failed
-  while (status == Status::Unconverged) {
+  while (status == StatusTest::Unconverged) {
     status = iterate();
     if((niter % outputFrequency)==0)
       printUpdate();
@@ -287,7 +286,7 @@ int NonlinearCG::getNumIterations() const
 const Parameter::List& NonlinearCG::getOutputParameters() const
 {
   oparams.setParameter("Nonlinear Iterations", niter);
-  oparams.setParameter("2-Norm of Residual", solnptr->getNormRHS());
+  oparams.setParameter("2-Norm of Residual", solnptr->getNormF());
   return oparams;
 }
 
@@ -299,7 +298,7 @@ void NonlinearCG::printUpdate()
 
   // All processors participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
-    norm_k = solnptr->getNormRHS();
+    norm_k = solnptr->getNormF();
     norm_update = (niter > 0) ? oldDirptr->norm() : 0; 
   }
 

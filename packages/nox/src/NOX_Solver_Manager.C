@@ -19,7 +19,7 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-Manager::Manager(Abstract::Group& grp, Status::Test &t, const Parameter::List& p) :
+Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p) :
   method(""),
   ptr(NULL)
 {
@@ -31,7 +31,7 @@ Manager::~Manager()
   delete ptr;
 }
 
-bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::List& params)
+bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Parameter::List& params)
 {
   string newmethod = params.getParameter("Nonlinear Solver", "Newton");
 
@@ -77,7 +77,7 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
   }
 }
 
-NOX::Status::StatusType Manager::getStatus()
+NOX::StatusTest::StatusType Manager::getStatus()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::getStatus - Null pointer error" << endl;
@@ -87,7 +87,7 @@ NOX::Status::StatusType Manager::getStatus()
   return ptr->getStatus();
 }
 
-NOX::Status::StatusType Manager::iterate()
+NOX::StatusTest::StatusType Manager::iterate()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::iterate - Null pointer error" << endl;
@@ -97,7 +97,7 @@ NOX::Status::StatusType Manager::iterate()
   return ptr->iterate();
 }
 
-NOX::Status::StatusType Manager::solve()
+NOX::StatusTest::StatusType Manager::solve()
 {
   if (ptr == NULL) {
     cout << "NOX::Solver::Manager::solve - Null pointer error" << endl;

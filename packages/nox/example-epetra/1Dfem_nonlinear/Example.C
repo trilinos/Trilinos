@@ -156,32 +156,32 @@ int main(int argc, char *argv[])
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
-  grp.computeRHS();
+  grp.computeF();
 
   NOX::Epetra::Vector weights(soln);
   weights.scale(1.0e-12);
 
   // Create the convergence tests
-  NOX::Status::AbsResid absresid(1.0e-6);
-  NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
-  //NOX::Status::WRMS wrms(1.0e-2, 1.0e-12);
-  //NOX::Status::WRMS wrms(1.0e-2, weights);
-  //NOX::Status::SizeIndAbsResid sizeindabsresid(1.0e-6);
-  NOX::Status::Combo converged(NOX::Status::Combo::AND);
-  converged.addTest(absresid);
-  converged.addTest(relresid);
+  NOX::StatusTest::NormF absresid(1.0e-6);
+  NOX::StatusTest::NormF relresid(grp, 1.0e-2);
+  //NOX::StatusTest::WRMS wrms(1.0e-2, 1.0e-12);
+  //NOX::StatusTest::WRMS wrms(1.0e-2, weights);
+  //NOX::StatusTest::SizeIndAbsResid sizeindabsresid(1.0e-6);
+  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
+  converged.addStatusTest(absresid);
+  converged.addStatusTest(relresid);
   //converged.addTest(wrms);
   //converged.addTest(sizeindabsresid);
-  NOX::Status::MaxIters maxiters(2000);
-  NOX::Status::Combo combo(NOX::Status::Combo::OR);
-  combo.addTest(converged);
-  combo.addTest(maxiters);
+  NOX::StatusTest::MaxIters maxiters(2000);
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  combo.addStatusTest(converged);
+  combo.addStatusTest(maxiters);
 
   // Create the method
   NOX::Solver::Manager solver(grp, combo, nlParams);
-  NOX::Status::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver.solve();
 
-  if (status != NOX::Status::Converged)
+  if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
       cout << "Nonlinear solver failed to converge!" << endl;
 

@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_WRMS.H"
+#include "NOX_StatusTest_WRMS.H"
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -40,7 +40,7 @@
 //#include "/home/rppawlo/Trilinos/packages/epetra/src/Epetra_Vector.h"
 //#include "/home/rppawlo/nox/src-epetra/NOX_Epetra_Vector.H"
 
-using namespace NOX::Status;
+using namespace NOX::StatusTest;
 
 WRMS::WRMS(double a, double b, double c) :
   atolIsScalar(true),
@@ -73,7 +73,7 @@ WRMS::~WRMS()
   delete v;
 }
 
-StatusType WRMS::operator()(const Solver::Generic& problem)
+StatusType WRMS::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
 
@@ -84,9 +84,9 @@ StatusType WRMS::operator()(const Solver::Generic& problem)
   // Create the working vectors if this is the first time this
   // operator is called.
   if (u == 0)
-    u = x.clone(NOX::CopyShape);
+    u = x.clone(NOX::ShapeCopy);
   if (v == 0)
-    v = x.clone(NOX::CopyShape);
+    v = x.clone(NOX::ShapeCopy);
   
   // Create the weighting vector u = RTOL |x| + ATOL
   if (atolIsScalar) {    
@@ -132,6 +132,12 @@ StatusType WRMS::operator()(const Solver::Generic& problem)
   
   return status;
 }
+
+StatusType WRMS::getStatus() const
+{
+  return status;
+}
+
 
 ostream& WRMS::print(ostream& stream, int indent) const
 {

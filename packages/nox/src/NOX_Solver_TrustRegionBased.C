@@ -56,17 +56,17 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-TrustRegionBased::TrustRegionBased(Abstract::Group& grp, Status::Test& t, const Parameter::List& p) :
+TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, const Parameter::List& p) :
   solnPtr(&grp),		// pointer to grp
   oldSolnPtr(grp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
-  newtonVecPtr(grp.getX().clone(CopyShape)), // create via clone 
+  newtonVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   newtonVec(*newtonVecPtr),	// reference to just-created pointer
-  cauchyVecPtr(grp.getX().clone(CopyShape)), // create via clone 
+  cauchyVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   cauchyVec(*cauchyVecPtr),	// reference to just-created pointer
-  aVecPtr(grp.getX().clone(CopyShape)), // create via clone 
+  aVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   aVec(*aVecPtr),		// reference to just-created pointer
-  bVecPtr(grp.getX().clone(CopyShape)), // create via clone 
+  bVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   bVec(*bVecPtr),		// reference to just-created pointer
   testPtr(&t),			// pointer to t
   iparams(p),			// copy p
@@ -82,7 +82,7 @@ void TrustRegionBased::init()
   // Initialize 
   niter = 0;
   dx = 0;
-  status = Status::Unconverged;
+  status = StatusTest::Unconverged;
 
   // Set up utilities (i.e., set print processor, etc)
   Utils::setUtils(iparams);
@@ -94,9 +94,9 @@ void TrustRegionBased::init()
     iparams.print(cout,5);
   }
 
-  // Compute RHS of initital guess
-  solnPtr->computeRHS();
-  fnew = 0.5 * solnPtr->getNormRHS() * solnPtr->getNormRHS();
+  // Compute F of initital guess
+  solnPtr->computeF();
+  fnew = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Get parameter settings
   if (!iparams.sublist("Direction").isParameter("Method"))
@@ -178,7 +178,7 @@ void TrustRegionBased::init()
 
 
   // Test the initial guess
-  status = testPtr->operator()(*this);
+  status = testPtr->checkStatus(*this);
 
   if (Utils::doPrint(Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
@@ -188,7 +188,7 @@ void TrustRegionBased::init()
 
 }
 
-bool TrustRegionBased::reset(Abstract::Group& grp, Status::Test& t, const Parameter::List& p) 
+bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, const Parameter::List& p) 
 {
   solnPtr = &grp;
   testPtr = &t;
@@ -203,34 +203,34 @@ TrustRegionBased::~TrustRegionBased()
 }
 
 
-NOX::Status::StatusType TrustRegionBased::getStatus()
+NOX::StatusTest::StatusType TrustRegionBased::getStatus()
 {
   return status;
 }
 
-NOX::Status::StatusType TrustRegionBased::iterate()
+NOX::StatusTest::StatusType TrustRegionBased::iterate()
 {
   // First check status
-  if (status != Status::Unconverged) 
+  if (status != StatusTest::Unconverged) 
     return status;
 
   // Copy pointers into temporary references
   Abstract::Group& soln = *solnPtr;
-  Status::Test& test = *testPtr;
+  StatusTest::Generic& test = *testPtr;
 
   // Compute Cauchy and Newton points
   bool ok;
-  ok = newton(newtonVec, soln, *this);
+  ok = newton.compute(newtonVec, soln, *this);
   if (!ok) {
     cout << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
-    status = Status::Failed;
+    status = StatusTest::Failed;
     return status;
   }
 
-  ok = cauchy(cauchyVec, soln, *this);
+  ok = cauchy.compute(cauchyVec, soln, *this);
   if (!ok) {
     cerr << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
-    status = Status::Failed;
+    status = StatusTest::Failed;
     return status;
   }
 
@@ -315,15 +315,15 @@ NOX::Status::StatusType TrustRegionBased::iterate()
     // Compute new X
     soln.computeX(oldSoln, dir, step);
 
-    // Compute RHS for new current solution.
-    ok = soln.computeRHS();
+    // Compute F for new current solution.
+    ok = soln.computeF();
     if (!ok) {
-      cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute RHS" << endl;
+      cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
       throw "NOX Error";
     }
 
     // Compute ratio of actual to predicted reduction
-    fnew = 0.5 * solnPtr->getNormRHS() * solnPtr->getNormRHS();
+    fnew = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
     if (fnew >= fold) {
       ratio = -1;
     }
@@ -331,11 +331,11 @@ NOX::Status::StatusType TrustRegionBased::iterate()
 
       ok = oldSoln.applyJacobian(*dirPtr, bVec);
       if (!ok) {
-	cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute RHS" << endl;
+	cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
 	throw "NOX Error";
       }
       double numerator = fold - fnew;
-      double denominator = abs(dir.dot(oldSoln.getGrad()) + 0.5 * bVec.dot(bVec));
+      double denominator = abs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
       ratio = numerator / denominator;
       cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
 	   << Utils::sci(denominator) << "=" << ratio << endl;
@@ -387,13 +387,13 @@ NOX::Status::StatusType TrustRegionBased::iterate()
     if (Utils::doPrint(Utils::InnerIteration))
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
-    soln.computeRHS();
+    soln.computeF();
     radius = newtonVec.norm();
     /*if (radius < minRadius)
       radius = 2 * minRadius;*/
   }
 
-  status = test(*this);
+  status = test.checkStatus(*this);
  
   if (Utils::doPrint(Utils::InnerIteration)) 
     cout << Utils::fill(72) << endl;
@@ -402,12 +402,12 @@ NOX::Status::StatusType TrustRegionBased::iterate()
   return status;
 }
 
-NOX::Status::StatusType TrustRegionBased::solve()
+NOX::StatusTest::StatusType TrustRegionBased::solve()
 {
   printUpdate();
 
   // Iterate until converged or failed
-  while (status == Status::Unconverged) {
+  while (status == StatusTest::Unconverged) {
     status = iterate();
     printUpdate();
   }
@@ -433,14 +433,14 @@ int TrustRegionBased::getNumIterations() const
 const Parameter::List& TrustRegionBased::getOutputParameters() const
 {
   oparams.setParameter("Nonlinear Iterations", niter);
-  oparams.setParameter("2-Norm of Residual", solnPtr->getNormRHS());
+  oparams.setParameter("2-Norm of Residual", solnPtr->getNormF());
   return oparams;
 }
 
 // protected
 void TrustRegionBased::printUpdate() 
 {
-  double fmax = solnPtr->getRHS().norm(Abstract::Vector::INF);
+  double fmax = solnPtr->getF().norm(Abstract::Vector::MaxNorm);
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "-- Newton Trust-Region Step " << niter << " -- \n";
@@ -448,14 +448,14 @@ void TrustRegionBased::printUpdate()
     cout << " fmax = " << Utils::sci(fmax);
     cout << "  dx = " << Utils::sci(dx);
     cout << "  radius = " << Utils::sci(radius);
-    if (status == Status::Converged)
+    if (status == StatusTest::Converged)
       cout << " (Converged!)";
-    if (status == Status::Failed)
+    if (status == StatusTest::Failed)
       cout << " (Failed!)";
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
   
-  if ((status != Status::Unconverged) && 
+  if ((status != StatusTest::Unconverged) && 
       (Utils::doPrint(Utils::OuterIteration))) {
     cout << Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    

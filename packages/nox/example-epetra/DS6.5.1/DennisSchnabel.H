@@ -19,7 +19,7 @@ class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
 // Flag to tell the evaluate routine what objects to fill
-enum FillType {RHS_ONLY, MATRIX_ONLY, ALL}; 
+enum FillType {F_ONLY, MATRIX_ONLY, ALL}; 
 
 // Finite Element Problem Class
 class DennisSchnabel { 

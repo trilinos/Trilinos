@@ -81,7 +81,7 @@ public:
   bool reset(Parameter::List& params);
 
   // derived
-  bool operator()(Abstract::Group& newgrp, double& step, 
+  bool compute(Abstract::Group& newgrp, double& step, 
 		  const Abstract::Group& oldgrp, 
 		  const Abstract::Vector& dir) ;
   
@@ -90,7 +90,7 @@ private:
   /*! \brief Compute the correct norm (according to the input
       parameters) of the given grp. 
   */
-  double getNormRHS(const Abstract::Group& grp) const;
+  double getNormF(const Abstract::Group& grp) const;
 
 private:
 

@@ -54,13 +54,13 @@ namespace Direction {
 
 //! %Generic direction interface
 /*!
-  %Generic interface to calculating search directions.
+  %Generic interface for calculating a search direction.
  */
 class Generic {
 
 public:
 
-  //! Default base constructor. 
+  //! Default constructor. 
   /*! 
     Constructors of derived objects should look like reset.
    */
@@ -73,14 +73,17 @@ public:
   virtual bool reset(Parameter::List& params) = 0;
   
   /*!
-    \brief Compute the direction vector for a specific method given
-    the current group.
+    \brief Compute the direction vector, \c d, for a specific method given
+    the current group, \c grp. 
 
-     Access to the solver is also allowed for getting additional
-     status-type information like iteration number, etc.
+    The \c grp is not const so that we can compute the F vector, the
+    Jacobian matrix, the Newton vector, and so on.
+
+    Const access to the solver is used for getting additional
+    information such as the past solution, the iteration number, and
+    so on.
   */
-  virtual bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
-			  const Solver::Generic& solver) = 0;
+  virtual bool compute(Abstract::Vector& d, Abstract::Group& g, const Solver::Generic& s) = 0;
 
 };
 } // namespace Direction

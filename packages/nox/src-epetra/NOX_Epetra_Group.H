@@ -63,13 +63,13 @@ namespace Epetra {
   <ul>
   <li> User Created Epetra_Operator or %Trilinos/%Epetra - The user must supply the operator to the group constructor.  This could  be any Epetra_RowMatrix or a user created class.  To be able to use this object, NOX requires the user to implement the following functions in the NOX::Epetra::Interface object: 
   <ul>
-  <li> computeRHS()
+  <li> computeF()
   <li> computeJacobian() 
   </ul></li>
 
-  <li> NOX::Epetra::MatrixFree - This object represents a Matrix-Free implementation an thus requires minimal memory since no Jacobian is stored.  The user need only supply the computeRHS() function for the NOX::Epetra::Interface class.
+  <li> NOX::Epetra::MatrixFree - This object represents a Matrix-Free implementation an thus requires minimal memory since no Jacobian is stored.  The user need only supply the computeF() function for the NOX::Epetra::Interface class.
 
-  <li> NOX::Epetra::FiniteDifference - This object uses finite differencing of the RHS to compute and store the entire Jacobian as an Epetra_CrsMatirx.  This is not optimied and can be very time consuming since an Interface::computeRHS() call is made for each unknown. This was meant primarily as a validation tool to ensure Jacobian fills are correct. The user need only supply the computeRHS() function for the NOX::Epetra::Interface class. 
+  <li> NOX::Epetra::FiniteDifference - This object uses finite differencing of the RHS to compute and store the entire Jacobian as an Epetra_CrsMatirx.  This is not optimied and can be very time consuming since an Interface::computeF() call is made for each unknown. This was meant primarily as a validation tool to ensure Jacobian fills are correct. The user need only supply the computeF() function for the NOX::Epetra::Interface class. 
   </ul>
  
 The solver type is set in the "Linear %Solver" sublist using the parameter tag "Aztec %Solver".  The following labels are valid:
@@ -218,11 +218,11 @@ public:
 			const Abstract::Vector& d, 
 			double step);
 
-  virtual bool computeRHS();
+  virtual bool computeF();
 
   virtual bool computeJacobian();
 
-  virtual bool computeGrad();
+  virtual bool computeGradient();
 
   virtual bool computeNewton(Parameter::List& params);
 
@@ -257,9 +257,9 @@ public:
    * computeX). */
   //@{
 
-  virtual bool isRHS() const;
+  virtual bool isF() const;
   virtual bool isJacobian() const;
-  virtual bool isGrad() const;
+  virtual bool isGradient() const;
   virtual bool isNewton() const;
 
   //@}
@@ -272,11 +272,11 @@ public:
 
   virtual const Abstract::Vector& getX() const;
 
-  virtual const Abstract::Vector& getRHS() const;
+  virtual const Abstract::Vector& getF() const;
   
-  virtual double getNormRHS() const;
+  virtual double getNormF() const;
 
-  virtual const Abstract::Vector& getGrad() const;
+  virtual const Abstract::Vector& getGradient() const;
 
   virtual const Abstract::Vector& getNewton() const;
 

@@ -61,9 +61,9 @@ bool Backtrack::reset(Parameter::List& params)
   const string tmp = params.getParameter("Decrease Condition", "Max Norm");
   
   if (tmp == "Max Norm")
-    normtype = NOX::Abstract::Vector::INF;
+    normtype = NOX::Abstract::Vector::MaxNorm;
   else if (tmp == "Two Norm")
-    normtype = NOX::Abstract::Vector::TWO;
+    normtype = NOX::Abstract::Vector::TwoNorm;
   else {
     cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
@@ -73,23 +73,23 @@ bool Backtrack::reset(Parameter::List& params)
   return true;
 }
 
-double Backtrack::getNormRHS(const Abstract::Group& grp) const
+double Backtrack::getNormF(const Abstract::Group& grp) const
 {
-  return (normtype == NOX::Abstract::Vector::INF) ? 
-    grp.getRHS().norm(normtype) : grp.getNormRHS();
+  return (normtype == NOX::Abstract::Vector::MaxNorm) ? 
+    grp.getF().norm(normtype) : grp.getNormF();
 }
 
-bool Backtrack::operator()(Abstract::Group& newgrp, double& step, 
+bool Backtrack::compute(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
-  double oldf = getNormRHS(oldgrp);
+  double oldf = getNormF(oldgrp);
   double newf;
   bool isfailed = false;
 
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
-  newgrp.computeRHS();    
-  newf = getNormRHS(newgrp);
+  newgrp.computeF();    
+  newf = getNormF(newgrp);
   int niters = 1;
 
   if (Utils::doPrint(Utils::InnerIteration)) {
@@ -114,8 +114,8 @@ bool Backtrack::operator()(Abstract::Group& newgrp, double& step,
     }
 
     newgrp.computeX(oldgrp, dir, step);
-    newgrp.computeRHS();    
-    newf = getNormRHS(newgrp);
+    newgrp.computeF();    
+    newf = getNormF(newgrp);
   } 
 
   if (Utils::doPrint(Utils::InnerIteration)) {

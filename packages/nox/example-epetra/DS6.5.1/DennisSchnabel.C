@@ -87,7 +87,7 @@ bool DennisSchnabel::evaluate(FillType f,
   flag = f;
 
   // Set the incoming linear objects
-  if (flag == RHS_ONLY) {
+  if (flag == F_ONLY) {
     rhs = tmp_rhs;
   } 
   else if (flag == MATRIX_ONLY) {
@@ -116,10 +116,10 @@ bool DennisSchnabel::evaluate(FillType f,
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
-  // Begin RHS fill
-  if((flag == RHS_ONLY) || (flag == ALL)) {
+  // Begin F fill
+  if((flag == F_ONLY) || (flag == ALL)) {
 
-    // Zero out the RHS vector
+    // Zero out the F vector
     i=rhs->PutScalar(0.0);
 
     // Processor 0 always fills the first equation.

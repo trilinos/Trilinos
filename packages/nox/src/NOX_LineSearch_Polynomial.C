@@ -60,18 +60,18 @@ bool Polynomial::reset(Parameter::List& params)
   return true;
 }
 
-bool Polynomial::operator()(Abstract::Group& newgrp, double& step, 
+bool Polynomial::compute(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
 
-  double oldf = 0.5*oldgrp.getNormRHS()*oldgrp.getNormRHS();  
+  double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
                             // Redefined f(), RH
 
 //   General computation of directional derivative used in curvature condition
 //   Note that for Newton direction, oldfprime = -2.0*oldf
-  Abstract::Vector* tmpvecptr = oldgrp.getX().clone(CopyShape);
+  Abstract::Vector* tmpvecptr = oldgrp.getX().clone(ShapeCopy);
   oldgrp.applyJacobian(dir,*tmpvecptr);
-  double oldfprime = tmpvecptr->dot(oldgrp.getRHS());
+  double oldfprime = tmpvecptr->dot(oldgrp.getF());
 
   double newf, prevf;
   double tempStep, previousStep;
@@ -81,8 +81,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
 
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
-  newgrp.computeRHS();    
-  newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+  newgrp.computeF();    
+  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
                             // Redefined f(), RH
 
   int niters = 1;
@@ -124,8 +124,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
        if(disc < 0) {
          step = recoverystep;
          newgrp.computeX(oldgrp, dir, step);
-         newgrp.computeRHS();    
-         newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+         newgrp.computeF();    
+         newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
          cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
          cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
          cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
@@ -166,8 +166,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
     
     niters ++;
     newgrp.computeX(oldgrp, dir, step);
-    newgrp.computeRHS();    
-    newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+    newgrp.computeF();    
+    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
                             // Redefined f(), RH
   } 
 

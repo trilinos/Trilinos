@@ -122,15 +122,15 @@ class TrustRegionBased : public Generic {
 public:
 
   //! %TrustRegionBased-method constructor. 
-  TrustRegionBased(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  TrustRegionBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
-  virtual Status::StatusType getStatus();
-  virtual Status::StatusType iterate();
-  virtual Status::StatusType solve();
+  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  virtual StatusTest::StatusType getStatus();
+  virtual StatusTest::StatusType iterate();
+  virtual StatusTest::StatusType solve();
   virtual const Abstract::Group& getSolutionGroup() const;
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
@@ -185,7 +185,7 @@ protected:
   Abstract::Vector& bVec;
 
   //! Stopping test.
-  Status::Test* testPtr;		
+  StatusTest::Generic* testPtr;		
 
   //! Input parameters.
   Parameter::List iparams;	
@@ -239,7 +239,7 @@ protected:
   int niter;                    
 
   //! %Status of nonlinear solver.
-  Status::StatusType status;
+  StatusTest::StatusType status;
 
   //! Enumerated list for each direction that may be required in the Trust region computation.
   enum StepType {Newton, Cauchy, Dogleg};

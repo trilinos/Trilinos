@@ -41,16 +41,15 @@ namespace Direction {
 
 //! %Manager for all direction computations
 /*! 
-   The parameters specify the type of direction as well as all
-   the corresponding parameters for that method.
+   The parameters passed to the constructor or reset should specify
+   the "Method", as described below, as well as any additional
+   parameters for that particular method.
  
    <ul>
    <li> "Method" - Name of the direction method. Valid choices are
    <ul> 
    <li> "%Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
-   <li> "Dogleg" (NOX::Direction::Dogleg) - not implemented yet
-   <li> "Broyden" (NOX::Direction::Broyden) - not implemented yet
    </ul>
    </ul>
  */  
@@ -71,15 +70,15 @@ public:
   bool reset(Parameter::List& params);
 
   // derived
-  bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
-		  const Solver::Generic& solver);
+  bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
+	       const Solver::Generic& solver);
 
 private:
 
   //! Method name
   string method;
 
-  //! Pointer to method
+  //! Pointer to actual direction calculation method
   Direction::Generic* ptr;
 
 };

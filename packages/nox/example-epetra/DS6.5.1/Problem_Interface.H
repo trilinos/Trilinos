@@ -21,8 +21,8 @@ public:
   Problem_Interface(DennisSchnabel& Problem);
   ~Problem_Interface();
 
-  //! Compute and return RHS.  Returns true if computation was successful.
-  bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);
+  //! Compute and return F.  Returns true if computation was successful.
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& F);
 
   //! Compute an explicit Jacobian.  Returns true if computation was successful.
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);

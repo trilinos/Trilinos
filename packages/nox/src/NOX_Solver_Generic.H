@@ -33,7 +33,7 @@
 #ifndef NOX_SOLVER_GENERIC_H
 #define NOX_SOLVER_GENERIC_H
 
-#include "NOX_Status_Test.H" 	// for NOX::StatusType
+#include "NOX_StatusTest_Generic.H" 	// for NOX::StatusTest::StatusType
 
 // Forward declarations
 namespace NOX {
@@ -70,16 +70,16 @@ public:
     the solution.
 
   */
-  virtual bool reset(Abstract::Group& grp, Status::Test& tests, const Parameter::List& params) = 0;
+  virtual bool reset(Abstract::Group& grp, StatusTest::Generic& tests, const Parameter::List& params) = 0;
 
   //! Check current convergence/failure status. 
-  virtual Status::StatusType getStatus() = 0;
+  virtual StatusTest::StatusType getStatus() = 0;
 
   //! Do one nonlinear method iteration and return status.
-  virtual Status::StatusType iterate() = 0;
+  virtual StatusTest::StatusType iterate() = 0;
 
   //! Solve the nonlinear problem and return final status.
-  virtual Status::StatusType solve() = 0;
+  virtual StatusTest::StatusType solve() = 0;
 
   //! Return a reference to the current solution group.
   virtual const Abstract::Group& getSolutionGroup() const = 0;

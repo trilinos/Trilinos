@@ -61,7 +61,7 @@ public:
   bool reset(Parameter::List& params);
 
   // derived
-  bool operator()(Abstract::Group& newgrp, double& step, 
+  bool compute(Abstract::Group& newgrp, double& step, 
 		  const Abstract::Group& oldgrp, 
 		  const Abstract::Vector& dir) ;
 private:

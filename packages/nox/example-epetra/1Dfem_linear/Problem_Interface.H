@@ -21,8 +21,8 @@ public:
   Problem_Interface(FiniteElementProblem& Problem);
   ~Problem_Interface();
 
-  //! Compute and return RHS
-  bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);
+  //! Compute and return F
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& F);
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
