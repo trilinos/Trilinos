@@ -5,29 +5,29 @@
 # @HEADER
 # ************************************************************************
 # 
-#            Trilinos: An Object-Oriented Solver Framework
-#                Copyright (2001) Sandia Corporation
+#                Kokkos: Fast Core Kernels Package
+#               Copyright (2004) Sandia Corporation
 # 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2, or (at your option)
-# any later version.
+#  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+#  license for use of this work by or on behalf of the U.S. Government.
+#  
+#  This library is free software; you can redistribute it and or modify
+#  it under the terms of the GNU Lesser General Public License as
+#  published by the Free Software Foundation; either version 2.1 of the
+#  License, or (at your option) any later version.
 #   
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
+#  This library is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
 #   
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-# 
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-# 
-# ************************************************************************
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+#  USA
+#  Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+#  
+#  ************************************************************************
 # @HEADER
 
 # ------------------------------------------------------------------------
@@ -52,7 +52,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
+AC_CONFIG_SRCDIR(/src/Kokkos_Version.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -125,47 +125,15 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
-#  #np# - Customize the checks for headers needed in package being added.
-#NOTE: This section still needs to be updated for new_package, it is still 
-# code from Epetra
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
+# Checks for header files - used in Kokkos_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+AC_CHECK_HEADERS([ctime sys/time.h time.h sys/resource.h],,,)
 
-if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Kokkos requires at least one or the other.]])
+if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes" && test "X$ac_cv_header_sys_resource_h != "Xyes""; then
+  AC_MSG_ERROR([[Cannot find ctime, sys/time.h, time.h, or sys/resource.h.  Kokkos requires at least one of these files.]])
 fi
-
-if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Kokkos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Kokkos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Kokkos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Kokkos requires at least one or the other.]])
-fi
-
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  Kokkos requires at least one or the other.]])
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Kokkos requires at least one or the other.]])
-  fi
-fi  
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -190,31 +158,14 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
-#
-#  #np# - These options are specific to Epetra and are left only as examples.
-#         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
-#         in the (package)_config.h file.  Developers should use a 
-#         more specific name such as 'new_package-fatal_messages', rather
-#         than 'fatal_messages'.
-#TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
-#                   FATAL_MESSAGES, yes)
-#TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
-#                   WARNING_MESSAGES, no)
-#TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
-#                   FORMAT_IO, yes)
-
-# ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#  #np# - These options can disable the tests and examples of a package.
-#  #np# - Packages that do not have tests or examples should #-out the 
-#  #np# - option(s) that does (do) not apply.
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-#AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+# These options can disable the tests and examples of a package.
+# Packages that do not have tests or examples should #-out the 
+# option(s) that does (do) not apply.
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
@@ -235,17 +186,16 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno"; then
 
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
+AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 dnl Check for user-specified names for BLAS lib
 TAC_ARG_WITH_BLASLIB
 
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
+fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
