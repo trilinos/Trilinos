@@ -164,7 +164,6 @@ struct ML_Sm_Hiptmair_Data_Struct
    double *res_edge;
    double *rhs_nodal;
    double *x_nodal;
-   double *edge_update;
    double max_eig;
    double omega;
    double output_level;

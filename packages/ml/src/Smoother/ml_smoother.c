@@ -1115,7 +1115,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 {
   int iter, kk, Nrows, init_guess;
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
-   double *res_edge, *edge_update,
+   double *res_edge,
           *rhs_nodal, *x_nodal;
    ML_Smoother  *smooth_ptr;
    ML_Sm_Hiptmair_Data *dataptr;
@@ -1144,7 +1144,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    reduced_smoother_flag = (int) dataptr->reduced_smoother;
 
    res_edge = (double *) dataptr->res_edge;
-   edge_update = (double *) dataptr->edge_update;
    rhs_nodal = (double *) dataptr->rhs_nodal;
    x_nodal = (double *) dataptr->x_nodal;
 
@@ -1262,9 +1261,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ************************/
       ML_Comm_Envelope_Increment_Tag(envelope);
       ML_Operator_Apply(Tmat, Tmat->invec_leng,
-                        x_nodal, Tmat->outvec_leng,edge_update);
+                        x_nodal, Tmat->outvec_leng,res_edge);
    
-      for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
+      for (kk=0; kk < Nrows; kk++) x[kk] += res_edge[kk];
 
       if (reduced_smoother_flag)
       {
@@ -3149,7 +3148,6 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->res_edge = NULL;
    ml_data->rhs_nodal = NULL;
    ml_data->x_nodal = NULL;
-   ml_data->edge_update = NULL;
    ml_data->max_eig = 0.0;
    ml_data->omega = 1.0;
    ml_data->output_level = 2;
@@ -3283,9 +3281,6 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
 
    if ( ml_data->x_nodal != NULL )
       ML_free(ml_data->x_nodal);
-
-   if ( ml_data->edge_update != NULL )
-      ML_free(ml_data->edge_update);
 
    if ( (ml_data->sm_nodal != NULL) && (ml_data->sm_nodal->my_level != NULL) )
    {
@@ -3969,8 +3964,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
                         ML_allocate(Tmat->invec_leng * sizeof(double));
    dataptr->x_nodal = (double *)
                       ML_allocate(Tmat->invec_leng * sizeof(double));
-   dataptr->edge_update = (double * )
-                          ML_allocate(Amat->invec_leng * sizeof(double));
    ML_memory_check("after work vectors");
 
    /*
