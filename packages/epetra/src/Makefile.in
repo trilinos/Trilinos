@@ -142,7 +142,9 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialSpdDenseSolver.cpp \
 	$(srcdir)/Epetra_SerialDenseSolver.cpp   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp \
-	$(srcdir)/Epetra_SerialDenseVector.cpp
+	$(srcdir)/Epetra_SerialDenseVector.cpp \
+	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp 
 
 
 SERIAL_H = \
@@ -370,6 +372,8 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseSolver.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialSymDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseVector.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_IntSerialDenseVector.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialComm.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_BasicDirectory.$(OBJEXT) \
@@ -407,6 +411,8 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseSolver.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialSymDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseVector.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_IntSerialDenseVector.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialComm.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_BasicDirectory.$(OBJEXT) \
@@ -442,6 +448,8 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseSolver.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialSymDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseVector.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_IntSerialDenseVector.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialComm.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_BasicDirectory.$(OBJEXT) \
@@ -481,6 +489,8 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseSolver.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialSymDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseVector.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_IntSerialDenseVector.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialComm.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_BasicDirectory.$(OBJEXT) \
@@ -527,6 +537,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_FEVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_Flops.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_Import.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_IntSerialDenseMatrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_IntSerialDenseVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_IntVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_LAPACK.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_LinearProblem.Po \
@@ -650,6 +662,10 @@ Epetra_SerialSymDenseMatrix.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp
 Epetra_SerialDenseVector.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialDenseVector.cpp
+Epetra_IntSerialDenseMatrix.$(OBJEXT): \
+	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp
+Epetra_IntSerialDenseVector.$(OBJEXT): \
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp
 Epetra_SerialComm.$(OBJEXT): $(srcdir)/Epetra_SerialComm.cpp
 Epetra_SerialDistributor.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialDistributor.cpp
@@ -702,6 +718,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_FEVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_Flops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_Import.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_IntSerialDenseMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_IntSerialDenseVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_IntVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_LAPACK.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_LinearProblem.Po@am__quote@
@@ -884,6 +902,30 @@ Epetra_SerialDenseVector.obj: $(srcdir)/Epetra_SerialDenseVector.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SerialDenseVector.Po' tmpdepfile='$(DEPDIR)/Epetra_SerialDenseVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SerialDenseVector.obj `cygpath -w $(srcdir)/Epetra_SerialDenseVector.cpp`
+
+Epetra_IntSerialDenseMatrix.o: $(srcdir)/Epetra_IntSerialDenseMatrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntSerialDenseMatrix.cpp' object='Epetra_IntSerialDenseMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntSerialDenseMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_IntSerialDenseMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntSerialDenseMatrix.o `test -f $(srcdir)/Epetra_IntSerialDenseMatrix.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_IntSerialDenseMatrix.cpp
+
+Epetra_IntSerialDenseMatrix.obj: $(srcdir)/Epetra_IntSerialDenseMatrix.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntSerialDenseMatrix.cpp' object='Epetra_IntSerialDenseMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntSerialDenseMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_IntSerialDenseMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntSerialDenseMatrix.obj `cygpath -w $(srcdir)/Epetra_IntSerialDenseMatrix.cpp`
+
+Epetra_IntSerialDenseVector.o: $(srcdir)/Epetra_IntSerialDenseVector.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntSerialDenseVector.cpp' object='Epetra_IntSerialDenseVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntSerialDenseVector.Po' tmpdepfile='$(DEPDIR)/Epetra_IntSerialDenseVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntSerialDenseVector.o `test -f $(srcdir)/Epetra_IntSerialDenseVector.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_IntSerialDenseVector.cpp
+
+Epetra_IntSerialDenseVector.obj: $(srcdir)/Epetra_IntSerialDenseVector.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntSerialDenseVector.cpp' object='Epetra_IntSerialDenseVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntSerialDenseVector.Po' tmpdepfile='$(DEPDIR)/Epetra_IntSerialDenseVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntSerialDenseVector.obj `cygpath -w $(srcdir)/Epetra_IntSerialDenseVector.cpp`
 
 Epetra_SerialComm.o: $(srcdir)/Epetra_SerialComm.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_SerialComm.cpp' object='Epetra_SerialComm.o' libtool=no @AMDEPBACKSLASH@
