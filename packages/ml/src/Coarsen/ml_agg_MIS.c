@@ -513,7 +513,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* communicate the phase two/three information  */
 
-   if ( mypid == 0 && 9 < ML_Get_PrintLevel())
+   if ( mypid == 0 && 8 < ML_Get_PrintLevel())
    {
       printf("Communicating phase 2/3 info\n");
       fflush(stdout);
@@ -564,7 +564,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       }
    }
 
-   if ( mypid == 0 && 9 < ML_Get_PrintLevel())
+   if ( mypid == 0 && 8 < ML_Get_PrintLevel())
    {
       printf("Calling ML_Operator_UnAmalgamateAndDropWeak\n");
       fflush(stdout);

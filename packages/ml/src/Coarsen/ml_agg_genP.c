@@ -54,7 +54,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    double t0;
 #endif
 
-   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
    {
      printf("Entering ML_Gen_MGHierarchy_UsingAggregation\n");
      fflush(stdout);
@@ -322,7 +322,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    t0 =  GetClock();
 #endif
 
-   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
    {
      printf("Entering ML_AGG_Gen_Prolongator\n");
      fflush(stdout);
@@ -673,7 +673,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
              ml->Pmat[clevel].N_nonzeros, ml->Pmat[clevel].outvec_leng);
    }
    */
-   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
    {
      printf("Leaving ML_AGG_Gen_Prolongator\n");
      fflush(stdout);
