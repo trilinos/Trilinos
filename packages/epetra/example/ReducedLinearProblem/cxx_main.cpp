@@ -6,7 +6,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_CrsSingletonFilter_new.h"
+#include "Epetra_CrsSingletonFilter.h"
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -24,7 +24,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A, Epetra_Vector &x, Epetra_Vector &b,
 	      Ifpack_CrsRiluk *M, 
 	      int Maxiter, double Tolerance, 
 	      double *residual, bool verbose);
-
+int Statistics(const Epetra_CrsSingletonFilter & filter);
 int main(int argc, char *argv[]) {
 
 #ifdef EPETRA_MPI
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 	 << "    Construct Reduced Problem time (sec) = " << reduceConstructTime << endl
 	 << "    Reduction Total time (sec)           = " << totalReduceTime << endl<< endl;
 
-  SingletonFilter.Statistics();
+  Statistics(SingletonFilter);
 
   Epetra_LinearProblem * ReducedProblem = SingletonFilter.ReducedProblem();
 
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     cout << "\n\n****************************************************" << endl
 	 << "    Update Reduced Problem time (sec)           = " << updateReducedProblemTime<< endl
 	 << "****************************************************" << endl;
-   SingletonFilter.Statistics();
+  Statistics(SingletonFilter);
 
   if (LevelFill>-1) {
 
@@ -440,4 +440,37 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     if (r_norm < Tolerance) break;
   }
   return;
+}
+//==============================================================================
+int Statistics(const Epetra_CrsSingletonFilter & filter) {
+
+  // Create local variables of some of the stats we need because we don't know if the
+  // method calls are collective or not for the particular implementation of the Row Matrix
+  int fmaxentries;
+  int maxentries = filter.FullMatrix()->MaxNumEntries();
+  filter.FullMatrix()->RowMatrixRowMap().Comm().SumAll(&maxentries, &fmaxentries, 1);
+  int fnrows = filter.FullMatrix()->NumGlobalRows();
+  int fnnz = filter.FullMatrix()->NumGlobalNonzeros();
+  if (filter.FullMatrix()->RowMatrixRowMap().Comm().MyPID()!=0) return(0);
+
+  cout << "Full System characteristics:" << endl << endl
+       << "  Dimension                             = " << fnrows << endl
+       << "  Number of nonzeros                    = " <<fnnz << endl
+       << "  Maximum Number of Row Entries         = " << fmaxentries << endl << endl
+       << "Reduced System characteristics:" << endl << endl
+       << "  Dimension                             = " << filter.ReducedMatrix()->NumGlobalRows() << endl
+       << "  Number of nonzeros                    = " << filter.ReducedMatrix()->NumGlobalNonzeros() << endl
+       << "  Maximum Number of Row Entries         = " << filter.ReducedMatrix()->GlobalMaxNumEntries() << endl << endl
+       << "Singleton information: " << endl
+       << "  Total number of singletons            = " << filter.NumSingletons() << endl
+       << "  Number of rows with single entries    = " << filter.NumRowSingletons() << endl
+       << "  Number of columns with single entries " << endl
+       << "    (that were not already counted as " << endl
+       << "     row singletons)                    = " << filter.NumColSingletons() << endl << endl
+       << "Ratios: " << endl
+       << "  Percent reduction in dimension        = " << filter.RatioOfDimensions()*100.0 << endl
+       << "  Percent reduction in nonzero count    = " << filter.RatioOfNonzeros()*100.0 << endl << endl;
+
+  return(0);
+
 }
