@@ -43,14 +43,20 @@ NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter
   dir(*dirptr),			// reference to just-created pointer
   olddirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   olddir(*olddirptr),		// reference to just-created pointer
+  precdirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  precolddirptr(xgrp.getX().clone(CopyShape)), // create via clone 
+  diffVector(xgrp.getX().clone(CopyShape)), // create via clone 
   testptr(&t),			// reference to t
   iparams(p),			// copy p
   oparams(),			// empty list
   linesearch(iparams.sublist("Line Search")), // initialize line search
   step(0.0),			// initialize to zero
   niter(0),			// initialize to zero
-  status(Status::Unconverged),	// initialize convergence status
-  maxIterations(p.getParameter("Max Iterations", 10))
+  restartFrequency(p.getParameter("Restart Frequency", 100)),
+  outputFrequency(p.getParameter("Output Frequency", 1)),
+				// initialize local variables to minimize 
+				// Parameter::List access
+  status(Status::Unconverged)	// initialize convergence status
 {
   init();
 }
@@ -60,7 +66,6 @@ void NonlinearCG::init()
 {
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
-
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     iparams.print(cout,5);
@@ -79,6 +84,10 @@ NonlinearCG::~NonlinearCG()
   delete oldsolnptr;
   delete dirptr;
   delete olddirptr;
+  delete precdirptr;
+  delete precolddirptr;
+  delete diffVector;
+  delete testptr;
 }
 
 bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
@@ -105,57 +114,59 @@ Status::StatusType NonlinearCG::iterate()
   Abstract::Group& soln = *solnptr;
   Status::Test& test = *testptr;
 
-  // Compute Jacobian at current solution.
-  // ONLY needed if computing Grad or Newton directions!!!!
-  // But also may be needed for some linesearches, ie More'-Thuente, so
-  // we compute it anyway.
-  soln.computeJacobian();
-  soln.computeGrad(); // Needed for new NOX --> not sure why.
+  // Construct Residual as first step in getting new search direction
   soln.computeRHS();  
 
   // Compute NonlinearCG direction for current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
-//  Two choices available for determining initial descent direction before
-//  orthogonalization: 
-  if(iparams.getParameter("Direction", "Steepest Descent")=="Richardson")
+  //  Two choices available for determining initial descent direction before
+  //  orthogonalization: 
+  if(iparams.isParameterEqual("Direction", "Richardson"))
   {
     dir = soln.getRHS();  // Richardson direction
-    if(niter!=0) oldDescentdirptr = &oldsoln.getRHS();
+    if(niter!=0) 
+      olddescentdirptr = &oldsoln.getRHS();
   }
   else
   {
+    soln.computeJacobian();
+    soln.computeGrad(); 
     dir = soln.getGrad(); // Steepest Descent direction for 
                           // f = 1/2 Trans(R).R
-    if(niter!=0) oldDescentdirptr = &oldsoln.getGrad();
+    if(niter!=0) 
+      olddescentdirptr = &oldsoln.getGrad();
   }
   dir.scale(-1.0);
 
   // Diagonally precondition if desired
 
-  Abstract::Vector& z = *dir.clone(DeepCopy);
-  if(iparams.getParameter("Diagonal Precondition", "Off") == "On") 
-    soln.applyJacobianDiagonalInverse(dir, z);
+  *precdirptr = dir;
+  if(iparams.isParameterEqual("Diagonal Precondition", "On")) {
+    if(!soln.isJacobian())
+      soln.computeJacobian();
+    soln.applyJacobianDiagonalInverse(dir, *precdirptr);
+  }
 
   // Orthogonalize using previous search direction
 
   if(niter!=0){  
-
-    Abstract::Vector& oldz = *oldDescentdirptr->clone(DeepCopy);
-    if(iparams.getParameter("Diagonal Precondition", "Off") == "On") 
-      soln.applyJacobianDiagonalInverse(*oldDescentdirptr, oldz);
+    *precolddirptr = *olddescentdirptr;
+    if(iparams.isParameterEqual("Diagonal Precondition", "On")) 
+      soln.applyJacobianDiagonalInverse(*olddescentdirptr, 
+                                      *precolddirptr);
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
-    if(iparams.getParameter("Orthogonalize", "Fletcher-Reeves")=="Polak-Ribiere")
+    if(iparams.isParameterEqual("Orthogonalize", "Polak-Ribiere"))
     {
 //                     Polak-Ribiere beta
 
-      Abstract::Vector& diffVector = *z.clone();
-      diffVector.update(1.0, oldz, 1.0); 
+      *diffVector = *precdirptr;
+      diffVector->update(1.0, *precolddirptr, 1.0); 
 
-      double denominator = oldDescentdirptr->dot(oldz);
+      double denominator = olddescentdirptr->dot(*precolddirptr);
 
-      beta = dir.dot(diffVector) / denominator;
+      beta = dir.dot(*diffVector) / denominator;
 
     // Constrain beta >= 0
       if(beta<0.0) {
@@ -167,16 +178,16 @@ Status::StatusType NonlinearCG::iterate()
     {
 //                     Fletcher-Reeves beta
 
-      double denominator = oldDescentdirptr->dot(oldz);
+      double denominator = olddescentdirptr->dot(*precolddirptr);
 
-      beta = dir.dot(z) / denominator;
+      beta = dir.dot(*precdirptr) / denominator;
 
     } // End of orthogonalization
 
 
 //  Allow for restart after specified number of nonlinear iterations
 
-    if( (niter % iparams.getParameter("Restart Frequency", 100))==0)
+    if( (niter % restartFrequency)==0)
     {
        if (Utils::doPrint(Utils::OuterIteration))
          cout << "Resetting beta --> 0" << endl;
@@ -184,18 +195,27 @@ Status::StatusType NonlinearCG::iterate()
        beta = 0 ;  // Restart with Steepest Descent direction
     }
 
-    z.update(beta, olddir, 1.0);
+    precdirptr->update(beta, olddir, 1.0);
 
   } // niter != 0
 
 
   // Store direction vector for use in orthogonalization
-  dir = z;
+  dir = *precdirptr;
   olddir = dir; 
 
   // Copy current soln to the old soln.
   oldsoln = soln;
 
+//  Debugging,  RH
+//  Check to see if dir is a descent direction and what dir it points to...
+//  if(!oldsoln.isGrad())
+//    oldsoln.computeGrad();
+//  double testInitialSlope = dir.dot(oldsoln.getGrad());
+//  cout << "  Inside NonlinearCG, dginit :" << testInitialSlope << endl;
+//  cin.get();
+  
+  
   // Do line search and compute new soln.
   /* NOTE FROM TAMMY: Need to check the return status! */
   linesearch(soln, step, oldsoln, dir); // niter needs to be added, RH
@@ -208,7 +228,7 @@ Status::StatusType NonlinearCG::iterate()
 
   // Evaluate the current status.
   status = test(*this);
- 
+
   // Return status.
   return status;
 }
@@ -221,16 +241,8 @@ Status::StatusType NonlinearCG::solve()
   // Iterate until converged or failed
   while (status == Status::Unconverged) {
     status = iterate();
-    if((niter % iparams.getParameter("Output Frequency",1))==0)
-        printUpdate();
-    if(niter>=maxIterations) {
-      if (Utils::doPrint(Utils::OuterIteration)) {
-        cout << "\n" << Utils::fill(72) << "\n";
-        cout << "Max Nonlinear Iterations reached...stopping " << endl;
-      }
-      status = Status::Converged;
-    }
-       
+    if((niter % outputFrequency)==0)
+      printUpdate();
   }
 
   return status;

@@ -59,8 +59,6 @@ The following parameters are valid for this solver:
   Sandia Report, SAND81-0084J, J. H. Biffle, "The Solution of Quasi-Static
   Nonlinear Mechanics Problems by the Nonlinear Conjugate Gradient Method"
 
-- "Max Iterations" - Maximum number of nonlinear iterations
-
 - "Orthogonalize" -  Determines which expression to use for the 
   orthogonalization parameter \f$\beta\f$ which is used to obtain a new search
   direction by \f${\bf s}_{k+1} = {\bf z}_{k+1}+\beta{\bf s}_k\f$.  Currently,
@@ -142,7 +140,28 @@ protected:
   /*! This pointer points into the previous solution Abstract::Group to the 
       descent direction based on the choice of "Richardson" or "Steepest
       Descent" determined by Orthogonalization in the Parameter::List. */
-  const Abstract::Vector* oldDescentdirptr;  
+  const Abstract::Vector* olddescentdirptr;  
+
+  //! Pointer to current preconditioned direction.
+  /*! Currently, preconditioning is done using only Jacobi (diagonal)
+      scaling as described above.  If preconditioning is turned off, this
+      vector is equal to the direction vector. */
+  Abstract::Vector* precdirptr;  
+
+  //! Pointer to previous descent direction preconditioned with current Jacobian.
+  /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
+      calculation of /f$\beta/f$ as described above.  Currently, 
+      preconditioning is done using only Jacobi (diagonal) scaling.  
+      If preconditioning is turned off, this vector is equal to the 
+      descent direction from the previous nonlinear iteration. */
+  Abstract::Vector* precolddirptr;  
+
+  //! Vector pointer to difference between current and previous descent directions.
+  /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
+      calculation of /f$\beta/f$ as described above.  
+      If preconditioning is turned off, this vector is equal to the 
+      difference between the current and previous descent directions. */
+  Abstract::Vector* diffVector;  
 
   //! Stopping test.
   Status::Test* testptr;		
@@ -165,11 +184,15 @@ protected:
   //! Number of nonlinear iterations.
   int niter;                    
 
+  //! Restart frequency --> use Steepest descent direction by setting beta = 0
+  int restartFrequency;                    
+
+  //! Output frequency 
+  int outputFrequency;                    
+
   //! %Status of nonlinear solver.
   Status::StatusType status;
 
-  //! Max number nonlinear iterations
-  int maxIterations;
 };
 } // namespace Solver
 } // namespace NOX
