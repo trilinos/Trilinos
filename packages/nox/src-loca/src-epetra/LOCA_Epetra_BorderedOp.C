@@ -47,8 +47,9 @@ LOCA::Epetra::BorderedOp::BorderedOp(Epetra_Operator& jac,
   haveParamComponent(false),
   useTranspose(false)
 {
-   // Get underlying map
-  underlyingMapPtr = &(a.Map());
+  // Get underlying map
+  //underlyingMapPtr = &(a.Map());
+  underlyingMapPtr = &(jac.OperatorDomainMap());
 
   // Get underlying communicator
   underlyingCommPtr = &(underlyingMapPtr->Comm());
