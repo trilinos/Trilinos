@@ -50,11 +50,6 @@ bool Group::computeNewton(NOX::Parameter::List& params)
   return false;
 }
 
-bool Group::computePreconditioner()
-{
-  return false;
-}
-
 bool Group::applyJacobian(const Vector& input, Vector& result) const
 {
   return false;
@@ -65,12 +60,12 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return false;
 }
 
-bool Group::applyJacobianInverse(const Vector& input, Vector& result) const
+bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& input, Vector& result) const
 {
   return false;
 }
 
-bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
+bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
 {
   return false;
 }
@@ -90,10 +85,6 @@ bool Group::isNewton() const
   return false;
 }
 
-bool Group::isPreconditioner() const
-{
-  return false;
-}
 
 
 

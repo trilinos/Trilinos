@@ -129,20 +129,16 @@ public:
   //! Returns \c false if F and/or the Jacobian have not been computed.
   /*! Solve \f$Js = -F\f$ for \f$s\f$.  
 
-    The parameter "Tolerance" may be included in the list of
-    parameters - this is the ideal solution tolerance for the linear
-    solve.
+  The parameters are from the "Linear Solver" sublist of the
+  "Direction" sublist that is passed to solver during construction.
 
-    \note If not defined in derived object, returns \c false.
+  The parameter "Tolerance" may be added/modified in the list of
+  parameters - this is the ideal solution tolerance for an iterative
+  linear solve.
+
+  \note If not defined in derived object, returns \c false.
   */
   virtual bool computeNewton(Parameter::List& params) = 0;
-
-  //! Compute the Preconditioning matrix, \f$ M \f$,  based on the current solution vector.
-  //! Returns true if \f$ M \f$ is successfully computed. 
-  /*!
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool computePreconditioner();
 
   //@}
 
@@ -189,23 +185,23 @@ public:
 
     Returns \c false if any errors are encountered.
 
+  The parameters are from the "Linear Solver" sublist of the
+  "Direction" sublist that is passed to solver during construction.
+
+  The parameter "Tolerance" may be added/modified in the list of
+  parameters - this is the ideal solution tolerance for an iterative
+  linear solve.
+
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyJacobianInverse(const Vector& input, Vector& result) const;
+  virtual bool applyJacobianInverse(Parameter::List& params, const Vector& input, Vector& result) const;
 
-  /*!
-    \brief Applies the inverse of the preconditioning matrix to the given input vector.
-  */
+  //! Applies the inverse of the diagonal of the Jacobian to the given input vector.
   /*! 
-    Computes 
-    \f[ \mbox{result} = M^{-1} \; \mbox{input}, \f]
-    and returns \c true.
-
-    Returns \c false if any errors are encountered.
-
+    Only necessary if using NOX::Solver::NonlinearCG.
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyPreconditionerInverse(const Vector& input, Vector& result) const;
+  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
 
   //@}
 
@@ -230,9 +226,6 @@ public:
   //! Return \c true if the Newton direction is valid.
   /*! \note If not defined in derived object, returns \c false. */
   virtual bool isNewton() const;
-  //! Return \c true if the Preconditioning Matrix is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isPreconditioner() const;
   //@}
 
   /** @name "Get" functions.
