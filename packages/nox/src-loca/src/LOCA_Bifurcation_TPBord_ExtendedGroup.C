@@ -38,6 +38,7 @@
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
 			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			      const NOX::Abstract::Vector& lenVec,
+			      NOX::Parameter::List& lsParams,
 			      int paramId)
   : grpPtr(&g),
     tpXVec(g.getX(), lenVec, 0.0),
@@ -52,12 +53,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
     isValidJacobian(false),
     isValidNewton(false)
 {
-  init();
+  init(lsParams);
 }
 
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
 			  const LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			  const NOX::Abstract::Vector& lenVec,
+			  NOX::Parameter::List& lsParams,
 			  int paramId)
   : grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(g.clone())),
     tpXVec(g.getX(), lenVec, 0.0),
@@ -72,7 +74,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
     isValidJacobian(false),
     isValidNewton(false)
 {
-  init();
+  init(lsParams);
 }
 
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
@@ -314,7 +316,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeF()
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
-  tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
+  tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr)/ lengthVecPtr->length() - 1.0;
   
   isValidF = true;
 
@@ -334,7 +336,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian()
   res = grpPtr->computeJacobian();
   if (res != NOX::Abstract::Group::Ok)
     return res;
-  
+
   res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
   if (res != NOX::Abstract::Group::Ok)
     return res;
@@ -434,7 +436,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
   result_null.update(1.0, *tmp, 1.0);
 
   // compute phi^T*y
-  result_param = lengthVecPtr->dot(input_null);
+  result_param = lengthVecPtr->dot(input_null)/ lengthVecPtr->length();
 
   delete tmp;
 
@@ -562,6 +564,9 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const 
 {
+  grpPtr->computeF();
+  grpPtr->computeJacobian();
+
   // Number of input vectors
   int m = nVecs; 
 
@@ -628,13 +633,13 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
     return res;
   
   // Compute and set results
-  double denom = lengthVecPtr->dot(*tmp3[m]);
+  double denom = lengthVecPtr->dot(*tmp3[m])/ lengthVecPtr->length();
   double w;
   LOCA::Bifurcation::TPBord::ExtendedVector* tpVecPtr;
   for (int i=0; i<m; i++) {
     tpVecPtr = dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector*>(results[i]);
 
-    w = (inputs_params[i] + lengthVecPtr->dot(*tmp3[i]))/denom;
+    w = (inputs_params[i] + lengthVecPtr->dot(*tmp3[i])/ lengthVecPtr->length())/denom;
     (tpVecPtr->getXVec()).update(1.0, *tmp1[i], -w, *tmp1[m], 0.0);
     (tpVecPtr->getNullVec()).update(-1.0, *tmp3[i], w, *tmp3[m], 0.0);
     tpVecPtr->getBifParam() = w;
@@ -760,15 +765,26 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup()
 }
 
 void
-LOCA::Bifurcation::TPBord::ExtendedGroup::init()
+LOCA::Bifurcation::TPBord::ExtendedGroup::init(NOX::Parameter::List& lsParams)
 {
 
   tpXVec.getBifParam() = getBifParam();
 
+  NOX::Abstract::Group::ReturnType res = grpPtr->computeF();
+
+  res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
+
+  res = grpPtr->computeJacobian();
+
+  NOX::Abstract::Vector& b = tpXVec.getNullVec();
+
+  res = grpPtr->applyJacobianInverse(lsParams, *derivResidualParamPtr, b);
+
   // Rescale length vector so that the normalization condition is met
   double lVecDotNullVec;
 
-  lVecDotNullVec = tpXVec.getNullVec().dot(*lengthVecPtr);
+  //lVecDotNullVec = tpXVec.getNullVec().dot(*lengthVecPtr) / lengthVecPtr->length();
+  lVecDotNullVec = b.dot(*lengthVecPtr) / lengthVecPtr->length();
   if (lVecDotNullVec == 0.0) {
     cout << "ERROR: LOCA::Bifurcation::TPBord::ExtendedGroup::init()\n"
          << "     : length vector can not have Norm zero " << endl;
@@ -777,5 +793,6 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::init()
   }
   cout << "\tIn LOCA::Bifurcation::TPBord::ExtendedGroup::init(), scaling lenVec by:" 
        << (1.0 / lVecDotNullVec) << endl;
-  lengthVecPtr->scale(1.0 / lVecDotNullVec);
+  //lengthVecPtr->scale(1.0 / lVecDotNullVec);
+  b.scale(1.0/lVecDotNullVec);
 }

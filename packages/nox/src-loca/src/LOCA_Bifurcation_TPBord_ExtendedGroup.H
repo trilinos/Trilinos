@@ -117,7 +117,8 @@ namespace LOCA {
 	 * not be copied.  
 	 */
 	ExtendedGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
-	      const NOX::Abstract::Vector& lenVec, int paramId = 0);
+	      const NOX::Abstract::Vector& lenVec, 
+		      NOX::Parameter::List& lsParams, int paramId = 0);
 
 	/*! 
 	 * \brief Constructor to set the base group, bifurcation paramter id
@@ -133,7 +134,8 @@ namespace LOCA {
 	 * be copied.  
 	 */
 	ExtendedGroup(const LOCA::Bifurcation::TPBord::AbstractGroup& g, 
-	      const NOX::Abstract::Vector& lenVec, int paramId = 0);
+	      const NOX::Abstract::Vector& lenVec, 
+		      NOX::Parameter::List& lsParams, int paramId = 0);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -412,7 +414,7 @@ namespace LOCA {
 		   \begin{bmatrix} 
 		      A & b
 		   \end{bmatrix} \\
-		  w &= \frac{z + C^Tl}{l^Td} \\
+		  w &= \frac{C^Tl - z}{l^Td} \\
 		  U &= A - b w^T \\
 		  V &= C - d w^T
 	       \end{split}
@@ -462,13 +464,13 @@ namespace LOCA {
 	
 	//@}
 
+	//! Get bifurcation parameter
+	double getBifParam() const;
+
       protected:
 
 	//! Initializes group
-	void init();
-	
-	//! Get bifurcation parameter
-	double getBifParam() const;
+	void init(NOX::Parameter::List& lsParams);
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
