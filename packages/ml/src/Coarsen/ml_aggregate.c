@@ -50,6 +50,7 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 /*MS*/
 #define ML_AGGR_METIS        7
 #define ML_AGGR_PARMETIS     8
+#define ML_AGGR_ZOLTAN       9
 /*ms*/
 
 /* ************************************************************************* */
@@ -95,6 +96,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_scheme_level       = NULL;
    (*ag)->aggr_options               = NULL;
    (*ag)->aggr_viz_and_stats         = NULL;
+   (*ag)->nodal_coord                = NULL;
    (*ag)->field_of_values            = NULL;
 /*MS*/
    (*ag)->block_scaled_SA            =  0;
@@ -153,7 +155,10 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       /* aggr_viz_and_stats is cleaned by calling the function
 	 `ML_Aggregate_Viz_Stats_Clean', in file "Utils/ml_agg_info.c" */
 
-      if( (*ag)->field_of_values != NULL ) ML_free( (*ag)->field_of_values );
+      if ((*ag)->field_of_values != NULL) 
+	ML_free((*ag)->field_of_values);
+      if ((*ag)->nodal_coord != NULL)
+	ML_free( (*ag)->nodal_coord );
 /*MS*/
       ML_memory_free( (void **) ag );
       (*ag) = NULL;
@@ -466,6 +471,18 @@ int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  )
 
 /* ------------------------------------------------------------------------- */
 
+int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_CoarsenScheme_Zoltan : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_scheme = ML_AGGR_ZOLTAN;
+   return 0;
+}
+/* ------------------------------------------------------------------------- */
+
 int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int MaxLevels,
 					 ML_Aggregate *ag,
 					 int choice )
@@ -550,6 +567,14 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int MaxLevels,
 					      ag, ML_AGGR_PARMETIS) );
 }
 
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int MaxLevels,
+						  ML_Aggregate *ag  )
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_ZOLTAN) );
+}
 /*ms*/
 
 /* ************************************************************************* */
@@ -1003,6 +1028,8 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          coarsen_scheme = ML_AGGR_METIS;
       else if (coarsen_scheme == ML_AGGR_PARMETIS) 
 	coarsen_scheme = ML_AGGR_PARMETIS;
+      else if (coarsen_scheme == ML_AGGR_ZOLTAN) 
+	coarsen_scheme = ML_AGGR_ZOLTAN;
 /*ms*/
       else 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
@@ -1097,6 +1124,10 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 	   
       case ML_AGGR_PARMETIS :
            Ncoarse = ML_Aggregate_CoarsenParMETIS(ag,Amatrix,Pmatrix,comm);
+           break;
+
+      case ML_AGGR_ZOLTAN :
+           Ncoarse = ML_Aggregate_CoarsenZoltan(ag,Amatrix,Pmatrix,comm);
            break;
 /*ms*/
    default :
@@ -2165,6 +2196,40 @@ int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag )
   return 0;
 }
 
+/* ************************************************************************* */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_NodalCoordinates(ML* ml, ML_Aggregate *ag, double *ptr)
+{
+  int i;
+  int MaxLevels = ml->ML_num_levels;
+  assert (ptr != 0);
+
+  if (ag->nodal_coord)
+    ML_free(ag->nodal_coord);
+
+  ag->nodal_coord = (double*) ML_allocate((sizeof(double*) * (MaxLevels)));
+  assert (ag->nodal_coord != NULL);
+  for (i = 0 ; i < MaxLevels ; ++i)
+    ag->nodal_coord[i] = NULL;
+  /* NOTE: fine-grid is ALWAYS at position 0.
+   * ML_DECREASING can be handle by passing relative level number */
+  ag->nodal_coord[0] = ptr;
+
+  return 0;
+}
+
+/* ************************************************************************* */
+/* Set the number of dimensions                                              */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions)
+{
+  assert (N_dimensions > 0);
+  assert (N_dimensions < 4);
+  ag->N_dimensions = N_dimensions;
+  return 0;
+}
 
 
 

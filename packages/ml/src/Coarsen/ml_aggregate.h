@@ -77,6 +77,9 @@ typedef struct ML_Aggregate_Struct
                                           aggregates but nonzero fill-in     
                                           increases on coarse meshes.        
                                           Default: .5                        */
+  double **nodal_coord;                 /**< Coordinates of fine-grid nodes 
+					  and aggregates */
+  int N_dimensions;
 /*ms*/
 } ML_Aggregate;
 
@@ -198,6 +201,7 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  );
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_count, int nvertices, 
 				  int *aggr_index, int exp_Nrows, 
@@ -210,6 +214,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled( int level, int, ML_Aggregate 
 int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int, ML_Aggregate *ag  );
 
 /* ------------------------------------------------------------------------- */
 /* set threshold for pruning matrix graph                                    */
@@ -383,13 +388,15 @@ int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_SmoothRestrictionWithA( ML_Aggregate *ag );
 int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag );
   
+extern int ML_Aggregate_Set_NodalCoordinates(ML* ml, ML_Aggregate *ag, double *ptr);
+extern int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions);
+
 /* ------------------------------------------------------------------------- */
 /* functions for visualization                                               */
 /* ------------------------------------------------------------------------- */
 
 extern int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels );
 extern int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels );
-  
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
