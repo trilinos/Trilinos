@@ -1,10 +1,30 @@
 ../configure --host=i686-pc-linux \
-    --enable-referencey12m \
-    --with-blas="-L/usr/local/lib -lblas" \
-    --with-lapack="-L/usr/local/lib -llapack" \
-    --with-mpi-libs="-lmpich -lpmpich" --enable-mpi \
-    --with-mpi-incdir=/usr/local/mpich/1.2.4/ip/smp/gcc-3.1/ssh/include \
-    --with-mpi-libdir=/usr/local/mpich/1.2.4/ip/smp/gcc-3.1/ssh/lib \
-    --enable-nox --enable-nox-epetra CXX=g++ CC=gcc F77=g77 \
-    CXXFLAGS="-g" CPPFLAGS=" " \
-    LDFLAGS=" "
+  --enable-teuchos --enable-teuchos-extended \
+  --enable-aztecoo-azlu --enable-anasazi \
+  --disable-new-package \
+  --enable-nox --enable-nox-epetra --enable-prerelease \
+  --with-nox-epetraext --with-nox-epetra-ml \
+  --enable-loca --enable-loca-epetra \
+  --enable-epetraext --enable-epetraext-transform \
+  --enable-amesos --enable-amesos-umfpack \
+  --with-amesos-umfpackincdir=/sierra/Release/UMFPACK/4.1/UMFPACK/Include \
+  --with-amesos-umfpackamdincdir=/sierra/Release/UMFPACK/4.1/AMD/Include \
+  --with-amesos-umfpacklib=/sierra/Release/UMFPACK/4.1/lib/dbg_dp_gnu3.2.2ip/libumfpack.a \
+  --with-amesos-umfpackamdlib=/sierra/Release/UMFPACK/4.1/lib/dbg_dp_gnu3.2.2ip/libamd.a \
+  --with-ml_teuchos --with-ml_anasazi --disable-examples \
+  --with-ml_external_mpi_functions \
+  --with-blas="-L/usr/local/lib -lblas" \
+  --with-lapack="-L/usr/local/lib -llapack" \
+  --enable-mpi \
+  --with-mpi-incdir=/usr/local/mpi/sierra/mpich/1.2.5.2/gcc-3.2.2/include \
+  --with-mpi-libs="-L/usr/local/mpi/sierra/mpich/1.2.5.2/gcc-3.2.2/lib -lmpich -lpmpich" \
+  --with-ldflags="-L/sierra/Release/y12m/1.00/lib/dbg_dp_gnu3.2.2ip -ly12m -lm" \
+  --prefix=/sierra/Release/Trilinos/4.0/install_gnu3.2.2ip \
+  CXX=g++ \
+  CC=gcc \
+  F77=g77 \
+  CXXFLAGS="-g -DMPICH_SKIP_MPICXX -DDISTRIBUTED" \
+  CCFLAGS="-g" \
+  FFLAGS="-g" \
+  CPPFLAGS=  LDFLAGS=
+

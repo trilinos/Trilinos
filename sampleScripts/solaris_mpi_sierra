@@ -1,7 +1,31 @@
-../configure --enable-referencey12m \
-    --with-mpi-libs="-lmpich -lnsl -lsocket -lrt" --enable-mpi \
-    --with-mpi-incdir=/sierra/Release/MPICH/1.2.4/include \
-    --with-mpi-libdir=/sierra/Release/MPICH/1.2.4/lib \
-    --enable-nox --enable-nox-epetra CXX=CC CC=cc F77=f77 \
-    CXXFLAGS="-g -pto" CPPFLAGS=-D_RWSTD_COMPILE_INSTANTIATE \
-    LDFLAGS="-z muldefs"
+../configure \
+  --enable-teuchos --enable-teuchos-extended \
+  --enable-aztecoo-azlu --enable-anasazi \
+  --disable-new-package \
+  --enable-nox --enable-nox-epetra --enable-prerelease \
+  --with-nox-epetraext --with-nox-epetra-ml \
+  --enable-loca --enable-loca-epetra \
+  --enable-epetraext --enable-epetraext-transform \
+  --enable-amesos --enable-amesos-umfpack \
+  --with-amesos-umfpackincdir=/sierra/Release/UMFPACK/4.1/UMFPACK/Include \
+  --with-amesos-umfpackamdincdir=/sierra/Release/UMFPACK/4.1/AMD/Include \
+  --with-amesos-umfpacklib=/sierra/Release/UMFPACK/4.1/lib/dbg_dp_sun7/libumfpack.a \
+  --with-amesos-umfpackamdlib=/sierra/Release/UMFPACK/4.1/lib/dbg_dp_sun7/libamd.a \
+  --with-ml_teuchos --with-ml_anasazi --disable-examples \
+  --with-ml_external_mpi_functions \
+  --with-blas="-lsunperf -L/sierra/Release/lapack/3.0/lib/dp_opt_sun7 -lblas" \
+  --with-lapack="-lsunperf -L/sierra/Release/lapack/3.0/lib/dp_opt_sun7 -llapack" \
+  --enable-mpi \
+  --with-mpi-incdir=/opt/SUNWhpc/include \
+  --with-ldflags="-L/opt/SUNWhpc/lib/sparcv9 -lmpi -L/sierra/Release/y12m/1.00/lib/dbg_dp_sun7 -ly12m -lnsl -lsocket -lrt" \
+  --prefix=/sierra/Release/Trilinos/4.0/install_sun7 \
+  CXX=CC \
+  CC=cc \
+  F77=f77 \
+  CXXFLAGS="-g -pto -xarch=v9 -DMPICH_SKIP_MPICXX -DDISTRIBUTED" \
+  CFLAGS="-g -D_MPIPP_H -xarch=v9" \
+  FFLAGS="-g -xarch=v9" \
+  CPPFLAGS="-D_MPIPP_H -D_RWSTD_COMPILE_INSTANTIATE" \
+  LDFLAGS="-z muldefs -lsunmath" \
+  LIBS="-lsunperf -lfai -lfai2 -lfui -lfsumai -lfprodai -lfminlai -lfmaxlai -lfminvai -lfmaxvai -lfsu -lsocket -lnsl -lrt -ldl -lsunmath -lm /net/sasn232/opt/SUNWspro7.0/SUNWspro/prod/lib/v9/stack_grow.o"
+
