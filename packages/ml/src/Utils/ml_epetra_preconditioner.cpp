@@ -993,7 +993,7 @@ int Epetra_ML::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   sprintf(parameter,"%saggregation: threshold",Prefix_);
   List.set(parameter,0.0);
 
-  // guass-seidel for all levels
+  // gauss-seidel for all levels
   sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
   List.set(parameter,2);
 
@@ -1001,7 +1001,10 @@ int Epetra_ML::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   List.set(parameter,0.67);
 
   sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"Gauss-Seidel");
+  List.set(parameter,"MLS");
+
+  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
+  List_.set(parameter,3);
   
   sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
   List.set(parameter,"both");
@@ -1009,6 +1012,9 @@ int Epetra_ML::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   // simplest solver on coarse problem
   sprintf(parameter,"%scoarse: type",Prefix_);
   List.set(parameter,"SuperLU");
+//  Tim Davis' simple serial LU package.  It's part of Amesos
+//  itself.
+//  List.set(parameter,"Amesos_KLU");
 
   sprintf(parameter,"%sprec type",Prefix_);
   List.set(parameter,"MGV");
@@ -1427,112 +1433,113 @@ void MultiLevelPreconditioner::SetAggregation()
   int value = -777;
   sprintf(parameter,"%saggregation: type",Prefix_);
   string CoarsenScheme = List_.get(parameter,"Uncoupled");
-  
-  for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
 
-    sprintf(parameter,"%saggregation: type (level %d)",Prefix_,LevelID_[level]);
-    CoarsenScheme = List_.get(parameter,CoarsenScheme);
-
-    if( CoarsenScheme == "METIS" )
-      ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
-    else if( CoarsenScheme == "ParMETIS" ) 
-      ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(level,NumLevels_,agg_);
-    else if( CoarsenScheme == "MIS" ) 
-      ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
-    /* FIXME ??? Does this compile ??? Does not support levels.... */
-    else if ( CoarsenScheme == "Hybrid" )
+  if ( CoarsenScheme == "Uncoupled-MIS" )
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
-    else if(  CoarsenScheme == "Uncoupled" ) 
-      ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(level,NumLevels_,agg_);
-    else if(  CoarsenScheme == "Coupled" ) 
-      ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
-    else {
-      if( Comm_.MyPID() == 0 ) {
-	cout << ErrorMsg_ << "specified options ("
-	     << CoarsenScheme << ") not valid. Should be:" << endl;
-	cout << ErrorMsg_ << "<METIS> <ParMETIS> <MIS> <Uncoupled> <Coupled> <Hybrid>" << endl;
-      }
-      ML_Aggregate_Set_CoarsenSchemeLevel_METIS(LevelID_[level],NumLevels_,agg_);
-    } 
-
-    if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
-      
-      bool isSet = false;
-
-      // first look for parameters without any level specification
-      
-      sprintf(parameter,"%saggregation: global aggregates", Prefix_);
-      if( List_.isParameter(parameter) ){
-	value = -777; // simply means not set
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-      
-      sprintf(parameter,"%saggregation: local aggregates", Prefix_);
-      if( List_.isParameter(parameter) ){
-	value = -777;
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-      
-      sprintf(parameter,"%saggregation: nodes per aggregate", Prefix_);
-      if( List_.isParameter(parameter) ){
-	value = -777;
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-
-      // now for level-specific data
-
-      sprintf(parameter,"%saggregation: global aggregates (level %d)", Prefix_, LevelID_[level]);
-      if( List_.isParameter(parameter) ){
-	value = -777; // simply means not set
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-      
-      sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
-      if( List_.isParameter(parameter) ){
-	value = -777;
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-      
-      sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", Prefix_, LevelID_[level]);
-      if( List_.isParameter(parameter) ){
-	value = -777;
-	value = List_.get(parameter,value);
-	if( value != -777 ) {
-	  ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-	  isSet = true;
-	}
-      }
-      
-      if( isSet == false ) {
-	// put default values
-	sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
-	value = List_.get(parameter,1);
-	ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
-      }
-      
-    } // if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" )
-    
-  } /* for */
+  else {
+     for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
+   
+       sprintf(parameter,"%saggregation: type (level %d)",Prefix_,LevelID_[level]);
+       CoarsenScheme = List_.get(parameter,CoarsenScheme);
+   
+       if( CoarsenScheme == "METIS" )
+         ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
+       else if( CoarsenScheme == "ParMETIS" ) 
+         ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(level,NumLevels_,agg_);
+       else if( CoarsenScheme == "MIS" ) 
+         ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
+       else if(  CoarsenScheme == "Uncoupled" ) 
+         ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(level,NumLevels_,agg_);
+       else if(  CoarsenScheme == "Coupled" ) 
+         ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
+       else {
+         if( Comm_.MyPID() == 0 ) {
+       cout << ErrorMsg_ << "specified options ("
+            << CoarsenScheme << ") not valid. Should be:" << endl;
+       cout << ErrorMsg_ << "<METIS> <ParMETIS> <MIS> <Uncoupled> <Coupled> <Hybrid>" << endl;
+         }
+         ML_Aggregate_Set_CoarsenSchemeLevel_METIS(LevelID_[level],NumLevels_,agg_);
+       } 
+   
+       if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
+         
+         bool isSet = false;
+   
+         // first look for parameters without any level specification
+         
+         sprintf(parameter,"%saggregation: global aggregates", Prefix_);
+         if( List_.isParameter(parameter) ){
+       value = -777; // simply means not set
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+         
+         sprintf(parameter,"%saggregation: local aggregates", Prefix_);
+         if( List_.isParameter(parameter) ){
+       value = -777;
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+         
+         sprintf(parameter,"%saggregation: nodes per aggregate", Prefix_);
+         if( List_.isParameter(parameter) ){
+       value = -777;
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+   
+         // now for level-specific data
+   
+         sprintf(parameter,"%saggregation: global aggregates (level %d)", Prefix_, LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+       value = -777; // simply means not set
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+         
+         sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+       value = -777;
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+         
+         sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", Prefix_, LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+       value = -777;
+       value = List_.get(parameter,value);
+       if( value != -777 ) {
+         ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+         isSet = true;
+       }
+         }
+         
+         if( isSet == false ) {
+       // put default values
+       sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
+       value = List_.get(parameter,1);
+       ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
+         }
+         
+       } // if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" )
+       
+     } /* for */
+     } /* else */
   
 }
 
