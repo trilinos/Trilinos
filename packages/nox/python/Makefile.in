@@ -47,7 +47,7 @@
 # Swig interface files
 # ------------------------------------------------------------------------
 
-SOURCES = $(_Abstract_la_SOURCES) $(_Epetra_la_SOURCES) $(_LAPACK_la_SOURCES) $(_Parameter_la_SOURCES) $(_Solver_la_SOURCES) $(_StatusTest_la_SOURCES)
+SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Epetra_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(nodist__Parameter_la_SOURCES) $(nodist__Solver_la_SOURCES) $(nodist__StatusTest_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -71,8 +71,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = python
-DIST_COMMON = $(am__noxPythonexec_PYTHON_DIST) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/__init__.py.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/__init__.py.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -96,28 +96,28 @@ am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/src/libnox.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 _Abstract_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am__Abstract_la_OBJECTS = _Abstract_la-wrap_NOX_Abstract.lo
-_Abstract_la_OBJECTS = $(am__Abstract_la_OBJECTS)
+nodist__Abstract_la_OBJECTS = _Abstract_la-wrap_NOX_Abstract.lo
+_Abstract_la_OBJECTS = $(nodist__Abstract_la_OBJECTS)
 am__DEPENDENCIES_3 = $(top_builddir)/src-epetra/libnoxepetra.a
 _Epetra_la_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
-am__Epetra_la_OBJECTS = _Epetra_la-wrap_NOX_Epetra.lo \
+nodist__Epetra_la_OBJECTS = _Epetra_la-wrap_NOX_Epetra.lo \
 	_Epetra_la-Epetra_VectorHelper.lo _Epetra_la-NumPyArray.lo \
 	_Epetra_la-NumPyWrapper.lo _Epetra_la-Callback.lo \
 	_Epetra_la-PyInterface.lo
-_Epetra_la_OBJECTS = $(am__Epetra_la_OBJECTS)
+_Epetra_la_OBJECTS = $(nodist__Epetra_la_OBJECTS)
 am__DEPENDENCIES_4 = $(top_builddir)/src-lapack/libnoxlapack.a
 _LAPACK_la_DEPENDENCIES = $(am__DEPENDENCIES_4) $(am__DEPENDENCIES_2)
-am__LAPACK_la_OBJECTS = _LAPACK_la-wrap_NOX_LAPACK.lo
-_LAPACK_la_OBJECTS = $(am__LAPACK_la_OBJECTS)
+nodist__LAPACK_la_OBJECTS = _LAPACK_la-wrap_NOX_LAPACK.lo
+_LAPACK_la_OBJECTS = $(nodist__LAPACK_la_OBJECTS)
 _Parameter_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am__Parameter_la_OBJECTS = _Parameter_la-wrap_NOX_Parameter.lo
-_Parameter_la_OBJECTS = $(am__Parameter_la_OBJECTS)
+nodist__Parameter_la_OBJECTS = _Parameter_la-wrap_NOX_Parameter.lo
+_Parameter_la_OBJECTS = $(nodist__Parameter_la_OBJECTS)
 _Solver_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am__Solver_la_OBJECTS = _Solver_la-wrap_NOX_Solver.lo
-_Solver_la_OBJECTS = $(am__Solver_la_OBJECTS)
+nodist__Solver_la_OBJECTS = _Solver_la-wrap_NOX_Solver.lo
+_Solver_la_OBJECTS = $(nodist__Solver_la_OBJECTS)
 _StatusTest_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am__StatusTest_la_OBJECTS = _StatusTest_la-wrap_NOX_StatusTest.lo
-_StatusTest_la_OBJECTS = $(am__StatusTest_la_OBJECTS)
+nodist__StatusTest_la_OBJECTS = _StatusTest_la-wrap_NOX_StatusTest.lo
+_StatusTest_la_OBJECTS = $(nodist__StatusTest_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -149,15 +149,11 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(_Abstract_la_SOURCES) $(_Epetra_la_SOURCES) \
-	$(_LAPACK_la_SOURCES) $(_Parameter_la_SOURCES) \
-	$(_Solver_la_SOURCES) $(_StatusTest_la_SOURCES)
-DIST_SOURCES = $(_Abstract_la_SOURCES) $(_Epetra_la_SOURCES) \
-	$(_LAPACK_la_SOURCES) $(_Parameter_la_SOURCES) \
-	$(_Solver_la_SOURCES) $(_StatusTest_la_SOURCES)
-am__noxPythonexec_PYTHON_DIST = Abstract.py Parameter.py StatusTest.py \
-	Solver.py Epetra.py LAPACK.py __init__.py
-noxPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
+SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Epetra_la_SOURCES) \
+	$(nodist__LAPACK_la_SOURCES) $(nodist__Parameter_la_SOURCES) \
+	$(nodist__Solver_la_SOURCES) $(nodist__StatusTest_la_SOURCES)
+DIST_SOURCES =
+nodist_noxPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
 py_compile = $(top_srcdir)/config/py-compile
 ETAGS = etags
 CTAGS = ctags
@@ -436,7 +432,7 @@ EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 # Where we want the NOX/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
 # ------------------------------------------------------------------------
-@BUILD_PYTHON_TRUE@noxPythonexecdir = $(prefix)/python/NOX
+noxPythonexecdir = $(prefix)/python/NOX
 
 # ------------------------------------------------------------------------
 # What to build
@@ -446,7 +442,7 @@ EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 # ------------------------------------------------------------------------
 # Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
-@BUILD_PYTHON_TRUE@noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
+@BUILD_PYTHON_TRUE@nodist_noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
 # ------------------------------------------------------------------------
 # Extra files to be installed by 'make dist'
@@ -489,7 +485,7 @@ SWIG_LAPACK_LIBADD = \
 # ------------------------------------------------------------------------
 # Definitions for _Abstract.la
 # ------------------------------------------------------------------------
-_Abstract_la_SOURCES = wrap_NOX_Abstract.C
+nodist__Abstract_la_SOURCES = wrap_NOX_Abstract.C
 _Abstract_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 _Abstract_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Abstract_la_LIBADD = $(SWIG_NOX_LIBADD)
@@ -497,7 +493,7 @@ _Abstract_la_LIBADD = $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Parameter.la
 # ------------------------------------------------------------------------
-_Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
+nodist__Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
 _Parameter_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 _Parameter_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Parameter_la_LIBADD = $(SWIG_NOX_LIBADD)
@@ -505,7 +501,7 @@ _Parameter_la_LIBADD = $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _StatusTest.la
 # ------------------------------------------------------------------------
-_StatusTest_la_SOURCES = wrap_NOX_StatusTest.C
+nodist__StatusTest_la_SOURCES = wrap_NOX_StatusTest.C
 _StatusTest_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 _StatusTest_la_LDFLAGS = $(SWIG_LDFLAGS)
 _StatusTest_la_LIBADD = $(SWIG_NOX_LIBADD)
@@ -513,7 +509,7 @@ _StatusTest_la_LIBADD = $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Solver.la
 # ------------------------------------------------------------------------
-_Solver_la_SOURCES = wrap_NOX_Solver.C
+nodist__Solver_la_SOURCES = wrap_NOX_Solver.C
 _Solver_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 _Solver_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Solver_la_LIBADD = $(SWIG_NOX_LIBADD)
@@ -521,7 +517,7 @@ _Solver_la_LIBADD = $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Epetra.la
 # ------------------------------------------------------------------------
-_Epetra_la_SOURCES = \
+nodist__Epetra_la_SOURCES = \
 	wrap_NOX_Epetra.C \
 	Epetra_VectorHelper.H \
 	Epetra_VectorHelper.C \
@@ -541,7 +537,7 @@ _Epetra_la_LIBADD = $(SWIG_EPETRA_LIBADD) $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _LAPACK.la
 # ------------------------------------------------------------------------
-_LAPACK_la_SOURCES = \
+nodist__LAPACK_la_SOURCES = \
 	wrap_NOX_LAPACK.C 
 
 _LAPACK_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS) $(SWIG_LAPACK_CXXFLAGS)
@@ -942,24 +938,24 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-noxPythonexecPYTHON: $(noxPythonexec_PYTHON)
+install-nodist_noxPythonexecPYTHON: $(nodist_noxPythonexec_PYTHON)
 	@$(NORMAL_INSTALL)
 	$(mkdir_p) $(DESTDIR)$(noxPythonexecdir)
-	@list='$(noxPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
+	@list='$(nodist_noxPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
 	  if test -f "$$p"; then b=; else b="$(srcdir)/"; fi; \
 	  if test -f $$b$$p; then \
 	    d=`echo $$p | sed -e 's,^.*/,,'`; \
 	    dlist="$$dlist $$d"; \
-	    echo " $(noxPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(noxPythonexecdir)/$$d"; \
-	    $(noxPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(noxPythonexecdir)/$$d; \
+	    echo " $(nodist_noxPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(noxPythonexecdir)/$$d"; \
+	    $(nodist_noxPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(noxPythonexecdir)/$$d; \
 	  else :; fi; \
 	done; \
 	test -z "$$dlist" || \
 	PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(noxPythonexecdir) $$dlist
 
-uninstall-noxPythonexecPYTHON:
+uninstall-nodist_noxPythonexecPYTHON:
 	@$(NORMAL_UNINSTALL)
-	@list='$(noxPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
+	@list='$(nodist_noxPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
 	  d=`echo $$p | sed -e 's,^.*/,,'`; \
 	  rm -f $(DESTDIR)$(noxPythonexecdir)/$$d; \
 	  rm -f $(DESTDIR)$(noxPythonexecdir)/$${d}c; \
@@ -1093,8 +1089,8 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-noxPythonexecLTLIBRARIES \
-	install-noxPythonexecPYTHON
+install-exec-am: install-nodist_noxPythonexecPYTHON \
+	install-noxPythonexecLTLIBRARIES
 
 install-info: install-info-am
 
@@ -1120,8 +1116,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-noxPythonexecLTLIBRARIES \
-	uninstall-noxPythonexecPYTHON
+uninstall-am: uninstall-info-am uninstall-nodist_noxPythonexecPYTHON \
+	uninstall-noxPythonexecLTLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libtool clean-noxPythonexecLTLIBRARIES ctags distclean \
@@ -1129,13 +1125,14 @@ uninstall-am: uninstall-info-am uninstall-noxPythonexecLTLIBRARIES \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-exec \
 	install-exec-am install-info install-info-am install-man \
-	install-noxPythonexecLTLIBRARIES install-noxPythonexecPYTHON \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-info-am uninstall-noxPythonexecLTLIBRARIES \
-	uninstall-noxPythonexecPYTHON
+	install-nodist_noxPythonexecPYTHON \
+	install-noxPythonexecLTLIBRARIES install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-info-am \
+	uninstall-nodist_noxPythonexecPYTHON \
+	uninstall-noxPythonexecLTLIBRARIES
 
 
 # ------------------------------------------------------------------------

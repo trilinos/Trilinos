@@ -110,14 +110,14 @@ endif
 
 EXTENSIONS = $(LOCA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 
-if BUILD_PYTHON
-
 # ------------------------------------------------------------------------
 # Where we want the LOCA/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
 # ------------------------------------------------------------------------
 
 locaPythonexecdir = $(prefix)/python/LOCA
+
+if BUILD_PYTHON
 
 # ------------------------------------------------------------------------
 # What to build
@@ -129,7 +129,7 @@ locaPythonexec_LTLIBRARIES = $(EXTENSIONS)
 # Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
 
-locaPythonexec_PYTHON = $(WRAPPERS) __init__.py
+nodist_locaPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
 endif
 
@@ -184,7 +184,7 @@ SWIG_LAPACK_LIBADD = \
 # Definitions for _TopLevel.la
 # ------------------------------------------------------------------------
 
-_TopLevel_la_SOURCES = wrap_LOCA_TopLevel.C Utils_enums.H
+nodist__TopLevel_la_SOURCES = wrap_LOCA_TopLevel.C Utils_enums.H
 
 _TopLevel_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -196,7 +196,7 @@ _TopLevel_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _Contination.la
 # ------------------------------------------------------------------------
 
-_Continuation_la_SOURCES = wrap_LOCA_Continuation.C
+nodist__Continuation_la_SOURCES = wrap_LOCA_Continuation.C
 
 _Continuation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -208,7 +208,7 @@ _Continuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _MultiContination.la
 # ------------------------------------------------------------------------
 
-_MultiContinuation_la_SOURCES = wrap_LOCA_MultiContinuation.C
+nodist__MultiContinuation_la_SOURCES = wrap_LOCA_MultiContinuation.C
 
 _MultiContinuation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -220,7 +220,7 @@ _MultiContinuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _Homotopy.la
 # ------------------------------------------------------------------------
 
-_Homotopy_la_SOURCES = wrap_LOCA_Homotopy.C
+nodist__Homotopy_la_SOURCES = wrap_LOCA_Homotopy.C
 
 _Homotopy_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -232,7 +232,7 @@ _Homotopy_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _TimeDependent.la
 # ------------------------------------------------------------------------
 
-_TimeDependent_la_SOURCES = wrap_LOCA_TimeDependent.C
+nodist__TimeDependent_la_SOURCES = wrap_LOCA_TimeDependent.C
 
 _TimeDependent_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -244,7 +244,7 @@ _TimeDependent_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _Bifurcation.la
 # ------------------------------------------------------------------------
 
-_Bifurcation_la_SOURCES = wrap_LOCA_Bifurcation.C
+nodist__Bifurcation_la_SOURCES = wrap_LOCA_Bifurcation.C
 
 _Bifurcation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -256,7 +256,7 @@ _Bifurcation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _Abstract.la
 # ------------------------------------------------------------------------
 
-_Abstract_la_SOURCES = wrap_LOCA_Abstract.C
+nodist__Abstract_la_SOURCES = wrap_LOCA_Abstract.C
 
 _Abstract_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
@@ -268,7 +268,7 @@ _Abstract_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # Definitions for _LAPACK.la
 # ------------------------------------------------------------------------
 
-_LAPACK_la_SOURCES = wrap_LOCA_LAPACK.C
+nodist__LAPACK_la_SOURCES = wrap_LOCA_LAPACK.C
 
 _LAPACK_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS) $(SWIG_LAPACK_CXXFLAGS)
 
@@ -280,7 +280,7 @@ _LAPACK_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
 # Definitions for _Chan.la
 # ------------------------------------------------------------------------
 
-_Chan_la_SOURCES = \
+nodist__Chan_la_SOURCES = \
 	wrap_LOCA_Chan.C \
 	$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.H \
 	$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C

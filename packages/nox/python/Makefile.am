@@ -131,14 +131,14 @@ endif
 
 EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 
-if BUILD_PYTHON
-
 # ------------------------------------------------------------------------
 # Where we want the NOX/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
 # ------------------------------------------------------------------------
 
 noxPythonexecdir = $(prefix)/python/NOX
+
+if BUILD_PYTHON
 
 # ------------------------------------------------------------------------
 # What to build
@@ -150,7 +150,7 @@ noxPythonexec_LTLIBRARIES = $(EXTENSIONS)
 # Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
 
-noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
+nodist_noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
 endif
 
@@ -208,7 +208,7 @@ SWIG_LAPACK_LIBADD = \
 # Definitions for _Abstract.la
 # ------------------------------------------------------------------------
 
-_Abstract_la_SOURCES = wrap_NOX_Abstract.C
+nodist__Abstract_la_SOURCES = wrap_NOX_Abstract.C
 
 _Abstract_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 
@@ -220,7 +220,7 @@ _Abstract_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _Parameter.la
 # ------------------------------------------------------------------------
 
-_Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
+nodist__Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
 
 _Parameter_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 
@@ -232,7 +232,7 @@ _Parameter_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _StatusTest.la
 # ------------------------------------------------------------------------
 
-_StatusTest_la_SOURCES = wrap_NOX_StatusTest.C
+nodist__StatusTest_la_SOURCES = wrap_NOX_StatusTest.C
 
 _StatusTest_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 
@@ -244,7 +244,7 @@ _StatusTest_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _Solver.la
 # ------------------------------------------------------------------------
 
-_Solver_la_SOURCES = wrap_NOX_Solver.C
+nodist__Solver_la_SOURCES = wrap_NOX_Solver.C
 
 _Solver_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 
@@ -256,7 +256,7 @@ _Solver_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _Epetra.la
 # ------------------------------------------------------------------------
 
-_Epetra_la_SOURCES = \
+nodist__Epetra_la_SOURCES = \
 	wrap_NOX_Epetra.C \
 	Epetra_VectorHelper.H \
 	Epetra_VectorHelper.C \
@@ -279,7 +279,7 @@ _Epetra_la_LIBADD = $(SWIG_EPETRA_LIBADD) $(SWIG_NOX_LIBADD)
 # Definitions for _LAPACK.la
 # ------------------------------------------------------------------------
 
-_LAPACK_la_SOURCES = \
+nodist__LAPACK_la_SOURCES = \
 	wrap_NOX_LAPACK.C 
 
 _LAPACK_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS) $(SWIG_LAPACK_CXXFLAGS)
