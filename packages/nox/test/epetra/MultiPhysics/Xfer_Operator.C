@@ -55,24 +55,24 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
       double xlocB_right = meshB[j+1];
       // First check for what we choose to define as a direct match (within tol)
       if( fabs(xlocB_left - xlocA) <= tol ) {
-        dependentNodes.insert( pair<int,int>(i, j) );
-        dependentWeights.insert( pair<int,double>(i, double(1.0)) );
+        dependentNodes.insert( multimap<int,int>::value_type(i, j) );
+        dependentWeights.insert( multimap<int,double>::value_type(i, double(1.0)) );
         break;
       }
       // Next determine which two nodes of meshB xlocA lies between
       else if( (xlocA > xlocB_left) && (xlocA < xlocB_right) ) {
-        dependentNodes.insert( pair<int,int>(i, j) );
-        dependentNodes.insert( pair<int,int>(i, j+1) );
+        dependentNodes.insert( multimap<int,int>::value_type(i, j) );
+        dependentNodes.insert( multimap<int,int>::value_type(i, j+1) );
         double wt_right = (xlocA - xlocB_left)/(xlocB_right - xlocB_left);
         double wt_left = 1.0 - wt_right;
-        dependentWeights.insert( pair<int,double>(i, wt_left) );
-        dependentWeights.insert( pair<int,double>(i, wt_right) );
+        dependentWeights.insert( multimap<int,double>::value_type(i, wt_left) );
+        dependentWeights.insert( multimap<int,double>::value_type(i, wt_right) );
         break;
       }
       // Finally check for a direct match of the right node
       else if( fabs(xlocB_right - xlocA) <= tol ) {
-        dependentNodes.insert( pair<int,int>(i, j+1) );
-        dependentWeights.insert( pair<int,double>(i, double(1.0)) );
+        dependentNodes.insert( multimap<int,int>::value_type(i, j+1) );
+        dependentWeights.insert( multimap<int,double>::value_type(i, double(1.0)) );
         break;
       }
     }
