@@ -1,20 +1,19 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
-#ifndef TIMER_CONST_H
-#define TIMER_CONST_H
+#ifndef __TIMER_CONST_H
+#define __TIMER_CONST_H
 
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
