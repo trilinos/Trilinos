@@ -41,9 +41,12 @@
 #include "NOX_LineSearch_FullStep.H"
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
-#include "NOX_LineSearch_Quadratic.H"
 #include "NOX_LineSearch_MoreThuente.H"
 #include "NOX_LineSearch_Secant.H"
+#ifdef WITH_PRERELEASE
+#include "NOX_LineSearch_Quadratic.H"
+#include "NOX_LineSearch_MoreThuente2.H"
+#endif
 
 using namespace NOX;
 using namespace NOX::LineSearch;
@@ -84,6 +87,8 @@ bool Manager::reset(Parameter::List& params)
 #ifdef WITH_PRERELEASE
     else if (method == "Quadratic")
       ptr = new Quadratic(utils, params);
+    else if (method == "More'-Thuente2")
+      ptr = new MoreThuente2(utils, params);
 #endif
     else {
       ptr = NULL;
