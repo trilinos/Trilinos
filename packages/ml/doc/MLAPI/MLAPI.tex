@@ -35,9 +35,11 @@
 \newcommand{\zoltan}  {{\sc Zoltan}}
 \newcommand{\nox}  {{\sc NOX}}
 \newcommand{\loca}  {{\sc Loca}}
-\newcommand{\MLAPI}  {{\sc MLAPI }}
-\newcommand{\mlapi}  {{\sc MLAPI }}
+\newcommand{\MLAPI}  {{\sc mlapi }}
+\newcommand{\mlapi}  {{\sc mlapi }}
 \newcommand{\MLAPIns}  {{\sc mlapi}}
+\newcommand{\hypre}  {{\sc hypre}}
+\newcommand{\petsc}  {{\sc PETSc}}
 \newcommand{\be}  {\begin{enumerate}}
 \newcommand{\ee}  {\end{enumerate}}
 % Maxwell abbreviations
@@ -134,15 +136,18 @@ Albuquerque, NM 87185-1110
 \end{center}
 
 \begin{abstract}
-This paper presents \MLAPIns, a software framework that enables 
+We discuss the design of \MLAPIns, an object oriented framework that enables 
 the development and usage of efficient,
   scalable and portable implementations of multilevel preconditioners for
   general distributed sparse matrices, in
-both serial and (massively) parallel environments. 
+both serial and (massively) parallel environments. The design of \MLAPI allows
+it to be used as both a solver package and a framework for algorithm
+development.
+
  The main feature of this framework is the use of several programming
  paradigms for the different implementation layes, with a strong emphasis on
- object oriented (OO) classes and operator overloading for the top layer, and use of optimized
- FORTRAN and C code whenever possible. In particular, \MLAPI takes advantage
+ object oriented (OO) classes and operator overloading for the top layer, and optimized
+ FORTRAN and C code for the layers underneath. In particular, \MLAPI takes advantage
  of \ML~\cite{ml-guide}, 
 the algebraic multilevel preconditioning
 package of Trilinos~\cite{Trilinos-home-page}. 
@@ -157,16 +162,16 @@ a capability to query for the nonzero elements in a given local row.
 Therefore, it is easy to interface a given application with \MLAPIns.
 
 
-\smallskip
+%\smallskip
 
-Preconditioners defined within the \MLAPI framework are tested on linear
-systems arising from a Newton procedure applied to the solution of the
-incompressible Navier-Stokes equations discretized by finite elements on
-unstructured 3D grids. The presented numerical results show that 
-the overhead due to the object-oriented programming in negligible,
-and the object-oriented paradigm can be
-effectively used to implement multilevel algebraic algorithms for real-life
-applications on massively parallel computers.
+%Preconditioners defined within the \MLAPI framework are tested on linear
+%systems arising from a Newton procedure applied to the solution of the
+%incompressible Navier-Stokes equations discretized by finite elements on
+%unstructured 3D grids. The presented numerical results show that 
+%the overhead due to the object-oriented programming in negligible,
+%and the object-oriented paradigm can be
+%effectively used to implement multilevel algebraic algorithms for real-life
+%applications on massively parallel computers.
 \end{abstract}
 
 %
@@ -195,7 +200,9 @@ The parallel solution of large linear systems of type
 A {x} = {b},
 \end{equation}
 where $A$ is a (distributed) large, real sparse matrix and $x$ and $b$ two real
-multi-vectors, is the computational kernel of many applications. Because of
+multi-vectors, is the computational kernel of many applications. The solution
+of such systems is a fundamental, and often the most time consuming,
+  part of many simulation codes. Because of
 the size of $A$, iterative solvers of Krylov type are generally
 adopted~\cite{barret93templates}, the
 best known methods being the conjugate gradient~\cite{hestenes52method} and
@@ -238,7 +245,8 @@ properties:
 
 It is easy to see that the definition of $P$ is driven by many conflicting
 objectives, such as its efficiency in terms of iterations to converge and in
-terms of CPU time, its storage requirements, and its robustness. 
+terms of CPU time, its storage requirements, and its robustness; see for
+instance~\cite{golub97closer,vorst95parallel}. 
 %The situation
 %is significantly complex for non-symmetric problems, as no general
 %theory can clearly explain the converge of GMRES-type methods, and therefore
@@ -249,9 +257,7 @@ terms of CPU time, its storage requirements, and its robustness.
 \smallskip
 
 A very successful class of preconditioners is represented by multilevel (or
-multigrid) methods 
-(see for instance~\cite{brandt.classic,hack.book,hack2.book},
- and~\cite{golub97closer,vorst95parallel} for a general overview on preconditioning).
+multigrid) methods.
 A multilevel method tries to approximate
 the original PDE problem of interest on a hierarchy of grids and use
 `solutions' from coarse grids to accelerate the convergence
@@ -262,13 +268,13 @@ international conferences organized since then.
 At least three
 approaches have been presented in literature to define the multilevel
 hierarchy:
-to use a sequence of grids, as done in geometric multigrid~\cite{}
+to use a sequence of grids, as done in geometric multigrid~\cite{brandt.classic,hack.book,hack2.book}
 to coarsen on each level by identifying a set of coarser-level nodes
 (the so-called C-nodes) and finer-level nodes (F-nodes) 
 (see for instance \cite{Briggs,WHackbusch_1985a}), or 
 to coarsen on each level by grouping the nodes into contiguous subsets,
 called aggregates, as done in smoothed 
-aggregation~\cite{brezina97robust,vanek1,vanek2,vanek3}.
+aggregation~\cite{vanek1,vanek2,vanek3}.
 Multilevel methods are well understood on model problems, while their
 application to more general, non-symmetric, problems, still requires
 further developments.
@@ -402,16 +408,22 @@ executed.
 
 \smallskip
 
-Operator overloading is an interesting capability of C++ that has been only
-partially used in the scientific computing community. Often, C++ codes are
-considered ``slow'' or ``inefficient'' with respect to FORTRAN and C codes,
-therefore only few preconditioning libraries actually massively exploit 
-operator overloading. To the best of our knowledge, no public domain parallel
-OO multilevel library (other than \ML) is available to
-define multilevel methods and preconditioners.
+Several start-of-the-art scientific computing libraries have recently adopted
+OO programming (OOP) to make them easier to use and more flexible. An
+incomplete list of 
+such libraries includes are Diffpack~\cite{bruaset97object}, 
+ISIS++~\cite{isis-guide}, BPKIT~\cite{bpkit}, \petsc\cite{petsc-guide},
+  \hypre \cite{hypre}, and almost all \trilinos\ packages, like \ifpack~\cite{ifpack-guide}, \ML~\cite{ml-guide}.
+  Perhaps \hypre and \ML~are the best suited framework to use and develop
+  multilevel preconditioners, the former somehow more focused on geometric and
+  classic AMG, while the latter with a strong focus on smoothed aggregation.
+  We believe that none of these libraries allows the developer to focus on the
+  high-level view of the algorithm as \mlapi does. 
+
+\smallskip
 
 In this paper, we want to show
-that it is possible to take advantage of OO programming to obtain intuitive,
+that it is possible to take advantage of OOP to obtain intuitive,
 easy-to-read and easy-to-develop codes, that are {\sl at the same time}
 efficient and scalable. The approach we have followed is the following:
 first, a set of C structures and functions has been developed for all 
@@ -431,14 +443,12 @@ shorter and easier to read and understand, and simpler to maintain and test.
 
 \smallskip
 
-FIXME...................
 This paper is organized as follows. First, in Section~\ref{sec:design}
 we will outline why an object-oriented interface can be useful to develop
 multilevel preconditioners (and, more general, multilevel solvers).
 Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
 usage is presented in Section~\ref{sec:usage}. The MATLAB~\copyright~interface is
-detailed in Section~\ref{sec:matlab}. Examples of usage is reported in
-Section~\ref{sec:example}. 
+detailed in Section~\ref{sec:matlab}.  Section~\ref{sec:conclusions} outlines the conclusions.
 
 %-----------------------------------------------------------------------------%
 \section{Software Design}
@@ -482,35 +492,48 @@ kernels. The first type utilizes the binary operators {\tt *, +, -},
 \bigskip
 
 \noindent
-{\bf Flexibility.} All \MLAPI classes and methods automatically uses a set of
+{\bf Flexibility.} \MLAPI is not based on any particular matrix format. This
+is particularly convenient as several matrix formats are currently in used.
+\MLAPI supports any data format that can offer a {\tt getrow()} function,
+  which basically returns the column ID and the value of all nonzero elements for any
+  locally hosted row. C users can provide this using the {\tt ML\_Operator}
+  structure, while C++ users can derive a class from the pure virtual {\tt
+    Epetra\_RowMatrix} class. Similarly, all operators defined by \MLAPI are
+    wrapped as {\tt Epetra\_RowMatrix} and {\tt ML\_Operator}, so that users
+    can access their nonzero elements without worrying about the actual data
+    storage used by \MLAPI.
+\bigskip
+
+\noindent
+{\bf Extensibility.} Multilevel algorithms are far from being completely
+understood for all classes of problems. It is important for the multilevel
+library to be easily extended, to validate new approaches. To that aim,
+encapsulation is used to hide details in
+specific classes. Besides, a set of function based on abstract interfaces
+is provided, to generate the necessary multilevel operators. Polymorphism
+allows the user to derive classes to implement new features.
+All \MLAPI classes and methods automatically uses a set of
 default parameters. However, these parameters can be tuned by specifying the
 desired parameters in a parameter list.
 
 \bigskip
 
 \noindent
-{\bf Extensibility.} Multilevel algorithms are far from being completely
-understood for all classes of problems. It is important for the multilevel
-library to be easily extended, to validate new approached. To that aim,
-encapsulation is used to hide details in
-specific classes. Besides, a set of function based on abstract interfaces
-is provided, to generate the necessary multilevel operators. Polimorphism
-allows the user to derive classes to implement new features.
-
-\bigskip
-
-\noindent
-{\bf High performance.} We implemented \MLAPI as a light layer of
+{\bf High performance.} A good numerical package that utilizes
+OOP must exhibit a computational efficiency that is comparable to FORTRAN and
+C codes. This puts severe limitations to the OO design. It is certain easy to
+generate elegant but inefficient C++ code. 
+We implemented \MLAPI as a light layer of
 C++, on the top of
 a mixture of FORTRAN77 kernels (BLAS~\cite{dongarra90set} and
                                 LAPACK~\cite{demmel89lapack}) 
 for all dense matrix
-operations and vector updates, C functions for all space matrix operations
+operations and vector updates, C functions for all sparse matrix operations
 (like distributed sparse matrix-matrix product), and C++, for memory
 management. The layer
 structure of \MLAPI is shown in Figure~\ref{fig:layer}. Lower layers of the
-library indicates an encapsulation relationship with upper layers.
-\MLAPI is (almost) as
+library indicates an encapsulation relationship with upper layers. As a
+result, \MLAPI is (almost) as
 efficient as the C or FORTRAN library underneath.
 
 \begin{figure}
@@ -527,7 +550,7 @@ efficient as the C or FORTRAN library underneath.
 {\bf Memory Management.} One of the most powerful feature of C and C++
 if the capability of allocating memory. Unfortunately, this is also the
 area where most bugs are found -- not to mention memory leaks. We have adopted
-smart pointers to manage memory~\ref{barlett04teuchos}.
+smart pointers to manage memory~\cite{barlett04teuchos}.
 \MLAPI objects should never be allocated using {\tt new}, and therefore never
 free them using {\tt delete}. The code will automatically delete memory
 when it is no longer referenced by any object. Besides, functions or methods
@@ -556,9 +579,28 @@ same memory location. However, \verb!A! and \verb!B! are not aliases: we can
 still write \verb!B = C!, meaning that \verb!A! contains what was contained in
 \verb!B!, and both \verb!B! and \verb!C! point to the same memory location. 
 Should we need to create a copy of \verb!C! in \verb!B!, we will use the
-instruction \verb!B = Duplicate(C)!, which is instead expensive, as new memory
+instruction \verb!B = Duplicate(C)!, which is instead an expensive operation, as new memory
 needs to be allocated, then all elements in \verb!C! need to be copied in
 \verb!B!.
+
+\medskip
+
+\noindent
+{\bf Operator overloading.} Operator overloading is an 
+interesting capability of C++ that has been only
+partially used in the scientific computing community. We do not adopt expression
+templates (see for instance~\cite{vandevoorde03cpp}); instead, we
+create temporary vectors, then perform vector operations (like updates,
+scaling, or DAXPY operations) using optimized BLAS routines 
+(which use would not be possible using expressions templates). These temporary vectors
+can be avoided by replacing, in an optimization phase, the overloaded
+operators with the {\tt Update()} methods of the {\tt MultiVector} class.
+Operations involving {\tt Operator}'s (like {\tt C = A + B}, or {\tt C = A *
+B}, where {\tt A, B} and {\tt C} are {\tt Operator}'s) are always resolved by creating
+temporary vectors. If the programmer is only interested in computing the
+action of a composed operator on a vector, he or she would rather write
+something like {\tt A * x + B * x}, therefore avoiding the creation of
+temporary operators. 
 
 %-----------------------------------------------------------------------------%
 \section{\MLAPI Classes}
@@ -1007,36 +1049,29 @@ action of the inverse of an operator on a given vector.
 
 %-----------------------------------------------------------------------------%
 \section{Concluding Remarks}
-\label{sec:conclusion}
+\label{sec:conclusions}
 %-----------------------------------------------------------------------------%
 
 Using C++ for numerical computations can greatly enhance clarity, reuse, and
-portability. In out C++  library, \MLAPI, the details are completely hidden at
+portability. In our C++  library, \MLAPI, the details are completely hidden at
 the algorithm level, so that the resulting code greatly resemble the 
-underlying multilevel algorithm.
-
-\smallskip
-
-The ideal solution to this problem would be to develop codes in a MATLAB-like
-environment, as MATLAB (at the price of non-parallel and often inefficient
-code) allows a very intuitive programming style. This
-is precisely the goal of \MLAPI. This object oriented framework is based on a
+underlying multilevel algorithm. This object oriented framework is based on a
 carefully designed set of classes and operator overloading, and allows the
 algorithm developer to write a parallel, efficient (C++) code in a MATLAB-like
 style. Operations on \MLAPI classes are then automatically translated by a
 (standard) compiler into efficient code.  The advantage of this approach is
 that the developer can focus on the algorithm itself, without spending time on
 details that can be fixed by the compiler. This reduces the time spent in
-writing and debugging the algorithm, at the only expense of a miminal increase
+writing and debugging the algorithm, at the only expense of a minimal increase
 in the CPU time.
 
 \smallskip
 
-The \MLAPI library will be made available with GNU LGPL license within the
-next version of Trilinos (6.0).
+The \MLAPI library will be made available with GNU LGPL license within
+Trilinos 6.0.
 
 %-----------------------------------------------------------------------------%
-\section{Acknowledgments}
+\section*{Acknowledgments}
 \label{sec:acks}
 %-----------------------------------------------------------------------------%
 
@@ -1044,19 +1079,11 @@ next version of Trilinos (6.0).
 \ML\ would not be so. \MLAPI also relies of several other
 \trilinos~\cite{Trilinos-home-page} packages:
 \epetra~\cite{epetra-guide}, \ifpack~\cite{ifpack-guide}, 
-\amesos~\cite{amesos-guide}, \teuchos. Also, \MLAPI can take advantage of
-\aztecoo\ and \triutils. \MLAPI can also be used outside
-\trilinos\ (but still requires \trilinos\ to be compiled and linked). 
+\amesos~\cite{amesos-guide}, \teuchos, \aztecoo\ and \triutils. 
 
 %-----------------------------------------------------------------------------%
-\section{OTHERS}
+%%% self-explanatory?
 %-----------------------------------------------------------------------------%
-
-\begin{itemize}
-\item some state of the art??
-
-\item BPKIT
-\end{itemize}
 
 %-----------------------------------------------------------------------------%
 \bibliography{MLAPI}
