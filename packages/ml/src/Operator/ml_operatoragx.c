@@ -583,25 +583,25 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
       if (local_op->com->send_cnt == 0) Nremote = 0;
       else Nremote = local_op->com->send_ia[local_op->com->send_cnt];
       if ( Nlocal > 0 ) {
-         new_local_ia = (int *) malloc( (Nlocal + 1) * sizeof(int) );
+         new_local_ia = (int *) ML_allocate( (Nlocal + 1) * sizeof(int) );
          for ( i = 0; i <= Nlocal; i++ ) new_local_ia[i] = 0;
          new_local_ja = 0;
          local_op->local_ia = new_local_ia;
          local_op->local_ja = new_local_ja;
       }
       if ( Nremote > 0 ) {
-         new_remote_ia = (int *) malloc( (Nremote + 1) * sizeof(int) );
+         new_remote_ia = (int *) ML_allocate( (Nremote + 1) * sizeof(int) );
          for ( i = 0; i <= Nremote; i++ ) new_remote_ia[i] = i;
-         new_remote_ja = (int *) malloc( Nremote * sizeof(int) );
+         new_remote_ja = (int *) ML_allocate( Nremote * sizeof(int) );
          for ( i = 0; i < Nremote; i++ ) new_remote_ja[i] = i;
-         new_remote_a = (double *) malloc( Nremote * sizeof(double) );
+         new_remote_a = (double *) ML_allocate( Nremote * sizeof(double) );
          for ( i = 0; i < Nremote; i++ ) new_remote_a[i] = 1.0;
          local_op->remote_ia = new_remote_ia;
          local_op->remote_ja = new_remote_ja;
          local_op->remote_a = new_remote_a;
       }
       if ( Nlocal > 0 ) {
-         invec = (double *) malloc( Nlocal * step * sizeof(double) );
+         invec = (double *) ML_allocate( Nlocal * step * sizeof(double) );
          for ( i = 0; i < Nlocal; i++ ) {
             dtmp  = local_op->restrict_wgts[i];
             istep = i * step;
@@ -609,7 +609,7 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
          }
       } else invec = 0;
       if ( Nremote > 0 ) {
-         outvec = (double *) malloc( Nremote * step * sizeof(double) );
+         outvec = (double *) ML_allocate( Nremote * step * sizeof(double) );
          for ( i = 0; i < Nremote*step; i++ ) outvec[i] = 0.0;
       } else outvec = 0;
       ncnt = 0;
@@ -625,9 +625,9 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
       ML_BdryPts_Get_Dirichlet_Grid_Info(coarse->BCs, &j, &dlist);
       for ( i = 0; i < Nremote*step; i++ )
          if ( outvec[i] < 0.0 ) j++;
-      if ( j > 0 ) coarse_bdry_list = (int *) malloc( j * sizeof(int) );
+      if ( j > 0 ) coarse_bdry_list = (int *) ML_allocate( j * sizeof(int) );
       else         coarse_bdry_list = 0;
-      remote_restrict_wgts = (double *) malloc((1+Nremote)*sizeof(double));
+      remote_restrict_wgts = (double *) ML_allocate((1+Nremote)*sizeof(double));
       if (remote_restrict_wgts == NULL) { printf("Out of space\n"); exit(1); }
       
       coarse_bdry_leng = 0;

@@ -370,9 +370,9 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
       else
       {
          allocated_space = 30;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
-         tdiag = (double *) malloc(length*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(length*sizeof(double));
          if (tdiag == NULL) 
             pr_error("Error(ML_Operator_Get_Diag): not enough space\n");
          for (i = 0; i < length; i++) tdiag[i] = 0.;
@@ -383,8 +383,8 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols);
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
                {
                   printf("Not enough space to get matrix row. Row length of\n");
@@ -524,7 +524,7 @@ int ML_Operator_Set_Label( ML_Operator *mat, char *label)
 
    if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
    size = strlen(label) + 1;
-   mat->label = (char *) malloc(size*sizeof(char));
+   mat->label = (char *) ML_allocate(size*sizeof(char));
    if (mat->label == NULL) pr_error("Not enough space in ML_Operator_Set_Label\n");
    strncpy(mat->label,label,size);
    return(1);
@@ -758,7 +758,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
   comm = Amat->comm;
 
   if ( (block_size > 1) || (drop_tolerance >= 0.0)) {
-     new_data = (struct amalg_drop *) malloc( sizeof(struct amalg_drop) );
+     new_data = (struct amalg_drop *) ML_allocate( sizeof(struct amalg_drop) );
      if (new_data == NULL) {
         printf("ML_Operator_AmalgamateAndDropWeak: out of space\n");
         exit(1);
@@ -1004,7 +1004,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    /* exchange index information                                        */
    /* ----------------------------------------------------------------- */
 
-   dbuf = (double *) malloc(sizeof(double) * buf_leng);
+   dbuf = (double *) ML_allocate(sizeof(double) * buf_leng);
    if (dbuf == NULL) 
       pr_error("ML_Operator_BlockFilter : out of space\n");
                                         
@@ -1018,8 +1018,8 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    /* ----------------------------------------------------------------- */
 
    allocated = 100;
-   col_ind = (int    *) malloc(allocated*sizeof(int   ));
-   col_val = (double *) malloc(allocated*sizeof(double));
+   col_ind = (int    *) ML_allocate(allocated*sizeof(int   ));
+   col_val = (double *) ML_allocate(allocated*sizeof(double));
    if ( col_val == NULL ) 
    {
       printf("ML_Operator_BlockFilter: out of space\n");
@@ -1052,8 +1052,8 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    /* allocate buffers for the new matrix                               */
    /* ----------------------------------------------------------------- */
 
-   (*new_ja) = (int *)    malloc( total_nnz * sizeof(int) );
-   (*new_aa) = (double *) malloc( total_nnz * sizeof(double) );
+   (*new_ja) = (int *)    ML_allocate( total_nnz * sizeof(int) );
+   (*new_aa) = (double *) ML_allocate( total_nnz * sizeof(double) );
    mat_ja    = (*new_ja);
    mat_aa    = (*new_aa);
 

@@ -67,8 +67,8 @@ int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
    fboundary_list   = ml_handle->Pmat[level2].to->BCs->Dirichlet_grid_list;
    cboundary_length = ml_handle->Pmat[level2].from->BCs->Dirichlet_grid_length;
    cboundary_list   = ml_handle->Pmat[level2].from->BCs->Dirichlet_grid_list;
-   dtemp       = (double *) malloc((size+1)*sizeof(double));
-   f_bdry      = (char *) malloc((fine_size+1)*sizeof(char));
+   dtemp       = (double *) ML_allocate((size+1)*sizeof(double));
+   f_bdry      = (char *) ML_allocate((fine_size+1)*sizeof(char));
    if (f_bdry == NULL) {
         printf("No space to compute coarse boundary\n");
         exit(1);
@@ -121,8 +121,8 @@ int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, int fine_size)
    char    *f_bdry, *c_bdry;
 
    Ncoarse     = ml_handle->Pmat[level].invec_leng;
-   c_bdry      = (char *) malloc((size+1)*sizeof(char));
-   f_bdry      = (char *) malloc((fine_size+1)*sizeof(char));
+   c_bdry      = (char *) ML_allocate((size+1)*sizeof(char));
+   f_bdry      = (char *) ML_allocate((fine_size+1)*sizeof(char));
    if (f_bdry == NULL) {
       printf("No space to compute coarse boundary\n");
       exit(1);
@@ -150,7 +150,7 @@ int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, int fine_size)
    for (jk = 0; jk < Ncoarse; jk++) {
       if (c_bdry[jk] == 'b') cboundary_length++;
    }
-   cboundary_list = (int *) malloc((cboundary_length+1)*sizeof(int));
+   cboundary_list = (int *) ML_allocate((cboundary_length+1)*sizeof(int));
    if (cboundary_list == NULL) {
       printf("No space to compute coarse boundary\n");
       exit(1);
@@ -197,15 +197,15 @@ int ML_Gen_Prolongator_Getrow(ML *ml_handle, int level2, int level, int isize,
    double dsize, di;
    struct ML_CSR_MSRdata *temp;
 
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
 
    space = osize*5+30;
 
    flag = 0;
 
    while (flag == 0) {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -229,7 +229,7 @@ int ML_Gen_Prolongator_Getrow(ML *ml_handle, int level2, int level, int isize,
 
    /* store the matrix into ML */
 
-   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
    temp->columns = cols;
    temp->values  = vals;
    temp->rowptr = row_ptr;
@@ -316,7 +316,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
       Nsend += ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
    }
    remap_leng = osize + Nrcv + Nsend;
-   remap = (int *) malloc( remap_leng*sizeof(int));
+   remap = (int *) ML_allocate( remap_leng*sizeof(int));
    for (i = 0; i < osize; i++) remap[i] = i;
    for (i = osize; i < osize+Nrcv+Nsend; i++) 
       remap[i] = -1;
@@ -347,9 +347,9 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    if (Nghost2 > Nghost) Nghost = Nghost2;
    if (neigh_list != NULL) ML_free(neigh_list);
 
-   row_ptr = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
-   colbuf  = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
-   valbuf  = (double *) malloc(sizeof(double)*(Nghost+osize+1));
+   row_ptr = (int    *) ML_allocate(sizeof(int)*(Nghost+osize+1));
+   colbuf  = (int    *) ML_allocate(sizeof(int)*(Nghost+osize+1));
+   valbuf  = (double *) ML_allocate(sizeof(double)*(Nghost+osize+1));
 
    /* count the total number of nonzeros and compute */
    /* the length of each row in the transpose.       */
@@ -365,8 +365,8 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
          row_ptr[  colbuf[j] ]++;
    }
 
-   cols    = (int    *) malloc(sizeof(int   )*(N_nzs+1));
-   vals    = (double *) malloc(sizeof(double)*(N_nzs+1));
+   cols    = (int    *) ML_allocate(sizeof(int   )*(N_nzs+1));
+   vals    = (double *) ML_allocate(sizeof(double)*(N_nzs+1));
    if (vals == NULL) 
       pr_error("ML_Gen_Restrictor_TransP: Out of space\n");
 
@@ -402,7 +402,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
 
    /* store the matrix into ML */
 
-   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
    temp->columns = cols;
    temp->values  = vals;
    temp->rowptr  = row_ptr;
@@ -605,7 +605,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
       Nsend += ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
    }
    remap_leng = osize + Nrcv + Nsend;
-   remap = (int *) malloc( remap_leng*sizeof(int));
+   remap = (int *) ML_allocate( remap_leng*sizeof(int));
    for (i = 0; i < osize; i++) remap[i] = i;
    for (i = osize; i < osize+Nrcv+Nsend; i++) 
       remap[i] = -1;
@@ -636,9 +636,9 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    if (Nghost2 > Nghost) Nghost = Nghost2;
    if (neigh_list != NULL) ML_free(neigh_list);
 
-   row_ptr = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
-   colbuf  = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
-   valbuf  = (double *) malloc(sizeof(double)*(Nghost+osize+1));
+   row_ptr = (int    *) ML_allocate(sizeof(int)*(Nghost+osize+1));
+   colbuf  = (int    *) ML_allocate(sizeof(int)*(Nghost+osize+1));
+   valbuf  = (double *) ML_allocate(sizeof(double)*(Nghost+osize+1));
 
    /* count the total number of nonzeros and compute */
    /* the length of each row in the transpose.       */
@@ -654,8 +654,8 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
          row_ptr[  colbuf[j] ]++;
    }
 
-   cols    = (int    *) malloc(sizeof(int   )*(N_nzs+1));
-   vals    = (double *) malloc(sizeof(double)*(N_nzs+1));
+   cols    = (int    *) ML_allocate(sizeof(int   )*(N_nzs+1));
+   vals    = (double *) ML_allocate(sizeof(double)*(N_nzs+1));
    if (vals == NULL) 
       pr_error("ML_Gen_Restrictor_TransP: Out of space\n");
 
@@ -691,7 +691,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
 
    /* store the matrix into ML */
 
-   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
    temp->columns = cols;
    temp->values  = vals;
    temp->rowptr  = row_ptr;

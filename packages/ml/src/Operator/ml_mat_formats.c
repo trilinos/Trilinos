@@ -694,7 +694,7 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
    if (getrow_comm != NULL)
    {
       nbytes = (getrow_comm->minimum_vec_size+ilen+1) * sizeof(double);
-      y2 = (double *) malloc( nbytes );
+      y2 = (double *) ML_allocate( nbytes );
       for (i = 0; i < ilen; i++) y2[i] = x[i];
       ML_exchange_bdry(y2, getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
    }
