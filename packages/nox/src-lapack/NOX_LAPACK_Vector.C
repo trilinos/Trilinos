@@ -34,8 +34,19 @@
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_BLAS_Wrappers.H"
 
+NOX::LAPACK::Vector::Vector() : 
+  x()		       // initialize an empty vector
+{
+}
+
+
 NOX::LAPACK::Vector::Vector(int n) : 
   x(n, 0.0)		       // initialize a zero vector of length n
+{
+}
+
+NOX::LAPACK::Vector::Vector(int n, double *v) : 
+  x(v,v+n)		       // initialize a vector of length n from array v
 {
 }
 
@@ -229,6 +240,15 @@ double NOX::LAPACK::Vector::dot(const NOX::LAPACK::Vector& y) const
 
   int n = x.size();		// size of x
   return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);
+  //double d = 0.0;
+  //for (int i=0; i<n; i++) {
+    // cout << "x[" << i << "] = " << x[i] << endl;
+//     cout << "y[" << i << "] = " << y.x[i] << endl;
+//     cout << "x[" << i << "]*y[" << i << "] = " << x[i]*y.x[i] << endl;
+  //d += x[i]*y.x[i];
+    //cout << "d = " << d << endl;
+  //}
+  //return d;
 }
 
 int NOX::LAPACK::Vector::length() const

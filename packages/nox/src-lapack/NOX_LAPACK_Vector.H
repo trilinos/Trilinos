@@ -56,10 +56,16 @@ namespace NOX {
     //! Implementation of NOX::Abstract::Vector for STL vector<double> (using LAPACK for some computations)
     class Vector : public Abstract::Vector {
 
-    public:			
+    public:	
+
+      //! Construct an empty vector
+      Vector();
     
       //! Construct a zero vector of length n
       Vector(int n);
+
+      //! Construct a vector of length n from given array
+      Vector(int n, double *v);
     
       //! Copy constructor
       Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy);
