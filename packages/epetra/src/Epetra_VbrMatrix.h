@@ -864,10 +864,16 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the allocated number of nonzero Block entries in specified local row on this processor.
     int NumAllocatedMyBlockEntries(int Row) const {return(Graph_->NumAllocatedMyIndices(Row));};
 
-    //! Returns the maximum number of nonzero entries across all rows on this processor.
+    //! Returns the maximum number of nonzero entries across all block rows on this processor.
+    /*! Let ki = the number of nonzero values in the ith block row of the VbrMatrix object.  For example,
+        if the ith block row had 5 block entries and the size of each entry was 4-by-4, ki would be 80.
+	Then this function return the max over all ki for all row on this processor.
+    */
     int MaxNumNonzeros() const {return(Graph_->MaxNumNonzeros());};
 
-    //! Returns the maximum number of nonzero entries across all rows on this processor.
+    //! Returns the maximum number of nonzero entries across all block rows on \e all processors.
+    /*! This function returns the max over all processor of MaxNumNonzeros().
+     */
     int GlobalMaxNumNonzeros() const {return(Graph_->GlobalMaxNumNonzeros());};
 
     //! Returns the index base for row and column indices for this graph.

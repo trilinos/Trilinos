@@ -426,10 +426,19 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	//! Returns the maximun number of nonzero entries across all rows across all processors.
 	int GlobalMaxNumIndices() const {return(CrsGraphData_->GlobalMaxNumIndices_);};
 	
-	//! Returns the maximum number of nonzero entries across all rows on this processor.
+	//! Returns the maximum number of nonzero points across all rows on this processor.
+	/*! For each entry in the graph, let i = the GRID of the entry and j = the CGID of the entry.  Then
+	    the entry size is the product of the rowmap elementsize of i and the colmap elementsize of i.
+	    Let ki = sum of all entry sizes for the entries in the ith row. 
+	    For example,
+            if the ith block row had 5 block entries and the element size of each entry was 4-by-4, ki would be 80.
+	    Then this function return the max over all ki for all row on this processor.
+	*/
 	int MaxNumNonzeros() const {return(CrsGraphData_->MaxNumNonzeros_);};
 	
-	//! Returns the maximun number of nonzero entries across all rows across all processors.
+	//! Returns the maximun number of nonzero points across all rows across all processors.
+	/*! This function returns the max over all processor of MaxNumNonzeros().
+	 */
 	int GlobalMaxNumNonzeros() const {return(CrsGraphData_->GlobalMaxNumNonzeros_);};
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.
