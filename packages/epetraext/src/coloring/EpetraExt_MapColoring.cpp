@@ -175,7 +175,9 @@ operator()( OriginalTypeRef orig  )
   {
     for( int i = 0; i < nCols; ++i )
       rowOrder[ i ] = i;
+#ifndef TFLOP
     random_shuffle( rowOrder.begin(), rowOrder.end() );
+#endif
   }
 
 #ifdef EPETRAEXT_TIMING
