@@ -47,7 +47,7 @@ int Zoltan_PHG_Coarsening
   int *ip, *ip_old;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   int *listgno=NULL, *listlno=NULL,  *listproc=NULL;
-  int *each_size=NULL, *msg_size=NULL;
+  int *msg_size=NULL;
   float *pwgt;
   char *buffer=NULL, *rbuffer=NULL;
   PHGComm *hgc = hg->comm;
@@ -64,8 +64,7 @@ int Zoltan_PHG_Coarsening
       ++count;
  
   if (hg->nVtx > 0 && hgc->nProc_x > 0 && (
-      !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
-   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
+      !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int))))){
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
@@ -80,12 +79,6 @@ int Zoltan_PHG_Coarsening
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
   }        
- 
-  /* EBEB the weight array need only be size of coarse nVtx?! */
-  /* EBEB allocate later when coarse nVtx is known. */
-  if (hg->nVtx > 0 && hg->VtxWeightDim > 0) 
-     c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
-      sizeof(float));   
  
   for (i = 0; i < hg->nVtx; i++)
      cmatch[i] = match[i];         /* working copy of match array */
@@ -146,6 +139,8 @@ int Zoltan_PHG_Coarsening
     ip_old = ip;
     *ip++ = listgno[i];                            /* destination vertex gno */
     for (j = 0; j < hg->VtxWeightDim; j++) {
+       /* EBEB Assume a float is no larger than an int. 
+          This is usually true, but to be safe this trick should be avoided. */
        pwgt = (float*) ip++;                               /* vertex weight */
        *pwgt = hg->vwgt[listlno[i]*hg->VtxWeightDim+j] ;
     }
@@ -206,7 +201,13 @@ int Zoltan_PHG_Coarsening
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
   }
+
+  /* Allocate vertex weight array for coarse hgraph */
+  if (hg->nVtx > 0 && hg->VtxWeightDim > 0) 
+     c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * hg->VtxWeightDim,
+      sizeof(float));   
       
+  /* Allocate edge weight array for coarse hgraph */
   if (hg->EdgeWeightDim > 0) {
     c_hg->ewgt =(float*)ZOLTAN_MALLOC(hg->nEdge*hg->EdgeWeightDim*sizeof(float));
     if (c_hg->ewgt == NULL) {
@@ -298,13 +299,13 @@ int Zoltan_PHG_Coarsening
     return ZOLTAN_MEMERR;
   } 
     
-  size = c_hg->nVtx;
-  MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);
+  MPI_Allgather (&(c_hg->nVtx), 1, MPI_INT, &(c_hg->dist_x[1]), 1, MPI_INT, 
+                 hgc->row_comm);
   
+  /* dist_x is the cumulative sum */
   c_hg->dist_x[0] = 0;
-  for (i = 1; i <= hgc->nProc_x; i++)
-    c_hg->dist_x[i] = c_hg->dist_x[i-1] + each_size[i-1];
-  size = 0;
+  for (i = 0; i < hgc->nProc_x; i++)
+    c_hg->dist_x[i+1] += c_hg->dist_x[i];
 
   /* Assuming that we do not collapse Edges, dist_y for the coarse hgraph
    * is the same as dist_y for the fine hgraph */
@@ -351,8 +352,8 @@ int Zoltan_PHG_Coarsening
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   c_hg->EdgeWeightDim = hg->EdgeWeightDim;
   
-  Zoltan_Multifree (__FILE__, __LINE__, 8, &buffer, &rbuffer, &listgno, &listlno,
-   &cmatch, &listproc, &each_size, &msg_size);  
+  Zoltan_Multifree (__FILE__, __LINE__, 7, &buffer, &rbuffer, &listgno, &listlno,
+   &cmatch, &listproc, &msg_size);  
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
 }
