@@ -336,7 +336,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   /* ********************************************************************** */
 
   return NULL;
-#endif
+#else
 
   Epetra_MpiComm Comm( mpi_communicator );
 
@@ -374,6 +374,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   Epetra2MLMatrix( Q, ML_Q2);
 
   return ML_Q2;
+#endif
   
 }
 
@@ -403,7 +404,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   /* ********************************************************************** */
 
   return NULL;
-#endif
+#else
 
   Epetra_MpiComm Comm( mpi_communicator );
 
@@ -438,6 +439,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   Epetra2MLMatrix( Qt, ML_Qt2);
 
   return ML_Qt2;
+#endif
   
 } /* ML_BuildQt */
 
