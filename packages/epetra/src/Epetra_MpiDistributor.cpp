@@ -965,6 +965,8 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
       self_recv_address = starts_from_ptr_[i] * obj_size;
   }
 
+  MPI_Barrier( comm_ );
+
   //setup scan through procs_to list starting w/ higher numbered procs 
   //Should help balance msg traffic
   int nblocks = nsends_ + self_msg_; 
