@@ -883,8 +883,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
         ML_Repartition_Set_Partitioner(ml_edges_,ML_USEPARMETIS);
       else if (Repartitioner == "Jostle")
         ML_Repartition_Set_Partitioner(ml_edges_,ML_USEJOSTLE);
-      else
-        if (Comm().MyPID() == 0) pr_error("Unrecognized partitioner: %s.", Repartitioner);
+      else {
+        if (Comm().MyPID() == 0) {
+          cerr << ErrorMsg_ << "Unrecognized partitioner `"
+               << Repartitioner << "'" << endl;
+          cerr << ErrorMsg_ << "It should be: " << endl;
+          cerr << ErrorMsg_ << "<Zoltan> / <ParMETIS> / <Jostle>" << endl;
+        }
+        ML_EXIT(-1);
+      }
     } //if (ShouldRepartition)
   } //if( SolvingMaxwell_ ...
   

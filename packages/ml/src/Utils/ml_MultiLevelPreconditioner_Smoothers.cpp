@@ -396,7 +396,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     } else if( Smoother == "ParaSails" ) {
 
-#ifdef HAVE_ML_PARASAILS
       // ========= //
       // ParaSails //
       // ========= //
@@ -434,6 +433,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	     << ",lb=" << ParaSailsLB
 	     << ")" << endl;
       
+#ifdef HAVE_ML_PARASAILS
       // I am not sure about the ending `0' and of ML
       ML_Gen_Smoother_ParaSails(ml, LevelID_[level], 
 				pre_or_post, num_smoother_steps,
@@ -452,8 +452,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ======== //
       // Hiptmair //
       // ======== //
-      if (SolvingMaxwell_ == false && Comm().MyPID() == 0)
-        pr_error("Hiptmair smoothing is only supported for solving eddy current equations.\nChoose another smoother.\n");
+      if (SolvingMaxwell_ == false) {
+        if (Comm().MyPID() == 0) {
+          cerr << ErrorMsg_ << "Hiptmair smoothing is only supported" << endl;
+          cerr << ErrorMsg_ << "for solving eddy current equations." << endl;
+          cerr << ErrorMsg_ << "Choose another smoother." << endl;
+        }
+        ML_EXIT(EXIT_FAILURE);
+      }
 
       sprintf(parameter,"%ssmoother: Hiptmair subsmoother type (level %d)",
               Prefix_.c_str(),level);
@@ -464,7 +470,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       edge_args_ = ML_Smoother_Arglist_Create(2);
 
       int logical_level = LevelID_[level];
-      void *edge_smoother, *nodal_smoother;
+      void *edge_smoother = 0, *nodal_smoother = 0;
 
       sprintf(parameter,"%ssmoother: Hiptmair node sweeps", Prefix_.c_str());
       nodal_its = List_.get(parameter, nodal_its);
@@ -522,7 +528,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_Smoother_Arglist_Set(edge_args_, 1, &omega);
       }
       else if (Comm().MyPID() == 0)
-        pr_error("Only MLS and SGS are supported as Hiptmair subsmoothers.\n");
+        cerr << ErrorMsg_ << "Only MLS and SGS are supported as Hiptmair subsmoothers." << endl;
     
       sprintf(parameter,"%ssmoother: Hiptmair efficient symmetric",
               Prefix_.c_str());
