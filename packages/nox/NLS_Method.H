@@ -29,6 +29,14 @@ protected:
   
 public:
 
+  //! Status of solver
+  enum STATUS {
+    NotConverged = 0,
+    Converged = 1,
+    MaxItersExceeded = -1,
+    OtherError = -2
+  };
+
   //! Deconstructor
   virtual ~NLS_Method() {};
 
@@ -36,13 +44,13 @@ public:
   virtual void resetParameters(NLS_ParameterList& p) = 0;
 
   //! Check for convergence of the nonlinear problem
-  virtual bool isConverged() = 0;
+  virtual STATUS isConverged() = 0;
 
   //! Do one nonlinear method iteration
-  virtual int iterate() = 0;
+  virtual STATUS iterate() = 0;
 
   //! Solve the nonlinear problem
-  virtual int solve() = 0;
+  virtual STATUS solve() = 0;
 
   //! Return a reference to the current solution group
   virtual NLS_Group& getSolutionGroup() const = 0;

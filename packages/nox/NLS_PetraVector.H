@@ -21,19 +21,11 @@ class NLS_PetraVector : public NLS_Vector {
 
  public:			
 
+  enum ConstructorType { DeepCopy, CopyShape };
+
   //! Construct an NLS_PetraVector by copying map and/or elements of
   //! a Epetra_Vector.  Creates a deep copy of the vector.
-  /*! The input vector is used to specify the map.  The contents are
-    only copied if doCopyEntries is true.  If false, the vector is 
-    initialized to all zeros.  */
-  NLS_PetraVector(const Epetra_Vector& copyFrom, bool doCopyEntries);
-
-  //! Construct an NLS_PetraVector by pointing to an external Epetra_Vector.
-  //! Creates a shallow copy (view) of the original vector.
-  /*! The vector may be modified, but it should not be deleted when
-    this is deleted.  The difference between this constructor and the
-    other constuctor is the CONSTness of the Epetra_Vector.  */
-  NLS_PetraVector(Epetra_Vector& pointTo);
+  NLS_PetraVector(const Epetra_Vector& copyFrom, ConstructorType type = DeepCopy);
 
   //! Deconstruct NLS_PetraVector
   /*! The memory for the actual Epetra_Vector should only be
@@ -74,7 +66,7 @@ class NLS_PetraVector : public NLS_Vector {
   //! See above for definition.
   virtual NLS_Vector& update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step);
 
-  NLS_Vector&  scale(double alpha);
+  NLS_Vector& scale(double alpha);
 
   virtual NLS_Vector* newcopy() const;
 

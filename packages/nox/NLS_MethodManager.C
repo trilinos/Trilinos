@@ -11,10 +11,27 @@
 #include "NLS_Newton.H"
 #include "NLS_MethodManager.H"
 
-NLS_MethodManager::NLS_MethodManager(NLS_Group& i, 
-				     NLS_Group& s, 
+NLS_MethodManager::NLS_MethodManager(NLS_Group& initialguess, 
+				     NLS_Group& workspace, 
 				     NLS_ParameterList& p) :
-  ptr(NULL)
+  ptr(NULL),
+  workgroup(NULL)
+{
+  setup(initialguess, workspace, p);
+}
+
+NLS_MethodManager::NLS_MethodManager(NLS_Group& initialguess, 
+				     NLS_ParameterList& p) :
+  ptr(NULL),
+  workgroup(NULL)
+{
+  workgroup = initialguess.newCopy();
+  setup(*workgroup, initialguess, p);
+}
+
+void NLS_MethodManager::setup(NLS_Group& initialguess, 
+			       NLS_Group& workspace, 
+			       NLS_ParameterList& p) 
 {
 
   NLS_Utilities::setUtilities(p);
@@ -25,19 +42,19 @@ NLS_MethodManager::NLS_MethodManager(NLS_Group& i,
     cout << "Nonlinear Solver: " << method << endl; 
   
   if (method == "Newton") {
-    ptr = new NLS_Newton(i, s, p);
+    ptr = new NLS_Newton(initialguess, workspace, p);
   } 
   else {
     cout << "ERROR: invalid choice for nonlinear solver "
 	 << "in NLS_MethodManager constructor" << endl;
     throw 1;
   }
-
 }
 
 NLS_MethodManager::~NLS_MethodManager()
 {
   delete ptr;
+  delete workgroup;
 }
 
 

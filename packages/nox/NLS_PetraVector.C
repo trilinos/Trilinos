@@ -11,25 +11,23 @@
 #include <iostream>
 #include "NLS_PetraVector.H"
 
-NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, bool doCopyEntries)
+NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, ConstructorType type)
 {
-  if (doCopyEntries) {
-    // deep copy
+  switch (type) {
+
+  case DeepCopy:		// default behavior
+
     petraVec = new Epetra_Vector(copyFrom); 
-  }
-  else {
-    // copy map and fill with zeros
+    doDeletePetraVec = true;	
+    break;
+
+  case CopyShape:
+
     petraVec = new Epetra_Vector(copyFrom.Map()); 
+    doDeletePetraVec = true;
+    break;  
+
   }
-
-  // delete when this is deleted
-  doDeletePetraVec = true;
-}
-
-NLS_PetraVector::NLS_PetraVector(Epetra_Vector& pointTo)
-{
-  petraVec = &pointTo;		// copy pointer only
-  doDeletePetraVec = false;	// do not delete when this is deleted
 }
 
 NLS_PetraVector::~NLS_PetraVector()
@@ -141,7 +139,7 @@ NLS_Vector& NLS_PetraVector::scale(double alpha)
 
 NLS_Vector* NLS_PetraVector::newcopy() const
 {
-  NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec, true);
+  NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec);
   return newVec;
 }
 

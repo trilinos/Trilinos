@@ -8,41 +8,47 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include "AztecOO.h"
-#include "NLS_Utilities.H"
 #include "NLS_PetraGroup.H"
 
-NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I) :
-  xVector(x, true), // deep copy x     
-  RHSVector(x, false), // new vector of same size
-  gradVector(x, false), // new vector of same size
-  NewtonVector(x, false), // new vector of same size
-  Interface(I) // set reference
+#include "NLS_Utilities.H"
+#include "AztecOO.h"
+#include "Epetra_LinearProblem.h" 
+
+NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, NLS_PetraSharedJacobian& sj, 
+			       NLS_PetraGroupInterface& i) :
+  xVector(x), // deep copy x     
+  RHSVector(x, NLS_PetraVector::CopyShape), // new vector of same size
+  gradVector(x, NLS_PetraVector::CopyShape), // new vector of same size
+  NewtonVector(x, NLS_PetraVector::CopyShape),// new vector of same size
+  sharedJacobian(sj), // pass J to SharedJacobian
+  interface(i) // set reference
 {
-  Jac = &J;
-  reset();
+  resetIsValid();
 }
 
 NLS_PetraGroup::NLS_PetraGroup(const NLS_PetraGroup& copyFrom) :
-  xVector(copyFrom.xVector.getPetraVector(), true), 
-  RHSVector(copyFrom.RHSVector.getPetraVector(), true), 
-  gradVector(copyFrom.gradVector.getPetraVector(), true), 
-  NewtonVector(copyFrom.NewtonVector.getPetraVector(), true),
-  Interface(copyFrom.Interface)
+  xVector(copyFrom.xVector.getPetraVector()), 
+  RHSVector(copyFrom.RHSVector.getPetraVector()), 
+  gradVector(copyFrom.gradVector.getPetraVector()), 
+  NewtonVector(copyFrom.NewtonVector.getPetraVector()),
+  sharedJacobian(copyFrom.sharedJacobian),
+  interface(copyFrom.interface)
 {
   isValidRHS = copyFrom.isValidRHS;
   isValidGrad = copyFrom.isValidGrad;
   isValidNewton = copyFrom.isValidNewton;
+  isValidJacobian = copyFrom.isValidJacobian;
 
-  Jac = NULL;
-  isValidJacobian = false;
+  // New copy takes ownership of the shared Jacobian
+  if (isValidJacobian)
+    sharedJacobian.takeOwnership(this);
 }
 
 NLS_PetraGroup::~NLS_PetraGroup() 
 {
 }
 
-void NLS_PetraGroup::reset() //private
+void NLS_PetraGroup::resetIsValid() //private
 {
   isValidRHS = false;
   isValidJacobian = false;
@@ -50,98 +56,116 @@ void NLS_PetraGroup::reset() //private
   isValidNewton = false;
 }
 
-bool NLS_PetraGroup::isJacobianEnabled() const
+NLS_Group* NLS_PetraGroup::newCopy() const 
 {
-  return (Jac != NULL);
-}
-
-NLS_Group* NLS_PetraGroup::newCopy(bool isJacobianEnabled) const 
-{
-  if (isJacobianEnabled)
-    return NULL;
-
   NLS_PetraGroup* newgrp = new NLS_PetraGroup(*this);
   return newgrp;
 }
 
-NLS_Group& NLS_PetraGroup::copy(const NLS_Group& source)
+NLS_Group& NLS_PetraGroup::operator=(const NLS_Group& copyFrom)
 {
-  copy(dynamic_cast<const NLS_PetraGroup&> (source));
-  return *this;
+  return operator=(dynamic_cast<const NLS_PetraGroup&> (copyFrom));
 }
 
-NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
+NLS_Group& NLS_PetraGroup::operator=(const NLS_PetraGroup& copyFrom)
 {
-  // Update the xVector
-  xVector.copy(copyFrom.xVector);
-  
-  // Don't copy Jacobian
-  isValidJacobian = false;
+  // Copy the xVector
+  xVector = copyFrom.xVector;
 
+  // Copy reference to sharedJacobian
+  sharedJacobian = copyFrom.sharedJacobian;
 
   // Update the isValidVectors
   isValidRHS = copyFrom.isValidRHS;
   isValidGrad = copyFrom.isValidGrad;
   isValidNewton = copyFrom.isValidNewton;
+  isValidJacobian = copyFrom.isValidJacobian;
 
   // Only copy vectors that are valid
   if (isValidRHS)
-    RHSVector.copy(copyFrom.RHSVector);
+    RHSVector = copyFrom.RHSVector;
   if (isValidGrad)
-    gradVector.copy(copyFrom.gradVector);
+    gradVector = copyFrom.gradVector;
   if (isValidNewton)
-    NewtonVector.copy(copyFrom.NewtonVector);
+    NewtonVector = copyFrom.NewtonVector;
+
+  // If valid, this takes ownership of the shared Jacobian
+  if (isValidJacobian)
+    sharedJacobian.takeOwnership(this);
+    
   return *this;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& grp, const NLS_Vector& d, double step) 
 {
-  computeX(dynamic_cast<const NLS_PetraGroup&> (grp),
-	   dynamic_cast<const NLS_PetraVector&> (d),
-	   step); 
-  return xVector;
+  // Cast to appropriate type, then call other computeX
+  const NLS_PetraGroup& petragrp = dynamic_cast<const NLS_PetraGroup&> (grp);
+  const NLS_PetraVector& petrad = dynamic_cast<const NLS_PetraVector&> (d);
+  return computeX(petragrp, petrad, step); 
 }
 
 //! Compute and return solution vector
-const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, 
-					   const NLS_PetraVector& d, 
+const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, const NLS_PetraVector& d, 
 					   double step) 
 {
-  xVector.update(dynamic_cast<const NLS_PetraVector&> (grp.getX()),  d, step);
-  reset();
+  resetIsValid();
+  xVector.update(grp.xVector, d, step);
   return xVector;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeRHS() 
 {
-  Interface.computeRHS(xVector.getPetraVector(), RHSVector.getPetraVector());
+  if (isRHS())
+    return RHSVector;
+
+  interface.computeRHS(xVector.getPetraVector(), RHSVector.getPetraVector());
+  normRHS = RHSVector.norm();
   isValidRHS = true;
   return RHSVector;
 }
 
 void NLS_PetraGroup::computeJacobian() 
 {
-  if (!isJacobianEnabled())
-    throw;
-  Interface.computeJacobian(xVector.getPetraVector(), *Jac);
+  // Skip if the Jacobian is already valid
+  if (isJacobian())
+    return;
+
+  // Take ownership of the Jacobian and get a reference
+  Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian(this);
+
+  // Fill the Jacobian
+  interface.computeJacobian(xVector.getPetraVector(), Jacobian);
+
+  // Update status
   isValidJacobian = true;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeGrad() 
 {
-  if (!isValidRHS) {
+  if (isGrad())
+    return gradVector;
+  
+  if (!isRHS()) {
     cout << "ERROR: NLS_PetraGroup::computeGrad() - RHS is out of date wrt X!" << endl;
     throw;
   }
-  if (!isValidJacobian) {
+
+  if (!isJacobian()) {
     cout << "ERROR: NLS_PetraGroup::computeGrad() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
+  
+  // Get a reference to the Jacobian (it's validity was check above)
+  const Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian();
 
-  // Compute grad = Jac^T * RHS.
-  bool TransJ = true;
-  Jac->Multiply(TransJ, RHSVector.getPetraVector(), gradVector.getPetraVector());
+  // Compute grad = Jacobian^T * RHS.
+  bool Transpose = true;
+  Jacobian.Multiply(Transpose, RHSVector.getPetraVector(), gradVector.getPetraVector());
+
+  // Update state
   isValidGrad = true;
+
+  // Return result
   return gradVector;
 }
 
@@ -157,54 +181,90 @@ const NLS_Vector& NLS_PetraGroup::computeNewton()
 const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& p) 
 
 {
-  if (!isValidRHS) {
+  if (isNewton())
+    return NewtonVector;
+
+  if (!isRHS()) {
     cout << "ERROR: computeNewton() - RHS is out of date wrt X!" << endl;
     throw;
   }
-  else if (!isValidJacobian) {
+
+  // Check the we own the shared Jacobian AND that the Jacobian is valid
+  if (!isJacobian()) {
     cout << "ERROR: computeNewton() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
   
-  Epetra_LinearProblem Problem(Jac, 
+  // Get the Jacobian 
+  /* (Have to get non-const version which requires reasserting
+     ownership. This is due to a flaw in Epetra_LinearProblem). */
+  Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian(this);
+
+  // Create Epetra problem to solve for NewtonVector 
+  // (Jacobian * NewtonVector = RHSVector)
+  Epetra_LinearProblem Problem(&Jacobian, 
 			       &(NewtonVector.getPetraVector()), 
 			       &(RHSVector.getPetraVector()));
+
+  // For now, set problem level to hard, moderate, or easy
+  Problem.SetPDL(easy);
+
+  // Create aztec problem
+  AztecOO aztec(Problem);
 
   int maxit = p.getParameter("Max Linear Iterations", 400);
   double tol = p.getParameter("Linear Solver Tolerance", 1.0e-6);
 
   if (NLS_Utilities::doPrint(3)) {
-    cout << "      *********************************************" << endl;
-    cout << "      NLS_PetraGroup::computeNewton "<< endl;
-    cout << "           Max Linear Iterations    = " << maxit << endl;
-    cout << "           Linear Solver Tolerance  = " << tol << endl;
-    cout << "      *********************************************" << endl 
-	 << endl;
+    cout << "      *********************************************" << "\n";
+    cout << "      NLS_PetraGroup::computeNewton "<< "\n";
+    cout << "           Max Linear Iterations    = " << maxit << "\n";
+    cout << "           Linear Solver Tolerance  = " << tol << "\n";
+    cout << "      *********************************************" << "\n" << endl;
   }
 
-  // For now, set problem level to hard, moderate, or easy
-  Problem.SetPDL(easy);
-  AztecOO aztec(Problem);
-  aztec.Iterate(maxit,tol);
+  // Solve Aztex problem
+  aztec.Iterate(maxit, tol);
+
+  // Scale soln by -1
+  NewtonVector.scale(-1.0);
+
+  // Update state
   isValidNewton = true;
+
+  // Return solution
   return NewtonVector;
 }
 
-double NLS_PetraGroup::computeLinearRHSNorm() 
+double NLS_PetraGroup::computeNormPredictedRHS(const NLS_Vector& s) 
 {  
-  if (isRHS() && isJacobian() && isNewton()) {
- 
-    bool TransJ = false;
-    NLS_PetraVector* d = dynamic_cast <NLS_PetraVector*> (RHSVector.newcopy());
-    Jac->Multiply(TransJ, NewtonVector.getPetraVector(), d->getPetraVector());
-    d->update(RHSVector, *d, -1.0);
-    double norm = d->norm();
-    delete d;
-    return norm;
+  if (!isRHS()) {
+    cout << "ERROR: computePredictedRHSNorm() - RHS is out of date wrt X!" << endl;
+    throw;
   }
-  cout << "ERROR: NLS_PetraGroup::computeLinearRHS - Vectors are out" 
-    " of date wrt X!" << endl;
-  throw;
+  if (!isJacobian()) {
+    cout << "ERROR: computePredictedRHSNorm() - Jacobian is out of date wrt X!" << endl;
+    throw;
+  }
+  
+  // Cast s to a const NLS_PetraVector
+  const NLS_PetraVector& petras = dynamic_cast <const NLS_PetraVector&> (s);
+
+  // Create a new vector to be the predicted RHS
+  NLS_PetraVector v(RHSVector.getPetraVector(), NLS_PetraVector::CopyShape);
+
+  // Get a reference to the Jacobian (it's validity was check above)
+  const Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian();
+
+  // Compute v = Jacobian * petras
+  bool NoTranspose = false;
+  Jacobian.Multiply(NoTranspose, petras.getPetraVector(), v.getPetraVector());
+
+  // Compute v = RHSVector + v (this is the predicted RHS)
+  v.update(RHSVector, v, 1.0);
+
+  // Return norm of predicted RHS
+  return v.norm();
 }
 
 bool NLS_PetraGroup::isRHS() const 
@@ -214,7 +274,7 @@ bool NLS_PetraGroup::isRHS() const
 
 bool NLS_PetraGroup::isJacobian() const 
 {  
-  return isValidJacobian;
+  return ((sharedJacobian.isOwner(this)) && (isValidJacobian));
 }
 
 bool NLS_PetraGroup::isGrad() const 
@@ -235,6 +295,11 @@ const NLS_Vector& NLS_PetraGroup::getX() const
 const NLS_Vector& NLS_PetraGroup::getRHS() const 
 {  
   return RHSVector;
+}
+
+double NLS_PetraGroup::getNormRHS() const
+{
+  return normRHS;
 }
 
 const NLS_Vector& NLS_PetraGroup::getGrad() const 

@@ -20,27 +20,27 @@ class NLS_Newton : public NLS_Method {
 
 public:
 
-  //! Newton-method constructor
-  NLS_Newton(NLS_Group& initialGuess, 
-	     NLS_Group& solutionSpace, 
+  //! Newton-method constructor. 
+  NLS_Newton(NLS_Group& initialguess, 
+	     NLS_Group& workspace, 
 	     NLS_ParameterList& parameters);
-  ~NLS_Newton();
 
-  void resetParameters(NLS_ParameterList& p);
-  bool isConverged();
-  int iterate();
-  int solve();
-  NLS_Group& getSolutionGroup() const;
-  bool getProfileInfo(string& name, NLS_Parameter& p) const;
-  double getNormRHS() const;
+  //! Destructor
+  virtual ~NLS_Newton();
 
-private:
+  virtual void resetParameters(NLS_ParameterList& p);
+  virtual STATUS isConverged();
+  virtual STATUS iterate();
+  virtual STATUS solve();
+  virtual NLS_Group& getSolutionGroup() const;
+  virtual bool getProfileInfo(string& name, NLS_Parameter& p) const;
+
+protected:
   
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
   NLS_ParameterList& params;    //!< Parameter List
   NLS_ForcingTerm forcingTerm;  //!< Forcing Term function
-  double normrhs;		//!< Norm of RHS
 
   // Statistics
   int niter;                    //!< Number of nonlinear iterations

@@ -25,26 +25,38 @@
 class NLS_MethodManager : public NLS_Method {
 
 public:
-  //! Generic interface to any of the various methods. 
-  NLS_MethodManager(NLS_Group& initial_guess, 
-		    NLS_Group& solution_space, 
+  //! Generic interface containing initialguess and an additional
+  //! group for scratch space.
+  NLS_MethodManager(NLS_Group& initialguess, NLS_Group& workspace, 
 		    NLS_ParameterList& p);
+
+  //! Generic interface only containing intialguess. This method will
+  //! create scratch space before instantiating the solver method.
+  NLS_MethodManager(NLS_Group& initialguess, NLS_ParameterList& p);
 
   //! Destructor
   ~NLS_MethodManager();
 
 
   void resetParameters(NLS_ParameterList& p);
-  bool isConverged();
-  int iterate();
-  int solve();
+  STATUS isConverged();
+  STATUS iterate();
+  STATUS solve();
   NLS_Group& getSolutionGroup() const;
   bool getProfileInfo(string& name, NLS_Parameter& p) const;
 
 private:
 
+  void setup(NLS_Group& initialguess, NLS_Group& workspace, 
+	     NLS_ParameterList& p);
+
+private:
+
   //! Pointer to the solver object
   NLS_Method *ptr;
+
+  //! Pointer to extra group
+  NLS_Group* workgroup;
 };
 
 #endif

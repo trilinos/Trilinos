@@ -11,17 +11,11 @@
 #ifndef _NLS_PETRA_GROUP_H
 #define _NLS_PETRA_GROUP_H
 
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-
-//#include "AztecOO.h"
-#include "NLS_Parameter.H"
+#include "NLS_Group.H"		// Base Class
 #include "NLS_ParameterList.H"
-#include "NLS_Vector.H"
 #include "NLS_PetraVector.H"
-#include "NLS_Group.H"
 #include "NLS_PetraGroupInterface.H"
+#include "NLS_PetraSharedJacobian.H"
 
 //! Concrete implementation of the pure virtual NLS_Group.
 
@@ -37,68 +31,47 @@ class NLS_PetraGroup : public NLS_Group {
 
 public:
 
-  //! Constructor for Jacobian-Enabled group.
-  /*! Makes internal xVector a deep copy of x and the internal Jacobian
-    a pointer to J. Does not delete J. */
-  NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I);
+  //! Constructor.
+  NLS_PetraGroup(Epetra_Vector& x, NLS_PetraSharedJacobian& sj, NLS_PetraGroupInterface& I);
 
-  //! Constructor for Jacobian-Diabled group.
-  /*! Makes internal xVector a deep copy of x. A group constructed in
-    this manner cannot compute its Jacobian. */
+  //! Copy constructor.
+  /*! Deep copy. Takes ownership of shared Jacobian if the Jacobian is valid. */
   NLS_PetraGroup(const NLS_PetraGroup& copyFrom);
 
   //! Deconstructor
   virtual ~NLS_PetraGroup();
 
-  virtual NLS_Group& copy(const NLS_Group& copyFrom);
+  virtual NLS_Group& operator=(const NLS_Group& copyFrom);
 
-  //! Copy everything except the Jacobian matrix, if any.
-  virtual NLS_Group& copy(const NLS_PetraGroup& copyFrom);
+  //! See above
+  virtual NLS_Group& operator=(const NLS_PetraGroup& copyFrom);
 
   /** @name "Compute" functions */
   //@{
 
-  //! Compute and return solution vector
   virtual const NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step);
 
-  //! Compute and return solution vector
+  //! See above
   virtual const NLS_Vector& computeX(const NLS_PetraGroup& grp, const NLS_PetraVector& d, double step);
 
-  //! Compute and return RHS
   virtual const NLS_Vector& computeRHS();
 
-  //! Compute Jacobian
   virtual void computeJacobian();
 
-  //! Compute and return gradient 
-  /*! Throws an error if RHS and Jacobian have not been computed */
   virtual const NLS_Vector& computeGrad();
 
-  //! Compute and return Newton direction 
-  /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual const NLS_Vector& computeNewton();
-
-  //! Compute and return Newton direction, using desired accuracy for nonlinear solve
-  /*! Throws an error if RHS and Jacobian have not been computed */
   virtual const NLS_Vector& computeNewton(NLS_ParameterList& params);
 
-  //! Compute and place linear residual in vector d.
-  /*! Compute the RHS based on the local linear model.  The Jacobian and
-   *  Newton direction must be alredy evaluated for the solution. This
-   *  is typically used for adaptively changing the linear solver tolerance 
-   *  for iterative linear solution methods. */  
-  virtual double computeLinearRHSNorm();  
+  virtual double computeNormPredictedRHS(const NLS_Vector& update);  
 
   //@}
 
-  //! Returns true if this group can compute a Jacobian
-  bool isJacobianEnabled() const;
-
-  /** @name Checks to see if various objects have been computed. 
+  /** @name "Is" functions
    *
-   * Returns true if the corresponding "compute" function has been
-   * called since the last update to the solution vector (via
-   * instantiation or computeX). */
+   * Checks to see if various objects have been computed. Returns true
+   * if the corresponding "compute" function has been called since the
+   * last update to the solution vector (via instantiation or
+   * computeX). */
   //@{
 
   virtual bool isRHS() const;
@@ -108,62 +81,62 @@ public:
 
   //@}
 
-  /** @name "Get" function */
+  /** @name "Get" functions 
+   *
+   * Note that these function do not check whether or not the vectors
+   * are valid. Must use the "Is" functions for that purpose. */
   //@{
 
-  //! Return solution vector
   virtual const NLS_Vector& getX() const;
 
-  //! Return rhs (throws an error if RHS has not been computed)
   virtual const NLS_Vector& getRHS() const;
+  
+  virtual double getNormRHS() const;
 
-  //! Return gradient (throws an error if gradient has not been computed)
   virtual const NLS_Vector& getGrad() const;
 
-  //! Return Newton direction (throws an error if newton direction has not been computed)
   virtual const NLS_Vector& getNewton() const;
 
   //@}
 
-  virtual NLS_Group* newCopy(bool isJacobianEnabled = false) const;
+  virtual NLS_Group* newCopy() const;
 
 protected:
 
-  //! Disallow Copy operator for now.
-  virtual NLS_PetraGroup& operator=(NLS_PetraGroup& copyFrom) {};
-
   //! resets the isValid flags to false
-  void reset();
+  void resetIsValid();
 
-/** @name Vectors */
-//@{
-//! Solution vector.
+  /** @name Vectors */
+  //@{
+  //! Solution vector.
   NLS_PetraVector xVector;
-//! Right-hand-side vector (function evaluation).
+  //! Right-hand-side vector (function evaluation).
   NLS_PetraVector RHSVector;
-//! Gradient vector (steepest descent vector).
+  //! Gradient vector (steepest descent vector).
   NLS_PetraVector gradVector;
-//! Newton direction vector.
+  //! Newton direction vector.
   NLS_PetraVector NewtonVector;
-//@}
+  //@}
 
-  //! Pointer to Epetra Jacobian Matrix 
-  Epetra_RowMatrix* Jac;
+  /** @name IsValid flags 
+   *  
+   * True if the current solution is up-to-date with respect to the
+   * currect xVector. */
+  //@{
+  bool isValidRHS;
+  bool isValidJacobian;
+  bool isValidGrad;
+  bool isValidNewton;
+  //@}
+  
+  //! Norm of RHS
+  double normRHS;
 
-  //! Pointer to user's code for filling the RHS (function) and Jacobian
-  NLS_PetraGroupInterface& Interface;
+  //! Reference to shared Jacobian matrix 
+  NLS_PetraSharedJacobian& sharedJacobian;
 
-/** @name IsValid flags 
- *  Tells if the vector is out of date with respect to the current 
- *  solution vector.
- *  false = vector is now out of date.
- *  true = vector is up to date with current solution. */
-//@{
-bool isValidRHS;
-bool isValidJacobian;
-bool isValidGrad;
-bool isValidNewton;
-//@}
+  //! Reference to interface for filling the RHS (function) and Jacobian
+  NLS_PetraGroupInterface& interface;
 
 };
 

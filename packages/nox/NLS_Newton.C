@@ -13,9 +13,9 @@
 
 const string stars("***********************************************************************\n");
 
-NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
-  oldsoln(i),
-  soln(s),
+NLS_Newton::NLS_Newton(NLS_Group& initialguess, NLS_Group& workspace, NLS_ParameterList& p) :
+  oldsoln(workspace),
+  soln(initialguess),
   params(p),
   niter(0)
 {
@@ -23,7 +23,6 @@ NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
   maxiter = params.getParameter("Max Nonlinear Iterations", 15);
   abstol = params.getParameter("Absolute Tolerance", 1.0e-9);
   reltol = params.getParameter("Relative Tolerance", 1.0e-4);
-  soln.copy(oldsoln);
   soln.computeRHS();
 }
 
@@ -35,10 +34,9 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 {
 }
 
-bool NLS_Newton::isConverged() 
+NLS_Method::STATUS NLS_Newton::isConverged() 
 {
-  //Compute norms
-  normrhs = soln.getRHS().norm();
+  // Compute norm of Newton step
   double normupdate = soln.getNewton().norm();
 
   // Output 
@@ -46,28 +44,44 @@ bool NLS_Newton::isConverged()
 
     cout << "\n" << stars;
     cout << "Newton Step " << niter 
-	 << " : Residual Norm = " << normrhs 
+	 << " : Residual Norm = " << soln.getNormRHS()
 	 << "  Update Norm = " << normupdate;
     cout << "\n" << stars << endl;
   }
 
-  if ((normrhs < abstol) && (normupdate < reltol)) {
+  if ((soln.getNormRHS() < abstol) && (normupdate < reltol)) {
     if (NLS_Utilities::doPrint(1)) 
       cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
-    return true;
+    return NLS_Method::Converged;
   }
 
-  return false;
+  // Check number of iterations
+  if (niter >= maxiter) {
+    if (NLS_Utilities::doPrint(1)) 
+      cout << "\n" << "Max iterations exceeded in nonlinear solver." << "\n" << endl;
+    return NLS_Method::MaxItersExceeded;
+  }
+
+  return NLS_Method::NotConverged;
 }
 
       
-int NLS_Newton::iterate()
+NLS_Method::STATUS NLS_Newton::iterate()
 {
   // compute the linear solver convergence criteria
-  if (params.getParameter("Forcing Term Method","None")!="None") {
-    params.setParameter("Residual Norm km1",oldsoln.getRHS().norm());
-    params.setParameter("Residual Norm k",normrhs);
-    double tol = forcingTerm.getForcingTerm(params);
+  if ((niter > 0) && (params.isParameterEqual("Forcing Term Method", "None"))) {
+
+    double tol;			// linear solver tolerance
+    
+    // Only compute the norm of the predicted RHS from the last iteration if necessary
+    if (params.isParameterEqual("Forcing Term Method", "Type 1")) {
+      double normPredRHS = oldsoln.computeNormPredictedRHS(oldsoln.getNewton());
+      tol = forcingTerm(params, soln.getNormRHS(), oldsoln.getNormRHS(), normPredRHS);
+    }
+    else
+      tol = forcingTerm(params, soln.getNormRHS(), oldsoln.getNormRHS());
+
+    // Reset linear solver tolerance
     params.setParameter("Linear Solver Tolerance", tol);
   }
 
@@ -77,50 +91,39 @@ int NLS_Newton::iterate()
   // compute Newton direction for current solution
   soln.computeNewton(params);
 
-  // Since soln is the only group that is jacobian enabled we need 
-  // to compute the linear residual norm before the solution is updated. 
-  if (params.getParameter("Forcing Term Method","None")!="None")
-    params.setParameter("Linearized Residual Norm", 
-			soln.computeLinearRHSNorm());
-  
-  // copy current group to the old group
-  oldsoln.copy(soln);
+  // copy current soln to the old soln
+  oldsoln = soln;
 
-  // update current solution
-  soln.computeX(oldsoln, soln.getNewton(), static_cast<double>(-1.0));
+  // compute new solution
+  soln.computeX(oldsoln, oldsoln.getNewton(), 1.0);
 
   // compute RHS for new current solution
   soln.computeRHS();
-
-  // compute norm of rhs
-  normrhs = soln.getRHS().norm();
 
   // update iteration count
   niter ++;
 
   // completed successful iteration
-  return true;
+  return isConverged();
 }
 
-int NLS_Newton::solve()
+NLS_Method::STATUS NLS_Newton::solve()
 {
   if (NLS_Utilities::doPrint(2)) 
     cout << "\n" << "Beginning nonlinear solve with Newtons method!" << endl;
 
-  // Check for convergence of initial guess
-  if (isConverged())
-    return niter;
-  
-  //const NLS_Vector& RHS = soln.getX();
+  NLS_Method::STATUS status = isConverged();
 
-  // Get Parameters
-  for (int i = 0; i < maxiter; i ++) {
-    iterate();
-    if (isConverged()) 
-      break;
+  // Check for convergence of initial guess
+  if (status != NotConverged)
+    return status;
+
+  // Iterate until converged or reach maxiter
+  while (status != NotConverged) {
+    status = iterate();
   }
 
-  return niter;
+  return status;
 }
 
 NLS_Group& NLS_Newton::getSolutionGroup() const
@@ -133,9 +136,5 @@ bool NLS_Newton::getProfileInfo(string& name, NLS_Parameter& p) const
   return false;
 }
 
-double NLS_Newton::getNormRHS() const
-{
-  return normrhs;
-}
 
 

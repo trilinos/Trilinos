@@ -37,42 +37,32 @@ public:
   //! NLS_Group deconstructor
   virtual ~NLS_Group() {};
 
-  //! Copies the values of all vectors in source group to this group
-  virtual NLS_Group& copy(const NLS_Group& copyFrom) = 0;
-  
+  //! Copies the values of all vectors and Jacobian (if it exists) in source group to this group.
+  //! (May invalidate Jacobian for source group.)
+  virtual NLS_Group& operator=(const NLS_Group& copyFrom) = 0;
+
   //@{ \name "Compute" functions
 
-  //! Compute and return solution vector, x, where this.x = grp.x() + step * d
+  //! Compute and return solution vector, x, where this.x = grp.x() + step * d.
   virtual const NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
 
-  //! Compute and return RHS
+  //! Compute and return RHS. (Usually also computes and stores norm of RHS.)
   virtual const NLS_Vector& computeRHS() = 0;
 
-  //! Returns true if this group is allowed to store a Jacobian matrix.
-  /*! Not every group is allowed to own a Jacobian because of its
-    size. Typically, only one group at a time will need to own a
-    Jacobian, and that will be in a Jacobian-enabled group. Obviously
-    a group cannot compute the Gradient or Newton direction unless it
-    is Jacobian-enabled. */
-  virtual bool isJacobianEnabled() const = 0;
-
-  //! Compute Jacobian (return true if successful)
+  //! Compute Jacobian.
   virtual void computeJacobian() = 0;
 
-  //! Compute and return gradient 
-  //! Throws an error if RHS and Jacobian have not been computed 
+  //! Compute and return gradient.
+  //! Throws an error if RHS and Jacobian have not been computed.
   virtual const NLS_Vector& computeGrad() = 0;
 
-  //! Compute and return Newton direction 
-  //! Throws an error if RHS and Jacobian have not been computed 
-  virtual const NLS_Vector& computeNewton() = 0;
-
-  //! Compute and return Newton direction, using specified parameters for nonlinear solve
-  //! Throws an error if RHS and Jacobian have not been computed 
+  //! Compute and return Newton direction, using specified parameters for nonlinear solve.
+  //! Throws an error if RHS and Jacobian have not been computed.
   virtual const NLS_Vector& computeNewton(NLS_ParameterList& params) = 0;
 
-  //! Compute and return Linear RHS vector d.
-  virtual double computeLinearRHSNorm() = 0;
+  //! Compute and return norm of predicted RHS for given update vector.
+  //! Throws an error if RHS and Jacobian have not been computed.
+  virtual double computeNormPredictedRHS(const NLS_Vector& update) = 0;
 
   //@}
 
@@ -91,21 +81,25 @@ public:
 
   //@}
 
-  //@{ \name "Get" functions 
+  /** @name "Get" functions 
+   *
+   * Note that these function do not check whether or not the vectors
+   * are valid. Must use the "Is" functions for that purpose. */
+  //@{ 
 
-  //! Return solution vector.  This should be protected!  
-  //! Getting a pointer to the solution vector could allow users to change
-  //! its value without using computeX().  This breaks the isRHS(), 
-  //! isJacobian(), isGrad(), and isNewton() functions. 
+  //! Return solution vector.  
   virtual const NLS_Vector& getX() const = 0;
 
-  //! Return rhs (throws an error if RHS has not been computed)
+  //! Return right-hand-side (RHS). 
   virtual const NLS_Vector& getRHS() const = 0;
 
-  //! Return gradient (throws an error if gradient has not been computed)
+  //! Return 2-norm of RHS.
+  virtual double getNormRHS() const = 0;
+
+  //! Return gradient.
   virtual const NLS_Vector& getGrad() const = 0;
 
-  //! Return Newton direction (throws an error if newton direction has not been computed)
+  //! Return Newton direction.
   virtual const NLS_Vector& getNewton() const = 0;
 
   //@}
@@ -113,8 +107,9 @@ public:
 
   //@{ \name Creating new NLS_Groups
 
-  //! Create a \b new NLS_Group of the same derived type as this one, but \b without an enabled Jacobian.
-  virtual NLS_Group* newCopy(bool isJacobianEnabled = false) const = 0;
+  //! Create a \b new NLS_Group of the same derived type as this one.
+  //! (May invalidate Jacobian for this group.)
+  virtual NLS_Group* newCopy() const = 0;
 
   //@}
 };
