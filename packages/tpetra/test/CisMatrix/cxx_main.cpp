@@ -27,14 +27,19 @@
 // @HEADER
 
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_CisMatrix.hpp"
-#include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Version.hpp"
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiPlatform.hpp"
+#else
+#include "Tpetra_SerialPlatform.hpp"
+#endif // TPETRA_MPI
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -55,16 +60,42 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-	// call test routine
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+    << "Starting CisMatrixTest..." << endl
+    << Tpetra::Tpetra_Version() << endl
+    << "****************************************\n";
+  }  
+  
+	// call test routines
 	int ierr = 0;
-	if(verbose) cout << "Starting CisMatrixTest..." << endl;
 	//ierr += codeCoverage<int, double>(verbose, debug);
 	ierr += unitTests<int, double>(verbose, debug);
 
 	// finish up
-	if(verbose)
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif // TPETRA_MPI
+  if(verbose)
 		if(ierr == 0)
 			cout << "CisMatrix test successful." << endl;
 		else
@@ -82,8 +113,13 @@ int codeCoverage(bool verbose, bool debug) {
 
 	if(verbose) cout << "Constructors..." << endl;
 	// have to create ElementSpace and VectorSpace first
-  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
-	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+#ifdef TPETRA_MPI
+  const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
+  const Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
+#else
+  const Tpetra::SerialPlatform <OrdinalType, OrdinalType> platformE;
+	const Tpetra::SerialPlatform <OrdinalType, ScalarType> platformV;
+#endif // TPETRA_MPI
 	Tpetra::ElementSpace<OrdinalType> elementspace(10, 0, platformE);
 	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
   // constructor taking one VectorSpace
@@ -95,15 +131,23 @@ int codeCoverage(bool verbose, bool debug) {
 
   // submissions
   if(verbose) cout << "Submitting entries..." << endl;
-  sm.submitEntry(Tpetra::Replace, 0, 5, 1);
-  sm.submitEntry(Tpetra::Replace, 0, 2, 2);
-  sm.submitEntry(Tpetra::Replace, 1, 8, 0);
-  sm.submitEntry(Tpetra::Replace, 1, 6, 3);
-  sm.submitEntry(Tpetra::Replace, 2, 3, 2);
-  sm.submitEntry(Tpetra::Replace, 3, 4, 0);
-  sm.submitEntry(Tpetra::Replace, 3, 11, 1);
-  sm.submitEntry(Tpetra::Replace, 3, 1, 2);
-  sm.submitEntry(Tpetra::Add, 3, 1, 1);
+  if(vectorspace.isMyGlobalIndex(0)) {
+    sm.submitEntry(Tpetra::Replace, 0, 5, 1);
+    sm.submitEntry(Tpetra::Replace, 0, 2, 2);
+  }
+  if(vectorspace.isMyGlobalIndex(1)) {
+    sm.submitEntry(Tpetra::Replace, 1, 8, 0);
+    sm.submitEntry(Tpetra::Replace, 1, 6, 3);
+  }
+  if(vectorspace.isMyGlobalIndex(2)) {
+    sm.submitEntry(Tpetra::Replace, 2, 3, 2);
+  }
+  if(vectorspace.isMyGlobalIndex(3)) {
+    sm.submitEntry(Tpetra::Replace, 3, 4, 0);
+    sm.submitEntry(Tpetra::Replace, 3, 11, 1);
+    sm.submitEntry(Tpetra::Replace, 3, 1, 2);
+    sm.submitEntry(Tpetra::Add, 3, 1, 1);
+  }
 
   if(debug) cout << sm << endl;
 
@@ -126,26 +170,25 @@ int codeCoverage(bool verbose, bool debug) {
   sm.getNumGlobalDiagonals(); // throw away output
   if(verbose) cout << "getNumMyDiagonals..." << endl;
   sm.getNumMyDiagonals(); // throw away output
+
+  // fillComplete
+  if(verbose) cout << "fillComplete..." << endl;
+  sm.fillComplete();
   
   // retrieve VectorSpaces
   if(verbose) cout << "Retrieving VectorSpaces..." << endl;
   if(verbose) cout << "sm.getPrimaryDist()" << endl;
   sm.getPrimaryDist(); // throw away output
-  //if(verbose) cout << "sm.getSecondaryDist()" << endl;
-  //sm.getSecondaryDist(); // throw away output
-  //if(verbose) cout << "sm.getDomainMap()" << endl;
-  //sm.getDomainDist(); // throw away output
-  //if(verbose) cout << "sm.getRangeMap()" << endl;
-  //sm.getRangeDist(); // throw away output
-
-  // fillComplete
-  if(verbose) cout << "fillComplete..." << endl;
-  sm.fillComplete();
+  if(verbose) cout << "sm.getSecondaryDist()" << endl;
+  sm.getSecondaryDist(); // throw away output
+  if(verbose) cout << "sm.getDomainMap()" << endl;
+  sm.getDomainDist(); // throw away output
+  if(verbose) cout << "sm.getRangeMap()" << endl;
+  sm.getRangeDist(); // throw away output
 
   // print
   cout << sm << endl;
   
-
 	if(verbose) cout << "Code coverage <" << OTName << ", " << STName << "> section finished." << endl;
 
 	return(0);
@@ -164,8 +207,13 @@ int unitTests(bool verbose, bool debug) {
 
   // create platform/es/vs we use
   if(verbose) cout << "Creating and Initializing platform/es/ves..." << endl;
-  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
-  Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+#ifdef TPETRA_MPI
+  const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformO(MPI_COMM_WORLD);
+  const Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
+#else
+  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
+	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+#endif // TPETRA_MPI
   Tpetra::ElementSpace<OrdinalType> elementspace(4, 0, platformO);
   Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
   if(debug) {
@@ -193,17 +241,25 @@ int unitTests(bool verbose, bool debug) {
 
   // create A CisMatrix and initalize values
   if(verbose) cout << "Creating A matrix..." << endl;
-  Tpetra::CisMatrix<OrdinalType, ScalarType> A(vectorspace, vectorspace);
+  Tpetra::CisMatrix<OrdinalType, ScalarType> A(vectorspace);
   if(debug) cout << A;
   if(verbose) cout << "Submitting values..." << endl;
-  A.submitEntry(Tpetra::Insert, 0, 2.0, 0); // CombineMode, Row/Col Number, Value, Index
-  A.submitEntry(Tpetra::Insert, 0, 1.0, 2); 
-  A.submitEntry(Tpetra::Insert, 1, 4.0, 1); // Matrix layout is:
-  A.submitEntry(Tpetra::Insert, 1, 2.0, 3); // 2 0 1 0
-  A.submitEntry(Tpetra::Insert, 2, 3.0, 0); // 0 4 0 2
-  A.submitEntry(Tpetra::Insert, 2, 6.0, 2); // 3 0 6 0
-  A.submitEntry(Tpetra::Insert, 3, 5.0, 1); // 0 5 0 8
-  A.submitEntry(Tpetra::Insert, 3, 8.0, 3);
+  if(vectorspace.isMyGlobalIndex(0)) {
+    A.submitEntry(Tpetra::Insert, 0, 2.0, 0); // CombineMode, Row/Col Number, Value, Index
+    A.submitEntry(Tpetra::Insert, 0, 1.0, 2); 
+  }
+  if(vectorspace.isMyGlobalIndex(1)) {
+    A.submitEntry(Tpetra::Insert, 1, 4.0, 1); // Matrix layout is:
+    A.submitEntry(Tpetra::Insert, 1, 2.0, 3); //  2  0  1  0
+  }                                           //  0  4  0  2
+  if(vectorspace.isMyGlobalIndex(2)) {        //  3  0  6  0
+    A.submitEntry(Tpetra::Insert, 2, 3.0, 0); //  0  5  0  8
+    A.submitEntry(Tpetra::Insert, 2, 6.0, 2);
+  }
+  if(vectorspace.isMyGlobalIndex(3)) {
+    A.submitEntry(Tpetra::Insert, 3, 5.0, 1);
+    A.submitEntry(Tpetra::Insert, 3, 8.0, 3);
+  }
   if(debug) cout << A;
   if(verbose) cout << "Calling fillComplete..." << endl;
   A.fillComplete();

@@ -35,9 +35,19 @@ namespace Tpetra {
 
 	// this will contain utility functions, such as efficientAddOrUpdate
 
-	void efficientAddOrUpdate() {
-		cout << "Tpetra_Util::efficientAddOrUpdate called." << endl;
-	};
+  // efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
+	template<typename MapType, typename KeyArgType, typename ValueArgType>
+  typename MapType::iterator efficientAddOrUpdate(MapType& m, KeyArgType const& k, ValueArgType const& v) {
+    typename MapType::iterator lb = m.lower_bound(k);
+    if(lb != m.end() && !(m.key_comp()(k, lb->first))) {
+      lb->second = v;
+      return(lb);
+    }
+    else {
+      typedef typename MapType::value_type MVT;
+      return(m.insert(lb, MVT(k, v)));
+    }
+  }
 
 } // namespace Tpetra
 

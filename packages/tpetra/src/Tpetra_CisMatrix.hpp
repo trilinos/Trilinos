@@ -37,6 +37,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
+#include "Tpetra_Util.hpp"
 
 namespace Tpetra {
 
@@ -198,6 +199,24 @@ public:
           if(!getSecondaryDist().isMyGlobalIndex(*indices))
             throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
         innerMap[*indices++] = *values++; // change this to a call to insert
+        //innermap.insert(std::map<OrdinalType, ScalarType>::value_type(*indices++, *values++);
+        //efficientAddOrUpdate(innerMap, *indices++, *values++);
+      }
+    }
+    else if(CM == Replace) {
+      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
+        if(CisMatrixData_->haveSecondary_)
+          if(!getSecondaryDist().isMyGlobalIndex(*indices))
+            throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+        innerMap[*indices++] = *values++;
+      }
+    }
+    else if(CM == Add) {
+      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
+        if(CisMatrixData_->haveSecondary_)
+          if(!getSecondaryDist().isMyGlobalIndex(*indices))
+            throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+        innerMap[*indices++] += *values++;
       }
     }
     else
@@ -210,13 +229,15 @@ public:
   }
   
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
-  /*! The domain distribution and range distribution will be set equal to the primary distribution. */
+  /*! The domain distribution and range distribution will be set equal to the primary distribution. 
+      NOTE: After calling fillComplete, no insertions or modifications are allowed. */
   void fillComplete() {
     fillComplete(getPrimaryDist(), getPrimaryDist());
   }
   
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
-  /*! The VectorSpaces passed in will be used for the domain and range distributions. */
+  /*! The VectorSpaces passed in will be used for the domain and range distributions. 
+      NOTE: After calling fillComplete, no insertions or modifications are allowed. */
   void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainSpace, VectorSpace<OrdinalType, ScalarType> const& rangeSpace) {
     if(isFillCompleted())
       throw reportError("Already fillCompleted.", -99);

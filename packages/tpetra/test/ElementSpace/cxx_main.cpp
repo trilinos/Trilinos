@@ -26,18 +26,22 @@
 // ***********************************************************************
 // @HEADER
 
-#define ORDINALTYPE int
-
-#include <iostream>
-#include <iomanip>
-#include "Tpetra_SerialPlatform.hpp" 
+#include "Tpetra_ConfigDefs.hpp"
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiPlatform.hpp"
+#else
+#include "Tpetra_SerialPlatform.hpp"
+#endif // TPETRA_MPI
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Version.hpp"
 
-void platformTester(bool verbose, bool debug);
-void esTester(bool verbose, bool debug);
-void isLgetG(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es);
-void isGgetL(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es);
+template<typename OrdinalType>
+void esTester(bool verbose, bool debug, int size, int rank);
+template<typename OrdinalType>
+void isLgetG(OrdinalType low, OrdinalType high, Tpetra::ElementSpace<OrdinalType>& es);
+template<typename OrdinalType>
+void isGgetL(OrdinalType low, OrdinalType high, Tpetra::ElementSpace<OrdinalType>& es);
 
 int main(int argc, char* argv[]) {
 	bool verbose = false;
@@ -51,45 +55,77 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
+	int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+    << "Starting ElementSpaceTest..." << endl
+    << Tpetra::Tpetra_Version() << endl
+    << "****************************************\n";
+  }
+  
+	esTester<int>(verbose, debug, size, rank);
 
-	platformTester(verbose, debug);
-	esTester(verbose, debug);
-
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif // TPETRA_MPI
+  
 	return(0);
 }
 
-void platformTester(bool verbose, bool debug) {
-	if(verbose) cout << "Creating platform...";
-  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
-	if(verbose) cout << "Successful." << endl;
-	if(debug) cout << platform << endl;
-}
-
-void esTester(bool verbose, bool debug) {
-	ORDINALTYPE eList[10] = {1,4,7,8,9,15,22,54,55,58};
-	ORDINALTYPE eSize = 10;
-  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
+template<typename OrdinalType>
+void esTester(bool verbose, bool debug, int size, int rank) {
+	OrdinalType nME = 5;
+  OrdinalType nGE = nME * size;
+  
+#ifdef TPETRA_MPI
+  Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
+#else
+  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
+#endif // TPETRA_MPI
 	
 	if(verbose) cout << "Creating es1(contiguous, tpetra-defined)...";
-	Tpetra::ElementSpace<ORDINALTYPE> es1(eSize, 2, platform);
+	Tpetra::ElementSpace<OrdinalType> es1(nGE, 2, platform);
 	if(verbose) cout << "Successful." << endl;
 	if(debug) cout << es1 << endl;
 	
 	if(verbose) cout << "Creating es2(contiguous, user-defined)...";
-	Tpetra::ElementSpace<ORDINALTYPE> es2(-1, 10, 2, platform);
+	Tpetra::ElementSpace<OrdinalType> es2(-1, nME, 2, platform); // should be same as es1
 	if(verbose) cout << "Successful." << endl;
 	if(debug) cout << es2 << endl;
 	
 	if(verbose) cout << "Testing isSameAs (contig)...";
 	assert(es1.isSameAs(es2) == true);
-	Tpetra::ElementSpace<ORDINALTYPE> es2a(10, 10, 3, platform);
+	Tpetra::ElementSpace<OrdinalType> es2a((nGE * 2), (nME * 2), 3, platform); // should be different than es1 & es2
 	assert(es1.isSameAs(es2a) == false);
 	if(verbose) cout << "Successful." << endl;
 	
-	if(verbose) cout << "Creating es3(noncontiguous)..."; 
-	Tpetra::ElementSpace<ORDINALTYPE> es3(-1, eSize, eList, 0, platform);
+	if(verbose) cout << "Creating es3(noncontiguous)...";
+  // create list of GIDs; needs to be unique for each image
+  // should be {0, 10, 20, ...} on node 0, {11, 21, 31} on node 1, etc.
+  std::vector<OrdinalType> eList(nME); // allocate to size nME
+  for(OrdinalType i = 0; i < nME; i++)
+    eList[i] = 10 * (i + rank) + rank;
+  OrdinalType* ePtr = &eList[0];
+  
+	Tpetra::ElementSpace<OrdinalType> es3(-1, nME, ePtr, 0, platform);
 	if(verbose) cout << "Successful." << endl;
 	if(debug) cout << es3 << endl;
 	
@@ -101,15 +137,15 @@ void esTester(bool verbose, bool debug) {
 	}
 	
 	if(verbose) cout << "Testing isSameAs (noncontig)...";
-	Tpetra::ElementSpace<ORDINALTYPE> es3a(eSize, eSize, eList, es3.getIndexBase(), platform);
+	Tpetra::ElementSpace<OrdinalType> es3a(nGE, nME, ePtr, es3.getIndexBase(), platform); // should be same as es3
 	assert(es3.isSameAs(es3a) == true);
-	eList[(eSize / 2)] += 2;
-	Tpetra::ElementSpace<ORDINALTYPE> es3b(eSize, eSize, eList, es3.getIndexBase(), platform);
+	eList[(nME / 2)] *= 10;
+	Tpetra::ElementSpace<OrdinalType> es3b(nGE, nME, ePtr , es3.getIndexBase(), platform); // should be different than es3 & es3a
 	assert(es3.isSameAs(es3b) == false);
 	if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Testing copy constructor...";
-	Tpetra::ElementSpace<ORDINALTYPE> es4(es3);
+	Tpetra::ElementSpace<OrdinalType> es4(es3);
 	assert(es3.isSameAs(es4) == true);
 	assert(es4.isSameAs(es3b) == false);
 	if(verbose) cout << "Successful." << endl;
@@ -120,31 +156,41 @@ void esTester(bool verbose, bool debug) {
   assert(es3.isSameAs(es3b) == true);
   if(verbose) cout << "Successful." << endl;
 
+#ifdef TPETRA_MPI
+  if(verbose) cout << "Running in MPI mode, not testing getRemoteIDList." << endl;
+#else
 	if(verbose) cout << "Testing getRemoteIDList...";
-	const int len = 5;
-	ORDINALTYPE gList[len] = {1,4,22,55,58};
-	ORDINALTYPE pList[len] = {5,5,5,5,5};
-	ORDINALTYPE lList[len] = {0,0,0,0,0};
-	es3.getRemoteIDList(5, gList, pList, lList);
+	const int len = 4;
+  std::vector<OrdinalType> gList(len);
+  gList[0] = eList[1]; 
+  gList[1] = eList[3]; 
+  gList[2] = eList[5];
+  gList[3] = eList[0];
+	OrdinalType pList[len] = {5,5,5,5};
+	OrdinalType lList[len] = {0,0,0,0};
+	es3.getRemoteIDList(len, &gList[0], pList, lList);
 	if(debug) cout << "\nGID PID LID getLID" << endl;
 	for(int i = 0; i < len; i++) {
 		if(debug) cout << setw(3) << gList[i] << setw(4) << pList[i] << setw(4) << lList[i] << setw(4) << es3.getLID(gList[i]) << endl;
 		assert(lList[i] == es3.getLID(gList[i]));
 	}
 	if(verbose) cout << "Successful." << endl;
+#endif // TPETRA_MPI
 	
 	if(verbose) cout << "ElementSpace test successful." << endl;
 }
 
-void isLgetG(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es) {
-	  for(ORDINALTYPE i = low; i < high; i++) {
+template<typename OrdinalType>
+void isLgetG(OrdinalType low, OrdinalType high, Tpetra::ElementSpace<OrdinalType>& es) {
+	  for(OrdinalType i = low; i < high; i++) {
 		  if(es.isMyLID(i))
 			  cout << "LID" << setw(3) << i << " getGID? " << es.getGID(i) << endl;
 	  }
 }
 
-void isGgetL(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es) {
-	  for(ORDINALTYPE i = low; i < high; i++) {
+template<typename OrdinalType>
+void isGgetL(OrdinalType low, OrdinalType high, Tpetra::ElementSpace<OrdinalType>& es) {
+	  for(OrdinalType i = low; i < high; i++) {
 		  if(es.isMyGID(i))
 			  cout << "GID" << setw(3) << i << " getLID? " << es.getLID(i) << endl;
 	  }

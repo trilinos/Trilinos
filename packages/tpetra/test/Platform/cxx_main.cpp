@@ -52,20 +52,39 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(verbose) 
-    cout << Tpetra::Tpetra_Version() << endl << endl;
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
   
-	// call test routine
-	int ierr = 0;
-	if(verbose) cout << "Starting PlatformTest..." << endl;
-	ierr += serialTests<int, double>(verbose, debug);
+  // initialize MPI if needed
 #ifdef TPETRA_MPI
-  if(verbose) cout << "Testing MPI functionality..." << endl;
-  int size = -1;
-  int rank = -1;
+  size = -1;
+  rank = -1;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+    << "Starting PlatformTest..." << endl
+    << Tpetra::Tpetra_Version() << endl
+    << "****************************************\n";
+  }
+  int ierr = 0;
+  
+  // test SerialPlatform
+	ierr += serialTests<int, double>(verbose, debug);
+  
+  // test MpiPlatform (if enabled)
+#ifdef TPETRA_MPI
+  if(verbose) cout << "Testing MPI functionality..." << endl;
 	ierr += mpiTests<int, double>(verbose, debug);
   MPI_Finalize();
 #endif
@@ -79,6 +98,7 @@ int main(int argc, char* argv[]) {
 	return(ierr);
 }
 
+//======================================================================
 template <typename OrdinalType, typename ScalarType>
 int serialTests(bool verbose, bool debug) {
 	if(verbose) cout << "Creating SerialPlatform object...";
@@ -103,6 +123,7 @@ int serialTests(bool verbose, bool debug) {
   return(0);
 }
 
+//======================================================================
 #ifdef TPETRA_MPI
 template <typename OrdinalType, typename ScalarType>
 int mpiTests(bool verbose, bool debug) {

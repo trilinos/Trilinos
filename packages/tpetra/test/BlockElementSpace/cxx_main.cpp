@@ -30,10 +30,16 @@
 
 #include <iostream>
 #include <iomanip>
-#include "Tpetra_SerialPlatform.hpp" 
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_BlockElementSpace.hpp"
 #include "Tpetra_Version.hpp"
+
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiPlatform.hpp"
+#else
+#include "Tpetra_SerialPlatform.hpp"
+#endif // TPETRA_MPI
 
 int main(int argc, char* argv[]) {
 
@@ -52,11 +58,40 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  if(verbose)
-    cout << Tpetra::Tpetra_Version() << endl << endl;  
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+         << "Starting BlockElementSpaceTest..." << endl
+         << Tpetra::Tpetra_Version() << endl
+         << "****************************************\n";
+  }
+  
   // Platform
   if(verbose) cout << "Creating platform" << endl;
+#ifdef TPETRA_MPI
+  Tpetra::MpiPlatform<ORDINALTYPE, ORDINALTYPE> platform(MPI_COMM_WORLD);
+#else
   Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
+#endif // TPETRA_MPI
+
 
   // ElementSpace
 	// commented out lines are for creating alternate es objects.
@@ -110,6 +145,10 @@ int main(int argc, char* argv[]) {
 	if(debug) cout << (*bes2es);
 	delete bes2es;
 
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif // TPETRA_MPI
+  
 	if(verbose) cout << "BlockElementSpace testing successful." << endl;
   return(0); 
 }

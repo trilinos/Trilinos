@@ -30,14 +30,19 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_ElementSpace.hpp"
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiPlatform.hpp"
+#else
 #include "Tpetra_SerialPlatform.hpp"
+#endif // TPETRA_MPI
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Version.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug);
+int unitTests(bool verbose, bool debug, int rank, int size);
 void checkOutputs(); 
 // checkOutputs does not need to be passed verbose/debug 
 // because it is only called if debug is true
@@ -55,19 +60,44 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-
-	// call test routine
-	int ierr = 0;
-	if(verbose) cout << "Starting VectorTest..." << endl;
-	ierr += unitTests<int, float>(verbose, debug);
-	ierr += unitTests<int, double>(verbose, debug);
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
+  
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
+  
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+    << "Starting VectorTest..." << endl
+    << Tpetra::Tpetra_Version() << endl
+    << "****************************************\n";
+  }
+  int ierr = 0;
+  
+	ierr += unitTests<int, float>(verbose, debug, rank, size);
+	ierr += unitTests<int, double>(verbose, debug, rank, size);
     
 	if(debug) 
 		checkOutputs();
 
 	// finish up
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif
+  
 	if(verbose) 
 		if(ierr == 0)
 			cout << "Vector test successful." << endl;
@@ -81,9 +111,14 @@ void checkOutputs() {
 	cout << "Doing checkOutput..." << endl;
 	int const length = 5;
 	int const indexBase = 0;
-	const Tpetra::SerialPlatform<int, int> platformE;
+#ifdef TPETRA_MPI
+  const Tpetra::MpiPlatform<int, int> platformE(MPI_COMM_WORLD);
+  const Tpetra::MpiPlatform<int, double> platformV(MPI_COMM_WORLD);
+#else
+  const Tpetra::SerialPlatform <int, int> platformE;
+	const Tpetra::SerialPlatform <int, double> platformV;
+#endif // TPETRA_MPI
 	Tpetra::ElementSpace<int> elementspace(length, indexBase, platformE);
-	const Tpetra::SerialPlatform<int, double> platformV;
 	Tpetra::VectorSpace<int, double> vectorspace(elementspace, platformV);
 	Tpetra::Vector<int, double> v1(vectorspace);
 	cout << "Created v1, default constructor" << endl;
@@ -143,11 +178,16 @@ void checkOutputs() {
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug) {
+int unitTests(bool verbose, bool debug, int rank, int size) {
 	int ierr = 0;
 	int returnierr = 0;
-	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
-	Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+#ifdef TPETRA_MPI
+  const Tpetra::MpiPlatform<OrdinalType, OrdinalType> platformE(MPI_COMM_WORLD);
+  const Tpetra::MpiPlatform<OrdinalType, ScalarType> platformV(MPI_COMM_WORLD);
+#else
+  const Tpetra::SerialPlatform <OrdinalType, OrdinalType> platformE;
+	const Tpetra::SerialPlatform <OrdinalType, ScalarType> platformV;
+#endif // TPETRA_MPI
 	if(verbose) cout << "Starting unit tests for Vector<" 
 									 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
 									 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
@@ -166,10 +206,11 @@ int unitTests(bool verbose, bool debug) {
 	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
 	Tpetra::Vector<OrdinalType, ScalarType> vector(vectorspace);
 	// taking a VectorSpace and a user array of entries
-	ScalarType* scalarArray = new ScalarType[ESlength];
+  OrdinalType myLength = vectorspace.getNumMyEntries();
+  std::vector<ScalarType> scalarArray(myLength); // allocate to size myLength
 	for(OrdinalType i = 0; i < ESlength; i++)
 		scalarArray[i] = Teuchos::ScalarTraits<ScalarType>::random();
-	Tpetra::Vector<OrdinalType, ScalarType> vector1a(scalarArray, ESlength, vectorspace);
+  Tpetra::Vector<OrdinalType, ScalarType> vector1a(&scalarArray[0], myLength, vectorspace);
 	// cpy ctr
 	Tpetra::Vector<OrdinalType, ScalarType> v2(vector);
 	

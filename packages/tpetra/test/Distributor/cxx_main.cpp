@@ -26,11 +26,20 @@
 // ***********************************************************************
 // @HEADER
 
-#define PACKETTYPE float
-#define ORDINALTYPE int
-
+#include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiDistributor.hpp"
+#else
 #include "Tpetra_SerialDistributor.hpp"
+#endif // TPETRA_MPI
 #include "Tpetra_Version.hpp"
+
+// function prototype
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug, int rank, int size);
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -45,24 +54,99 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-
-  if(verbose) cout << "Creating SerialDistributor object...";
-  Tpetra::SerialDistributor<PACKETTYPE, ORDINALTYPE> distributor;
-  //if(debug) cout <<distributor.label() << endl;
-	if(verbose) cout << "Successful." << endl;
-
-	//  void createFromSends(const OrdinalType& numExportIDs, const OrdinalType* exportImageIDs,
-	//											 const bool& deterministic, OrdinalType& numRemoteIDs ) 
-
-	ORDINALTYPE nEIDs = 2;
-	ORDINALTYPE* eIIDs = 0;
-	bool determ = false;
-	ORDINALTYPE nRIDs = 2;
-	//distributor.createFromSends(nEIDs, eIIDs, false, nRIDs);
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
   
-	if(verbose) cout << "Distributor test successful." << endl;
+  // initialize MPI if needed
+#ifdef TPETRA_MPI
+  size = -1;
+  rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif // TPETRA_MPI
   
-  return(0);
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+    << "Starting DistributorTest..." << endl
+    << Tpetra::Tpetra_Version() << endl
+    << "****************************************\n";
+  }
+  int ierr = 0;
+  
+	ierr += unitTests<int, float>(verbose, debug, rank, size);
+	ierr += unitTests<int, double>(verbose, debug, rank, size);
+
+	// finish up
+#ifdef TPETRA_MPI
+  MPI_Finalize();
+#endif
+  
+	if(verbose) 
+		if(ierr == 0)
+			cout << "Distributor test successful." << endl;
+		else
+			cout << "Distributor test failed." << endl;
+	return(ierr);
+}
+
+//======================================================================
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug, int rank, int size) {
+	int ierr = 0;
+	int returnierr = 0;
+	if(verbose) cout << "Starting unit tests for Distributor<" 
+									 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
+									 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
+	
+	// ======================================================================
+	// code coverage section - just call functions, no testing
+	// ======================================================================
+	if(verbose) cout << "Starting code coverage section..." << endl;
+	
+	// constructors
+	if(debug) cout << "Constructors..." << endl;
+#ifdef TPETRA_MPI
+  Tpetra::MpiDistributor<OrdinalType, OrdinalType> distrib;
+#else
+  Tpetra::SerialDistributor<OrdinalType, OrdinalType> distrib;
+#endif // TPETRA_MPI
+  // cpy ctr
+	
+	// print
+	if(debug) {
+		cout << "Overloaded << operator..." << endl;
+		cout << distrib << endl;
+	}
+	
+  // assignment operator
+  if(debug) cout << "assignment operator..." << endl;
+  //v2 = vector;
+	
+	if(verbose) cout << "Code coverage section finished." << endl;
+	
+	// ======================================================================
+	// actual testing section - affects return code
+	// ======================================================================
+	
+	if(verbose) cout << "Starting actual testing section..." << endl;
+	
+	// finish up
+	if(verbose)
+		if(returnierr == 0)
+			cout << "DistributorTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
+		else
+			cout << "DistributorTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
+	return(returnierr);
 }
