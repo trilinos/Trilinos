@@ -1162,20 +1162,28 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
 
      if (8 < ML_Get_PrintLevel())  {
-	   printf("ML_agg_reitzinger: %e\n",d1);
+       if (ml_edges->comm->ML_mypid == 0 )
+         printf("ML_agg_reitzinger: %e\n",d1);
        if ( fabs(d1) > 1.0e-4) {
-	 if (ml_edges->comm->ML_mypid == 0 )
-	   printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
-		  d1,grid_level);
-	 for (i = 0; i < Pe->outvec_leng; i++) {
-	   /* change this tolerance if you actually want */
-	   /* to see the individual components.          */
-	   if (fabs(vec[i]) > 1.0e1) 
-	     printf("%d: ===> %d is %20.13e vs %20.13e\n",
-		    Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
-	 }
+         if (ml_edges->comm->ML_mypid == 0 )
+           printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
+                  d1,grid_level);
+         if (14 < ML_Get_PrintLevel())  {
+            ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn.debug");
+            ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine.debug");
+            ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse.debug");
+            ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe.debug");
+         }
+         for (i = 0; i < Pe->outvec_leng; i++) {
+           /* change this tolerance if you actually want */
+           /* to see the individual components.          */
+           if (fabs(vec[i]) > 1.0e-3) 
+             fprintf(stderr,"%d: ===> %d is %20.13e vs %20.13e\n",
+                Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
+         }
        }
      }
+
      ML_free(vec); ML_free(Tfine_Pn_vec);
 
 #ifdef LEASTSQ_SERIAL
