@@ -83,12 +83,12 @@ during construction of the EpetraExt_MatlabEngine object exits.
   <li> -8 a dense Matlab mxArray was passed to a method that requires a sparse mxArray
 </ul>
 
-\subsection buildInstructions Build Instructions
+<b>Build Instructions</b>
 These instructions can be found in the file Trilinos/packages/epetraext/doc/matlab.README.
 
-\verbinclude ../doc/matlab.README
+\verbinclude matlab.README
 
-\subsection example Example Code
+<b>Example Code</b>
 The following example code generates simple Epetra objects and then
 puts them into Matlab.
 
@@ -96,7 +96,7 @@ The point of this example is to illustrate the flow of calls when
 using EpetraExt_MatlabEngine.  This example program can be found in the file
 Trilinos/packages/epetraext/example/matlab/cxx_main.cpp.  
 
-\verbinclude ../example/matlab/cxx_main.cpp
+\verbinclude cxx_main.cpp
 
 */
 class EpetraExt_MatlabEngine {
