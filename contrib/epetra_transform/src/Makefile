@@ -21,15 +21,15 @@ LDFLAGS=$(ARCH_LDFLAGS)
 LIBEPETRA_TRANSFORM = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra_trans.a
 
 EPETRA_TRANSFORM_CC = EDT_MultiVector_View.cpp \
-                      EDT_CrsGraph_View.cpp \
-                      EDT_CrsMatrix_View.cpp \
                       ET_CrsGraph_BTF.cpp \
                       EDT_CrsGraph_Overlap.cpp \
                       EDT_CrsGraph_Transpose.cpp \
-                      EDT_CrsGraph_Zoltan.cpp \
-                      EDT_CrsGraph_ZoltanOrder.cpp \
-                      Epetra_ZoltanQuery.cpp \
-                      EDT_CrsGraph_MapColoring.cpp 
+                      EDT_CrsGraph_MapColoring.cpp \
+                      EDT_CrsGraph_View.cpp \
+                      EDT_CrsMatrix_View.cpp 
+#                      EDT_CrsGraph_Zoltan.cpp \
+#                      EDT_CrsGraph_ZoltanOrder.cpp \
+#                      Epetra_ZoltanQuery.cpp
 
 EPETRA_TRANSFORM_F =  btf/concmp.f \
                       btf/genbtf.f \
