@@ -425,6 +425,8 @@ int Zoltan_RB_find_median(
     for (i = 0; i < numlist; i++)
       dotmark[i] = 0;
     weightlo = weight;
+    weighthi = 0.;
+    tmp_half = valuemax;
   }
 
   /* found median */

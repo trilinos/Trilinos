@@ -36,7 +36,6 @@ char *yo = "Zoltan_RCB_Build_Structure";
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
 struct rcb_tree *treeptr;
 int i, ierr = 0;
-int num_geom;
 
   /*
    * Allocate an RCB data structure for this Zoltan structure.
@@ -82,7 +81,8 @@ int num_geom;
   }
 
   ierr = Zoltan_RB_Build_Structure(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
-                               &(rcb->Dots), num_obj, max_obj, &num_geom,
+                               &(rcb->Dots), num_obj, max_obj,
+                               &(rcb->Input_Dim),
                                wgtflag, use_ids);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_RB_Build_Structure.");

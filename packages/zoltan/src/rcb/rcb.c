@@ -308,6 +308,13 @@ static int rcb_fn(
 
   double start_time, end_time;
   double lb_time[2];
+  int    tfs_disregard_results = 0; /* added for Tflops_Special; all procs
+                                       must enter Zoltan_RB_find_bisector
+                                       when Tflops_Special==1.  This flag
+                                       indicates that the aspect ratio test
+                                       failed on this processor, so its 
+                                       results from Zoltan_RB_find_bisector
+                                       should be ignored. */
   int    tfs[2], tmp_tfs[2];        /* added for Tflops_Special; max number
                                        of procs and parts over all processors
                                        in each iteration (while loop) of 
@@ -675,7 +682,7 @@ static int rcb_fn(
         dotmark0[j] = dotmark[j];
     }
 
-    for (dim=0; dim<3; dim++){
+    for (dim=0; dim<rcb->Input_Dim; dim++){
 
       /* One cut direction only */
       if (one_cut_dir){
@@ -685,8 +692,15 @@ static int rcb_fn(
       }
       else {
         /* Do not cut along this dimension if box is too thin. */
-        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio)
-          continue;
+        if (zz->Tflops_Special) tfs_disregard_results = 0;
+
+        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio) {
+          if (zz->Tflops_Special)/* All procs must participate in find_bisector;
+                                    compute cut but don't use the results. */
+            tfs_disregard_results = 1;
+          else 
+            continue;
+        }
 
         /* Restore original dotmark array. */
         for (j=0; j<dotnum; j++)
@@ -745,7 +759,8 @@ static int rcb_fn(
 
         /* test for better balance */
         if ((!one_cut_dir) && 
-            ((norm_max < norm_best) || (norm_best<0.))){
+            ((norm_best<0.) ||
+              (!tfs_disregard_results && (norm_max < norm_best)))) {
           norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtflag; j++){

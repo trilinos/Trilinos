@@ -153,6 +153,9 @@ int Zoltan_RB_find_bisector(
   int     rank;                      /* rank in partition (Tflops_Special) */
   int     iteration;                 /* bisection iteration no. */
   int     i, j, k, numlist;
+  int     tfs_early_exit = 0;        /* Flag used only with Tflops_Special,
+                                        indicating early exit when all weight
+                                        is to be put in one partition. */
 
   char  msg[256];                    /* for error messages */
 
@@ -222,32 +225,37 @@ int Zoltan_RB_find_bisector(
   }
 
   /* Check for early exit (unless Tflops_Special is set) */
-  if (!Tflops_Special){
-    if (k == -nwgts){
-      /* Put all dots in upper half */
-      *valuehalf = valuemin;
-      for (i = 0; i < dotnum; i++)
-         dotmark[i] = 1;
-      for (j=0; j<nwgts; j++){
-        weighthi[j] = weight[j];
-        weightlo[j] = 0.0;
-      }
-      ierr = ZOLTAN_OK;
-      goto End;
+  if (k == -nwgts){
+    /* Put all dots in upper half */
+    *valuehalf = valuemin;
+    for (i = 0; i < dotnum; i++)
+       dotmark[i] = 1;
+    for (j=0; j<nwgts; j++){
+      weighthi[j] = weight[j];
+      weightlo[j] = 0.0;
     }
-    else if (k == nwgts){
-      /* Put all dots in lower half */
-      *valuehalf = valuemax;
-      for (i = 0; i < dotnum; i++)
-         dotmark[i] = 0;
-      for (j=0; j<nwgts; j++){
-        weightlo[j] = weight[j];
-        weighthi[j] = 0.0;
-      }
-      ierr = ZOLTAN_OK;
+    ierr = ZOLTAN_OK;
+    if (Tflops_Special) 
+      tfs_early_exit = 1;
+    else
       goto End;
-    }
   }
+  else if (k == nwgts){
+    /* Put all dots in lower half */
+    *valuehalf = valuemax;
+    for (i = 0; i < dotnum; i++)
+       dotmark[i] = 0;
+    for (j=0; j<nwgts; j++){
+      weightlo[j] = weight[j];
+      weighthi[j] = 0.0;
+    }
+    ierr = ZOLTAN_OK;
+    if (Tflops_Special) 
+      tfs_early_exit = 1;
+    else
+      goto End;
+  }
+
   if (dotnum > 0) {
     /* check for illegal NULL pointers */
     if ((!dots) || (!dotmark) || (!dotlist)){
@@ -389,6 +397,8 @@ int Zoltan_RB_find_bisector(
      MPI_Allreduce(&localmin, &valuemin2, 1, MPI_DOUBLE, MPI_MIN, local_comm);
      MPI_Allreduce(localsum, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
   }
+
+  if (tfs_early_exit) goto End;
 
   /* The actual coordinate interval is [valuemin2,valuemax2]. 
    * The given input [[valuemin,valuemax] may be a slightly larger interval, 
@@ -921,12 +931,19 @@ int Zoltan_RB_find_bisector(
     }
     if (iteration == MAX_BISECT_ITER){
       ierr = ZOLTAN_WARN;
-      ZOLTAN_PRINT_WARN(proc, yo, "MAX_BISECT_ITER reached. Possible bug in Zoltan/RCB.");
+      ZOLTAN_PRINT_WARN(proc, yo, 
+                        "MAX_BISECT_ITER reached. Possible bug in Zoltan/RCB.");
     }
   }
-  else /* if one processor set all dots to 0 (Tflops_Special) */
-    for (i = 0; i < numlist; i++)
-       dotmark[i] = 0;
+  else { /* if one processor set all dots to 0 (Tflops_Special) */
+    tmp_half = valuemax;
+    for (j = 0; j < dotnum; j++)
+      dotmark[j] = 0;
+    for (j=0; j<nwgts; j++) {
+      weightlo[j] = weight[j];
+      weighthi[j] = 0.0;
+    }
+  }
 
   /* found bisector */
   *valuehalf = tmp_half;
