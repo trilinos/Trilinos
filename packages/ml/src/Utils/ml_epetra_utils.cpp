@@ -395,23 +395,18 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   
   ML_Operator * ML_Q2;
   
-#ifndef ML_MPI
-  /* ********************************************************************** */
-  /* ONe should not call this function with one processor only (as he has   */
-  /* nothing to redistributed. I simply return (this is also checked later) */
-  /* ********************************************************************** */
-
-  return NULL;
-#else
-
+#ifdef ML_MPI
   Epetra_MpiComm Comm( mpi_communicator );
-
+#else
+  Epetra_SerialComm Comm;
+#endif
+  
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
   Epetra_Map StartingMap(-1,StartingNumElements*NumPDEEqns,0,Comm);
   Epetra_Map ReorderedMap(-1,ReorderedNumElements*NumPDEEqns,0,Comm);
-
+  
   Q = new Epetra_CrsMatrix(Copy,StartingMap,1);
 
   int * MyGlobalElements = StartingMap.MyGlobalElements();
@@ -430,7 +425,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   }
   
   assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
-
+  
   {int itemp;
   Comm.MaxAll(&ComputeNewNullSpace,&itemp,1);
   if( itemp == 1 ) ComputeNewNullSpace = 1;
@@ -505,7 +500,6 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   return ML_Q2;
 
-#endif
 }
 
 
