@@ -105,6 +105,8 @@ extern int ML_Set_MaxIterations(ML *ml, int iterations);
 extern int ML_Print_Timing(ML *ml);
 
 extern int ML_Destroy(ML **ml);
+extern void ML_Solve_SmootherDestroy(void *data);
+
 
 extern int ML_Init_Comm(ML *ml);
 extern int ML_Set_Comm_MyRank(ML *ml, int myrank);
