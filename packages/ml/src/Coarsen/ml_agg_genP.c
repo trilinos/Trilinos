@@ -12,6 +12,12 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 
+#ifdef GEOMETRIC_2D
+extern double lambda_max,lambda_min, sten_a,sten_b,sten_c, sten_d,sten_e,sten_f,
+  sten_g,sten_h,sten_i;
+extern int mls_or_gs, mls_order;
+#endif
+
 #include <math.h>
 #include "ml_struct.h"
 #include "ml_op_utils.h"
@@ -153,6 +159,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #ifdef ML_TIMING
    double t0;
 #endif
+#ifdef GEOMETRIC_2D
+   struct  ML_CSR_MSRdata *csr_data;
+   int m,i,j,row,k, bsize;
+   double s;
+#endif
 
    if (ag->nullspace_corrupted == ML_YES) {
      printf("Can not reuse aggregate object when the fine grid operator\n");
@@ -195,6 +206,41 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
+
+#ifdef GEOMETRIC_2D
+   csr_data = ml->Amat[next].data;
+   m = (int) sqrt( ((double)ml->Amat[next].invec_leng) + .00001); k = m*m+1;
+   csr_data->columns[0] = k;
+   bsize = csr_data->columns[m*m];
+   for (j = 0; j < m; j++) {
+     for (i = 0; i < m; i++) {
+       row = i +j*m;
+       csr_data->columns[k]= row+1;
+       if ((row)%m !=     m-1                       ) csr_data->values[k++] = sten_f;
+       csr_data->columns[k]= row-1;
+       if ((row)%m !=       0                       ) csr_data->values[k++] = sten_d;
+       csr_data->columns[k]= row+m-1; 
+       if (((row/(m))%m != m-1) &&((row)%m != 0)    ) csr_data->values[k++] = sten_a;
+       csr_data->columns[k]= row+m;
+       if ((row/(m))%m != m-1                       ) csr_data->values[k++] = sten_b;
+       csr_data->columns[k]= row+m+1;
+       if (((row/(m))%m != m-1) &&((row)%m !=   m-1)) csr_data->values[k++] = sten_c;
+       csr_data->columns[k]= row-m-1;
+       if (((row/(m))%m !=   0) &&((row)%m !=     0)) csr_data->values[k++] = sten_g;
+       csr_data->columns[k]= row-m;
+       if ((row/(m))%m !=   0                       ) csr_data->values[k++] = sten_h;
+       csr_data->columns[k]= row-m+1;
+       if (((row/(m))%m !=   0) && ((row)%m !=  m-1)) csr_data->values[k++] = sten_i;
+       csr_data->values[row]     = sten_e;
+       csr_data->columns[row+1] = k;
+     }
+   }
+   if (k > bsize) {
+     printf("problemssssssssssssssssssss %d %d\n",k,bsize);
+     exit(1);
+   }
+#endif
+
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
