@@ -57,6 +57,7 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
   }
 
   for( i=0 ; i<MaxLevels ; i++ ) {
+    info[i].id = -1;
     info[i].x = NULL;
     info[i].y = NULL;
     info[i].z = NULL;
@@ -64,6 +65,9 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
     info[i].Nlocal = 0;
     info[i].Naggregates = 0;
     info[i].is_filled = ML_NO;
+    info[i].local_or_global = -1;
+    info[i].graph_radius = -1;
+    info[i].Amatrix = NULL;
   }
 
   ag->aggr_viz_and_stats = (void *)info;
@@ -726,6 +730,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
   int Nrows, Naggregates_global, Nrows_global, offset;
+  int mypid = ml->comm->ML_mypid;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -748,8 +753,16 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   /* copy ML_Operator pointers so that they can be used to viz graphs       */
   /* ********************************************************************** */
 
+  if (incr_or_decr == ML_DECREASING) {
+    for( i=finest_level; i>=coarsest_level; i--)
+      info[i].Amatrix = &(ml->Amat[i]);
+  }
+  else {
+    for( i=coarsest_level; i<=finest_level; i++)
+      info[i].Amatrix = &(ml->Amat[i]);
+  }
+
   for( i=0 ; i<MaxMgLevels ; i++ ) {
-    info[i].Amatrix = &(ml->Amat[i]);
     if( info[i].Amatrix != NULL )
       ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);  
   }
@@ -794,46 +807,44 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
   }
 
-  if( dim > 0 ) {
-    switch( incr_or_decr ) {
-    case ML_INCREASING:
-      for( ilevel=finest_level ; ilevel<coarsest_level ; ilevel++ ) {
+  if( dim > 0 )
+  {
+    switch( incr_or_decr )
+    {
+      case ML_INCREASING:
+        for( ilevel=finest_level ; ilevel<coarsest_level ; ilevel++ )
+        {
+          Naggregates = info[ilevel].Naggregates;
+          switch( dim ) {
+            case 3:
+              info[ilevel+1].z = (double *)malloc(sizeof(double)*Naggregates);
+            case 2:
+              info[ilevel+1].y = (double *)malloc(sizeof(double)*Naggregates);
+            case 1:
+              info[ilevel+1].x = (double *)malloc(sizeof(double)*Naggregates);
+          }
+          ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
+                         info[ilevel+1], comm);
+        }
+        break;
+      case ML_DECREASING:
+        for( ilevel=finest_level ; ilevel>coarsest_level ; ilevel-- )
+        {
+          Naggregates = info[ilevel].Naggregates;
 
-	Naggregates = info[ilevel].Naggregates;
-	switch( dim ) {
-	case 3:
-	  info[ilevel+1].z = (double *)malloc(sizeof(double)*Naggregates);
-	case 2:
-	  info[ilevel+1].y = (double *)malloc(sizeof(double)*Naggregates);
-	case 1:
-	  info[ilevel+1].x = (double *)malloc(sizeof(double)*Naggregates);
-	}
-	ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
-					     info[ilevel+1],
-					     comm);
-      }
-      break;
-    case ML_DECREASING:
-      for( ilevel=finest_level ; ilevel>coarsest_level ; ilevel-- ) {
-
-	Naggregates = info[ilevel].Naggregates;
-	
-	switch( dim ) {
-	case 3:
-	  info[ilevel-1].z = (double *)malloc(sizeof(double)*Naggregates);
-	case 2:
-	  info[ilevel-1].y = (double *)malloc(sizeof(double)*Naggregates);
-	case 1:
-	  info[ilevel-1].x = (double *)malloc(sizeof(double)*Naggregates);
-	}
-	ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
-					     info[ilevel-1],
-					     comm);
-      }
-      
-      break;
+          switch( dim ) {
+            case 3:
+              info[ilevel-1].z = (double *)malloc(sizeof(double)*Naggregates);
+            case 2:
+              info[ilevel-1].y = (double *)malloc(sizeof(double)*Naggregates);
+            case 1:
+              info[ilevel-1].x = (double *)malloc(sizeof(double)*Naggregates);
+          }
+          ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
+                         info[ilevel-1], comm);
+        }
+        break;
     }
-    
   }
 
   /* ********************************************************************** */
@@ -893,6 +904,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
     if( info[ilevel].is_filled == ML_YES ) {
 
+
       	Nlocal = info[ilevel].Nlocal;
 	Naggregates = info[ilevel].Naggregates;
 	radius = info[ilevel].graph_radius;
@@ -904,7 +916,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	case ML_LOCAL_INDICES:
 	  Naggregates_global = ML_gsum_int(Naggregates,comm);
 #ifdef ML_MPI
-	  MPI_Scan(&offset, &Naggregates, 1, MPI_INT, MPI_SUM, comm->USR_comm);
+	  MPI_Scan(&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
 	  offset -= Naggregates;
 #else
 	  offset = 0;
@@ -926,14 +938,9 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	  iaggre = info[ilevel].graph_decomposition[i]+offset;
 
 	  if( iaggre >= Naggregates_global ) {
-	    fprintf(stderr,
-		    "*ML*ERR* error : %d >= %d\n"
-		    "*ML*ERR* (file %s, line %d\n",
-		    iaggre,
-		    Naggregates_global,
-		    __FILE__,
-		    __LINE__ );
-	    exit( EXIT_FAILURE );
+	    pr_error("(%d) %s, line %d: %d >= %d, %d   %d\n",
+            mypid, __FILE__, __LINE__, iaggre, Naggregates_global,
+            info[ilevel].graph_decomposition[i],offset);
 	  }
 	  itemp[iaggre]++;
 
