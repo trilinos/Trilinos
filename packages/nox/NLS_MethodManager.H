@@ -1,10 +1,7 @@
-
 #ifndef NLS_METHOD_MANAGER_H
 #define NLS_METHOD_MANAGER_H
 
-// Forward Declarations
-class NLS_ParameterList;
-class NLS_Method;
+#include "NLS_Method.H"		// Base class
 
 //! Concrete class to control the instatiation of the derived 
 //! NLS_Method class.  
@@ -14,32 +11,28 @@ class NLS_Method;
 */
 
 //-----------------------------------------------------------------------------
-class NLS_MethodManager
-{
+class NLS_MethodManager : public NLS_Method {
+
 public:
-  //! NLS_MethodManager constructor.  User must supply a NLS_ParameterList
-  //! object.  The method manager then instantiates the correct 
-  //! concrete class and returns a NLS_Method object. 
-  NLS_MethodManager(NLS_ParameterList& params);
+  //! Generic interface to any of the various methods. 
+  NLS_MethodManager(NLS_Group& initial_guess, NLS_ParameterList& p);
 
   //! Destructor
   ~NLS_MethodManager();
 
-  //! Allocate memory for the NLS_Method object.
-  void createMethod();
 
-  //! Call one step of the nonlinear solver method
-  int iterate();
-  
-  //! Solve the nonlinear problem
-  int solve();
+  virtual void resetParameters(NLS_ParameterList& p);
+  virtual bool isConverged();
+  virtual int iterate();
+  virtual int solve();
+  virtual NLS_Group& getSolutionGroup() const;
+  virtual bool getProfileInfo(string& name, NLS_Parameter& p) const;
+
 
 private:
-  //!Reference to the ParameterList object
-  NLS_ParameterList &ParameterList;
 
-  //! Pointer to the Method object
-  NLS_Method *Method;
+  //! Pointer to the solver object
+  NLS_Method *ptr;
 };
 
 #endif
