@@ -98,10 +98,10 @@ NOX::StatusTest::Combo::~Combo()
 
 NOX::StatusTest::StatusType NOX::StatusTest::Combo::checkStatus(const Solver::Generic& problem)
 {
-  return checkStatus(problem, NOX::StatusTest::Minimal);
+  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
 }
 
-NOX::StatusTest::StatusType NOX::StatusTest::Combo::checkStatus(const Solver::Generic& problem, 
+NOX::StatusTest::StatusType NOX::StatusTest::Combo::checkStatusEfficiently(const Solver::Generic& problem, 
 					       NOX::StatusTest::CheckType checkType)
 {
   if (type == OR)
@@ -128,7 +128,7 @@ void NOX::StatusTest::Combo::orOp(const Solver::Generic& problem, NOX::StatusTes
   // any, that is unconverged is the status that it sets itself too.
   for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
   {
-    NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
+    NOX::StatusTest::StatusType s = (*i)->checkStatusEfficiently(problem, checkType);
 
     if ((status == Unconverged) && (s != Unconverged)) 
     {
@@ -155,7 +155,7 @@ void NOX::StatusTest::Combo::andOp(const Solver::Generic& problem, NOX::StatusTe
 
   for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
+    NOX::StatusTest::StatusType s = (*i)->checkStatusEfficiently(problem, checkType);
 
     // If any of the tests are unconverged, then the AND test is
     // unconverged.

@@ -67,10 +67,10 @@ NormUpdate::~NormUpdate()
 
 StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
 {
-  return checkStatus(problem, NOX::StatusTest::Minimal);
+  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
 }
 
-StatusType NormUpdate::checkStatus(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+StatusType NormUpdate::checkStatusEfficiently(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
 {
   if (checkType == None)
   {

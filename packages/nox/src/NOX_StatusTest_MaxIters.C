@@ -51,11 +51,11 @@ NOX::StatusTest::MaxIters::~MaxIters()
 
 NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::checkStatus(const Solver::Generic& problem)
 {
-  return checkStatus(problem, NOX::StatusTest::Minimal);
+  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
 }
 
-NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::checkStatus(const Solver::Generic& problem, 
-								   NOX::StatusTest::CheckType checkType)
+NOX::StatusTest::StatusType NOX::StatusTest::MaxIters::checkStatusEfficiently(const Solver::Generic& problem, 
+									      NOX::StatusTest::CheckType checkType)
 {
   switch (checkType)
   {

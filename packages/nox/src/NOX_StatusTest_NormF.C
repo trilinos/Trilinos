@@ -140,11 +140,11 @@ void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
 
 NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem)
 {
-  return checkStatus(problem, NOX::StatusTest::Minimal);
+  return checkStatusEfficiently(problem, NOX::StatusTest::Minimal);
 }
 
-NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem,
-								NOX::StatusTest::CheckType checkType)
+NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatusEfficiently(const NOX::Solver::Generic& problem,
+									   NOX::StatusTest::CheckType checkType)
 {
   if (checkType == NOX::StatusTest::None)
   {

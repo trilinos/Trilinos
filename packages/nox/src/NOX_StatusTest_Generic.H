@@ -88,17 +88,14 @@ public:
   //! %Test the stopping criterion
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem) = 0;
 
-  //! %Test the stopping criterion
+  //! %Test the stopping criterion efficiently
   /*!  
-    The test can (and should, if possible) be skipped if \c
+    The test can (and should, if possible) be skipped if 
     checkType is NOX::StatusType::None.  If the test is skipped, then
     the status should be set to NOX::StatusTest::Unevaluated.
   */
-  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem, 
-						  NOX::StatusTest::CheckType checkType)
-  { 
-    return checkStatus(problem); 
-  };
+  virtual NOX::StatusTest::StatusType checkStatusEfficiently(const NOX::Solver::Generic& problem, 
+							     NOX::StatusTest::CheckType checkType);
 
   //! Return the result of the most recent checkStatus call
   virtual NOX::StatusTest::StatusType getStatus() const = 0;

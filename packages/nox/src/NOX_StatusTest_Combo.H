@@ -102,7 +102,7 @@ public:
     
     See addOp() and orOp() for details.
   */
-  virtual StatusType checkStatus(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
+  virtual StatusType checkStatusEfficiently(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
 
   virtual StatusType getStatus() const;
 

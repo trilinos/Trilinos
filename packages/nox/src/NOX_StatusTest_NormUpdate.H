@@ -51,15 +51,15 @@ namespace StatusTest {
   \brief Various convergence tests based on the norm of the change in
   the solution vector, \f$ x \f$, between outer iterations.
 
-  If checkStatus is called with the type set to NOX::StatusTest::None,
+  If checkStatusEfficiently is called with the type set to NOX::StatusTest::None,
   then the status is set to NOX::StatusTest::Unevaluated and returned.
   (Also #normUpdate is set to -1.0.)
 
-  If checkStatus is called on the first iteration, then the status is
+  If checkStatusEfficiently is called on the first iteration, then the status is
   set to NOX::StatusTest::Unconverged and returned.  (Also #normUpdate is
   set to -1.0.)
 
-  If checkStatus is called on a problem where the solution group does
+  If checkStatusEfficiently is called on a problem where the solution group does
   not have F evaluated (i.e., problem.getSolutionGroup().isF() is
   false), then the status is set to NOX::StatusTest::Unconverged and
   returned.   (Also #normUpdate is set to -1.0.)
@@ -131,7 +131,7 @@ public:
 
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
 
-  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem, 
+  virtual NOX::StatusTest::StatusType checkStatusEfficiently(const NOX::Solver::Generic& problem, 
 						  NOX::StatusTest::CheckType checkType);
 
   virtual NOX::StatusTest::StatusType getStatus() const;
