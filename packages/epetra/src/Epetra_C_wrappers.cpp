@@ -50,348 +50,348 @@
 extern "C" {
 #endif
 
-/////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
 //                  Epetra_Comm                    //
 ///////////////////////////////////////////////////
 
 #ifdef EPETRA_MPI
-EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create1)() {
-  Epetra_Comm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  return((EPETRA_OBJECT_PTR ) comm_);
-}
-EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create2)(MPI_Comm * comm) {
-  Epetra_Comm *comm_ = new Epetra_MpiComm(*comm);
-  return((EPETRA_OBJECT_PTR ) comm_);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create1)() {
+    Epetra_Comm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
+    return((EPETRA_OBJECT_PTR ) comm_);
+  }
+  EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create2)(MPI_Comm * comm) {
+    Epetra_Comm *comm_ = new Epetra_MpiComm(*comm);
+    return((EPETRA_OBJECT_PTR ) comm_);
+  }
 #endif
 
-EPETRA_OBJECT_PTR MANGLE(epetra_serialcomm_create)() {
-  Epetra_Comm *comm = new Epetra_SerialComm();
-  return((EPETRA_OBJECT_PTR ) comm);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_serialcomm_create)() {
+    Epetra_Comm *comm = new Epetra_SerialComm();
+    return((EPETRA_OBJECT_PTR ) comm);
+  }
 
-int MANGLE(epetra_comm_mypid)(EPETRA_OBJECT_REF comm) {
-  Epetra_Comm *comm_ = (Epetra_Comm *) comm;
-  return(comm_->MyPID());
+  int MANGLE(epetra_comm_mypid)(EPETRA_OBJECT_REF comm) {
+    Epetra_Comm *comm_ = (Epetra_Comm *) comm;
+    return(comm_->MyPID());
   
-}
-int MANGLE(epetra_comm_numproc)(EPETRA_OBJECT_REF comm) {
-  Epetra_Comm* comm_ = (Epetra_Comm *) comm;
-  return(comm_->NumProc());
+  }
+  int MANGLE(epetra_comm_numproc)(EPETRA_OBJECT_REF comm) {
+    Epetra_Comm* comm_ = (Epetra_Comm *) comm;
+    return(comm_->NumProc());
   
-}
+  }
 
-void MANGLE(epetra_comm_barrier)(EPETRA_OBJECT_REF comm) {
-  Epetra_Comm* comm_ = (Epetra_Comm *) comm;
-  comm_->Barrier();
+  void MANGLE(epetra_comm_barrier)(EPETRA_OBJECT_REF comm) {
+    Epetra_Comm* comm_ = (Epetra_Comm *) comm;
+    comm_->Barrier();
   
-}
+  }
 
-void MANGLE(epetra_comm_destroy)(EPETRA_OBJECT_REF comm) {
+  void MANGLE(epetra_comm_destroy)(EPETRA_OBJECT_REF comm) {
     delete (Epetra_Comm *) comm;
-}
+  }
 
-/////////////////////////////////////////////////////
-//                  Epetra_Map                     //
-///////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  //                  Epetra_Map                     //
+  ///////////////////////////////////////////////////
 
-EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalElements,
-																						 EPETRA_INT indexBase,
-                                             EPETRA_OBJECT_REF comm) {
-  Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
-  Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_OBJECT_PTR ) map);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalElements,
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
 
-EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalElements,
-																						 EPETRA_INT numMyElements,
-																						 EPETRA_INT indexBase,
-                                             EPETRA_OBJECT_REF comm) {
-  Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
-  Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
-																	 EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_OBJECT_PTR ) map);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalElements,
+					       EPETRA_INT numMyElements,
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
+				     EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
 
-EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalElements,
-					   EPETRA_INT numLocalElements,
-					   int *updateList, 
-					   EPETRA_INT indexBase,
-					   EPETRA_OBJECT_REF comm) {
-  Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
-  Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),
-                                updateList, EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_OBJECT_PTR ) map);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalElements,
+					       EPETRA_INT numLocalElements,
+					       int *updateList, 
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),
+				     updateList, EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
 
-int MANGLE(epetra_map_nummyelements)(EPETRA_OBJECT_REF map) {
-  Epetra_Map * map_ = (Epetra_Map *) map;
-  return(map_->NumMyElements());
-}
+  int MANGLE(epetra_map_nummyelements)(EPETRA_OBJECT_REF map) {
+    Epetra_Map * map_ = (Epetra_Map *) map;
+    return(map_->NumMyElements());
+  }
 
-int MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map) {
-  Epetra_Map * map_ = (Epetra_Map *) map;
-  return(map_->NumGlobalElements());
-}
+  int MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map) {
+    Epetra_Map * map_ = (Epetra_Map *) map;
+    return(map_->NumGlobalElements());
+  }
 #ifndef EPETRA_FORTRAN  /* Fortran cannot receive a pointer to int */
-int * MANGLE(epetra_map_myglobalelements)(EPETRA_OBJECT_REF map) {
-  Epetra_Map * map_ = (Epetra_Map *) map;
-  return(map_->MyGlobalElements());
-}
+  int * MANGLE(epetra_map_myglobalelements)(EPETRA_OBJECT_REF map) {
+    Epetra_Map * map_ = (Epetra_Map *) map;
+    return(map_->MyGlobalElements());
+  }
 #endif
-EPETRA_OBJECT_PTR MANGLE(epetra_map_comm)(EPETRA_OBJECT_REF map) {
-  Epetra_Map * map_ = (Epetra_Map *) map;
-  return((EPETRA_OBJECT_PTR) &(map_->Comm()));
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_comm)(EPETRA_OBJECT_REF map) {
+    Epetra_Map * map_ = (Epetra_Map *) map;
+    return((EPETRA_OBJECT_PTR) &(map_->Comm()));
+  }
 
-void MANGLE(epetra_map_destroy)(EPETRA_OBJECT_REF map)
-{
+  void MANGLE(epetra_map_destroy)(EPETRA_OBJECT_REF map)
+  {
     delete (Epetra_Map *) map;
-}
+  }
 
-/////////////////////////////////////////////////////
-//                  Epetra_Vector                  //
-///////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  //                  Epetra_Vector                  //
+  ///////////////////////////////////////////////////
 
-EPETRA_OBJECT_PTR MANGLE(epetra_vector_create1)(EPETRA_OBJECT_REF map) {
-  Epetra_Map& map_ = *(Epetra_Map *) map;
-  Epetra_Vector *vector = new Epetra_Vector(map_);
-  return((EPETRA_OBJECT_PTR ) vector);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_vector_create1)(EPETRA_OBJECT_REF map) {
+    Epetra_Map& map_ = *(Epetra_Map *) map;
+    Epetra_Vector *vector = new Epetra_Vector(map_);
+    return((EPETRA_OBJECT_PTR ) vector);
+  }
 
-EPETRA_OBJECT_PTR MANGLE(epetra_vector_create2)(EPETRA_INT CopyValues, EPETRA_OBJECT_REF map,
-																								double * V) {
-	Epetra_DataAccess CV = View;
-	if (EPETRA_DEREF(CopyValues)==1) CV = Copy;
-  Epetra_Map& map_ = *(Epetra_Map *) map;
-  Epetra_Vector *vector = new Epetra_Vector(CV, map_, V);
-  return((EPETRA_OBJECT_PTR ) vector);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_vector_create2)(EPETRA_INT CopyValues, EPETRA_OBJECT_REF map,
+						  double * V) {
+    Epetra_DataAccess CV = View;
+    if (EPETRA_DEREF(CopyValues)==1) CV = Copy;
+    Epetra_Map& map_ = *(Epetra_Map *) map;
+    Epetra_Vector *vector = new Epetra_Vector(CV, map_, V);
+    return((EPETRA_OBJECT_PTR ) vector);
+  }
 
-int MANGLE(epetra_vector_putscalar)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalar) {
-  Epetra_Vector *x_ = (Epetra_Vector *) x;
-  return(x_->PutScalar(EPETRA_DEREF(scalar)));
-}
+  int MANGLE(epetra_vector_putscalar)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalar) {
+    Epetra_Vector *x_ = (Epetra_Vector *) x;
+    return(x_->PutScalar(EPETRA_DEREF(scalar)));
+  }
 
-int MANGLE(epetra_vector_norm1)(EPETRA_OBJECT_REF x, double *scalar) {
-  Epetra_Vector *x_ = (Epetra_Vector *) x;
-  return(x_->Norm1(scalar));
-}
+  int MANGLE(epetra_vector_norm1)(EPETRA_OBJECT_REF x, double *scalar) {
+    Epetra_Vector *x_ = (Epetra_Vector *) x;
+    return(x_->Norm1(scalar));
+  }
 
-int MANGLE(epetra_vector_norm2)(EPETRA_OBJECT_REF x, double *scalar) {
-  Epetra_Vector *x_ = (Epetra_Vector *) x;
-  return(x_->Norm2(scalar));
-}
+  int MANGLE(epetra_vector_norm2)(EPETRA_OBJECT_REF x, double *scalar) {
+    Epetra_Vector *x_ = (Epetra_Vector *) x;
+    return(x_->Norm2(scalar));
+  }
 
-int MANGLE(epetra_vector_random)(EPETRA_OBJECT_REF x) {
-  Epetra_Vector *x_ = (Epetra_Vector *) x;
-  return(x_->Random());
-}
+  int MANGLE(epetra_vector_random)(EPETRA_OBJECT_REF x) {
+    Epetra_Vector *x_ = (Epetra_Vector *) x;
+    return(x_->Random());
+  }
 
-int MANGLE(epetra_vector_update)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalara, EPETRA_OBJECT_REF a, 
-                                 EPETRA_DOUBLE scalarb, EPETRA_OBJECT_REF b, EPETRA_DOUBLE scalarx) {
-  Epetra_Vector *x_ = (Epetra_Vector *) x;
-  Epetra_Vector& a_ = *(Epetra_Vector *) a;
-  Epetra_Vector& b_ = *(Epetra_Vector *) b;
-  return(x_->Update(EPETRA_DEREF(scalara), a_, EPETRA_DEREF(scalarb), b_, EPETRA_DEREF(scalarx)));
-}
+  int MANGLE(epetra_vector_update)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalara, EPETRA_OBJECT_REF a, 
+				   EPETRA_DOUBLE scalarb, EPETRA_OBJECT_REF b, EPETRA_DOUBLE scalarx) {
+    Epetra_Vector *x_ = (Epetra_Vector *) x;
+    Epetra_Vector& a_ = *(Epetra_Vector *) a;
+    Epetra_Vector& b_ = *(Epetra_Vector *) b;
+    return(x_->Update(EPETRA_DEREF(scalara), a_, EPETRA_DEREF(scalarb), b_, EPETRA_DEREF(scalarx)));
+  }
 
-void MANGLE(epetra_vector_print)(EPETRA_OBJECT_REF x) {
-	cout << *(Epetra_Vector *) x;
-}
+  void MANGLE(epetra_vector_print)(EPETRA_OBJECT_REF x) {
+    cout << *(Epetra_Vector *) x;
+  }
 
-void MANGLE(epetra_vector_destroy)(EPETRA_OBJECT_REF x) {
+  void MANGLE(epetra_vector_destroy)(EPETRA_OBJECT_REF x) {
     delete (Epetra_Vector *) x;
-}
+  }
 
-/////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
 #ifdef SKIP4NOW /* Comment this out for now */
-/////////////////////////////////////////////////////
-//                  Epetra_DVBR_Matrix         //
-///////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  //                  Epetra_DVBR_Matrix         //
+  ///////////////////////////////////////////////////
 
 
-EPETRA_MATRIX_POINTER MANGLE(epetra_rdp_dvbr_matrix_create)
-                   (EPETRA_MAP rowmap)
-{
-  Epetra_BlockMap& rowmap_ = *(Epetra_BlockMap *) rowmap;
-  Epetra_DVBR_Matrix *B = new Epetra_DVBR_Matrix(rowmap_);
-  return((EPETRA_MATRIX_POINTER) B);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_dvbr_matrix_create)
+    (EPETRA_MAP rowmap)
+  {
+    Epetra_BlockMap& rowmap_ = *(Epetra_BlockMap *) rowmap;
+    Epetra_DVBR_Matrix *B = new Epetra_DVBR_Matrix(rowmap_);
+    return((EPETRA_OBJECT_PTR) B);
+  }
 
-int MANGLE(epetra_rdp_dvbr_matrix_allocate)
-          (EPETRA_MATRIX A, int* numNzBlks, int* blkColInds)
-{
-  Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
-  return(B->allocate(numNzBlks, blkColInds));
-}
-int MANGLE(epetra_rdp_dvbr_matrix_putblockrow)
-          (EPETRA_MATRIX A, EPETRA_INT blk_row, EPETRA_INT num_nz_blocks, 
-				  double* vals, int* blk_col_inds)
-{
-  Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
-  return(B->putBlockRow( EPETRA_DEREF(blk_row), EPETRA_DEREF(num_nz_blocks), vals, 
-                         blk_col_inds));
-}
+  int MANGLE(epetra_rdp_dvbr_matrix_allocate)
+    (EPETRA_MATRIX A, int* numNzBlks, int* blkColInds)
+  {
+    Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
+    return(B->allocate(numNzBlks, blkColInds));
+  }
+  int MANGLE(epetra_rdp_dvbr_matrix_putblockrow)
+    (EPETRA_MATRIX A, EPETRA_INT blk_row, EPETRA_INT num_nz_blocks, 
+     double* vals, int* blk_col_inds)
+  {
+    Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
+    return(B->putBlockRow( EPETRA_DEREF(blk_row), EPETRA_DEREF(num_nz_blocks), vals, 
+			   blk_col_inds));
+  }
 
-int MANGLE(epetra_rdp_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A)
-{
-  Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
-  return(B->fillComplete());
-}
+  int MANGLE(epetra_rdp_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A)
+  {
+    Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
+    return(B->fillComplete());
+  }
 
-int MANGLE(epetra_rdp_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
-                                             EPETRA_VECTOR y)
-{
+  int MANGLE(epetra_rdp_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
+					    EPETRA_VECTOR y)
+  {
     Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
     const Epetra_Vector& x1 = *(Epetra_Vector *) x;
     Epetra_Vector& y1 = *(Epetra_Vector *) y;
     return(B->matvec(x1, y1));
-}
+  }
 
-int MANGLE(epetra_rdp_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
-                                          EPETRA_MULTIVECTOR x,
-                                          EPETRA_MULTIVECTOR y)
-{
+  int MANGLE(epetra_rdp_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
+						 EPETRA_MULTIVECTOR x,
+						 EPETRA_MULTIVECTOR y)
+  {
     Epetra_DVBR_Matrix *B = (Epetra_DVBR_Matrix *) A;
     const Epetra_MultiVector& x1 = *(Epetra_MultiVector *) x;
     Epetra_MultiVector& y1 = *(Epetra_MultiVector *) y;
     return(B->matvec(x1, y1));
-}
+  }
 
-void MANGLE(epetra_rdp_dvbr_matrix_destroy)(EPETRA_MATRIX A)
-{
+  void MANGLE(epetra_rdp_dvbr_matrix_destroy)(EPETRA_MATRIX A)
+  {
     delete (Epetra_DVBR_Matrix *) A;
-}
+  }
 
-/////////////////////////////////////////////////////
-//                  Epetra_DCRS_Matrix         //
-///////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  //                  Epetra_DCRS_Matrix         //
+  ///////////////////////////////////////////////////
 
 
-EPETRA_MATRIX_POINTER MANGLE(epetra_rdp_dcrs_matrix_create) (EPETRA_MAP rowmap)
-{
-  Epetra_Map& rowmap_ = *(Epetra_Map *) rowmap;
-  Epetra_DCRS_Matrix *B = new Epetra_DCRS_Matrix(rowmap_);
-  return((EPETRA_MATRIX_POINTER) B);
-}
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_dcrs_matrix_create) (EPETRA_MAP rowmap)
+  {
+    Epetra_Map& rowmap_ = *(Epetra_Map *) rowmap;
+    Epetra_DCRS_Matrix *B = new Epetra_DCRS_Matrix(rowmap_);
+    return((EPETRA_OBJECT_PTR) B);
+  }
 
-int MANGLE(epetra_rdp_dcrs_matrix_allocate)
-          (EPETRA_MATRIX A, int* rowLengths)
-{
-  Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
-  return(B->allocate(rowLengths));
-}
-int MANGLE(epetra_rdp_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row,
-EPETRA_INT num_nz, 
-				  double* vals, int* col_inds)
-{
-  Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
-  return(B->putRow( EPETRA_DEREF(row), EPETRA_DEREF(num_nz), vals, col_inds));
-}
+  int MANGLE(epetra_rdp_dcrs_matrix_allocate)
+    (EPETRA_MATRIX A, int* rowLengths)
+  {
+    Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
+    return(B->allocate(rowLengths));
+  }
+  int MANGLE(epetra_rdp_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row,
+					    EPETRA_INT num_nz, 
+					    double* vals, int* col_inds)
+  {
+    Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
+    return(B->putRow( EPETRA_DEREF(row), EPETRA_DEREF(num_nz), vals, col_inds));
+  }
 
-int MANGLE(epetra_rdp_dcrs_matrix_sumintodiagonal)
-          (EPETRA_MATRIX A, double* diagonal)
-{
-  Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
-  return(B->sumIntoDiagonal( diagonal));
-}
+  int MANGLE(epetra_rdp_dcrs_matrix_sumintodiagonal)
+    (EPETRA_MATRIX A, double* diagonal)
+  {
+    Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
+    return(B->sumIntoDiagonal( diagonal));
+  }
 
-int MANGLE(epetra_rdp_dcrs_matrix_fillcomplete)(EPETRA_MATRIX A)
-{
-  Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
-  return(B->fillComplete());
-}
+  int MANGLE(epetra_rdp_dcrs_matrix_fillcomplete)(EPETRA_MATRIX A)
+  {
+    Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
+    return(B->fillComplete());
+  }
 
-int MANGLE(epetra_rdp_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
-                                             EPETRA_VECTOR y)
-{
+  int MANGLE(epetra_rdp_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x,
+					    EPETRA_VECTOR y)
+  {
     Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
     const Epetra_Vector& x1 = *(Epetra_Vector *) x;
     Epetra_Vector& y1 = *(Epetra_Vector *) y;
     return(B->matvec(x1, y1));
-}
+  }
 
-int MANGLE(epetra_rdp_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
-                                          EPETRA_MULTIVECTOR x,
-                                          EPETRA_MULTIVECTOR y)
-{
+  int MANGLE(epetra_rdp_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
+						 EPETRA_MULTIVECTOR x,
+						 EPETRA_MULTIVECTOR y)
+  {
     Epetra_DCRS_Matrix *B = (Epetra_DCRS_Matrix *) A;
     const Epetra_MultiVector& x1 = *(Epetra_MultiVector *) x;
     Epetra_MultiVector& y1 = *(Epetra_MultiVector *) y;
     return(B->matvec(x1, y1));
-}
+  }
 
 
-void MANGLE(epetra_rdp_dcrs_matrix_destroy)(EPETRA_MATRIX A)
-{
+  void MANGLE(epetra_rdp_dcrs_matrix_destroy)(EPETRA_MATRIX A)
+  {
     delete (Epetra_DCRS_Matrix *) A;
+  }
+
+  //                  Epetra_MultiVector         //
+  ///////////////////////////////////////////////////
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create)()
+  {
+    Epetra_MultiVector *vector = new Epetra_MultiVector();
+    return((EPETRA_OBJECT_PTR) vector);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create1)
+    (EPETRA_MAP map, EPETRA_INT numVectors)
+  {
+    Epetra_Map& map_ = *(Epetra_Map *) map;
+    Epetra_MultiVector *vector = new Epetra_MultiVector(map_, EPETRA_DEREF(numVectors));
+    return((EPETRA_OBJECT_PTR) vector);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create2)(EPETRA_MAP map, 
+								    double *A, EPETRA_INT lda, EPETRA_INT numVectors)
+  {
+    Epetra_Map& map_ = *(Epetra_Map *) map;
+    Epetra_MultiVector *vector = new Epetra_MultiVector(map_, A, EPETRA_DEREF(lda),
+							EPETRA_DEREF(numVectors));
+    return((EPETRA_OBJECT_PTR) vector);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create3)(EPETRA_MAP map, 
+								    double **in_multiVector, EPETRA_INT numVectors)
+  {
+    Epetra_Map& map_ = *(Epetra_Map *) map;
+    Epetra_MultiVector *vector = new Epetra_MultiVector(map_, in_multiVector,
+							EPETRA_DEREF(numVectors));
+    return((EPETRA_OBJECT_PTR) vector);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create4)
+    (EPETRA_MULTIVECTOR in_multiVector)
+  {
+    Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
+    Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_);
+    return((EPETRA_OBJECT_PTR) vector);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create5)(EPETRA_MULTIVECTOR 
+								    in_multiVector, EPETRA_INT numVectors, int *vecIndices)
+  {
+    Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
+    Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_,
+							EPETRA_DEREF(numVectors), vecIndices));
+  return((EPETRA_OBJECT_PTR) vector);
 }
 
-//                  Epetra_MultiVector         //
-///////////////////////////////////////////////////
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create)()
-{
-  Epetra_MultiVector *vector = new Epetra_MultiVector();
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create1)
-                         (EPETRA_MAP map, EPETRA_INT numVectors)
-{
-  Epetra_Map& map_ = *(Epetra_Map *) map;
-  Epetra_MultiVector *vector = new Epetra_MultiVector(map_, EPETRA_DEREF(numVectors));
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create2)(EPETRA_MAP map, 
-                                double *A, EPETRA_INT lda, EPETRA_INT numVectors)
-{
-  Epetra_Map& map_ = *(Epetra_Map *) map;
-  Epetra_MultiVector *vector = new Epetra_MultiVector(map_, A, EPETRA_DEREF(lda),
-          EPETRA_DEREF(numVectors));
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create3)(EPETRA_MAP map, 
-                                double **in_multiVector, EPETRA_INT numVectors)
-{
-  Epetra_Map& map_ = *(Epetra_Map *) map;
-  Epetra_MultiVector *vector = new Epetra_MultiVector(map_, in_multiVector,
-                                                 EPETRA_DEREF(numVectors));
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create4)
-                         (EPETRA_MULTIVECTOR in_multiVector)
-{
-  Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
-  Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_);
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create5)(EPETRA_MULTIVECTOR 
-                        in_multiVector, EPETRA_INT numVectors, int *vecIndices)
-{
-  Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
-  Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_,
-                                   EPETRA_DEREF(numVectors), vecIndices));
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
-}
-
-EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_rdp_multivector_create6)(EPETRA_MULTIVECTOR
-                        in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors)
+EPETRA_OBJECT_PTR MANGLE(epetra_rdp_multivector_create6)(EPETRA_MULTIVECTOR
+								  in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors)
 {
   Epetra_MultiVector & in_multiVector_ = *(Epetra_MultiVector *) in_multiVector;
   Epetra_MultiVector *vector = new Epetra_MultiVector(in_multiVector_, EPETRA_DEREF(startindex),
-                                   EPETRA_DEREF(numvectors));
-  return((EPETRA_MULTIVECTOR_POINTER) vector);
+						      EPETRA_DEREF(numvectors));
+  return((EPETRA_OBJECT_PTR) vector);
 }
 
 int MANGLE(epetra_rdp_multivector_putmultivector)
-          (EPETRA_MULTIVECTOR multiVector, 
-                                       double **in_multiVector)
+  (EPETRA_MULTIVECTOR multiVector, 
+   double **in_multiVector)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   const double ** t = (const double **) in_multiVector;
@@ -399,7 +399,7 @@ int MANGLE(epetra_rdp_multivector_putmultivector)
 }
 
 int MANGLE(epetra_rdp_multivector_allocate)(EPETRA_MULTIVECTOR multiVector, 
-                                EPETRA_MAP map, EPETRA_INT numVectors)
+					    EPETRA_MAP map, EPETRA_INT numVectors)
 {
   Epetra_Map& map_ = *(Epetra_Map *) map;
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
@@ -407,22 +407,22 @@ int MANGLE(epetra_rdp_multivector_allocate)(EPETRA_MULTIVECTOR multiVector,
 }
 
 int MANGLE(epetra_rdp_multivector_putscalar)
-          (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar)
+  (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   return(multiVector_->putScalar(EPETRA_DEREF(scalar)));
 }
 
 int MANGLE(epetra_rdp_multivector_scale)
-          (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar)
+  (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   return(multiVector_->scale(EPETRA_DEREF(scalar)));
 }
 
 int MANGLE(epetra_rdp_multivector_scalecopy)
-          (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
-           EPETRA_DOUBLE scalar)
+  (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
+   EPETRA_DOUBLE scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& multiVector_in_ = *(Epetra_MultiVector *) multiVector_in;
@@ -430,8 +430,8 @@ int MANGLE(epetra_rdp_multivector_scalecopy)
 }
 
 int MANGLE(epetra_rdp_multivector_dotprod)
-          (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
-           double *scalar)
+  (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
+   double *scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& multiVector_in_ = *(Epetra_MultiVector *) multiVector_in;
@@ -439,8 +439,8 @@ int MANGLE(epetra_rdp_multivector_dotprod)
 }
 
 int MANGLE(epetra_rdp_multivector_addvec)
-          (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar, 
-           EPETRA_MULTIVECTOR multiVector_in)
+  (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar, 
+   EPETRA_MULTIVECTOR multiVector_in)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& multiVector_in_ = *(Epetra_MultiVector *) multiVector_in;
@@ -448,22 +448,22 @@ int MANGLE(epetra_rdp_multivector_addvec)
 }
 
 int MANGLE(epetra_rdp_multivector_norm1)
-          (EPETRA_MULTIVECTOR multiVector, double *scalar)
+  (EPETRA_MULTIVECTOR multiVector, double *scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   return(multiVector_->norm1(scalar));
 }
 
 int MANGLE(epetra_rdp_multivector_norm2)
-          (EPETRA_MULTIVECTOR multiVector, double *scalar)
+  (EPETRA_MULTIVECTOR multiVector, double *scalar)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   return(multiVector_->norm2(scalar));
 }
 
 int MANGLE(epetra_rdp_multivector_lincomb)(EPETRA_MULTIVECTOR multiVector,
-                               EPETRA_MULTIVECTOR b, 
-                               EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c)
+					   EPETRA_MULTIVECTOR b, 
+					   EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& b_ = *(Epetra_MultiVector *) b;
@@ -472,7 +472,7 @@ int MANGLE(epetra_rdp_multivector_lincomb)(EPETRA_MULTIVECTOR multiVector,
 }
 
 int MANGLE(epetra_rdp_multivector_random)
-          (EPETRA_MULTIVECTOR multiVector)
+  (EPETRA_MULTIVECTOR multiVector)
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   return(multiVector_->random());
@@ -491,9 +491,9 @@ int MANGLE(epetra_rdp_multivector_numvectors)(EPETRA_MULTIVECTOR multiVector)
 }
 
 int MANGLE(epetra_rdp_multivector_gemm)(EPETRA_MULTIVECTOR multiVector,
-                   EPETRA_INT transa, EPETRA_INT transb, EPETRA_DOUBLE alpha,
-                   EPETRA_MULTIVECTOR A, EPETRA_MULTIVECTOR B,
-                   EPETRA_DOUBLE beta )
+					EPETRA_INT transa, EPETRA_INT transb, EPETRA_DOUBLE alpha,
+					EPETRA_MULTIVECTOR A, EPETRA_MULTIVECTOR B,
+					EPETRA_DOUBLE beta )
 {
   Epetra_MultiVector *multiVector_ = (Epetra_MultiVector *) multiVector;
   Epetra_MultiVector& A_ = *(Epetra_MultiVector *) A;
@@ -505,99 +505,99 @@ int MANGLE(epetra_rdp_multivector_gemm)(EPETRA_MULTIVECTOR multiVector,
 
 void MANGLE(epetra_rdp_multivector_destroy)(EPETRA_MULTIVECTOR multiVector)
 {
-    delete (Epetra_MultiVector *) multiVector;
+  delete (Epetra_MultiVector *) multiVector;
 }
 
 /////////////////////////////////////////////////////
 //                  Epetra_BlockMap                //
 ///////////////////////////////////////////////////
 
-EPETRA_BLOCKMAP_POINTER MANGLE(epetra_blockmap_create1)(
-		      EPETRA_INT numGlobalElements, EPETRA_INT numLocalElements, int *updateList,
-		      EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
-		      int *blockUpdateList,
-		      int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
+EPETRA_OBJECT_PTR MANGLE(epetra_blockmap_create1)(
+							EPETRA_INT numGlobalElements, EPETRA_INT numLocalElements, int *updateList,
+							EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
+							int *blockUpdateList,
+							int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_BlockMap *blockmap = new Epetra_BlockMap(EPETRA_DEREF(numGlobalElements),
-                           EPETRA_DEREF(numLocalElements), updateList,
-                           EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks),
-                           blockUpdateList,
-                           blockSizes, EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_BLOCKMAP_POINTER ) blockmap);
+						  EPETRA_DEREF(numLocalElements), updateList,
+						  EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks),
+						  blockUpdateList,
+						  blockSizes, EPETRA_DEREF(indexBase), comm_);
+  return((EPETRA_OBJECT_PTR ) blockmap);
 }
 
-EPETRA_BLOCKMAP_POINTER MANGLE(epetra_blockmap_create2)(
-		      EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
-		      int *blockUpdateList,
-		      int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
+EPETRA_OBJECT_PTR MANGLE(epetra_blockmap_create2)(
+							EPETRA_INT numGlobalBlocks, EPETRA_INT numLocalBlocks, 
+							int *blockUpdateList,
+							int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_BlockMap *blockmap = new Epetra_BlockMap(
-                           EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks), 
-													 blockUpdateList,
-                           blockSizes, EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_BLOCKMAP_POINTER ) blockmap);
+						  EPETRA_DEREF(numGlobalBlocks), EPETRA_DEREF(numLocalBlocks), 
+						  blockUpdateList,
+						  blockSizes, EPETRA_DEREF(indexBase), comm_);
+  return((EPETRA_OBJECT_PTR ) blockmap);
 }
 
 void MANGLE(epetra_blockmap_destroy)(EPETRA_BLOCKMAP blockmap)
 {
-    delete (Epetra_BlockMap *) blockmap;
+  delete (Epetra_BlockMap *) blockmap;
 }
 
 /////////////////////////////////////////////////////
 //                  Epetra_LocalMap                //
 ///////////////////////////////////////////////////
 
-EPETRA_LOCALMAP_POINTER MANGLE(epetra_localmap_create)(EPETRA_INT numLocalElements,
-                               EPETRA_INT indexBase, EPETRA_COMM comm)
+EPETRA_OBJECT_PTR MANGLE(epetra_localmap_create)(EPETRA_INT numLocalElements,
+						       EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalMap *localmap = new Epetra_LocalMap(EPETRA_DEREF(numLocalElements),
-                    EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_LOCALMAP_POINTER ) localmap);
+						  EPETRA_DEREF(indexBase), comm_);
+  return((EPETRA_OBJECT_PTR ) localmap);
 }
 
 void MANGLE(epetra_localmap_destroy)(EPETRA_LOCALMAP localmap)
 {
-    delete (Epetra_LocalMap *) localmap;
+  delete (Epetra_LocalMap *) localmap;
 }
 
 /////////////////////////////////////////////////////
 //                  Epetra_LocalBlockMap           //
 ///////////////////////////////////////////////////
 
-EPETRA_LOCALBLOCKMAP_POINTER MANGLE(epetra_localblockmap_create1)(
-		      EPETRA_INT numLocalElements,
-		      EPETRA_INT numLocalBlocks,
-		      int* blockSizes,
-		      EPETRA_INT indexBase, EPETRA_COMM comm)
+EPETRA_OBJECT_PTR MANGLE(epetra_localblockmap_create1)(
+								  EPETRA_INT numLocalElements,
+								  EPETRA_INT numLocalBlocks,
+								  int* blockSizes,
+								  EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalBlockMap *localblockmap = new
-                      Epetra_LocalBlockMap(EPETRA_DEREF(numLocalElements),
-                                  EPETRA_DEREF(numLocalBlocks),
-                                  blockSizes,
-                                  EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_LOCALBLOCKMAP_POINTER ) localblockmap);
+    Epetra_LocalBlockMap(EPETRA_DEREF(numLocalElements),
+			 EPETRA_DEREF(numLocalBlocks),
+			 blockSizes,
+			 EPETRA_DEREF(indexBase), comm_);
+  return((EPETRA_OBJECT_PTR ) localblockmap);
 }
 
-EPETRA_LOCALBLOCKMAP_POINTER MANGLE(epetra_localblockmap_create2)(
-		      EPETRA_INT numLocalBlocks,
-		      int* blockSizes,
-		      EPETRA_INT indexBase, EPETRA_COMM comm)
+EPETRA_OBJECT_PTR MANGLE(epetra_localblockmap_create2)(
+								  EPETRA_INT numLocalBlocks,
+								  int* blockSizes,
+								  EPETRA_INT indexBase, EPETRA_COMM comm)
 {
   Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
   Epetra_LocalBlockMap *localblockmap = new
-                      Epetra_LocalBlockMap(EPETRA_DEREF(numLocalBlocks),
-                                  blockSizes,
-                                  EPETRA_DEREF(indexBase), comm_);
-  return((EPETRA_LOCALBLOCKMAP_POINTER ) localblockmap);
+    Epetra_LocalBlockMap(EPETRA_DEREF(numLocalBlocks),
+			 blockSizes,
+			 EPETRA_DEREF(indexBase), comm_);
+  return((EPETRA_OBJECT_PTR ) localblockmap);
 }
 
 void MANGLE(epetra_localblockmap_destroy)(EPETRA_LOCALBLOCKMAP localblockmap)
 {
-    delete (Epetra_LocalBlockMap *) localblockmap;
+  delete (Epetra_LocalBlockMap *) localblockmap;
 }
 
 
