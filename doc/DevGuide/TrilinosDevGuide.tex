@@ -1251,7 +1251,9 @@ solvers and can bring multiple solvers to bear on a single problem.
 
 \section{Integrating a Package into Trilinos}
 \label{Section:IntegratingPackages}
-In sections~\ref{Subsection:AddSource},~\ref{Section:PackageRequirements}, 
+Before beginning to add a new package to Trilinos, permission must be 
+granted by the Trilinos Project leader.  In 
+Sections~\ref{Subsection:AddSource},~\ref{Section:PackageRequirements}, 
 and~\ref{Section:SuggestPractices} different aspects of adding a package to 
 Trilinos are discussed.  These sections cover how to add files to a package,
 what is required of a package, and how these requirements could be met, 
@@ -1261,7 +1263,7 @@ assumed throughout that a process like the one in
 Section~\ref{Subsection:AddSource} has already been used to add all of the 
 source files for the new package to the CVS repository.  This section also 
 assumes that the recommended directory structure for Trilinos packages 
-(src, test, example, doc subdirectories) is being used.
+(src, test, example, and doc subdirectories) is being used.
 
 Some useful terminology for this section is listed in 
 Table~\ref{Table:NewPackageTerms}.
@@ -1288,15 +1290,23 @@ Section~\ref{Section:IntegratingPackages}.}
 
 \end{table}
 
-There are five general steps that need to be followed to add a new package to
+There are seven general steps that need to be followed to add a new package to
 the Trilinos Autotools configure and build system.  Note that these steps do 
 not have to be completed in the exact order listed below, nor does a step 
 necessarily have to be completed in its entirety before moving onto the next
 step.  (For example, a portion of a library can be autotool'ed and tested
-before work begins on the rest of the library.)  The five steps are listed
-below.  Note that new\_package is a work in progress; comments are most welcome.
+before work begins on the rest of the library.)  The seven steps are listed
+below.  Note that new\_package is a work in progress; comments are welcome.
 
 \begin{enumerate}
+
+\item Request services that are provided to Trilinos packages.
+
+See Section~\ref{Section:AvailableServices} for more information about 
+services available to Trilinos packages such as mail lists and issue 
+tracking.  To request these services, contact the Trilinos Team Leader.  
+It is helpful to complete this step early on because issue tracking can 
+begin and mail lists can preserve initial commit comments.
 
 \item Write the non-generated files necessary for Autoconf and Automake.
 
@@ -1361,22 +1371,92 @@ These warnings will be fixed in the future.
 \item Test and debug Autoconf and Automake files.
 
 Run \InlineCommand{configure} with the appropriate options in a clean BUILD 
-directory.  For information about configuring Trilinos, see 
-Section~\ref{Subsection:ConfiguringTrilinos}.  Testing and debugging can 
-become a long iterative process.  To save time, consider disabling all of the 
-packages that do not need to be built for the current task.  When debugging 
-the configure.ac script for np, consider configuring at the np level, as 
-libraries that np is dependent on are not needed at the configure stage.  
-(To do this, make sure to point at the np configure script from the build 
-directory.)
-%at echo paragraph, make sure to mention make'ing make a tips section.
+directory.  Once the configure process completes successfully, type 
+
+\DisplayCommand{make}
+
+to build the configured packages.  For information about configuring and 
+building Trilinos, see Section~\ref{Section:GettingStarted}.  Testing and 
+debugging can become a long iterative process.  Below are some tips for 
+improving efficiency in this step.  
+
+\begin{itemize}
+
+\item Consider disabling all of the packages that do not need to be built for 
+the current task.  When debugging the configure.ac script for np, consider 
+configuring at the np level, as libraries that np is dependent on are not 
+needed at the configure stage.  (To do this, make sure to point at the np 
+configure script from the build directory.)
+
+\item The \InlineCommand{echo} command can be used in configure.ac to 
+print out the value of variables for degugging purposes.
+
+\item The \InlineCommand{AC\_CHECK\_FILE} macro can be used in configure.ac to 
+check for the existence of a particular file or directory.
+
+\item Do not run \InlineCommand{configure} in the source tree, always use a 
+separate build tree.
+
+\end{itemize}
 
 \item Add all Autoconf and Automake files to the Trilinos CVS repository.
 
-\item Perform tests and request new Mailman lists.
+The \InlineCommand{bootstrap} command will generate files necessary for the 
+configure and build processes.  These files must be added to the repository 
+because users are not required to have Autoconf or Automake.  See 
+Section~\ref{Subsection:AddSource} for infomation regarding how to add files 
+to the repository.
+
+When the new files have been committed, a good sanity check is to checkout 
+a new copy of Trilinos and attempt to configure and build.  This will catch 
+any files that have not been properly added.
+
+\item Add regression tests to the Trilinos test harness.
+
+For more information about this step, see Section~\ref{subsect:TestHarness}.
+It is not uncommon for packages to contribute tests to the test harness some 
+time after the package has been added to Trilinos.  However, it is important 
+that all packages can be tested throughly via the test harness.
+
+\item Perform tests.
+
+Buid with and without package options and run all tests associated with np on 
+a variety of platforms.  Make sure that dependencies have been properly 
+established in the Autotools system so that users cannot disable packages that 
+np is dependent on.  Finally, run the checkin test harness to ensure that 
+all Trilinos packages still build properly.  For more information about how 
+to use the checkin test harness, see Section~\ref{subsect:TestHarness}.
 
 \end{enumerate}
-%summary
+
+\subsection{Improving Portability}
+
+Trilinos packages build on a wide variety of platforms.  Below are a few tips 
+for improving portability using mechanisms associated with Autoconf.
+
+\begin{itemize}
+\item Make sure that np\_config.h is included in all your source
+files, directly or indirectly.  The value of any package-specific options are 
+pulled from this file.  It is usually best to include it through a 
+ConfigDefs file; read on for more information.  
+
+\item Include np\_config.h before (usually indirectly) including 
+(AnyOtherPackage\_ConfigDefs.h, or the Autotools PACKAGE macros will 
+be improperly defined.
+
+\item Consider creating a file analogous to Epetra\_ConfigDefs.h.  This file 
+takes care of various issues such as setting the value of package-specific 
+options and including the best available versions of header files.  For 
+example, if np requires a math header file, configure should test for both 
+cmath and math.h.  Then the ConfigDefs file chooses to include cmath if it 
+is available.  If cmath is not available, math.h is included.  If neither file 
+is available, the configure stage will not complete successfully.  All header 
+files are included once in the ConfigDefs file, and the ConfigDefs file is 
+included in all other source files.  Don't forget to include np\_config.h in 
+the ConfigDefs file because that is the file that contains the results of the 
+checks performed during the configure stage.
+
+\end{itemize}
 
 \section{Interoperability Status for Existing Trilinos Packages}
 Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
