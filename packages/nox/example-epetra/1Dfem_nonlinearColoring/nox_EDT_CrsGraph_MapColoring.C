@@ -1,5 +1,7 @@
 #ifndef HAVE_NOX_EPETRAEXT
 
+#include "NOX_Common.H" // Needed for: ifdef MUST_CONST_STL_MAP_KEY
+
 // Include local version of needed coloring files
 #include <nox_EDT_CrsGraph_MapColoring.H>
 #include <nox_EDT_CrsGraph_Transpose.H>
