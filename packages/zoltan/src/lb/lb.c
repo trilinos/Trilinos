@@ -88,7 +88,7 @@ int flag;
    * Allocate storage for the load-balancing object.
    */
 
-  lb = (LB *) LB_SMALLOC(sizeof(LB));
+  lb = (LB *) LB_MALLOC(sizeof(LB));
   if (!lb) {
     fprintf(stderr, "Error from %s: Insufficient memory\n", yo);
     return NULL;
@@ -321,7 +321,7 @@ int i;
 /* Need to replace it with something. */
 /*
   if (params != NULL) {
-    lb->Params = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
+    lb->Params = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                            LB_PARAMS_MAX_SIZE, sizeof(double));
     if (!lb->Params) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
@@ -682,19 +682,19 @@ int i;
    */
 
   if (num_import > 0) {
-    proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
+    proc_list = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                        num_import, sizeof(int));
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       return (DLB_MEMERR);
     }
-    import_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
+    import_objs = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                             num_import, sizeof(LB_TAG));
     if (!import_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free((void **) &proc_list);
+      LB_Free((void **) &proc_list);
       return (DLB_MEMERR);
     }
 
@@ -721,46 +721,46 @@ int i;
    */
 
   if (*num_export > 0) {
-    export_objs         = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, 
+    export_objs         = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1, 
                                                    *num_export, sizeof(LB_TAG));
     if (!export_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free((void **) &proc_list);
-      LB_safe_free((void **) &import_objs);
+      LB_Free((void **) &proc_list);
+      LB_Free((void **) &import_objs);
       return (DLB_MEMERR);
     }
-    *export_global_ids  = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *export_global_ids  = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_GID));
     if (!(*export_global_ids)) { 
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free((void **) &proc_list);
-      LB_safe_free((void **) &import_objs);
-      LB_safe_free((void **) &export_objs);
+      LB_Free((void **) &proc_list);
+      LB_Free((void **) &import_objs);
+      LB_Free((void **) &export_objs);
       return (DLB_MEMERR);
     }
-    *export_local_ids   = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *export_local_ids   = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_LID));
     if (!(*export_local_ids)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free((void **) &proc_list);
-      LB_safe_free((void **) &import_objs);
-      LB_safe_free((void **) &export_objs);
-      LB_safe_free((void **) export_local_ids);
+      LB_Free((void **) &proc_list);
+      LB_Free((void **) &import_objs);
+      LB_Free((void **) &export_objs);
+      LB_Free((void **) export_local_ids);
       return (DLB_MEMERR);
     }
-    *export_procs       = (int *)    LB_array_alloc(__FILE__, __LINE__, 1,
+    *export_procs       = (int *)    LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(int));
     if (!(*export_procs)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free((void **) &proc_list);
-      LB_safe_free((void **) &import_objs);
-      LB_safe_free((void **) &export_objs);
-      LB_safe_free((void **) export_local_ids);
-      LB_safe_free((void **) export_procs);
+      LB_Free((void **) &proc_list);
+      LB_Free((void **) &import_objs);
+      LB_Free((void **) &export_objs);
+      LB_Free((void **) export_local_ids);
+      LB_Free((void **) export_procs);
       return (DLB_MEMERR);
     }
 
@@ -785,9 +785,9 @@ int i;
     (*export_procs)[i]      = export_objs[i].Proc;
   }
 
-  LB_safe_free((void **) &proc_list);
-  LB_safe_free((void **) &import_objs);
-  LB_safe_free((void **) &export_objs);
+  LB_Free((void **) &proc_list);
+  LB_Free((void **) &import_objs);
+  LB_Free((void **) &export_objs);
   
   LB_comm_destroy(&comm_plan);
 
@@ -912,7 +912,7 @@ int ierr = 0;
 
 
   if (num_export > 0) {
-    export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
+    export_buf = (char *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_export,
                                          size);
     if (!export_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
@@ -920,12 +920,12 @@ int ierr = 0;
       return (DLB_FATAL);
     }
 
-    proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
+    proc_list = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_export,
                                        sizeof(int));
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free ((void **) &export_buf);
+      LB_Free ((void **) &export_buf);
       return (DLB_FATAL);
     }
 
@@ -962,13 +962,13 @@ int ierr = 0;
   }
 
   if (num_import > 0) {
-    import_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_import,
+    import_buf = (char *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_import,
                                          size);
     if (!import_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_safe_free ((void **) &export_buf);
-      LB_safe_free ((void **) &proc_list);
+      LB_Free ((void **) &export_buf);
+      LB_Free ((void **) &proc_list);
       return (DLB_FATAL);
     }
 
@@ -985,8 +985,8 @@ int ierr = 0;
    */
 
   LB_comm_destroy(&comm_plan);
-  LB_safe_free((void **) &proc_list);
-  LB_safe_free((void **) &export_buf);
+  LB_Free((void **) &proc_list);
+  LB_Free((void **) &export_buf);
 
   /*
    *  Unpack the object data.
@@ -1006,7 +1006,7 @@ int ierr = 0;
     tmp += size;
   }
 
-  LB_safe_free((void **) &import_buf);
+  LB_Free((void **) &import_buf);
   if (lb->Debug > 4)
     printf("DLBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
@@ -1043,12 +1043,12 @@ int LB_Free_Data(
  *  Routine to free the arrays returning the results of the load balancing.
  */
 
-  LB_safe_free((void **) import_global_ids);
-  LB_safe_free((void **) import_local_ids);
-  LB_safe_free((void **) import_procs);
-  LB_safe_free((void **) export_global_ids);
-  LB_safe_free((void **) export_local_ids);
-  LB_safe_free((void **) export_procs);
+  LB_Free((void **) import_global_ids);
+  LB_Free((void **) import_local_ids);
+  LB_Free((void **) import_procs);
+  LB_Free((void **) export_global_ids);
+  LB_Free((void **) export_local_ids);
+  LB_Free((void **) export_procs);
 
   return (DLB_OK);
 
