@@ -49,6 +49,7 @@ AbsResid::~AbsResid()
 
 StatusType AbsResid::operator()(const Solver::Generic& problem)
 {
+  status = Unconverged;
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();
   if (normrhs < tol)

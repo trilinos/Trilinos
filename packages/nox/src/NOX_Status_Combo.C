@@ -90,6 +90,8 @@ Combo::~Combo()
 
 StatusType Combo::operator()(const Solver::Generic& problem)
 {
+  status = Unconverged;
+
   if (type == OR)
     orOp(problem);
   else

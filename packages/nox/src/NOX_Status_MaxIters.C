@@ -51,6 +51,7 @@ MaxIters::~MaxIters()
 
 StatusType MaxIters::operator()(const Solver::Generic& problem)
 {
+  status = Unconverged;
   int niters = problem.getNumIterations();
   if (niters >= maxiters)
     status = Failed;

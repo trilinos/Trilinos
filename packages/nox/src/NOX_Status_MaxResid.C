@@ -49,6 +49,7 @@ MaxResid::~MaxResid()
 
 StatusType MaxResid::operator()(const Solver::Generic& problem)
 {
+  status = Unconverged;
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = (tmp.getRHS()).norm(Abstract::Vector::INF);
   if (normrhs < tol)
