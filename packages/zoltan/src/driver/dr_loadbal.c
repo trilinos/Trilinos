@@ -80,6 +80,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   int num_exported;              /* Number of nodes to be exported.          */
   int new_decomp;                /* Flag indicating whether the decomposition
                                     has changed                              */
+
   int i;                         /* Loop index                               */
 
 /***************************** BEGIN EXECUTION ******************************/
@@ -96,19 +97,21 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     return 0;
   }
 
-  /* set the user-specified parameters */
+
+  /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
     LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
   }
 
-  /* set the method */
+
+  /* Set the method */
   if (LB_Set_Method(lb_obj, prob->method) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Method()\n");
     return 0;
   }
 
   /*
-   * set the callback functions
+   * Set the callback functions
    */
 
   if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
@@ -129,7 +132,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     return 0;
   }
 
-  /* functions for geometry based algorithms */
+  /* Functions for geometry based algorithms */
   if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
                 NULL) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
@@ -142,7 +145,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     return 0;
   }
 
-  /* functions for geometry based algorithms */
+  /* Functions for geometry based algorithms */
   if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
                 (void *) *elements) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
@@ -159,11 +162,11 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval();
-    LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+    LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
   }
 
   /*
-   * call the load balancer
+   * Call the load balancer
    */
   if (LB_Balance(lb_obj, &new_decomp, &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,
@@ -173,7 +176,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /*
-   * call another routine to perform the migration
+   * Call another routine to perform the migration
    */
   if (new_decomp) {
     if (!migrate_elements(Proc, elements, lb_obj, num_imported, import_gids,
@@ -188,7 +191,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval();
-    LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+    LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
   }
 
   /* Clean up */
