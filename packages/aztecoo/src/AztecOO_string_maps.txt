@@ -1,0 +1,108 @@
+KEYS
+ AZ_solver
+ AZ_scaling
+ AZ_precond
+ AZ_conv
+ AZ_output
+ AZ_pre_calc
+ AZ_max_iter
+ AZ_poly_ord
+ AZ_overlap
+ AZ_type_overlap
+ AZ_kspace
+ AZ_orthog
+ AZ_aux_vec
+ AZ_reorder
+ AZ_keep_info
+ AZ_subdomain_solve
+ AZ_graph_fill
+ AZ_init_guess
+ AZ_keep_kvecs
+ AZ_apply_kvecs
+ AZ_orth_kvecs
+ AZ_ignore_scaling
+ AZ_check_update_size
+ AZ_extreme
+
+ AZ_tol
+ AZ_drop
+ AZ_ilut_fill
+ AZ_omega
+ AZ_rthresh
+ AZ_athresh
+ AZ_update_reduction
+ AZ_ill_cond_thresh
+
+VALUES
+ AZ_none
+ AZ_cg
+ AZ_gmres
+ AZ_cgs
+ AZ_tfqmr
+ AZ_bicgstab
+ AZ_slu
+ AZ_symmlq
+ AZ_GMRESR
+ AZ_fixed_pt
+ AZ_analyze
+ AZ_lu
+ AZ_cg_condnum
+ AZ_gmres_condnum
+
+ AZ_Jacobi
+ AZ_BJacobi
+ AZ_row_sum
+ AZ_sym_diag
+ AZ_sym_row_sum
+ AZ_equil
+ AZ_sym_BJacobi
+
+ AZ_sym_GS
+ AZ_Neumann
+ AZ_ls
+ AZ_ilu
+ AZ_bilu
+ AZ_icc
+ AZ_ilut
+ AZ_rilu
+ AZ_recursive
+ AZ_smoother
+ AZ_dom_decomp
+ AZ_multilevel
+ AZ_user_precond
+
+ AZ_r0
+ AZ_rhs
+ AZ_Anorm
+ AZ_sol
+ AZ_weighted
+ AZ_expected_values
+ AZ_noscaled
+ AZTECOO_conv_test
+ AZ_inf_noscaled
+
+ AZ_all
+ AZ_last
+ AZ_warnings
+
+ AZ_input_form
+ AZ_global_mat
+ AZ_explicit
+
+ AZ_calc
+ AZ_recalc
+ AZ_reuse
+ AZ_sys_reuse
+
+ AZ_diag
+ AZ_full
+
+ AZ_standard
+ AZ_symmetric
+
+ AZ_classic
+ AZ_modified
+
+ AZ_resid
+ AZ_rand
+

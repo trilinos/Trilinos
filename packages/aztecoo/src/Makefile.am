@@ -72,6 +72,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \
+	$(srcdir)/AztecOO_string_maps.h \
 	$(srcdir)/AztecOO_Operator.h \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
@@ -85,6 +86,7 @@ WITH_CPP_H = \
 
 WITH_CPP = \
 	$(srcdir)/AztecOO.cpp \
+	$(srcdir)/AztecOO_string_maps.cpp \
 	$(srcdir)/AztecOO_Operator.cpp \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \

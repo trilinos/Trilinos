@@ -40,8 +40,20 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Import.h"
 
-#include <Teuchos_ParameterList.hpp>
+#include <AztecOO_string_maps.h>
 
+#ifdef HAVE_AZTECOO_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#endif
+
+#ifdef HAVE_TEUCHOS_EXTENDED
+#include <Teuchos_StrUtils.hpp>
+#else
+//If Trilinos wasn't configured with Teuchos-extended enabled, then we need
+//to write our own function for converting a string to upper-case, and to do
+//that we need the toupper() prototype that's declared in ctype.h.
+#include <ctype.h>
+#endif
 
 //=============================================================================
 AztecOO::AztecOO(Epetra_Operator * A, 
@@ -152,12 +164,121 @@ void AztecOO::DeleteMemory() {
 }
 
 //=============================================================================
-int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist)
+string AztecOO_uppercase(const string& s)
 {
-  int solver = parameterlist.get("AZ_solver", AZ_gmres);
-  SetAztecOption(AZ_solver, solver);
+  //convert incoming string to uppercase, and prepend 'AZ_' if the first
+  //two characters aren't already 'AZ'.
+
+#ifdef HAVE_TEUCHOS_EXTENDED
+  string upp = Teuchos::StrUtils::allCaps(s);
+#else
+  string upp(s);
+  for(unsigned i=0; i<upp.length(); ++i) {
+    upp[i] = toupper(upp[i]);
+  }
+#endif
+
+  if (upp[0] == 'A' && upp[1] == 'Z') {
+    return(upp);
+  }
+
+  string az_("AZ_");
+  return(az_+upp);
+}
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+//=============================================================================
+bool AztecOO_SetOptionOrParam(int offset,
+                              const Teuchos::ParameterEntry& entry,
+                              AztecOO* azoo)
+{
+  //Use the given parameter-list entry to set azoo::options_[offset] or
+  //azoo::params_[offset], as appropriate.
+  //
+  //Return true if entry is used, false if not.
+  //
+  //The options_ and params_ arrays are allocated elsewhere, and have size
+  //AZ_OPTIONS_SIZE and AZ_PARAMS_SIZE respectively. However, the positions
+  //in those arrays that are eligible to be set by this function are
+  //azoo::options_[0 ... AZ_FIRST_USER_OPTION] and
+  //azoo::params_[0 ... AZ_FIRST_USER_PARAM]
+  //All AZ_ #defines are listed in az_aztec_defs.h.
+
+  bool entry_used = false;
+
+  if (offset < 0) return(entry_used);
+
+  int dummy_int;
+  double dummy_double;
+  string dummy_string;
+
+  if (entry.isType<int>() || entry.isType<unsigned>()) {
+    if (offset < AZ_FIRST_USER_OPTION) {
+      azoo->SetAztecOption(offset, entry.getValue(&dummy_int));
+      entry_used = true;
+    }
+  }
+  else if (entry.isType<string>()) {
+    if (offset < AZ_FIRST_USER_OPTION) {
+      string sname = AztecOO_uppercase(entry.getValue(&dummy_string));
+      Teuchos::map<string,int>& val_map = AztecOO_value_map();
+
+      Teuchos::map<string,int>::iterator result = val_map.find(sname);
+      if (result != val_map.end()) {
+        azoo->SetAztecOption(offset, (*result).second);
+        entry_used = true;
+      }
+    }
+  }
+  else if (entry.isType<double>()) {
+    if (offset < AZ_FIRST_USER_PARAM) {
+      double entry_value = entry.getValue(&dummy_double);
+      azoo->SetAztecParam(offset, entry_value);
+      entry_used = true;
+    }
+  }
+
+  return(entry_used);
+}
+
+//=============================================================================
+int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist,
+                           bool cerr_warning_if_unused)
+{
+  //cerr_warning_if_unused is an optional argument, default value is false.
+
+  AztecOO_initialize_maps();
+
+  Teuchos::map<string,int>& azoo_key_map = AztecOO_key_map();
+
+  //Iterate the ParameterList, setting any options/parameters for which the
+  //ParameterEntry's name matches a key-word that we recoginze.
+
+  Teuchos::ParameterList::ConstIterator
+    pl_iter = parameterlist.begin(),
+    pl_end  = parameterlist.end();
+
+  for(; pl_iter != pl_end; ++pl_iter) {
+    //create an upper-case copy of the entry's name and prepend AZ_ if necessary
+    string name = AztecOO_uppercase((*pl_iter).first);
+
+    const Teuchos::ParameterEntry& entry = (*pl_iter).second;
+
+    Teuchos::map<string,int>::iterator result = azoo_key_map.find(name);
+    bool entry_used = false;
+
+    if (result != azoo_key_map.end()) {
+      entry_used = AztecOO_SetOptionOrParam((*result).second, entry, this);
+    }
+
+    if (cerr_warning_if_unused && !entry_used) {
+      cerr << "AztecOO:SetParameters warning: '"<<name<<"' not used."<<endl;
+    }
+  }
+
   return(0);
 }
+#endif //HAVE_AZTECOO_TEUCHOS
 
 //=============================================================================
 int AztecOO::SetAztecDefaults() {

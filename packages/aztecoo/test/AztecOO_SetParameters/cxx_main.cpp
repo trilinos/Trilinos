@@ -33,10 +33,8 @@
 #include <Teuchos_ParameterList.hpp>
 #endif
 
-#include "Epetra_SerialComm.h"
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
-#include "Epetra_MpiComm.h"
 #endif
 
 int main(int argc, char* argv[]) {
@@ -45,29 +43,37 @@ int main(int argc, char* argv[]) {
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose1 = true;
 
-  int ierr = 0;
+  int err;
   int returnierr = 0;
   int size = 1;
   int rank = 0;
 
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   if (verbose1) {
   }
 
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  AztecOO azoo;
 #ifdef HAVE_AZTECOO_TEUCHOS
+  AztecOO azoo;
+
   Teuchos::ParameterList paramlist;
   paramlist.set("AZ_solver", AZ_cg);
-  int err = azoo.SetParameters(paramlist);
+  paramlist.set("max_ITER", 200);
+  paramlist.set("az_Tol", 1.0e-09);
+  paramlist.set("precond", AZ_Jacobi);
+
+  paramlist.set("AZ_kspace", 2.5);//bad type
+
+  if (verbose1==true) {
+    cout << "parameter 'AZ_kspace' given bad type (double), warning should"
+         << "be printed to cerr"<<endl;
+    err = azoo.SetParameters(paramlist, verbose1);
+  }
+  else {
+    err = azoo.SetParameters(paramlist);
+  }
   if (err != 0) {
     if (verbose1) {
       cerr << "err " << err << " returned from AztecOO::SetParameters"<<endl;
@@ -78,13 +84,35 @@ int main(int argc, char* argv[]) {
   const int* options = azoo.GetAllAztecOptions();
   if (options[AZ_solver] != AZ_cg) {
     if (verbose1) {
-      cerr << "SetParameters test failed."<<endl;
+      cerr << "SetParameters test failed to correctly set AZ_solver."<<endl;
+    }
+    return(-1);
+  }
+
+  if (options[AZ_max_iter] != 200) {
+    if (verbose1) {
+      cerr << "SetParameters test failed to correctly set AZ_max_iter."<<endl;
+    }
+    return(-1);
+  }
+
+  if (options[AZ_precond] != AZ_Jacobi) {
+    if (verbose1) {
+      cerr << "SetParameters test failed to correctly set AZ_precond."<<endl;
+    }
+    return(-1);
+  }
+
+  const double* params = azoo.GetAllAztecParams();
+  if (params[AZ_tol] != 1.0e-09) {
+    if (verbose1) {
+      cerr << "SetParameters test failed to correctly set AZ_tol."<<endl;
     }
     return(-1);
   }
 #endif
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 

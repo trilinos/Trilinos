@@ -306,9 +306,35 @@ class AztecOO {
     values or previously-set values unless those values are contained in the
     current ParameterList argument. Note that if the method SetAztecDefaults()
     is called after this method has been called, any parameters set by this
-    method will be replaced by default values.
+    method will be lost.
+
+    A ParameterList is a collection of named ParameterEntry objects. AztecOO
+    recognizes names which mirror the macros defined in az_aztec_defs.h. In
+    addition, it recognizes case insensitive versions of those names, with or
+    without the prepended 'AZ_'. So the following are equivalent and valid:
+    "AZ_solver", "SOLVER", "Solver". To set an entry in the Aztec options
+    array, the type of the ParameterEntry value may be either a string or an int
+    in some cases. E.g., if selecting the solver, the following are equivalent
+    and valid: AZ_gmres (which is an int), "AZ_gmres" (which is a string) or
+    "GMRES" (case-insensitive, 'AZ_' is optional).
+
+    To set an entry in the Aztec params array, the type of the
+    ParameterEntry value must be double.
+
+    By default, this method will silently ignore parameters which have
+    unrecognized names or invalid types. Users may set the optional argument
+    specifying that warnings be printed for unused parameters. Alternatively,
+    users may iterate the ParameterList afterwards and check the isUsed
+    attribute on the ParameterEntry objects.
+
+    @param parameterlist Object containing parameters to be parsed by AztecOO.
+    @param cerr_warning_if_unused Optional argument, default value is false.
+        If true, a warning is printed to cerr stating which parameters are
+        not used due to having unrecognized names or values of the wrong type.
+        Default behavior is to silently ignore unused parameters.
   */
-  int SetParameters(Teuchos::ParameterList& parameterlist);
+  int SetParameters(Teuchos::ParameterList& parameterlist,
+                    bool cerr_warning_if_unused=false);
 #endif
 
   //! AztecOO function to restore default options/parameter settings.

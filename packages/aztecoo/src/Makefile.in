@@ -125,9 +125,9 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libaztecoo_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__libaztecoo_a_SOURCES_DIST = $(srcdir)/az_comm.c \
-	$(srcdir)/AztecOO.cpp $(srcdir)/AztecOO_Operator.cpp \
-	$(srcdir)/Epetra_MsrMatrix.cpp $(srcdir)/Aztec2Petra.cpp \
-	$(srcdir)/AZOO_iterate.cpp \
+	$(srcdir)/AztecOO.cpp $(srcdir)/AztecOO_string_maps.cpp \
+	$(srcdir)/AztecOO_Operator.cpp $(srcdir)/Epetra_MsrMatrix.cpp \
+	$(srcdir)/Aztec2Petra.cpp $(srcdir)/AZOO_iterate.cpp \
 	$(srcdir)/AztecOO_StatusTestCombo.cpp \
 	$(srcdir)/AztecOO_StatusTestMaxIters.cpp \
 	$(srcdir)/AztecOO_StatusTestResNorm.cpp $(srcdir)/az_check.c \
@@ -153,9 +153,10 @@ am__libaztecoo_a_SOURCES_DIST = $(srcdir)/az_comm.c \
 	$(srcdir)/az_sort.c $(srcdir)/md_timer_mpi.c \
 	$(srcdir)/md_wrap_mpi_c.c
 am__objects_1 = az_comm.$(OBJEXT)
-am__objects_2 = AztecOO.$(OBJEXT) AztecOO_Operator.$(OBJEXT) \
-	Epetra_MsrMatrix.$(OBJEXT) Aztec2Petra.$(OBJEXT) \
-	AZOO_iterate.$(OBJEXT) AztecOO_StatusTestCombo.$(OBJEXT) \
+am__objects_2 = AztecOO.$(OBJEXT) AztecOO_string_maps.$(OBJEXT) \
+	AztecOO_Operator.$(OBJEXT) Epetra_MsrMatrix.$(OBJEXT) \
+	Aztec2Petra.$(OBJEXT) AZOO_iterate.$(OBJEXT) \
+	AztecOO_StatusTestCombo.$(OBJEXT) \
 	AztecOO_StatusTestMaxIters.$(OBJEXT) \
 	AztecOO_StatusTestResNorm.$(OBJEXT)
 am__objects_3 = az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
@@ -195,6 +196,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/AztecOO_StatusTestCombo.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/AztecOO_StatusTestMaxIters.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/AztecOO_StatusTestResNorm.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/AztecOO_string_maps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_MsrMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_bilu.Po ./$(DEPDIR)/az_cg.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/az_cg_condnum.Po ./$(DEPDIR)/az_cgs.Po \
@@ -387,6 +389,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \
+	$(srcdir)/AztecOO_string_maps.h \
 	$(srcdir)/AztecOO_Operator.h \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
@@ -399,6 +402,7 @@ WITH_CPP_H = \
 
 WITH_CPP = \
 	$(srcdir)/AztecOO.cpp \
+	$(srcdir)/AztecOO_string_maps.cpp \
 	$(srcdir)/AztecOO_Operator.cpp \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \
@@ -691,6 +695,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_StatusTestCombo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_StatusTestMaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_StatusTestResNorm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_string_maps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MsrMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_bilu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cg.Po@am__quote@
@@ -1471,6 +1476,22 @@ AztecOO.obj: $(srcdir)/AztecOO.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AztecOO.Po' tmpdepfile='$(DEPDIR)/AztecOO.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO.obj `if test -f '$(srcdir)/AztecOO.cpp'; then $(CYGPATH_W) '$(srcdir)/AztecOO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecOO.cpp'; fi`
+
+AztecOO_string_maps.o: $(srcdir)/AztecOO_string_maps.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AztecOO_string_maps.o -MD -MP -MF "$(DEPDIR)/AztecOO_string_maps.Tpo" -c -o AztecOO_string_maps.o `test -f '$(srcdir)/AztecOO_string_maps.cpp' || echo '$(srcdir)/'`$(srcdir)/AztecOO_string_maps.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AztecOO_string_maps.Tpo" "$(DEPDIR)/AztecOO_string_maps.Po"; else rm -f "$(DEPDIR)/AztecOO_string_maps.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AztecOO_string_maps.cpp' object='AztecOO_string_maps.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AztecOO_string_maps.Po' tmpdepfile='$(DEPDIR)/AztecOO_string_maps.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_string_maps.o `test -f '$(srcdir)/AztecOO_string_maps.cpp' || echo '$(srcdir)/'`$(srcdir)/AztecOO_string_maps.cpp
+
+AztecOO_string_maps.obj: $(srcdir)/AztecOO_string_maps.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AztecOO_string_maps.obj -MD -MP -MF "$(DEPDIR)/AztecOO_string_maps.Tpo" -c -o AztecOO_string_maps.obj `if test -f '$(srcdir)/AztecOO_string_maps.cpp'; then $(CYGPATH_W) '$(srcdir)/AztecOO_string_maps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecOO_string_maps.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AztecOO_string_maps.Tpo" "$(DEPDIR)/AztecOO_string_maps.Po"; else rm -f "$(DEPDIR)/AztecOO_string_maps.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AztecOO_string_maps.cpp' object='AztecOO_string_maps.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AztecOO_string_maps.Po' tmpdepfile='$(DEPDIR)/AztecOO_string_maps.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_string_maps.obj `if test -f '$(srcdir)/AztecOO_string_maps.cpp'; then $(CYGPATH_W) '$(srcdir)/AztecOO_string_maps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecOO_string_maps.cpp'; fi`
 
 AztecOO_Operator.o: $(srcdir)/AztecOO_Operator.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AztecOO_Operator.o -MD -MP -MF "$(DEPDIR)/AztecOO_Operator.Tpo" -c -o AztecOO_Operator.o `test -f '$(srcdir)/AztecOO_Operator.cpp' || echo '$(srcdir)/'`$(srcdir)/AztecOO_Operator.cpp; \
