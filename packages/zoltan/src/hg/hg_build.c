@@ -73,64 +73,20 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
   hgraph->EdgeWeightDim = zz->Edge_Weight_Dim;
 
   /* Use callback functions to build the hypergraph. */
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info){
-    /* Hypergraph callback functions exist; call them and build the HG directly */
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-    ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs),
-      &(zhg->LIDs), zz->Obj_Weight_Dim, &(hgraph->vwgt),
-      &(zhg->Input_Parts));
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
-      goto End;
-    }
-    hgraph->nVtx = zhg->nObj;
-
-    ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg, hgp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
-      goto End;
-    }
+  ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs),
+    &(zhg->LIDs), zz->Obj_Weight_Dim, &(hgraph->vwgt),
+    &(zhg->Input_Parts));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
+    goto End;
   }
+  hgraph->nVtx = zhg->nObj;
 
-  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
-           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
-    /* 
-     * Hypergraph callback functions don't exist, but graph functions do;
-     * call the graph callback, build a graph, and convert it to a hypergraph. 
-     */
-    Graph graph;             /* Temporary graph. */
-
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
-    Zoltan_HG_Graph_Init(&graph);
-    ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs),
-      &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt),
-      &(zhg->Input_Parts));
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
-    graph.nVtx = zhg->nObj;
-
-    ierr = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
-     zhg->GIDs, zhg->LIDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-     &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
-
-    graph.nEdge = graph.nindex[graph.nVtx];
-    ierr = Zoltan_HG_Graph_to_HGraph(zz, &graph, hgraph);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error converting graph to hypergraph");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
-
-    Zoltan_HG_Graph_Free(&graph);
+  ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg, hgp);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
+    goto End;
   }
 
   /* Work-around for Trilinos/EpetraExt, which registers dummy query 
@@ -202,14 +158,26 @@ int num_gid_entries = zz->Num_GID;
 static PHGComm scomm;
 static int first_time = 1;
 
-  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg, nVtx, hgp->EdgeSizeThreshold,
-                                        1, &(hg->nEdge), 
-                                        &edge_gids, &edge_lids, &edge_sizes,
-                                        &(hg->ewgt), &(hg->nPins), 
-                                        &edge_verts, &edge_procs);
+  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info)
+    ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg, nVtx, hgp->EdgeSizeThreshold,
+                                          1, &(hg->nEdge), 
+                                          &edge_gids, &edge_lids, &edge_sizes,
+                                          &(hg->ewgt), &(hg->nPins), 
+                                          &edge_verts, &edge_procs);
+  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) 
+    ierr = Zoltan_HG_Graph_Callbacks(zz, zhg, nVtx, hgp->EdgeSizeThreshold,
+                                     1, &(hg->nEdge), 
+                                     &edge_gids, &edge_lids, &edge_sizes,
+                                     &(hg->ewgt), &(hg->nPins), 
+                                     &edge_verts, &edge_procs);
+  else {
+    hg->nEdge = 0;
+    hg->nPins = 0;
+  }
+
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "Error returned from Zoltan_HG_Hypergraph_Callbacks");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Callbacks");
     goto End;
   }
 

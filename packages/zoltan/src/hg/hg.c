@@ -283,9 +283,11 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
     cutl = Zoltan_HG_hcut_size_links(zz, hg, output_parts);
     cutn = Zoltan_HG_hcut_size_total(hg, output_parts);
   
-    Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-    cutl += remcutl;
-    cutn += remcutn;
+    if (zoltan_hg->nRemove) {
+      Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+      cutl += remcutl;
+      cutn += remcutn;
+    }
 
     cutlsum += cutl;
     if (cutl > cutlmax) cutlmax = cutl;

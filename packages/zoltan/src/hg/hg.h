@@ -183,6 +183,10 @@ extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
 extern int Zoltan_HG_Hypergraph_Callbacks(ZZ *, ZHG *, int, float, int, 
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
   ZOLTAN_ID_PTR *, int **);
+extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
+  ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
+  int **);
+
 
 extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, Partition, FILE*);
 extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
