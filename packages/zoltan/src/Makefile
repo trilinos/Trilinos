@@ -71,9 +71,9 @@ PARMETISLIB_PATH = parmetis/ParMetis
 #   Paths to submodules
 #
 SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
-		  ../params ../parmetis
+		  ../params ../parmetis ../timer
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
-		  -I../params -I../driver -I../ch -I../parmetis
+		  -I../params -I../driver -I../ch -I../parmetis -I../timer
 
 #source code from SCCS projects
 
@@ -117,6 +117,9 @@ PAR_INC		= par_const.h par.h
 PARMETIS_CSRC	= parmetis_part.c parmetis_util.c 
 PARMETIS_INC	= parmetis_const.h
 
+TIMER_CSRC	= timer.c
+TIMER_INC	= timer_const.h
+
 # source code and defines for driver
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
@@ -143,10 +146,11 @@ endif
 
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
-		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARMETIS_INC)
+		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARAMS_INC) \
+		  $(PARMETIS_INC) $(TIMER_INC)
 #LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
 LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC)
+		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) $(TIMER_CSRC)
 LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
 
 #
@@ -155,7 +159,7 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 LINT		= alint # SunOs4
 #LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
-		  -Icomm -Ioct -Iparmetis \
+		  -Icomm -Ioct -Iparmetis -Itimer \
 		  -I/Net/local/lang/SC3.0.1/include \
 		  -I/Net/local/lang/SC3.0.1/ansi_include \
 		  -I/Net/local/mpi/include \
@@ -164,7 +168,7 @@ LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 		  -I/Net/pecos/rf_crew/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver ch all lb par rcb comm oct parmetis params
+SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer
 VPATH		= $(SUBDIRS)
 
 ##############################################################################
@@ -235,6 +239,7 @@ TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
 #SUN_CC          = acc -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
 #                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
 #                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
+#SUN_CC		= purify -follow-child-processes=yes gcc
 SUN_CC		= gcc
 SUN_DBG_FLAGS	= -g 
 SUN_OPT_FLAGS	= -O
