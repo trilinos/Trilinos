@@ -33,8 +33,7 @@ extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
-{
+}
 #endif
 #endif
 #include "Epetra_Map.h"

@@ -32,6 +32,7 @@ class Epetra_LinearProblem;
 #include "mpi.h"
 #endif
 #include "ml_include.h"
+#include <iostream>
 
 // ====================================================================== 
 //! Matrix-vector function for Epetra matrices.
@@ -132,8 +133,10 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double &);
 
+#ifdef FIXME
 string ML_toString(const int& x);
 string ML_toString(const double& x);
+#endif
 
 
 #ifdef __cplusplus
