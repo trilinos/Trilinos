@@ -69,6 +69,6 @@ typedef struct RCB_Struct {
   int Dot_Top;
 } RCB_STRUCT;
 
-extern void LB_rcb_build_data_structure(LB *, int *, int *);
+extern void LB_rcb_build_data_structure(LB *, int *, int *, int);
 
 #endif
