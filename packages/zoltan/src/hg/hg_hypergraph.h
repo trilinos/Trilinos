@@ -103,7 +103,7 @@ extern int Zoltan_HG_Info         (ZZ*, HGraph*);
 extern int Zoltan_HG_Check        (ZZ*, HGraph*);
 extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
 extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
-extern void Zoltan_HG_Print(ZZ*, HGraph*, FILE*);
+extern void Zoltan_HG_Print(ZZ*, HGraph*, FILE*, char*);
 
     
 #ifdef __cplusplus

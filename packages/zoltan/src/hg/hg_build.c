@@ -182,28 +182,9 @@ ZOLTAN_ID_PTR global_ids = zhg->Global_IDs;
 HGraph *hg = &(zhg->HG);
 int nVtx = hg->nVtx;                     
 int num_gid_entries = zz->Num_GID;
+static PHGComm scomm;
+static int first_time = 1;
 
-
-  /* Build vtxdist as in Zoltan_Build_Graph. */
-  /* KDD -- I am guessing we will need this array in parallel; we may not. */
-
-  hg->dist_x = (int *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(int));
-  if (!(hg->dist_x)){
-    /* Not enough memory */
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-    goto End;
-  }
-
-  /* Construct vtxdist[i] = the number of vertices on all procs < i. */
-  /* Scan to compute partial sums of the number of objs */
-
-  MPI_Scan (&nVtx, hg->dist_x, 1, MPI_INT, MPI_SUM, zz->Communicator);
-
-  /* Gather data from all procs */
-
-  MPI_Allgather (&(hg->dist_x[0]), 1, MPI_INT,
-                 &(hg->dist_x[1]), 1, MPI_INT, zz->Communicator);
-  hg->dist_x[0] = 0;
 
   /* Get hyperedge information from application through query functions. */
 
@@ -267,6 +248,35 @@ int num_gid_entries = zz->Num_GID;
     goto End;
   }
 
+  /*  Set up place-holder arrays and communicators that, while not used 
+   *  in serial, are needed by some of the utility functions shared by 
+   *  HG and PHG.
+   */
+  hg->dist_x = (int *)ZOLTAN_MALLOC(2 * sizeof(int));
+  hg->dist_y = (int *)ZOLTAN_MALLOC(2 * sizeof(int));
+  if (!hg->dist_x || !hg->dist_y){
+    /* Not enough memory */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+    goto End;
+  }
+
+  hg->dist_x[0] = 0;
+  hg->dist_x[1] = hg->nVtx;
+  hg->dist_y[0] = 0;
+  hg->dist_y[1] = hg->nEdge;
+
+  if (first_time) {
+    scomm.nProc_x = scomm.nProc_y = 1;
+    scomm.myProc_x = scomm.myProc_y = 0;
+    scomm.Communicator = MPI_COMM_SELF;
+    scomm.row_comm = MPI_COMM_SELF;
+    scomm.col_comm = MPI_COMM_SELF;
+    scomm.myProc = 0;
+    scomm.nProc = 1;
+    first_time = 0;
+  }
+
+  hg->comm = &scomm;
   
   if (npins > 0) {
     /* 

@@ -206,6 +206,14 @@ char *yo = "Zoltan_HG_Coarsening";
   c_hg->hvertex = c_hvertex;
 #endif
 
+  c_hg->comm = hg->comm;
+  c_hg->dist_x = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
+  c_hg->dist_y = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
+  c_hg->dist_x[0] = 0;
+  c_hg->dist_x[1] = c_hg->nVtx;
+  c_hg->dist_y[0] = 0;
+  c_hg->dist_y[1] = c_hg->nEdge;
+
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
 }

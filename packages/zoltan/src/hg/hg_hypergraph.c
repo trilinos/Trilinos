@@ -12,6 +12,7 @@
  ****************************************************************************/
 #include <float.h>
 #include <limits.h>
+#include "phg.h"
 #include "hg_util.h"
 #include "hg_hypergraph.h"
 
@@ -462,7 +463,8 @@ End:
 void Zoltan_HG_Print(
   ZZ *zz,
   HGraph *hg,
-  FILE *fp
+  FILE *fp,
+  char *str
 )
 {
 /* Routine to print hypergraph weights and edges. Assumes serial execution;
@@ -481,10 +483,25 @@ char *yo = "Zoltan_HG_Print";
 
   num_vwgt = hg->VtxWeightDim;
   num_ewgt = hg->EdgeWeightDim;
+
+  fprintf(fp, "%s nVtx=%d nEdge=%d nPins=%d vWgt=%d eWgt=%d\n", 
+          str, hg->nVtx, hg->nEdge, hg->nPins, 
+          hg->VtxWeightDim, hg->EdgeWeightDim);
+
+  /* Print Vertex Info */
+  fprintf(fp, "%s Vertices:  (edges)\n", str);
+  for (i = 0; i < hg->nVtx; i++) {
+    fprintf(fp, "%d (%d):  ", i, VTX_LNO_TO_GNO(hg, i));
+    fprintf(fp, "(");
+    for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
+      fprintf(fp, "%d ", hg->vedge[j]);
+    fprintf(fp, ")\n");
+  }
+
   if (hg->vwgt != NULL) {
-    fprintf(fp, "Vertices: [weights])\n");
+    fprintf(fp, "%s Vertices: [weights])\n", str);
     for (i = 0; i < hg->nVtx; i++) {
-      fprintf(fp, "%d:  [", i);
+      fprintf(fp, "%d (%d):  [", i, VTX_LNO_TO_GNO(hg, i));
       for (j = 0; j < num_vwgt; j++)
         fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
       fprintf(fp, "])\n");
@@ -492,9 +509,9 @@ char *yo = "Zoltan_HG_Print";
   }
 
   /* Print Hyperedge Info */
-  fprintf(fp, "Hyperedges:  (vertices)\n");
+  fprintf(fp, "%s Hyperedges:  (vertices)\n", str);
   for (i = 0; i < hg->nEdge; i++) {
-    fprintf(fp, "%d:  ", i);
+    fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
     fprintf(fp, "(");
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
       fprintf(fp, "%d ", hg->hvertex[j]);
@@ -502,9 +519,9 @@ char *yo = "Zoltan_HG_Print";
   }
 
   if (hg->ewgt != NULL) {
-    fprintf(fp, "Hyperedge Weights:  [weights]\n");
+    fprintf(fp, "%s Hyperedge Weights:  [weights]\n", str);
     for (i = 0; i < hg->nEdge; i++) {
-      fprintf(fp, "%d:  ", i);
+      fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
       fprintf(fp, "[");
       for (j = 0; j < num_ewgt; j++)
         fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);
@@ -513,9 +530,8 @@ char *yo = "Zoltan_HG_Print";
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
 }
+
 /****************************************************************************/
-
-
 
 int Zoltan_HG_HGraph_to_Graph(
   ZZ *zz,
