@@ -3,11 +3,6 @@
 # $Source$
 
 ########################################################################
-#@HEADER
-#@HEADER
-########################################################################
-
-########################################################################
 ### Automatically insert header text into given file
 ########################################################################
 
@@ -54,21 +49,27 @@ close INFILE;
 close OUTFILE;
 
 #error check on cnt
-if ($cnt != 2) {
+if ($cnt < 2) {
     unlink $tmpname;
-    die "Error: The key \"$key\" did not appear exactly two times in the file.\n";
+    die "Error: The key \"$key\" did not appear at least two times in $filename.\n";
 }
 
 #diff check
 @diff = `diff $filename $tmpname`;
 if ($#diff >= 0) {
-    rename($tmpname, $filename) or die "Autoheader failed to replace old file with new file.\n";
+    rename($tmpname, $filename) or 
+	die "Autoheader failed to replace old file with new file for $filename.\n";
 }
+else {
+    unlink $tmpname;
+}
+
 
 sub insert_header{
 
     if ($type =~ /^auto$/) {
 
+	(($filename =~ /.ac$/) && ($type = "plain")) or
 	(($filename =~ /.[CH]$/) && ($type = "C++")) or
 	(($filename =~ /.[ch]$/) && ($type = "C")) or
 	($type = "plain");

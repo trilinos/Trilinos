@@ -1,15 +1,37 @@
 // $Id$ 
 // $Source$ 
 
-// NOX: An Object-Oriented Nonlinear Solver Package
-// COPYRIGHT (2002) Sandia Corporation.
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
-// CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
 
-#ifndef _NOX_PARAMETER_ENTRY_H
-#define _NOX_PARAMETER_ENTRY_H
+#ifndef NOX_PARAMETER_ENTRY_H
+#define NOX_PARAMETER_ENTRY_H
 
 #include<string>	    // one parameter type
 
@@ -131,8 +153,8 @@ private:
 
 };
 
-}
-}
+} // namespace Parameter
+} // namespace NOX
 
 //! Output the parameter. Relies of leftshift operator defined in the class.
 ostream& operator<<(ostream& stream, const NOX::Parameter::Entry& e);
