@@ -50,7 +50,7 @@ LB_INC=lb_const.h lb.h lbi_const.h
 RCB_CSRC=rcb.c rcb_util.c 
 RCB_INC=rcb.h
 
-PAR_CSRC=
+PAR_CSRC=par_util.c
 PAR_INC=par_const.h par.h
 
 # machine independent routines
