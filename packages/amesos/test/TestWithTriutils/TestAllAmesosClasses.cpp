@@ -4,14 +4,14 @@
 
 #include "Epetra_config.h"
 
-const bool TestKLU = true;
-const bool TestUMFPACK = true;
-const bool TestSuperLU = false;
-const bool TestSuperLUdist = false;
-const bool TestMUMPS = true;
-const bool TestScaLAPACK = false;
-const bool verbose = true;
-const int OutputLevel = 2;
+const bool TestKLU         = true;
+const bool TestUMFPACK     = true;
+const bool TestSuperLU     = true;
+const bool TestSuperLUdist = true;
+const bool TestMUMPS       = true;
+const bool TestScaLAPACK   = true;
+const bool verbose         = true;
+const int OutputLevel      = 2;
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -87,12 +87,14 @@ void TestAmesos(char ProblemType[],
   Amesos A_Factory;
   
   Amesos_BaseSolver * Solver = A_Factory.Create(ProblemType, Problem);
-//  Amesos_Mumps * Solver = new Amesos_Mumps(Problem);
+
   if( Solver ) {
 
-    Solver->SetParameters(AmesosList);
+    // Both sentences should work
+    //    Solver->SetUseTranspose(UseTranspose);
+    AmesosList.set("UseTranspose",UseTranspose);
 
-    Solver->SetUseTranspose(UseTranspose);
+    Solver->SetParameters(AmesosList);
     
     // create a rhs corresponding to lhs or 1's
     lhs->PutScalar(1.0);
@@ -167,6 +169,10 @@ int main(int argc, char *argv[]) {
   CommandLineParser CLP(argc,argv);
   CrsMatrixGallery Gallery("", Comm);
   
+  // default values for problem type and size
+  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "recirc_2d" ); 
+  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "900" ); 
+
   Gallery.Set(CLP);
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
@@ -197,6 +203,24 @@ int main(int argc, char *argv[]) {
     TestAmesos("Amesos_Klu", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
     
   }
+  
+  // ================ //
+  // KLU -- options 1 //
+  // ================ //
+
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestKLU ) {
+    
+    Teuchos::ParameterList AmesosList;
+    AmesosList.set("ComputeVectorNorms",true);
+    AmesosList.set("ComputeTrueResidual",true);
+    AmesosList.set("PrintStatus",true);
+    AmesosList.set("PrintTiming",true);
+    AmesosList.set("OutputLevel",1);
+    TestAmesos("Amesos_Klu", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+    
+  }
 
   // ========================== //
   // UMFPACK -- default options //
@@ -221,6 +245,24 @@ int main(int argc, char *argv[]) {
     
      Teuchos::ParameterList AmesosList;
      TestAmesos("Amesos_Umfpack", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
+  }
+  
+  // ==================== //
+  // UMFPACK -- options 1 //
+  // ===================== //
+
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestUMFPACK ) {
+    
+     Teuchos::ParameterList AmesosList;
+     AmesosList.set("ComputeVectorNorms",true);
+     AmesosList.set("ComputeTrueResidual",true);
+     AmesosList.set("PrintStatus",true);
+     AmesosList.set("PrintTiming",true);
+     AmesosList.set("OutputLevel",1);
+     TestAmesos("Amesos_Umfpack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+     
   }
   
   // ======= //
@@ -404,6 +446,35 @@ int main(int argc, char *argv[]) {
      TestAmesos("Amesos_Scalapack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
     
+  // ====================== //
+  // Scalapack -- transpose //
+  // ====================== //
+  
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestScaLAPACK ) {
+    
+     Teuchos::ParameterList AmesosList;
+     AmesosList.set("ComputeVectorNorms",true);
+     AmesosList.set("ComputeTrueResidual",true);
+     AmesosList.set("PrintStatus",true);
+     AmesosList.set("PrintTiming",true);
+     AmesosList.set("OutputLevel",1);
+     TestAmesos("Amesos_Scalapack", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
+  }
+
+  // ====================== //
+  // Scalapack -- options 1 //
+  // ====================== //
+  
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestScaLAPACK ) {
+    
+     Teuchos::ParameterList AmesosList;
+     TestAmesos("Amesos_Scalapack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+  }
+
   // print out total error
   
   if( Comm.MyPID() == 0 ) {
@@ -417,6 +488,7 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  return( EXIT_SUCCESS );
+  if( TotalErrorResidual < 1e-9 ) return( EXIT_SUCCESS );
+  else                            return( EXIT_FAILURE );
 
 }
