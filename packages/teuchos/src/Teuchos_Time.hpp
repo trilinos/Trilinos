@@ -33,7 +33,7 @@ namespace Teuchos
 
   public:
     /** Construct with a descriptive name */
-    Time(const string& name);
+    Time(const string& name, bool start = false);
   
     /** returns current wall-clock time in seconds.*/
     static double wallTime();
@@ -42,7 +42,7 @@ namespace Teuchos
     void start();
 
     /** stop the timer */
-    void stop();
+    double stop();
 
     /** returns the total time accumulated by this timer. Note that this should be called
      * only when the clock is stopped. */

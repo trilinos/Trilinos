@@ -8,9 +8,11 @@
 using namespace Teuchos;
 
 //=============================================================================
-Time::Time(const string& name) 
+Time::Time(const string& name, bool start) 
   : startTime_(0), totalTime_(0), isRunning_(false), name_(name)
-{}
+{
+	if(start) this->start();
+}
 
 void Time::start()
 {
@@ -18,11 +20,12 @@ void Time::start()
   startTime_ = wallTime();
 }
 
-void Time::stop()
+double Time::stop()
 {
   totalTime_ += wallTime() - startTime_;
   isRunning_ = false;
   startTime_ = 0;
+  return totalTime_;
 }
 
 
