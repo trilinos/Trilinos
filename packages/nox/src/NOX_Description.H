@@ -69,7 +69,7 @@
 
   <ul>
   <li> 
-  <a href="http://software.sandia.gov/downloads/nox-1.0a-dev.tar.gz">Latest Development Version</a>, updated nightly
+  <a href="http://software.sandia.gov/nox/downloads/nox-1.0a-dev.tar.gz">Latest Development Version</a>, updated nightly
   </ul>
 
 
