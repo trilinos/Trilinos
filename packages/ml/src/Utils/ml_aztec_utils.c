@@ -2147,14 +2147,13 @@ int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
   int          j_last, bindx_row;
   double       *sc_vec;
   char        *yo = "AZ_sym_diagonal_scaling: ";
-  int         *indx, *bindx, *data_org;
+  int         *bindx, *data_org;
   double      *val;
 
 
   /**************************** execution begins ******************************/
 
   val  = Amat->val;
-  indx = Amat->indx;
   bindx = Amat->bindx;
   data_org = Amat->data_org;
 

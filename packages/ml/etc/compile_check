@@ -1,65 +1,111 @@
 #!/bin/sh
-
+ARCH=$1
+USE_MPI=$2
+BLAS_LIB=$3
+LAPACK_LIB=$4
+if test $# -le 1
+then
+USE_MPI=no
+fi
+if test `expr ${USE_MPI}` = 'yes'
+then
+echo hiiiiiiiiiiiiiiiiiiii
+fi
+exit
+if test $# -ge 5
+then
+  echo "Usage: compile_check architecture [use_mpi blas_lib lapack_lib]"
+  exit
+fi
+if test $# -le 0
+then
+  echo "Usage: compile_check architecture [use_mpi blas_lib lapack_lib]"
+  exit
+fi
+echo hi
+cd ..
 #
 #  Aztec but no superlu
 #
+echo "testing with Aztec but no superlu"
 etc/clean_all
 cd Obj
 make clean
 cd ..
-./installer<<END
-PCLINUX
-no
-no
-no
-yes
-
-no
-yes
-no
-yes
-no
-no
-END
-
+\rm -f /tmp/compile_input
+echo $ARCH >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo  >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+./installer < /tmp/compile_input
+#
+# SuperLU no aztec
+#
+echo "testing with Superlu but no aztec"
+etc/clean_all
+cd Obj
+make clean
+cd ..
+\rm -f /tmp/compile_input
+echo $ARCH >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo  >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+./installer < /tmp/compile_input
+exit
 #
 #  Aztec with superlu
 #
+echo "testing with Superlu and aztec"
 etc/clean_all
 cd Obj
 make clean
 cd ..
-./installer<<END
-PCLINUX
-no
-no
-no
-yes
-
-no
-yes
-yes
-
-yes
-no
-no
-END
-
+\rm -f /tmp/compile_input
+echo $ARCH  >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo  >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo  >> /tmp/compile_input
+echo yes >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+./installer < /tmp/compile_input
 #
 #  no Aztec no superlu
 #
+echo "testing with no Superlu and no aztec"
 etc/clean_all
 cd Obj
 make clean
 cd ..
-./installer<<END
-PCLINUX
-no
-no
-no
-no
-no
-no
-no
-no
-END
+\rm -f /tmp/compile_input
+echo $ARCH >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+echo no >> /tmp/compile_input
+./installer < /tmp/compile_input

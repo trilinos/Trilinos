@@ -809,7 +809,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 {
    int iter, kk, Nrows,ntimes;
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
-   ML_Comm *comm;
    double *res_edge, *edge_update,
           *rhs_nodal, *x_nodal;
    ML_Smoother  *smooth_ptr;
@@ -817,7 +816,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Smoother  *sm_nodal;
 #endif
    ML_Sm_Hiptmair_Data *dataptr;
-   double omega, max_eig;
+   double omega /* , max_eig */;
    ML_Comm_Envelope *envelope;
 #ifdef ML_DEBUG_SMOOTHER
    int i,j;
@@ -827,7 +826,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    smooth_ptr = (ML_Smoother *) sm;
 
    Ke_mat = smooth_ptr->my_level->Amat;
-   comm = smooth_ptr->my_level->comm;
    Nrows = Ke_mat->getrow->Nrows;
 
    /* pointer to private smoother data */
@@ -836,9 +834,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    Tmat = (ML_Operator *) dataptr->Tmat;
    Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
    TtATmat = (ML_Operator *) dataptr->TtATmat;
-   max_eig = (double) dataptr->max_eig;
 
 /*
+   max_eig = (double) dataptr->max_eig;
    printf("max_eig = %e, ntimes = %d, omega = %d\n",
            max_eig, smooth_ptr->ntimes, smooth_ptr->omega);
 */
@@ -857,7 +855,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
            sqrt((ML_gdot(Nrows, x, x, comm))));
    printf("\t%d: ||rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-          sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
+          sqrt((ML_gdot(Nrows, rhs, rhs, Tmat_trans->comm))));
    fflush(stdout);
 #endif
 
@@ -915,9 +913,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #ifdef ML_DEBUG_SMOOTHER
       printf("After SGS on edges\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Nrows, x, x, comm)));
+             sqrt(ML_gdot(Nrows, x, x, Tmat_trans->comm)));
       printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Nrows,res_edge,res_edge,comm)));
+             sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm)));
 #endif
    
       /****************************
@@ -972,7 +970,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt((ML_gdot(Nrows,x,x,comm))));
+             sqrt((ML_gdot(Nrows,x,x,Tmat_trans->comm))));
       printf("--------------------------------\n");
 #endif
 
@@ -5474,13 +5472,12 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, n = outlen;
+    int              i, n = outlen;
     double           cf, om2, over;
     double          *pAux, *y;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
-    deg    = widget->mlsDeg;
     om2    = widget->mlsOm2;
     over   = widget->mlsOver;
     cf     = over * om2; 

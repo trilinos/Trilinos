@@ -1738,8 +1738,11 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    double       aux_om, om_loc[MLS_MAX_DEG], om2, coord;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
+#ifdef WARNINGS
    int          j_max;
+
    double       x_max;
+#endif
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
@@ -1793,12 +1796,21 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 	   }
    }
    rho2  = 0.e0;
+#ifdef WARNINGS
    j_max = 0;
    x_max = 0.e0;
+#endif
 
-   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {rho2 = sample[j]; j_max = j;}
+   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {
+     rho2 = sample[j]; 
+#ifdef WARNINGS
+     j_max = j;
+#endif
+   }
    
+#ifdef WARNINGS
    x_max = (double)j_max * gridStep;
+#endif
 
    if (deg < 2) {
 	   widget->mlsBoost = 1.029e0;
@@ -3086,14 +3098,9 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
    double      *res,  *sol2, *rhs2, res_norm = 0., *normalscales;
    double      *rhss, *dtmp;
    ML_Operator *Amat, *Rmat;
-   ML_Smoother *pre,  *post;
-   ML_CSolve   *csolve;
 
    Amat     = curr->Amat;
    Rmat     = curr->Rmat;
-   pre      = curr->pre_smoother;
-   post     = curr->post_smoother;
-   csolve   = curr->csolve;
    lengf    = Amat->outvec_leng;
 
    /* ------------------------------------------------------------ */

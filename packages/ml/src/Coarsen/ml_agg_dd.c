@@ -288,7 +288,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
       if (rows_in_aggs[i] == NULL)
       {
          printf("ERROR: couldn't allocate memory in CoarsenCoupled\n");
-         printf("       requested = %d\n",aggr_cnt_array[i]*sizeof(int));
+         printf("       requested = %d\n",aggr_cnt_array[i]);
          exit(1);
       }
    }

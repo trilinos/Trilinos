@@ -1042,9 +1042,6 @@ e
 {
 
 
-    /* System generated locals */
-    integer     i__1, i__2, i__3;
-
     /* Local variables */
     static integer info;
     static doublereal temp;
@@ -1253,9 +1250,7 @@ e
 /*     And when  alpha.eq.zero. */
 
     if (*alpha == 0.) {
-	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
-	    i__2 = *m;
 	    for (i = 1; i <= *m; ++i) {
 		B(i,j) = 0.;
 /* L10: */
@@ -1273,10 +1268,8 @@ e
 /*           Form  B := alpha*inv( A )*B. */
 
 	    if (upper) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (*alpha != 1.) {
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = *alpha * B(i,j);
 /* L30: */
@@ -1287,7 +1280,6 @@ e
 			    if (nounit) {
 				B(k,j) /= A(k,k);
 			    }
-			    i__2 = k - 1;
 			    for (i = 1; i <= k-1; ++i) {
 				B(i,j) -= B(k,j) * A(i,k);
 /* L40: */
@@ -1298,22 +1290,18 @@ e
 /* L60: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (*alpha != 1.) {
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = *alpha * B(i,j);
 /* L70: */
 			}
 		    }
-		    i__2 = *m;
 		    for (k = 1; k <= *m; ++k) {
 			if (B(k,j) != 0.) {
 			    if (nounit) {
 				B(k,j) /= A(k,k);
 			    }
-			    i__3 = *m;
 			    for (i = k + 1; i <= *m; ++i) {
 				B(i,j) -= B(k,j) * A(i,k);
 /* L80: */
@@ -1329,12 +1317,9 @@ e
 /*           Form  B := alpha*inv( A' )*B. */
 
 	    if (upper) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			temp = *alpha * B(i,j);
-			i__3 = i - 1;
 			for (k = 1; k <= i-1; ++k) {
 			    temp -= A(k,i) * B(k,j);
 /* L110: */
@@ -1348,11 +1333,9 @@ e
 /* L130: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    for (i = *m; i >= 1; --i) {
 			temp = *alpha * B(i,j);
-			i__2 = *m;
 			for (k = i + 1; k <= *m; ++k) {
 			    temp -= A(k,i) * B(k,j);
 /* L140: */
@@ -1373,19 +1356,15 @@ e
 /*           Form  B := alpha*B*inv( A ). */
 
 	    if (upper) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (*alpha != 1.) {
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = *alpha * B(i,j);
 /* L170: */
 			}
 		    }
-		    i__2 = j - 1;
 		    for (k = 1; k <= j-1; ++k) {
 			if (A(k,j) != 0.) {
-			    i__3 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) -= A(k,j) * B(i,k);
 /* L180: */
@@ -1395,7 +1374,6 @@ e
 		    }
 		    if (nounit) {
 			temp = 1. / A(j,j);
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = temp * B(i,j);
 /* L200: */
@@ -1406,16 +1384,13 @@ e
 	    } else {
 		for (j = *n; j >= 1; --j) {
 		    if (*alpha != 1.) {
-			i__1 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = *alpha * B(i,j);
 /* L220: */
 			}
 		    }
-		    i__1 = *n;
 		    for (k = j + 1; k <= *n; ++k) {
 			if (A(k,j) != 0.) {
-			    i__2 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) -= A(k,j) * B(i,k);
 /* L230: */
@@ -1425,7 +1400,6 @@ e
 		    }
 		    if (nounit) {
 			temp = 1. / A(j,j);
-			i__1 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,j) = temp * B(i,j);
 /* L250: */
@@ -1442,17 +1416,14 @@ e
 		for (k = *n; k >= 1; --k) {
 		    if (nounit) {
 			temp = 1. / A(k,k);
-			i__1 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = temp * B(i,k);
 /* L270: */
 			}
 		    }
-		    i__1 = k - 1;
 		    for (j = 1; j <= k-1; ++j) {
 			if (A(j,k) != 0.) {
 			    temp = A(j,k);
-			    i__2 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) -= temp * B(i,k);
 /* L280: */
@@ -1461,7 +1432,6 @@ e
 /* L290: */
 		    }
 		    if (*alpha != 1.) {
-			i__1 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = *alpha * B(i,k);
 /* L300: */
@@ -1470,21 +1440,17 @@ e
 /* L310: */
 		}
 	    } else {
-		i__1 = *n;
 		for (k = 1; k <= *n; ++k) {
 		    if (nounit) {
 			temp = 1. / A(k,k);
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = temp * B(i,k);
 /* L320: */
 			}
 		    }
-		    i__2 = *n;
 		    for (j = k + 1; j <= *n; ++j) {
 			if (A(j,k) != 0.) {
 			    temp = A(j,k);
-			    i__3 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) -= temp * B(i,k);
 /* L330: */
@@ -1493,7 +1459,6 @@ e
 /* L340: */
 		    }
 		    if (*alpha != 1.) {
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = *alpha * B(i,k);
 /* L350: */
@@ -1784,9 +1749,6 @@ e
 {
 
 
-    /* System generated locals */
-    integer i__1;
-
     /* Local variables */
     static integer i, m;
     static doublereal dtemp;
@@ -1824,7 +1786,6 @@ e
     if (*incy < 0) {
 	iy = (-(*n) + 1) * *incy + 1;
     }
-    i__1 = *n;
     for (i = 1; i <= *n; ++i) {
 	dtemp = DX(ix);
 	DX(ix) = DY(iy);
@@ -1845,7 +1806,6 @@ L20:
     if (m == 0) {
 	goto L40;
     }
-    i__1 = m;
     for (i = 1; i <= m; ++i) {
 	dtemp = DX(i);
 	DX(i) = DY(i);
@@ -1857,7 +1817,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__1 = *n;
     for (i = mp1; i <= *n; i += 3) {
 	dtemp = DX(i);
 	DX(i) = DY(i);
@@ -1879,7 +1838,6 @@ doublereal MLFORTRAN(dasum)(integer *n, doublereal *dx, integer *incx)
 
 
     /* System generated locals */
-    integer i__1, i__2;
     doublereal ret_val, d__1, d__2, d__3, d__4, d__5, d__6;
 
     /* Local variables */
@@ -1912,8 +1870,6 @@ doublereal MLFORTRAN(dasum)(integer *n, doublereal *dx, integer *incx)
 /*        code for increment not equal to 1 */
 
     nincx = *n * *incx;
-    i__1 = nincx;
-    i__2 = *incx;
     for (i = 1; *incx < 0 ? i >= nincx : i <= nincx; i += *incx) {
         dtemp += (d__1 = DX(i), ML_abs(d__1));
 /* L10: */
@@ -1931,7 +1887,6 @@ L20:
     if (m == 0) {
         goto L40;
     }
-    i__2 = m;
     for (i = 1; i <= m; ++i) {
         dtemp += (d__1 = DX(i), ML_abs(d__1));
 /* L30: */
@@ -1941,7 +1896,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__2 = *n;
     for (i = mp1; i <= *n; i += 6) {
         dtemp = dtemp + (d__1 = DX(i), ML_abs(d__1)) + (d__2 = DX(i + 1), ML_abs(
                 d__2)) + (d__3 = DX(i + 2), ML_abs(d__3)) + (d__4 = DX(i + 3),
@@ -1961,8 +1915,6 @@ L60:
 {
 
 
-    /* System generated locals */
-    integer i__1;
 
     /* Local variables */
     static integer i, m, ix, iy, mp1;
@@ -2002,7 +1954,6 @@ L60:
     if (*incy < 0) {
         iy = (-(*n) + 1) * *incy + 1;
     }
-    i__1 = *n;
     for (i = 1; i <= *n; ++i) {
         DY(iy) += *da * DX(ix);
         ix += *incx;
@@ -2021,7 +1972,6 @@ L20:
     if (m == 0) {
         goto L40;
     }
-    i__1 = m;
     for (i = 1; i <= m; ++i) {
         DY(i) += *da * DX(i);
 /* L30: */
@@ -2031,7 +1981,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__1 = *n;
     for (i = mp1; i <= *n; i += 4) {
         DY(i) += *da * DX(i);
         DY(i + 1) += *da * DX(i + 1);
@@ -2051,7 +2000,6 @@ doublereal MLFORTRAN(ddot)(integer *n, doublereal *dx, integer *incx, doublereal
 
 
     /* System generated locals */
-    integer i__1;
     doublereal ret_val;
 
     /* Local variables */
@@ -2093,7 +2041,6 @@ doublereal MLFORTRAN(ddot)(integer *n, doublereal *dx, integer *incx, doublereal
     if (*incy < 0) {
         iy = (-(*n) + 1) * *incy + 1;
     }
-    i__1 = *n;
     for (i = 1; i <= *n; ++i) {
         dtemp += DX(ix) * DY(iy);
         ix += *incx;
@@ -2113,7 +2060,6 @@ L20:
     if (m == 0) {
         goto L40;
     }
-    i__1 = m;
     for (i = 1; i <= m; ++i) {
         dtemp += DX(i) * DY(i);
 /* L30: */
@@ -2123,7 +2069,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__1 = *n;
     for (i = mp1; i <= *n; i += 5) {
         dtemp = dtemp + DX(i) * DY(i) + DX(i + 1) * DY(i + 1) + DX(i + 2) *
                 DY(i + 2) + DX(i + 3) * DY(i + 3) + DX(i + 4) * DY(i + 4);
@@ -2149,8 +2094,6 @@ L60:
 {
 
 
-    /* System generated locals */
-    integer i__1, i__2;
 
     /* Local variables */
     static integer i, m, nincx, mp1;
@@ -2179,8 +2122,6 @@ L60:
 /*        code for increment not equal to 1 */
 
     nincx = *n * *incx;
-    i__1 = nincx;
-    i__2 = *incx;
     for (i = 1; *incx < 0 ? i >= nincx : i <= nincx; i += *incx) {
 	DX(i) = *da * DX(i);
 /* L10: */
@@ -2197,7 +2138,6 @@ L20:
     if (m == 0) {
 	goto L40;
     }
-    i__2 = m;
     for (i = 1; i <= m; ++i) {
 	DX(i) = *da * DX(i);
 /* L30: */
@@ -2207,7 +2147,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__2 = *n;
     for (i = mp1; i <= *n; i += 5) {
 	DX(i) = *da * DX(i);
 	DX(i + 1) = *da * DX(i + 1);
@@ -2235,14 +2174,11 @@ L40:
 {
 
 
-    /* System generated locals */
-    integer i__1, i__2, i__3;
-
     /* Local variables */
     static integer info;
     static logical nota, notb;
     static doublereal temp;
-    static integer i, j, l, ncola;
+    static integer i, j, l;
     static integer nrowa, nrowb;
 
 
@@ -2416,10 +2352,8 @@ L40:
     notb = MLFORTRAN(lsame)(transb, "N");
     if (nota) {
 	nrowa = *m;
-	ncola = *k;
     } else {
 	nrowa = *k;
-	ncola = *m;
     }
     if (notb) {
 	nrowb = *k;
@@ -2463,9 +2397,7 @@ L40:
 
     if (*alpha == 0.) {
 	if (*beta == 0.) {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    C(i,j) = 0.;
 /* L10: */
@@ -2473,9 +2405,7 @@ L40:
 /* L20: */
 	    }
 	} else {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    C(i,j) = *beta * C(i,j);
 /* L30: */
@@ -2493,26 +2423,21 @@ L40:
 
 /*           Form  C := alpha*A*B + beta*C. */
 
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (*beta == 0.) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			C(i,j) = 0.;
 /* L50: */
 		    }
 		} else if (*beta != 1.) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L60: */
 		    }
 		}
-		i__2 = *k;
 		for (l = 1; l <= *k; ++l) {
 		    if (B(l,j) != 0.) {
 			temp = *alpha * B(l,j);
-			i__3 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    C(i,j) += temp * A(i,l);
 /* L70: */
@@ -2526,12 +2451,9 @@ L40:
 
 /*           Form  C := alpha*A'*B + beta*C */
 
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    temp = 0.;
-		    i__3 = *k;
 		    for (l = 1; l <= *k; ++l) {
 			temp += A(l,i) * B(l,j);
 /* L100: */
@@ -2551,26 +2473,21 @@ L40:
 
 /*           Form  C := alpha*A*B' + beta*C */
 
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (*beta == 0.) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			C(i,j) = 0.;
 /* L130: */
 		    }
 		} else if (*beta != 1.) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L140: */
 		    }
 		}
-		i__2 = *k;
 		for (l = 1; l <= *k; ++l) {
 		    if (B(j,l) != 0.) {
 			temp = *alpha * B(j,l);
-			i__3 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    C(i,j) += temp * A(i,l);
 /* L150: */
@@ -2584,12 +2501,9 @@ L40:
 
 /*           Form  C := alpha*A'*B' + beta*C */
 
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    temp = 0.;
-		    i__3 = *k;
 		    for (l = 1; l <= *k; ++l) {
 			temp += A(l,i) * B(j,l);
 /* L180: */
@@ -2626,7 +2540,7 @@ integer MLFORTRAN(idamax)(integer *n, doublereal *dx, integer *incx)
 
 
     /* System generated locals */
-    integer ret_val, i__1;
+    integer ret_val;
     doublereal d__1;
 
     /* Local variables */
@@ -2663,7 +2577,6 @@ integer MLFORTRAN(idamax)(integer *n, doublereal *dx, integer *incx)
     ix = 1;
     dmax__ = ML_abs(DX(1));
     ix += *incx;
-    i__1 = *n;
     for (i = 2; i <= *n; ++i) {
 	if ((d__1 = DX(ix), ML_abs(d__1)) <= dmax__) {
 	    goto L5;
@@ -2680,7 +2593,6 @@ L5:
 
 L20:
     dmax__ = ML_abs(DX(1));
-    i__1 = *n;
     for (i = 2; i <= *n; ++i) {
 	if ((d__1 = DX(i), ML_abs(d__1)) <= dmax__) {
 	    goto L30;
@@ -4900,9 +4812,6 @@ WORK)
 {
 
 
-    /* System generated locals */
-    integer i__1;
-
     /* Local variables */
     static integer i, m, ix, iy, mp1;
 
@@ -4938,7 +4847,6 @@ WORK)
     if (*incy < 0) {
 	iy = (-(*n) + 1) * *incy + 1;
     }
-    i__1 = *n;
     for (i = 1; i <= *n; ++i) {
 	DY(iy) = DX(ix);
 	ix += *incx;
@@ -4957,7 +4865,6 @@ L20:
     if (m == 0) {
 	goto L40;
     }
-    i__1 = m;
     for (i = 1; i <= m; ++i) {
 	DY(i) = DX(i);
 /* L30: */
@@ -4967,7 +4874,6 @@ L20:
     }
 L40:
     mp1 = m + 1;
-    i__1 = *n;
     for (i = mp1; i <= *n; i += 7) {
 	DY(i) = DX(i);
 	DY(i + 1) = DX(i + 1);
@@ -4995,9 +4901,6 @@ L40:
 int dummy3, int dummy4)
 {
 
-
-    /* System generated locals */
-    integer     i__1, i__2, i__3;
 
     /* Local variables */
     static integer info;
@@ -5204,9 +5107,7 @@ int dummy3, int dummy4)
 /*     And when  alpha.eq.zero. */
 
     if (*alpha == 0.) {
-	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
-	    i__2 = *m;
 	    for (i = 1; i <= *m; ++i) {
 		B(i,j) = 0.;
 /* L10: */
@@ -5224,13 +5125,10 @@ int dummy3, int dummy4)
 /*           Form  B := alpha*A*B. */
 
 	    if (upper) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = *m;
 		    for (k = 1; k <= *m; ++k) {
 			if (B(k,j) != 0.) {
 			    temp = *alpha * B(k,j);
-			    i__3 = k - 1;
 			    for (i = 1; i <= k-1; ++i) {
 				B(i,j) += temp * A(i,k);
 /* L30: */
@@ -5245,7 +5143,6 @@ int dummy3, int dummy4)
 /* L50: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    for (k = *m; k >= 1; --k) {
 			if (B(k,j) != 0.) {
@@ -5254,7 +5151,6 @@ int dummy3, int dummy4)
 			    if (nounit) {
 				B(k,j) *= A(k,k);
 			    }
-			    i__2 = *m;
 			    for (i = k + 1; i <= *m; ++i) {
 				B(i,j) += temp * A(i,k);
 /* L60: */
@@ -5270,14 +5166,12 @@ int dummy3, int dummy4)
 /*           Form  B := alpha*B*A'. */
 
 	    if (upper) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    for (i = *m; i >= 1; --i) {
 			temp = B(i,j);
 			if (nounit) {
 			    temp *= A(i,i);
 			}
-			i__2 = i - 1;
 			for (k = 1; k <= i-1; ++k) {
 			    temp += A(k,i) * B(k,j);
 /* L90: */
@@ -5288,15 +5182,12 @@ int dummy3, int dummy4)
 /* L110: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			temp = B(i,j);
 			if (nounit) {
 			    temp *= A(i,i);
 			}
-			i__3 = *m;
 			for (k = i + 1; k <= *m; ++k) {
 			    temp += A(k,i) * B(k,j);
 /* L120: */
@@ -5319,16 +5210,13 @@ int dummy3, int dummy4)
 		    if (nounit) {
 			temp *= A(j,j);
 		    }
-		    i__1 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			B(i,j) = temp * B(i,j);
 /* L150: */
 		    }
-		    i__1 = j - 1;
 		    for (k = 1; k <= j-1; ++k) {
 			if (A(k,j) != 0.) {
 			    temp = *alpha * A(k,j);
-			    i__2 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) += temp * B(i,k);
 /* L160: */
@@ -5339,22 +5227,18 @@ int dummy3, int dummy4)
 /* L180: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    temp = *alpha;
 		    if (nounit) {
 			temp *= A(j,j);
 		    }
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			B(i,j) = temp * B(i,j);
 /* L190: */
 		    }
-		    i__2 = *n;
 		    for (k = j + 1; k <= *n; ++k) {
 			if (A(k,j) != 0.) {
 			    temp = *alpha * A(k,j);
-			    i__3 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) += temp * B(i,k);
 /* L200: */
@@ -5370,13 +5254,10 @@ int dummy3, int dummy4)
 /*           Form  B := alpha*B*A'. */
 
 	    if (upper) {
-		i__1 = *n;
 		for (k = 1; k <= *n; ++k) {
-		    i__2 = k - 1;
 		    for (j = 1; j <= k-1; ++j) {
 			if (A(j,k) != 0.) {
 			    temp = *alpha * A(j,k);
-			    i__3 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) += temp * B(i,k);
 /* L230: */
@@ -5389,7 +5270,6 @@ int dummy3, int dummy4)
 			temp *= A(k,k);
 		    }
 		    if (temp != 1.) {
-			i__2 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = temp * B(i,k);
 /* L250: */
@@ -5399,11 +5279,9 @@ int dummy3, int dummy4)
 		}
 	    } else {
 		for (k = *n; k >= 1; --k) {
-		    i__1 = *n;
 		    for (j = k + 1; j <= *n; ++j) {
 			if (A(j,k) != 0.) {
 			    temp = *alpha * A(j,k);
-			    i__2 = *m;
 			    for (i = 1; i <= *m; ++i) {
 				B(i,j) += temp * B(i,k);
 /* L270: */
@@ -5416,7 +5294,6 @@ int dummy3, int dummy4)
 			temp *= A(k,k);
 		    }
 		    if (temp != 1.) {
-			i__1 = *m;
 			for (i = 1; i <= *m; ++i) {
 			    B(i,k) = temp * B(i,k);
 /* L290: */
@@ -6338,8 +6215,6 @@ doublereal MLFORTRAN(dnrm2)(integer *n, doublereal *x, integer *incx)
 {
 
 
-    /* System generated locals */
-    integer i__1, i__2;
     doublereal ret_val, d__1;
 
 
@@ -6379,8 +6254,6 @@ doublereal MLFORTRAN(dnrm2)(integer *n, doublereal *x, integer *incx)
           auxiliary routine:   
           CALL DLASSQ( N, X, INCX, SCALE, SSQ ) */
 
-	i__1 = (*n - 1) * *incx + 1;
-	i__2 = *incx;
 	for (ix = 1; *incx < 0 ? ix >= (*n-1)**incx+1 : ix <= (*n-1)**incx+1; ix += *incx) {
 	    if (X(ix) != 0.) {
 		absxi = (d__1 = X(ix), ML_abs(d__1));

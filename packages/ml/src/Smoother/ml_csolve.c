@@ -207,7 +207,7 @@ int ML_CSolve_Set_Label( ML_CSolve *csolve, char *label)
 
 int ML_CSolve_Aggr(void *vsolver,int ilen,double *x,int olen,double *rhs)
 {
-   int            i, n, flag, N_local, offset;
+   int            i, n, N_local, offset;
    double         *local_x, *local_rhs;
    ML_Comm        *comm;
    ML_Solver      *solver;
@@ -229,7 +229,6 @@ int ML_CSolve_Aggr(void *vsolver,int ilen,double *x,int olen,double *rhs)
    N_local  = (int) solver->dble_params1[0];
    offset   = (int) solver->dble_params1[1];
    n        = (int) solver->dble_params1[2];
-   flag     = solver->reuse_flag;
 
    /* ------------------------------------------------------------- */
    /* gather from all processors the complete right hand side       */

@@ -285,11 +285,11 @@ int ML_AMG_Identity_Getrows(void *data, int N_requested_rows,
            int requested_rows[], int allocated_space, int columns[], 
            double values[], int row_lengths[])
 {
+  /*
    ML_Operator    *Amat;
-   ML_GetrowFunc  *getrow_obj;
 
    Amat = (ML_Operator *) data;
-   getrow_obj = Amat->getrow;
+  */
    if (N_requested_rows > 1) 
    {
       printf("Too bad. This routine only works with 1 row at a time\n");

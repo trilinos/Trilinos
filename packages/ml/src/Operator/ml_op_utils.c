@@ -783,10 +783,7 @@ int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
                 int allocated_space, int columns[], double values[],
 				int row_lengths[])
 {
-   double *temp;
    int    i;
-
-   temp = (double *) data;
 
    if (allocated_space < N_requested_rows) return(0);
 

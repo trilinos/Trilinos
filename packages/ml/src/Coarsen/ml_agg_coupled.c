@@ -511,7 +511,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       if (rows_in_aggs[i] == NULL)
       {
          printf("ERROR: couldn't allocate memory in CoarsenCoupled\n");
-         printf("       requested = %d\n",aggr_cnt_array[i]*sizeof(int));
+         printf("       requested = %d\n",aggr_cnt_array[i]);
          exit(1);
       }
    }
@@ -906,7 +906,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    int     exp_Nrows, max_dist, *sendlist_proc;
    int     phaseAFlag, printflag;
    int     max_length=0;
-   int     attach_scheme, min_agg_size, max_neigh_selected;
+   int     min_agg_size, max_neigh_selected;
    ML_Node       *node_head, *node_tail, *new_node;
 
    /* ============================================================= */
@@ -917,7 +917,6 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    Nrows = mat_indx[0] - 1;
    exp_Nrows = Nrows;
    for ( i = 0; i < N_neighbors; i++ ) exp_Nrows += recv_leng[i];
-   attach_scheme = ml_ag->attach_scheme;
    printflag = ml_ag->print_flag;
 
    /* ============================================================= */
@@ -1672,7 +1671,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
 {
    int      i, j, k, m, N_neighbors, *send_leng, *recv_leng, *send_list;
    int      *neighbors, nbytes, total_send_leng, total_recv_leng;
-   int      index, count, count2, label, mypid, nprocs, msgtype;
+   int      index, count, count2, label, nprocs, msgtype;
    int      new_N_neighbors, *new_send_leng, *new_send_list;
    int      *new_recv_list, *new_recv_leng, *new_neighbors;
    int      toproc, fromproc, *recv_list; 
@@ -1692,7 +1691,6 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
       (*out_send_list) = NULL;
       return 0;
    }
-   mypid = comm->ML_mypid;
 
    /* ----------------------------------------------------------------- */
    /* allocate storage for the communication information                */
@@ -1975,7 +1973,7 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
    int           mypid, msgtype, procnum, *com_buf, *com_buf2, nready;
    int           nbytes, total_send_leng, total_recv_leng, select_flag;
    int           aggr_count, *aggr_cnt_array, loop_flag, *itmp_array;
-   int           old_aggr_count, nneigh_selected, node_type_scalar;
+   int           nneigh_selected, node_type_scalar;
    int           nselected, total_nselected, total_Nrows, nwaiting;
    int           total_nwaiting, total_aggr_count, aggr_cnt_leng; 
    int           sqrtnprocs;
@@ -2097,7 +2095,9 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
 
       while ( loop_flag != 0 )
       {
+	/*
          old_aggr_count = aggr_count;
+	*/
 
          for ( inode2 = 0; inode2 < Nrows; inode2++ )
          {
@@ -2550,7 +2550,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
         int *recv_list, ML_Comm *comm, int printflag )
 {
    int          i, k, m, inode, jnode, index, mincount, select_flag;
-   int          maxcount, length, *int_array, *int_array2, *com_buf;
+   int          length, *int_array, *int_array2, *com_buf;
    int          total_send_leng, msgtype, mypid, aggr_count, *aggr_cnt_array;
    int          nselected, total_nselected, total_Nrows, total_aggr_count; 
    int          Nrows, nbytes;
@@ -2619,7 +2619,9 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
 
          else if ( attach_scheme == ML_AGGR_MAXLINK )
          {
+	   /*
             maxcount = 0;
+	   */
             length = mat_indx[inode+1] - mat_indx[inode];
             if (length>0) int_array  = (int *) malloc(length * sizeof(int));
             if (length>0) int_array2 = (int *) malloc(length * sizeof(int));

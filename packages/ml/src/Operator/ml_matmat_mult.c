@@ -40,10 +40,13 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int *col_inds, B_total_Nnz, itemp, B_allocated, hash_val, *accum_index, lots_of_space;
    int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
    int subB_Nnz, Next_est, total_cols = 0;
-   double t1,t6;
+   /*
+   double t1, t6;
+   */
    int tcols, hash_used, j, *tptr;
-
+   /*
    t1 = GetClock();
+   */
    N  = Amatrix->getrow->Nrows;
 
    /**************************************************************************/
@@ -517,8 +520,8 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    ML_free(accum_val);
    ML_free(A_i_vals);
    ML_free(A_i_cols);
-   t6 = GetClock();
    /*
+   t6 = GetClock();
    printf("matmat  ==> %e   %d\n", t6-t1,Bmatrix->comm->ML_mypid); fflush(stdout);
    */
 

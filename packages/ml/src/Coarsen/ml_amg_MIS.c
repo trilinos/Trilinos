@@ -56,7 +56,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     printflag, sizeint, logsizeint, offnrows, *offibuffer, *offmap;
    int     *offmap2, *offlengths, numCi, *Ci_array,/* *int_array,*/ *int_buf;
    int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
-   int     msgtype, mypid, nprocs, *send_leng=NULL, *recv_leng=NULL;
+   int     msgtype, mypid, *send_leng=NULL, *recv_leng=NULL;
    int     N_neighbors, *neighbors=NULL, *send_list=NULL, sys_unk_filter;
    int     *recv_list=NULL, total_recv_leng=0, total_send_leng=0, idiag;
    int     A_ntotal, A_Nneigh, *A_rcvleng=NULL, *A_sndleng=NULL, *sys_info;
@@ -69,8 +69,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    double  *values, *offdbuffer, *dsumCij, dsumCi, rowsum, dtemp;
    char    *vtype, *state, *bdry, *border_flag;
    ML_GetrowFunc *getrow_obj;
-   ML_CommInfoOP *getrow_comm, *mat_comm;
-   struct ML_CSR_MSRdata *temp, *csr_data;
+   ML_CommInfoOP *mat_comm;
+   struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
 
    /* ============================================================= */
@@ -78,7 +78,6 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* ============================================================= */
 
    mypid          = comm->ML_mypid;
-   nprocs         = comm->ML_nprocs;
    epsilon        = ml_amg->threshold;
    num_PDE_eqns   = ml_amg->num_PDE_eqns;
    printflag      = ml_amg->print_flag;
@@ -339,7 +338,6 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    else                CF_array = NULL;
    for (i = 0; i < A_ntotal; i++) CF_array[i] = -1;
 
-   temp   = (struct ML_CSR_MSRdata *) Amatrix->data;
    if ( Nrows > 0 ) vlist = (int *) malloc(sizeof(int)* Nrows);
    else             vlist = NULL;
    if ( A_ntotal > 0 ) state = (char *) malloc(sizeof(char)* A_ntotal);
@@ -1039,7 +1037,6 @@ for ( i = 0; i < Nrows; i++ )
    */
    exp_Nrows = A_ntotal;
    getrow_obj  = Amatrix->getrow;
-   getrow_comm = getrow_obj->pre_comm;
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
    nbytes      = N_neighbors * sizeof( int );
    if ( nbytes > 0 ) 
