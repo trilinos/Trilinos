@@ -10,7 +10,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_LinearProblem.h" 
-#include "Amesos_Umfpack.h" 
+#include "Amesos_Factory.h" 
 
 
 //  Jonathan - I need to convert an ml to an ML_Operator 
@@ -132,10 +132,13 @@ int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle)
 
   AMESOS::Parameter::List ParamList ;
 
-  Amesos_Umfpack *A_Umfpack = new Amesos_Umfpack( *Amesos_LinearProblem, ParamList );
+  Amesos_BaseSolver* A_Base;
   
-  A_Umfpack->SymbolicFactorization();
-  A_Umfpack->NumericFactorization();
+  Amesos_Factory A_Factory;
+  A_Base = A_Factory.Create( AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+  
+  A_Base->SymbolicFactorization();
+  A_Base->NumericFactorization();
 
 
   ML_free(global_nodes_as_int);
@@ -143,21 +146,15 @@ int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle)
   ML_free(global_rows);
   ML_free(global_nodes);
 
-  *Amesos_Handle = (void *) A_Umfpack ;
+  *Amesos_Handle = (void *) A_Base ;
 
   return 0;
 }
 
 int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) {
 
-  double my_x[100000];
-  for (int i=0; i <12345; i++ ) my_x[i] = 0 ; 
-
-  double my_rhs[100000];
-  for (int i=0; i <5; i++ ) my_rhs[i] = rhs[i] ; 
-
-  Amesos_Umfpack *A_Umfpack = (Amesos_Umfpack *) Amesos_Handle ;
-  Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *) A_Umfpack->GetProblem() ; 
+  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
+  Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *) A_Base->GetProblem() ; 
 
   Epetra_BlockMap map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
 
@@ -169,20 +166,23 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) {
   Amesos_LinearProblem->SetLHS( &EV_lhs ) ; 
 
 
-  A_Umfpack->Solve() ; 
+  A_Base->Solve() ; 
 
 }
 
 void ML_Amesos_Destroy(void *Amesos_Handle){
 
-  Amesos_Umfpack *A_Umfpack = (Amesos_Umfpack *) Amesos_Handle ;
+  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   const Epetra_LinearProblem *Amesos_LinearProblem;
-  Amesos_LinearProblem = A_Umfpack->GetProblem() ; 
+  Amesos_LinearProblem = A_Base->GetProblem() ; 
   const Epetra_Operator *EO = Amesos_LinearProblem->GetOperator() ; 
 
+  cout << "In the desctructor" << endl;
+   
+  
   delete Amesos_LinearProblem->GetOperator() ; 
 
   delete Amesos_LinearProblem ;
-  delete A_Umfpack ;
+  delete A_Base ;
 }
 
