@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   // Construct a Source Map that puts approximately the same Number of equations on each processor in 
   // uniform global ordering
 
-  Epetra_Map& SourceMap = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map SourceMap(NumGlobalEquations, NumMyEquations, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   int NumMyElements = SourceMap.NumMyElements();
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
   // Construct a Standard Map that puts approximately the same number of equations on each processor in 
   // uniform global ordering
 
-  Epetra_Map& StandardMap = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map StandardMap(NumGlobalEquations, NumMyEquations, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   NumMyElements = StandardMap.NumMyElements();
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 
   // Create a standard Epetra_CrsGraph
 
-  Epetra_CrsGraph& StandardGraph = *new Epetra_CrsGraph(Copy, StandardMap, 3);
+  Epetra_CrsGraph StandardGraph(Copy, StandardMap, 3);
   EPETRA_TEST_ERR(StandardGraph.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(StandardGraph.IndicesAreLocal(),ierr);
   
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
   // Create Epetra_CrsMatrix using the just-built graph
 
-  Epetra_CrsMatrix& StandardMatrix = *new Epetra_CrsMatrix(Copy, StandardGraph);
+  Epetra_CrsMatrix StandardMatrix(Copy, StandardGraph);
   EPETRA_TEST_ERR(StandardMatrix.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
   
@@ -299,11 +299,11 @@ int main(int argc, char *argv[])
 
   for (i=0; i< OverlapNumMyElements; i++) OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
 
-  Epetra_Map& OverlapMap = *new Epetra_Map(-1, OverlapNumMyElements, OverlapMyGlobalElements, 0, Comm);
+  Epetra_Map OverlapMap(-1, OverlapNumMyElements, OverlapMyGlobalElements, 0, Comm);
 
   // Create the Overlap Epetra_Matrix
 
-  Epetra_CrsMatrix& OverlapMatrix = *new Epetra_CrsMatrix(Copy, OverlapMap, 4);
+  Epetra_CrsMatrix OverlapMatrix(Copy, OverlapMap, 4);
   EPETRA_TEST_ERR(OverlapMatrix.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(OverlapMatrix.IndicesAreLocal(),ierr);
   
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
 
-  Epetra_CrsMatrix& GatheredMatrix = *new Epetra_CrsMatrix(Copy, StandardGraph);
+  Epetra_CrsMatrix GatheredMatrix(Copy, StandardGraph);
   Epetra_Export Exporter(OverlapMap, StandardMap);
   EPETRA_TEST_ERR(!(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0),ierr);
   EPETRA_TEST_ERR(!(GatheredMatrix.TransformToLocal()==0),ierr);
@@ -369,6 +369,7 @@ int main(int argc, char *argv[])
   //cout << " Overlap Matrix "  << endl<< OverlapMatrix   << endl
   //     << " Standard Matrix " << endl << StandardMatrix << endl 
   //     << "GatheredMatrix "   << endl << GatheredMatrix << endl;
+
   forierr = 0;
   for (i=0; i< StandardNumMyRows; i++)
     {
