@@ -10,14 +10,23 @@ EXEEXT = .exe
 
 # List the names of all exe's in this directory here
 if ML_STANDALONE_MODE
+
 if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par
 else
 noinst_PROGRAMS = mlguide
 endif
+
 else
+
+if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max
+else
+noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
+                  ml_example1dGS ml_example2d ml_example3d ml_simple_max
+endif
+
 endif
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
