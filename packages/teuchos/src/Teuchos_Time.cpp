@@ -57,7 +57,7 @@ double Time::wallTime()
 
 #else
 
-#ifndef MINGW
+#  ifndef MINGW
   struct timeval tp;
   static long start = 0, startu;
   if (!start)
@@ -69,11 +69,10 @@ double Time::wallTime()
   }
   gettimeofday(&tp, NULL);
   return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
-#else
+#  else
   return( (double) clock() / CLOCKS_PER_SEC );
-#endif
+#  endif
 
 #endif
 
 }
-
