@@ -334,8 +334,6 @@ if test -n "$PYTHON"; then
      [Python wrappers require swig (Simple Wrapper Interface Generator).
       See http://www.swig.org])
   fi
-  AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
-  AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
   # SWIG configuration
   AC_PROG_SWIG(1.3.23)
@@ -343,6 +341,8 @@ if test -n "$PYTHON"; then
   SWIG_MULTI_MODULE_SUPPORT
   SWIG_PYTHON
 fi
+AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
 # ------------------------------------------------------------------------
 # Specify other directories 
