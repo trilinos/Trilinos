@@ -32,12 +32,6 @@ static char *cvs_rcbconsth_id = "$Id$";
   int       proc;                  owner of this dot before RCB
 */
 
-/* Steve Plimpton, Sandia National Labs, ABQ, NM  87185
-   Dept 9221, MS 1111
-   (505) 845-7873
-   sjplimp@cs.sandia.gov
-*/
-
                              /* dot to balance on for RCB */ 
 struct rcb_dot {	        /* dot = point in 3-space */
   double    X[3];		/* location of dot */
@@ -72,5 +66,8 @@ typedef struct RCB_Struct {
 extern int LB_RCB_Build_Structure(LB *, int *, int *, int);
 extern void LB_RCB_Free_Structure(LB *);
 extern int LB_Set_RCB_Param(char *, char *);
+extern int LB_Box_Assign(LB *, double, double, double, double, double, double,
+			int *, int *);
+extern int LB_Point_Assign(LB *, double *, int *);
 
 #endif

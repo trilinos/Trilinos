@@ -248,7 +248,7 @@ static int rcb(
   MPI_Status status;
   MPI_Op box_op;
   MPI_Datatype box_type;
-  MPI_User_function rcb_box_merge;
+  MPI_User_function LB_rcb_box_merge;
 
   if (stats) {
     MPI_Barrier(lb->Communicator);
@@ -331,7 +331,7 @@ static int rcb(
   MPI_Type_contiguous(6,MPI_DOUBLE,&box_type);
   MPI_Type_commit(&box_type);
 
-  MPI_Op_create(&rcb_box_merge,1,&box_op);
+  MPI_Op_create(&LB_rcb_box_merge,1,&box_op);
 
   /* set dot weights = 1.0 if user didn't */
 
@@ -735,7 +735,7 @@ static void RCB_error(LB *lb, int size)
 
 /* min/max merge of each component of a rcb_box */
 
-void rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
+void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 {
   int i;
