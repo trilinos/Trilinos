@@ -172,6 +172,11 @@ int FiniteDifference::NumMyRowEntries(int MyRow, int & NumEntries) const
 {
   return jacobian->NumMyRowEntries(MyRow, NumEntries);
 }
+
+int FiniteDifference::MaxNumEntries() const
+{
+  return jacobian->MaxNumEntries();
+}
   
 int FiniteDifference::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
 {
@@ -291,6 +296,11 @@ const Epetra_Map& FiniteDifference::RowMatrixColMap() const
 const Epetra_Import* FiniteDifference::RowMatrixImporter() const
 {
   return jacobian->RowMatrixImporter();
+}
+
+const Epetra_BlockMap& FiniteDifference::Map() const
+{
+  return jacobian->Map();
 }
 
 bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)

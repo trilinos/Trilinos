@@ -113,6 +113,9 @@ class FiniteDifference : public Epetra_RowMatrix {
 
   //! See Epetra_RowMatrix documentation.
   virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int MaxNumEntries() const;
   
   //! See Epetra_RowMatrix documentation.
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
@@ -185,6 +188,9 @@ class FiniteDifference : public Epetra_RowMatrix {
   
   //! See Epetra_RowMatrix documentation.
   virtual const Epetra_Import * RowMatrixImporter() const;
+
+  //! See Epetra_SrcDistObj documentation.
+  virtual const Epetra_BlockMap& Map() const;
 
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
