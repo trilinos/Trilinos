@@ -124,9 +124,6 @@ float   **eweights 		/* edge weight list data */
     while (!end_flag)
 	j = read_int(fin, &end_flag);
 
-    printf("Debug: using_vwgts=%1d, using_ewgts=%1d, vwgt_dim = %d, ewgt_dim = %d\n", 
-           using_vwgts, using_ewgts, *vwgt_dim, *ewgt_dim);
-
     /* Allocate space for rows and columns. */
     *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
     if (narcs != 0)
