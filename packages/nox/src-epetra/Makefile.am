@@ -103,7 +103,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_LIBADD = $(XTRALDADD)
+libnoxepetra_a_LIBADD = $(CXXREPOS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

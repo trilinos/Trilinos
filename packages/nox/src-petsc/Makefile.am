@@ -96,7 +96,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libnoxpetsc_a_LIBADD = $(XTRALDADD)
+libnoxpetsc_a_LIBADD = $(CXXREPOS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -104,6 +104,11 @@ libnoxpetsc_a_LIBADD = $(XTRALDADD)
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
 
 
 

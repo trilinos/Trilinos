@@ -89,6 +89,7 @@ AMTAR = @AMTAR@
 AWK = @AWK@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
+CXXREPOS = @CXXREPOS@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
@@ -101,7 +102,6 @@ PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 VERSION = @VERSION@
-XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -134,7 +134,7 @@ rosenbrock_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
 # Order matters here!
-rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+rosenbrock_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
 
 
 # ------------------------------------------------------------------------
@@ -148,6 +148,8 @@ rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample 
 @USE_ALTERNATE_AR_FALSE@libnoxexample_a_AR = $(AR) cru
 
 MAINTAINERCLEANFILES = Makefile.in 
+
+MOSTLYCLEANFILES = $(CXXREPOS)
 subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
@@ -376,6 +378,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 

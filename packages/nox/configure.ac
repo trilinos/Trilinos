@@ -250,6 +250,8 @@ case $target in
 
     if test "${CXX}" = "CC"; then
      CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     F77=f77
+     FFLAGS="-64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"    
     fi
 
@@ -654,7 +656,7 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
 
   # Find valid LAPACK
   AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
+  AC_SEARCH_LIBS(dgetrs,[cxml lapack complib.sgimath],,AC_MSG_ERROR([Cannot find LAPACK library]))
 
 fi
 
@@ -895,19 +897,22 @@ dnl fi
 # ------------------------------------------------------------------------
 
 # -- DEC CXX --
-dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-if test X${target_cpu} = Xalpha; then
-   XTRALDADD="cxx_repository/*.o"
-fi
+case $target in
+  alpha*)
+    if test CXX = cxx; then
+      CXXREPOS="cxx_repository/*.o"
+    fi
+  ;;
+esac
 
-AC_MSG_CHECKING([for extra object files to be linked])
-if test X$XTRALDADD = X; then
+AC_MSG_CHECKING([for C++ repository files])
+if test X$CXXREPOS = X; then
 AC_MSG_RESULT(none)
 else
-AC_MSG_RESULT($XTRALDADD)
+AC_MSG_RESULT($CXXREPOS)
 fi
 
-AC_SUBST(XTRALDADD)
+AC_SUBST(CXXREPOS)
 
 # ------------------------------------------------------------------------
 # Checks for library functions

@@ -59,7 +59,7 @@ rosenbrock_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
 # Order matters here!
-rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+rosenbrock_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -81,7 +81,6 @@ endif
 
 MAINTAINERCLEANFILES = Makefile.in 
 
-
-
+MOSTLYCLEANFILES = $(CXXREPOS)
 
 

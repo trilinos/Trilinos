@@ -166,7 +166,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libnox_a_LIBADD = $(XTRALDADD)
+libnox_a_LIBADD = $(CXXREPOS)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
@@ -198,6 +198,11 @@ pkgexecinclude_HEADERS = NOX_Config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
 
 
 

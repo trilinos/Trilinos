@@ -96,6 +96,7 @@ AMTAR = @AMTAR@
 AWK = @AWK@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
+CXXREPOS = @CXXREPOS@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
@@ -108,7 +109,6 @@ PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 VERSION = @VERSION@
-XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -171,7 +171,7 @@ libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libnoxepetra_a_LIBADD = $(XTRALDADD)
+libnoxepetra_a_LIBADD = $(CXXREPOS)
 
 
 # ------------------------------------------------------------------------
