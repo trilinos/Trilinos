@@ -350,7 +350,27 @@ COMP_H = \
 	$(srcdir)/Ifpack_SOR.h \
 	$(srcdir)/Ifpack_SSOR.h \
 	$(srcdir)/Ifpack_PointPreconditioner.h \
-	$(srcdir)/Ifpack_BlockPreconditioner.h
+	$(srcdir)/Ifpack_BlockPreconditioner.h \
+	$(srcdir)/Ifpack_BlockJacobi.h \
+	$(srcdir)/Ifpack_BlockGaussSeidel.h \
+	$(srcdir)/Ifpack_Container.h \
+	$(srcdir)/Ifpack_SparseContainer.h \
+	$(srcdir)/Ifpack_AdditiveSchwarz.h \
+	$(srcdir)/Ifpack_LocalRowMatrix.h \
+	$(srcdir)/Ifpack_Graph.h \
+	$(srcdir)/Ifpack_Container.h \
+	$(srcdir)/Ifpack_SparseContainer.h \
+        $(srcdir)/Ifpack_Graph_Epetra_RowMatrix.h \
+	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h \
+	$(srcdir)/Ifpack_Partitioner.h \
+	$(srcdir)/Ifpack_OverlappingPartitioner.h \
+	$(srcdir)/Ifpack_LinearPartitioner.h \
+	$(srcdir)/Ifpack_GreedyPartitioner.h \
+	$(srcdir)/Ifpack_METISPartitioner.h \
+	$(srcdir)/Ifpack_EquationPartitioner.h \
+	$(srcdir)/Ifpack_Amesos.h \
+	$(srcdir)/Ifpack_Utils.h \
+	$(srcdir)/Ifpack_AztecOO.h
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp \
@@ -1150,26 +1170,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-	$(srcdir)/Ifpack_BlockJacobi.h
-	$(srcdir)/Ifpack_BlockGaussSeidel.h
-	$(srcdir)/Ifpack_Container.h \
-	$(srcdir)/Ifpack_SparseContainer.h \
-	$(srcdir)/Ifpack_AdditiveSchwarz.h \
-	$(srcdir)/Ifpack_LocalRowMatrix.h \
-	$(srcdir)/Ifpack_Graph.h \
-	$(srcdir)/Ifpack_Container.h \
-	$(srcdir)/Ifpack_SparseContainer.h \
-        $(srcdir)/Ifpack_Graph_Epetra_RowMatrix.h \
-	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h \
-	$(srcdir)/Ifpack_Partitioner.h \
-	$(srcdir)/Ifpack_OverlappingPartitioner.h \
-	$(srcdir)/Ifpack_LinearPartitioner.h \
-	$(srcdir)/Ifpack_GreedyPartitioner.h \
-	$(srcdir)/Ifpack_METISPartitioner.h \
-	$(srcdir)/Ifpack_EquationPartitioner.h \
-	$(srcdir)/Ifpack_Amesos.h \
-	$(srcdir)/Ifpack_Utils.h \
-	$(srcdir)/Ifpack_AztecOO.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -108,9 +108,9 @@ COMP_H = \
 	$(srcdir)/Ifpack_SOR.h \
 	$(srcdir)/Ifpack_SSOR.h \
 	$(srcdir)/Ifpack_PointPreconditioner.h \
-	$(srcdir)/Ifpack_BlockPreconditioner.h
-	$(srcdir)/Ifpack_BlockJacobi.h
-	$(srcdir)/Ifpack_BlockGaussSeidel.h
+	$(srcdir)/Ifpack_BlockPreconditioner.h \
+	$(srcdir)/Ifpack_BlockJacobi.h \
+	$(srcdir)/Ifpack_BlockGaussSeidel.h \
 	$(srcdir)/Ifpack_Container.h \
 	$(srcdir)/Ifpack_SparseContainer.h \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h \
