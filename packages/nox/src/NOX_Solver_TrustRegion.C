@@ -111,7 +111,7 @@ void TrustRegion::init()
   newton.reset(iparams.sublist("Direction"));
   cauchy.reset(iparams.sublist("Cauchy Direction"));
 
-  initRadius = iparams.getParameter("Initial Radius", 0);
+  initRadius = iparams.getParameter("Initial Radius", 0.0);
   radius = initRadius;
 
   /*
