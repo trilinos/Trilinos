@@ -134,10 +134,3 @@ Epetra_Directory * Epetra_SmpMpiComm:: CreateDirectory(const Epetra_BlockMap & m
 }
 //=============================================================================
 Epetra_MpiSmpComm::~Epetra_MpiSmpComm()  {}
-//=============================================================================
-void Epetra_MpiSmpComm::Print(ostream & os) const
-{
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors" << endl; 
-  os << "::Thread "<< MyThreadID()<<" of " << NumThreads() << " on node " << MyNodeID() << endl; 
-  return;
-}

@@ -144,9 +144,3 @@ Epetra_Directory * Epetra_MpiComm:: CreateDirectory(const Epetra_BlockMap & map)
 }
 //=============================================================================
 Epetra_MpiComm::~Epetra_MpiComm()  {}
-//=============================================================================
-void Epetra_MpiComm::Print(ostream & os) const
-{
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
-  return;
-}

@@ -327,7 +327,11 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
 
   //@{ \name Print object to an output stream
   //! Print method that implements Epetra_Object virtual Print method
-  void Print(ostream & os) const;
+  inline void Print(ostream & os) const {
+  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors" << endl; 
+  os << "::Thread "<< MyThreadID()<<" of " << NumThreads() << " on node " << MyNodeID() << endl; 
+  return;}
+
   //! Print method that implements Epetra_Comm virtual PrintInfo method
   void PrintInfo(ostream & os) const {Epetra_MpiSerialComm::Print(os);return;};
 
