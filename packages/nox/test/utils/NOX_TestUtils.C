@@ -322,6 +322,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
     }
     
   } /* old style */
+  return true;
 }
 
 bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params)
