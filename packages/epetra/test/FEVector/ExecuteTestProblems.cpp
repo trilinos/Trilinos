@@ -6,8 +6,7 @@
 		      bool verbose)
   {
     const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0, i;
-    int IndexBase = 0;
+    int ierr = 0;
     double *residual = new double[NumVectors];
 
     /* get ID of this processor */
@@ -25,7 +24,7 @@
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 {
   const Epetra_Comm & Comm = Map.Comm();
-  int ierr = 0, i;
+  int ierr = 0;
   
   /* get number of processors and the name of this processor */
   
@@ -77,7 +76,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 
 int fevec1(Epetra_Comm& Comm, bool verbose)
 {
-  int ierr;
+  int ierr = 0;
   int NumGlobalRows = 4;
   int indexBase = 0;
   Epetra_Map Map(NumGlobalRows, indexBase, Comm);
@@ -89,8 +88,6 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   int NumLocalRows = Map.NumMyElements();
   int MinLocalRow = Map.MinMyGID();
-
-  double ElementArea = 0.5;
 
   int NumCols = 3;
   int* Indices = new int[NumCols];

@@ -554,28 +554,25 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
     if (ElementSize_!=Map.ElementSize()) return(false);
     else return(true);
   }
-  else {
 
-    // If we get this far, we need to check local properties and then check across
-    // all processors to see if local properties are all true
+  // If we get this far, we need to check local properties and then check across
+  // all processors to see if local properties are all true
 
-    int MySameMap = 1; // Assume not needed
-    if (NumMyElements_!=Map.NumMyElements()) MySameMap = 0;
+  int MySameMap = 1; // Assume not needed
+  if (NumMyElements_!=Map.NumMyElements()) MySameMap = 0;
     
-    if (MySameMap==1) {
-      for (int i=0; i<NumMyElements_; i++) {
-	if (GID(i) != Map.GID(i)) MySameMap = 0;
-	if (ElementSizeList_[i] != Map.ElementSizeList_[i]) MySameMap=0;
-      }
+  if (MySameMap==1) {
+    for (int i=0; i<NumMyElements_; i++) {
+      if (GID(i) != Map.GID(i)) MySameMap = 0;
+      if (ElementSizeList_[i] != Map.ElementSizeList_[i]) MySameMap=0;
     }
-    // Now get min of MySameMap across all processors
-
-    int GlobalSameMap = 0;
-    assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
-    
-    return(GlobalSameMap==1);
   }
-  return(false);
+  // Now get min of MySameMap across all processors
+
+  int GlobalSameMap = 0;
+  assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
+    
+  return(GlobalSameMap==1);
 }
 
 
@@ -587,16 +584,16 @@ bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
     
   if (NumGlobalPoints_!=Map.NumGlobalPoints() ) return(false);
   
-	// If we get this far, we need to check local properties and then check across
-	// all processors to see if local properties are all true
+  // If we get this far, we need to check local properties and then check across
+  // all processors to see if local properties are all true
 
-	int MySameMap = 1; // Assume not needed
-	if (NumMyPoints_!=Map.NumMyPoints()) MySameMap = 0;
-	
-	int GlobalSameMap = 0;
-	assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
-	
-	return(GlobalSameMap==1);
+  int MySameMap = 1; // Assume not needed
+  if (NumMyPoints_!=Map.NumMyPoints()) MySameMap = 0;
+
+  int GlobalSameMap = 0;
+  assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
+
+  return(GlobalSameMap==1);
 }
 
 //==============================================================================

@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[]) {
 
-  int ierr = 0, i, j;
+  int ierr = 0;
 
 #ifdef EPETRA_MPI
 
@@ -50,8 +50,6 @@ int main(int argc, char *argv[]) {
   int NumProc = Comm.NumProc(); 
   if (verbose) cout << Comm <<endl;
 
-  bool verbose1 = verbose;
-
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 
@@ -59,8 +57,6 @@ int main(int argc, char *argv[]) {
   int NumMyElements = 4;
   int NumGlobalElements = NumMyElements*NumProc;
   int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
   // Test Petra-defined uniform linear distribution constructor
 

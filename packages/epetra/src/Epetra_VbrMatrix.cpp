@@ -691,8 +691,6 @@ int Epetra_VbrMatrix::SortEntries() {
 //==========================================================================
 int Epetra_VbrMatrix::MergeRedundantEntries() {
 
-  int i, j, k;
-
   if (NoRedundancies()) return(0);
   if (!Sorted()) EPETRA_CHK_ERR(-1);  // Must have sorted entries
 
@@ -701,7 +699,7 @@ int Epetra_VbrMatrix::MergeRedundantEntries() {
   // Note:  This function assumes that SortEntries was already called.
 
   bool SumInto = true;
-  for (i=0; i<NumMyBlockRows_; i++){
+  for (int i=0; i<NumMyBlockRows_; i++){
     int NumEntries = NumBlockEntriesPerRow_[i];
     if (NumEntries>1) {
       double ** const Values = Values_[i];

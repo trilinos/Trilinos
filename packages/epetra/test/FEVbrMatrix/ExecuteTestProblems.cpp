@@ -6,8 +6,7 @@
 		      bool verbose)
   {
     const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0, i;
-    int IndexBase = 0;
+    int ierr = 0;
 
     /* get ID of this processor */
 

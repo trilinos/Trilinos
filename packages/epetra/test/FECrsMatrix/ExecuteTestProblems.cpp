@@ -7,8 +7,7 @@ int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap,
 		int NumVectors, bool verbose)
   {
     const Epetra_Comm & Comm = Map.Comm();
-    int ierr = 0, i;
-    int IndexBase = 0;
+    int ierr = 0;
 
     /* get ID of this processor */
 
@@ -51,7 +50,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
-  int indexBase = 0, ierr;
+  int indexBase = 0, ierr = 0;
 
   if (localProc == 0) {
     int numMyNodes = 2;
@@ -168,7 +167,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
-  int indexBase = 0, ierr;
+  int indexBase = 0, ierr = 0;
 
   if (localProc == 0) {
     int numMyNodes = 3;
@@ -268,7 +267,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 {
   const Epetra_Comm & Comm = Map.Comm();
-  int ierr = 0, i;
+  int ierr = 0;
   
   /* get number of processors and the name of this processor */
   
