@@ -169,7 +169,7 @@ va_dcl
   if (dim[0].index <= 0) {
 #ifdef DEBUG
     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension <= 0, %d\n\twill return the nil pointer\n", 
+            "dimension <= 0, %d; will return NULL\n", 
             yo, file, lineno, dim[0].index);
 #endif
     return((double *) NULL);
@@ -182,8 +182,8 @@ va_dcl
     dim[i].index = va_arg(va, int);
     if (dim[i].index <= 0) {
       fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
-              "%d\n", yo, file, lineno, i+1, dim[i].index);
-      fprintf(stderr, "\twill return the nil pointer\n");
+              "%d; will return NULL\n",
+              yo, file, lineno, i+1, dim[i].index);
       return((double *) NULL);
     }
     dim[i].total = dim[i-1].total * dim[i].index;
@@ -201,7 +201,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) LB_smalloc((int) total);
+  dfield = (double *) LB_smalloc((int) total, file, lineno);
   field  = (char *) dfield;
 
   for (i = 0; i < numdim - 1; i++) {
@@ -224,13 +224,15 @@ va_dcl
 
 /* Modified by Scott Hutchinson (1421) 20 January 1993 */
 
-double *LB_smalloc(int n)
+double *LB_smalloc(int n, char *filename, int lineno)
 
 {
+  char *yo = "LB_smalloc";
   double *pntr;           /* return value */
 
   if (n < 0) {
-    fprintf(stderr, "LB_smalloc ERROR: Non-positive argument. (%d)\n", n);
+    fprintf(stderr, "%s (from %s,%d) ERROR: Non-positive argument. (%d)\n", 
+            yo, filename, lineno, n);
     exit(-1);
   }
   else if (n == 0)
@@ -239,8 +241,8 @@ double *LB_smalloc(int n)
     pntr = (double *) malloc((unsigned) n);
 
   if (pntr == NULL && n != 0) {
-    fprintf(stderr, "LB_smalloc : Out of space - number of bytes "
-            "requested = %d\n", n);
+    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
+            "requested = %d\n", yo, filename, lineno, n);
     exit(0);
   }
 

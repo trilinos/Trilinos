@@ -35,11 +35,12 @@ static char *cvs_all_allo_h =
 #   define	PROTO(x)	()
 #endif
 
+#define LB_SMALLOC(a) LB_smalloc((a), __FILE__, __LINE__)
 
 /* function declarations for dynamic array allocation */
 
 extern double *LB_array_alloc(char *file, int lineno, int numdim, ...);
 extern void LB_safe_free(void **ptr);
-extern double *LB_smalloc(int n);
+extern double *LB_smalloc(int n, char *file, int lineno);
 
 #endif
