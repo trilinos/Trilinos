@@ -84,6 +84,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
+   mat->nflop               = 0;
    mat->label               = NULL;
    mat->comm                = comm;
    mat->num_PDEs            = 1;
@@ -99,8 +100,12 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
 
 int ML_Operator_Clean( ML_Operator *mat)
 {
-#ifdef ML_TIMING_DETAILED
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    double t1;
+#endif
+#ifdef ML_FLOPS
+   int i, nglobflop;
+   double mflops;
 #endif
 
    if (mat == NULL) return 0;
@@ -123,19 +128,26 @@ int ML_Operator_Clean( ML_Operator *mat)
       if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
          printf(" Build time for %s (minimum) \t= %e\n",mat->label,t1);
    }
+#endif
+#if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    if  (mat->label != NULL) {
-      t1 = ML_gsum_double(mat->apply_time, mat->comm);
-      t1 = t1/((double) mat->comm->ML_nprocs);
-      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
-         printf(" Apply time for %s (average) \t= %e\n",mat->label,t1);
-      t1 = ML_gmax_double(mat->apply_time, mat->comm);
-      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
-         printf(" Apply time for %s (maximum) \t= %e\n",mat->label,t1);
-      t1 = - mat->apply_time;
-      t1 = ML_gmax_double(t1, mat->comm);
-      t1 = - t1;
-      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
-         printf(" Apply time for %s (minimum) \t= %e\n",mat->label,t1);
+     t1 = ML_gsum_double(mat->apply_time, mat->comm);
+     nglobflop = mat->nflop;
+     ML_gsum_scalar_int(&nglobflop, &i, mat->comm);
+     mflops = ((double) nglobflop) / t1;
+     mflops = mflops / (1024 * 1024);
+     mflops = mflops / ((double) mat->comm->ML_nprocs);
+     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
+     printf(" Mflop rating for %s (average) \t= %e\n", mat->label,mflops);
+     mflops = (double) mat->nflop / mat->apply_time;
+     mflops = ML_gmax_double(mflops, mat->comm);
+     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
+        printf(" Mflop rating for %s (maximum) \t= %e\n",mat->label,mflops);
+     mflops = - (double) mat->nflop / mat->apply_time;
+     mflops = ML_gmax_double(mflops, mat->comm);
+     mflops = -mflops;
+     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
+        printf(" Mflop rating for %s (minimum) \t= %e\n",mat->label,mflops);
    }
 #endif
 
@@ -234,6 +246,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->data_destroy        = NULL;
    mat->build_time          = original->build_time;
    mat->apply_time          = original->apply_time;
+   mat->nflop               = original->nflop;
    /* If operator *mat has built as part of ML_Create, a label has already been
       allocated. */
    if (mat->label != NULL) ML_free(mat->label);
@@ -463,7 +476,7 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
 int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
                       double dout[])
 {
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    double t0;
 
    t0 = GetClock();
@@ -474,8 +487,11 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
    if (Op->matvec->ML_id == ML_EXTERNAL)
         Op->matvec->external(Op->data, inlen, din, olen, dout);
    else Op->matvec->internal(Op,       inlen, din, olen, dout);
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+#endif
+#ifdef ML_FLOPS
+   Op->nflop += ML_Operator_GetFlops(Op);
 #endif
    return 0;
 }
@@ -488,7 +504,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
                       double din[], int olen, double dout[])
 {
    int i, length, *list;
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    double t0;
 
    t0 = GetClock();
@@ -505,8 +521,11 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    ML_BdryPts_Get_Dirichlet_Grid_Info(Op->to->BCs, &length, &list);
    for ( i = 0; i < length; i++ ) dout[list[i]] = 0.0;
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+#endif
+#ifdef ML_FLOPS
+   Op->nflop += ML_Operator_GetFlops(Op);
 #endif
    return 0;
 }
@@ -1536,7 +1555,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
  
 
    int i, length, *list;
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    double t0;
 
    t0 = GetClock();
@@ -1557,8 +1576,11 @@ Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 
    ML_BdryPts_Get_Dirichlet_Grid_Info(Op->to->BCs, &length, &list);
    for ( i = 0; i < length; i++ ) dout[list[i]] = 0.0;
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+#endif
+#ifdef ML_FLOPS
+   Op->nflop += ML_Operator_GetFlops(Op);
 #endif
 
    }
@@ -1572,7 +1594,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
                       int olen, Epetra_MultiVector &ep_dout )
 {
 
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    double t0;
 
    t0 = GetClock();
@@ -1612,8 +1634,11 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
             Op->matvec->internal(Op,       inlen, din, olen, dout);
          }
    }
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+#endif
+#ifdef ML_FLOPS
+   Op->nflop += ML_Operator_GetFlops(Op);
 #endif
    return 0;
 }

@@ -106,6 +106,7 @@ struct ML_Operator_Struct {
    ML_Operator   *sub_matrix;
    ML_BdryPts    *bc;
    double        build_time, apply_time;
+   int           nflop;
    char          *label; 
    int           num_PDEs, num_rigid;
    double        lambda_max, lambda_min, lambda_max_img;
