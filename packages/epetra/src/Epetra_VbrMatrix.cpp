@@ -434,6 +434,8 @@ int Epetra_VbrMatrix::PutScalar(double ScalarConstant)
       }
     }
   }
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 

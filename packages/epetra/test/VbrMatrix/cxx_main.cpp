@@ -28,33 +28,12 @@
 
 
 //
-//  Jan 7 - TODO (Ken)
-//      Add test of fixed block sizes - DONE 
-//      Add test of matrices that are built without numnz  - DONE 
-//      Add comparison to Crs matrices  - DONE 
-//      Test Multiply1 - DONE 
-//
-//  Jan 9 - TODO (Ken)
-//      Why does BeginReplaceGlobalValues at line 762 work?
-//      When is InsertMyValues() legal?
-//      CHECK CrsMAtrix.Multiply(x,x)
-//      CHECK VbrMAtrix.MultiVec.Multiply(x,x) FAILS
-//      Add an input/output matrix to TestMatrix so that the second time around 
-//        we can use the other constructors and hence the insert/replace/suminto MY routines
-//      Check test coverage 
-//      Cleanup kludge and ken marks - DONE for now
-//      Test with old Epetra_VbrMatrix.cpp and check it in  - DONE 
-//      Make sure that suminto and replace values still work even after FillComplete is called - DONE 
-//      Make sure that insert values fails after FillComplete is called YES 
-//      Add OptimizeStorage and new Epetra_VbrMatrix.cpp 
-//      Make sure that suminto and replace values still work even after OptimizeStorage is called
-//      What happens if OptimizeStorage is called before FillComplete?  
-//      NormInf() and NormOne() should be tested with/without calls to update values.  
 //
 //      valgrind usage:
 //         valgrind --suppressions=Suppressions --leak-check=yes --show-reachable=yes ./VbrMatrix_test.exe
 //
 //      mpirun -np 2 valgrind --suppressions=Suppressions --logfile=valg.out --leak-check=yes --show-reachable=yes ./VbrMatrix_test.exe
+//      The file Suppressions can be found in packages/epetra/test/VbrMatrix/Suppressions.in
 //
 //
 #include "Epetra_SerialDenseMatrix.h"
@@ -426,16 +405,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   int NumMyNonzeros = 0, NumMyEquations = 0;
 
 
-#if 0 
-  cout << " MyLocalElements = " ; for (i=0; i<NumMyElements; i++) cout <<" "<< MyLocalElements[i] ; cout << endl ; 
-  cout << " MyGlobalElements = " ; for (i=0; i<NumMyElements; i++) cout <<" "<< MyGlobalElements[i] ; cout << endl ; 
-  cout << " NumGlobalElements = " << NumGlobalElements << endl ; 
-
-  if ( HaveColMap ) { 
-    cout << " LIDs = " ; for (i=0; i<NumGlobalElements; i++) cout <<" "<< rowmap->LID( i ) ; cout << endl ; 
-    cout << " GIDs = " ; for (i=0; i<NumGlobalElements; i++) cout <<" "<< rowmap->GID( i ) ; cout << endl ; 
-  }
-#endif
 
   for (i=0; i<NumMyElements; i++) {
     int MyCurRow = MyLocalElements[i];
@@ -492,14 +461,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     if ( insertlocal ) { 
       for ( int ii=0; ii < NumEntries; ii++ ) 
 	MyIndices[ii] = colmap->LID( Indices[ii] ) ; 
-#if 0
-      cout << "PiD = " << Comm.MyPID() << " Indices = " ;
-      for ( int ii=0; ii < NumEntries; ii++ ) cout << " " << Indices[ii] ; 
-      cout << endl ; 
-      cout << " PiD = " << Comm.MyPID() << " MyIndices = " ;
-      for ( int ii=0; ii < NumEntries; ii++ ) cout << " " << MyIndices[ii] ; 
-      cout << endl ; 
-#endif
       //      Epetra_MpiComm* MComm = dynamic_cast<Epetra_MpiComm*>( &Comm ) ;
       //  MComm->SetTracebackMode(1); // This should enable error traceback reporting
       if ( HaveGraph ) {
@@ -583,11 +544,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	NumMyBlockEntries++ ; 
       }
 
-      if ( false && A->Comm().MyPID() == 1 ) {
-	cout << " CurRow = " << CurRow << " Indices[0] = " << Indices[0] << endl ; 
-	cout << " i = " << i << " j = " << j << endl ; 
-      }
-      //  assert( A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N()) == 0 );
       //  EPETRA_TEST_ERR(!(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0), ierr);
       EPETRA_TEST_ERR(!(A->SubmitBlockEntry(*AD)==0), ierr);
       A->EndSubmitEntries();
@@ -632,11 +588,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     }
   }
 
-  if ( false && ExtraBlocks ) {
-    A->Print( cout ) ; 
-    cout << " NumMyNonzeros = " <<NumMyNonzeros << endl ; 
-    cout << " NumGlobalNonzeros = " <<NumGlobalNonzeros << endl ; 
-  }
 
   EPETRA_TEST_ERR(!(check(*A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
@@ -722,7 +673,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   Epetra_CrsMatrix* OrigCrsA;
   ConvertVbrToCrs( A, OrigCrsA ) ; 
 
-
   // Increase diagonal dominance
 
   if (verbose) cout << "\n\nIncreasing the magnitude of first diagonal term and solving again\n\n"
@@ -755,10 +705,12 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   //
   //  NormOne() and NormInf() will return cached values
   //
+
   EPETRA_TEST_ERR( ! (AnormOne == A->NormOne( )), ierr ); 
   EPETRA_TEST_ERR( ! (AnormInf == A->NormInf( )), ierr );
   //
-  //  On Process 0, 
+  //  On Process 0, let the class know that NormInf_ and NormOne_ are
+  //  out of date.  
   // 
   if ( MyPID == 0 ) {
     EPETRA_TEST_ERR(!(A->BeginSumIntoGlobalValues( 0, 0, 0 )==0),ierr);
@@ -876,6 +828,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   CrsA->Multiply( true, CrsMY, CrsMY ) ; 
   check_mytranspose = CrsMY ; 
 
+
   EPETRA_TEST_ERR( checkmultiply( false, *A, mx, check_my ), ierr ); 
 
   EPETRA_TEST_ERR( checkmultiply( true, *A, mx, check_mytranspose ), ierr ); 
@@ -909,6 +862,39 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   EPETRA_TEST_ERR( ! ( A->StorageOptimized() == B->StorageOptimized() ), ierr ) ; 
 
   EPETRA_TEST_ERR( checkmultiply( false, *B, mx, check_my ), ierr ); 
+
+  AnormInf =  A->NormInf( );
+  AnormOne =  A->NormOne( );
+  EPETRA_TEST_ERR( ! (AnormOne == B->NormOne( )), ierr ); 
+  EPETRA_TEST_ERR( ! (AnormInf == B->NormInf( )), ierr ); 
+
+
+  Epetra_CrsMatrix* CrsB;
+  ConvertVbrToCrs( B, CrsB ) ; 
+
+  if (verbose) cout << "\n\n*****Testing PutScalar, LeftScale, RightScale, and ReplaceDiagonalValues" << endl<< endl;
+  //
+  //  Check PutScalar, 
+  //
+  B->PutScalar( 1.0 ) ; 
+  CrsB->PutScalar( 1.0 ) ; 
+  EPETRA_TEST_ERR(! ( B->NormOne() == CrsB->NormOne() ), ierr ) ; 
+
+
+  check_y = CrsY ; 
+  //
+  EPETRA_TEST_ERR( B->ReplaceDiagonalValues( check_y ), ierr ) ; 
+  EPETRA_TEST_ERR( CrsB->ReplaceDiagonalValues( CrsY ), ierr ) ; 
+  EPETRA_TEST_ERR(! ( B->NormOne() == CrsB->NormOne() ), ierr ) ; 
+
+  EPETRA_TEST_ERR( B->LeftScale( check_y ), ierr ) ; 
+  EPETRA_TEST_ERR( CrsB->LeftScale( CrsY ), ierr ) ; 
+  EPETRA_TEST_ERR(! ( B->NormOne() == CrsB->NormOne() ), ierr ) ; 
+
+  EPETRA_TEST_ERR( B->RightScale( check_y ), ierr ) ; 
+  EPETRA_TEST_ERR( CrsB->RightScale( CrsY ), ierr ) ; 
+  EPETRA_TEST_ERR(! ( B->NormOne() == CrsB->NormOne() ), ierr ) ; 
+
 
   if (debug) Comm.Barrier();
 
@@ -1091,12 +1077,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   double origonenorm = B->NormOne();
   EPETRA_TEST_ERR(!(B->Scale(4.0)==0),ierr);
   //  EPETRA_TEST_ERR((B->NormOne()!=origonenorm),ierr);
-#if 0
-  cout << " B->NormOne() " << B->NormOne() << " origonenorm = " <<
-    origonenorm << endl ; 
-  cout << " B->NormInf() " << B->NormInf() << " originfnorm = " <<
-    originfnorm << endl ; 
-#endif
   EPETRA_TEST_ERR(!(B->NormInf()==4.0 * originfnorm),ierr);
   EPETRA_TEST_ERR(!(B->NormOne()==4.0 * origonenorm),ierr);
 
@@ -1120,6 +1100,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   }
   
   delete CrsA;
+  delete CrsB;
   delete OrigCrsA ;
 
   return ierr; 
@@ -1192,7 +1173,6 @@ int main(int argc, char *argv[])
 
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 1, 1, VariableEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );  
 
-
   //
   //  Check the various constructors
   //  
@@ -1256,11 +1236,11 @@ int main(int argc, char *argv[])
 
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 8, 8, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
 
+  //  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 2, 2, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
 
 
   delete PreviousA;
 
- 
   /*
   if (verbose) {
     // Test ostream << operator (if verbose)
@@ -1749,8 +1729,6 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   if (verbose) cout << "Multiply x"<<endl;
   EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr );
 
-
-  //  if (verbose) cout << y <<endl;   // This fails because verbose is only true on proc 0 
 
   //Next we're going to extract pointers-to-block-rows and check values to make
   //sure that the internal method Epetra_VbrMatrix::mergeRedundantEntries()

@@ -928,6 +928,8 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
       ierr = 1; // flag a warning error
   }
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 //==========================================================================
