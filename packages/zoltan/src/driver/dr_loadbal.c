@@ -77,7 +77,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                  MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
-  char *yo = "run_zoltan";
+  char *yo = "setup_zoltan";
 
   float *psize;                  /* Partition size */
   int *partid;                   /* Partition numbers */
@@ -138,15 +138,17 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
     }
   }
-  else if (Test.Local_Partitions == 3) {
+  else if (Test.Local_Partitions == 3 || Test.Local_Partitions == 5) {
     /* Variable partition sizes, but one partition per proc */
+    /* Test.Local_Partitions == 5 is same as 3, but with sizes increased by 1 */
+    /* to avoid zero-sized partitions (for ParMETIS tests). */
     i = 0;
-    psize[0] = (float) Proc;    /* Partition size = myproc */
+    psize[0] = (float) (Proc + (Test.Local_Partitions == 5)); 
     /* Set partition sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
     /* Reset partition sizes for upper half of procs. */
     if (Proc >= nprocs/2){
-      psize[0] = 0.5 + (Proc%2);
+      psize[0] = 0.5 + (Proc%2) + (Test.Local_Partitions == 5);
       Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
     }
   }

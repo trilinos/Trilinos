@@ -85,6 +85,7 @@ type(PARIO_INFO) :: pio_info
 
 !/***************************** BEGIN EXECUTION ******************************/
 
+  run_zoltan = .true.
   nullify(zz_obj, import_gids, import_lids, import_procs, import_to_part, &
                   export_gids, export_lids, export_procs, export_to_part)
 
@@ -104,7 +105,7 @@ type(PARIO_INFO) :: pio_info
   if (.not.associated(zz_obj)) then
     print *, "fatal:  NULL object returned from Zoltan_Create()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 !  /* Set the user-specified parameters */
@@ -118,7 +119,7 @@ type(PARIO_INFO) :: pio_info
   if (Zoltan_Set_Param(zz_obj, "LB_METHOD", prob%method) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 !  /*
@@ -134,7 +135,7 @@ type(PARIO_INFO) :: pio_info
     if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
-      return
+      goto 9999
     endif
 
   else if (Test_Local_Partitions == 2) then
@@ -148,20 +149,22 @@ type(PARIO_INFO) :: pio_info
       if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Param()"
         run_zoltan = .false.
-        return
+        goto 9999
       endif
     endif
 
-  else if (Test_Local_Partitions == 3) then
+  else if (Test_Local_Partitions == 3 .or. Test_Local_Partitions == 5) then
 !   /* Variable partition sizes, but one partition per proc */
     partid(1) = Proc
     idx(1) = 0
     psize(1) = Proc   !/* Partition size = myproc */
+    if (Test_Local_Partitions == 5) psize(1) = psize(1) + 1
 !   /* Set partition sizes using global numbers. */
     ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, partid, idx, psize)
 !   /* Reset partition sizes for upper half of procs. */
     if (Proc >= nprocs/2) then
       psize(1) = 0.5 + modulo(Proc,2)
+      if (Test_Local_Partitions == 5) psize(1) = psize(1) + 1
       ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, partid, idx, psize)
     endif
 
@@ -175,7 +178,7 @@ type(PARIO_INFO) :: pio_info
     if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
-      return
+      goto 9999
     endif
 !   /* Each partition size is inverse to the no. of partitions on a proc. */
     do i = 1, Proc
@@ -196,7 +199,7 @@ type(PARIO_INFO) :: pio_info
                         mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_FIRST_OBJ_FN_TYPE, get_first_element, &
@@ -205,7 +208,7 @@ type(PARIO_INFO) :: pio_info
                 mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NEXT_OBJ_FN_TYPE, get_next_element, &
@@ -214,7 +217,7 @@ type(PARIO_INFO) :: pio_info
                 mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 !  /* Functions for geometry based algorithms */
@@ -223,7 +226,7 @@ type(PARIO_INFO) :: pio_info
                          mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
   if (Test_Multi_Callbacks.eq.1) then
@@ -232,7 +235,7 @@ type(PARIO_INFO) :: pio_info
         == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
-      return
+      goto 9999
     endif
 
   else
@@ -241,7 +244,7 @@ type(PARIO_INFO) :: pio_info
     if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
-      return
+      goto 9999
     endif
   endif
 
@@ -252,7 +255,7 @@ type(PARIO_INFO) :: pio_info
                 mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_EDGE_LIST_FN_TYPE, get_edge_list, &
@@ -260,13 +263,13 @@ type(PARIO_INFO) :: pio_info
   if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
   if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 !  /* Evaluate the old balance */
@@ -289,7 +292,7 @@ type(PARIO_INFO) :: pio_info
                  export_procs, export_to_part) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_LB_Partition()"
     run_zoltan = .false.
-    return
+    goto 9999
   endif
 
 !  /*
@@ -304,7 +307,7 @@ type(PARIO_INFO) :: pio_info
                           export_lids,export_procs,export_to_part)) then
       print *, "fatal:  error returned from migrate_elements()"
       run_zoltan = .false.
-      return
+      goto 9999
     endif
   endif
 
@@ -322,6 +325,7 @@ type(PARIO_INFO) :: pio_info
   endif 
 
 !  /* Clean up */
+9999 continue
   ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
                              import_procs, import_to_part) 
   ierr = Zoltan_LB_Free_Part(export_gids,  export_lids, &
@@ -329,7 +333,6 @@ type(PARIO_INFO) :: pio_info
 
   call Zoltan_Destroy(zz_obj)
 
-  run_zoltan = .true.
 
 end function run_zoltan
 

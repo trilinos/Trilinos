@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
   int    Proc, Num_Proc;
   int    iteration;
   int    error;
+  int    print_output = 1;
 
   MESH_INFO  mesh;             /* mesh information struct */
   PARIO_INFO pio_info;
@@ -129,7 +130,8 @@ int main(int argc, char *argv[])
     sprintf(cmesg, "fatal: Zoltan_Initialize returned error code, %d", error);
     Gen_Error(0, cmesg);
     error_report(Proc);
-    exit(1);
+    print_output = 0;
+    goto End;
   }
 
   /* initialize some variables */
@@ -160,13 +162,15 @@ int main(int argc, char *argv[])
               " \"%s\"!\n", cmd_file);
       Gen_Error(0, cmesg);
       error_report(Proc);
-      exit(1);
+      print_output = 0;
+      goto End;
     }
 
     if (!check_inp(&prob, &pio_info)) {
       Gen_Error(0, "fatal: Error in user specified parameters.\n");
       error_report(Proc);
-      exit(1);
+      print_output = 0;
+      goto End;
     }
 
     print_input_info(stdout, Num_Proc, &prob);
@@ -188,7 +192,8 @@ int main(int argc, char *argv[])
   if (!setup_zoltan(zz, Proc, &prob, &mesh)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
-    exit(1);
+    print_output = 0;
+    goto End;
   }
 
   srand(Proc);
@@ -206,7 +211,8 @@ int main(int argc, char *argv[])
       if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
         Gen_Error(0, "fatal: Error returned from read_mesh\n");
         error_report(Proc);
-        exit(1);
+        print_output = 0;
+        goto End;
       }
 
 #ifdef KDDKDD_COOL_TEST
@@ -223,7 +229,6 @@ int main(int argc, char *argv[])
         if (!output_results(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)){
           Gen_Error(0, "fatal: Error returned from output_results\n");
           error_report(Proc);
-          exit(1);
         }
         if (Output.Gnuplot)
           if (!output_gnu(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
@@ -239,7 +244,8 @@ int main(int argc, char *argv[])
     if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
-      exit(1);
+      print_output = 0;
+      goto End;
     }
 
     /* Reset the mesh data structure for next iteration. */
@@ -266,6 +272,7 @@ int main(int argc, char *argv[])
            cmd_file, Total_Partition_Time/Number_Iterations);
   }
 
+End:
   Zoltan_Destroy(&zz);
 
   Zoltan_Memory_Stats();
@@ -273,16 +280,17 @@ int main(int argc, char *argv[])
   /*
    * output the results
    */
-  if (!output_results(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
-    Gen_Error(0, "fatal: Error returned from output_results\n");
-    error_report(Proc);
-    exit(1);
-  }
-
-  if (Output.Gnuplot) {
-    if (!output_gnu(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
-      Gen_Error(0, "warning: Error returned from output_gnu\n");
+  if (print_output) {
+    if (!output_results(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+      Gen_Error(0, "fatal: Error returned from output_results\n");
       error_report(Proc);
+    }
+
+    if (Output.Gnuplot) {
+      if (!output_gnu(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+        Gen_Error(0, "warning: Error returned from output_gnu\n");
+        error_report(Proc);
+      }
     }
   }
 

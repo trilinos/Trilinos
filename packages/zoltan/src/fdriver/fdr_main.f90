@@ -122,7 +122,7 @@ end interface
   error = Zoltan_Initialize(version)
   if (error /= ZOLTAN_OK) then
     print *, "fatal: Zoltan_Initialize returned error code, ", error
-    stop
+    goto 9999
   endif
 
 !  /* initialize some variables */
@@ -130,7 +130,7 @@ end interface
   allocate(Mesh, stat=alloc_stat)
   if (alloc_stat /= 0) then
     print *, "fatal: insufficient memory"
-    stop
+    goto 9999
   endif
 
   nullify(Mesh%eb_names,Mesh%eb_ids,Mesh%eb_cnts,Mesh%eb_nnodes, &
@@ -158,12 +158,12 @@ end interface
     print *,"Reading the command file, ", cmd_file
     if(.not. read_cmd_file(cmd_file, prob, pio_info)) then
       print *, 'fatal: Could not read in the command file "',cmd_file,'"!'
-      stop
+      goto 9999
     endif
 
     if (.not. check_inp(prob, pio_info)) then
       print *, "fatal: Error in user specified parameters."
-      stop
+      goto 9999
     endif
 
     call print_input_info(6, Num_Proc, prob)
@@ -179,7 +179,7 @@ end interface
 !   */
   if (.not. read_mesh(Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
       print *, "fatal: Error returned from read_mesh"
-      stop
+      goto 9999
   endif
 
 !  /*
@@ -188,7 +188,7 @@ end interface
 !   */
   if (.not. run_zoltan(Proc, prob, pio_info)) then
       print *, "fatal: Error returned from run_zoltan"
-      stop
+      goto 9999
   endif
 
 !  /*
@@ -196,9 +196,10 @@ end interface
 !   */
   if (.not. output_results(cmd_file, Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
       print *, "fatal: Error returned from output_results"
-      stop
+      goto 9999
   endif
 
+9999 continue
   if (associated(Mesh%elements)) then
     do i = 0, Mesh%elem_array_len-1
       call free_element_arrays(Mesh%elements(i))
