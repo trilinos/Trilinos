@@ -55,7 +55,7 @@ int LB_ParMetis(
   int num_obj, nedges, sum_edges, max_edges, edgecut;
   int options[MAX_OPTIONS], *destproc, *nbors_proc;
   int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag;
-  int get_graph_data, get_geom_data;
+  int get_graph_data, get_geom_data, get_times;
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
   double geom_vec[6];
@@ -82,9 +82,6 @@ int LB_ParMetis(
   int i99, *p99;
   printf("[%1d] Debug: Entering LB_ParMetis()\n", lb->Proc);
 #endif
-
-  /* Start timer here */
-  times[0] = MPI_Wtime();
 
   /* Set default return values (in case of early exit) */
   /* Unnecessary because this was done in LB_Balance.
@@ -134,6 +131,13 @@ int LB_ParMetis(
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
       options[0], options[1], options[2], options[3]);
 #endif
+
+  /* Start timer as soon as options have been set */
+  get_times = (options[OPTION_DBGLVL]>0);
+  if (get_times){
+    MPI_Barrier(lb->Communicator);
+    times[0] = MPI_Wtime();
+  }
 
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
@@ -510,7 +514,7 @@ int LB_ParMetis(
   }
 
   /* Get a time here */
-  times[1] = MPI_Wtime();
+  if (get_times) times[1] = MPI_Wtime();
 
   /* Call ParMETIS */
   wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
@@ -559,7 +563,7 @@ int LB_ParMetis(
   }
 
   /* Get a time here */
-  times[2] = MPI_Wtime();
+  if (get_times) times[2] = MPI_Wtime();
 
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", lb->Proc, edgecut);
@@ -679,10 +683,10 @@ int LB_ParMetis(
   }
 
   /* Get a time here */
-  times[3] = MPI_Wtime();
+  if (get_times) times[3] = MPI_Wtime();
 
   /* Output timing results if desired */
-  if (options[OPTION_DBGLVL]>0){
+  if (get_times){
     if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics (wall clock):\n");
     LB_Print_Time(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
     LB_Print_Time(lb, times[2]-times[1], "ParMETIS  Library time         ");
