@@ -44,7 +44,7 @@ namespace NOX {
 namespace Epetra {
 
 //! Implementation of NOX::Abstract::Vector for %Epetra vectors.
-class Vector : public Abstract::Vector {
+class Vector : public virtual Abstract::Vector {
 
  public:			
 

@@ -186,7 +186,7 @@ The parameter list passed into the group during a computeNewton() or ApplyJacobi
 
  */
 
-class Group : public Abstract::Group {
+class Group : public virtual Abstract::Group {
 
 protected:
   //! Types that define how the  construction of the preconditioner should be handled during a call to createPreconditioner().  
