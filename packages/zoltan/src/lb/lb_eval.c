@@ -353,6 +353,7 @@ int LB_Eval (LB *lb, int print_stats,
 
   /* Copy results to output parameters if desired */
   if (nobj) *nobj = num_obj;
+  if (ncuts) *ncuts = cuts;
   if (nadj) *nadj = num_adj;
   if (nboundary) *nboundary = num_boundary;
   if (obj_wgt){
