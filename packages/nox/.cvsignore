@@ -1,4 +1,7 @@
 Makefile
 autom4te.cache
+autoscan.log
+builds
 config.log
 config.status
+configure.scan
