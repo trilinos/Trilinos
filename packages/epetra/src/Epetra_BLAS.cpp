@@ -47,77 +47,86 @@ functions that include the macro:
 #include "Epetra_BLAS.h"
 #include "Epetra_BLAS_wrappers.h"
 
-static int epetra_blas_one = 1;
 
 //=============================================================================
-float Epetra_BLAS::ASUM(int N, float * X) const {
- return(SASUM_F77(&N, X, &epetra_blas_one));
+float Epetra_BLAS::ASUM(int N, float * X, int INCX) const {
+ return(SASUM_F77(&N, X, &INCX));
 }
 //=============================================================================
-double Epetra_BLAS::ASUM(int N, double * X) const {
-  return(DASUM_F77(&N, X, &epetra_blas_one));
+double Epetra_BLAS::ASUM(int N, double * X, int INCX) const {
+  return(DASUM_F77(&N, X, &INCX));
 }
 //=============================================================================
-float Epetra_BLAS::DOT(int N, float * X, float * Y) const {
-  return(SDOT_F77(&N, X, &epetra_blas_one, Y, &epetra_blas_one));
+float Epetra_BLAS::DOT(int N, float * X, float * Y, int INCX, int INCY) const {
+  return(SDOT_F77(&N, X, &INCX, Y, &INCY));
 }
 //=============================================================================
-double Epetra_BLAS::DOT(int N, double * X, double * Y) const {
-  return(DDOT_F77(&N, X, &epetra_blas_one, Y, &epetra_blas_one));
+double Epetra_BLAS::DOT(int N, double * X, double * Y, int INCX, int INCY) const {
+  return(DDOT_F77(&N, X, &INCX, Y, &INCY));
 }
 //=============================================================================
-float Epetra_BLAS::NRM2(int N, float * X) const {
-  return(SNRM2_F77(&N, X, &epetra_blas_one));
+float Epetra_BLAS::NRM2(int N, float * X, int INCX) const {
+  return(SNRM2_F77(&N, X, &INCX));
 }
 //=============================================================================
-double Epetra_BLAS::NRM2(int N, double * X) const {
-  return(DNRM2_F77(&N, X, &epetra_blas_one));
+double Epetra_BLAS::NRM2(int N, double * X, int INCX) const {
+  return(DNRM2_F77(&N, X, &INCX));
 }
 //=============================================================================
-void Epetra_BLAS::SCAL(int N, float ALPHA, float * X) const {
-  SSCAL_F77(&N, &ALPHA, X, &epetra_blas_one);
+void Epetra_BLAS::SCAL(int N, float ALPHA, float * X, int INCX) const {
+  SSCAL_F77(&N, &ALPHA, X, &INCX);
   return;
 }
 //=============================================================================
-void Epetra_BLAS::SCAL(int N, double ALPHA, double * X) const {
-  DSCAL_F77(&N, &ALPHA, X, &epetra_blas_one);
+void Epetra_BLAS::SCAL(int N, double ALPHA, double * X, int INCX) const {
+  DSCAL_F77(&N, &ALPHA, X, &INCX);
   return;
 }
 //=============================================================================
-int Epetra_BLAS::IAMAX(int N, float * X) const {
-  return(ISAMAX_F77(&N, X, &epetra_blas_one)-1);// Note that we return base zero result
+void Epetra_BLAS::COPY(int N, float * X, float * Y, int INCX, int INCY) const {
+  SCOPY_F77(&N, X, &INCX, Y, &INCY);
+  return;
 }
 //=============================================================================
-int Epetra_BLAS::IAMAX(int N, double * X) const {
-  return(IDAMAX_F77(&N, X, &epetra_blas_one)-1);// Note that we return base zero result
+void Epetra_BLAS::COPY(int N, double * X, double * Y, int INCX, int INCY) const {
+  DCOPY_F77(&N, X, &INCX, Y, &INCY);
+  return;
 }
 //=============================================================================
-void Epetra_BLAS::AXPY(int N, float ALPHA, float * X, float * Y) const {
-  SAXPY_F77(&N, &ALPHA, X, &epetra_blas_one, Y, &epetra_blas_one);
+int Epetra_BLAS::IAMAX(int N, float * X, int INCX) const {
+  return(ISAMAX_F77(&N, X, &INCX)-1);// Note that we return base zero result
 }
 //=============================================================================
-void Epetra_BLAS::AXPY(int N, double ALPHA, double * X, double * Y) const {
-  DAXPY_F77(&N, &ALPHA, X, &epetra_blas_one, Y, &epetra_blas_one);
+int Epetra_BLAS::IAMAX(int N, double * X, int INCX) const {
+  return(IDAMAX_F77(&N, X, &INCX)-1);// Note that we return base zero result
+}
+//=============================================================================
+void Epetra_BLAS::AXPY(int N, float ALPHA, float * X, float * Y, int INCX, int INCY) const {
+  SAXPY_F77(&N, &ALPHA, X, &INCX, Y, &INCY);
+}
+//=============================================================================
+void Epetra_BLAS::AXPY(int N, double ALPHA, double * X, double * Y, int INCX, int INCY) const {
+  DAXPY_F77(&N, &ALPHA, X, &INCX, Y, &INCY);
 }
 //=============================================================================
 void Epetra_BLAS::GEMV(char TRANS, int M, int N,
 		      float ALPHA, float * A, int LDA, float * X,
-		      float BETA, float * Y) const {
+		      float BETA, float * Y, int INCX, int INCY) const {
   SGEMV_F77(CHAR_MACRO(TRANS), &M, &N, &ALPHA,
-	 A, &LDA, X, &epetra_blas_one, &BETA, Y, &epetra_blas_one);
+	 A, &LDA, X, &INCX, &BETA, Y, &INCY);
 }
 //=============================================================================
 void Epetra_BLAS::GEMV(char TRANS, int M, int N,
 		      double ALPHA, double * A, int LDA, double * X,
-		      double BETA, double * Y) const {
+		      double BETA, double * Y, int INCX, int INCY) const {
   DGEMV_F77(CHAR_MACRO(TRANS), &M, &N, &ALPHA,
-	 A, &LDA, X, &epetra_blas_one, &BETA, Y, &epetra_blas_one);
+	 A, &LDA, X, &INCX, &BETA, Y, &INCY);
 }
 
 //=============================================================================
 void Epetra_BLAS::GEMM(char TRANSA, char TRANSB, int M, int N, int K,
-	    float ALPHA, float * A, int LDA, float * B,
-	    int LDB, float BETA, float * C, int LDC) const {
+		       float ALPHA, float * A, int LDA, float * B,
+		       int LDB, float BETA, float * C, int LDC) const {
 
   SGEMM_F77(CHAR_MACRO(TRANSA), CHAR_MACRO(TRANSB), &M, &N, &K, &ALPHA,
          A, &LDA, B, &LDB, &BETA, C, &LDC);

@@ -75,46 +75,50 @@ class Epetra_BLAS {
   
   //@{ \name Level 1 BLAS
   //! Epetra_BLAS one norm function (SASUM).
-  float ASUM(int N, float * X) const;
+  float ASUM(int N, float * X, int INCX = 1) const;
   //! Epetra_BLAS one norm function (DASUM).
-  double ASUM(int N, double * X) const;
+  double ASUM(int N, double * X, int INCX = 1) const;
 
   //! Epetra_BLAS dot product function (SDOT).
-  float DOT(int N, float * X, float * Y) const;
+  float DOT(int N, float * X, float * Y, int INCX = 1, int INCY = 1) const;
   //! Epetra_BLAS dot product function (DDOT).
-  double DOT(int N, double * X, double * Y) const;
+  double DOT(int N, double * X, double * Y, int INCX = 1, int INCY = 1) const;
 
   //! Epetra_BLAS norm function (SNRM2).
-  float NRM2(int N, float * X) const;
+  float NRM2(int N, float * X, int INCX = 1) const;
   //! Epetra_BLAS norm function (DNRM2).
-  double NRM2(int N, double * X) const;
+  double NRM2(int N, double * X, int INCX = 1) const;
 
   //! Epetra_BLAS vector scale function (SSCAL)
-  void SCAL( int N, float ALPHA, float * X) const;
+  void SCAL( int N, float ALPHA, float * X, int INCX = 1) const;
   //! Epetra_BLAS vector scale function (DSCAL)
-  void SCAL( int N, double ALPHA, double * X) const;
+  void SCAL( int N, double ALPHA, double * X, int INCX = 1) const;
 
+  //! Epetra_BLAS vector copy function (SCOPY)
+  void COPY( int N, float * X, float * Y, int INCX = 1, int INCY = 1) const;
+  //! Epetra_BLAS vector scale function (DCOPY)
+  void COPY( int N, double * X, double * Y, int INCX = 1, int INCY = 1) const;
 
   //! Epetra_BLAS arg maximum of absolute value function (ISAMAX)
-  int IAMAX( int N, float * X) const;
+  int IAMAX( int N, float * X, int INCX = 1) const;
   //! Epetra_BLAS arg maximum of absolute value function (IDAMAX)
-  int IAMAX( int N, double * X) const;
+  int IAMAX( int N, double * X, int INCX = 1) const;
 
   //! Epetra_BLAS vector update function (SAXPY)
-  void AXPY( int N, float ALPHA, float * X, float * Y) const;
+  void AXPY( int N, float ALPHA, float * X, float * Y, int INCX = 1, int INCY = 1) const;
   //! Epetra_BLAS vector update function (DAXPY)
-  void AXPY( int N, double ALPHA, double * X, double * Y) const;
+  void AXPY( int N, double ALPHA, double * X, double * Y, int INCX = 1, int INCY = 1) const;
   //@}
 
   //@{ \name Level 2 BLAS
   //! Epetra_BLAS matrix-vector multiply function (SGEMV)
   void GEMV(char TRANS, int M, int N,
          float ALPHA, float * A, int LDA, float * X,
-         float BETA, float * Y) const;
+         float BETA, float * Y, int INCX = 1, int INCY = 1) const;
   //! Epetra_BLAS matrix-vector multiply function (DGEMV)
   void GEMV(char TRANS, int M, int N,
          double ALPHA, double * A, int LDA, double * X,
-         double BETA, double * Y) const;
+         double BETA, double * Y, int INCX = 1, int INCY = 1) const;
   //@}
 
 
