@@ -265,3 +265,15 @@ operator<<(ostream& stream, const LOCA::ParameterVector& p)
   p.print(stream);
   return stream;
 }
+
+const vector<double>& 
+LOCA::ParameterVector::getValuesVector() const
+{
+  return x;
+}
+
+const vector<string>& 
+LOCA::ParameterVector::getNamesVector() const
+{
+  return l;
+}

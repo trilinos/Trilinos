@@ -114,6 +114,12 @@ public:
   //! Prints the vector to cout.
   void print(ostream& stream) const;
 
+  //! Accessor to get the underlying stl vector with all parameter values
+  const vector<double>& getValuesVector() const;
+
+  //! Accessor to get the underlying stl vector with all parameter names
+  const vector<string>& getNamesVector() const;
+
 protected:
 
   //! Parameter values
