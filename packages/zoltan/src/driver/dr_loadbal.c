@@ -1163,15 +1163,16 @@ int procs[1000], parts[1000];
 double x[3];
 int i;
 
+  fprintf(fp, "\n-------------------------------------------------------\n");
   if (test_both) {
     status = Zoltan_LB_Box_Assign(zz, xlo[0], xlo[1], xlo[2], 
                                       xhi[0], xhi[1], xhi[2], 
                                       procs, &proccnt);
     if (status != ZOLTAN_OK) 
-      fprintf(fp, "\nerror returned from Zoltan_LB_Box_Assign()\n");
+      fprintf(fp, "error returned from Zoltan_LB_Box_Assign()\n");
     else {
-      fprintf(fp, "\n%d Zoltan_LB_Box_Assign    LO: (%e %e %e)\n"
-                    "%d                         HI: (%e %e %e)\n", 
+      fprintf(fp, "%d Zoltan_LB_Box_Assign    LO: (%e %e %e)\n"
+                  "%d                         HI: (%e %e %e)\n", 
                   Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
   
       procfound = 0;
@@ -1185,17 +1186,9 @@ int i;
         fprintf(fp, "%d Zoltan_LB_Box_Assign error:  "
                      "expected proc %d not in output proc list\n",
                       Proc, answer_proc);
-      
-      /* Test point assign */
-      test_point_drops(fp, xlo, zz, Proc, procs, proccnt, NULL, 0, test_both);
-      test_point_drops(fp, xhi, zz, Proc, procs, proccnt, NULL, 0, test_both);
-      x[0] = 0.5 * (xlo[0] + xhi[0]);
-      x[1] = 0.5 * (xlo[1] + xhi[1]);
-      x[2] = 0.5 * (xlo[2] + xhi[2]);
-      test_point_drops(fp, x, zz, Proc, procs, proccnt, NULL, 0, test_both);
     }
   }
-  else fprintf(fp, "\n%d Zoltan_LB_Box_Assign not tested.\n", Proc);
+  else fprintf(fp, "%d Zoltan_LB_Box_Assign not tested.\n", Proc);
 
 
   status = Zoltan_LB_Box_PP_Assign(zz, xlo[0], xlo[1], xlo[2], 
@@ -1203,10 +1196,10 @@ int i;
                                        procs, &proccnt, 
                                        parts, &partcnt);
   if (status != ZOLTAN_OK) 
-    fprintf(fp, "\nerror returned from Zoltan_LB_Box_PP_Assign()\n");
+    fprintf(fp, "error returned from Zoltan_LB_Box_PP_Assign()\n");
   else {
-    fprintf(fp, "\n%d Zoltan_LB_Box_PP_Assign LO: (%e %e %e)\n"
-                  "%d                         HI: (%e %e %e)\n", 
+    fprintf(fp, "%d Zoltan_LB_Box_PP_Assign LO: (%e %e %e)\n"
+                "%d                         HI: (%e %e %e)\n", 
                 Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
 
     procfound = 0;
