@@ -45,11 +45,13 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, double 
   x_perturb(x),
   fo(x),
   fp(x),
+  fmPtr(0),
   Jc(x),
   alpha(alpha_),
   beta(beta_),
   betaVector(0),
   betaType(Scalar),
+  diffType(Forward),
   label("NOX::FiniteDifference Jacobian")
 {
   // Create the finite difference Jacobian matrix
@@ -64,11 +66,13 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
   x_perturb(x),
   fo(x),
   fp(x),
+  fmPtr(0),
   Jc(x),
   alpha(alpha_),
   beta(0),
   betaVector(&beta_),
   betaType(Vector),
+  diffType(Forward),
   label("NOX::FiniteDifference Jacobian")
 {
   // Create the finite difference Jacobian matrix
@@ -83,11 +87,13 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
   x_perturb(x),
   fo(x),
   fp(x),
+  fmPtr(0),
   Jc(x),
   alpha(alpha_),
   beta(beta_),
   betaVector(0),
   betaType(Scalar),
+  diffType(Forward),
   label("NOX::FiniteDifference Jacobian")
 {
   // Create the finite difference Jacobian matrix directly using a 
@@ -104,11 +110,13 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
   x_perturb(x),
   fo(x),
   fp(x),
+  fmPtr(0),
   Jc(x),
   alpha(alpha_),
   beta(0),
   betaVector(&beta_),
   betaType(Vector),
+  diffType(Forward),
   label("NOX::FiniteDifference Jacobian")
 {
   // Create the finite difference Jacobian matrix directly using a 
@@ -119,6 +127,7 @@ FiniteDifference::FiniteDifference(Interface& i, const Epetra_Vector& x, const E
 
 FiniteDifference::~FiniteDifference()
 {
+  delete fmPtr;
   delete jacobian;
   delete graph;
 }
@@ -320,6 +329,18 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   // Zero out Jacobian
   jacobian->PutScalar(0.0);
 
+  // Create an extra perturbed residual vector pointer if needed
+  if ( diffType == Centered )
+    if ( !fmPtr )
+      fmPtr = new Epetra_Vector(x);
+
+  // Create a reference to the extra perturbed residual vector
+  Epetra_Vector& fm = *fmPtr;
+ 
+  double scaleFactor = 1.0;
+  if ( diffType == Backward )
+    scaleFactor = -1.0;
+
   double eta = 0.0;  // Value to perturb the solution vector 
   
   int min = map.MinAllGID();  // Minimum Global ID value
@@ -345,7 +366,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
       else
 	eta = alpha*x[map.LID(k)] + (*betaVector)[map.LID(k)];
 
-      x_perturb[map.LID(k)] += eta;
+      x_perturb[map.LID(k)] += scaleFactor * eta;
       proc = map.Comm().MyPID();
     }  
 
@@ -357,10 +378,22 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
     // Compute the perturbed RHS
     interface.computeF(x_perturb,fp, Interface::Jacobian);
+
+    if ( diffType == Centered ) {
+      if (map.MyGID(k))
+        x_perturb[map.LID(k)] -= 2.0 * eta;  
+      interface.computeF(x_perturb,fm, Interface::Jacobian);
+    }
     
     // Compute the column k of the Jacobian
-    Jc.Update(1.0, fp, -1.0, fo, 0.0);
-    Jc.Scale(1.0/eta);
+    if ( diffType != Centered ) {
+      Jc.Update(1.0, fp, -1.0, fo, 0.0);
+      Jc.Scale( 1.0/(scaleFactor * eta) );
+    }
+    else {
+      Jc.Update(1.0, fp, -1.0, fm, 0.0);
+      Jc.Scale( 1.0/(2.0 * eta) );
+    }
 
     // Insert nonzero column entries into the jacobian    
     for (int j = myMin; j < myMax+1; j++) {
@@ -443,4 +476,9 @@ Epetra_CrsMatrix*  FiniteDifference::createGraphAndJacobian(Interface& i,
 
   return jacobian;
 
+}
+
+void FiniteDifference::setDifferenceMethod(DifferenceType diffType_)
+{
+  diffType = diffType_;
 }

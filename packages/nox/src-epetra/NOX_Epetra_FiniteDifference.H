@@ -62,12 +62,16 @@ The perturbation, \f$ \delta \f$, is calculated based on one of the following eq
 \f[ \delta = \alpha * | x_j | + \beta_j \f]
 
 where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ can be either a scalar or a vector (defaults to a scalar value of 1.0e-6).  The choice is defined by the type of constructor used.  All parameters are supplied in the constructor.  
+In addition to the forward difference derivative approximation, backward or centered differences can be used via the setDifferenceMethod function.  Note that centered difference provides second order spatial accuracy but at the cost of twice as many function evaluations.
 
   Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems but only for debugging purposes.
   */
 class FiniteDifference : public Epetra_RowMatrix {
       
  public:
+
+  //! Define types for use of the perturbation parameter \f$ \delta\f$. 
+  enum DifferenceType {Forward, Backward, Centered};
 
   //! Constructor 
   FiniteDifference(Interface& i, const Epetra_Vector& initialGuess, double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -198,6 +202,9 @@ class FiniteDifference : public Epetra_RowMatrix {
   //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
   virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M);
 
+  //! Set the type of perturbation method used (default is Forward)
+  virtual void setDifferenceMethod( DifferenceType type );
+
 protected:
 
   //! Constructs an Epetra_CrsGraph and Epetra_RowMatrix for the Jacobian.  This is only called if the user does not supply an Epetra_CrsGraph.
@@ -226,6 +233,9 @@ protected:
   //! Function evaluation at perturbX - a work array that needs to be mutable.
   mutable Epetra_Vector fp;
 
+  //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
+  Epetra_Vector* fmPtr;
+
   //! Column vector of the jacobian - a work array that needs to be mutable.
   mutable Epetra_Vector Jc;
 
@@ -243,6 +253,9 @@ protected:
 
   //! Flag that sets whether \f$ \beta \f$ is a scalar or a vector.
   BetaType betaType;
+
+  //! Define types for use of the perturbation parameter \f$ \delta\f$. 
+  DifferenceType diffType;
 
   //! label for the Epetra_RowMatrix
   string label;
