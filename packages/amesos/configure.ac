@@ -338,7 +338,9 @@ if test "X$ADDON_KS" = "Xyes"; then
          ;;
   *sgi*) PLATFORM=sgi
        ;;
-  *powerpc*) PLATFORM=ppc
+  *powerpc-apple*) PLATFORM=ppc
+      ;;
+  *powerpc-ibm-aix*) PLATFORM=aix
       ;;
   *solaris*) PLATFORM=solaris
       ;;
@@ -347,8 +349,8 @@ if test "X$ADDON_KS" = "Xyes"; then
   alpha*-dec-osf*) PLATFORM=DEC
        ;;
   *)   if test "x$PLATFORM" = "x"; then
-         AC_MSG_NOTICE([Unrecognized target, using generic unix for PLATFORM])
-         Xyce_ARCH=unix
+         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
+         Xyce_ARCH=linux
        fi
        ;;
  esac

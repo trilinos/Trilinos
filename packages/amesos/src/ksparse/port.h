@@ -22,7 +22,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
  */
 
 #ifdef aix
-#  include "os_aix.h"
+#  include "os_linux.h"
 #  define CONFIGURED
 #endif
 
@@ -33,11 +33,6 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 
 #ifdef DEC
 #  include "os_dec.h"
-#  define CONFIGURED
-#endif
-
-#ifdef sun
-#  include "os_sun.h"
 #  define CONFIGURED
 #endif
 
@@ -57,7 +52,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #endif
 
 #ifdef solaris
-# include "os_solaris.h"
+# include "os_linux.h"
 # define CONFIGURED
 #endif
 
@@ -102,7 +97,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #endif
 
 #ifdef mingw
-#  include "os_mingw32.h"
+#  include "os_linux.h"
 #  define CONFIGURED
 #endif
 
