@@ -228,7 +228,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = (nz_cnt + 1) * sizeof( int );
-   ML_memory_alloc((void**) &mat_indx, nbytes, "AVA");
+   ML_memory_alloc((void**) &mat_indx, (unsigned int) nbytes, "AVA");
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, nz_cnt);
 
@@ -390,13 +390,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        /* MB_MODIF */
        nvblocks = Nrows/ml_ag->num_PDE_eqns;
        nbytes   = nvblocks * sizeof(int);
-       ML_memory_alloc((void**) &vblock_info,nbytes,"AVE");
+       ML_memory_alloc((void**) &vblock_info, (unsigned int) nbytes,"AVE");
        /* MB_MODIF */
        for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = ml_ag->num_PDE_eqns;
        nvblockflag = 1;
      }    
    nbytes = (nvblocks + 1)* sizeof(int);
-   if (nbytes > 0) ML_memory_alloc((void**) &vblock_info2,nbytes,"AVC");
+   if (nbytes > 0) ML_memory_alloc((void**) &vblock_info2, (unsigned int) nbytes,"AVC");
    vblock_info2[0] = vblock_info[0]; 
    for ( i = 1; i < nvblocks; i++ )
      vblock_info2[i] = vblock_info2[i-1] + vblock_info[i];
@@ -414,7 +414,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    else
    {
      nbytes = (nz_cnt + 1) * sizeof( int ); /* probably excessive */
-     if (nbytes > 0) ML_memory_alloc((void**) &amal_mat_indx,nbytes,"AVB");
+     if (nbytes > 0) ML_memory_alloc((void**) &amal_mat_indx, (unsigned int) nbytes,"AVB");
 
      amal_count = nvblocks + 1;
      amal_mat_indx[0] = amal_count; 
@@ -564,7 +564,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    Ncoarse = aggr_count * nullspace_dim;
    level   = ml_ag->cur_level;
    nbytes  = Nrows * sizeof( int );
-   ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AVC");
+   ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), (unsigned int) nbytes, "AVC");
    new_cnt = aggr_count;
    for ( i = 0; i < nvblocks; i++ ) 
    {
@@ -641,13 +641,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = ( Nrows + 1 ) * sizeof(int); 
-   ML_memory_alloc((void**)&(new_ia), nbytes, "AVM");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "AVM");
    nbytes = Nrows * nullspace_dim * sizeof(int);  
-   ML_memory_alloc((void**)&(new_ja), nbytes, "AVN");
+   ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "AVN");
    nbytes = Nrows * nullspace_dim * sizeof(double); 
-   ML_memory_alloc((void**)&(new_val), nbytes, "AVO");
+   ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "AVO");
    nbytes = Ncoarse * nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**)&(new_null),nbytes,"AVX");
+   ML_memory_alloc((void**)&(new_null), (unsigned int) nbytes,"AVX");
    for (i = 0; i < Ncoarse*nullspace_dim; i++) new_null[i] = 0.0;
 
    /* ------------------------------------------------------------- */
@@ -664,8 +664,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = aggr_count * sizeof(int);
-   ML_memory_alloc((void**)&agg_sizes,     nbytes,"AVI");
-   ML_memory_alloc((void**)&agg_sizes_cum, nbytes, "AVJ");
+   ML_memory_alloc((void**)&agg_sizes, (unsigned int) nbytes,"AVI");
+   ML_memory_alloc((void**)&agg_sizes_cum, (unsigned int) nbytes, "AVJ");
 
    /* ------------------------------------------------------------- */
    /* fill the temporary variables and also find the maximum        */
@@ -729,13 +729,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = max_agg_size * nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**)&qr_tmp, nbytes, "AVU");
+   ML_memory_alloc((void**)&qr_tmp, (unsigned int) nbytes, "AVU");
    nbytes = nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**)&tmp_vect, nbytes, "AVT");
+   ML_memory_alloc((void**)&tmp_vect, (unsigned int) nbytes, "AVT");
 
    lwork  = nullspace_dim;
    nbytes = nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**)&work, nbytes, "AVK");
+   ML_memory_alloc((void**)&work, (unsigned int) nbytes, "AVK");
 
    work[0] = lwork;
    for (i = 0; i < aggr_count; i++) 
@@ -964,7 +964,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                       ML_Operator *Amat, int *mat_indx, int *bdry_array,
                       int *aggr_count_in, int **aggr_index_in, char *true_bdry)
 {
-   int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
+   int     i, j, k, m, kk, inode = 0, jnode, nbytes, length, Nrows;
    int     select_flag, aggr_count, index, mypid, inode2;
    int     *aggr_index, *itmp_array = NULL, count;
    int     *aggr_stat, ordering;
@@ -1004,8 +1004,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    nbytes = Nrows * sizeof( int );
    if ( nbytes > 0 ) 
    {
-      ML_memory_alloc((void**) &aggr_index, nbytes, "AMA");
-      ML_memory_alloc((void**) &aggr_stat,  nbytes, "AMB");
+      ML_memory_alloc((void**) &aggr_index, (unsigned int) nbytes, "AMA");
+      ML_memory_alloc((void**) &aggr_stat, (unsigned int) nbytes, "AMB");
    } else aggr_index = aggr_stat = NULL;
 
    for ( i = 0; i < Nrows; i++ ) aggr_stat[i] = ML_AGGR_READY;
@@ -1040,7 +1040,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    nbytes = aggr_cnt_leng * sizeof( int );
    if ( nbytes > 0 ) 
    {
-      ML_memory_alloc((void**) &aggr_cnt_array, nbytes, "AME");
+      ML_memory_alloc((void**) &aggr_cnt_array, (unsigned int) nbytes, "AME");
       for ( i = 0; i < aggr_cnt_leng; i++ ) aggr_cnt_array[i] = 0;
    } else
       aggr_cnt_array = NULL;
@@ -1056,7 +1056,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    if ( ordering == 1 )       /* random ordering */
    {
       nbytes = Nrows * sizeof(int);
-      ML_memory_alloc((void**) &randomVector, nbytes, "AMF");
+      ML_memory_alloc((void**) &randomVector, (unsigned int) nbytes, "AMF");
       for (i = 0; i < Nrows; i++) randomVector[i] = i;
       ML_randomize(Nrows, randomVector);
    } 
@@ -1223,7 +1223,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                itmp_array = aggr_cnt_array;
                aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
                nbytes = aggr_cnt_leng * sizeof( int );
-               ML_memory_alloc((void**) &aggr_cnt_array,nbytes,"AMG");
+               ML_memory_alloc((void**) &aggr_cnt_array, (unsigned int) nbytes,"AMG");
                for ( k = 0; k < aggr_count; k++ )
                   aggr_cnt_array[k] = itmp_array[k];
                ML_memory_free((void**) &itmp_array);
@@ -1324,7 +1324,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
             length = mat_indx[inode+1] - mat_indx[inode];
             nbytes = length * sizeof( int );
             if ( nbytes > 0 )
-               ML_memory_alloc((void**) &int_buf, nbytes, "AGR");
+               ML_memory_alloc((void**) &int_buf, (unsigned int) nbytes, "AGR");
             length = 0; 
             for (jnode=mat_indx[inode]; jnode<mat_indx[inode+1]; 
                  jnode++) 
@@ -1454,7 +1454,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                itmp_array = aggr_cnt_array;
                aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
                nbytes = aggr_cnt_leng * sizeof( int );
-               ML_memory_alloc((void**) &aggr_cnt_array, nbytes, "AGL");
+               ML_memory_alloc((void**) &aggr_cnt_array, (unsigned int) nbytes, "AGL");
                for ( k = 0; k < aggr_count; k++ )
                   aggr_cnt_array[k] = itmp_array[k];
                ML_memory_free((void**) &itmp_array);
