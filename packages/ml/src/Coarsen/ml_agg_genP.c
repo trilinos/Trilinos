@@ -48,6 +48,11 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    double t0;
 #endif
 
+   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   {
+     printf("Entering ML_Gen_MGHierarchy_UsingAggregation\n");
+     fflush(stdout);
+   }
    /* ----------------------------------------------------------------- */
    /* if user does not provide a ML_Aggregate object, create a default  */
    /* ----------------------------------------------------------------- */
@@ -228,6 +233,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    double t0;
    t0 =  GetClock();
 #endif
+
+   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   {
+     printf("Entering ML_AGG_Gen_Prolongator\n");
+     fflush(stdout);
+   }
 
    widget.near_bdry = NULL;
    Amat     = (ML_Operator *) data;
@@ -435,6 +446,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
              ml->Pmat[clevel].N_nonzeros, ml->Pmat[clevel].outvec_leng);
    }
    */
+   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel())
+   {
+     printf("Leaving ML_AGG_Gen_Prolongator\n");
+     fflush(stdout);
+   }
 #ifdef ML_TIMING
    ml->Pmat[clevel].build_time =  GetClock() - t0;
    ml->timing->total_build_time += ml->Pmat[clevel].build_time;
