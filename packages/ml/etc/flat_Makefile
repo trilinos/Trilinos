@@ -32,7 +32,7 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_agg_genP.c ml_lapack.c mli_solver.c ml_agg_coupled.c \
        ml_krylov.c       ml_cg.c           ml_gmres.c \
        ml_agg_uncoupled.c ml_agg_dd.c      ml_read_utils.c \
-       ml_bicgstabl.c    ml_pde.c          ml_xxt.c ml_agg_MIS.c
+       ml_bicgstabl.c    ml_pde.c          ml_xyt.c ml_agg_MIS.c
 #=======================================================================
 # ML include files
 #=======================================================================
@@ -89,4 +89,4 @@ include ../etc/depends.ml
 
 clean:
 	@echo "junk" > dummy.o
-	@rm -f *.o libml.a $(APPLICATION) core ml_example1d ml_example2d ml_example3d ml_readex mlguide mlguide_par
+	@rm -f *.o libml.a $(APPLICATION) core ml_example1d ml_example2d ml_example3d ml_readex mlguide mlguide_par ml_readfile ml_read_elas
