@@ -380,8 +380,10 @@ private:
 			:enum_option_val(_enum_option_val)
 			,num_enum_opt_values(_num_enum_opt_values)
 			,enum_opt_values(_enum_opt_values,_enum_opt_values+_num_enum_opt_values)
-			,enum_opt_names(_enum_opt_names,_enum_opt_names+_num_enum_opt_values)
-			{}
+			{
+				for( int k = 0; k < num_enum_opt_values; ++k )
+					enum_opt_names.push_back(std::string(_enum_opt_names[k]));
+			}
 		int                  *enum_option_val;
 		int                  num_enum_opt_values;
 		std::vector<int>     enum_opt_values;
