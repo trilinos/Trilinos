@@ -1,4 +1,6 @@
 
+#ifdef ZOLTAN_ORDER
+
 #include <EDT_CrsGraph_ZoltanOrder.h>
 
 #include <EDT_CrsGraph_Transpose.h>
@@ -8,19 +10,14 @@
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
+#include <Epetra_Import.h>
 
 #include <Epetra_MpiComm.h>
 
 #include <vector>
 #include <set>
 
-using std::vector;
-using std::set;
-
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_ZoltanOrder::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_ZoltanOrder::NewTypePtr EpetraExt::CrsGraph_ZoltanOrder::operator()( EpetraExt::CrsGraph_ZoltanOrder::OriginalTypeRef original )
 {
   int err;
 
@@ -38,8 +35,7 @@ NewTypePtr CrsGraph_ZoltanOrder::operator()( OriginalTypeRef original )
     LB->Set_Param( "ORDER_TYPE", "LOCAL" );
 
     //Setup Query Object
-    Epetra_CrsGraph * TGraph = CrsGraph_Transpose()( original );
-    TransGraph = TGraph;
+    TransGraph = CrsGraph_Transpose()( original );
     Query = new Epetra_ZoltanQuery( original, TransGraph, true );
     if( err == ZOLTAN_OK ) err = LB->Set_QueryObject( Query );
 
@@ -101,6 +97,4 @@ cout << "------------------------------\n";
   return NewGraph;
 }
 
-} //namespace Transform
-} //namespace EpetraExt
-
+#endif //ZOLTAN_ORDER

@@ -10,8 +10,6 @@
 
 #include <vector>
 
-using std::vector
-
 class Epetra_CrsGraph;
 
 namespace EpetraExt {

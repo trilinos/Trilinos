@@ -137,13 +137,13 @@ BTF = \
 EXTRA_MPI_H = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
-	$(srcdir)/EDT_CrsGraph_ZoltanQuery.h
+	$(srcdir)/Epetra_ZoltanQuery.h
 
 
 EXTRA_MPI = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
-	$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+	$(srcdir)/Epetra_ZoltanQuery.cpp
 
 
 @HAVE_MPI_TRUE@MPI_H = \
@@ -172,7 +172,9 @@ libepetraext_a_SOURCES = \
 
 
 #We need the following to support separate build directories
-AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src
+AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
+            -I$(top_srcdir)/../../external/Zoltan_C++
+
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -238,7 +240,7 @@ libepetraext_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_Zoltan.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanOrder.$(OBJEXT) \
-@HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanQuery.$(OBJEXT)
+@HAVE_MPI_TRUE@	Epetra_ZoltanQuery.$(OBJEXT)
 @HAVE_MPI_FALSE@am_libepetraext_a_OBJECTS = EDT_CrsGraph_View.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsMatrix_View.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_MultiVector_View.$(OBJEXT) \
@@ -262,10 +264,10 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_View.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Zoltan.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po \
-@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsMatrix_View.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po \
-@AMDEP_TRUE@	$(DEPDIR)/EDT_MultiVector_View.Po
+@AMDEP_TRUE@	$(DEPDIR)/EDT_MultiVector_View.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_ZoltanQuery.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -331,8 +333,7 @@ EDT_LinearProblem_StaticCondensation.$(OBJEXT): \
 EDT_CrsGraph_Zoltan.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Zoltan.cpp
 EDT_CrsGraph_ZoltanOrder.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
-EDT_CrsGraph_ZoltanQuery.$(OBJEXT): \
-	$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+Epetra_ZoltanQuery.$(OBJEXT): $(srcdir)/Epetra_ZoltanQuery.cpp
 libepetraext.a: $(libepetraext_a_OBJECTS) $(libepetraext_a_DEPENDENCIES) 
 	-rm -f libepetraext.a
 	$(libepetraext_a_AR) libepetraext.a $(libepetraext_a_OBJECTS) $(libepetraext_a_LIBADD)
@@ -351,10 +352,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_View.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Zoltan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsMatrix_View.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_MultiVector_View.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_ZoltanQuery.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -491,17 +492,17 @@ EDT_CrsGraph_ZoltanOrder.obj: $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanOrder.obj `cygpath -w $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp`
 
-EDT_CrsGraph_ZoltanQuery.o: $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
-@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp' object='EDT_CrsGraph_ZoltanQuery.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.TPo' @AMDEPBACKSLASH@
+Epetra_ZoltanQuery.o: $(srcdir)/Epetra_ZoltanQuery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_ZoltanQuery.cpp' object='Epetra_ZoltanQuery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/Epetra_ZoltanQuery.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanQuery.o `test -f $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_ZoltanQuery.o `test -f $(srcdir)/Epetra_ZoltanQuery.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_ZoltanQuery.cpp
 
-EDT_CrsGraph_ZoltanQuery.obj: $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
-@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp' object='EDT_CrsGraph_ZoltanQuery.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.TPo' @AMDEPBACKSLASH@
+Epetra_ZoltanQuery.obj: $(srcdir)/Epetra_ZoltanQuery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_ZoltanQuery.cpp' object='Epetra_ZoltanQuery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/Epetra_ZoltanQuery.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanQuery.obj `cygpath -w $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_ZoltanQuery.obj `cygpath -w $(srcdir)/Epetra_ZoltanQuery.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)

@@ -2,6 +2,8 @@
 #ifndef EDT_CRSGRAPH_ZOLTANORDER_H
 #define EDT_CRSGRAPH_ZOLTANORDER_H
 
+#ifdef ZOLTAN_ORDER
+
 #include <Epetra_Transform.h>
 
 class Zoltan_LoadBalance;
@@ -9,7 +11,6 @@ class Zoltan_LoadBalance;
 class Epetra_CrsGraph;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_ZoltanOrder : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
@@ -27,7 +28,8 @@ class CrsGraph_ZoltanOrder : public StructuralSameTypeTransform<Epetra_CrsGraph>
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
+
+#endif //ZOLTAN_ORDER
 
 #endif //EDT_CRSGRAPH_ZOLTANORDER_H

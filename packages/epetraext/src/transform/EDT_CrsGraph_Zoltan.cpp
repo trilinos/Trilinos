@@ -12,19 +12,14 @@
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
+#include <Epetra_Import.h>
 
 #include <Epetra_MpiComm.h>
 
 #include <vector>
 #include <set>
 
-using std::vector;
-using std::set;
-
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_Zoltan::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_Zoltan::NewTypePtr EpetraExt::CrsGraph_Zoltan::operator()( EpetraExt::CrsGraph_Zoltan::OriginalTypeRef original )
 {
   int err;
 
@@ -43,8 +38,7 @@ NewTypePtr CrsGraph_Zoltan::operator()( OriginalTypeRef original )
     if( err == ZOLTAN_OK ) err = LB->Set_Param( "PARMETIS_METHOD", partitionMethod_ );
 
     //Setup Query Object
-    Epetra_CrsGraph * TGraph = CrsGraph_Transpose()( original );
-    TransGraph = TGraph.release();
+    TransGraph = CrsGraph_Transpose()( original );
     Query = new Epetra_ZoltanQuery( original, TransGraph );
     if( err == ZOLTAN_OK ) err = LB->Set_QueryObject( Query );
 
@@ -127,7 +121,4 @@ NewTypePtr CrsGraph_Zoltan::operator()( OriginalTypeRef original )
   
   return NewGraph;
 }
-
-} //namespace Transform
-} //namespace EpetraExt
 

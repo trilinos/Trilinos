@@ -51,12 +51,12 @@ BTF = \
 EXTRA_MPI_H = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
-	$(srcdir)/EDT_CrsGraph_ZoltanQuery.h
+	$(srcdir)/Epetra_ZoltanQuery.h
 
 EXTRA_MPI = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
-	$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+	$(srcdir)/Epetra_ZoltanQuery.cpp
 
 if HAVE_MPI
 
@@ -87,7 +87,8 @@ libepetraext_a_SOURCES = \
 	$(MPI)
 
 #We need the following to support separate build directories
-AM_CPPFLAGS=-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src
+AM_CPPFLAGS=-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
+            -I$(top_srcdir)/../../external/Zoltan_C++
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------

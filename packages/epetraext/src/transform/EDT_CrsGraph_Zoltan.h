@@ -4,11 +4,12 @@
 
 #include <Epetra_Transform.h>
 
+#include <string>
+
 class Epetra_CrsGraph;
 class Zoltan_LoadBalance;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_Zoltan : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
@@ -32,8 +33,6 @@ class CrsGraph_Zoltan : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
-
 
 #endif //EDT_CRSGRAPH_ZOLTAN_H
