@@ -1,7 +1,7 @@
 CXXFLAGS=-O3
 CFLAGS=-O3
 FFLAGS=-O3
---with-libs="-L/home/mnphenow/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib -lumfpack 
--L/home/mnpheonw/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Lib -lamd"
+--with-libs="/home/mnphenow/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a 
+/home/mnpheonw/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
 --with-incdirs="-I/home/mnphenow/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
 -I/home/mnphenow/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Include"
