@@ -136,7 +136,7 @@ typedef enum LB_Method {
 #define LB_NUM_ID_ENTRIES_DEF 1
 #define LB_RETURN_LISTS_DEF   LB_ALL_LISTS
 #define LB_TIMER_DEF          LB_TIME_WALL
-#define LB_TFLOPS_SPECIAL_DEF TRUE
+#define LB_TFLOPS_SPECIAL_DEF FALSE
 
 /*****************************************************************************/
 /*****************************************************************************/
