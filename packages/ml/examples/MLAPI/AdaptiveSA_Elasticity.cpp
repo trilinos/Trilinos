@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
     int dimNS = 3;
 
     MultiVector NSfine(FineSpace,dimNS);
+    Epetra_MultiVector* Epetra_NSfine = 0;
     if (!ReadKernel) {
       NSfine = 0.0;
       for (int i = 0 ; i < NSfine.GetMyLength() ; ++i)
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
   			    NSfine(i,j) = 1.0;
     } 
     else {
-      Epetra_MultiVector* Epetra_NSfine = new Epetra_MultiVector(*map,dimNS,true);
+      Epetra_NSfine = new Epetra_MultiVector(*map,dimNS,true);
       for (int i=0; i<dimNS; i++)
       {
         sprintf(filename,"%s/data_nullsp%d.txt",argv[1],i);
@@ -160,6 +161,24 @@ int main(int argc, char *argv[])
       Prec.IncrementNullSpace();
       Prec.Compute();
     }
+    
+#if 1
+    MultiVector NewNS    = Prec.GetNullSpace();
+    int         newdimNS = NewNS.GetNumVectors();
+    Epetra_MultiVector* EnewNS = new Epetra_MultiVector(*map,newdimNS,true);
+    for (int v = 0 ; v < newdimNS ; ++v)
+    for (int i = 0 ; i < NewNS.GetMyLength() ; ++i)
+       (*EnewNS)[v][i] = NewNS(i,v);   
+
+    // create output of vector for visualization with gid
+    sprintf(filename,"%s/data_grid.txt",argv[1]);
+    for (int i=0; i<newdimNS; i++)
+    {
+       ok = Epetra_ML_writegidviz(filename,i+1,*EnewNS,i,*map,comm);
+       if (!ok) {
+          cout << "**ERR**: could not create GID viz\n"; throw -1; }
+    }
+#endif  
 
     // test the solver
     MultiVector LHS(FineSpace);
