@@ -378,12 +378,12 @@ void BlockGmres<TYPE>::TrueResiduals (bool vb) {
 	const TYPE one=1.0;
 	AX->MvAddMv(one, _rhs, -one, *AX);	
 	AX->MvNorm(_trueresids);
-    if(vb){
+    	if(vb){
 		cout << "--------------------------------------" << endl;
-      for (i=0; i<AX->GetNumberVecs(); i++){
+      		for (i=0; i<AX->GetNumberVecs(); i++){
 		  cout <<"Unscaled "<< i <<"-th true residual "<< _trueresids[i] << endl;
-	  }
-	  cout << endl << endl;
+	  	}
+	  	cout << endl << endl;
 	}
 	TYPE scale;
 	for (i=0; i<AX->GetNumberVecs(); i++ ) {
@@ -401,8 +401,8 @@ void BlockGmres<TYPE>::TrueResiduals (bool vb) {
 		  }
 		}
 	}
-	cout << endl << endl;
-    //
+	if (vb) { cout << endl << endl; }
+    	//
 	if (AX) delete AX;
 	if (norms_AX) delete [] norms_AX;
 	if (norms_rhs) delete [] norms_rhs;

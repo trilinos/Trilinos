@@ -91,7 +91,7 @@ private:
 	void QRFactorDef(AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>&, bool&,int,
 		                 int[],int&,bool);
     	void CheckCGOrth(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool);
-	void PrintCGIterInfo(int[], int, int[], int, int[], int);
+	void PrintCGIterInfo(int[], const int, int[], const int, int[], const int);
 	void CheckCGResids(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool) const;
 	AnasaziMatrix<TYPE> &_amat; // must be passed in by the user
 	AnasaziPrecondition<TYPE> &_precond; // must be passed in by user
@@ -368,10 +368,10 @@ void BlockCG<TYPE>::TrueResiduals (bool vb) {
 	AX->MvNorm(_trueresids);
 	if(vb){
 		cout << "--------------------------------------" << endl;
-      for (i=0; i<AX->GetNumberVecs(); i++){
-		  cout <<"Unscaled "<< i <<"-th true residual "<< _trueresids[i] << endl;
-	  }
-	  cout << endl << endl;
+      		for (i=0; i<AX->GetNumberVecs(); i++){
+			cout <<"Unscaled "<< i <<"-th true residual "<< _trueresids[i] << endl;
+	  	}
+	  	cout << endl << endl;
 	}
 	TYPE scale;
 	for (i=0; i<AX->GetNumberVecs(); i++ ) {
@@ -389,7 +389,7 @@ void BlockCG<TYPE>::TrueResiduals (bool vb) {
 		  }
 		}
 	}
-	cout << endl << endl;
+	if(vb) { cout << endl << endl; }
 	//
 	if (AX) delete AX;
 	if (norms_AX) delete [] norms_AX;
@@ -1185,8 +1185,8 @@ void BlockCG<TYPE>::CheckCGOrth(AnasaziMultiVec<TYPE>& P1, AnasaziMultiVec<TYPE>
 
 template<class TYPE>
 void BlockCG<TYPE>::PrintCGIterInfo(int cur[], const int cursz, 
-									  int ind[], const int indsz,
-									  int conv[], const int convsz) {
+						  int ind[], const int indsz,
+						  int conv[], const int convsz) {
 	//
 	int i;
 	if (_debuglevel > 0){
