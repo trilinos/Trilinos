@@ -81,40 +81,60 @@ int main(int argc, char *argv[])
   
   // Begin Nonlinear Solver ************************************
 
-  // Create parameter list
+  // Create the top level parameter list
   NOX::Parameter::List nlParams;
-  nlParams.setParameter("Output Level", 4);
-  nlParams.setParameter("MyPID", MyPID); 
+
+  // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based"); 
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+
+  // Set the printing parameters in the "Printing" sublist
+  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID); 
+  printParams.setParameter("Output Precision", 3);
+  printParams.setParameter("Output Processor", 0);
+  printParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  //searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Full Step", 0.01);
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  searchParams.setParameter("Method", "More'-Thuente");
-  searchParams.setParameter("Default Step", 1.0000);
-  searchParams.setParameter("Recovery Step", 0.0001);
-  searchParams.setParameter("Minimum Step", 0.0001);
+  searchParams.setParameter("Method", "Full Step");
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
+  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+    newtonParams.setParameter("Forcing Term Method", "Constant");
+    //newtonParams.setParameter("Forcing Term Method", "Type 1");
+    //newtonParams.setParameter("Forcing Term Method", "Type 2");
+    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
   //dirParams.setParameter("Method", "Steepest Descent");
+  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
+    //sdParams.setParameter("Scaling Type", "None");
+    //sdParams.setParameter("Scaling Type", "2-Norm");
+    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
+  //dirParams.setParameter("Method", "NonlinearCG");
+  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+    //nlcgParams.setParameter("Restart Frequency", 2000);
+    //nlcgParams.setParameter("Precondition", "On");
+    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
-  // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
-
-  // Sublist for linear solver
-  NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
+  // Sublist for linear solver for the Newton method
+  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Preconditioning", "None");           
+  lsParams.setParameter("Scaling", "None");             
+  //lsParams.setParameter("Scaling", "Row Sum");          
+  lsParams.setParameter("Preconditioning", "None");   
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
@@ -124,21 +144,26 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
   //lsParams.setParameter("Overlap", 2);   
   //lsParams.setParameter("Fill Factor", 2);   
-  //lsParams.setParameter("Drop Tolerance", 1.0e-6);   
+  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
+
+  // Create the interface between the test problem and the nonlinear solver
+  // This is created by the user using inheritance of the abstract base class:
+  // NLS_PetraGroupInterface
+  Problem_Interface interface(Problem);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& A = Problem.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree AA(interface, soln);
+  //NOX::Epetra::MatrixFree A(interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference AAA(interface, soln);
+  //NOX::Epetra::FiniteDifference A(interface, soln);
 
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
+  //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
   grp.computeF();
 
   // Create the convergence tests
@@ -168,6 +193,14 @@ int main(int argc, char *argv[])
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
+
+  // Output the parameter list
+  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+    cout << endl << "Final Parameters" << endl
+	 << "****************" << endl;
+    solver.getParameterList().print(cout);
+    cout << endl;
+  }
 
   // Print solution
   char file_name[25];

@@ -80,14 +80,14 @@ int main(int argc, char *argv[])
   
   // Begin Nonlinear Solver ************************************
 
-  // Create parameter list
+  // Create the top level parameter list
   NOX::Parameter::List nlParams;
 
-  // Set the method
+  // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
 
-  // Set the printing parameters
+  // Set the printing parameters in the "Printing" sublist
   NOX::Parameter::List& printParams = nlParams.sublist("Printing");
   printParams.setParameter("MyPID", MyPID); 
   printParams.setParameter("Output Precision", 3);
