@@ -1,5 +1,3 @@
-#ifdef WITH_PRERELEASE
-
 // $Id$ 
 // $Source$ 
 
@@ -248,12 +246,12 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
       alpha.push_front(a);
       
     }
-    
+
     const Update& u = *(updates.back());
     const Abstract::Vector& y = u.y();
     double gamma = u.sdoty() / y.dot(y);
     dir.scale(gamma);
-    
+
     for (UpdateConstIterator i = updates.begin(); i != updates.end(); i++) {
       
       const Update& u = *(*i);
@@ -272,7 +270,3 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
 
   return ok;
 }
-
-
-
-#endif

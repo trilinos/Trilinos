@@ -1,5 +1,3 @@
-#ifdef WITH_PRERELEASE
-
 // $Id$ 
 // $Source$ 
 
@@ -46,15 +44,36 @@ namespace Direction {
 
 //! %Quasi-Newton direction computation
 /*!  
-  Computes the Quasi-Newton direction by updating a low-rank
-  approximation to the inverse Jacobian, \f$H\f$, and then computing
+  Applied limited-memory BFGS (LM-BFGS) to the problem
 
-  \f[ s = -H f. \f]
+  \f[
+  f(x) = \frac{1}{2} \|F(x)\|^2
+  \f]
+
+  The Quasi-Newton direction is computed by updating a low-rank
+  approximation to the inverse Hessian, \f$H\f$, and then computing
+
+  \f[ 
+  s = -H_k g_k
+  \f]
+
+  Here \f$g_k = J_k^T F_k\f$ represents the gradient of \f$f\f$. 
   
+  Suppose at some iteration $k$, we have $m_k$ updates. Then $H_k$ is
+  calculated as follows.
+
+  [TO BE FILLED IN LATER]
+
   To use this direction, specify that the "Method" is "QuasiNewton" in the
   "Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
+
+  The following options are valid in the "Direction" sublist of the
+  parameters that are passed to the nonlinear solver:
+
+  - "Memory" - Number of saved updates, defaults to 5.
+
  */  
 
 class QuasiNewton : public Generic {
@@ -203,5 +222,4 @@ protected:
 } // namespace Direction
 } // namespace NOX
 
-#endif
 #endif
