@@ -57,17 +57,11 @@
 
   \section license License
 
-  Our intention is to make %NOX available for download under the terms
+  %NOX is available for download under the terms
   of the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser
   General Public License</a>.
 
   \section download Downloads
-
-  Since our code has not yet been approved for general release, \b Do
-  \b Not \b Distribute \b Outside \b of \b Sandia \b Without \b
-  Express \b Permission \b from \b Tammy \b Kolda \b or \b Roger \b
-  Pawlowski.
-
 
   <ul>
   <li> 
@@ -98,7 +92,7 @@ Discussion forum for users of %NOX. (Recommended)
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
 Discussion forum for %NOX developers. (Developers)
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
-CVS Commit Message (Active  Developers)
+CVS Commit Messages (Active  Developers)
 </ul>
 
 \section contributors NOX Contributors
@@ -1246,10 +1240,21 @@ immediately before the word that is causing the link. For example,
 
      <li> "Method" - see NOX::Direction::Manager for options
 
+     <li> "User Defined Constructor" - see NOX::Direction::Manager for details
+
      <li> "Newton" sublist - used by NOX::Direction::Newton,
           see class documentation for all details.
 
 	  <ul>
+
+	  <li> "Forcing Term Method"
+	  <li> "Forcing Term Initial Tolerance"
+	  <li> "Forcing Term Minimum Tolerance"
+	  <li> "Forcing Term Maximum Tolerance"
+	  <li> "Forcing Term Alpha"
+	  <li> "Forcing Term Gamma"
+	  <li> "Forcing Term User Defined Norm"
+	  <li> "Rescue Bad Newton Solver"
 
 	  <li> "Linear Solver" sublist, passed to
 	       NOX::Abstract::Group::computeNewton() by
@@ -1260,38 +1265,6 @@ immediately before the word that is causing the link. For example,
 	       <li> "Tolerance"
 
 	       </ul>
-
-	  <li> "Rescue Bad Newton Solver"
-	  <li> "Forcing Term Method"
-	  <li> "Forcing Term Initial Tolerance"
-	  <li> "Forcing Term Minimum Tolerance"
-	  <li> "Forcing Term Maximum Tolerance"
-	  <li> "Forcing Term Alpha"
-	  <li> "Forcing Term Gamma"
-
-	  </ul>
-
-     <li> "Quasi-Newton" sublist, used by
-          NOX::Direction::QuasiNewton, see class documentation for
-          details
-
-	  <ul>
-
-	  <li> "Memory"
-
-	  </ul>
-
-	  
-
-     <li> "Nonlinear CG" sublist, used by
-          NOX::Direction::NonlinearCG, see class documentation for
-          details
-
-	  <ul>
-
-	  <li> "Orthogonalize"
-	  <li> "Precondition"
-	  <li> "Restart Frequency"
 
 	  </ul>
 
@@ -1315,6 +1288,8 @@ immediately before the word that is causing the link. For example,
      <ul>
 
      <li> "Method" - see NOX::LineSearch::Manager for options
+
+     <li> "User Defined Constructor" - see NOX::LineSearch::Manager for details
 
      <li> "Backtrack" sublist - used by NOX::LineSearch::Backtrack,
           see class documentation for all details.
@@ -1360,30 +1335,21 @@ immediately before the word that is causing the link. For example,
           see class documentation for details
 
 	  <ul>
-
-	  <li> "Convergence Criteria"
-	  <li> "Interpolation Type"
-	  <li> "Minimum Step"
 	  <li> "Default Step"
-	  <li> "Recovery Step"
 	  <li> "Max Iters"
-	  <li> "Alpha Factor"
+	  <li> "Minimum Step"
+	  <li> "Recovery Step"
+	  <li> "Interpolation Type"
 	  <li> "Min Bounds Factor"
 	  <li> "Max Bounds Factor"
+	  <li> "Sufficient Decrease Condition"
+	  <li> "Alpha Factor"
 	  <li> "Force Interpolation"
-
-	  </ul>
-
-     <li> "Secant" sublist - used by NOX::LineSearch::Secant, see
-          class documentation for details
-
-	  <ul>
-
-	  <li> "Minimum Step"
-	  <li> "Default Step"
-	  <li> "Recovery Step"
-	  <li> "Max Iters"
-
+	  <li> "Use Counters"
+	  <li> "Maximum Iteration for Increase"
+	  <li> "Allowed Relative Increase"
+	  <li> "User Defined Merit Function"
+	  <li> "User Defined Norm"
 	  </ul>
 
      </ul>
