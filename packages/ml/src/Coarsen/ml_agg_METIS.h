@@ -13,12 +13,18 @@
 /*MS*/
 #define ML_AGGREGATE_OPTIONS_ID 13579
 
+/* undefined will be a negative number */
+#define ML_NUM_LOCAL_AGGREGATES     0
+#define ML_NUM_GLOBAL_AGGREGATES    1
+#define ML_NUM_NODES_PER_AGGREGATE  2
+
 typedef struct ML_Aggregate_Options_Struct
 {
   int id;
-  int Naggregates;
+  int Naggregates_local;
   int Nnodes_per_aggregate;
-  int local_or_global;
+  int Naggregates_global;
+  int choice;
   int reordering_flag;
   int desired_aggre_per_proc; /* for ParMETIS */
 } ML_Aggregate_Options;
@@ -43,7 +49,8 @@ extern "C" {
 					ML_Operator **Pmatrix, ML_Comm *comm);
   extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
 					     int offsets[],
-					     int N_procs );
+					     int N_procs,
+					     USR_COMM comm);
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
   

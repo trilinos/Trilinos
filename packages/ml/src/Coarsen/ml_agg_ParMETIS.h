@@ -23,7 +23,7 @@ extern "C" {
 					 int desired_aggre_per_proc );
   extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
 				    int offsets[],
-				    int N_procs );
+				    int N_procs, USR_COMM );
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
 						  int level,

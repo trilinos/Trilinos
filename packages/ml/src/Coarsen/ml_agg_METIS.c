@@ -55,6 +55,8 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 					  int graph_decomposition[],
 					  int mypid);
 
+#define OPTIMAL_VALUE (27*27)
+
 #ifdef EXTREME_DEBUGGING
 static int MyPID_ = 0;
 void set_print(int MyPID ) 
@@ -72,6 +74,26 @@ void print(char * str, ...)
   return;
 }
 #endif
+
+int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
+				   int NumLevels )
+{
+
+  int i;
+  
+  for( i=0 ; i<NumLevels ; i++ ) {
+    pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
+    pointer[i].Naggregates_local = -1;
+    pointer[i].Naggregates_global = -1;
+    pointer[i].Nnodes_per_aggregate = -1;
+    pointer[i].choice = -1;
+    pointer[i].reordering_flag = ML_NO;
+    pointer[i].desired_aggre_per_proc = -1;
+  }
+
+  return 0;
+  
+}
 
 /* ======================================================================== */
 /*!
@@ -155,27 +177,18 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
     /* set to the default values                                            */
     /* ******************************************************************** */
 
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
-      pointer[i].Naggregates = -1;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
-      pointer[i].reordering_flag = ML_NO;
-      pointer[i].desired_aggre_per_proc = -1;
-    }
+    ML_Aggregate_Options_Defaults( pointer, Nlevels );
     
     ag->aggr_options = (void *)pointer;
   }
 
   if( level >= 0 ) {
     pointer[level].Nnodes_per_aggregate = Nnodes_per_aggre;
-    pointer[level].Naggregates = -1;
-    pointer[level].local_or_global = ML_LOCAL_INDICES;
+    pointer[level].choice = ML_NUM_NODES_PER_AGGREGATE;
   } else {
     for( i=0 ; i<Nlevels ; i++ ) {
       pointer[i].Nnodes_per_aggregate = Nnodes_per_aggre;
-      pointer[i].Naggregates = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
+      pointer[i].choice = ML_NUM_NODES_PER_AGGREGATE;
     }
   }
   
@@ -250,27 +263,18 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
     /* set to the default values                                            */
     /* ******************************************************************** */
 
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
-      pointer[i].Naggregates = -1;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
-      pointer[i].reordering_flag = ML_NO;
-      pointer[i].desired_aggre_per_proc = -1;
-    }
+    ML_Aggregate_Options_Defaults( pointer, Nlevels );
     
     ag->aggr_options = (void *)pointer;
   }
 
   if( level >= 0 ) {
-    pointer[level].Naggregates = Nlocal;
-    pointer[level].Nnodes_per_aggregate = -1;
-    pointer[level].local_or_global = ML_LOCAL_INDICES;
+    pointer[level].Naggregates_local = Nlocal;
+    pointer[level].choice = ML_NUM_LOCAL_AGGREGATES;
   } else {
     for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].Naggregates = Nlocal;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
+      pointer[i].Naggregates_local = Nlocal;
+      pointer[i].choice = ML_NUM_LOCAL_AGGREGATES;
     }
   }
   
@@ -329,26 +333,19 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
     /* ******************************************************************** */
     /* set to the default values                                            */
     /* ******************************************************************** */
-    
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
-      pointer[i].Naggregates = -1;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
-      pointer[i].reordering_flag = ML_NO;
-      pointer[i].desired_aggre_per_proc = -1;
-    }
+
+    ML_Aggregate_Options_Defaults( pointer, Nlevels );
     
     ag->aggr_options = (void *)pointer;
   }
   
   if( level >= 0 ) {
-    pointer[level].Naggregates = Nglobal;
-    pointer[level].local_or_global = ML_GLOBAL_INDICES;
+    pointer[level].Naggregates_global = Nglobal;
+    pointer[level].choice = ML_NUM_GLOBAL_AGGREGATES;
   } else {
     for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].Naggregates = Nglobal;
-      pointer[i].local_or_global = ML_GLOBAL_INDICES;
+      pointer[i].Naggregates_global = Nglobal;
+      pointer[i].choice = ML_NUM_GLOBAL_AGGREGATES;
     }
   }
    
@@ -415,14 +412,7 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
     /* set to the default values                                            */
     /* ******************************************************************** */
 
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
-      pointer[i].Naggregates = -1;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
-      pointer[i].reordering_flag = ML_NO;
-      pointer[i].desired_aggre_per_proc = -1;      
-    }
+    ML_Aggregate_Options_Defaults( pointer, Nlevels );
     
     ag->aggr_options = (void *)pointer;
   }
@@ -754,7 +744,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 {
 
   int i, j,jj,  count, count2, col;
-  int Nrows, NrowsMETIS, N_nonzeros;
+  int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
   idxtype *part=NULL;
@@ -777,6 +767,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* ------------------- execution begins --------------------------------- */
 
   t0 = GetClock();
+
+  sprintf( str, "METIS (level %d) :", current_level );
   
   comm = Amatrix->comm;
   
@@ -810,6 +802,15 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }
   }
 
+  N_bdry_nodes = ML_Comm_GsumInt(comm, Nrows-NrowsMETIS);
+  Nrows_global = ML_Comm_GsumInt(comm, Nrows);
+  
+  if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+    printf("%s # bdry (block) nodes = %d, # (block) nodes = %d\n",
+	   str,
+	   N_bdry_nodes, Nrows_global);
+  }
+  
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
@@ -1001,7 +1002,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       /* perform some checks. If aggregates with zero assigned nodes      */
       /* exist, then recall METIS, asking for a smaller number of sub     */
       /* graphs. This is the role of the `ok' variable.                   */
-      /* Also, if the part vector contains some junk, recall ParMETIS     */
+      /* Also, if the part vector contains some junk, recall METIS        */
       /* **************************************************************** */
 
       ok = 1;
@@ -1036,7 +1037,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       if( N_parts == 0 ) {
 	if( comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
 	  fprintf( stderr,
-		   "*ML*WRN* something went **VERY** wrong in calling ParMETIS\n"
+		   "*ML*WRN* something went **VERY** wrong in calling METIS\n"
 		   "*ML*WRN* try to ask for a smaller number of subdomains\n"
 		   "*ML*WRN* I will put all the nodes into one aggregate...\n",
 		   "*ML*WRN* (file %x, line %d)\n",
@@ -1071,14 +1072,14 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   if( Amatrix->comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
    
-    printf("METIS aggregation (level %d) estimated required mem = %d Kb\n"
-	   "METIS aggregation (level %d) max estimated mem = %d Kb\n",
-	   current_level,
+    printf("%s Estimated required mem for METIS = %d Kb\n"
+	   "%s Max estimated mem for METIS = %d Kb\n",
+	   str,
 	   nbytes,
-	   current_level,
+	   str,
 	   nbytes_max );
   }
-
+  
   /* ********************************************************************** */
   /* reordering using METIS to minimize the fill-in during factorization    */
   /* ********************************************************************** */
@@ -1111,7 +1112,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      value among all the processors */
      
   if( local_or_global == ML_GLOBAL_INDICES ) {
-    ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs);
+    ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs,
+				    Amatrix->comm->USR_comm );
   }
 
   /* ********************************************************************** */
@@ -1163,12 +1165,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   if( part != NULL    ) ML_free( part    );
   if( perm != NULL    ) ML_free( perm    );
   if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
-
+  
   t0 = GetClock() - t0;
 
   if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
    
-    printf("METIS aggregation : time required = %e\n",
+    printf("%s time required = %e\n",
+	   str,
 	   t0 );
     
   }
@@ -1218,7 +1221,8 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   total_nz = 0;
    int                   count2;
    ML_agg_indx_comm      agg_indx_comm;
-
+   char str[80];
+   
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef CLEAN_DEBUG
@@ -1247,19 +1251,28 @@ int agg_offset, vertex_offset;
  set_print(comm->ML_mypid);
 #endif
  
-   /* ============================================================= */
-   /* get the machine information and matrix references             */
-   /* ============================================================= */
+ /* ------------------- execution begins --------------------------------- */
 
-   mypid                   = comm->ML_mypid;
-   Nprocs                  = comm->ML_nprocs;
-   epsilon                 = ml_ag->threshold;
-   num_PDE_eqns            = ml_ag->num_PDE_eqns;
-   nullspace_dim           = ml_ag->nullspace_dim;
-   nullspace_vect          = ml_ag->nullspace_vect;
-   Nrows                   = Amatrix->outvec_leng;
-   printflag               = ml_ag->print_flag;
+ sprintf( str, "METIS (level %d) :", ml_ag->cur_level );
 
+ /* ============================================================= */
+ /* get the machine information and matrix references             */
+ /* ============================================================= */
+ 
+ mypid                   = comm->ML_mypid;
+ Nprocs                  = comm->ML_nprocs;
+ epsilon                 = ml_ag->threshold;
+ num_PDE_eqns            = ml_ag->num_PDE_eqns;
+ nullspace_dim           = ml_ag->nullspace_dim;
+ nullspace_vect          = ml_ag->nullspace_vect;
+ Nrows                   = Amatrix->outvec_leng;
+ printflag               = ml_ag->print_flag;
+ 
+ if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+     printf("ML_Aggregate_CoarsenMETIS : num_PDE_eqns = %d\n",
+	    num_PDE_eqns);
+ }
+ 
    /* ============================================================= */
    /* check the system size versus null dimension size              */
    /* ============================================================= */
@@ -1288,9 +1301,9 @@ int agg_offset, vertex_offset;
 
    if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
-      printf("ML_Aggregate_CoarsenMETIS : current level = %d\n",
-                                            ml_ag->cur_level);
-      printf("ML_Aggregate_CoarsenMETIS : current eps = %e\n",epsilon);
+      printf("%s current eps = %e\n",
+	     str,
+	     epsilon);
    }
 /*
    epsilon = epsilon * epsilon;
@@ -1302,12 +1315,8 @@ int agg_offset, vertex_offset;
    exp_Nrows = Nrows;
 
    /* ********************************************************************** */
-   /* retrive the pointer to the ML_Aggregate_Options, which contains the    */
-   /* number of aggregates (or their size), as well as few options for the   */
-   /* constructions.                                                         */
+   /* allocate memory for aggr_index, which will contain the METIS decomp.   */
    /* ********************************************************************** */
-
-   aggr_options = (ML_Aggregate_Options *)ml_ag->aggr_options;
 
    nbytes = (Nrows*num_PDE_eqns) * sizeof(int);
 
@@ -1334,13 +1343,22 @@ int agg_offset, vertex_offset;
 	 ml_ag->aggr_viz_and_stats );
 #endif
 
+   /* ********************************************************************** */
+   /* retrive the pointer to the ML_Aggregate_Options, which contains the    */
+   /* number of aggregates (or their size), as well as few options for the   */
+   /* constructions.                                                         */
+   /* ********************************************************************** */
+
+   aggr_options = (ML_Aggregate_Options *)ml_ag->aggr_options;
+
    if( aggr_options == NULL ) {
 
      if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-       printf("METIS aggregation: using default values\n");
+       printf("%s Using default values\n",
+	      str);
      }
 
-     /* this value is hardwired in ml_agg_ParMETIS.c, and can be set by   */
+     /* this value is hardwired in ml_agg_METIS.c, and can be set by      */
      /* the user with `ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate' */
      
      optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
@@ -1360,86 +1378,125 @@ int agg_offset, vertex_offset;
 		__LINE__ );
        exit( EXIT_FAILURE );
      }
-     
-     aggr_count = aggr_options[ml_ag->cur_level].Naggregates;
 
-     if( (aggr_count < 0 || aggr_count > Nrows) && 
-          aggr_options[ml_ag->cur_level].Nnodes_per_aggregate == -1 ) {
+     /* ******************************************************************** */
+     /* Retrive the user's defined choice to define the number of aggregates */
+     /* For local number, it is ok.                                          */
+     /* If global number of aggregates or nodes per aggregate have been      */
+     /* specified, compute the local one (evenly dividing this global number)*/
+     /* For those two latter cases, I suppose that the input value is the    */
+     /* same on all processes (but I don't check ... )                       */
+     /* ******************************************************************** */
 
-       j = aggr_count;
-       optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
-       aggr_count = Nrows/optimal_value;
-       if( aggr_count < 1 ) aggr_count = 1;
-       
-       fprintf( stderr,
-		"*ML*ERR* (proc %d) incorrect # aggregates = %d (N_rows = %d)\n"
-		"*ML*ERR* (proc %d) changing # aggregates to default value (%d)\n",
-		mypid, j,
-		Nrows,
-		mypid,
-		aggr_count );
-     }
-     
-     /* ******************************************************************** */
-     /* if global number of aggregates has been specified, compute the local */
-     /* one (evenly dividing this global number)                             */
-     /* ******************************************************************** */
-     
-     switch( aggr_options[ml_ag->cur_level].local_or_global ) {
-       
-     case ML_GLOBAL_INDICES:
-       
-       mod = aggr_count % Nprocs;
-     
-       aggr_count /= Nprocs;
-       if( mypid == 0 ) {
-	 aggr_count += mod;
+     switch( aggr_options[ml_ag->cur_level].choice ) {
+
+     case ML_NUM_LOCAL_AGGREGATES:
+
+       aggr_count = aggr_options[ml_ag->cur_level].Naggregates_local;
+       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	 printf( "%s Requested %d local aggregates (on proc 0)\n",
+		 str,
+		 aggr_count );
        }
-       
-       if( aggr_count < 1 ) aggr_count = 1;
        break;
 
-       case ML_LOCAL_INDICES:
-	 break;
-
-       default:
-	 fprintf( stderr,
-		  "*ML*WRN* something weird... proceed anyhow\n"
-		  "*ML*WRN* (file %s, line %d)\n",
-		  __FILE__,
-		  __LINE__ );
-     }
-
-     /* ******************************************************************** */
-     /* if aggr_count is minus 1,  this means that the user has set the # of */
-     /* nodes in each aggregate and not the local number. So, I compute this */
-     /* latter value which is the one needed by METIS. Note that value of    */
-     /* aggr_count too close to the number of vertices may result in bizarre */
-     /* behavior of METIS                                                    */
-     /* ******************************************************************** */
-
-     if( aggr_count == -1 ) {
-
-       i = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
-
-       if( aggr_options[ml_ag->cur_level].Nnodes_per_aggregate >= Nrows) {
-	 aggr_count = 1;
-       } else {
-	 aggr_count = (Nrows/i);
+     case ML_NUM_GLOBAL_AGGREGATES:
+       
+       aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
+       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	 printf( "%s Requested %d global aggregates\n",
+		 str,
+		 aggr_count );
        }
+       
+       if( aggr_count < Nprocs ) {
+	 if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	   fprintf( stderr,
+		    "*ML*WRN* In CoarsenMETIS, %s global aggregates are required,\n"
+		    "*ML*WRN* but you have only %d processes. METIS requires at\n"
+		    "*ML*WRN* one aggregate per process. Otherwise, you can use ParMETIS\n"
+		    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local aggregate\n"
+		    "*ML*WRN* (file %s, line %d)\n",
+		    aggr_count,
+		    Nprocs,
+		    __FILE__,
+		    __LINE__ );
+	 }
+	 aggr_count = 1;
+
+       } else { 
+       
+	 mod = aggr_count % Nprocs;
+     
+	 aggr_count /= Nprocs;
+	 if( mypid == 0 ) {
+	   aggr_count += mod;
+	 }
+	 
+	 if( aggr_count < 1 ) {
+	   fprintf( stderr,
+		    "*ML*WRN* something weird happened... Check the code !!\n"
+		    "*ML*WRN* (file %x, line %d)\n",
+		    __FILE__,
+		    __LINE__ );
+	   aggr_count = 1;
+	 }
+       }
+       
+       break;
+       
+     case ML_NUM_NODES_PER_AGGREGATE:
+       
+       aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
+
+       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	 printf( "%s Requested %d nodes per aggregate\n",
+		 str,
+		 aggr_count );
+       }
+       
+       if( aggr_count >= Nrows) {
+
+	 i = aggr_count;
+	 
+	 aggr_count = Nrows/OPTIMAL_VALUE;
+	 if( aggr_count == 0 ) aggr_count = 1;
+	 
+	 if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	   fprintf( stderr,
+		    "*ML*WRN* (proc %d) # nodes per aggregate (%d) > # nodes (%d)\n"
+		    "*ML*WRN* now proceeding with aggr_count = %d\n",
+		    mypid,		    
+		    i,
+		    Nrows,
+		    aggr_count);
+	 }
+	 
+       } else {
+
+	 aggr_count = (Nrows/aggr_count);
+
+	 if( aggr_count == 0 ) aggr_count = 1;
+	 
+       }
+
+#ifdef ML_MPI
+       MPI_Reduce( &aggr_count, &i, 1, MPI_INT, MPI_SUM, 0,
+		   comm->USR_comm);
+#else
+       i = aggr_count;
+#endif
        
        if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-	 printf("ML_Aggregate_CoarsenMETIS (level %d, proc 0) : "
-		"%d nodes/aggr (%d aggregates)\n",
-		ml_ag->cur_level,
-		i,
-		aggr_count );
+	 printf("%s avg %f aggr/process\n",
+		str,
+		1.0*i/Nprocs );
        }
        
-       aggr_options[ml_ag->cur_level].Naggregates = aggr_count;
+       break;
        
-     }
-     
+     } /* switch */
+       
      reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag;
      
    } /* if( aggr_options == NULL )*/
@@ -1448,7 +1505,7 @@ int agg_offset, vertex_offset;
      fprintf( stderr,
 	      "*ML*ERR* on proc %d, value of aggr_count not correct (%d)\n"
 	      "*ML*ERR* Set this value using ML_Aggregate_Set_LocalNumber\n"
-	      "*ML*ERR* or ML_Aggregate_Set_NodesPerAggr\n"
+	      "*ML*ERR* or ML_Aggregate_Set_NodesPerAggr or ML_Aggregate_Set_GlobalNumber\n"
 	      "*ML*ERR* (file %s, line %d)\n",
 	      mypid,
 	      aggr_count,
@@ -1456,7 +1513,7 @@ int agg_offset, vertex_offset;
 	      __LINE__ );
      exit( EXIT_FAILURE );
    }
-   
+
    /* ********************************************************************** */
    /* to call METIS, we have to create a graph using CSR data format         */
    /* Essentially, this requires a matrix-vector product (on the Amalgamated */
@@ -1488,23 +1545,35 @@ int agg_offset, vertex_offset;
 					      reorder_flag, ml_ag->cur_level,
 					      &total_nz);
 
-#ifdef EXTREME_DEBUGGING
-   print("# actual local aggregates = %d, # rows_METIS = %d\n",
-	 aggr_count,
-	 Nrows );
+
+#ifdef ML_MPI
+   MPI_Allreduce( &Nrows, &i, 1, MPI_INT, MPI_SUM, Amatrix->comm->USR_comm );
+   MPI_Allreduce( &aggr_count, &j, 1, MPI_INT, MPI_SUM, Amatrix->comm->USR_comm );
+#else
+   i = Nrows;
+   j = aggr_count;
 #endif
 
+   if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+     printf("%s Using %d aggregates (globally)\n",
+	    str,
+	    j );
+     printf("%s Naggre/Nrows = %8.5f %%\n",
+	    str,
+	    100.0*j/i );
+   }
+   /*
    if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
      printf("ML_Aggregate_CoarsenMETIS (level %d) : "
-	    "%d aggregates (on proc 0)\n",
+	    "%d Aggregates (on proc 0)\n",
 	    ml_ag->cur_level,
 	    aggr_count );
    }
+   */
    j = ML_gsum_int( aggr_count, comm );
    if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-     printf("ML_Aggregate_CoarsenMETIS (level %d) : "
-	    "%d aggregates (globally)\n",
-	    ml_ag->cur_level,
+     printf("%s %d Aggregates (globally)\n",
+	    str,
 	    j );
    }   
    
@@ -2110,7 +2179,8 @@ int agg_offset, vertex_offset;
 
 int ML_DecomposeGraph_BuildOffsets( int N_parts,
 				    int offsets[],
-				    int N_procs )
+				    int N_procs,
+				    USR_COMM comm)
 {
 
   int i;
@@ -2126,12 +2196,11 @@ int ML_DecomposeGraph_BuildOffsets( int N_parts,
 #ifdef ML_MPI
   MPI_Allgather(&N_parts, 1, MPI_INT,
 		offsets+1, 1, MPI_INT,
-		MPI_COMM_WORLD);
+		comm);
   offsets[0] = 0;
   for( i=2 ; i<N_procs+1 ; i++ ) {
     offsets[i] += offsets[i-1];
   }
-  
 #else
   offsets[0] = 0;
   offsets[1] = N_parts;
