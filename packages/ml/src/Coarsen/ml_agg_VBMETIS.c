@@ -2465,8 +2465,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
          "file %s, line %d\n",
          comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);exit(EXIT_FAILURE);
 
-    ML_LocalReorder_with_METIS( NrowsMETIS, xadj, adjncy ,
-				N_parts,  part, current_level, comm );
     
   }
 
