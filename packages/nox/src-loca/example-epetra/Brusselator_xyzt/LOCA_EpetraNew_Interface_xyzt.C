@@ -38,44 +38,45 @@ using namespace  LOCA::EpetraNew::Interface;
 
 xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
        NOX::EpetraNew::Interface::Jacobian &iJac_,
-       LOCA::EpetraNew::Interface::MassMatrix &iMass_, Epetra_Vector &splitVec_,
-       Epetra_CrsMatrix &splitJac_, Epetra_CrsMatrix &splitMass_, Epetra_MpiComm &globalComm_,
-       int replica_) : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
-       splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_), replica(replica_),
-       splitRes(splitVec_), solution(0), solutionOverlap(0), overlapImporter(0),
-       jacobian(0), stencil(0), numReplicas(-1)
+       LOCA::EpetraNew::Interface::MassMatrix &iMass_,
+       Epetra_Vector &splitVec_, Epetra_CrsMatrix &splitJac_,
+       Epetra_CrsMatrix &splitMass_, Epetra_MpiComm &globalComm_,
+       int replica_, int timeStepsPerProc_)
+       : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
+       splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
+       replica(replica_), timeStepsPerProc(timeStepsPerProc_),
+       splitRes(splitVec_), splitVecOld(splitVec_), solution(0),
+       solutionOverlap(0), overlapImporter(0), jacobian(0), rowStencil(0),
+       rowIndex(0), numReplicas(-1)
 {
-  numReplicas = globalComm.NumProc() / splitVec.Comm().NumProc();
+    numReplicas = globalComm.NumProc() / splitVec.Comm().NumProc();
     cout << " In xyzt constructor: NumReplicas =  " << numReplicas << endl;
 
-  // Allocate and fill stencil for time integratror: no subdiagonal for first block row
-
-   if (replica==0) {
-     stencil = new std::vector<int>(1);
-     (*stencil)[0]=0;
-   } else {
-     stencil = new std::vector<int>(2);
-     (*stencil)[0]=-1;
-     (*stencil)[1]=0;
-   }
-
-   cout << "xyztCalling  EpetraExt::BlockCrsMatrix" << endl;
 
    // Construct global block matrix graph from split jacobian and stencil
    // Each block has identical sparsity, and assumes mass matrix's sparsity 
    // is a subset of the Jacobian's
-   jacobian = new EpetraExt::BlockCrsMatrix(splitJac.Graph(), *stencil, replica, globalComm);
 
-   cout << "xyztCalling  EpetraExt::BlockVector" << endl;
-   // Construct global solution vector, and fill with initial guess
+   rowStencil = new std::vector< std::vector<int> >(timeStepsPerProc);
+   rowIndex = new std::vector<int>;
+   for (int i=0; i < timeStepsPerProc; i++) {
+     if (replica!=0 || i!=0)  (*rowStencil)[i].push_back(-1);
+     (*rowStencil)[i].push_back(0);
+     (*rowIndex).push_back(i + replica*timeStepsPerProc);
+   }
+
+   jacobian = new EpetraExt::BlockCrsMatrix(splitJac.Graph(), *rowStencil, *rowIndex, globalComm);
+
+   // Construct global solution vector, the overlap vector, and importer between them
    solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());
-
-   // ??
-   solutionOverlap = new EpetraExt::BlockVector(splitVec.Map(), jacobian->ColMap(), stencil->size());
+   solutionOverlap = new EpetraExt::BlockVector(splitVec.Map(), jacobian->ColMap());
+  
    overlapImporter = new Epetra_Import(solutionOverlap->Map(), solution->Map());
 
 
-   solution->Block() = splitVec;
+   // Load initial guess into block solution vector
+   for (int i=0; i < timeStepsPerProc; i++) 
+           solution->LoadBlockValues(splitVec, (*rowIndex)[i]);
 
    cout << "Ending xyzt constructor" << endl;
 }
@@ -86,72 +87,80 @@ xyzt::~xyzt()
   delete solutionOverlap;
   delete overlapImporter;
   delete jacobian;
-  delete stencil;
+  delete rowStencil;
+  delete rowIndex;
 }
 
 bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
+  bool stat = true;
 
   // Copy owned parts of vector from vector with global map to one with split map
-  solution->Block() = x;
-  splitVec = F;
+  solution->Epetra_Vector::operator=(x);
+  solutionOverlap->Import(*solution, *overlapImporter, Insert);
 
-  // Set old soltuuon based  on solution from previous block row
-  setOldSolution();
+  EpetraExt::BlockVector residual(*solution);
 
+  for (int i=0; i < timeStepsPerProc; i++) {
 
-  bool stat = iReq.computeF(solution->Block(),  splitVec, fillFlag);
+    int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
+    if (blockRowOld >= 0)  {
+      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
+      iMass.setOldSolution(splitVecOld);
+    }
+    else { //First time step gets static Xold, not part of block solution vector
+      iMass.setOldSolutionFirstStep();
+    }
 
-  // Copy residual vector
-  F = splitVec;
+    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+
+    splitRes.PutScalar(0.0);
+    stat = stat && iReq.computeF(splitVec,  splitRes, fillFlag);
+
+    residual.LoadBlockValues(splitRes, (*rowIndex)[i]);
+  }
+
+  // F does not know it is a clone of a block vector, so must copy values from residual
+  // -- can be fixed? Maybe make residual a view of F instad of copying.
+  F = residual;
 
   return stat;
 }
 
 bool xyzt::computeJacobian(const Epetra_Vector& x)
 {
+  bool stat = true;
+  jacobian->PutScalar(0.0);
 
-  solution->Block() = x;
-  setOldSolution();
+  // Copy owned parts of vector from vector with global map to one with split map
+  solution->Epetra_Vector::operator=(x);
+  solutionOverlap->Import(*solution, *overlapImporter, Insert);
+
+  for (int i=0; i < timeStepsPerProc; i++) {
+
+    int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
+    if (blockRowOld >= 0)  {
+      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
+      iMass.setOldSolution(splitVecOld);
+    }
+    else {
+      //First time step gets static Xold, not part of block solution vector
+      iMass.setOldSolutionFirstStep();
+    }
   
-  bool stat =  iJac.computeJacobian( solution->Block() );
+    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+    stat =  stat && iJac.computeJacobian( splitVec );
 
-  // Put jacobian on diagonal
-  if (replica==0) EpetraExt::MatrixMatrix::Add(splitJac, false, 1.0, jacobian->Block(0), 0.0);
-  else {
-    // Put jacobian on diagonal
-    EpetraExt::MatrixMatrix::Add(splitJac, false, 1.0, jacobian->Block(0), 0.0);
-
-    cout << " NEED TO PASS X_OLD TO MASS MATRIX FILL " << endl;
-    stat = iMass.computeMassMatrix( solutionOverlap->Block(1) );
-    // Put mass matrix on sub diagonal
-    EpetraExt::MatrixMatrix::Add(splitJac, false, 1.0, jacobian->Block(1), 0.0);
-
-
-    /*
- int NumMyRows = jacobian->Graph().NumMyRows();
- vector<double*> Values( NumMyRows );
- vector<int*> Indices( NumMyRows );
- vector<int> NumValues( NumMyRows );
-
- int j=0;
-  jacobian->ExtractMyRowView(j, NumValues[j], Values[j], Indices[j] );
-
-  cout << " Jacobian " << j << endl;
-  for (int i=0; i<NumValues[j]; i++)
-	  cout << "XX  index " << Indices[j][i] << "GID " << jacobian->GCID(Indices[j][i]) << " val " << Values[j][i] << endl;
-	  */
+    // Hardwired for -1 0 stencil meaning [M J]
+    if (blockRowOld >= 0) {
+      jacobian->LoadBlock(splitJac, i, 1);
+      stat = stat && iMass.computeMassMatrix( splitVecOld );
+      jacobian->LoadBlock(splitMass, i, 0);
+    }
+    else {
+      jacobian->LoadBlock(splitJac, i, 0);
+    }
   }
-
-
-  /*
-cout << "splitJac  \n" << splitJac << endl;
-for (int i=0; i<1.0e7; i++) {replica++; replica--;} //pause
-cout << "jacobian \n" << *jacobian << endl;
-for (int i=0; i<1.0e7; i++) {replica++; replica--;} //pause
-cout << "jacobian0: " << replica << "\n" <<jacobian->Block(0) << endl;
-for (int i=0; i<1.0e7; i++) {replica++; replica--;} //pause
-*/
 
   return stat;
 }
@@ -163,8 +172,14 @@ void xyzt::setParameters(const LOCA::ParameterVector& params)
 
 void xyzt::printSolution(const Epetra_Vector& x, double conParam)
 {
-   solution->Block() = x;
-   iReq.printSolution(solution->Block(), conParam);
+  solution->Epetra_Vector::operator=(x);
+
+  for (int i=0; i < timeStepsPerProc; i++) {
+
+    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+    iReq.printSolution(splitVec, conParam);
+
+  }
 }
 
 EpetraExt::BlockVector& xyzt::getSolution()
@@ -175,20 +190,6 @@ EpetraExt::BlockVector& xyzt::getSolution()
 EpetraExt::BlockCrsMatrix& xyzt::getJacobian()
 {
   return  *jacobian; 
-}
-
-void xyzt::setOldSolution()
-{
-
-  // This needs to be run on all processors
-  solutionOverlap->Import(*solution, *overlapImporter, Insert);
-
-  if (replica > 0) {
-
-    cout << "Old SOlution block number -- needs fixing " << endl;
-    iMass.setOldSolution(solutionOverlap->Block(1));
-  }
- 
 }
 
 #endif

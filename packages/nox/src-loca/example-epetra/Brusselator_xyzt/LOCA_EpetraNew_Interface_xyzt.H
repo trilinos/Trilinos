@@ -60,12 +60,15 @@ namespace EpetraNew {
 namespace Interface {
 
   /*!
-    \brief Supplies NOX with the set nonlinear equations.
+    \brief Interface for space-time (xyzt) problems.
  
-    This is the minimum required information to solve a nonlinear
-    problem using the NOX::EpetraNew objects for the linear algebra
-    implementation.  Used by NOX::EpetraNew::Group to provide a link
-    to the external code for residual fills.
+    Code that takes a standard NOX/LOCA problem interface for spatially-discretized
+    problems, and creates a NOX/LOCA interface for space-time problems.  This
+    interface can be called by multiple replicas of the spatially discretized
+    problem for parallelism of the time domain. Each replica can also own on 
+    one or more time steps. This interface assembles a single space-time system
+    including the solution and residual BlockVectors and the Jacobian BlockCrsMatrix.
+    This interface relies heavily on the EpetraExt_Block* classes.
   */
 class xyzt : public LOCA::EpetraNew::Interface::Required,
              public NOX::EpetraNew::Interface::Jacobian
@@ -73,36 +76,38 @@ class xyzt : public LOCA::EpetraNew::Interface::Required,
 
 public:
  
-  //! Code that takes several replicas of problem interface, each working on a different
-  //! time step, and assembles a single space-time system
-
   //! Constructor
-  xyzt(LOCA::EpetraNew::Interface::Required &iReq,  NOX::EpetraNew::Interface::Jacobian &iJac,
+  xyzt(LOCA::EpetraNew::Interface::Required &iReq, NOX::EpetraNew::Interface::Jacobian &iJac,
        LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
-       Epetra_CrsMatrix &splitJac,  Epetra_CrsMatrix &splitMass, 
-       Epetra_MpiComm &globalComm, int replica);
+       Epetra_CrsMatrix &splitJac, Epetra_CrsMatrix &splitMass, 
+       Epetra_MpiComm &globalComm, int replica, int timeStepsPerProc);
 
   //! Destructor
   virtual ~xyzt();
 
-  //! Compute the function, F, given the specified input vector x.  Returns true if computation was successful.
+  //! NOX Interface function for computing the function, F, given the vector x.
+  //Returns true if computation was successful.
   virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
 			const FillType fillFlag);
   
+  //! NOX Interface function for computing the Jacobian matrix
+  //Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x);
 
+  //! LOCA Interface function for setting the continuation parameter
   virtual void setParameters(const LOCA::ParameterVector& param);
 
+  //! LOCA Interface function for printing the solution
   virtual void printSolution(const Epetra_Vector& x_, double conParam);
 
+  //! Accessor for the global solution BlockVector
   virtual EpetraExt::BlockVector& getSolution();
+  //! Accessor for the global BlockCrsMatrix
   virtual EpetraExt::BlockCrsMatrix& getJacobian();
 
 private:
-  void setOldSolution();
-
   
-  // Info from split (3D) problem
+  // Info from split (3D) problem, passed in to the constructor.
   LOCA::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
   LOCA::EpetraNew::Interface::MassMatrix &iMass;
@@ -111,15 +116,18 @@ private:
   Epetra_CrsMatrix& splitMass; // can be same object as splitJac
   Epetra_MpiComm& globalComm;
   int replica;
+  int timeStepsPerProc;
 
   // xyzt objects created in constructor
-  Epetra_Vector& splitRes;
+  Epetra_Vector splitRes; //tmp space
+  Epetra_Vector splitVecOld; //tmp space
   EpetraExt::BlockCrsMatrix* jacobian;
   EpetraExt::BlockVector* solution;
   EpetraExt::BlockVector* solutionOverlap;
   Epetra_Import* overlapImporter;
   int numReplicas;
-  std::vector<int>* stencil;
+  std::vector< std::vector<int> >* rowStencil;
+  std::vector<int>* rowIndex;
 
 };
 } // namespace Interface

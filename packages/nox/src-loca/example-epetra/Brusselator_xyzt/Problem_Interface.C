@@ -42,7 +42,8 @@
 Problem_Interface::Problem_Interface(Brusselator& Problem, int replica_) :
   problem(Problem),
   replica(replica_),
-  outStep(0)
+  outStep(0),
+  oldSolnOrig(Problem.getOldSoln())
 { }
 
 Problem_Interface::~Problem_Interface()
@@ -124,6 +125,13 @@ bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
 void Problem_Interface::setOldSolution(const Epetra_Vector& xOld)
 {
   problem.reset(xOld);
+}
+
+void Problem_Interface::setOldSolutionFirstStep()
+{
+  // Grab previous solution of first time step
+
+  setOldSolution(oldSolnOrig);
 }
 //-----------------------------------------------------------------------------
 

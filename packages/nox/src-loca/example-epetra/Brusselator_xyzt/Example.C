@@ -121,6 +121,13 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
+  // Get the number of elements from the command line
+  if (argc<2) { 
+    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
+    exit(1);
+  }
+  int NumGlobalNodes = atoi(argv[1]) + 1;
+
 #ifdef HAVE_MPI
 
 #ifdef DO_XYZT
@@ -135,7 +142,11 @@ int main(int argc, char *argv[])
 
   // Divide in chunks of spatialProcs = 2
 
-  int spatialProcs=1;
+  int spatialProcs= 1; // default
+  if (argc>2) { spatialProcs = atoi(argv[2]);}
+  int timeStepsPerProc= 1; // default
+  if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
+
   replica = rank/spatialProcs;
   if (size % spatialProcs != 0) {
     cout << "ERROR: num spatial procs " << spatialProcs
@@ -143,22 +154,23 @@ int main(int argc, char *argv[])
      exit(-1);
   }
   int num_replicas = size / spatialProcs;
+  int numTimeSteps =  num_replicas* timeStepsPerProc;
 
   ierrmpi =  MPI_Comm_split(MPI_COMM_WORLD, replica, rank, &split_MPI_Comm);
 
   ierrmpi = MPI_Comm_size(split_MPI_Comm, &sizesplit);
   ierrmpi = MPI_Comm_rank(split_MPI_Comm, &ranksplit);
 
-  /*
-  cout << "  BACKWARDS ORDERING OF REPLICAS " << endl;
-  replica = num_replicas - replica - 1;
-  */
-
-  cout << "XYZT: Global rank(size) = " << rank << "(" << size <<  "), replica = " << replica
-       << ":  rank(size) = " << ranksplit << "("<< sizesplit << ")" << endl;
-
   Epetra_MpiComm Comm(split_MPI_Comm);
   Epetra_MpiComm globalComm(MPI_COMM_WORLD);
+
+  if (globalComm.MyPID()==0) cout  << "--------------XYZT Partition Info---------------" 
+     << "\n\tNumProcs              = " << size
+     << "\n\tSpatial Decomposition = " << spatialProcs
+     << "\n\tNumber of Replicas    = " << num_replicas
+     << "\n\tTime Steps per Proc   = " << timeStepsPerProc
+     << "\n\tNumber of Time Steps  = " << numTimeSteps
+     << "\n-----------------------------------------------" << endl;
 
 #else
   // Create a communicator for Epetra objects
@@ -176,13 +188,6 @@ int main(int argc, char *argv[])
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-
-  // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalNodes = atoi(argv[1]) + 1;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -238,7 +243,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
   stepSizeList.setParameter("Method", "Constant");
  // stepSizeList.setParameter("Method", "Adaptive");
-  stepSizeList.setParameter("Initial Step Size", 0.1);
+  stepSizeList.setParameter("Initial Step Size", -0.1);
   stepSizeList.setParameter("Min Step Size", 1.0e-3);
   stepSizeList.setParameter("Max Step Size", 2000.0);
   stepSizeList.setParameter("Aggressiveness", 0.1);
@@ -356,7 +361,8 @@ int main(int argc, char *argv[])
 
 #ifdef DO_XYZT
   LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, interface,
-                                         soln, A, A, globalComm, replica);
+                                         soln, A, A, globalComm, replica,
+					 timeStepsPerProc);
   Epetra_CrsMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 
@@ -451,12 +457,12 @@ int main(int argc, char *argv[])
     // Print solution
 #ifndef DO_XYZT
     interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
-#endif
 
     Problem.reset(finalSolution);
     grp.setX(finalSolution);
     stepper.reset(grp, combo, paramList);
     grp.computeF();
+#endif
 
   } // end time step while loop
 
@@ -480,8 +486,5 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
 
-/* end main
-*/
 return ierr ;
-//#endif 
 }

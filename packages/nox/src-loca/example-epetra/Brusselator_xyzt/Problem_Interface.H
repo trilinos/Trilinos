@@ -57,30 +57,31 @@ public:
   Problem_Interface(Brusselator& Problem, int replica=0);
   ~Problem_Interface();
 
-  //! Compute and return F
+  //! Compute and return F (LOCA::EpetraNew::Interface::Required)
   bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
                 NOX::EpetraNew::Interface::Required::FillType fillType);
 
-  //! Compute an explicit Jacobian
+  //! Compute an explicit Jacobian (NOX::EpetraNew::Interface::Jacobian)
   bool computeJacobian(const Epetra_Vector& x);
 
-  //! Set a parameter in the user's code.
+  //! Set a parameter in the user's code. (LOCA::EpetraNew::Interface::Required)
   void setParameters(const LOCA::ParameterVector& params);
 
-  //! Call user's own print routine for vector-parameter pair
+  //! Call user's own print routine for vector-parameter pair (LOCA::EpetraNew::Interface::Required)
   virtual void printSolution(const Epetra_Vector& x_, double conParam);
 
-  //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
+  //! Calculation of preconditioner (NOX::EpetraNew::Interface::Preconditioner)
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
   
-  //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
+  //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.  (NOX::EpetraNew::Interface::Preconditioner)
   bool computePreconditioner(const Epetra_Vector& x, NOX::Parameter::List* p);
 
-  //! Compute an explicit MassMatrix
+  //! Compute an explicit MassMatrix (LOCA::EpetraNew::Interface::MassMatrix)
   bool computeMassMatrix(const Epetra_Vector& x);
 
-  //! Set the old solution, the one from the preious time step
+  //! Set the old solution, the one from the preious time step (LOCA::EpetraNew::Interface::MassMatrix)
   void setOldSolution(const Epetra_Vector& xOld);
+  void setOldSolutionFirstStep();
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
@@ -93,6 +94,7 @@ public:
 private:
   int outStep;  // Output step index
   int replica;  // only used for printing
+  Epetra_Vector oldSolnOrig; // Initial value of solution vector, used as Xold for first time step
 };
 
 #endif

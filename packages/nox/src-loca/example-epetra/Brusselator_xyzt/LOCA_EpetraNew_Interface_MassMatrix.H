@@ -59,12 +59,12 @@ namespace LOCA {
          *  */
         virtual bool computeMassMatrix(const Epetra_Vector& x) = 0;
 
-        /*! Routine to change the old solution, the one from the previous
-	 * time step.
-         *  */
-        virtual void setOldSolution(const Epetra_Vector& x) 
-	{ cout << "LOCA::EpetraNew::Interface::MassMatrix::setOldSolution\n"
-               << "Routine Called but not overloaded ! " << endl; };
+        /*! Routine to reset the old solution, the one from the previous
+	 * time step. Different routine for first step, where the old
+	 * solution is set by the user and not part of the solution vector.
+         */
+        virtual void setOldSolution(const Epetra_Vector& x) = 0;
+        virtual void setOldSolutionFirstStep() = 0;
 
       };
     } // namespace Interface
