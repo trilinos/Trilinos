@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_Secant.H"
+#include "NOX_LineSearch_Secant.H"
 
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
@@ -39,7 +39,7 @@
 #include "NOX_Utils.H"
 
 using namespace NOX;
-using namespace NOX::Linesearch;
+using namespace NOX::LineSearch;
 
 Secant::Secant(Parameter::List& params) 
 {

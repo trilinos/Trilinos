@@ -33,12 +33,12 @@
 #ifndef NOX_LINESEARCH_MANAGER_H
 #define NOX_LINESEARCH_MANAGER_H
 
-#include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Common.H"		    // class data element (string)
 
 
 namespace NOX {
-namespace Linesearch {
+namespace LineSearch {
 
 //! %Manager for all different line searches
 /*! 
@@ -48,10 +48,10 @@ namespace Linesearch {
    <ul>
    <li> "Method" - Name of the line search. Valid choices are
    <ul> 
-   <li> "Full Step" (NOX::Linesearch::FullStep)
-   <li> "Backtrack" (NOX::Linesearch::Backtrack)
-   <li> "%Polynomial" (NOX::Linesearch::Polynomial)
-   <li> "More'-Thuente" (NOX::Linesearch::MoreThuente)
+   <li> "Full Step" (NOX::LineSearch::FullStep)
+   <li> "Backtrack" (NOX::LineSearch::Backtrack)
+   <li> "%Polynomial" (NOX::LineSearch::Polynomial)
+   <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
    </ul>
    </ul>
  */  
@@ -77,9 +77,9 @@ private:
   string method;
 
   //! Pointer to method
-  Linesearch::Generic* ptr;
+  LineSearch::Generic* ptr;
 
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
 #endif

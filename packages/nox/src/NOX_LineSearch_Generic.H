@@ -30,71 +30,51 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_POLYNOMIAL_H
-#define NOX_LINESEARCH_POLYNOMIAL_H
-
-#include "NOX_Linesearch_Generic.H" // base class
+#ifndef NOX_LINESEARCH_GENERIC_H
+#define NOX_LINESEARCH_GENERIC_H
 
 namespace NOX {
-namespace Linesearch {
+namespace Abstract {
+class Vector;
+class Group;
+}
+namespace Parameter {
+class List;
+}
+}
 
-//! Use quad/cubic polynomial fit from Dennis & Schnabel
+namespace NOX {
+
+//! %NOX linesearches
+namespace LineSearch {
+
+//! %Generic line search interface
 /*!
-
-  \todo Russ needs to add a citation for the source of this line
-  search. Is it Alg 6.3.1mod from D&S? We also need to add a basic
-  description of the search.
-  
-  \todo Does this work with non-Newton directions?
-
-  This line search can be called via NOX::Linesearch::Manager.
- 
-  The following parameters can be specified for this line search:
- 
-  - "Default Step" - starting step length (defaults to 1.0)
-
-  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
-
-  - "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
+  Every line search should respect the following Parameter:
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
-
 */
-
-class Polynomial : public Generic {
+class Generic {
 
 public:
 
-  //! Constructor
-  Polynomial(Parameter::List& params);
+  //! Default constructor
+  Generic() {};
 
   //! Destructor
-  ~Polynomial();
+  virtual ~Generic() {};
+
+  //! Reset parameters
+  virtual bool reset(Parameter::List& params) = 0;
   
-  // derived
-  bool reset(Parameter::List& params);
-
-  // derived
-  bool operator()(Abstract::Group& newgrp, double& step, 
-		  const Abstract::Group& oldgrp, 
-		  const Abstract::Vector& dir) ;
-  
-private:
-
-   //! Minimum step length (i.e., when we give up)
-  double minstep;
- 
- //! Default step
-  double defaultstep;
-
-  //! Default step for linesearch failure
-  double recoverystep;
-
-  //! Maximum itersions
-  int maxiters;
+  //! Perform a line search from oldgrp along dirction dir. 
+  //! Update newgrp = oldgrp + step * dir.
+  virtual bool operator()(Abstract::Group& newgrp, double& step,
+			  const Abstract::Group& oldgrp, 
+			  const Abstract::Vector& dir) = 0;
 
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
+
 #endif

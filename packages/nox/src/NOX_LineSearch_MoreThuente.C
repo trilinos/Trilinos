@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_MoreThuente.H"	// class definition
+#include "NOX_LineSearch_MoreThuente.H"	// class definition
 
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
@@ -39,7 +39,7 @@
 #include "NOX_Utils.H"
 
 using namespace NOX;
-using namespace NOX::Linesearch;
+using namespace NOX::LineSearch;
 
 MoreThuente::MoreThuente(Parameter::List& params) :
   tmpvecptr(NULL)
@@ -67,7 +67,7 @@ bool MoreThuente::reset(Parameter::List& params)
   if ((ftol < 0.0) || (gtol < 0.0) || 
       (xtol < 0.0) || (stpmin < 0.0) || (stpmax < stpmin) || 
       (maxfev <= 0) || (defaultstep <= 0)) {
-    cout << "NOX::Linesearch::MoreThuente::reset - Error in Input Parameter!" << endl;
+    cout << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << endl;
     throw "NOX Error";
   }
 
@@ -96,12 +96,12 @@ double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group
   bool flag = grp.applyJacobian(dir,*tmpvecptr);
   
   if (!flag) {
-    cout << "NOX::Linesearch::MoreThuente::dgcompute -  Unable to apply Jacobian!" << endl;
+    cout << "NOX::LineSearch::MoreThuente::dgcompute -  Unable to apply Jacobian!" << endl;
     throw "NOX Error";
   }
 
   if (!grp.isRHS()) {
-    cout << "NOX::Linesearch::MoreThuente::dgcompute - Invalid RHS" << endl;
+    cout << "NOX::LineSearch::MoreThuente::dgcompute - Invalid RHS" << endl;
     throw "NOX Error";
   }
 
@@ -127,7 +127,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
   if (dginit >= 0.0) {
     if (Utils::doPrint(Utils::Warning)) {
-      cout << "NOX::Linesearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
+      cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
     stp = recoverystep;
     newgrp.computeX(oldgrp, dir, stp);

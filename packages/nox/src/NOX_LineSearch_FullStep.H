@@ -30,51 +30,46 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_GENERIC_H
-#define NOX_LINESEARCH_GENERIC_H
+#ifndef NOX_LINESEARCH_FULLSTEP_H
+#define NOX_LINESEARCH_FULLSTEP_H
+
+#include "NOX_LineSearch_Generic.H" // base class 
 
 namespace NOX {
-namespace Abstract {
-class Vector;
-class Group;
-}
-namespace Parameter {
-class List;
-}
-}
+namespace LineSearch {
 
-namespace NOX {
+//! Simplest line search - always take the full step.
+/*! 
+  This line search can be called via NOX::LineSearch::Manager.
+ 
+  The following parameters can be specified for this line search: 
+ 
+  - "Full Step" - length of a full step (defaults to 1.0)
+*/  
 
-//! %NOX linesearches
-namespace Linesearch {
-
-//! %Generic line search interface
-/*!
-  Every line search should respect the following Parameter:
-
-  - "Max Iters" - maximum number of iterations (i.e., RHS computations)
-*/
-class Generic {
+class FullStep : public Generic {
 
 public:
 
-  //! Default constructor
-  Generic() {};
+  //! Constructor
+  FullStep(Parameter::List& params);
 
   //! Destructor
-  virtual ~Generic() {};
-
-  //! Reset parameters
-  virtual bool reset(Parameter::List& params) = 0;
+  ~FullStep();
   
-  //! Perform a line search from oldgrp along dirction dir. 
-  //! Update newgrp = oldgrp + step * dir.
-  virtual bool operator()(Abstract::Group& newgrp, double& step,
-			  const Abstract::Group& oldgrp, 
-			  const Abstract::Vector& dir) = 0;
+  // derived
+  bool reset(Parameter::List& params);
 
+  // derived
+  bool operator()(Abstract::Group& newgrp, double& step, 
+		  const Abstract::Group& oldgrp, 
+		  const Abstract::Vector& dir) ;
+private:
+
+  //! Full step length
+  double fullstep;
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
 
 #endif

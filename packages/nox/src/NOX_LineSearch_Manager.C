@@ -30,39 +30,71 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_FullStep.H" // class definition
+#include "NOX_LineSearch_Manager.H" // class definition
 
-#include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
+// All the different line searches
+#include "NOX_LineSearch_FullStep.H"
+#include "NOX_LineSearch_Backtrack.H"
+#include "NOX_LineSearch_Polynomial.H"
+#include "NOX_LineSearch_MoreThuente.H"
+#include "NOX_LineSearch_Secant.H"
 
 using namespace NOX;
-using namespace NOX::Linesearch;
+using namespace NOX::LineSearch;
 
-FullStep::FullStep(Parameter::List& params) 
+Manager::Manager(Parameter::List& params) :
+  method(""),
+  ptr(NULL)
 {
   reset(params);
 }
 
-FullStep::~FullStep()
+Manager::~Manager()
 {
-
+  delete ptr;
 }
 
-bool FullStep::reset(Parameter::List& params)
+bool Manager::reset(Parameter::List& params)
 {
-  fullstep = params.getParameter("Full Step", 1.0);
-  return true;
+   string newmethod = params.getParameter("Method", "Full Step");
+
+  if (method != newmethod) {
+    
+    method = newmethod;
+    
+    delete ptr;
+    
+    if (method == "Full Step")
+      ptr = new FullStep(params);
+    else if ((method == "Interval Halving") // deprecated
+	     || (method == "Backtrack"))
+      ptr = new Backtrack(params);
+    else if (method == "Polynomial")
+      ptr = new Polynomial(params);
+    else if (method == "More'-Thuente")
+      ptr = new MoreThuente(params);
+    else if (method == "Secant")
+      ptr = new Secant(params);
+    else {
+      ptr = NULL;
+      cout << "ERROR: NOX::LineSearch::Manager - invalid choice \"" 
+	   << method << "\" for line search method " << endl;
+      throw "NOX Error";
+    }
+  }
+
+  return ptr->reset(params);
 }
 
-bool FullStep::operator()(Abstract::Group& newgrp, double& step, 
-			  const Abstract::Group& oldgrp, const Abstract::Vector& dir)
+bool Manager::operator()(Abstract::Group& newgrp, double& step, 
+			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
-  step = fullstep;
-  newgrp.computeX(oldgrp, dir, step);
-  return true;
+  return ptr->operator()(newgrp, step, oldgrp, dir);
 }
+
 

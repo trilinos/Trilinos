@@ -30,56 +30,47 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_SECANT_H
-#define NOX_LINESEARCH_SECANT_H
+#ifndef NOX_LINESEARCH_POLYNOMIAL_H
+#define NOX_LINESEARCH_POLYNOMIAL_H
 
-#include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
 
 namespace NOX {
-namespace Linesearch {
+namespace LineSearch {
 
-//! Use Secant linesearch adapted from Shewchuk
+//! Use quad/cubic polynomial fit from Dennis & Schnabel
 /*!
 
-  This is a linesearch in which nonlinear iterations for the step length
-  (scalar) are performed using a quasi-Newton (secant) method adapted from
-  Shewchuk, "An Introduction to the Conjugate Gradient Method Without the
-  Agonizing Pain, ed 1 1/4," 1994.
+  \todo Russ needs to add a citation for the source of this line
+  search. Is it Alg 6.3.1mod from D&S? We also need to add a basic
+  description of the search.
+  
+  \todo Does this work with non-Newton directions?
 
-  This linesearch is not currently constrained by conditions such as those of
-  Wolfe or Armijo-Goldstein but rather is free to sample any step length in
-  hopes of finding a very accurate minimization of the objective function in
-  the search direction provided.  The method assumes that locally the negative 
-  of the computed residual serves as the gradient of the function to be
-  minimized.  Highly accurate linesearch is expected to help convergence
-  of nonlinearCG.
-
-  This line search can be called via NOX::Linesearch::Manager.
+  This line search can be called via NOX::LineSearch::Manager.
  
   The following parameters can be specified for this line search:
  
-  - "Minimum Step" - minimum step length allowed (when we give up)
-
   - "Default Step" - starting step length (defaults to 1.0)
+
+  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
 
   - "Recovery Step" - step to take when the line search fails
     (defaults to value for "Default Step")
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
 
-  - Initialization of the numerically approximated Hessian is done using
-    a backward difference with perturbation (initial step length) of -1.e-5.
 */
 
-class Secant : public Generic {
+class Polynomial : public Generic {
 
 public:
 
   //! Constructor
-  Secant(Parameter::List& params);
+  Polynomial(Parameter::List& params);
 
   //! Destructor
-  ~Secant();
+  ~Polynomial();
   
   // derived
   bool reset(Parameter::List& params);
@@ -91,15 +82,8 @@ public:
   
 private:
 
-   //! Computed correction to step length; nonlinear iterations for 
-   //! step length are assumed to be converged when abs(alpha) < 1.e-8
-  double alpha;
-
    //! Minimum step length (i.e., when we give up)
   double minstep;
-
-   //! Best step length found so far
-  double bestStep;
  
  //! Default step
   double defaultstep;
@@ -111,6 +95,6 @@ private:
   int maxiters;
 
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
 #endif

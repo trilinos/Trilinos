@@ -33,11 +33,11 @@
 #ifndef NOX_LINESEARCH_BACKTRACK_H
 #define NOX_LINESEARCH_BACKTRACK_H
 
-#include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Abstract_Vector.H" // for NOX::Abstract::Vector::NormType
 
 namespace NOX {
-namespace Linesearch {
+namespace LineSearch {
 
 //! Generic backtracking line search.
 /*!  This line search starts with the step length defined by "Default
@@ -49,7 +49,7 @@ namespace Linesearch {
   later case, the line search has failed, and we take the step defined
   by "Recovery Step".
 
-  This line search can be called via NOX::Linesearch::Manager.
+  This line search can be called via NOX::LineSearch::Manager.
  
   The following parameters can be specified for this line search:
  
@@ -110,6 +110,6 @@ private:
   NOX::Abstract::Vector::NormType normtype;
 
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
 #endif

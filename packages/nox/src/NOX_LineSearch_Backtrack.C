@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_Backtrack.H" // class definition
+#include "NOX_LineSearch_Backtrack.H" // class definition
 
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
@@ -39,7 +39,7 @@
 #include "NOX_Utils.H"
 
 using namespace NOX;
-using namespace NOX::Linesearch;
+using namespace NOX::LineSearch;
 
 Backtrack::Backtrack(Parameter::List& params) 
 {
@@ -65,7 +65,7 @@ bool Backtrack::reset(Parameter::List& params)
   else if (tmp == "Two Norm")
     normtype = NOX::Abstract::Vector::TWO;
   else {
-    cout << "NOX::Linesearch::Backtrack::reset - Invalid choice \"" << tmp 
+    cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
     throw "NOX Error";
   }

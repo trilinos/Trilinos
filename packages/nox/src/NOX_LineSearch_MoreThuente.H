@@ -33,10 +33,10 @@
 #ifndef NOX_MORETHUENTE_H
 #define NOX_MORETHUENTE_H
 
-#include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_LineSearch_Generic.H" // base class
 
 namespace NOX {
-namespace Linesearch {
+namespace LineSearch {
 
 //! More'-Thuente Line Search.
 /*!
@@ -80,7 +80,7 @@ namespace Linesearch {
   further progress. In this case stp only satisfies the sufficient
   decrease condition.
 
-  This line search can be called via NOX::Linesearch::Manager.
+  This line search can be called via NOX::LineSearch::Manager.
  
   The following parameters can be specified for this line search:
  
@@ -391,6 +391,6 @@ private:
 
 
 };
-} // namespace Linesearch
+} // namespace LineSearch
 } // namespace NOX
 #endif
