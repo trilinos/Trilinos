@@ -7,7 +7,7 @@
 
 /*****************************************************************************/
 /* Sample driver for AZTEC/ML package. The software is tested by reading     */ 
- * input to drive ML from a file (ml_inputfile).                             */
+/* input to drive ML from a file (ml_inputfile).                             */
 /*                                                                           */
 /*****************************************************************************/
 /* Here is a sample input file:
