@@ -36,7 +36,6 @@
 
 //#include <cstring>
 #include "ml_amesos_wrap.h"
-#include "ml_ifpack_wrap.h"
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
 

@@ -20,21 +20,7 @@
 #include "ml_RowMatrix.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos.h" 
-
 #include "ml_amesos_wrap.h"
-
-#ifdef EPETRA_MPI
-#ifndef ML_MPI
-Garbage - ML_MPI and EPETRA_MPI must be the same 
-#endif
-#include "Epetra_MpiComm.h"
-#else
-#ifdef ML_MPI
-Garbage - ML_MPI and EPETRA_MPI must be the same 
-#endif
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
 
 static double TimeForSolve__ = 0.0;
@@ -51,14 +37,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
   ML_Operator *Ke = &(ml->Amat[curr_level]);
-  ML_Epetra::RowMatrix* Amesos_Matrix = new ML_Epetra::RowMatrix(Ke,Comm);
+  ML_Epetra::RowMatrix* Amesos_Matrix = new ML_Epetra::RowMatrix(Ke);
   assert (Amesos_Matrix != 0);
   
   int NumGlobalRows = Amesos_Matrix->NumGlobalRows();

@@ -25,14 +25,8 @@ class RowMatrix : public virtual Epetra_RowMatrix {
       
  public:
   //@{ \name Constructor.
-    //! Constructor
-    RowMatrix(ML_Operator* Op, 
-#ifdef HAVE_MPI
-	      Epetra_MpiComm& Comm
-#else
-	      Epetra_SerialComm& Comm
-#endif
-	      );
+    //! Constructor, constructs Comm object if not provided
+    RowMatrix(ML_Operator* Op, const Epetra_Comm* Comm = 0);
 
   //@}
   //@{ \name Destructor.
@@ -272,7 +266,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   bool HasNormInf() const{return(false);};
   
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-  const Epetra_Comm & Comm() const{return(Comm_);};
+  const Epetra_Comm & Comm() const{return(*Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
   const Epetra_Map & OperatorDomainMap() const {return(*RowMap_);};
@@ -295,11 +289,8 @@ private:
 
   // FIXME: I still do not support rows != cols
   ML_Operator* Op_;
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm_;        // Comm object
-#else
-  Epetra_SerialComm Comm_;
-#endif
+  const Epetra_Comm* Comm_;        // Comm object
+  bool FreeCommObject_;       // free communicator is created by constructor
   int NumMyRows_;            // number of local rows
   int NumGlobalRows_;        // number of global rows
   int NumMyCols_;            // number of local cols
@@ -323,6 +314,7 @@ private:
   Epetra_Import* Importer_;
   
   char* Label_;
+
 };
 
 } // namespace ML_Epetra

@@ -28,7 +28,6 @@
 
 #include "ml_agg_METIS.h"
 #include "ml_agg_genP.h"
-#include "ml_ifpack.h"
 
 int warning_flag = 0;
 

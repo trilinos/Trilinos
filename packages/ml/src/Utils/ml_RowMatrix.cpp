@@ -11,29 +11,39 @@
 
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
-#ifdef HAVE_MPI
-				Epetra_MpiComm& Comm
-#else
-				Epetra_SerialComm& Comm
-#endif
-			       ) :
+                                const Epetra_Comm* UserComm) :
   Op_(0),
-  Comm_(Comm),
+  FreeCommObject_(false),
   NumMyRows_(-1),
   NumGlobalRows_(-1),
   NumMyCols_(-1),
   NumGlobalCols_(-1),
   RowMap_(0),
   ColMap_(0),
-  NumMyNonzeros_(0),
-  Allocated_(128),
-  NumGlobalNonzeros_(0),
   MaxNumEntries_(0),
+  Allocated_(128),
   NormInf_(-1.0),
+  NumMyNonzeros_(0),
+  NumGlobalNonzeros_(0),
   NumMyDiagonals_(0),
   NumGlobalDiagonals_(0)
 {
  
+  if (UserComm) {
+    // simply stick it to the pointer if the user passed Comm
+    Comm_ = UserComm;
+  }
+  else {
+    // otherwise we create a default communicator object,
+    // and track down the need of freeing it in the dtor
+#ifdef HAVE_MPI
+    Comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+    Comm_ = new Epetra_SerialComm;
+#endif
+    FreeCommObject_ = true;
+  }
+
   Op_ = Op;
 
   Label_ = new char[80];
@@ -42,8 +52,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   NumMyRows_ = Op->outvec_leng;
   NumMyCols_ = Op->invec_leng;
  
-  Comm_.SumAll(&NumMyRows_,&NumGlobalRows_,1);
-  Comm_.SumAll(&NumMyCols_,&NumGlobalCols_,1);
+  Comm().SumAll(&NumMyRows_,&NumGlobalRows_,1);
+  Comm().SumAll(&NumMyCols_,&NumGlobalCols_,1);
 
   // right now only square matrices
   if (NumMyRows_ != NumMyCols_)
@@ -56,7 +66,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // I need this map because often codes use the RowMatrixRowMap.
   // Also, I need to check that the map of the input vector
   // and of the output vector are consistent with what I have here
-  RowMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm_);
+  RowMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
 
   if (NumGlobalRows_ != RowMap_->NumGlobalElements())
     ML_CHK_ERRV(-3); // something went wrong
@@ -74,7 +84,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   int MaxMyNumEntries = 0;
   double MyNormInf = -1.0;
 
-  for (int i = 0; i < NumMyCols() ; ++i) {
+  for (int i = 0; i < NumMyRows() ; ++i) {
 
     int ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
 				  &Indices_[0],&Values_[0],&ncnt);
@@ -109,14 +119,14 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
     if (RowNormInf > MyNormInf)
       MyNormInf = RowNormInf;
 
-  } // for each col
+  } // for each row
 
   // fix a couple of global integers
 
-  Comm_.SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
-  Comm_.SumAll(&NumMyDiagonals_,&NumGlobalDiagonals_,1);
-  Comm_.MaxAll(&MaxMyNumEntries,&MaxNumEntries_,1);
-  Comm_.MaxAll(&MyNormInf,&NormInf_,1);
+  Comm().SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
+  Comm().SumAll(&NumMyDiagonals_,&NumGlobalDiagonals_,1);
+  Comm().MaxAll(&MaxMyNumEntries,&MaxNumEntries_,1);
+  Comm().MaxAll(&MyNormInf,&NormInf_,1);
 
   // build a list of global indices for columns
 
@@ -134,7 +144,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   Ncols = Op->invec_leng;
 
-  Comm_.ScanSum(&Ncols,&Ncols_offset,1); 
+  Comm().ScanSum(&Ncols,&Ncols_offset,1); 
   Ncols_offset -= Ncols;
 
   vector<double> global_col_id; 
@@ -161,7 +171,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // create the column map
 
   ColMap_ = new Epetra_Map(-1,Ncols + Nghost,
-			  &global_col_id_as_int[0],0,Comm_);
+			  &global_col_id_as_int[0],0,Comm());
 
   return;
 }
@@ -177,6 +187,9 @@ ML_Epetra::RowMatrix::~RowMatrix()
 
   if (Label_)
     delete [] Label_;
+
+  if (FreeCommObject_)
+    delete Comm_;
 
   return;
 
@@ -210,13 +223,16 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   if (MyRow < 0 || MyRow >= NumMyRows())
     ML_CHK_ERR(-1); // not a local row
 
-  if (NumMyRowEntries_[MyRow] > Length)
+  if (NumMyRowEntries_[MyRow] > Length) {
+    cerr << NumMyRowEntries_[MyRow] << " " << Length << endl;
     ML_CHK_ERR(-2); // need more space
-
+  }
 
   int ierr = ML_Operator_Getrow(Op_,1,&MyRow,Length,
 				Indices,Values,&NumEntries);
-
+  if (ierr < 0)
+    ML_CHK_ERR(ierr);
+  
   if (NumEntries != NumMyRowEntries_[MyRow])
     ML_CHK_ERR(-4); // something went wrong
 

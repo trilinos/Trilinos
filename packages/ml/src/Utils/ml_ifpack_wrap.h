@@ -20,8 +20,11 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS 
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */ 
 
-#ifndef _MLIFPACKWRAP_
-#define _MLIFPACKWRAP_
+#ifndef ML_IFPACK_WRAP
+#define ML_IFPACK_WRAP
+
+#include "ml_include.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK)
 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -29,20 +32,27 @@ extern "C" {
 #endif
 #endif
 
-  /** Generates the IFPACK smoother. */
-  int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
-		  double * params, void ** Ifpack_Handle);
-  
-  /** Solves using IFPACK */
-  int ML_Ifpack_Solve( void * Ifpack_Handle, double * x, double * rhs );
+namespace Teuchos {
+  class ParameterList;
+}
+class Epetra_Comm;
 
-  /** Destroy all data associated to the IFPACK smoother. */
-  void ML_Ifpack_Destroy(void * Ifpack_Handle);
-  
+int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
+			      double rhs[]);
+
+void ML_Smoother_Clean_Ifpack(void * Ifpack_Handle);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
 #endif
 #endif
 
+/** Generates the ifpack smoother */
+int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
+                           int nl, int pre_or_post, 
+                           Teuchos::ParameterList& List,
+                           const Epetra_Comm& Comm);
+
+#endif
 #endif

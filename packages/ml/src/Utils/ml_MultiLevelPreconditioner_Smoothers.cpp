@@ -28,7 +28,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "ml_ifpack.h"
+#include "ml_ifpack_wrap.h"
 #include "Teuchos_ParameterList.hpp"
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -276,88 +276,30 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // IFPACK //
       // ====== //
 
-      int ifp_options[ML_IFPACK_OPTIONS_SIZE];
-      double ifp_params[ML_IFPACK_PARAMS_SIZE];
-      ML_Ifpack_Defaults(ifp_options,ifp_params);
-
-      sprintf(parameter,"%ssmoother: ifpack type (level %d)",
-	      Prefix_.c_str(), level);
+#ifdef HAVE_ML_IFPACK
+      sprintf(parameter,"%ssmoother: ifpack type", Prefix_.c_str());
       string IfpackType = List_.get(parameter,"Amesos");
-      if (IfpackType == "Amesos")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_AMESOS;
-      else if (IfpackType == "Jacobi")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_JACOBI;
-      else if (IfpackType == "Gauss-Seidel")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_GS;
-      else if (IfpackType == "symmetric Gauss-Seidel")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_SGS;
-      else if (IfpackType == "block Jacobi")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_JACOBI;
-      else if (IfpackType == "block Gauss-Seidel")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_GS;
-      else if (IfpackType == "block symmetric Gauss-Seidel")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_SGS;
-      else if (IfpackType == "block Jacobi (Amesos)")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_JACOBI_AMESOS;
-      else if (IfpackType == "block Gauss-Seidel (Amesos)")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_GS_AMESOS;
-      else if (IfpackType == "block symmetric Gauss-Seidel (Amesos)")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_BLOCK_SGS_AMESOS;
-      else if (IfpackType == "ICT")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_ICT;
-      else if (IfpackType == "RILUK")
-	ifp_options[ML_IFPACK_TYPE] = ML_IFPACK_RILUK;
-      else {
-	cerr << ErrorMsg_ << "ifpack type not valid ("
-	     << IfpackType << ")" << endl;
-	cerr << ErrorMsg_ << "(file " << __FILE__
-	     << ", line = " << __LINE__ << ")" << endl;
-	exit(EXIT_FAILURE);
-      }
 
-      sprintf(parameter,"%ssmoother: ifpack sweeps (level %d)",
-	      Prefix_.c_str(), level);
-      int IfpackSweeps = List_.get(parameter,(int)0);
-      ifp_options[ML_IFPACK_SWEEPS] = IfpackSweeps;
-
-      sprintf(parameter,"%ssmoother: ifpack overlap (level %d)",
-	      Prefix_.c_str(), level);
-      int IfpackOverlap = List_.get(parameter,(int)0);
-      ifp_options[ML_IFPACK_OVERLAP] = IfpackOverlap;
-
-      sprintf(parameter,"%ssmoother: ifpack block overlap (level %d)",
-	      Prefix_.c_str(), level);
-      int IfpackBlockOverlap = List_.get(parameter,(int)0);
-      ifp_options[ML_IFPACK_BLOCK_OVERLAP] = IfpackBlockOverlap;
-
-      sprintf(parameter,"%ssmoother: ifpack local parts (level %d)",
-	      Prefix_.c_str(), level);
-      int IfpackLocalParts = List_.get(parameter,(int)1);
-      ifp_options[ML_IFPACK_LOCAL_PARTS] = IfpackLocalParts;
-
-      sprintf(parameter,"%ssmoother: ifpack level-of-fill (level %d)",
-	      Prefix_.c_str(), level);
-      int IfpackLevelOfFill = List_.get(parameter,(int)1);
-      ifp_options[ML_IFPACK_LEVEL_OF_FILL] = IfpackLevelOfFill;
-
-      sprintf(parameter,"%ssmoother: ifpack damping factor (level %d)",
-	      Prefix_.c_str(), level);
-      double IfpackDampingFactor = List_.get(parameter,(double)1.0);
-      ifp_params[ML_IFPACK_DAMPING_FACTOR] = IfpackDampingFactor;
+      sprintf(parameter,"%ssmoother: ifpack overlap", Prefix_.c_str());
+      int IfpackOverlap = List_.get(parameter,0);
 
       if( verbose_ ) {
 	cout << msg << "IFPACK, type = `" << IfpackType << "', "
-	     << PreOrPostSmoother << endl;
-	cout << msg << "Overlap = " << IfpackOverlap << ", "
-	     << "# local blocks = " << IfpackLocalParts << ", "
-	     << "block overlap = " << IfpackBlockOverlap << endl;
-	cout << msg << "Level-of-fill = " << IfpackLevelOfFill << ", "
-	     << "sweeps = " << IfpackSweeps
-	     << ", damping factor = " << IfpackDampingFactor << endl;
+	     << PreOrPostSmoother
+	     << ", Overlap = " << IfpackOverlap << endl;
       }
 
-      ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post,
-			     ifp_options, ifp_params);
+      sprintf(parameter,"%ssmoother: ifpack list", Prefix_.c_str());
+      Teuchos::ParameterList& IfpackList = List_.sublist(parameter);
+      ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
+                             IfpackOverlap, LevelID_[level], pre_or_post,
+                             IfpackList,*Comm_);
+#else
+      cerr << ErrorMsg_ << "IFAPCK not available." << endl
+	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
+	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
+	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+#endif
 
     } else if( Smoother == "ParaSails" ) {
 

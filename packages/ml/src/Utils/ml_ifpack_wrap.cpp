@@ -9,7 +9,6 @@
 #include "ml_utils.h"
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
-
 #include "Epetra_Map.h" 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h" 
@@ -17,112 +16,88 @@
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
+// converter from ML_Operator to Epetra_RowMatrix (only wraps)
 #include "ml_RowMatrix.h"
+// IFPACK factory class
 #include "Ifpack.h"
-
-#include "Epetra_Comm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 using namespace ML_Epetra;
 
-// ================================================ ====== ==== ==== == =
+int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
+                  Teuchos::ParameterList& List, 
+                  const Epetra_Comm& Comm, 
+                  void ** Ifpack_Handle);
 
-int ML_Ifpack_Gen(ML *ml, int curr_level, int * options,
-		  double * params, void ** Ifpack_Handle)
+// ====================================================================== 
+// MS // This does not work yet with ML_ALL_LEVELS
+// MS // I also ask for the Epetra_Comm, as IFPACK only works
+// MS // with the Epetra interface.
+int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
+                           int nl, int pre_or_post,
+                           Teuchos::ParameterList& List,
+                           const Epetra_Comm& Comm)
 {
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
+   int status = 1;
+   char str[80];
+   void *Ifpack_Handle ;
+
+   fun = ML_Smoother_Ifpack;
+
+   /* Creates IFPACK objects */
+
+   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, Comm, &Ifpack_Handle) ; 
+   assert (status == 0); 
+
+   /* Sets function pointers */
+
+   if (pre_or_post == ML_PRESMOOTHER) {
+     sprintf(str,"IFPACK_pre%d",nl);
+     status = ML_Smoother_Set(&(ml->pre_smoother[nl]), (void*)Ifpack_Handle,
+			      fun, 1, 0.0, str);
+     ml->pre_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER) {
+     sprintf(str,"IFPACK_post%d",nl);
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
+			      (void*)Ifpack_Handle, fun, 1, 0.0, str);
+     ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+   }
+   else if (pre_or_post == ML_BOTH) {
+     sprintf(str,"IFPACK_pre%d",nl);
+     status = ML_Smoother_Set(&(ml->pre_smoother[nl]),
+			      (void*)Ifpack_Handle,
+			      fun, 1,  0.0, str);
+     sprintf(str,"IFPACK_post%d",nl);
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]),
+			      (void*)Ifpack_Handle, fun, 1, 0.0, str);
+     ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+   }
+   else 
+     return(pr_error("ML_Gen_Smoother_Jacobi: unknown pre_or_post choice\n"));
+
+   return(status);
+
+}
+// ================================================ ====== ==== ==== == =
+
+int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
+                  Teuchos::ParameterList& List, 
+                  const Epetra_Comm& Comm, 
+                  void ** Ifpack_Handle)
+{
 
   ML_Operator *Ke = &(ml->Amat[curr_level]);
 
-  RowMatrix* Ifpack_Matrix = new RowMatrix(Ke, Comm);
+  // creates the wrapper from ML_Operator to Epetra_RowMatrix
+  // (ML_Epetra::RowMatrix). This is a cheap conversion
+  RowMatrix* Ifpack_Matrix = new RowMatrix(Ke, &Comm);
   assert (Ifpack_Matrix != 0);
 
+  // we enter the IFPACK world through the factory only
   Ifpack Factory;
   Ifpack_Preconditioner* Prec;
-
-  // set these values in the List
-  Teuchos::ParameterList List;
-
-  string Type;
-  string AmesosType;
-
-  // local preconditioner
-  switch (options[ML_IFPACK_TYPE]) {
-  case ML_IFPACK_AMESOS:
-    Type = "Amesos";
-    break;
-  case ML_IFPACK_JACOBI:
-    Type = "point relaxation";
-    List.set("point: type","Jacobi");
-    break;
-  case ML_IFPACK_GS:
-    Type = "point relaxation";
-    List.set("point: type","Gauss-Seidel");
-    break;
-  case ML_IFPACK_SGS:
-    Type = "point relaxation";
-    List.set("point: type","symmetric Gauss-Seidel");
-    break;
-  case ML_IFPACK_BLOCK_JACOBI:
-  case ML_IFPACK_BLOCK_JACOBI_AMESOS:
-    Type = "block relaxation";
-    List.set("block: type","Jacobi");
-    break;
-  case ML_IFPACK_BLOCK_GS:
-  case ML_IFPACK_BLOCK_GS_AMESOS:
-    Type = "block relaxation";
-    List.set("block: type","Gauss-Seidel");
-    break;
-  case ML_IFPACK_BLOCK_SGS:
-  case ML_IFPACK_BLOCK_SGS_AMESOS:
-    Type = "block relaxation";
-    List.set("block: type","symmetric Gauss-Seidel");
-    break;
-  case ML_IFPACK_ICT:
-    Type = "ICT";
-    break;
-  case ML_IFPACK_RILUK:
-    Type = "RILUK";
-    break;
-  default:
-    cerr << "Value for options[ML_IFPACK_TYPE] not recognized." << endl;
-    exit(EXIT_FAILURE);
-  }
-
-  // overlap
-  int Overlap = options[ML_IFPACK_OVERLAP];
-
-  // overlap among blocks (only for Ifpack_Jacobi)
-  int BlockOverlap = options[ML_IFPACK_BLOCK_OVERLAP];
-
-  // level-of-fill
-  int LevelOfFill = options[ML_IFPACK_LEVEL_OF_FILL];
-
-  // number of local blocks
-  int LocalParts = options[ML_IFPACK_LOCAL_PARTS];
-
-  // sweeps
-  int NumSweeps = options[ML_IFPACK_SWEEPS];
-
-  // damping factor
-  double DampingFactor = params[ML_IFPACK_DAMPING_FACTOR];
-
-  List.set("partitioner: local parts", LocalParts);
-  List.set("partitioner: overlap", BlockOverlap);
-  List.set("point: damping factor", LocalParts);
-  List.set("point: sweeps", LocalParts);
-  List.set("block: damping factor", LocalParts);
-  List.set("block: sweeps", LocalParts);
-  List.set("fact: level-of-fill", LocalParts);
 
   // create the preconditioner 
   Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
@@ -159,11 +134,12 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
 {
 
   Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+  if (ML_Get_PrintLevel() > 8)
+    cout << *Prec;
+
   delete &(Prec->Matrix());
   delete Prec;
 
 } /* ML_Ifpack_Destroy */
 
-#else
-
-#endif /* #ifdef HAVE_ML_IFPACK */
+#endif
