@@ -40,6 +40,7 @@
 #include "TSFVectorType.hpp"
 #include "TSFVectorSpace.hpp"
 #include "TSFLinearSolver.hpp"
+#include "TSFLinearOperator.hpp"
 #include "TSFObjectWithVerbosity.hpp"
 #include "TSFNonlinearOperator.hpp" // nonlinear operator
 
