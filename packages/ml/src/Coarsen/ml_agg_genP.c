@@ -733,6 +733,14 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 	 break;
 	 
        }
+
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nProlongator/Restriction smoother (level %d) : damping factor = %e\n"
+		"Prolongator/Restriction smoother (level %d) : ( = %e / %e)\n\n",
+		level, ag->smoothP_damping_factor/ max_eigen,
+		level,
+		ag->smoothP_damping_factor, max_eigen );
+       }
        
      }
      else { /* no need to compute eigenvalue .... we already have it */
@@ -751,6 +759,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    {
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;
+
+      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n\n",
+	      level );
+      }
+
    }
    
    
@@ -2363,14 +2377,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    /* This is not an error! Here use R (this P will become R later)          */
    /* ********************************************************************** */
    
-   if( ag->smoothP_damping_factor == 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
-     
-     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-       printf("\n(level %d) : Using non-smoothed aggregation\n\n",
-	      level );
-     }
-     
-   } else if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+   if( ag->Restriction_smoothagg_transpose == ML_TRUE ) {
      
      fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
 
@@ -2403,6 +2410,9 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 		level );
        }
        
+       ag->smoothP_damping_factor = 0.00000001;
+       Amat->lambda_max = 1.0;
+
      } else if( fov->choice == 1 ) {
        
        ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
@@ -2417,6 +2427,14 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 		level,
 		fov->eta );
        }
+
+       eta = fov->eta;
+       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+       if( dtemp < 0.0 ) dtemp = 0.000001;
+       dtemp2 = fov->real_max;
+       
+       ag->smoothP_damping_factor = dtemp;
+       Amat->lambda_max = dtemp2;
        
      } else if( fov->choice == 2 ) {
 
@@ -2428,6 +2446,14 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 		fov->eta );
        }
 
+       eta = fov->eta;
+       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+       if( dtemp < 0.0 ) dtemp = 0.000001;
+       dtemp2 = fov->real_max;
+       
+       ag->smoothP_damping_factor = dtemp;
+       Amat->lambda_max = dtemp2;
+       
      } else {
        
        fprintf( stderr,
@@ -2441,41 +2467,38 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      }
 #else
      fprintf( stderr,
-	      "ERROR: You must compile with options --with-ml_anasazi\n"
-	      "ERROR: and --with-ml_teuchos for eigen-analysis\n"
+	      "ERROR: You must compile with options --enable-anasazi\n"
+	      "ERROR: and --enable-teuchos for eigen-analysis\n"
 	      "ERROR: (file %s, line %d)\n",
 	      __FILE__,
 	      __LINE__ );
      exit( EXIT_FAILURE );
 #endif
-     
-     
-     eta = fov->eta;
-     dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
-     if( dtemp < 0.0 ) dtemp = 0.000001;
-     dtemp2 = fov->real_max;
-     	      
-     ag->smoothP_damping_factor = dtemp;
-     Amat->lambda_max = dtemp2;
 
      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
        printf("Restriction smoother (level %d) : damping factor = %e\n"
-	      "Restriction smoother (level %d) : ( = %e / %e)\n",
+	      "Restriction smoother (level %d) : ( = %e / %e)\n\n",
 	      level,
-	      ag->smoothP_damping_factor/dtemp2,
+	      ag->smoothP_damping_factor/Amat->lambda_max,
 	      level,
-	      dtemp,
-	      dtemp2);
+	      ag->smoothP_damping_factor,
+	      Amat->lambda_max);
      }
 
      ml->symmetrize_matrix = ML_FALSE;
      ag->keep_P_tentative = ML_YES;
      ag->use_transpose = ML_TRUE;
 
+     max_eigen = Amat->lambda_max;
+     
+   } else {
+
+     /* This is the normal ML way */
+     
+     max_eigen = Amat->lambda_max;
+
    }
-
-   max_eigen = Amat->lambda_max;
-
+   
    ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
    
    return 0;
@@ -2502,7 +2525,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
   
   Amat = &(ml->Amat[level]);
 
-  if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+  if( ag->Restriction_smoothagg_transpose == ML_TRUE ) {
 
     if( ag->use_transpose != ML_TRUE ) {
       fprintf( stderr,
@@ -2548,7 +2571,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 
     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
       printf("Prolongator smoother (level %d) : damping parameter = %e\n"
-	     "Prolongator smoother (level %d) : ( = %e / %e )\n",
+	     "Prolongator smoother (level %d) : ( = %e / %e )\n\n",
 	     level,
 	     ag->smoothP_damping_factor/dtemp2,
 	     level,
