@@ -34,9 +34,10 @@
 #define NOX_LINESEARCH_GENERIC_H
 
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Utils.H"
 
 namespace NOX {
 namespace Linesearch {

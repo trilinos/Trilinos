@@ -31,7 +31,6 @@
 //@HEADER
 
 #include "NOX_Epetra_Group.H"	// class definition
-#include "NOX_Utils.H"
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
 #include "AztecOO.h"

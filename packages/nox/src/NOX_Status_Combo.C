@@ -31,8 +31,6 @@
 //@HEADER
 
 #include "NOX_Status_Combo.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Utils.H"
 
 using namespace NOX::Status;
 

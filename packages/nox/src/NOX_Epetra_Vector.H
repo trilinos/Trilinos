@@ -34,6 +34,8 @@
 #define NOX_EPETRA_VECTOR_H
 
 #include "NOX_Abstract_Vector.H"	// Base Class
+
+// External include from Trilinos
 #include "Epetra_Vector.h"
 
 namespace NOX {

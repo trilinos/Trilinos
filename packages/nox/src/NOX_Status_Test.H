@@ -34,12 +34,13 @@
 #define NOX_STATUS_TEST_H
 
 #include "NOX_Common.H"
+#include "NOX_Utils.H"
 
 namespace NOX {
 
 namespace Solver
 {
-class Generic;			// forward declaration
+class Generic;			// forward declaration (included below)
 }
 
 //! %Status checkers.
@@ -70,4 +71,7 @@ public:
 } // namespace Solver
 } // namespace NOX
 
+#include "NOX_Solver_Generic.H"
+
 #endif
+

@@ -33,8 +33,8 @@
 #ifndef NOX_ABSTRACT_GROUP_H
 #define NOX_ABSTRACT_GROUP_H
 
-#include "NOX_Parameter_List.H"	
 #include "NOX_Abstract_Vector.H"
+#include "NOX_Parameter_List.H"	
 
 namespace NOX { 
 namespace Abstract { 

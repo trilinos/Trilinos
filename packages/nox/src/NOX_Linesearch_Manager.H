@@ -33,7 +33,7 @@
 #ifndef NOX_LINESEARCH_MANAGER_H
 #define NOX_LINESEARCH_MANAGER_H
 
-#include "NOX_Linesearch_Generic.H"
+#include "NOX_Linesearch_Generic.H" // base class
 
 namespace NOX {
 namespace Linesearch {

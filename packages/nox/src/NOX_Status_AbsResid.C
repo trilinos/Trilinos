@@ -34,7 +34,6 @@
 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
 
 using namespace NOX::Status;
 

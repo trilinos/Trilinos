@@ -30,12 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_MoreThuente.H"
-
-#include "NOX_Utils.H"		// for static doPrint function
-#include <iomanip>		// for setw
-#include <math.h>		// for abs, sqrt
-#include <stdio.h>		// for getchar
+#include "NOX_Linesearch_MoreThuente.H"	// class definition
 
 using namespace NOX;
 using namespace NOX::Linesearch;

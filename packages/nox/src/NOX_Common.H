@@ -36,6 +36,9 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <cmath>
+#include <vector>
+#include <map>
 
 using namespace std;
 

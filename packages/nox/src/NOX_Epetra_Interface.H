@@ -33,6 +33,7 @@
 #ifndef NOX_EPETRA_INTERFACE_H
 #define NOX_EPETRA_INTERFACE_H
   
+// External Includes from Trilinos
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 
@@ -46,8 +47,10 @@ class Interface {
 
 public:
  
+  //! Constructor
   Interface() {};
 
+  //! Destructor
   virtual ~Interface() {};
 
   //! Compute RHS given the specified input vector, x.

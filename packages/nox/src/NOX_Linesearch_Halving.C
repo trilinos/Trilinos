@@ -30,10 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_Halving.H"
-
-#include "NOX_Utils.H"		// for static doPrint function
-#include <iomanip>		// for setw
+#include "NOX_Linesearch_Halving.H" // class definition
 
 using namespace NOX;
 using namespace NOX::Linesearch;

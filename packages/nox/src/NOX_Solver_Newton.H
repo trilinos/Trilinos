@@ -35,7 +35,6 @@
 
 #include "NOX_Solver_Generic.H"	    // base class
 #include "NOX_Linesearch_Manager.H" // line search
-#include "NOX_Status_Test.H"	    // status test for convergence
 
 namespace NOX {
 namespace Solver {

@@ -33,7 +33,7 @@
 #ifndef NOX_MORETHUENTE_H
 #define NOX_MORETHUENTE_H
 
-#include "NOX_Linesearch_Generic.H"
+#include "NOX_Linesearch_Generic.H" // base class
 
 namespace NOX {
 namespace Linesearch {

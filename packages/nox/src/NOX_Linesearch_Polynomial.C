@@ -32,9 +32,6 @@
 
 #include "NOX_Linesearch_Polynomial.H"
 
-#include "NOX_Utils.H"		// for static doPrint function
-#include <math.h>		// for abs, sqrt
-
 using namespace NOX;
 using namespace NOX::Linesearch;
 

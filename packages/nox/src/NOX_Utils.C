@@ -31,7 +31,6 @@
 //@HEADER
 
 #include "NOX_Utils.H"
-#include <iomanip>
 
 int NOX::Utils::myPID = 0;
 int NOX::Utils::outputLevel = 2;

@@ -34,6 +34,7 @@
 #define NOX_UTILS_H
   
 #include "NOX_Parameter_List.H"
+#include "NOX_Common.H"
 
 namespace NOX {
 

@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Epetra_SharedJacobian.H"
+#include "NOX_Epetra_SharedJacobian.H" // class definition
 
 using namespace NOX::Epetra;
 

@@ -34,8 +34,6 @@
 #define NOX_STATUS_COMBO_H
 
 #include "NOX_Status_Test.H"	// base class
-#include "NOX_Solver_Generic.H"
-#include <vector>
 
 namespace NOX {
 namespace Status {

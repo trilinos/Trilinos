@@ -30,7 +30,6 @@
 // ************************************************************************
 //@HEADER
 
-#include <iostream>
 #include "NOX_Epetra_Vector.H"
 
 using namespace NOX;

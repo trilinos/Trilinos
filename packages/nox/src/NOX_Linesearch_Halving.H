@@ -33,7 +33,7 @@
 #ifndef NOX_LINESEARCH_HALVING_H
 #define NOX_LINESEARCH_HALVING_H
 
-#include "NOX_Linesearch_Generic.H"
+#include "NOX_Linesearch_Generic.H" // base class
 
 namespace NOX {
 namespace Linesearch {

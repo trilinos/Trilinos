@@ -32,10 +32,6 @@
 
 #include "NOX_Solver_Newton.H"	// class definition
 
-#include <iomanip>		// for setw
-#include <cmath>		// for min, max
-#include "NOX_Utils.H"		
-
 using namespace NOX;
 using namespace NOX::Solver;
 

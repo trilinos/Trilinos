@@ -30,8 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_MaxIters.H"
-#include "NOX_Solver_Generic.H"
+#include "NOX_Status_MaxIters.H" // class definition
 
 using namespace NOX::Status;
 

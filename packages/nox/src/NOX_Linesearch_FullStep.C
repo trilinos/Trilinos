@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_FullStep.H"
+#include "NOX_Linesearch_FullStep.H" // class definition
 
 using namespace NOX;
 using namespace NOX::Linesearch;

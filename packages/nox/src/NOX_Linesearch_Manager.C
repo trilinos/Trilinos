@@ -30,11 +30,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_Manager.H" // base class
+#include "NOX_Linesearch_Manager.H" // class definition
 
-#include <string>
-
-// Different line searches
+// All the different line searches
 #include "NOX_Linesearch_FullStep.H"
 #include "NOX_Linesearch_Halving.H"
 #include "NOX_Linesearch_Polynomial.H"

@@ -30,11 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_MaxResid.H"
+#include "NOX_Status_MaxResid.H" // class definition
 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
 
 using namespace NOX::Status;
 

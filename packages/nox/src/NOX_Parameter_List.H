@@ -33,8 +33,7 @@
 #ifndef NOX_PARAMETER_LIST_H
 #define NOX_PARAMETER_LIST_H
 
-#include<vector>		// for tmpstring
-#include<map>			// for map of strings to parameters
+#include "NOX_Common.H"
 #include "NOX_Parameter_Entry.H" // individual parameters
 
 namespace NOX {
