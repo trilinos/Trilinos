@@ -26,5 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockElementSpace complexArrayTest Distributor \
-ElementSpace enum Platform VectorSpace
+EXEEXT = .exe
+
+noinst_PROGRAMS = Platform_test
+
+Platform_test_SOURCES = $(srcdir)/cxx_main.cpp
+
+Platform_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a
+
+Platform_test_CXXFLAGS = -I$(top_srcdir)/src
+
+Platform_test_LDADD = $(top_builddir)/src/libtpetra.a $(BLAS_LIBS) \
+	$(LIBS) $(FLIBS)
+
+
