@@ -76,7 +76,8 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   newton(utils),		// initialize direction
   cauchy(utils),       		// initialize direction
   userNormPtr(0),
-  userMeritFuncPtr(0)
+  userMeritFuncPtr(0),
+  useAredPredRatio(false)
 {
   init();
 }
@@ -162,6 +163,10 @@ void TrustRegionBased::init()
        getArbitraryParameter("User Defined Merit Function"));
     userMeritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(&mf);
   }
+
+  // Check for the using Homer Walker's Ared/Pred ratio calculation
+  useAredPredRatio = 
+    paramsPtr->sublist("Trust Region").getParameter("Use Ared/Pred Ratio Calculation", false);
 
   // Compute F of initital guess
   solnPtr->computeF();
@@ -312,7 +317,6 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     cout << "-- Trust Region Inner Iteration --" << endl;
   }
 
-
   // Trust region subproblem loop
   while ((ratio < minRatio) && (radius > minRadius)) 
   {
@@ -412,47 +416,96 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       throw "NOX Error";
     }
 
-    // Compute ratio of actual to predicted reduction
-    if (userMeritFuncPtr != 0) {
-      newF = userMeritFuncPtr->computef(*solnPtr);
-    }
-    else 
-      newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+    // Compute ratio of actual to predicted reduction 
+    // If using Homer Walker's Ared/Pred ratio computation, 
+    // we use F, NOT the merit function, f.
+    if (useAredPredRatio) {
 
-    if (newF >= oldF) 
-    {
-      ratio = -1;
-    }
-    else 
-    {
-
+      // bVec = F(x) + J d
       rtype = oldSoln.applyJacobian(*dirPtr, bVec);
       if (rtype != NOX::Abstract::Group::Ok) 
       {
-	cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+	cout << "NOX::Solver::TrustRegionBased::iterate - "
+	     << "unable to compute F" << endl;
 	throw "NOX Error";
       }
-      double numerator = oldF - newF;
-      double denominator = 0.0;
+      bVec.update(1.0, oldSoln.getF(), 1.0);
 
-      if (userMeritFuncPtr != 0) {
-	denominator = fabs(oldF - userMeritFuncPtr->
-			   computeQuadraticModel(dir,oldSoln));
+      // Compute norms
+      double oldNormF = 0.0;
+      double newNormF = 0.0;
+      double normFLinear = 0.0;
+      if (userNormPtr != 0) {
+	oldNormF = userNormPtr->norm(oldSoln.getF());
+	newNormF = userNormPtr->norm(soln.getF());
+	normFLinear = userNormPtr->norm(bVec);
       }
-      else 
-	denominator = fabs(dir.dot(oldSoln.getGradient()) + 
-			   0.5 * bVec.dot(bVec));
+      else {
+	oldNormF = oldSoln.getNormF();
+	newNormF = soln.getNormF();
+	normFLinear = bVec.norm();
+      }
 
-      ratio = numerator / denominator;
-      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+      ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
+
+      // Print the ratio values if requested
+      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+      double numerator = oldNormF - newNormF;
+      double denominator = oldNormF - normFLinear;
 	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	     << utils.sciformat(denominator) << "=" << ratio << endl;
+      }
 
-      // WHY IS THIS CHECK HERE?
-      if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
-	ratio = -1;
+      // Update the merit function (newF used when printing iteration status)
+      if (userMeritFuncPtr != 0) {
+	newF = userMeritFuncPtr->computef(*solnPtr);
+      }
+      else 
+	newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+
     }
+    else {  // Default ratio computation
 
+      if (userMeritFuncPtr != 0) {
+	newF = userMeritFuncPtr->computef(*solnPtr);
+      }
+      else 
+	newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+      
+      if (newF >= oldF) 
+      {
+	ratio = -1;
+      }
+      else 
+      {
+	  
+	rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+	if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
+	  throw "NOX Error";
+	}
+	double numerator = oldF - newF;
+	double denominator = 0.0;
+	  
+	if (userMeritFuncPtr != 0) {
+	  denominator = fabs(oldF - userMeritFuncPtr->
+			     computeQuadraticModel(dir,oldSoln));
+	}
+	else 
+	  denominator = fabs(dir.dot(oldSoln.getGradient()) + 
+			     0.5 * bVec.dot(bVec));
+	
+	ratio = numerator / denominator;
+	if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+	  cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	       << utils.sciformat(denominator) << "=" << ratio << endl;
+	
+	// WHY IS THIS CHECK HERE?
+	if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
+	  ratio = -1;
+      }
+    }
 
     if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
       cout << "radius = " << utils.sciformat(radius, 1);

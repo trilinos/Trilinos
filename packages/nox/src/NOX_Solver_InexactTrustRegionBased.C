@@ -95,7 +95,8 @@ InexactTrustRegionBased(Abstract::Group& grp,
   numNewtonSteps(0),
   numDoglegSteps(0),
   numTrustRegionInnerIterations(0),
-  sumDoglegFractions(0.0)
+  sumDoglegFractions(0.0),
+  useAredPredRatio(false)
 {
   init();
 }
@@ -202,6 +203,10 @@ void NOX::Solver::InexactTrustRegionBased::init()
   useCauchyInNewtonDirection = paramsPtr->sublist("Trust Region")
     .getParameter("Use Cauchy in Newton Direction", true);
 
+  // Check for the using Homer Walker's Ared/Pred ratio calculation
+  useAredPredRatio = paramsPtr->sublist("Trust Region")
+    .getParameter("Use Ared/Pred Ratio Calculation", false);
+
   // Check for a user defined Norm
   if (paramsPtr->sublist("Trust Region").
       isParameterArbitrary("User Defined Norm")) {
@@ -210,9 +215,9 @@ void NOX::Solver::InexactTrustRegionBased::init()
       sublist("Trust Region").getArbitraryParameter("User Defined Norm"));
     userNormPtr = const_cast<NOX::Parameter::UserNorm*>(&un);
 
-    // RPP: Hack!!  Need to get the the row sum scaling vector computed 
-    // (fix this in Epetra objects later).
-    
+    // RPP: Hack!!  Need to compute the row sum scaling vector 
+    // so norms are up-to-date (fix this in Epetra objects later).
+    // This only is needed for user defined norms at this point.
     solnPtr->computeF();
     solnPtr->computeJacobian();
     solnPtr->computeNewton(paramsPtr->sublist("Direction").
@@ -381,7 +386,8 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   ok = newton.compute(newtonVec, soln, *this);
   if (!ok) 
   {
-    cout << "NOX::Solver::InexactTrustRegionBased::iterate - unable to calculate Newton direction" << endl;
+    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	 << "unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
     return status;
   }
@@ -389,18 +395,15 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   ok = cauchy.compute(cauchyVec, soln, *this);
   if (!ok) 
   {
-    cout << "NOX::Solver::InexactTrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
+    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	 << "unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     return status;
   }
 
   if (nIter == 0) 
   {
-    if (userNormPtr != 0) {
-      radius = userNormPtr->norm(newtonVec);
-    }
-    else 
-      radius = newtonVec.norm();
+    radius = computeNorm(newtonVec);
 
     if (radius < minRadius)
       radius = 2 * minRadius;
@@ -412,12 +415,8 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   // Copy current soln to the old soln.
   oldSoln = soln;
   // RPP: Can't just copy over oldf.  Scaling could change between iterations
-  // so user Merit Functions could be out of sync
-  if (userMeritFuncPtr != 0) {
-    oldF = userMeritFuncPtr->computef(oldSoln);
-  }
-  else 
-    oldF = newF;
+  // for user defined Merit Functions and throw things out of sync
+  oldF = computeMeritFunction(oldSoln);
 
   // Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
@@ -441,17 +440,9 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     double step;
 
     // Trust region step
-    double newtonVecNorm = 0.0;
-    double cauchyVecNorm = 0.0;
-    if (userNormPtr != 0) {
-      newtonVecNorm = userNormPtr->norm(newtonVec);
-      cauchyVecNorm = userNormPtr->norm(cauchyVec);
-    }
-    else { 
-      newtonVecNorm = newtonVec.norm();
-      cauchyVecNorm = cauchyVec.norm();
-    }
-
+    double newtonVecNorm = computeNorm(newtonVec);
+    double cauchyVecNorm = computeNorm(cauchyVec);
+    
     if (newtonVecNorm <= radius) 
     {
       stepType = InexactTrustRegionBased::Newton;
@@ -515,11 +506,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     const Abstract::Vector& dir = *dirPtr;
 
     // Calculate true step length
-    if (userNormPtr != 0) {
-      dx = step * userNormPtr->norm(dir);
-    }
-    else
-      dx = step * dir.norm();
+    dx = step * (computeNorm(dir));
     
     // Compute new X
     soln.computeX(oldSoln, dir, step);
@@ -528,52 +515,85 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok) 
     {
-      cerr << "NOX::Solver::InexactTrustRegionBased::iterate - unable to compute F" << endl;
+      cerr << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	   << "unable to compute F" << endl;
       throw "NOX Error";
     }
 
     // Compute ratio of actual to predicted reduction
-    if (userMeritFuncPtr != 0) {
-      newF = userMeritFuncPtr->computef(*solnPtr);
-    }
-    else 
-      newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+    // If using Homer Walker's Ared/Pred ratio computation, 
+    // we use F, NOT the merit function, f.
+    if (useAredPredRatio) {
 
-    if (newF >= oldF) 
-    {
-      ratio = -1;
-    }
-    else 
-    {
-
+      // bVec = F(x) + J d
       rtype = oldSoln.applyJacobian(*dirPtr, bVec);
       if (rtype != NOX::Abstract::Group::Ok) 
       {
-	cerr << "NOX::Solver::InexactTrustRegionBased::iterate - unable to compute F" << endl;
+	cout << "NOX::Solver::TrustRegionBased::iterate - "
+	     << "unable to compute F" << endl;
 	throw "NOX Error";
       }
+      bVec.update(1.0, oldSoln.getF(), 1.0);
 
-      double numerator = oldF - newF;
-      double denominator = 0.0;
+      // Compute norms
+      double oldNormF = computeNorm(oldSoln.getF());
+      double newNormF = computeNorm(soln.getF());
+      double normFLinear = computeNorm(bVec);;
+      
+      ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
 
-      if (userMeritFuncPtr != 0) {
-	denominator = fabs(oldF - userMeritFuncPtr->
-			   computeQuadraticModel(dir,oldSoln));
-      }
-      else 
-	denominator = fabs(dir.dot(oldSoln.getGradient()) + 
-			   0.5 * bVec.dot(bVec));
-
-      ratio = numerator / denominator;
-      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+      // Print the ratio values if requested
+      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+      double numerator = oldNormF - newNormF;
+      double denominator = oldNormF - normFLinear;
 	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	     << utils.sciformat(denominator) << "=" << ratio << endl;
+      }
 
-      // WHY IS THIS CHECK HERE?
-      if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
-	ratio = -1;
+      // Update the merit function (newF used when printing iteration status)
+      newF = computeMeritFunction(*solnPtr);
+
     }
+    else {  // Default ratio computation
 
+      newF = computeMeritFunction(*solnPtr);
+
+      if (newF >= oldF) 
+      {
+	ratio = -1;
+      }
+      else 
+      {
+	
+	rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+	if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	       << "unable to compute F" << endl;
+	  throw "NOX Error";
+	}
+
+	double numerator = oldF - newF;
+	double denominator = 0.0;
+
+	if (userMeritFuncPtr != 0) {
+	  denominator = fabs(oldF - userMeritFuncPtr->
+			     computeQuadraticModel(dir,oldSoln));
+	}
+	else 
+	  denominator = fabs(dir.dot(oldSoln.getGradient()) + 
+			     0.5 * bVec.dot(bVec));
+
+	ratio = numerator / denominator;
+	if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+	  cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	       << utils.sciformat(denominator) << "=" << ratio << endl;
+
+	// WHY IS THIS CHECK HERE?
+	if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
+	  ratio = -1;
+      }
+    }  // end ratio computation
 
     if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
       cout << "radius = " << utils.sciformat(radius, 1);
@@ -601,11 +621,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     if (ratio < contractTriggerRatio) 
     {
       if (stepType == InexactTrustRegionBased::Newton) {
-	if (userNormPtr != 0) {
-	  radius = userNormPtr->norm(newtonVec);
-	}
-	else 
-	  radius = newtonVec.norm();
+	radius = computeNorm(newtonVec);
       }
       radius = max(contractFactor * radius, minRadius);
     }
@@ -637,11 +653,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
     soln.computeF();
-    if (userNormPtr != 0) {
-      radius = userNormPtr->norm(newtonVec);
-    }
-    else
-      radius = newtonVec.norm();
+    radius = computeNorm(newtonVec);
     /*if (radius < minRadius)
       radius = 2 * minRadius;*/
   }
@@ -812,30 +824,66 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
       ratio = -1;
     else {
 
-      rtype = oldSoln.applyJacobian(*dirPtr, zVec);
-      if (rtype != NOX::Abstract::Group::Ok)
-	throwError("iterateInexact", "unable to applyJacobian!");
+     // If using Homer Walker's Ared/Pred ratio computation, 
+     // we use F, NOT the merit function, f.
+     if (useAredPredRatio) {
+
+       // bVec = F(x) + J d
+       rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+       if (rtype != NOX::Abstract::Group::Ok) 
+       {
+	 cout << "NOX::Solver::TrustRegionBased::iterate - "
+	      << "unable to compute F" << endl;
+	 throw "NOX Error";
+       } 
+       bVec.update(1.0, oldSoln.getF(), 1.0);
+
+       // Compute norms
+       double oldNormF = computeNorm(oldSoln.getF());
+       double newNormF = computeNorm(soln.getF());
+       double normFLinear = computeNorm(bVec);;
+       
+       ratio = (oldNormF - newNormF) / (oldNormF - normFLinear);
+       
+       // Print the ratio values if requested
+       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+	 double numerator = oldNormF - newNormF;
+	 double denominator = oldNormF - normFLinear;
+	 cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	      << utils.sciformat(denominator) << "=" << ratio << endl;
+       }
+
+       // Update the merit function (newF used when printing iteration status)
+       newF = computeMeritFunction(*solnPtr);
+
+     }
+     else {  // Default ratio computation
+
+       rtype = oldSoln.applyJacobian(*dirPtr, zVec);
+       if (rtype != NOX::Abstract::Group::Ok)
+	 throwError("iterateInexact", "unable to applyJacobian!");
   
-      double numerator = oldF - newF;
-      double denominator = 0.0;
+       double numerator = oldF - newF;
+       double denominator = 0.0;
 
-      if (userMeritFuncPtr != 0) {
-	denominator = fabs(oldF - userMeritFuncPtr->
-			   computeQuadraticModel(dir,oldSoln));
-      }
-      else 
-	denominator = fabs(dir.dot(oldSoln.getGradient()) + 
-			   0.5 * zVec.dot(zVec));
+       if (userMeritFuncPtr != 0) {
+	 denominator = fabs(oldF - userMeritFuncPtr->
+			    computeQuadraticModel(dir,oldSoln));
+       }
+       else 
+	 denominator = fabs(dir.dot(oldSoln.getGradient()) + 
+			    0.5 * zVec.dot(zVec));
 
-      ratio = numerator / denominator;
-      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
-	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
-	     << utils.sciformat(denominator) << "=" << ratio << endl;
+       ratio = numerator / denominator;
+       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+	 cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	      << utils.sciformat(denominator) << "=" << ratio << endl;
 
-      // WHY IS THIS CHECK HERE?
-      if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
-	ratio = -1;
-    }
+       // WHY IS THIS CHECK HERE?
+       if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
+	 ratio = -1;
+     }
+    } 
 
     if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
       cout << "radius = " << utils.sciformat(radius, 1);

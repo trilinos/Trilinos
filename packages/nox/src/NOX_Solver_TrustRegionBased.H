@@ -198,6 +198,16 @@ sublist based to the solver.
 
 - "Recovery Step" - Defaults to 1.0.
 
+- "Use Ared/Pred Ratio Calculation" (boolean) - Defaults to false. If
+  set to true, this option replaces the algorithm used to compute the
+  improvement ratio, \f$ \rho \f$, as described above.  The improvement
+  ratio is replaced by an "Ared/Pred" sufficient decrease criteria
+  similar to that used in line search algorithms (see Eisenstat and
+  Walker, SIAM Journal on Optimization V4 no. 2 (1994) pp 393-422):
+  - \f$\rho = \frac{\|F(x) \| - \| F(x + d) \| }
+                   {\| F(x) \| - \| F(x) + Jd \| } \f$
+
+
 <B>Output Paramters</B>
 
 A sublist for output parameters called "Output" will be created and contain the following parameters:
@@ -365,6 +375,9 @@ protected:
   
   //! Stores a user supplied merit function if supplied in the parameter list.
   NOX::Parameter::MeritFunction* userMeritFuncPtr;
+
+  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
+  bool useAredPredRatio;
 
 };
 } // namespace Solver

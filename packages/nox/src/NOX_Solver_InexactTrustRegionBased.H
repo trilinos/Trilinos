@@ -211,9 +211,19 @@ sublist based to the solver.
 
 - "Use Counters" - Boolean.  If set to true, solver statistics will be stored.
 
-- "Use Cauchy in Newton Direction" - Boolean.  If set to true, the initial 
-  guess for the Newton direction computation will use the Cauchy direction 
-  as the initial guess. 
+- "Use Ared/Pred Ratio Calculation" (boolean) - Defaults to false. If
+  set to true, this option replaces the algorithm used to compute the
+  improvement ratio, \f$ \rho \f$, as described above.  The improvement
+  ratio is replaced by an "Ared/Pred" sufficient decrease criteria
+  similar to that used in line search algorithms (see Eisenstat and
+  Walker, SIAM Journal on Optimization V4 no. 2 (1994) pp 393-422):
+  - \f$\rho = \frac{\|F(x) \| - \| F(x + d) \| }
+                   {\| F(x) \| - \| F(x) + Jd \| } \f$
+
+- "Use Cauchy in Newton Direction" - Boolean.  Used only by the
+  "Inexact Trust Region" algorithm.  If set to true, the initial guess
+  for the Newton direction computation will use the Cauchy direction as
+  the initial guess.
 
 - "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the solver parameter list (see Output Parameters).
 
@@ -484,6 +494,9 @@ protected:
     step size of all dogleg steps.
   */
   double sumDoglegFractions;
+
+  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
+  bool useAredPredRatio;
 
 };
 } // namespace Solver
