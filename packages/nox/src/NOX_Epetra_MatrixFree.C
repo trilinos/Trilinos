@@ -127,37 +127,37 @@ int MatrixFree::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Mu
   return 0;
 }
 
-int MatrixFree::InvRowSums(Epetra_Vector& x) const{return 0;}
+int MatrixFree::InvRowSums(Epetra_Vector& x) const{return 1;}
   
-int MatrixFree::LeftScale(const Epetra_Vector& x){return 0;}
+int MatrixFree::LeftScale(const Epetra_Vector& x){return 1;}
   
-int MatrixFree::InvColSums(Epetra_Vector& x) const{return 0;}
+int MatrixFree::InvColSums(Epetra_Vector& x) const{return 1;}
   
-int MatrixFree::RightScale(const Epetra_Vector& x){return 0;}
+int MatrixFree::RightScale(const Epetra_Vector& x){return 1;}
   
-double MatrixFree::NormInf() const{return 0.0;}
+double MatrixFree::NormInf() const{return 1.0;}
 
-double MatrixFree::NormOne() const{return 0.0;}
+double MatrixFree::NormOne() const{return 1.0;}
   
-int MatrixFree::NumGlobalNonzeros() const{return 0;}
+int MatrixFree::NumGlobalNonzeros() const{return 1;}
   
-int MatrixFree::NumGlobalRows() const{return 0;}
+int MatrixFree::NumGlobalRows() const{return 1;}
   
-int MatrixFree::NumGlobalCols() const{return 0;}
+int MatrixFree::NumGlobalCols() const{return 1;}
   
-int MatrixFree::NumGlobalDiagonals() const{return 0;}
+int MatrixFree::NumGlobalDiagonals() const{return 1;}
   
-int MatrixFree::NumMyNonzeros() const{return 0;}
+int MatrixFree::NumMyNonzeros() const{return 1;}
   
-int MatrixFree::NumMyRows() const{return 0;}
+int MatrixFree::NumMyRows() const{return 1;}
   
-int MatrixFree::NumMyCols() const{return 0;}
+int MatrixFree::NumMyCols() const{return 1;}
   
-int MatrixFree::NumMyDiagonals() const{return 0;}
+int MatrixFree::NumMyDiagonals() const{return 1;}
   
-bool MatrixFree::LowerTriangular() const{return true;}
+bool MatrixFree::LowerTriangular() const{return false;}
 
-bool MatrixFree::UpperTriangular() const{return true;}
+bool MatrixFree::UpperTriangular() const{return false;}
 
 const Epetra_Comm& MatrixFree::Comm() const
 {
