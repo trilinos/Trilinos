@@ -128,6 +128,51 @@ The file \TriExe{epetra/ex1.cpp} presents the use of some of the above
 introduced functions.  For a description of the syntax, please refer to
 the Epetra Class Documentation.
 
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{15cm} | }
+\hline
+\verb!NumGlobalPoints()!\\
+The total number of points across all processes. \\
+\\
+\verb!NumMyPoints()!\\
+The number of points on the calling process. \\
+\\
+ \verb!MinAllGID()! \\
+The minimum global index value across all processes.  \\
+\\
+ \verb!MaxAllGID()! \\
+The maximum global index value across all processes. \\
+\\
+ \verb!MinMyGID()!\\
+The minimum global index value on the calling process. \\
+\\
+ \verb!MaxMyGID()! \\
+The maximum global index value on the calling process. \\
+\\
+ \verb!MinLID()! \\
+The minimum local index value on the calling process. \\
+\\
+ \verb!MaxLID()! \\
+The maximum local index value on the calling process. \\
+\\
+ \verb!LinearMap()! \\
+Returns true if the elements are distributed linear across processes,
+i.e., process 0 gets the first n/p elements, process 1 gets the next
+n/p elements, etc. where n is the number of elements and p is the number
+of processes.  \\
+\bf \verb!DistributedGlobal()! \\
+Returns true if the element space of the map spans more than one
+process. This will be true in most cases, but will be false in serial
+cases and for objects that are created via the derived Epetra\_LocalMap
+class.  \\
+\hline
+\end{tabular}
+\caption{Some methods of the class {\tt Epetra\_Map}}
+\label{tab:epetra_map}
+\end{center}
+\end{table}
+
 %%%
 %%%
 %%%
@@ -429,32 +474,38 @@ the table.
 \begin{tabular}{ | p{15cm} | }
 \hline
 \verb!int NumMyELement()! \\
-\hspace{1cm} returns the local vector length on the
+returns the local vector length on the
 calling processor \\
+\\
 \verb!int NumGlobalElements()! \\
-\hspace{1cm} returns the  global length\\
+returns the  global length\\
+\\
 \verb!int Norm1(double *Result) const! \\
-\hspace{1cm} returns the 1-norm (defined as $\sum_i^n |
+returns the 1-norm (defined as $\sum_i^n |
   x_i|$ (see also \verb!Norm2! and \verb!NormInf!)\\
+\\
 \verb!Normweigthed(double *Result) const! \\
-\hspace{1cm} returns the  2-norm, defined as
+ returns the  2-norm, defined as
 $\sqrt{ \frac{1}{n} \sum_{j=1}^{n} (w_j x_j)^2}$) \\
+\\
 \verb!int Dot(const Epetra MultiVector A, double *Result) const! \\
-\hspace{1cm} computes
+ computes
 the dot product of each corresponding pair of vectors \\
+\\
 \verb!int Scale(double ScalarA, const Epetra MultiVector &A! \\
-\hspace{1cm} 
 Replace multi-vector values with scaled values of A,
 \verb!this=ScalarA*A! \\
+\\
 \verb!int MinValue(double *Result) const! \\
-\hspace{1cm} compute minimum value of
-each vector in multi-vector (see also \verb!MaxValue! and \verb!MeanValue!\\
+compute minimum value of
+each vector in multi-vector (see also \verb!MaxValue! and \verb!MeanValue!)\\
+\\
 \verb!int PutScalar(double Scalar)! \\
-\hspace{1cm} Initialize all values in a
+Initialize all values in a
 multi-vector with constant value \\
+\\
 \verb!int Random()! \\
-\hspace{1cm}  set multi-vector values to random numbers \\
-
+ set multi-vector values to random numbers \\
 \hline
 \end{tabular}
 \caption{Some methods of the class {\tt Epetra\_Vector}}

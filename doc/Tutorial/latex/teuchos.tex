@@ -42,22 +42,21 @@ of the Teuchos tools and is built by default when Teuchos is enabled
 contains more special purpose tools like XML parsing and communicators
 (\verb!--enable-teuchos-extended!).
 
-Standard classes in the Teuchos namespace include low-level math functions ({\tt BLAS}
-and {\tt LAPACK}, thin layers of C++ code wrapping BLAS and
+Standard classes in the Teuchos namespace include low-level math
+functions (BLAS and LAPACK, thin layers of C++ code wrapping BLAS and
 LAPACK routines), serial dense matrix classes (for basic operations like
 addition, multiplication, scaling, logical comparison, norms, etc. This
 class also provides support for a dense matrix that needs to be
 replicated across processors in a parallel application), a parameters'
-list (ParameterList), a memory management class (
-\verb!RefCountPtr!), performance monitoring classes
-(\verb!TimeMonitor! and \verb!Flops!), and exception
-handling macro (\verb!TEST_FOR_EXCEPTION!).
+list (ParameterList), a memory management class (RefCountPtr),
+performance monitoring classes (TimeMonitor and Flops),
+and exception handling macro (TEST\_FOR\_EXCEPTION).
 
 Extended classes include a templated array class
-(\verb!Array!), XML utils ({\tt XMLObject},
-{\tt FileInputSource} and {\tt StringInputSource}),
-and MPI wrappers (\verb!MPISession!, \verb!MPIComm!
-and \verb!ContainerComm!).
+(Array), XML utils ({XMLObject},
+{FileInputSource} and { StringInputSource}),
+and MPI wrappers (MPISession, MPIComm
+and ContainerComm).
 
 \medskip
 
@@ -86,7 +85,7 @@ In this Chapter, we will present the following classes:
 
 A parameters' list is a C++ containers of objects that can be used as
 parameters for some operations. Almost all kind of C++ objects can be
-stick into the same list. A very basic usage for an hypotetical list for
+stick into the same list. A very basic usage for a hypotetical list for
 an iterative linear solver might be as follows:
 \begin{verbatim}
 Teuchos::ParameterList List;
@@ -94,7 +93,11 @@ List.setParameter("max number of iterations", 1550);
 List.setParameter("tolerance", 1e-10);
 List.setParameter("output prefix", "Velocity-Jacobian");
 \end{verbatim}
-Lists can contain sublists, created as 
+Note that in the {\sl same} list, the user can stick integer, double,
+strings, pointers, or any other C++ object\footnote{The list store a
+  copy the input object. The user can also pass pointers to arrays. In
+  this case, only the pointer is copied, not the array itself.}.  Lists
+can contain sublists, created as
 \begin{verbatim}
 Teuchos::ParameterList & PrecList = List.sublist("preconditioner");
 \end{verbatim}
@@ -108,17 +111,25 @@ of a parameter or of a sublist as
 List.isParameter("tolerance");
 List.isSublist("preconditioner");
 \end{verbatim}
+and retrive the value of a given parameter as
+\begin{verbatim}
+int its = List.get("max number of iterations", 100);
+double tol = List.get("tolerance",1e-12);
+\end{verbatim}
+The second input parameter of method \verb!get()! specifies the type of
+the parameter. It this is not 
 It is important to note that mispelled parameters (which may mean with
 additional space characters) are simply ignored. Therefore, it is
 important to be aware that a given parameter has not been used. Unused
-parameters can be retrived with method \verb!unused()!.
+parameters can be printed with method \verb!unused(cout)!.
 
 \begin{remark}
   \verb!Teuchos::ParameterList! is currently used by several Trilinos
   packages. For instance, all parameters for Amesos objects~(see Chapter
   \ref{chap:amesos}) and the smoothed aggregation preconditioning class
-  \verb!ML_Epetra::Preconditioner! (see Section~\ref{sec:ml_prec}) are set
-  through a parameters' list.
+  \verb!ML_Epetra::Preconditioner! (see
+  Section~\ref{sec:ml:preconditioner}) are set through a parameters'
+  list.
 \end{remark}
 
 
@@ -129,7 +140,7 @@ parameters can be retrived with method \verb!unused()!.
 \subsection{Teuchos::RefCountPtr}
 \label{sec:teuchos:RefCountPtr}
 
-Teuchos::RefCountPtr is a template class, whose functionalities are very
+Teuchos::RefCountPtr is a templated class, whose functionalities are very
 similar to the garbage collector of Java. Memory allocated through
 RefCountPtr will automatically freed when no longer referenced, avoding
 memory leaks.
@@ -290,7 +301,7 @@ rest of Teuchos from the details of C++ to Fortran translation.
 
 \verb!Teuchos::LAPACK! is a serial interface only, as LAPACK functions
 are. Users interested in the parallel counterpart of LAPACK, ScaLAPACK,
-can use the Amesos package; see~\ref{chap:amesos}.
+can use the Amesos package; see Chapter~\ref{chap:amesos}.
 
 \verb!Teuchos::LAPACK! is a templated class for float, double and
 complex arithmetics (the latter only available if Teuchos has been

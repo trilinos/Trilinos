@@ -43,14 +43,14 @@ The reader not interested in the examples may decide to skip this chapter.
 %%%
 
 \subsection{Trilinos\_Util\_CommandLineParser}
-\label{sec:triutils:shell}
+\label{sec:triutils:CLP}
 
-\verb!Trilinos\_Util\_CommandLineParser! is a class to parse the command
+\verb!Trilinos_Util_CommandLineParser! is a class to parse the command
 line.  With this class, it is easy to handle
 input line arguments and shell variables. For instance, the user can
 write
 \begin{verbatim}
-$ ./ex2.exe -nx 10 -tol 1e-6 -solver=cg 
+$ ./ex2.exe -nx 10 -tol 1e-6 -solver=cg
 \end{verbatim}
 and then easily retrieve the value of {\tt nx}, {\tt tol}, and {\tt solver}.
  
@@ -115,7 +115,7 @@ A typical constructor requires the problem type and an Epetra\_Comm, and
 it is followed by a set of instructions to specify the problem. For
 instance, we may have:
 \begin{verbatim}
-Trilinos_Util_MatrixGallery Gallery("laplace_2d", Comm);
+Trilinos_Util_CrsMatrixGallery Gallery("laplace_2d", Comm);
 Gallery.set("problem_size",100);
 Gallery.set("map_type","linear");
 Gallery.set("solution_type","random");
@@ -124,40 +124,53 @@ which creates a matrix corresponding to the discretization of a 2D
 Laplacian on a Cartesian grid with 100 points. The nodes are decomposed
 linearly, and the exact solution is a random vector.
 
+Alternatively, it is possible to read a matrix stored in Harwell/Boeing
+format as follows:
+\begin{verbatim}
+Trilinos_Util_CrsMatrixGallery Gallery("hb", Comm);
+Gallery.set("matrix_name",''bcsstk14.rsa'');
+Gallery.set("map_type","greedy");
+\end{verbatim}
+This snipper will read matrix (and, if available, solution and
+right-hand side) from the file \verb!bcsstk14.rsa!, and will partition
+the matrix across the processes using a gredy algorithm.
+
 A list of currently avaialble problems is reported below. By notation,
-\verb!IntValue! refers to a generic positive integer, \verb!a,b,c! to
-double-precision values.
+\verb!IntValue! refers to a generic positive integer, {\tt
+  a,b,c,d,e,f,g} to double-precision values or the Epetra\_Vector.
+defined on the map \verb!Gallery.GetMap()!. In the latter case, vector
+elements {\tt i} will be use to define the specified coefficient for row
+{\tt i}.  Note that some matrices are dense, but still stored as
+Epetra\_CrsMatrix. $i$ and $j$ are supposed to start from 0 (C-style).
 
 \vskip .1 in
 
-\choicebox{\tt eye}{Creates an identity matrix. The dimension of the
+\choicebox{\tt eye}{Creates an identity matrix. The size of the
   problem is set using {\tt Set("problem size", IntValue)}, or,
   alternatively, by {\tt Set("nx", IntValue)}.}
 
 \choicebox{\tt diag}{Creates a diagonal matrix. The elements on the
-  diagonal can be set using {\tt Set("a",value)}, where value is either a
-  double, or an Epetra\_Vector. Problem size set as for {\tt eye}.}
+  diagonal can be set using {\tt Set("a",value)}. The problem size is
+  set as for {\tt eye}.}
 
-\choicebox{\tt tridiag}{ Creates a tridiagonal matrix. The diagonal
-  element is set using {\tt Set("a", DiagValue)}, the subdiagonal using
-  {\tt Set("b",SubDiagValue)}, and the superdiagonal using
-  {\tt Set("c",SupDiagValue)}.  DiagValue, SubDiagValue, and SupDiagValue can
-  be scalar or Epetra vectors.  In the latter case, all vectors must
-  have the same number of elements. Elements i will be use to define row
-  i. Problem size specified as for {\tt eye}.}
+\choicebox{\tt tridiag}{Creates a tridiagonal matrix. The diagonal
+  element is set using {\tt Set("a", a)}, the subdiagonal using {\tt
+    Set("b",b)}, and the superdiagonal using {\tt Set("c",c)}. The
+  problem size is specified as for {\tt eye}.}
 
-\choicebox{\tt laplace\_1d}{ Create the classical tridiagonal matrix
-  with stencil [-1, 2, -1].  Problem size specified as for {\tt eye}.}
+\choicebox{\tt laplace\_1d}{Creates the classical tridiagonal matrix
+  with stencil [-1, 2, -1].  The problem size is specified as for {\tt
+    eye}.}
 
 \choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the
-  stencil of a 2D Laplacian operator on a structured cartesian grid.
-  Problem size is specified using {\tt Set("problem size", IntValue)}.
-  In this case, IntValue must be a square number. Alternatively, one can
-  set the number of nodes along the x-axis and y-axis, using {\tt
-    Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
+  stencil of a 2D Laplacian operator on a structured Cartesian grid.
+  The problem size is specified using {\tt Set("problem size",
+    IntValue)}.  In this case, IntValue must be a square number.
+  Alternatively, one can set the number of nodes along the x-axis and
+  y-axis, using {\tt Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
 
 \choicebox{\tt cross\_stencil\_2d}{Creates a matrix with the same stencil of
-  "laplace\_2d", but with arbitrary values. The stencil is
+  {\tt laplace\_2d}, but with arbitrary values. The stencil is
   \[
   A =   \left[
     \begin{tabular}{ccc}
@@ -165,59 +178,67 @@ double-precision values.
   b & a & c \\
     & d &   \\
   \end{tabular}
-  \right]
+  \right] .
   \]
-  and each value can be either a double, or and Epetra\_Vector. Problem
-  size specified as in "laplace\_2d."}
+  The problem size is specified as in {\tt laplace\_2d}.}
 
-\choicebox{\tt laplace\_3d}{Creates a matrix corresponding to the stencil of
-  a 3D Laplacian operator on a structured cartesian grid. Problem size
-  specified using Set("problme size",IntValue). In this case, IntValue
-  must be a cube. Alternatively, one can specify the number of nodes
-  along the axis, using {\tt Set("nx",IntValue), Set("ny",IntValue)}, and
-  {\tt Set("nz",IntValue)}.}
+\choicebox{\tt laplace\_3d}{Creates a matrix corresponding to the
+  stencil of a 3D Laplacian operator on a structured Cartesian grid. The
+  problem size is specified using Set("problme size",IntValue). In this
+  case, IntValue must be a cube. Alternatively, one can specify the
+  number of nodes along the axis, using {\tt Set("nx",IntValue),
+    Set("ny",IntValue)}, and {\tt Set("nz",IntValue)}.}
 
-\choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix stencil
-  correspond to that of a 3D Laplace operator on a structured grid. On a
-  given x-y plane, the stencil is a in {\tt laplace 2d}. The value on the
-  plane below is set using Set("f",F), and in the plane above with
-  {\tt Set("g",G")}. Problem size specifed as in {\tt laplace3d}.}
+\choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix
+  stencil correspond to that of a 3D Laplace operator on a structured
+  grid. On a given x-y plane, the stencil is as in {\tt laplace 2d}. The
+  value on the plane below is set using {\tt Set("f",F)}, and in the
+  plane above with {\tt Set("g",G")}. The problem size is specifed as in
+  {\tt laplace3d}.}
 
 \choicebox{\tt hb}{The matrix is read from file. File name is specified
   by {\tt Set("file name", FileName)}. {\tt FileName} is a C++ string.
-  Problem size is automatically read from file.}
+  Problem size is automatically determined.}
 
 \choicebox{\tt lehmer}{Returns a symmetric positive definite matrix, such
-  that A(i,j) = (i+1)/(j+1) (for j>=i), and (j+1)/(i+1) (for j<j). This
+  that
+  \[
+  A_{i,j} = 
+  \left\{
+    \begin{array}{ll}
+      \frac{i+1}{j+1} & if  j \ge i \\
+      \frac{j+1}{i+1} & otherwise \\
+    \end{array}
+  \right. .
+  \]
+  This
   matrix has three properties: is totally nonnegative, the inverse
   is tridiagonal and esplicitly known, The condition number is bounded
-  as n <= cond(A) <= 4*n (n is the problem size).}
+  as $ n \le cond(A) \le 4*n$ (where $n$ is the problem size).}
 
 \choicebox{\tt minij}{Returns the symmetric positive definite matrix
-  defined sd A(i,j) = min(i+1,j+1). More information can be found in the
+  defined as $A_{i,j} = \min(i+1,j+1)$. More information can be found in the
   help of MATLAB's gallery function.}
 
 \choicebox{\tt ris}{Returns a symmetric Hankel matrix with elements
-  A(i,j) = 0.5/(n-(i+1)-(j+1)+1.5), with n equals problem size. (i and j
-  start from 0.)  The eigenvalues of A cluster around -$\pi/2$ and
-  $\pi/2$.}
+  $A_{i,j} = 0.5/(n-(i+1)-(j+1)+1.5)$, where $n$ is problem size. The
+  eigenvalues of A cluster around $-\pi/2$ and $\pi/2$.}
 
 \choicebox{\tt hilbert}{This is a famous example of a badly conditioned
-  matrix. The elements are defined as 1/((i+1)+(j+1)-1). (i and j start
-  from 0.)}
+  matrix. The elements are defined as $1/((i+1)+(j+1)-1)$.}
 
 \choicebox{\tt jordblock}{Creates a Jordan block with eigenvalue set via
-  {Set("a",DoubleVal)}.}
+  {\tt Set("a",DoubleVal)}.}
 
-\choicebox{\tt  cauchy}{Creates a particular instance of a Cauchy matrix with
-  elements A(i,j) = 1/(i+j) (where i and j range from 1 to
-  NumGlobalElements).  Explicit formulas are known for the inverse and
-  determinand of a Cauchy matrix. For this particular Cauchy matrix, the
-  determinant is nonzero and the matrix is totally positive.}
+\choicebox{\tt cauchy}{Creates a particular instance of a Cauchy matrix
+  with elements $A(i,j) = 1/(i+j+2)$ Explicit formulas are known for the
+  inverse and determinand of a Cauchy matrix. For this particular Cauchy
+  matrix, the determinant is nonzero and the matrix is totally
+  positive.}
 
-\choicebox{\tt fiedler}{Creates a matrix whose element are A(i,j) = | i - j |.
-  The matrix is symmetric, and has a dominant positive eigenvalue, and
-  all the other eigenvalues are negative.}
+\choicebox{\tt fiedler}{Creates a matrix whose element are $A_{i,j} = |
+  i - j |$.  The matrix is symmetric, and has a dominant positive
+  eigenvalue, and all the other eigenvalues are negative.}
 
 \choicebox{\tt hanowa}{Creates a matrix whoe eigenvalues lie on a vertical line
   in the complex plane. The matrix has the 2x2 block structure
@@ -227,29 +248,31 @@ double-precision values.
         diag(1:m) &     a * eye(n/2) \\
 \end{tabular}
       \right].
-        \]
-  The complex eigenvalues are of the form a +- k*i, for 1 <= k <= n/2.
-  The default value for a is -1.}
-
-\choicebox{\tt kms}{Create the n-by-n Kac-Murdock-Szego Toepliz matrix
-  such that A(i,j) = rho\^(abs(i-j)) (for real rho only). Default value
-  for rho is 0.5.  The inverse of this matrix is tridiagonal, and it is
-  positive definite if and only if 0 < abs(rho) < 1.}
-
-\choicebox{\tt parter}{Creates a matrix A(i,j) = 1/(i-j+0.5). A is a
-  Cauchy and a Toeplliz matrix. Most of the singular values of A are
-  very close to $\pi$.}
+      \]
+      The complex eigenvalues are of the form a $+- k*i$, for $1 \leq
+      k \leq n/2$.  The default value for a is -1.}
+    
+    \choicebox{\tt kms}{Create the n-by-n Kac-Murdock-Szego Toepliz
+      matrix such that $A_{i,j} = \rho^{|i-j|}$ (for real $\rho$ only).
+      Default value is $\rho= 0.5.$  The inverse of this matrix is
+      tridiagonal, and it is positive definite if and only if $0 <
+      |\rho| < 1$.}
+    
+    \choicebox{\tt parter}{Creates a matrix $A_{i,j} = 1/(i-j+0.5)$.
+      This matrix is a Cauchy and a Toepliz matrix. Most of the singular
+      values of A are very close to $\pi$.}
 
 \choicebox{\tt pei}{Creates the matrix $\alpha$ * eye(n) + ones(n). This
-  matrix is singular for $\alpha = 0$ or -n.}
+  matrix is singular for $\alpha = 0$ or $-n$.}
 
 \choicebox{\tt vander}{Create the Vandermonde matrix whose second last
   column is the vector c. The j-th column is given by $A(:,j) = C^{(n-j)}$.}
 
 \medskip
 
-Some choices are available to define the exact solution, using
-Set("exact solution", value). value can be: 
+Some choices are available to define the exact solution, using {\tt
+  Set("exact solution", value)}. {\tt value} can assume the following
+values:
 
 \vskip .1 in
 
@@ -263,19 +286,20 @@ Set("exact solution", value). value can be:
 \medskip
 
 \verb!CreateMap()! allows some different maps. The type of map is set
-using Set("map",value). Value is a string, defined as reported below.
+{\tt using Set("map",value)}. {\tt Value} is a string, defined as
+reported below.
 
 \vskip .1 in
 
 \choicebox{\tt linear}{Create a linear map. Elements are divided into
   continuous chunks among the processors.}
 
-\choicebox{\tt box}{Used for problems defined on cartesian grids over a
-  square. The nodes is subdivided into {\tt mx x my} subdomains. {\tt
+\choicebox{\tt box}{Used for problems defined on Cartesian grids over a
+  square. The domain subdivided into {\tt mx x my} subdomains.  {\tt
     mx} and {\tt my} are specified via {\tt Set("mx",IntValue)} and {\tt
     Set("my",IntValue)}.}
 
-\choicebox{\tt interlaces}{Elements are subdivided so that element i is
+\choicebox{\tt interlaced}{Elements are subdivided so that element i is
   assigned to process i\%NumProcs.}
   
 \choicebox{\tt random}{Assign each node to a random process}
@@ -313,14 +337,14 @@ G.ComputeResidual(residual);
 G.ComputeDiffBetweenStartingAndExactSolutions(residual);
 \end{verbatim}
 
-An Epetra\_VrbMatrix pointer is returned by calling
-\verb!GetVbrMatrix()!.  This matrix is formed starting from the
-Epetra\_CsrMatrix, and it is formally equivalent to the CrsMatrix
-returned by \verb!GetMatrix()!, the difference being that each node of
-the CrsMatrix is replicated num\_PDE\_eqns times (this value is passed in
-input, or set via Set("num pde eqns",IntValue)). 
-A pointer to the linear problem defined by the Vbr matrix is returned by
-method \verb!GetVbrLinearProblem()!.
+%An Epetra\_VrbMatrix pointer is returned by calling
+%\verb!GetVbrMatrix()!.  This matrix is formed starting from the
+%Epetra\_CsrMatrix, and it is formally equivalent to the CrsMatrix
+%returned by \verb!GetMatrix()!, the difference being that each node of
+%the CrsMatrix is replicated num\_PDE\_eqns times (this value is passed in
+%input, or set via Set("num pde eqns",IntValue)). 
+%A pointer to the linear problem defined by the Vbr matrix is returned by
+%method \verb!GetVbrLinearProblem()!.
 
 \medskip
 
@@ -374,7 +398,16 @@ int main(int argc, char *argv[])
 
 }
 \end{verbatim}
-This program may be ran with the following command line:
+This program can be executed with the following command line:
 \begin{verbatim}
-$ ex1.exe -problem_type=laplace_2d -problem_size=10000
+[msala:triutils]> mpirun -np 4 ex1.exe -problem_type=laplace_2d \
+                  -problem_size=10000
 \end{verbatim}
+
+\begin{remark}
+  Most of the examples reported in the following chapters use both
+  Trilinos\_Util\_CommandLineParser and Trilinos\_Util\_CrsMatrixGallery
+  to define the distributed matrix. The user is encouraged to test a
+  given method using matrices with different numerical properties.
+\end{remark}
+

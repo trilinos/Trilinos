@@ -145,7 +145,7 @@ accomplished using Trilinos.
     Light-weight interface to BLAS and LAPACK: & Epetra 
     & Chapter \ref{chap:epetra_mat} \\
     Templated interface to BLAS and LAPACK, arbitrary-precision
-    arithmetic, parameters; list, smart pointers:& Teuchos &
+    arithmetic, parameters' list, smart pointers:& Teuchos &
     Section \ref{sec:teuchos:LAPACK} \\
     Definition of abstract interfaces to vectors, linear operators, and
     solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$   & --
@@ -253,7 +253,7 @@ $ ../configure --prefix=${TRILINOS_HOME}/${TRILINOS_ARCH} \
   --enable-mpi --with-mpi-compilers \
   --enable-triutils --enable-aztecoo \
   --enable-ifpack --enable-anasazi \
-  --enable-ml --enable-nox  \
+  --enable-ml --enable-nox  --enable-teuchos \
   --enable-nox-epetra | tee configure_${TRILINOS_ARCH}.log
 $ make | tee make_${TRILINOS_ARCH}.log
 $ make install | tee make_install_${TRILINOS_ARCH}.log
@@ -269,6 +269,15 @@ and delete the \verb!--enable-mpi --with-mpi-compilers! options.
   procedure for beginning MPI jobs on their computer system(s). It may be
   necessary to specify on the configure line the location of MPI include
   files and libraries.
+\end{remark}
+
+\begin{remark}
+  Compiling Trilinos requires time! For instance, on a Pentium 4, 1.7
+  Ghz with Intel compilers, to configure Trilinos with LOCA, NOX,
+  AztecOO, Anasazi, IFPACK, Triutils, EpetraExt, Teuchos, ML and Epetra,
+  required 2 minutes and 11 seconds. The compilation took 5 minutes and
+  41 seconds. The reader is encouraged to start by enabling a limited
+  number of packages, then re-configuring Trilinos as required.
 \end{remark}
 
 %%%
@@ -313,7 +322,7 @@ the library to link (other libraries may be needed).  The variable
 In this example, the name of the executable is \verb!ex1.exe!.  The
 command to run this example on 2 processors is often
 \begin{verbatim}
-$ mpirun -np 2 ./ex1.exe
+[msala:epetra]> mpirun -np 2 ./ex1.exe
 \end{verbatim}
 Please check the local MPI documentation for more details. 
 

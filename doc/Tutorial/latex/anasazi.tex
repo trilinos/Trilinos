@@ -44,7 +44,7 @@ In this Chapter we present:
 \begin{itemize}
 \item the Epetra interface to Anasazi objects (in
   Section~\ref{sec:anasazi_interface});
-\item the use of Anasazi to the solution of an eigenvalue problem (in
+\item the use of Anasazi for the solution of an eigenvalue problem (in
   Section~\ref{sec:anasazi_solver}).
 \end{itemize}
 
@@ -158,6 +158,34 @@ Anasazi::PetraVec<double> eveci(Map, nev);
 MyBlockArnoldi.getiEvecs( eveci )
 \end{verbatim}
 
+Example \TriExe{anasazi/ex1.cpp} shows how to compute the eigenvectors
+correspoding to the lowest eigenvalues for a 1D Laplace problem. The
+results are shows in Figure~\ref{fig:anasazi:1D}.
+Table~\ref{tab:anasazi:Lapl} reports the lower eigenvalue for 1D, 2D and
+3D Laplace problems.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[height=6cm]{anasazi_Laplace_1D.ps}
+  \caption{Lowest eigenvalues of a 1D Laplace problem, with $h=1/33$.}
+  \label{fig:anasazi:1D}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| l | c c c |}    
+    \hline
+& {\tt laplace\_1d} & {\tt laplace\_2d} &{\tt laplace\_3d} \\
+     \hline
+     $h = 1/33$ & 0.00905 & 0.0181 & 0.02716 \\
+     $h = 1/65$ & 0.00235  & 0.00467 & 0.007006 \\
+     $h = 1/129$ & 0.0005936 & 0.0011861 & - \\
+     $h = 1/257$ & 0.000149 & 0.0002983 & - \\
+     $h = 1/513$ & 3.75e-5 & - & - \\
+     \hline
+  \end{tabular}
+  \caption{$\lambda_{min}$ for 1D, 2D and 3D Laplace problem on a Cartesian mesh.}
+  \label{tab:anasazi:Lapl}
+\end{table}
 %%%
 %%%
 %%%

@@ -195,6 +195,114 @@ introduced in Section~\ref{sec:sparse_vbr}. If required, other matrix
 formats can be introduced by deriving the Epetra\_RowMatrix virtual
 class.
 
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{15cm} | }
+\hline
+\tt virtual int 
+Multiply (bool TransA, const Epetra\_MultiVector \&X, Epetra\_MultiVector
+\&Y) const=0 \\
+Returns the result of a Epetra\_RowMatrix multiplied by a
+Epetra\_MultiVector X in Y.  \\
+\\
+\tt virtual int 
+Solve (bool Upper, bool Trans, bool UnitDiagonal, const
+Epetra\_MultiVector \&X, Epetra\_MultiVector \&Y) const=0 \\
+Returns result of a local-only solve using a triangular Epetra\_RowMatrix with Epetra\_MultiVectors X and Y. \\
+\\
+\tt virtual int 
+InvRowSums (Epetra\_Vector \&x) const=0 \\
+Computes the sum of absolute values of the rows of the Epetra\_RowMatrix,
+results returned in x.  \\
+\\
+\tt virtual int 
+LeftScale (const Epetra\_Vector \&x)=0 \\
+Scales the Epetra\_RowMatrix on the left with a Epetra\_Vector x.  \\
+\\
+\tt virtual int 
+InvColSums (Epetra\_Vector \&x) const=0 \\
+Computes the sum of absolute values of the columns of the
+Epetra\_RowMatrix, results returned in x.  \\
+\\
+\tt virtual int 
+RightScale (const Epetra\_Vector \&x)=0 \\
+Scales the Epetra\_RowMatrix on the right with a Epetra\_Vector x.  \\
+\hline
+\end{tabular}
+\caption{Mathematical methods of {\tt Epetra\_RowMatrix}}
+\label{tab:row_matrix}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{15cm} | }
+\hline
+\tt virtual bool 
+Filled () const=0 \\
+If FillComplete() has been called, this query returns true, otherwise it
+returns false. \\
+\tt virtual double 
+NormInf () const=0 \\
+Returns the infinity norm of the global matrix. \\
+\tt virtual double 
+NormOne () const=0 \\
+Returns the one norm of the global matrix. \\
+\tt virtual int 
+NumGlobalNonzeros () const=0 \\
+Returns the number of nonzero entries in the global matrix. \\
+\tt virtual int 
+NumGlobalRows () const=0 \\
+Returns the number of global matrix rows. \\
+\tt virtual int 
+NumGlobalCols () const=0 \\
+Returns the number of global matrix columns. \\
+\tt virtual int 
+NumGlobalDiagonals () const=0 \\
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. \\
+\tt virtual int 
+NumMyNonzeros () const=0 \\
+Returns the number of nonzero entries in the calling processor's portion
+of the matrix. \\
+\tt virtual int 
+NumMyRows () const=0 \\
+Returns the number of matrix rows owned by the calling processor. \\
+\tt virtual int 
+NumMyCols () const=0 \\
+Returns the number of matrix columns owned by the calling processor. \\
+\tt virtual int 
+NumMyDiagonals () const=0 \\
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. \\
+\tt virtual bool 
+LowerTriangular () const=0 \\
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. \\
+\tt virtual bool 
+UpperTriangular () const=0 \\
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. \\
+\tt virtual const Epetra\_Map \& 
+RowMatrixRowMap () const=0 \\
+Returns the Epetra\_Map object associated with the rows of this matrix. \\
+\tt virtual const Epetra\_Map \& 
+RowMatrixColMap () const=0 \\
+Returns the Epetra\_Map object associated with the columns of this
+matrix. \\
+\tt virtual const Epetra\_Import * 
+RowMatrixImporter () const=0 \\
+Returns the Epetra\_Import object that contains the import operations for
+distributed operations. \\
+\hline
+\end{tabular}
+\caption{Atribute access methods of {\tt Epetra\_RowMatrix}}
+\label{tab:distr_vec}
+\end{center}
+\end{table}
+
+
+
 \begin{remark}
 Some numerical algorithms require  the application of the linear
 operator only. For this reason, some applications find convenient to not

@@ -334,6 +334,63 @@ Once the linear problem has been defined, the user can:
 \item change $A$, using \verb!SetOperator(&A)!.
 \end{itemize}
 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{15cm} | }
+\hline
+\tt void 
+SetPDL (ProblemDifficultyLevel PDL) \\
+Set problem difficulty level.  \\
+\tt void 
+SetOperator (Epetra\_RowMatrix *A) \\
+Set Operator A of linear problem AX = B using an Epetra\_RowMatrix.  \\
+\tt void 
+SetOperator (Epetra\_Operator *A) \\
+Set Operator A of linear problem AX = B using an Epetra\_Operator.  \\
+\tt void 
+SetLHS (Epetra\_MultiVector *X) \\
+Set left-hand-side X of linear problem AX = B. \\
+\tt void 
+SetRHS (Epetra\_MultiVector *B) \\
+Set right-hand-side B of linear problem AX = B.  \\
+\tt int 
+CheckInput () const \\
+Check input parameters for existence and size consistency. \\
+\tt int  
+LeftScale (const Epetra\_Vector \&D) \\
+Perform left scaling of a linear problem.  \\
+\tt int 
+RightScale (const Epetra\_Vector \&D) \\
+Perform right scaling of a linear problem. \\
+\tt Epetra\_Operator * 
+GetOperator () const\\
+Get a pointer to the operator A. \\
+\tt Epetra\_RowMatrix * 
+GetMatrix () const \\
+Get a pointer to the matrix A. \\
+\tt Epetra\_MultiVector * 
+GetLHS () const \\
+Get a pointer to the left-hand-side X. \\
+\tt Epetra\_MultiVector * 
+GetRHS () const \\
+Get a pointer to the right-hand-side B. \\
+\tt ProblemDifficultyLevel 
+GetPDL () const \\
+Get problem difficulty level. \\
+\tt bool 
+IsOperatorSymmetric () const \\
+Get operator symmetry bool. \\
+\hline
+\end{tabular}
+\caption{Methods of {\tt Epetra\_LinearProblem}}
+\label{tab:distr_vec}
+\end{center}
+\end{table}
+
+
+
+
 %%%
 %%%
 %%%

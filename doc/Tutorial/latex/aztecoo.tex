@@ -358,6 +358,64 @@ A_Solver.Iterate(Niters, 1.0E-12);
 \end{verbatim}
 \end{enumerate}
 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{5cm} | p{10cm} | }
+\hline
+\verb!AZ_cg! & Conjugate gradient (only applicable to symmetric positive
+definite matrices). \\
+\verb!AZ_cg_condnum! & As \verb!AZ_cg!, but also estimates the condition
+number of the preconditioned linear operator. \\
+\verb!AZ_gmres! & Restarted generalized minimal residual (returned in
+\verb!params[AZ_condnum]!). \\ 
+\verb!AZ_gmres_condnum! & As \verb!AZ_gmres!, but also estimates the condition
+number of the preconditioned linear operator  (returned in
+\verb!params[AZ_condnum]!). \\ 
+\verb!AZ_cgs! &  Conjugate gradient squared.\\
+\verb!AZ_tfqmr! & Transpose-free quasi minimal residual. \\
+\verb!AZ_bicgstab! &  Bi-conjugate gradient with stabilization.\\
+\verb!AZ_lu! & Sparse direct solver (one process only). This requires
+AztecOO to be configured with {\tt --enable-aztecoo-azlu}. \\
+\hline
+\end{tabular}
+\caption{Avialable choices for {\tt options[AZ\_solver]}.}
+\label{tab:aztec:solver}
+\end{center}
+\end{table}
+
+An example of the performances of AztecOO preconditioners is reported in
+Table~\ref{tab:aztecoo:dd}. The table reports the estimated condition
+number of one-level Schwarz preconditioner with mininal overlap. The
+problem is a 2D Laplace operator, discretized using a 5-point formula on
+a regular Cartesian grid. As predicted by theory, the condition number
+is linear $\mathcal{O}(1/hH)$, where $h$ is the mesh size, and $H$ is
+the size of each (square) subdomain.
+
+File \TriExe{aztecoo/ex3.cpp} reports the code used to obtain these
+retults. The code uses the Trilinos\_Util\_CrsMatrixGallery class to
+create the matrix. For instance, to estimate the condition number with
+$h=1/60$ and $H=1/3$, one may have:
+\begin{verbatim}
+[msala:aztecoo]> mpirun -np 9 ex3.exe -problem_type=laplace_2d \
+                 -problem_size=900 -map_type=box
+\end{verbatim}
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| c | c c c |}
+    \hline
+    & $h=1/30$ & $h=1/60$ & $h=1/120$ \\
+    \hline
+    $H=1/3$ & 40.01 & 83.80 & 183.41 \\
+    $H=1/4$ & 51.46 & 106.01 & 223.22 \\
+    $H=1/6$ & 79.19 & 15040 & 311.26 \\
+    $H=1/8$ & -     & 191.06 & 403.29 \\
+    \hline
+  \end{tabular}
+  \caption{Condition number for one-level domain decomposition precondititoner on a square.}
+  \label{tab:aztec:dd}
+\end{table}
 %%%
 %%%
 %%%
