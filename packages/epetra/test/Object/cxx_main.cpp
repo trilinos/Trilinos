@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   Epetra_Object obj;
 
   // Test Epetra_Object label and the method to get the label attribute
-  char* ObjLabel = obj.Label();
+  const char* ObjLabel = obj.Label();
   const char* ObjLabel1 = "Epetra::Object";
   if (verbose) cout << endl << endl << "This should say " << ObjLabel1 << ": " << ObjLabel << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(ObjLabel1,ObjLabel),ierr);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   // Test Epetra_Object SetLabel attribute set method
   const char* NewObjLabel = "New name for Epetra_Object";
   obj.SetLabel(NewObjLabel);
-  char* NewObjLabel1 = obj.Label(); 
+  const char* NewObjLabel1 = obj.Label(); 
   if (verbose) cout << endl << "This should say " << NewObjLabel << ": " << NewObjLabel1 << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(NewObjLabel1,NewObjLabel),ierr);
 
@@ -105,19 +105,19 @@ int main(int argc, char *argv[]) {
   EPETRA_TEST_ERR(!(1==TbM),ierr);
 
   Epetra_Object obj2(NewObjLabel); // pass only a label
-  char* NewObjLabel2 = obj2.Label();
+  const char* NewObjLabel2 = obj2.Label();
   if (verbose) cout << endl << endl << "This should say " << NewObjLabel << ": " << NewObjLabel2 << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(NewObjLabel2,NewObjLabel),ierr);
 
   Epetra_Object obj3(NewObjLabel,1); // pass a label and a TracebackMode
-  char* NewObjLabel3 = obj3.Label();
+  const char* NewObjLabel3 = obj3.Label();
   int TbM1 = obj3.GetTracebackMode();
   if (verbose) cout << endl << "This should say " << NewObjLabel << "," << "1: " << NewObjLabel3 << "," << TbM1 << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(NewObjLabel3,NewObjLabel),ierr);
   EPETRA_TEST_ERR(!(1==TbM1),ierr);
   
   Epetra_Object obj4(obj3); // copy constructor
-  char* NewObjLabel4 = obj4.Label();
+  const char* NewObjLabel4 = obj4.Label();
   int TbM2 = obj4.GetTracebackMode();
   if (verbose) cout << endl << "This should say " << NewObjLabel << "," << "1: " << NewObjLabel4 << "," << TbM2 << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(NewObjLabel4,NewObjLabel),ierr);
