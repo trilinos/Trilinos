@@ -131,7 +131,7 @@ bool NOX::LineSearch::Manager::reset(Parameter::List& params)
   }
   else 
   {
-    printWarning("reset", "invalid choice (" + method + ") for direction method");
+    printWarning("reset", "invalid choice (" + method + ") for linesearch method");
     return false;
   }
 
