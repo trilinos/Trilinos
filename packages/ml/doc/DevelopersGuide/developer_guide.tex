@@ -1108,6 +1108,7 @@ The following variables can be used to track timing:
 
 \subsection{Checking Memory Usage}
 
+\subsubsection{Older versions of valgrind}
 Probably, the easiest way to check the memory usage (under Linux) is to use
 \verb!valgrind!, like for instance
 \begin{verbatim}
@@ -1119,9 +1120,59 @@ This also works in parallel:
 \end{verbatim}
 (but it is slower, and can produce a lot of output.)
 
+\subsubsection{valgrind, version 2.1.2.}  Using this version in parallel seems to be
+more involved than previous versions.  The following works for mpich-1.2.5 on a Linux x86
+box running Redhat Enterprise 3.  Note:  you must have root access!  (This information was
+pulled from \verb!http://www.hlrs.de/people/keller/MPI/mpich_valgrind.html!.)
+\be
+\item \verb!cd /usr/local/mpich! (or wherever mpich is installed)
+\item \verb!cd bin!
+\item \verb!cp mpirun_dbg.ddd mpirun_dbg.valgrind!
+\item Edit \verb!mpirun_dbg.valgrind! so that it reads as follows:
+\begin{verbatim}
+#!/bin/sh
+cmdLineArgs=""
+p4pgfile=""
+p4workdir=""
+prognamemain=""
+while [ 1 -le $# ] ; do
+  arg=$1
+  shift
+  case $arg in
+     -cmdlineargs)
+        cmdLineArgs="$1"
+        shift
+    ;;
+     -p4pg)
+        p4pgfile="$1"
+    shift
+    ;;
+     -p4wd)
+        p4workdir="$1"
+    shift
+    ;;
+     -progname)
+        prognamemain="$1"
+    shift
+    ;;
+  esac
+done
+#
+valgrind --tool=memcheck --leak-check=yes
+ --suppressions=/usr/local/valgrind/mpich-1.2.5.supp $prognamemain $cmdLineArgs
+ -p4pg $p4pgfile -p4wd $p4workdir
+\end{verbatim}
+See the valgrind documentation on how to generate the suppression file
+\verb!mpich-1.2.5.supp!.
+Your favorite valgrind options go in the file above on the last line.
+
+\item Now you can valgrind your executable: \verb!mpirun -np 2 -dbg=valgrind ./ml_example.exe!.
+\ee
+
+\subsubsection{Internal memory checking in \ML}
 Another way is to compile \ML with the flag \verb!ML_MEM_CHECK!. Then,
-the user can insert a call to \verb!ML_print_it()!, to print out all the
-\ML allocagted memory that is still to be deleted. This check can be
+the user can insert a call to \verb!ML_print_it()!, to print all the
+\ML allocated memory that is still to be deleted. This check can be
 expensive for large runs.
 
 \subsection{Attaching a Debugger to ML}
