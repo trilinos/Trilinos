@@ -23,13 +23,10 @@ extern "C" {
 #include "params_const.h"
 #include "all_allo_const.h"
 
-/* static double hcut_size_links (ZZ *zz, PHGraph *hg, int p, Partition part);
-   static double hcut_size_total (PHGraph *hg, Partition part);
-*/
 
 /*
- *  Main routine for Zoltan interface to hypergraph partitioning.
- *  Builds input data structures, set parameters, etc.
+ *  Main routine for Zoltan interface to hypergraph partitioning. Also routines
+ *  that build input data structures, set parameters, etc.
  */
 
 
