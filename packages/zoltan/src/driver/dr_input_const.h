@@ -13,12 +13,13 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_dr_input_const = "$Id$";
-#endif
 
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
+
+#ifndef lint
+static char *cvs_dr_input_const = "$Id$";
+#endif
 
 /* define the input file types */
 #define NEMESIS_FILE 0
