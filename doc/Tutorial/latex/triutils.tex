@@ -124,9 +124,9 @@ following example creates a matrix corresponding to the discretization
 of a 2D Laplacian on a Cartesian grid with 100 points:
 \begin{verbatim}
 Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", Comm);
-Gallery.set("problem_size",100);
-Gallery.set("map_type","linear");
-Gallery.set("solution_type","random");
+Gallery.Set("problem_size",100);
+Gallery.Set("map_type","linear");
+Gallery.Set("exact_solution","random");
 \end{verbatim}
 The nodes are decomposed linearly, and the exact solution is a random
 vector.
@@ -134,8 +134,8 @@ vector.
 The next example will read a matrix stored in Harwell/Boeing format:
 \begin{verbatim}
 Trilinos_Util::CrsMatrixGallery Gallery("hb", Comm);
-Gallery.set("matrix_name","bcsstk14.rsa");
-Gallery.set("map_type","greedy");
+Gallery.Set("matrix_name","bcsstk14.rsa");
+Gallery.Set("map_type","greedy");
 \end{verbatim}
 The example reads the matrix (and, if available, solution and right-hand
 side) from the file \verb!bcsstk14.rsa!, and partitions the matrix
