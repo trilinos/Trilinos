@@ -452,6 +452,9 @@ operator()( OriginalTypeRef orig  )
     Epetra_Import Adj2Import( Adj2.ColMap(), RowMap );
     Adj2ColColorMap.Import( RowColorMap, Adj2Import, Insert );
 
+    if( verbose_ ) cout << "RowColoringMap:\n " << RowColorMap;
+    if( verbose_ ) cout << "Adj2ColColorMap:\n " << Adj2ColColorMap;
+
     vector<int> rowOrder( nRows );
     if( reordering_ == 0 || reordering_ == 1 ) 
     {
@@ -502,13 +505,14 @@ operator()( OriginalTypeRef orig  )
             ++testcolor;
           }
         }
-        RowColorMap[ rowOrder[row] ] = color;
+        Adj2ColColorMap[ rowOrder[row] ] = color;
       }
     }
+    if( verbose_ ) cout << "RowColorMap after Greedy:\n " << RowColorMap;
 
     ColorMap = new Epetra_MapColoring( ColMap );
-    Epetra_Import ColImport( ColMap, RowMap );
-    ColorMap->Import( RowColorMap, ColImport, Insert );
+    Epetra_Import ColImport( ColMap, Adj2.ColMap() );
+    ColorMap->Import( Adj2ColColorMap, ColImport, Insert );
   }
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
