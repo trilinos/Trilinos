@@ -164,7 +164,7 @@ int main()
   NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
+    NOX::StatusTest::NormF statusTestA(1.0e-5, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
