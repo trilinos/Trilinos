@@ -5,6 +5,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
+#include <algorithm>
 
 // ====================================================================== 
 Ifpack_OverlappingRowMatrix::
