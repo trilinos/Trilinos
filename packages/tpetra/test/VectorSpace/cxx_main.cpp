@@ -7,7 +7,8 @@
 #include <iostream>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_VectorSpace.hpp" 
+#include "Tpetra_VectorSpace.hpp"
+#include "Tpetra_Vector.hpp"
 
 //Tpetra::ElementSpace<ORDINALTYPE>* esCreator(int constructorNum, bool verbose, bool debug);
 
@@ -29,6 +30,8 @@ int main(int argc, char* argv[]) {
   const Tpetra::SerialPlatform<int, float> platformV;
 	Tpetra::VectorSpace<int, float> vectorspace(elementspace, platformV);
 	Tpetra::VectorSpace<int, float> v2(vectorspace);
+
+	Tpetra::Vector<int, float> vector(vectorspace);
 
 	return(0);
 }

@@ -95,7 +95,8 @@ DIST_H = \
 DIST = 
 
 COMP_H = \
-	$(srcdir)/Tpetra_VectorSpace.hpp
+	$(srcdir)/Tpetra_VectorSpace.hpp \
+	$(srcdir)/Tpetra_Vector.hpp
 
 COMP = 
 

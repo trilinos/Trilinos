@@ -176,9 +176,12 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   : Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
+	const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+
 	// initial throws
-	if (numGlobalElements < 0)
-    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= 0.", -1);
+	if (numGlobalElements < zero)
+    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= " + toString(zero) + ".", -1);
 
 	// platform & comm setup
 	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
@@ -188,7 +191,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	// compute numMyElements
   OrdinalType numMyElements = numGlobalElements / numImages;
   OrdinalType remainder = numGlobalElements % numImages;
-  OrdinalType start_index = myImageID * (numMyElements + 1);
+  OrdinalType start_index = myImageID * (numMyElements + one);
   if (myImageID < remainder)
     numMyElements++;
   else
@@ -200,9 +203,9 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   
 	// setup min/maxs
   OrdinalType minAllGID = indexBase;
-  OrdinalType maxAllGID = minAllGID + numGlobalElements - 1;
+  OrdinalType maxAllGID = minAllGID + numGlobalElements - one;
   OrdinalType minMyGID = start_index + indexBase;
-  OrdinalType maxMyGID = minMyGID + numMyElements - 1;
+  OrdinalType maxMyGID = minMyGID + numMyElements - one;
 	
 	// call ESData constructor
 	ElementSpaceData_ = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
@@ -220,11 +223,15 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	: Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
+	const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	const OrdinalType negOne = zero - one;
+
 	// initial throws
-  if(numGlobalElements < -1) 
-    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= -1.", -1);
-  if(numMyElements < 0) 
-    throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= 0.", -2);
+  if(numGlobalElements < negOne) 
+    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= " + toString(negOne) + ".", -1);
+  if(numMyElements < zero) 
+    throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= " + toString(zero) + ".", -2);
 
 	// platform & comm setup
 	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
@@ -236,8 +243,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	//   check to see if user's value for numGlobalElements is either -1 
 	//   (in which case we use our computed value) or matches ours.
   OrdinalType global_sum;
-  comm->sumAll(&numMyElements, &global_sum, 1);
-	if(numGlobalElements == -1)
+  comm->sumAll(&numMyElements, &global_sum, one);
+	if(numGlobalElements == negOne)
 		numGlobalElements = global_sum;
 	else if(numGlobalElements != global_sum) 
 		throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
@@ -249,12 +256,12 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	
 	// setup min/maxs
   OrdinalType minAllGID = indexBase;
-  OrdinalType maxAllGID = minAllGID + numGlobalElements - 1;
+  OrdinalType maxAllGID = minAllGID + numGlobalElements - one;
 	OrdinalType start_index;
-	comm->scanSum(&numMyElements, &start_index, 1);
+	comm->scanSum(&numMyElements, &start_index, one);
 	start_index -= numMyElements;
 	OrdinalType minMyGID = start_index + indexBase;
-	OrdinalType maxMyGID = minMyGID + numMyElements - 1;
+	OrdinalType maxMyGID = minMyGID + numMyElements - one;
 
 	// call ESData constructor
 	ElementSpaceData_ = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
@@ -272,11 +279,15 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   : Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
+	const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+	const OrdinalType negOne = zero - one;
+
 	// initial throws
-  if(numGlobalElements < -1) 
-    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= -1.", -1);
-  if(numMyElements < 0) 
-    throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= 0.", -2);
+  if(numGlobalElements < negOne) 
+    throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= " + toString(negOne) + ".", -1);
+  if(numMyElements < zero) 
+    throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= " + toString(zero) + ".", -2);
 
 	// platform & comm setup
 	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
@@ -288,8 +299,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	//   check to see if user's value for numGlobalElements is either -1 
 	//   (in which case we use our computed value) or matches ours.
   OrdinalType global_sum;
-  comm->sumAll(&numMyElements, &global_sum, 1);
-	if(numGlobalElements == -1)
+  comm->sumAll(&numMyElements, &global_sum, one);
+	if(numGlobalElements == negOne)
 		numGlobalElements = global_sum;
 	else if(numGlobalElements != global_sum)
 		throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
@@ -300,21 +311,20 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	map<OrdinalType, OrdinalType> glMap;
 	OrdinalType minMyGID = indexBase;
 	OrdinalType maxMyGID = indexBase;
-	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-	if(numMyElements > 0) {
-		for(OrdinalType i = 0; i < numMyElements; i++) {
+	if(numMyElements > zero) {
+		for(OrdinalType i = zero; i < numMyElements; i++) {
 			lgMap[i + zero] = elementList[i]; // lgmap: LID=key, GID=mapped
 			glMap[elementList[i]] = (i + zero); // glmap: GID=key, LID=mapped
 		}
-    minMyGID = elementList[0];
-    maxMyGID = elementList[numMyElements - 1];
+    minMyGID = elementList[zero];
+    maxMyGID = elementList[numMyElements - one];
 	}
 
 	// set min/maxAllGIDs
 	OrdinalType minAllGID;
 	OrdinalType maxAllGID;
-	comm->minAll(&minMyGID, &minAllGID, 1);
-	comm->maxAll(&maxMyGID, &maxAllGID, 1);
+	comm->minAll(&minMyGID, &minAllGID, one);
+	comm->maxAll(&maxMyGID, &maxAllGID, one);
   if (minAllGID < indexBase)
     throw reportError("Minimum global element index = " + toString(minAllGID) + 
 											" is less than index base = " + toString(indexBase) +".", -4);
@@ -390,18 +400,19 @@ bool ElementSpace<OrdinalType>::isMyLID (OrdinalType LID) const {
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::getMyGlobalElements(OrdinalType* elementList) const {
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
   if(elementList == 0)
     throw reportError("Pointer does not have child allocated.", 3);
   else if(isContiguous()) {
 		OrdinalType nME = getNumMyElements();
 		OrdinalType minMyGID = getMinMyGID();
-    for(OrdinalType i = 0; i < nME; i++)
+    for(OrdinalType i = zero; i < nME; i++)
       elementList[i] = minMyGID + i;
 	}
   else { // not contiguous
     typename std::map<OrdinalType, OrdinalType>::iterator lgi = ElementSpaceData_->lgMap_.begin();
     typename std::map<OrdinalType, OrdinalType>::iterator lgmax = ElementSpaceData_->lgMap_.end();
-    for(OrdinalType i = 0; lgi != lgmax; i++) {
+    for(OrdinalType i = zero; lgi != lgmax; i++) {
       elementList[i] = lgi->second;
       lgi++;
     }
@@ -412,7 +423,7 @@ void ElementSpace<OrdinalType>::getMyGlobalElements(OrdinalType* elementList) co
 template<typename OrdinalType>
 OrdinalType* ElementSpace<OrdinalType>::getMyGlobalElements() const {
 	OrdinalType nME = getNumMyElements();
-  if((ElementSpaceData_->myGlobalElements_ == 0) && (nME > 0)) {
+  if((ElementSpaceData_->myGlobalElements_ == 0) && (nME > Teuchos::OrdinalTraits<OrdinalType>::zero())) {
 		ElementSpaceData_->myGlobalElements_ = new OrdinalType[nME];
     getMyGlobalElements(ElementSpaceData_->myGlobalElements_);
   }
@@ -461,15 +472,17 @@ bool ElementSpace<OrdinalType>::isSameAs (ElementSpace<OrdinalType> const& Eleme
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::print(ostream& os) const {
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+
   OrdinalType* myGlobalElements1 = getMyGlobalElements();
   OrdinalType myImageID = comm().getMyImageID();
   OrdinalType numImages = comm().getNumImages();
 	OrdinalType minLID = getMinLID();
 	OrdinalType nME = getNumMyElements();
   
-  for (int imageCtr = 0; imageCtr < numImages; imageCtr++) {
+  for (OrdinalType imageCtr = zero; imageCtr < numImages; imageCtr++) {
     if (myImageID == imageCtr) {
-      if (myImageID == 0) {
+      if (myImageID == zero) {
 				os <<  "\nNumber of Global Elements  = "; os << getNumGlobalElements(); os << endl;
 				os <<    "Maximum of all GIDs        = "; os << getMaxAllGID(); os << endl;
 				os <<    "Minimum of all GIDs        = "; os << getMinAllGID(); os << endl;
@@ -490,7 +503,7 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
       os <<  "      Global Index "; os << " ";
       os << endl;
     
-      for (OrdinalType i = 0, lid = minLID; i < nME; i++, lid++) {
+      for (OrdinalType i = zero, lid = minLID; i < nME; i++, lid++) {
 				os.width(14);
 				os <<  myImageID; os << "    ";
 				os.width(14);
@@ -513,7 +526,7 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::directorySetup() {
-  if(getNumGlobalElements() != 0)
+  if(getNumGlobalElements() != Teuchos::OrdinalTraits<OrdinalType>::zero())
     if(ElementSpaceData_->Directory_ == 0)
       ElementSpaceData_->Directory_ = platform().createDirectory(*this); // Make directory
 }
