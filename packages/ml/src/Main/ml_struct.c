@@ -20,11 +20,11 @@
 #endif
 
 #ifdef SUPERLU
-extern int SuperLU_Solve(void *, int, double *, int, double *);
-extern int SuperLU_SolveLocal(void *, double *, double *);
+extern int ML_SuperLU_Solve(void *, int, double *, int, double *);
+extern int ML_SuperLU_SolveLocal(void *, double *, double *);
 #elif DSUPERLU
-extern int SuperLU_Solve(void *, int, double *, int, double *);
-extern int SuperLU_SolveLocal(void *, double *, double *);
+extern int ML_SuperLU_Solve(void *, int, double *, int, double *);
+extern int ML_SuperLU_SolveLocal(void *, double *, double *);
 #endif
 
 
@@ -3626,11 +3626,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = SuperLU_Solve;
+      sl->csolve->func->internal = ML_SuperLU_Solve;
       sl->csolve->func->ML_id = ML_INTERNAL;
       ML_CSolve_Set_Label( sl->csolve, "SuperLU");
 
@@ -3662,7 +3662,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
             solver->dble_params1 = NULL;
          }
          solver->reuse_flag = -999;
-         SuperLU_Solve((void*)solver, 0, NULL, 0, NULL);
+         ML_SuperLU_Solve((void*)solver, 0, NULL, 0, NULL);
          solver->reuse_flag = 0;
          /* Charles look at these  */
          /* if (solver->Mat1 != NULL )
@@ -3748,14 +3748,17 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* extract local matrix using getrow function and store it into a    */
    /* CSR data object                                                   */
    /* ----------------------------------------------------------------- */
-   if ( level < 0 || level >= ml_handle->ML_num_levels ) {
+
+   if ( level < 0 || level >= ml_handle->ML_num_levels ) 
+   {
       printf("ML_Gen_CoarseSolverSuperLU error : invalid level number.\n");
       exit(-1);
    }
    op      = (ML_Operator *) &ml_handle->Amat[level];
    data    = op->data;
    osize   = op->outvec_leng;
-   if (op->invec_leng < 0) {
+   if (op->invec_leng < 0) 
+   {
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
    }
@@ -3924,11 +3927,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    coarsest_level = level;
    sl = &(ml_handle->SingleLevel[coarsest_level]);
-   if ( sl->csolve->func->internal == SuperLU_Solve ) reuse = 1;
+   if ( sl->csolve->func->internal == ML_SuperLU_Solve ) reuse = 1;
    else
    {
       reuse = 0;
-      sl->csolve->func->internal = SuperLU_Solve;
+      sl->csolve->func->internal = ML_SuperLU_Solve;
       sl->csolve->func->ML_id = ML_INTERNAL;
       ML_CSolve_Set_Label( sl->csolve, "Dist. SuperLU");
    }
