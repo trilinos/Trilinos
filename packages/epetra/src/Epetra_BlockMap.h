@@ -317,7 +317,7 @@ class Epetra_BlockMap: public Epetra_Object {
   
   //@{ \name Local/Global ID accessor methods.
   //! Returns the processor IDs and corresponding local index value for a given list of global indices
-  /*! For each element (GID) of a given a list of global element numbers (stored in GIDList) of length NumIDs,
+  /*! For each element (GID) of a given list of global element numbers (stored in GIDList) of length NumIDs,
       this function returns (in PIDList) the with processor that owns the GID for this map and returns the
       local index (in LIDList) of the GID on that processor.
   */

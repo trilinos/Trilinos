@@ -34,7 +34,6 @@
 #include "Epetra_IntSerialDenseVector.h"
 
 class Epetra_Comm;
-class Epetra_Directory;
 class Epetra_HashTable;
 
 //! Epetra_BlockMapData:  The Epetra BlockMap Data Class.
@@ -59,7 +58,6 @@ class Epetra_BlockMapData : public Epetra_Data {
   //@}
 
   const Epetra_Comm * Comm_;
-  Epetra_Directory * Directory_;
   
   Epetra_IntSerialDenseVector LID_;
   Epetra_IntSerialDenseVector MyGlobalElements_;

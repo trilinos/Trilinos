@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     }
     else if (verbose) cout << "Checked OK\n\n" << endl;
   }
-	
+
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm)" << endl;
     Map = new Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm);

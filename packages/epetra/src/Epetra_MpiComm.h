@@ -62,10 +62,11 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   Epetra_MpiComm(const Epetra_MpiComm & Comm);
 
-	//! Clone method.
-	Epetra_Comm * Clone() const {
-		return(dynamic_cast<Epetra_Comm *>(new Epetra_MpiComm(*this)));
-	};
+  //! Clone method.
+  Epetra_Comm * Clone() const
+    {
+      return(new Epetra_MpiComm(*this));
+    };
 
   //! Epetra_MpiComm Destructor.
   /*! Completely deletes a Epetra_MpiComm object.  

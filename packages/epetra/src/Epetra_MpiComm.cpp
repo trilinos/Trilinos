@@ -39,9 +39,9 @@ Epetra_MpiComm::Epetra_MpiComm(MPI_Comm Comm) :
 //=============================================================================
 Epetra_MpiComm::Epetra_MpiComm(const Epetra_MpiComm & Comm) : 
   Epetra_Object(Comm.Label()), 
-	MpiCommData_(Comm.MpiCommData_)
+  MpiCommData_(Comm.MpiCommData_)
 {
-	MpiCommData_->IncrementReferenceCount();
+  MpiCommData_->IncrementReferenceCount();
 }
 
 //=============================================================================

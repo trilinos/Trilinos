@@ -77,11 +77,6 @@ int main(int argc, char *argv[]) {
   verbose = (globalverbose>0);
 #endif
 
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
-
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
   if (verbose) cout << Comm <<endl;
@@ -94,14 +89,6 @@ int main(int argc, char *argv[]) {
   int NumGlobalElements = NumMyElements*NumProc;
   int IndexBase = 0;
   
-  // Test Petra-defined uniform linear distribution constructor
-
-  if (verbose&&rank==0) {
-    cout << "\n*********************************************************"<<endl;
-    cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
-    cout << "*********************************************************" << endl;
-  }
-
   Epetra_Map Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
   EPETRA_TEST_ERR( Drumm1(Map, verbose),ierr);

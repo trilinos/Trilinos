@@ -622,8 +622,6 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
     return; // Nothing to do
 
   else if (LinearMap() || numMyElements == 0) {
-    if (BlockMapData_->Directory_ == 0) 
-      BlockMapData_->Directory_ = Comm().CreateDirectory(*this); // Make directory
     return; // Nothing else to do
   }
   else {
@@ -641,6 +639,10 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
     
     //Hash everything else
     if(i < numMyElements) {
+      if (BlockMapData_->LIDHash_ != NULL) {
+	delete BlockMapData_->LIDHash_;
+      }
+
       BlockMapData_->LIDHash_ = new Epetra_HashTable(numMyElements - i + 1 );
       for(; i < numMyElements; ++i )
 	BlockMapData_->LIDHash_->Add( BlockMapData_->MyGlobalElements_[i], i );
@@ -663,8 +665,6 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
 
 #endif
     
-    if (BlockMapData_->Directory_ == 0)
-      BlockMapData_->Directory_ = Comm().CreateDirectory(*this); // Make directory
   }
 }
 
@@ -725,11 +725,20 @@ int Epetra_BlockMap::FindLocalElementID(int PointID, int & ElementID, int & Elem
 }
 
 //==============================================================================
-int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList, int * SizeList) const {
-
-  if (BlockMapData_->Directory_!=0) {
-    EPETRA_CHK_ERR(BlockMapData_->Directory_->GetDirectoryEntries(NumIDs, GIDList, PIDList, LIDList, SizeList));
+int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList,
+				  int * PIDList, int * LIDList,
+				  int * SizeList) const
+{
+  Epetra_Directory* directory = Comm().CreateDirectory(*this);
+  if (directory == NULL) {
+    return(-1);
   }
+
+  EPETRA_CHK_ERR( directory->GetDirectoryEntries(NumIDs, GIDList,
+						 PIDList, LIDList, SizeList) );
+
+  delete directory;
+
   return(0);
 }
 
@@ -865,10 +874,6 @@ Epetra_BlockMap & Epetra_BlockMap::operator= (const Epetra_BlockMap & map) {
     BlockMapData_ = map.BlockMapData_;
     BlockMapData_->IncrementReferenceCount();
   }
-  
-  if (BlockMapData_->Directory_ != NULL) {
-    delete BlockMapData_->Directory_;
-    BlockMapData_->Directory_ = Comm().CreateDirectory(*this); // Make directory
-  }
+
   return(*this);
 }

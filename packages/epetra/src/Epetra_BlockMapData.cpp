@@ -29,7 +29,6 @@
 
 #include "Epetra_BlockMapData.h"
 #include "Epetra_HashTable.h"
-#include "Epetra_Directory.h"
 #include "Epetra_Comm.h"
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 // Use the new LID hash table approach by default
@@ -37,30 +36,27 @@
 
 //=============================================================================
 Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm) 
-	: Comm_(Comm.Clone()),
-		Directory_(0),
-		NumGlobalElements_(NumGlobalElements),
-		IndexBase_(IndexBase),
-		ElementSize_(ElementSize),
-		LastContiguousGIDLoc_(0),
-		LIDHash_(0)
+  : Comm_(Comm.Clone()),
+    NumGlobalElements_(NumGlobalElements),
+    IndexBase_(IndexBase),
+    ElementSize_(ElementSize),
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
 {
-	//cout << "--BMD created, addr: " << this << endl; //DATA_DEBUG
+  //cout << "--BMD created, addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
-Epetra_BlockMapData::~Epetra_BlockMapData() {
+Epetra_BlockMapData::~Epetra_BlockMapData()
+{
   if(LIDHash_ != 0) {
     delete LIDHash_;
     LIDHash_ = 0;
   }
-  if(Directory_ != 0) {
-    delete Directory_;
-    Directory_ = 0;
+
+  if(Comm_ != 0) {
+    delete Comm_;
+    Comm_ = 0;
   }
-	if(Comm_ != 0) {
-		delete Comm_;
-		Comm_ = 0;
-	}
-	//cout << "--BMD destroyed, addr: " << this << endl; //DATA_DEBUG
+  //cout << "--BMD destroyed, addr: " << this << endl; //DATA_DEBUG
 }
