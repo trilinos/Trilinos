@@ -62,6 +62,7 @@ class Epetra_RowMatrix;
 class AztecOO;
 class Ifpack_IlukGraph;
 class Ifpack_CrsRiluk;
+class Ifpack_Preconditioner;
 
 namespace NOX {
 //! Improved version of the Epetra support class.
@@ -175,6 +176,7 @@ AZ_last.
   <li> "None" - No preconditioning.  (default)
   <li> "AztecOO" - AztecOO internal preconditioner.  This requires a preconditioner operator that derives from the Epetra_RowMatrix class.  
   <li> "Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix.  
+  <li> "New Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix.  
   <li> "User Defined" - The user supplies an Epetra_Operator derived 
   class.  Users must implement at a minimum the ApplyInverse() function of the Epetra_Operator class since preconditioning of vectors is accomplished through calls to this method.  
   </ul>
@@ -233,6 +235,8 @@ below (See the Aztec 2.1 manual for more information):
   </ul>
 
   </ul>
+
+<li> "New Ifpack Preconditioner" - If the "Preconditioner" flag is set to "New Ifpack" then any of the options supported by the Ifpack Create factory can be specified using a Teuchos::ParameterList containing the Ifpack options and then setting this as a parameter named "IfPack Teuchos Parameter List" in the "Linear Solver" sublist. Note that this requires %NOX to be built with Teuchos::Any support enabled.
 
 <li> "Reuse Preconditioner" - (boolean) If set to true, the group/linear solver will not refactor the preconditioner even if the group's solution vector changes.  This flag tells the group an dlinear system to turn off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
 
@@ -440,6 +444,13 @@ protected:
   */
   virtual bool createIfpackPreconditioner(NOX::Parameter::List& p) const;
 
+  /*! 
+    \brief 
+    Allocates the objects required for using the new version of ifpack preconditioners via the Ifpack Create factory.
+    This is called from NOX::EpetraNew::Group::computePreconditioner().
+  */
+  virtual bool createNewIfpackPreconditioner(NOX::Parameter::List& p) const;
+
 #ifdef HAVE_NOX_ML_EPETRA
   /*! 
     \brief 
@@ -505,7 +516,7 @@ protected:
 				       SeparateMatrix};
   PreconditionerMatrixSourceType precMatrixSource;
 
-  enum PreconditionerType {None_, AztecOO_, Ifpack_, ML_, UserDefined_};
+  enum PreconditionerType {None_, AztecOO_, Ifpack_, NewIfpack_, ML_, UserDefined_};
   PreconditionerType precAlgorithm;
   
   //! Aztec solver object.
@@ -521,6 +532,11 @@ protected:
     Mutable since the applyRightPreconditioner() is a const method.
   */
   mutable Ifpack_CrsRiluk* ifpackPreconditionerPtr;
+
+  /*! \brief Stores the new ifpack preconditioner.
+    Mutable since the applyRightPreconditioner() is a const method.
+  */
+  mutable Ifpack_Preconditioner* newIfpackPreconditionerPtr;
 
 #ifdef HAVE_NOX_ML_EPETRA
   /*! \brief Stores the ml preconditioner.
@@ -568,38 +584,6 @@ protected:
   Epetra_Operator* solveJacOpPtr;
 
 };
-
-// This is a temporary helper class to support ML and should be moved after
-// determining where best to put it.
-#ifdef HAVE_NOX_ML_EPETRA
-class TeuchosParamsAsNOXArbitrary : public Parameter::Arbitrary
-{
-public:
-  TeuchosParamsAsNOXArbitrary(const Teuchos::ParameterList& TPlist)
-    { myName = "NOX::Parameter::Arbitrary Wrapper for Teuchos::ParamaterList";
-      teuchosParamsPtr = new Teuchos::ParameterList(TPlist); }
-
-  ~TeuchosParamsAsNOXArbitrary()
-    { delete teuchosParamsPtr; teuchosParamsPtr = 0; }
-
-  Teuchos::ParameterList* getTeuchosParams() const
-    { return teuchosParamsPtr; }
-
-protected:
-
-  TeuchosParamsAsNOXArbitrary* clone() const
-    { return new TeuchosParamsAsNOXArbitrary(*teuchosParamsPtr); }
-
-  const string& getType() const
-    { return myName; }
-
-private:
-  Teuchos::ParameterList* teuchosParamsPtr;
-  string myName;
-
-};
-#endif
-
 
 } // namespace Epetra
 } // namespace NOX

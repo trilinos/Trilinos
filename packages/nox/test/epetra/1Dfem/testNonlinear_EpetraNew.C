@@ -155,16 +155,67 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);  
+  //lsParams.setParameter("Max Age Of Prec", 3);
+
+  // Various Preconditioner options
   //lsParams.setParameter("Preconditioner", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
+  //lsParams.setParameter("Preconditioner", "Ifpack");
+#ifdef HAVE_NOX_ANY
+  //lsParams.setParameter("Preconditioner", "New Ifpack");
+  Teuchos::ParameterList IfpackList;
+#endif
+
 #ifdef HAVE_NOX_ML_EPETRA
   // Comment out the previous Preconditioner spec and uncomment this line
   // to turn on ML 
   //lsParams.setParameter("Preconditioner", "ML");
+  // create a parameter list for ML options
+  Teuchos::ParameterList MLList;
 #endif
+
   //lsParams.setParameter("Jacobian Operator", "Finite Difference");
   //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
   //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
+
+  // Set specific Preconditioning Package options if valid
+#ifdef HAVE_NOX_ANY
+  if( lsParams.getParameter("Preconditioner", "None") == "New Ifpack" ) {
+    lsParams.setParameter("Ifpack Preconditioner", "ILU");
+    // Can fill Ifpack options into IfpackList here
+
+    lsParams.setParameter("Ifpack Teuchos Parameter List", &IfpackList);
+  }
+#endif
+
+#ifdef HAVE_NOX_ML_EPETRA
+  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
+    // This Teuchos parameter list is needed for ML
+  
+    // These specifications come straight from the example in 
+    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
+  
+    // set defaults for classic smoothed aggregation
+    ML_Epetra::SetDefaults("SA",MLList);
+    // maximum number of levels
+    MLList.set("max levels",5);
+    MLList.set("increasing or decreasing","decreasing");
+    // use Uncoupled scheme to create the aggregate,
+    // from level 3 use the better but more expensive MIS
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("aggregation: type (level 3)", "MIS");
+    // smoother is Gauss-Seidel. Example file
+    // ml_example_epetra_preconditioner_2level.cpp shows how to use
+    // AZTEC's preconditioners as smoothers
+    MLList.set("smoother: type","Gauss-Seidel");
+    // use both pre and post smoothing
+    MLList.set("smoother: pre or post", "both");
+    // solve with serial direct solver KLU
+    MLList.set("coarse: type","Jacobi");
+  
+    lsParams.setParameter("ML Teuchos Parameter List", &MLList);
+  }
+#endif
 
   // Use an Epetra Scaling object if desired
   Epetra_Vector scaleVec(soln);
@@ -189,6 +240,7 @@ int main(int argc, char *argv[])
 
   // **** Ctor #2 - Jac but no Prec
   //NOX::EpetraNew::Interface::Jacobian& iJac = FD;
+  //NOX::EpetraNew::Interface::Jacobian& iJac = interface;
   //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
   //				     iReq, iJac, FD, soln);
 
@@ -196,38 +248,6 @@ int main(int argc, char *argv[])
   //NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
   //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
   //				      iReq, iPrec, FD, soln);
-
-#ifdef HAVE_NOX_ML_EPETRA
-  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
-    // This Teuchos parameter list is needed for ML
-  
-    // These specifications come straight from the example in 
-    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
-  
-    // create a parameter list for ML options
-    Teuchos::ParameterList MLList;
-    // set defaults for classic smoothed aggregation
-    ML_Epetra::SetDefaults("SA",MLList);
-    // maximum number of levels
-    MLList.set("max levels",5);
-    MLList.set("increasing or decreasing","decreasing");
-    // use Uncoupled scheme to create the aggregate,
-    // from level 3 use the better but more expensive MIS
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("aggregation: type (level 3)", "MIS");
-    // smoother is Gauss-Seidel. Example file
-    // ml_example_epetra_preconditioner_2level.cpp shows how to use
-    // AZTEC's preconditioners as smoothers
-    MLList.set("smoother: type","Gauss-Seidel");
-    // use both pre and post smoothing
-    MLList.set("smoother: pre or post", "both");
-    // solve with serial direct solver KLU
-    MLList.set("coarse: type","Amesos_KLU");
-  
-    NOX::EpetraNew::TeuchosParamsAsNOXArbitrary arbitraryMLList(MLList);
-    lsParams.setParameter("ML Teuchos Parameter List", arbitraryMLList);
-  }
-#endif
 
   // **** Ctor #4 - Prec and Jac
   NOX::EpetraNew::Interface::Jacobian& iJac = MF;
