@@ -286,10 +286,10 @@ AC_CXX_NEW_FOR_SCOPING
 #AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
-AC_MSG_CHECKING([whether $CC recognizes __func__])
-AC_TRY_COMPILE(, [int main() { char *s = __func__; }],
+AC_MSG_CHECKING([whether $CC recognizes __PRETTY_FUNCTION__])
+AC_TRY_COMPILE(, [int main() { char *s = __PRETTY_FUNCTION__; }],
    AC_DEFINE(HAVE_CFUNC,, 
-   [Define if the C complier supports __func__]) ac_cv_c_var_func=yes,
+   [Define if the C complier supports __PRETTY_FUNCTION__]) ac_cv_c_var_func=yes,
    ac_cv_c_var_func=no)
 AM_CONDITIONAL(ML_CFUNC, test "X$ac_cv_c_var_func" != "Xno")
 
