@@ -84,7 +84,7 @@ ZOLTAN_INCLUDE= -I$(ZUTIL)/Communication \
                 -I$(ZTOP)/lb \
                 -I$(ZTOP)/include
 
-INCLUDE = -I../lib $(ZOLTAN_INCLUDE)
+INCLUDE = -I../lib $(ZOLTAN_INCLUDE) $(INCLUDE_PATH)
 
 ##############################################################################
 # 
