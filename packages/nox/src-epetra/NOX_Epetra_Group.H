@@ -271,7 +271,7 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
-  virtual bool isNewtonSolveResidual() const;
+  virtual bool isNormNewtonSolveResidual() const;
 
   //@}
 
@@ -291,7 +291,7 @@ public:
 
   virtual const Abstract::Vector& getNewton() const;
 
-  double getNewtonSolveResidual() const;
+  double getNormNewtonSolveResidual() const;
 
   //@}
 
@@ -324,7 +324,7 @@ protected:
   virtual bool computePreconditioner(AztecOO& aztec) const;
   
   //! Computes the 2-norm of the residual of the linear model used in the Newton solve computation, ||Js+f||.
-  virtual bool computeNewtonSolveResidual();
+  virtual bool computeNormNewtonSolveResidual();
   //@}
 
   //! Returns the type of operator that is passed into the group constructors.
@@ -365,7 +365,7 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
-  bool isValidNewtonSolveResidual;
+  bool isValidNormNewtonSolveResidual;
   //@}
   
   //! 2-Norm of RHS

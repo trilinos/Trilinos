@@ -205,7 +205,7 @@ Group::Group(const Group& source, CopyType type) :
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
-    isValidNewtonSolveResidual = source.isValidNewtonSolveResidual;
+    isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
     normRHS = source.normRHS;
     normNewtonSolveResidual = source.normNewtonSolveResidual;
     
@@ -243,7 +243,7 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGrad = false;
   isValidNewton = false;
-  isValidNewtonSolveResidual = false;
+  isValidNormNewtonSolveResidual = false;
 }
 
 void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
@@ -346,7 +346,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
-  isValidNewtonSolveResidual = source.isValidNewtonSolveResidual;
+  isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -360,7 +360,7 @@ Abstract::Group& Group::operator=(const Group& source)
   if (isValidNewton)
     NewtonVector = source.NewtonVector;
 
-  if (isValidNewtonSolveResidual)
+  if (isValidNormNewtonSolveResidual)
     normNewtonSolveResidual = source.normNewtonSolveResidual;
 
   // If valid, this takes ownership of the shared Jacobian
@@ -526,7 +526,7 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   isValidNewton = true;
 
   // Compute the 2-norm of the Newton solve residual ||Js+f||
-  computeNewtonSolveResidual();
+  computeNormNewtonSolveResidual();
 
   // Return solution
   return true;
@@ -761,9 +761,9 @@ bool Group::isNewton() const
   return isValidNewton;
 }
 
-bool Group::isNewtonSolveResidual() const 
+bool Group::isNormNewtonSolveResidual() const 
 {   
-  return isValidNewtonSolveResidual;
+  return isValidNormNewtonSolveResidual;
 }
 
 const Abstract::Vector& Group::getX() const 
@@ -811,19 +811,20 @@ const Abstract::Vector& Group::getNewton() const
   return NewtonVector;
 }
 
-double Group::getNewtonSolveResidual() const
+double NOX::Epetra::Group::getNormNewtonSolveResidual() const
 {
   // Make sure value is not already calculated
-  if (isValidNewtonSolveResidual) 
+  if (isValidNormNewtonSolveResidual) 
     return normNewtonSolveResidual;
 
   // Otherwise throw an error since a Newton direction has not been calculated
   // wrt this solution group
-  cout << "ERROR: NOX::Epetra::Group::getNewtonSolveResidual() - Group has "
+  /*
+  cout << "ERROR: NOX::Epetra::Group::getNormNewtonSolveResidual() - Group has "
        << "not performed a Newton solve corresponding to this solution vector!"
        << endl;
   throw "NOX Error";
- 
+  */
   return -1.0;
 }  
 
@@ -966,21 +967,21 @@ bool Group::computePreconditioner(AztecOO& aztec) const
   return true;
 }
 
-bool Group::computeNewtonSolveResidual ()
+bool Group::computeNormNewtonSolveResidual ()
 {
   // Make sure value is not already calculated
-  if (isValidNewtonSolveResidual) 
+  if (isValidNormNewtonSolveResidual) 
     return true;
 
   // Make sure NewtonVector and RHSVector are valid
   // We could return false, but for now we will throw errors
   if (!isValidRHS) {
-    cerr << "ERROR: NOX::Epetra::Group::getNewtonSolveResidual() - invalid RHS" 
+    cerr << "ERROR: NOX::Epetra::Group::computeNormNewtonSolveResidual() - invalid RHS" 
 	 << endl;
     throw "NOX Error";
   }
   if (!isValidNewton) {
-    cerr << "ERROR: NOX::Epetra::Group::getNewtonSolveResidual() - invalid "
+    cerr << "ERROR: NOX::Epetra::Group::computeNormNewtonSolveResidual() - invalid "
 	 << "Newton direction" << endl;
     throw "NOX Error";
   }
@@ -995,7 +996,7 @@ bool Group::computeNewtonSolveResidual ()
   tmpNoxVector.update(1.0, RHSVector, 1.0);
   normNewtonSolveResidual = tmpNoxVector.norm();
   
-  isValidNewtonSolveResidual = true;
+  isValidNormNewtonSolveResidual = true;
   
   return true;
 }
