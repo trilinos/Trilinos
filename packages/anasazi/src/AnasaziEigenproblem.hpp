@@ -4,9 +4,10 @@
 
 #include "AnasaziMatrix.hpp"
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziDenseMatrix.hpp"
 #include "AnasaziOperator.hpp"
 #include "AnasaziReturnType.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Anasazi {
 
@@ -131,7 +132,7 @@ class Eigenproblem {
 	*/
 	ReturnType AInProd( TYPE alpha, const MultiVec<TYPE>& X, 
 						const MultiVec<TYPE>& Y,
-						DenseMatrix<TYPE>& Z );
+						Teuchos::SerialDenseMatrix<int,TYPE>& Z );
 
 	/*! \brief Computes B inner product using definition of ApplyMatrixB.
 
@@ -139,7 +140,7 @@ class Eigenproblem {
 	*/
 	ReturnType BInProd( TYPE alpha, const MultiVec<TYPE>& X, 
 						const MultiVec<TYPE>& Y,
-						DenseMatrix<TYPE>& Z );
+						Teuchos::SerialDenseMatrix<int,TYPE>& Z );
 	//@}
 
 	//@{ \name Norm Methods.
@@ -294,7 +295,7 @@ ReturnType Eigenproblem<TYPE>::ApplyMatrixA (const MultiVec<TYPE>& X,
 template<class TYPE>
 ReturnType Eigenproblem<TYPE>::AInProd( TYPE alpha, const MultiVec<TYPE>& X, 
 						const MultiVec<TYPE>& Y,
-						DenseMatrix<TYPE>& Z )
+						Teuchos::SerialDenseMatrix<int,TYPE>& Z )
 {	
 	if (_Amat) {
 		//
@@ -321,7 +322,7 @@ ReturnType Eigenproblem<TYPE>::AInProd( TYPE alpha, const MultiVec<TYPE>& X,
 template<class TYPE>
 ReturnType Eigenproblem<TYPE>::BInProd( TYPE alpha, const MultiVec<TYPE>& X, 
 						const MultiVec<TYPE>& Y,
-						DenseMatrix<TYPE>& Z )
+						Teuchos::SerialDenseMatrix<int,TYPE>& Z )
 {
 	if (_Bmat) {
 		//
@@ -358,16 +359,15 @@ ReturnType Eigenproblem<TYPE>::BMvNorm( MultiVec<TYPE>& X, TYPE* normvec )
 {
 	int IntOne = 1;
 	int numvecs = X.GetNumberVecs();
-	DenseMatrix<TYPE> DenseOne(IntOne,IntOne);
+	Teuchos::SerialDenseVector<int,TYPE> DenseOne(IntOne);
 	MultiVec<TYPE>* Xj = 0;
 	int *index = new int[IntOne];	
-	TYPE* DOptr = DenseOne.getarray();
 	
 	for (int i=0; i<numvecs; i++) {
 		index[0] = i;
 		Xj = X.CloneView( index, IntOne );
 		BInProd( 1.0, *Xj, *Xj, DenseOne );
-		normvec[i] = sqrt(DOptr[0]);
+		normvec[i] = sqrt(DenseOne(0));
 	}
 
 	delete Xj;

@@ -2,8 +2,8 @@
 #ifndef ANASAZI_MULTI_VEC_HPP
 #define ANASAZI_MULTI_VEC_HPP
 
-#include "AnasaziDenseMatrix.hpp"
-#include "AnasaziCommon.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {
 
@@ -80,7 +80,7 @@ public:
 	*/
 
 	virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
-		DenseMatrix<TYPE>& B, TYPE beta ) = 0;
+		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) = 0;
 
 	/*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
 	*/
@@ -91,7 +91,7 @@ public:
 	   \c alpha * \c A^T * (\c *this).
 	*/
 
-	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, DenseMatrix<TYPE>& B) = 0;
+	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B) = 0;
 
 	//@}
 	//@{ \name Norm method.

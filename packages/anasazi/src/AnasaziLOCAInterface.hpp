@@ -5,7 +5,7 @@
 
 #include "AnasaziMatrix.hpp"
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziCommon.hpp"
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziReturnType.hpp"
 #include "NOX_Abstract_Vector.H"
 #include "LOCA_Abstract_Group.H"

@@ -4,7 +4,7 @@
 
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziReturnType.hpp"
-#include "AnasaziCommon.hpp"
+#include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {
 

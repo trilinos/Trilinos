@@ -23,7 +23,6 @@ CORE_H = \
 	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
-	$(srcdir)/AnasaziDenseMatrix.hpp \
 	$(srcdir)/AnasaziPetraInterface.hpp \
 	$(srcdir)/AnasaziLOCAInterface.hpp \
 	$(srcdir)/AnasaziReturnType.hpp \

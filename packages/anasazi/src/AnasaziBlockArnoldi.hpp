@@ -3,9 +3,12 @@
 #ifndef BLOCK_ARNOLDI_HPP
 #define BLOCK_ARNOLDI_HPP
 
-#include "AnasaziLAPACK.hpp"
-#include "AnasaziBLAS.hpp"
-#include "AnasaziCommon.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziEigenproblem.hpp"
 
 /*!	\class Anasazi::BlockArnoldi
@@ -97,8 +100,8 @@ public:
 	void currentStatus();
 	//@}
 private:
-	void QRFactorization( MultiVec<TYPE>&, DenseMatrix<TYPE>& );
-	void SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>& Q );
+	void QRFactorization( MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>& );
+	void SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q );
 	void BlockReduction();
 	void BlkOrth( const int j );
 	void BlkOrthSing( const int j );
@@ -111,7 +114,7 @@ private:
 	void CheckBlkArnRed( const int );
 	Eigenproblem<TYPE> &_problem; // must be passed in by the user
 	MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
-	DenseMatrix<TYPE>* _hessmatrix;
+	Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
 	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
@@ -131,7 +134,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem,
 				const TYPE tol, const int nev, const int length, const int block,
 				const string which, const int step, const int restarts) : 
 				_problem(problem), _basisvecs(0), _evecr(0), _eveci(0), 
-				_hessmatrix(0), _nev(nev), _length(length), _block(block), 
+				_nev(nev), _length(length), _block(block), 
 				_restarts(restarts), _residual_tolerance(tol), _step(step),
 				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), 
 				_iter(0), _jstart(0), _jend(0), _which(which),
@@ -165,8 +168,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem,
 	//
 	// Create the rectangular Hessenberg matrix
 	//
-	_hessmatrix = new DenseMatrix<TYPE>((_length+1)*_block, _length*_block); 
-	assert(_hessmatrix!=NULL);
+	_hessmatrix.shape((_length+1)*_block, _length*_block); 
 	//
 	// Create the vectors for eigenvalues and their residual errors and
 	// initialize them.
@@ -193,8 +195,8 @@ void BlockArnoldi<TYPE>::SetBlkTols() {
         const TYPE two = 2.0;
         TYPE eps;
         char precision = 'P';
-        AnasaziLAPACK lapack;
-        lapack.LAMCH(precision, eps);
+        Teuchos::LAPACK<int,TYPE> lapack;
+        eps = lapack.LAMCH(precision);
         _blk_tol = 10*sqrt(eps);
         _sing_tol = 10 * eps;
         _dep_tol = 1/sqrt(two);
@@ -207,8 +209,8 @@ BlockArnoldi<TYPE>::~BlockArnoldi() {
 	if (_basisvecs) delete _basisvecs;
 	if (_evecr) delete _evecr;
 	if (_eveci) delete _eveci;
-	if (_hessmatrix) delete _hessmatrix;
 	if (_ritzresiduals) delete [] _ritzresiduals;
+	if (_actualresiduals) delete [] _actualresiduals;
 	if (_evalr) delete [] _evalr;
 	if (_evali) delete [] _evali;
 	if (_order) delete [] _order;
@@ -488,7 +490,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 		}
 		MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
 		assert(U_vec!=NULL);
-		DenseMatrix<TYPE> G10(_block,_block);
+		Teuchos::SerialDenseMatrix<int,TYPE> G10(_block,_block);
 		QRFactorization( *U_vec, G10 );
 		delete U_vec;
 		delete [] index;
@@ -543,7 +545,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 	// Compute the current eigenvalue estimates before returning.
 	//
 	//cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<endl<<endl;
-	//_hessmatrix->print();
+	//cout<<_hessmatrix<<endl;
 
 	// Output current information if necessary
 	if (_debuglevel > 0) {
@@ -568,7 +570,8 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 	int i,j;
 	ReturnType ret;
 	int *index = new int[ _block ]; assert(index!=NULL);
-	
+	MultiVec<TYPE> *U_vec=0, *F_vec=0;
+
 	for ( j = _jstart; j < _jend; j++ ) {
 		//
 		// Associate the j-th block of _basisvecs with U_vec.
@@ -576,7 +579,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		for ( i=0; i<_block; i++ ) {
 			index[i] = j*_block+i;
 		}
-		MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _block);
+		U_vec = _basisvecs->CloneView(index, _block);
 		assert(U_vec!=NULL);
 		//
 		// Associate (j+1)-st block of ArnoldiVecs with F_vec.
@@ -584,7 +587,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		for ( i=0; i<_block; i++ ) {
 			index[i] = (j+1)*_block+i;
 		}
-		MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+		F_vec = _basisvecs->CloneView(index, _block);
 		assert(F_vec!=NULL);
 		//
 		//  Compute F_vec = OP * U_vec
@@ -611,7 +614,8 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 			BlkOrthSing(j);
 		}
 		//
-		delete U_vec, F_vec;
+		delete U_vec; U_vec=0;
+		delete F_vec; F_vec=0;
 		//
 		// If we cannot go any further with the factorization, then we need to exit
 		// this method.
@@ -651,14 +655,11 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         // even though we're only going to set the coefficients in
         // rows [0:(j+1)*_block-1]
         //
-        int ldh = _hessmatrix->getld();
-        int n_row = _hessmatrix->getrows();
-        int n_col = _hessmatrix->getcols();
+        int n_row = _hessmatrix.numRows();
         //
-        TYPE* ptr_hess = _hessmatrix->getarray();
         for ( k=0; k<_block; k++ ) {
                 for ( i=0; i<n_row ; i++ ) {
-                                ptr_hess[j*ldh*_block + k*ldh + i] = zero;
+     			_hessmatrix( i, j*_block+k ) = zero;
                 }
         }
         //
@@ -673,9 +674,7 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         //
         // Create a matrix to store the product trans(V_prev)*B*F_vec
         //
-        DenseMatrix<TYPE> dense_mat(num_prev, _block );
-        TYPE* ptr_dense = dense_mat.getarray();
-        int ld_dense = dense_mat.getld();
+        Teuchos::SerialDenseMatrix<int,TYPE> dense_mat(num_prev, _block );
         //
         F_vec->MvNorm(norm1);
         //
@@ -694,8 +693,7 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
                 //
                 for ( k=0; k<_block; k++ ) {
                         for ( i=0; i<num_prev; i++ ) {
-                                ptr_hess[j*ldh*_block + k*ldh + i] +=
-                                        ptr_dense[k*ld_dense + i];
+                                _hessmatrix( i, j*_block+k ) += dense_mat(i,k);
                         }
                 }
                 //
@@ -735,8 +733,9 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
                 // Compute the QR factorization of F_vec
                 //
                 row_offset = (j+1)*_block; col_offset = j*_block;
-                DenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
-                        _block, _block);
+                Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, 
+									row_offset, col_offset);
+
                 QRFactorization( *F_vec, sub_block_hess );
         }
         //
@@ -762,6 +761,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         const TYPE zero = 0.0;
         int i, k, iter, num_prev;
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
+        Teuchos::SerialDenseVector<int,TYPE> dense_vec;
         TYPE norm1[IntOne];
         TYPE norm2[IntOne];
 	ReturnType ret;
@@ -776,14 +776,11 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         //
         // Zero out the full block column of the Hessenberg matrix
         //
-        int ldh = _hessmatrix->getld();
-        int n_row = _hessmatrix->getrows();
-        int n_col = _hessmatrix->getcols();
+        int n_row = _hessmatrix.numRows();
         //
-        TYPE* ptr_hess = _hessmatrix->getarray();
         for ( k=0; k<_block; k++ ) {
                 for ( i=0; i<n_row ; i++ ) {
-                        ptr_hess[j*ldh*_block + k*ldh + i] = zero;
+                        _hessmatrix(i, j*_block+k) = zero;
                 }
         }
         //
@@ -795,6 +792,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         //
         for (int iter=0; iter<_block; iter++){
                 num_prev = (j+1)*_block + iter; // number of previous _basisvecs
+		dense_vec.size(num_prev);
                 //
                 // Grab the next column of _basisvecs
                 //
@@ -810,8 +808,6 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                 //
                 // Create matrix to store product trans(Q_vec)*B*q_vec
                 //
-                DenseMatrix<TYPE> dense_mat(num_prev, IntOne);
-                TYPE* ptr_dense = dense_mat.getarray();
                 //
                 // Do one step of classical Gram-Schmidt B-orthogonalization
                 // with a 2nd correction step if needed.
@@ -820,18 +816,18 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                 //
                 // Compute trans(Q_vec)*B*q_vec
                 //
-		ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_mat );
+		ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_vec );
                 //
                 // Sum results [0:num_prev-1] into column (num_prev-_block)
                 // of the Hessenberg matrix
                 //
                 for (k=0; k<num_prev; k++){
-                        ptr_hess[(j*_block + iter)*ldh +k] += ptr_dense[k];
-                }
+                        _hessmatrix(k, j*_block+iter) += dense_vec(k);
+ 	        }
 		//
-                // Compute q_vec<- q_vec - Q_vec * dense_mat
+                // Compute q_vec<- q_vec - Q_vec * dense_vec
                 //
-                q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
                 //
                 q_vec->MvNorm(norm2);
                 //
@@ -841,18 +837,18 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                         //
                     	// Compute trans(Q_vec)*q_vec
                     	//
-			ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_mat );
+			ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_vec );
                     	//
                     	// Sum results [0:num_prev-1] into column (num_prev-_block)
                     	// of the Hessenberg matrix
                     	//
                     	for (k=0; k<num_prev; k++){
-                            	ptr_hess[(j*_block + iter)*ldh +k] += ptr_dense[k];
+                            	_hessmatrix(k, j*_block+iter) += dense_vec(k);
                         }
 			//
-                    	// Compute q_vec<- q_vec - Q_vec * dense_mat
+                    	// Compute q_vec<- q_vec - Q_vec * dense_vec
                     	//
-                    	q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                    	q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
                     	//
                     	q_vec->MvNorm(norm2);
                 }
@@ -878,11 +874,11 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                         // orthogonalization with a correction step if needed.
                         //
                         for (int num_orth=0; num_orth<2; num_orth++){
-				ret = _problem.BInProd( one, *Q_vec, *tptr, dense_mat );
+				ret = _problem.BInProd( one, *Q_vec, *tptr, dense_vec );
                                 // Note that we don't change the entries of the
                                 // Hessenberg matrix when we orthogonalize a
                                 // random vector
-                                tptr->MvTimesMatAddMv(-one, *Q_vec, dense_mat, one);
+                                tptr->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
                         }
                         //
                         tptr->MvNorm(norm2);
@@ -900,7 +896,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                         	// Enter a zero in the [(j+1)*_block + iter] row in the
                         	// [(j*_block + iter] column of the Hessenberg matrix
                         	//
-                		ptr_hess[(j*_block+iter)*ldh + (j+1)*_block+iter] = zero;
+                		_hessmatrix((j+1)*_block+iter, j*_block+iter) = zero;
                         }
                         else {
                                 // Can't produce a new orthonormal basis vector
@@ -924,7 +920,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                         // Enter norm of q_vec to the [(j+1)*_block + iter] row
                     	// in the [(j*_block + iter] column of the Hessenberg matrix
                         //
-                        ptr_hess[(j*_block+iter)*ldh + (j+1)*_block+iter] = norm2[0];
+                        _hessmatrix((j+1)*_block+iter, j*_block+iter) = norm2[0];
                 } // end else ...
         } // end for (i=0;...)
         //
@@ -945,10 +941,9 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn, 
-						DenseMatrix<TYPE>& FouierR) {
+						Teuchos::SerialDenseMatrix<int,TYPE>& FouierR) {
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == _block);
-	int ldR = FouierR.getld();
 	int *index = new int[nb]; assert(index!=NULL);
 	const int IntOne=1;
 	const int IntZero=0;
@@ -957,7 +952,6 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 	bool addvec = false, flg = false;
 	ReturnType ret;
 	//
-	TYPE * R = FouierR.getarray();
 	TYPE norm1[IntOne];
 	TYPE norm2[IntOne];
 	MultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
@@ -967,7 +961,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 	//
 	for ( j=0; j<nb; j++ ) {
 		for ( i=0; i<nb; i++ ) {
-			R[j*ldR+i] = zero;
+			FouierR(i,j) = zero;
 		}
 	}
 	//
@@ -995,8 +989,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 			// basis for first j columns of the entering VecIn).
 			//
 			Qj = VecIn.CloneView(index, j);
-			DenseMatrix<TYPE> rj(j,1);
-			TYPE * result = rj.getarray();
+			Teuchos::SerialDenseVector<int,TYPE> rj(j);
 			_problem.BMvNorm( *qj, norm1 );
 			//
 			// Do one step of classical Gram-Schmidt orthogonalization
@@ -1011,7 +1004,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 			// Sum results[0:j-1] into column j of R.
 			//
 			for ( k=0; k<j; k++ ) {
-        			R[j*ldR+k] += result[k];
+        			FouierR(k,j) += rj(k);
 			}
 			//
 			// Compute qj <- qj - Qj * rj.
@@ -1029,7 +1022,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
     				// Sum results[0:j-1] into column j of R.
     				//
     				for ( k=0; k<j; k++ ) {
-            				R[j*ldR+k] += result[k];
+            				FouierR(k,j) += rj(k);
         			}
 				//
 				// Compute qj <- qj - Qj * rj.
@@ -1073,7 +1066,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
                                  	// previous vectors in block.
                                  	//
                                      	addvec = true;
-                                 	DenseMatrix<TYPE> tj(j,1);
+                                 	Teuchos::SerialDenseVector<int,TYPE> tj(j);
                                  	//
                                  	tptr->MvRandom();
                                  	_problem.BMvNorm( *tptr, norm1 );
@@ -1110,14 +1103,15 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
                 if (addvec){
                         // We've added a random vector, so
                         // enter a zero in j'th diagonal element of R
-                        *(R+j*ldR+j) = zero;
+                        FouierR(j,j) = zero;
                 }
                 else {
-                        *(R+j*ldR+j) = normq[0];
+                        FouierR(j,j) = normq[0];
                 }
                 delete qj; delete Qj;
       	} // for (j=0; j<nb; j++) ...
 	//
+	delete tptr;
 	delete [] index;	
 }
 
@@ -1129,10 +1123,9 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int _nevtemp, _nevtemp2;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	DenseMatrix<TYPE>* Hj;	
-	DenseMatrix<TYPE> Q(n,n);
-	AnasaziLAPACK lapack;
-	AnasaziBLAS blas;
+	Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
+	Teuchos::LAPACK<int,TYPE> lapack;
+	Teuchos::BLAS<int,TYPE> blas;
 	if (_jstart < _nevblock) {
 	  _nevtemp = n; _nevtemp2 = n;
 	} else {
@@ -1141,22 +1134,18 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	// If we are going to restart then we can overwrite the 
 	// hessenberg matrix with the Schur factorization, else we
-	// will just use a copy of it.
+	// will just use a copy of it.  The Schur vectors will be in Q
+	// on return.
 	//
 	if (apply) {
-		Hj = new DenseMatrix<TYPE>(*_hessmatrix, i, j, m, n);		
+		Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, n, i, j);		
+		SortSchurForm( Hj, Q );
 	} else {	
 		// Create a view into the current hessenberg matrix and
 		// make a copy.
-		DenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, m, n);
-		Hj = new DenseMatrix<TYPE>(Hj_temp);
+		Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, m, n, i, j);
+		SortSchurForm( Hj, Q );
 	}
-	//
-	// Compute the Schur decomposition for the current block upper hessenber
-	// matrix, and resort the Schur form.  The Schur vectors will be in Q on return.
-	//
-	SortSchurForm( *Hj, Q );
-	//
 	// Check the residual error for the Krylov-Schur decomposition.
 	// The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
 	// where HQ = QT is || FB_m^TQ || <= || H_{m+1,m} || || B_m^TQ ||.
@@ -1167,20 +1156,12 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	//  Calculate the B matrix for the Krylov-Schur basis F_vec*B^T
 	//
-	DenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
-	TYPE *ptr_sbh = sub_block_hess.getarray();
-	int ld_sbh = sub_block_hess.getld();
-	//
-	DenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
-	TYPE *ptr_sbq = sub_block_q.getarray();
-	int ld_sbq = sub_block_q.getld();
-	//
-	DenseMatrix<TYPE> sub_block_b( _block, _nevtemp );
-	TYPE *ptr_sbb = sub_block_b.getarray();
-	char* trans = "N";	
-	blas.GEMM( *trans, *trans, _block, _nevtemp, _block, one, ptr_sbh, ld_sbh, 
-		ptr_sbq, ld_sbq, zero, ptr_sbb, _block );
-	DenseMatrix<TYPE> sub_block_b2(sub_block_b, 0, 0, _block, _nevtemp2);
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
+	blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, _nevtemp, _block, one, sub_block_hess.values(), sub_block_hess.stride(), 
+		sub_block_q.values(), sub_block_q.stride(), zero, sub_block_b.values(), _block );
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b2(Teuchos::View, sub_block_b, _block, _nevtemp2);
         //
         //  Compute approximate ritzresiduals for each eigenvalue using an approximate
         //  2-norm to scale.
@@ -1191,15 +1172,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
                 if (temp > _scalefactor) _scalefactor = temp;
         }
         _scalefactor = sqrt(_scalefactor);
-        _schurerror = sub_block_b2.getfronorm()/_scalefactor;
+        _schurerror = sub_block_b2.normFrobenius()/_scalefactor;
 	//
 	// ------------>  NOT SURE IF RITZRESIDUALS CAN BE UPDATED AFTER DEFLATION!
 	//
         //for (i=0; i<_nevtemp ; i++) {
         for (i=_defblock*_block; i<_nevtemp ; i++) {
-        	DenseMatrix<TYPE> s(sub_block_b,0,i,_block,1);
-                TYPE *ptr_s=s.getarray();
-                _ritzresiduals[i] = blas.NRM2(_block, ptr_s)/_scalefactor;
+        	Teuchos::SerialDenseMatrix<int,TYPE> s(Teuchos::View, sub_block_b, _block, 1, 0, i);
+                _ritzresiduals[i] = blas.NRM2(_block, s.values(), 1)/_scalefactor;
         }   
 	//
 	//  We are going to restart, so update the Krylov-Schur decomposition.
@@ -1213,19 +1193,17 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		for (i = 0; i < n; i++ ) {
 			index[i] = i;
 		}
-		DenseMatrix<TYPE> Qnev(Q, n, _nevtemp);
+		Teuchos::SerialDenseMatrix<int,TYPE> Qnev(Teuchos::View, Q, n, _nevtemp);
 		MultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
 		MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 		basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
 		//
 		// Update the Krylov-Schur form (quasi-triangular matrix).
 		//
-		DenseMatrix<TYPE> Hjp1(*_hessmatrix,_nevtemp,0,_block,_nevtemp);
-		TYPE* ptr_hjp1 = Hjp1.getarray();
-		int ld_hjp1 = Hjp1.getld();
+		Teuchos::SerialDenseMatrix<int,TYPE> Hjp1(Teuchos::View, _hessmatrix,_block,_nevtemp, _nevtemp );
 		for (i=0; i<_block; i++) {
 		    for (j=0; j<_nevtemp; j++) {
-			ptr_hjp1[j*ld_hjp1 + i] = ptr_sbb[j*_block + i];
+			Hjp1(i, j) = sub_block_b(i, j);
 		    }
 		}
 		delete basistemp, basistemp2;
@@ -1240,20 +1218,17 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	int n=_jstart*_block, info=0;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	AnasaziLAPACK lapack;
-	AnasaziBLAS blas;
-	MultiVec<TYPE>* basistemp;
-	DenseMatrix<TYPE> Q(n,n);
+	Teuchos::LAPACK<int,TYPE> lapack;
+	Teuchos::BLAS<int,TYPE> blas;
+	MultiVec<TYPE>* basistemp=0;
+	Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
 	int * index = new int [ n ]; assert(index!=NULL);
 	//  Set the index array.
 	for (k=0; k<n; k++) { index[k] = k; }
 	//
 	//  Get a view into the current Hessenberg matrix.
 	//
-	DenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, n, n);
-	DenseMatrix<TYPE> Hj(Hj_temp);
-	int ldhj = Hj.getld();
-	TYPE *ptr_hj = Hj.getarray();
+	Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, n, n, i, j);
 	//
 	//  If the Krylov-Schur decomposition is not current, compute residuals
 	//  like we are going to restart to update decomposition.
@@ -1267,6 +1242,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  basistemp = _basisvecs->Clone( n );
 	  MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 	  basistemp->MvTimesMatAddMv ( one, *basistemp2, Q, zero );
+	  delete basistemp2;
 	} else {
 	  //
 	  // We can aquire the Ritz vectors from the current decomposition.
@@ -1285,9 +1261,6 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  //  Now compute the eigenvectors of the Schur form
 	  //  Reset the dense matrix and compute the eigenvalues of the Schur form.
 	  //
-	  Q.init();
-	  int ldq = Q.getld();
-	  TYPE *ptr_q = Q.getarray();
 	  int lwork = 4*n;
 	  TYPE *work = new TYPE[lwork]; assert(work!=NULL);
 	  int *select = new int[ n ];	  
@@ -1295,17 +1268,18 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  char * howmny = "A";
 	  int mm, ldvl = 1;
 	  TYPE *vl = new TYPE[ ldvl ];
-	  lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
-			ptr_q, ldq, n, &mm, work, &info );
+	  lapack.TREVC( *side, *howmny, select, n, Hj.values(), Hj.stride(), vl, ldvl,
+			Q.values(), Q.stride(), n, &mm, work, &info );
 	  assert(info==0);
+	  delete [] work, select, vl;
 	  //
 	  //  The computed eigenvectors are normalized by the infinity norm.
 	  //  Change to euclidean norm.
 	  //
 	  TYPE enormscale;
 	  for (j=0; j<n; j++) {
-	    enormscale = blas.NRM2(n, ptr_q+(j*ldq));
-	    blas.SCAL(n, one/enormscale, ptr_q+(j*ldq));
+	    enormscale = blas.NRM2(n, Q[j], 1);
+	    blas.SCAL(n, one/enormscale, Q[j], 1);
 	  }
 	  //
 	  //  Convert back to approximate eigenvectors of the operator.
@@ -1329,9 +1303,10 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	      evecstempr = evecstemp->CloneView( index+i, 1 );
 	      evecr1 = _evecr->CloneView( index+i, 1 );
 	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
+		delete evecr1; evecr1=0;
 	      evecr1 = _evecr->CloneView( index+i+1, 1 );
 	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
-	      
+	      delete evecr1; evecr1=0;
 	      // Note where imaginary part of eigenvector is.
 	      indexi[conjprs] = i+1;
 	      
@@ -1346,12 +1321,13 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	      _evecr->SetBlock( *evecstempr, index+i, 1 );
 	      i++;			
 	    }
+	    delete evecstempr; evecstempr=0;
 	  }
 	  // Set the imaginary part of the eigenvectors if conjugate pairs exist.
 	  // If the last eigenvector has a split conjugate pair, don't set negative imaginary
 	  // part.
 	  if (conjprs) {	
-	    MultiVec<TYPE>  *evecstempi, *eveci1;
+	    MultiVec<TYPE>  *evecstempi=0, *eveci1=0;
 	    //
 	    // There's a problem when the last eigenvalues is the first of
 	    // a conjugate pair.
@@ -1361,33 +1337,35 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	      for (i=0; i<conjprs-1; i++) {
 		evecstempi = evecstemp->CloneView( indexi+i, 1 );
 		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
 				 *evecstempi, zero, *evecstempi );
-		
+		delete eveci1; eveci1=0;		
       		// Change index and set non-conjugate part of imaginary eigenvalue
 		indexi[i]--;
 		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
 				 *evecstempi, zero, *evecstempi );			
 	      }
-	      
+		delete eveci1; eveci1=0;
+		delete evecstempi; evecstempi=0;	      
 	      // Set imaginary part of last eigenvector now.
 	      indexi[0] = indexi[conjprs-1]-1;
 	      evecstempi = evecstemp->CloneView( indexi+(conjprs-1), 1 );
 	      eveci1 = _eveci->CloneView( indexi, 1 );
-	      eveci1->MvAddMv( abs(_evali[indexi[0]])/_evali[indexi[0]]/(2*one),
+	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[0]])/_evali[indexi[0]]/(2*one),
 			       *evecstempi, zero, *evecstempi );
 	      
 	    } else {
 	      for (i=0; i<conjprs; i++) {
 		evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
 		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
 				 *evecstempi, zero, *evecstempi );
+		delete eveci1; eveci1=0;
 		// Change index and set non-conjugate part of imag eigenvector.
 		indexi[i]--;
 		eveci1 = _eveci->CloneView( indexi+i, 1 );
-		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+		eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
 				 *evecstempi, zero, *evecstempi );
 	      }	      
 	    }				    
@@ -1395,8 +1373,8 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	    delete evecstempi, eveci1;
 	  }
 	  // Clean up.
-	  delete evecstemp, evecstempr, evecr1;
-	  delete [] indexi;
+	  delete evecstemp; 
+	  delete [] indexi; 
 	}
 
 	_isevecscurrent = true;
@@ -1405,13 +1383,14 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>& Q ) {
+void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
         const TYPE one = 1.0;
         const TYPE zero = 0.0;
-        AnasaziLAPACK lapack; 
+        Teuchos::LAPACK<int,TYPE> lapack; 
 	int i, j, info=0;
-        int n = H.getrows(), ldh = H.getld();
-	TYPE *ptr_h = H.getarray();
+        int n = H.numRows(), ldh = H.stride(), ldq = Q.stride(); 
+	TYPE* ptr_h = H.values();
+	TYPE* ptr_q = Q.values();
 	//
 	//  If the operator is symmetric, analyze the block tridiagonal matrix
 	//  and enforce symmetry.
@@ -1424,7 +1403,7 @@ void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>&
 	    //
 	    for(j=_nevblock*_block; j<n; j++) {
 	      for(i=0; i<j; i++) {
-		ptr_h[j*ldh + i] = ptr_h[i*ldh + j];
+		H( i, j ) = H( j, i );
 	      }
 	    }
 	  } else {
@@ -1433,7 +1412,7 @@ void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>&
 	    //
 	    for( j=0; j<n; j++ ) {
 	      for( i=0; i<j; i++ ) {
-		ptr_h[j*ldh + i] = ptr_h[i*ldh + j];
+		H( i, j ) = H( j, i );
 	      }
 	    }
 	  }
@@ -1446,8 +1425,6 @@ void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>&
 	//---------------------------------------------------
 	//
 	int lwork = 4*n;
-	int ldq = Q.getld();
-	TYPE *ptr_q = Q.getarray();
 	TYPE *work = new TYPE[lwork]; assert(work!=NULL);
 	int *select = new int[ n ];
 	int sdim = 0; 
@@ -1528,13 +1505,15 @@ void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>&
 	if (_issym) {
 	  for(j=0; j<n; j++){
 	    for(i=0; i<j; i++) {
-	      if(abs(ptr_h[j*ldh+i])>_maxsymmelem) { _maxsymmelem = ptr_h[j*ldh+i]; }
+	      if(Teuchos::ScalarTraits<TYPE>::magnitude(H(i, j))>_maxsymmelem) { _maxsymmelem = H(i, j); }
 	    }
 	  }
 	}
 	delete [] work; 
-	delete [] bwork, select;
+	delete [] bwork,
+	delete [] select;
 	delete [] offset;
+	delete [] _order2;
 }
 
 template<class TYPE>
@@ -1580,12 +1559,10 @@ void BlockArnoldi<TYPE>::Restart() {
 			cout<<"Number of blocks being deflated : "<<_defblock<<endl;
 		}
 		TYPE zero = 0.0;
-		DenseMatrix<TYPE> Hj_temp(*_hessmatrix, _nevtemp, 0, _block, _defblock*_block);
-		TYPE *ptr_hj = Hj_temp.getarray();
-		int ld_hj = Hj_temp.getld();
+		Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, _block, _defblock*_block, _nevtemp, 0);
 		for (i=0; i<_block; i++) {
 		    for (j=0; j<_defblock*_block; j++) {
-			ptr_hj[j*ld_hj + i] = zero;
+			Hj( i, j ) = zero;
 		    }
 		}
 	}
@@ -1605,7 +1582,7 @@ void BlockArnoldi<TYPE>::SortEvals() {
 	int i, j, tempord;
 	const int n = _jstart*_block;
 	TYPE temp, tempr, tempi;
-	AnasaziLAPACK lapack;
+	Teuchos::LAPACK<int,TYPE> lapack;
 	//
 	// Reset the index
 	//		
@@ -1787,10 +1764,10 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                         
         const TYPE one=1.0;
         const TYPE zero=0.0;
-        DenseMatrix<TYPE> VTV(m,m);
+        Teuchos::SerialDenseMatrix<int,TYPE> VTV(m,m);
 	ret = _problem.BInProd( one, *Vj, *Vj, VTV );
 	if (ret != Ok) { }
-        TYPE* ptr=VTV.getarray();
+        TYPE* ptr=VTV.values();
         TYPE column_sum;
         
         for (k=0; k<m; k++) {
@@ -1801,16 +1778,16 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                         }
                         column_sum += ptr[i];
                 }
-                cout <<  " V^T*B*V-I " << "for column " << k << " is " << fabs(column_sum) << endl;
+                cout <<  " V^T*B*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
                 ptr += m;
         }
         cout << " " << endl;
         
-        DenseMatrix<TYPE> E(m,_block);
+        Teuchos::SerialDenseMatrix<int,TYPE> E(m,_block);
         
 	ret = _problem.BInProd( one, *Vj, *F_vec, E );
 	if (ret != Ok) { }
-        TYPE* ptr_Ej=E.getarray();
+        TYPE* ptr_Ej=E.values();
                         
         for (k=0;k<_block;k++) {
                 column_sum=zero;
@@ -1819,15 +1796,13 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                 }
                 ptr_Ej += m;
                 if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-                cout << " B-Orthogonality with F " << "for column " << k << " is " << fabs(column_sum) << endl;
+                cout << " B-Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
 	}
         cout << " " << endl;
                  
         MultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
         ret = _problem.ApplyOp(*Vj,*AVj);
-        int row_offset=0;
-        int col_offset=0;
-        DenseMatrix<TYPE> Hj(*_hessmatrix, row_offset, col_offset, m, m);
+        Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, m);
         AVj->MvTimesMatAddMv(-one, *Vj, Hj, one);
         for ( i=0; i<_block; i++ ) {  
                 index[i] = j*_block+i;
@@ -1839,7 +1814,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         AVj->MvNorm(ptr_norms);
         
         for ( i=0; i<m; i++ ) { 
-                cout << " Arnoldi relation " << "for column " << i << " is " << fabs(ptr_norms[i]) << endl;        
+                cout << " Arnoldi relation " << "for column " << i << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(ptr_norms[i]) << endl;        
 	}
         cout << " " << endl;
                 
@@ -1854,4 +1829,5 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
 } // End of namespace Anasazi
 #endif
 // End of file BlockArnoldi.hpp
+
 
