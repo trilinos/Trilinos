@@ -300,7 +300,9 @@ int main(int argc, char *argv[]) {
     ML_Epetra::SetDefaults("DD-ML",MLList);
     iters = TestMultiLevelPreconditioner("DD-ML", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
-#ifdef HAVE_ML_AMESOS
+    // can check iteration number only with Amesos coarse solver,
+    // and METIS installed
+#if defined(HAVE_ML_AMESOS) && defined(HAVE_ML_METIS)
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -323,7 +325,6 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-#if defined(HAVE_ML_METIS) && defined(HAVE_ML_PARMETIS_3x)
   // ========================= //
   // default options for DD-ML //
   // ========================= //
@@ -338,7 +339,9 @@ int main(int argc, char *argv[]) {
     MLList.set("aggregation: nodes per aggregate (level 1)", 27);
     iters = TestMultiLevelPreconditioner("DD-ML", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
-#ifdef HAVE_ML_AMESOS
+    // can check iteration number only with Amesos coarse solver,
+    // and METIS, ParMETIS installed
+#if defined(HAVE_ML_AMESOS) && defined(HAVE_ML_METIS) && defined(HAVE_ML_PARMETIS_3x)
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -363,7 +366,6 @@ int main(int argc, char *argv[]) {
     }
   }
 #endif
-#endif
 
   // ===================== //
   // print out total error //
@@ -381,13 +383,13 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
+  if( TotalErrorResidual > 1e-8 ) return( EXIT_FAILURE );
+
 #ifdef HAVE_ML_AMESOS
   if( TotalFailed ) return( EXIT_FAILURE );
-  else              return( EXIT_SUCCESS );
-#else
-  if( TotalErrorResidual < 1e-10 ) return(EXIT_SUCCESS );
-  else return( EXIT_FAILURE );
 #endif
+
+  return( EXIT_SUCCESS );
 
 }
 
