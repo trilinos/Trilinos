@@ -156,6 +156,12 @@ char *T2 = "N";
   print_freq   = options[AZ_print_freq];
   kspace       = options[AZ_kspace];
 
+  /* Initialize some values in convergence info struct */
+  convergence_info->print_info = print_freq;
+  convergence_info->iteration = 0;
+  convergence_info->sol_updated = 0; /* GMRES seldom updates solution */
+  convergence_info->epsilon = params[AZ_tol];
+
   /* allocate memory for required vectors */
 
   NN    = kspace  + 1;
@@ -191,11 +197,16 @@ char *T2 = "N";
    *     1) ||r||                corresponding to options[AZ_conv]
    *     2) scaled ||r||         corresponding to options[AZ_conv]
    */
+  r_2norm = DDOT_F77(&N, res, &one, res, &one);
+  AZ_gdot_vec(1, &r_2norm, &rec_residual, proc_config);  
+  r_2norm = sqrt(r_2norm);
+  rec_residual = r_2norm;
 
   AZ_compute_global_scalars(Amat, x, b, res,
                           weight, &rec_residual, &scaled_r_norm, options,
                           data_org, proc_config, &r_avail, NULL, NULL, NULL,
                           convergence_info);
+  r_2norm = rec_residual;
 
   converged = scaled_r_norm < epsilon;
 
