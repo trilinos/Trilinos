@@ -54,6 +54,24 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 					  int graph_decomposition[],
 					  int mypid);
 
+#ifdef EXTREME_DEBUGGING
+static int MyPID_ = 0;
+void set_print(int MyPID ) 
+{
+  MyPID_ = MyPID;
+}
+#include <stdarg.h>
+void print(char * str, ...) 
+{
+  
+  va_list ArgList;
+  va_start(ArgList, str);
+  printf("===%d=== ", MyPID_);
+  vprintf(str,ArgList);
+  return;
+}
+#endif
+
 /* ======================================================================== */
 /*!
  \brief Used to set the flag (used in Decompose_with_METIS) to compute
@@ -870,7 +888,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       fclose(fp);
 #endif
 
-#define DUMP_WEST
 #ifdef DUMP_WEST
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
       fp = fopen(str,"w");
@@ -1224,6 +1241,10 @@ int agg_offset, vertex_offset;
  int mod, Nprocs;
  int optimal_value;
  char * unamalg_bdry = NULL;
+
+#ifdef EXTREME_DEBUGGING
+ set_print(comm->ML_mypid);
+#endif
  
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -1242,6 +1263,10 @@ int agg_offset, vertex_offset;
    /* check the system size versus null dimension size              */
    /* ============================================================= */
 
+#ifdef EXTREME_DEBUGGING
+   print("# rows orig = %d, # PDE eqns = %d\n", Nrows, num_PDE_eqns);
+#endif
+ 
    if ( Nrows % num_PDE_eqns != 0 )
    {
       printf("ML_Aggregate_CoarsenMIS ERROR : Nrows must be multiples");
@@ -1283,7 +1308,6 @@ int agg_offset, vertex_offset;
 
    aggr_options = (ML_Aggregate_Options *)ml_ag->aggr_options;
 
-   /*FIXME: e` giusto??? */
    nbytes = (Nrows*num_PDE_eqns) * sizeof(int);
 
    if ( nbytes > 0 ) {
@@ -1299,6 +1323,15 @@ int agg_offset, vertex_offset;
      }
    }
    else              aggr_index = NULL;
+
+   for( i=0 ; i<Nrows*num_PDE_eqns ; i++ ) aggr_index[i] = -1;
+   
+#ifdef EXTREME_DEBUGGING
+   print("aggr_index has size %d bytes\n", nbytes);
+   print("aggr_options pointer is %x\n", aggr_options);
+   print("ml_ag->aggr_viz_and_stats pointer is  %x\n",
+	 ml_ag->aggr_viz_and_stats );
+#endif
 
    if( aggr_options == NULL ) {
 
@@ -1429,13 +1462,36 @@ int agg_offset, vertex_offset;
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
-   unamalg_bdry = (char *) ML_allocate( sizeof(char) * Nrows );
-   
+   unamalg_bdry = (char *) ML_allocate( sizeof(char) * (Nrows+1) );
+
+   if( unamalg_bdry == NULL ) {
+     fprintf( stderr,
+	      "*ML*ERR* on proc %d, not enough space for %d bytes\n"
+	      "*ML*ERR* (file %s, line %d)\n",
+	      mypid,
+	      sizeof(char) * Nrows,
+	      __FILE__,
+	      __LINE__ );
+     exit( EXIT_FAILURE );
+   }
+
+#ifdef EXTREME_DEBUGGING
+   print("# requested local aggregates = %d, # rows_METIS = %d\n",
+	 aggr_count,
+	 Nrows );
+#endif
+
    aggr_count = ML_DecomposeGraph_with_METIS( Amatrix,aggr_count,
 					      aggr_index, unamalg_bdry,
 					      ML_LOCAL_INDICES, NULL,
 					      reorder_flag, ml_ag->cur_level,
 					      &total_nz);
+
+#ifdef EXTREME_DEBUGGING
+   print("# actual local aggregates = %d, # rows_METIS = %d\n",
+	 aggr_count,
+	 Nrows );
+#endif
 
    if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
      printf("ML_Aggregate_CoarsenMETIS (level %d) : "
@@ -1463,7 +1519,7 @@ int agg_offset, vertex_offset;
 
    if( ml_ag->aggr_viz_and_stats != NULL ) {
 
-     graph_decomposition = (int *)ML_allocate(sizeof(int)*Nrows);
+     graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
      if( graph_decomposition == NULL ) {
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
@@ -1493,7 +1549,7 @@ int agg_offset, vertex_offset;
    i = ML_Comm_GsumInt( comm, Nrows);
 
    if ( mypid == 0 && 8 < ML_Get_PrintLevel())
-     printf("Aggregation(METIS) : Total nonzeros = %d (Nrows=%d)\n",
+     printf("Aggregation(METIS) : Total nonzeros = %d (Total Nrows=%d)\n",
 	    total_nz,i);
    
    if ( ml_ag->operator_complexity == 0.0 ) {
@@ -1501,6 +1557,8 @@ int agg_offset, vertex_offset;
       ml_ag->operator_complexity = total_nz;
    }
    else ml_ag->operator_complexity += total_nz;
+
+   /* fix aggr_index for num_PDE_eqns > 1 */
    
    for (i = Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
@@ -1516,6 +1574,10 @@ int agg_offset, vertex_offset;
 
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
 
+#ifdef EXTREME_DEBUGGING
+   print("After `ML_Operator_UnAmalgamateAndDropWeak'\n");
+#endif   
+   
    Nrows      *= num_PDE_eqns;
    exp_Nrows  *= num_PDE_eqns;
 
@@ -1547,11 +1609,26 @@ int agg_offset, vertex_offset;
    
    /* count the size of each aggregate */
 
-   aggr_cnt_array = (int *) ML_allocate(sizeof(int)*aggr_count);
+   aggr_cnt_array = (int *) ML_allocate(sizeof(int)*(aggr_count+1));
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
-   for (i = 0; i < exp_Nrows; i++) 
-      if (aggr_index[i] >= 0) 
-         aggr_cnt_array[aggr_index[i]]++;
+   for (i = 0; i < exp_Nrows; i++) {
+     if (aggr_index[i] >= 0) {
+       if( aggr_index[i] >= aggr_count ) {
+	 fprintf( stderr,
+		  "*ML*WRN* on process %d, something weird happened...\n"
+		  "*ML*WRN* node %d belong to aggregate %d (#aggr = %d)\n"
+		  "*ML*WRN* (file %s, line %d)\n",
+		  comm->ML_mypid,
+		  i,
+		  aggr_index[i],
+		  aggr_count,
+		  __FILE__,
+		  __LINE__ );
+       } else {
+	 aggr_cnt_array[aggr_index[i]]++;
+       }
+     }
+   }
 
 #ifdef ML_AGGR_OUTAGGR
    sprintf(fname,"agg%d_%d",comm->ML_mypid,level_count);
@@ -1609,6 +1686,10 @@ int agg_offset, vertex_offset;
    /* Form tentative prolongator                                    */
    /* ============================================================= */
 
+#ifdef EXTREME_DEBUGGING
+   print("Form tentative prolongatoe\n");
+#endif
+
    Ncoarse = aggr_count;
    
    /* ============================================================= */
@@ -1616,7 +1697,7 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
 
    level = ml_ag->cur_level;
-   nbytes = Nrows * sizeof( int );
+   nbytes = (Nrows+1) * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
    count = aggr_count;
    for ( i = 0; i < Nrows; i+=num_PDE_eqns ) 
@@ -1634,13 +1715,17 @@ int agg_offset, vertex_offset;
        *   exit(1);
        *}*/
    }
-   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */
- 
+   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */ 
    
    /* ============================================================= */
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
 
+#ifdef EXTREME_DEBUGGING
+   print("nullspace_dim = %d\n", nullspace_dim );
+   print("Nrows = %d\n", Nrows );
+#endif
+   
    new_Nrows = Nrows;
    exp_Ncoarse = Nrows;
    
@@ -1648,15 +1733,16 @@ int agg_offset, vertex_offset;
    {
       if ( aggr_index[i] >= exp_Ncoarse ) 
       {
-         printf("WARNING : index out of bound %d = %d(%d)\n", i, aggr_index[i], 
+         printf("*ML*WRN* index out of bound %d = %d(%d)\n",
+		i, aggr_index[i], 
                 exp_Ncoarse);
       }
    }
-   nbytes = ( new_Nrows + 1 ) * sizeof(int); 
+   nbytes = ( new_Nrows+1 ) * sizeof(int); 
    ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(int); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int); 
    ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(double); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double); 
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
    
@@ -1664,8 +1750,18 @@ int agg_offset, vertex_offset;
    /* set up the space for storing the new null space               */
    /* ------------------------------------------------------------- */
 
-   nbytes = Ncoarse * nullspace_dim * nullspace_dim * sizeof(double);
+   nbytes = (Ncoarse+1) * nullspace_dim * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_null),nbytes,"AGr");
+   if( new_null == NULL ) {
+     fprintf( stderr,
+	      "*ML*ERR* on process %d, not enough memory for %d bytes\n"
+	      "*ML*ERR* (file %s, line %d)\n",
+	      nbytes,
+	      __FILE__,
+	      __LINE__ );
+     exit( EXIT_FAILURE );
+   }
+   
    for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
       new_null[i] = 0.0;
 
@@ -1691,18 +1787,16 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
 
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLs");
-   for (i = 0; i < aggr_count; i++) 
-   {
-      rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
-      aggr_cnt_array[i] = 0;
-      if (rows_in_aggs[i] == NULL) 
-      {
-         printf("Error: couldn't allocate memory in CoarsenMETIS\n");
-         exit(1);
-      }
+   for (i = 0; i < aggr_count; i++) {
+     nbytes = aggr_cnt_array[i]+1;
+     rows_in_aggs[i] = (int *) ML_allocate(nbytes*sizeof(int));
+     aggr_cnt_array[i] = 0;
+     if (rows_in_aggs[i] == NULL)  {
+       printf("*ML*ERR* couldn't allocate memory in CoarsenMETIS\n");
+       exit(1);
+     }
    }
-   for (i = 0; i < exp_Nrows; i+=num_PDE_eqns) 
-   {
+   for (i = 0; i < exp_Nrows; i+=num_PDE_eqns) {
       if ( aggr_index[i] >= 0 && aggr_index[i] < aggr_count)
       {
          for (j = 0; j < num_PDE_eqns; j++)
@@ -1750,9 +1844,11 @@ int agg_offset, vertex_offset;
          for (j = 0; j < length; j++)
          {
             index = rows_in_aggs[i][j];
+	    
             for (k = 0; k < nullspace_dim; k++)
             {
-              if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
+              if ( unamalg_bdry[index/num_PDE_eqns] == 'T')
+		qr_tmp[k*length+j] = 0.;
                else
                {
                   if (index % num_PDE_eqns == k) qr_tmp[k*length+j] = 1.0;
@@ -1768,14 +1864,18 @@ int agg_offset, vertex_offset;
             for (j = 0; j < length; j++)
             {
                index = rows_in_aggs[i][j];
-               if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
+               if ( unamalg_bdry[index/num_PDE_eqns] == 'T')
+		 qr_tmp[k*length+j] = 0.;
                else {
                   if (index < Nrows) {
                      qr_tmp[k*length+j] = nullspace_vect[k*Nrows+index];
                   }
                   else {
 		    fprintf( stderr,
-			     "*ML*ERR* in QR\n" );
+			     "*ML*ERR* in QR\n"
+			     "*ML*ERR* (file %s, line %d)\n",
+			     __FILE__,
+			     __LINE__ );
 		    exit( EXIT_FAILURE );
                   }
                }
@@ -1786,6 +1886,7 @@ int agg_offset, vertex_offset;
       /* ---------------------------------------------------------- */
       /* now calculate QR using an LAPACK routine                   */
       /* ---------------------------------------------------------- */
+
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
 	MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
@@ -1900,6 +2001,10 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
+
+#ifdef EXTREME_DEBUGGING
+   print("set up the csr_data data structure\n");
+#endif
    
    ML_memory_alloc((void**) &csr_data, sizeof(struct ML_CSR_MSRdata),"CSR");
    csr_data->rowptr  = new_ia;
@@ -1923,7 +2028,10 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
-
+#ifdef EXTREME_DEBUGGING
+   print("clean up\n");
+#endif
+   
    ML_free(unamalg_bdry);
    ML_memory_free((void**)&aggr_index);
    ML_free(aggr_cnt_array);
