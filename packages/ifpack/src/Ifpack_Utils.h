@@ -9,6 +9,13 @@ class Epetra_CrsMatrix;
 class Epetra_CrsGraph;
 class Epetra_RowMatrix;
 class Epetra_MultiVector;
+class Epetra_Vector;
+
+/*! \file Ifpack_Utils.h
+ */
+
+//! Prints a line of `=' on cout
+void Ifpack_PrintLine();
 
 //! Stops the execution of code, so that a debugger can be attached.
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm);
@@ -36,7 +43,34 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 
 void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A);
 
-int Ifpack_Analyze(const Epetra_RowMatrix& A, const int NumEquations = 1);
+//! Analyzes the basic properties of the input matrix A; see \ref ifp_analyze.
+int Ifpack_Analyze(const Epetra_RowMatrix& A);
+
+//! Analyzes the distribution of values of the input matrix A.
+/*!
+ \param A - (In) matrix to be analyzed.
+ \param abs - (In) if \c true, the function will analyze matrix
+              B, whose elements are defined as \f$ B_{i,i} = | A_{i,i}| \f$.
+ \param steps - (In) number of intervals for the analysis.
+
+ An example of output is reported \ref ifp_matrix.
+ */
+int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
+                                 const bool abs = false, 
+                                 const int steps = 10);
+
+//! Analyzes the distribution of values of the input vector Diagonal.
+/*!
+ \param Diagonal - (In) Vector to be analyzed.
+ \param abs - (In) if \c true, the function will analyze vector
+              B, whose elements are defined as \f$ B_{i} = | D_{i}| \f$.
+ \param steps - (In) number of intervals for the analysis.
+
+ An example of output is reported \ref ifp_vector.
+ */
+int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
+                                 const bool abs = false, 
+                                 const int steps = 10);
 int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
                        char* FileName,
                        int NumPDEEqns = 1);

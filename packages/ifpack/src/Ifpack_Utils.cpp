@@ -10,6 +10,11 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
+void Ifpack_PrintLine()
+{
+  cout << "================================================================================" << endl;
+}
+
 //============================================================================
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 {
@@ -265,302 +270,471 @@ void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A)
 }
 
 //============================================================================
-// First written for ML_operators, this explains the C style
-#include "limits.h"
-#include "float.h"
-int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
+
+double Ifpack_FrobeniusNorm(const Epetra_RowMatrix& A)
 {
-
-  int i,j;
-  double MyFrobeniusNorm = 0.0; 
-  double FrobeniusNorm = 0.0;
-  double MyMinElement = DBL_MAX; 
-  double MinElement = DBL_MAX;
-  double MyMaxElement = DBL_MIN; 
-  double MaxElement = DBL_MIN;
-  double MyMinAbsElement = DBL_MAX; 
-  double MinAbsElement = DBL_MAX;
-  double MyMaxAbsElement = 0.0; 
-  double MaxAbsElement = 0.0;
-  int NumMyRows = 0, NumGlobalRows = 0;
-  
-  int MyPID;
-  int NumProc;
-
-  double Element, AbsElement; /* generic nonzero element and its abs value */
-  int DiagonallyDominant = 0;
-  int MyDiagonallyDominant = 0;
-  int WeaklyDiagonallyDominant = 0;
-  int MyWeaklyDiagonallyDominant = 0;
-  int MyDirichletRows = 0;
-  int DirichletRows = 0;
-  int MyLowerNonzeros = 0;
-  int MyUpperNonzeros = 0;
-  int LowerNonzeros = 0;
-  int UpperNonzeros = 0;
-  double Min;
-  double MyMin;
-  double Max;
-  double MyMax;
-  int MyBandwidth = 0;
-  int Bandwidth = 0;
-  int grow;
-  int gcol;
-  int MyActualNonzeros = 0;
-  int ActualNonzeros = 0;
-  const Epetra_Comm& Comm = A.Comm();
-
-  /* ---------------------- execution begins ------------------------------ */
-
-  // only square matrices. The code should work for
-  // rectangular matrices as well, but it has never been tested.
-  if( A.NumGlobalRows() != A.NumGlobalCols() ) 
-    IFPACK_CHK_ERR(-1);
-
-  /* set up data and allocate memory */
-  MyPID = A.Comm().MyPID();
-  NumProc = A.Comm().NumProc();
-  NumMyRows = A.NumMyRows();
-  NumGlobalRows = A.NumGlobalRows();
+  double MyNorm = 0.0, GlobalNorm;
 
   vector<int> colInd(A.MaxNumEntries());
   vector<double> colVal(A.MaxNumEntries());
 
-  vector<double> Diagonal(NumMyRows);
-  vector<double> SumOffDiagonal(NumMyRows);
-  
-  for (i = 0 ; i < NumMyRows ; ++i) {
-    Diagonal[i] = 0.0;
-    SumOffDiagonal[i] = 0.0;
-  }
- 
-  // zero-out values
-  MyActualNonzeros = 0;
-  
-  /* cycle over all matrix rows */
-
-  for (int i = 0 ; i < NumMyRows ; ++i) {
-
-    grow = A.RowMatrixRowMap().GID(i);
-    if (grow == -1)
-      IFPACK_CHK_ERR(-1);
+  for (int i = 0 ; i < A.NumMyRows() ; ++i) {
 
     int Nnz;
     IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
                                       &colVal[0],&colInd[0]));
-                                      
-    /* compute the real number of nonzero elements */
-    
-    int count = 0;
-    for (j = 0 ; j < Nnz ; ++j) {
-      /* compute the real number of nonzeros only */
-      if (colVal[j] != 0.0) {
-        ++count;
-        gcol = A.RowMatrixColMap().GID(colInd[j]);
-        if (gcol == -1)
-          IFPACK_CHK_ERR(-1);
-        if (gcol < grow) 
-          MyLowerNonzeros++;
-        else if (gcol > grow) 
-          MyUpperNonzeros++;
-        /* compute bandwidth */
-        if (IFPACK_ABS((gcol - grow)) > MyBandwidth)
-          MyBandwidth = IFPACK_ABS((gcol - grow));
-      }
-    }
-    MyActualNonzeros += count;
 
-    if (count == 1) MyDirichletRows++;
-    
-    /* start looking for min/max element (with and without abs()) */
-    /* I consider the following:
-     * - min element;
-     * - min abs element;
-     * - max element;
-     * - max abs element;
-     * - diagonal element;
-     * - sum off abs off-diagonal elements;
-     * Here I compute the local ones, with prefix `My'. The global
-     * ones (without prefix) will be computed later
-     */
-
-    for (j = 0 ; j < Nnz ; ++j) {
-      Element = colVal[j];
-      if (Element != 0.0) {
-        AbsElement = fabs(Element);
-        if ((Element < MyMinElement) && (Element != 0.0))
-          MyMinElement = Element;
-        if (Element > MyMaxElement) 
-          MyMaxElement = Element;
-        if ((AbsElement < MyMinAbsElement) && (AbsElement != 0.0))
-          MyMinAbsElement = AbsElement;
-        if (AbsElement > MyMaxAbsElement) 
-          MyMaxAbsElement = AbsElement;
-        if (colInd[j] == i)
-          Diagonal[i] = AbsElement;
-        else
-          SumOffDiagonal[i] += fabs(Element);
-        MyFrobeniusNorm += Element*Element;
-      }
-    }
-  } /* for over all matrix rows */
-
-  /* compute the min/max of important quantities over all processes */
-
-  Comm.MinAll(&MyMinElement,&MinElement,1);
-  Comm.MaxAll(&MyMaxElement,&MaxElement,1);
-  Comm.MinAll(&MyMinAbsElement,&MinAbsElement,1);
-  Comm.MaxAll(&MyMaxAbsElement,&MaxAbsElement,1);
-  
-  Comm.SumAll(&MyLowerNonzeros,&LowerNonzeros,1);
-  Comm.SumAll(&MyUpperNonzeros,&UpperNonzeros,1);
-
-  Comm.SumAll(&MyFrobeniusNorm,&FrobeniusNorm,1);
-  Comm.SumAll(&MyDirichletRows,&DirichletRows,1);
-  Comm.SumAll(&MyActualNonzeros,&ActualNonzeros,1);
-
-  Comm.MaxAll(&MyBandwidth,&Bandwidth,1);
-
-  /* a test to see if matrix is diagonally-dominant */
-
-  MyDiagonallyDominant = 0;
-  MyWeaklyDiagonallyDominant = 0;
-
-  for (i = 0 ; i < NumMyRows ; ++i) {
-    if (Diagonal[i] > SumOffDiagonal[i]) 
-      ++MyDiagonallyDominant;
-    else if (Diagonal[i] == SumOffDiagonal[i]) 
-      ++MyWeaklyDiagonallyDominant;
-    /* else nothing to track */
-  }
-
-  Comm.SumAll(&MyDiagonallyDominant,&DiagonallyDominant,1);
-  Comm.SumAll(&MyWeaklyDiagonallyDominant,&WeaklyDiagonallyDominant,1);
-
-  /* simply no output for MyPID>0, only proc 0 write on os */
-  if (MyPID == 0) {
-
-    cout << "\n\n\t*** IFPACK Analysis of Epetra_RowMatrix `" << A.Label() << "'" << endl;
-    printf("\t%-50s = %d\n", 
-           "Number of global rows", NumGlobalRows);
-    printf("\t%-50s = %d\n",
-           "Number of stored elements", A.NumGlobalNonzeros());
-    printf("\t%-50s = %d\n",
-           "Number of nonzero elements", ActualNonzeros);
-    printf("\t%-50s = %f\n",
-           "Average number of nonzero elements/rows", 
-           1.0 * A.NumGlobalNonzeros() / NumGlobalRows);
-    printf("\t%-50s = %d\n",
-           "Nonzero elements in strict lower part", LowerNonzeros);
-    printf("\t%-50s = %d\n",
-           "Nonzero elements in strict upper part", UpperNonzeros);
-    printf("\t%-50s = %d\n",
-           "Max |i-j|, a(i,j) != 0",Bandwidth);
-    printf("\t%-50s = %d (= %5.2f%%)\n",
-           "Number of diagonally dominant rows",
-           DiagonallyDominant,
-           100.0*DiagonallyDominant/NumGlobalRows); 
-    printf("\t%-50s = %d (= %5.2f%%)\n",
-           "Number of weakly diagonally dominant rows",
-           WeaklyDiagonallyDominant,
-           100.0*WeaklyDiagonallyDominant/NumGlobalRows);
-    printf("\t%-50s = %d (= %5.2f%%)\n",
-           "Number of Dirichlet rows",
-           DirichletRows,
-           100.0*DirichletRows/NumGlobalRows);
-    printf("\t%-50s = %f\n",
-           "||A||_F",sqrt(FrobeniusNorm));
-    printf("\t%-50s = %f\n",
-           "Min_{i,j} ( a(i,j) )", MinElement);
-    printf("\t%-50s = %f\n",
-           "Max_{i,j} ( a(i,j) )", MaxElement);
-    printf("\t%-50s = %f\n",
-           "Min_{i,j} ( abs(a(i,j)) )", MinAbsElement);
-    printf("\t%-50s = %f\n",
-           "Max_{i,j} ( abs(a(i,j)) )", MaxAbsElement);
-
-  }
-
-  /* Analyze elements on diagonal for the entire matrix */
-
-  MyMin = DBL_MAX, MyMax = 0.0;
-  for( i=0 ; i<NumMyRows ; ++i ) {
-    if (Diagonal[i] < MyMin ) {
-      if (Diagonal[i] != 0.0) 
-        MyMin = Diagonal[i];
-    }
-    if (Diagonal[i] > MyMax) 
-      MyMax = Diagonal[i];
-  }
-  Comm.MinAll(&MyMin,&Min,1);
-  Comm.MaxAll(&MyMax,&Max,1);
-
-  if (MyPID == 0) {
-    printf("\t%-50s = %f\n",
-           "Min_i ( abs(a(i,i)) )", Min);
-    printf("\t%-50s = %f\n",
-           "Max_i ( abs(a(i,i)) )", Max);
-  }
-
-  /* Analyze elements off diagonal for the entire matrix */
-
-  MyMin = DBL_MAX, MyMax = 0.0;
-  for (i = 0 ; i < NumMyRows ; ++i) {
-    if (SumOffDiagonal[i] < MyMin ) 
-      if (SumOffDiagonal[i] != 0.0) 
-        MyMin = SumOffDiagonal[i];
-    if (SumOffDiagonal[i] > MyMax) 
-      MyMax = SumOffDiagonal[i];
-  }
-  Comm.MinAll(&MyMin,&Min,1);
-  Comm.MaxAll(&MyMax,&Max,1);
-
-  if (MyPID == 0) {
-    printf("\t%-50s = %f\n",
-           "Min_i ( \\sum_{j!=i} abs(a(i,j)) )", Min);
-    printf("\t%-50s = %f\n",
-           "Max_i ( \\sum_{j!=i} abs(a(i,j)) )", Max);
-  }
-
-  /* cycle over all equations and analyze diagonal elements. 
-   * This may show that the matrix is badly scaled */
-  
-  if (NumEquations > 1) {
-
-    for (int Equation = 0 ; Equation < NumEquations ; ++Equation) {
-
-      /* Analyze elements on diagonal */
-
-      MyMin = DBL_MAX, MyMax = 0.0;
-      for (i = Equation ; i < NumMyRows ; i += NumEquations) {
-        if (Diagonal[i] < MyMin) {
-          if (Diagonal[i] != 0.0)
-            MyMin = Diagonal[i];
-        }
-        if (Diagonal[i] > MyMax) 
-          MyMax = Diagonal[i];
-      }
-      Comm.MinAll(&MyMin,&Min,1);
-      Comm.MaxAll(&MyMax,&Max,1);
-
-      if (MyPID == 0) {
-        printf("\t(Eq %2d) %-42s = %f\n",
-               Equation,
-               "Min_i ( abs(a(i,i)) )", 
-               Min);
-        printf("\t(Eq %2d) %-42s = %f\n",
-               Equation,
-               "Max_i ( abs(a(i,i)) )", 
-               Max);
-      }
+    for (int j = 0 ; j < Nnz ; ++j) {
+      MyNorm += colVal[j] * colVal[j];
     }
   }
 
-  if (MyPID == 0)
+  A.Comm().SumAll(&MyNorm,&GlobalNorm,1);
+
+  return(sqrt(GlobalNorm));
+}
+
+static void print()
+{
+  printf("\n");
+}
+
+#include <iomanip>
+template<class T>
+static void print(char* str, T val)
+{
+  cout.width(30); cout.setf(ios::left);
+  cout << str;
+  cout << " = " << val << endl;
+}
+
+template<class T>
+static void print(char* str, T val, double percentage)
+{
+  cout.width(30); cout.setf(ios::left);
+  cout << str;
+  cout << " = ";
+  cout.width(20); cout.setf(ios::left);
+  cout << val;
+  cout << " ( " << percentage << " %)" << endl;
+}
+template<class T>
+static void print(char* str, T one, T two, T three, bool equal = true)
+{
+  cout.width(30); cout.setf(ios::left);
+  cout << str;
+  if (equal) 
+    cout << " = ";
+  else
+    cout << "   ";
+  cout.width(15); cout.setf(ios::left);
+  cout << one;
+  cout.width(15); cout.setf(ios::left);
+  cout << two;
+  cout.width(15); cout.setf(ios::left);
+  cout << three;
+  cout << endl;
+}
+
+//============================================================================
+#include "limits.h"
+#include "float.h"
+#include "Epetra_FECrsMatrix.h"
+
+int Ifpack_Analyze(const Epetra_RowMatrix& A)
+{
+
+  int NumMyRows = A.NumMyRows();
+  int NumGlobalRows = A.NumGlobalRows();
+  int NumGlobalCols = A.NumGlobalCols();
+  int MyBandwidth = 0, GlobalBandwidth;
+  int MyLowerNonzeros = 0, MyUpperNonzeros = 0;
+  int GlobalLowerNonzeros, GlobalUpperNonzeros;
+  int MyDiagonallyDominant = 0, GlobalDiagonallyDominant;
+  int MyWeaklyDiagonallyDominant = 0, GlobalWeaklyDiagonallyDominant;
+  double MyMin, MyAvg, MyMax;
+  double GlobalMin, GlobalAvg, GlobalMax;
+  int GlobalStorage;
+
+  bool verbose = (A.Comm().MyPID() == 0);
+
+  GlobalStorage = sizeof(int*) * NumGlobalRows + 
+    sizeof(int) * A.NumGlobalNonzeros() + 
+    sizeof(double) * A.NumGlobalNonzeros();
+
+  if (verbose) {
+    print();
+    Ifpack_PrintLine();
+    print<const char*>("Label", A.Label());
+    print<int>("Global rows", NumGlobalRows);
+    print<int>("Global columns", NumGlobalCols);
+    print<int>("Stored nonzeros", A.NumGlobalNonzeros());
+    print<int>("Nonzeros / row", A.NumGlobalNonzeros() / NumGlobalRows);
+    print<double>("Estimated storage (Mbytes)", 1.0e-6 * GlobalStorage);
+  }
+
+  int NumMyActualNonzeros = 0, NumGlobalActualNonzeros;
+  int NumMyEmptyRows = 0, NumGlobalEmptyRows;
+  int NumMyDirichletRows = 0, NumGlobalDirichletRows;
+
+  vector<int> colInd(A.MaxNumEntries());
+  vector<double> colVal(A.MaxNumEntries());
+
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+
+    int GRID = A.RowMatrixRowMap().GID(i);
+    int Nnz;
+    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                      &colVal[0],&colInd[0]));
+
+    if (Nnz == 0)
+      NumMyEmptyRows++;
+
+    if (Nnz == 1)
+      NumMyDirichletRows++;
+
+    double ExtraSum = 0.0;
+    double Diag = 0.0;
+
+    for (int j = 0 ; j < Nnz ; ++j) {
+
+      double v = colVal[j];
+      if (v < 0) v = -v;
+      if (colVal[j] != 0.0)
+        NumMyActualNonzeros++;
+
+      int GCID = A.RowMatrixColMap().GID(colInd[j]);
+
+      if (GCID != GRID)
+        ExtraSum += v;
+      else
+        Diag = v;
+
+      if (GCID < GRID) 
+        MyLowerNonzeros++;
+      else if (GCID > GRID) 
+        MyUpperNonzeros++;
+      int b = GCID - GRID;
+      if (b < 0) b = -b;
+      if (b > MyBandwidth)
+        MyBandwidth = b;
+    }
+
+    if (Diag > ExtraSum)
+      MyDiagonallyDominant++;
+
+    if (Diag >= ExtraSum)
+      MyWeaklyDiagonallyDominant++;
+  }
+
+  // ======================== //
+  // summing up global values //
+  // ======================== //
+ 
+  A.Comm().SumAll(&MyDiagonallyDominant,&GlobalDiagonallyDominant,1);
+  A.Comm().SumAll(&MyWeaklyDiagonallyDominant,&GlobalWeaklyDiagonallyDominant,1);
+  A.Comm().SumAll(&NumMyActualNonzeros, &NumGlobalActualNonzeros, 1);
+  A.Comm().SumAll(&NumMyEmptyRows, &NumGlobalEmptyRows, 1);
+  A.Comm().SumAll(&NumMyDirichletRows, &NumGlobalDirichletRows, 1);
+  A.Comm().SumAll(&MyBandwidth, &GlobalBandwidth, 1);
+  A.Comm().SumAll(&MyLowerNonzeros, &GlobalLowerNonzeros, 1);
+  A.Comm().SumAll(&MyUpperNonzeros, &GlobalUpperNonzeros, 1);
+  A.Comm().SumAll(&MyDiagonallyDominant, &GlobalDiagonallyDominant, 1);
+  A.Comm().SumAll(&MyWeaklyDiagonallyDominant, &GlobalWeaklyDiagonallyDominant, 1);
+ 
+  if (verbose) {
+    print();
+    print<int>("Actual nonzeros", NumGlobalActualNonzeros);
+    print<int>("Nonzeros in strict lower part", GlobalLowerNonzeros);
+    print<int>("Nonzeros in strict upper part", GlobalUpperNonzeros);
+    print();
+    print<int>("Empty rows", NumGlobalEmptyRows,
+               100.0 * NumGlobalEmptyRows / NumGlobalRows);
+    print<int>("Dirichlet rows", NumGlobalDirichletRows,
+               100.0 * NumGlobalDirichletRows / NumGlobalRows);
+    print<int>("Diagonally dominant rows", GlobalDiagonallyDominant,
+               100.0 * GlobalDiagonallyDominant / NumGlobalRows);
+    print<int>("Weakly diag. dominant rows", 
+               GlobalWeaklyDiagonallyDominant,
+               100.0 * GlobalWeaklyDiagonallyDominant / NumGlobalRows);
+    print();
+    print<int>("Maximum bandwidth", GlobalBandwidth);
+
+    print();
+    print("", "one-norm", "inf-norm", "Frobenius", false);
+    print("", "========", "========", "=========", false);
+    print();
+
+    print<double>("A", A.NormOne(), A.NormInf(), Ifpack_FrobeniusNorm(A));
+  }
+
+  // create A + A^T and A - A^T
+
+  Epetra_FECrsMatrix AplusAT(Copy, A.RowMatrixRowMap(), 0);
+  Epetra_FECrsMatrix AminusAT(Copy, A.RowMatrixRowMap(), 0);
+
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+
+    int GRID = A.RowMatrixRowMap().GID(i);
+
+    int Nnz;
+    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                      &colVal[0],&colInd[0]));
+
+    for (int j = 0 ; j < Nnz ; ++j) {
+
+      int GCID         = A.RowMatrixColMap().GID(colInd[j]);
+      double plus_val  = colVal[j];
+      double minus_val = -colVal[j];
+
+      if (AplusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
+        IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
+      }
+
+      if (AplusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&plus_val) != 0) {
+        IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GCID,1,&GRID,&plus_val));
+      }
+
+      if (AminusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
+        IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
+      }
+
+      if (AminusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&minus_val) != 0) {
+        IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GCID,1,&GRID,&minus_val));
+      }
+
+    }
+  }
+
+  AplusAT.FillComplete();
+  AminusAT.FillComplete();
+
+  AplusAT.Scale(0.5);
+  AminusAT.Scale(0.5);
+
+  if (verbose) {
+    print<double>("A + A^T", AplusAT.NormOne(), 
+                  AplusAT.NormInf(),
+                  Ifpack_FrobeniusNorm(AplusAT));
+    print<double>("A - A^T", AminusAT.NormOne(), 
+                  AminusAT.NormInf(),
+                  Ifpack_FrobeniusNorm(AminusAT));
+
+    print();
+    print<char*>("", "min", "avg", "max", false);
+    print<char*>("", "===", "===", "===", false);
+  }
+
+  MyMax = -DBL_MAX;
+  MyMin = DBL_MAX;
+
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+
+    int Nnz;
+    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                      &colVal[0],&colInd[0]));
+
+    for (int j = 0 ; j < Nnz ; ++j) {
+      MyAvg += colVal[j];
+      if (colVal[j] > MyMax) MyMax = colVal[j];
+      if (colVal[j] < MyMin) MyMin = colVal[j];
+    }
+  }
+
+  A.Comm().MaxAll(&MyMax, &GlobalMax, 1);
+  A.Comm().MinAll(&MyMin, &GlobalMin, 1);
+  A.Comm().SumAll(&MyAvg, &GlobalAvg, 1);
+  GlobalAvg /= A.NumGlobalNonzeros();
+
+  if (verbose) {
+    print();
+    print<double>(" A(i,j)", GlobalMin, GlobalAvg, GlobalMax);
+  }
+
+  MyMax = 0.0;
+  MyMin = DBL_MAX;
+
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+
+    int Nnz;
+    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                      &colVal[0],&colInd[0]));
+
+    for (int j = 0 ; j < Nnz ; ++j) {
+      double v = colVal[j];
+      if (v < 0) v = -v;
+      MyAvg += v;
+      if (colVal[j] > MyMax) MyMax = v;
+      if (colVal[j] < MyMin) MyMin = v;
+    }
+  }
+
+  A.Comm().MaxAll(&MyMax, &GlobalMax, 1);
+  A.Comm().MinAll(&MyMin, &GlobalMin, 1);
+  A.Comm().SumAll(&MyAvg, &GlobalAvg, 1);
+  GlobalAvg /= A.NumGlobalNonzeros();
+
+  if (verbose) {
+    print<double>("|A(i,j)|", GlobalMin, GlobalAvg, GlobalMax);
+    print();
+  }
+
+  // ================= //
+  // diagonal elements //
+  // ================= //
+
+  Epetra_Vector Diagonal(A.RowMatrixRowMap());
+  A.ExtractDiagonalCopy(Diagonal);
+  Diagonal.MinValue(&GlobalMin);
+  Diagonal.MaxValue(&GlobalMax);
+  Diagonal.MeanValue(&GlobalAvg);
+
+  if (verbose) {
+    print();
+    print<double>(" A(k,k)", GlobalMin, GlobalAvg, GlobalMax);
+  }
+
+  Diagonal.Abs(Diagonal);
+  Diagonal.MinValue(&GlobalMin);
+  Diagonal.MaxValue(&GlobalMax);
+  Diagonal.MeanValue(&GlobalAvg);
+  if (verbose)
+    print<double>("|A(k,k)|", GlobalMin, GlobalAvg, GlobalMax);
+
+  if (verbose) {
+    cout << "================================================================================" << endl;
+  }
+
+  return(0);
+}
+
+int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
+                                 const bool abs, const int steps)
+{
+
+  bool verbose = (Diagonal.Comm().MyPID() == 0);
+  double min_val =  DBL_MAX;
+  double max_val = -DBL_MAX;
+
+  for (int i = 0 ; i < Diagonal.MyLength() ; ++i) {
+    double v = Diagonal[i];
+    if (abs)
+      if (v < 0) v = -v;
+    if (v > max_val)
+      max_val = v;
+    if (v < min_val)
+      min_val = v;
+  }
+
+  if (verbose) {
     cout << endl;
+    Ifpack_PrintLine();
+    cout << "Vector label = " << Diagonal.Label() << endl;
+    cout << endl;
+  }
 
-  return 0;
+  double delta = (max_val - min_val) / steps;
+  for (int k = 0 ; k < steps ; ++k) {
 
+    double below = delta * k + min_val;
+    double above = below + delta;
+    int MyBelow = 0, GlobalBelow;
+
+    for (int i = 0 ; i < Diagonal.MyLength() ; ++i) {
+      double v = Diagonal[i];
+      if (v < 0) v = -v;
+      if (v >= below && v < above) MyBelow++;
+    }
+
+    Diagonal.Comm().SumAll(&MyBelow, &GlobalBelow, 1);
+
+    if (verbose) {
+      printf("Elements in [%+7e, %+7e) = %10d ( = %5.2f %%)\n",
+             below, above, GlobalBelow,
+             100.0 * GlobalBelow / Diagonal.GlobalLength());
+    }
+  }
+  
+  if (verbose) {
+    Ifpack_PrintLine();
+    cout << endl;
+  }
+
+  return(0);
+}
+
+// ====================================================================== 
+
+int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
+                                 const bool abs, const int steps)
+{
+
+  bool verbose = (A.Comm().MyPID() == 0);
+  double min_val =  DBL_MAX;
+  double max_val = -DBL_MAX;
+
+  vector<int>    colInd(A.MaxNumEntries());
+  vector<double> colVal(A.MaxNumEntries());
+  
+  for (int i = 0 ; i < A.NumMyRows() ; ++i) {
+
+    int Nnz;
+    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                      &colVal[0],&colInd[0]));
+
+    for (int j = 0 ; j < Nnz ; ++j) {
+      double v = colVal[j];
+      if (abs)
+        if (v < 0) v = -v;
+      if (v < min_val)
+        min_val = v;
+      if (v > max_val)
+        max_val = v;
+    }
+  }
+
+  if (verbose) {
+    cout << endl;
+    Ifpack_PrintLine();
+    cout << "Label of matrix = " << A.Label() << endl;
+    cout << endl;
+  }
+
+  double delta = (max_val - min_val) / steps;
+  for (int k = 0 ; k < steps ; ++k) {
+
+    double below = delta * k + min_val;
+    double above = below + delta;
+    int MyBelow = 0, GlobalBelow;
+
+    for (int i = 0 ; i < A.NumMyRows() ; ++i) {
+
+      int Nnz;
+      IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                        &colVal[0],&colInd[0]));
+
+      for (int j = 0 ; j < Nnz ; ++j) {
+        double v = colVal[j];
+        if (abs)
+          if (v < 0) v = -v;
+        if (v >= below && v < above) MyBelow++;
+      }
+
+    }
+    A.Comm().SumAll(&MyBelow, &GlobalBelow, 1);
+    if (verbose) {
+      printf("Elements in [%+7e, %+7e) = %10d ( = %5.2f %%)\n",
+             below, above, GlobalBelow,
+             100.0 * GlobalBelow / A.NumGlobalNonzeros());
+    }
+  }
+
+  if (verbose) {
+    Ifpack_PrintLine();
+    cout << endl;
+  }
+
+  return(0);
 }
 
 // ====================================================================== 
