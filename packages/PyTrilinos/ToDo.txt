@@ -73,3 +73,7 @@
        int NumPy arrays to int * the same way double NumPy arrays are
        converted to double *.
     ------ Clean up %typemap(in) (int * Indices)
+
+****** Upgrade PyTrilinos to become a Trilinos package
+    ------ Copy to Trilinos repository
+    ------ Autotool

@@ -30,24 +30,13 @@ ifeq ($(TEST_NO_DIFF),)
 	fi
 endif
 
-test: testEpetra testSerialDense testParameter testStatusTest testExample
+test: testEpetra testParameter testStatusTest testExample
 
 testEpetra:
 	rm -fr $@.out
 	touch $@.out
 	@echo "----" $(TEE) $@.out
 	@echo "Test Epetra interface" $(TEE) $@.out
-	@echo "----" $(TEE) $@.out
-	@./$@.py 2>&1 $(TEE) $@.out
-	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
-	@mv TEMP $@.out
-	$(MAKE) TEST_OUT=$@.out test_diff
-
-testSerialDense:
-	rm -fr $@.out
-	touch $@.out
-	@echo "----" $(TEE) $@.out
-	@echo "Test the SerialDense interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
 	@grep -v "Ran [0-9]* tests in" $@.out > TEMP

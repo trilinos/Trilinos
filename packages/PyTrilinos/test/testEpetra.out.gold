@@ -62,6 +62,18 @@ Test the 3D Vector noncontig(0,2) Numeric array constructor ... ok
 Test the 3D Vector noncontig(1,2) Numeric array constructor ... ok
 Test the 3D Vector Numeric array constructor ... ok
 Test the 3D Vector PyObject constructor ... ok
+Test the SerialDenseVector default constructor ... ok
+Test the SerialDenseMatrix copy constructor ... ok
+Test the SerialDenseMatrix default constructor ... ok
+Test the SerialDenseMatrix index errors ... ok
+Test the SerialDenseMatrix NormOne and NormInf methods ... ok
+Test the SerialDenseMatrix Shape and Reshape methods ... ok
+Test the SerialDenseMatrix sized constructor ... ok
+Test the SerialDenseSolver ... ok
+Test the SerialDenseVector copy constructor ... ok
+Test the SerialDenseVector index errors ... ok
+Test the SerialDenseVector Size and Resize methods ... ok
+Test the SerialDenseVector sized constructor ... ok
 
 ----------------------------------------------------------------------
 
