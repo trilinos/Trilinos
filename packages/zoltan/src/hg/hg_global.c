@@ -27,6 +27,10 @@ static ZOLTAN_HG_GLOBAL_PART_FN global_rbfs;
 static ZOLTAN_HG_GLOBAL_PART_FN global_rbfsh;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr1;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr2;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr3;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr4;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr5;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr6;
 
 /****************************************************************************/
 
@@ -40,6 +44,10 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   else if (!strcasecmp(str, "rbfsh")) return global_rbfsh;
   else if (!strcasecmp(str, "gr1")) return global_gr1;
   else if (!strcasecmp(str, "gr2")) return global_gr2;
+  else if (!strcasecmp(str, "gr3")) return global_gr3;
+  else if (!strcasecmp(str, "gr4")) return global_gr4;
+  else if (!strcasecmp(str, "gr5")) return global_gr5;
+  else if (!strcasecmp(str, "gr6")) return global_gr6;
   else                              return NULL;
 }
 
@@ -544,7 +552,7 @@ static int greedy_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank; 
-  int esize;
+  int esize, *vtx_count=NULL;
   int ierr=ZOLTAN_OK;
   float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   float *gain = NULL, *edge_sum = NULL;
@@ -565,7 +573,7 @@ static int greedy_order (
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
 
-  if (priority_mode==2){
+  if ((priority_mode==2) || (priority_mode==4) || (priority_mode==6)){
     if (!(edge_sum = (float *)  ZOLTAN_CALLOC (sizeof (float), hg->nVtx))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr =  ZOLTAN_MEMERR;
@@ -576,6 +584,13 @@ static int greedy_order (
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
         edge_sum[hg->hvertex[i]] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
       }
+    }
+  }
+  if (priority_mode>=3){
+    if (!(vtx_count = (int *)  ZOLTAN_CALLOC (sizeof (int), hg->nEdge))){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ierr =  ZOLTAN_MEMERR;
+      goto error;
     }
   }
 
@@ -651,9 +666,13 @@ rank[vtx]);
       /* Reset all gain values (but one). */
       j = heap_peak_max(&h);
       for (i=0; i<hg->nVtx; i++){
-        if (i !=j) gain[i] = 0.0;
+        if (i != j) gain[i] = 0.0;
         if (rank[i] <0) heap_change_value(&h, i, gain[i]);
       }
+      /* Reset counters. */
+      if (vtx_count)
+        for (j=0; j<hg->nEdge; j++)
+          vtx_count[j] = 0;
     }
      
     /* Update gain values for nbors. */
@@ -661,6 +680,7 @@ rank[vtx]);
     for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
       edge = hg->vedge[j];
       esize = hg->hindex[edge+1] - hg->hindex[edge];
+      if (vtx_count) vtx_count[edge]++;
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
         nbor = hg->hvertex[i];
         if (rank[nbor] <0){
@@ -668,6 +688,15 @@ rank[vtx]);
              gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/esize;
            else if (priority_mode==2)
              gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/(edge_sum[nbor]*esize);
+           else if (priority_mode==3)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize-vtx_count[edge]));
+           else if (priority_mode==4)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize-vtx_count[edge]))/edge_sum[nbor];
+           else if (priority_mode==5)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize-vtx_count[edge]));
+           else if (priority_mode==6)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize-vtx_count[edge]))/edge_sum[nbor];
+
            heap_change_value(&h, nbor, gain[nbor]);
         }
       }
@@ -684,24 +713,27 @@ rank[vtx]);
 error:
   ZOLTAN_FREE ((void **) &rank);
   ZOLTAN_FREE ((void **) &gain);
-  if (edge_sum) ZOLTAN_FREE ((void **) &edge_sum);
+  if (edge_sum)  ZOLTAN_FREE ((void **) &edge_sum);
+  if (vtx_count) ZOLTAN_FREE ((void **) &vtx_count);
   heap_free(&h);
   return ierr;
 }
 
 /*****************************************************************/
 
-/* Greedy ordering, variation 1. 
- * Priority function: 
- *    gain(v,S) = \sum_e wgt(e) * |V(e) \in S| / |V(e)|,
- * where V(e) is the set of vertices connected by e.
+/* Generic greedy ordering. 
+ * Priority function 1: 
+ *    gain(v,S) = \sum_e wgt(e) * |e \intersect S| / |e|
+ * Priority function 2: 
+ *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |e \intersect S| / |e|
  */
 
-static int global_gr1 (
+static int global_greedy (
   ZZ *zz, 
   HGraph *hg,
   int p,
-  Partition part
+  Partition part,
+  int pri_mode
 )
 { 
   int i, start, *order;
@@ -724,7 +756,7 @@ static int global_gr1 (
   }
 
   /* Call greedy_order. */
-  ierr = greedy_order(zz, hg, order, start, 1, p, part);
+  ierr = greedy_order(zz, hg, order, start, pri_mode, p, part);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
@@ -736,47 +768,36 @@ error:
 
 /*****************************************************************/
 
-/* Greedy ordering, variation 2. 
- * Priority function: 
- *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |V(e) \in S| / |V(e)|,
- * where V(e) is the set of vertices connected by e.
- */
+/* Entry points for all the greedy methods. */
 
-static int global_gr2 (
-  ZZ *zz, 
-  HGraph *hg,
-  int p,
-  Partition part
-)
+static int global_gr1 (ZZ *zz, HGraph *hg, int p, Partition part)
 { 
-  int i, start, *order;
-  int ierr = ZOLTAN_OK;
-  char *yo = "global_gr2" ;
+  return global_greedy(zz, hg, p, part, 1);
+}
 
-  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ierr = ZOLTAN_MEMERR;
-    goto error;
-  }
+static int global_gr2 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 2);
+}
 
-  /* Find pseudo-peripheral start vertex */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
-  for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-      goto error;
-    start = order[hg->nVtx -1];
-  }
+static int global_gr3 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 3);
+}
 
-  /* Call greedy_order. */
-  ierr = greedy_order(zz, hg, order, start, 2, p, part);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    goto error;
+static int global_gr4 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 4);
+}
 
-error:
-  /* Free data and return. */
-  ZOLTAN_FREE ((void **) &order) ;
-  return ierr;
+static int global_gr5 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 5);
+}
+
+static int global_gr6 (ZZ *zz, HGraph *hg, int p, Partition part)
+{ 
+  return global_greedy(zz, hg, p, part, 6);
 }
 
 #ifdef __cplusplus

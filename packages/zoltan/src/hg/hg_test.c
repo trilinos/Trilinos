@@ -79,7 +79,8 @@ int main (int argc, char **argv)
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-redmo  reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
-    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,gr1,(gr2)}");
+    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");
+    puts("                           gr1,(gr2),gr3,gr4,gr5,gr6}");
     puts("-l      local method:     no,(fm)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
