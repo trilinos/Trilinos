@@ -17,7 +17,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Epetra_CrsMatrix &A, const Ifpack_IlukGra
     RelaxValue_(0.0),
     Condest_(-1.0),
     Athresh_(0.0),
-    Rthresh_(0.0),
+    Rthresh_(1.0),
     OverlapX_(0),
     OverlapY_(0),
     OverlapMode_(Zero)
