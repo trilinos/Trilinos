@@ -889,6 +889,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double                *rowi_val = NULL;
    int Nnonzeros = 0, Nnonzeros2 = 0;
    int optimal_value;
+   ML_Operator * Pmatrix2 = NULL;
    
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
@@ -1822,10 +1823,17 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_Operator_Set_ApplyFunc(Pstart, ML_INTERNAL, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 
-   *Pmatrix = ML_Operator_Create( Amatrix->comm );
+   Pmatrix2 = ML_Operator_Create( Amatrix->comm );
    
-   ML_2matmult(QQ, Pstart, *Pmatrix, ML_CSR_MATRIX );
+   ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
 
+   ML_Operator_Clean( *Pmatrix );
+
+   memcpy((void *) *Pmatrix, (void *)Pmatrix2, sizeof(ML_Operator));
+   /* FIXME * !!!!
+   ML_free(Pmatrix2);
+   */
+   
    /* ********************************************************************** */
    /* I have to destroy the tentative local matrix, and the redistribution   */
    /* matrix QQ. This is actually an ML_Operator on the top of an Epetra     */
@@ -1833,7 +1841,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* memory interally used by Epetra.                                       */
    /* ********************************************************************** */
 
-   ML_Operator_Destroy( &Pstart );
+   ML_Operator_Destroy( &Pstart ); 
    ML_Operator_Destroy( &QQ );
 
 #ifdef ML_WITH_EPETRA
