@@ -61,8 +61,12 @@ int main(int argc, char* argv[]) {
 	delete[] esizelist;
 	esizelist = 0;
 	if(debug) cout << bes2;
-	
+
+	if(verbose) cout << "Creating compatible ElementSpace" << endl;
+	Tpetra::ElementSpace<ORDINALTYPE> const* bes2es = bes2.generateCompatibleElementSpace();
+	if(debug) cout << (*bes2es);
+	delete bes2es;
+
 	cout << "BlockElementSpace testing successful." << endl;
   return(0); 
 }
-

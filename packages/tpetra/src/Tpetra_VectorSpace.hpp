@@ -60,6 +60,7 @@ public:
 			, Comm_()
 	{
 		BlockElementSpace_ = Teuchos::rcp(new BlockElementSpace<OrdinalType>(blockElementSpace));
+		ElementSpace_ = Teuchos::rcp(blockElementSpace.generateCompatibleElementSpace());
 		Platform_ = Teuchos::rcp(platform.clone());
 		Comm_ = Teuchos::rcp(platform.createScalarComm());
 	};
@@ -103,19 +104,19 @@ public:
 	OrdinalType getMaxGlobalIndex() const {return(getIndexBase() + getNumGlobalEntries());};
 	
 	//! Return the local index for a given global index
+	/*! If this VectorSpace was created using a BlockElementSpace,
+		  LIDs and GIDs from the compatible ElementSpace will be used.
+	*/
 	OrdinalType getLocalIndex(OrdinalType globalIndex) const {
-		if(!blockspace_)
 			return(elementSpace().getLID(globalIndex));
-		else
-			throw reportError("no global indices for blockspace", 1);
 	};
 	
 	//! Return the global index for a given local index
+	/*! If this VectorSpace was created using a BlockElementSpace,
+		  LIDs and GIDs from the compatible ElementSpace will be used.
+	*/
 	OrdinalType getGlobalIndex(OrdinalType localIndex) const {
-		if(!blockspace_)
 			return(elementSpace().getGID(localIndex));
-		else
-			throw reportError("no global indices for blockspace", 1);
 	};
 	
 	//@}
@@ -167,6 +168,8 @@ public:
 		if(blockspace_) {
 			os << "Built on a BlockElementSpace" << endl;
 			blockElementSpace().print(os);
+			os << "Compatible ElementSpace:" << endl;
+			elementSpace().print(os);
 		}
 		else {
 			os << "Built on an ElementSpace" << endl;
