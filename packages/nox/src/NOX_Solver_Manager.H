@@ -16,10 +16,24 @@
 namespace NOX {
 namespace Solver{
 
-//! Concrete class to control the instatiation of the derived 
-//! NLS_Method class.  
-/*! This is the class that takes control from the user code and hands
- *  it over to the nonlinear solver component. */
+/*! 
+
+  \brief Concrete class to control the instatiation of the derived 
+  NLS_Method class.  
+
+  This is the class that takes control from the user code and hands it
+  over to the nonlinear solver component.
+
+  The parameters may specify the method:
+
+   <ul>
+   <li> "Method" - Name of the solver method. Valid choices are
+   <ul> 
+   <li> "%Newton" (NOX::Solver::Newton) [Default]
+   <li> "Nonlinear CG" (NOX::Solver::NonlinearCG)
+   </ul>
+   </ul>
+*/
 
 class Manager : public Generic {
 
