@@ -43,12 +43,14 @@ CORE_H = \
 CORE = 
 
 UTIL_H = \
-	$(srcdir)/Tpetra_ConfigDefs.hpp
+	$(srcdir)/Tpetra_ConfigDefs.hpp \
+	$(srcdir)/Tpetra_PacketTraits.hpp
 
 UTIL = \
 	$(srcdir)/Tpetra_Version.cpp
 
-ENUM_H = 
+ENUM_H = \
+	$(srcdir)/Tpetra_CombineMode.hpp
 
 UNIPROC_H = 
 
@@ -90,13 +92,13 @@ DIST_H = \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
 	$(srcdir)/Tpetra_ElementSpaceData.hpp \
 	$(srcdir)/Tpetra_BlockElementSpace.hpp \
-	$(srcdir)/Tpetra_BlockElementSpaceData.hpp
+	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
+	$(srcdir)/Tpetra_VectorSpace.hpp \
+	$(srcdir)/Tpetra_VectorSpaceData.hpp
 
 DIST = 
 
 COMP_H = \
-	$(srcdir)/Tpetra_VectorSpace.hpp \
-	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_SparseMatrix.hpp \

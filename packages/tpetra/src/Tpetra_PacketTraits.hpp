@@ -29,10 +29,6 @@
 #ifndef _TPETRA_PACKETTRAITS_HPP_
 #define _TPETRA_PACKETTRAITS_HPP_
 
-// Kris
-// 07.08.03 -- Move into Teuchos package/namespace
-// 01.16.04 -- Move back into Tpetra package/namespace per discussion with Mike Heroux. (HKT)
-
 #include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
