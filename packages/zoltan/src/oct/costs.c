@@ -1,3 +1,22 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_costsc_id = "$Id$";
+#endif
+
+#include "lb_const.h"
 #include "octant_const.h"
 #include "costs.h"
 #include "octupdate_const.h"

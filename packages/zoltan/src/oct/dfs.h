@@ -1,3 +1,24 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef __DFS_H
+#define __DFS_H
+
+#ifndef lint
+static char *cvs_dfsh_id = "$Id$";
+#endif
+
 #include "dfs_const.h"
 
 extern void dfs_set_visit_criterion(int visit);
@@ -14,3 +35,5 @@ float pcost;                /* Current partition cost */
 float optcost;              /* Optimal partition cost */
 float pmass;                /* octant volume for partition */
 double pcoord[3];           /* Sum of octant position-volume products */
+
+#endif

@@ -1,12 +1,28 @@
-/* #include <malloc.h> */
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_utilc_id = "$Id$";
+#endif
+
+#include "lb_const.h"
 #include "octant_const.h"
 #include "util_const.h"
 #include "hilbert_const.h"
+#include "dfs_const.h"
 
-typedef double Coord[3];
+
 
 void set_method(double method_number) {
   
@@ -48,11 +64,11 @@ void *my_malloc(int size) {
  * "upper"
  *
  */
-int in_box(Coord pt, Coord lower, Coord upper) {
+int in_box(COORD pt, COORD lower, COORD upper) {
   int i;
   int j;
 
-  if(dimension == 2)
+  if(OCT_dimension == 2)
     j = 2;                                            /* ignore z coord info */
   else
     j = 3;
@@ -78,7 +94,7 @@ int in_box(Coord pt, Coord lower, Coord upper) {
  * in the octant, due to roundoff
  *
  */
-void bounds_to_origin_size(Coord min, Coord max, Coord origin, Coord size) {
+void bounds_to_origin_size(COORD min, COORD max, COORD origin, COORD size) {
   int i;
 
   for (i=0; i<3; i++) {
@@ -96,10 +112,10 @@ void bounds_to_origin_size(Coord min, Coord max, Coord origin, Coord size) {
  * in the octant, due to roundoff
  *
  */
-void bounds_to_origin(Coord min, Coord max, Coord origin)
+void bounds_to_origin(COORD min, COORD max, COORD origin)
 {
   int i;
-  Coord size;
+  COORD size;
 
   for (i=0; i<3; i++) {
     size[i]=max[i]-min[i];
@@ -107,11 +123,11 @@ void bounds_to_origin(Coord min, Coord max, Coord origin)
   }
 }
 
-void child_bounds_wrapper(pOctant oct, int input, Coord cmin, Coord cmax) {
+void child_bounds_wrapper(pOctant oct, int input, COORD cmin, COORD cmax) {
   int cnum;                               /* child number */
-  Coord min,
+  COORD min,
         max;
-  Coord origin;
+  COORD origin;
 
   /* get the bounds of an octant */
   POC_bounds(oct,min,max);
@@ -120,7 +136,7 @@ void child_bounds_wrapper(pOctant oct, int input, Coord cmin, Coord cmax) {
 
   if(HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */
-    if(dimension == 3)
+    if(OCT_dimension == 3)
       cnum = hilbert_bounds(min, max, input);
     else {
       if(input < 4)
@@ -144,12 +160,12 @@ void child_bounds_wrapper(pOctant oct, int input, Coord cmin, Coord cmax) {
 extern int compare( unsigned * x, unsigned * y)
 { return ( *x == *y ) ? 0 : ( ( *x < *y ) ? -1 : 1 ); }
 
-int hilbert2d_bounds(Coord min, Coord max, int cnum) {
+int hilbert2d_bounds(COORD min, COORD max, int cnum) {
   unsigned ihsfc[4][2];
   unsigned Nword = 1;
-  Coord child_min[4],
+  COORD child_min[4],
         child_max[4];
-  Coord centroid,
+  COORD centroid,
         origin;
   double center[2];
   int i, k;
@@ -158,8 +174,8 @@ int hilbert2d_bounds(Coord min, Coord max, int cnum) {
   for(i=0; i<4; i++) {
     child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - gmin[0])/(gmax[0] - gmin[0]);
-    center[1] = (centroid[1] - gmin[1])/(gmax[1] - gmin[1]);
+    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
     fhsfc2d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -170,12 +186,12 @@ int hilbert2d_bounds(Coord min, Coord max, int cnum) {
   return(k);
 }
 
-int hilbert_bounds(Coord min, Coord max, int cnum) {
+int hilbert_bounds(COORD min, COORD max, int cnum) {
   unsigned ihsfc[8][2];
   unsigned Nword = 1;
-  Coord child_min[8],
+  COORD child_min[8],
         child_max[8];
-  Coord centroid,
+  COORD centroid,
         origin,
         center;
   int i, k;
@@ -184,9 +200,9 @@ int hilbert_bounds(Coord min, Coord max, int cnum) {
   for(i=0; i<8; i++) {
     child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - gmin[0])/(gmax[0] - gmin[0]);
-    center[1] = (centroid[1] - gmin[1])/(gmax[1] - gmin[1]);
-    center[2] = (centroid[2] - gmin[2])/(gmax[2] - gmin[2]);
+    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
+    center[2] = (centroid[2] - OCT_gmin[2])/(OCT_gmax[2] - OCT_gmin[2]);
     fhsfc3d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -204,8 +220,8 @@ int hilbert_bounds(Coord min, Coord max, int cnum) {
  * NOTE: relies on child octant numbering. Assumes in z-curve ordering, so
  *       needs conversion if using Gray code
  */
-void child_bounds(Coord pmin, Coord pmax, Coord porigin, int cnum,
-		  Coord cmin, Coord cmax) {
+void child_bounds(COORD pmin, COORD pmax, COORD porigin, int cnum,
+		  COORD cmin, COORD cmax) {
   int i;                                  /* index counter */
   int place;                              /* place currently being looked at */
 
@@ -223,12 +239,12 @@ void child_bounds(Coord pmin, Coord pmax, Coord porigin, int cnum,
   }
 }
 
-int child_which_wrapper(pOctant oct, Coord point) {
+int child_which_wrapper(pOctant oct, COORD point) {
   int cnum;                               /* child number */
   int result;
-  Coord min,
+  COORD min,
         max;
-  Coord origin;
+  COORD origin;
 
   POC_bounds(oct,min,max);                   /* get the bounds of the octant */
   bounds_to_origin(min,max,origin);            /* convert to bound to origin */
@@ -237,7 +253,7 @@ int child_which_wrapper(pOctant oct, Coord point) {
   
   if(HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */
-    if(dimension == 3) 
+    if(OCT_dimension == 3) 
       result = change_to_hilbert(min, max, origin, cnum);
     else 
       result = change_to_hilbert2d(min, max, origin, cnum);
@@ -265,12 +281,12 @@ int child_which_wrapper(pOctant oct, Coord point) {
  * Note: Finds number in z-curve ordering. Needs to be converted if using
  *       Gray code or Hilbert code.
  */
-int child_which(Coord porigin, Coord point) {
+int child_which(COORD porigin, COORD point) {
   int cnum;                                                 /* child number */
   int i;                                                    /* index counter */
   int j;
   
-  if(dimension == 2)
+  if(OCT_dimension == 2)
     j = 1;                                       /* ignore z coordinate info */
   else
     j = 2;
@@ -286,8 +302,8 @@ int child_which(Coord porigin, Coord point) {
   return(cnum);
 }
 
-double dist_point_box(Coord point, Coord min, Coord max) {
-  Coord dist;
+double dist_point_box(COORD point, COORD min, COORD max) {
+  COORD dist;
   double pdist;
   int zero;
   int i;
@@ -507,20 +523,20 @@ int child_orientation(int o, int cnum) {
 #endif
 }
 
-int change_to_hilbert2d(Coord min, Coord max, Coord origin, int cnum) {
+int change_to_hilbert2d(COORD min, COORD max, COORD origin, int cnum) {
   unsigned ihsfc[4][2];
   unsigned Nword = 1;
-  Coord child_min[4],
+  COORD child_min[4],
         child_max[4];
-  Coord centroid;
+  COORD centroid;
   double center[2];
   int i;
   
   for(i=0; i<4; i++) {
     child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - gmin[0])/(gmax[0] - gmin[0]);
-    center[1] = (centroid[1] - gmin[1])/(gmax[1] - gmin[1]);
+    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
     fhsfc2d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -543,21 +559,21 @@ int change_to_hilbert2d(Coord min, Coord max, Coord origin, int cnum) {
   return(i);
 }
 
-int change_to_hilbert(Coord min, Coord max, Coord origin, int cnum) {
+int change_to_hilbert(COORD min, COORD max, COORD origin, int cnum) {
   unsigned ihsfc[8][2];
   unsigned Nword = 1;
-  Coord child_min[8],
+  COORD child_min[8],
         child_max[8];
-  Coord centroid,
+  COORD centroid,
         center;
   int i;
   
   for(i=0; i<8; i++) {
     child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - gmin[0])/(gmax[0] - gmin[0]);
-    center[1] = (centroid[1] - gmin[1])/(gmax[1] - gmin[1]);
-    center[2] = (centroid[2] - gmin[2])/(gmax[2] - gmin[2]);
+    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
+    center[2] = (centroid[2] - OCT_gmin[2])/(OCT_gmax[2] - OCT_gmin[2]);
     fhsfc3d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }

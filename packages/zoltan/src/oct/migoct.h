@@ -1,3 +1,24 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef __MIGOCT_H
+#define __MIGOCT_H
+
+#ifndef lint
+static char *cvs_migocth_id = "$Id$";
+#endif
+
 #include "migoct_const.h"
 
 /* static void tag_regions(pOctant *octs, int *newpids, int nocts, 
@@ -15,3 +36,5 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
 			       int *tag_pids, int *nrectags,
 			       pRegion *import_tags, pRegion prev_tags,
 			       int npimtags, float *c3);
+
+#endif

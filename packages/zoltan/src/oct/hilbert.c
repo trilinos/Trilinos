@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_hilbertc_id = "$Id$";
+#endif
+
 /* ---------------------------------------------------------------------
 Author:     H. Carter Edwards
                 http://www.ticam.utexas.edu/~carter
@@ -53,7 +71,7 @@ bit is the trailing bit of the last word.
 
 ----------------------------------------------------------------------*/
 
-#include <stdlib.h>
+#include "lb_const.h"
 #include <limits.h>
 #include "hilbert_const.h"
 

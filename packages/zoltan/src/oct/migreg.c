@@ -1,8 +1,25 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_migregc_id = "$Id$";
+#endif
+
 #include "migreg.h"
 #include "hilbert_const.h"
 #include "comm.h"
-
-typedef double Coord[3];
+#include "dfs_const.h"
 
 /*
  * migreg_migrate_regions(Message *message_Array, int number_of_regions)
@@ -63,7 +80,7 @@ void insert_orphan(Region reg) {
   if(rootlist == NULL)                                        /* error check */
     fprintf(stderr,"ERROR in insert_orphans(), rootlist is NULL\n");
 
-  if (dimension == 2)
+  if (OCT_dimension == 2)
     i = 2;                                           /* ignore z coordinates */
   else
     i = 3;
@@ -115,16 +132,16 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
 			    Map *array, int *c1, int *c2) {
   int     i, j, k;                    /* index counters */
   pRegion ptr;                        /* region in the mesh */
-  double  origin[3];                  /* centroid coordinate information */
+  COORD   origin;                     /* centroid coordinate information */
   pRegion *regions;                   /* an array of regions */
   int     *npids;
-  Region  *regions2;                   /* an array of regions */
+  Region  *regions2;                  /* an array of regions */
   int     *npids2;
   int     nreg;                       /* number of regions */
-  double  min[3],                     /* minimum bounds of an octant */
-          max[3];                     /* maximum bounds of an octant */
-  double  cmin[3],                    /* minimum bounds of a child octant */
-          cmax[3];                    /* maximum bounds of a child octant */
+  COORD   min,                        /* minimum bounds of an octant */
+          max;                        /* maximum bounds of an octant */
+  COORD   cmin,                       /* minimum bounds of a child octant */
+          cmax;                       /* maximum bounds of a child octant */
   int     new_num;
   int     n;
 
@@ -149,21 +166,21 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
      */
     /* region not attached, have to find which processor to send to */
     j=0;
-    vector_set(min, gmin);
-    vector_set(max, gmax);
+    vector_set(min, OCT_gmin);
+    vector_set(max, OCT_gmax);
     /* 
      * for each level of refinement, find which child region belongs to.
      * translate which child to which entry in map array.
      */
     for(i=0; i<level; i++) {
       bounds_to_origin(min, max, origin);
-      if(dimension == 2)
+      if(OCT_dimension == 2)
 	j = j * 4;
       else
 	j = j * 8;
       k = child_which(origin, ptr->Coord);
       if(HILBERT) {
-	if(dimension == 3) 
+	if(OCT_dimension == 3) 
 	  new_num = change_to_hilbert(min, max, origin, k);
 	else 
 	  new_num = change_to_hilbert2d(min, max, origin, k);
@@ -201,14 +218,14 @@ void migreg_migrate_orphans(pRegion RegionList, int nregions, int level,
   if (nreg!=nregions) {
     fprintf(stderr,"%d migreg_migrate_orphans: "
 	    "%d regions found != %d expected\n",
-	    msg_mypid,nreg,nregions);
+	    LB_Proc,nreg,nregions);
     abort();
   }
 
   regions2 = (Region *)malloc(n * sizeof(Region));
   npids2 = (int *)malloc(n * sizeof(int));
   
-  /* fprintf(stderr,"(%d) n = %d\n", msg_mypid, n); */
+  /* fprintf(stderr,"(%d) n = %d\n", LB_Proc, n); */
   for(i=0; i<n; i++) {
     npids2[i] = npids[i];
     vector_set(regions2[i].Coord, regions[i]->Coord);

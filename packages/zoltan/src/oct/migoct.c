@@ -1,6 +1,23 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_migoctc_id = "$Id$";
+#endif
+
 #include <unistd.h>
-#include <stdio.h>
-#include "msg_const.h"
+#include "lb_const.h"
 #include "octant_const.h"
 #include "migoct.h"
 #include "comm.h"
@@ -284,7 +301,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
   }
 
   /*  for(i=0; i<(*nrectags); i++) {
-   *    fprintf(stderr,"%d -> %d\n", (*import_tags)[i].Proc, msg_mypid);
+   *    fprintf(stderr,"%d -> %d\n", (*import_tags)[i].Proc, LB_Proc);
    *  }
    */  
   *c3 = im_load;

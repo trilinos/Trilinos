@@ -1,38 +1,58 @@
-#include<stdlib.h>
-#include<stdio.h>
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_octantc_id = "$Id$";
+#endif
+
+#include "lb_const.h"
 #include "octant_const.h"
 #include "util_const.h"
 
-/* static int dimensions = 8; */
-
+/*****************************************************************************/
 /* WARNING: GLOBAL VARIABLES... BE CAREFUL WHEN USING */
-pRList OCT_rootlist;                 /* list of all the local roots          */
-int OCT_count;                       /* count of all local octants           */
+pRList OCT_rootlist = NULL;          /* list of all the local roots          */
 int OCT_localpid;                    /* the processor id                     */
-int idcount;                         /* count for id's, help with uniqueness */
-double gmin[3];                      /* global root's min bounds             */
-double gmax[3];                      /* global root's max bounds             */
-int dimension;
+COORD OCT_gmin;                      /* global root's min bounds             */
+COORD OCT_gmax;                      /* global root's max bounds             */
+int OCT_dimension;
 int GRAY;
 int HILBERT;
 
+static int OCT_count;                /* count of all local octants           */
+static int OCT_idcount;              /* count for id's, help with uniqueness */
+
+/*****************************************************************************/
 /*
  * void POC_init(int processor_id)
  *
- * sets up global variables for the octree partitioner */
+ * sets up global variables for the octree partitioner
+ */
 void POC_init(int pid, int dim) {
   OCT_count=0;
   OCT_localpid=pid;
   OCT_rootlist=NULL;
-  idcount=0;
+  OCT_idcount=0;
   if((dim > 3) || (dim < 2)) {
-    fprintf(stderr,"WARNING: illeagle dimension, using default (3D).\n");
-    dimension = 3;
+    fprintf(stderr,"WARNING: illegal dimension, using default (3D).\n");
+    OCT_dimension = 3;
   }
   else
-    dimension = dim;
+    OCT_dimension = dim;
 }
 
+/*****************************************************************************/
 /*
  * pOctant POC_malloc()
  *
@@ -51,6 +71,7 @@ pOctant POC_malloc() {
   return(ptr);
 }
 
+/*****************************************************************************/
 /*
  * POC_new()
  *
@@ -70,7 +91,7 @@ pOctant POC_new() {
   /* setup default information about octant */
   new->parent= NULL;
   new->ppid = OCT_localpid;
-  new->id=(idcount++);
+  new->id=(OCT_idcount++);
   new->which = -1;
   new->numChild = 0;
   new->list=NULL;
@@ -80,6 +101,7 @@ pOctant POC_new() {
   return(new);
 }
 
+/*****************************************************************************/
 /* 
  * void POC_free(pOctant octant)
  *
@@ -126,6 +148,7 @@ void POC_free(pOctant oct) {
   free(oct);
 }
 
+/*****************************************************************************/
 #ifdef LGG_MIGOCT
 /*
  * ATTN!! :
@@ -143,6 +166,7 @@ void POC_setID(pOctant oct, int id)
 { oct->id=id; }
 #endif /* LGG_MIGOCT */
 
+/*****************************************************************************/
 /*
  * void POC_id(pOctant octant)
  *
@@ -151,6 +175,7 @@ void POC_setID(pOctant oct, int id)
 int POC_id(pOctant oct) 
 { return(oct->id); }
 
+/*****************************************************************************/
 /*
  * POC_setparent(pOctant octant, pOctant parent, int parent_processor_id)
  *
@@ -166,7 +191,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
       tmp = (pRList)malloc(sizeof(RList));
       if(tmp == NULL) {
 	fprintf(stderr, "%s: %s\n", "POC_setparent",
-		"Could not allocalte new rootlist entry.");
+		"Could not allocate new rootlist entry.");
 	abort();
       }
       tmp->oct = oct;
@@ -209,6 +234,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
   oct->parent=parent;
 }
 
+/*****************************************************************************/
 /*
  * void POC_setchildnum(pOctant octant, int childnumber)
  *
@@ -217,6 +243,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 void POC_setchildnum(pOctant oct, int childnum)
 { oct->which=childnum; }
 
+/*****************************************************************************/
 /* 
  * int POC_childnum(pOctant octant)
  * 
@@ -225,6 +252,7 @@ void POC_setchildnum(pOctant oct, int childnum)
 int POC_childnum(pOctant oct)
 { return(oct->which); }
 
+/*****************************************************************************/
 /*
  * void POC_setcild(pOctant octant, int childnumber, pOctant child)
  *
@@ -235,6 +263,7 @@ void POC_setchild(pOctant oct, int i, pOctant child) {
   oct->numChild++;
 }
 
+/*****************************************************************************/
 /*
  * void POC_setchildren(pOctant octant, pOctant children[8],
  *                      int child_processor_ids[8])
@@ -249,23 +278,26 @@ void POC_setchildren(pOctant oct, pOctant children[8], int cpids[8]) {
     POC_setchild(oct,i,children[i]);
 }
 
+/*****************************************************************************/
 /*
- * void POC_setbounds(pOctant octant, double minimum_bounds[3],
- *                    double maximum_bounds[3])
+ * void POC_setbounds(pOctant octant, COORD minimum_bounds,
+ *                    COORD maximum_bounds)
  *
  * sets the min and max bounds of an octant 
  */
-void POC_setbounds(pOctant oct, double min[3], double max[3])
+void POC_setbounds(pOctant oct, COORD min, COORD max)
 { vector_set(oct->min,min); vector_set(oct->max,max); }
 
+/*****************************************************************************/
 /*
- * void POC_bounds(pOctant octant, double minimum[3], double maximum[3])
+ * void POC_bounds(pOctant octant, COORD minimum, COORD maximum)
  *
  * gets the min and max bounds of an octant
  */
-void POC_bounds(pOctant oct, double min[3], double max[3])
+void POC_bounds(pOctant oct, COORD min, COORD max)
 { vector_set(min,oct->min); vector_set(max,oct->max); }
 
+/*****************************************************************************/
 /*
  * pOctant POC_parent(pOctant octant)
  *
@@ -274,6 +306,7 @@ void POC_bounds(pOctant oct, double min[3], double max[3])
 pOctant POC_parent(pOctant oct) 
 { return(oct->parent); }
 
+/*****************************************************************************/
 /*
  * pOctant POC_child(pOctant octant, int child_index)
  *
@@ -282,6 +315,7 @@ pOctant POC_parent(pOctant oct)
 pOctant POC_child(pOctant oct, int i) 
 { return(oct->child[i]); }
 
+/*****************************************************************************/
 /*
  * POC_children(pOctant octant, pOctant children[8])
  *
@@ -295,6 +329,7 @@ int POC_children(pOctant oct, pOctant children[8]) {
   return(oct->numChild);
 }
   
+/*****************************************************************************/
 /*
  * int POC_isTerminal(pOctant octant)
  *
@@ -313,6 +348,7 @@ int POC_isTerminal(pOctant oct) {
     return(0);
 }
 
+/*****************************************************************************/
 /*
  * pRegion POC_regionlist(pOctant octant)
  * get a copy of the octant's region list
@@ -323,6 +359,7 @@ pRegion POC_regionlist(pOctant oct) {
   return(oct->list);
 }
 
+/*****************************************************************************/
 /*
  * void POC_addRegion(pOctant octant, pRegion region)
  * add a region to oct's list
@@ -354,6 +391,7 @@ void POC_addRegion(pOctant oct, pRegion region) {
   oct->list = entry;
 }
 
+/*****************************************************************************/
 /*
  * void POC_remRegion(pOctant octant, pRegion region)
  * remove a region from an oct's list
@@ -380,6 +418,7 @@ void POC_remRegion(pOctant oct, pRegion region) {
   }
 }
 
+/*****************************************************************************/
 /*
  * void POC_clearRegions(pOctant octant)
  * erase all of a oct's regions
@@ -396,6 +435,7 @@ void POC_clearRegions(pOctant oct) {
   oct->list=NULL;
 }
 
+/*****************************************************************************/
 /*
  * int POC_nRegions(pOctant octant)
  * return the number of regions in the octant's list
@@ -421,14 +461,18 @@ int POC_nRegions(pOctant oct) {
   return(count);
 }
 
+/*****************************************************************************/
 /*
  * pRList POC_localroots()
  *
  * return the list of local roots
  */
 pRList POC_localroots()
-{ return(OCT_rootlist); }
+{
+  return(OCT_rootlist);
+}
 
+/*****************************************************************************/
 /***                        attached data routines                         ***/
 /*
  * void POC_modify_cost(pOctant octant, float cost)
@@ -436,8 +480,11 @@ pRList POC_localroots()
  * modifies the cost field of the octant
  */
 void POC_modify_cost(pOctant oct, float cost)
-{ oct->cost = cost; }
+{
+  oct->cost = cost;
+}
 
+/*****************************************************************************/
 /*
  * void POC_modify_newpid(pOctant octant, int new_processor_id)
  *
@@ -445,24 +492,33 @@ void POC_modify_cost(pOctant oct, float cost)
  * migrate to
  */
 void POC_modify_newpid(pOctant oct, int newpid)
-{ oct->npid = newpid; }
+{
+  oct->npid = newpid;
+}
 
+/*****************************************************************************/
 /*
- * floag POC_data_cost(pOctant octant)
+ * float POC_data_cost(pOctant octant)
  *
  * returns the cost of the octant
  */
 float POC_data_cost(pOctant oct)
-{ return(oct->cost); }
+{
+  return(oct->cost);
+}
 
+/*****************************************************************************/
 /*
  * int POC_data_newpid(pOctant octant)
  *
  * returns the new processor id of the octant 
  */
 int POC_data_newpid(pOctant oct)
-{ return(oct->npid); }
+{ 
+  return(oct->npid);
+}
 
+/*****************************************************************************/
 /*
  * int POC_nlocal(pOctant octant)
  *
@@ -484,6 +540,7 @@ int POC_nlocal(pOctant oct) {
   return(total);
 }
 
+/*****************************************************************************/
 /*
  * int POC_nOctant()
  *
@@ -492,14 +549,15 @@ int POC_nlocal(pOctant oct) {
 int POC_nOctants()
 { return (OCT_count); }
 
+/*****************************************************************************/
 /*
- * void POC_origin_volume(pOctant oct, Coord origin, double *volume)
+ * void POC_origin_volume(pOctant oct, COORD origin, double *volume)
  *
  * gets the origin and volume of the octant
  */
-void POC_origin_volume(pOctant oct, double origin[3], double *volume) {
-  double min[3],                                     /* octant minimum bound */
-         max[3];                                     /* octant maximum bound */
+void POC_origin_volume(pOctant oct, COORD origin, double *volume) {
+  COORD min,                                         /* octant minimum bound */
+        max;                                         /* octant maximum bound */
   double size[3];                                    /* size of the octant */
 
   POC_bounds(oct,min,max);
@@ -507,6 +565,7 @@ void POC_origin_volume(pOctant oct, double origin[3], double *volume) {
   *volume=size[0]*size[1]*size[2];
 }
 
+/*****************************************************************************/
 /*
  * void POC_printResults()
  *
@@ -523,6 +582,7 @@ void POC_printResults() {
   }
 }
 
+/*****************************************************************************/
 /*
  * void POC_DfsTraversal(pOctant octant)
  *
@@ -542,6 +602,7 @@ void POC_DfsTraversal(pOctant oct) {
   }
 }
 
+/*****************************************************************************/
 /*
  * void POC_printRegionInfo(pOctant octant)
  *
@@ -591,6 +652,7 @@ void POC_printRegionInfo(pOctant oct) {
   }
 }
 
+/*****************************************************************************/
 /*
  * pOctant POC_nextDfs(pOctant octant)
  *
@@ -628,6 +690,7 @@ pOctant POC_nextDfs(pOctant octant) {
   return(NULL);         /* no more octants remain in dfs ordering */
 }
 
+/*****************************************************************************/
 /*
  * int POC_local(pOctant octant, int child_index)
  *
@@ -645,6 +708,7 @@ int POC_local(pOctant octant, int i) {
   }
 }
 
+/*****************************************************************************/
 /*
  * void POC_setCpid(pOctant octant, int child_index, int child_processor_id)
  *
@@ -654,6 +718,7 @@ void POC_setCpid(pOctant octant, int i, int cpid) {
   octant->cpid[i] = cpid;
 }
 
+/*****************************************************************************/
 /*
  * int POC_delTree(pOctant root)
  *

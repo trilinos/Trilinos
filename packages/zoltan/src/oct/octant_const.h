@@ -1,10 +1,32 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef __OCTANT_CONST_H
+#define __OCTANT_CONST_H
+
+#ifndef lint
+static char *cvs_octantconsth_id = "$Id$";
+#endif
+
 #include "lb_const.h"
-#include <math.h>
+
+typedef double COORD[3];
 
 typedef struct Region_Node* pRegion;   /* typedef for a pointer to a region  */
 typedef struct Region_Node {           /* region = area in 3-space           */
   struct Region_Node *next;            /* pointer to next region in list     */
-  double Coord[3];                     /* centroid location of region        */
+  COORD  Coord;                        /* centroid location of region        */
   double Weight;                       /* weight of Region - default is 1    */
   LB_TAG Tag;                          /* Tag containing IDs for the object  */
   int    attached;                     /* flag to see if region was attached */
@@ -15,8 +37,8 @@ typedef struct _Octant {             /* octant tree node that has 8 children */
   pRegion list;                      /* list of regions associated to octant */
   struct _Octant *child[8];          /* array of octant's children           */
   struct _Octant *parent;            /* parent of the octant                 */
-  double min[3];                     /* minimum bounds of an octant          */
-  double max[3];                     /* max bounds of an octant              */
+  COORD  min;                        /* minimum bounds of an octant          */
+  COORD  max;                        /* max bounds of an octant              */
   int ppid;                          /* parent pid, -1 mean a local root     */
   int id;                            /* octant's id number                   */
   int which;                         /* which child of parent                */
@@ -35,17 +57,15 @@ typedef struct RL_Node {                /* an entry in the local root list   */
 
 typedef struct {
   int npid;
-  double min[3];
-  double max[3];
+  COORD min;
+  COORD max;
 } Map;
 
 extern pRList OCT_rootlist;          /* list of all the local roots          */
-extern int OCT_count;                /* count of all local octants           */
 extern int OCT_localpid;             /* the processor id                     */
-extern int idcount;                  /* count for id's, help with uniqueness */
-extern double gmin[3];
-extern double gmax[3];
-extern int dimension;
+extern COORD OCT_gmin;
+extern COORD OCT_gmax;
+extern int OCT_dimension;
 extern int GRAY;
 extern int HILBERT;
 /* extern Map *array; */
@@ -89,8 +109,8 @@ extern void    POC_setchildnum(pOctant oct, int childnum);
 extern int     POC_childnum(pOctant oct);
 extern void    POC_setchild(pOctant oct, int i, pOctant child);
 extern void    POC_setchildren(pOctant oct, pOctant children[8], int cpids[8]);
-extern void    POC_setbounds(pOctant oct, double min[3], double max[3]);
-extern void    POC_bounds(pOctant oct, double min[3], double max[3]);
+extern void    POC_setbounds(pOctant oct, COORD min, COORD max);
+extern void    POC_bounds(pOctant oct, COORD min, COORD max);
 extern pOctant POC_parent(pOctant oct);
 extern pOctant POC_child(pOctant oct, int i);
 extern int     POC_children(pOctant oct, pOctant children[8]);
@@ -107,7 +127,7 @@ extern float   POC_data_cost(pOctant oct);
 extern int     POC_data_newpid(pOctant oct);
 extern int     POC_nlocal(pOctant oct);
 extern int     POC_nOctants(void);
-extern void    POC_origin_volume(pOctant oct,double origin[3],double *volume);
+extern void    POC_origin_volume(pOctant oct,COORD origin,double *volume);
 extern void    POC_printResults();
 extern pOctant POC_malloc();
 extern void    POC_DfsTraversal(pOctant oct);
@@ -120,3 +140,5 @@ extern int     POC_delTree(pOctant root);
  * extern void    POC_setOrientation(pOctant octant, int orientation);
  * extern int     POC_getOrientation(pOctant octant);
  */
+
+#endif
