@@ -135,24 +135,29 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
       if( cnt ) {
 	int * NewExportGIDs = 0;
 	int * NewExportPIDs = 0;
+	int * NewExportLIDs = 0;
 	int cnt1 = NumExportIDs_-cnt;
 	if (cnt1) {
 	  NewExportGIDs = new int[cnt1];
 	  NewExportPIDs = new int[cnt1];
+	  NewExportLIDs = new int[cnt1];
 	}
 	cnt = 0;
 	for( i = 0; i < NumExportIDs_; ++i )
 	  if( ExportPIDs_[i] != -1 ) {
 	    NewExportGIDs[cnt] = ExportGIDs[i];
 	    NewExportPIDs[cnt] = ExportPIDs_[i];
+	    NewExportLIDs[cnt] = ExportLIDs_[i];
 	    ++cnt;
           }
 	assert(cnt==cnt1); // Sanity test
 	NumExportIDs_ = cnt;
 	delete [] ExportGIDs;
 	delete [] ExportPIDs_;
+	delete [] ExportLIDs_;
 	ExportGIDs = NewExportGIDs;
 	ExportPIDs_ = NewExportPIDs;
+	ExportLIDs_ = NewExportLIDs;
 	ReportError("Warning in Epetra_Export: Source IDs not found in Target Map (Do you want to export from subset of Source Map?)", 1 );
       }
     }
