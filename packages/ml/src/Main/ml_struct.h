@@ -191,7 +191,7 @@ extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post,
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
 extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
-                     double, ML_Operator**, ML_Operator**); 
+                     double, ML_Operator**, ML_Operator**, ML_Operator*); 
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
