@@ -76,7 +76,6 @@ int LB_ParMetis_Part(
 /* BAH: This stuff is now obsolete.  Need to replace it. */
 #if 0
   if (lb->Params == NULL) { 
-    /*  No application-specified parameters; use defaults. */ 
     pmethod = 0;
     vwgt_dim = 0;
     ewgt_dim = 0;
@@ -160,10 +159,10 @@ pmethod = 0; /* temporary hack */
     printf("[%1d] Debug: num_obj =%d\n", myproc, num_obj);
 #endif
   
-  global_ids = (LB_GID *) LB_SMALLOC(num_obj * sizeof(LB_GID) );
-  local_ids = (LB_LID *) LB_SMALLOC(num_obj * sizeof(LB_LID) );
+  global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
+  local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
   if (vwgt_dim)
-    float_vwgt = (float *)LB_SMALLOC(vwgt_dim*num_obj * sizeof(float));
+    float_vwgt = (float *)LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
   else {
     float_vwgt = NULL;
     vwgt = NULL;
@@ -208,11 +207,11 @@ pmethod = 0; /* temporary hack */
 #endif
   
     /* Allocate space for ParMETIS data structs */
-    vtxdist= (idxtype *)LB_SMALLOC((lb->Num_Proc+1)* sizeof(idxtype));
-    xadj   = (idxtype *)LB_SMALLOC((num_obj+1)* sizeof(idxtype));
-    adjncy = (idxtype *)LB_SMALLOC(sum_edges * sizeof(idxtype));
+    vtxdist= (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
+    xadj   = (idxtype *)LB_MALLOC((num_obj+1)* sizeof(idxtype));
+    adjncy = (idxtype *)LB_MALLOC(sum_edges * sizeof(idxtype));
     if (ewgt_dim) 
-      adjwgt = (idxtype *)LB_SMALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
+      adjwgt = (idxtype *)LB_MALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
     else
       adjwgt = NULL;
   
@@ -241,9 +240,9 @@ pmethod = 0; /* temporary hack */
 #endif
   
     /* Construct local hash table */
-    hash_nodes = (struct LB_hash_node *)LB_SMALLOC(num_obj *
+    hash_nodes = (struct LB_hash_node *)LB_MALLOC(num_obj *
       sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) LB_SMALLOC(num_obj *
+    hashtab = (struct LB_hash_node **) LB_MALLOC(num_obj *
       sizeof(struct LB_hash_node *) );
     if ((!hash_nodes) || (!hashtab)){
       /* Not enough memory */
@@ -265,9 +264,9 @@ pmethod = 0; /* temporary hack */
   
     
     /* Construct edge list */
-    nbors_global = (LB_GID *)LB_SMALLOC(max_edges * sizeof(LB_GID));
-    nbors_proc = (int *)LB_SMALLOC(max_edges * sizeof(int));
-    proc_list = (struct LB_vtx_list **) LB_SMALLOC(lb->Num_Proc *
+    nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
+    nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
+    proc_list = (struct LB_vtx_list **) LB_MALLOC(lb->Num_Proc *
       sizeof(struct LB_vtx_list *) );
     if ((!nbors_global) || (!nbors_proc) || (!proc_list)){
       /* Not enough memory */
@@ -314,7 +313,7 @@ pmethod = 0; /* temporary hack */
         } else {
           /* Inter-processor edge */
           /* Add it to beginning of the list */
-          new = (struct LB_vtx_list *) LB_SMALLOC (sizeof(struct LB_vtx_list));
+          new = (struct LB_vtx_list *) LB_MALLOC (sizeof(struct LB_vtx_list));
           new->next = proc_list[nbors_proc[j]];
           if (new->next == NULL){
             new->length = 1;
@@ -368,10 +367,10 @@ pmethod = 0; /* temporary hack */
   
       /* Allocate buffers */
       size = sizeof(LB_GID) + sizeof(int);
-      sendbuf = (char *) LB_SMALLOC(max_edges*size);
-      recvbuf = (char *) LB_SMALLOC(sum_edges*size);
-      request = (MPI_Request *) LB_SMALLOC(nsend*sizeof(MPI_Request));
-      status  = (MPI_Status *) LB_SMALLOC(nsend*sizeof(MPI_Status));
+      sendbuf = (char *) LB_MALLOC(max_edges*size);
+      recvbuf = (char *) LB_MALLOC(sum_edges*size);
+      request = (MPI_Request *) LB_MALLOC(nsend*sizeof(MPI_Request));
+      status  = (MPI_Status *) LB_MALLOC(nsend*sizeof(MPI_Status));
       /* Issue the recvs */
       offset = 0;
       j = 0;
@@ -458,7 +457,7 @@ pmethod = 0; /* temporary hack */
                 /* Free the node in the list we don't need anymore */
                 new = ptr;
                 ptr = ptr->next;
-                LB_safe_free((void **)&new);
+                LB_Free((void **)&new);
                 break;
               }
             }
@@ -470,25 +469,25 @@ pmethod = 0; /* temporary hack */
         }
       }
       /* Free space for communication data */
-      LB_safe_free((void **) &sendbuf);
-      LB_safe_free((void **) &recvbuf);
-      LB_safe_free((void **) &request);
-      LB_safe_free((void **) &status);
+      LB_Free((void **) &sendbuf);
+      LB_Free((void **) &recvbuf);
+      LB_Free((void **) &request);
+      LB_Free((void **) &status);
     } /* end if (nsend>0) */
   
     /* Free space for temp data structures */
-    LB_safe_free((void **) &hash_nodes);
-    LB_safe_free((void **) &hashtab);
-    LB_safe_free((void **) &proc_list);
-    LB_safe_free((void **) &nbors_global);
-    LB_safe_free((void **) &nbors_proc);
+    LB_Free((void **) &hash_nodes);
+    LB_Free((void **) &hashtab);
+    LB_Free((void **) &proc_list);
+    LB_Free((void **) &nbors_global);
+    LB_Free((void **) &nbors_proc);
   
     /* Get vertex weights if needed */
     if (vwgt_dim){
 #ifdef LB_DEBUG
       printf("[%1d] Debug: Converting vertex weights...\n", myproc);
 #endif
-      vwgt = (idxtype *)LB_SMALLOC(vwgt_dim*num_obj * sizeof(idxtype));
+      vwgt = (idxtype *)LB_MALLOC(vwgt_dim*num_obj * sizeof(idxtype));
       max_wgt = 0;
       for (i=0; i<num_obj; i++){
         if (float_vwgt[i]>max_wgt) max_wgt = float_vwgt[i];
@@ -497,7 +496,7 @@ pmethod = 0; /* temporary hack */
       for (i=0; i<vwgt_dim*num_obj; i++){
         vwgt[i] = ceil(float_vwgt[i]*100/max_wgt);
       }
-      LB_safe_free((void **) &float_vwgt);
+      LB_Free((void **) &float_vwgt);
     }
 
   } /* end get_graph_data */
@@ -506,7 +505,7 @@ pmethod = 0; /* temporary hack */
     /* Determine how many dimensions the data have */
     ndims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
     /* Allocate space for the geometry data */
-    xyz = (float *) LB_SMALLOC(ndims*num_obj * sizeof(float));
+    xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
     if (!xyz){
       /* Not enough space */
     }
@@ -526,7 +525,7 @@ pmethod = 0; /* temporary hack */
   options[0] = 0; /* No ParMetis options for now */
   wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
-  part = (idxtype *)LB_SMALLOC(num_obj * sizeof(idxtype));
+  part = (idxtype *)LB_MALLOC(num_obj * sizeof(idxtype));
   
   /* Select the desired ParMetis function */
 #ifdef LB_DEBUG
@@ -573,11 +572,11 @@ pmethod = 0; /* temporary hack */
 #endif
 
   /* Free weights; they are no longer needed */
-  if (vwgt_dim) LB_safe_free((void **) &vwgt);
-  if (ewgt_dim) LB_safe_free((void **) &adjwgt);
+  if (vwgt_dim) LB_Free((void **) &vwgt);
+  if (ewgt_dim) LB_Free((void **) &adjwgt);
 
   /* Construct send/recv data from ParMETIS output */
-  destproc = (int *)LB_SMALLOC(num_obj * sizeof(int));
+  destproc = (int *)LB_MALLOC(num_obj * sizeof(int));
   nsend = 0;
   for (i=0; i<num_obj; i++){
     if (part[i] != lb->Proc){
@@ -602,7 +601,7 @@ pmethod = 0; /* temporary hack */
   if (flag>0){
 
     size = sizeof(LB_GID) + sizeof(LB_LID) + sizeof(int);
-    sendbuf = (char *)LB_SMALLOC(nsend*size);
+    sendbuf = (char *)LB_MALLOC(nsend*size);
 #ifdef LB_DEBUG
   printf("[%1d] Debug: copying data to sendbuf.\n", myproc);
 #endif
@@ -626,7 +625,7 @@ pmethod = 0; /* temporary hack */
     plan = LB_comm_create(nsend, destproc, lb->Communicator, &nrecv);
   
     /* Allocate enough space for receive buffer */
-    recvbuf = (char *)LB_SMALLOC(nrecv*size);
+    recvbuf = (char *)LB_MALLOC(nrecv*size);
   
     /* Do the communication */
 #ifdef LB_DEBUG
@@ -636,9 +635,9 @@ pmethod = 0; /* temporary hack */
   
     /* Unpack received data into proper places */
     *num_imp = nrecv;
-    *imp_gids = (LB_GID *)LB_SMALLOC(nrecv * sizeof(LB_GID));
-    *imp_lids = (LB_LID *)LB_SMALLOC(nrecv * sizeof(LB_LID));
-    *imp_procs = (int *)LB_SMALLOC(nrecv * sizeof(int));
+    *imp_gids = (LB_GID *)LB_MALLOC(nrecv * sizeof(LB_GID));
+    *imp_lids = (LB_LID *)LB_MALLOC(nrecv * sizeof(LB_LID));
+    *imp_procs = (int *)LB_MALLOC(nrecv * sizeof(int));
     if (!(*imp_gids) || !(*imp_lids) || !(*imp_procs)){
       /* Not enough memory */
       return LB_MEMERR;
@@ -668,23 +667,23 @@ pmethod = 0; /* temporary hack */
 #endif
 
     /* Free buffers */
-    LB_safe_free((void **) &sendbuf);
-    LB_safe_free((void **) &recvbuf);
+    LB_Free((void **) &sendbuf);
+    LB_Free((void **) &recvbuf);
 
   } /* end if (flag>0) */
 
   /* Free space */
-  LB_safe_free((void **) &part);
-  LB_safe_free((void **) &local_ids);
-  LB_safe_free((void **) &global_ids);
+  LB_Free((void **) &part);
+  LB_Free((void **) &local_ids);
+  LB_Free((void **) &global_ids);
   if (get_graph_data){
-    LB_safe_free((void **) &destproc);
-    LB_safe_free((void **) &vtxdist);
-    LB_safe_free((void **) &xadj);
-    LB_safe_free((void **) &adjncy);
+    LB_Free((void **) &destproc);
+    LB_Free((void **) &vtxdist);
+    LB_Free((void **) &xadj);
+    LB_Free((void **) &adjncy);
   }
   if (get_geom_data){
-    LB_safe_free((void **) &xyz);
+    LB_Free((void **) &xyz);
   }
 #ifdef LB_DEBUG
   printf("[%1d] Debug: exiting ParMetis_Part\n", myproc);
