@@ -17,67 +17,68 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
+#include <string.h>
 #include "comm.h"
+#include "zoltan_mem.h"
 
-/* Given a list of processors & message data, sort them by proc ID */
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
+/* Given a list of processors & message data, sort them by proc ID            */
+/* This routine will ensure that the ordering produced by the invert_map      */
+/* routines is deterministic.  This should make bugs more reproducible.       */
+/* This is a distribution count sort (Knuth)                                  */
+/* An easily fixed assumption is that the smallest integer is zero!           */
 
-int       Zoltan_Comm_Sort_Ints(
-int      *vals_sort,		/* values to be sorted */
-int      *vals_other,		/* other array to be reordered w/ sort */
-int       nvals)		/* length of these two arrays */
+int  Zoltan_Comm_Sort_Ints(
+int *vals_sort,     /* values to be sorted */
+int *vals_other,    /* other array to be reordered w/ sort */
+int  nvals)         /* length of these two arrays */
 {
-/* This routine will ensure that the ordering */
-/* produced by the invert_map routines is deterministic.  This should */
-/* make bugs more reproducible.  This is accomplished by sorting */
-/* the message lists by processor ID. */
+    int *store=NULL, *copy_sort=NULL, *copy_other=NULL, *p;
+    int i;
+    int top;         /* largest interger to sort, smallest is 0 by assumption */
+    int err = ZOLTAN_OK;
 
-    int       temp;		/* swapping value */
-    int       lo, hi;		/* counters from bottom and top of array */
-    int       pivot;		/* value to partition with */
+    if (nvals < 1 || vals_sort == NULL  || vals_other == NULL)
+       return ZOLTAN_FATAL;
+    if (nvals == 1)
+       return ZOLTAN_OK;           /* fastest way to sort 1 item is to return */
+       
+    /* find largest value (sort sometimes used for non processor lists) */   
+    top = vals_sort[0];
+    for (i = 1; i < nvals; i++)
+       if (top < vals_sort[i])
+           top = vals_sort[i];
 
-    if (nvals <= 1) return(ZOLTAN_OK);
+    store      = (int*) ZOLTAN_CALLOC (top+2,  sizeof(int));
+    copy_sort  = (int*) ZOLTAN_MALLOC (nvals * sizeof(int));
+    copy_other = (int*) ZOLTAN_MALLOC (nvals * sizeof(int));
 
-    /* Partition */
-    lo = nvals/2;
-    if (lo == nvals - 1) --lo;
-    pivot = vals_sort[lo];
+    if (store  &&  copy_sort  &&  copy_other)  {
+       memcpy (copy_sort,  vals_sort,  nvals * sizeof(int));
+       memcpy (copy_other, vals_other, nvals * sizeof(int));
 
-    lo = -1;
-    hi = nvals;
+       p = store+1;
+       for (i = 0; i < nvals; i++)
+          p[copy_sort[i]]++;                /* count number of occurances */
 
-    while (lo < hi) {
-	do {
-	    hi--;
-        } while (vals_sort[hi] > pivot);
+       for (i = 1; i < top+1; i++)
+          p[i] += p[i-1];                   /* compute partial sums */
+                                            /* assert: p[top] = nvals */
+                                              
+       p = store;                           /* effectively shifts down by one */
+       for (i = 0; i < nvals; i++)  {
+          vals_sort  [p[copy_sort [i]]] = copy_sort [i];
+          vals_other [p[copy_sort [i]]] = copy_other[i];
+          ++p[copy_sort [i]];
+          }
+       }
+    else
+       err =  ZOLTAN_MEMERR;
+       
+    Zoltan_Multifree (__FILE__, __LINE__, 3, &copy_sort, &copy_other, &store);
+    return err;
+    }
 
-	do {
-	    lo++;
-	} while (vals_sort[lo] < pivot);
-
-        if (lo < hi) {	/* Swap low and high items */
-	    temp = vals_sort[lo];
-	    vals_sort[lo] = vals_sort[hi];
-	    vals_sort[hi] = temp;
-
-	    temp = vals_other[lo];
-	    vals_other[lo] = vals_other[hi];
-	    vals_other[hi] = temp;
-	}
-    } 
-
-    /* Recurse */
-    if (hi + 1 > 1) Zoltan_Comm_Sort_Ints(vals_sort, vals_other, hi + 1);
-    if (nvals - hi - 1 > 1)
-	Zoltan_Comm_Sort_Ints(&vals_sort[hi + 1], &vals_other[hi + 1], nvals - hi - 1);
-
-
-    return(ZOLTAN_OK);
-}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

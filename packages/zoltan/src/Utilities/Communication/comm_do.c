@@ -46,6 +46,7 @@ extern "C" {
 	Otherwise need to receive in buffer and copy.
 */
 
+
 int       Zoltan_Comm_Do(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
 int tag,			/* message tag for communicating */
@@ -53,8 +54,25 @@ char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
 {
+   int status;
+   
+   status = Zoltan_Comm_Do_Post (plan, tag, send_data, nbytes, recv_data);
+   if (status == ZOLTAN_OK)
+      status = Zoltan_Comm_Do_Wait (plan, tag, send_data, nbytes, recv_data);
+   return status;
+}
+
+static char  *recv_buff;	/* place to receive messages */
+
+
+int       Zoltan_Comm_Do_Post(
+ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
+int tag,			/* message tag for communicating */
+char *send_data,		/* array of data I currently own */
+int nbytes,			/* multiplier for sizes */
+char *recv_data)		/* array of data I'll own after comm */
+{
     char     *send_buff;	/* space to buffer outgoing data */
-    char     *recv_buff;	/* place to receive messages */
     MPI_Status status;		/* return from Waitany */
     int       my_proc;		/* processor ID */
     int       self_recv_address;/* where in recv_data self info starts */
@@ -66,7 +84,7 @@ char *recv_data)		/* array of data I'll own after comm */
     int       proc_index;	/* loop counter over procs to send to */
     int       i, j, k, jj;	/* loop counters */
 
-    static char *yo = "Zoltan_Comm_Do";
+    static char *yo = "Zoltan_Comm_Do_Post";
 
 
     /* Check input parameters */
@@ -287,8 +305,34 @@ char *recv_data)		/* array of data I'll own after comm */
 	    ZOLTAN_FREE((void **) &send_buff);
 	}
     }
+    return (ZOLTAN_OK);
+}
 
 
+
+int       Zoltan_Comm_Do_Wait(
+ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
+int tag,			/* message tag for communicating */
+char *send_data,		/* array of data I currently own */
+int nbytes,			/* multiplier for sizes */
+char *recv_data)		/* array of data I'll own after comm */
+{
+    char     *send_buff;	/* space to buffer outgoing data */
+    MPI_Status status;		/* return from Waitany */
+    int       my_proc;		/* processor ID */
+    int       self_recv_address;/* where in recv_data self info starts */
+    int       self_num;		/* where in send list my_proc appears */
+    int       offset;		/* offset into array I'm copying into */
+    int       self_index;	/* send offset for data I'm keeping */
+    int       out_of_mem;	/* am I out of memory? */
+    int       nblocks;		/* number of procs who need my data */
+    int       proc_index;	/* loop counter over procs to send to */
+    int       i, j, k, jj;	/* loop counters */
+
+    static char *yo = "Zoltan_Comm_Do_Wait";
+
+    MPI_Comm_rank(plan->comm, &my_proc);    
+    
     /* Wait for messages to arrive & unpack them if necessary. */
     /* Note: since request is in plan, could wait in later routine. */
 
