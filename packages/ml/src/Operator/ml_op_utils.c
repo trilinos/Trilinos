@@ -77,7 +77,8 @@ int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
    for (jk = 0; jk < size; jk++)       dtemp[jk] = 0.0;
    for (jk = 0; jk < cboundary_length; jk++) dtemp[cboundary_list[jk]] = 1.;
    if ( comm_info != NULL)
-      ML_exchange_bdry(dtemp, comm_info, size, ml_handle->comm, ML_OVERWRITE);
+      ML_exchange_bdry(dtemp, comm_info, size, ml_handle->comm,
+                       ML_OVERWRITE,NULL);
 
 
 
