@@ -376,7 +376,7 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 
   AC_LANG_CPLUSPLUS 
   AC_MSG_CHECKING(for mpi.h)
-  AC_TRY_CPP(mpi.h,
+  AC_TRY_CPP([#include "mpi.h"],
     [AC_MSG_RESULT(yes)], 
     [AC_MSG_RESULT(no)  
      AC_MSG_ERROR(cannot find mpi.h)]
@@ -391,7 +391,7 @@ fi
 #iostream
 AC_LANG_CPLUSPLUS 
 AC_MSG_CHECKING([for iostream])
-AC_TRY_CPP(iostream,
+AC_TRY_CPP([#include <iostream>],
 [
   AC_MSG_RESULT(yes)
   AC_DEFINE(HAVE_IOSTREAM,,[define if we can include <iostream>])
@@ -399,7 +399,7 @@ AC_TRY_CPP(iostream,
 [
   AC_MSG_RESULT(no)
   AC_MSG_CHECKING([for iostream.h])
-  AC_TRY_CPP(iostream.h,
+  AC_TRY_CPP([#include "iostream.h"],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_IOSTREAM_H,,[define if we can include <iostream.h>])
@@ -415,7 +415,7 @@ AC_TRY_CPP(iostream,
 #iomanip
 AC_LANG_CPLUSPLUS 
 AC_MSG_CHECKING([for iomanip])
-AC_TRY_CPP(iomanip,
+AC_TRY_CPP([#include "iomanip"],
 [
   AC_MSG_RESULT(yes)
   AC_DEFINE(HAVE_IOMANIP,,[define if we can include <iomanip>])
@@ -423,7 +423,7 @@ AC_TRY_CPP(iomanip,
 [
   AC_MSG_RESULT(no)
   AC_MSG_CHECKING([for iomanip.h])
-  AC_TRY_CPP(iomanip.h,
+  AC_TRY_CPP([#include "iomanip.h"],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_IOMANIP_H,,[define if we can include <iomanip.h>])
@@ -453,7 +453,7 @@ AC_TRY_COMPILE(
 [
   AC_MSG_RESULT(no)
   AC_MSG_CHECKING([for math.h])
-  AC_TRY_CPP(math.h,
+  AC_TRY_CPP([#include "math.h"],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_MATH_H,,[define if we can include <math.h>])
@@ -496,20 +496,19 @@ AC_ARG_ENABLE(epetra,
 [BUILD_LIBNOXEPETRA=no]
 )
 
-TRILINOS_DIR=${TRILINOS_HOME}
-
-AC_ARG_WITH(trilinos,
-[  --with-trilinos         specify Trilinos root directory
-                          (uses TRILINOS_HOME if no argument)],
-[
-  BUILD_LIBNOXEPETRA=yes
-  if test ${withval} = yes; then
-    TRILINOS_DIR=${TRILINOS_HOME}
-  else
-    TRILINOS_DIR=${withval}
-  fi  
-]
-)
+dnl TRILINOS_DIR=${TRILINOS_HOME}
+dnl AC_ARG_WITH(trilinos,
+dnl [  --with-trilinos        specify Trilinos root directory
+dnl                           (uses TRILINOS_HOME if no argument)],
+dnl [
+dnl   BUILD_LIBNOXEPETRA=yes
+dnl   if test ${withval} = yes; then
+dnl     TRILINOS_DIR=${TRILINOS_HOME}
+dnl   else
+dnl     TRILINOS_DIR=${withval}
+dnl   fi  
+dnl ]
+dnl )
 
 AC_MSG_CHECKING(whether we should build the noxepetra library)
 AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
@@ -535,36 +534,83 @@ AC_MSG_RESULT(${BUILD_LIBNOXPETSC})
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
-AC_DEFUN(TRILINOS_INCLUDE_CHECK,
+AC_DEFUN(TRILINOS_INCLUDE_WITH,
 [
   AC_ARG_WITH($1-include,
-  [  --with-$1-include    specify location of $1 header files],
-  [$1_INC=$withval])
+  [  --with-$1-include=<dir>  specify location of all $1 header files],
+  [$1_INCDIR=$withval])
+])
 
-  AC_MSG_CHECKING(for $1 include directory)
-  if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${TRILINOS_DIR}/include/$2; then
-    $1_INC=${TRILINOS_DIR}/include
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${TRILINOS_DIR}/include/$1/$2; then
-    $1_INC=${TRILINOS_DIR}/include/$1
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${TRILINOS_DIR}/packages/$1/src/$2; then
-    $1_INC=${TRILINOS_DIR}/packages/$1/src
-    AC_MSG_RESULT([${$1_INC}])
-  else
-    AC_MSG_RESULT(no)
+REL_TRILINOS_CPPFLAGS=
+ABS_TRILINOS_CPPFLAGS=
+
+AC_DEFUN(TRILINOS_HEADER,
+[
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  AC_TRY_CPP([#include "$2"],[done=yes],)
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir
+  if test $done = no && test -n ${$1_INCDIR}; then
+    CPPFLAGS="-I${$1_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    AC_TRY_CPP([#include "$2"],
+    [ done=yes
+      REL_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+    ],[])
+    CPPFLAGS=$save_CPPFLAGS
+  fi   
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    AC_TRY_CPP([#include "$2"],
+    [ done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../$1/src ${ABS_TRILINOS_CPPFLAGS}"
+    ],[])
+    CPPFLAGS=$save_CPPFLAGS
+  fi   
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n $srcdir; then
+    CPPFLAGS="-I$srcdir/../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    AC_TRY_CPP([#include "$2"],
+    [ done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../$1/src ${ABS_TRILINOS_CPPFLAGS}"
+    ],[])					       
+    CPPFLAGS=$save_CPPFLAGS
+  fi   
+
+#   AC_MSG_CHECKING([For $2])
+#   AC_MSG_RESULT([$REL_TRILINOS_CPPFLAGS])
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot find the include file $2, part of the $1 package."
+    echo "Try --with-$1-libdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
     AC_MSG_ERROR([Cannot find $1 include directory containing $2])
-  fi  
-
+  fi 
 ])
 
 if test X${BUILD_LIBNOXEPETRA} = Xyes; then
 
-  TRILINOS_INCLUDE_CHECK(epetra,Epetra_Vector.h)
-  TRILINOS_INCLUDE_CHECK(aztecoo,AztecOO.h)
-  TRILINOS_INCLUDE_CHECK(ifpack,Ifpack_CrsRiluk.h)
+  TRILINOS_INCLUDE_WITH(epetra)
+  TRILINOS_INCLUDE_WITH(aztec00)
+  TRILINOS_INCLUDE_WITH(ifpack)
+  TRILINOS_HEADER(epetra,Epetra_config.h)
+  TRILINOS_HEADER(epetra,Epetra_Vector.h)
+  TRILINOS_HEADER(aztecoo,AztecOO_config.h)
+  TRILINOS_HEADER(aztecoo,AztecOO.h)
+  TRILINOS_HEADER(ifpack,Ifpack_config.h)
+  TRILINOS_HEADER(ifpack,Ifpack_CrsRiluk.h)
 
   if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     TRILINOS_COMM="MPI"
@@ -572,7 +618,8 @@ if test X${BUILD_LIBNOXEPETRA} = Xyes; then
     TRILINOS_COMM="SERIAL"
   fi
 
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC} -I${ifpack_INC}"
+#  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC} -I${ifpack_INC}"
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} ${REL_TRILINOS_CPPFLAGS}"
 
 fi
 
