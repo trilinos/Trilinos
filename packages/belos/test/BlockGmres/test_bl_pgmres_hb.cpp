@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "AnasaziPetra.hpp"
-#include "BlockGmres.hpp"
+#include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
 #include "Ifpack_IlukGraph.h"
