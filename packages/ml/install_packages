@@ -244,20 +244,18 @@ then
    fi
    ${echo} "=================================================================="
 else
-   ${echo} -n "Do you want to use Distributed SuperLU? [yes] "
+   ${echo} -n "Do you want to use Distributed SuperLU? [no] "
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if  test `expr $USING_MPI` = 'no' &&
-      (test `expr $yes_or_no` = 'yess' ||
-       test `expr $yes_or_no` = 's')
+      (test `expr $yes_or_no` = 'yess')
    then
       ${echo}
       ${echo} "====> Must use MPI with Distributed SuperLU ... IGNORING"
       ${echo}
       yes_or_no=no
    fi
-   if test `expr $yes_or_no` = 'yess' ||
-      test `expr $yes_or_no` = 's'
+   if test `expr $yes_or_no` = 'yess' 
    then
       PACKAGES=`${echo} $PACKAGES -DDSUPERLU`
       ${echo} -n "Where is the superlu directory? [$PWD/lib/SuperLU_DIST] "
