@@ -214,7 +214,7 @@ TFLOP_INC_PATH	= $(SUBINCPATH)
 
 TFLOP_CCOMP	= $(TFLOP_CC) $(TFLOP_INC_PATH) $(TFLOP_DBG_FLAGS)
 
-TFLOP_DEFS	= $(GDEFINES)
+TFLOP_DEFS	= $(GDEFINES) -DTFLOP
 
 # driver stuff
 TFLOP_ARCHD	= $(ROOT_ARCHD)/tflop
@@ -272,6 +272,10 @@ SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) \
 ##############################################################################
 # SUNOS Definitions
 ##############################################################################
+
+#SUNOS_CC          = purify -follow-child-processes=yes acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
+#                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
+#                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
 
 SUNOS_CC          = acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
                 -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
