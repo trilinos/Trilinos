@@ -258,7 +258,7 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
 
    if (smoo->label != NULL) { free(smoo->label); smoo->label = NULL; }
    size = strlen(label) + 1;
-   smoo->label = (char *) malloc(size*sizeof(char));
+   smoo->label = (char *) ML_allocate(size*sizeof(char));
    if (smoo->label == NULL) 
       pr_error("Not enough space in ML_Smoother_Set_Label\n");
    strncpy(smoo->label,label,size);
@@ -292,7 +292,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
       {
          Amat = pre->my_level->Amat;
          n    = Amat->outvec_leng; 
-         res  = (double *) malloc( (n+1)*sizeof(double) );
+         res  = (double *) ML_allocate( (n+1)*sizeof(double) );
          temp = sqrt(ML_gdot(n, rhs, rhs, pre->my_level->comm));
          tol  = temp*pre->tol;
          pre->ntimes = 100;
@@ -384,9 +384,9 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
       else 
       {
          allocated_space = 30;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
-         tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
          for (i = 0; i < Amat->outvec_leng; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
@@ -394,8 +394,8 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
             {
                allocated_space = 2*allocated_space + 1;
                free(vals); free(cols); 
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
                {
                   printf("Not enough space to get matrix row. Row length of\n");
@@ -414,13 +414,13 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
 
    n     = Amat->outvec_leng;
-   res   = (double *) malloc(n*sizeof(double));
+   res   = (double *) ML_allocate(n*sizeof(double));
    if (smooth_ptr->omega == ML_ONE_STEP_CG) {
-      res2  = (double *) malloc(n*sizeof(double));
+      res2  = (double *) ML_allocate(n*sizeof(double));
    }
 
 #ifdef ML_DEBUG_SMOOTHER
-   if (res2 != NULL) res2  = (double *) malloc(n*sizeof(double));
+   if (res2 != NULL) res2  = (double *) ML_allocate(n*sizeof(double));
    printf("    ML_Jacobi, omega = %e\n", omega);
 #endif
 
@@ -487,8 +487,8 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
       pr_error("Error(ML_GaussSeidel): Need getrow() for GS smoother\n");
 
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_GaussSeidel(): Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for GS smoother\n");
@@ -507,7 +507,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    else x2 = x;
 
 #ifdef ML_DEBUG_SMOOTHER
-   res2 = (double*) malloc(Nrows * sizeof(double));
+   res2 = (double*) ML_allocate(Nrows * sizeof(double));
 #endif
 
    /* ----------------------------------------------------------------- */
@@ -614,9 +614,9 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    else
    {
       allocated_space = (Amat->max_nz_per_row+1) * Nrows + 1;
-      rptr = (int    *) malloc(allocated_space*sizeof(int   ));
-      cols = (int    *) malloc(allocated_space*sizeof(int   ));
-      vals = (double *) malloc(allocated_space*sizeof(double));
+      rptr = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+      vals = (double *) ML_allocate(allocated_space*sizeof(double));
       if (vals == NULL) pr_error("ML_Smoother_SGS ERROR: Not enough space\n");
       nnz = 0;
       rptr[0] = nnz;
@@ -638,8 +638,8 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    }
 #else
    allocated_space = Amat->max_nz_per_row + 1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
 #endif
 
@@ -665,7 +665,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    /* ----------------------------------------------------------------- */
 
 #ifdef ML_DEBUG_SMOOTHER
-   res2 = (double*) malloc(Nrows * sizeof(double));
+   res2 = (double*) ML_allocate(Nrows * sizeof(double));
 #endif
 
 #ifndef ML_FAST
@@ -1409,8 +1409,8 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
       pr_error("Error(ML_SGSSequential): Need getrow() for SGS smoother\n");
 
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
 
    getrow_comm= Amat->getrow->pre_comm;
@@ -1540,12 +1540,12 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
 
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    /* this is very space inefficient, but since lapack doesn't do sparsity,
       I'm not sure how to do better without rewriting their solver routine */
-   Atimesx = (double *) malloc(blocksize*sizeof(double));
-   correc = (double *) malloc(blocksize*sizeof(double));
+   Atimesx = (double *) ML_allocate(blocksize*sizeof(double));
+   correc = (double *) ML_allocate(blocksize*sizeof(double));
    if (correc == NULL) pr_error("Error in ML_BlockGaussSeidel:Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for BGS smoother\n");
@@ -1677,14 +1677,14 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    /* ----------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row+1000;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    maxBlocksize = 0;
    for ( i = 0; i < Nblocks; i++ )
       if ( blocklengths[i] > maxBlocksize ) 
          maxBlocksize = blocklengths[i];
-   aggr_offset = (int *) malloc( Nblocks * sizeof(int) );
-   aggr_group  = (int *) malloc( Nrows   * sizeof(int) );
+   aggr_offset = (int *) ML_allocate( Nblocks * sizeof(int) );
+   aggr_group  = (int *) ML_allocate( Nrows   * sizeof(int) );
    aggr_offset[0] = 0;
    for (i = 1; i < Nblocks; i++) 
       aggr_offset[i] = aggr_offset[i-1] + blocklengths[i-1]; 
@@ -1701,20 +1701,20 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) 
    {
-      x_ext = (double *) malloc((inlen+getrow_comm->total_rcv_length+1)*
+      x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
    {
-      dtemp   = (double *) malloc( maxBlocksize * sizeof(double) );
+      dtemp   = (double *) ML_allocate( maxBlocksize * sizeof(double) );
    }
    if ( Nblocks > 0 )
    {
-     unprec_r = (double *) malloc(inlen*sizeof(double));
+     unprec_r = (double *) ML_allocate(inlen*sizeof(double));
 
-      do_update = (int *) malloc( Nblocks * sizeof(int) );
+      do_update = (int *) ML_allocate( Nblocks * sizeof(int) );
       if ( do_update == NULL ) 
       {
          printf("ERROR : memory allocation.\n");
@@ -1722,7 +1722,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
       }
    }
    if (smooth_ptr->omega == ML_ONE_STEP_CG) {
-     Mr = (double *) malloc(inlen*sizeof(double));
+     Mr = (double *) ML_allocate(inlen*sizeof(double));
      if (Mr == NULL) pr_error("ML_Smoother_VBlockJacobi: Out of space\n");
    }
    else Mr = unprec_r;
@@ -1867,14 +1867,14 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    /* ----------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row+1000;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    maxBlocksize = 0;
    for ( i = 0; i < Nblocks; i++ )
       if ( blocklengths[i] > maxBlocksize ) 
          maxBlocksize = blocklengths[i];
-   aggr_offset = (int *) malloc( Nblocks * sizeof(int) );
-   aggr_group  = (int *) malloc( Nrows   * sizeof(int) );
+   aggr_offset = (int *) ML_allocate( Nblocks * sizeof(int) );
+   aggr_group  = (int *) ML_allocate( Nrows   * sizeof(int) );
    if ( Nblocks > 0 ) aggr_offset[0] = 0;
    for (i = 1; i < Nblocks; i++) 
       aggr_offset[i] = aggr_offset[i-1] + blocklengths[i-1]; 
@@ -1891,15 +1891,15 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) 
    {
-      x_ext = (double *) malloc((inlen+getrow_comm->total_rcv_length+1)*
+      x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
    {
-      Ax  = (double *) malloc( maxBlocksize * sizeof(double) );
-      res = (double *) malloc( maxBlocksize * sizeof(double) );
+      Ax  = (double *) ML_allocate( maxBlocksize * sizeof(double) );
+      res = (double *) ML_allocate( maxBlocksize * sizeof(double) );
    }
 
    /* ----------------------------------------------------- */
@@ -2073,14 +2073,14 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    /* ----------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row+1000;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    maxBlocksize = 0;
    for ( i = 0; i < Nblocks; i++ )
       if ( blocklengths[i] > maxBlocksize ) 
          maxBlocksize = blocklengths[i];
-   aggr_offset = (int *) malloc( Nblocks * sizeof(int) );
-   aggr_group  = (int *) malloc( Nrows   * sizeof(int) );
+   aggr_offset = (int *) ML_allocate( Nblocks * sizeof(int) );
+   aggr_group  = (int *) ML_allocate( Nrows   * sizeof(int) );
    if ( Nblocks > 0 ) aggr_offset[0] = 0;
    for (i = 1; i < Nblocks; i++) 
       aggr_offset[i] = aggr_offset[i-1] + blocklengths[i-1]; 
@@ -2097,15 +2097,15 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) 
    {
-      x_ext = (double *) malloc((inlen+getrow_comm->total_rcv_length+1)*
+      x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
    {
-      Ax  = (double *) malloc( maxBlocksize * sizeof(double) );
-      res = (double *) malloc( maxBlocksize * sizeof(double) );
+      Ax  = (double *) ML_allocate( maxBlocksize * sizeof(double) );
+      res = (double *) ML_allocate( maxBlocksize * sizeof(double) );
    }
 
    /* ----------------------------------------------------- */
@@ -2315,8 +2315,8 @@ int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
    mat_ja   = dataptr->mat_ja;
    mat_aa   = dataptr->mat_aa;
 
-   dbuffer = (double *) malloc(extNrows * sizeof(double));
-   idiag   = (int *)    malloc(extNrows * sizeof(int));
+   dbuffer = (double *) ML_allocate(extNrows * sizeof(double));
+   idiag   = (int *)    ML_allocate(extNrows * sizeof(int));
    for ( i = 0; i < inlen; i++ ) dbuffer[i] = rhs[i];
 
    if ( extNrows > outlen )
@@ -2421,7 +2421,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    /* communicate the rhs and put into dbuffer                  */
    /* --------------------------------------------------------- */
 
-   dbuffer = (double *) malloc(extNrows * sizeof(double));
+   dbuffer = (double *) ML_allocate(extNrows * sizeof(double));
    for ( i = 0; i < outlen; i++ ) dbuffer[i] = rhs[i];
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
 
@@ -2432,8 +2432,8 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    /* set up for SuperLU solves                                 */
    /* --------------------------------------------------------- */
 
-   rhsbuf = (double *) malloc(max_blk_size * sizeof(double));
-   solbuf = (double *) malloc(max_blk_size * sizeof(double));
+   rhsbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
+   solbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
    panel_size               = sp_ienv(1);
    iparam.panel_size        = panel_size;
    iparam.relax             = sp_ienv(2);
@@ -2448,7 +2448,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
 
    /* --------------------------------------------------------- */
    /* the first pass                                            */
@@ -2476,7 +2476,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
       Destroy_SuperMatrix_Store(&X);
    }
 
-   if (ntimes > 1) xbuffer = (double *) malloc(extNrows * sizeof(double));
+   if (ntimes > 1) xbuffer = (double *) ML_allocate(extNrows * sizeof(double));
 
    for ( m = 1; m < ntimes; m++ )
    {
@@ -2592,7 +2592,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    /* communicate the rhs and put into dbuffer                  */
    /* --------------------------------------------------------- */
 
-   dbuffer = (double *) malloc(extNrows * sizeof(double));
+   dbuffer = (double *) ML_allocate(extNrows * sizeof(double));
    for ( i = 0; i < outlen; i++ ) dbuffer[i] = rhs[i];
    for ( i = outlen; i < extNrows; i++ ) dbuffer[i] = 0.0;
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
@@ -2604,8 +2604,8 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    /* set up for SuperLU solves                                 */
    /* --------------------------------------------------------- */
 
-   rhsbuf = (double *) malloc(max_blk_size * sizeof(double));
-   solbuf = (double *) malloc(max_blk_size * sizeof(double));
+   rhsbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
+   solbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
    panel_size               = sp_ienv(1);
    iparam.panel_size        = panel_size;
    iparam.relax             = sp_ienv(2);
@@ -2620,7 +2620,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
 
    /* --------------------------------------------------------- */
    /* the first pass                                            */
@@ -2648,7 +2648,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
       Destroy_SuperMatrix_Store(&X);
    }
 
-   if (ntimes > 1) xbuffer = (double *) malloc(extNrows * sizeof(double));
+   if (ntimes > 1) xbuffer = (double *) ML_allocate(extNrows * sizeof(double));
 
    for ( m = 1; m < ntimes; m++ )
    {
@@ -3076,6 +3076,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       ML_Krylov_Destroy(&kdata);
       if (Amat->comm->ML_mypid == 0 && dataptr->print == 1)
       {
+         printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
+                                                     Amat->invec_leng);
          printf("E:Calculated max eigenvalue of %f.\n",dataptr->max_eig);
          printf("E:Using Hiptmair damping factor of %f.\n",dataptr->omega);
          fflush(stdout);
@@ -3296,7 +3298,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    /* and pick off the diagonal entries. */
    dataptr->TtAT_diag = (double *)
-                        malloc( tmpmat->outvec_leng * sizeof(double) );
+                        ML_allocate( tmpmat->outvec_leng * sizeof(double) );
    ML_Operator_Get_Diag(tmpmat, tmpmat->outvec_leng, &tmpdiag );
    for (i=0; i< tmpmat->outvec_leng; i++)
       if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
@@ -3351,17 +3353,17 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    allocated_space = Amat->max_nz_per_row+1;
    dataptr->blocksize = blocksize;
 
-   dataptr->blockfacts = (double **)malloc(Nblocks*sizeof(double *));
-   dataptr->perms = (int **)malloc(Nblocks*sizeof(int *));
+   dataptr->blockfacts = (double **)ML_allocate(Nblocks*sizeof(double *));
+   dataptr->perms = (int **)ML_allocate(Nblocks*sizeof(int *));
    blockfacts = dataptr->blockfacts;
    perms = dataptr->perms;
    for (j=0; j<Nblocks; j++) 
    {
       blockfacts[j]=(double *)calloc(blocksize*blocksize,sizeof(double));
-      perms[j]=(int *)malloc(blocksize*blocksize*sizeof(int));
+      perms[j]=(int *)ML_allocate(blocksize*blocksize*sizeof(int));
    }
-   cols = (int    *) malloc(allocated_space*sizeof(int    ));
-   vals = (double *) malloc(allocated_space*sizeof(double ));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int    ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double ));
 
    if (vals == NULL) 
       pr_error("Error in ML_Gen_BGSFacts(): Not enough space\n");
@@ -3427,12 +3429,12 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       printf("ML_Gen_VBGSFacts : blocking information not available.\n");
       exit(1);
    }
-   dataptr->blockmap = (int *) malloc( Nrows * sizeof(int));
+   dataptr->blockmap = (int *) ML_allocate( Nrows * sizeof(int));
    if (dataptr->blockmap == NULL) 
       pr_error("ML_Smoother_Gen_VBGSFacts: out of space\n");
    for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
 
-   dataptr->blocklengths = (int*) malloc( Nblocks * sizeof(int));
+   dataptr->blocklengths = (int*) ML_allocate( Nblocks * sizeof(int));
    block_sizes = dataptr->blocklengths;
 
    /* ----------------------------------------------------------- */
@@ -3458,26 +3460,26 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    /* allocate memory for each block                              */
    /* ----------------------------------------------------------- */
 
-   dataptr->blockfacts = (double **) malloc(Nblocks*sizeof(double *));
+   dataptr->blockfacts = (double **) ML_allocate(Nblocks*sizeof(double *));
 
-   dataptr->perms = (int **)malloc(Nblocks*sizeof(int *));
+   dataptr->perms = (int **)ML_allocate(Nblocks*sizeof(int *));
    blockfacts = dataptr->blockfacts;
    perms = dataptr->perms;
    for ( i = 0; i < Nblocks; i++) 
    {
       length = block_sizes[i] * block_sizes[i];
-      blockfacts[i] = (double *)malloc( length* sizeof(double) );
+      blockfacts[i] = (double *)ML_allocate( length* sizeof(double) );
       for ( j = 0; j < length; j++) blockfacts[i][j] = 0.0; 
-      perms[i] = (int *)malloc( block_sizes[i] * sizeof(int));
+      perms[i] = (int *)ML_allocate( block_sizes[i] * sizeof(int));
    }
 
    /* ----------------------------------------------------------- */
    /* load the block matrices                                     */
    /* ----------------------------------------------------------- */
 
-   block_offset = (int *) malloc(Nrows*sizeof(int ));
-   cols = (int    *) malloc(allocated_space*sizeof(int    ));
-   vals = (double *) malloc(allocated_space*sizeof(double ));
+   block_offset = (int *) ML_allocate(Nrows*sizeof(int ));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int    ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double ));
    if (vals == NULL) 
       pr_error("Error in ML_Smoother_Gen_VBGSFacts: Not enough space\n");
 
@@ -3583,8 +3585,8 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    /* compose NrowsOffset and processor offsets proc_array        */
    /* ----------------------------------------------------------- */
  
-   proc_array  = (int *) malloc(nprocs * sizeof(int) );
-   proc_array2 = (int *) malloc(nprocs * sizeof(int) );
+   proc_array  = (int *) ML_allocate(nprocs * sizeof(int) );
+   proc_array2 = (int *) ML_allocate(nprocs * sizeof(int) );
    for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
    proc_array[mypid] = Nrows;
    ML_gsum_vec_int(proc_array, proc_array2, nprocs, comm);
@@ -3597,14 +3599,14 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    /* compose the column index map (index_array,index_array2)     */
    /* ----------------------------------------------------------- */
 
-   dble_array  = (double *) malloc(extNrows *sizeof(double));
+   dble_array  = (double *) ML_allocate(extNrows *sizeof(double));
    for (i = Nrows; i < extNrows; i++) dble_array[i] = 0.0;
    for (i = 0; i < Nrows; i++) dble_array[i] = 1.0 * ( i + NrowsOffset );
    if (getrow_comm != NULL)
       ML_exchange_bdry(dble_array,getrow_comm, Nrows,comm,ML_OVERWRITE,NULL);
-   index_array = ( int *) malloc((extNrows-Nrows) * sizeof(int));
+   index_array = ( int *) ML_allocate((extNrows-Nrows) * sizeof(int));
    for (i = Nrows; i < extNrows; i++) index_array[i-Nrows] = dble_array[i];
-   index_array2  = (int *) malloc((extNrows-Nrows) *sizeof(int));
+   index_array2  = (int *) ML_allocate((extNrows-Nrows) *sizeof(int));
    for (i = 0; i < extNrows-Nrows; i++) index_array2[i] = i;
    free( dble_array );
 
@@ -3659,8 +3661,8 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* Set up send messages                                        */
    /* ----------------------------------------------------------- */
 
-   request      = (USR_REQ  *) malloc(N_neighbors*sizeof(USR_REQ ));
-   (*recv_leng) = (int  *)     malloc(total_recv * sizeof(int));
+   request      = (USR_REQ  *) ML_allocate(N_neighbors*sizeof(USR_REQ ));
+   (*recv_leng) = (int  *)     ML_allocate(total_recv * sizeof(int));
 
    mtype = 2001;
 
@@ -3685,8 +3687,8 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* ----------------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row + 1;
-   cols = (int *) malloc(allocated_space * sizeof(int));
-   vals = (double *) malloc(allocated_space * sizeof(double));
+   cols = (int *) ML_allocate(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
    {
       proc_id   = neighbors[i];
@@ -3761,9 +3763,9 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* Set up communication                                        */
    /* ----------------------------------------------------------- */
 
-   request     = (USR_REQ  *) malloc(N_neighbors*sizeof(USR_REQ ));
-   (*int_buf)  = (int  *)     malloc(total_recv * sizeof(int));
-   (*dble_buf) = (double  *)  malloc(total_recv * sizeof(double));
+   request     = (USR_REQ  *) ML_allocate(N_neighbors*sizeof(USR_REQ ));
+   (*int_buf)  = (int  *)     ML_allocate(total_recv * sizeof(int));
+   (*dble_buf) = (double  *)  ML_allocate(total_recv * sizeof(double));
 
    mtype = 2002;
 
@@ -3793,8 +3795,8 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* ----------------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row + 1;
-   cols = (int *) malloc(allocated_space * sizeof(int));
-   vals = (double *) malloc(allocated_space * sizeof(double));
+   cols = (int *) ML_allocate(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
    {
       proc_id   = neighbors[i];
@@ -3807,7 +3809,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
          ML_get_matrix_row(Amat,1,&index,&allocated_space,&cols,&vals,&m,0);
          nnz += m;
       }
-      if ( nnz > 0 ) send_buf = (double *) malloc( nnz * sizeof(double));
+      if ( nnz > 0 ) send_buf = (double *) ML_allocate( nnz * sizeof(double));
       offset = 0;
       for (j = 0; j < length; j++) 
       {
@@ -3873,8 +3875,8 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* ----------------------------------------------------------- */
 
    allocated_space = Amat->max_nz_per_row + 1;
-   cols = (int *) malloc(allocated_space * sizeof(int));
-   vals = (double *) malloc(allocated_space * sizeof(double));
+   cols = (int *) ML_allocate(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
    {
       proc_id   = neighbors[i];
@@ -3887,7 +3889,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
          ML_get_matrix_row(Amat,1,&index,&allocated_space,&cols,&vals,&m,0);
          nnz += m;
       }
-      if ( nnz > 0 ) isend_buf = (int *) malloc( nnz * sizeof(int));
+      if ( nnz > 0 ) isend_buf = (int *) ML_allocate( nnz * sizeof(int));
       offset = 0;
       for (j = 0; j < length; j++) 
       {
@@ -3973,13 +3975,13 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    /* ---------------------------------------------------------- */
 
    allocated_space = extNrows;
-   cols = (int *) malloc(allocated_space * sizeof(int));
-   vals = (double *) malloc(allocated_space * sizeof(double));
-   sortcols = (int *)    malloc(extNrows * sizeof(int));
-   sortvals = (double *) malloc(extNrows * sizeof(double));
-   dble_buf = (double *) malloc(extNrows * sizeof(double));
-   diagonal = (double *) malloc(extNrows * sizeof(double));
-   rowNorms = (double *) malloc(extNrows * sizeof(double));
+   cols = (int *) ML_allocate(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
+   sortcols = (int *)    ML_allocate(extNrows * sizeof(int));
+   sortvals = (double *) ML_allocate(extNrows * sizeof(double));
+   dble_buf = (double *) ML_allocate(extNrows * sizeof(double));
+   diagonal = (double *) ML_allocate(extNrows * sizeof(double));
+   rowNorms = (double *) ML_allocate(extNrows * sizeof(double));
 
    /* ---------------------------------------------------------- */
    /* compute the storage requirement for the ILU matrix         */
@@ -3997,9 +3999,9 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    }
    for ( i = 0; i < total_recv_leng; i++ ) total_nnz += recv_lengths[i];
    total_nnz *= (fillin + 1);
-   ilut_ptr->mat_ia = (int *) malloc( (extNrows + 1 ) * sizeof(int));
-   ilut_ptr->mat_ja = (int *) malloc( total_nnz * sizeof(int));
-   ilut_ptr->mat_aa = (double *) malloc( total_nnz * sizeof(double));
+   ilut_ptr->mat_ia = (int *) ML_allocate( (extNrows + 1 ) * sizeof(int));
+   ilut_ptr->mat_ja = (int *) ML_allocate( total_nnz * sizeof(int));
+   ilut_ptr->mat_aa = (double *) ML_allocate( total_nnz * sizeof(double));
    mat_ia = ilut_ptr->mat_ia;
    mat_ja = ilut_ptr->mat_ja;
    mat_aa = ilut_ptr->mat_aa;
@@ -4031,7 +4033,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
 
    nnz_count = 0;
    mat_ia[0] = 0;
-   track_array = (int *) malloc( extNrows * sizeof(int) );
+   track_array = (int *) ML_allocate( extNrows * sizeof(int) );
    for ( i = 0; i < extNrows; i++ ) dble_buf[i] = 0.0;
 
    for ( i = 0; i < Nrows; i++ )
@@ -4427,11 +4429,11 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* compose the initial blk_size information                   */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->blk_size = (int *) malloc(nblocks * sizeof(int) );
-   schwarz_ptr->blk_indices = (int **) malloc(nblocks * sizeof(int*) );
+   schwarz_ptr->blk_size = (int *) ML_allocate(nblocks * sizeof(int) );
+   schwarz_ptr->blk_indices = (int **) ML_allocate(nblocks * sizeof(int*) );
    blk_indices  = schwarz_ptr->blk_indices;
    blk_size     = schwarz_ptr->blk_size;
-   tmp_blk_leng = (int *) malloc(nblocks * sizeof(int) );
+   tmp_blk_leng = (int *) ML_allocate(nblocks * sizeof(int) );
    for ( i = 0; i < nblocks; i++ ) blk_size[i] = 0; 
    for ( i = 0; i < Nrows; i++ )   blk_size[blkinfo[i]]++;
    for ( i = 0; i < nblocks; i++ ) 
@@ -4445,7 +4447,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    for ( i = 0; i < nblocks; i++ ) 
    {
       tmp_blk_leng[i] = blk_size[i] * blk_size[i] + 5;
-      blk_indices[i] = (int *) malloc(tmp_blk_leng[i] * sizeof(int));
+      blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
    }
    for ( i = 0; i < nblocks; i++ ) blk_size[i] = 0;
    for ( i = 0; i < Nrows; i++ ) 
@@ -4461,8 +4463,8 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* ---------------------------------------------------------- */
 
    allocated_space = extNrows;
-   vals = (double *) malloc(allocated_space * sizeof(double));
-   cols = (int *)    malloc(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
+   cols = (int *)    ML_allocate(allocated_space * sizeof(int));
    max_blk_size = 0;
    for ( i = 0; i < nblocks; i++ ) 
    {
@@ -4475,7 +4477,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
          {
             tmp_indices = blk_indices[i];
             tmp_blk_leng[i] = 2 * ( blk_size[i] + rowleng ) + 2;
-            blk_indices[i] = (int *) malloc(tmp_blk_leng[i] * sizeof(int));
+            blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
             for (k = 0; k < blk_size[i]; k++) blk_indices[i][k] = tmp_indices[k]; 
             free( tmp_indices );
          }   
@@ -4498,15 +4500,15 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* compute the memory requirements for each block             */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->bmat_ia = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->bmat_ja = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->bmat_aa = (double **) malloc(nblocks * sizeof(double*) );
+   schwarz_ptr->bmat_ia = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->bmat_ja = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->bmat_aa = (double **) ML_allocate(nblocks * sizeof(double*) );
    bmat_ia = schwarz_ptr->bmat_ia;
    bmat_ja = schwarz_ptr->bmat_ja;
    bmat_aa = schwarz_ptr->bmat_aa;
-   schwarz_ptr->aux_bmat_ia = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->aux_bmat_ja = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->aux_bmat_aa = (double **) malloc(nblocks * sizeof(double*) );
+   schwarz_ptr->aux_bmat_ia = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->aux_bmat_ja = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->aux_bmat_aa = (double **) ML_allocate(nblocks * sizeof(double*) );
    aux_bmat_ia = schwarz_ptr->aux_bmat_ia;
    aux_bmat_ja = schwarz_ptr->aux_bmat_ja;
    aux_bmat_aa = schwarz_ptr->aux_bmat_aa;
@@ -4536,12 +4538,12 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
             else              aux_nnz++;
          }
       }
-      bmat_ia[i] = (int *)    malloc( (blk_size[i] + 1) * sizeof(int));
-      bmat_ja[i] = (int *)    malloc( nnz * sizeof(int));
-      bmat_aa[i] = (double *) malloc( nnz * sizeof(double));
-      aux_bmat_ia[i] = (int *)    malloc( (blk_size[i] + 1) * sizeof(int));
-      aux_bmat_ja[i] = (int *)    malloc( aux_nnz * sizeof(int));
-      aux_bmat_aa[i] = (double *) malloc( aux_nnz * sizeof(double));
+      bmat_ia[i] = (int *)    ML_allocate( (blk_size[i] + 1) * sizeof(int));
+      bmat_ja[i] = (int *)    ML_allocate( nnz * sizeof(int));
+      bmat_aa[i] = (double *) ML_allocate( nnz * sizeof(double));
+      aux_bmat_ia[i] = (int *)    ML_allocate( (blk_size[i] + 1) * sizeof(int));
+      aux_bmat_ja[i] = (int *)    ML_allocate( aux_nnz * sizeof(int));
+      aux_bmat_aa[i] = (double *) ML_allocate( aux_nnz * sizeof(double));
    }
 
    /* ---------------------------------------------------------- */
@@ -4600,25 +4602,25 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* call SuperLU to perform decomposition                      */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->slu_Amat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->slu_Lmat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->slu_Umat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->perm_r   = (int **) malloc(nblocks*sizeof(int*));
-   schwarz_ptr->perm_c   = (int **) malloc(nblocks*sizeof(int*));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   schwarz_ptr->slu_Amat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->slu_Lmat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->slu_Umat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->perm_r   = (int **) ML_allocate(nblocks*sizeof(int*));
+   schwarz_ptr->perm_c   = (int **) ML_allocate(nblocks*sizeof(int*));
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
    R     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   tsol  = (double *) malloc( max_blk_size * sizeof(double) );
-   trhs  = (double *) malloc( max_blk_size * sizeof(double) );
+   tsol  = (double *) ML_allocate( max_blk_size * sizeof(double) );
+   trhs  = (double *) ML_allocate( max_blk_size * sizeof(double) );
    for ( i = 0; i < max_blk_size; i ++ ) trhs[i] = 0.0;
 
    for ( i = 0; i < nblocks; i ++ )
    {
-      schwarz_ptr->slu_Amat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
-      schwarz_ptr->slu_Lmat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
-      schwarz_ptr->slu_Umat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Amat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Lmat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Umat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
       A = schwarz_ptr->slu_Amat[i];
       L = schwarz_ptr->slu_Lmat[i];
       U = schwarz_ptr->slu_Umat[i];
@@ -4628,8 +4630,8 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
       mat_aa = schwarz_ptr->bmat_aa[i];
       nnz    = mat_ia[nrows];
       dCreate_CompRow_Matrix(A,nrows,nrows,nnz,mat_aa,mat_ja,mat_ia,NR,_D,GE);
-      schwarz_ptr->perm_r[i] = (int *) malloc(nrows*sizeof(int));
-      schwarz_ptr->perm_c[i] = (int *) malloc(2*nrows*sizeof(int));
+      schwarz_ptr->perm_r[i] = (int *) ML_allocate(nrows*sizeof(int));
+      schwarz_ptr->perm_c[i] = (int *) ML_allocate(2*nrows*sizeof(int));
       perm_r = schwarz_ptr->perm_r[i];
       perm_c = schwarz_ptr->perm_c[i];
       permc_spec = 0;
@@ -4776,7 +4778,8 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
 	  
 	     for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val++ * x2[*bindx_ptr++];
-         x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
+         if (val[i] != 0.0)
+            x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
       }
 
       bindx_ptr--;
@@ -4789,7 +4792,8 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
 
          for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val-- * x2[*bindx_ptr--];
-         x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
+         if (val[i] != 0.0)
+            x2[i] = omega * sum/val[i] + one_minus_omega * x2[i];
       }
 
    }
@@ -5210,8 +5214,8 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
 #endif
 
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SGS(): Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for SGS smoother\n");
@@ -5325,8 +5329,8 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
 #endif
 
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SGS(): Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for SGS smoother\n");
@@ -5455,8 +5459,8 @@ int ML_Smoother_Gen_Ordering(ML_Operator *Amat, int **data_ptr)
 
    Nrows   = Amat->getrow->Nrows;
    allocated_space = Amat->max_nz_per_row+28;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) 
       pr_error("Error in Smoother_Gen_Ordering: Not enough space\n");
 
