@@ -465,6 +465,154 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 }
 
 /* ************************************************************************* */
+/* Hiptmair smoother                                                     */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
+                            double rhs[])
+{
+   int iter, i, j, length, allocated_space = 0, *cols = NULL, col;
+   double dtemp, diag_term, *vals = NULL;
+   ML_Operator *Tmat_trans;
+#ifdef ML_SMOOTHER_DEBUG
+   double *res2, res_norm;
+#endif
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2, omega;
+   double *g, *res, gTres, gTAg;
+   int kk;
+   ML_Smoother  *smooth_ptr;
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+   omega = smooth_ptr->omega;
+   Tmat_trans  = (ML_Operator *)smooth_ptr->smoother->data;
+
+   if (Amat->getrow->ML_id == ML_EMPTY) 
+      pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
+
+
+   ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+
+
+   g = (double *) ML_allocate( inlen*sizeof(double));
+   res = (double *) ML_allocate( inlen*sizeof(double));
+
+   for (i = 0; i < Tmat_trans->outvec_leng; i++) {
+      ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+      ML_Operator_Apply(Amat, Nrows, x, Nrows , res);
+gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
+ printf("res norm = %e   %d\n",gTAg,length);
+      for (kk = 0; kk < Nrows; kk++) res[kk] = rhs[kk] - res[kk];
+      for (kk = 0; kk < inlen; kk++) g[kk] = 0.;
+      for (kk = 0; kk < length; kk++) {g[cols[kk]] = vals[kk];
+      printf("g(%d) = %e, %e | rhs = %e %e\n",cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[cols[kk]]);}
+      gTres = ML_gdot(Nrows, res, g, comm);
+      ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
+      gTAg = ML_gdot(Nrows, res, g, comm);
+      printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
+      for (kk = 0; kk < length; kk++) {
+	x[cols[kk]] += (gTres/gTAg)*vals[kk];
+      }
+   }
+   printf("norm of solution after forward on T %e\n",
+	  sqrt(ML_gdot(Nrows,x,x,comm)));
+   for (i = Tmat_trans->outvec_leng-1; i >= 0; i--) {
+      ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+      ML_Operator_Apply(Amat, Nrows, x, Nrows , res);
+gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
+ printf("res norm = %e\n",gTAg);
+      for (kk = 0; kk < Nrows; kk++) res[kk] = rhs[kk] - res[kk];
+      for (kk = 0; kk < inlen; kk++) g[kk] = 0.;
+      for (kk = 0; kk < length; kk++) {g[cols[kk]] = vals[kk];
+      printf("g(%d) = %e, %e | rhs = %e %e\n",cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[kk]);}
+      gTres = ML_gdot(Nrows, res, g, comm);
+      ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
+      gTAg = ML_gdot(Nrows, res, g, comm);
+      printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
+      for (kk = 0; kk < length; kk++) {
+	x[cols[kk]] += (gTres/gTAg)*vals[kk];
+      }
+   }
+   printf("norm of solution after backward on T %e\n",
+	  sqrt(ML_gdot(Nrows,x,x,comm)));
+   return 0;
+
+   allocated_space = Amat->max_nz_per_row+1;
+   cols = (int    *) malloc(allocated_space*sizeof(int   ));
+   vals = (double *) malloc(allocated_space*sizeof(double));
+   if (vals == NULL) pr_error("Error in ML_GaussSeidel(): Not enough space\n");
+   if (Amat->getrow->post_comm != NULL)
+      pr_error("Post communication not implemented for GS smoother\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) 
+   {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+				   *sizeof(double));
+      if (x2 == NULL) 
+      {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+   }
+   else x2 = x;
+
+#ifdef ML_SMOOTHER_DEBUG
+   res2 = (double*) malloc(Nrows * sizeof(double));
+#endif
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   {
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+      for (i = 0; i < Nrows; i++)       {
+         dtemp = 0.0;
+         diag_term = 0.0;
+         ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+         for (j = 0; j < length; j++) 
+         {
+            col = cols[j];
+            if (col == i) diag_term = vals[j];
+            dtemp += vals[j]*x2[col];
+         }
+         if (diag_term == 0.0)
+            pr_error("Error: GS() can not be used with a zero diagonal\n");
+
+         x2[i] += omega * (rhs[i] - dtemp)/diag_term;
+      }
+#ifdef ML_SMOOTHER_DEBUG
+      ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
+      for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
+      res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
+      printf("      GS : iter = %2d, rnorm = %e\n", iter, res_norm);
+#endif
+   }
+   if (getrow_comm != NULL) 
+   {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+   if (allocated_space != Amat->max_nz_per_row+1) 
+      Amat->max_nz_per_row = allocated_space;
+
+#ifdef ML_SMOOTHER_DEBUG
+   free(res2);
+#endif
+   free(vals); free(cols);
+
+   return 0;
+}
+
+/* ************************************************************************* */
 /* Symmetric Gauss-Seidel smoother                                           */
 /* ------------------------------------------------------------------------- */
 
