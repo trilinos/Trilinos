@@ -4,7 +4,7 @@ CC=cc
 FC=f77
 RANLIB=ranlib
 LINKER=$(CC)
-ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket
+ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket -lm
 AR=ar
 ##LAPACK PATH   Note: I use '-L/opt/SUNWspro/lib -lnsl -xlic_lib=sunperf -lsunmath'
 ##LAPACK LIB    Note: I use 'NA'
