@@ -75,8 +75,9 @@ int i, j;
 /****************************************************************************/
 int update_hvertex_proc(MESH_INFO_PTR mesh)
 {
-  if (Zoltan_DD_Find(mesh->dd, mesh->hvertex, NULL, NULL, NULL, 
+  if (Zoltan_DD_Find(mesh->dd, (ZOLTAN_ID_PTR)mesh->hvertex, NULL, NULL, NULL,
                      mesh->hindex[mesh->nhedges], mesh->hvertex_proc) != 0) {
+
     Gen_Error(0, "fatal:  NULL returned from Zoltan_DD_Find()\n");
     return 0;
   }
