@@ -617,13 +617,15 @@ long file names.
 Commonly a developer needs to add files to or remove files from a Trilinos 
 package.  
 
-This process can be divided into eight steps:
+This process can be divided into the following steps:
 
 \begin{enumerate}
-\item Obtain the supported versions of Autoconf and Automake.
+\item Obtain the supported versions of Autoconf and Automake
 \item Update source code from Trilinos repository
 \item Add new files to or remove obsolete files from the Trilinos repository
 \item List new files in or remove obsolete files from Makefile.am
+\item If adding a new Makefile.am, update configure.ac and the parent 
+Makefile.am
 \item Bootstrap
 \item Test the new code
 \item Update source code from Trilinos repository
@@ -664,6 +666,13 @@ From the top Trilinos directory type
 
 \item Add new files to or remove obsolete files from the Trilinos repository
 
+If a whole new directory, abcdir, is to be added, type 
+
+\DisplayCommand{cvs add abcdir}
+
+to add abcdir to the repository.  This must be done before adding any of the 
+contents of abcdir.
+
 To add new files abc.cpp and abc.h to the Trilinos repository, type
 
 \DisplayCommand{cvs add abc.cpp abc.h}
@@ -673,15 +682,39 @@ Trilinos repository).  To remove the same files, type
 
 \DisplayCommand{cvs remove abc.cpp abc.h}
 
-\item List new files in or remove obsolete files from Makefile.am
+Note that directories cannot be removed from the repository using 
+\InlineCommand{cvs remove}.
+
+ \item List new files in or remove obsolete files from Makefile.am
 
 New source files should be placed into a category in the appropriate 
 Makefile.am.  Typically, the directory in which the new files are located will 
 contain a Makefile.am.  If not, the appropriate Makefile.am will be found in 
 the Makefile.am that is in the parent directory directly above the directory 
-in which the new files are located.  To remove files from the build process, 
+in which the new files are located.  When adding a new directory that will
+require a Makefile (for example, when adding a new test directory), create a 
+new Makefile.am.  Usually a developer can find a Makefile.am to use as a 
+template in the new\_package package.  To remove files from the build process, 
 delete the file names from the appropriate Makefile.am.
 
+\item If adding a new Makefile.am, update configure.ac and the parent 
+Makefile.am
+
+When adding a new Makefile.am, the corresponding Makefile must be listed in 
+the configure.ac file that is located in the same package as the 
+Makefile.am (if the Makefile.am is not a part of any package, ie part of the 
+general Trilinos framework, list the corresponding Makefile in the 
+Trilinos level configure.ac).  The list of Makefile's is near the very bottom 
+of the configure.ac file.
+
+Any new directories that contain a Makefile.am must be listed in the 
+Makefile.am in the directory immediately above the new directory.  List the 
+new directory on the SUBDIRS line.  If the parent directory does not contain 
+a Makefile.am, create it and add the name of the parent directory to the 
+SUBDIRS line in the Makefile.am in the directory above the parent directory 
+(repeat as necessary to reach an existing Makefile.am).
+
+Use \InlineCommand{cvs add} to add all new Makefile.am's.
 \item Bootstrap
 
 First, from the top-level directory of the appropriate Trilinos package (for 
@@ -689,7 +722,8 @@ example Trilinos/packages/epetra), type
 
 \DisplayCommand{./bootstrap}
 
-The bootstrap should complete without any errors.
+The bootstrap should complete without any errors.  Add any Autotools 
+files that are generated during the bootstrap using \InlineCommand{cvs add}. 
 
 \item Test the new code
 
@@ -1741,7 +1775,8 @@ text editor will be used to edit CVS commit logs.  The default value for
 \InlineDirectory{CVSEDITOR} is 
 \begin {verbatim} 
 vi
-\end {verbatim}.
+\end {verbatim}
+.
 
 Before committing changes, be sure to perform a CVS update.  Any conflicts 
 must be resolved before a commit will complete properly.  Changes are 
@@ -1804,6 +1839,13 @@ Finally, save the file, and exit the CVS editor to commit the changes.
 %cvs status
 
 \end{itemize}
+
+%\section{Creating a New Trilinos (Release) Branch with CVS}
+
+%A CVS branch can be used in any situation that requires  a version of the 
+%code that is different than the development branch be maintained.
+%This section describes how to create a Trilinos release branch, bu
+
 
 %\section{Common Bugzilla Tasks}
 %\label{Section:BugzillaTasks}
