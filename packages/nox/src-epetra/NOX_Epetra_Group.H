@@ -247,6 +247,10 @@ public:
   //! See above
   virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
   
+  virtual bool preconditionVector(const Vector& input, Vector& result) const;
+  //! See above
+  virtual bool preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const;
+
   //@}
 
   /** @name "Is" functions

@@ -34,6 +34,7 @@
 
 // All the different direction methods 
 #include "NOX_Direction_Newton.H"
+#include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
 
 #include "NOX_Utils.H"
@@ -72,6 +73,8 @@ bool Manager::reset(Parameter::List& params)
     
     if (method == "Newton")
       ptr = new Newton(params);
+    else if (method == "NonlinearCG")
+      ptr = new NonlinearCG(params);
     else if (method == "Steepest Descent")
       ptr = new SteepestDescent(params);
     else {

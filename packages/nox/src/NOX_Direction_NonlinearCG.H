@@ -33,12 +33,10 @@
 #ifndef SOLVER_NONLINEARCG_H
 #define SOLVER_NONLINEARCG_H
 
-#include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Parameter_List.H"	    // class data element 
+#include "NOX_Direction_Generic.H"	    // base class
 
 namespace NOX {
-namespace Solver {
+namespace Direction {
 
 //! Nonlinear Conjugate Gradient method with Linesearch
 /*!
@@ -79,7 +77,6 @@ The following parameters are valid for this solver:
 - "Line Search" - Sublist of the line search parameters, passed to the
   NOX::Linesearch::Manager constructor. Defaults to an empty list.
 
-  \author Russ Hopper, Org. 9233, Sandia National Labs
 */
 
 class NonlinearCG : public Generic {
@@ -87,46 +84,49 @@ class NonlinearCG : public Generic {
 public:
 
   //! %NonlinearCG-method constructor. 
-  NonlinearCG(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  NonlinearCG(Parameter::List& params);
 
   //! Destructor
   virtual ~NonlinearCG();
 
-  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
-  virtual StatusTest::StatusType getStatus();
-  virtual StatusTest::StatusType iterate();
-  virtual StatusTest::StatusType solve();
-  virtual const Abstract::Group& getSolutionGroup() const;
-  virtual const Abstract::Group& getPreviousSolutionGroup() const;
-  virtual int getNumIterations() const;
-  virtual const Parameter::List& getOutputParameters() const;
+  virtual bool reset(Parameter::List& p);
+//  virtual StatusTest::StatusType getStatus();
+  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
+                       const Solver::Generic& solver);
+//  virtual StatusTest::StatusType solve();
+//  virtual const Abstract::Group& getSolutionGroup() const;
+//  virtual const Abstract::Group& getPreviousSolutionGroup() const;
+//  virtual int getNumIterations() const;
+//  virtual const Parameter::List& getOutputParameters() const;
 
 protected:
   
   //! Print out initialization information and calcuation the RHS.
-  virtual void init();
+  //virtual void init();
 
   //! Prints the current iteration information.
-  virtual void printUpdate();
+  //virtual void printUpdate();
 
 protected:
   
   //! Current solution.
   Abstract::Group* solnptr;		
 
+  Abstract::Vector* tmpVecPtr;
+
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldSolnptr;	
+  const Abstract::Group* oldsolnptr;	
   //! Previous solution reference.
-  Abstract::Group& oldSoln;	
+//  Abstract::Group& oldSoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* dirptr;
+//  Abstract::Vector* dirptr;
   //! Current search direction.reference.
-  Abstract::Vector& dir;
+//  Abstract::Vector& dir;
 
   //! Previous search direction.pointer.
   /*! The current search direction is found by computing the steepest
@@ -134,15 +134,13 @@ protected:
       search direction.  We have both a pointer and a reference because
       we need to create a DERIVED object and then want to have a reference
       to it. */
-  Abstract::Vector* oldDirptr;
-  //! Previous search direction.reference.
-  Abstract::Vector& oldDir;
+  Abstract::Vector* oldDirPtr;
 
   //! Pointer to previous descent direction.
   /*! This pointer points into the previous solution Abstract::Group to the 
       descent direction based on the choice of "Richardson" or "Steepest
       Descent" determined by Orthogonalization in the Parameter::List. */
-  const Abstract::Vector* oldDescentDirptr;  
+  Abstract::Vector* oldDescentDirPtr;  
 
   //! Pointer to current preconditioned direction.
   /*! Currently, preconditioning is done using only Jacobi (diagonal)
@@ -163,25 +161,25 @@ protected:
       calculation of /f$\beta/f$ as described above.  
       If preconditioning is turned off, this vector is equal to the 
       difference between the current and previous descent directions. */
-  Abstract::Vector* diffVector;  
+  Abstract::Vector* diffVecPtr;  
 
   //! Stopping test.
-  StatusTest::Generic* testptr;		
+  //StatusTest::Generic* testptr;		
 
   //! Input parameters.
-  Parameter::List iparams;	
+  Parameter::List& iparams;	
 
   //! Output paramters.
-  mutable Parameter::List oparams; 
+  //mutable Parameter::List oparams; 
 
   //! Orthogonalization parameter
   double beta;			
 
   //! Linesearch. 
-  LineSearch::Manager linesearch; 
+  //LineSearch::Manager linesearch; 
 
   //! Current step.
-  double step;			
+  //double step;			
 
   //! Number of nonlinear iterations.
   int niter;                    
@@ -190,13 +188,13 @@ protected:
   int restartFrequency;                    
 
   //! Output frequency 
-  int outputFrequency;                    
+  //int outputFrequency;                    
 
   //! %Status of nonlinear solver.
-  StatusTest::StatusType status;
+  //StatusTest::StatusType status;
 
 };
-} // namespace Solver
+} // namespace Direction
 } // namespace NOX
 
 #endif

@@ -562,6 +562,18 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
 }
 
 
+bool Group::preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const
+{
+  const Vector& epetrainput = dynamic_cast<const Vector&> (input);
+  Vector& epetraresult = dynamic_cast<Vector&> (result);
+  return preconditionVector(epetrainput, epetraresult);
+}
+
+bool Group::preconditionVector(const Vector& epetrainput, Vector& epetraresult) const
+{
+  return applyJacobianDiagonalInverse(epetrainput, epetraresult);
+}
+
 
 bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
 {

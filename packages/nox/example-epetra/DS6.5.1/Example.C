@@ -82,18 +82,9 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
-  nlParams.setParameter("Nonlinear Solver", "Newton");
-  //nlParams.setParameter("Nonlinear Solver", "Line Search");
+  //nlParams.setParameter("Nonlinear Solver", "Newton");
+  nlParams.setParameter("Nonlinear Solver", "Line Search");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region"); 
-  //nlParams.setParameter("Nonlinear Solver", "NonlinearCG"); 
-  //nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
-  //nlParams.setParameter("Direction", "Steepest Descent");  // default
-  //nlParams.setParameter("Direction", "Richardson"); 
-  //nlParams.setParameter("Max Iterations", 100); 
-  //nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
-  //nlParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
-  //nlParams.setParameter("Restart Frequency", 5);  // default = 10
-  //nlParams.setParameter("Output Frequency", 10);  // default = 1
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -108,8 +99,14 @@ int main(int argc, char *argv[])
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
+  //dirParams.setParameter("Method", "Newton");
   //dirParams.setParameter("Method", "Steepest Descent");
+    //dirParams.setParameter("Scaling Type", "None");
+  dirParams.setParameter("Method", "NonlinearCG");
+    dirParams.setParameter("Restart Frequency", 10);
+    dirParams.setParameter("Precondition", "On");
+    //dirParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -150,7 +147,7 @@ int main(int argc, char *argv[])
 
   // Create the convergence tests
   NOX::StatusTest::NormF testNormF(1.0e-6);
-  NOX::StatusTest::MaxIters testMaxIters(10);
+  NOX::StatusTest::MaxIters testMaxIters(25);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
 
   // Create the method

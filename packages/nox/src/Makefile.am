@@ -61,11 +61,13 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
+	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_SteepestDescent.H
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Newton.C \
+	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
 
 PARAMETER_H = \
@@ -80,14 +82,12 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_NonlinearCG.H 
+	$(srcdir)/NOX_Solver_TrustRegionBased.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_NonlinearCG.C 
+	$(srcdir)/NOX_Solver_TrustRegionBased.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
