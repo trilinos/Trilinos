@@ -41,9 +41,11 @@ typedef struct ML_DVector_Struct
 /* functions to manipulate the vector structure                         */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern int  ML_DVector_Create( ML_DVector **, ML_Comm *com );
@@ -62,8 +64,10 @@ extern int  ML_DVector_Axpy( double, ML_DVector *, ML_DVector * );
 extern int  ML_DVector_Aypx( double, ML_DVector *, ML_DVector * );
 extern int ML_DVector_Print(int length, double *data, char *label, ML_Comm *comm);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

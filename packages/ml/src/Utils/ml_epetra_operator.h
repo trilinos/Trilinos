@@ -118,6 +118,9 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
     \return Integer error code, set to 0 if successful.
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+#ifdef WKC
+  int ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+#endif
   //int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   
   //! Returns the infinity norm of the global matrix.

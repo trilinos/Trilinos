@@ -39,9 +39,11 @@ typedef struct ML_IntList_Struct
 /* functions to manipulate the Int_lists structures                     */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 extern int ML_IntList_Create(ML_IntList **, int, int);
@@ -50,8 +52,10 @@ extern int ML_IntList_Get_Sublist(ML_IntList *, int, int *, int *);
 extern int ML_IntList_Destroy(ML_IntList **);
 extern int ML_IntList_Print(ML_IntList *);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

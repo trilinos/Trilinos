@@ -58,6 +58,7 @@ Epetra_ML_Operator::~Epetra_ML_Operator() {
 //==============================================================================
 int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
+#ifndef WKC
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
   if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
@@ -94,6 +95,101 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
   }
 
   return 0;
+
+#else
+
+  if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
+  if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
+  if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
+
+  MPI_Pcontrol ( 8 , "entry" , 2 , 0 , 0 );
+
+// These to fcns are unnecessary!
+  Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
+                              // in solver or if X = Y
+  Y.PutScalar(0.0); // Always start with Y = 0
+  // ML_iterate doesn't handle multivectors, so extract and iterate one at
+  // a time on them.
+  double **xvectors;
+  double **yvectors;
+  int ierr = X.ExtractView(&xvectors);
+  ierr = Y.ExtractView(&yvectors);
+
+  //note: solver_ is the ML handle
+//  for (int i=0; i < X.NumVectors(); i++)
+//  {
+    switch(solver_->ML_scheme) {
+      case(ML_MGFULLV):
+//        ML_Solve_MGFull(solver_,
+//                        xvectors[i],  //rhs
+//                        yvectors[i]); //solution
+        break;
+      case(ML_SAAMG): //Marian Brezina's solver
+//        ML_Solve_AMGV(solver_,
+//                      xvectors[i],  //rhs
+//                      yvectors[i]); //solution
+        break;
+      default:
+// WKC -- changed the call to use Epetra_MultiVectors
+//        ML_Solve_MGV(solver_,
+//                     xvectors[i],  //rhs
+//                     yvectors[i]); //solution
+        ML_Solve_MGV(solver_,
+                     X,  //rhs
+                     Y); //solution
+    }
+//  }
+
+  int  kk = 1;
+
+  MPI_Pcontrol ( 8 , "exit" , 2 , 1 , &kk );
+
+  return 0;
+#endif
 }
+
+#ifdef WKC
+//==============================================================================
+int Epetra_ML_Operator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+  if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
+  if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
+  if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
+
+// These to fcns are unnecessary!
+  Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
+                              // in solver or if X = Y
+  Y.PutScalar(0.0); // Always start with Y = 0
+  // ML_iterate doesn't handle multivectors, so extract and iterate one at
+  // a time on them.
+  double **xvectors;
+  double **yvectors;
+  int ierr = X.ExtractView(&xvectors);
+  ierr = Y.ExtractView(&yvectors);
+
+  //note: solver_ is the ML handle
+  for (int i=0; i < X.NumVectors(); i++)
+  {
+    switch(solver_->ML_scheme) {
+      case(ML_MGFULLV):
+        ML_Solve_MGFull(solver_,
+                        xvectors[i],  //rhs
+                        yvectors[i]); //solution
+        break;
+      case(ML_SAAMG): //Marian Brezina's solver
+        ML_Solve_AMGV(solver_,
+                      xvectors[i],  //rhs
+                      yvectors[i]); //solution
+        break;
+      default:
+        ML_Solve_MGV(solver_,
+                     xvectors[i],  //rhs
+                     yvectors[i]); //solution
+    }
+  }
+
+  return 0;
+}
+#endif
 
 #endif //ifdef ML_WITH_EPETRA

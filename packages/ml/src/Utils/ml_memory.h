@@ -23,14 +23,18 @@
 #else
 #define ml_size_t int
 #endif
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+#endif
 extern void ML_free(void *);
 extern void *ML_allocate(ml_size_t size);
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #ifndef ML_MEM_CHECK
@@ -46,9 +50,11 @@ extern void *ML_allocate(ml_size_t size);
                             }\
                          }
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern  int  ML_memory_alloc( void **, unsigned int, char * );
@@ -66,8 +72,10 @@ extern void ML_spit_it_out();
 #endif
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

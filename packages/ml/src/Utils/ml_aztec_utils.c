@@ -20,6 +20,10 @@
 #include "az_blas_wrappers.h"
 #endif
 
+#ifdef ML_CPP
+#include "ml_lapack.h"
+#endif
+
 int warning_flag = 0;
 
 /***************************************************************************/

@@ -33,15 +33,19 @@
 /* -------------------------------------------------------------------- */
 #if defined(SUN4) || defined(SUN5)
 
+#ifndef ML_CPP
 #ifdef __cplusplus
    extern "C" {
+#endif
 #endif
 
      double drand48();
      void srand48(long seedval);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
    }
+#endif
 #endif
 
 #endif
@@ -51,8 +55,10 @@
 
 #define million  0.1e7
 
+#ifndef ML_CPP
 #ifdef __cplusplus
    extern "C" {
+#endif
 #endif
 
    int    pr_error(char *fmt,  ... );
@@ -99,8 +105,10 @@
    void   ML_use_param(void *data, int junk);
    void   ML_PauseForDebugger(ML_Comm *comm);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -11,8 +11,10 @@
 #define __MLAZUTILS__
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 #ifdef AZTEC
@@ -196,8 +198,10 @@ extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
 
 #endif
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #ifdef AZTEC_RAY_WILL_FIX

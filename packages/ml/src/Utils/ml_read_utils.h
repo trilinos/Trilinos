@@ -22,9 +22,11 @@ struct reader_context {
 #define MAX_TOKENS 50
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern void ML_Reader_GetGeneralSpecs(FILE *ifp, 
@@ -44,8 +46,10 @@ extern void ML_Reader_ReadInput(char *cmd_file_name,
 extern int ML_strcmp(char *input, char *string);
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 

@@ -10,6 +10,10 @@
 /* Date          : January, 1998                                        */
 /* ******************************************************************** */
 
+#ifdef ML_CPP
+#include <stdlib.h>
+#endif
+
 #include "ml_comm.h"
 #include "ml_memory.h"
 

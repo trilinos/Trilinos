@@ -293,6 +293,23 @@ int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int le
 }
 
 
+#ifdef WKC
+int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)
+{
+  /* ML matvec wrapper for Epetra matrices. */
+
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
+  Epetra_MultiVector &X(*(Epetra_MultiVector *)p);
+  Epetra_MultiVector &Y(*(Epetra_MultiVector *)ap);
+
+  A->Multiply(false, X, Y);
+
+  return 1;
+}
+#endif
+
+
+
 #else
 
   /*noop for certain compilers*/

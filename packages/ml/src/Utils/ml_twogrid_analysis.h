@@ -13,8 +13,10 @@
 #ifndef __MLTWOGRID__
 #define __MLTWOGRID__
 
+#ifndef ML_CPP
 #ifdef __cplusplus
    extern "C" {
+#endif
 #endif
 
 #include "ml_defs.h"
@@ -37,8 +39,10 @@ double ML_GetTwoLevelConvergenceFactor(ML *ml, double *approx_soln,
 									   double *exact_soln);
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif /*ifdef __MLTWOGRID__*/
