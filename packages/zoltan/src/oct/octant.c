@@ -19,6 +19,7 @@ static char *cvs_octantc_id = "$Id$";
 #include "lb_const.h"
 #include "octant_const.h"
 #include "util_const.h"
+#include "all_allo_const.h"
 
 /*****************************************************************************/
 /* WARNING: GLOBAL VARIABLES... BE CAREFUL WHEN USING */
@@ -61,7 +62,7 @@ void POC_init(int pid, int dim) {
 pOctant POC_malloc() {
   pOctant ptr;                                  /* pointer to the new octant */
   
-  ptr=(pOctant)malloc(sizeof(Octant));                     /* allocate space */
+  ptr=(pOctant) LB_SMALLOC(sizeof(Octant));                /* allocate space */
   if (!ptr) {                                                 /* error check */
     perror("POC_malloc: malloc failure");
     abort();
@@ -124,8 +125,7 @@ void POC_free(pOctant oct) {
 	else
 	  prev->next = ptr->next;
 	ptr->oct = NULL;
-	free(ptr);
-	ptr = NULL;
+	LB_safe_free((void **) &ptr);
       }
       else {
 	prev = ptr;
@@ -137,7 +137,7 @@ void POC_free(pOctant oct) {
   c = oct->list;
   while(c != NULL) {
     oct->list = c->next;
-    free(c);
+    LB_safe_free((void **) &c);
     c = oct->list;
   }
 ********/
@@ -145,7 +145,7 @@ void POC_free(pOctant oct) {
   /* free up space in memory */
   oct->list = NULL;
   OCT_count--;
-  free(oct);
+  LB_safe_free((void **) &oct);
 }
 
 /*****************************************************************************/
@@ -188,7 +188,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 
   if (oct->ppid == OCT_localpid) {                              /* was local */
     if (ppid != OCT_localpid) {                              /* now nonlocal */
-      tmp = (pRList)malloc(sizeof(RList));
+      tmp = (pRList) LB_SMALLOC(sizeof(RList));
       if(tmp == NULL) {
 	fprintf(stderr, "%s: %s\n", "POC_setparent",
 		"Could not allocate new rootlist entry.");
@@ -220,8 +220,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 	  else
 	    prev->next = tmp->next;
 	  tmp->oct = NULL;
-	  free(tmp);
-	  tmp = NULL;
+	  LB_safe_free((void **) &tmp);
 	}
 	else {
 	  prev = tmp;
@@ -373,7 +372,7 @@ void POC_addRegion(pOctant oct, pRegion region) {
     abort();
   }
 
-  entry = (pRegion)malloc(sizeof(Region));        /* malloc space for region */
+  entry = (pRegion) LB_SMALLOC(sizeof(Region));   /* malloc space for region */
   if(entry == NULL) {
     fprintf(stderr,"%s\n", 
 	    "ERROR in POC_addRegion, cannot allocate memory for region");
@@ -408,8 +407,7 @@ void POC_remRegion(pOctant oct, pRegion region) {
 	oct->list = tmp->next;
       else
 	prev->next = tmp->next;
-      free(tmp);
-      tmp = NULL;
+      LB_safe_free((void **) &tmp);
     }
     else {
       prev = tmp;
@@ -429,7 +427,7 @@ void POC_clearRegions(pOctant oct) {
   ptr = oct->list;
   while(ptr != NULL) {
     oct->list = ptr->next;
-    free(ptr);
+    LB_safe_free((void **) &ptr);
     ptr = oct->list;
   }
   oct->list=NULL;

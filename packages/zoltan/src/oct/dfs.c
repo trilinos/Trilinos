@@ -17,6 +17,7 @@ static char *cvs_dfsc_id = "$Id$";
 #endif
 
 #include "lb_const.h"
+#include "all_allo_const.h"
 #include "octant_const.h"
 #include "dfs.h"
 #include "costs_const.h"
@@ -298,10 +299,17 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
 
   i = POC_nOctants();
   if(POC_nOctants()) {          /* allocate space for octants being migrated */
-    docts = (pOctant *)malloc(sizeof(pOctant)*POC_nOctants());
-    dpids = (int *)malloc(sizeof(int)*POC_nOctants());
-    if((docts == NULL) || (dpids == NULL)) {
+    docts = (pOctant *) LB_array_alloc(__FILE__, __LINE__, 1, POC_nOctants(),
+                                       sizeof(pOctant));
+    if(!docts) {
       fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
+      abort();
+    }
+    dpids = (int *) LB_array_alloc(__FILE__, __LINE__, 1, POC_nOctants(),
+                                   sizeof(int));
+    if(!dpids) {
+      fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
+      LB_safe_free((void **) &docts);
       abort();
     }
   }
@@ -332,8 +340,8 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
   LB_Migrate_Objects(lb, docts, dpids, dcount, export_regs, nsentags, 
 		     import_regs, nrectags, c2, c3, counter3, counter4);
 
-  free(docts);
-  free(dpids);
+  LB_safe_free((void **) &docts);
+  LB_safe_free((void **) &dpids);
   
 #if 0
   LB_print_sync_start(lb, TRUE);
@@ -358,7 +366,7 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
   }
   
   LB_migreg_migrate_regions(lb, pmeshpb,migregions,nregions,TRUE);
-  free(migregions);
+  LB_safe_free((void **) &migregions);
 #endif
 }
 

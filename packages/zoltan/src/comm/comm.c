@@ -41,6 +41,7 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 	     char *recvbuf)                  /* space for datums to recv */
 
 {
+  char *yo = "LB_comm_do";
   int i,isend,irecv,index,send_offset,recv_offset;
   char *buf;
 
@@ -56,6 +57,10 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 /* malloc buf for largest send */
 
   buf = (char *) LB_SMALLOC(nsize*plan->nsendmax*sizeof(char));
+  if ((nsize*plan->nsendmax > 0) && !buf) {
+      fprintf(stderr, "Error in %s: Insufficient memory\n", yo);
+      exit(-1);
+  }
 
 /* send each message, packing buf with needed datums */
 
@@ -100,6 +105,7 @@ struct Comm_Obj *LB_comm_create(
   int *nreturn)                /* # of datums I will recv including self */
 
 {
+  char *yo = "LB_comm_create";
   MPI_Comm new_comm;
   struct Comm_Obj *plan;
   int me,nprocs;
@@ -119,9 +125,23 @@ struct Comm_Obj *LB_comm_create(
 /* allocate plan and work vectors */
 
   plan = (struct Comm_Obj *) LB_SMALLOC(sizeof(struct Comm_Obj));
-
+  if (!plan) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (plan)\n",
+              me, yo);
+      exit(-1);
+  }
   list = (int *) LB_SMALLOC(nprocs*sizeof(int));
+  if (!list) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (list)\n",
+              me, yo);
+      exit(-1);
+  }
   counts = (int *) LB_SMALLOC(nprocs*sizeof(int));
+  if (!counts) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (counts)\n",
+              me, yo);
+      exit(-1);
+  }
 
 /* nrecv = # of messages I receive, not including self
    nself = 0 if no data for self, 1 if there is */
@@ -142,9 +162,29 @@ struct Comm_Obj *LB_comm_create(
 /* storage for recv info, not including self */
 
   procs_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  if ((nrecv > 0) && !procs_from) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (procs_from)\n",
+              me, yo);
+      exit(-1);
+  }
   lengths_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  if ((nrecv > 0) && !lengths_from) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (lengths_from)\n",
+              me, yo);
+      exit(-1);
+  }
   request = (MPI_Request *) LB_SMALLOC(nrecv*sizeof(MPI_Request));
+  if ((nrecv > 0) && !request) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (request)\n",
+              me, yo);
+      exit(-1);
+  }
   status = (MPI_Status *) LB_SMALLOC(nrecv*sizeof(MPI_Status));
+  if ((nrecv > 0) && !status) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (status)\n",
+              me, yo);
+      exit(-1);
+  }
 
 /* nsend = # of messages I send, not including self */
 
@@ -159,8 +199,24 @@ struct Comm_Obj *LB_comm_create(
 /* storage for send info, including self */
 
   procs_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  if ((nsend+nself > 0) && !procs_to) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (procs_to)\n",
+              me, yo);
+      exit(-1);
+  }
   lengths_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  if ((nsend+nself > 0) && !lengths_to) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (lengths_to)\n",
+              me, yo);
+      exit(-1);
+  }
   indices_to = (int *) LB_SMALLOC(n*sizeof(int));
+  if ((n > 0) && !indices_to) {
+      fprintf(stderr, "[%d] Error in %s: Insufficient memory (indices_to)\n",
+              me, yo);
+      exit(-1);
+  }
+
 
 /* set send info in procs_to and lengths_to, including self
    each proc begins with iproc > me, and continues until iproc = me

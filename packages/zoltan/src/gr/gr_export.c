@@ -198,7 +198,7 @@ int header_size = sizeof(int);   /* assume header is only num of vertices */
     error = MPI_Send(buf, size, MPI_BYTE, index, MSG_EXPORT, MPI_COMM_WORLD);
   }
 
-  safe_free((void **) &buf);
+  LB_safe_free((void **) &buf);
 }
 
 /*****************************************************************************/
@@ -227,7 +227,7 @@ int *proc_exp_cnt, proc_exp_edge_cnt;
 
   update_graph_due_to_exports(graph, export_list);
 
-  safe_free((void **) &proc_exp_list);
-  safe_free((void **) &proc_exp_cnt);
+  LB_safe_free((void **) &proc_exp_list);
+  LB_safe_free((void **) &proc_exp_cnt);
 }
 

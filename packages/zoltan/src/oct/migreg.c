@@ -20,6 +20,7 @@ static char *cvs_migregc_id = "$Id$";
 #include "hilbert_const.h"
 #include "comm_const.h"
 #include "dfs_const.h"
+#include "all_allo_const.h"
 
 /*
  * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
@@ -44,7 +45,8 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 
   comm_plan = LB_comm_create(nregions, npids, lb->Communicator, &n_import);
   *c2 = n_import;
-  import_objs = (Region *)malloc(n_import * sizeof(Region));
+  import_objs = (Region *) LB_array_alloc(__FILE__, __LINE__, 1, n_import,
+                                          sizeof(Region));
 
   if((n_import != 0) && (import_objs == NULL)) {
     fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
@@ -59,7 +61,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
     LB_insert_orphan(lb, import_objs[i]);
   }
 
-  free(import_objs);
+  LB_safe_free((void **) &import_objs);
   LB_comm_destroy(&comm_plan);
 }
 
@@ -146,10 +148,13 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   int     n;
 
   /* create the array of messages to be sent to other processors */
-  /* Array = (Message *)malloc(nregions * sizeof(Message)); */
+  /* Array = (Message *) LB_array_alloc(__FILE__, __LINE__, 1, nregions,
+                                        sizeof(Message)); */
 
-  regions = (pRegion *)malloc(nregions * sizeof(pRegion));
-  npids = (int *)malloc(nregions * sizeof(int));
+  regions = (pRegion *) LB_array_alloc(__FILE__, __LINE__, 1, nregions,
+                                       sizeof(pRegion));
+  npids = (int *) LB_array_alloc(__FILE__, __LINE__, 1, nregions,
+                                 sizeof(int));
 
   ptr = RegionList;
   n = nreg = 0;
@@ -222,8 +227,9 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     abort();
   }
 
-  regions2 = (Region *)malloc(n * sizeof(Region));
-  npids2 = (int *)malloc(n * sizeof(int));
+  regions2 = (Region *) LB_array_alloc(__FILE__, __LINE__, 1, n,
+                                       sizeof(Region));
+  npids2 = (int *) LB_array_alloc(__FILE__, __LINE__, 1, n, sizeof(int));
   
   /* fprintf(stderr,"(%d) n = %d\n", LB_Proc, n); */
   for(i=0; i<n; i++) {
@@ -240,10 +246,10 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   /* migrate the orphan regions according to the message array */
   LB_migreg_migrate_regions(lb, regions2, npids2, n, c2);
   
-  free(regions);
-  free(npids);
-  free(regions2);
-  free(npids2);
+  LB_safe_free((void **) &regions);
+  LB_safe_free((void **) &npids);
+  LB_safe_free((void **) &regions2);
+  LB_safe_free((void **) &npids2);
 }
 
 /*
@@ -255,7 +261,7 @@ void LB_copy_info(pRegion src, pRegion *dest) {
   pRegion copy;
 
   /* mallloc space for destination */
-  copy = (pRegion)malloc(sizeof(Region));
+  copy = (pRegion) LB_SMALLOC(sizeof(Region));
   if(copy == NULL) {
     fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
     abort();
