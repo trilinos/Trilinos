@@ -3,6 +3,7 @@
 #define FORTRAN_STRLEN
 
 #include "ml_lapack.h"
+#include "string.h"
 /* typedef long int integer; */
 typedef int integer;
 typedef char *address;
