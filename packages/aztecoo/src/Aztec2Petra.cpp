@@ -182,8 +182,8 @@ int Aztec2Petra(int * proc_config,
   b = new Epetra_Vector (View, *map, az_b);
 
   if (!Amat->has_global_indices) {
-    delete global_bindx;
-    delete update;
+    AZ_free((void *) global_bindx);
+    AZ_free((void *) update);
   }
   return 0;
 }
