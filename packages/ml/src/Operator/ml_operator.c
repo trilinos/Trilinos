@@ -146,6 +146,8 @@ int ML_Operator_Clean( ML_Operator *mat)
    if (mat->subspace != NULL) {
      ML_free(mat->subspace->VAV);
      ML_free(mat->subspace->pivots);
+     ML_free(mat->subspace->vec1); ML_free(mat->subspace->vec2);
+     ML_free(mat->subspace->res1); ML_free(mat->subspace->res2);
      ML_free(mat->subspace);
    }
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
@@ -1384,6 +1386,8 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
    ML_Operator *Amat;
    int i;
 
+   assert(numvecs <= ML_MAX_SUBSPACE_DIM);
+
    Amat = &(ml->Amat[ml->ML_finest_level]);
    if (Amat->subspace == NULL) {
      Amat->subspace = (ML_Operator_Subspace *)
@@ -1403,7 +1407,13 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
                          ML_allocate( numvecs * numvecs * sizeof(double) );
    Amat->subspace->pivots = (int *) ML_allocate( numvecs * sizeof(int) );
 
-   assert(numvecs <= ML_MAX_SUBSPACE_DIM);
-
+   Amat->subspace->res1 = (double *) ML_allocate(Amat->outvec_leng *
+                                                 sizeof(double) );
+   Amat->subspace->res2 = (double *) ML_allocate(Amat->outvec_leng *
+                                                 sizeof(double) );
+   Amat->subspace->vec1 = (double *) ML_allocate((Amat->outvec_leng +
+                                        Amat->invec_leng) * sizeof(double) );
+   Amat->subspace->vec2 = (double *) ML_allocate((Amat->outvec_leng +
+                                        Amat->invec_leng) * sizeof(double) );
    return 0;
 }
