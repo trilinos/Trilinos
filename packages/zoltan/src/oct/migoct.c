@@ -259,7 +259,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 				    Bruce and Steve's communication routines */
 
   im_load = 0;
-  comm_plan = LB_comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
+  comm_plan = LB_Comm_Create(nsentags, tag_pids, lb->Communicator, &nreceives);
   tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
                                  sizeof(Region));
   
@@ -269,8 +269,8 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     abort();
   }
   
-  LB_comm_do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
-  LB_comm_destroy(&comm_plan);
+  LB_Comm_Do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
+  LB_Comm_Destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */
   j=0;

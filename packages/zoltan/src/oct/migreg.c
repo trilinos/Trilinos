@@ -43,7 +43,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   Region *import_objs;          /* Array of import objects used to request 
 				    the objs from other processors. */
 
-  comm_plan = LB_comm_create(nregions, npids, lb->Communicator, &n_import);
+  comm_plan = LB_Comm_Create(nregions, npids, lb->Communicator, &n_import);
   *c2 = n_import;
   import_objs = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n_import,
                                           sizeof(Region));
@@ -54,7 +54,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
     abort();
   }
 
-  LB_comm_do(comm_plan, (char *) regions, sizeof(Region), 
+  LB_Comm_Do(comm_plan, (char *) regions, sizeof(Region), 
           (char *) import_objs);
 
   for (i=0; i<n_import; i++) {
@@ -62,7 +62,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   }
 
   LB_FREE(&import_objs);
-  LB_comm_destroy(&comm_plan);
+  LB_Comm_Destroy(&comm_plan);
 }
 
 /*

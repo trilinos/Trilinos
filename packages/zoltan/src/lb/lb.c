@@ -675,7 +675,7 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-  comm_plan = LB_comm_create(num_import, proc_list, lb->Communicator,
+  comm_plan = LB_Comm_Create(num_import, proc_list, lb->Communicator,
                              num_export);
 
   /*
@@ -731,7 +731,7 @@ int i;
     *export_procs = NULL;
   }
 
-  LB_comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
+  LB_Comm_Do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
           (char *) export_objs);
 
   /*
@@ -748,7 +748,7 @@ int i;
   LB_FREE(&import_objs);
   LB_FREE(&export_objs);
   
-  LB_comm_destroy(&comm_plan);
+  LB_Comm_Destroy(&comm_plan);
 
   return (LB_OK);
 }
@@ -929,7 +929,7 @@ int ierr = 0;
    *  processor has to import to establish the new decomposition.
    */
 
-  comm_plan = LB_comm_create(num_export, proc_list, lb->Communicator,
+  comm_plan = LB_Comm_Create(num_export, proc_list, lb->Communicator,
                              &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
@@ -952,13 +952,13 @@ int ierr = 0;
    *  Send the export data using the communication plan.
    */
 
-  LB_comm_do(comm_plan, export_buf, size, import_buf);
+  LB_Comm_Do(comm_plan, export_buf, size, import_buf);
 
   /*
    *  Free whatever memory we can.
    */
 
-  LB_comm_destroy(&comm_plan);
+  LB_Comm_Destroy(&comm_plan);
   LB_FREE(&proc_list);
   LB_FREE(&export_buf);
 

@@ -35,13 +35,13 @@ static void debug_sort2_int_int(int n, int ra[], int rb[]);
 /* ------------------------------------------------------------------- */
 /* perform irregular communication using a pre-computed plan */
 
-void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
+void LB_Comm_Do(struct Comm_Obj *plan,          /* plan from create_comm */
 	     char *sendbuf,                  /* list of datums to send */
 	     int nsize,                      /* size in bytes of each datum */
 	     char *recvbuf)                  /* space for datums to recv */
 
 {
-  char *yo = "LB_comm_do";
+  char *yo = "LB_Comm_Do";
   int i,isend,irecv,index,send_offset,recv_offset;
   char *buf;
 
@@ -98,14 +98,14 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 /* ------------------------------------------------------------------- */
 /* create an irregular communication plan */
 
-struct Comm_Obj *LB_comm_create(
+struct Comm_Obj *LB_Comm_Create(
   int n,                       /* # of datums */
   int *proclist,               /* which proc each datum is to be sent to */
   MPI_Comm original_comm,      /* communicator for all participating procs */
   int *nreturn)                /* # of datums I will recv including self */
 
 {
-  char *yo = "LB_comm_create";
+  char *yo = "LB_Comm_Create";
   MPI_Comm new_comm;
   struct Comm_Obj *plan;
   int me,nprocs;
@@ -257,7 +257,7 @@ struct Comm_Obj *LB_comm_create(
   if (nself) *nreturn += lengths_to[nsend];
 
 /* barrier to insure all my MPI_ANY_SOURCE messages are received
-   else some procs could proceed to LB_comm_do and start sending to me */
+   else some procs could proceed to LB_Comm_Do and start sending to me */
 
   MPI_Barrier(new_comm);
 
@@ -310,7 +310,7 @@ struct Comm_Obj *LB_comm_create(
 /* ------------------------------------------------------------------- */
 /* free all memory associated with irregular communication plan */
 
-void LB_comm_destroy(struct Comm_Obj **plan)
+void LB_Comm_Destroy(struct Comm_Obj **plan)
 
 {
 /* free MPI communicator */
@@ -346,40 +346,40 @@ void LB_comm_destroy(struct Comm_Obj **plan)
      integer proclist(*)
      dimension sendbuf(*),recvbuf(*)
 
-     call LB_comm_create(n,proclist,MPI_COMM_WORLD,nreturn,plan)
+     call LB_Comm_Create(n,proclist,MPI_COMM_WORLD,nreturn,plan)
      ...
-     call LB_comm_do(plan,sendbuf,nsize,recvbuf)
+     call LB_Comm_Do(plan,sendbuf,nsize,recvbuf)
      ...
-     call LB_comm_destroy(plan)
+     call LB_Comm_Destroy(plan)
 */
 
 
 /* ------------------------------------------------------------------- */
-/* F77 wrapper on LB_comm_do */
+/* F77 wrapper on LB_Comm_Do */
 
-void LB_comm_do_(struct Comm_Obj **plan, char *sendbuf, int *nsize, char *recvbuf)
+void LB_Comm_Do_(struct Comm_Obj **plan, char *sendbuf, int *nsize, char *recvbuf)
 
 {
-  LB_comm_do(*plan,sendbuf,*nsize,recvbuf);
+  LB_Comm_Do(*plan,sendbuf,*nsize,recvbuf);
 }
 
 /* ------------------------------------------------------------------- */
-/* F77 wrapper on LB_comm_create */
+/* F77 wrapper on LB_Comm_Create */
 
-void LB_comm_create_(int *n, int *proclist, MPI_Comm *original_comm,
+void LB_Comm_Create_(int *n, int *proclist, MPI_Comm *original_comm,
 		  int *nreturn, struct Comm_Obj **plan)
 
 {
-  *plan = LB_comm_create(*n,proclist,*original_comm,nreturn);
+  *plan = LB_Comm_Create(*n,proclist,*original_comm,nreturn);
 }
 
 /* ------------------------------------------------------------------- */
-/* F77 wrapper on LB_comm_destroy */
+/* F77 wrapper on LB_Comm_Destroy */
 
-void LB_comm_destroy_(struct Comm_Obj **plan)
+void LB_Comm_Destroy_(struct Comm_Obj **plan)
 
 {
-  LB_comm_destroy(plan);
+  LB_Comm_Destroy(plan);
 }
 
 /* KDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDD */

@@ -42,8 +42,8 @@ typedef struct Comm_Obj COMM_OBJ;
 
 /* function prototypes */
 
-extern void LB_comm_do(struct Comm_Obj *, char *, int, char *);
-extern struct Comm_Obj *LB_comm_create(int, int *, MPI_Comm, int *);
-extern void LB_comm_destroy(struct Comm_Obj **);
+extern void LB_Comm_Do(struct Comm_Obj *, char *, int, char *);
+extern struct Comm_Obj *LB_Comm_Create(int, int *, MPI_Comm, int *);
+extern void LB_Comm_Destroy(struct Comm_Obj **);
 
 #endif
