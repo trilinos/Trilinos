@@ -156,6 +156,14 @@ namespace LOCA {
 		      NOX::LAPACK::Vector& result) const;
 
       virtual NOX::Abstract::Group::ReturnType
+      applyComplexInverse(NOX::Parameter::List& params,
+			  const NOX::Abstract::Vector& input_real,
+			  const NOX::Abstract::Vector& input_imag,
+			  double frequency,
+			  NOX::Abstract::Vector& result_real,
+			  NOX::Abstract::Vector& result_imag) const;
+
+      virtual NOX::Abstract::Group::ReturnType
       applyComplexInverseMulti(NOX::Parameter::List& params,
 			       const NOX::Abstract::Vector* const* inputs_real,
 			       const NOX::Abstract::Vector* const* inputs_imag,

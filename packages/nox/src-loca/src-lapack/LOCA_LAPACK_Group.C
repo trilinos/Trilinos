@@ -262,6 +262,9 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
   // Return code
   int info;
 
+  // Make sure Jacobian is fresh
+  computeJacobian();
+
   // Copy Jacobian matrix since lapack routines overwrite it
   NOX::LAPACK::Matrix J(NOX::LAPACK::Group::jacobianMatrix);
 
@@ -378,6 +381,149 @@ LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
 	    &NOX::LAPACK::i_one);
 
   return NOX::Abstract::Group::Ok;
+}
+
+// NOX::Abstract::Group::ReturnType
+// LOCA::LAPACK::Group::applyComplexInverse(
+// 			       NOX::Parameter::List& params,
+// 			       const NOX::Abstract::Vector& input_real,
+// 			       const NOX::Abstract::Vector& input_imag,
+// 			       double frequency,
+// 			       NOX::Abstract::Vector& result_real,
+// 			       NOX::Abstract::Vector& result_imag) const
+// {
+//   if (!isMass()) 
+//     return NOX::Abstract::Group::BadDependency;
+
+//   int n = input_real.length();
+//   int N = 2*n;
+//   int info;
+//   int *piv = new int[N];
+
+//   // Copy all input vectors into one (complex) vector
+//   NOX::LAPACK::Vector b(N);
+//   const NOX::LAPACK::Vector& lapack_input_real = 
+//     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
+//   const NOX::LAPACK::Vector& lapack_input_imag =
+//     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
+//   for (int i=0; i<n; i++) {
+//     b(i) = lapack_input_real(i);
+//     b(i+n) = lapack_input_imag(i);
+//   }
+
+//   // Create complex matrix J+i*w*M
+//   NOX::LAPACK::Matrix A(N,N);
+//   for (int j=0; j<n; j++) {
+//     for (int i=0; i<n; i++) {
+//       A(i,j) = jacobianMatrix(i,j);
+//       A(i+n,j) = frequency*massMatrix(i,j);
+//       A(i,j+n) = -frequency*massMatrix(i,j);
+//       A(i+n,j+n) = jacobianMatrix(i,j);
+//     }
+//   }
+
+//   // Solve A*x = b
+//   DGESV_F77(&N, &NOX::LAPACK::i_one, &A(0,0), &N, piv, &b(0), &N, &info);
+
+//   if (info != 0)
+//       return NOX::Abstract::Group::Failed;
+
+//   // Copy result from matrix
+//   NOX::LAPACK::Vector& lapack_result_real = 
+//     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
+//   NOX::LAPACK::Vector& lapack_result_imag = 
+//     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
+//   for (int i=0; i<n; i++) {
+//     lapack_result_real(i) = b(i);
+//     lapack_result_imag(i) = b(i+n);
+//   }
+
+//   delete [] piv;
+
+//   return NOX::Abstract::Group::Ok;
+// }
+
+// NOX::Abstract::Group::ReturnType
+// LOCA::LAPACK::Group::applyComplexInverse(
+// 			       NOX::Parameter::List& params,
+// 			       const NOX::Abstract::Vector& input_real,
+// 			       const NOX::Abstract::Vector& input_imag,
+// 			       double frequency,
+// 			       NOX::Abstract::Vector& result_real,
+// 			       NOX::Abstract::Vector& result_imag) const
+// {
+//   if (!isMass()) 
+//     return NOX::Abstract::Group::BadDependency;
+
+//   int n = input_real.length();
+//   int info;
+//   int *piv = new int[n];
+
+//   // Copy all input vectors into one (complex) vector
+//   NOX::LAPACK::Vector b(2*n);
+//   const NOX::LAPACK::Vector& lapack_input_real = 
+//     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
+//   const NOX::LAPACK::Vector& lapack_input_imag =
+//     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
+//   for (int i=0; i<n; i++) {
+//     b(2*i) = lapack_input_real(i);
+//     b(2*i+1) = lapack_input_imag(i);
+//   }
+
+//   // Create complex matrix J+i*w*M
+//   NOX::LAPACK::Matrix A(2*n,n);
+//   for (int j=0; j<n; j++) {
+//     for (int i=0; i<n; i++) {
+//       A(2*i,j) = jacobianMatrix(i,j);
+//       A(2*i+1,j) = frequency*massMatrix(i,j);
+//     }
+//   }
+
+//   // Solve A*x = b
+//   ZGESV_F77(&n, &NOX::LAPACK::i_one, &A(0,0), &n, piv, &b(0), &n, &info);
+
+//   if (info != 0)
+//       return NOX::Abstract::Group::Failed;
+
+//   // Copy result from matrix
+//   NOX::LAPACK::Vector& lapack_result_real = 
+//     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
+//   NOX::LAPACK::Vector& lapack_result_imag = 
+//     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
+//   for (int i=0; i<n; i++) {
+//     lapack_result_real(i) = b(2*i);
+//     lapack_result_imag(i) = b(2*i+1);
+//   }
+
+//   delete [] piv;
+
+//   return NOX::Abstract::Group::Ok;
+// }
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyComplexInverse(
+			       NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector& input_real,
+			       const NOX::Abstract::Vector& input_imag,
+			       double frequency,
+			       NOX::Abstract::Vector& result_real,
+			       NOX::Abstract::Vector& result_imag) const
+{
+   NOX::Abstract::Group::ReturnType res;
+   const NOX::Abstract::Vector* inputs_real[1];
+   const NOX::Abstract::Vector* inputs_imag[1];
+   NOX::Abstract::Vector* results_real[1];
+   NOX::Abstract::Vector* results_imag[1];
+
+   inputs_real[0] = &input_real;
+   inputs_imag[0] = &input_imag;
+   results_real[0] = &result_real;
+   results_imag[0] = &result_imag;
+   
+   res = applyComplexInverseMulti(params, inputs_real, inputs_imag, frequency, 
+				  results_real, results_imag, 1);
+
+   return res;
 }
 
 NOX::Abstract::Group::ReturnType
