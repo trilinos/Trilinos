@@ -62,6 +62,9 @@ typedef struct ML_Aggregate_Struct
                                        /* only if the user explicitely       */
                                        /* requires them                      */
   void * field_of_values;
+  int    block_scaled_SA;              /* = 1 indicates that the prolongator */
+                                       /* smoother should use block diagonal */
+                                       /* scaling (blocksize = num_PDE_eqns) */
 /*ms*/
 } ML_Aggregate;
 
@@ -214,6 +217,8 @@ extern int ML_Aggregate_Get_Flag_SmoothExistingTentativeP( ML_Aggregate *);
 
 int ML_Aggregate_Set_DampingFactor( ML_Aggregate *, double factor );
 int ML_Aggregate_Set_PSmootherType( ML_Aggregate *, int stype );
+int ML_Aggregate_Set_PointDiagScaling( ML_Aggregate *ag);
+int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag);
 
 /* ------------------------------------------------------------------------- */
 /* set up scheme to compute spectral radius of A at each level               */

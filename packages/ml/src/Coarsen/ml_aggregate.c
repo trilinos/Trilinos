@@ -96,6 +96,8 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->aggr_viz_and_stats         = NULL;
    (*ag)->field_of_values            = NULL;
 /*MS*/
+   (*ag)->block_scaled_SA            = 0;
+
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
 #endif
@@ -172,6 +174,35 @@ int ML_Aggregate_Set_MinNodesPerAggregate( ML_Aggregate *ag, int nnodes )
    else               ag->min_nodes_per_aggregate = nnodes;
    return 0;
 }
+/* ************************************************************************* */
+/* set Prolongator smoother to use block diagonal scaling                    */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
+      exit(-1);
+   }
+   ag->block_scaled_SA = 1;
+   return 0;
+}
+/* ************************************************************************* */
+/* set Prolongator smoother to use point diagonal scaling                    */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_PointDiagScaling( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
+      exit(-1);
+   }
+   ag->block_scaled_SA = 0;
+   return 0;
+}
+
 
 /* ************************************************************************* */
 /* set output level                                                          */
@@ -743,7 +774,6 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
 
    /* if there was a nullspace vector specified before, free it */
    if (ag->nullspace_vect != NULL) {
-
      /* if this is the fine grid, indicate that we have overwritten */
      /* the user's nullspace.                                       */
      if (ag->nullspace_corrupted == ML_EMPTY)
@@ -779,6 +809,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
          fprintf(fp, "null %5d (%5d) = %e\n", i, leng*null_dim, null_vect[i]);
 #endif
       }
+
    }
    else
       ag->nullspace_vect = NULL;
