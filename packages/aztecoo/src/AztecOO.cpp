@@ -179,6 +179,7 @@ int AztecOO::SetAztecDefaults() {
  athresholds_ = 0;
  rthresholds_ = 0;
  condestThreshold_ = 0.0;
+ procConfigSet_ = false;
  return(0);
 
 }
@@ -825,6 +826,8 @@ int Epetra_Aztec_getrow(int columns[], double values[],
   for (int i = 0; i < N_requested_rows; i++) {
     int LocalRow = requested_rows[i];
     // Do copy, return if copy failed
+    A->NumMyRowEntries(LocalRow, NumEntries);
+    if (NumEntries>Length) return(0);  // This check should eliminate error reports from next line
     if (A->ExtractMyRowCopy(LocalRow, Length, NumEntries, Values, Indices)!=0) return(0);
     // update row lengths and pointers 
     row_lengths[i] = NumEntries;
