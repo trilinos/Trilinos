@@ -11,8 +11,11 @@
     \brief This class creates a basic map object for platforms where the std::map is
 	deficient, otherwise the std::map is injected into the Teuchos namespace.  
 	
-    The map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
-    Currently the basic map class is only used on ASCI Red (Janus).
+    \note 
+    <ol>
+	<li> The map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
+	<li> Currently the basic map class is only used on ASCI Red (Janus).
+    </ol>
 */
 
 namespace Teuchos {

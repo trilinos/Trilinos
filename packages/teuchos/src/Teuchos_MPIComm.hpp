@@ -115,7 +115,6 @@ namespace Teuchos
       /** */
       const static int PROD;
       //@}
-      //@}
 
       // errCheck() checks the return value of an MPI call and throws
       // a ParallelException upon failure.
