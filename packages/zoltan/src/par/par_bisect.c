@@ -24,8 +24,6 @@
 #define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on either side of cut */
 #define MAX_ITERATIONS 20     /* Max. no. of iterations in main bisection loop */
-#define TOL_FACTOR 0.5        /* Balance tolerance for each cut = TOL_FACTOR * lb->Imbal_Tol */
-/* EBEB We should replace the tolerance heuristic. */
 
 /* Data structure for parallel find bisector routine */
 
@@ -75,9 +73,7 @@ static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
 /*****************************************************************************/
 
 int Zoltan_RB_find_bisector(
-  int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
-                           of communicators should be done (to avoid memory
-                           leaks in tflops' Comm_Dup and Comm_Split).        */
+  ZZ *zz,               /* Zoltan struct, contains lots of fields. */
   double *dots,         /* array of coordinates                              */
   double *wgts,         /* array of (multidimensional) weights associated with dots  */
   int *dotmark,         /* returned list of which side of the bisector
@@ -85,16 +81,13 @@ int Zoltan_RB_find_bisector(
                                 0 - dot is < valuehalf
                                 1 - dot is > valuehalf                       */
   int dotnum,           /* number of dots (length of three previous arrays   */
-  int proc,             /* this proc number (rank)                           */
   int nwgts,            /* number of weights (per dot)                       */
   int norm,             /* norm to be used for multiweights: 1,2, or 3       */
   double *fraclo,       /* fraction of weight that should be in bottom half  */
-  float *imbal_tol,     /* imbalance tolerance for load balance              */
   MPI_Comm local_comm,  /* MPI communicator on which to find bisector        */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
   int *counter,         /* returned for stats, # of bisector interations     */
-  int nprocs,           /* Total number of processors (Tflops_Special)       */
   int num_procs,        /* Number of procs in partition (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in partition (Tflops_Special)*/
   int num_parts,        /* Number of partitions in set (Tflops_Special)      */
@@ -104,7 +97,8 @@ int Zoltan_RB_find_bisector(
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
   int    *dotlist,      /* list of active dots */
-  int rectilinear_blocks/* if set all dots with same value on same side of cut*/
+  int rectilinear_blocks,/* if 1, all dots with same value on same side of cut*/
+  int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
 )
 {
 /* Local declarations. */
@@ -120,9 +114,10 @@ int Zoltan_RB_find_bisector(
   double  *tmplo, *tmphi;            /* temp arrays for norm calculations */
   double  *invfraclo, *invfrachi;    /* inverse of fractionlo,hi */
   double  normlo, normhi, oldnorm;   /* norms of weight vectors */
-  double  eps;                       /* tolerance for imbalance */
+  double  eps;                       /* abs. tolerance for imbalance */
   double  temp;                      /* temp variable */
-
+  int proc   = zz->Proc;             /* My proc rank. */
+  int nprocs = zz->Num_Proc;         /* Total number of processors */
   int     ierr = ZOLTAN_OK;          /* error code */
   int     i, j, k, wtflag = 0, numlist;
   int     indexlo, indexhi;          /* indices of dot closest to bisector */
@@ -321,7 +316,7 @@ int Zoltan_RB_find_bisector(
       localsum[j] += wgts[i*nwgts+j];
   }
 
-  if (Tflops_Special) {
+  if (zz->Tflops_Special) {
      rank = proc - proclower;
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
      if (!tmp) {
@@ -330,7 +325,7 @@ int Zoltan_RB_find_bisector(
         goto End;
      }
 
-/* EBEB  After testing, Remove section below. Assume valuemin/max, wtsum are given as input. */
+/* EBEB  After testing, remove section below. Assume valuemin/max, wtsum are given as input. */
      /* find valuemax */
      tmp[proc] = valuemax2 = localmax;
      MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
@@ -367,13 +362,23 @@ int Zoltan_RB_find_bisector(
     printf("[%2d] Warning: computed valuemax %lf does not match input %lf\n",
       proc, valuemax2, valuemax);
 
+  /* Scale weights if not comparable. */
+  if (!obj_wgt_comparable){
+    for (i=0; i<dotnum; i++)
+      for (j=0; j<nwgts; j++)
+        if (wtsum[j]>0) wgts[i*nwgts+j] /= wtsum[j];
+    for (j=0; j<nwgts; j++)
+      wtsum[j] = 1.0;
+  }
+
   /* weightlo/hi = total weight in non-active parts of partition */
   for (j=0; j<nwgts; j++)
     weighthi[j] = weightlo[j] = 0.0;
 
-  /* Heuristic: Set tolerance for each cut to TOL_FACTOR of imbal_tol */
-  eps = TOL_FACTOR * (imbal_tol[0]-1.) * Zoltan_norm(norm, nwgts, wtsum, NULL);
-  iteration = 0;
+  /* Set tolerance for each cut to imbal_tol/log(p) */
+  /* EBEB For now, only use first imbalance tol if vector. */
+  eps = (zz->LB.Imbalance_Tol[0]-1.) / (log(num_parts)/log(2.0))
+        * 0.5*Zoltan_norm(norm, nwgts, wtsum, NULL);
 
   /* bisector iteration */
   /* zoom in on bisector until correct # of dots in each half of partition */
@@ -389,6 +394,7 @@ int Zoltan_RB_find_bisector(
   if (num_procs > 1) { /* don't need to go through if only one proc.  This
                           added for Tflops_Special */
 
+    iteration = 0;
     while (iteration++ < MAX_ITERATIONS){
 
       /* choose bisector value */
@@ -479,7 +485,7 @@ int Zoltan_RB_find_bisector(
 
       /* combine bisector data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
-      if (Tflops_Special) {
+      if (zz->Tflops_Special) {
          i = 1;
          Zoltan_reduce(num_procs, rank, proc, 1, medme, med, &i, med_type,
                    local_comm);
@@ -560,7 +566,7 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (Tflops_Special)
+            if (zz->Tflops_Special)
               Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
             else
               MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -698,7 +704,7 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (Tflops_Special)
+            if (zz->Tflops_Special)
                Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
             else
                MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);

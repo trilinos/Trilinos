@@ -21,16 +21,18 @@ extern "C" {
 #endif
 
 
-#include <mpi.h>
+#ifndef __ZOLTAN_CONST_H
+#include "zz_const.h"
+#endif
 
-extern int Zoltan_RB_find_bisector(int, double *, double *, int *,
-  int, int, int, int, double *, float *, MPI_Comm,
-  double *, int, int *, 
-  int, int, int, int, double, double, 
-  double *, double *, double *, int *, int);
+extern int Zoltan_RB_find_bisector(ZZ *, double *, double *, 
+  int *, int, int, int, double *, MPI_Comm,
+  double *, int, int *, int, int, int, double, double, 
+  double *, double *, double *, int *, int, int);
 
-/* Note: This number should be >= RB_MAX_WEIGHTS in RCB. */
-#define MAX_BISECT_WGTS 4
+/* Note: MAX_BISECT_WGTS should be >= RB_MAX_WEIGHTS in RCB. */
+/* EBEB: Should we rather include rcb_const.h and use RB_MAX_WEIGHTS? */
+#define MAX_BISECT_WGTS 8
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

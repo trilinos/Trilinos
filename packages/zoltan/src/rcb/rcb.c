@@ -63,7 +63,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-  double, int, int, int, int, int, int, int, int, float *);
+  double, int, int, int, int, int, int, int, int, int, float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
   struct rcb_box *);
@@ -86,6 +86,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_LOCK_DIRECTIONS", NULL, "INT", 0 },
                   { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
                   { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
+                  { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -155,6 +156,8 @@ int Zoltan_RCB(
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
+    int obj_wgt_comp;         /* 1 if all (multi-)weights for an object 
+                                 have same units, 0 otherwise. */
     int ierr;
 
 
@@ -167,7 +170,10 @@ int Zoltan_RCB(
     Zoltan_Bind_Param(RCB_params, "RCB_SET_DIRECTIONS", (void *) &preset_dir);
     Zoltan_Bind_Param(RCB_params, "RCB_RECTILINEAR_BLOCKS",
                               (void *) &rectilinear_blocks);
+    Zoltan_Bind_Param(RCB_params, "OBJ_WEIGHTS_COMPARABLE",
+                              (void *) &obj_wgt_comp);
 
+    /* Set default values. */
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
     check_geom = DEFAULT_CHECK_GEOM;
@@ -177,6 +183,7 @@ int Zoltan_RCB(
     reuse_dir = 0;
     preset_dir = 0;
     rectilinear_blocks = 0;
+    obj_wgt_comp = 1;      /* EBEB Change to 0 later. */
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -188,7 +195,7 @@ int Zoltan_RCB(
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
-                 rectilinear_blocks, part_sizes);
+                 rectilinear_blocks, obj_wgt_comp, part_sizes);
 
     return(ierr);
 }
@@ -226,6 +233,7 @@ static int rcb_fn(
                                     1: xyz,        2: xzy,      3: yzx,
                                     4: yxz,        5: zxy,      6: zyx  */
   int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
+  int obj_wgt_comp,             /* (1) obj wgts have same units, no scaling */
   float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
                                    * wgtflag containing the percentage of work 
                                    to be assigned to each partition.    */
@@ -308,6 +316,7 @@ static int rcb_fn(
   int *dim_spec = NULL;             /* specified direction for preset_dir */
   int fp;                           /* first partition assigned to this proc */
   int np;                           /* number of parts assigned to this proc */
+  int wgtdim;                       /* max(wgtflag,1) */
   char msg[128];                    /* buffer for error messages */
 
   /* MPI data types and user functions */
@@ -390,10 +399,11 @@ static int rcb_fn(
   /* create mark and list arrays for dots */
 
   allocflag = 0;
+  wgtdim = (wgtflag>0 ? wgtflag : 1);
   if (dotmax > 0) {
     if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
      || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-     || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+     || !(wgts = (double *) ZOLTAN_MALLOC(wgtdim*dotmax*sizeof(double)))
      || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ierr = ZOLTAN_MEMERR;
@@ -534,7 +544,7 @@ static int rcb_fn(
     timers[0] = time2 - time1;
   }
 
-  /* recursively halve until just one part or proc in set */
+  /* Main loop: recursively halve until just one part or proc in set */
   
   old_nprocs = num_procs = nprocs;
   old_nparts = num_parts;
@@ -588,7 +598,7 @@ static int rcb_fn(
       ZOLTAN_FREE(&dotlist);
       if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
        || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(wgtdim*dotmax*sizeof(double)))
        || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
@@ -603,7 +613,9 @@ static int rcb_fn(
     dotpt = rcb->Dots;
     for (i = 0; i < dotnum; i++) {
       coord[i] = dotpt[i].X[dim];
-      wgts[i] = dotpt[i].Weight[0];
+      for (j=0; j<wgtflag; j++){
+        wgts[i*wgtflag+j] = dotpt[i].Weight[j];
+      }
     }
 
     /* determine if there is a first guess to use */
@@ -633,13 +645,14 @@ static int rcb_fn(
     }
     else { 
       if (Zoltan_RB_find_bisector(
-             zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-             wgtflag, 1, fraclo, zz->LB.Imbalance_Tol, local_comm, 
+             zz, coord, wgts, dotmark, dotnum, 
+             wgtflag, 1, fraclo, local_comm, 
              &valuehalf, first_guess, counters,
-             nprocs, old_nprocs, proclower, old_nparts, 
+             old_nprocs, proclower, old_nparts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi,
-             dotlist, rectilinear_blocks) != ZOLTAN_OK) {
+             dotlist, rectilinear_blocks, obj_wgt_comp) 
+        != ZOLTAN_OK) {
         ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
         ierr = ZOLTAN_FATAL;
         goto End;
@@ -1154,7 +1167,7 @@ static int serial_rcb(
 {
 char *yo = "serial_rcb";
 int ierr = ZOLTAN_OK;
-int i;
+int i, j;
 int dim;
 int first_guess;
 int new_nparts;
@@ -1178,7 +1191,8 @@ struct rcb_box tmpbox;
 
     for (i = 0; i < dotnum; i++) {
       coord[i] = dotpt[dindx[i]].X[dim];
-      wgts[i] = dotpt[dindx[i]].Weight[0];
+      for (j=0; j<wgtflag; j++)
+        wgts[i*wgtflag+j] = dotpt[dindx[i]].Weight[j];
     }
 
     if (reuse && dim == treept[partmid].dim) {
