@@ -20,7 +20,7 @@ dnl
 AC_DEFUN([TAC_ARG_CONFIG_EXPAT],
 [
 AC_ARG_ENABLE(expat,
-AC_HELP_STRING([--enable-expat],[enable expat XML parser]),
+AC_HELP_STRING([--enable-expat],[Enable expat XML parser]),
 [
 HAVE_PKG_EXPAT=yes
 EXPAT_LIBS=-lexpat
