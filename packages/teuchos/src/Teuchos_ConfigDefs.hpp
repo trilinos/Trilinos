@@ -230,6 +230,13 @@ using std::complex;
 
 #endif /* TFLOP */
 
+// RAB: 20031002: Added this for all platforms in addition to TFLOPS?
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#else
+#include <iomanip.h>  
+#endif
+
 #else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
 
 #include <iostream>
