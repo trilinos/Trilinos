@@ -137,7 +137,7 @@ int ML_Operator_Clean( ML_Operator *mat)
       t1 = - t1;
       if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
          printf(" Apply time for %s (minimum) \t= %e\n",mat->label,t1);
-      if (mat->ntimes != 0) 
+      if ( (mat->comm->ML_mypid == 0) && (mat->ntimes != 0))
          printf(" Number of Applies for %s \t= %d\n",mat->label,mat->ntimes);
    }
 #endif
@@ -158,6 +158,8 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif   
 #endif
+   if (mat->label != NULL) { ML_free(mat->label); mat->label = NULL; }
+
    if (mat->halfclone == ML_TRUE) {
      return ML_Operator_halfClone_Clean(mat);
    }
@@ -195,7 +197,6 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
    ML_memory_free((void**)&(mat->matvec));
    ML_memory_free((void**)&(mat->getrow));
-   if (mat->label != NULL) { ML_free(mat->label); mat->label = NULL; }
    mat->num_PDEs            = 1;
    mat->num_rigid           = 1;
    mat->halfclone           = ML_FALSE;
