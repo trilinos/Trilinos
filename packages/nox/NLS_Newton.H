@@ -29,7 +29,7 @@ public:
   virtual ~NLS_Newton();
 
   virtual void resetParameters(NLS_ParameterList& p);
-  virtual STATUS isConverged();
+  virtual STATUS getStatus();
   virtual STATUS iterate();
   virtual STATUS solve();
   virtual NLS_Group& getSolutionGroup() const;

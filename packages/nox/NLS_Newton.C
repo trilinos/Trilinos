@@ -20,7 +20,7 @@ NLS_Newton::NLS_Newton(NLS_Group& initialguess, NLS_Group& workspace, NLS_Parame
   niter(0)
 {
   NLS_Utilities::setUtilities(params);
-  maxiter = params.getParameter("Max Nonlinear Iterations", 15);
+  maxiter = params.getParameter("Max Iterations", 15);
   abstol = params.getParameter("Absolute Tolerance", 1.0e-9);
   reltol = params.getParameter("Relative Tolerance", 1.0e-4);
   soln.computeRHS();
@@ -34,14 +34,14 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 {
 }
 
-NLS_Method::STATUS NLS_Newton::isConverged() 
+NLS_Method::STATUS NLS_Newton::getStatus() 
 {
-  // Compute norm of Newton step
+  // Compute norm of Newton step 
+  /* NOTE FROM TAMMY: This only works when we take full Newton
+     steps. Need to change it if we do a linesearch. */
   double normupdate = soln.getNewton().norm();
 
-  // Output 
   if (NLS_Utilities::doPrint(1)) {
-
     cout << "\n" << stars;
     cout << "Newton Step " << niter 
 	 << " : Residual Norm = " << soln.getNormRHS()
@@ -49,20 +49,25 @@ NLS_Method::STATUS NLS_Newton::isConverged()
     cout << "\n" << stars << endl;
   }
 
-  if ((soln.getNormRHS() < abstol) && (normupdate < reltol)) {
-    if (NLS_Utilities::doPrint(1)) 
-      cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
-    return NLS_Method::Converged;
-  }
+  NLS_Method::STATUS status = NLS_Method::NotConverged;
 
-  // Check number of iterations
+  if (soln.getNormRHS() < abstol)
+    status = NLS_Method::ConvergedAbsTol;
+
+  if ((niter > 0) && (normupdate < reltol))
+    status = NLS_Method::ConvergedRelTol;
+
   if (niter >= maxiter) {
-    if (NLS_Utilities::doPrint(1)) 
-      cout << "\n" << "Max iterations exceeded in nonlinear solver." << "\n" << endl;
-    return NLS_Method::MaxItersExceeded;
+    status = NLS_Method::MaxItersExceeded;
   }
 
-  return NLS_Method::NotConverged;
+  if ((status > 0) && (NLS_Utilities::doPrint(1)))
+    cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
+
+  if ((status < 0) && (NLS_Utilities::doPrint(1)))
+    cout << "\n" << "Nonlinear solver failed." << "\n" << endl;
+
+  return status;
 }
 
       
@@ -89,7 +94,7 @@ NLS_Method::STATUS NLS_Newton::iterate()
   soln.computeJacobian();
 
   // compute Newton direction for current solution
-  soln.computeNewton(params);
+  soln.computeNewton(params.sublist("Linear Solver Parameters"));
 
   // copy current soln to the old soln
   oldsoln = soln;
@@ -104,22 +109,22 @@ NLS_Method::STATUS NLS_Newton::iterate()
   niter ++;
 
   // completed successful iteration
-  return isConverged();
+  return getStatus();
 }
 
 NLS_Method::STATUS NLS_Newton::solve()
 {
   if (NLS_Utilities::doPrint(2)) 
-    cout << "\n" << "Beginning nonlinear solve with Newtons method!" << endl;
+    cout << "\n" << "Beginning nonlinear solve with Newton's method!" << endl;
 
-  NLS_Method::STATUS status = isConverged();
+  NLS_Method::STATUS status = getStatus();
 
   // Check for convergence of initial guess
   if (status != NotConverged)
     return status;
 
   // Iterate until converged or reach maxiter
-  while (status != NotConverged) {
+  while (status == NotConverged) {
     status = iterate();
   }
 
