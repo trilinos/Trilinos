@@ -51,10 +51,10 @@ namespace Teuchos
   enum EUplo { UPPER_TRI, LOWER_TRI };
   enum EDiag { UNIT_DIAG, NON_UNIT_DIAG };
 
-  char ESideChar[] = {'L' , 'R'   };
-  char ETranspChar[] = {'N' , 'T' , 'C' };
-  char EUploChar[] = {'U' , 'L'   };
-  char EDiagChar[] = {'U' , 'N'   };
+  extern char ESideChar[];
+  extern char ETranspChar[];
+  extern char EUploChar[];
+  extern char EDiagChar[];
 
   template<typename OrdinalType, typename ScalarType>
   class BLAS

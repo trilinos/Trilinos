@@ -1,8 +1,23 @@
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_Out.hpp"
 
-using namespace Teuchos;
+namespace Teuchos
+{
 
+// These characters are needed for BLAS & LAPACK routines for compile time debugging
+char ESideChar[] = {'L' , 'R' };
+char ETranspChar[] = {'N' , 'T' , 'C' };
+char EUploChar[] = {'U' , 'L' };
+char EDiagChar[] = {'U' , 'N' };
+char EFactChar[] = {'F', 'N' };
+char ENormChar[] = {'O', 'I' };
+char ECompQChar[] = {'N', 'I', 'V' };
+char EJobChar[] = {'E', 'V', 'B' };
+char EJobSChar[] = {'E', 'S' };
+char EJobVSChar[] = {'V', 'N' };
+char EHowmnyChar[] = {'A', 'S' };
+char ECMachChar[] = {'E', 'S', 'B', 'P', 'N', 'R', 'M', 'U', 'L', 'O' };
+char ESortChar[] = {'N', 'S'};
 
 double Utils::chopVal_ = 1.0e-16;
 
@@ -28,4 +43,4 @@ string Utils::toString(const double& x)
 }
 
 
-
+} // end namespace Teuchos

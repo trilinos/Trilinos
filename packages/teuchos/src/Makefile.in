@@ -132,7 +132,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp\
-	$(srcdir)/Teuchos_Time.hpp 
+	$(srcdir)/Teuchos_Time.hpp \
+	$(srcdir)/Teuchos_Utils.hpp
 
 
 CORE = \
@@ -140,7 +141,8 @@ CORE = \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
-	$(srcdir)/Teuchos_Time.cpp
+	$(srcdir)/Teuchos_Time.cpp \
+	$(srcdir)/Teuchos_Utils.cpp
 
 
 EXTRA_EXPERIMENTAL_H = \
@@ -173,7 +175,6 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_SystemRand.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
-	$(srcdir)/Teuchos_Utils.hpp\
 	$(srcdir)/Teuchos_WriterBase.hpp\
 	$(srcdir)/Teuchos_XMLInputSource.hpp\
 	$(srcdir)/Teuchos_XMLInputStream.hpp\
@@ -203,7 +204,6 @@ EXTRA_EXPERIMENTAL = \
 	$(srcdir)/Teuchos_SystemRand.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
-	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \
 	$(srcdir)/Teuchos_XMLInputStream.cpp \
 	$(srcdir)/Teuchos_XMLObject.cpp \
@@ -375,7 +375,7 @@ LIBRARIES = $(lib_LIBRARIES)
 libteuchos_a_DEPENDENCIES =
 am__objects_1 = Teuchos_CompObject.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
 	Teuchos_Object.$(OBJEXT) Teuchos_TestForException.$(OBJEXT) \
-	Teuchos_Time.$(OBJEXT)
+	Teuchos_Time.$(OBJEXT) Teuchos_Utils.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 @HAVE_MPI_FALSE@am__objects_3 =
@@ -394,7 +394,7 @@ am__objects_4 = Teuchos_CommandLine.$(OBJEXT) \
 	Teuchos_StringInputStream.$(OBJEXT) \
 	Teuchos_SystemRand.$(OBJEXT) Teuchos_TimeMonitor.$(OBJEXT) \
 	Teuchos_TreeBuildingXMLHandler.$(OBJEXT) \
-	Teuchos_Utils.$(OBJEXT) Teuchos_XMLInputSource.$(OBJEXT) \
+	Teuchos_XMLInputSource.$(OBJEXT) \
 	Teuchos_XMLInputStream.$(OBJEXT) Teuchos_XMLObject.$(OBJEXT) \
 	Teuchos_XMLObjectImplem.$(OBJEXT)
 @HAVE_TEUCHOS_EXPERIMENTAL_TRUE@am__objects_5 = $(am__objects_4)
@@ -520,6 +520,7 @@ Teuchos_Object.$(OBJEXT): $(srcdir)/Teuchos_Object.cpp
 Teuchos_TestForException.$(OBJEXT): \
 	$(srcdir)/Teuchos_TestForException.cpp
 Teuchos_Time.$(OBJEXT): $(srcdir)/Teuchos_Time.cpp
+Teuchos_Utils.$(OBJEXT): $(srcdir)/Teuchos_Utils.cpp
 Teuchos_CommandLine.$(OBJEXT): $(srcdir)/Teuchos_CommandLine.cpp
 Teuchos_CommandLineProcessor.$(OBJEXT): \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp
@@ -548,7 +549,6 @@ Teuchos_SystemRand.$(OBJEXT): $(srcdir)/Teuchos_SystemRand.cpp
 Teuchos_TimeMonitor.$(OBJEXT): $(srcdir)/Teuchos_TimeMonitor.cpp
 Teuchos_TreeBuildingXMLHandler.$(OBJEXT): \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp
-Teuchos_Utils.$(OBJEXT): $(srcdir)/Teuchos_Utils.cpp
 Teuchos_XMLInputSource.$(OBJEXT): $(srcdir)/Teuchos_XMLInputSource.cpp
 Teuchos_XMLInputStream.$(OBJEXT): $(srcdir)/Teuchos_XMLInputStream.cpp
 Teuchos_XMLObject.$(OBJEXT): $(srcdir)/Teuchos_XMLObject.cpp
@@ -670,6 +670,18 @@ Teuchos_Time.obj: $(srcdir)/Teuchos_Time.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Time.Po' tmpdepfile='$(DEPDIR)/Teuchos_Time.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Time.obj `cygpath -w $(srcdir)/Teuchos_Time.cpp`
+
+Teuchos_Utils.o: $(srcdir)/Teuchos_Utils.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Utils.cpp' object='Teuchos_Utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Utils.Po' tmpdepfile='$(DEPDIR)/Teuchos_Utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Utils.o `test -f '$(srcdir)/Teuchos_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Utils.cpp
+
+Teuchos_Utils.obj: $(srcdir)/Teuchos_Utils.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Utils.cpp' object='Teuchos_Utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Utils.Po' tmpdepfile='$(DEPDIR)/Teuchos_Utils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Utils.obj `cygpath -w $(srcdir)/Teuchos_Utils.cpp`
 
 Teuchos_CommandLine.o: $(srcdir)/Teuchos_CommandLine.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_CommandLine.cpp' object='Teuchos_CommandLine.o' libtool=no @AMDEPBACKSLASH@
@@ -922,18 +934,6 @@ Teuchos_TreeBuildingXMLHandler.obj: $(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po' tmpdepfile='$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TreeBuildingXMLHandler.obj `cygpath -w $(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp`
-
-Teuchos_Utils.o: $(srcdir)/Teuchos_Utils.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Utils.cpp' object='Teuchos_Utils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Utils.Po' tmpdepfile='$(DEPDIR)/Teuchos_Utils.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Utils.o `test -f '$(srcdir)/Teuchos_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Utils.cpp
-
-Teuchos_Utils.obj: $(srcdir)/Teuchos_Utils.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Utils.cpp' object='Teuchos_Utils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Utils.Po' tmpdepfile='$(DEPDIR)/Teuchos_Utils.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Utils.obj `cygpath -w $(srcdir)/Teuchos_Utils.cpp`
 
 Teuchos_XMLInputSource.o: $(srcdir)/Teuchos_XMLInputSource.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_XMLInputSource.cpp' object='Teuchos_XMLInputSource.o' libtool=no @AMDEPBACKSLASH@
