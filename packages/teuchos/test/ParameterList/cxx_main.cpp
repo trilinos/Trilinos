@@ -1,6 +1,6 @@
-#include <iostream>
-#include <string>
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 using namespace std;
 using namespace Teuchos;
@@ -14,37 +14,11 @@ int main(int argc, char *argv[])
   bool InvalidCmdLineArgs = false;
   int FailedTests = 0;
 
-  // Check for verbose mode 
-  // (this will be replaced by the CommandLineProcessor later)
-  for(int i = 1; i < argc; i++)
-    {
-      if(argv[i][0] == '-')
-        {
-          switch(argv[i][1])
-            {
-            case 'v':
-              if(!verbose)
-                {
-                  verbose = 1;
-                }
-              else
-                {
-                  InvalidCmdLineArgs = 1;
-                }
-              break;
-           default:
-              InvalidCmdLineArgs = 1;
-              break;
-           }
-       }
-   }
-
-  if(InvalidCmdLineArgs || (argc > 2))
-    {
-      cout << "Invalid command line arguments detected. Use the following flags:" << endl
-           << "\t -v enables verbose mode (outputs test info & reports number of failed/successful tests)" << endl;
-      return -1;
-    }
+  // Read options from the command line. 
+  CommandLineProcessor  clp(false); // Don't throw exceptions
+  clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
+  CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFULL ) return parse_return;
 
   // Create Main Parameter List / Sublist Structure
   ParameterList PL_Main;
@@ -171,13 +145,70 @@ int main(int argc, char *argv[])
 	FailedTests++;
     }  
     
-    // Retrieve some information from the parameter list
-    int max_iters = PL_My_Polynomial.getParameter("Max Iters", 10 );
-    string nonlin_solver = PL_Main.getParameter("Nonlinear Solver","Trust Region Based");
-    ParameterList& My_Line_Search = PL_Main.sublist("Line Search");
+    // Retrieve some information from the parameter list using templated "get" method.
+    int max_iters;
+    string nonlin_solver;
+    bool tempMeth = true;
+    try {
+      max_iters = PL_My_Polynomial.template getParameter<int>("Max Iters");
+      nonlin_solver = PL_Main.template getParameter<string>("Nonlinear Solver");
+    }
+    catch( exception& e ) { tempMeth = false; }  
+    if (verbose) {
+	cout<< "Is the templated 'getParameter' method functional ... "<<endl;
+	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
+	if (tempMeth && max_iters==3) { cout << "yes" << endl; }
+	else { cout << "no" << endl; FailedTests++; }
+    }
+
+    // Retrieve some information from the parameter list that we know is a bad "get".
+    float mbf;
+    tempMeth = false;
+    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
+    try {
+	mbf = PL_LinSol.template getParameter<float>( "Tol" );
+    }
+    catch( exception& e ) {
+	tempMeth = true;
+	FailedTests--;		
+    }
+    if (verbose) {
+	cout<< "  Can we retrieve information using the WRONG variable type ... ";
+	if (tempMeth) { cout << "no" << endl; }
+	else { cout << "yes" << endl; }
+    }
+
+    // Check templated isParameterType functionality
+    bool PT1, PT2, PT3, PT4, PT5;
+    PT1 = PL_Polynomial.template isParameterType<int>("Default Step");
+    PT2 = PL_Polynomial.template isParameterType<long int>("Default Step");
+    PT3 = PL_Polynomial.template isParameterType<string>("Interpolation Type");
+    if (verbose) {
+	cout<< "Is the templated 'isParameterType' method functional ... "<<endl;
+	cout<< "  Is the 'Default Step' of type 'int' ... ";
+	if (PT1) { cout<< "yes" << endl; }
+	else { cout<< "no" << endl; FailedTests++; }
+	cout<< "  Is the 'Default Step' of type 'long int' ... ";
+	if (PT2) { cout<< "yes" << endl; FailedTests++; }
+	else { cout<< "no (as expected)" << endl; }
+	cout<< "  Is the 'Interpolation Type' of type 'string' ... ";
+	if (PT3) { cout<< "yes" << endl; }
+	else { cout<< "no" << endl; FailedTests++; }
+    }
+    PT4 = isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
+    PT5 = isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
+    if (verbose) {
+	cout<< "Is the helper function 'isParameterType' functional ... "<<endl;
+	cout<< "  Is the 'Max Bounds Factor' of type 'double' ... ";
+	if (PT4) { cout<< "yes" <<endl; }
+	else { cout<< "no" << endl; FailedTests++; }
+	cout<< "  Is the 'Max Bounds Factor' of type 'float' ... ";
+	if (PT5) { cout<< "yes" <<endl; FailedTests++; }
+	else { cout<< "no (as expected)" << endl; }
+    }	
   }
 
-  // Print out main list
+    // Print out main list
   if (verbose) {
 	print_break();
 	cout << "The Final Parameter List" << endl;
@@ -187,6 +218,7 @@ int main(int argc, char *argv[])
 	cout << "Number of Failed Tests : " << FailedTests << endl;
 	print_break();
   }
+
   // Return -1 if there are any failed tests, 
   // else 0 will be returned indicating a clean finish!  
   if ( FailedTests > 0 ) { return(-1); }
