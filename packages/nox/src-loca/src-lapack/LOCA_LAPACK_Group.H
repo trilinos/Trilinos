@@ -66,9 +66,18 @@ namespace LOCA {
       //! Constructor 
       Group(LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
-      //! Constructor
+      //! Constructor with parameter list
       Group(NOX::Parameter::List& params,
 	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
+
+      //! Constructor with used and allocated dimensions of matrices
+      Group(LOCA::LAPACK::Interface& i, int m, int n, int ma, int na,
+	    bool hasMassMat = false);
+
+      //! Constructor with parameter list and with used, allocated dims
+      Group(NOX::Parameter::List& params,
+	    LOCA::LAPACK::Interface& i, int m, int n, int ma, int na,
+	    bool hasMassMat = false);
 
       //! Copy constructor
       Group(const Group& source, 

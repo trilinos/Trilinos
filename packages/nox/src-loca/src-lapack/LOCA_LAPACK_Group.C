@@ -65,6 +65,35 @@ LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
 				     jacobianMatrix.numCols());
 }
 
+LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
+			   int m, int n, int ma, int na, bool hasMassMat) : 
+  NOX::LAPACK::Group(interface, m, n, ma, na), 
+  LOCA::Abstract::Group(),
+  locaProblemInterface(interface), 
+  params(),
+  massMatrix(),
+  hasMassMatrix(hasMassMat),
+  isValidMass(false)
+{
+  if (hasMassMat)
+    massMatrix = NOX::LAPACK::Matrix(m, n, ma, na);
+}
+
+LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
+			   LOCA::LAPACK::Interface& interface,
+			   int m, int n, int ma, int na, bool hasMassMat) : 
+  NOX::LAPACK::Group(interface, m, n, ma, na), 
+  LOCA::Abstract::Group(params),
+  locaProblemInterface(interface), 
+  params(),
+  massMatrix(),
+  hasMassMatrix(hasMassMat),
+  isValidMass(false)
+{
+  if (hasMassMat)
+    massMatrix = NOX::LAPACK::Matrix(m, n, ma, na);
+}
+
 LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source, 
 			   NOX::CopyType type) : 
   NOX::LAPACK::Group(source,type), 
@@ -134,23 +163,24 @@ LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
   if (nVecs < 1)
     return NOX::Abstract::Group::Failed;
 
-  int n = inputs[0]->length();
-  int m = nVecs;
+  int m = jacobianMatrix.numRows();
+  int n = jacobianMatrix.numCols();
+  int lda = jacobianMatrix.numRowsAllocated();
   int info;
 
   // Copy all input vectors into one matrix
-  NOX::LAPACK::Matrix B(n,m);
+  NOX::LAPACK::Matrix B(m,nVecs);
   const NOX::LAPACK::Vector* constVecPtr;
-  for (int j=0; j<m; j++) {
+  for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(inputs[j]);
-    for (int i=0; i<n; i++)
+    for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
 
   // Compute Jacobian LU factorization if invalid
   if (!NOX::LAPACK::Group::isValidJacobianLUFact) {
     NOX::LAPACK::Group::jacobianLUFact = NOX::LAPACK::Group::jacobianMatrix;
-    DGETRF_F77(&n, &n, &jacobianLUFact(0,0), &n, 
+    DGETRF_F77(&m, &n, &jacobianLUFact(0,0), &lda, 
 	       &NOX::LAPACK::Group::pivots[0], &info);
 
     if (info != 0)
@@ -160,17 +190,17 @@ LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
   }
 
   // Backsolve using LU factorization
-  DGETRS_F77("N", &n, &m, &jacobianLUFact(0,0), &n, &pivots[0], 
-  	     &B(0,0), &n, &info);
+  DGETRS_F77("N", &n, &nVecs, &jacobianLUFact(0,0), &lda, &pivots[0], 
+  	     &B(0,0), &m, &info);
 
   if (info != 0)
       return NOX::Abstract::Group::Failed;
 
   // Copy result from matrix
   NOX::LAPACK::Vector* vecPtr;
-  for (int j=0; j<m; j++) {
+  for (int j=0; j<nVecs; j++) {
     vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(outputs[j]);
-    for (int i=0; i<n; i++)
+    for (int i=0; i<m; i++)
       (*vecPtr)(i) = B(i,j);
   }
 
@@ -241,6 +271,8 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 {
   // Size of matrix
   int n = jacobianMatrix.numRows();
+  int lda = jacobianMatrix.numRowsAllocated();
+  int ldb = massMatrix.numRowsAllocated();
 
   // Space to hold right eigenvectors
   double *vr = new double[n*n];
@@ -279,12 +311,12 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
     // Copy mass matrix since lapack routines overwrite it
     M = massMatrix;
 
-    DGGEV_F77("N", "V", &n, &J(0,0), &n, &M(0,0), &n, alphar, alphai, beta,
+    DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, &work0, &lwork, &info);
 
   }
   else {
-    DGEEV_F77("N", "V", &n, &J(0,0), &n, alphar, alphai, 
+    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
 	      vr, &n, vr, &n, &work0, &lwork, &info);
   }
 
@@ -294,11 +326,11 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 
   // Calculate eigenvalues, eigenvectors
   if (hasMassMatrix) {
-    DGGEV_F77("N", "V", &n, &J(0,0), &n, &M(0,0), &n, alphar, alphai, beta,
+    DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, work, &lwork, &info);
   }
   else {
-    DGEEV_F77("N", "V", &n, &J(0,0), &n, alphar, alphai, 
+    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
 	      vr, &n, vr, &n, work, &lwork, &info);
   }
 
@@ -331,7 +363,7 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
 {
-  int size = NOX::LAPACK::Group::xVector.length();
+  int size = jacobianMatrix.numRows();
 
   // Scale the matrix by the value of the homotopy continuation param
   jacobianMatrix.scale(conParamValue);
@@ -378,131 +410,16 @@ LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
     return NOX::Abstract::Group::BadDependency;
 
   // Compute result = M * input
-  int n = input.length();
+  int m = massMatrix.numRows();
+  int n = massMatrix.numCols();
+  int lda = massMatrix.numRowsAllocated();
 
-  DGEMV_F77("N", &n, &n, &NOX::LAPACK::d_one, &massMatrix(0,0), &n, &input(0),
-	    &NOX::LAPACK::i_one, &NOX::LAPACK::d_zero, &result(0), 
+  DGEMV_F77("N", &m, &n, &NOX::LAPACK::d_one, &massMatrix(0,0), &lda, 
+	    &input(0), &NOX::LAPACK::i_one, &NOX::LAPACK::d_zero, &result(0), 
 	    &NOX::LAPACK::i_one);
 
   return NOX::Abstract::Group::Ok;
 }
-
-// NOX::Abstract::Group::ReturnType
-// LOCA::LAPACK::Group::applyComplexInverse(
-// 			       NOX::Parameter::List& params,
-// 			       const NOX::Abstract::Vector& input_real,
-// 			       const NOX::Abstract::Vector& input_imag,
-// 			       double frequency,
-// 			       NOX::Abstract::Vector& result_real,
-// 			       NOX::Abstract::Vector& result_imag) const
-// {
-//   if (!isMass()) 
-//     return NOX::Abstract::Group::BadDependency;
-
-//   int n = input_real.length();
-//   int N = 2*n;
-//   int info;
-//   int *piv = new int[N];
-
-//   // Copy all input vectors into one (complex) vector
-//   NOX::LAPACK::Vector b(N);
-//   const NOX::LAPACK::Vector& lapack_input_real = 
-//     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
-//   const NOX::LAPACK::Vector& lapack_input_imag =
-//     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
-//   for (int i=0; i<n; i++) {
-//     b(i) = lapack_input_real(i);
-//     b(i+n) = lapack_input_imag(i);
-//   }
-
-//   // Create complex matrix J+i*w*M
-//   NOX::LAPACK::Matrix A(N,N);
-//   for (int j=0; j<n; j++) {
-//     for (int i=0; i<n; i++) {
-//       A(i,j) = jacobianMatrix(i,j);
-//       A(i+n,j) = frequency*massMatrix(i,j);
-//       A(i,j+n) = -frequency*massMatrix(i,j);
-//       A(i+n,j+n) = jacobianMatrix(i,j);
-//     }
-//   }
-
-//   // Solve A*x = b
-//   DGESV_F77(&N, &NOX::LAPACK::i_one, &A(0,0), &N, piv, &b(0), &N, &info);
-
-//   if (info != 0)
-//       return NOX::Abstract::Group::Failed;
-
-//   // Copy result from matrix
-//   NOX::LAPACK::Vector& lapack_result_real = 
-//     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
-//   NOX::LAPACK::Vector& lapack_result_imag = 
-//     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
-//   for (int i=0; i<n; i++) {
-//     lapack_result_real(i) = b(i);
-//     lapack_result_imag(i) = b(i+n);
-//   }
-
-//   delete [] piv;
-
-//   return NOX::Abstract::Group::Ok;
-// }
-
-// NOX::Abstract::Group::ReturnType
-// LOCA::LAPACK::Group::applyComplexInverse(
-// 			       NOX::Parameter::List& params,
-// 			       const NOX::Abstract::Vector& input_real,
-// 			       const NOX::Abstract::Vector& input_imag,
-// 			       double frequency,
-// 			       NOX::Abstract::Vector& result_real,
-// 			       NOX::Abstract::Vector& result_imag) const
-// {
-//   if (!isMass()) 
-//     return NOX::Abstract::Group::BadDependency;
-
-//   int n = input_real.length();
-//   int info;
-//   int *piv = new int[n];
-
-//   // Copy all input vectors into one (complex) vector
-//   NOX::LAPACK::Vector b(2*n);
-//   const NOX::LAPACK::Vector& lapack_input_real = 
-//     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
-//   const NOX::LAPACK::Vector& lapack_input_imag =
-//     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
-//   for (int i=0; i<n; i++) {
-//     b(2*i) = lapack_input_real(i);
-//     b(2*i+1) = lapack_input_imag(i);
-//   }
-
-//   // Create complex matrix J+i*w*M
-//   NOX::LAPACK::Matrix A(2*n,n);
-//   for (int j=0; j<n; j++) {
-//     for (int i=0; i<n; i++) {
-//       A(2*i,j) = jacobianMatrix(i,j);
-//       A(2*i+1,j) = frequency*massMatrix(i,j);
-//     }
-//   }
-
-//   // Solve A*x = b
-//   ZGESV_F77(&n, &NOX::LAPACK::i_one, &A(0,0), &n, piv, &b(0), &n, &info);
-
-//   if (info != 0)
-//       return NOX::Abstract::Group::Failed;
-
-//   // Copy result from matrix
-//   NOX::LAPACK::Vector& lapack_result_real = 
-//     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
-//   NOX::LAPACK::Vector& lapack_result_imag = 
-//     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
-//   for (int i=0; i<n; i++) {
-//     lapack_result_real(i) = b(2*i);
-//     lapack_result_imag(i) = b(2*i+1);
-//   }
-
-//   delete [] piv;
-
-//   return NOX::Abstract::Group::Ok;
-// }
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverse(
@@ -546,7 +463,7 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
   if (nVecs < 1)
     return NOX::Abstract::Group::Failed;
 
-  int n = inputs_real[0]->length();
+  int n = jacobianMatrix.numRows();
   int m = nVecs;
   int info;
   int *piv = new int[n];
