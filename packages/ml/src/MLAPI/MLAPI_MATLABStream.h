@@ -1,6 +1,9 @@
 #ifndef MLAPI_MATLABSTREAM_H
 #define MLAPI_MATLABSTREAM_H
 
+#include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
+
 #include "MLAPI_Operator.h"
 
 namespace MLAPI {
@@ -9,6 +12,8 @@ namespace MLAPI {
 \class MATLABStream
 
 \brief Basic stream to save in a MATLAB-compatible file MLAPI objects.
+
+For an example of usage, see \ref ml_blackboard_cpp
 
 \author Marzio Sala, SNL 9214
 
@@ -19,91 +24,117 @@ class MATLABStream
 {
 public:
 
-  // @{ Constructos and destructors
+  // @{ \name Constructors and destructors.
   
   //! Opens the specified file for writing.
   MATLABStream(const string& FileName, bool UseSparse = true) 
   {
     FileName_ = FileName;
+    SetUseSparse(UseSparse);
+
+    // Creates a new stream, deletes old stream with the same name.
     if (GetMyPID() == 0) {
-      fp_ = fopen(FileName_.c_str(),"w");
-      fclose(fp_);
+      Open(true);
+      fprintf(fp_, "%%beginning of MLAPI::MATLABStream\n");
+      Close();
     }
   }
 
-  //! Destructor.
+  //! Finally closes the output file.
   ~MATLABStream()
-  { }
+  {
+    if (GetMyPID() == 0) {
+      Open();
+      fprintf(fp_, "%%end of MLAPI::MATLABStream\n");
+      Close();
+    }
+  }
 
   // @}
-  // @{ Overloaded operators
+  // @{ \name Overloaded operators
 
-  //! Writes on file input integer on process 0 only.
-  MATLABStream& operator << (const int i)
+  //! Writes on file the specified integer (on process 0 only).
+  MATLABStream& operator << (const int obj)
   {
-    if (GetMyPID() == 0)
-      fprintf(fp_,"%d",i);
+    if (GetMyPID() == 0) {
+      Open();
+      fprintf(fp_,"%d",obj);
+      Close();
+    }
     return(*this);
   }
 
-  //! Writes on file input string on process 0 only.
-  MATLABStream& operator << (const string s)
+  //! Writes on file the specified double (on process 0 only).
+  MATLABStream& operator << (const double obj)
   {
-    if (GetMyPID() == 0)
-      fprintf(fp_,"%s",s.c_str());
+    if (GetMyPID() == 0) {
+      Open();
+      fprintf(fp_,"%f",obj);
+      Close();
+    }
+    return(*this);
+  }
+
+  //! Writes on file the specified string on process 0 only.
+  MATLABStream& operator << (const string obj)
+  {
+    if (GetMyPID() == 0) {
+      Open();
+      fprintf(fp_,"%s",obj.c_str());
+      Close();
+    }
     return(*this);
   }
 
   //! Writes on file input Operator, one process at-a-time, using global ordering.
-  MATLABStream& operator << (const Operator& Op)
+  MATLABStream& operator << (const Operator& obj)
   {
     int    *bindx;
     double *val;
     int    allocated, row_length;
-    ML_Operator* matrix = Op.GetML_Operator();
+    ML_Operator* matrix = obj.GetML_Operator();
 
-    if (matrix->getrow == NULL) {
-      cerr << "ERROR: In MATLABStream::operator<<" << endl;
-      cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-      cerr << "ERROR: getrow() not set!" << endl;
-      throw(-1);
-    }
+    if (matrix->getrow == NULL)
+      ML_THROW("getrow() not set", -1);
 
     allocated = 100;
     bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
     val   = (double *)  ML_allocate(allocated*sizeof(double));
 
-    int NumGlobalRows = Op.GetDomainSpace().GetNumGlobalElements();
-    int NumGlobalCols = Op.GetRangeSpace().GetNumGlobalElements();
+    int NumGlobalRows = obj.GetDomainSpace().GetNumGlobalElements();
+    int NumGlobalCols = obj.GetRangeSpace().GetNumGlobalElements();
 
     if (GetMyPID() == 0) {
-      fp_ = fopen(FileName_.c_str(),"a");
-      fprintf(fp_,"%s = zeros(%d,%d);\n",
-              Op.GetLabel().c_str(), NumGlobalRows, NumGlobalCols);
-      fclose(fp_);
+      Open();
+      if (GetUseSparse())
+        fprintf(fp_,"%s = sparse(%d,%d);\n",
+                obj.GetLabel().c_str(), NumGlobalRows, NumGlobalCols);
+      else
+        fprintf(fp_,"%s = zeros(%d,%d);\n",
+                obj.GetLabel().c_str(), NumGlobalRows, NumGlobalCols);
+
+      Close();
     }
 
     for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
       if (GetMyPID() == iproc) {
 
-        fp_ = fopen(FileName_.c_str(),"a");
+        Open();
 
         for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
           ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                             &row_length, 0);
           for  (int j = 0; j < row_length; j++) {
-            int GlobalRow = Op.GetDomainSpace()(i) + 1;
-            int GlobalCol = Op.GetColumnSpace()(bindx[j]) + 1;
+            int GlobalRow = obj.GetDomainSpace()(i) + 1;
+            int GlobalCol = obj.GetColumnSpace()(bindx[j]) + 1;
             fprintf(fp_,"%s(%d,%d) = %e;\n",
-                    Op.GetLabel().c_str(), GlobalRow, GlobalCol, val[j]);
+                    obj.GetLabel().c_str(), GlobalRow, GlobalCol, val[j]);
           }
         }
-        fclose(fp_);
+        Close();
       }
-#ifdef HAVE_MPI
-      MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      Barrier();
     }
 
     ML_free(val);
@@ -111,84 +142,121 @@ public:
     return (*this);
   }
 
-  //! Writes on file input MultiVector, one process at-a-time.
-  MATLABStream& operator << (const MultiVector& v)
+  //! Writes on file the input MultiVector, one process at-a-time.
+  MATLABStream& operator << (const MultiVector& obj)
   {
-    int NumMyRows = v.GetVectorSpace().GetNumMyElements();
-    int NumGlobalRows = v.GetVectorSpace().GetNumGlobalElements();
+    int NumMyRows = obj.GetVectorSpace().GetNumMyElements();
+    int NumGlobalRows = obj.GetVectorSpace().GetNumGlobalElements();
+    int NumVectors = obj.GetNumVectors();
 
     if (GetMyPID() == 0) {
-      fp_ = fopen(FileName_.c_str(),"a");
-      fprintf(fp_,"%s = zeros(%d);\n",
-              v.GetLabel().c_str(), NumGlobalRows);
-      fclose(fp_);
+      Open();
+      fprintf(fp_,"%s = zeros(%d, %d);\n",
+              obj.GetLabel().c_str(), NumGlobalRows, NumVectors);
+      Close();
     }
 
     for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
       if (GetMyPID() == iproc) {
 
-        fp_ = fopen(FileName_.c_str(),"a");
+        Open();
 
-        for (int i = 0 ; i < NumMyRows ; ++i)
-          fprintf(fp_,"%s(%d) = %e;\n",
-                  v.GetLabel().c_str(), v.GetVectorSpace()(i) + 1, v(i));
-        fclose(fp_);
+        for (int i = 0 ; i < NumMyRows ; ++i) {
+          for (int j = 0 ; j < NumVectors ; ++j) {
+            fprintf(fp_,"%s(%d, %d) = %e;\n",
+                    obj.GetLabel().c_str(), obj.GetVectorSpace()(i) + 1, j + 1, obj(i,j));
+          }
+        }
+        Close();
       }
-#ifdef HAVE_MPI
-      MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      Barrier();
     }
 
     return (*this);
   }
 
   //! Writes on file input Space, one process at-a-time.
-  MATLABStream& operator << (const Space& S)
+  MATLABStream& operator << (const Space& obj)
   {
-    int NumMyRows = S.GetNumMyElements();
-    int NumGlobalRows = S.GetNumGlobalElements();
+    int NumMyRows = obj.GetNumMyElements();
+    int NumGlobalRows = obj.GetNumGlobalElements();
 
     if (GetMyPID() == 0) {
-      fp_ = fopen(FileName_.c_str(),"a");
+      Open();
       fprintf(fp_,"%s = zeros(%d);\n",
-              S.GetLabel().c_str(), NumGlobalRows);
-      fclose(fp_);
+              obj.GetLabel().c_str(), NumGlobalRows);
+      Close();
     }
 
     for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
       if (GetMyPID() == iproc) {
 
-        fp_ = fopen(FileName_.c_str(),"a");
+        Open();
 
         for (int i = 0 ; i < NumMyRows ; ++i)
           fprintf(fp_,"%s(%d) = %d;\n",
-                  S.GetLabel().c_str(), i, S(i) + 1);
-        fclose(fp_);
+                  obj.GetLabel().c_str(), i, obj(i) + 1);
+        Close();
       }
-#ifdef HAVE_MPI
-      MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      Barrier();
     }
 
     return (*this);
   }
 
+  // @}
+  // @{ \name Sets and gets methods
+
+  //! Returns \c true if the stream uses sparse MATLAB format.
+  bool GetUseSparse() const
+  {
+    return(UseSparse_);
+  }
+
+  //! Toggles the use of sparse MATLAB formats.
+  void SetUseSparse(const bool UseSparse)
+  {
+    UseSparse_ = UseSparse;
+  }
+    
+  //! Returns the name of the output file.
+  inline string GetFileName() const
+  {
+    return(FileName_);
+  }
+
+  //@}
+  
 private:
 
-  // @}
-  // @{ Internal data
+  //! Opens the file stream in append mode, or in write more if \c FirstTime == \c true.
+  void Open(const bool FirstTime = false)
+  {
+    if (FirstTime)
+      fp_ = fopen(FileName_.c_str(),"w");
+    else
+      fp_ = fopen(FileName_.c_str(),"a");
+  }
   
+  //! Closes the file stream.
+  void Close() 
+  {
+    fclose(fp_);
+  }
+
   //! Name of output file.
   string FileName_;
+  //! If \c true, prints out using sparse MATLAB commands.
+  bool UseSparse_;
   //! FILE pointer.
   FILE* fp_;
 
-  // @}
-  
 }; // class MATLABStream
 
 } // namespace MLAPI
+
+#endif // HAVE_ML_MLAPI
 
 #endif

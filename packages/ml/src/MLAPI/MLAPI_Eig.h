@@ -1,6 +1,9 @@
 #ifndef MLAPI_EIG_H
 #define MLAPI_EIG_H
 
+#include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
+
 #include "ml_include.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiVector.h"
@@ -58,7 +61,6 @@ double MaxEigPowerMethod(const Operator& Op, const bool DiagonalScaling = false)
 }
 
 //! Computes the maximum eigenvalue of \c Op using Anasazi
-// FIXME: add EigDataBase
 double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling = false) 
 {
 
@@ -105,7 +107,7 @@ void Eig(const Operator& Op, MultiVector& ER,
 #include "ml_anasazi.h"
 #include "float.h"
 #include <fstream>
-// FIXME: Add EigDataBase
+// FIXME: Add List
 void Eigs(const Operator& A, int NumEigenvalues, 
           MultiVector& ER, MultiVector& EI)
 {
@@ -167,5 +169,7 @@ void Eigs(const Operator& A, int NumEigenvalues,
 }
 
 } // namespace MLAPI
+
+#endif // HAVE_ML_MLAPI
 
 #endif // MLAPI_EIG_H

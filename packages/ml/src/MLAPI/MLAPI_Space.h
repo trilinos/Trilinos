@@ -1,5 +1,6 @@
 #ifndef ML_SPACE_H
 #define ML_SPACE_H
+
 #include "ml_include.h"
 #include "ml_comm.h"
 #include "MLAPI_Workspace.h"
@@ -13,7 +14,7 @@ namespace MLAPI {
 /*!
 \class Space
 
-\brief Specifies the number of elements in a space and its layout among processors.
+\brief Specifies the number and distribution among processes of elements.
 
 \author Marzio Sala, SNL 9214
 
@@ -23,8 +24,9 @@ namespace MLAPI {
 class Space : public BaseObject {
 
 public:
-  //@{ Constructors and Destructors
-  //
+
+  //@{ \name Constructors and Destructors
+  
   //! Default constructor, defines an empty space.
   Space()
   {
@@ -80,7 +82,74 @@ public:
   ~Space() {};
 
   //@}
-  //@{ Overloaded operators
+  //@{ \name Reshape methods
+
+  //! Reset the dimension of the space by specifying the local number of elements.
+  void Reshape(const int NumGlobalElements, const int NumMyElements = -1)
+  {
+
+    if (NumGlobalElements <= 0 && NumMyElements < 0)
+      ML_THROW("NumGlobalElements = " + GetString(NumGlobalElements) +
+               " and NumMyElements = " + GetString(NumMyElements), -1);
+
+    if (NumMyElements == -1) {
+      NumMyElements_ = NumGlobalElements / GetNumProcs();
+      if (GetMyPID() == 0)
+        NumMyElements_ += NumGlobalElements % GetNumProcs();
+    }
+    else
+      NumMyElements_ = NumMyElements;
+
+    NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
+
+    if (NumGlobalElements != -1) {
+      if (NumGlobalElements != NumGlobalElements_) 
+        ML_THROW("Specified # of global elements the sum of local elements (" +
+                 GetString(NumGlobalElements) + " vs. " +
+                 GetString(NumGlobalElements_), -1);
+    }
+
+    Offset_   = ML_gpartialsum_int(NumMyElements_,GetML_Comm());
+    IsLinear_ = true;
+    
+  }
+
+  //! Reset the dimension of the space by specifying the local number of elements and their global numbering (starting from 0).
+  void Reshape(const int NumGlobalElements, const int NumMyElements, 
+               const int* MyGlobalElements)
+  {
+    if (NumGlobalElements <= 0 && NumMyElements < 0)
+      ML_THROW("NumGlobalElements = " + GetString(NumGlobalElements) +
+               " and NumMyElements = " + GetString(NumMyElements), -1);
+
+    if (NumMyElements == -1) {
+      NumMyElements_ = NumGlobalElements / GetNumProcs();
+      if (GetMyPID() == 0)
+        NumMyElements_ += NumGlobalElements % GetNumProcs();
+    }
+    else
+      NumMyElements_ = NumMyElements;
+
+    NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
+
+    if (NumGlobalElements != -1) {
+      if (NumGlobalElements != NumGlobalElements_)
+        ML_THROW("Specified # of global elements the sum of local elements (" +
+                 GetString(NumGlobalElements) + " vs. " +
+                 GetString(NumGlobalElements_), -1);
+    }
+
+    RCPMyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
+    RCPMyGlobalElements_->Resize(NumMyElements_);
+    for (int i = 0 ; i < NumMyElements_ ; ++i)
+      (*RCPMyGlobalElements_)[i] = MyGlobalElements[i];
+
+    Offset_   = -1; // not set
+    IsLinear_ = false;
+  }
+
+  //@}
+  //@{ \name Overloaded operators
 
   //! Operator =.
   Space& operator=(const Space& RHS)
@@ -135,74 +204,7 @@ public:
   }
 
   // @}
-  // @{ Reshape methods
-
-  //! Reset the dimension of the space by specifying the local number of elements.
-  void Reshape(const int NumGlobalElements, const int NumMyElements = -1)
-  {
-
-    if (NumGlobalElements <= 0 && NumMyElements < 0)
-      ML_THROW("NumGlobalElements = " + toString(NumGlobalElements) +
-               " and NumMyElements = " + toString(NumMyElements), -1);
-
-    if (NumMyElements == -1) {
-      NumMyElements_ = NumGlobalElements / GetNumProcs();
-      if (GetMyPID() == 0)
-        NumMyElements_ += NumGlobalElements % GetNumProcs();
-    }
-    else
-      NumMyElements_ = NumMyElements;
-
-    NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
-
-    if (NumGlobalElements != -1) {
-      if (NumGlobalElements != NumGlobalElements_) 
-        ML_THROW("Specified # of global elements the sum of local elements (" +
-                 toString(NumGlobalElements) + " vs. " +
-                 toString(NumGlobalElements_), -1);
-    }
-
-    Offset_   = ML_gpartialsum_int(NumMyElements_,GetML_Comm());
-    IsLinear_ = true;
-    
-  }
-
-  //! Reset the dimension of the space by specifying the local number of elements and their global numbering (starting from 0).
-  void Reshape(const int NumGlobalElements, const int NumMyElements, 
-               const int* MyGlobalElements)
-  {
-    if (NumGlobalElements <= 0 && NumMyElements < 0)
-      ML_THROW("NumGlobalElements = " + toString(NumGlobalElements) +
-               " and NumMyElements = " + toString(NumMyElements), -1);
-
-    if (NumMyElements == -1) {
-      NumMyElements_ = NumGlobalElements / GetNumProcs();
-      if (GetMyPID() == 0)
-        NumMyElements_ += NumGlobalElements % GetNumProcs();
-    }
-    else
-      NumMyElements_ = NumMyElements;
-
-    NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
-
-    if (NumGlobalElements != -1) {
-      if (NumGlobalElements != NumGlobalElements_)
-        ML_THROW("Specified # of global elements the sum of local elements (" +
-                 toString(NumGlobalElements) + " vs. " +
-                 toString(NumGlobalElements_), -1);
-    }
-
-    RCPMyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
-    RCPMyGlobalElements_->Resize(NumMyElements_);
-    for (int i = 0 ; i < NumMyElements_ ; ++i)
-      (*RCPMyGlobalElements_)[i] = MyGlobalElements[i];
-
-    Offset_   = -1; // not set
-    IsLinear_ = false;
-  }
-
-  // @}
-  // @{ Query methods
+  // @{ \name Get and Set methods
 
   //! Returns the local number of elements on the calling process.
   int GetNumMyElements() const
@@ -234,6 +236,9 @@ public:
   {
     return(RCPMyGlobalElements_);
   }
+
+  // @}
+  // @{ \name Miscellanous methods
 
   //! Prints on ostream basic information about \c this object.
   std::ostream& Print(std::ostream& os,
@@ -278,10 +283,9 @@ public:
     return(os);
   }
 
-private:
-
   // @}
-  // @{ Private data
+  
+private:
 
   //! Number of elements assigned to the calling processor.
   int NumMyElements_;
@@ -294,7 +298,6 @@ private:
   //! Container of global numbering of local elements.
   Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> RCPMyGlobalElements_;
 
-  // @}
 };
 
 } // namespace MLAPI

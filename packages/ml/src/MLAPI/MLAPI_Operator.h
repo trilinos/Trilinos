@@ -1,38 +1,23 @@
 #ifndef ML_OPERATOR_H
 #define ML_OPERATOR_H
+
 #include "ml_include.h"
 #include <iostream>
 #include "ml_operator.h"
-#include "ml_epetra.h"
-#include "ml_amesos.h"
 #include "ml_epetra_utils.h"
-#include "ml_amesos_wrap.h"
 #include "ml_RowMatrix.h"
-#ifdef HAVE_ML_ANASAZI
-#include "ml_anasazi.h"
-#endif
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
+#include "MLAPI_BaseOperator.h"
+#include "MLAPI_CompObject.h"
+#include "MLAPI_TimeObject.h"
 #include "MLAPI_Workspace.h"
 #include "MLAPI_Operator_Box.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h"
 
 using namespace std;
 
-namespace Teuchos {
-  class ParameterList;
-}
-
 namespace MLAPI {
-
-#ifdef HAVE_ML_EPETRAz
-const int MatrixType = ML_EpetraCRS_MATRIX;
-#else
-const int MatrixType = ML_CSR_MATRIX;
-#endif
 
 /*!
  * \class Operator
@@ -41,13 +26,13 @@ const int MatrixType = ML_CSR_MATRIX;
  *
  * \author Marzio Sala, SNL 9214
  *
- * \date Last updated on 07-Jan-05
+ * \date Last updated on Feb-05.
  */
 
-class Operator : public BaseObject {
+class Operator : public BaseOperator, public CompObject, public TimeObject {
 
 public:
-  //@{ Constructors and destructors.
+  //@{ \name Constructors and destructors.
 
   //! Default constructor.
   Operator() 
@@ -57,27 +42,30 @@ public:
 
   //! Constructor with given already computed ML_Operator pointer.
   Operator(const Space& DomainSpace, const Space& RangeSpace,
-           ML_Operator* Op, bool Ownership = true)
+           ML_Operator* Op, bool Ownership = true,
+           Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
-    Reshape(DomainSpace, RangeSpace, Op, Ownership);
+    Reshape(DomainSpace, RangeSpace, Op, Ownership, AuxOp);
   }
 
   //! Constructor with given already FillComplete()'d object.
   Operator(const Space& DomainSpace, const Space& RangeSpace,
-           Epetra_RowMatrix* Matrix, bool Ownership = true)
+           Epetra_RowMatrix* Matrix, bool Ownership = true,
+           Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
-    Reshape(DomainSpace, RangeSpace, Matrix, Ownership);
+    Reshape(DomainSpace, RangeSpace, Matrix, Ownership, AuxOp);
   }
 
   //! Copy constructor.
   Operator(const Operator& RHS) 
   {
-    DomainSpace_    = RHS.GetDomainSpace();
-    RangeSpace_     = RHS.GetRangeSpace();
-    ColumnSpace_    = RHS.GetColumnSpace();
-    RCPOperatorBox_ = RHS.GetRCPOperatorBox();
-    RCPRowMatrix_   = RHS.GetRCPRowMatrix();
-    
+    DomainSpace_       = RHS.GetDomainSpace();
+    RangeSpace_        = RHS.GetRangeSpace();
+    ColumnSpace_       = RHS.GetColumnSpace();
+    RCPOperatorBox_    = RHS.GetRCPOperatorBox();
+    RCPAuxOperatorBox_ = RHS.GetRCPAuxOperatorBox();
+    RCPRowMatrix_      = RHS.GetRCPRowMatrix();
+
     SetLabel(RHS.GetLabel());
   }
 
@@ -87,30 +75,28 @@ public:
     Destroy();
   }
 
-  // @{
-  // @} Reshape methods
+  // @}
+  // @{ \name Reshape methods
 
   //! Reshape with given already computed ML_Operator pointer.
   void Reshape(const Space& DomainSpace, const Space& RangeSpace,
-               ML_Operator* Op, bool Ownership = true)
+               ML_Operator* Op, bool Ownership = true,
+               Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
-    RangeSpace_ = RangeSpace;
-    DomainSpace_ = DomainSpace;
+    RangeSpace_        = RangeSpace;
+    DomainSpace_       = DomainSpace;
 
-    RCPOperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
-    if (RangeSpace == DomainSpace) // FIXME !!!!!!!
-      RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())),Ownership);
-    // FIXME!
-    else
-      RCPRowMatrix_ = Teuchos::null;
-    //  ML_THROW("FIX BUG IN ml_RowMatrix (for rect matrices)", -1);
+    RCPOperatorBox_    = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
+    RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())),Ownership);
+    RCPAuxOperatorBox_ = AuxOp;
 
     BuildColumnSpace();
   }
 
   //! Reshape with given already FillComplete()'d object.
   void Reshape(const Space& DomainSpace, const Space& RangeSpace,
-               Epetra_RowMatrix* Matrix, bool Ownership = true)
+               Epetra_RowMatrix* Matrix, bool Ownership = true,
+               Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
     RangeSpace_ = RangeSpace;
     DomainSpace_ = DomainSpace;
@@ -118,6 +104,7 @@ public:
 
     ML_Operator* Op = ML_Operator_Create(MLAPI::GetML_Comm());
     RCPOperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,true));
+    RCPAuxOperatorBox_ = AuxOp;
 
     RCPRowMatrix_ = Teuchos::rcp(Matrix,Ownership);
     Epetra2MLMatrix(RCPRowMatrix_.get(), GetML_Operator());
@@ -127,16 +114,16 @@ public:
   }
 
   // @}
-  // @{ Overloaded operators
+  // @{ \name Overloaded operators
 
   //! Makes \c this object equivalent to \c RHS.
   Operator& operator=(const Operator& RHS) 
   {
     Destroy();
 
-    DomainSpace_ = RHS.GetDomainSpace();
-    RangeSpace_  = RHS.GetRangeSpace();
-    ColumnSpace_ = RHS.GetColumnSpace();
+    DomainSpace_    = RHS.GetDomainSpace();
+    RangeSpace_     = RHS.GetRangeSpace();
+    ColumnSpace_    = RHS.GetColumnSpace();
     RCPOperatorBox_ = RHS.GetRCPOperatorBox();
     RCPRowMatrix_   = RHS.GetRCPRowMatrix();
     
@@ -152,54 +139,62 @@ public:
   }
 
   // @}
-  // @{ Query methods
+  // @{ \name Get and Set methods
   
   //! Returns a reference to the internally stored domain space.
-  inline const Space& GetDomainSpace() const {
+  const Space GetOperatorDomainSpace() const {
     return(DomainSpace_);
   }
 
   //! Returns a reference to the internally stored range space.
-  inline const Space& GetRangeSpace() const {
+  const Space GetOperatorRangeSpace() const {
+    return(RangeSpace_);
+  }
+
+  //! Returns a reference to the internally stored domain space.
+  inline const Space GetDomainSpace() const {
+    return(DomainSpace_);
+  }
+
+  //! Returns a reference to the internally stored range space.
+  inline const Space GetRangeSpace() const {
     return(RangeSpace_);
   }
 
   //! Returns a reference to the internally stored column space.
-  inline const Space& GetColumnSpace() const 
+  inline const Space GetColumnSpace() const 
   {
     return(ColumnSpace_);
   }
 
-  // @}
-  // @{ Mathematical methods.
-  
-  //! Applies \c this operator to LHS, returns the result in \c RHS.
-  int Apply(const MultiVector& LHS, MultiVector& RHS) const
+  inline int GetNumGlobalRows() const 
   {
-    assert (GetDomainSpace() == LHS.GetVectorSpace());
-    assert (GetRangeSpace() == RHS.GetVectorSpace());
-    assert (GetML_Operator() != 0);
-
-    int DomainSize = GetDomainSpace().GetNumMyElements();
-    int RangeSize  = GetRangeSpace().GetNumMyElements();
-    
-    int (*func)(ML_Operator*,int,double*,int,double*) = GetML_Operator()->matvec->func_ptr;
-
-    (*func)(GetML_Operator(),DomainSize,(double*)&LHS(0),
-            RangeSize,(double*)&RHS(0));
-    return(0);
+    return(GetRangeSpace().GetNumGlobalElements());
   }
 
-  //! Returns the RefCountPtr of OperatorBox_.
-  inline const Teuchos::RefCountPtr<ML_Operator_Box>& GetRCPOperatorBox() const
+  inline int GetNumMyRows() const 
   {
-    return(RCPOperatorBox_);
+    return(GetRangeSpace().GetNumMyElements());
   }
 
-  //! Returns the RefCountPtr of RowMatrix_
-  inline const Teuchos::RefCountPtr<Epetra_RowMatrix> GetRCPRowMatrix() const
+  inline int GetNumGlobalCols() const 
   {
-    return(RCPRowMatrix_);
+    return(GetDomainSpace().GetNumGlobalElements());
+  }
+
+  inline int GetNumMyCols() const 
+  {
+    return(GetDomainSpace().GetNumMyElements());
+  }
+
+  inline int GetNumGlobalNonzeros() const 
+  {
+    return(GetRowMatrix()->NumGlobalNonzeros());
+  }
+
+  inline int GetNumMyNonzeros() const 
+  {
+    return(GetRowMatrix()->NumMyNonzeros());
   }
 
   //! Returns the RefCountPtr of OperatorBox_.
@@ -214,16 +209,83 @@ public:
     return(GetRCPOperatorBox()->GetData());
   }
 
+  //! Returns the RefCountPtr of OperatorBox_.
+  inline const Teuchos::RefCountPtr<ML_Operator_Box>& GetRCPOperatorBox() const
+  {
+    return(RCPOperatorBox_);
+  }
+
+  //! Returns the RefCountPtr of AuxOperatorBox_.
+  inline const Teuchos::RefCountPtr<ML_Operator_Box>& GetRCPAuxOperatorBox() const
+  {
+    return(RCPAuxOperatorBox_);
+  }
+  //! Returns the RefCountPtr of RowMatrix_
+  inline const Teuchos::RefCountPtr<Epetra_RowMatrix>& GetRCPRowMatrix() const
+  {
+    return(RCPRowMatrix_);
+  }
+
+  // @}
+  // @{ \name Mathematical methods.
+  
+  //! Applies \c this operator to LHS, returns the result in \c RHS.
+  int Apply(const MultiVector& X, MultiVector& Y) const
+  {
+    ResetTimer();
+
+    if (GetDomainSpace() != X.GetVectorSpace())
+      ML_THROW("Domain spaces differ", -1);
+    if (GetRangeSpace() != Y.GetVectorSpace())
+      ML_THROW("Range spaces differ", -1);
+    if (X.GetNumVectors() != Y.GetNumVectors())
+      ML_THROW("Number of vectors differ", -1);
+    if (GetML_Operator() == 0)
+      ML_THROW("Operator not set", -1);
+      
+    int (*func)(ML_Operator*,int,double*,int,double*) = 
+      GetML_Operator()->matvec->func_ptr;
+
+    for (int v = 0 ; v < X.GetNumVectors() ; ++v) {
+      double* x_ptr = (double*)&X(0) + v * X.GetMyLength();
+      double* y_ptr = (double*)&Y(0) + v * Y.GetMyLength();
+      (*func)(GetML_Operator(),X.GetMyLength(),x_ptr,
+              Y.GetMyLength(), y_ptr);
+    }
+
+    // FIXME-RST: is there a way to get the flop count from
+    // ML for this operator? The following is not always correct...
+
+    UpdateFlops(2.0 * GetNumGlobalNonzeros());
+    UpdateTime();
+
+    return(0);
+  }
+
+  // @}
+  // @{ \name Miscellaneous methods
+  
   //! Prints basic information about \c this object.
   ostream& Print(std::ostream& os, const bool verbose = true) const
   {
+    if (GetRCPOperatorBox().get() == 0) {
+      if (GetMyPID() == 0) {
+        os << endl;
+        os << "*** MLAPI::Operator ***" << endl;
+        os << "Label  = " << GetLabel() << endl;
+        os << "Status = empty" << endl;
+        os << endl;
+      }
+      return(os);
+    }
+
     int    *bindx;
     double *val;
     int    allocated, row_length;
     ML_Operator* matrix = GetML_Operator();
 
     if (matrix->getrow == NULL) 
-      throw("getrow not set");
+      ML_THROW("getrow not set", -1);
 
     if (GetMyPID() == 0) {
       os << endl;
@@ -231,6 +293,9 @@ public:
       os << "Label             = " << GetLabel() << endl;
       os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << endl;
       os << "Number of columns = " << GetDomainSpace().GetNumGlobalElements() << endl;
+      os << "Flop count        = " << GetFlops() << endl;
+      os << "Cumulative time   = " << GetTime() << endl;
+      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
       os << endl;
     }
 
@@ -261,7 +326,7 @@ public:
           ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                             &row_length, 0);
           for  (int j = 0; j < row_length; j++) {
-            int GlobalRow = GetDomainSpace()(i);
+            int GlobalRow = GetRangeSpace()(i);
             int GlobalCol = GetColumnSpace()(bindx[j]);
             os.width(10);
             os << iproc;
@@ -277,15 +342,17 @@ public:
       Barrier();
     }
 
+    if (GetMyPID() == 0)
+      os << endl;
+
     ML_free(val);
     ML_free(bindx);
     return (os);
   }
 
-private:
-  
   // @}
-  // @{ Internally used methods.
+  
+private:
   
   //! Build the column space, by computing the GID of all local columns.
   void BuildColumnSpace()
@@ -327,9 +394,6 @@ private:
   //! Destroys all internal data.
   void Destroy() { }
 
-  // @}
-  // @{ Internal data
-
   //! Domain space.
   Space DomainSpace_;
   //! Range space.
@@ -338,13 +402,13 @@ private:
   Space ColumnSpace_;
   //! Container for the underlying ML_Operator pointer.
   Teuchos::RefCountPtr<ML_Operator_Box> RCPOperatorBox_;
+  //! Container for the underlying ML_Operator pointer.
+  Teuchos::RefCountPtr<ML_Operator_Box> RCPAuxOperatorBox_;
   //! Container for the underlying Epetra_RowMatrix pointer
   Teuchos::RefCountPtr<Epetra_RowMatrix> RCPRowMatrix_;
-
-  // @}
 
 }; // Operator
 
 } // namespace MLAPI
-#endif // ML_OPERATOR_H
 
+#endif // ML_OPERATOR_H

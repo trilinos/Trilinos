@@ -1,14 +1,6 @@
 #ifndef MLAPI_BASEOBJECT_H
 #define MLAPI_BASEOBJECT_H
 
-#define ML_THROW(str,val) { \
-  std::cerr << "ERROR: In function/method " << __func__ << "()" << endl; \
-  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << endl; \
-  std::cerr << "ERROR: " << str << endl; \
-  throw(val); \
-  }
-
-//! MLAPI: Default namespace for all ML API classes.
 namespace MLAPI {
 
 /*!
@@ -21,7 +13,7 @@ namespace MLAPI {
  *
  * \author Marzio Sala, SNL 9214
  *
- * \date Last updated on 07-Jan-05
+ * \date Last updated on Feb-05.
  */
 class BaseObject {
 
@@ -29,7 +21,8 @@ public:
   //! Constructor with empty label.
   BaseObject() 
   {
-    Label_ = "not-set";
+    Label_ = "obj_" + GetString(count);
+    ++count;
   }
 
   //! Constructor with given Label.
@@ -57,25 +50,16 @@ public:
   virtual std::ostream& Print(std::ostream& os, 
                               const bool Verbose = true) const = 0;
 
-  string toString(const int& x) const {
-    char s[100];
-    sprintf(s, "%d", x);
-    return string(s);
-  }
-
-  string toString(const double& x) const {
-    char s[100];
-    sprintf(s, "%g", x);
-    return string(s);
-  }
-
 private:
   //! Label of this object.
   string Label_;
 
+  static int count;
 };
 
-std::ostream& operator << (std::ostream& os, const BaseObject& obj)
+int BaseObject::count = 0;
+
+std::ostream& operator<< (std::ostream& os, const BaseObject& obj)
 {
   return(obj.Print(os));
 }

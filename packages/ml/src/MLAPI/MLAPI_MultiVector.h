@@ -1,15 +1,69 @@
 #ifndef ML_VECTOR_H
 #define ML_VECTOR_H
 
-#include "ml_include.h"
 #include "ml_lapack.h"
-#include "ml_comm.h"
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
+#include "MLAPI_CompObject.h"
+#include "MLAPI_TimeObject.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include <iomanip>
 
 namespace MLAPI {
+
+class DoubleVector {
+
+public:
+  DoubleVector(const int size)
+  {
+    ownership_ = true;
+    ptr_ = new double[size];
+  }
+
+  DoubleVector(double* ptr)
+  {
+    ownership_ = false;
+    ptr_ = ptr;
+  }
+
+  inline double& operator[](const int i)
+  {
+    return(ptr_[i]);
+  }
+
+  inline const double& operator[](const int i) const
+  {
+    return(ptr_[i]);
+  }
+
+  ~DoubleVector()
+  {
+    if (ownership_)
+      delete[] ptr_;
+  }
+
+  double* Values()
+  {
+    return(ptr_);
+  }
+
+  const double* Values() const
+  {
+    return(ptr_);
+  }
+
+private:
+  DoubleVector(const DoubleVector& rhs)
+  {}
+
+  DoubleVector& operator=(const DoubleVector& rhs)
+  {
+    return(*this);
+  }
+  
+  double* ptr_;
+  bool    ownership_;
+};
 
 /*!
 \class MultiVector
@@ -21,14 +75,17 @@ namespace MLAPI {
 \date Last updated on Feb-05.
 */
 
-class MultiVector : public BaseObject {
+class MultiVector : public BaseObject, public CompObject, public TimeObject {
 
 public:
 
-  //@{ Constructors and destructors
+  //@{ \name Constructors and destructors
 
   //! Default constructor.
-  MultiVector() { }
+  MultiVector() 
+  { 
+    NumVectors_ = 0;
+  }
 
   //! Constructor for a given Space.
   MultiVector(const Space& VectorSpace, const int NumVectors = 1,
@@ -37,18 +94,18 @@ public:
     NumVectors_  = NumVectors;
     VectorSpace_ = VectorSpace;
     if (GetMyTotalLength()) {
-      SetRCPValues(Teuchos::rcp(new double[GetMyTotalLength()]));
+      SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyTotalLength())));
       *this = 0.0;
     }
   }
 
   //! Constructor with a given Space, and user-provided array of values.
   MultiVector(const Space& VectorSpace, double* Values,
-               const int NumVectors = 1)
+              const int NumVectors = 1)
   {
     NumVectors_  = NumVectors;
     VectorSpace_ = VectorSpace;
-    SetRCPValues(Teuchos::rcp(Values, false));
+    SetRCPValues(Teuchos::rcp(new DoubleVector(Values)));
   }
 
   //! Copy constructor.
@@ -66,7 +123,21 @@ public:
   }
 
   // @}
-  // @{ Overloaded operators
+  // @{ \name Reshape methods
+  
+  //! Sets the space of this vector.
+  void Reshape(const Space& S, const int NumVectors = 1)
+  {
+    NumVectors_ = NumVectors;
+    VectorSpace_ = S;
+    if (GetMyTotalLength())
+      SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyTotalLength())));
+    else
+      SetRCPValues(Teuchos::null);
+  }
+
+  // @}
+  // @{ \name Overloaded operators
 
   //! Sets all elements of this vector to \c rhs.
   MultiVector& operator=(double rhs) 
@@ -102,8 +173,8 @@ public:
   {
 #ifdef MLAPI_CHECK
     if ((i < 0) || (i >= GetMyLength()))
-      ML_THROW("Requested component " + toString(i) +
-               ", while MyLength() = " + toString(GetMyLength()), -1);
+      ML_THROW("Requested component " + GetString(i) +
+               ", while MyLength() = " + GetString(GetMyLength()), -1);
 #endif
     return(GetValues()[i]);
   }
@@ -113,8 +184,8 @@ public:
   {
 #ifdef MLAPI_CHECK
     if ((i < 0) || (i >= GetMyLength()))
-      ML_THROW("Requested component " + toString(i) +
-               ", while MyLength() = " + toString(GetMyLength()), -1);
+      ML_THROW("Requested component " + GetString(i) +
+               ", while MyLength() = " + GetString(GetMyLength()), -1);
 #endif
     return(GetValues()[i]);
   }
@@ -124,11 +195,11 @@ public:
   {
 #ifdef MLAPI_CHECK
     if (i < 0) || (i >= GetMyLength())
-      ML_THROW("Requested component " + toString(i) +
-               ", while MyLength() = " + toString(GetMyLength()), -1);
+      ML_THROW("Requested component " + GetString(i) +
+               ", while MyLength() = " + GetString(GetMyLength()), -1);
     if (v < 0) || (v >= GetNumVectors())
-      ML_THROW("Requested vector " + toString(v) +
-               ", while NumVectors() = " + toString(GetNumVectors()), -1);
+      ML_THROW("Requested vector " + GetString(v) +
+               ", while NumVectors() = " + GetString(GetNumVectors()), -1);
 #endif
     return(GetValues()[i + v * GetMyLength()]);
   }
@@ -138,156 +209,17 @@ public:
   {
 #ifdef MLAPI_CHECK
     if (i < 0) || (i >= GetMyLength())
-      ML_THROW("Requested component " + toString(i) +
-               ", while MyLength() = " + toString(GetMyLength()), -1);
+      ML_THROW("Requested component " + GetString(i) +
+               ", while MyLength() = " + GetString(GetMyLength()), -1);
     if (v < 0) || (v >= GetNumVectors())
-      ML_THROW("Requested vector " + toString(v) +
-               ", while NumVectors() = " + toString(GetNumVectors()), -1);
+      ML_THROW("Requested vector " + GetString(v) +
+               ", while NumVectors() = " + GetString(GetNumVectors()), -1);
 #endif
     return(GetValues()[i + v * GetMyLength()]);
   }
 
   // @}
-  // @{ Mathematical methods
-  
-  //! Sets the space of this vector.
-  void Reshape(const Space& S, const int NumVectors = 1)
-  {
-    NumVectors_ = NumVectors;
-    VectorSpace_ = S;
-    if (GetMyTotalLength())
-      SetRCPValues(Teuchos::rcp(new double[GetMyTotalLength()]));
-    else
-      SetRCPValues(Teuchos::null);
-  }
-
-  //! Sets this = rhs.
-  void Update(const MultiVector& rhs)
-  {
-    int n = GetMyTotalLength();
-    if (n == 0) return;
-
-    CheckSpaces(rhs);
-
-    int incr = 1;
-    // copy rhs into this
-    DCOPY_F77(&n, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
-  }
-  
-  //! Sets this = alpha * rhs.
-  void Update(double alpha, const MultiVector& rhs)
-  {
-    int n = GetMyTotalLength();
-    if (n == 0) return;
-
-    CheckSpaces(rhs);
-
-    int incr = 1;
-    // copy rhs into this
-    DCOPY_F77(&n, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
-    // scale this
-    DSCAL_F77(&n, &alpha, GetValues(), &incr);
-  }
-
-  //! Sets this = alpha * x + beta * y.
-  void Update(double alpha, const MultiVector& x,
-              double beta,  const MultiVector& y)
-  {
-    int n = GetMyTotalLength();
-    if (n == 0) return;
-
-    CheckSpaces(x);
-    CheckSpaces(y);
-
-    int incr = 1;
-    // copy rhs into this
-    DCOPY_F77(&n, (double*)x.GetValues(), &incr, GetValues(), &incr);
-    Update(beta,y,alpha);
-
-  }
-
-  //! Sets this = alpha * rhs + beta * this.
-  void Update(double alpha, const MultiVector& rhs, double beta)
-  {
-    int n = GetMyTotalLength();
-    if (n == 0) return;
-
-    CheckSpaces(rhs);
-
-    int incr = 1;
-    // scale this by beta
-    DSCAL_F77(&n, &beta, GetValues(), &incr);
-    // computes this = alpha * rhs + this
-    DAXPY_F77(&n, &alpha, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
-  }
-
-  //! Computes the dot product between \c this vector and \c rhs.
-  inline double DotProduct(const MultiVector& rhs) const 
-  {
-    assert (rhs.GetVectorSpace() == GetVectorSpace());
-
-    double MyResult = 0.0, Result = 0.0;
-    int n = GetMyTotalLength();
-    int incr = 1;
-    MyResult = DDOT_F77(&n, (double*)GetValues(), &incr, (double*)rhs.GetValues(), &incr);
-
-    Result = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
-    return(Result);
-  }
-
-  //! Computes the 2-norm of \c this vector.
-  inline double Norm2() const 
-  {
-    double MyResult = 0.0, Result = 0.0;
-    int n = GetMyTotalLength();
-    int incr = 1;
-    MyResult = DDOT_F77(&n, (double*)GetValues(), &incr, (double*)GetValues(), &incr);
-
-    Result = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
-    return(sqrt(Result));
-  }
-
-  //! Computes the infinite norm of \c this vector.
-  inline double NormInf() const 
-  {
-    double MyResult = 0.0, Result = 0.0;
-    int n = GetMyTotalLength();
-    int incr = 1;
-    int i = IDAMAX_F77(&n, (double*)GetValues(), &incr);
-    MyResult = GetValues()[i - 1];
-
-    Result = ML_Comm_GmaxDouble(GetML_Comm(),MyResult);
-    return(Result);
-  }
-
-  //! Populates the vector with random elements.
-  inline void Random() 
-  {
-    ML_random_vec(GetValues(),GetMyTotalLength(),MLAPI::GetML_Comm());
-    return;
-  }
-
-  //! Replaces each element of the vector with its reciprocal.
-  inline void Reciprocal() 
-  {
-    for (int i = 0 ; i < GetMyTotalLength() ; ++i) {
-      if (GetValues()[i] != 0.0)
-        GetValues()[i] = 1.0 / GetValues()[i];
-    }
-  }
-
-  //! Scales each element by the specified factor.
-  inline void Scale(const double Factor) 
-  {
-    int n = GetMyTotalLength();
-    if (n == 0) return;
-
-    int incr = 1;
-    DSCAL_F77(&n, (double*)&Factor, GetValues(), &incr);
-  }
-
-  // @}
-  // @{ Query methods
+  // @{ \name Set and Get methods
   
   //! Returns the Space on which \c this vector is defined.
   inline const Space& GetVectorSpace() const 
@@ -328,14 +260,210 @@ public:
   //! Returns a pointer to the double array (non-const version)
   inline double* GetValues()
   {
-    return(RCPValues_.get());
+    return(RCPValues_.get()->Values());
   }
 
   //! Returns a pointer to the double array (const version)
   inline const double* GetValues() const
   {
-    return(RCPValues_.get());
+    return(RCPValues_.get()->Values());
   }
+  
+  //! Returns a pointer to the double array (non-const version)
+  inline Teuchos::RefCountPtr<DoubleVector>& GetRCPValues() 
+  {
+    return(RCPValues_);
+  }
+
+  //! Returns a pointer to the double array (const version)
+  inline const Teuchos::RefCountPtr<DoubleVector>& GetRCPValues() const
+  {
+    return(RCPValues_);
+  }
+
+  //! Sets the RefCountPtr<Values_>
+  inline void SetRCPValues(const Teuchos::RefCountPtr<DoubleVector>& RCPValues)
+  {
+    RCPValues_ = RCPValues;
+  }
+
+  // @}
+  // @{ \name Mathematical methods
+  
+  //! Sets this = rhs.
+  void Update(const MultiVector& rhs)
+  {
+    int n = GetMyTotalLength();
+    if (n == 0) return;
+
+    CheckSpaces(rhs);
+
+    int incr = 1;
+    // copy rhs into this
+    DCOPY_F77(&n, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
+
+  }
+  
+  //! Sets this = alpha * rhs.
+  void Update(double alpha, const MultiVector& rhs)
+  {
+    ResetTimer();
+
+    int n = GetMyTotalLength();
+    if (n == 0) return;
+
+    CheckSpaces(rhs);
+
+    int incr = 1;
+    // copy rhs into this
+    DCOPY_F77(&n, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
+    // scale this
+    DSCAL_F77(&n, &alpha, GetValues(), &incr);
+
+    UpdateFlops(1.0 * GetGlobalTotalLength());
+    UpdateTime();
+
+  }
+
+  //! Sets this = alpha * x + beta * y.
+  void Update(double alpha, const MultiVector& x,
+              double beta,  const MultiVector& y)
+  {
+    ResetTimer();
+
+    int n = GetMyTotalLength();
+    if (n == 0) return;
+
+    CheckSpaces(x);
+    CheckSpaces(y);
+
+    int incr = 1;
+    // copy rhs into this
+    DCOPY_F77(&n, (double*)x.GetValues(), &incr, GetValues(), &incr);
+
+    Update(beta,y,alpha);
+    UpdateTime();
+
+  }
+
+  //! Sets this = alpha * rhs + beta * this.
+  void Update(double alpha, const MultiVector& rhs, double beta)
+  {
+    ResetTimer();
+
+    int n = GetMyTotalLength();
+    if (n == 0) return;
+
+    CheckSpaces(rhs);
+
+    int incr = 1;
+    // scale this by beta
+    DSCAL_F77(&n, &beta, GetValues(), &incr);
+    // computes this = alpha * rhs + this
+    DAXPY_F77(&n, &alpha, (double*)rhs.GetValues(), &incr, GetValues(), &incr);
+
+    UpdateFlops(1.0 * GetGlobalTotalLength());     // DSCAL
+    UpdateFlops(2.0 * GetGlobalTotalLength()); // DAXPY
+    UpdateTime();
+  }
+
+  //! Computes the dot product between \c this vector and \c rhs.
+  inline double DotProduct(const MultiVector& rhs, const int vector = 0) const 
+  {
+    assert (rhs.GetVectorSpace() == GetVectorSpace());
+    assert (rhs.GetNumVectors() == GetNumVectors());
+
+    ResetTimer();
+
+    double MyResult = 0.0;
+    double Result   = 0.0;
+    int n           = GetMyLength();
+    int incr        = 1;
+    double* ptr     = (double*)GetValues() + vector * n;
+    double* rhs_ptr = (double*)rhs.GetValues() + vector * n;
+    MyResult        = DDOT_F77(&n, ptr, &incr, rhs_ptr, &incr);
+    Result          = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
+
+    UpdateFlops(2.0 * GetGlobalTotalLength()); // DDOT
+    UpdateTime();
+
+    return(Result);
+  }
+
+  //! Computes the 2-norm of \c this vector.
+  inline double Norm2(const int vector = 0) const 
+  {
+    ResetTimer();
+
+    double MyResult = 0.0;
+    double Result   = 0.0;
+    int n           = GetMyLength();
+    int incr        = 1;
+    double* ptr     = (double*)GetValues() + vector * n;
+    MyResult        = DDOT_F77(&n, ptr, &incr, ptr, &incr);
+    Result          = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
+    
+    UpdateFlops(2.0 * GetGlobalTotalLength()); // DDOT
+    ResetTimer();
+
+
+    return(sqrt(Result));
+  }
+
+  //! Computes the infinite norm of \c this vector.
+  inline double NormInf(const int vector = 0) const 
+  {
+    double MyResult = 0.0;
+    double Result   = 0.0;
+    int n           = GetMyLength();
+    int incr        = 1;
+    double* ptr     = (double*)GetValues() + vector * n;
+    int i           = IDAMAX_F77(&n, ptr, &incr);
+    MyResult        = ptr[i - 1];
+    Result          = ML_Comm_GmaxDouble(GetML_Comm(),MyResult);
+
+    return(Result);
+  }
+
+  //! Replaces each element of the vector with its reciprocal.
+  inline void Reciprocal() 
+  {
+    ResetTimer();
+
+    for (int i = 0 ; i < GetMyTotalLength() ; ++i) {
+      if (GetValues()[i] != 0.0)
+        GetValues()[i] = 1.0 / GetValues()[i];
+    }
+
+    UpdateFlops(1.0 * GetGlobalTotalLength());
+    UpdateTime();
+  }
+
+  //! Scales each element by the specified factor.
+  inline void Scale(const double Factor) 
+  {
+    ResetTimer();
+
+    int n = GetMyTotalLength();
+    if (n == 0) return;
+
+    int incr = 1;
+    DSCAL_F77(&n, (double*)&Factor, GetValues(), &incr);
+
+    UpdateFlops(1.0 * GetGlobalTotalLength()); 
+    UpdateTime();
+  }
+
+  // @}
+  // @{ \name Miscellanous methods
+
+  //! Populates the vector with random elements.
+  inline void Random() 
+  {
+    ML_random_vec(GetValues(),GetMyTotalLength(),MLAPI::GetML_Comm());
+    return;
+  }
+
 
   //! Prints basic information about \c this object on ostream
   virtual std::ostream& Print(std::ostream& os,
@@ -348,6 +476,9 @@ public:
       os << "Local length      = " << GetMyLength() << endl;
       os << "Global length     = " << GetGlobalLength() << endl;
       os << "Number of vectors = " << GetNumVectors() << endl;
+      os << "Flop count        = " << GetFlops() << endl;
+      os << "Cumulative time   = " << GetTime() << endl;
+      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
       os << endl << endl;
     }
 
@@ -392,12 +523,10 @@ public:
 
     return(os);
   }
+  // @}
 
 private:
 
-  // @}
-  // @{ Internally used methods
-  
   //! Initialize \c this object.
   inline void Initialize()
   {
@@ -416,41 +545,18 @@ private:
 
     if (rhs.GetNumVectors() != GetNumVectors())
       ML_THROW("rhs and this have different number of vectors" +
-               toString(rhs.GetNumVectors()) + " vs. " +
-               toString(GetNumVectors()) + ")", -1);
+               GetString(rhs.GetNumVectors()) + " vs. " +
+               GetString(GetNumVectors()) + ")", -1);
 
   }
 
-  //! Returns a pointer to the double array (non-const version)
-  inline Teuchos::RefCountPtr<double> GetRCPValues() 
-  {
-    return(RCPValues_);
-  }
-
-  //! Returns a pointer to the double array (const version)
-  inline const Teuchos::RefCountPtr<double> GetRCPValues() const
-  {
-    return(RCPValues_);
-  }
-
-  //! Sets the RefCountPtr<Values_>
-  inline void SetRCPValues(const Teuchos::RefCountPtr<double> RCPValues)
-  {
-    RCPValues_ = RCPValues;
-  }
-
-  // @}
-  // @{ Internal data
-  
   //! Pointer to locally own values.
-  Teuchos::RefCountPtr<double> RCPValues_;
+  Teuchos::RefCountPtr<DoubleVector> RCPValues_;
   //! Data layout.
   Space VectorSpace_;
   //! Number of vectors.
   int NumVectors_;
 
-  // @}
-  
 }; // MultiVector
 
 } // namespace MLAPI

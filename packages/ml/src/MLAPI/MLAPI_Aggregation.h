@@ -1,5 +1,9 @@
 #ifndef MLAPI_AGGREGATION_H
 #define MLAPI_AGGREGATION_H
+
+#include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
+
 #include "ml_include.h"
 #include <iostream>
 #include "Teuchos_ParameterList.hpp"
@@ -7,7 +11,6 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_Workspace.h"
-#include "MLAPI_DataBase.h"
 
 /*!
 \file MLAPI_Aggregation.h
@@ -30,15 +33,30 @@ namespace MLAPI {
 #include "ml_aggregate.h"
 #include "ml_agg_METIS.h"
 
+// ====================================================================== 
 //! Builds the tentative prolongator using aggregation.
-void BuildPtent(const Operator& A, const AggregationDataBase& Data,
-                const NullSpace& ThisNS, 
-                Operator& Ptent, NullSpace& NextNS)
+// ====================================================================== 
+
+void GetPtent(const Operator& A, Teuchos::ParameterList& List,
+              const MultiVector& ThisNS, 
+              Operator& Ptent, MultiVector& NextNS)
 {
 
-  string CoarsenType  = Data.GetType();
-  int    NodesPerAggr = Data.GetNodesPerAggregate();
-  double Threshold    = Data.GetThreshold();
+  // FIXME-RST
+  // Ray, I would appreciate if you check and fix (or tell me how to fix)
+  // the following:
+  // - number of PDEs
+  // - dimension of the null space
+  // - settings of all the parameters to call ML_Aggregate_Coarsen()
+  // - set/get of null space, before and after the call to ML_Aggregate_Coarsen()
+  // - for output, how to set the current level?
+  // - something else has to be fixed? Memory leaks?
+  // Thanks
+  
+  string CoarsenType     = List.get("aggregation: type", "Uncoupled");
+  int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
+  double Threshold       = List.get("aggregation:", 0.0);
+  int    NumPDEEquations = List.get("PDE equations", 1);
 
   ML_Aggregate* agg_object;
   ML_Aggregate_Create(&agg_object);
@@ -50,17 +68,19 @@ void BuildPtent(const Operator& A, const AggregationDataBase& Data,
   ML_Operator* ML_Ptent = 0;
   ML_Ptent = ML_Operator_Create(GetML_Comm());
 
-  if (ThisNS.GetDimension() == 0)
+  if (ThisNS.GetNumVectors() == 0)
     ML_THROW("zero-dimension null space", -1);
              
-  int size = A.GetDomainSpace().GetNumMyElements() * ThisNS.GetDimension();
-  // HOW TO FREE THIS MEMORY??
+  int size = A.GetDomainSpace().GetNumMyElements() * ThisNS.GetNumVectors();
+
+  // FIXME-RST HOW TO FREE THIS MEMORY??
   ML_memory_alloc((void **)&(agg_object->nullspace_vect), 
                   sizeof(double) * size, "ns");
   for (int i = 0 ; i < size ; ++i)
     agg_object->nullspace_vect[i] = 1.0 ; //////ThisNS.Values()[i];
 
-  agg_object->nullspace_dim = ThisNS.GetDimension();
+  agg_object->nullspace_dim = ThisNS.GetNumVectors();
+  agg_object->num_PDE_eqns = NumPDEEquations;
 
   int NextSize;
   
@@ -89,31 +109,34 @@ void BuildPtent(const Operator& A, const AggregationDataBase& Data,
   Ptent.Reshape(CoarseSpace,A.GetRangeSpace(),ML_Ptent,true);
 
   // FIXME: this is broken
-  assert (NextSize * ThisNS.GetDimension() != 0);
+  assert (NextSize * ThisNS.GetNumVectors() != 0);
 
-  double* NextNullSpace = new double[NextSize * ThisNS.GetDimension()];
+  NextNS.Reshape(CoarseSpace, ThisNS.GetNumVectors());
 
-  for (int i = 0 ; i < NextSize * ThisNS.GetDimension() ; ++i)
-    NextNullSpace[i] = agg_object->nullspace_vect[i];
+  // FIXME: is it correct?
+  for (int i = 0 ; i < NextNS.GetMyTotalLength() ; ++i)
+    NextNS.GetValues()[i] = agg_object->nullspace_vect[i];
 
   ML_Aggregate_Destroy(&agg_object);
 
-  // FIXME: what is the new dimension of the null space??
-  NextNS.Reshape(CoarseSpace, ThisNS.GetDimension(), NextNullSpace,
-                 true);
 }
 
-//! Builds the tentative prolongator using aggregation and default null space
-void BuildPtent(const Operator& A, const AggregationDataBase& Data,
-                Operator& Ptent)
-{
-  NullSpace FineNS(A.GetDomainSpace(),1);
-  NullSpace CoarseNS;
+// ====================================================================== 
+//! Builds the tentative prolongator with default null space.
+// ====================================================================== 
 
-  BuildPtent(A, Data, FineNS, Ptent, CoarseNS);
+void GetPtent(const Operator& A, Teuchos::ParameterList& List, Operator& Ptent)
+{
+  MultiVector FineNS(A.GetDomainSpace(),1);
+  FineNS = 1.0;
+  MultiVector CoarseNS;
+
+  GetPtent(A, List, FineNS, Ptent, CoarseNS);
   
 }
 
 } // namespace MLAPI
+
+#endif // HAVE_ML_MLAPI
 
 #endif // MLAPI_AGGREGATION_H

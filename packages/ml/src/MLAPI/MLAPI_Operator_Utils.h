@@ -1,5 +1,9 @@
 #ifndef ML_OPERATOR_UTILS_H
 #define ML_OPERATOR_UTILS_H
+
+#include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
+
 #include "ml_include.h"
 #include <iostream>
 #include "ml_operator.h"
@@ -34,9 +38,12 @@ namespace Teuchos {
 
 namespace MLAPI {
 
+// ====================================================================== 
 //! Performs a triple matrix-matrix product, res = R * A *P.
-Operator RAP(const Operator& R, const Operator& A, 
-             const Operator& P)
+// ====================================================================== 
+
+Operator GetRAP(const Operator& R, const Operator& A, 
+                const Operator& P)
 {
   ML_Operator* Rmat = R.GetML_Operator();
   ML_Operator* Amat = A.GetML_Operator();
@@ -45,7 +52,7 @@ Operator RAP(const Operator& R, const Operator& A,
 
   result = ML_Operator_Create (Rmat->comm);
 
-  ML_rap(Rmat, Amat, Pmat, result, MatrixType);
+  ML_rap(Rmat, Amat, Pmat, result, GetMatrixType());
 
   Operator op(P.GetDomainSpace(),P.GetDomainSpace(), result);
   return(op);
@@ -54,86 +61,11 @@ Operator RAP(const Operator& R, const Operator& A,
 #include "ml_aggregate.h"
 #include "ml_agg_METIS.h"
 
-// DELETE THIS CRAP
-#if 0
-//! Builds the tentative prolongator using aggregation.
-Operator BuildP(const Operator& A, Teuchos::ParameterList& List)
-{
-  ML_Aggregate* agg_object;
-  ML_Aggregate_Create(&agg_object);
-  ML_Aggregate_Set_MaxLevels(agg_object,2);
-  ML_Aggregate_Set_StartLevel(agg_object,0);
-  ML_Aggregate_Set_Threshold(agg_object,0.0);
-  agg_object->curr_threshold = 0.0;
-  
-  ML_Operator* ML_Ptent = 0;
-  ML_Ptent = ML_Operator_Create(GetML_Comm());
-  string CoarsenType = List.get("aggregation: type","MIS");
-
-  // FIXME: as in MLP
-  int NullSpaceDim = List.get("nullspace dimension", 1);
-  double* NullSpace = List.get("nullspace", (double*)0);
-
-  int size = A.DomainSpace().NumMyElements();
-  if (NullSpace)
-  {
-    ML_memory_alloc((void **)&(agg_object->nullspace_vect), 
-                    sizeof(double) * size, "ns");
-    for (int i = 0 ; i < size * NullSpaceDim ; ++i)
-      agg_object->nullspace_vect[i] = NullSpace[i];
-  }
-  agg_object->nullspace_dim = NullSpaceDim;
-
-  int NewSize;
-  
-  if (CoarsenType == "Uncoupled") {
-    NewSize = ML_Aggregate_CoarsenUncoupled(agg_object, A.GetData(),
-                                            &ML_Ptent, GetML_Comm());
-  }
-  else if (CoarsenType == "MIS") {
-    NewSize = ML_Aggregate_CoarsenMIS(agg_object, A.GetData(),
-                                      &ML_Ptent, GetML_Comm());
-  }
-  else if (CoarsenType == "METIS") {
-    int NodesPerAggr = List.get("aggregation: nodes per aggregate",1);
-    ML ml_object;
-    ml_object.ML_num_levels = 1;
-    ML_Aggregate_Set_NodesPerAggr(&ml_object,agg_object,0,NodesPerAggr);
-    NewSize = ML_Aggregate_CoarsenMETIS(agg_object, A.GetData(),
-                                      &ML_Ptent, GetML_Comm());
-  }
-  else {
-    cerr << "ERROR: In BuildP()" << endl;
-    cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    cerr << "ERROR: Requested aggregation schem (" << CoarsenType
-         << ") not recognized." << endl;
-    throw(-1);
-  }
-
-  int NumMyElements = NewSize;
-  Space CoarseSpace(-1,NumMyElements);
-  Operator Ptent(CoarseSpace,A.RangeSpace(),ML_Ptent,true);
-
-  if (NullSpace == 0)
-  {
-    NullSpace = new double[NewSize];
-    List.set("nullspace",NullSpace);
-  }
-
-  // store next-level nullspace vector in list
-  List.set("nullspace dimension", NullSpaceDim);
-  for (int i = 0 ; i < NewSize ; ++i)
-    NullSpace[i] = agg_object->nullspace_vect[i];
-
-  ML_Aggregate_Destroy(&agg_object);
-
-  return(Ptent);
-
-}
-#endif
-
+// ====================================================================== 
 //! Returns a newly created transpose of \c A.
-Operator Transpose(const Operator& A) 
+// ====================================================================== 
+
+Operator GetTranspose(const Operator& A) 
 {
   ML_Operator* ML_transp;
   ML_transp = ML_Operator_Create(GetML_Comm());
@@ -143,8 +75,11 @@ Operator Transpose(const Operator& A)
   return(transp);
 }
 
+// ====================================================================== 
 //! Returns the identity matrix.
-Operator Identity(const Space& DomainSpace, const Space& RangeSpace)
+// ====================================================================== 
+
+Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
 {
   ML_Operator* ML_eye = ML_Operator_Create(GetML_Comm());
   int size = DomainSpace.GetNumMyElements();
@@ -155,57 +90,23 @@ Operator Identity(const Space& DomainSpace, const Space& RangeSpace)
   return(*eye);
 }
 
-int diag_matvec(ML_Operator *Amat_in, int ilen, double p[], 
-                int olen, double ap[])
-{
-  MultiVector* D = (MultiVector*)Amat_in->data;
-  
-  for (int i = 0; i < olen; i++) ap[i] = (*D)(i) * p[i];
-
-  return(1);
-}
-
-int diag_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
-                 int allocated_space, int columns[], double values[],
-                 int row_lengths[])
-{
-  MultiVector* D = (MultiVector*)data->data;
-
-  if (allocated_space < N_requested_rows) {
-    ML_avoid_unused_param(data);
-    return(0);
-  }
-
-  for (int i = 0; i < N_requested_rows; i++) {
-    row_lengths[i] = 1;
-    columns[i]     = requested_rows[i];
-    values[i]      = (*D)(i);
-  }
-  return(1);
-}
-
+// ====================================================================== 
 //! Returns a vector containing the diagonal elements of \c A.
-MultiVector Diagonal(const Operator& A)
+// ====================================================================== 
+
+MultiVector GetDiagonal(const Operator& A, const int offset = 0)
 {
   // FIXME
-  if (A.GetDomainSpace() != A.GetRangeSpace()) {
-    cerr << "ERROR: In Diagonal()" << endl;
-    cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    cerr << "ERROR: Currently only square matrices are supported." << endl;
-    throw(-1);
-  }
+  if (A.GetDomainSpace() != A.GetRangeSpace())
+    ML_THROW("Currently only square matrices are supported", -1);
 
   MultiVector D(A.GetDomainSpace());
   D = 0.0;
   
   ML_Operator* matrix = A.GetML_Operator();
 
-  if (matrix->getrow == NULL) {
-    cerr << "ERROR: In Diagonal()" << endl;
-    cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    cerr << "ERROR: getrow() not set!" << endl;
-    throw(-1);
-  }
+  if (matrix->getrow == NULL)
+    ML_THROW("getrow() not set!", -1);
 
   int row_length;
   int allocated = 128;
@@ -213,11 +114,15 @@ MultiVector Diagonal(const Operator& A)
   double* val   = (double *)  ML_allocate(allocated*sizeof(double));
 
   for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
+    int GlobalRow = A.GetRangeSpace()(i);
     ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                       &row_length, 0);
     for  (int j = 0; j < row_length; j++) {
-      if (bindx[j] == i)
+      D(i) = 0.0;
+      if (A.GetColumnSpace()(bindx[j]) == GlobalRow + offset) {
         D(i) = val[j];
+        break;
+      }
     }
   }
 
@@ -227,43 +132,237 @@ MultiVector Diagonal(const Operator& A)
 
 }
 
-//! Returns a newly created operator, containing D on the diagonal.
-Operator Diagonal(const MultiVector& D)
+// ====================================================================== 
+// DIAGONAL OPERATOR
+// - takes a MultiVector (w/ only one vector) in input
+// - allocates memory to store the diagonal as a double vector
+// - sets the pointers
+// - the destructor deletes the double vector
+// ====================================================================== 
+
+static int diag_matvec(ML_Operator *Amat_in, int ilen, double p[], 
+                int olen, double ap[])
 {
-  ML_Operator* MLDiag = ML_Operator_Create(GetML_Comm());
+  double* D = (double*)Amat_in->data;
+  
+  for (int i = 0; i < olen; i++) ap[i] = D[i] * p[i];
+
+  return(1);
+}
+
+static int diag_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
+                 int allocated_space, int columns[], double values[],
+                 int row_lengths[])
+{
+  double* D = (double*)data->data;
+
+  if (allocated_space < N_requested_rows) {
+    ML_avoid_unused_param(data);
+    return(0);
+  }
+
+  for (int i = 0; i < N_requested_rows; i++) {
+    row_lengths[i] = 1;
+    columns[i]     = requested_rows[i];
+    values[i]      = D[i];
+  }
+  return(1);
+}
+
+static void diag_destroy(void* data)
+{
+  double* D = (double*)data;
+  delete[] D;
+}
+
+// ====================================================================== 
+//! Returns a newly created operator, containing D on the diagonal.
+// ====================================================================== 
+
+Operator GetDiagonal(const MultiVector& D, const int offset = 0)
+{
+  if (D.GetNumVectors() != 1)
+    ML_THROW("D.GetNumVectors() != 1", -1);
+
   int size = D.GetMyLength();
-  // FIXME: this is a memory leak!
-  MultiVector* D2 = new MultiVector(D);
-  ML_Operator_Set_ApplyFuncData(MLDiag, size, size,
-            (void*)D2, size, diag_matvec, 0);
-  ML_Operator_Set_Getrow(MLDiag, size, diag_getrows);
+  if (size == 0)
+    ML_THROW("empty diagonal vector in input", -1);
+
+  double* diag = new double[size];
+  for (int i = 0 ; i < size ; ++i)
+    diag[i] = D(i);
+
+  // creates the ML operator and store the diag pointer,
+  // as well as the function pointers
+  ML_Operator* MLDiag = ML_Operator_Create(GetML_Comm());
+
+  MLDiag->invec_leng = size;
+  MLDiag->outvec_leng = size;
+  MLDiag->data = (void*)diag;
+  MLDiag->matvec->func_ptr = diag_matvec;
+
+  MLDiag->matvec->ML_id = ML_NONEMPTY;
+  MLDiag->matvec->Nrows = size;
+  MLDiag->from_an_ml_operator = 0;
+  MLDiag->data_destroy = diag_destroy;
+
+  MLDiag->getrow->func_ptr = diag_getrows;
+
+  MLDiag->getrow->ML_id = ML_NONEMPTY;
+  MLDiag->getrow->Nrows = size;
+
+  // creates the MLAPI wrapper
   Operator Diag(D.GetVectorSpace(),D.GetVectorSpace(),MLDiag,true);
   return(Diag);
 }
 
+// ====================================================================== 
+
+static void widget_destroy(void* data)
+{
+  struct ML_AGG_Matrix_Context* widget = (struct ML_AGG_Matrix_Context*)data;
+  delete widget;
+}
+
+// ====================================================================== 
 //! Returns an operator defined as (I - Damping A).
-Operator JacobiIterationOperator(const Operator& Amat, double Damping,
-                                 struct ML_AGG_Matrix_Context* widget)
+// ====================================================================== 
+
+Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
 {
 
+  struct ML_AGG_Matrix_Context* widget = new struct ML_AGG_Matrix_Context;
+  widget->near_bdry = 0;
+  widget->aggr_info = 0;
+  widget->drop_tol  = 0.0;
+
   widget->Amat = Amat.GetML_Operator();
-  widget->omega  = Damping;
-  ML_Operator* AGGsmoother = ML_Operator_Create(GetML_Comm());
-  ML_Operator_Set_ApplyFuncData(AGGsmoother, widget->Amat->invec_leng,
+  widget->omega = Damping;
+
+  ML_Operator* tmp_ML = ML_Operator_Create(GetML_Comm());
+  ML_Operator_Set_ApplyFuncData(tmp_ML, widget->Amat->invec_leng,
                                 widget->Amat->outvec_leng, widget,
                                 widget->Amat->matvec->Nrows, NULL, 0);
-  ML_Operator_Set_Getrow(AGGsmoother, 
-                         widget->Amat->getrow->Nrows, 
+
+  // FIXME-RST: is this the right way to do it??
+  tmp_ML->data_destroy = widget_destroy;
+
+  ML_Operator_Set_Getrow(tmp_ML, widget->Amat->getrow->Nrows, 
                          ML_AGG_JacobiSmoother_Getrows);
-  ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
+  // FIXME-RST:
+  // is this creating a brand new comm info, or just a clone?
+  // It would be nice to have a new comm info, so that the
+  // old operator could be destroyed if necessary...
+
+  ML_CommInfoOP_Clone(&(tmp_ML->getrow->pre_comm),
                       widget->Amat->getrow->pre_comm);
 
-  Operator tmp(Amat.GetDomainSpace(), Amat.GetRangeSpace(), AGGsmoother, false);
+  Operator tmp(Amat.GetDomainSpace(), Amat.GetRangeSpace(), tmp_ML, true,
+               Amat.GetRCPOperatorBox());
 
   return(tmp);
 }
 
-//! Creates C = scalarA * A + scalarB * B.
+// ====================================================================== 
+
+static int Ptent1D_matvec(ML_Operator *Amat_in, int ilen, double p[], 
+                int olen, double ap[])
+{
+  double* D = (double*)Amat_in->data;
+  
+  for (int i = 0; i < olen; i++) ap[i] = D[i] * p[i / 3];
+
+  return(1);
+}
+
+// ====================================================================== 
+
+static int Ptent1D_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
+                 int allocated_space, int columns[], double values[],
+                 int row_lengths[])
+{
+  double* D = (double*)data->data;
+
+  if (allocated_space < N_requested_rows) {
+    ML_avoid_unused_param(data);
+    return(0);
+  }
+
+  for (int i = 0; i < N_requested_rows; i++) {
+    row_lengths[i] = 1;
+    columns[i]     = requested_rows[i] / 3;
+    values[i]      = D[i];
+  }
+  return(1);
+}
+
+static void Ptent1D_destroy(void* data)
+{
+  double* D = (double*)data;
+  delete[] D;
+}
+
+// ====================================================================== 
+//! Returns a newly created operator, containing D on the diagonal.
+// ====================================================================== 
+
+Operator GetPtent1D(const MultiVector& D, const int offset = 0)
+{
+  if (D.GetNumVectors() != 1)
+    ML_THROW("D.GetNumVectors() != 1", -1);
+
+  int size = D.GetMyLength();
+  if (size == 0)
+    ML_THROW("empty diagonal vector in input", -1);
+
+  double* diag = new double[size];
+  for (int i = 0 ; i < size ; ++i)
+    diag[i] = D(i);
+
+  // creates the ML operator and store the diag pointer,
+  // as well as the function pointers
+  ML_Operator* MLDiag = ML_Operator_Create(GetML_Comm());
+
+  int invec_leng = size / 3 + size % 3;
+  int outvec_leng = size;
+
+  MLDiag->invec_leng = invec_leng;
+  MLDiag->outvec_leng = outvec_leng;
+  MLDiag->data = (void*)diag;
+  MLDiag->data_destroy = Ptent1D_destroy;
+  MLDiag->matvec->func_ptr = Ptent1D_matvec;
+
+  MLDiag->matvec->ML_id = ML_NONEMPTY;
+  MLDiag->matvec->Nrows = outvec_leng;
+  MLDiag->from_an_ml_operator = 0;
+
+  MLDiag->getrow->func_ptr = Ptent1D_getrows;
+
+  MLDiag->getrow->ML_id = ML_NONEMPTY;
+  MLDiag->getrow->Nrows = outvec_leng;
+
+  // creates the domain space
+  vector<int> MyGlobalElements(invec_leng);
+  for (int i = 0 ; i < invec_leng ; ++i) 
+    MyGlobalElements[i] = D.GetVectorSpace()(i * 3) / 3;
+  Space DomainSpace(invec_leng, -1, &MyGlobalElements[0]);
+  Space RangeSpace = D.GetVectorSpace();
+
+  // creates the MLAPI wrapper
+  Operator Diag(DomainSpace,RangeSpace,MLDiag,true);
+  return(Diag);
+}
+
+// Creates C = scalarA * A + scalarB * B.
+//
+// FIXME-RST
+// - This function is a duplicate of ML_Operator_Add. Should we have
+//   just one version? 
+// - does it work with ML_EpetraCRS_MATRIX? On my computer was computer
+//   was crashing (but some time ago)
+// - it there a memory leak in the allocation of columns and values?
+//   Isn't it allocated twice?
+//
 int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 		    int matrix_type, double scalarA, double scalarB)
 {
@@ -488,17 +587,31 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 
 }
 
+// ====================================================================== 
+//! Performs a cheap analysis of the properties of the input operator.
+// ====================================================================== 
+
 void AnalyzeCheap(const Operator& A) 
 {
   ML_Operator_Analyze(A.GetML_Operator(), const_cast<char*>(A.GetLabel().c_str()));
 }
 
-void PrintSparsity(const Operator& A, char* title,
-                   char* FileName, int NumPDEEquations)
+// ====================================================================== 
+//! Prints on file the sparsity structure of input operator.
+// ====================================================================== 
+
+void PrintSparsity(const Operator& A, int NumPDEEquations = 1)
 {
+  char* title = const_cast<char*>(A.GetLabel().c_str());
+  char filename[80];
+  sprintf(filename, "%s.ps", title);
+          
   ML_Operator_PrintSparsity(A.GetML_Operator(), title,
-                            FileName, ML_TRUE, NumPDEEquations = 1);
+                            filename, ML_TRUE, NumPDEEquations = 1);
 }
 
 } // namespace MLAPI
+
+#endif // HAVE_ML_MLAPI
+
 #endif // ML_OPERATOR_UTILS_H

@@ -1,6 +1,9 @@
 #ifndef MLAPI_DOUBLEVECTOR_UTILS_H
 #define MLAPI_DOUBLEVECTOR_UTILS_H
 
+#include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
+
 #include "MLAPI_MultiVector.h"
 
 namespace MLAPI {
@@ -28,7 +31,7 @@ MultiVector Extract(const MultiVector& y, const int v)
 {
   if ((v < 0) || v > y.GetNumVectors())
     ML_THROW("Wrong input parameter v (" +
-             y.toString(v) + ")", -1);
+             GetString(v) + ")", -1);
       
   MultiVector x(y.GetVectorSpace(), 1);
   for (int i = 0 ; i < x.GetMyLength() ; ++i)
@@ -38,5 +41,7 @@ MultiVector Extract(const MultiVector& y, const int v)
 }
 
 } // namespace MLAPI
+
+#endif // HAVE_ML_MLAPI
 
 #endif

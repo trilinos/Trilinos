@@ -1,9 +1,11 @@
 #ifndef ML_INVERSEOPERATOR_H
 #define ML_INVERSEOPERATOR_H
-#include "Epetra_Vector.h"
+
+#include "ml_common.h"
 #include "ml_include.h"
 #include "ml_RowMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_Vector.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_IC.h"
@@ -13,10 +15,11 @@
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
 #include "MLAPI_Space.h"
+#include "MLAPI_BaseOperator.h"
+#include "MLAPI_CompObject.h"
+#include "MLAPI_TimeObject.h"
 #include "MLAPI_MultiVector.h"
-#include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_Workspace.h"
-#include "MLAPI_DataBase.h"
 
 using namespace std;
 
@@ -30,24 +33,38 @@ namespace MLAPI {
  *
  * \author Marzio Sala, SNL 9214
  *
- * \date Last updated on 07-Jan-05
+ * \date Last updated on Feb-05.
  */
 
-class InverseOperator : public BaseObject {
+class InverseOperator : public BaseOperator, public CompObject, public TimeObject {
 
 public:
-  //@{ Constructors and destructors.
 
-  //! Basic constructor.
+  // @{ \name Constructors and destructors.
+
+  //! Empty constructor.
   InverseOperator()
   {}
   
+  //! Constructor for a given Operator and type, and default parameters.
+  InverseOperator(const Operator& Op, const string Type)
+  {
+    Reshape(Op, Type);
+  }
+
+  //! Constructor for a given Operator, type and parameters.
+  InverseOperator(const Operator& Op, const string Type,
+                  Teuchos::ParameterList& List)
+  {
+    Reshape(Op, Type, List);
+  }
+
   //! Copy constructor.
   InverseOperator(const InverseOperator& RHS)
   {
-    Op_ = RHS.GetOperator();
+    Op_           = RHS.GetOperator();
     RCPRowMatrix_ = RHS.RCPRowMatrix();
-    RCPData_ = RHS.GetRCPData();
+    RCPData_      = RHS.GetRCPData();
     SetLabel(RHS.GetLabel());
   }
 
@@ -56,7 +73,7 @@ public:
   {}
 
   // @}
-  // @{ Overloaded operators
+  // @{ \name Overloaded operators
 
   //! Operator =.
   InverseOperator& operator=(const InverseOperator& RHS)
@@ -64,9 +81,9 @@ public:
     if (this == &RHS)
       return(*this);
 
-    Op_ = RHS.GetOperator();
+    Op_           = RHS.GetOperator();
     RCPRowMatrix_ = RHS.RCPRowMatrix();
-    RCPData_ = RHS.GetRCPData();
+    RCPData_      = RHS.GetRCPData();
 
     SetLabel(RHS.GetLabel());
     return(*this);
@@ -75,32 +92,30 @@ public:
   // @}
   // @{ Reshaping methods
 
-  //! Reshapes the object by setting the Operator and the specified type.
-  /*! Reshapes the object by preparing \c this object to apply the inverse
-   * of the input operator \c Op, as specified by \c Type.
-   * 
-   * \param Op (In) - Operator of which \c this object defines the inverse
-   *
-   * \param Type (In) - String containing the method that will be used
-   *              to define the action of the inverse.
-   *
-   *                                      a double value.
-   */
-  void Reshape(const Operator& Op, const SmootherDataBase& DB)
+  //! Reshapes the object with default values.
+  void Reshape(const Operator& Op, const string Type)
   {
+    Teuchos::ParameterList List;
+    Reshape(Op, Type, List);
+  }
+
+  //! Reshapes the object by setting the Operator and the specified type.
+  void Reshape(const Operator& Op, const string Type,
+               Teuchos::ParameterList& List)
+  {
+    ResetTimer();
+
     Op_ = Op;
 
     RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
                                                        &GetEpetra_Comm()));
 
-    string Type = DB.GetType();
-
     // FIXME: to add overlap and level-of-fill
-    int NumSweeps   = DB.GetSweeps();
-    double Damping  = DB.GetDamping();
-    int LOF_ilu     = DB.GetILUFill();
-    double LOF_ict  = DB.GetICTFill();
-    double LOF_ilut = DB.GetILUTFill();
+    int NumSweeps   = List.get("smoother: sweeps", 1);
+    double Damping  = List.get("smoother: damping factor", 0.67); 
+    int LOF_ilu     = List.get("smoother: ilu fill", 0);
+    double LOF_ict  = List.get("smoother: ilut fill", 1.0);
+    double LOF_ilut = List.get("smoother: ict fill", 1.0);
 
     Teuchos::ParameterList IFPACKList;
     IFPACKList.set("relaxation: sweeps", NumSweeps);
@@ -110,14 +125,9 @@ public:
     IFPACKList.set("fact: ilut level-of-fill", LOF_ilut);
     IFPACKList.set("relaxation: zero starting solution", false);
     
-    bool verbose = (GetMyPID() == 0 && GetPrintLevel() > 5);
+    bool verbose = false; //(GetMyPID() == 0 && GetPrintLevel() > 5);
 
     Ifpack_Preconditioner* Prec;
-
-    if (verbose) {
-      cout << "Build smoother `" << Type << "'" << endl;
-//      cout << "# global rows = " << RowMatrix_.get()->NumGlobalRows() << endl;
-    }
 
     if (Type == "Jacobi") {
       if (verbose) {
@@ -200,52 +210,33 @@ public:
     RCPData_->SetParameters(IFPACKList);
     RCPData_->Initialize();
     RCPData_->Compute();
-  }
 
-  void Reshape(const Operator& Op, const CoarseSolverDataBase& DB)
-  {
-    Op_ = Op;
+    UpdateFlops(RCPData_->InitializeFlops());
+    UpdateFlops(RCPData_->ComputeFlops());
+    UpdateTime();
 
-    RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
-                                                       &GetEpetra_Comm()));
-
-    string Type = DB.GetType();
-
-    bool verbose = (GetMyPID() == 0 && GetPrintLevel() > 5);
-
-    Ifpack_Preconditioner* Prec;
-
-    if (verbose) {
-      cout << "Build coarse solver `" << Type << "'" << endl;
-//      cout << "# global rows = " << RowMatrix_.get()->NumGlobalRows() << endl;
-    }
-
-    if (Type == "Amesos" || Type == "Amesos-KLU")  {
-      if (verbose) {
-        cout << "Amesos-KLU direct solver" << endl;
-        cout << endl;
-      }
-      Prec = new Ifpack_Amesos(RowMatrix());
-    }
-    else
-      ML_THROW("Requested type (" + Type + ") not recognized", -1);
-
-    RCPData_ = Teuchos::rcp(Prec);
-
-    RCPData_->Initialize();
-    RCPData_->Compute();
   }
 
   // @}
-  // @{ Query methods
+  // @{ Get and Set methods.
   
   //! Returns a reference to the range space of \c this object.
-  const Space& GetRangeSpace() const {
+  const Space GetOperatorRangeSpace() const {
     return(Op_.GetRangeSpace());
   }
 
   //! Returns a reference to the domain space of \c this object.
-  const Space& GetDomainSpace() const {
+  const Space GetOperatorDomainSpace() const {
+    return(Op_.GetDomainSpace());
+  }
+
+  //! Returns a reference to the range space of \c this object.
+  const Space GetRangeSpace() const {
+    return(Op_.GetRangeSpace());
+  }
+
+  //! Returns a reference to the domain space of \c this object.
+  const Space GetDomainSpace() const {
     return(Op_.GetDomainSpace());
   }
 
@@ -261,43 +252,53 @@ public:
     return(RCPRowMatrix_.get());
   }
 
-  //! Returns a pointer to the internally stored IFPACK preconditioner.
-  const Teuchos::RefCountPtr<Ifpack_Preconditioner> GetRCPData() const
-  {
-    return(RCPData_);
-  }
-
   //! Returns a reference to the Operator of which \c this object defines the inverse.
   const Operator& GetOperator() const
   {
     return(Op_);
   }
 
-  //! Prints out basic information about \c this object.
-  ostream& Print(std::ostream& os, const bool verbose = true) const
+  //! Returns a pointer to the internally stored IFPACK preconditioner.
+  Teuchos::RefCountPtr<Ifpack_Preconditioner>& GetRCPData() 
   {
+    return(RCPData_);
+  }
 
-    // FIXME: to be completed in some way???
-    if (GetMyPID() == 0) {
-      os << "InverseOperator `" << GetLabel() << "'" << endl;
-    }
-
-    return(os);
-
+  //! Returns a pointer to the internally stored IFPACK preconditioner.
+  const Teuchos::RefCountPtr<Ifpack_Preconditioner>& GetRCPData() const
+  {
+    return(RCPData_);
   }
 
   // @}
   // @{ Mathematical methods
   
   //! Applies \c this object to vector \c lhs, returns values in \c rhs.
-  int ApplyInverse(const MultiVector& lhs, MultiVector& rhs) const
+  int Apply(const MultiVector& x, MultiVector& y) const
   {
-    Epetra_Vector elhs(View,RowMatrix()->OperatorDomainMap(),
-                       (double*)&(lhs(0)));
-    Epetra_Vector erhs(View,RowMatrix()->OperatorRangeMap(),
-                       (double*)&(rhs(0)));
+    ResetTimer();
 
-    RCPData_->ApplyInverse(elhs,erhs);
+    int x_nv = x.GetNumVectors();
+    int y_nv = y.GetNumVectors();
+    double FL = RCPData_->ComputeFlops();
+
+    if (x_nv != y_nv)
+      ML_THROW("Number of vectors of x and y differ (" +
+               GetString(x_nv) + " vs. " + GetString(x_nv), -1);
+                
+    for (int v = 0 ; v < x_nv ; ++v) {
+
+      Epetra_Vector x_Epetra(View,RowMatrix()->OperatorDomainMap(),
+                             (double*)&(x(0,v)));
+      Epetra_Vector y_Epetra(View,RowMatrix()->OperatorRangeMap(),
+                             (double*)&(y(0,v)));
+
+      RCPData_->ApplyInverse(x_Epetra,y_Epetra);
+    }
+
+    UpdateFlops(RCPData_->ComputeFlops() - FL);
+    UpdateTime();
+
     return(0);
   }
 
@@ -306,23 +307,44 @@ public:
   {
     MultiVector RHS(LHS.GetVectorSpace());
     RHS = 0.0;
-    ApplyInverse(LHS,RHS);
+    Apply(LHS,RHS);
     return(RHS);
   }
 
   //! Applies the operator to LHS using RHS as initial solution, returns the results.
   MultiVector operator()(const MultiVector& LHS,
-                          const MultiVector& RHS)
+                         const MultiVector& RHS)
   {
     MultiVector RHS2 = Duplicate(RHS);
-    ApplyInverse(LHS,RHS2);
+    Apply(LHS,RHS2);
     return(RHS2);
   }
 
-private:
+  // @}
+  // @{ \name Miscellaneous methods
+
+  //! Prints out basic information about \c this object.
+  ostream& Print(std::ostream& os, const bool verbose = true) const
+  {
+
+    if (GetMyPID() == 0) {
+      os << "***MLAPI::InverseOperator" << endl;
+      os << "Label             = " << GetLabel() << endl;
+      os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << endl;
+      os << "Number of columns = " << GetRangeSpace().GetNumGlobalElements() << endl;
+      os << "Flop count        = " << GetFlops() << endl;
+      os << "Cumulative time   = " << GetTime() << endl;
+      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      os << endl;
+    }
+
+    return(os);
+
+  }
 
   // @}
-  // @{ Internal data
+  
+private:
 
   //! Operator of which \c this object define the inverse.
   Operator Op_;
@@ -336,4 +358,5 @@ private:
 }; // InverseOperator
 
 } // namespace MLAPI
+
 #endif // ML_INVERSEOPERATOR_H

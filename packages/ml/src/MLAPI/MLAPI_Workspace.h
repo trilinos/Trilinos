@@ -10,6 +10,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+//! MLAPI: Default namespace for all MLAPI objects and functions.
 namespace MLAPI {
 
 static ML_Comm* ML_Comm_ = 0;
@@ -137,6 +138,7 @@ void Init()
     }
   }
 
+  ML_Set_PrintLevel(10);
 }
 
 //! Destroys the MLAPI workspace.
@@ -151,6 +153,25 @@ void Finalize()
     delete Epetra_Comm_;
     Epetra_Comm_ = 0;
   }
+}
+
+string GetString(const int& x) 
+{
+  char s[100];
+  sprintf(s, "%d", x);
+  return string(s);
+}
+
+string GetString(const double& x)
+{
+  char s[100];
+  sprintf(s, "%g", x);
+  return string(s);
+}
+
+int GetMatrixType() 
+{
+  return(ML_CSR_MATRIX);
 }
 
 } // namespace MLAPI
