@@ -376,10 +376,9 @@ LOCA::EpetraNew::Group::applyShiftedMatrixInverse(
 
     shiftsys.applyJacobianInverse(solveList,epetraInput,epetraResult);
 
-    return NOX::Abstract::Group::Ok;
-
   }
 
+  return NOX::Abstract::Group::Ok;  
 }
 
 NOX::Abstract::Group::ReturnType 
