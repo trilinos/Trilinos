@@ -217,6 +217,13 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
+# Check to see if we should build the EpetraTpetraProfile example. This should only be done if
+# both Epetra and TriUtils are enabled.
+TAC_ARG_CHECK_DEFAULT_FEATURE(epetra, EPETRA)
+TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+AM_CONDITIONAL(BUILD_PROFILE_EXAMPLE, test "X$ac_cv_use_epetra" != "Xno" && test "X$ac_cv_use_triutils" != "Xno")
+
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------

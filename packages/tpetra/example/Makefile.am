@@ -26,5 +26,9 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = verySimple EpetraTpetraProfile
+if BUILD_PROFILE_EXAMPLE
+EPETRA_TPETRA_PROFILE=EpetraTpetraProfile
+endif
+
+SUBDIRS = $(EPETRA_TPETRA_PROFILE) verySimple
 
