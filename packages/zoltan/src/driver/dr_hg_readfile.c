@@ -169,7 +169,7 @@ char *yo = "old_readfile";
 
        /* read optional hyperedge weights first */
        if (code == 1 || code == 11) {
-          for (count = 0; count < *ewgt_dim; count++)
+          for (count = 0; count < *ewgt_dim; count++) {
              if (nextstr (f, string) != 1)  {
                 sprintf(errstr, "%s ERROR...reading hyperedge weight %d\n", 
                         yo, i);
@@ -177,7 +177,8 @@ char *yo = "old_readfile";
                 err = ZOLTAN_FATAL;
                 goto End;
              }             
-          (*ewgt)[*ewgt_dim * i + count] = (float) atoi(string);          
+             (*ewgt)[*ewgt_dim * i + count] = (float) atoi(string);          
+          }
        }
        
        /* now read vertices in current hyperedge */

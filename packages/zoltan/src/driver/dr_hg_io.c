@@ -354,6 +354,7 @@ int num_dist_procs;
   if (myproc == host_proc) {
     old_hindex  = *hindex;
     old_hvertex = *hvertex;
+    old_hewgts = *hewgts;
     old_hvertex_proc = (int *) malloc(old_hindex[*gnhedges] * sizeof(int));
 
     /* Allocate space for size and send flags */
