@@ -532,7 +532,7 @@ int Zoltan_HSFC(
    if (zz->Proc == 0 && err == ZOLTAN_WARN && zz->Debug_Level >ZOLTAN_DEBUG_NONE)
       ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user limit");
 
-free:
+End:
    MPI_Op_free (&mpi_op);
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,
@@ -543,10 +543,9 @@ free:
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
       MPI_Barrier(zz->Communicator);
       end_time = Zoltan_Time(zz->Timer);
+      if (zz->Debug_Proc == zz->Proc)
+         printf ("HSFC Processing Time is %.6f seconds\n", end_time-start_time);
       }
-
-   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Debug_Proc == zz->Proc)
-      printf ("HSFC Processing Time is %.6f seconds\n", end_time - start_time);
 
    ZOLTAN_TRACE_EXIT (zz, yo);
    return err;

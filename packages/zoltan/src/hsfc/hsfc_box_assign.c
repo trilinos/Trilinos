@@ -203,7 +203,7 @@ fini:
             procs[(*proc_count)++] = i;
       }
 
-free:
+End:
    ZOLTAN_FREE (&part_array);
    ZOLTAN_TRACE_EXIT (zz, yo);
    return err;

@@ -61,7 +61,7 @@ static const double  DEFAULT_BIN_MIN =  2.0;
 
 
 #define ZOLTAN_HSFC_ERROR(error,str) {err = error; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str); goto free;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str); goto End;}
 
 
 typedef struct Partition {

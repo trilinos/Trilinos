@@ -73,7 +73,7 @@ int Zoltan_HSFC_Point_Assign (
       }
    err = ZOLTAN_OK;
 
-free:
+End:
    ZOLTAN_TRACE_EXIT (zz, yo);
    return err;
    }
