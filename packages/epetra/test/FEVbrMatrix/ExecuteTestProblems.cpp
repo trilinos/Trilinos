@@ -87,7 +87,7 @@ int quad1(const Epetra_Map& map, bool verbose)
   Epetra_BlockMap blkMap(-1, numMyNodes, myNodes, dofPerNode,
 			 indexBase, Comm);
 
-  int rowLengths = 8; //each element-matrix will have 4 block-columns.
+  int rowLengths = 3; //each element-matrix will have 4 block-columns.
                       //the rows of the assembled matrix will be longer than
                       //this, but we don't need to worry about that because the
                       //VbrMatrix will add memory as needed. For a real
@@ -139,7 +139,11 @@ int quad1(const Epetra_Map& map, bool verbose)
 					  dofPerNode, dofPerNode), ierr);
     }
 
-    EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
+    int err = A.EndSubmitEntries();
+    if (err < 0) {
+      cout << "quad1: error in A.EndSubmitEntries: "<<err<<endl;
+      return(-1);
+    }
   }
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr);
@@ -150,6 +154,38 @@ int quad1(const Epetra_Map& map, bool verbose)
   if (verbose) {
     A.Print(cout);
   }
+
+  int numMyRows = A.NumMyRows();
+  int correct_numMyRows = dofPerNode*numMyNodes;
+
+  if (numMyRows != correct_numMyRows) {
+    cout << "proc " << localProc << ", numMyRows("<<numMyRows<<") doesn't match"
+	 << " correct_numMyRows("<<correct_numMyRows<<")."<<endl;
+    return(-1);
+  }
+
+  int numMyNonzeros = A.NumMyNonzeros();
+  int correct_numMyNonzeros = nodesPerElem*nodesPerElem*dofPerNode*dofPerNode;
+
+  if (numProcs > 1) {
+    if (localProc == numProcs-1) {
+      correct_numMyNonzeros += dofPerNode*dofPerNode*4;
+    }
+    else if (localProc > 0) {
+      correct_numMyNonzeros -= dofPerNode*dofPerNode*4;
+    }
+    else {
+      //localProc==0 && numProcs > 1
+      correct_numMyNonzeros -= dofPerNode*dofPerNode*8;
+    }
+  }
+
+  if (numMyNonzeros != correct_numMyNonzeros) {
+    cout << "proc " << localProc << ", numMyNonzeros(" << numMyNonzeros
+	 <<") != correct_numMyNonzeros("<<correct_numMyNonzeros<<")"<<endl;
+    return(-1);
+  }
+
 
   delete [] elemMatrix;
   delete [] myNodes;
