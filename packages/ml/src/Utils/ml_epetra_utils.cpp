@@ -17,6 +17,7 @@
 #ifdef ML_WITH_EPETRA
 #include "ml_epetra_utils.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -30,14 +31,24 @@ int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
 {
   /* ML matvec wrapper for Epetra matrices. */
 
+  // general case
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
-/*MS*/
-  Epetra_Vector X(View, A->OperatorDomainMap(), p);
-  Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
-/*ms*/
+
+  // for VBR matrices first
+  Epetra_VbrMatrix * VbrA = NULL;
+  VbrA = dynamic_cast<Epetra_VbrMatrix *>(A);
+
+  if( VbrA != NULL ) {
+    Epetra_Vector X(View, VbrA->DomainMap(), p);
+    Epetra_Vector Y(View, VbrA->RangeMap(), ap);
+    VbrA->Multiply(false, X, Y);
+  } else {   
+    Epetra_Vector X(View, A->OperatorDomainMap(), p);
+    Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
   
-  A->Multiply(false, X, Y);
-  
+    A->Multiply(false, X, Y);
+  }
+
   return 1;
 }
 
