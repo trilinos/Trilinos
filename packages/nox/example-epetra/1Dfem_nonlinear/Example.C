@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
   converged.addStatusTest(relresid);
   converged.addStatusTest(wrms);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(80);
+  NOX::StatusTest::MaxIters maxiters(800);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
@@ -201,6 +201,14 @@ int main(int argc, char *argv[])
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
+
+  // Output the parameter list
+  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+    cout << endl << "Final Parameters" << endl
+	 << "****************" << endl;
+    solver.getParameterList().print(cout);
+    cout << endl;
+  }
 
   // Print solution
   char file_name[25];
