@@ -30,11 +30,11 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BIFURCATION_TPBORDGROUP_H
-#define LOCA_BIFURCATION_TPBORDGROUP_H
+#ifndef LOCA_BIFURCATION_PITCHFORKBORDGROUP_H
+#define LOCA_BIFURCATION_PITCHFORBORDGROUP_H
 
 #include "LOCA_Abstract_Group.H"
-#include "LOCA_Bifurcation_TPBordVector.H"
+#include "LOCA_Bifurcation_PitchforkBordVector.H"
 #include "LOCA_DerivUtils.H"
 
 namespace LOCA {
@@ -42,56 +42,61 @@ namespace LOCA {
 }
 namespace LOCA { 
 
-  //! %LOCA bifurcation vectors and groups
   namespace Bifurcation { 
 
     /*! 
-      \brief %LOCA's generic turning point group.  Implements the bordering
-      algorithm to solve turning point equations.  
+      \brief %LOCA's generic pitchfork group.  Implements the bordering
+      algorithm to solve pitchfork equations.  
     */
     /*!
-      The %TPBordGroup is a concrete implementation of the 
+      The %PitchforkBordGroup is a concrete implementation of the 
       LOCA::Abstract::Group that defines the following extended set of 
       equations:
       \f[
        G(z) = \left[
               \begin{array}{c}
-	        F(x,p) \\
+	        F(x,p)+\sigma\psi\\
 		Jn \\
+		\langle x, \psi\rangle \\
 		l^Tn-1
 	      \end{array}
               \right] = 0
     \f]
-    where \f$z = [x, n, p]\in\Re^{2n+1}\f$, \f$x\f$ is the solution vector,
-    \f$n\f$ is the null vector, \f$l\f$ is the length normalization vector
-    and \f$J\f$ is the Jacobian of F.
+    where \f$z = [x, n, \sigma, p]\in\Re^{2n+2}\f$, 
+    \f$x\f$ is the solution vector, \f$n\f$ is the null vector, 
+    \f$\psi\f$ is the antisymmetric vector, \f$\sigma\f$ is the slack
+    variables representing the asymmetry in the problem, \f$l\f$ is the 
+    length normalization vector and \f$J\f$ is the Jacobian of F.
 
     This class implements all of the NOX::Abstract::Group and 
     LOCA::Abstract::Group methods for this extended set of equations.
     %Newton solves are computed by the bordering algorithm.
     */
 
-    class TPBordGroup : public virtual LOCA::Abstract::Group {
+    class PitchforkBordGroup : public virtual LOCA::Abstract::Group {
 
     public:
   
       //! Constructor to set the base group, bifurcation paramter, length vector, and derivative objects.
-      TPBordGroup(const Abstract::Group& g, 
-		  const NOX::Abstract::Vector& lenVec, int paramId = 0,
-		  const DerivUtils& d = DerivUtils());
+      PitchforkBordGroup(const Abstract::Group& g, 
+			 const NOX::Abstract::Vector& asymVec,
+			 const NOX::Abstract::Vector& lenVec, 
+			 int paramId = 0,
+			 const DerivUtils& d = DerivUtils());
 
       //! Copy constructor.
-      TPBordGroup(const TPBordGroup& source, NOX::CopyType type = NOX::DeepCopy);
+      PitchforkBordGroup(const PitchforkBordGroup& source, 
+			 NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
-      virtual ~TPBordGroup();
+      virtual ~PitchforkBordGroup();
   
       //! Assignment operator
       virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
       //! Assignment operator
       virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
       //! Assignment operator
-      virtual TPBordGroup& operator=(const TPBordGroup& source);
+      virtual PitchforkBordGroup& operator=(const PitchforkBordGroup& source);
      
       //! Cloning function
       virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
@@ -120,7 +125,7 @@ namespace LOCA {
       virtual void setX(const NOX::Abstract::Vector& y);
 
       //! Set the solution vector, x, to y.
-      virtual void setX(const TPBordVector& y);
+      virtual void setX(const PitchforkBordVector& y);
 
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
       virtual void computeX(const NOX::Abstract::Group& g, 
@@ -128,7 +133,8 @@ namespace LOCA {
 			    double step);
 
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
-      virtual void computeX(const TPBordGroup& g, const TPBordVector& d,
+      virtual void computeX(const PitchforkBordGroup& g, 
+			    const PitchforkBordVector& d,
 			    double step);
 
       //! Compute the turning point equation residual $G$ 
@@ -175,18 +181,6 @@ namespace LOCA {
       applyJacobianInverseMulti(NOX::Parameter::List& params, 
 			   const NOX::Abstract::Vector* const* inputs, 
 			   NOX::Abstract::Vector** results, int nVecs) const;
-
-      /*! 
-	Applies Jacobian inverse of underlying group on multiple right hand sides
-      */
-      virtual NOX::Abstract::Group::ReturnType 
-      underlyingGroupApplyJacobianInverseManager(NOX::Parameter::List& params, 
-			  const NOX::Abstract::Vector& input1, 
-			  const NOX::Abstract::Vector& input2, 
-			  const NOX::Abstract::Vector& approxNullVec,
-			  const NOX::Abstract::Vector& jacTimesApproxNullVec,
-			  NOX::Abstract::Vector& result1,
-			  NOX::Abstract::Vector& result2) const;
 
       /*! 
 	Applies Jacobian inverse of underlying group on multiple right hand sides
@@ -268,7 +262,7 @@ namespace LOCA {
       virtual void setScaleVec(const NOX::Abstract::Vector& s);
 
       //! Set scale vector
-      void setScaleVec(const LOCA::Bifurcation::TPBordVector& s);
+      void setScaleVec(const LOCA::Bifurcation::PitchforkBordVector& s);
 
       //! Get scale vector
       virtual const NOX::Abstract::Vector& getScaleVec() const;
@@ -288,19 +282,22 @@ namespace LOCA {
       LOCA::Abstract::Group* grpPtr;   
   
       //! Stores the turning point solution vector
-      TPBordVector tpXVec;
+      PitchforkBordVector pfXVec;
 
       //! Stores the turning point residual vector
-      TPBordVector tpFVec;
+      PitchforkBordVector pfFVec;
 
       //! Stores the turning point Newton vector
-      TPBordVector tpNewtonVec;
+      PitchforkBordVector pfNewtonVec;
+
+      //! Stores the asymmetry vector 
+      NOX::Abstract::Vector* asymVecPtr;
 
       //! Stores the constant length vector
       NOX::Abstract::Vector* lengthVecPtr;
 
       //! Stores the scale vector
-      TPBordVector tpScaleVec;
+      PitchforkBordVector pfScaleVec;
 
       //! Stores the bifurcation parameter index
       int bifParamId;

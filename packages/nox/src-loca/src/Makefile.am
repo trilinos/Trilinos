@@ -107,11 +107,15 @@ LOCA_STEPSIZE = \
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H 
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBordVector.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBordGroup.H
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C 
+	$(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBordVector.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBordGroup.C
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H

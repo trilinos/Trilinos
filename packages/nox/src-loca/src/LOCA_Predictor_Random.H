@@ -51,8 +51,8 @@ namespace LOCA {
       component is filled with random values and the parameter component
       equal to 1.  Each componenet of the solution vector \f$v_i\f$ of the 
       predictor is given by \f$v_i = \epsilon r_i x_i\f$ where 
-      \f$r_i\f$ is a random value between 0 and 1, \f$x_i\f$ is the
-      corresponding componenet of the solution vector, and \f$\epsilon\f$
+      \f$r_i\f$ is a random value between -1 and 1, \f$x_i\f$ is the
+      corresponding component of the solution vector, and \f$\epsilon\f$
       is a parameter.
 
       The parameters used by this class supplied in the constructor or reset
@@ -85,6 +85,8 @@ namespace LOCA {
 	      LOCA::Continuation::Vector& result);
 
     protected:
+
+      //! Size of random value
       double epsilon;
 
     };

@@ -32,85 +32,97 @@
 
 #include "LOCA_Bifurcation_TPBordVector.H"  // Class definition
 
-using namespace LOCA;
-using namespace LOCA::Bifurcation; 
-
-TPBordVector::TPBordVector(const NOX::Abstract::Vector& xVec,
-			   const NOX::Abstract::Vector& nullVec,
-			   double bifParam) :
-  MultiVector(2,1)
+LOCA::Bifurcation::TPBordVector::TPBordVector(
+					 const NOX::Abstract::Vector& xVec,
+					 const NOX::Abstract::Vector& nullVec,
+					 double bifParam) :
+  LOCA::MultiVector(2,1)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
   setScalar(0, bifParam);
 }
 
-TPBordVector::TPBordVector(const TPBordVector& source, NOX::CopyType type) :
-  MultiVector(source, type)
+LOCA::Bifurcation::TPBordVector::TPBordVector(
+                                const LOCA::Bifurcation::TPBordVector& source,
+				NOX::CopyType type) :
+  LOCA::MultiVector(source, type)
 {
 }
 
 
-TPBordVector::~TPBordVector()
+LOCA::Bifurcation::TPBordVector::~TPBordVector()
 {
 }
 
-NOX::Abstract::Vector& TPBordVector::operator=(const NOX::Abstract::Vector& y)
+NOX::Abstract::Vector& 
+LOCA::Bifurcation::TPBordVector::operator=(const NOX::Abstract::Vector& y)
 {
-  return operator=(dynamic_cast<const TPBordVector&>(y));
+  return operator=(dynamic_cast<const LOCA::Bifurcation::TPBordVector&>(y));
 }
 
-LOCA::MultiVector& TPBordVector::operator=(const LOCA::MultiVector& y)
+LOCA::MultiVector& 
+LOCA::Bifurcation::TPBordVector::operator=(const LOCA::MultiVector& y)
 {
-  return operator=(dynamic_cast<const TPBordVector&>(y));
+  return operator=(dynamic_cast<const LOCA::Bifurcation::TPBordVector&>(y));
 }
 
-TPBordVector& TPBordVector::operator=(const TPBordVector& y)
+LOCA::Bifurcation::TPBordVector& 
+LOCA::Bifurcation::TPBordVector::operator=(
+                                      const LOCA::Bifurcation::TPBordVector& y)
 { 
-  MultiVector::operator=(y);
+  LOCA::MultiVector::operator=(y);
   return *this;
 }
 
-NOX::Abstract::Vector* TPBordVector::clone(NOX::CopyType type) const
+NOX::Abstract::Vector* 
+LOCA::Bifurcation::TPBordVector::clone(NOX::CopyType type) const
 {
-  return new TPBordVector(*this, type);
+  return new LOCA::Bifurcation::TPBordVector(*this, type);
 }
 
-void TPBordVector::setVec(const NOX::Abstract::Vector& xVec,
-			  const NOX::Abstract::Vector& nullVec,
-			  double bifPar)
+void 
+LOCA::Bifurcation::TPBordVector::setVec(const NOX::Abstract::Vector& xVec,
+					const NOX::Abstract::Vector& nullVec,
+					double bifPar)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
   setScalar(0, bifPar);
 }
 
-const NOX::Abstract::Vector& TPBordVector::getXVec() const
+const NOX::Abstract::Vector& 
+LOCA::Bifurcation::TPBordVector::getXVec() const
 {
   return getVector(0);
 }
 
-const NOX::Abstract::Vector& TPBordVector::getNullVec() const
+const NOX::Abstract::Vector& 
+LOCA::Bifurcation::TPBordVector::getNullVec() const
 {
   return getVector(1);
 }
 
-double TPBordVector::getBifParam() const
+double 
+LOCA::Bifurcation::TPBordVector::getBifParam() const
 {
   return getScalar(0);
 }
 
-NOX::Abstract::Vector& TPBordVector::getXVec()
+NOX::Abstract::Vector& 
+LOCA::Bifurcation::TPBordVector::getXVec()
 {
   return getVector(0);
 }
 
-NOX::Abstract::Vector& TPBordVector::getNullVec()
+NOX::Abstract::Vector& 
+LOCA::Bifurcation::TPBordVector::getNullVec()
 {
   return getVector(1);
 }
 
-double& TPBordVector::getBifParam()
+double& 
+LOCA::Bifurcation::TPBordVector::getBifParam()
 {
   return getScalar(0);
 }

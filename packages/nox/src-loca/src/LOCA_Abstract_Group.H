@@ -137,6 +137,10 @@ namespace LOCA {
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** outputs, int nVecs) const;
 
+      //! Compute inner product between two vectors
+      virtual double innerProduct(const NOX::Abstract::Vector& x,
+				  const NOX::Abstract::Vector& y);
+
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p) = 0;
 

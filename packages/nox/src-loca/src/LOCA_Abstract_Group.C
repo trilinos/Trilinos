@@ -33,16 +33,13 @@
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Parameter_Vector.H"
 
-using namespace LOCA;
-using namespace Abstract;
-using NOX::Abstract::Vector;
-
-LOCA::Abstract::Group::Group(const DerivUtils& d)
+LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
   : derivPtr(d.clone(NOX::DeepCopy))
 {
 }
 
-LOCA::Abstract::Group::Group(const Group& source, NOX::CopyType type)
+LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
+			     NOX::CopyType type)
   : derivPtr(source.derivPtr->clone(type))
 {
 }
@@ -269,6 +266,13 @@ LOCA::Abstract::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
   }
 
   return res;
+}
+
+double
+LOCA::Abstract::Group::innerProduct(const NOX::Abstract::Vector& x,
+				    const NOX::Abstract::Vector& y) 
+{
+  return x.dot(y);
 }
 
 NOX::Abstract::Group::ReturnType

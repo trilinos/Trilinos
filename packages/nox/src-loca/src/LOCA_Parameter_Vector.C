@@ -34,29 +34,29 @@
 
 #include "LOCA_Utils.H"            // print utilities
 
-using namespace LOCA;
-
-ParameterVector::ParameterVector()
+LOCA::ParameterVector::ParameterVector()
 {
 }
 
-ParameterVector::ParameterVector(const ParameterVector& source) :
+LOCA::ParameterVector::ParameterVector(const LOCA::ParameterVector& source) :
   x(source.x),
   l(source.l)
 {
 }
 
-ParameterVector* ParameterVector::clone() const
+LOCA::ParameterVector* 
+LOCA::ParameterVector::clone() const
 {
-  ParameterVector* y = new ParameterVector(*this);
+  LOCA::ParameterVector* y = new LOCA::ParameterVector(*this);
   return y;
 }
 
-ParameterVector::~ParameterVector()
+LOCA::ParameterVector::~ParameterVector()
 {
 }
 
-int ParameterVector::addParameter(string label, double value)
+int 
+LOCA::ParameterVector::addParameter(string label, double value)
 {
   unsigned int size = x.size();
   x.push_back(value);
@@ -64,21 +64,24 @@ int ParameterVector::addParameter(string label, double value)
   return (size);
 }
 
-bool ParameterVector::init(double value)
+bool 
+LOCA::ParameterVector::init(double value)
 {
   for (unsigned int i = 0; i < x.size(); i ++)
     x[i] = value;
   return true;
 }
 
-bool ParameterVector::scale(double value)
+bool 
+LOCA::ParameterVector::scale(double value)
 {
   for (unsigned int i = 0; i < x.size(); i ++)
     x[i] *= value;
   return true;
 }
 
-bool ParameterVector::scale(const ParameterVector& p)
+bool 
+LOCA::ParameterVector::scale(const LOCA::ParameterVector& p)
 {
   //make sure vectors are of compatible size
   if (this->x.size() != p.x.size())
@@ -89,9 +92,10 @@ bool ParameterVector::scale(const ParameterVector& p)
   return true;
 }
 
-bool ParameterVector::update(double alpha, 
-			     const ParameterVector& alphaVector, 
-			     double b)
+bool 
+LOCA::ParameterVector::update(double alpha, 
+			      const LOCA::ParameterVector& alphaVector, 
+			      double b)
 {  //make sure vectors are of compatible size
   if (x.size() != alphaVector.x.size())
     return false;
@@ -103,17 +107,19 @@ bool ParameterVector::update(double alpha,
   return true;
 }
 
-ParameterVector& ParameterVector::operator=(const ParameterVector& source)
+LOCA::ParameterVector& 
+LOCA::ParameterVector::operator=(const LOCA::ParameterVector& source)
 {
   x = source.x;
   l = source.l;
   return *this;
 }
 
-double& ParameterVector::operator[] (int i)
+double& 
+LOCA::ParameterVector::operator[] (int i)
 {
   if ((i < 0) || (i >= x.size())) {
-    if (Utils::doPrint(Utils::Error)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::operator[] - index is out "
 	   << "of range!" << endl;
     }
@@ -122,10 +128,11 @@ double& ParameterVector::operator[] (int i)
   return x[i];
 }
 
-const double& ParameterVector::operator[] (int i) const
+const double& 
+LOCA::ParameterVector::operator[] (int i) const
 {
   if ((i < 0) || (i >= x.size())) {
-    if (Utils::doPrint(Utils::Error)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::operator[] const - index is "
 	   << "out of range!" << endl;
     }
@@ -134,10 +141,11 @@ const double& ParameterVector::operator[] (int i) const
   return x[i];
 }
 
-void ParameterVector::setValue(int i, double value)
+void 
+LOCA::ParameterVector::setValue(int i, double value)
 {
   if ((i < 0) || (i >= x.size())) {
-    if (Utils::doPrint(Utils::Error)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::setValue() - index is "
 	   << "out of range!" << endl;
     }
@@ -148,10 +156,11 @@ void ParameterVector::setValue(int i, double value)
   return;
 }
 
-void ParameterVector::setValue(string label, double value)
+void 
+LOCA::ParameterVector::setValue(string label, double value)
 {
   if (!isParameter(label)) {
-    if (Utils::doPrint(Utils::Error)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::setValue() - label is "
 	   << "not valid!" << endl;
     }
@@ -166,10 +175,11 @@ void ParameterVector::setValue(string label, double value)
   return;
 }
 
-double ParameterVector::getValue(int i) const
+double 
+LOCA::ParameterVector::getValue(int i) const
 {
   if ((i < 0) || (i >= x.size())) {
-    if (Utils::doPrint(Utils::Error)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "ERROR: LOCA::Parameter::Vector::getValue(int) - index is "
 	   << "out of range!" << endl;
     }
@@ -178,14 +188,15 @@ double ParameterVector::getValue(int i) const
   return x[i];
 }
 
-double ParameterVector::getValue(string label) const
+double 
+LOCA::ParameterVector::getValue(string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
       return x[i];
   }
 
-  if (Utils::doPrint(Utils::Error)) {
+  if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
     cout << "ERROR: LOCA::Parameter::Vector::getValue(string) - label is "
 	 << "not valid!" << endl;
   }
@@ -194,14 +205,15 @@ double ParameterVector::getValue(string label) const
   return 0.0;
 }
 
-int ParameterVector::getIndex(string label) const
+int 
+LOCA::ParameterVector::getIndex(string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
       return i;
   }
 
-  if (Utils::doPrint(Utils::Warning)) {
+  if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
     cout << "Warning: LOCA::ParameterVector::getIndex() - The string \"" 
 	 << label << "\" was not found!" << endl;
   }
@@ -209,12 +221,14 @@ int ParameterVector::getIndex(string label) const
   return -1;
 }
 
-double* ParameterVector::getDoubleArrayPointer()
+double* 
+LOCA::ParameterVector::getDoubleArrayPointer()
 {
   return &x[0];
 }
 
-bool ParameterVector::isParameter(string label) const
+bool 
+LOCA::ParameterVector::isParameter(string label) const
 {
   for (unsigned int i = 0; i < x.size(); i++) {
     if (l[i] == label)
@@ -223,17 +237,20 @@ bool ParameterVector::isParameter(string label) const
   return false;
 }
 
-string ParameterVector::getLabel(int i) const
+string 
+LOCA::ParameterVector::getLabel(int i) const
 {
   return l[i];
 }
 
-int ParameterVector::length() const
+int 
+LOCA::ParameterVector::length() const
 {
   return x.size();
 }
 
-void ParameterVector::print(ostream& stream) const
+void 
+LOCA::ParameterVector::print(ostream& stream) const
 {
   stream << "LOCA::ParameterVector \n(size = " << x.size() << ")";
   for (unsigned int i = 0; i < x.size(); i++) {
@@ -242,7 +259,8 @@ void ParameterVector::print(ostream& stream) const
   cout << endl;
 }
 
-ostream& operator<<(ostream& stream, const ParameterVector& p)
+ostream& 
+operator<<(ostream& stream, const LOCA::ParameterVector& p)
 {
   p.print(stream);
   return stream;

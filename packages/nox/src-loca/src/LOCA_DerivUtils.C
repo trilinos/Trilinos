@@ -38,34 +38,33 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Common.H"  // For fabs function
 
-using namespace LOCA;
-
-DerivUtils::DerivUtils(double perturb) :
-	perturb(perturb)
+LOCA::DerivUtils::DerivUtils(double perturb) :
+  perturb(perturb)
 {
   // assert (perturb>0.0);
 }
 
-DerivUtils::DerivUtils(const DerivUtils& source) :
-	perturb(source.perturb)
+LOCA::DerivUtils::DerivUtils(const DerivUtils& source) :
+  perturb(source.perturb)
 {
 
 }
 
-DerivUtils::~DerivUtils()
+LOCA::DerivUtils::~DerivUtils()
 {
  
 }
 
-DerivUtils* DerivUtils::clone(NOX::CopyType type) const
+LOCA::DerivUtils* 
+LOCA::DerivUtils::clone(NOX::CopyType type) const
 {
   return new DerivUtils(*this);  //Call Copy Constructor
 }
 
 NOX::Abstract::Group::ReturnType
-DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
-			const int param_id, 
-			NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
+			      const int param_id, 
+			      NOX::Abstract::Vector& result) const
 {
   // Compute base residual F
   grp.computeF();
@@ -92,10 +91,10 @@ DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
-			 const NOX::Abstract::Vector& nullVector, 
-			 const int param_id,
-			 NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
+			       const NOX::Abstract::Vector& nullVector, 
+			       const int param_id,
+			       NOX::Abstract::Vector& result) const
 {
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
@@ -112,11 +111,11 @@ DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
-			 const NOX::Abstract::Vector& nullVector, 
-			 const int param_id,
-			 const NOX::Abstract::Vector& JnVector,
-			 NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
+			       const NOX::Abstract::Vector& nullVector, 
+			       const int param_id,
+			       const NOX::Abstract::Vector& JnVector,
+			       NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
   LOCA::Abstract::Group* grpPerturbedPtr = 
@@ -142,10 +141,10 @@ DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
-			  const NOX::Abstract::Vector& nullVector,
-			  const NOX::Abstract::Vector& aVector,
-			  NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
+				const NOX::Abstract::Vector& nullVector,
+				const NOX::Abstract::Vector& aVector,
+				NOX::Abstract::Vector& result) const
 {
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
@@ -162,11 +161,11 @@ DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
-			  const NOX::Abstract::Vector& nullVector,
-			  const NOX::Abstract::Vector& aVector,
-			  const NOX::Abstract::Vector& JnVector,
-			  NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
+				const NOX::Abstract::Vector& nullVector,
+				const NOX::Abstract::Vector& aVector,
+				const NOX::Abstract::Vector& JnVector,
+				NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
   LOCA::Abstract::Group* grpPerturbedPtr = 
@@ -192,11 +191,11 @@ DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
 }
 
 NOX::Abstract::Group::ReturnType 
-DerivUtils::computeDJnDxaDp(LOCA::Abstract::Group& grp,
-			    const NOX::Abstract::Vector& nullVector,
-			    const NOX::Abstract::Vector& aVector,
-			    const int param_id,
-			    NOX::Abstract::Vector& result) const
+LOCA::DerivUtils::computeDJnDxaDp(LOCA::Abstract::Group& grp,
+				  const NOX::Abstract::Vector& nullVector,
+				  const NOX::Abstract::Vector& aVector,
+				  const int param_id,
+				  NOX::Abstract::Vector& result) const
 {
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
@@ -223,9 +222,9 @@ DerivUtils::computeDJnDxaDp(LOCA::Abstract::Group& grp,
 //
 
 NOX::Abstract::Vector& 
-DerivUtils::doDifference(NOX::Abstract::Vector& perturbedVector,
-			 const NOX::Abstract::Vector& baseVector,
-			 const double eps) const
+LOCA::DerivUtils::doDifference(NOX::Abstract::Vector& perturbedVector,
+			       const NOX::Abstract::Vector& baseVector,
+			       const double eps) const
 {
   perturbedVector.update(-1.0, baseVector, 1.0);
 
@@ -233,8 +232,8 @@ DerivUtils::doDifference(NOX::Abstract::Vector& perturbedVector,
 }
 
 double 
-DerivUtils::perturbParam(LOCA::Abstract::Group& grpPerturbed,
-			 const int param_id) const
+LOCA::DerivUtils::perturbParam(LOCA::Abstract::Group& grpPerturbed,
+			       const int param_id) const
 {
   // Allocated new parameter vector
   LOCA::ParameterVector paramVec(grpPerturbed.getParams());
@@ -251,8 +250,8 @@ DerivUtils::perturbParam(LOCA::Abstract::Group& grpPerturbed,
 }
 
 double 
-DerivUtils::perturbXVec(LOCA::Abstract::Group& grpPerturbed,
-			const NOX::Abstract::Vector& aVector) const
+LOCA::DerivUtils::perturbXVec(LOCA::Abstract::Group& grpPerturbed,
+			      const NOX::Abstract::Vector& aVector) const
 {
   // Allocate tempertory xVector
   NOX::Abstract::Vector *tmpXVecPtr = grpPerturbed.getX().clone(NOX::DeepCopy);
@@ -269,14 +268,14 @@ DerivUtils::perturbXVec(LOCA::Abstract::Group& grpPerturbed,
 }
 
 double 
-DerivUtils::epsScalar(const double p) const
+LOCA::DerivUtils::epsScalar(const double p) const
 {
    return perturb * (perturb + fabs(p));
 }
 
 double 
-DerivUtils::epsVector(const NOX::Abstract::Vector& xVector,
-		      const NOX::Abstract::Vector& aVector) const
+LOCA::DerivUtils::epsVector(const NOX::Abstract::Vector& xVector,
+			    const NOX::Abstract::Vector& aVector) const
 {
    return perturb * (perturb + xVector.norm(NOX::Abstract::Vector::TwoNorm)
                                / aVector.norm(NOX::Abstract::Vector::TwoNorm));
