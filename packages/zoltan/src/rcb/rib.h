@@ -46,6 +46,8 @@ typedef struct RIB_Struct {
 } RIB_STRUCT;
 
 extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, int);
+extern void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany);
+
 
 /* function prototypes */
 
