@@ -21,6 +21,9 @@
 
 #define MAX_MALLOC_LOG 1000
 
+#define ML_allocate(i)    malloc((i + sizeof(double) ))
+#define ML_free(i)        { free(i); i = NULL; }
+
 #ifdef __cplusplus
 extern "C"
 {
