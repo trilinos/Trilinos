@@ -39,7 +39,6 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 #include "NOX_Parameter_MeritFunction.H"
-#include "NOX_Utils.H"
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -60,7 +59,13 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-InexactTrustRegionBased::InexactTrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) :
+//*************************************************************************
+//**** Constructor
+//*************************************************************************
+NOX::Solver::InexactTrustRegionBased::
+InexactTrustRegionBased(Abstract::Group& grp, 
+			StatusTest::Generic& t, 
+			Parameter::List& p) :
   solnPtr(&grp),		// pointer to grp
   oldSolnPtr(grp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
@@ -68,6 +73,8 @@ InexactTrustRegionBased::InexactTrustRegionBased(Abstract::Group& grp, StatusTes
   newtonVec(*newtonVecPtr),	// reference to just-created pointer
   cauchyVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   cauchyVec(*cauchyVecPtr),	// reference to just-created pointer
+  rCauchyVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  rCauchyVec(*rCauchyVecPtr),		// reference to just-created pointer
   aVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   aVec(*aVecPtr),		// reference to just-created pointer
   bVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
@@ -75,21 +82,48 @@ InexactTrustRegionBased::InexactTrustRegionBased(Abstract::Group& grp, StatusTes
   testPtr(&t),			// pointer to t
   paramsPtr(&p),			// copy p
   utils(paramsPtr->sublist("Printing")), // inititalize utils
+  inNewtonUtils(utils, paramsPtr->sublist("Direction")),
   newton(utils),		// initialize direction
   cauchy(utils),		// initialize direction
+  radius(0.0),
   userNormPtr(0),
-  userMeritFuncPtr(0)
+  userMeritFuncPtr(0),
+  writeOutputParamsToList(true),
+  useCounters(true),
+  numCauchySteps(0),
+  numNewtonSteps(0),
+  numDoglegSteps(0),
+  numTrustRegionInnerIterations(0),
+  sumDoglegFractions(0.0)
 {
   init();
 }
 
+//*************************************************************************
+//**** Destructor
+//*************************************************************************
+NOX::Solver::InexactTrustRegionBased::~InexactTrustRegionBased() 
+{
+  delete oldSolnPtr;
+  delete cauchyVecPtr;
+  delete newtonVecPtr;
+  delete rCauchyVecPtr;
+  delete aVecPtr;
+  delete bVecPtr;
+}
+
+//*************************************************************************
+//**** init
+//*************************************************************************
 // Protected
-void InexactTrustRegionBased::init()
+void NOX::Solver::InexactTrustRegionBased::init()
 {
   // Initialize 
   nIter = 0;
-  dx = 0;
+  dx = 0.0;
   status = StatusTest::Unconverged;
+  if (useCounters)
+    resetCounters();
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -98,43 +132,69 @@ void InexactTrustRegionBased::init()
     paramsPtr->print(cout,5);
   }
 
+  // Get the trust region method
+  string methodChoice = 
+    paramsPtr->sublist("Trust Region").
+    getParameter("Inner Iteration Method", "Inexact Trust Region");
+  if (methodChoice == "Standard Trust Region")
+    method = Standard;
+  else if (methodChoice == "Inexact Trust Region")
+    method = Inexact;
+  else {
+    cerr << "NOX::Solver::InexactTrustRegionBased::init - \"" << methodChoice
+	 << "\" is an invalid choice for \"Method\" key!"
+	 << endl;
+    throw "NOX Error";
+  }
+
   // Set default parameter settings using getParameter() if they are not set
+  // Default directions 
   paramsPtr->sublist("Direction").getParameter("Method", "Newton");
-  paramsPtr->sublist("Cauchy Direction").getParameter("Method", "Steepest Descent");
-  paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent").getParameter("Scaling Type", "Quadratic Model Min");
+  paramsPtr->sublist("Cauchy Direction")
+    .getParameter("Method", "Steepest Descent");
+  paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent")
+    .getParameter("Scaling Type", "Quadratic Model Min");
 
   newton.reset(paramsPtr->sublist("Direction"));
   cauchy.reset(paramsPtr->sublist("Cauchy Direction"));
 
-  minRadius = paramsPtr->sublist("Trust Region").getParameter("Minimum Trust Region Radius", 1.0e-6);
-  if (minRadius <= 0) 
+  minRadius = paramsPtr->sublist("Trust Region")
+    .getParameter("Minimum Trust Region Radius", 1.0e-6);
+  if (minRadius <= 0.0) 
     invalid("Minimum Trust Region Radius", minRadius);
 
-  maxRadius = paramsPtr->sublist("Trust Region").getParameter("Maximum Trust Region Radius", 1.0e+10);
+  maxRadius = paramsPtr->sublist("Trust Region")
+    .getParameter("Maximum Trust Region Radius", 1.0e+10);
   if (maxRadius <= minRadius) 
     invalid("Maximum Trust Region Radius", maxRadius);
 
-  minRatio = paramsPtr->sublist("Trust Region").getParameter("Minimum Improvement Ratio", 1.0e-4);
-  if (minRatio <= 0) 
+  minRatio = paramsPtr->sublist("Trust Region")
+    .getParameter("Minimum Improvement Ratio", 1.0e-4);
+  if (minRatio <= 0.0) 
     invalid("Minimum Improvement Ratio", minRatio);
 
-  contractTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Contraction Trigger Ratio", 0.1);
+  contractTriggerRatio = paramsPtr->sublist("Trust Region")
+    .getParameter("Contraction Trigger Ratio", 0.1);
   if (contractTriggerRatio < minRatio) 
     invalid("Contraction Trigger Ratio", contractTriggerRatio);
 
-  expandTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Expansion Trigger Ratio", 0.75);
+  expandTriggerRatio = paramsPtr->sublist("Trust Region")
+    .getParameter("Expansion Trigger Ratio", 0.75);
   if (expandTriggerRatio <= contractTriggerRatio) 
     invalid("Expansion Trigger Ratio", expandTriggerRatio);
 
-  contractFactor = paramsPtr->sublist("Trust Region").getParameter("Contraction Factor", 0.25);
+  contractFactor = paramsPtr->sublist("Trust Region")
+    .getParameter("Contraction Factor", 0.25);
   if ((contractFactor <= 0) || (contractFactor >= 1)) 
     invalid("Contraction Factor", contractFactor);
 
-  expandFactor = paramsPtr->sublist("Trust Region").getParameter("Expansion Factor", 4.0);
+  expandFactor = paramsPtr->sublist("Trust Region")
+    .getParameter("Expansion Factor", 4.0);
   if (expandFactor <= 1) 
     invalid("Expansion Factor", expandFactor);
 
-  recoveryStep = paramsPtr->sublist("Trust Region").getParameter("Recovery Step", 1.0);
+  recoveryStep = paramsPtr->sublist("Trust Region")
+    .getParameter("Recovery Step", 1.0);
   if (recoveryStep < 0) 
     invalid("Recovery Step", recoveryStep);
 
@@ -146,10 +206,14 @@ void InexactTrustRegionBased::init()
       sublist("Trust Region").getArbitraryParameter("User Defined Norm"));
     userNormPtr = const_cast<NOX::Parameter::UserNorm*>(&un);
 
-    // RPP: Hack!!  Need to get the scaling vectors computed.
+    // RPP: Hack!!  Need to get the the row sum scaling vector computed 
+    // (fix this in Epetra objects later).
+    
     solnPtr->computeF();
     solnPtr->computeJacobian();
-    solnPtr->computeNewton(paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver"));
+    solnPtr->computeNewton(paramsPtr->sublist("Direction").
+			   sublist("Newton").sublist("Linear Solver"));
+    
   }
 
   // Check for a user defined Merit Function
@@ -181,18 +245,35 @@ void InexactTrustRegionBased::init()
 
 }
 
-//PRIVATE
-void NOX::Solver::InexactTrustRegionBased::invalid(const string& name, double value) const
+//*************************************************************************
+//**** invalid
+//*************************************************************************
+void NOX::Solver::InexactTrustRegionBased::invalid(const string& name, 
+						   double value) const
 {
-  cerr << "NOX::Solver::InexactTrustRegionBased::init - " 
+  cout << "NOX::Solver::InexactTrustRegionBased::init - " 
        << "Invalid \"" << name << "\" (" << value << ")" 
        << endl;
   throw "NOX Error";
 }
 
-bool InexactTrustRegionBased::reset(Abstract::Group& grp, 
-				    StatusTest::Generic& t, 
-				    Parameter::List& p) 
+//*************************************************************************
+//**** throwError
+//*************************************************************************
+void NOX::Solver::InexactTrustRegionBased::throwError(const string& method, 
+						      const string& message) const
+{
+  cout << "NOX::Solver::InexactTrustRegionBased::" << method << " - " 
+       << message << endl;
+  throw "NOX Error";
+}
+
+//*************************************************************************
+//**** reset
+//*************************************************************************
+bool NOX::Solver::InexactTrustRegionBased::reset(Abstract::Group& grp, 
+						 StatusTest::Generic& t, 
+						 Parameter::List& p) 
 {
   solnPtr = &grp;
   testPtr = &t;
@@ -202,16 +283,21 @@ bool InexactTrustRegionBased::reset(Abstract::Group& grp,
   return true;
 }
 
-bool InexactTrustRegionBased::reset(Abstract::Group& grp, 
-				    StatusTest::Generic& t)
+//*************************************************************************
+//**** reset (without reparsing of parameter list)
+//*************************************************************************
+bool NOX::Solver::InexactTrustRegionBased::reset(Abstract::Group& grp, 
+						 StatusTest::Generic& t)
 {
   solnPtr = &grp;
   testPtr = &t;
 
   // Initialize 
   nIter = 0;
-  dx = 0;
+  dx = 0.0;
   status = StatusTest::Unconverged;
+  if (useCounters)
+    resetCounters();
 
   // Print out initialization information
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
@@ -239,18 +325,44 @@ bool InexactTrustRegionBased::reset(Abstract::Group& grp,
   return true;
 }
 
-InexactTrustRegionBased::~InexactTrustRegionBased() 
-{
-  delete oldSolnPtr;
-}
-
-
-NOX::StatusTest::StatusType InexactTrustRegionBased::getStatus()
+//*************************************************************************
+//**** getStatus
+//*************************************************************************
+NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::getStatus()
 {
   return status;
 }
 
-NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
+//*************************************************************************
+//**** iterate
+//*************************************************************************
+NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::iterate()
+{
+
+  NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
+
+  switch(method) {
+  case Standard:
+    status = iterateStandard();
+    break;
+
+  case Inexact:
+    status = iterateInexact();
+    break;
+
+  default:
+    status = iterateInexact();  // defaults to non-minimized model
+    break;
+  }
+  
+  return status;
+}
+
+//*************************************************************************
+//**** iterateStandard
+//*************************************************************************
+NOX::StatusTest::StatusType 
+NOX::Solver::InexactTrustRegionBased::iterateStandard()
 {
   // First check status
   if (status != StatusTest::Unconverged) 
@@ -312,10 +424,14 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
     cout << "-- Trust Region Inner Iteration --" << endl;
   }
 
+  // Dogleg variable
+  double gamma = 0.0;
 
   // Trust region subproblem loop
   while ((ratio < minRatio) && (radius > minRadius)) 
   {
+    if (useCounters)
+      numTrustRegionInnerIterations += 1;
 
     Abstract::Vector* dirPtr;
     double step;
@@ -376,7 +492,7 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
       }
       
       // final soln to quadratic equation
-      double gamma = (sqrt(tmp) - cta) / ata;
+      gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
 	cerr << "NOX::Solver::InexactTrustRegionBased::iterate - invalid trust region step" << endl;
 	throw "NOX Error";
@@ -496,8 +612,19 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
       radius = min(expandFactor * radius, maxRadius);
     }
 
-  }
+  } // End of While loop over TR inner iteration
 
+  // Update Counters
+  if (useCounters) {
+    if (stepType == InexactTrustRegionBased::Newton)
+      numNewtonSteps += 1;
+    else if (stepType == InexactTrustRegionBased::Cauchy) 
+      numCauchySteps += 1;
+    else if (stepType == InexactTrustRegionBased::Dogleg) {
+      numDoglegSteps += 1;
+      sumDoglegFractions += gamma;
+    }
+  }
 
   // Evaluate the current status
   if ((radius <= minRadius) && (ratio < minRatio)) 
@@ -524,7 +651,291 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::iterate()
   return status;
 }
 
-NOX::StatusTest::StatusType InexactTrustRegionBased::solve()
+//*************************************************************************
+//**** interateInexact
+//*************************************************************************
+NOX::StatusTest::StatusType 
+NOX::Solver::InexactTrustRegionBased::iterateInexact()
+{
+  // First check the current status
+  if (status != StatusTest::Unconverged) 
+    return status;
+
+  // Copy pointers into temporary references
+  Abstract::Group& soln = *solnPtr;
+  StatusTest::Generic& test = *testPtr;
+
+  // Newton direction eta (do before setting oldSoln = soln).
+  eta_last = eta;
+  eta = inNewtonUtils.computeForcingTerm(soln, oldSoln, nIter, *this, eta_last);
+  
+  // Copy current soln to the old soln.
+  oldSoln = soln;
+  // RPP: Can't just copy over oldf.  Scaling could change between iterations
+  // so user Merit Functions could be out of sync
+  oldF = computeMeritFunction(oldSoln);
+
+  // Compute Cauchy direction
+  bool ok = cauchy.compute(cauchyVec, oldSoln, *this);
+  if (!ok) {
+    cout << "NOX::Solver::InexactTrustRegionBased::iterate - "
+	 << "unable to calculate Cauchy direction" << endl;
+    status = StatusTest::Failed;
+    return status;
+  }
+  
+  // Compute linear model residual for cauchy direction and tolerance
+  oldSoln.applyJacobian(cauchyVec, rCauchyVec);
+  rCauchyVec.update(1.0, oldSoln.getF(), 1.0);
+  double rCauchy = computeNorm(rCauchyVec);
+  double normF = computeNorm(oldSoln.getF());
+  double etaCauchy = rCauchy/normF;
+  
+  // Improvement ratio = (oldF - newF) / (mold - mnew)
+  double ratio = -1.0;
+
+  // Initial Radius
+  if (nIter == 0) 
+      radius = maxRadius;
+
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  {
+    cout << NOX::Utils::fill(72) << endl;
+    cout << "-- Trust Region Inner Iteration --" << endl;
+  }
+
+  // Set up variables needed during inner iteration.
+  NOX::Abstract::Vector* dirPtr = 0;
+  NOX::Abstract::Vector& doglegVec = bVec;
+  NOX::Abstract::Vector& zVec = aVec;
+  double step = 0.0;
+  double tau = 0.0;
+  double normS = computeNorm(cauchyVec);
+  bool computedNewtonDir = false;
+  innerIterationStatus = Unconverged;
+
+  // Update iteration count.
+  nIter ++;
+
+  // While "s" is not acceptable:
+  while (innerIterationStatus == Unconverged) {
+
+    if (useCounters)
+      numTrustRegionInnerIterations += 1;
+
+    // Compute a direction and step length
+    if (computeNorm(cauchyVec) >= radius) {
+      stepType = InexactTrustRegionBased::Cauchy;
+      step = radius / computeNorm(cauchyVec);
+      dirPtr = &cauchyVec;
+    }
+    else {
+      if (etaCauchy <= eta) {
+	stepType = InexactTrustRegionBased::Cauchy;
+	step = 1.0;
+	dirPtr = &cauchyVec;
+      }
+      else {  // compute the Newton direction
+
+	if (!computedNewtonDir) {
+	  string directionMethod = paramsPtr->sublist("Direction").
+	    getParameter("Method", "Newton");
+	  NOX::Parameter::List& lsParams = paramsPtr->sublist("Direction").
+	    sublist(directionMethod).sublist("Linear Solver");
+	  lsParams.setParameter("Tolerance", eta);
+	  newtonVec.update(1.0, cauchyVec, 0.0);
+	  if (!(oldSoln.isJacobian()))
+	    oldSoln.computeJacobian();
+	  oldSoln.applyJacobianInverse(lsParams, oldSoln.getF(), newtonVec);
+	  newtonVec.scale(-1.0);
+	  computedNewtonDir = true;
+	}
+
+	// Can we take a Newton step?
+	if (computeNorm(newtonVec) <= radius) {
+	  stepType = InexactTrustRegionBased::Newton;
+	  step = 1.0;
+	  dirPtr = &newtonVec;
+	}
+	else { 
+
+	  // Compute z
+	  zVec.update(1.0, newtonVec, -1.0, cauchyVec, 0.0);
+	  
+	  // Compute <s,z>
+	  double sDotZ = 0.0;  
+	  if (userNormPtr != 0) 
+	    sDotZ = userNormPtr->dot(cauchyVec,zVec);
+	  else
+	    sDotZ = cauchyVec.dot(zVec);
+
+	  // Compute tau
+	  double normZ = computeNorm(zVec);
+	  if (sDotZ <= 0.0)
+	    tau = (-1.0 + sqrt(sDotZ * sDotZ + normZ * normZ * 
+		  (radius * radius - normS * normS)))/(normZ * normZ);
+	  else
+	    tau = (radius * radius - normS * normS)/
+	      (sDotZ + sqrt(sDotZ * sDotZ + normZ * normZ * 
+			    (radius * radius - normS * normS)));
+
+	  // Compute dogleg step
+	  doglegVec.update(1.0, cauchyVec, tau, zVec, 0.0);
+	  stepType = InexactTrustRegionBased::Dogleg;
+	  step = 1.0;
+	  dirPtr = &doglegVec;
+	} 
+      }      
+    } // Finished computing direction and step length
+
+    // Check if the computed step is valid for the trust region
+    //innerIterationStatus = checkStep();
+    NOX::Abstract::Vector& dir = *dirPtr;
+
+    // Update X and compute new F
+    soln.computeX(oldSoln, dir, step);
+    NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+    if (rtype != NOX::Abstract::Group::Ok)
+      throwError("iterateInexact", "unable to compute F!");
+    
+    // Compute ratio of actual to predicted reduction
+    newF = computeMeritFunction(*solnPtr);
+
+    if (newF >= oldF) 
+      ratio = -1;
+    else {
+
+      rtype = oldSoln.applyJacobian(*dirPtr, zVec);
+      if (rtype != NOX::Abstract::Group::Ok)
+	throwError("iterateInexact", "unable to applyJacobian!");
+  
+      double numerator = oldF - newF;
+      double denominator = 0.0;
+
+      if (userMeritFuncPtr != 0) {
+	denominator = fabs(oldF - userMeritFuncPtr->
+			   computeQuadraticModel(dir,oldSoln));
+      }
+      else 
+	denominator = fabs(dir.dot(oldSoln.getGradient()) + 
+			   0.5 * zVec.dot(zVec));
+
+      ratio = numerator / denominator;
+      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	     << utils.sciformat(denominator) << "=" << ratio << endl;
+
+      // WHY IS THIS CHECK HERE?
+      if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
+	ratio = -1;
+    }
+
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
+      cout << "radius = " << utils.sciformat(radius, 1);
+      cout << " ratio = " << setprecision(1) << setw(3) << ratio;
+      cout << " f = " << utils.sciformat(sqrt(2*newF));
+      cout << " oldF = " << utils.sciformat(sqrt(2*oldF));
+      cout << " ";
+
+      switch(stepType) {
+      case InexactTrustRegionBased::Newton:
+	cout << "Newton";
+	break;
+      case InexactTrustRegionBased::Cauchy:
+	cout << "Cauchy";
+	break;
+      case InexactTrustRegionBased::Dogleg:
+	cout << "Dogleg";
+	break;
+      }
+      
+      cout << endl;
+    }
+
+    // Check the inner iteration status
+    if (ratio >= minRatio) {
+      innerIterationStatus = Converged;
+    }
+    else if ((radius <= minRadius) && (ratio < minRatio)) {
+      innerIterationStatus = Failed; 
+    }
+
+    // Update trust region radius
+    if (ratio < contractTriggerRatio) {
+
+      if (stepType == InexactTrustRegionBased::Newton)
+	radius = computeNorm(newtonVec);
+  
+      radius = max(contractFactor * radius, minRadius);
+    }
+    else if (ratio > expandTriggerRatio)
+    {
+      radius = min(expandFactor * radius, maxRadius);
+    }
+
+  } // End Trust region inner iteration
+
+  // Update Counters
+  if (useCounters) {
+    if (stepType == InexactTrustRegionBased::Newton)
+      numNewtonSteps += 1;
+    else if (stepType == InexactTrustRegionBased::Cauchy) 
+      numCauchySteps += 1;
+    else if (stepType == InexactTrustRegionBased::Dogleg) {
+      numDoglegSteps += 1;
+      sumDoglegFractions += tau;
+    }
+  }
+
+  // Adjust the eta when taking a cauchy or dogleg step
+  // This is equivalent to accounting for backtracking in inexact Newton
+  // line searches.  Have to check theory w/ Homer Walker on this.
+  if (stepType == InexactTrustRegionBased::Cauchy) 
+    eta = etaCauchy;
+  else if (stepType == InexactTrustRegionBased::Dogleg)
+    eta = 1.0 - tau * (1.0 - eta);
+
+  // If the inner iteration failed, use a recovery step
+  if (innerIterationStatus == Failed) {
+
+    if (utils.isPrintProcessAndType(Utils::InnerIteration))
+      cout << "Inner Iteration Failed!\n ";
+    if (computedNewtonDir) {
+      soln.computeX(oldSoln, cauchyVec, recoveryStep);
+      cout << "Using Newton recovery step and resetting trust region!" << endl;
+    }
+    else {
+      soln.computeX(oldSoln, cauchyVec, recoveryStep);
+      cout << "Using Cauchy recovery step and resetting trust region!" << endl;
+    }
+    soln.computeF();
+    radius = computeNorm(newtonVec);
+  }
+
+  // Evaluate the current status
+  status = test.checkStatus(*this);
+ 
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+    cout << NOX::Utils::fill(72) << endl;
+
+  return status;    
+}
+
+//*************************************************************************
+//**** checkStep
+//*************************************************************************
+NOX::StatusTest::StatusType 
+NOX::Solver::InexactTrustRegionBased::checkStep(const NOX::Abstract::Vector& step,
+						double& radius)
+{
+  
+  return NOX::StatusTest::Converged;
+}
+
+//*************************************************************************
+//**** solve
+//*************************************************************************
+NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
 {
   printUpdate();
 
@@ -534,35 +945,66 @@ NOX::StatusTest::StatusType InexactTrustRegionBased::solve()
     printUpdate();
   }
 
-  Parameter::List& outputParams = paramsPtr->sublist("Output");
-  outputParams.setParameter("Nonlinear Iterations", nIter);
-  outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+  if (writeOutputParamsToList) {
+    Parameter::List& outputParams = paramsPtr->sublist("Output");
+    outputParams.setParameter("Nonlinear Iterations", nIter);
+    outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+    if (useCounters) {
+      Parameter::List& trOutputParams = paramsPtr->
+	sublist("Trust Region").sublist("Output");
+      trOutputParams.setParameter("Number of Cauchy Steps", numCauchySteps);
+      trOutputParams.setParameter("Number of Newton Steps", numNewtonSteps);
+      trOutputParams.setParameter("Number of Dogleg Steps", numDoglegSteps);
+      trOutputParams.setParameter("Number of Trust Region Inner Iterations", 
+				  numTrustRegionInnerIterations);
+      trOutputParams.setParameter("Average Fraction for Dogleg Steps", 
+				  (sumDoglegFractions/((double)numDoglegSteps)));
+    }
+  }
 
   return status;
 }
 
-const Abstract::Group& InexactTrustRegionBased::getSolutionGroup() const
+//*************************************************************************
+//**** getSolutionGroup
+//*************************************************************************
+const Abstract::Group& 
+NOX::Solver::InexactTrustRegionBased::getSolutionGroup() const
 {
   return *solnPtr;
 }
 
-const Abstract::Group& InexactTrustRegionBased::getPreviousSolutionGroup() const
+//*************************************************************************
+//**** getPreviousSolutionGroup
+//*************************************************************************
+const Abstract::Group& 
+NOX::Solver::InexactTrustRegionBased::getPreviousSolutionGroup() const
 {
   return oldSoln;
 }
 
-int InexactTrustRegionBased::getNumIterations() const
+//*************************************************************************
+//**** getNumIterations
+//*************************************************************************
+int NOX::Solver::InexactTrustRegionBased::getNumIterations() const
 {
   return nIter;
 }
 
-const Parameter::List& InexactTrustRegionBased::getParameterList() const
+//*************************************************************************
+//**** getParameterList
+//*************************************************************************
+const Parameter::List& 
+NOX::Solver::InexactTrustRegionBased::getParameterList() const
 {
   return *paramsPtr;
 }
 
+//*************************************************************************
+//**** printUpdate
+//*************************************************************************
 // protected
-void InexactTrustRegionBased::printUpdate() 
+void NOX::Solver::InexactTrustRegionBased::printUpdate() 
 {
   // Print the status test parameters at each iteration if requested  
   if ((status == StatusTest::Unconverged) && 
@@ -595,6 +1037,50 @@ void InexactTrustRegionBased::printUpdate()
     testPtr->print(cout);
     cout << NOX::Utils::fill(72) << "\n";
   }
+}
+
+//*************************************************************************
+//**** resetCounters
+//*************************************************************************
+void NOX::Solver::InexactTrustRegionBased::resetCounters()
+{
+  numCauchySteps = 0;
+  numNewtonSteps = 0;
+  numDoglegSteps = 0;
+  numTrustRegionInnerIterations = 0;
+  sumDoglegFractions = 0.0;
+  return;
+}
+
+//*************************************************************************
+//**** computeNorm
+//*************************************************************************
+double NOX::Solver::InexactTrustRegionBased::
+computeNorm(const NOX::Abstract::Vector& v)
+{
+  double norm = 0.0;
+  if (userNormPtr != 0)
+    norm = userNormPtr->norm(v);
+  else
+    norm = v.norm();
+
+  return norm;
+}
+
+//*************************************************************************
+//**** computeMeritFunction
+//*************************************************************************
+double NOX::Solver::InexactTrustRegionBased::
+computeMeritFunction(NOX::Abstract::Group& grp)
+{
+  double f = 0.0;
+
+  if (userMeritFuncPtr != 0)
+    f = userMeritFuncPtr->computef(grp);
+  else 
+    f = 0.5 * grp.getNormF() * grp.getNormF();
+
+  return f;
 }
 
 #endif // WITH_PRERELEASE

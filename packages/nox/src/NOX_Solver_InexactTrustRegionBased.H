@@ -36,10 +36,13 @@
 #define NOX_SOLVER_INEXACTTRUSTREGIONBASED_H
 
 #include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Direction_Manager.H"  // class data element
-#include "NOX_Parameter_List.H"	    // class data element
-#include "NOX_Utils.H"	            // class data element
+
+// Class data elements
+#include "NOX_LineSearch_Manager.H" 
+#include "NOX_Direction_Manager.H"  
+#include "NOX_Parameter_List.H"	    
+#include "NOX_Utils.H"	            
+#include "NOX_Direction_Utils_InexactNewton.H" 
 
 namespace NOX {
   namespace Parameter {
@@ -160,20 +163,26 @@ An iteration consists of the following steps.
 The following parameters should be specified in the "Trust Region"
 sublist based to the solver.
 
-  - "Direction" - Sublist of the direction parameters for the %Newton
-    point, passed to the NOX::Direction::Manager constructor. If this
-    sublist does not exist, it is created by default. Furthermore, if
-    "Method" is not specified in this sublist, it is added with a value of
-    "Newton".
+- "Inner Iteration Method" - Choice of trust region algorithm to use.  
+  Choices are:
+  <ul>
+  <li> "Standard Trust Region"
+  <li> "Inexact Trust Region"
+  </ul>
 
-  - "Cauchy %Direction" - Sublist of the direction parameters for the
-    Cauchy point, passed to the NOX::Direction::Manager
-    constructor. If this sublist does not exist, it is created by
-    default. Furthremore, if "Method" is not specified in this
-    sublist, it is added with a value of "Steepest Descent" Finally,
-    if the sub-sublist "Steepest Descent" does not exist, it is
-    created and the parameter "Scaling Type" is added and set to
-    "Quadratic".
+- "Direction" - Sublist of the direction parameters for the %Newton
+  point, passed to the NOX::Direction::Manager constructor. If this
+  sublist does not exist, it is created by default. Furthermore, if
+  "Method" is not specified in this sublist, it is added with a value of
+  "Newton".
+
+- "Cauchy %Direction" - Sublist of the direction parameters for the
+  Cauchy point, passed to the NOX::Direction::Manager constructor. If
+  this sublist does not exist, it is created by default. Furthermore, if
+  "Method" is not specified in this sublist, it is added with a value of
+  "Steepest Descent" Finally, if the sub-sublist "Steepest Descent" does
+  not exist, it is created and the parameter "Scaling Type" is added and
+  set to "Quadratic Min Model".
 
 - "Minimum Trust Region Radius" (\f$\Delta_{\min}\f$) - Minimum allowable trust region
   radius. Defaults to 1.0e-6.
@@ -200,6 +209,10 @@ sublist based to the solver.
 
 - "Recovery Step" - Defaults to 1.0.
 
+- "Use Counters" - Boolean.  If set to true, solver statistics will be stored.
+
+- "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the solver parameter list (see Output Parameters).
+
 <B>Output Paramters</B>
 
 A sublist for output parameters called "Output" will be created and contain the following parameters:
@@ -207,6 +220,15 @@ A sublist for output parameters called "Output" will be created and contain the 
 - "Nonlinear Iterations" - Number of nonlinear iterations
 
 - "2-Norm or Residual" - Two-norm of final residual
+
+- "Number of Cauchy Steps" - Number of cauchy steps taken during the solve.
+
+- "Number of Newton Steps" - Number of Newton steps taken during the solve.
+
+- "Number of Dogleg Steps" - Number of Dogleg steps taken during the solve.
+
+- "Number of Trust Region Inner Iterations" - Number of inner iterations 
+  required to adjust the trust region radius.
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -242,17 +264,65 @@ public:
 
 protected:
   
+  //! "Standard" trust region implementation
+  virtual NOX::StatusTest::StatusType iterateStandard();
+  //! "Inexact Trust Region"
+  virtual NOX::StatusTest::StatusType iterateInexact();
+
   //! Print out initialization information and calcuation the RHS.
   virtual void init();
-
-  //! Print and error message and throw and error
-  virtual void invalid(const string& param, double value) const;
 
   //! Prints the current iteration information.
   virtual void printUpdate();
 
+  //! Print an error message and throw an error during parameter reads
+  virtual void invalid(const string& param, double value) const;
+
+  //! Print an error message and throw an error
+  virtual void throwError(const string& method, const string& mesage) const;
+
+  //! Resets the counters in the solver.
+  virtual void resetCounters();
+
+  //! Check to see if the current step is acceptable.  If not, it reduces the trust region radius accordingly.
+  NOX::StatusTest::StatusType checkStep(const NOX::Abstract::Vector& step,
+					double& radius);
+
+  //! Computes the norm of a given vector.  
+  /*! Defaults to the L-2 norm but could use a user defined norm also. */
+  virtual double computeNorm(const NOX::Abstract::Vector& v);
+
+  //! Computes the merit function of a given solution group.
+  /*! Defaults to \f$ \frac{1}{2}\| F \|^2 \f$ but can be a 
+    user defined merit funtion.
+  */
+  virtual double computeMeritFunction(NOX::Abstract::Group& grp);
+
 protected:
-  
+  //! Type of Trust Region algorithm to use.
+  enum TrustRegionType {
+    //! Basic trust region method for nonlinear systems (Nocedal and Wright?).
+    Standard,
+    //! Inexact Trust region WITHOUT minimization of the local linear model over the line segments.
+    Inexact
+  };
+
+  //! Type of trust region algorithm to use.
+  TrustRegionType method;
+
+  //! Return types for inner iteration status test
+  enum InnerIterationReturnType {
+    //! Converged.
+    Converged,
+    //! Unconverged.
+    Unconverged,
+    //! Failed by hitting minimum radius bound.
+    Failed
+  };
+
+  //! Current status of the trust region inner iteration.
+  InnerIterationReturnType innerIterationStatus;
+
   //! Current solution.
   NOX::Abstract::Group* solnPtr;		
 
@@ -280,6 +350,13 @@ protected:
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
+  NOX::Abstract::Vector* rCauchyVecPtr;
+  //! Extra vector
+  NOX::Abstract::Vector& rCauchyVec;
+
+  //! Extra vector used in computations
+  /*! We have both a pointer and a reference because we need to create
+    a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* aVecPtr;
   //! Extra vector
   NOX::Abstract::Vector& aVec;
@@ -297,8 +374,11 @@ protected:
   //! Input parameters.
   NOX::Parameter::List* paramsPtr;	
 
-  //! Printing Utils
+  //! Printing utilities.
   NOX::Utils utils;
+
+  //! Inexact Newton utitilities.
+  NOX::Direction::Utils::InexactNewton inNewtonUtils;
 
   //! %Newton %Search %Direction. 
   NOX::Direction::Manager newton; 
@@ -345,6 +425,12 @@ protected:
   //! Number of nonlinear iterations.
   int nIter;                    
 
+  //! Current linear solve tolerance (inexact only). 
+  double eta;
+
+  //! Linear solve tolerance used in last iteration (inexact only).
+  double eta_last;
+
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
@@ -367,7 +453,31 @@ protected:
   
   //! Stores a user supplied merit function if supplied in the parameter list.
   NOX::Parameter::MeritFunction* userMeritFuncPtr;
-  
+
+  //! If set to true, statistics/counters will be output to the output list
+  bool writeOutputParamsToList;
+
+  //! If set to true, counters will be stored by the solver. 
+  bool useCounters;
+
+  //! Counter for the number of cauchy steps taken.
+  int numCauchySteps;
+
+  //! Counter for the number of Newton steps taken.
+  int numNewtonSteps;
+
+  //! Counter for the number of Dogleg steps taken.
+  int numDoglegSteps;
+
+  //! Number of inner iterations required to adjust the trust region radius.
+  int numTrustRegionInnerIterations;
+
+  //! Holds the sum of the fraction of dogleg steps in the Newton direction.
+  /*! Divided by the number of dogleg steps, this will give the average
+    step size of all dogleg steps.
+  */
+  double sumDoglegFractions;
+
 };
 } // namespace Solver
 } // namespace NOX
