@@ -22,7 +22,7 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
-#ifdef HAVE_ML_ANASAZI
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
                                                ML_Smoother* Smoother,
 					       int MaxIters, double Tolerance,

@@ -483,7 +483,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // IFPACK //
   // ====== //
 
-#ifdef HAVE_ML_IFPACK
+#if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
   if (InputList.get("test: IFPACK",true) == true) {
     
     if( Comm().MyPID() == 0 ) cout << endl << "- IFPACK" << endl;
@@ -537,6 +537,8 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       delete yo;
     }
 
+#if defined(HAVE_ML_AMESOS)
+
     for (double omega = 0.25 ; omega < 1.5 ; omega += 0.25) {
 
       // now test block w/ equation partitioner
@@ -585,6 +587,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
       delete yo;
     }
+#endif
  }
 #endif
 

@@ -14,7 +14,7 @@
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
                                 const Epetra_Comm* UserComm,
                                 const bool cheap,
-                                USR_COMM comm) :
+                                const USR_COMM comm) :
   Op_(0),
   FreeCommObject_(false),
   NumMyRows_(-1),

@@ -181,6 +181,9 @@ int main(int argc, char *argv[])
   //   * NumMLCycles specifies the number of applications of the 
   //     complete cycle.
 
+  int NumPreCycles = 5;
+  int NumPostCycles = 1;
+  int NumMLCycles = 10;
   MLPrec->AnalyzeHierarchy(true, NumPreCycles, NumPostCycles, NumMLCycles);
 
   // ================================================= //

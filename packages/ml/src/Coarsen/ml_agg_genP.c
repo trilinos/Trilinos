@@ -34,7 +34,7 @@ extern "C"
 {
 #endif
 #endif
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
@@ -726,7 +726,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 	 break;
 
        case 2: /* Use Anasazi */
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 	 ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
 					     ML_FALSE, ML_TRUE, &max_eigen);
 #else
@@ -2370,7 +2370,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values_non_scaled == ML_YES ) {
 
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
        ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(Amat,fov);
 #else
        fprintf(stderr,
@@ -2407,7 +2407,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values == ML_YES ) {
 
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
        ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
 #else
 	 fprintf(stderr,

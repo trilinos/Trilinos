@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   // Trilinos tutorial for more details.
   
   CrsMatrixGallery Gallery("recirc_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  Gallery.Set("problem_size", 900);
   
   // retrive pointers for linear system matrix and linear problem
   Epetra_RowMatrix * A = Gallery.GetMatrix();
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   // enable filtering (also known as GGB)
   MLList.set("filtering: enable", true);
   // number of modes to be filtered
-  MLList.set("filtering: eigenvalues to compute", 10);
+  MLList.set("filtering: eigenvalues to compute", 2);
   // number of local aggregates, the higher the better the preconditioner
   // (tough it might be expensive to apply the filtering correction)
   MLList.set("filtering: local aggregates", 1);

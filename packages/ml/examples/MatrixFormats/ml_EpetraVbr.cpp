@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   // build up a 9-point Laplacian in 2D. This stencil will lead to
   // "perfect" aggregates, of square shape, using almost all the ML
   // aggregation schemes.
-  // The problem size (10000) must be a square number. Otherwise, the user
+  // The problem size (900) must be a square number. Otherwise, the user
   // can specify the number of points in the x- and y-direction, and the
   // length of the x- and y-side of the computational domain. Please
   // refer to the Trilinos tutorial for more details.
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   // Note also that this gallery matrix have no boundary nodes.
   
   VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
-  Gallery.Set("problem_size", 10000);
+  Gallery.Set("problem_size", 900);
   
   // retrive pointers for linear system matrix and linear problem
   Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);

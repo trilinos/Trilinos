@@ -207,6 +207,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
