@@ -367,11 +367,6 @@ Other important notes about the configure and build processes.
 \item Any code that links to Trilinos should define 
 \InlineCommand{HAVE\_CONFIG\_H}.
 
-\item The ``classic'' build system and Autotools do not mix.  Trying to build 
-with Autotools in a directory that contains a classic build will not work.  
-Before attempting an Autotools build, the classic build object, library, and 
-executable files within the source tree should be removed.
-
 \item The build process will fail on OSX if ``DropZip'' is used to 
 unzip the Trilinos tarball.  This utility truncates long file names.
 
