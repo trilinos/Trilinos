@@ -18,9 +18,9 @@ The version 5.0 general release contains 17 packages: Amesos, Anasazi, AztecOO,
 Didasko, Epetra, EpetraExt, Ifpack, Kokkos, Komplex, LOCA, ML, New_Package, 
 NOX, Pliris, PyTrilinos, Teuchos, and Triutils.
 
-The limited release contains an additional 5 packages that are available in 
-special situations by request. These are: Belos, Claps, Jpetra, Meros, and 
-Tpetra. 
+The limited release contains an additional 9 packages that are available in 
+special situations by request. These are: Belos, Claps, Jpetra, Meros, Tpetra, 
+TSF, TSFCore, TSFCoreUtils and TSFExtended.
 
 Some of the significant new features:
 
