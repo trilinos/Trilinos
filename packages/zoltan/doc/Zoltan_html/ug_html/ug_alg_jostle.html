@@ -1,0 +1,132 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1377">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE>Zoltan User's Guide:  Jostle Interface</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="Jostle"></A>Jostle</H2>
+<A HREF="http://www.gre.ac.uk/jostle/">Jostle</A> is a library for graph/mesh
+partitioning and load balancing developed at the University of Greenwich,
+London, UK, by Chris Walshaw. The parallel version of Jostle is sometimes
+called pjostle. In the Zoltan context, the name Jostle always refers to
+the parallel version of the library. The main algorithm used in Jostle
+is based on multilevel graph partitioning, and a diffusion-type method
+is also available. Hence the Jostle library is similar to ParMETIS. Zoltan
+provides an interface to Jostle to give users an alternative to ParMETIS.
+
+<P>At present, only a subset of the Jostle options are supported by Zoltan.
+These are briefly described below. For further details, see the documentation
+available from the Jostle home page. More options may be added to Zoltan
+upon request.
+
+<P>Note that Jostle is not distributed with Zoltan. If you wish to use
+Jostle within Zoltan, you must first obtain a <A HREF="http://www.gre.ac.uk/jostle/plicense.ps.gz">license
+for Parallel Jostle</A> and install it on your system. The license is free
+for academic use.
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+
+<TD><B>JOSTLE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>JOSTLE_OUTPUT_LEVEL</I></TD>
+
+<TD>Amount of output Jostle should produce.&nbsp; (integer)</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_THRESHOLD</I></TD>
+
+<TD>Threshold at which the graph contraction phase is stopped. (integer)</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_GATHER_THRESHOLD</I></TD>
+
+<TD>Duplicate coarse graph on all processors when there are fewer than
+this number of nodes. (integer)</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_MATCHING</I></TD>
+
+<TD>Matching algorithm for graph contraction. (Valid values are "local"
+and "global".)</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_REDUCTION</I></TD>
+
+<TD>When reduction is turned off, Jostle performs a diffusion-type algorithm
+instead of multilevel graph partitioning. (Valid values are "on" and "off".)</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default values:</B></TD>
+
+<TD>See the Jostle documentation.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+pair</TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD></TD>
+
+<TD NOSAVE><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_NUM_EDGES_FN</A></B>&nbsp;
+<BR><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_EDGE_LIST_FN</A></B></TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_alg_oct.html">Next:&nbsp; Octree/Space-Filling Curve (SFC)
+Partitioning</A>&nbsp; |&nbsp; <A HREF="ug_alg_parmetis.html">Previous:&nbsp;
+ParMetis</A>]
+</BODY>
+</HTML>
