@@ -127,7 +127,7 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
    ml_cs->data = NULL;
    ml_cs->func = NULL;
    ml_cs->data_destroy = NULL;
-   if (ml_cs->label != NULL) { free(ml_cs->label); ml_cs->label = NULL; }
+   if (ml_cs->label != NULL) { ML_free(ml_cs->label); ml_cs->label = NULL; }
    return 0;
 }
 

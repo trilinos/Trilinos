@@ -299,8 +299,8 @@ int ML_sort(int nlist, int *list)
    for ( i = 0; i < count1; i++ ) list[i] = cnt1_array[i];
    list[count1] = key;
    for ( i = 0; i < count2; i++ ) list[count1+1+i] = cnt2_array[i];
-   free( cnt1_array );
-   free( cnt2_array );
+   ML_free( cnt1_array );
+   ML_free( cnt2_array );
    ML_sort( count1, list );
    begin = count1+1;
    for ( i = count1+1; i < nlist; i++ ) 
@@ -370,8 +370,8 @@ int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit)
       dlist[count1+1+i] = darray2[i];
       ilist[count1+1+i] = iarray2[i];
    }
-   free( darray1 );
-   free( iarray1 );
+   ML_free( darray1 );
+   ML_free( iarray1 );
    if ( count1+1 == limit ) return 0;
    else if ( count1+1 < limit )
       ML_split_dsort(&(dlist[count1+1]),count2,&(ilist[count1+1]),limit-count1-1);
@@ -497,9 +497,9 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
       loopcnt--;
    }
 
-   free(darray);
-   free(treeArray);
-   free(treeLengs);
+   ML_free(darray);
+   ML_free(treeArray);
+   ML_free(treeLengs);
    return 0;
 }
 
@@ -1486,11 +1486,11 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
       j = 3; j = ML_gmax_int(j, comm); /* synchronize procs */
     }
 
-    if (ibuffer == obuffer) {free(send_buffer); send_buffer = NULL;}
-    free(request);
-    free(start_recv_proc);
-    free(finished_recv_messg);
-    free(finished_send_messg);
+    if (ibuffer == obuffer) {ML_free(send_buffer); send_buffer = NULL;}
+    ML_free(request);
+    ML_free(start_recv_proc);
+    ML_free(finished_recv_messg);
+    ML_free(finished_send_messg);
     return;
   }
 
@@ -1554,12 +1554,12 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         j += length;
      }
      *total_num_recv = j/element_size;
-     if (ibuffer == obuffer) {free(send_buffer); send_buffer = NULL;}
+     if (ibuffer == obuffer) {ML_free(send_buffer); send_buffer = NULL;}
   }
-  free(request);
-  free(start_recv_proc);
-  free(finished_recv_messg);
-  free(finished_send_messg);
+  ML_free(request);
+  ML_free(start_recv_proc);
+  ML_free(finished_recv_messg);
+  ML_free(finished_send_messg);
 
 } /* ML_splitup_big_msg */
 
