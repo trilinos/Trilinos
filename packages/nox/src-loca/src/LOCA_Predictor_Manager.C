@@ -69,8 +69,10 @@ LOCA::Predictor::Manager::reset(NOX::Parameter::List& params)
     else if (method == "Random")
       predictorPtr = new LOCA::Predictor::Random(params);
     else {
-      cerr << "LOCA::Predictor::Manager::reset() - invalid choice (" 
-	   << method << ") for predictor method " << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+	cout << "LOCA::Predictor::Manager::reset() - invalid choice (" 
+	     << method << ") for predictor method " << endl;
+      }
       return NOX::Abstract::Group::Failed;
     }
   }
@@ -84,11 +86,13 @@ LOCA::Predictor::Manager::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
 				  LOCA::Continuation::ExtendedVector& result) 
 {
   if (predictorPtr == NULL) {
-    cerr << "LOCA::Predictor::Manager::compute - Null pointer error" << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::Predictor::Manager::compute - Null pointer error" << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 
-  if (Utils::doPrint(Utils::StepperDetails))
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
     cout << "\n\tCalling Predictor with method: " << method << endl;
 
   return predictorPtr->compute(prevGroup, curGroup, result);

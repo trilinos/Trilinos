@@ -36,6 +36,7 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
 #include "LOCA_Continuation_ArcLengthGroup.H"
+#include "LOCA_Utils.H"
 
 LOCA::Continuation::Manager::Manager(NOX::Parameter::List& p) :
   method(),
@@ -68,8 +69,13 @@ LOCA::Continuation::Manager::createContinuationGroup(
   else if (method == "Arc Length")
     return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, linSolverParams, *paramsPtr);
   else {
-    cerr << "LOCA::Continuation::Manager::createContinuationGroup() - invalid choice (" << method << ") for continuation method " << endl;
-      return NULL;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::Continuation::Manager::createContinuationGroup() "
+	   << "- invalid choice (" << method 
+	   << ") for continuation method " << endl;
+    }
+    throw "LOCA Error";
+    return NULL;
   }
 }
 

@@ -34,6 +34,8 @@
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H" 
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_ErrorCheck.H"
+#include "LOCA_Utils.H"
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
 			      LOCA::Bifurcation::HopfBord::AbstractGroup& g,
@@ -876,9 +878,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient() const 
 {
-  cout << "ERROR: LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient() "
-       << " - not implemented" << endl;
-  throw "LOCA Error";
+  LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient()"," - not implemented");
   return getNewton();
 }
 
@@ -895,9 +895,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(hopfNewtonVec,residual);
   if (res != NOX::Abstract::Group::Ok) {
-    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
-	 << " returned not ok" << endl;
-    throw "LOCA Error";
+     LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
     return 0.0;
   }
 
@@ -908,17 +906,24 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual() const
 void
 LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution(const double conParam) const 
 {
-  cout << "LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution\n";
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Bifurcation::HopfBord::ExtendedGroup::printSolution\n";
 
-  cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
+    cout << "\tPrinting Solution Vector for conParam = " 
+	 << LOCA::Utils::sci(conParam) << endl;
+  }
   grpPtr->printSolution(conParam);
 
-  cout << "\tPrinting Real Component of Eigenvector for bif param = " 
-       << getBifParam() << endl;
-  grpPtr->printSolution(hopfXVec.getRealEigenVec(), hopfXVec.getBifParam());
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Real Component of Eigenvector for bif param = " 
+	 << LOCA::Utils::sci(getBifParam()) << endl;
+  }
 
-  cout << "\tPrinting Imaginary Component of Eigenvector for frequency = " 
-       << hopfXVec.getFrequency() << endl;
+  grpPtr->printSolution(hopfXVec.getRealEigenVec(), hopfXVec.getBifParam());
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Imaginary Component of Eigenvector for frequency = " 
+	 << LOCA::Utils::sci(hopfXVec.getFrequency()) << endl;
+  }
   grpPtr->printSolution(hopfXVec.getImagEigenVec(), 
 			hopfXVec.getFrequency());
 }
@@ -951,11 +956,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::init()
   ldz = hopfXVec.getImagEigenVec().dot(*lengthVecPtr);
 
   if (ldy == 0.0) {
-    cout << "ERROR: LOCA::Bifurcation::HopfBord::ExtendedGroup::init()"
-         << "     : Real component of eigenvector cannot be orthogonal " 
-	 << "to length vector!" << endl;
-
-    throw "LOCA Error";
+     LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::init()","Real component of eigenvector cannot be orthogonal to length vector!");
   }
 
   denom = ldy*ldy + ldz*ldz;

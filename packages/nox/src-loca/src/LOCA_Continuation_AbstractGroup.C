@@ -32,6 +32,7 @@
 
 #include "NOX_Parameter_List.H"
 #include "LOCA_Continuation_AbstractGroup.H"
+#include "LOCA_ErrorCheck.H"
 
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
@@ -62,6 +63,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::computeEigenvalues(
 					        NOX::Parameter::List& params)
 {
-  cerr << "Error:  No eigensolver defined for group" << endl;
+  LOCA::ErrorCheck::throwError("LOCA::Continuation::AbstractGroup::computeEigenvalues",
+			       "No eigensolver defined for group");
   return NOX::Abstract::Group::Failed;
 }

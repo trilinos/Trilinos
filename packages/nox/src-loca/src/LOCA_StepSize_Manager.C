@@ -36,6 +36,7 @@
 #include "NOX_Solver_Generic.H"
 #include "LOCA_StepSize_Constant.H"
 #include "LOCA_StepSize_Adaptive.H"
+#include "LOCA_Utils.H"
 
 LOCA::StepSize::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -64,8 +65,10 @@ LOCA::StepSize::Manager::reset(NOX::Parameter::List& params)
     else if (method == "Adaptive")
       stepSizePtr = new LOCA::StepSize::Adaptive(params);
     else {
-      cerr << "LOCA::StepSize::Manager::reset() - invalid choice (" 
-	   << method << ") for step size method " << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+	cout << "LOCA::StepSize::Manager::reset() - invalid choice (" 
+	     << method << ") for step size method " << endl;
+      }
       return NOX::Abstract::Group::Failed;
     }
   }
@@ -83,7 +86,9 @@ LOCA::StepSize::Manager::compute(
 			double& stepSize) 
 {
   if (stepSizePtr == NULL) {
-    cerr << "LOCA::StepSize::Manager::compute - Null pointer error" << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::StepSize::Manager::compute - Null pointer error" << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 

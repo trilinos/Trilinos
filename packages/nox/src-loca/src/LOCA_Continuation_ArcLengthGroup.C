@@ -32,6 +32,7 @@
 
 #include "LOCA_Continuation_ArcLengthGroup.H"
 #include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 				 LOCA::Continuation::AbstractGroup& g,
@@ -255,8 +256,10 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   tmpVec->update(-1.0, prevXVec, 1.0);
 
   if (!isPredictorDirection()) {
-    cerr << "LOCA::Continuation::ArcLengthGroup::computeF() called " 
-	 << "with invalid predictor vector." << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::Continuation::ArcLengthGroup::computeF() called " 
+	   << "with invalid predictor vector." << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 
@@ -382,8 +385,10 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& i
   // if tangent vector hasn't been computed, we are stuck since this is
   // a const method
   if (!isPredictorDirection()) {
-    cerr << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called " 
-	 << "with invalid predictor vector." << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called " 
+	   << "with invalid predictor vector." << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 
@@ -514,9 +519,7 @@ LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(newtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
-    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
-	 << " returned not ok" << endl;
-    throw "LOCA Error";
+    LOCA::ErrorCheck::throwError("LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
     return 0.0;
   }
 
@@ -547,14 +550,17 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
   double dpdsOld = 
     1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  if (Utils::doPrint(Utils::StepperDetails)) {
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "dpdsOld = " << dpdsOld << endl;
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "thetaOld = " << theta << endl;
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "gOld = " << theta*dpdsOld << endl;
-  }
+   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+     cout << endl 
+	  << "\t" << LOCA::Utils::fill(64, '+') << endl 
+	  << "\t" << "Arc-length scaling calculation:" << endl
+	  << "\t" << "Parameter component of predictor before rescaling = " 
+	  << LOCA::Utils::sci(dpdsOld) << endl
+	  << "\t" << "Scale factor from previous step                   = "
+	  << LOCA::Utils::sci(theta) << endl
+	  << "\t" << "Parameter contribution to arc-length equation     = "
+	  << LOCA::Utils::sci(theta*dpdsOld) << endl;
+   }
 
   // Recompute scale factor
   recalculateScaleFactor(dpdsOld);
@@ -563,14 +569,16 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
   double dpdsNew = 
     1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  if (Utils::doPrint(Utils::StepperDetails)) {
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "dpdsNew = " << dpdsNew << endl;
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "thetaNew = " << theta << endl;
-    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-         << "gNew = " << theta*dpdsNew << endl;
-  }
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+     cout << endl 
+	  << "\t" << "Parameter component of predictor after rescaling  = " 
+	  << LOCA::Utils::sci(dpdsNew) << endl
+	  << "\t" << "New scale factor (theta)                          = "
+	  << LOCA::Utils::sci(theta) << endl
+	  << "\t" << "Parameter contribution to arc-length equation     = "
+	  << LOCA::Utils::sci(theta*dpdsNew) << endl
+	  << "\t" << LOCA::Utils::fill(64, '+') << endl;
+   }
 
   // Rescale predictor vector
   predictorVec.scale(dpdsNew);

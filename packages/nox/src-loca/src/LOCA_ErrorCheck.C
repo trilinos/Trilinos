@@ -47,7 +47,7 @@ LOCA::ErrorCheck::~ErrorCheck()
 
 void LOCA::ErrorCheck::throwError(string callingFunction, 
 				  string message, 
-				  string throwLabel) const
+				  string throwLabel)
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
     cout << "************************" << "\n";
@@ -61,7 +61,7 @@ void LOCA::ErrorCheck::throwError(string callingFunction,
 }
 
 void LOCA::ErrorCheck::printWarning(string callingFunction, 
-				    string message) const
+				    string message)
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
     cout << "WARNING: " << callingFunction << " - ";
@@ -74,7 +74,7 @@ void LOCA::ErrorCheck::printWarning(string callingFunction,
 void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
 				       ActionType action,
 				       string callingFunction,
-				       string message) const
+				       string message)
 {
   if (status != NOX::Abstract::Group::Ok) {
     
@@ -100,7 +100,8 @@ void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
   return;
 }
 
-string LOCA::ErrorCheck::getReturnTypeString(NOX::Abstract::Group::ReturnType status) const
+string 
+LOCA::ErrorCheck::getReturnTypeString(NOX::Abstract::Group::ReturnType status) 
 {
   if (status == NOX::Abstract::Group::Ok)
     return "Ok";

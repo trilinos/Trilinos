@@ -36,6 +36,7 @@
 
 // LOCA Includes
 #include "LOCA_Utils.H"		                // for static function doPrint
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Continuation_AbstractGroup.H"   // class data element
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
@@ -147,7 +148,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   statusTestPtr = &t;
 
   // Initialize the utilities
-  Utils::setUtils(paramListPtr->sublist("LOCA").sublist("Utilities"));
+  LOCA::Utils::setUtils(paramListPtr->sublist("LOCA").sublist("Utilities"));
 
   // Get LOCA sublist
   NOX::Parameter::List& locaList = paramListPtr->sublist("LOCA");
@@ -170,9 +171,8 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   if (stepperList.isParameter("Initial Value"))
     startValue = stepperList.getParameter("Initial Value", 0.0);
   else {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Initial Value\" of continuation param is not set!" << endl;
-    throw "LOCA Error";
+    LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+				 "\"Initial Value\" of continuation parameter is not set!");
   }
 
   // Get the continuation parameter name
@@ -181,25 +181,22 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 						   "None"), 
 			  startValue);
   else {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Continuation Parameter\" name is not set!" << endl;
-    throw "LOCA Error";
+     LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+				  "\"Continuation Parameter\" name is not set!");
   }
   
   // Get the max and min values of the continuation parameter
   if (stepperList.isParameter("Max Value"))
     maxValue = stepperList.getParameter("Max Value", 0.0);
   else {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Maximum Value\" of continuation param is not set!" << endl;
-    throw "LOCA Error";
+     LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+				  "\"Maximum Value\" of continuation parameter is not set!");
   }
   if (stepperList.isParameter("Min Value"))
     minValue = stepperList.getParameter("Min Value", 0.0);
   else {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Minimum Value\" of continuation param is not set!" << endl;
-    throw "LOCA Error";
+    LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+				 "\"Minimum Value\" of continuation parameter is not set!");
   }
   
 
@@ -240,7 +237,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 
   printInitializationInfo();
 
-  if (Utils::doPrint(Utils::Parameters))
+  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters))
     paramListPtr->print(cout);
   
   return true;
@@ -479,10 +476,6 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 	   curGroupPtr->computeScaledDotProduct(*prevPredictorPtr, 
 						 *prevPredictorPtr));
 
-    if (Utils::doPrint(Utils::StepperDetails))
-      cout << "LOCA::Stepper::postprocess():  tangentFactor = "
-  	   << tangentFactor << endl;
-
     if (tangentFactor < minTangentFactor)
       return LOCA::Abstract::Iterator::Unsuccessful;
 
@@ -501,21 +494,28 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
     // See if we went past bounds for parameter
     if ( value >= maxValue*(1.0 - 1.0e-15) && paramStep > 0 ) {
-      cout << "\n\tContinuation run stopping: parameter reached bound of "
-           << maxValue << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+	cout << "\n\tContinuation run stopping: parameter reached bound of "
+	     << LOCA::Utils::sci(maxValue) << endl;
+      }
       targetValue = maxValue;
       return LOCA::Abstract::Iterator::Finished;
     }
     if ( value <= minValue*(1.0 + 1.0e-15) && paramStep < 0 ) {
-      cout << "\n\tContinuation run stopping: parameter reached bound of "
-           << minValue << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+	cout << "\n\tContinuation run stopping: parameter reached bound of "
+	     << LOCA::Utils::sci(minValue) << endl;
+      }
       targetValue = minValue;
       return LOCA::Abstract::Iterator::Finished;
     }
 
     // Check to see if arclength step was aimed to reach bound (should be near)
     if (isLastIteration()) {
-      cout << "\n\tContinuation run stopping: parameter stepped to bound" << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+	cout << "\n\tContinuation run stopping: parameter stepped to bound" 
+	     << endl;
+      }
       return LOCA::Abstract::Iterator::Finished;
     }
   }
@@ -525,8 +525,10 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Check to see if max number of steps has been reached
   if (LOCA::Abstract::Iterator::numTotalSteps
         >= LOCA::Abstract::Iterator::maxSteps) {
-    cout << "\n\tContinuation run stopping: reached maximum number of steps "
-         << LOCA::Abstract::Iterator::maxSteps << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+      cout << "\n\tContinuation run stopping: reached maximum number of steps "
+	   << LOCA::Abstract::Iterator::maxSteps << endl;
+    }
     return LOCA::Abstract::Iterator::Failed;
   }
 
@@ -543,6 +545,12 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Provisional;
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\n\tTangent factor scaling:  Rescaling step size by "
+	 << LOCA::Utils::sci(pow(fabs(tangentFactor), tangentFactorExponent))
+	 << endl;
+  }
 
   stepSize *= pow(fabs(tangentFactor), tangentFactorExponent);
   
@@ -578,76 +586,88 @@ LOCA::Stepper::getParameterList() const
 void 
 LOCA::Stepper::printInitializationInfo()
 {  
-  cout.precision(6);
-  if (Utils::doPrint(Utils::StepperIteration)) {
-    cout << endl << Utils::fill(72, '~') << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+    cout << endl << LOCA::Utils::fill(72, '~') << endl;
     cout << "Beginning Continuation Run \n" 
-	 << "Stepper Method:             " << conGroupManagerPtr->getMethod() << "\n"
-	 << "Initial Parameter Value = " << startValue << "\n"
-	 << "Maximum Parameter Value = " << maxValue << "\n"
-	 << "Minimum Parameter Value = " << minValue << "\n"
-	 << "Maximum Number of Continuation Steps = " << LOCA::Abstract::Iterator::maxSteps 
+	 << "Stepper Method:             " << conGroupManagerPtr->getMethod() 
+	 << "\n"
+	 << "Initial Parameter Value = " << LOCA::Utils::sci(startValue) 
+	 << "\n"
+	 << "Maximum Parameter Value = " << LOCA::Utils::sci(maxValue) << "\n"
+	 << "Minimum Parameter Value = " << LOCA::Utils::sci(minValue) << "\n"
+	 << "Maximum Number of Continuation Steps = " 
+	 << LOCA::Abstract::Iterator::maxSteps 
 	 << endl;
-    cout << Utils::fill(72, '~') << endl << endl;
+    cout << LOCA::Utils::fill(72, '~') << endl << endl;
   }
 }
  
 void 
 LOCA::Stepper::printStartStep()
 {  
-  if (Utils::doPrint(Utils::StepperIteration)) {
-    cout.precision(6);
-    cout << "\n" << Utils::fill(72, '~') << "\n";
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+    cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber <<" : ";
     if (stepNumber==0) {
-      cout << "Attempting to converge initial guess at initial parameter values." << endl;
+      cout << "Attempting to converge initial guess at initial parameter"
+	   << "values." << endl;
     }
     else if (isTargetStep) {
-      cout << "Attempting to hit final target value " << targetValue << endl;
+      cout << "Attempting to hit final target value " 
+	   << LOCA::Utils::sci(targetValue) << endl;
     }
     else {
       cout << "Parameter: " << conGroupManagerPtr->getConParamID()
-  	   << " = " << curGroupPtr->getContinuationParameter() 
-           << " from " << prevGroupPtr->getContinuationParameter() << endl;
-      cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
-      cout << "Current step size  = " << stepSize << "   "
-	   << "Previous step size = " << stepSizeManagerPtr->getPrevStepSize() << endl;
+  	   << " = " 
+	   << LOCA::Utils::sci(curGroupPtr->getContinuationParameter())
+           << " from " 
+	   << LOCA::Utils::sci(prevGroupPtr->getContinuationParameter()) 
+	   << endl;
+      cout << "Continuation Method: " << conGroupManagerPtr->getMethod() 
+	   << endl;
+      cout << "Current step size  = " << LOCA::Utils::sci(stepSize) << "   "
+	   << "Previous step size = " 
+	   << LOCA::Utils::sci(stepSizeManagerPtr->getPrevStepSize()) << endl;
     }
-    cout << Utils::fill(72, '~') << "\n" << endl;
+    cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
   }
 }
 
 void 
 LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  cout.precision(6);
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     // Print results of successful continuation step
-    if (Utils::doPrint(Utils::StepperIteration)) {
-      cout << "\n" << Utils::fill(72, '~') << "\n";
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+      cout << "\n" << LOCA::Utils::fill(72, '~') << "\n";
       cout << "End of Continuation Step " << stepNumber << " : ";
       cout << "Parameter: " << conGroupManagerPtr->getConParamID()
-	   << " = " << curGroupPtr->getContinuationParameter();
+	   << " = " 
+	   << LOCA::Utils::sci(curGroupPtr->getContinuationParameter());
       if (stepNumber != 0) 
-        cout << " from " << prevGroupPtr->getContinuationParameter();
+        cout << " from " 
+	     << LOCA::Utils::sci(prevGroupPtr->getContinuationParameter());
       cout << endl << "--> Step Converged in "
-           << solverPtr->getNumIterations() <<" Nonlinear Solver Iterations!\n";
-      cout << Utils::fill(72, '~') << "\n" << endl;
+           << solverPtr->getNumIterations() 
+	   <<" Nonlinear Solver Iterations!\n";
+      cout << LOCA::Utils::fill(72, '~') << "\n" << endl;
     }
   }
   else {
-    if (Utils::doPrint(Utils::StepperIteration)) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
       // RPP: We may not need this, the failure info should be 
       // at the method level!
-      cout << endl << Utils::fill(72, '~') << endl;
+      cout << endl << LOCA::Utils::fill(72, '~') << endl;
       cout << "Continuation Step Number " << stepNumber 
            << " experienced a convergence failure in\n"
-           << "the nonlinear solver after "<< solverPtr->getNumIterations() <<" Iterations\n";
+           << "the nonlinear solver after "<< solverPtr->getNumIterations() 
+	   <<" Iterations\n";
       cout << "Value of continuation parameter at failed step = "
-           << curGroupPtr->getContinuationParameter();
+           << LOCA::Utils::sci(curGroupPtr->getContinuationParameter());
       if (stepNumber != 0) 
-        cout << " from " << prevGroupPtr->getContinuationParameter();
-      cout << endl << Utils::fill(72, '~') << endl;
+        cout << " from " 
+	     << LOCA::Utils::sci(prevGroupPtr->getContinuationParameter());
+      cout << endl << LOCA::Utils::fill(72, '~') << endl;
     }
   }
 }

@@ -37,6 +37,7 @@
 #include "LOCA_SingularJacobianSolve_Nic.H"
 #include "LOCA_SingularJacobianSolve_NicDay.H"
 #include "LOCA_SingularJacobianSolve_ItRef.H"
+#include "LOCA_Utils.H"
 
 LOCA::SingularJacobianSolve::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -112,8 +113,11 @@ LOCA::SingularJacobianSolve::Manager::reset(NOX::Parameter::List& params)
     else if (method == "Iterative Refinement")
       singularSolverPtr = new LOCA::SingularJacobianSolve::ItRef(params);
     else {
-      cerr << "LOCA::SingularJacobianSolve::Manager::reset() - invalid choice (" 
-	   << method << ") for singular solve method " << endl;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+	cout << "LOCA::SingularJacobianSolve::Manager::reset() - invalid "
+	     << "choice (" 
+	     << method << ") for singular solve method " << endl;
+      }
       return NOX::Abstract::Group::Failed;
     }
   }
@@ -131,11 +135,15 @@ LOCA::SingularJacobianSolve::Manager::compute(
 				NOX::Abstract::Vector& result) 
 {
   if (singularSolverPtr == NULL) {
-    cerr << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer error" << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer"
+	   << " error" << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 
-  cout << "\n\tCalling singular solver with method: " << method << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
+    cout << "\n\tCalling singular solver with method: " << method << endl;
 
   return singularSolverPtr->compute(params, grp, input, approxNullVec,
 				    jacApproxNullVec, result);
@@ -152,12 +160,16 @@ LOCA::SingularJacobianSolve::Manager::computeMulti(
 				int nVecs) 
 {
   if (singularSolverPtr == NULL) {
-    cerr << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer error" << endl;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer"
+	   << "error" << endl;
+    }
     return NOX::Abstract::Group::Failed;
   }
 
-  cout << "\n\tCalling singular solver with method: " << method << endl;
-
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
+    cout << "\n\tCalling singular solver with method: " << method << endl;
+  
   return singularSolverPtr->computeMulti(params, grp, inputs, approxNullVec,
 					 jacApproxNullVec, results, nVecs);
 }

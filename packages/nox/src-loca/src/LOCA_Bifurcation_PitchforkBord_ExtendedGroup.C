@@ -34,6 +34,8 @@
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_ErrorCheck.H"
+#include "LOCA_Utils.H"
 
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
                          LOCA::Bifurcation::TPBord::AbstractGroup& g,
@@ -676,9 +678,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient() const 
 {
-  cout << "ERROR: LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient() "
-       << " - not implemented" << endl;
-  throw "LOCA Error";
+  LOCA::ErrorCheck::throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient()"," - not implemented");
   return getNewton();
 }
 
@@ -695,9 +695,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual() co
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(pfNewtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
-    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
-	 << " returned not ok" << endl;
-    throw "LOCA Error";
+    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
     return 0.0;
   }
 
@@ -708,12 +706,19 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual() co
 void
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(const double conParam) const 
 {
-  cout << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
-  cout << "\tSlack variable sigma = " << pfXVec.getSlackVar() << endl;
-  cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
+    cout << "\tSlack variable sigma = " 
+	 << LOCA::Utils::sci(pfXVec.getSlackVar()) << endl;
+    cout << "\tPrinting Solution Vector for conParam = " 
+	 << LOCA::Utils::sci(conParam) << endl;
+  }
   grpPtr->printSolution(conParam);
 
-  cout << "\tPrinting Null Vector for bif param = " << getBifParam() << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tPrinting Null Vector for bif param = " 
+	 << LOCA::Utils::sci(getBifParam()) << endl;
+  }
   grpPtr->printSolution(pfXVec.getNullVec(), pfXVec.getBifParam());
 }
 
@@ -738,12 +743,11 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()
   double lVecDotNullVec;
   lVecDotNullVec = lengthVecPtr->dot(pfXVec.getNullVec());
   if (lVecDotNullVec == 0.0) {
-    cout << "ERROR: LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init\n"
-         << "     : length vector can not have Norm zero " << endl;
-
-    throw "LOCA Error";
+    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()","null vector can be orthogonal to length-scaling vector");
   }
-  cout << "\tIn LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init, scaling lenVec by:" 
-       << (1.0 / lVecDotNullVec) << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "\tIn LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init, scaling lenVec by:" 
+	 << LOCA::Utils::sci(1.0 / lVecDotNullVec) << endl;
+  }
   lengthVecPtr->scale(1.0 / lVecDotNullVec);
 }
