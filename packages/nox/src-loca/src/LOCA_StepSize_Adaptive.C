@@ -59,6 +59,7 @@ LOCA::StepSize::Adaptive::reset(NOX::Parameter::List& params)
 
 NOX::Abstract::Group::ReturnType 
 LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
+				  const LOCA::Continuation::Vector& predictor,
 				  const NOX::Solver::Generic& solver,
 				  const NOX::StatusTest::StatusType& solverStatus,
 				  const LOCA::Stepper& stepper,
@@ -66,8 +67,12 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
 {
   // If this is the first step, set step size to initial value
   if (isFirstStep) {
-    stepSize = startStepSize;
-    isFirstStep = false;
+    double dpds = predictor.getParam();
+    LOCA::StepSize::Constant::startStepSize /= dpds;
+    LOCA::StepSize::Constant::maxStepSize /= dpds;
+    LOCA::StepSize::Constant::minStepSize /= dpds;
+    LOCA::StepSize::Constant::isFirstStep = false;
+    stepSize = LOCA::StepSize::Constant::startStepSize;
   }
   else {
     // Get maximum number of nonlinear iterations from stepper parameters

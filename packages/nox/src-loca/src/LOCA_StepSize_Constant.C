@@ -60,15 +60,21 @@ LOCA::StepSize::Constant::reset(NOX::Parameter::List& params)
 
 NOX::Abstract::Group::ReturnType 
 LOCA::StepSize::Constant::compute(LOCA::Continuation::Group& curGroup,
+				  const LOCA::Continuation::Vector& predictor,
 				  const NOX::Solver::Generic& solver,
 				  const NOX::StatusTest::StatusType& solverStatus,
 				  const LOCA::Stepper& stepper,
 				  double& stepSize) 
 {
-  // If this is the first step, set step size to initial value
+  // If this is the first step, set step size to initial value adjusted 
+  // to predicted change in parameter
   if (isFirstStep) {
-    stepSize = startStepSize;
+    double dpds = predictor.getParam();
+    startStepSize /= dpds;
+    maxStepSize /= dpds;
+    minStepSize /= dpds;
     isFirstStep = false;
+    stepSize = startStepSize;
   }
   else {
     // Step size remains constant, unless...

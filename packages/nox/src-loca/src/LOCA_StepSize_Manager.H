@@ -55,6 +55,7 @@ namespace LOCA {
   
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& curGroup,
+	      const LOCA::Continuation::Vector& predictor,
 	      const NOX::Solver::Generic& solver,
 	      const NOX::StatusTest::StatusType& solverStatus,
 	      const LOCA::Stepper& stepper,
