@@ -233,7 +233,10 @@ int main(int argc, char *argv[])
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
   // 5. Finite Difference with Coloring......uncomment the following
 // -------------- Uncomment this block to use coloring --------------- //
-#ifdef HAVE_NOX_EPETRAEXT 
+#ifndef HAVE_NOX_EPETRAEXT 
+  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
+  exit(0);
+#else 
   // Create a timer for performance
   Epetra_Time fillTime(Comm);
 
@@ -256,10 +259,6 @@ int main(int argc, char *argv[])
 
   FDC.setDifferenceMethod(NOX::EpetraNew::FiniteDifference::Centered);
 
-#else 
-  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
-  exit(0);
-#endif 
 // -------------- End of block needed to use coloring --------------- */
 
 
@@ -379,4 +378,5 @@ int main(int argc, char *argv[])
 /* end main
 */
 return ierr ;
+#endif 
 }
