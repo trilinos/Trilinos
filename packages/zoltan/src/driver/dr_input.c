@@ -67,9 +67,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
   char   inp_line[MAX_INPUT_STR_LN + 1];
   char   inp_copy[MAX_INPUT_STR_LN + 1];
   char  *cptr, *cptr2;
-  double value;
   int    i, icnt;
-  int    iret, num_params_alloc = 0, param_index;
+  int    num_params_alloc = 0, param_index;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -417,7 +416,6 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
 /*****************************************************************************/
 int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 {
-  char   cmesg[256]; /* for error messages */
 /***************************** BEGIN EXECUTION ******************************/
 
   /* check for the parallel Nemesis file for proc 0 */

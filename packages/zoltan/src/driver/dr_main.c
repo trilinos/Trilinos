@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   float  version;
 
   int    Proc, Num_Proc;
-  int    error, i, j;
+  int    error, i;
 
   PARIO_INFO    pio_info;
   ELEM_INFO_PTR elements;

@@ -21,7 +21,7 @@ static char *cvs_elemch_id = "$Id$";
 #endif
 
 /* Define element types */
-typedef enum {SPHERE, BAR1, BAR2, QUAD1, S_QUAD2, QUAD2,
+typedef enum {E_TYPE_ERROR=-1, SPHERE, BAR1, BAR2, QUAD1, S_QUAD2, QUAD2,
               SHELL1, SHELL2, TRI1, TRI2, TSHELL1, TSHELL2, HEX1,
               S_HEX2, HEX2, TET1, TET2, WEDGE1, WEDGE2,
               HEXSHELL, NULL_EL} E_Type;

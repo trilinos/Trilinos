@@ -69,9 +69,9 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
     case 3:
       answer=BAR2;
       break;
-    defalt:
+    default:
       Gen_Error(0, "fatal: unsupported BAR/BEAM/TRUSS element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "QUAD", 4) == 0)
@@ -89,7 +89,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported QUAD element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "HEX", 3) == 0)
@@ -110,7 +110,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported HEX element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "TRI", 3) == 0)
@@ -127,7 +127,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported TRI element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "TET", 3) == 0)
@@ -142,7 +142,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported TET element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "SHELL", 5) == 0)
@@ -157,7 +157,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported SHELL element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else if(strncasecmp(elem_name, "WEDGE", 5) == 0)
@@ -172,13 +172,13 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     default:
       Gen_Error(0, "fatal: unsupported WEDGE element");
-      answer = -1;
+      answer = E_TYPE_ERROR;
     }
   }
   else
   {
     Gen_Error(0, "fatal: unknown element type read");
-    answer = -1;
+    answer = E_TYPE_ERROR;
   }
 
   return answer;

@@ -528,7 +528,7 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
     if (Mesh.eb_cnts[iblk] > 0) {
       if ((eb_etype[iblk] =  get_elem_type(Mesh.eb_names[iblk],
                                            Mesh.eb_nnodes[iblk],
-                                           Mesh.num_dims)) < 0) {
+                                           Mesh.num_dims)) == E_TYPE_ERROR) {
         Gen_Error(0, "fatal: could not get element type");
         return 0;
       }

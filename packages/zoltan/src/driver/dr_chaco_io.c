@@ -219,7 +219,6 @@ static int fill_elements(
   int i, j, k, elem_id, local_id;
   int num_vtx; 
   int *vtx_list = NULL;
-  char cmesg[256];
   char *yo = "fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
 

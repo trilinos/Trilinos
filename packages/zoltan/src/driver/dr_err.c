@@ -31,7 +31,7 @@ static char *cvs_error_id = "$Id$";
 #include "dr_err_const.h"
 
 static int error_cnt = 0;
-int error_lev = 1;
+int error_lev = 3;
 
 static ERROR_MSG_PTR error_info;
 
@@ -84,7 +84,8 @@ void error_add(int level, char *message, char *filename, int line_no)
   (error_info+error_cnt)->line_no = line_no;
 
   /* Store the name of the file in which the error occured */
-  (error_info+error_cnt)->filename = malloc((strlen(filename)+1)*sizeof(char));
+  (error_info+error_cnt)->filename =
+                          (char *) malloc((strlen(filename)+1)*sizeof(char));
   if(!((error_info+error_cnt)->filename))
   {
     fprintf(stderr, "insufficient memory for entire error message\n");

@@ -705,46 +705,48 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
 
   /* copy the adjacency info */
   /* globalIDs are received; convert to local IDs when adj elem is local */
-  current_elem->adj      = (int *) malloc(current_elem->adj_len * sizeof(int));
-  current_elem->adj_proc = (int *) malloc(current_elem->adj_len * sizeof(int));
-  if (current_elem->adj == NULL || current_elem->adj_proc == NULL) {
-    Gen_Error(0, "fatal: insufficient memory");
-    *ierr = LB_MEMERR;
-    return;
-  }
-  for (i =  0; i < current_elem->adj_len; i++) {
-    current_elem->adj[i] = *buf_int;
-    buf_int++;
-    current_elem->adj_proc[i] = *buf_int;
-    buf_int++;
-    if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
-      current_elem->adj[i] = in_list(current_elem->adj[i], 
-                                     New_Elem_Index_Size, New_Elem_Index);
-  }
-  size += current_elem->adj_len * 2 * sizeof(int);
-
-  /*
-   * copy the allocated float fields for this element.
-   */
-
-  /* Pad the buffer so the following casts will work.  */
-  size += pad_for_alignment(size);
-  buf_float = (float *) (buf + size);
-
-  /* copy the edge_wgt data */
-  if (Use_Edge_Wgts) {
-    current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
-                                            * sizeof(float));
-    if (current_elem->edge_wgt == NULL) {
+  if (current_elem->adj_len > 0) {
+    current_elem->adj      = (int *)malloc(current_elem->adj_len * sizeof(int));
+    current_elem->adj_proc = (int *)malloc(current_elem->adj_len * sizeof(int));
+    if (current_elem->adj == NULL || current_elem->adj_proc == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       *ierr = LB_MEMERR;
       return;
     }
-    for (i = 0; i < current_elem->adj_len; i++) {
-      current_elem->edge_wgt[i] = *buf_float;
-      buf_float++;
+    for (i =  0; i < current_elem->adj_len; i++) {
+      current_elem->adj[i] = *buf_int;
+      buf_int++;
+      current_elem->adj_proc[i] = *buf_int;
+      buf_int++;
+      if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
+        current_elem->adj[i] = in_list(current_elem->adj[i], 
+                                       New_Elem_Index_Size, New_Elem_Index);
     }
-    size += current_elem->adj_len * sizeof(float);
+    size += current_elem->adj_len * 2 * sizeof(int);
+
+    /*
+     * copy the allocated float fields for this element.
+     */
+
+    /* Pad the buffer so the following casts will work.  */
+    size += pad_for_alignment(size);
+    buf_float = (float *) (buf + size);
+
+    /* copy the edge_wgt data */
+    if (Use_Edge_Wgts) {
+      current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
+                                              * sizeof(float));
+      if (current_elem->edge_wgt == NULL) {
+        Gen_Error(0, "fatal: insufficient memory");
+        *ierr = LB_MEMERR;
+        return;
+      }
+      for (i = 0; i < current_elem->adj_len; i++) {
+        current_elem->edge_wgt[i] = *buf_float;
+        buf_float++;
+      }
+      size += current_elem->adj_len * sizeof(float);
+    }
   }
 
   /* copy coordinate data */
