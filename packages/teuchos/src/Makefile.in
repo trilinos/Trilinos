@@ -125,10 +125,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
-	$(srcdir)/Teuchos_PacketTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
-	$(srcdir)/Teuchos_ReportError.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
