@@ -20,7 +20,7 @@ Albuquerque, NM 87185-1110
 \SANDprintDate{August 2003}
 \SANDauthor{
 Michael A. Heroux and James M. Willenbring \\
-Computational Math and Algorithms Departmment \\
+Computational Math and Algorithms Department \\
  \\
 Sandia National Laboratories\\
 P.O. Box 5800\\
@@ -143,111 +143,128 @@ Optional parameters. \\ \hline
 \section{Getting Started}
 \label{Section:GettingStarted}
 This chapter covers some of the basics that a user will need to know when 
-beginning to work on the Trilinos project.  We address how to configure and 
-build Trilinos, as well as how to add files to an existing package.
+beginning to use Trilinos.  Specifically, we address how to obtain, 
+configure, build and test Trilinos.
 
-%Four subsections common to the Dev Guide and User Guide: Recommended 
-%Build Directory Structure, Configuring Trilinos, Building Trilinos,
-%and Trilinos Configuration Options
-\input{../DevGuide/TrilinosDUGuideConfigBuild.tex}
+\framebox{\begin{minipage}[r]{.88\textwidth}{
+{\bf Tip:}
+Check out the Trilinos Home Page at \newline
+\InlineDirectory{http://software.sandia.gov/Trilinos}.
+At the website a user can:  
+\begin{itemize}
+\item Find general information about Trilinos and Trilinos Packages.
+\item Download Trilinos.
+\item Sign up for mail lists.
+\item Find documentation.
+\item Submit a bug report.
+\end{itemize}
+}\end{minipage}}
 
-\section{Tools Available for Trilinos Users}
-\label{Section:AvailableTools}
-A number of services exist for Trilinos packages.  Many of these services 
-relate directly to the requirements and suggested practices for Trilinos 
-packages.  For example, the CVS repository is discussed below, and 
-Trilinos packages must make use of this repository.  Also, Bonsai, Bugzilla 
-and Mailman are all tools that relate to suggested practices.  (It should be 
-noted that these services are not simply meant to satisfy SQE requirements.  
-Rather, Bonsai, Bugzilla and Mailman have proved to be very useful tools.  
-Using these tools together, along with the CVS repository, has led to a more 
-time and cost effective code development process.)  For more information about 
-any of the below services, please contact the Trilinos Project Leader.
+\subsection{Obtaining a Copy of Trilinos}
 
-\subsection{Test Harness}
-\label{subsect:TestHarness}
+Trilinos can be obtained in two different ways.  Users most commonly 
+download Trilinos in the form of a tarball from the Trilinos website at 
+\newline \InlineDirectory{http://software.sandia.gov/trilinos/downloads.html}.
 
-Trilinos packages that configure and build using Autotools can easily 
-utilize the the Trilinos test harness.  The Trilinos test harness is composed 
-of two components.  
+Users may be able to obtain a 
+copy of Trilinos via the Trilinos CVS repository.  Access to the Trilinos 
+repository is granted only to co-developers, Sandians, and in select 
+special cases.
 
-One part of the test harness is used to run nightly tests on a number of 
-platforms.  This portion of the test harness performs a 
-\InlineCommand{cvs update} (gets the most recent source code) every night and 
-then builds the libraries and runs any tests that have been integrated into 
-the test harness.  
-
-Tests that are added as ``daily'' tests are run six time a week, while 
-``weekly'' tests are run once a week.  Currently the nightly test harness only 
-runs on Linux, IRIX64, and DEC/OSF1, but it will eventually run on 5-8 
-platforms.  Packages that have not ported to a particular platform can be 
-excluded from the testing process on that platform.  Packages that do not have 
-any tests integrated into the test harness can still benefit by testing that 
-libraries build without errors.  
-
-The second component of the test harness is a script that should be executed 
-by users before checking updates into the repository.  This script is located 
-in \InlineDirectory{Trilinos/testharness/checkin-test-harness}.  The script 
-provides an easy way for users to run all of the ``daily'' tests that have 
-been added to the test harness for all packages from one location.  
-Instructions for running the script can be found within the script itself.
-
-Integrating existing tests into the testharness is not difficult.  
-The process is discussed in 
-\InlineDirectory{Trilinos/testharness/HowToAddToTestHarness}.  
-Please note that this document is a work in progress.
-
-\subsection{CVS Repository}
-
-Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
-very easy to add new packages to the repository.  Packages that already use 
-CVS can even retain their CVS history!  To access the repository, one must 
-have an account on software.sandia.gov.  Once an account has been granted, 
-set the following two environment variables (replace ``your\_user\_name'' 
-with your user name on software):
+To access the repository, an account on software.sandia.gov is required.  
+To request an account, send a note 
+to \InlineDirectory{trilinos-help@software.sandia.gov}.  
+The following two environment variables must be set to access the repository:
 
 \DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
 \DisplayCommand{CVS\_RSH ssh}
 
-For those not familiar with CVS, a brief discussion covering some of the most 
-common CVS commands is available in~\ref{Section:CVS}.  For a more complete 
-listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
+Replace ``your\_user\_name'' with your user name on software.
 
-\subsection{Bugzilla}
+To checkout a working copy of the development branch of Trilinos in the 
+current directory, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of a release branch of Trilinos in the current 
+directory, type
+
+\DisplayCommand{cvs checkout -r name\_of\_release\_branch Trilinos}
+
+Replace ``name\_of\_release\_branch'' with the name of the release branch.
+The name of the current release branch can be obtained by sending a note to
+\newline \InlineDirectory{trilinos-help@software.sandia.gov}.
+
+To checkout a working copy of the development version of only one Trilinos 
+package in the current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+Replace ``package\_name'' with the name of the package.  Please note 
+that many packages have dependencies on other Trilinos packages.
+
+For those not familiar with CVS, a brief discussion covering some of the most 
+common CVS commands is available in Section~\ref{Section:CVS}.  For a more 
+complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+%Four subsections common to the Dev Guide and User Guide: Recommended 
+%Build Directory Structure, Configuring Trilinos, Building Trilinos,
+%and Trilinos Configuration Options
+
+\input{../DevGuide/TrilinosDUGuideConfigBuild.tex}
+
+\subsection{Testing the Build}
+\label{subsect:TestHarness}
+
+Trilinos contains a script that can be used for the purpose of 
+verification testing.  This script is located 
+in \InlineDirectory{Trilinos/testharness/checkin-test-harness}.  The script 
+provides an easy way to run a set of tests for the packages that have been 
+included in a build (not all packages support testing).  
+Instructions for running the script can be found within the script itself.
+
+\section{Ongoing Use and Support}
+\label{Section:UseSupport}
+In this section we discuss how to report issues (bugs) and how to sign up
+for mail lists.
+
+\subsection{Reporting Bugs}
 \label{subsect:Bugzilla}
 Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.  
 Bugzilla can be found on the web at 
 \InlineDirectory{http://software.sandia.gov/bugzilla}.  
 A Bugzilla account is necessary for submitting bugs.  Those interested can 
-sign up at the website.  All bugs related to any package of Trilinos that uses 
-Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
-one developer diagnoses and fixes a bug within a short period of time.  A bug 
-report is still very valuable in this case because it provides an artifact 
-that outlines the problem and explains how the problem was fixed.  A bug 
-report should be filled out with as much detail as possible.  Likewise, after 
-a bug has been resolved, the developer should also provide a detailed 
-description of the solution that was used.
+sign up at the website.  All bugs related to any Trilinos package that uses 
+Bugzilla should be submitted to Bugzilla.  A secondary method of submitting
+bug reports is to send a note 
+to \InlineDirectory{Trilinos-Bugs@software.sandia.gov}.  
+
+Regardless of how an issue is submitted, the bug report should be filled out 
+with as much detail as possible.  Specifically, be sure to include which 
+version of Trilinos the bug was discovered in and which 
+platform(s) and compiler(s) the bug is associated with.  Also include any 
+specific error messages and any additional information that can be provided.
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
 should be submitted to Bugzilla to report a segmentation fault that occurs 
 when using an existing Ifpack preconditioner, and a bug report should also be
 submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are 
-used interchangably in the discussion of Bugzilla in this guide.
+used interchangeably in this discussion of Bugzilla.
 
-\subsection{Mailman}
+\subsection{Signing Up for Mail Lists}
 \label{subsect:MailMan}
 Email lists are maintained for Trilinos as a whole and for each package 
 through Mailman~\cite{Mailman}.  This tool can be found on the web at 
 \newline
 \InlineDirectory{http://software.sandia.gov/mailman/listinfo}.  
 Those interested in signing 
-up for one or more lists may do so at the website.  Non-Sandians are able to 
-sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this 
-in mind when posting to these lists.
+up for one or more lists may do so at the website.  A digest mode is 
+available for those who wish to receive a daily summary of list activity.  
+Non-Sandians are able to sign up for the ``Users'' and ``Announce'' 
+lists.  Sandians should keep this in mind when posting to these lists.
 
-Lists for new packages can be set up very easily.  Each package usually has 
-five mailing lists.  The example mailing lists mentioned below are to be used 
+The example mailing lists mentioned below are to be used 
 for issues relating to all of Trilinos.  The names for the lists pertaining to 
 individual packages follow the same naming scheme, simply replace ``Trilinos'' 
 with the name of the package.  For example the list for Trilinos users is 
@@ -256,12 +273,16 @@ called Trilinos-Users and the email address is
 for Epetra users is called Epetra-Users and the associated email address is 
 \InlineCommand{epetra-users@software.sandia.gov}
 
-TIP: While those who use Epetra (or any other Trilinos package) are also
+\framebox{\begin{minipage}[r]{.99\textwidth}{
+{\bf Tip:}
+While those who use any individual Trilinos package are also
 ``Trilinos users'', the lists are not set up to recognize this.  In other 
 words, those who subscribe to the Epetra-Users mailing list do not necessarily 
 form a subset of those who subscribe to the Trilinos-Users mailing list.  This 
 is also true of all other list types.  Keep this in mind when subscribing and 
 posting to lists.
+}\end{minipage}}
+
 \begin{itemize}
 \item Trilinos-Announce 
 \InlineCommand{trilinos-announce@software.sandia.gov}
@@ -273,126 +294,6 @@ All Trilinos release announcements and other major news.
 
 List for Trilinos Users.  General discussions about the use of Trilinos.
 \end{itemize}
-
-	\subsection{Portable Interface to BLAS and LAPACK}
-%	**(See Overview Doc pg 12)**
-
-Portable interface to BLAS and LAPACK: The Basic Linear Algebra
-Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
-provide a large repository of robust, high-performance mathematical
-software for serial and shared memory parallel dense linear algebra
-computations.  However, the BLAS and LAPACK interfaces are Fortran
-specifications, and the mechanism for calling Fortran interfaces from
-C and C++ varies across computing platforms.  Epetra (and Tpetra)
-provide a set of simple, portable interfaces to the BLAS and LAPACK
-that provide uniform access to the BLAS and LAPACK across a broad
-set of platforms.  These interfaces are accessible to
-other packages.
-
-\section{Epetra and TSF: Two Special Trilinos Packages}
-\label{Section:EpetraAndTSF}
-In order to understand what Trilinos provides beyond the software
-engineering tools and the
-contributions of each Trilinos package, we briefly discuss two special
-Trilinos package collections: Petra and TSF.  These two package
-collections are complimentary,
-with TSF providing a common abstract application
-programmer interface (API) for other Trilinos packages and Petra
-providing a common concrete implementation of basic classes used by most
-Trilinos packages.
-
-\subsection{Petra}
-Matrices, vectors and graphs are basic objects used in most solver
-algorithms. Most Trilinos
-packages interact with these kinds of objects via abstract interfaces that
-allow a package to define what services and behaviors are expected from the objects,
-without enforcing a specific implementation.   This facilitates
-integration of a Trilinos package into almost any existing
-application.
-
-However, in order to use these packages, some concrete
-implementation of matrix and vector classes must be selected.  
-Petra is an object model for parallel,
-distributed-memory, object-oriented matrix and vector classes.
-Presently there are three Petra libraries: Epetra, Jpetra and Tpetra.
-Of the three, Epetra is the most mature and the one presently used in
-production computing settings.  Epetra is a collection of concrete
-classes that supports the construction and use of vectors, sparse
-graphs, and dense and sparse matrices.  It provides serial, parallel and
-distributed memory
-capabilities.  It uses the BLAS and LAPACK where possible, and as a
-result has good performance characteristics.
-
-In addition to providing easy construction and use of matrices,
-vectors and graphs in a parallel distributed memory environment,
-one of the most important aspects of Epetra is that every other
-Trilinos package can accept user data as Epetra objects.  This
-facilitates the use of multiple Trilinos packages in combination.  For
-example, Ifpack objects can be used as preconditioners for AztecOO, as
-can ML or Amesos objects.  Users can also use Trilinos packages in
-sequence such as solving linear and eigen problems with the same
-matrix.
-
-In summary, Epetra provides a common foundation for all other Trilinos
-packages while retaining an open architecture that allows any package
-to be used independently.  Epetra also supports light-weight copyin of
-user data, allowing easy interoperability with other package such as
-PETSc.
-
-\subsection{TSF}
-\label{subsect:InteropTSF}
-Many different algorithms are available to solve any given numerical
-problem.  For example, there are many algorithms for solving a system
-of linear equations, and many solver packages are available to solve
-linear systems.  Which package is appropriate is a function of
-many details about the problem being solved and the platform on which
-application is being run. However, even though
-there are many different solvers, conceptually, from an abstract view,
-these solvers are providing a similar capability, and it is
-advantageous to utilize this abstract view.be the coupling of
-linear solvers and eigensolvers in various ways.
-TSF is a collection of abstract classes that provides an application
-programmer interface (API) to perform the most common solver
-operations.  It can provide a single interface to many different
-solvers and has powerful compositional mechanisms that support the
-light-weight construction of composite objects from a set of
-existing objects.  As a result, TSF users gain easy access to many
-solvers and can bring multiple solvers to bear on a single problem.
-
-TSF is split into several packages.  The most important user-oriented
-classes are TSFCore and TSFExtended:
-\begin{enumerate}
-\item {\bf TSFCore:} As its name implies, TSFCore contains a small set
-of core classes that are considered essential to almost any abstract
-linear algebra interface.  The primary user classes in TSFCore are
-Vector, MultiVector, LinearOp and VectorSpace. TSFCore is discussed in
-detail in~\cite{TSFCore}.
-\item {\bf TSFExtended:} TSFExtended builds on top of TSFCore and
-includes overloaded operators, block and composite operators, both of
-which support powerful abstraction capabilities.  The Meros package
-relies on TSFExtended to implicitly construct sophisticated
-Schur compliment preconditioners in terms of existing component
-operators with little overhead in time or memory.
-\end{enumerate}
-
-Both TSFCore and TSFExtended are important because they allow
-interfacing and sophisticated use of numerical linear algebra object
-without requiring the user or application to commit to any particular
-concrete linear algebra library.  This approach allows us to leverage
-the investment in sophisticated abstract numerical algorithms across
-many concrete linear algebra libraries and gives application
-developers a single API that provides access to many solver packages.
-
-
-\section{Interoperability Status for Existing Trilinos Packages}
-Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
-\begin{figure}
-%\begin{center}
-\includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackageDependencies}
-%\end{center}
-\caption{\label{Figure:TrilinosPackageDependencies}Current Trilinos Package Dependencies}
-\end{figure}
-collection of Trilinos packages depend on each other.
 
 %\section{Platform Portability}
 %	**(List platforms - encourage script submission)**
@@ -406,13 +307,38 @@ collection of Trilinos packages depend on each other.
 \appendix
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
+To access the Trilinos CVS repository, an account on software.sandia.gov is 
+required.  To request an account, send a note to 
+\InlineCommand{trilinos-help@software.sandia.gov}.  
+The following two 
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.)
+
+Below is a brief description of the CVS commands that are most commonly 
+used by Trilinos users.  For a 
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
 \begin{itemize}
 \item {\bf Checking Out a Working Copy:}
-To get started, checkout a working copy of the development branch from the CVS 
-repository.  (Releases branches can be obtained by by checking out the 
-appropriate tagged version of the repository.  More about this below.)
+To checkout a working copy of the development branch of Trilinos in the 
+current directory from the CVS repository, type
 
 \DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the 
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
 
 \item {\bf Updating a Working Copy:}
 To update after a version has been obtained use the \InlineCommand{cvs update} 
@@ -439,6 +365,7 @@ repository, but the directory structures will remain if this option is not
 specified.  If an empty directory is needed, simply issue one update 
 command without the ``-P'' and the empty directories will be restored.
 
+%Possible future topics include:
 %\item{Working with Branches}
 %cvs status
 
