@@ -41,6 +41,9 @@
 # 
 # ************************************************************************
 #@HEADER
+
+SOURCES = $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -62,6 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -79,6 +83,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -92,17 +97,41 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-exec-recursive install-info-recursive \
-	install-recursive installcheck-recursive installdirs-recursive \
-	pdf-recursive ps-recursive uninstall-info-recursive \
-	uninstall-recursive
+am__EXEEXT_1 = example_AmesosFactory$(EXEEXT) \
+	example_AmesosFactory_HB$(EXEEXT) \
+	example_AmesosFactory_Tridiag$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+am_example_AmesosFactory_OBJECTS =  \
+	example_AmesosFactory-example_AmesosFactory.$(OBJEXT)
+example_AmesosFactory_OBJECTS = $(am_example_AmesosFactory_OBJECTS)
+@HAVE_AMESOS_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
+am__DEPENDENCIES_2 =
+am_example_AmesosFactory_HB_OBJECTS =  \
+	example_AmesosFactory_HB-example_AmesosFactory_HB.$(OBJEXT)
+example_AmesosFactory_HB_OBJECTS =  \
+	$(am_example_AmesosFactory_HB_OBJECTS)
+am_example_AmesosFactory_Tridiag_OBJECTS = example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.$(OBJEXT)
+example_AmesosFactory_Tridiag_OBJECTS =  \
+	$(am_example_AmesosFactory_Tridiag_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(example_AmesosFactory_SOURCES) \
+	$(example_AmesosFactory_HB_SOURCES) \
+	$(example_AmesosFactory_Tridiag_SOURCES)
+DIST_SOURCES = $(example_AmesosFactory_SOURCES) \
+	$(example_AmesosFactory_HB_SOURCES) \
+	$(example_AmesosFactory_Tridiag_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -134,7 +163,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -156,6 +185,8 @@ HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
 HAVE_AMESOS_SUPERLU_TRUE = @HAVE_AMESOS_SUPERLU_TRUE@
+HAVE_AMESOS_TRIUTILS_FALSE = @HAVE_AMESOS_TRIUTILS_FALSE@
+HAVE_AMESOS_TRIUTILS_TRUE = @HAVE_AMESOS_TRIUTILS_TRUE@
 HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -244,10 +275,78 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = AmesosDscpack AmesosFactory  AmesosSuperludist
-all: all-recursive
+EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag
+EXTRA_DIST = 662_bus.rsa
+@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_INCDIR = 
+@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+@HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_LIBS = 
+@HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
+
+#Specify locations of include files within Trilinos, but outside amesos
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	      -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	      ${TRIUTILS_INCDIR}
+
+example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
+example_AmesosFactory_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	${TRIUTILS_LIBS} \
+	GetNecessaryFiles
+
+example_AmesosFactory_CXXFLAGS = -I$(top_srcdir)/src \
+				 ${TRIUTILS_INCDIR}
+
+example_AmesosFactory_LDADD = $(top_builddir)/src/libamesos.a \
+	$(AMESOS_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+example_AmesosFactory_Tridiag_SOURCES = $(srcdir)/example_AmesosFactory_Tridiag.cpp
+example_AmesosFactory_Tridiag_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	${TRIUTILS_LIBS} \
+	GetNecessaryFiles
+
+example_AmesosFactory_Tridiag_CXXFLAGS = -I$(top_srcdir)/src \
+				 ${TRIUTILS_INCDIR}
+
+example_AmesosFactory_Tridiag_LDADD = $(top_builddir)/src/libamesos.a \
+	$(AMESOS_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+example_AmesosFactory_HB_SOURCES = $(srcdir)/example_AmesosFactory_HB.cpp
+example_AmesosFactory_HB_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	${TRIUTILS_LIBS}
+
+example_AmesosFactory_HB_CXXFLAGS = -I$(top_srcdir)/src \
+				 ${TRIUTILS_INCDIR}
+
+example_AmesosFactory_HB_LDADD = $(top_builddir)/src/libamesos.a \
+	$(AMESOS_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -277,66 +376,93 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+example_AmesosFactory$(EXEEXT): $(example_AmesosFactory_OBJECTS) $(example_AmesosFactory_DEPENDENCIES) 
+	@rm -f example_AmesosFactory$(EXEEXT)
+	$(CXXLINK) $(example_AmesosFactory_LDFLAGS) $(example_AmesosFactory_OBJECTS) $(example_AmesosFactory_LDADD) $(LIBS)
+example_AmesosFactory_HB$(EXEEXT): $(example_AmesosFactory_HB_OBJECTS) $(example_AmesosFactory_HB_DEPENDENCIES) 
+	@rm -f example_AmesosFactory_HB$(EXEEXT)
+	$(CXXLINK) $(example_AmesosFactory_HB_LDFLAGS) $(example_AmesosFactory_HB_OBJECTS) $(example_AmesosFactory_HB_LDADD) $(LIBS)
+example_AmesosFactory_Tridiag$(EXEEXT): $(example_AmesosFactory_Tridiag_OBJECTS) $(example_AmesosFactory_Tridiag_DEPENDENCIES) 
+	@rm -f example_AmesosFactory_Tridiag$(EXEEXT)
+	$(CXXLINK) $(example_AmesosFactory_Tridiag_LDFLAGS) $(example_AmesosFactory_Tridiag_OBJECTS) $(example_AmesosFactory_Tridiag_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+example_AmesosFactory-example_AmesosFactory.o: $(srcdir)/example_AmesosFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory-example_AmesosFactory.o -MD -MP -MF "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo" -c -o example_AmesosFactory-example_AmesosFactory.o `test -f '$(srcdir)/example_AmesosFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo" "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory.cpp' object='example_AmesosFactory-example_AmesosFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory-example_AmesosFactory.o `test -f '$(srcdir)/example_AmesosFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory.cpp
+
+example_AmesosFactory-example_AmesosFactory.obj: $(srcdir)/example_AmesosFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory-example_AmesosFactory.obj -MD -MP -MF "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo" -c -o example_AmesosFactory-example_AmesosFactory.obj `if test -f '$(srcdir)/example_AmesosFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo" "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory.cpp' object='example_AmesosFactory-example_AmesosFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory-example_AmesosFactory.obj `if test -f '$(srcdir)/example_AmesosFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory.cpp'; fi`
+
+example_AmesosFactory_HB-example_AmesosFactory_HB.o: $(srcdir)/example_AmesosFactory_HB.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_HB_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory_HB-example_AmesosFactory_HB.o -MD -MP -MF "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo" -c -o example_AmesosFactory_HB-example_AmesosFactory_HB.o `test -f '$(srcdir)/example_AmesosFactory_HB.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory_HB.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo" "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory_HB.cpp' object='example_AmesosFactory_HB-example_AmesosFactory_HB.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_HB_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory_HB-example_AmesosFactory_HB.o `test -f '$(srcdir)/example_AmesosFactory_HB.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory_HB.cpp
+
+example_AmesosFactory_HB-example_AmesosFactory_HB.obj: $(srcdir)/example_AmesosFactory_HB.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_HB_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory_HB-example_AmesosFactory_HB.obj -MD -MP -MF "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo" -c -o example_AmesosFactory_HB-example_AmesosFactory_HB.obj `if test -f '$(srcdir)/example_AmesosFactory_HB.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory_HB.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory_HB.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo" "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory_HB.cpp' object='example_AmesosFactory_HB-example_AmesosFactory_HB.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_HB_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory_HB-example_AmesosFactory_HB.obj `if test -f '$(srcdir)/example_AmesosFactory_HB.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory_HB.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory_HB.cpp'; fi`
+
+example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.o: $(srcdir)/example_AmesosFactory_Tridiag.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_Tridiag_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.o -MD -MP -MF "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo" -c -o example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.o `test -f '$(srcdir)/example_AmesosFactory_Tridiag.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory_Tridiag.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo" "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory_Tridiag.cpp' object='example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_Tridiag_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.o `test -f '$(srcdir)/example_AmesosFactory_Tridiag.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory_Tridiag.cpp
+
+example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.obj: $(srcdir)/example_AmesosFactory_Tridiag.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_Tridiag_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.obj -MD -MP -MF "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo" -c -o example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.obj `if test -f '$(srcdir)/example_AmesosFactory_Tridiag.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory_Tridiag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory_Tridiag.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo" "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po"; else rm -f "$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_AmesosFactory_Tridiag.cpp' object='example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po' tmpdepfile='$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_Tridiag_CXXFLAGS) $(CXXFLAGS) -c -o example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.obj `if test -f '$(srcdir)/example_AmesosFactory_Tridiag.cpp'; then $(CYGPATH_W) '$(srcdir)/example_AmesosFactory_Tridiag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_AmesosFactory_Tridiag.cpp'; fi`
 uninstall-info-am:
-
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -348,21 +474,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if (etags --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	else \
-	  include_option=--include; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -373,7 +488,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -422,33 +537,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || mkdir "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="../$(top_distdir)" \
-	        distdir="../$(distdir)/$$subdir" \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(PROGRAMS)
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -464,21 +565,23 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
@@ -486,44 +589,46 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-uninstall-info: uninstall-info-recursive
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-recursive ctags ctags-recursive \
-	distclean distclean-generic distclean-recursive distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
 
+#copy these files over to the build area
+GetNecessaryFiles: $(EXTRA_DIST)
+	        cp -f $(srcdir)/662_bus.rsa .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
