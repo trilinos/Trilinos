@@ -1,0 +1,12 @@
+
+TEUCHOS_BUILD_BASE=$(TRILINOS_BUILD)/packages/teuchos/src
+TEUCHOS_SRC_BASE=../../../packages/teuchos/src
+
+COMMON = -DHAVE_CONFIG_H -I$(TEUCHOS_SRC_BASE) -I$(TEUCHOS_BUILD_BASE) $(TEUCHOS_SRC_BASE)/Teuchos_TestForException.cpp $(TEUCHOS_SRC_BASE)/Teuchos_RefCountPtr.cpp
+
+example_raw_cpp_pointers.exe : example_raw_cpp_pointers.cpp example_get_args.hpp
+	g++ -g -o0 $(COMMON) example_raw_cpp_pointers.cpp -o example_raw_cpp_pointers.exe
+
+example_ref_count_ptr.exe : example_ref_count_ptr.cpp example_get_args.hpp
+	g++ -g -o0 $(COMMON) example_ref_count_ptr.cpp -o example_ref_count_ptr.exe
+

@@ -41,7 +41,7 @@ under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
 % Set some things we need for SAND reports. These are mandatory
 %
 \SANDnum{SAND2003-xxx}
-\SANDprintDate{May 2004}
+\SANDprintDate{June 2004}
 \SANDauthor{
 Roscoe A. Bartlett \\ Optimization and Uncertainty Estimation
 }
@@ -81,24 +81,25 @@ The improper use of operator {}\texttt{new} and operator
 program behavior and segmentation faults in C++ programs.  Here we
 introduce a templated concrete C++ class
 {}\texttt{Teuchos\-::Ref\-Count\-Ptr<>}, which is part of the Trilinos
-tools package {}\texttt{Teuchos} (means ``tool'' in Latin), that
-combines the concepts of smart pointers and reference counting to
-build a low-overhead but effective means for simplifying dynamic
-memory management in C++.  Here we describe why the raw use of
-pointers and raw calls to operator {}\texttt{new} and operator
-{}\texttt{delete} is so difficult to pull of without making mistakes
-and how programs that use raw pointers for memory management can
-easily be modified to use {}\texttt{Ref\-Count\-Ptr<>}.  In its most
-basic usage, {}\texttt{Ref\-Count\-Ptr<>} automatically determines
-when operator {}\texttt{delete} should be called to free an object
-allocated with operator {}\texttt{new} but the class also supports
-more sophisticated use cases as well.  This document provides just the
-most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to allow developers
-to get started using it right away.  However, more detailed
-information on the design and advanced usage of
-{}\texttt{Ref\-Count\-Ptr<>} is described in the companion document
+tools package {}\texttt{Teuchos}, that combines the concepts of smart
+pointers and reference counting to build a low-overhead but effective
+tool for simplifying dynamic memory management in C++.  We discuss why
+the use of raw pointers for memory management, managed through
+explicit calls to operator {}\texttt{new} and operator
+{}\texttt{delete}, is so difficult to accomplish without making
+mistakes and how programs that use raw pointers for memory management
+can easily be modified to use {}\texttt{Ref\-Count\-Ptr<>}.  In its
+most basic usage, {}\texttt{Ref\-Count\-Ptr<>} automatically
+determines when operator {}\texttt{delete} should be called to free an
+object allocated with operator {}\texttt{new}.  However, the class
+also supports more sophisticated use cases as well.  This document
+describes just the most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to
+allow developers to get started using it right away.  However, more
+detailed information on the design and advanced features of
+{}\texttt{Ref\-Count\-Ptr<>} is provided by the companion document
 ``Teuchos::RefCountPtr : The Trilinos Smart Reference-Counted Pointer
-Class for (Almost) Automatic Dynamic Memory Management in C++''.
+Class for (Almost) Automatic Dynamic Memory Management in C++''
+{}\cite{ref:RefCountPtr}.
 %
 \end{abstract}
 %
@@ -136,45 +137,47 @@ in~\cite{Sand98-0730}.
 \section{Introduction}
 %
 
-The main purpose of the document is provide a quick-start introducing
+The main purpose of this document is to provide a quick-start guide on
 how to incorporate the reference-counting smart pointer class
 {}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} into C++ programs that use
 dynamic memory allocation and object orientation.  This code is
 included in the Trilinos {}\cite{ref:Trilinos-Overview} tools package
 {}\texttt{Teuchos}.  The design of
 {}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} is based partly on the
-interface for {}\texttt{std::auto\_ptr<>} and Items 28 and 29 in "More
-Effective C++" {}\cite{ref:meyers_1996}.  In short, using this class
-allows one client to dynamically create an object (using operator
-{}\texttt{new} for instance), pass the object around to many other
-clients which also need to access the object and then never requiring
-any client to explicitly call delete.  The object will (almost
+interface for {}\texttt{std\-::auto\-\_ptr<>} and Items 28 and 29 in
+"More Effective C++" {}\cite{ref:meyers_1996}.  In short, using this
+class allows one client to dynamically create an object (using
+operator {}\texttt{new} for instance), pass the object around to other
+clients that need to access the object and never require any client to
+explicitly call operator {}\texttt{delete}.  The object will (almost
 magically) be deleted when all of the clients remove their references
-to it.  This is very similar to the type of garbage collection that is
-in languages like Perl and Java.  There are, although, some
-pathological cases (such as the classic problem of circular
+to the object.  In principle, this is very similar to the type of
+garbage collection that is in languages like Perl and Java.  There are
+some pathological cases (such as the classic problem of circular
 references, see {}\cite[Item 29, page 212]{ref:meyers_1996}) where
-{}\texttt{Ref\-Count\-Ptr<>} will result in a memory leak but these
+{}\texttt{Ref\-Count\-Ptr<>} will result in a memory leak, but these
 situations can be avoided through careful designs.  However, realizing
 the potential of hands-off garbage collection with
 {}\texttt{Ref\-Count\-Ptr<>} requires following some rules.  These
-rules are partly spelled out in the form of commandments (see Appendix
-{}\ref{rcpqs:apdx:commandments}).
+rules are partially spelled out in the form of commandments in
+Appendix {}\ref{rcpqs:apdx:commandments}.
 
-The use of {}\texttt{Ref\-Count\-Ptr<>} is critical in the development
-and maintenance of complex object-oriented programs composed of many
-separately-developed pieces (such as Trilinos).  This discussion
-assumes that the reader has a basic familiarity and some programming
-experience with C++ and has at least been exposed to the basic
-concepts of object-oriented programming in C++ (good sources include
-{}\cite{ref:gama_et_al_1995} and {}\cite{ref:stroustrup_2000}) and is
-comfortable with the use of C++ pointers and references.
+The use of {}\texttt{Ref\-Count\-Ptr<>} is critically important in the
+development and maintenance of complex object-oriented programs
+composed of many separately-developed pieces (such as Trilinos).  This
+discussion assumes that the reader has a basic familiarity and some
+programming experience with C++ and has at least been exposed to the
+basic concepts of object-oriented programming (good sources include
+{}\cite{ref:gama_et_al_1995} and {}\cite{ref:stroustrup_2000}).
+Furthermore, the reader should be comfortable with the use of C++
+pointers and references.
 
-The Appendices contain basic reference material for
-{}\texttt{Ref\-Count\-Ptr<>}.  For those readers that like to see the
-C++ declarations right up front, Appendix {}\ref{rcpqs:apdx:c++decl}
-contains the C++ declarations in the {}\texttt{Teuchos} namespace for
-the template class {}\texttt{Ref\-Count\-Ptr<>} and some important
+The appendices contain basic reference material for
+{}\texttt{Ref\-Count\-Ptr<>}.  In many respects, the appendices are
+the most important contribution of this document.  For those readers
+that like to see the C++ declarations right away, Appendix
+{}\ref{rcpqs:apdx:c++decl} contains the C++ declarations for the
+template class {}\texttt{Ref\-Count\-Ptr<>} and some important
 associated non-member templated functions.  Appendix
 {}\ref{rcpqs:apdx:quickstart} is a short reference-card-like
 quick-start for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The
@@ -186,64 +189,65 @@ to associate and manage extra data.  Appendix
 {}\ref{rcpqs:apdx:commandments} gives some commandments for the use of
 {}\texttt{Ref\-Count\-Ptr<>} and reinforces the material in Appendix
 {}\ref{rcpqs:apdx:quickstart}.  Appendix
-{}\ref{rcpqs:apdx:passing-args} gives tables for recommended idioms
-for how to pass raw C++ objects and
-{}\texttt{Ref\-Count\-Ptr<>}-wrapped objects to and from functions.
-More detailed discussions of all of the material in the appendices is
-contained in the design document for {}\texttt{Ref\-Count\-Ptr<>}
-{}\cite{ref:RefCountPtr}.  Appendix {}\ref{rcpqs:apdx:ex-prg} gives a
-listing for an example program that uses raw pointer variables and
-direct calls to operator {}\texttt{new} and operator {}\texttt{delete}
-while Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows a
-refactoring of this example program to use
-{}\texttt{Ref\-Count\-Ptr<>}.
+{}\ref{rcpqs:apdx:passing-args} gives tables of recommended idioms for
+how to pass raw C++ objects and {}\texttt{Ref\-Count\-Ptr<>}-wrapped
+objects to and from functions.  More detailed discussions of all of
+the material in the appendices is contained in the design document for
+{}\texttt{Ref\-Count\-Ptr<>} {}\cite{ref:RefCountPtr}.  Appendix
+{}\ref{rcpqs:apdx:ex-prg} gives a listing for an example program that
+uses raw pointer variables and direct calls to operator {}\texttt{new}
+and operator {}\texttt{delete} while Appendix
+{}\ref{rcpqs:apdx:ex-prg-refactored} shows a refactoring of this
+example program to use {}\texttt{Ref\-Count\-Ptr<>}.
 
 {}\textbf{Note!}  Anxious readers are encouraged to jump directly to
 Appendix {}\ref{rcpqs:apdx:ex-prg} and
 {}\ref{rcpqs:apdx:ex-prg-refactored} to get an idea of what
-{}\texttt{Ref\-Count\-Ptr<>} is all about.  This example together with
-the reference material in the appendices should be enough for
-semi-experienced C++ developers to get up and going with
+{}\texttt{Ref\-Count\-Ptr<>} is all about.  This example, together
+with the reference material in the appendices, should be enough for
+semi-experienced C++ developers to start using
 {}\texttt{Ref\-Count\-Ptr<>} right away.
 
 For less anxious readers, in the following section, we describe why
 the use of raw C++ pointers and raw calls to operator {}\texttt{new}
 and especially operator {}\texttt{delete} is difficult to program
 correctly in even moderately complex C++ programs.  We then discuss
-different ways C++ pointers are used in such C++ programs and then
-describe how to refactor these C++ programs to replace some of the raw
-C++ pointers and raw calls to operator {}\texttt{delete} with
-{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion, a
+the different ways C++ pointers are used in such programs and describe
+how to refactor these programs to replace some of the raw C++ pointers
+and raw calls to operator {}\texttt{delete} with
+{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion a
 distinction will be made between {}\textit{transitive} and
 {}\textit{non-transitive} associations.  {}\texttt{Ref\-Count\-Ptr<>}
 is recommended for use only with {}\textit{non-transitive}
 associations.  In addition, {}\texttt{Ref\-Count\-Ptr<>} is designed
 for the memory management of individual objects, not raw C++ arrays of
 objects.  Array allocation and deallocation should be performed using
-standard C++ containers such as {}\texttt{std\-::vector<>} or perhaps
-{}\texttt{std\-::valaray<>} or some other such convenient C++ array
+standard C++ containers such as {}\texttt{std\-::vector<>},
+{}\texttt{std\-::valarray<>} or some other such convenient C++ array
 class.  However, it is quite common to dynamically allocate arrays of
-{}\texttt{Ref\-Count\-Ptr<>} objects or to manage the lifetime of such
-array class objects.
+{}\texttt{Ref\-Count\-Ptr<>} objects and use
+{}\texttt{Ref\-Count\-Ptr<>} to manage the lifetime of such array
+class objects.
 
 %
 \section{An example C++ program}
 %
 
-The use of object-oriented (OO) programing in C++ is major motivation
-for the development of {}\texttt{Ref\-Count\-Ptr<>}.  OO programs are
-characterized by the use of abstract classes (i.e.~interfaces) and
-concrete subclasses (i.e.~implementations).  In OO programs it is
-common that the selection of which concrete subclass(es) to use is not
-known until runtime.  The ``Abstract Factory''
-{}\cite{ref:gama_et_al_1995} is a popular design pattern that allows
-the flexible runtime selection of what concrete subclasses to create.
+The use of object-oriented (OO) programing in C++ is the major
+motivation for the development of {}\texttt{Ref\-Count\-Ptr<>}.  OO
+programs are characterized by the use of abstract classes
+(i.e.~interfaces) and concrete subclasses (i.e.~implementations).  In
+OO programs it is common that the selection of which concrete
+subclass(es) to use is not known until runtime.  The ``Abstract
+Factory'' {}\cite{ref:gama_et_al_1995} is a popular design pattern
+that allows the flexible runtime selection of what concrete subclasses
+to create.
 
 Below we describe a fictitious program that demonstrates some of the
 typical features of an OO program that uses dynamic memory management
-in C++.  In this simple program it will seem easy to be able to handle
-the C++ memory management using raw C++ pointers and calls to operator
-{}\texttt{new} and operator {}\texttt{delete} but real larger OO
+in C++.  In this simple program, handling memory management using raw
+C++ pointers and calls to operator {}\texttt{new} and operator
+{}\texttt{delete} will appear fairly easy but larger more realistic OO
 programs are much more complicated and it is definitely not easy to do
 memory management without some help.
 
@@ -254,7 +258,7 @@ memory management without some help.
 
 One of the predominate features of this example program is the use of
 the following abstract interface base class {}\texttt{Utility\-Base}
-that defines an interface that provides some useful capability.
+that defines an interface to provide some useful capability.
 
 {\small\begin{verbatim}
 class UtilityBase {
@@ -267,23 +271,26 @@ In our example program, {}\texttt{Utility\-Base} will have two
 subclasses where one or the other will be used at runtime.
 
 {\small\begin{verbatim}
-UtilityA : public UtilityBase {
+class UtilityA : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityA::f() called, this="<<this<<"\n"; }
 };
 
-UtilityB : public UtilityBase {
+class UtilityB : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityB::f() called, this="<<this<<"\n"; }
 };
 \end{verbatim}}
 
-Some of the client software in this program has to create
-{}\texttt{Utility\-Base} objects without knowing exactly what the
-concrete subclasses are being used.  This is accomplished through the
-use of the ``Abstract Factory'' design pattern
-{}\cite{ref:gama_et_al_1995}.  For {}\texttt{Utility\-Base}, the
-abstract factory looks like
+{}\noindent{}In this toy example program the above implementation
+functions just print to standard out but in a real program would do
+something useful.
+
+Some of the clients in this program have to create
+{}\texttt{Utility\-Base} objects without knowing exactly what concrete
+subclasses are being used.  This is accomplished through the use of
+the ``Abstract Factory'' design pattern {}\cite{ref:gama_et_al_1995}.
+For {}\texttt{Utility\-Base}, the abstract factory looks like
 
 {\small\begin{verbatim}
 class UtilityBaseFactory {
@@ -296,12 +303,12 @@ public:
 {}\texttt{Utility\-A} and {}\texttt{Utility\-B} objects.
 
 {\small\begin{verbatim}
-UtilityAFactory : public UtilityBaseFactory {
+class UtilityAFactory : public UtilityBaseFactory {
 public:
   UtilityBase* createUtility() const { return new UtilityA(); }
 };
 
-UtilityBFactory : public UtilityBaseFactory {
+class UtilityBFactory : public UtilityBaseFactory {
 public:
   UtilityBase* createUtility() const { return new UtilityB(); }
 };
@@ -342,11 +349,13 @@ public:
 };
 \end{verbatim}}
 
-The type of logic shown in {}\texttt{ClientC} for how it is determined
-when new objects should be created anew or when objects should be
-reused and passed around is very common in complex OO programs.  The
-above client classes show two different types of associations between
-objects: {}\textit{transitive} and {}\textit{non-transitive}.
+The type of logic used in {}\texttt{ClientC} for determining when new
+objects should be created or when objects should be reused and passed
+around is common in complex OO programs.
+
+The above client classes demonstrate two different types of
+associations between objects: {}\textit{transitive} and
+{}\textit{non-transitive}.
 
 {}\textit{Transitive} associations exist only within a single function
 call and do not persist after the function has finished executing.
@@ -363,8 +372,8 @@ between two objects exists past a single function call.  The most
 typical kind of non-transitive association in an OO C++ program is
 where one object maintains a private pointer data member to another
 object.  For example, non-transitive associations exist between a
-{}\texttt{ClientC} object and a {}\texttt{Utility\-Base\-Factory} and
-a {}\texttt{Utility\-Base} object through the the private C++ pointer
+{}\texttt{ClientC} object, a {}\texttt{Utility\-Base\-Factory} and a
+{}\texttt{Utility\-Base} object through the the private C++ pointer
 data members {}\texttt{ClientC\-::utility\-Factory\_} and
 {}\texttt{ClientC\-::utility\_} respectively.  Likewise, a
 non-transitive association exists between a {}\texttt{ClientB} object
@@ -372,24 +381,22 @@ and a {}\texttt{Utility\-Base} object through the private pointer data
 member {}\texttt{ClientB\-::utility\_}.
 
 Non-transitive relationships are significantly more complex than
-transitive relationships since in many programs a non-transitive
-relationship implies that some objects must be responsible for the
-lifetime of other objects.  This is never the case in a transitive
-relationship as defined above.
+transitive relationships since a non-transitive relationship usually
+implies that some objects must be responsible for the lifetime of
+other objects.  This is never the case in a transitive relationship as
+defined above.
 
 Appendix {}\ref{rcpqs:apdx:ex-prg} shows an example program that uses
-all of the C++ classes described above.  All of the class declarations
-are repeated in the listing for sake of completeness.  The program in
-Appendix {}\ref{rcpqs:apdx:ex-prg} has several memory management
-problems. An astute reader will notice that the
-{}\texttt{Utility\-Base\-Factory} created in in {}\texttt{main()} gets
-deleted twice; once in the destructor for the {}\texttt{ClientC}
-object {}\texttt{c} and again at the end of {}\texttt{main()} in an
-explicit call to operator {}\texttt{delete}.  This problem could be
-fixed in this program by arbitrating ``ownership'' of the
-{}\texttt{Utility\-Base\-Factory} object to either {}\texttt{main()}
-or {}\texttt{ClientC} object, but not both which is the case in
-Appendix {}\ref{rcpqs:apdx:ex-prg}.
+all of the C++ classes described above.  The program in Appendix
+{}\ref{rcpqs:apdx:ex-prg} has several memory management problems. An
+astute reader will notice that the {}\texttt{Utility\-Base\-Factory}
+created in {}\texttt{main()} gets deleted twice; once in the
+destructor for the {}\texttt{ClientC} object {}\texttt{c} and again at
+the end of {}\texttt{main()} in an explicit call to operator
+{}\texttt{delete}.  This problem could be fixed in this program by
+arbitrating ``ownership'' of the {}\texttt{Utility\-Base\-Factory}
+object to either {}\texttt{main()} or the {}\texttt{ClientC} object,
+but not both which is the case in Appendix {}\ref{rcpqs:apdx:ex-prg}.
 
 A more difficult memory management problem to catch and fix occurs in
 the {}\texttt{ClientB} and {}\texttt{ClientC} objects regrading a
@@ -407,9 +414,9 @@ called on this shared {}\texttt{Utility\-Base} object multiple times
 when {}\texttt{b1}, {}\texttt{b2} and {}\texttt{c} are destroyed.  In
 this case, it is not so easy to arbitrate ownership of the shared
 {}\texttt{Utility\-Base} object to the {}\texttt{ClientB} or the
-{}\texttt{ClientC} objects.  Logic could easily be developed in this
-simple program to insure that ownership was assigned properly but such
-logic would enlarge the program, complicate maintenance, and would
+{}\texttt{ClientC} objects.  Logic could be developed in this simple
+program to insure that ownership was assigned properly but such logic
+would enlarge the program, complicate maintenance, and would
 ultimately make the software components less reusable.  In more
 complex programs, trying to dynamically arbitrate ownership at run
 time is much more difficult and error prone if done manually.
@@ -420,23 +427,23 @@ time is much more difficult and error prone if done manually.
 %
 
 Now we describe how {}\texttt{Ref\-Count\-Ptr<>} can be used to
-greatly simplify these types of OO programs.  Appendix
-{}\ref{rcpqs:apdx:ex-prg-refactored} shows the refactoring of the
-program in Appendix {}\ref{rcpqs:apdx:ex-prg} to use
-{}\texttt{Ref\-Count\-Ptr<>} for all non-transitive relationships.  In
-general, the refactoring of software that uses raw C++ pointers to use
-{}\texttt{Ref\-Count\-Ptr<>} is to replace {}\texttt{T*} with
-{}\texttt{Ref\-Count\-Ptr<T>} where {}\texttt{T} is nearly any class
-or built-in data type.
+greatly simplify dynamic memory management in these types of OO
+programs.  Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows the
+refactoring of the program in Appendix {}\ref{rcpqs:apdx:ex-prg} to
+use {}\texttt{Ref\-Count\-Ptr<>} for all non-transitive relationships.
+In general, refactoring software that uses raw C++ pointers to use
+{}\texttt{Ref\-Count\-Ptr<>} is as simple as replacing the type
+{}\texttt{T*} with {}\texttt{Ref\-Count\-Ptr<T>}, where {}\texttt{T}
+is nearly any class or built-in data type.
 
-The first non-transitive relationship that
-{}\texttt{Ref\-Count\-Ptr<>} is used for is the relationship between a
+The first non-transitive relationship for which
+{}\texttt{Ref\-Count\-Ptr<>} is used is the relationship between a
 {}\texttt{Utility\-Base\-Factory} object and a client that uses it.
 The refactoring changes the return type of
 {}\texttt{Utility\-Base\-Factory\-::createUtility()} from a raw
 {}\texttt{Utility\-Base*} pointer to a
-{}\texttt{Ref\-Count\-Ptr<Utility\-Base>} object.  The new ``abstract
-factory'' class declarations (assuming that the symbols from the
+{}\texttt{Ref\-Count\-Ptr<Utility\-Base>} object.  The new ``Abstract
+Factory'' class declarations (assuming that the symbols from the
 {}\texttt{Teuchos} namespace are in scope so that explicit
 {}\texttt{Teuchos::} qualification is not necessary) become
 
@@ -446,28 +453,28 @@ public:
   virtual RefCountPtr<UtilityBase> createUtility() const = 0;
 };
 
-UtilityAFactory : public UtilityBaseFactory {
+class UtilityAFactory : public UtilityBaseFactory {
 public:
   RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
 };
 
-UtilityBFactory : public UtilityBaseFactory {
+class UtilityBFactory : public UtilityBaseFactory {
 public:
   RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
 };
 \end{verbatim}}
 
 In addition to the change of the return type, the refactoring also
-requires that the operator {}\texttt{new} calls be wrapped in a
-templated function call to {}\texttt{Teuchos\-::rcp(...)} (see
+requires that calls to operator {}\texttt{new} be wrapped in calls to
+the templated function {}\texttt{Teuchos\-::rcp(...)} (see
 {}\cite[Appendix C]{ref:RefCountPtr} for a discussion of why this is
 the case).
 
 The refactoring shown in Appendix {}\ref{rcpqs:apdx:ex-prg-refactored}
-does not impact the definition of the {}\texttt{ClientA} class since
+does not impact the definition of the class {}\texttt{ClientA} since
 this class does not have any non-transitive relationships with any
-other objects.  However, the definitions of the {}\texttt{ClientB} and
-{}\texttt{ClientC} classes do change and become
+other objects.  However, the definitions of the classes
+{}\texttt{ClientB} and {}\texttt{ClientC} do change and become
 
 {\small\begin{verbatim}
 class ClientB {
@@ -499,22 +506,44 @@ destructors are gone.  It turns out that the compiler-generated
 destructors do exactly the correct thing (i.e.~call the destructor on
 the {}\texttt{Ref\-Count\-Ptr<>} data members which in turns calls
 operator {}\texttt{delete} on the underlying reference-counted object
-when the reference count goes to zero).  One should also notice that
-the old default constructor {}\texttt{ClientB::ClientB()} which
-initialized the raw C++ pointer {}\texttt{utility\_} to null is no
-longer needed since {}\texttt{Ref\-Count\-Ptr<>} has a default
-constructor that already does that.
+when the reference count goes to zero).  The second thing that one
+should notice that the old default constructor
+{}\texttt{ClientB::ClientB()} which initialized the raw C++ pointer
+{}\texttt{utility\_} to null is no longer needed since
+{}\texttt{Ref\-Count\-Ptr<>} has a default constructor that does that.
+A third thing to notice about these refactored client classes is that
+the {}\texttt{Ref\-Count\-Ptr<>} objects are passed by
+{}\texttt{const} reference (see Appendix
+{}\ref{rcpqs:apdx:passing-args}) and not by value as the corresponding
+raw pointers where in the original unfactored classes.  Passing
+{}\texttt{Ref\-Count\-Ptr<>} objects by {}\texttt{const} reference
+yeilds slightly more efficient code and simplifies stepping through
+the code in a debugger.
+
+As an aside, note that all of the function prototypes in the
+refactored classes in Appendix {}\ref{rcpqs:apdx:ex-prg-refactored}
+follow the recommended idioms given in Appendix
+{}\ref{rcpqs:apdx:passing-args}.  By using these closely idioms the
+use of {}\texttt{Ref\-Count\-Ptr<>} not only eases dynamic memory
+management but it also enhances the vocabulary of the C++ language.
+For example, when a one sees a function prototype where an object is
+passed through a {}\texttt{Ref\-Count\-Ptr<>} smart pointer, one can
+automatically deduce that a ``memory'' of that object will be retained
+(through a private {}\texttt{Ref\-Count\-Ptr<>} data member in the
+server) and that automatically should alter how the developer plans on
+calling that function an passing that argument.
 
 %
 \section{Advanced features of {}\texttt{Ref\-Count\-Ptr<>}}
 %
 
 While the use cases for {}\texttt{Ref\-Count\-Ptr<>} described above
-comprise 95\% or more of the relavent use cases, there are some more
-challenging use cases that require more advanced features.  Some of
-these advanced features (the C++ declarations for which are shown in
-Appendix {}\ref{rcpqs:apdx:c++decl}) are discussed in the design
-document {}\cite{ref:RefCountPtr} and are mentioned below:
+typically comprise 95\% or more of the relavent use cases in most
+programs, there are some more challenging use cases that require more
+advanced features.  Some of these advanced features (the C++
+declarations for which are shown in Appendix
+{}\ref{rcpqs:apdx:c++decl}) are discussed in the design document
+{}\cite{ref:RefCountPtr} and are mentioned below:
 
 \begin{enumerate}
 
@@ -572,10 +601,9 @@ and refactored classes {}\texttt{ClientB} and {}\texttt{ClientC}
 described in Sections {}\ref{rcpbg:sec:original-program} and
 {}\ref{rcpbg:sec:refactored-program}.
 
-The class {}\texttt{Ref\-Count\-Ptr<>} also has other advanced
-features not found in other smart-pointer implementations such as the
-ability to tack on extra data and the customization of the
-deallocation policy.
+The class {}\texttt{Ref\-Count\-Ptr<>} also has advanced features not
+found in other smart-pointer implementations such as the ability to
+attach extra data and the customization of the deallocation policy.
 
 % ---------------------------------------------------------------------- %
 % References
@@ -654,10 +682,10 @@ template<class Dealloc_T
 \label{rcpqs:apdx:quickstart}
 %
 
-This appendix presents a short but fairly comprehensive quick-start for
-the use of {}\texttt{Ref\-Count\-Ptr<>}.  The use cases described here
-should cover 99\% or more of the use instances of
-{}\texttt{Ref\-Count\-Ptr<>} in a program.
+This appendix presents a short, but fairly comprehensive, quick-start
+for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The use cases described
+here should cover 99\% or more of the use instances of
+{}\texttt{Ref\-Count\-Ptr<>} in a typical program.
 
 The following class hierarchy will be used in the C++ examples given
 below.
@@ -673,10 +701,10 @@ class E : public D {};
 \end{verbatim}}
 
 All of the following code examples used in this appendix are assumed
-to be in the namespace {}\texttt{Teuchos} or has appropriate
+to be in the namespace {}\texttt{Teuchos} or have appropriate
 {}\texttt{using Teuchos::...} declarations.  This removes the need to
-explicitly use {}\texttt{Teuchos::} to qualify classes and non-member
-functions.
+explicitly use {}\texttt{Teuchos::} to qualify classes, functions and
+other declarations from the {}\texttt{Teuchos} namespace.
 
 \begin{enumerate}
 
@@ -687,7 +715,7 @@ functions.
 \item {\bf Creating a \texttt{RefCountPtr<>} object using \texttt{new}}
 \label{rcpqs:apdx:qs:new}
 %
-{\small\begin{verbatim}
+ {\small\begin{verbatim}
 RefCountPtr<C> c_ptr = rcp(new C);
 \end{verbatim}}
 %
@@ -856,13 +884,7 @@ get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1")->f();
 \item {\bf Resetting extra data}
 %
 {\small\begin{verbatim}
-get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C); // Same access type
-get_extra_data<RefCountPtr<B1> >(a_ptr,ctx)->f();
-\end{verbatim}}
-or
-{\small\begin{verbatim}
-set_extra_data(rcp(new C),"A:B1",&a_ptr,false);  // New access type (replaces old)
-get_extra_data<RefCountPtr<C> >(a_ptr,ctx)->f();
+get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C);
 \end{verbatim}}
 %
 \end{enumerate}
@@ -951,9 +973,10 @@ templated function {}\texttt{rcp<T>(T* p, bool owns\_mem)} and setting
 \end{commandment}
 
 \begin{anticommandment}
-Thou shall never pass a pointer for an object not allocated with
-operator {}\texttt{new} into a {}\texttt{Ref\-Count\-Ptr<>} object unless
-{}\texttt{owns\_mem} is set to {}\texttt{false}.
+Thou shall never pass a pointer for an object {}\underline{not}
+allocated with operator {}\texttt{new} into a
+{}\texttt{Ref\-Count\-Ptr<>} object without setting
+{}\texttt{owns\_mem} to {}\texttt{false}.
 \end{anticommandment}
 
 {}\noindent{}Example:
@@ -991,19 +1014,20 @@ using raw pointer access.
 \label{rcpqs:apdx:passing-args}
 %
 
-Below are recommendations for idioms for declarations for passing
-required\footnote{Required arguments must be bound to valid objects
-(i.e.~can not be {}\texttt{NULL})} and optional\footnote{Optional
-arguments can be {}\texttt{NULL} in some cases} arguments into and out
-of C++ functions for various use cases and different types of objects.
-These idioms are designed to exploit the C++ language to make C++
-function prototypes as self documenting as possible, avoid coding
-errors and increase readability of C++ code.  In general,
-{}\texttt{Ref\-Count\-Ptr<>} objects should be passed and manipulated
-as through there where raw C++ pointers with the exception that
-{}\texttt{Ref\-Count\-Ptr<>} objects should generally be passed by
-reference instead of by value (see {}\cite{ref:RefCountPtr} for more
-details).
+Below are recommended idioms for passing required\footnote{Required
+arguments must be bound to valid objects (i.e.~can not be
+{}\texttt{NULL})} and optional\footnote{Optional arguments may be
+{}\texttt{NULL} in some cases} arguments into and out of C++ functions
+for various use cases and different types of objects.  These idioms
+show how to write function arguments prototypes which exploit the C++
+language in a way that makes these function prototypes as self
+documenting as possible, avoid coding errors and increase readability
+of C++ code.  In general, {}\texttt{Ref\-Count\-Ptr<>} objects should
+be passed and manipulated as though they where raw C++ pointers.  The
+main difference is that while raw C++ pointer objects should generally
+be passed by value, {}\texttt{Ref\-Count\-Ptr<>} objects should
+generally be passed by reference for several reasons (see
+{}\cite{ref:RefCountPtr} for more details).
 
 %
 %\fbox{
@@ -1011,9 +1035,10 @@ details).
 \begin{minipage}{{}\textwidth}
 \begin{tabular}{|c|c|c|}
 \hline
-argument purpose
-& transitive
-& non-transitive \\
+Argument purpose
+& Transitive
+& Non-transitive \\
+\hline
 \hline
 non-mutable object (required$^1$)
 & \begin{minipage}{12ex}
@@ -1062,9 +1087,10 @@ holder for an actual built-in or user-defined data type.
 \begin{minipage}{{}\textwidth}
 \begin{tabular}{|c|c|c|}
 \hline
-argument purpose
-& transitive
-& non-transitive \\
+Argument purpose
+& Transitive
+& Ton-transitive \\
+\hline
 \hline
 non-mutable object (required$^1$)
 & {}\texttt{const A \&a}
@@ -1102,6 +1128,7 @@ semantics) or large concrete objects to and from functions where
 %
 
 {\small\begin{verbatim}
+#include "example_get_args.hpp"
 
 // Abstract interfaces
 class UtilityBase {
@@ -1114,19 +1141,19 @@ public:
 };
 
 // Concrete implementations
-UtilityA : public UtilityBase {
+class UtilityA : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityA::f() called, this="<<this<<"\n"; }
 };
-UtilityB : public UtilityBase {
+class UtilityB : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityB::f() called, this="<<this<<"\n"; }
 };
-UtilityAFactory : public UtilityBaseFactory {
+class UtilityAFactory : public UtilityBaseFactory {
 public:
   UtilityBase* createUtility() const { return new UtilityA(); }
 };
-UtilityBFactory : public UtilityBaseFactory {
+class UtilityBFactory : public UtilityBaseFactory {
 public:
   UtilityBase* createUtility() const { return new UtilityB(); }
 };
@@ -1165,20 +1192,20 @@ int main( int argc, char* argv[] )
 {
   // Read options from the commandline
   bool useA, shareUtility;
-  ...
+  example_get_args(argc,argv,&useA,&shareUtility);
   // Create factory
-  UtilityBaseFactory
-    *utilityFactory = ( useA ? new UtilityAFactory() : new UtilityBFactory() );
+  UtilityBaseFactory *utilityFactory = 0;
+  if(useA) utilityFactory = new UtilityAFactory();
+  else     utilityFactory = new UtilityBFactory();
   // Create cleints
   ClientA a;
   ClientB b1, b2;
-  ClientC c(utilityFactory);
+  ClientC c(utilityFactory,shareUtility);
   // Do some stuff
   c.h(&b1);
   c.h(&b2);
   b1.g(a);
   b2.g(a);
-  ...
   // Cleanup memory
   delete utilityFactory;
 }
@@ -1190,6 +1217,9 @@ int main( int argc, char* argv[] )
 %
 
 {\small\begin{verbatim}
+#include "Teuchos_RefCountPtr.hpp"
+#include "example_get_args.hpp"
+
 // Inject symbols for RefCountPtr so we don't need Teuchos:: qualification
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
@@ -1205,19 +1235,19 @@ public:
 };
 
 // Concrete implementations
-UtilityA : public UtilityBase {
+class UtilityA : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityA::f() called, this="<<this<<"\n"; }
 };
-UtilityB : public UtilityBase {
+class UtilityB : public UtilityBase {
 public:
-  void f() const { ... }
+  void f() const { std::cout<<"\nUtilityB::f() called, this="<<this<<"\n"; }
 };
-UtilityAFactory : public UtilityBaseFactory {
+class UtilityAFactory : public UtilityBaseFactory {
 public:
   RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
 };
-UtilityBFactory : public UtilityBaseFactory {
+class UtilityBFactory : public UtilityBaseFactory {
 public:
   RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
 };
@@ -1253,20 +1283,20 @@ int main( int argc, char* argv[] )
 {
   // Read options from the commandline
   bool useA, shareUtility;
-  ...
+  example_get_args(argc,argv,&useA,&shareUtility);
   // Create factory
-  RefCountPtr<UtilityBaseFactory>
-    utilityFactory = ( useA ? rcp(new UtilityAFactory()) : rcp(new UtilityBFactory()) );
+  RefCountPtr<UtilityBaseFactory> utilityFactory;
+  if(useA) utilityFactory = rcp(new UtilityAFactory());
+  else     utilityFactory = rcp(new UtilityBFactory());
   // Create cleints
   ClientA a;
   ClientB b1, b2;
-  ClientC c(utilityFactory);
+  ClientC c(utilityFactory,shareUtility);
   // Do some stuff
   c.h(&b1);
   c.h(&b2);
   b1.g(a);
   b2.g(a);
-  ...
 }
 \end{verbatim}}
 
