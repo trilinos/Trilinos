@@ -53,6 +53,10 @@ class XferOp {
   // mapping.
   void transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom);
 
+  // Return a const reference to the dependent nodes map
+  multimap<int,int>& getDependentNodesMap() 
+    { return dependentNodes; };
+
 private:
 
   multimap<int,int> dependentNodes;

@@ -46,6 +46,7 @@
 
 #include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
+#include "Xfer_Operator.H"
 
 // Headers needed for Coloring
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
@@ -675,19 +676,19 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 
     // Create convenient reference for each Jacobian matrix
     Epetra_CrsMatrix &problemMatrix = *problemMatrixPtr;
-    int problemNumNodes = problem.NumMyNodes;
+    int problemMaxNodes = problem.NumMyNodes;
 
     // Temporary storage arrays for extracting/inserting matrix row data
-    int* columnIndices = new int[problemNumNodes];
-    double* values = new double[problemNumNodes];
+    int* columnIndices = new int[problemMaxNodes];
+    double* values = new double[problemMaxNodes];
 
     int problemRow, compositeRow, numCols, numValues;
     for (int i = 0; i<problemMatrix.NumMyRows(); i++)
     { 
       problemRow = problemMatrix.Map().GID(i);
-      problemGraph.ExtractGlobalRowCopy(problemRow, problemNumNodes, 
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
                            numCols, columnIndices);
-      problemMatrix.ExtractGlobalRowCopy(problemRow, problemNumNodes,
+      problemMatrix.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
                            numValues, values);
       if( numCols != numValues ) {
         if (MyPID==0)
@@ -989,9 +990,10 @@ bool Problem_Manager::evaluate(
   return true;
 }
 
-void Problem_Manager::generateGraph()
+void Problem_Manager::generateGraph(bool doOffBlocks)
 { 
 
+  // First construct a graph for each problem's self-dependence
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
@@ -1005,33 +1007,121 @@ void Problem_Manager::generateGraph()
     Epetra_CrsGraph &problemGraph = problem.getGraph();
 
     // Use max potential number of nonzero columns to dimension index array
-    int problemNumNodes = problemGraph.Map().MaxAllGID();
+    int problemMaxNodes = problemGraph.Map().MaxAllGID();
 
     // Get the indices map for copying data from this problem into 
     // the composite problem
-    Epetra_IntVector& indices = 
+    Epetra_IntVector& problemIndices = 
             *ProblemToCompositeIndices.find(probId)->second;
 
     int problemRow, compositeRow, numCols;
 
     // First fill composite graph for each problem's self-dependence.  This
     // corresponds to diagonal blocks.
-    int* columnIndices = new int[problemNumNodes];
+    int* columnIndices = new int[problemMaxNodes];
 
     for (int i = 0; i<problemGraph.NumMyRows(); i++)
     { 
       problemRow = problemGraph.Map().GID(i);
-      problemGraph.ExtractGlobalRowCopy(problemRow, problemNumNodes, 
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
                            numCols, columnIndices);
 
       // Convert row/column indices to composite problem
-      compositeRow = indices[problemRow];
+      compositeRow = problemIndices[problemRow];
       for (int j = 0; j<numCols; j++)
-        columnIndices[j] = indices[columnIndices[j]];
+        columnIndices[j] = problemIndices[columnIndices[j]];
       int ierr = AA->InsertGlobalIndices(compositeRow, numCols, columnIndices);
     }
     delete [] columnIndices; columnIndices = 0;
   }
+
+  // Hard-wired to test --> RHooper
+  doOffBlocks = true;
+
+  // Next create inter-problem block graph contributions if desired;
+  // default is false
+  if( doOffBlocks ) { 
+
+    problemIter = Problems.begin();
+
+    // Loop over each problem being managed and ascertain its graph as well
+    // as its graph from its dependencies
+    for( ; problemIter != problemLast; problemIter++) {
+  
+      GenericEpetraProblem& problem = *(*problemIter).second;
+      int probId = problem.getId();
+  
+      Epetra_CrsGraph &problemGraph = problem.getGraph();
+
+      // Get the indices map for copying data from this problem into 
+      // the composite problem
+      Epetra_IntVector& problemIndices = 
+              *ProblemToCompositeIndices.find(probId)->second;
+  
+      int problemMaxNodes = problemGraph.Map().NumGlobalElements();
+
+      int problemRow, compositeRow, numCols, numDepCols;
+  
+      // Loop over each problem on which this one depends
+      for( int k = 0; k<problem.auxProblems.size(); k++) {
+
+        // Get the needed objects for the depend problem
+        GenericEpetraProblem &dependProblem = 
+          *(Problems.find(problem.auxProblems[k])->second);
+        int dependId = dependProblem.getId();
+        XferOp *xferOpPtr = problem.xferOperators.find(dependId)->second;
+	if( !xferOpPtr ) {
+          cout << "ERROR: Unable to get Xfer_Operator for dependence of "
+               << "problem \"" << problem.getName() << "\" on problem "
+               << "\"" << dependProblem.getName() << "\" !!" << endl;
+          throw "Problem_Manager ERROR";
+        }
+        XferOp &xferOp = *xferOpPtr;
+        multimap<int,int>& depNodesMap = xferOp.getDependentNodesMap();
+
+        // Get the indices map for copying data from the dependent problem into 
+        // the composite problem
+        Epetra_IntVector& dependIndices = 
+                *ProblemToCompositeIndices.find(dependId)->second;
+
+        // Dimension nonzero columns index array with upper bound which is
+	// the previous definition * 2 since each node in problem could
+	// depend at most on 2 nodes in dependProblem
+        int* columnIndices = new int[problemMaxNodes];
+        int maxDepNodes = 2 * problemGraph.Map().MaxAllGID();
+        int* dependentColIndices = new int[maxDepNodes];
+
+        // We must loop over each dependent node of problem and then determine 
+	// the dependence of each on the nodes of dependProblem
+
+        // Loop over each row in problem and ascertain all dependencies on
+	// dependProblem as determined by the xferOp map
+        for (int i = 0; i<problemGraph.NumMyRows(); i++) {
+
+          problemRow = problemGraph.Map().GID(i);
+
+          problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
+                               numCols, columnIndices);
+  
+          // Convert row/column indices to composite problem
+          compositeRow = problemIndices[problemRow];
+          numDepCols = 0;
+          for (int j = 0; j<numCols; j++) {
+            int numDepNodes = depNodesMap.count(columnIndices[j]);
+            pair< multimap<int, int>::iterator,
+                  multimap<int, int>::iterator > rangeN
+                = depNodesMap.equal_range(columnIndices[j]);
+            multimap<int, int>::iterator iterN;
+            for( iterN = rangeN.first; iterN != rangeN.second; iterN++)
+              dependentColIndices[numDepCols++] = dependIndices[iterN->second];
+          }
+          AA->InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
+        }
+        delete [] columnIndices; columnIndices = 0;
+        delete [] dependentColIndices; dependentColIndices = 0;
+      }
+    }
+  } // end doOffBlocks
 
   AA->TransformToLocal();
   AA->SortIndices();
@@ -1100,4 +1190,3 @@ void Problem_Manager::outputStatus()
     cout << endl;
   }
 }
-

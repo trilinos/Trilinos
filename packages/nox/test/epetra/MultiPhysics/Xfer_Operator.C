@@ -40,7 +40,7 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
   // problem's mesh and involves a simple linear interpolation (possibly
   // extrapolation).
   Epetra_Vector &meshA = probA.getMesh();
-  Epetra_Vector& meshB = const_cast<GenericEpetraProblem&>(probB).getMesh();
+  Epetra_Vector &meshB = const_cast<GenericEpetraProblem&>(probB).getMesh();
 
   // For now, this is designed for serial execution since some problemA
   // nodes will lie within off-processor problemB elements in general.

@@ -154,7 +154,7 @@ private:
                              const Epetra_Vector& problemVec);
 
   // Creates a composite graph from existing graphs of registered problems
-  void generateGraph();
+  void generateGraph(bool doOffBlocks = false);
 
 private:
 
