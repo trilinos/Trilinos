@@ -44,6 +44,8 @@
 **         - for use in curvilinear ls.
 **         - Remove extra calculation of terr[], which would equal the
 **           the true residual but be different from the "stopping" residual.
+**         - Right now the terr calculation can be off from qmin because
+**           terr includes 1 less equation than qmin.
 **
 **  (.) Clean up class variables that are also declared as local variables.
 **
@@ -96,7 +98,9 @@
 #undef STORE_HESSENBERG
 #undef CHECK_ORTHOGONALITY
 #define CHECK_RESIDUALS
-#define ALPHA_CORRECTION
+#undef ALPHA_CORRECTION
+#define GMRES_STYLE_STOPPING_CONDITION
+#define PROTECT_CURVILINEAR_DESCENT
 
 #include "NOX_Direction_Tensor.H" // class definition
 #include "NOX_Common.H"
@@ -107,10 +111,28 @@
 #include "stdio.h"  // for printf()
 
 
+/* Some compilers (in particular the SGI and ASCI Red - TFLOP)
+ * fail to find the max and min function.  Therfore we redefine them
+ * here.
+ */
+#ifdef max
+#undef max
+#endif
+#define max(a,b) ((a)>(b)) ? (a) : (b);
+
+#ifdef min
+#undef min
+#endif
+#define min(a,b) ((a)<(b)) ? (a) : (b);
+
+
+// **************************************************************************
+// *** Constructor
+// **************************************************************************
 NOX::Direction::Tensor::Tensor(const NOX::Utils& u,
 			       NOX::Parameter::List& params) :
-  utils(u)
-
+  utils(u),
+  inexactNewtonUtils(u, params)
 {
   scPtr = NULL;
   acPtr = NULL;
@@ -210,9 +232,18 @@ bool NOX::Direction::Tensor::reset(NOX::Parameter::List& params)
   
   NOX::Parameter::List& localParams = p.sublist("Linear Solver");
   localParamsPtr = &(p.sublist("Linear Solver"));
-  tol = localParams.getParameter("Tolerance", 1.0e-4);
+
+  // Reset the inexact Newton Utilities (including linear solve tolerance)
+  inexactNewtonUtils.reset(utils, params);
+  tol = localParams.getParameter("Tolerance", 1e-4);
+
+  // Krylov solver parameters
   kmax = localParams.getParameter("Size of Krylov Subspace", 30);
-  maxRestarts = localParams.getParameter("Max Restarts", 0);
+  // maxRestarts = localParams.getParameter("Max Restarts", 0);
+  // maxRestarts = kmax / localParams.getParameter("Max Iterations", 30) - 1;
+  maxRestarts = (localParams.getParameter("Max Iterations", 30) / kmax) - 1;
+  if (maxRestarts < 0)
+    maxRestarts = 0;
   outputFreq = localParams.getParameter("Output Frequency", 20);
   isSubspaceAugmented = false;
 
@@ -403,7 +434,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
   errTol = 0;       // stopping tolerance for error 
 
   dInitial->init(0);   // bwb - remove this line if testing restarts
-  //dir.init(0);    
+  dir.init(0);    
   
   // Compute F at current solution...
   status = soln.computeF();
@@ -434,7 +465,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
   }
   acPtr->update(1.0, solver.getPreviousSolutionGroup().getF(), -1.0);
   acPtr->update(-1.0, soln.getF(), 1.0);    
-  if (normS != 0)
+  if (normS != 0.0)
     acPtr->scale(1/(normS*normS*normS*normS));
 
 #if DEBUG_LEVEL > 1
@@ -452,6 +483,26 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
        << "  " << acPtr->norm() << "  ";
   acPtr->print();
 #endif // DEBUG_LEVEL
+
+  double lsTol = tol;
+//  string lsMethod = solver.getParameterList().sublist("Line Search")
+//    .getParameter("Method", "Tensor");
+//  if (solver.getParameterList().sublist("Line Search").sublist(lsMethod)
+//      .isParameter("Adjusted Tolerance"))
+//    lsTol = solver.getParameterList().sublist("Line Search").sublist(lsMethod)
+//      .getParameter("Adjusted Tolerance", tol);
+  if (solver.getParameterList().sublist("Line Search").
+      isParameter("Adjusted Tolerance"))
+    lsTol = solver.getParameterList().sublist("Line Search").
+      getParameter("Adjusted Tolerance", tol);
+  cout << "Adjusted tolerance = " << lsTol << endl;
+  
+  // Compute inexact forcing term if requested.
+  tol = inexactNewtonUtils.computeForcingTerm(soln,
+					      solver.getPreviousSolutionGroup(),
+					      solver.getNumIterations(),
+					      solver, lsTol);
+  //tol = localParamsPtr->getParameter("Tolerance", 1.0e-4);
 
   // Compute the error tolerance, tol*||Fc||  or  tol*||Minv*Fc||
   if (precondition == Left) {
@@ -471,7 +522,17 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       if (requestedBaseStep == NewtonStep  ||  normS == 0  ||
 	  requestedBaseStep == TensorStepFP) 
 	*dInitial = *dNewton;
-      else
+#ifdef PROTECT_CURVILINEAR_DESCENT
+      else if (getNormModelResidual(*dTensor, soln, solver, false) > (errTol / tol))
+	// Protect against cases where the curvilinear step would retreat to
+	// a bad Newton step.
+      {
+	*dInitial = *dNewton;
+	cout << " Using Newton step instead of Tensor step in restart " << errTol/tol
+	     << endl;
+      }
+#endif
+      else 
 	*dInitial = *dTensor;
     }
     
@@ -493,7 +554,8 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       double bb = vecPtr->dot(*vecPtr);
       double bc = vecPtr->dot(soln.getF());
       double cc = soln.getF().dot(soln.getF());
-      alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true);
+      double qval = 0.0;
+      alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true, qval);
       printf("    Alpha correction (dTensor) = %e\n", alpha); 
 
       if (restarts == 0  &&  fabs(alpha-1) > 1e-5) {
@@ -773,7 +835,8 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
     double bb = vecPtr->dot(*vecPtr);
     double bc = vecPtr->dot(soln.getF());
     double cc = soln.getF().dot(soln.getF());
-    double alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true);
+    double qval = 0.0;
+    double alpha = minQuartic(aa, 2*ab, 2*ac+bb, 2*bc, cc, true, qval);
     printf("    Alpha correction (dTensor) = %e\n", alpha); 
     delete vecPtr;
   }
@@ -823,7 +886,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
   int maxp = pmax;
 
   // ...unless this is the first iteration, then calculate Newton step...
-  if (normS == 0) {
+  if (normS == 0.0) {
     maxp = 1;
     requestedStep = NewtonStep;
     isAugmentSubspace = false;
@@ -1281,8 +1344,16 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 
       // Minimize quartic equation to find beta
       y1 = calculateBeta(vecg, vecq, hess[k1][k1], k1, k1, p1,
-			 sqrt(qNorm2[k1]));
+			 sqrt(qNorm2[k1]), qval);
 
+#ifndef GMRES_STYLE_STOPPING_CONDITION
+      // Update the tensor residual norm...
+      double beta2 = dir0xsc + sqrt(qNorm2[k1]) * y1;
+      beta2 = beta2 * beta2;
+      terr = qval - fabs(vecg[k1] + hess[k1][k1]*y1 + vecq[k1] * beta2);
+      printf(" Stopping condition 2: qval = %e  terr = %e\n", qval, terr);
+#endif
+      
 #ifndef DEPRECATED_CODE
       // Find root of q(beta) equation
       qa = vecq[k1] * qNorm2[k1];
@@ -1296,7 +1367,9 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       // y1 = yOld;
       // printf(" Setting y1 = yOld\n");
 #endif
-      
+
+
+#ifdef GMRES_STYLE_STOPPING_CONDITION
       // Update the tensor residual norm...
       double beta2 = dir0xsc + sqrt(qNorm2[k1]) * y1;
       beta2 = beta2 * beta2;
@@ -1304,6 +1377,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
 	terrvec[i] = -vecg[k1+i+1] - vecq[k1+i+1] * beta2;
       }
       terr = norm(p1,terrvec);
+#endif
     }
     else {  // Standard implementation using Givens rotations
       
@@ -1367,7 +1441,7 @@ bool NOX::Direction::Tensor::solveModels(NOX::Abstract::Vector& dir,
       if (requestedStep == TensorStep3) {
 	
 	// Minimize quartic equation to find beta
-	y1 = calculateBeta(vecg, vecq, hess[0][0], 0, k, p1, normS);
+	y1 = calculateBeta(vecg, vecq, hess[0][0], 0, k, p1, normS, qval);
 	
 #ifndef DEPRECATED_CODE
 	// Find smallest magnitude root of quadratic equation (first row)...
@@ -1578,11 +1652,11 @@ NOX::Direction::Tensor::computeTensorStep(const NOX::Abstract::Group& soln,
 
   if (requestedStep == TensorStep2) {
     // Calculate yt = Q1*yt1 (without explicit Q1)
-    double temp = 0;
+    double temp = 0.0;
     for (int i=k1; i>=0; i--) {
-    temp += yt[i]/sqrt(qNorm2[i]);
-    yt[i] = temp*qk[i];
-    if (i>0)
+      temp += yt[i]/sqrt(qNorm2[i]);
+      yt[i] = temp*qk[i];
+      if (i>0)
 	yt[i] += yt[i-1]*q1subdiag[i-1]/sqrt(qNorm2[i-1]);
     }
   }
@@ -1609,6 +1683,7 @@ NOX::Direction::Tensor::computeTensorStep(const NOX::Abstract::Group& soln,
   dTensor->print();
 #endif
 #if DEBUG_LEVEL > 0
+  printf(" ||sc||*y1 = %e   d0'*sc = %e\n", normS*y1, lambda*dir0xsc);
   printf(" ||sc||*y1+d0'*sc = %e\n", normS*y1+lambda*dir0xsc);
 #endif
 
@@ -1632,8 +1707,9 @@ NOX::Direction::Tensor::computeCurvilinearStep(NOX::Abstract::Vector& dir,
     return true;
   }
 
+  double qval = 0.0;
   double minBeta = minQuartic(ata, 2*atb, 2*lambda*atc+btb, 2*lambda*btc,
-			      lambda*lambda*ctc, false);
+			      lambda*lambda*ctc, false, qval);
 
   // Compute apparent beta from actual beta
   y1 = (minBeta - lambda*dir0xsc);
@@ -2070,7 +2146,7 @@ void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
 
 double NOX::Direction::Tensor::minQuartic(double q1, double q2, double q3,
 					  double q4, double q5,
-					  bool chooseGlobal) const
+					  bool chooseGlobal, double& qval) const
   /*
   ** Minimize quartic by finding the critical points of the equation
   **           q1*x^4 + q2*x^3 + q3*x^2 + q4*x + q5,
@@ -2146,17 +2222,18 @@ double NOX::Direction::Tensor::minQuartic(double q1, double q2, double q3,
 	   indx, sqrt(qminx), minimizer);
   else
     printf(" %d minimizer(s):  qmin = %e  m1 = %e%c m2 = %e%c\n",
-	   indx, sqrt(qminx), roots[0], roots[0] == minimizer ? '*':' ',
-	   roots[1], roots[1] == minimizer ? '*':' ');
+	   indx, sqrt(qminx), roots[0], (roots[0] == minimizer) ? '*':' ',
+	   roots[1], (roots[1] == minimizer) ? '*':' ');
 #endif
-  
+
+  qval = sqrt(qminx);
   return minimizer;
 }
 
 
 double NOX::Direction::Tensor::calculateBeta(double* vecg, double* vecq,
 					     double h1, int kk0, int kk,
-					     int pp, double normS)
+					     int pp, double normS, double& qval)
 {
   // Calculate inner products of last p rows
   ata = inner_product(pp, &vecq[kk+1], &vecq[kk+1]);
@@ -2223,10 +2300,10 @@ double NOX::Direction::Tensor::calculateBeta(double* vecg, double* vecq,
   printf("array1: %e  %e  %e  %e  %e\n", q1, q2, q3, q4, q5);
   printf("array2: %e  %e  %e  %e  %e\n", ata, 2*atb, 2*atc+btb, 2*btc, ctc);
 
-  double minBeta = minQuartic(q1, q2, q3, q4, q5, false);
+  double minBeta = minQuartic(q1, q2, q3, q4, q5, false, qval);
 #endif
   
-  double minBeta = minQuartic(ata, 2*atb, 2*atc+btb, 2*btc, ctc, false);
+  double minBeta = minQuartic(ata, 2*atb, 2*atc+btb, 2*btc, ctc, false, qval);
 
   // Compute apparent beta from actual beta
   minBeta = (minBeta - dir0xsc)/normS;
@@ -2255,9 +2332,9 @@ double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
   else {
     qval = 0;
     lambdaBar = 1.0;
-    if (fabs(qa/qb) < 1e-8) {
+    if (fabs(qa*qc/qb) < 1e-8) {
 #if DEBUG_LEVEL > 0
-      cout << "qa is relatively small\n";
+      cout << " Quadratic equation is relatively linear\n";
 #endif 
       beta = -qc/qb;
     }

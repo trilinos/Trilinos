@@ -36,6 +36,7 @@
 #define NOX_DIRECTION_TENSOR_H
 
 #include "NOX_Direction_Generic.H" // base class
+#include "NOX_Direction_Utils_InexactNewton.H" // class data element
 #include "NOX_Parameter_List.H"	   // class data element 
 #include "NOX_Abstract_Group.H"    // returnType
 
@@ -192,12 +193,12 @@ private:
   //!  Find the smallest magnitude minimizer of quartic equation
   double NOX::Direction::Tensor::minQuartic(double q1, double q2, double q3,
 					    double q4, double q5,
-					    bool chooseGlobal) const;
+					    bool chooseGlobal, double& qval) const;
   
   //!  Calculate beta by minimizing quartic equation
   double NOX::Direction::Tensor::calculateBeta(double* vecg, double* vecq,
 					       double h1, int kk0, int kk,
-					       int pp, double normS);
+					       int pp, double normS, double& qval);
 
   //!  Calculate beta by solving the quadratic equation
   double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
@@ -451,6 +452,10 @@ private:
   
   //! Counter for number of Preconditioner-vector products
   mutable int multsMv;
+
+  //! Inexact Newton solve utilities
+  NOX::Direction::Utils::InexactNewton inexactNewtonUtils;
+  
 };
 } // namespace Direction
 } // namespace NOX
