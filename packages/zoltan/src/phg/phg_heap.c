@@ -3,13 +3,21 @@
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
+ 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
 
 
@@ -37,15 +45,14 @@ extern "C" {
 /* prototypes */
 static void heapify (HEAP*, int);
 
-
 /* Inititializes the heap values and allocates space. */
 /* Currently, we allocate space for as many heap entries as */
 /* the range of the input elements. These two parameters may be */
 /* decoupled in the future. */
 
-int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
+int Zoltan_PHG_heap_init (ZZ *zz, HEAP *h, int space)
 {
-  char *yo = "Zoltan_HG_heap_init";
+  char *yo = "Zoltan_PHG_heap_init";
   int i;
 
   h->space = space;
@@ -64,7 +71,7 @@ int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
 
 
 
-void Zoltan_HG_heap_clear (HEAP *h)
+void Zoltan_PHG_heap_clear (HEAP *h)
 {
   int i;
 
@@ -79,7 +86,7 @@ void Zoltan_HG_heap_clear (HEAP *h)
 
 
 /* Frees all memory and sets the heap value back to default */
-void Zoltan_HG_heap_free (HEAP *h)
+void Zoltan_PHG_heap_free (HEAP *h)
 {
   if (h->space != 0) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &h->ele, &h->pos, &h->value);
@@ -91,10 +98,10 @@ void Zoltan_HG_heap_free (HEAP *h)
 
 
 /* Checks wheather the heap has the Max-Heap property */
-int Zoltan_HG_heap_check (HEAP *h)
+int Zoltan_PHG_heap_check (HEAP *h)
 {
   int i, left, right;
-  static char *yo = "Zoltan_HG_heap_check";
+  static char *yo = "Zoltan_PHG_heap_check";
 
   for (i = 0; i < h->n; i++) {
     left  = 2*i + 1;
@@ -110,13 +117,13 @@ int Zoltan_HG_heap_check (HEAP *h)
 
 
 
-/* Zoltan_HG_heap_input adds one item to the heap but does NOT rearrange the
-   heap! Constant time. We might want to write a function Zoltan_HG_heap_insert
+/* Zoltan_PHG_heap_input adds one item to the heap but does NOT rearrange the
+   heap! Constant time. We might want to write a function Zoltan_PHG_heap_insert
    that adds an item and preserves the heap property. */
 
-int Zoltan_HG_heap_input (HEAP *h, int element, float value)
+int Zoltan_PHG_heap_input (HEAP *h, int element, float value)
 {
-static char *yo = "Zoltan_HG_heap_input";
+static char *yo = "Zoltan_PHG_heap_input";
 
   if (element >= h->space) {
     ZOLTAN_PRINT_ERROR(0, yo, "Inserted heap element out of range!\n");
@@ -135,7 +142,7 @@ static char *yo = "Zoltan_HG_heap_input";
 
 
 /* Moves the values in the heap to gain the Max-Heap property. Linear time */
-int Zoltan_HG_heap_make (HEAP *h)
+int Zoltan_PHG_heap_make (HEAP *h)
 { 
   int i;
 
@@ -168,7 +175,7 @@ static void heapify (HEAP *h, int root)
 
 /* Changes the value of an element in the heap and restores the
    heap property. This can take O(log(n)) time */
-int Zoltan_HG_heap_change_value (HEAP *h, int element, float value)
+int Zoltan_PHG_heap_change_value (HEAP *h, int element, float value)
 {
   int position, father;
 
@@ -199,7 +206,7 @@ int Zoltan_HG_heap_change_value (HEAP *h, int element, float value)
 
 
 /* Extracts the maximum element & restores the heap property. Time O(log(n))*/
-int Zoltan_HG_heap_extract_max (HEAP *h)
+int Zoltan_PHG_heap_extract_max (HEAP *h)
 {
   int max;
 
@@ -218,7 +225,7 @@ int Zoltan_HG_heap_extract_max (HEAP *h)
 
 
 /* Extracts an element from the heap */
-int Zoltan_HG_heap_extract (HEAP *h, int element)
+int Zoltan_PHG_heap_extract (HEAP *h, int element)
 {
   int position;
 

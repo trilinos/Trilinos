@@ -16,23 +16,24 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
-static int split_hypergraph (HGraph*, HGraph*, Partition, int, ZZ*);
+static int split_hypergraph (PHGraph*, PHGraph*, Partition, int, ZZ*);
 
 
 
 /* recursively divides problem into 2 parts until all p found */
-int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
- HGPartParams *hgp, int level)
+int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
+ PHGPartParams *hgp, int level)
 {
   int i, mid;
   int err;
   Partition part;
-  HGraph *new;
-  char *yo = "Zoltan_HG_rdivide";
+  PHGraph *new;
+  char *yo = "Zoltan_PHG_rdivide";
 
   hg->redl = 2;  /* hg->redl gets changed during execution, reset it */
+hg->redl = hgp->redl;  
    
   /* only one part remaining, record results and exit */
   if (lo == hi) {
@@ -51,7 +52,7 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   mid = (lo+hi)/2;
   hg->ratio = (double) (mid-lo+1) / (double) (hi-lo+1);
   hg->redl = 0;
-  err = Zoltan_HG_HPart_Lib (zz, hg, 2, part, hgp, level);
+  err = Zoltan_PHG_HPart_Lib (zz, hg, 2, part, hgp, level);
   if (err != ZOLTAN_OK)
     return err;
 
@@ -63,20 +64,20 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     return ZOLTAN_OK;
   }
 
-  new = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph));
+  new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph));
   if (new == NULL)  {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
     return ZOLTAN_MEMERR;
   }
-  Zoltan_HG_HGraph_Init (new);
+  Zoltan_PHG_HGraph_Init (new);
 
   /* recursively divide in two parts and repartition hypergraph */
   err = split_hypergraph (hg, new, part, 0, zz);
   if (err != ZOLTAN_OK)
     return err;
     
-  err = Zoltan_HG_rdivide (lo, mid, final, zz, new, hgp, level+1);
-  Zoltan_HG_HGraph_Free (new);
+  err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
+  Zoltan_PHG_HGraph_Free (new);
   if (err != ZOLTAN_OK)
     return err;
 
@@ -84,8 +85,8 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   if (err != ZOLTAN_OK)
     return err;
     
-  err = Zoltan_HG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
-  Zoltan_HG_HGraph_Free (new);
+  err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
+  Zoltan_PHG_HGraph_Free (new);
   if (err != ZOLTAN_OK)
     return err;
 
@@ -98,7 +99,7 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 
 
 
-static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
+static int split_hypergraph (PHGraph *old, PHGraph *new, Partition part,
  int partid, ZZ *zz)
 {
   int *tmap;        /* temporary array mapping from old HGraph info to new */
@@ -172,7 +173,7 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
   /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
   new->hvertex = (int*) ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nInput);
   new->hindex = (int*) ZOLTAN_REALLOC(new->hindex, sizeof(int) * (new->nEdge+1));
-  Zoltan_HG_Create_Mirror (zz, new);
+  Zoltan_PHG_Create_Mirror (zz, new);
 
   ZOLTAN_FREE (&tmap);
   return ZOLTAN_OK;

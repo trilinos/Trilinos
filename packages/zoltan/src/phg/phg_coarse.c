@@ -11,12 +11,14 @@
  *    $Revision$
  ****************************************************************************/
 
+ 
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
 /****************************************************************************/
 
@@ -28,21 +30,22 @@ extern "C" {
   vertices to the new vertices. It will be used to pass a partition of the coarse
   graph back to the original graph. Time O(|I|*log(|I|)), due to sorting. */
 
-int Zoltan_HG_Coarsening (ZZ *zz,  /* the Zoltan data structure */
-  HGraph *hg,
+int Zoltan_PHG_Coarsening
+( ZZ *zz,  /* the Zoltan data structure */
+  PHGraph *hg,
   int    *pack,      /* Matching, Packing or Grouping array */
-  HGraph *c_hg,      /* points to a copy of hg structure */
+  PHGraph *c_hg,      /* points to a copy of hg structure */
   int    *LevelMap)
 {
   int i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins, *hsize=NULL;
   int *sum=NULL, *used_vertices=NULL, *sorted=NULL, *c_hindex=NULL; 
   int *c_hvertex=NULL;
   float *c_ewgt=NULL;
-  char *yo = "Zoltan_HG_Coarsening";
+  char *yo = "Zoltan_PHG_Coarsening";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  Zoltan_HG_HGraph_Init(c_hg);
+  Zoltan_PHG_HGraph_Init(c_hg);
   c_hg->info  = hg->info + 1;
   c_hg->ratio = hg->ratio;
   c_hg->redl  = hg->redl;
@@ -120,7 +123,7 @@ int Zoltan_HG_Coarsening (ZZ *zz,  /* the Zoltan data structure */
     c_hg->hvertex = NULL;
     Zoltan_Multifree (__FILE__, __LINE__, 3, &c_ewgt, &c_hindex, &c_hvertex);
     ZOLTAN_TRACE_EXIT (zz, yo);
-    return Zoltan_HG_Create_Mirror(zz, c_hg);
+    return Zoltan_PHG_Create_Mirror(zz, c_hg);
   }
 
   /* Move weight of identical hyperedges to one of them */
@@ -198,7 +201,7 @@ int Zoltan_HG_Coarsening (ZZ *zz,  /* the Zoltan data structure */
   c_hg->hvertex =(int*)  ZOLTAN_REALLOC(c_hvertex, c_hg->nInput   * sizeof(int));
 
   ZOLTAN_TRACE_EXIT (zz, yo);
-  return Zoltan_HG_Create_Mirror(zz, c_hg);
+  return Zoltan_PHG_Create_Mirror(zz, c_hg);
 }
 
 

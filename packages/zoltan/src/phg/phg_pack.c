@@ -11,26 +11,25 @@
  *    $Revision$
  ****************************************************************************/
 
+ 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
 
 
-static ZOLTAN_HG_PACKING_FN packing_no;  /* template -- packing */
+static ZOLTAN_PHG_PACKING_FN packing_no;  /* template --packing */
+
 
 
 /****************************************************************************/
-
-
-
-int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
+int Zoltan_PHG_Set_Packing_Fn (PHGPartParams *hgp)
 {
-int found = 1;
-
+  int found = 1;
+  
   if (!strcasecmp(hgp->redm_str, "no"))   hgp->packing = packing_no;
   else {
     found = 0;
@@ -42,6 +41,7 @@ int found = 1;
        edge weight scaling functions accordingly. */
 
     /* Note: optimizer _aug1 is identical to packing_mxp -> aug1 was eliminated */
+ 
 
     hgp->packing_opt = NULL;
   }
@@ -49,60 +49,62 @@ int found = 1;
 }
 
 
-/****************************************************************************/
 
-int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp,
+/****************************************************************************/
+int Zoltan_PHG_Packing (ZZ *zz, PHGraph *hg, Packing pack, PHGPartParams *hgp,
  int *limit)
 {
   int   err = ZOLTAN_OK;
   float *old_ewgt = NULL, *new_ewgt = NULL;
-  char  *yo = "Zoltan_HG_Packing";
+  char  *yo = "Zoltan_PHG_Packing";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Scale the weight of the edges */
   if (hg->vwgt && hgp->ews) {
-     if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-     }
-     Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
-     old_ewgt = hg->ewgt;
-     hg->ewgt = new_ewgt;
-     }
+    if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
+  Zoltan_PHG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
+  old_ewgt = hg->ewgt;
+  hg->ewgt = new_ewgt;
+  }
 
   /* Do the packing */
   if (hgp->packing) {
-     err = hgp->packing(zz, hg, pack, limit);
-     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-        goto End;
+    err = hgp->packing (zz, hg, pack, limit);
+    if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+      goto End;
   }
 
   /* Optimization */
   if (hgp->packing_opt != NULL)
-     err = hgp->packing_opt (zz, hg, pack, limit);
+    err = hgp->packing_opt (zz, hg, pack, limit);
 
 End:
   /* Restore the old edge weights */
   if (hg->vwgt && hgp->ews)
-     hg->ewgt = old_ewgt;
+    hg->ewgt = old_ewgt;
 
   ZOLTAN_FREE ((void**) &new_ewgt);
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
 }
 
 
 
-/* null packing, hypergraph version */
-static int packing_no(ZZ *zz, HGraph *hg, Packing pack, int *limit)
+/****************************************************************************/
+static int packing_no (ZZ *zz, PHGraph *hg, Packing pack, int *limit)
 {
-  char *yo = "packin_no";
   return ZOLTAN_OK;
 }
 
 
+
+/****************************************************************************/
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

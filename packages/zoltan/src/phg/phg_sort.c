@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
 
 

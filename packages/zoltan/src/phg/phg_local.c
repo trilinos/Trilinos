@@ -16,14 +16,14 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
-static ZOLTAN_HG_LOCAL_REF_FN local_no;
-static ZOLTAN_HG_LOCAL_REF_FN local_grkway;
+static ZOLTAN_PHG_LOCAL_REF_FN local_no;
+static ZOLTAN_PHG_LOCAL_REF_FN local_grkway;
 
 /****************************************************************************/
 
-ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
+ZOLTAN_PHG_LOCAL_REF_FN *Zoltan_PHG_Set_Local_Ref_Fn(char *str)
 {
   
   if      (!strcasecmp(str, "grkway"))         return local_grkway;
@@ -31,30 +31,35 @@ ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
   else                                         return NULL;
 }
 
-/****************************************************************************/
 
-int Zoltan_HG_Local(ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *hgp)
+
+/****************************************************************************/
+int Zoltan_PHG_Local (ZZ *zz, PHGraph *hg, int p, Partition part,
+PHGPartParams *hgp)
 {
   return hgp->local_ref(zz, hg, p, part, hgp, hgp->bal_tol);
 }
 
-/****************************************************************************/
 
+
+/****************************************************************************/
 static int local_no (
   ZZ *zz,     /* Zoltan data structure */
-  HGraph *hg,
+  PHGraph *hg,
   int p,
   Partition part,
-  HGPartParams *hgp,
+  PHGPartParams *hgp,
   float bal_tol
 )
 {
   return ZOLTAN_OK;
 }
 
+
+
 /****************************************************************************/
 /*
-static int gain_check (HGraph *hg, double *gain, int *part, int **cut)
+static int gain_check (PHGraph *hg, double *gain, int *part, int **cut)
 {
   double g;
   int vertex, j, edge;
@@ -79,12 +84,12 @@ static int gain_check (HGraph *hg, double *gain, int *part, int **cut)
 */
 
 
+
 /***************************************************************************/
 
 /* This algorithm is loosely based on "A Coarse-Grained Parallel Formulation */
 /* of Multilevel k-way Graph Partitioning Algorithm", Karypis & Kumar, 1997. */
 /* It is implimented in serial as a testbed for future parallel development  */
-
 
 typedef struct
    {
@@ -102,7 +107,7 @@ static int comparison2 (const void*, const void*);
 
 
 
-int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
+int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
  int *part, int **cut, double *gain, HEAP *heap)
 {
   int i, j, edge, v;
@@ -117,7 +122,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
         v = hg->hvertex[j];
         gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
         if (heap)
-          Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+          Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
       }
     }
     else if (cut[sour][edge] == 2) {
@@ -126,7 +131,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
         if (part[v] == sour) {
           gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
           if (heap)
-            Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+            Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
           break;
         }
       }
@@ -137,7 +142,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
         v = hg->hvertex[j];
         gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
         if (heap)
-          Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+          Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
       }
     }
     else if (cut[dest][edge] == 1) {
@@ -146,7 +151,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
         if (v != vertex && part[v] == dest) {
           gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
           if (heap)
-            Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+            Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
           break;
         }
       }
@@ -158,12 +163,13 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
 }
 
 
+
 static int local_grkway (
   ZZ *zz,
-  HGraph *hg,
+  PHGraph *hg,
   int p,
   Partition part,
-  HGPartParams *hgp,
+  PHGPartParams *hgp,
   float bal_tol
 )
 {
@@ -198,16 +204,13 @@ static int local_grkway (
 upstore = (int*)  ZOLTAN_CALLOC (p*p, sizeof (int));
 up      = (int**) ZOLTAN_CALLOC (p,   sizeof (int));
 
-
 for (i = 0; i < p; i++)
    up[i] = upstore + i * p;
    
-
 for (i = 0; i < p; i++)
    for (j = 0; j < p; j++)
       if ((j > i && j <= i + p/2) || (j < i && j <= i - p/2))
          up[i] [j] = 1;
-
 
   /* simulate 2 dimensional arrays whose dimensions are known at run time */
   for (edge = 0; edge < hg->nEdge; edge++)

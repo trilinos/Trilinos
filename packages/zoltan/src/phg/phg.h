@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __HG_H
-#define __HG_H
+#ifndef __PHG_H
+#define __PHG_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
-#include "hg_const.h"
-#include "hypergraph.h"
+#include "phg_const.h"
+#include "phypergraph.h"
 
 
 
@@ -30,23 +30,23 @@ extern "C" {
  * Includes Zoltan IDs corresponding to local objects (vertices) and
  * a HGraph as used by the algorithms. */
 
-struct Zoltan_HGraph {
+struct Zoltan_PHGraph {
   ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
   Partition Parts;          /* Initial partition #s for on-processor objects */
                             /* KDD In parallel version Part may be part of HG */
-  HGraph HG;                /* Hypergraph for initial objects.       */
+  PHGraph HG;                /* Hypergraph for initial objects.       */
 };
 
-typedef struct Zoltan_HGraph ZHG;
+typedef struct Zoltan_PHGraph ZHG;
 
 /*****************************************************************************/
 
 
 
 /* Prototypes */
-extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
-extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, FILE*);
+extern int Zoltan_PHG_Build_Hypergraph (ZZ*, ZHG**, PHGPartParams*);
+extern void Zoltan_PHG_HGraph_Print(ZZ*, ZHG*,  PHGraph*, FILE*);
 
 
 
@@ -54,4 +54,4 @@ extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, FILE*);
 } /* closing bracket for extern "C" */
 #endif
 
-#endif   /* __HG_H */
+#endif   /* __PHG_H */

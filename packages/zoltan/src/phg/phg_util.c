@@ -16,19 +16,15 @@
 extern "C" {
 #endif
 
-#ifdef ZOLTAN_HG
-#include "hypergraph.h"
-#endif
-/*
-#include "math.h"  ..do we need that? <math.h> is included already!
-*/
+#include "phypergraph.h"
+
 
 /*****************************************************************************/
 
 
 
-void Zoltan_HG_HGraph_Init(
-  HGraph *hgraph
+void Zoltan_PHG_HGraph_Init(
+  PHGraph *hgraph
 )
 {
   hgraph->info  = 0;
@@ -51,13 +47,12 @@ void Zoltan_HG_HGraph_Init(
   hgraph->vmap    = NULL;
 }
 
+
+
 /*****************************************************************************/
 
-
-#ifdef ZOLTAN_HG
-
-void Zoltan_HG_Graph_Init(
-  Graph *graph
+void Zoltan_PHG_Graph_Init(
+  PGraph *graph
 )
 {
   graph->info  = 0;
@@ -75,14 +70,13 @@ void Zoltan_HG_Graph_Init(
   graph->neigh   = NULL;
 }
 
-#endif /* ZOLTAN_HG */
+
 
 /****************************************************************************/
-
-
 /* Frees memory associated with a hypergraph; but not the hypergraph itself */
-int Zoltan_HG_HGraph_Free(
-  HGraph *hg
+
+int Zoltan_PHG_HGraph_Free(
+  PHGraph *hg
 )
 {
   if (hg)
@@ -93,13 +87,12 @@ int Zoltan_HG_HGraph_Free(
   return ZOLTAN_OK;
 }
 
+
+
 /****************************************************************************/
-
-#ifdef ZOLTAN_HG
-
 /* Frees all memory associated with a graph; does not free the graph itself. */
-int Zoltan_HG_Graph_Free(
-  Graph *g
+int Zoltan_PHG_Graph_Free(
+  PGraph *g
 )
 {
   if (g)
@@ -109,23 +102,23 @@ int Zoltan_HG_Graph_Free(
   return ZOLTAN_OK;
 }
 
+
+
 /****************************************************************************/
 
-
-
-int Zoltan_HG_Info (
+int Zoltan_PHG_Info (
   ZZ *zz,
-  HGraph *hg
+  PHGraph *hg
 )
 {
   int i, size, size_min, size_max, count;
   float wgt_min, wgt_max, wgt_tot;
   double mean, var, temp;
-  char *yo = "Zoltan_HG_Info";
+  char *yo = "Zoltan_PHG_Info";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  printf("--------- HGraph Information (min/ave/max/tot) ------------------\n");
+  printf("--------- PHGraph Information (min/ave/max/tot) ------------------\n");
   printf("info:%d |V|=%d |E|=%d |P|=%d \n", hg->info, hg->nVtx, hg->nEdge,
    hg->nInput);
 
@@ -232,9 +225,6 @@ int Zoltan_HG_Info (
 }
 
 
-#endif /* ZOLTAN_HG */
-
-
 
 /****************************************************************************/
 /**  Given arrays to lookup a vertex for a given hyperedge (hindex, hvertex)
@@ -242,16 +232,17 @@ int Zoltan_HG_Info (
  **  other set of arrays (mirror).
  **  The mirror (to be filled in) should have NULL pointers in hg on entry!
  **  The calling program is responsible for freeing the mirror's memory  ***/
-int Zoltan_HG_Create_Mirror (
+
+int Zoltan_PHG_Create_Mirror (
   ZZ *zz,
-  HGraph *hg
+  PHGraph *hg
 )
 {
   int i, j;                  /* loop counters */
   int inlength, outlength;   /* input/output array lengths */
   int *index, *data;         /* pointers to input information */
   int *outindex, *outdata;
-  char *yo = "Zoltan_HG_Create_Mirror";
+  char *yo = "Zoltan_PHG_Create_Mirror";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -323,15 +314,15 @@ int Zoltan_HG_Create_Mirror (
   return ZOLTAN_OK;
 }
 
-#ifdef ZOLTAN_HG
 
 
 /****************************************************************************/
 /* check that (hindex, hvertex) and (vindex, vedge) are consistant mappings */
 /* returns ZOLTAN_WARN if not consistant, returns ZOLTAN_OK otherwise */
-int Zoltan_HG_Check (
+
+int Zoltan_PHG_Check (
   ZZ *zz,
-  HGraph *hg
+  PHGraph *hg
 )
 {
   int i;
@@ -341,7 +332,7 @@ int Zoltan_HG_Check (
   int *check;
   char str[256];
   int err = ZOLTAN_OK;
-  char *yo = "Zoltan_HG_Check";
+  char *yo = "Zoltan_PHG_Check";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -442,21 +433,21 @@ End:
  *  One hyperedge is created for each vertex of g.
  *  Hyperedge i consists of vertex i + all edge neighbors of i in graph g. */
 
-int Zoltan_HG_Graph_to_HGraph(
+int Zoltan_PHG_Graph_to_HGraph(
   ZZ *zz,
-  Graph *g,        /* Input graph */
-  HGraph *hg       /* Ouput hypergraph */
+  PGraph *g,        /* Input graph */
+  PHGraph *hg       /* Ouput hypergraph */
 )
 {
   int i, j;
   int *hindex = NULL, *hvertex = NULL;  /* temporary array pointers */
   int cnt;
   int err = ZOLTAN_OK;
-  char *yo = "Zoltan_HG_Graph_to_HGraph";
+  char *yo = "Zoltan_PHG_Graph_to_HGraph";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  Zoltan_HG_HGraph_Init(hg);
+  Zoltan_PHG_HGraph_Init(hg);
   hg->info  = g->info;
   hg->nVtx  = g->nVtx;
   hg->nEdge = g->nVtx;
@@ -541,7 +532,7 @@ int Zoltan_HG_Graph_to_HGraph(
   }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Creating mirror");
-  err = Zoltan_HG_Create_Mirror(zz, hg);
+  err = Zoltan_PHG_Create_Mirror(zz, hg);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in building mirror.");
 
@@ -563,16 +554,16 @@ End:
 /* Routine to print hypergraph weights and edges. Assumes serial execution;
  * put inside Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End for parallel
  * programs. */
-void Zoltan_HG_Print(
+void Zoltan_PHG_Print(
   ZZ *zz,
-  HGraph *hg,
+  PHGraph *hg,
   FILE *fp
 )
 {
   int i, j;
   int num_vwgt;
   int num_ewgt;
-  char *yo = "Zoltan_HG_Print";
+  char *yo = "Zoltan_PHG_Print";
 
   if (hg == NULL)
     return;
@@ -629,33 +620,32 @@ void Zoltan_HG_Print(
 
 static unsigned int idum = 123456789U;
 
-unsigned Zoltan_HG_Rand (void) 
+unsigned Zoltan_PHG_Rand (void) 
 {
   return idum = (1664525U * idum) + 1013904223U;
 }
 
 
 
-void Zoltan_HG_Srand (unsigned int seed) 
+void Zoltan_PHG_Srand (unsigned int seed) 
 {
   idum = seed;
 }
 
 
 /* Randomly permute an array of ints. */
-void Zoltan_HG_Rand_Perm_Int (int *data, int n)
+void Zoltan_PHG_Rand_Perm_Int (int *data, int n)
 {
   int i, number, temp;
 
   for (i = n; i > 0; i--) {
-    number       = Zoltan_HG_Rand() % i;
+    number       = Zoltan_PHG_Rand() % i;
     temp         = data[number];
     data[number] = data[i-1];
     data[i-1]    = temp;
   }
-}
+} 
 
-#endif /* ZOLTAN_HG */
 
 
 #ifdef __cplusplus

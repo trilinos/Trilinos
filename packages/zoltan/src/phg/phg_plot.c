@@ -16,10 +16,10 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "phypergraph.h"
 
 /*****************************************************************************/
-void Zoltan_HG_Plot(
+void Zoltan_PHG_Plot(
   int proc,         /* Processor calling the routine */
   int nvtx,         /* Number of vertices */
   int nparts,       /* Number of partitions; ignored if part == NULL */

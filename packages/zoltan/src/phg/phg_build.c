@@ -11,36 +11,40 @@
  *    $Revision$
  ****************************************************************************/
 
+ 
+ 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "hg.h"
-#include "hypergraph.h"
+#include "phg.h"
+#include "phypergraph.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
+
+
 
 /*****************************************************************************/
 /* Function prototypes */
 
 static int hash_lookup (ZZ*, ZHG*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_HG_Fill_Hypergraph (ZZ*, ZHG*);
+static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZHG*);
 /*****************************************************************************/
 
 
 
 /* allocates and builds hypergraph data structure using callback routines */
-int Zoltan_HG_Build_Hypergraph(
+int Zoltan_PHG_Build_Hypergraph(
   ZZ *zz,                            /* Zoltan data structure */
   ZHG **zoltan_hg,                   /* Hypergraph to be allocated and built */
-  HGPartParams *hgp                  /* Parameters for HG partitioning */
+  PHGPartParams *hgp                 /* Parameters for HG partitioning */
 )
 {
   ZHG *zhg;                         /* Temporary pointer to Zoltan_HGraph */
-  HGraph *hgraph;                   /* Temporary pointer to HG field */
+  PHGraph *hgraph;                  /* Temporary pointer to PHG field */
   int err = ZOLTAN_OK;
-  char *yo = "Zoltan_HG_Build_Hypergraph";
+  char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   ZOLTAN_TRACE_ENTER (zz, yo);
 
@@ -57,22 +61,22 @@ int Zoltan_HG_Build_Hypergraph(
   zhg->Local_IDs  = NULL;
   zhg->Parts      = NULL;
 
-  hgraph = &(zhg->HG);
-  Zoltan_HG_HGraph_Init(hgraph);
+  hgraph = &zhg->HG;
+  Zoltan_PHG_HGraph_Init(hgraph);
 
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins) {
-    /* Hypergraph callback functions exist; call them and build the HG directly */
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
+    /* Hypergraph callback functions exist; call them and build the PHG */
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Parallel Hypergraph Callbacks.");
 
-    err = Zoltan_Get_Obj_List(zz, &(hgraph->nVtx), &(zhg->Global_IDs),
-     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt), &(zhg->Parts));
+    err = Zoltan_Get_Obj_List(zz, &hgraph->nVtx, &zhg->Global_IDs,
+     &zhg->Local_IDs, zz->Obj_Weight_Dim, &hgraph->vwgt, &zhg->Parts);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
     }
 
-    err = Zoltan_HG_Fill_Hypergraph(zz, zhg);
+    err = Zoltan_PHG_Fill_Hypergraph(zz, zhg);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
       goto End;
@@ -84,36 +88,35 @@ int Zoltan_HG_Build_Hypergraph(
         
     /* Hypergraph callback functions don't exist, but graph functions do;     */
     /* call the graph callback, build a graph, and convert it to a hypergraph */
-    Graph graph;             /* Temporary graph. */
+    PGraph graph;             /* Temporary graph. */
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
-    Zoltan_HG_Graph_Init(&graph);
-    err = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
+    Zoltan_PHG_Graph_Init (&graph);
+    err = Zoltan_Get_Obj_List(zz, &graph.nVtx, &zhg->Global_IDs,
+     &zhg->Local_IDs, zz->Obj_Weight_Dim, &graph.vwgt, &zhg->Parts);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
-      Zoltan_HG_Graph_Free(&graph);
+      Zoltan_PHG_Graph_Free (&graph);
       goto End;
     }
 
-    err = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
+    err = Zoltan_Build_Graph (zz, 1, hgp->check_graph, graph.nVtx,
      zhg->Global_IDs, zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-     &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
+     &graph.vtxdist, &graph.nindex, &graph.neigh, &graph.ewgt);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
-      Zoltan_HG_Graph_Free(&graph);
+      Zoltan_PHG_Graph_Free (&graph);
       goto End;
     }
 
     graph.nEdge = graph.nindex[graph.nVtx];
-    err = Zoltan_HG_Graph_to_HGraph(zz, &graph, hgraph);
+    err = Zoltan_PHG_Graph_to_HGraph (zz, &graph, hgraph);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error converting graph to hypergraph");
-      Zoltan_HG_Graph_Free(&graph);
+      Zoltan_PHG_Graph_Free(&graph);
       goto End;
     }
-
-    Zoltan_HG_Graph_Free(&graph);
+    Zoltan_PHG_Graph_Free(&graph);
   }
 
   if (zz->Get_Num_Geom != NULL && 
@@ -122,30 +125,30 @@ int Zoltan_HG_Build_Hypergraph(
      /* Geometric callbacks are registered;       */
      /* get coordinates for hypergraph objects.   */
      ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
-     err = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
-      zhg->Local_IDs, &(hgraph->nDim), &(hgraph->coor));
+     err = Zoltan_Get_Coordinates (zz, hgraph->nVtx, zhg->Global_IDs,
+      zhg->Local_IDs, &hgraph->nDim, &hgraph->coor);
   }
 
   if (hgp->check_graph) {
-    err = Zoltan_HG_Check(zz, hgraph);
+    err = Zoltan_PHG_Check(zz, hgraph);
     if (err == ZOLTAN_WARN) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning returned from Zoltan_HG_Check");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning returned from Zoltan_PHG_Check");
     }
     else if (err != ZOLTAN_OK) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_HG_Check");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_PHG_Check");
       goto End;     
     }
   }
 
-  if (hgp->output_level >= HG_DEBUG_PRINT)
-    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), stdout);
+  if (hgp->output_level >= PHG_DEBUG_PRINT)
+    Zoltan_PHG_HGraph_Print(zz, zhg, &zhg->HG, stdout);
 
 End:
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     /* Return NULL zhg */
-    Zoltan_HG_HGraph_Free(&(zhg->HG));
-    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
-     &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
+    Zoltan_PHG_HGraph_Free (&zhg->HG);
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &zhg->Global_IDs, &zhg->Local_IDs,
+     &zhg->Parts, zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -158,16 +161,14 @@ End:
 /* Routine to call HG query function and build HG data structure.  */
 /* Also builds Zoltan_HGraph vtxdist array.                        */
 
-static int Zoltan_HG_Fill_Hypergraph(
+static int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
   ZHG *zhg
 )
 {
-
-  char *yo = "Zoltan_HG_Fill_Hypergraph";
   ZOLTAN_ID_PTR edge_verts = NULL;  /* Object GIDs belonging to hyperedges    */
-  int *edge_sizes = NULL;           /* # of GIDs in each hyperedge            */
-  int *edge_procs = NULL;           /* Processor owning each GID of hyperedge */
+  int *edge_sizes  = NULL;          /* # of GIDs in each hyperedge            */
+  int *edge_procs  = NULL;          /* Processor owning each GID of hyperedge */
   float *edge_wgts = NULL;          /* Hyperedge weights                      */
 
   struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
@@ -179,10 +180,11 @@ static int Zoltan_HG_Fill_Hypergraph(
   int err = ZOLTAN_OK;
 
   ZOLTAN_ID_PTR global_ids = zhg->Global_IDs;  
-  HGraph *hg = &(zhg->HG);
+  PHGraph *hg = &zhg->HG;
   int nVtx = hg->nVtx;                     
   int num_gid_entries = zz->Num_GID;
-
+  char *yo = "Zoltan_PHG_Fill_Hypergraph";
+  
   /* Build vtxdist as in Zoltan_Build_Graph. */
   /* KDD -- I am guessing we will need this array in parallel; we may not. */
   hg->vtxdist = (int*) ZOLTAN_MALLOC ((zz->Num_Proc+1) * sizeof(int));
@@ -196,12 +198,12 @@ static int Zoltan_HG_Fill_Hypergraph(
   MPI_Scan (&nVtx, hg->vtxdist, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
   /* Gather data from all procs */
-  MPI_Allgather (&(hg->vtxdist[0]), 1, MPI_INT,
-                 &(hg->vtxdist[1]), 1, MPI_INT, zz->Communicator);
+  MPI_Allgather (&hg->vtxdist[0], 1, MPI_INT, &hg->vtxdist[1], 1, MPI_INT,
+   zz->Communicator);
   hg->vtxdist[0] = 0;
 
   /* Get hyperedge information from application through query functions. */
-  hg->nEdge = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &err);
+  hg->nEdge = zz->Get_Num_HG_Edges (zz->Get_Num_HG_Edges_Data, &err);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
     goto End;
@@ -215,7 +217,7 @@ static int Zoltan_HG_Fill_Hypergraph(
 
   hg->nInput = npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &err);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Max_HG_Edge_Size");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Max_PHG_Edge_Size");
     goto End;
   }
 
@@ -235,7 +237,7 @@ static int Zoltan_HG_Fill_Hypergraph(
      zz->Edge_Weight_Dim, hg->nEdge, npins, edge_sizes, edge_verts, edge_procs,
      edge_wgts);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_HG_Edge_List");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_PHG_Edge_List");
       goto End;
     }
   }
@@ -279,13 +281,13 @@ static int Zoltan_HG_Fill_Hypergraph(
     /* Assign consecutive numbers based on the order of the ids */
     for (i=0; i< nVtx; i++) {
       hash_tab[i] = NULL;
-      hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
+      hash_nodes[i].gid = &global_ids[i*num_gid_entries];
       hash_nodes[i].gno = hg->vtxdist[zz->Proc]+i;
     }
 
     for (i=0; i< nVtx; i++){
       /* insert hashed elements into hash table */
-      j = Zoltan_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries,
+      j = Zoltan_Hash(&global_ids[i*num_gid_entries], num_gid_entries,
        (unsigned int) nVtx);
       hash_nodes[i].next = hash_tab[j];
       hash_tab[j] = &hash_nodes[i];
@@ -299,7 +301,7 @@ static int Zoltan_HG_Fill_Hypergraph(
     }
 
     for (i = 0; i < npins; i++) {
-      hg->hvertex[i] = hash_lookup(zz, zhg, &(edge_verts[i]), nVtx, hash_tab);
+      hg->hvertex[i] = hash_lookup(zz, zhg, &edge_verts[i], nVtx, hash_tab);
       if (hg->hvertex[i] == -1) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hyperedge GID not found.")
         err = ZOLTAN_FATAL;
@@ -318,15 +320,15 @@ static int Zoltan_HG_Fill_Hypergraph(
   Zoltan_Multifree(__FILE__, __LINE__, 4, &edge_verts, &edge_sizes, &edge_procs, 
    &edge_wgts);
 
-  err = Zoltan_HG_Create_Mirror(zz, hg);
+  err = Zoltan_PHG_Create_Mirror (zz, hg);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error from Zoltan_HG_Create_Mirror");
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error from Zoltan_PHG_Create_Mirror");
     goto End;
   }
 
 End:
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-    Zoltan_HG_HGraph_Free(hg);
+    Zoltan_PHG_HGraph_Free(hg);
     Zoltan_Multifree(__FILE__, __LINE__, 6, &edge_verts, &edge_sizes, 
      &edge_procs, &edge_wgts, &hash_nodes, &hash_tab);
   }
@@ -350,8 +352,8 @@ static int hash_lookup(
   int i;
   struct Hash_Node *ptr;
 
-  i = Zoltan_Hash( key, zz->Num_GID, (unsigned int) nVtx);
-  for (ptr = hash_tab[i]; ptr != NULL; ptr = ptr->next){
+  i = Zoltan_Hash (key, zz->Num_GID, (unsigned int) nVtx);
+  for (ptr = hash_tab[i]; ptr != NULL; ptr = ptr->next) {
     if (ZOLTAN_EQ_GID(zz, ptr->gid, key))
       return (ptr->gno);
   }

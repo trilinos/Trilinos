@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __HG_HYPERGRAPH_H
-#define __HG_HYPERGRAPH_H
+#ifndef __PHG_HYPERGRAPH_H
+#define __PHG_HYPERGRAPH_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -42,11 +42,12 @@ typedef struct {
   /* arrays to look up the neighbors of a vertex */
   int *nindex;  /* length |V|+1 index to neigh, last is 2|E| */
   int *neigh;   /* length 2|E|, list of neighbors for each vertex */
-  } Graph;
+  } PGraph;
 
 
+  
 typedef struct {
-  int info;     /* primarily for debugging recursive algorithms;initially 0 */
+  int info;    /* primarily for debugging recursive algorithms;initially 0 */
   int nVtx;    /* number of vertices, |V| */
   int nEdge;   /* number of hyperedges, |E| */
   int nInput;  /* number of inputs, |I| */
@@ -76,7 +77,7 @@ typedef struct {
                      
   int *vmap;     /* used when recursively dividing for p > 2 */
   double ratio;  /* split when recursively dividing for p > 2 */
-  } HGraph;
+  } PHGraph;
 
 
 #ifdef __cplusplus
