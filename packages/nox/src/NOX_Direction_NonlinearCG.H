@@ -78,13 +78,10 @@ s = - M^{-1}(x) F(x) + \beta s_{prev}
   If "Off" is selected, no preconditioner is computed and the behavior is
   equivalent to \f$ M = I \f$ where \f$ I \f$ is the identity matrix.
   If "On", \f$ M \f$ is computed and applied as determined by the
-  underlying implementation.  Currently, NOX::Epetra only supports the
-  inverse of the diagonal of the current Jacobian, ie \f$ M = \left({\rm
-  diag} {\bf J}\right)^{-1} \f$.  This limits preconditioning to jacobi
-  (diagonal), but more general and robust choices will become available
-  shortly.  NOX::Petsc supports the full suite provided in the
-  user's Petsc installation and can be set by proper specification in
-  the .petscrc file.
+  underlying implementation.  Currently, NOX::Epetra supports the inverse
+  of the current Jacobian, ie \f$ M = {\bf J}^{-1} \f$.  NOX::Petsc
+  supports the full suite provided in the user's Petsc installation and
+  can be set by proper specification in the .petscrc file.
 
 
 <li> "Restart Frequency" - An integer specification of the number of nonlinear 
