@@ -11,14 +11,14 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __IRB_CONST_H
-#define __IRB_CONST_H
+#ifndef __RIB_CONST_H
+#define __RIB_CONST_H
 
 #include "shared_const.h"
 
 /* Data structures for parallel inertial recursive bisection method */
 
-struct irb_tree {               /* tree of irb method cuts */
+struct rib_tree {               /* tree of rib method cuts */
     double    cm[3];            /* center of mass */
     double    ev[3];            /* perpendicular direction from cut */
     double    cut;              /* position of cut */
@@ -27,17 +27,17 @@ struct irb_tree {               /* tree of irb method cuts */
     int       right_leaf;       /* right child of this node in cut tree */
 };
 
-typedef struct IRB_Struct {
+typedef struct RIB_Struct {
     LB_ID_PTR Global_IDs;
     LB_ID_PTR Local_IDs;
     struct Dot_Struct *Dots;
-    struct irb_tree   *Tree_Ptr;
+    struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
-} IRB_STRUCT;
+} RIB_STRUCT;
 
-extern int LB_IRB_Build_Structure(LB *, int *, int *, int);
-extern void LB_IRB_Free_Structure(LB *);
-extern int LB_Set_IRB_Param(char *, char *);
+extern int LB_RIB_Build_Structure(LB *, int *, int *, int);
+extern void LB_RIB_Free_Structure(LB *);
+extern int LB_Set_RIB_Param(char *, char *);
 
 /* function prototypes */
 

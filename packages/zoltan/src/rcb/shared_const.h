@@ -14,9 +14,9 @@
 #ifndef __SHARED_CONST_H
 #define __SHARED_CONST_H
 
-/* Data structures shared by parallel RCB and IRB */
+/* Data structures shared by parallel RCB and RIB */
 
-                             /* dot to balance on for RCB and IRB */ 
+                             /* dot to balance on for RCB and RIB */ 
 struct Dot_Struct {	        /* dot = point in 3-space */
   double    X[3];		/* location of dot */
   double    Weight;             /* weight of dot - if used must be > 0 */

@@ -85,9 +85,9 @@ int LB_Set_Method(LB *lb, char *method_name)
     lb->Method = REFTREE;
     lb->LB_Fn = LB_Reftree_Part;
   }
-  else if (strcmp(method_upper, "IRB") == 0) {
-    lb->Method = IRB;
-    lb->LB_Fn = LB_irb;
+  else if (strcmp(method_upper, "RIB") == 0) {
+    lb->Method = RIB;
+    lb->LB_Fn = LB_rib;
   }
   else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;

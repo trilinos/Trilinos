@@ -142,9 +142,9 @@ LB_CSRC		= lb_balance.c lb_eval.c lb_id.c lb_init.c lb_migrate.c \
 LB_INC		= lb_const.h lb.h lbi_const.h lb_id_const.h lb_util_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
-                  create_proc_list.c irb.c irb_util.c \
+                  create_proc_list.c rib.c rib_util.c \
                   inertial1d.c inertial2d.c inertial3d.c shared.c
-RCB_INC		= rcb_const.h create_proc_list.h irb_const.h shared_const.h
+RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
 
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c

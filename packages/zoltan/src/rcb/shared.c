@@ -48,7 +48,7 @@ int LB_RB_Build_Structure(
 {
 /*
  *  Function to build the geometry-based data structures for 
- *  RCB and IRB.
+ *  RCB and RIB.
  */
 char *yo = "LB_RB_Build_Structure";
 char msg[256];
@@ -149,7 +149,7 @@ static int initialize_dot(LB *lb, LB_ID_PTR gid, LB_ID_PTR lid,
                           int wgtflag, float *wgt)
 {
 /*
- *  Function that initializes the dot data structure for RCB and IRB. 
+ *  Function that initializes the dot data structure for RCB and RIB. 
  *  It uses the global ID, coordinates and weight provided by the application.  
  */
 int ierr = LB_OK;

@@ -15,12 +15,12 @@
 #include <math.h>
 #include "lb_const.h"
 #include "rcb_const.h"
-#include "irb_const.h"
+#include "rib_const.h"
 
 static void Box_Assign(struct rcb_tree *, struct rcb_box *, int *, int *, int);
-static void Box_Assign3(struct irb_tree *,struct rcb_box *, int *, int *, int);
-static void Box_Assign2(struct irb_tree *,struct rcb_box *, int *, int *, int);
-static void Box_Assign1(struct irb_tree *,struct rcb_box *, int *, int *, int);
+static void Box_Assign3(struct rib_tree *,struct rcb_box *, int *, int *, int);
+static void Box_Assign2(struct rib_tree *,struct rcb_box *, int *, int *, int);
+static void Box_Assign1(struct rib_tree *,struct rcb_box *, int *, int *, int);
 
 int LB_Box_Assign(
 LB             *lb,             /* The load-balancing structure */
@@ -34,14 +34,14 @@ int            *procs,          /* list of procs that box intersects */
 int            *numprocs)       /* number of processors in proc list */
 {
 /* Determine which processors a box intersects.
-   Currently assumes that partitioning has used RCB or IRB, but should be
+   Currently assumes that partitioning has used RCB or RIB, but should be
    modified to return an error message if other method was used */
 
      static char       *yo = "LB_Box_Assign";
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB. */
      struct rcb_tree   *treept; /* tree of RCB cuts */
-     IRB_STRUCT        *irb;    /* Pointer to data structures for IRB. */
-     struct irb_tree   *itree;  /* tree of IRB cuts */
+     RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
+     struct rib_tree   *itree;  /* tree of RIB cuts */
      struct rcb_box    box;     /* box data structure */
 
      if (lb->Data_Structure == NULL) {
@@ -72,19 +72,19 @@ int            *numprocs)       /* number of processors in proc list */
 
         Box_Assign(treept, &box, procs, numprocs, treept[0].right_leaf);
      }
-     else if (lb->Method == IRB) {
-        irb = (IRB_STRUCT *) (lb->Data_Structure);
-        itree = irb->Tree_Ptr;
-        if (itree[0].right_leaf < 0) { /* IRB tree was never created. */
-           LB_PRINT_ERROR(lb->Proc, yo, "No IRB tree saved;"
-             " Must set parameter IRB_KEEP_CUTS to 1.");
+     else if (lb->Method == RIB) {
+        rib = (RIB_STRUCT *) (lb->Data_Structure);
+        itree = rib->Tree_Ptr;
+        if (itree[0].right_leaf < 0) { /* RIB tree was never created. */
+           LB_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved;"
+             " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
            return(LB_FATAL);
         }
 
         *numprocs = 0;
 
-        switch (irb->Num_Geom) {
+        switch (rib->Num_Geom) {
            case 3:
               box.lo[0] = xmin;
               box.lo[1] = ymin;
@@ -116,7 +116,7 @@ int            *numprocs)       /* number of processors in proc list */
      }
      else {
         LB_PRINT_ERROR(lb->Proc, yo, 
-                       "Box_Assign valid only when method is RCB or IRB.");
+                       "Box_Assign valid only when method is RCB or RIB.");
         *procs = -1;
         *numprocs = 0;
         return(LB_FATAL);
@@ -162,7 +162,7 @@ int              procmid)       /* 1st processor in upper half */
 }
 
 static void Box_Assign3(
-struct irb_tree   *itree,       /* IRB tree */
+struct rib_tree   *itree,       /* RIB tree */
 struct rcb_box    *box,         /* extended box */
 int               *procs,       /* processors that box is in */
 int               *numprocs,    /* current number of processors on list */
@@ -232,7 +232,7 @@ int               procmid)      /* 1st processor in upper half */
 }
 
 static void Box_Assign2(
-struct irb_tree   *itree,       /* IRB tree */
+struct rib_tree   *itree,       /* RIB tree */
 struct rcb_box    *box,         /* extended box */
 int               *procs,       /* processors that box is in */
 int               *numprocs,    /* current number of processors on list */
@@ -292,7 +292,7 @@ int               procmid)      /* 1st processor in upper half */
 }
 
 static void Box_Assign1(
-struct irb_tree   *itree,       /* IRB tree */
+struct rib_tree   *itree,       /* RIB tree */
 struct rcb_box    *box,         /* extended box */
 int               *procs,       /* processors that box is in */
 int               *numprocs,    /* current number of processors on list */

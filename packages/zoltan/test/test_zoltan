@@ -173,20 +173,20 @@ endif
 if ( $yes_fortran ) then
 # Using F90
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb irb oct )
+    set ch_methods = ( rcb rib oct )
     set nem_methods = ( )
   else
-    set ch_methods = ( rcb irb oct partkway partgeom diffusion )
+    set ch_methods = ( rcb rib oct partkway partgeom diffusion )
     set nem_methods = ( )
   endif
 else
 # Using C
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct )
-    set nem_methods = ( rcb irb oct )
+    set ch_methods = ( rcb rcb-oneproc rib rib-oneproc oct )
+    set nem_methods = ( rcb rib oct )
   else
-    set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct partkway partkway-oneproc partkway-cyclic partgeom diffusion )
-    set nem_methods = ( rcb irb oct partkway partgeom diffusion )
+    set ch_methods = ( rcb rcb-oneproc rib rib-oneproc oct partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set nem_methods = ( rcb rib oct partkway partgeom diffusion )
   endif
 endif
 

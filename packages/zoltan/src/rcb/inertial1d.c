@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include "lb_const.h"
-#include "irb_const.h"
+#include "rib_const.h"
 
 int LB_inertial1d(
      struct Dot_Struct *dotpt,  /* graph data structure for weights */

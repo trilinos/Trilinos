@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include "lb_const.h"
 #include "rcb_const.h"
-#include "irb_const.h"
+#include "rib_const.h"
 
 
 int LB_Point_Assign(
@@ -29,8 +29,8 @@ int      *proc)                 /* processor that point lands in */
      int               procmid; /* 1st processor in upper half */
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB.  */
      struct rcb_tree   *treept; /* tree of RCB cuts */
-     IRB_STRUCT        *irb;    /* Pointer to data structures for IRB. */
-     struct irb_tree   *itree;  /* tree of IRB cuts */
+     RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
+     struct rib_tree   *itree;  /* tree of RIB cuts */
 
      if (lb->Data_Structure == NULL) {
         LB_PRINT_ERROR(-1, yo, 
@@ -61,17 +61,17 @@ int      *proc)                 /* processor that point lands in */
 
         return(LB_OK);
      }
-     else if (lb->Method == IRB) {
-        irb = (IRB_STRUCT *) (lb->Data_Structure);
-        itree = irb->Tree_Ptr;
-        if ((procmid = itree[0].right_leaf) < 0) { /* IRB tree never created */
-           LB_PRINT_ERROR(lb->Proc, yo, "No IRB tree saved for Point_Assign; "
-                                     "Must set parameter IRB_KEEP_CUTS to 1.");
+     else if (lb->Method == RIB) {
+        rib = (RIB_STRUCT *) (lb->Data_Structure);
+        itree = rib->Tree_Ptr;
+        if ((procmid = itree[0].right_leaf) < 0) { /* RIB tree never created */
+           LB_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved for Point_Assign; "
+                                     "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(LB_FATAL);
         }
 
-        switch (irb->Num_Geom) {
+        switch (rib->Num_Geom) {
            case 3:
               while (procmid > 0)
                  if(((coords[0] - itree[procmid].cm[0])*itree[procmid].ev[0] +
@@ -106,7 +106,7 @@ int      *proc)                 /* processor that point lands in */
      }
      else {
         LB_PRINT_ERROR(lb->Proc, yo, "LB_Point_Assign valid only when method "
-                                     "is RCB or IRB.");
+                                     "is RCB or RIB.");
         *proc = -1;
         return(LB_FATAL);
      }

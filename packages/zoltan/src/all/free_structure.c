@@ -16,7 +16,7 @@
 #include <string.h>
 #include "lb_const.h"
 #include "rcb_const.h"
-#include "irb_const.h"
+#include "rib_const.h"
 #include "oct_util_const.h"
 #include "reftree_const.h"
 
@@ -34,8 +34,8 @@ LB *lb)				/* load balance structure */
       LB_RCB_Free_Structure(lb);
       break;
 
-    case IRB:
-      LB_IRB_Free_Structure(lb);
+    case RIB:
+      LB_RIB_Free_Structure(lb);
       break;
 
     case OCTPART:

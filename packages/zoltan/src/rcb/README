@@ -13,7 +13,7 @@
 
 
 RCB DIRECTORY -- Implementation of Recursive Coordinate Bisection.  Also
-                 includes Inertial Recursive Bisection due to the similarity
+                 includes Recursive Inertial Bisection due to the similarity
                  of the algorithms.
 -----------------------------------------------------------------------------
 
@@ -27,29 +27,29 @@ rcb_util.c    -- Functions that call the load-balancing query routines to
                  build the data structures needed for RCB algorithm.
                  (initialize_dot, rcb_build_data_structure)
 
-point_assign.c -- Given a geometric decomposition constructed via RCB or IRB,
+point_assign.c -- Given a geometric decomposition constructed via RCB or RIB,
 		 this routine determines which processor a particular
 		 geometric point is assigned to.
 
-box_assign.c  -- Given a geometric decomposition constructed via RCB or IRB,
+box_assign.c  -- Given a geometric decomposition constructed via RCB or RIB,
 		 this routine determines which processors an axis-aligned
 		 box intersects.
 
 create_proc_list.c -- Create the communication list to communicate dots
                       between processors in each half at each step of
-                      RCB or IRB.
+                      RCB or RIB.
 
 create_proc_list_const.h -- Prototype for create_proc_list.c.
 
-irb_const.h   -- Data structure definitions needed for IRB (IRB_Struct,
-                 irb_dot, irb_tree).  Prototypes for external functions
-                 in irb_util.c
+rib_const.h   -- Data structure definitions needed for RIB (RIB_Struct,
+                 rib_dot, rib_tree).  Prototypes for external functions
+                 in rib_util.c
 
-irb.c         -- Implementation of IRB.
+rib.c         -- Implementation of RIB.
 
-irb_util.c    -- Functions that call the load-balancing query routines to
-                 build the data structures needed for RCB algorithm.
-                 (initialize_dot, LB_IRB_Build_Structure, LB_IRB_Free_Structure)
+rib_util.c    -- Functions that call the load-balancing query routines to
+                 build the data structures needed for RIB algorithm.
+                 (initialize_dot, LB_RIB_Build_Structure, LB_RIB_Free_Structure)
 
 inertial1d.c  -- Determine center of mass and direction of perpendicular to
                  cutting plane for 1d inertial.

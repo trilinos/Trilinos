@@ -15,13 +15,13 @@
 #include <math.h>
 #include <memory.h>
 #include "lb_const.h"
-#include "irb_const.h"
+#include "rib_const.h"
 #include "params_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
 
-/* Inertial recursive bisection (IRB) load balancing routine operates on
+/* Inertial recursive bisection (RIB) load balancing routine operates on
    "dots" as defined in shared_const.h */
 
 /* Notes:
@@ -34,36 +34,36 @@
 
 #define TINY   1.0e-6
 
-#define IRB_DEFAULT_OVERALLOC 1.0
+#define RIB_DEFAULT_OVERALLOC 1.0
 
-static void IRB_check(LB *, struct Dot_Struct *, int, int);
-static void IRB_stats(LB *, double, struct Dot_Struct *,int, double *,
+static void RIB_check(LB *, struct Dot_Struct *, int, int);
+static void RIB_stats(LB *, double, struct Dot_Struct *,int, double *,
                       int *, int);
 
-static int irb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
+static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                int, int, int, int);
 
-/*  IRB_CHECK = 0  No consistency check on input or results */
-/*  IRB_CHECK = 1  Check input weights and final results for consistency */
-static int IRB_CHECK = 1;
+/*  RIB_CHECK = 0  No consistency check on input or results */
+/*  RIB_CHECK = 1  Check input weights and final results for consistency */
+static int RIB_CHECK = 1;
 
-/*  IRB_OUTPUT_LEVEL = 0  No statistics logging */
-/*  IRB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
-/*  IRB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
-static int IRB_OUTPUT_LEVEL = 0;
+/*  RIB_OUTPUT_LEVEL = 0  No statistics logging */
+/*  RIB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
+/*  RIB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
+static int RIB_OUTPUT_LEVEL = 0;
 
-/*  Parameters structure for IRB method.  Used in  */
-/*  LB_Set_IRB_Param and LB_IRB.                      */
-static PARAM_VARS IRB_params[] = {
-                  { "IRB_OVERALLOC", NULL, "DOUBLE" },
-                  { "IRB_CHECK", NULL, "INT" },
-                  { "IRB_OUTPUT_LEVEL", NULL, "INT" },
-                  { "IRB_KEEP_CUTS", NULL, "INT" },
+/*  Parameters structure for RIB method.  Used in  */
+/*  LB_Set_RIB_Param and LB_RIB.                      */
+static PARAM_VARS RIB_params[] = {
+                  { "RIB_OVERALLOC", NULL, "DOUBLE" },
+                  { "RIB_CHECK", NULL, "INT" },
+                  { "RIB_OUTPUT_LEVEL", NULL, "INT" },
+                  { "KEEP_CUTS", NULL, "INT" },
                   { NULL, NULL, NULL } };
 
 /*---------------------------------------------------------------------------*/
 
-int LB_Set_IRB_Param(
+int LB_Set_RIB_Param(
      char *name,                 /* name of variable */
      char *val                   /* value of variable */
 )
@@ -72,16 +72,16 @@ int LB_Set_IRB_Param(
      PARAM_UTYPE result;         /* value returned from Check_Param */
      int index;                  /* index returned from Check_Param */
 
-     status = LB_Check_Param(name, val, IRB_params, &result, &index);
+     status = LB_Check_Param(name, val, RIB_params, &result, &index);
 
      return(status);
 }
 
 /*---------------------------------------------------------------------------*/
 
-int LB_irb(
+int LB_rib(
      LB *lb,                       /* The load-balancing structure with info for
-                                      the IRB balancer.                       */
+                                      the RIB balancer.                       */
      int *num_import,              /* Number of non-local objects assigned to
                                       this processor in the new decomposition.*/
      LB_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
@@ -99,7 +99,7 @@ int LB_irb(
      int **export_procs            /* Not computed. */
 )
 {
-     /* Wrapper routine to set parameter values and call the real irb. */
+     /* Wrapper routine to set parameter values and call the real rib. */
      double overalloc;           /* amount to overallocate by when realloc
                                     of dot array must be done.
                                     1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -110,33 +110,33 @@ int LB_irb(
      int gen_tree;               /* (0) don't (1) generate whole treept to use
                                     later for point and box drop. */
 
-     LB_Bind_Param(IRB_params, "IRB_OVERALLOC", (void *) &overalloc);
-     LB_Bind_Param(IRB_params, "IRB_CHECK", (void *) &check);
-     LB_Bind_Param(IRB_params, "IRB_OUTPUT_LEVEL", (void *) &stats);
-     LB_Bind_Param(IRB_params, "IRB_KEEP_CUTS", (void *) &gen_tree);
+     LB_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
+     LB_Bind_Param(RIB_params, "RIB_CHECK", (void *) &check);
+     LB_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
+     LB_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
 
-     overalloc = IRB_DEFAULT_OVERALLOC;
-     check = IRB_CHECK;
-     stats = IRB_OUTPUT_LEVEL;
+     overalloc = RIB_DEFAULT_OVERALLOC;
+     check = RIB_CHECK;
+     stats = RIB_OUTPUT_LEVEL;
      gen_tree = 0;
      wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
-     LB_Assign_Param_Vals(lb->Params, IRB_params, lb->Debug_Level, lb->Proc,
+     LB_Assign_Param_Vals(lb->Params, RIB_params, lb->Debug_Level, lb->Proc,
                           lb->Debug_Proc);
 
      /* Initializations in case of early exit. */
      *num_import = -1;
      *num_export = -1;  /* We don't compute the export map. */
 
-     return(irb_fn(lb, num_import, import_global_ids, import_local_ids,
+     return(rib_fn(lb, num_import, import_global_ids, import_local_ids,
                 import_procs, overalloc, wgtflag, check, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int irb_fn(
+static int rib_fn(
      LB *lb,                       /* The load-balancing structure with info for
-                                      the IRB balancer. */
+                                      the RIB balancer. */
      int *num_import,              /* Number of non-local objects assigned to
                                       this processor in the new decomposition.*/
      LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
@@ -158,7 +158,7 @@ static int irb_fn(
      int gen_tree                  /* (0) do not (1) do generate full treept */
 )
 {
-     char    yo[] = "irb_fn";
+     char    yo[] = "rib_fn";
      char    msg[256];
      int     proc,nprocs;        /* my proc id, total # of procs */
      LB_ID_PTR gidpt;            /* local global IDs array. */
@@ -204,8 +204,8 @@ static int irb_fn(
                                     6 = # of reallocs of dot array */
      int     i,j,k;              /* local variables */
 
-     IRB_STRUCT *irb = NULL;     /* Pointer to data structures for IRB */
-     struct irb_tree *treept = NULL; /* tree of cuts - single cut on exit*/
+     RIB_STRUCT *rib = NULL;     /* Pointer to data structures for RIB */
+     struct rib_tree *treept = NULL; /* tree of cuts - single cut on exit*/
 
      double start_time, end_time;
      double lb_time[2];
@@ -226,24 +226,24 @@ static int irb_fn(
      nprocs = lb->Num_Proc;
 
      /*
-      *  Build the IRB Data structure and
+      *  Build the RIB Data structure and
       *  set pointers to information in it.
       */
 
      start_time = LB_Time(lb->Timer);
-     ierr = LB_IRB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+     ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
      if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        LB_PRINT_ERROR(proc, yo, "Error returned from LB_IRB_Build_Structure.");
+        LB_PRINT_ERROR(proc, yo, "Error returned from LB_RIB_Build_Structure.");
         LB_TRACE_EXIT(lb, yo);
         return(ierr);
      }
 
-     irb = (IRB_STRUCT *) (lb->Data_Structure);
+     rib = (RIB_STRUCT *) (lb->Data_Structure);
 
-     gidpt = irb->Global_IDs;
-     lidpt = irb->Local_IDs;
-     dotpt  = irb->Dots;
-     treept = irb->Tree_Ptr;
+     gidpt = rib->Global_IDs;
+     lidpt = rib->Local_IDs;
+     dotpt  = rib->Dots;
+     treept = rib->Tree_Ptr;
      end_time = LB_Time(lb->Timer);
      lb_time[0] = end_time - start_time;
      start_time = end_time;
@@ -380,7 +380,7 @@ static int irb_fn(
         for (i = 0; i < dotnum; i++) {
           wgts[i] = dotpt[i].Weight;
         }
-        switch (irb->Num_Geom) {
+        switch (rib->Num_Geom) {
            case 3:
               ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value,
                                    local_comm);
@@ -447,11 +447,11 @@ static int irb_fn(
         if (allocflag) {
            /* 
             * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
-            * store their values in irb.
+            * store their values in rib.
             */
-           irb->Global_IDs = gidpt;
-           irb->Local_IDs = lidpt;
-           irb->Dots = dotpt;
+           rib->Global_IDs = gidpt;
+           rib->Local_IDs = lidpt;
+           rib->Dots = dotpt;
         }
 
         /* create new communicators */
@@ -470,7 +470,7 @@ static int irb_fn(
 
      /* have recursed all the way to final single sub-domain */
 
-     /* free all memory used by IRB and MPI */
+     /* free all memory used by RIB and MPI */
 
      MPI_Comm_free(&local_comm);
 
@@ -488,9 +488,9 @@ static int irb_fn(
 
      /* error checking and statistics */
 
-     if (check) IRB_check(lb, dotpt, dotnum, pdotnum);
+     if (check) RIB_check(lb, dotpt, dotnum, pdotnum);
      if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME))
-        IRB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
+        RIB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
                   stats);
 
      /* update calling routine parameters */
@@ -518,8 +518,8 @@ static int irb_fn(
      }
 
      if (gen_tree) {
-        MPI_Allgather(&treept[proc], sizeof(struct irb_tree), MPI_BYTE,
-                      treept, sizeof(struct irb_tree), MPI_BYTE,
+        MPI_Allgather(&treept[proc], sizeof(struct rib_tree), MPI_BYTE,
+                      treept, sizeof(struct rib_tree), MPI_BYTE,
                       lb->Communicator);
         for (i = 1; i < nprocs; i++)
            if (treept[i].parent > 0)
@@ -536,15 +536,15 @@ static int irb_fn(
 
      if (lb->Debug_Level >= LB_DEBUG_ATIME) {
         if (lb->Proc == lb->Debug_Proc)
-           printf("ZOLTAN IRB Times:  \n");
+           printf("ZOLTAN RIB Times:  \n");
         LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
                        "ZOLTAN       Build:       ");
         LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
-                       "ZOLTAN         IRB:         ");
+                       "ZOLTAN         RIB:         ");
      }
 
      if (lb->Debug_Level >= LB_DEBUG_ALL) {
-        LB_RB_Print_All(lb, irb->Global_IDs, irb->Dots, 
+        LB_RB_Print_All(lb, rib->Global_IDs, rib->Dots, 
                         pdotnum, pdottop, *num_import, 
                         *import_global_ids, *import_procs);
      }
@@ -557,11 +557,11 @@ static int irb_fn(
 
 /* ----------------------------------------------------------------------- */
 
-/* consistency checks on IRB results */
+/* consistency checks on RIB results */
 
-static void IRB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
+static void RIB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
 {
-     char *yo = "IRB_check";
+     char *yo = "RIB_check";
      char msg[256];
      int i, proc, nprocs, total1, total2;
      double weight, wtmax, wtmin, wtone, tolerance;
@@ -575,8 +575,8 @@ static void IRB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
      MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
      if (total1 != total2) {
         if (proc == 0) {
-           sprintf(msg, "Points before IRB = %d, "
-                        "Points after IRB = %d\n", total1,total2);
+           sprintf(msg, "Points before RIB = %d, "
+                        "Points after RIB = %d\n", total1,total2);
            LB_PRINT_WARN(proc, yo, msg);
         }
      }
@@ -619,9 +619,9 @@ static void IRB_check(LB *lb, struct Dot_Struct *dotpt, int dotnum, int dotorig)
 }
 
 
-/* IRB statistics */
+/* RIB statistics */
 
-static void IRB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
+static void RIB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
                       int dotnum, double *timers, int *counters, int stats)
 {
      int i, proc, nprocs, sum, min, max, print_proc;
@@ -632,10 +632,10 @@ static void IRB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
      MPI_Comm_size(lb->Communicator,&nprocs);
      print_proc = lb->Debug_Proc;
 
-     if (proc == print_proc) printf("IRB total time: %g (secs)\n",timetotal);
+     if (proc == print_proc) printf("RIB total time: %g (secs)\n",timetotal);
 
      if (stats) {
-        if (proc == print_proc) printf("IRB Statistics:\n");
+        if (proc == print_proc) printf("RIB Statistics:\n");
 
         MPI_Barrier(lb->Communicator);
 
