@@ -79,6 +79,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
                                     has changed                              */
 
   int i;                         /* Loop index                               */
+  int ierr;                      /* Error code                               */
+  char errmsg[128];		 /* Error message */
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -97,7 +99,12 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
-    LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
+    ierr = LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
+    if (!(ierr == 0) || (ierr == 3)) {
+      sprintf(errmsg, "fatal: error in LB_Set_Param when setting parameter %s\n", prob->params[i][0]);
+      Gen_Error(0, errmsg);
+      return 0;
+    }
   }
 
 
