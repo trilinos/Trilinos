@@ -70,9 +70,9 @@ public:
   //! Destructor.
   virtual ~Group();
 
-  virtual Abstract::Group& operator=(const Group& source);
+  virtual Abstract::Group& operator=(const NOX::Abstract::Group& source);
   //! See above.
-  virtual Abstract::Group& operator=(const Abstract::Group& source);
+  virtual Abstract::Group& operator=(const Group& source);
 
   /** @name "Compute" functions. */
   //@{
