@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
 
   // matrix downloaded from MatrixMarket
-  char FileName[] = "bcsstk14.rsa";
+  char FileName[] = "../HBMatrices/bcsstk14.rsa";
 
   Epetra_Map * readMap; // Pointers because of Trilinos_Util_ReadHb2Epetra
   Epetra_CrsMatrix * readA; 
