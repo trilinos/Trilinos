@@ -1,0 +1,2 @@
+# This configure command will build Trilinos on a Scyld-based beowulf system
+../configure --enable-mpi --with-mpi-cxx=g++ --with-mpi-cc=cc --with-mpi-f77=g77 --with-mpi-libs=-lmpi --enable-referencey12m
