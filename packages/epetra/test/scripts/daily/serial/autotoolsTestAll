@@ -1,0 +1,60 @@
+#!/bin/csh
+# $1 - Used only for automated testing.  No action required by script owner.
+#      This parameter names the subdirectory from which the script is being
+#      run.  This assists a developer in figuring out which tests failed.
+# $2 - Indicates if the test is an automated nightly test.  No action required
+#      by script owner.
+
+set error = 0
+set AnError = False
+### maybe should pass $homedir and package name to script
+#set printexitvalue
+if( "$2" == "True" ) then # $2 is an optional parameter indicating if 
+			  # this is an automated test or not
+    # file2 is the log that is created and put into a results email if 
+    # errors occur.
+    set file2 = ../../../../logErrors.txt
+    echo $file2
+    # Echo some important information into the log file to help developers
+    # figure out which tests failed.
+    echo "Package being tested: Epetra  " >>& $file2
+    echo "Name of subdirectory: " $1 >>& $file2
+    echo "Date: " `eval date` >>& $file2
+    echo `uname -a` >>& $file2
+    #'file' is a shorter log that is retained even if all tests pass.
+    set file = ../../../../log`eval uname`.txt
+    echo "Package being tested: Epetra  " >>& $file
+    echo "Name of subdirectory: " $1 >>& $file
+else
+    cd ../../../
+    set file = log.`eval date +%d%b%Y_%H%M%S`
+    rm -f $file
+endif
+echo $file
+echo "Date: " `eval date` >>& $file
+echo `uname -a` >>& $file
+# List of subdirectories containing test exe's.
+#foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
+foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
+	cd $f
+	foreach g(*.exe)
+		echo "############" $g "##############" >>& ../$file
+		if( "$2" == "True" ) then
+		    ./$g >>& ../$file
+		    if( "$status" != "0" ) then
+		    # A test failed.
+			set AnError = True
+			echo "############" $g "##############" >>& ../$file2
+			./$g -v >>& ../$file2
+		    endif
+		else
+		# This is not an automated test.
+		    ./$g -v >>& ../$file
+		endif
+	end
+	cd ..
+end
+if( "$AnError" != "True" && "$2" == "True" ) then
+    rm -f $file2
+endif
+
