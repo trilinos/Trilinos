@@ -27,9 +27,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "ml_config.h"
 
 // This example reads a matrix in AIJ format, and creates
