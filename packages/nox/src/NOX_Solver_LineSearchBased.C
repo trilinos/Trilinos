@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Solver_LineSearch.H"	// class definition
+#include "NOX_Solver_LineSearchBased.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
@@ -56,7 +56,7 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-LineSearch::LineSearch(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
+LineSearchBased::LineSearchBased(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// pointer to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
@@ -71,7 +71,7 @@ LineSearch::LineSearch(Abstract::Group& xgrp, Status::Test& t, const Parameter::
 }
 
 // Protected
-void LineSearch::init()
+void LineSearchBased::init()
 {
   // Initialize 
   step = 0;
@@ -91,7 +91,7 @@ void LineSearch::init()
   // Compute RHS of initital guess
   bool ok = solnptr->computeRHS();
   if (!ok) {
-    cout << "NOX::Solver::LineSearch::init - Unable to compute RHS" << endl;
+    cout << "NOX::Solver::LineSearchBased::init - Unable to compute RHS" << endl;
     throw "NOX Error";
   }
 
@@ -99,7 +99,7 @@ void LineSearch::init()
   status = testptr->operator()(*this);
   if (status == Status::Converged) {
     if (Utils::doPrint(Utils::Warning)) {
-      cout << "Warning: NOX::Solver::LineSearch::init() - The solution passed "
+      cout << "Warning: NOX::Solver::LineSearchBased::init() - The solution passed "
 	   << "into the solver (either through constructor or reset method) "
 	   << "is already converged!  The solver wil not "
 	   << "attempt to solve this system since status is flagged as "
@@ -115,7 +115,7 @@ void LineSearch::init()
 
 }
 
-bool LineSearch::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
+bool LineSearchBased::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
@@ -126,19 +126,19 @@ bool LineSearch::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::
   return true;
 }
 
-LineSearch::~LineSearch() 
+LineSearchBased::~LineSearchBased() 
 {
   delete oldsolnptr;
   delete dirptr;
 }
 
 
-NOX::Status::StatusType LineSearch::getStatus()
+NOX::Status::StatusType LineSearchBased::getStatus()
 {
   return status;
 }
 
-NOX::Status::StatusType LineSearch::iterate()
+NOX::Status::StatusType LineSearchBased::iterate()
 {
   // First check status
   if (status != Status::Unconverged) 
@@ -152,7 +152,7 @@ NOX::Status::StatusType LineSearch::iterate()
   bool ok;
   ok = direction(dir, soln, *this);
   if (!ok) {
-    cout << "NOX::Solver::LineSearch::iterate - unable to calculate direction" << endl;
+    cout << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
     status = Status::Failed;
     return status;
   }
@@ -164,18 +164,18 @@ NOX::Status::StatusType LineSearch::iterate()
   ok = linesearch(soln, step, oldsoln, dir);
   if (!ok) {
     if (step == 0) {
-      cout << "NOX::Solver::LineSearch::iterate - linesearch failed" << endl;
+      cout << "NOX::Solver::LineSearchBased::iterate - linesearch failed" << endl;
       status = Status::Failed;
       return status;
     }
     else if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Solver::LineSearch::iterate - using recovery step for linesearch" << endl;
+      cout << "NOX::Solver::LineSearchBased::iterate - using recovery step for linesearch" << endl;
   }
 
   // Compute RHS for new current solution.
   ok = soln.computeRHS();
   if (!ok) {
-    cout << "NOX::Solver::LineSearch::iterate - unable to compute RHS" << endl;
+    cout << "NOX::Solver::LineSearchBased::iterate - unable to compute RHS" << endl;
     status = Status::Failed;
     return status;
   }
@@ -190,7 +190,7 @@ NOX::Status::StatusType LineSearch::iterate()
   return status;
 }
 
-NOX::Status::StatusType LineSearch::solve()
+NOX::Status::StatusType LineSearchBased::solve()
 {
   printUpdate();
 
@@ -203,22 +203,22 @@ NOX::Status::StatusType LineSearch::solve()
   return status;
 }
 
-const Abstract::Group& LineSearch::getSolutionGroup() const
+const Abstract::Group& LineSearchBased::getSolutionGroup() const
 {
   return *solnptr;
 }
 
-const Abstract::Group& LineSearch::getPreviousSolutionGroup() const
+const Abstract::Group& LineSearchBased::getPreviousSolutionGroup() const
 {
   return oldsoln;
 }
 
-int LineSearch::getNumIterations() const
+int LineSearchBased::getNumIterations() const
 {
   return niter;
 }
 
-const Parameter::List& LineSearch::getOutputParameters() const
+const Parameter::List& LineSearchBased::getOutputParameters() const
 {
   oparams.setParameter("Nonlinear Iterations", niter);
   oparams.setParameter("2-Norm of Residual", solnptr->getNormRHS());
@@ -226,7 +226,7 @@ const Parameter::List& LineSearch::getOutputParameters() const
 }
 
 // protected
-void LineSearch::printUpdate() 
+void LineSearchBased::printUpdate() 
 {
   double norm_soln;
   double norm_step;

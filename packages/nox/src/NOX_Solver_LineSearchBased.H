@@ -30,11 +30,11 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_SOLVER_NEWTON_H
-#define NOX_SOLVER_NEWTON_H
+#ifndef NOX_SOLVER_LINESEARCHBASED_H
+#define NOX_SOLVER_LINESEARCHBASED_H
 
 #include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_Linesearch_Manager.H" // class data element
+#include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
 
@@ -42,7 +42,7 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief %Newton-like solver with a line search.
+  \brief Basic line search based solver
   
   The following parameters are valid for this solver:
 
@@ -60,15 +60,15 @@ namespace Solver {
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
-class LineSearch : public Generic {
+class LineSearchBased : public Generic {
 
 public:
 
-  //! %LineSearch-method constructor. 
-  LineSearch(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  //! %LineSearchBased-method constructor. 
+  LineSearchBased(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
 
   //! Destructor
-  virtual ~LineSearch();
+  virtual ~LineSearchBased();
 
   virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
   virtual Status::StatusType getStatus();
@@ -116,7 +116,7 @@ protected:
   mutable Parameter::List oparams; 
 
   //! Linesearch. 
-  Linesearch::Manager linesearch; 
+  NOX::LineSearch::Manager linesearch; 
 
   //! %Search %Direction. 
   Direction::Manager direction; 
