@@ -92,10 +92,6 @@ extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 }
 #endif
 
-/*#define ML_allocate(i)    malloc((i))*/
-#define ML_allocate(i)    malloc((i + sizeof(int) ))
-#define ML_free(i)        { free(i); i = NULL; }
-
 #define ML_matrix_type         0
 #define ML_N_internal          1
 #define ML_N_border            2
