@@ -46,8 +46,16 @@ int main()
 
   try {
 
+    // Create output file to save solutions
+    ofstream outFile("ChanContinuation.dat");
+    outFile.setf(ios::scientific, ios::floatfield);
+    outFile.precision(14);
+
+    // Save size of discretizations
+    outFile << n << endl;
+
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
+    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -86,8 +94,8 @@ int main()
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");
-    //predictorList.setParameter("Method", "Tangent");
-    predictorList.setParameter("Method", "Secant");
+    predictorList.setParameter("Method", "Tangent");
+    //predictorList.setParameter("Method", "Secant");
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
@@ -150,6 +158,8 @@ int main()
       stepper.getParameterList().print(cout);
       cout << endl;
     }
+
+    outFile.close();
   }
 
   catch (string& s) {

@@ -41,11 +41,22 @@ ChanProblemInterface::ChanProblemInterface(int N, double a, double b,
   alpha(a),
   beta(b),
   scale(s),
-  n(N)
+  n(N),
+  outputFilePtr(NULL)
 {
-  for (int i=0; i<n; i++) 
-    initialGuess(i) = 
-      i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
+  init();
+}
+
+ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
+					   double s, ofstream& file)  : 
+  initialGuess(N),
+  alpha(a),
+  beta(b),
+  scale(s),
+  n(N),
+  outputFilePtr(&file)
+{
+  init();
 }
 
 const NOX::LAPACK::Vector&
@@ -88,6 +99,14 @@ ChanProblemInterface::setParams(const LOCA::ParameterVector& p) {
   scale = p.getValue("scale");
 }
 
+void
+ChanProblemInterface::init() {
+
+  for (int i=0; i<n; i++) 
+    initialGuess(i) = 
+      i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
+}
+
 double
 ChanProblemInterface::source_term(double x) {
   return 1. + (x + 0.5*x*x)/(1. + 0.01*x*x);
@@ -123,5 +142,12 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
      for (int i=n-2; i<n; i++)  cout << " " << x(i);
    }
    cout << endl;
+
+   if (outputFilePtr != NULL) {
+     (*outputFilePtr) << conParam << " ";
+     for (int i=0; i<n; i++)
+       (*outputFilePtr) << x(i) << " ";
+     (*outputFilePtr) << endl << endl;
+   }
 
 }

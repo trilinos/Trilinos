@@ -45,8 +45,16 @@ int main()
     int maxNewtonIters = 20;
     //int maxNewtonIters = 6;
 
+    // Create output file to save solutions
+    ofstream outFile("ChanTPContinuation.dat");
+    outFile.setf(ios::scientific, ios::floatfield);
+    outFile.precision(14);
+
+    // Save size of discretizations
+    outFile << n << endl;
+
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale);
+    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -77,7 +85,7 @@ int main()
     stepperList.setParameter("Continuation Method", "Arc Length");
     stepperList.setParameter("Continuation Parameter", "beta");
     stepperList.setParameter("Initial Value", beta);
-    stepperList.setParameter("Max Value", 0.8);
+    stepperList.setParameter("Max Value", 1.0);
     stepperList.setParameter("Min Value", 0.0);
     stepperList.setParameter("Max Steps", 20);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
@@ -155,6 +163,8 @@ int main()
       stepper.getParameterList().print(cout);
       cout << endl;
     }
+
+    outFile.close();
   }
 
   catch (string& s) {

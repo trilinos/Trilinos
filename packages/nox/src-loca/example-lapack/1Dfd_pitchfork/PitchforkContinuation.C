@@ -140,6 +140,17 @@ int main()
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
 
+    // Direction sublist
+    NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+    dirParams.setParameter("Method", "Newton");
+
+    // Newton sublist
+    NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+    newtonParams.setParameter("Forcing Term Method", "Constant");
+
+    // Linear solver sublist
+    NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(1.0e-8, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);

@@ -35,6 +35,7 @@
 
 #include "LOCA_LAPACK_Interface.H" // base class
 #include "NOX_LAPACK_Vector.H" // class data element
+#include <fstream>
 
 /*!
   \brief LOCA-LAPACK problem interface for the Chan problem.
@@ -54,9 +55,12 @@ class ChanProblemInterface :
   public LOCA::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor.  Also generates an initial guess
   ChanProblemInterface(int N, double a, double b, double s);
+ 
+  //! Constructor.  Also generates an initial guess
+  ChanProblemInterface(int N, double a, double b, double s, ofstream& file);
 
   //! Destructor
   ~ChanProblemInterface() {};
@@ -80,6 +84,9 @@ public:
 
 
 private:
+
+  //! Computes the initial guess
+  void init();
 
   //! Computes the source term
   double source_term(double x);
@@ -106,6 +113,9 @@ private:
 
   //! Stores the size of the discretization
   int n;
+
+  //! Stores pointer to output file stream
+  ofstream* outputFilePtr;
 
 };
 
