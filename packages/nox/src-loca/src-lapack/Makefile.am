@@ -95,7 +95,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-liblocalapack_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+liblocalapack_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
