@@ -262,6 +262,8 @@ void Epetra_Export::Print(ostream & os) const
   else Distor_->Print(os);
   
   os << "Number of Same IDs = " << NumSameIDs_ << endl;
+  os << "Number of Permute IDs = " << NumPermuteIDs_ << endl;
+  os << "Number of Export IDs = " << NumExportIDs_ << endl;
   
   os << "Epetra_Export Print Needs attention!!!!" << endl;
   return;

@@ -225,8 +225,6 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries, double * Value
 
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
 
-//  if( !StaticGraph() ) EPETRA_CHK_ERR( Graph_->InsertGlobalIndices( Row, NumEntries, Indices ) );
-
   return(0);
 }
 
@@ -238,8 +236,6 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries, double * Values, i
   Graph_->SetIndicesAreLocal(true);
 
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
-
-//  if( !StaticGraph() ) EPETRA_CHK_ERR( Graph_->InsertMyIndices( Row, NumEntries, Indices ) );
 
   return(0);
 
@@ -280,6 +276,24 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int
     
     if (StaticGraph()) EPETRA_CHK_ERR(-2); // If the matrix graph is fully constructed, we cannot insert new values
 
+    int tmpNumEntries = NumEntries;
+
+    if( Graph_->ColMap_ ) { //must insert only valid indices, values
+      double * tmpValues = Values;
+      Values = new double[NumEntries];
+      int loc = 0;
+      if( IndicesAreLocal() ) {
+        for( int i = 0; i < NumEntries; ++i )
+          if( Graph_->ColMap_->MyLID(Indices[i]) ) Values[loc++] = tmpValues[i];
+      }
+      else {
+        for( int i = 0; i < NumEntries; ++i )
+          if( Graph_->ColMap_->MyGID(Indices[i]) ) Values[loc++] = tmpValues[i];
+      }
+      if( NumEntries != loc ) ierr = 2; //Some columns excluded
+      NumEntries = loc;
+    } 
+
     int start = NumEntriesPerRow_[Row];
     int stop = start + NumEntries;
     int NumAllocatedEntries = NumAllocatedEntriesPerRow_[Row];
@@ -296,14 +310,16 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int
         
     for (j=start; j<stop; j++) Values_[Row][j] = Values[j-start];
 
+    NumEntries = tmpNumEntries;
+    if( Graph_->ColMap_ ) delete [] Values;
   }
 
   if( !StaticGraph() ) Graph_->InsertIndices( Row, NumEntries, Indices );
 
-
-  EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+
+  EPETRA_CHK_ERR(ierr);
   return(0);
 
 }
@@ -324,12 +340,13 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * Valu
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc)) Values_[Row][Loc] = Values[j];
-    else EPETRA_CHK_ERR(-2); // Value not found
+    else ierr = 2; // Value Excluded
   }
 
-  EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+
+  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 
@@ -344,18 +361,18 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
 
   if (CV_==View) EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
-    
   if (Row < 0 || Row >= NumMyRows_) EPETRA_CHK_ERR(-1); // Not in Row range
     
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) Values_[Row][Loc] = Values[j];
-    else EPETRA_CHK_ERR(-2); // Value not found
+    else ierr = 2; // Value Excluded
   }
 
-  EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+
+  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 
@@ -1330,28 +1347,28 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
   int i;
   
   int Row, NumEntries;
-  int * Indices;
-  double * Values;
   int FromRow, ToRow;
+  int MaxNumEntries = A.MaxNumEntries();
+  int * Indices = 0;
+  double * Values = 0;
+
+  if( (NumSameIDs||NumPermuteIDs) && A.IndicesAreLocal() ) { //Need Temp Space
+    Indices = new int[MaxNumEntries];
+    Values = new double[MaxNumEntries];
+  }
   
   // Do copy first
   if (NumSameIDs>0) {
     if (A.IndicesAreLocal()) {
-      int MaxNumEntries = A.MaxNumEntries();
-      Indices = new int[MaxNumEntries];  // Need some temporary space
-      Values = new double[MaxNumEntries];  // Need some temporary space
-      
       for (i=0; i<NumSameIDs; i++) {
 				Row = GRID(i);
 				assert(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
 				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
 				if (StaticGraph() || IndicesAreLocal())
-					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0);
+					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)>=0);
 				else
-					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
+					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)>=0); 
       }
-      delete [] Values;
-      delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumSameIDs; i++) {
@@ -1359,9 +1376,9 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
 				assert(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)==0); // Set pointers
 				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
 				if (StaticGraph() || IndicesAreLocal())
-					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0); 
+					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)>=0); 
 				else
-					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
+					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)>=0); 
       }
     }	
   }
@@ -1369,22 +1386,16 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
   // Do local permutation next
   if (NumPermuteIDs>0) {
     if (A.IndicesAreLocal()) {
-      int MaxNumEntries = A.MaxNumEntries();
-      Indices = new int[MaxNumEntries];  // Need some temporary space
-      Values = new double[MaxNumEntries];  // Need some temporary space
-      
       for (i=0; i<NumPermuteIDs; i++) {
 				FromRow = A.GRID(PermuteFromLIDs[i]);
 				ToRow = GRID(PermuteToLIDs[i]);
 				assert(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
 				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
 				if (StaticGraph() || IndicesAreLocal())
-					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
 				else
-					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0); 
       }
-      delete [] Values;
-      delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumPermuteIDs; i++) {
@@ -1393,12 +1404,17 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
 				assert(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)==0); // Set pointers
 				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
 				if (StaticGraph() || IndicesAreLocal())
-					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)>=0); 
 				else
-					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0); 
       }
     }
   }	
+
+  if( (NumSameIDs||NumPermuteIDs) && A.IndicesAreLocal() ) { //Need Temp Space
+    delete [] Values;
+    delete [] Indices;
+  }
 	
   return(0);
 }
@@ -1422,9 +1438,6 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_DistObject & Source,
                         (((GlobalMaxNumEntries+2)+sizeof(int)-1)*sizeof(int))/sizeof(double);
   SizeOfPacket = DoublePacketSize * sizeof(double); 
 
-
-
-
   if (DoublePacketSize*Nsend>LenExports) {
     if (LenExports>0) delete [] Exports;
     LenExports = DoublePacketSize*Nsend;
@@ -1447,7 +1460,6 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_DistObject & Source,
   int FromRow;
   double * valptr, * dintptr;
   int * intptr;
-  
 
   // Each segment of Exports will be filled by a packed row of information for each row as follows:
   // 1st int: GRID of row where GRID is the global row ID for the source matrix
@@ -1525,7 +1537,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
     if (CombineMode==Add) {
       if (StaticGraph() || IndicesAreLocal())
 				// Add to any current values
-				assert(SumIntoGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+				assert(SumIntoGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
       else
 				// Insert values
 				assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
@@ -1533,7 +1545,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
     else if (CombineMode==Insert) {
       if (StaticGraph() || IndicesAreLocal())
 				// Replace any current values
-				assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+				assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
       else
 				// Insert values
 				assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);

@@ -302,7 +302,23 @@ int Epetra_CrsGraph::InsertIndices(int Row, int NumIndices, int *Indices) {
     NumIndicesPerRow_[Row] = NumIndices;
   }
   else {
-    
+
+    if( ColMap_ ) { //only insert indices in col map if defined
+      int * tmpIndices = Indices;
+      Indices = new int[NumIndices];
+      int loc = 0;
+      if( IndicesAreLocal() ) {
+        for( j = 0; j < NumIndices; ++j )
+          if( ColMap_->MyLID(tmpIndices[j]) ) Indices[loc++] = tmpIndices[j];
+      }
+      else {
+        for( j = 0; j < NumIndices; ++j )
+          if( ColMap_->MyGID(tmpIndices[j]) ) Indices[loc++] = tmpIndices[j];
+      }
+      if( loc != NumIndices ) ierr = 2; //Some columns excluded
+      NumIndices = loc;
+    }
+
     int start = NumIndicesPerRow_[Row];
     int stop = start + NumIndices;
     int NumAllocatedIndices = NumAllocatedIndicesPerRow_[Row];
@@ -320,6 +336,8 @@ int Epetra_CrsGraph::InsertIndices(int Row, int NumIndices, int *Indices) {
     
     NumIndicesPerRow_[Row] = stop;
     for (j=start; j<stop; j++) Indices_[Row][j ] = Indices[j-start];
+
+    if( ColMap_ ) delete [] Indices;
   }
   MaxNumIndices_ = EPETRA_MAX(MaxNumIndices_, NumIndicesPerRow_[Row]);
   EPETRA_CHK_ERR(ierr);
@@ -442,7 +460,7 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow, int Index, int Start, int
 
   int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
   for (j=0; j< NumIndices; j++) {
-    if (j0>=NumIndices) j0 -= NumIndices; // wrap around
+    if (j0>=NumIndices) j0 = 0; // wrap around
 
     if (Indices[j0]==Index) {
       Loc = j0;
@@ -934,12 +952,10 @@ int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int & NumIn
 
   Row = LRID(Row); // Normalize row range
 
-
   if (Row < 0 || Row >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in Row range
 
   NumIndices = NumIndicesPerRow_[Row];
   if (LenOfIndices < NumIndices) EPETRA_CHK_ERR(-2); // Not enough space for copy. Needed size is passed back in NumIndices
-
 
   if (IndicesAreLocal())  for (j=0; j<NumIndices; j++) Indices[j] = GCID(Indices_[Row][j]);
   else for(j=0; j<NumIndices; j++)Indices[j] = Indices_[Row][j];
@@ -1026,29 +1042,30 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
   int i;
   
   int Row, NumIndices;
-  int * Indices;
+  int * Indices = 0;
   int FromRow, ToRow;
+
+  int MaxNumIndices = A.MaxNumIndices();
+
+  if( (NumSameIDs||NumPermuteIDs) && A.IndicesAreLocal() )
+    Indices = new int[MaxNumIndices];
   
   // Do copy first
   if (NumSameIDs>0) {
     if (A.IndicesAreLocal()) {
-      int MaxNumIndices = A.MaxNumIndices();
-      Indices = new int[MaxNumIndices];  // Need some temporary space
-      
       for (i=0; i<NumSameIDs; i++) {
 	Row = GRID(i);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices));
+	assert(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices)==0);
 	// Place into target graph.  
-	EPETRA_CHK_ERR(InsertGlobalIndices(Row, NumIndices, Indices)); 
+	assert(InsertGlobalIndices(Row, NumIndices, Indices)>=0); 
       }
-      delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumSameIDs; i++) {
 	Row = GRID(i);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumIndices, Indices)); // Set pointer	
+	assert(A.ExtractGlobalRowView(Row, NumIndices, Indices)==0); // Set pointer	
 	// Place into target graph.
-	  EPETRA_CHK_ERR(InsertGlobalIndices(Row, NumIndices, Indices)); 
+	  assert(InsertGlobalIndices(Row, NumIndices, Indices)>=0); 
       }
     }	
   }
@@ -1056,28 +1073,27 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
   // Do local permutation next
   if (NumPermuteIDs>0) {
     if (A.IndicesAreLocal()) {
-      int MaxNumIndices = A.MaxNumIndices();
-      Indices = new int[MaxNumIndices];  // Need some temporary space
-      
       for (i=0; i<NumPermuteIDs; i++) {
 	FromRow = A.GRID(PermuteFromLIDs[i]);
 	ToRow = GRID(PermuteToLIDs[i]);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices));
+	assert(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices)==0);
 	// Place into target graph.
-	EPETRA_CHK_ERR(InsertGlobalIndices(ToRow, NumIndices, Indices)); 
+	assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0); 
       }
-      delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumPermuteIDs; i++) {
 	FromRow = A.GRID(PermuteFromLIDs[i]);
 	ToRow = GRID(PermuteToLIDs[i]);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumIndices, Indices)); // Set pointer
+	assert(A.ExtractGlobalRowView(FromRow, NumIndices, Indices)==0); // Set pointer
 	// Place into target graph.
-	EPETRA_CHK_ERR(InsertGlobalIndices(ToRow, NumIndices, Indices)); 
+	assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0); 
       }
     }
   }	
+
+  if( (NumSameIDs||NumPermuteIDs) && A.IndicesAreLocal() )
+    delete [] Indices;
     
   return(0);
 }
@@ -1133,7 +1149,7 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_DistObject & Source,
     FromRow = A.GRID(ExportLIDs[i]);
     *intptr = FromRow;
     Indices = intptr + 2;
-    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, GlobalMaxNumIndices, NumIndices, Indices));
+    assert(A.ExtractGlobalRowCopy(FromRow, GlobalMaxNumIndices, NumIndices, Indices)==0);
     intptr[1] = NumIndices; // Load second slot of segment
     intptr += IntPacketSize; // Point to next segment
   }
@@ -1188,7 +1204,7 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_DistObject & Source,
     NumIndices = intptr[1];
     Indices = intptr + 2; 
     // Insert indices
-    assert(InsertGlobalIndices(ToRow, NumIndices, Indices)==0);
+    assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0);
     intptr += IntPacketSize; // Point to next segment
   }
   
