@@ -23,4 +23,5 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #define EPETRA_FORTRAN
-#include "Epetra_c_wrappers.cc"
+#include "Epetra_C_wrappers.cpp"
+ 

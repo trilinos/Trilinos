@@ -1,86 +1,78 @@
 
-/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
- * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
- * work by or on behalf of the U.S. Government.  Export of this program
- * may require a license from the United States Government. */
+C * Copyright (2001) Sandia Corportation. Under the terms of Contract 
+C * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+C * work by or on behalf of the U.S. Government.  Export of this program
+C * may require a license from the United States Government.
 
 
-/* NOTICE:  The United States Government is granted for itself and others
- * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in ths data to reproduce, prepare derivative works, and
- * perform publicly and display publicly.  Beginning five (5) years from
- * July 25, 2001, the United States Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable
- * worldwide license in this data to reproduce, prepare derivative works,
- * distribute copies to the public, perform publicly and display
- * publicly, and to permit others to do so.
- * 
- * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
- * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
- * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
- * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
- * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
- * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+C * NOTICE:  The United States Government is granted for itself and others
+C * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+C * license in ths data to reproduce, prepare derivative works, and
+C * perform publicly and display publicly.  Beginning five (5) years from
+C * July 25, 2001, the United States Government is granted for itself and
+C * others acting on its behalf a paid-up, nonexclusive, irrevocable
+C * worldwide license in this data to reproduce, prepare derivative works,
+C * distribute copies to the public, perform publicly and display
+C * publicly, and to permit others to do so.
+C * 
+C * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+C * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+C * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+C * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+C * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+C * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 
 
 #define EPETRA_FORTRAN
-
 #ifdef EPETRA_ADDRESS64BIT
-
-#define EPETRA_MATRIX long integer
-#define EPETRA_VECTOR long integer
-#define EPETRA_MULTIVECTOR long integer
-#define EPETRA_COMM long integer
-#define EPETRA_MAP long integer
-#define EPETRA_LOCALMAP long integer
-#define EPETRA_BLOCKMAP long integer
-#define EPETRA_LOCALBLOCKMAP long integer
-
+#define EPETRA_OBJECT_PTR long integer
 #else
-
-#define EPETRA_MATRIX integer
-#define EPETRA_VECTOR integer
-#define EPETRA_MULTIVECTOR integer
-#define EPETRA_COMM integer
-#define EPETRA_MAP integer
-#define EPETRA_LOCALMAP integer
-#define EPETRA_BLOCKMAP integer
-#define EPETRA_LOCALBLOCKMAP integer
-
+#define EPETRA_OBJECT_PTR integer
 #endif
-
 #define EPETRA_ERROR_FLAG integer
 
-      EPETRA_COMM             petra_comm_create
-      EPETRA_COMM             petra_comm_create_serial
+      EPETRA_OBJECT_PTR       epetra_mpicomm_create1
+      EPETRA_OBJECT_PTR       epetra_mpicomm_create2
+      EPETRA_OBJECT_PTR       epetra_serialcomm_create
 
-      EPETRA_MAP              petra_map_create
-      EPETRA_LOCALMAP         petra_localmap_create
-      EPETRA_BLOCKMAP         petra_blockmap_create1
-      EPETRA_BLOCKMAP         petra_blockmap_create2
-      EPETRA_LOCALBLOCKMAP    petra_localblockmap_create1
-      EPETRA_LOCALBLOCKMAP    petra_localblockmap_create2
+      EPETRA_ERROR_FLAG       epetra_comm_mypid
+      EPETRA_ERROR_FLAG       epetra_comm_numproc
 
-      EPETRA_MATRIX           petra_rdp_dcrs_matrix_create
-      EPETRA_MATRIX           petra_rdp_dvbr_matrix_create
+      EPETRA_OBJECT_PTR       epetra_map_create1
+      EPETRA_OBJECT_PTR       epetra_map_create2
+      EPETRA_OBJECT_PTR       epetra_map_create3
+      EPETRA_ERROR_FLAG       epetra_map_numMyelements
+      EPETRA_ERROR_FLAG       epetra_map_numGlobalelements
 
-      EPETRA_VECTOR           petra_rdp_vector_create
-      EPETRA_MULTIVECTOR     petra_rdp_multivector_create
+      EPETRA_OBJECT_PTR       epetra_vector_create1
+      EPETRA_OBJECT_PTR       epetra_vector_create2
+      EPETRA_ERROR_FLAG       epetra_vector_update
+      EPETRA_ERROR_FLAG       epetra_vector_norm1
+      EPETRA_ERROR_FLAG       epetra_vector_norm2
+      EPETRA_ERROR_FLAG       epetra_vector_random
+      EPETRA_ERROR_FLAG       epetra_vector_putscalar
 
-      EPETRA_ERROR_FLAG  petra_comm_getmypid
-      EPETRA_ERROR_FLAG  petra_comm_getnumproc
 
-      EPETRA_ERROR_FLAG  petra_rdp_dvbr_matrix_allocate
-      EPETRA_ERROR_FLAG  petra_rdp_dvbr_matrix_putblockrow
-      EPETRA_ERROR_FLAG  petra_rdp_dvbr_matrix_fillcomplete
-      EPETRA_ERROR_FLAG  petra_rdp_dvbr_matrix_matvec
+      EPETRA_OBJECT_PTR       epetra_localmap_create
+      EPETRA_OBJECT_PTR       epetra_blockmap_create1
+      EPETRA_OBJECT_PTR       epetra_blockmap_create2
+      EPETRA_OBJECT_PTR       epetra_localblockmap_create1
+      EPETRA_OBJECT_PTR       epetra_localblockmap_create2
 
-      EPETRA_ERROR_FLAG  petra_rdp_dcrs_matrix_allocate
-      EPETRA_ERROR_FLAG  petra_rdp_dcrs_matrix_putrow
-      EPETRA_ERROR_FLAG  petra_rdp_dcrs_matrix_sumintodiagonal
-      EPETRA_ERROR_FLAG  petra_rdp_dcrs_matrix_fillcomplete
-      EPETRA_ERROR_FLAG  petra_rdp_dcrs_matrix_matvec
+      EPETRA_OBJECT_PTR       epetra_crsmatrix_create
+      EPETRA_OBJECT_PTR       epetra_vbrmatrix_create
 
-      EPETRA_ERROR_FLAG  petra_rdp_vector_putvector
-      EPETRA_ERROR_FLAG  petra_rdp_vector_lincomb
-      EPETRA_ERROR_FLAG  petra_rdp_vector_norm2
+      EPETRA_OBJECT_PTR       epetra_multivector_create
+
+
+      EPETRA_ERROR_FLAG  epetra_vbrmatrix_allocate
+      EPETRA_ERROR_FLAG  epetra_vbrmatrix_putblockrow
+      EPETRA_ERROR_FLAG  epetra_vbrmatrix_fillcomplete
+      EPETRA_ERROR_FLAG  epetra_vbrmatrix_matvec
+
+      EPETRA_ERROR_FLAG  epetra_crsmatrix_allocate
+      EPETRA_ERROR_FLAG  epetra_crsmatrix_putrow
+      EPETRA_ERROR_FLAG  epetra_crsmatrix_sumintodiagonal
+      EPETRA_ERROR_FLAG  epetra_crsmatrix_fillcomplete
+      EPETRA_ERROR_FLAG  epetra_crsmatrix_matvec
+

@@ -29,84 +29,43 @@
 
 typedef double * EPETRA_DOUBLE;
 typedef int    * EPETRA_INT;
-#define DEREF_ *
+#define EPETRA_DEREF(a) *a
 
 #ifdef EPETRA_ADDRESS64BIT
 
-typedef long int EPETRA_MATRIX_POINTER;
-typedef long int EPETRA_VECTOR_POINTER;
-typedef long int EPETRA_MULTIVECTOR_POINTER;
-typedef long int EPETRA_COMM_POINTER;
-typedef long int EPETRA_MAP_POINTER;
-typedef long int EPETRA_LOCALMAP_POINTER;
-typedef long int EPETRA_BLOCKMAP_POINTER;
-typedef long int EPETRA_LOCALBLOCKMAP_POINTER;
-
-typedef long int & EPETRA_MATRIX;
-typedef long int & EPETRA_VECTOR;
-typedef long int & EPETRA_MULTIVECTOR;
-typedef long int & EPETRA_COMM;
-typedef long int & EPETRA_MAP;
-typedef long int & EPETRA_LOCALMAP;
-typedef long int & EPETRA_BLOCKMAP;
-typedef long int & EPETRA_LOCALBLOCKMAP;
-
+typedef long int EPETRA_OBJECT_PTR;
+typedef long int & EPETRA_OBJECT_REF;
 
 #else
 
-typedef int EPETRA_MATRIX_POINTER;
-typedef int EPETRA_VECTOR_POINTER;
-typedef int EPETRA_MULTIVECTOR_POINTER;
-typedef int EPETRA_COMM_POINTER;
-typedef int EPETRA_MAP_POINTER;
-typedef int EPETRA_LOCALMAP_POINTER;
-typedef int EPETRA_BLOCKMAP_POINTER;
-typedef int EPETRA_LOCALBLOCKMAP_POINTER;
-
-typedef int & EPETRA_MATRIX;
-typedef int & EPETRA_VECTOR;
-typedef int & EPETRA_MULTIVECTOR;
-typedef int & EPETRA_COMM;
-typedef int & EPETRA_MAP;
-typedef int & EPETRA_LOCALMAP;
-typedef int & EPETRA_BLOCKMAP;
-typedef int & EPETRA_LOCALBLOCKMAP;
+typedef int EPETRA_OBJECT_PTR;
+typedef int & EPETRA_OBJECT_REF;
 
 #endif
 #else
 
-/* These typedefs act as new types for the petra C interface */
+/* These typedefs act as new types for the Epetra C interface */
 
 typedef double EPETRA_DOUBLE;
 typedef int    EPETRA_INT;
-#define DEREF_ 
+#define EPETRA_DEREF(a) a
 
-typedef void * EPETRA_MATRIX_POINTER;
-typedef void * EPETRA_VECTOR_POINTER;
-typedef void * EPETRA_MULTIVECTOR_POINTER;
-typedef void * EPETRA_COMM_POINTER;
-typedef void * EPETRA_MAP_POINTER;
-typedef void * EPETRA_LOCALMAP_POINTER;
-typedef void * EPETRA_BLOCKMAP_POINTER;
-typedef void * EPETRA_LOCALBLOCKMAP_POINTER;
-
-typedef void * EPETRA_MATRIX;
-typedef void * EPETRA_VECTOR;
-typedef void * EPETRA_MULTIVECTOR;
-typedef void * EPETRA_COMM;
-typedef void * EPETRA_MAP;
-typedef void * EPETRA_LOCALMAP;
-typedef void * EPETRA_BLOCKMAP;
-typedef void * EPETRA_LOCALBLOCKMAP;
+typedef void * EPETRA_OBJECT_PTR;
+typedef void * EPETRA_OBJECT_REF;
 
 
 #endif
  
-#if defined(EPETRA_FORTRAN) && defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
+#ifdef EPETRA_FORTRAN
+#if defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
 #define MANGLE(x) x
 #else
 #define MANGLE(x) x ## __
 #endif
+#else
+#define MANGLE(x) x
+#endif
+
 
 
 #ifdef __cplusplus
@@ -114,235 +73,248 @@ extern "C" {
 #endif
 
 /*****************************************************/
-/**              petra_rdp_dvbr_matrix             **/
+/**                  Epetra_Comm                    **/
 /***************************************************/
 
-EPETRA_MATRIX_POINTER MANGLE(petra_rdp_dvbr_matrix_create)(EPETRA_MAP rowmap);
+#ifdef EPETRA_MPI
+EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create1)();
+EPETRA_OBJECT_PTR MANGLE(epetra_mpicomm_create2)(MPI_Comm * comm);
+#endif
+EPETRA_OBJECT_PTR MANGLE(epetra_serialcomm_create)();
 
-int MANGLE(petra_rdp_dvbr_matrix_allocate)(EPETRA_MATRIX A, int* numNzBlks, int* blkColInds);
+int MANGLE(epetra_comm_mypid)(EPETRA_OBJECT_REF communicator);
 
-int MANGLE(petra_rdp_dvbr_matrix_putblockrow)(EPETRA_MATRIX A, EPETRA_INT
+int MANGLE(epetra_comm_numproc)(EPETRA_OBJECT_REF communicator);
+
+void MANGLE(epetra_comm_barrier)(EPETRA_OBJECT_REF communicator);
+
+void MANGLE(epetra_comm_destroy)(EPETRA_OBJECT_REF communicator);
+
+/*****************************************************/
+/**                  Epetra_Map                     **/
+/***************************************************/
+
+EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalEquations, 
+																						 EPETRA_INT indexBase,
+																						 EPETRA_OBJECT_REF comm);
+
+EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalEquations, 
+																						 EPETRA_INT numMyElements,
+																						 EPETRA_INT indexBase,
+																						 EPETRA_OBJECT_REF comm);
+
+EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalEquations, 
+                               EPETRA_INT numlocalEquations,
+                               int *updateList, EPETRA_INT indexBase,
+                               EPETRA_OBJECT_REF comm);
+int MANGLE(epetra_map_nummyelements)(EPETRA_OBJECT_REF map);
+int MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map);
+
+#ifndef EPETRA_FORTRAN  /* Fortran cannot receive a pointer to int */
+int * MANGLE(epetra_map_myglobalelements)(EPETRA_OBJECT_REF map);
+#endif
+
+EPETRA_OBJECT_PTR MANGLE(epetra_map_comm)(EPETRA_OBJECT_REF map);
+
+void MANGLE(epetra_map_destroy)(EPETRA_OBJECT_REF map);
+
+/*****************************************************/
+/**              Epetra_Vector                  **/
+/***************************************************/
+
+EPETRA_OBJECT_PTR MANGLE(epetra_vector_create1)(EPETRA_OBJECT_REF map);
+EPETRA_OBJECT_PTR MANGLE(epetra_vector_create2)(EPETRA_INT Copy, EPETRA_OBJECT_REF map,
+																								double * V);
+
+int MANGLE(epetra_vector_putscalar)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalar);
+
+int MANGLE(epetra_vector_update)(EPETRA_OBJECT_REF x, EPETRA_DOUBLE scalara,
+                                  EPETRA_OBJECT_REF a,
+                                  EPETRA_DOUBLE scalarb, EPETRA_OBJECT_REF b,
+                                  EPETRA_DOUBLE scalarx);
+
+int MANGLE(epetra_vector_norm1)(EPETRA_OBJECT_REF x, double *result);
+
+int MANGLE(epetra_vector_norm2)(EPETRA_OBJECT_REF x, double *result);
+
+int MANGLE(epetra_vector_random)(EPETRA_OBJECT_REF x);
+
+void MANGLE(epetra_vector_print)(EPETRA_OBJECT_REF x);
+
+void MANGLE(epetra_vector_destroy)(EPETRA_OBJECT_REF x);
+
+#ifdef SKIP4NOW
+/*****************************************************/
+/**              petra_dvbr_matrix             **/
+/***************************************************/
+
+EPETRA_OBJECT_PTR MANGLE(epetra_dvbr_matrix_create)(EPETRA_MAP rowmap);
+
+int MANGLE(epetra_dvbr_matrix_allocate)(EPETRA_MATRIX A, int* numNzBlks, int* blkColInds);
+
+int MANGLE(epetra_dvbr_matrix_putblockrow)(EPETRA_MATRIX A, EPETRA_INT
 blk_row, EPETRA_INT num_nz_blocks,
 				  double* vals, int* blk_col_inds);
 
-int MANGLE(petra_rdp_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A);
+int MANGLE(epetra_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A);
 
-int  MANGLE(petra_rdp_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, EPETRA_VECTOR y);
+int  MANGLE(epetra_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, EPETRA_VECTOR y);
 
-int MANGLE(petra_rdp_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
+int MANGLE(epetra_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
                                           EPETRA_MULTIVECTOR x,
                                           EPETRA_MULTIVECTOR y);
 
-void MANGLE(petra_rdp_dvbr_matrix_destroy)(EPETRA_MATRIX A);
+void MANGLE(epetra_dvbr_matrix_destroy)(EPETRA_MATRIX A);
 
 /*****************************************************/
-/**                  petra_rdp_dcrs_matrix         **/
+/**                  petra_dcrs_matrix         **/
 /***************************************************/
 
-EPETRA_MATRIX_POINTER MANGLE(petra_rdp_dcrs_matrix_create)(EPETRA_MAP rowmap);
+EPETRA_MATRIX_POINTER MANGLE(epetra_dcrs_matrix_create)(EPETRA_MAP rowmap);
 
-int  MANGLE(petra_rdp_dcrs_matrix_allocate)(EPETRA_MATRIX A, int* rowLengths);
+int  MANGLE(epetra_dcrs_matrix_allocate)(EPETRA_MATRIX A, int* rowLengths);
 
-int MANGLE(petra_rdp_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row, 
+int MANGLE(epetra_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row, 
                                          EPETRA_INT num_nz,
 				                     double* vals, int* col_inds);
 
-int MANGLE(petra_rdp_dcrs_matrix_sumintodiagonal)(EPETRA_MATRIX A, 
+int MANGLE(epetra_dcrs_matrix_sumintodiagonal)(EPETRA_MATRIX A, 
                                                   double* diagonal);
 
-int MANGLE(petra_rdp_dcrs_matrix_fillcomplete)(EPETRA_MATRIX A);
+int MANGLE(epetra_dcrs_matrix_fillcomplete)(EPETRA_MATRIX A);
 
-int MANGLE(petra_rdp_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, 
+int MANGLE(epetra_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, 
                                          EPETRA_VECTOR y);
 
-int MANGLE(petra_rdp_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
+int MANGLE(epetra_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
                                           EPETRA_MULTIVECTOR x,
                                           EPETRA_MULTIVECTOR y);
 
-void MANGLE(petra_rdp_dcrs_matrix_destroy)(EPETRA_MATRIX A);
+void MANGLE(epetra_dcrs_matrix_destroy)(EPETRA_MATRIX A);
 
 /*****************************************************/
-/**              petra_rdp_vector                  **/
-/***************************************************/
-
-EPETRA_VECTOR_POINTER MANGLE(petra_rdp_vector_create)(EPETRA_MAP map);
-
-int MANGLE(petra_rdp_vector_putvector)(EPETRA_VECTOR x, double *vector);
-
-int MANGLE(petra_rdp_vector_putscalar)(EPETRA_VECTOR x, EPETRA_DOUBLE scalar);
-
-int MANGLE(petra_rdp_vector_lincomb)(EPETRA_VECTOR x, EPETRA_VECTOR b,
-           EPETRA_DOUBLE scalar, EPETRA_VECTOR c);
-
-int MANGLE(petra_rdp_vector_norm1)(EPETRA_VECTOR x, double *result);
-
-int MANGLE(petra_rdp_vector_norm2)(EPETRA_VECTOR x, double *result);
-
-int MANGLE(petra_rdp_vector_random)(EPETRA_VECTOR x);
-
-void MANGLE(petra_rdp_vector_destroy)(EPETRA_VECTOR x);
-
-/*****************************************************/
-/**               petra_rdp_multivector            **/
+/**               petra_multivector            **/
 /***************************************************/
 
   /* create empty shell WITHOUT float storage, fill later with put functions */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create)();
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create)();
 
   /* create empty shell WITH float storage, fill later with put functions */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create1)(EPETRA_MAP map, EPETRA_INT numvectors);
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create1)(EPETRA_MAP map, EPETRA_INT numvectors);
 
   /* Build multivector from a Fortran-style 2D array
      NOTE: User storage is not copied, user must keep A intact!! */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create2)(EPETRA_MAP map,
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create2)(EPETRA_MAP map,
                                 double *A, EPETRA_INT lda, EPETRA_INT numvectors);
 
   /* Build multivector from a double **
      NOTE: User storage is not copied, user must keep A intact!! */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create3)(EPETRA_MAP map,
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create3)(EPETRA_MAP map,
                                 double **in_multivector, EPETRA_INT numvectors);
 
   /* Copy constructor */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create4)(EPETRA_MULTIVECTOR
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create4)(EPETRA_MULTIVECTOR
                                                in_multivector);
 
   /* creates a new multivector from numvector number of vectors of an existing
    * multivector where the vectors to be copied are listed in
    * vecIndices.  
    */
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create5)(EPETRA_MULTIVECTOR 
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create5)(EPETRA_MULTIVECTOR 
                         in_multivector, EPETRA_INT numvectors, int *vecIndices);
 
-EPETRA_MULTIVECTOR_POINTER MANGLE(petra_rdp_multivector_create6)(EPETRA_MULTIVECTOR
+EPETRA_MULTIVECTOR_POINTER MANGLE(epetra_multivector_create6)(EPETRA_MULTIVECTOR
                         in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors);
 
-int MANGLE(petra_rdp_multivector_putmultivector)(EPETRA_MULTIVECTOR multivector, 
+int MANGLE(epetra_multivector_putmultivector)(EPETRA_MULTIVECTOR multivector, 
                                        double **in_multivector);
 
   /* Allocates space for a multivector created by the default
    * constructor */
-int MANGLE(petra_rdp_multivector_allocate)(EPETRA_MULTIVECTOR multivector, 
+int MANGLE(epetra_multivector_allocate)(EPETRA_MULTIVECTOR multivector, 
                                 EPETRA_MAP map, EPETRA_INT numvectors);
 
-int MANGLE(petra_rdp_multivector_putscalar)(EPETRA_MULTIVECTOR multivector, EPETRA_DOUBLE scalar);
+int MANGLE(epetra_multivector_putscalar)(EPETRA_MULTIVECTOR multivector, EPETRA_DOUBLE scalar);
 
-int MANGLE(petra_rdp_multivector_scale)
+int MANGLE(epetra_multivector_scale)
           (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar);
 
-int MANGLE(petra_rdp_multivector_scalecopy)
+int MANGLE(epetra_multivector_scalecopy)
           (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
            EPETRA_DOUBLE scalar);
 
-int MANGLE(petra_rdp_multivector_dotprod)
+int MANGLE(epetra_multivector_dotprod)
           (EPETRA_MULTIVECTOR multiVector, EPETRA_MULTIVECTOR multiVector_in,
            double *scalar);
 
-int MANGLE(petra_rdp_multivector_addvec)
+int MANGLE(epetra_multivector_addvec)
           (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar, 
            EPETRA_MULTIVECTOR multiVector_in);
 
-int MANGLE(petra_rdp_multivector_norm1)(EPETRA_MULTIVECTOR multivector, double *result);
+int MANGLE(epetra_multivector_norm1)(EPETRA_MULTIVECTOR multivector, double *result);
 
-int MANGLE(petra_rdp_multivector_norm2)(EPETRA_MULTIVECTOR multivector, double *result);
+int MANGLE(epetra_multivector_norm2)(EPETRA_MULTIVECTOR multivector, double *result);
 
-int MANGLE(petra_rdp_multivector_lincomb)(EPETRA_MULTIVECTOR multivector,
+int MANGLE(epetra_multivector_lincomb)(EPETRA_MULTIVECTOR multivector,
                                EPETRA_MULTIVECTOR b, 
                                EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c);
 
-int MANGLE(petra_rdp_multivector_random)(EPETRA_MULTIVECTOR multivector);
+int MANGLE(epetra_multivector_random)(EPETRA_MULTIVECTOR multivector);
 
   /* Note: The return value for this function is the number of vectors
      in the multivector */
-int MANGLE(petra_rdp_multivector_numvectors)(EPETRA_MULTIVECTOR multivector);
+int MANGLE(epetra_multivector_numvectors)(EPETRA_MULTIVECTOR multivector);
 
-int MANGLE(petra_rdp_multivector_reduce)(EPETRA_MULTIVECTOR multivector);
+int MANGLE(epetra_multivector_reduce)(EPETRA_MULTIVECTOR multivector);
 
-int MANGLE(petra_rdp_multivector_gemm)(EPETRA_MULTIVECTOR multivector,
+int MANGLE(eepetra_multivector_gemm)(EPETRA_MULTIVECTOR multivector,
 			    EPETRA_INT transa, EPETRA_INT transb, EPETRA_DOUBLE alpha,
 			    EPETRA_MULTIVECTOR A, EPETRA_MULTIVECTOR B,
 			    EPETRA_DOUBLE beta );
 
-void MANGLE(petra_rdp_multivector_destroy)(EPETRA_MULTIVECTOR multivector);
-
-/*****************************************************/
-/**                  Epetra_Map                     **/
-/***************************************************/
-
-EPETRA_MAP_POINTER MANGLE(petra_map_create1)(EPETRA_INT numGlobalEquations, 
-                               EPETRA_COMM comm);
-
-EPETRA_MAP_POINTER MANGLE(petra_map_create2)(EPETRA_INT numGlobalEquations, 
-                               EPETRA_INT numlocalEquations,
-                               int *updateList, EPETRA_INT indexBase,
-                               EPETRA_COMM comm);
-int MANGLE(petra_map_numlocalequations)(EPETRA_MAP map);
-
-#ifndef EPETRA_FORTRAN  /* Fortran cannot receive a pointer to int */
-int * MANGLE(petra_map_getupdatelist)(EPETRA_MAP map);
-#endif
-
-EPETRA_COMM_POINTER MANGLE(petra_map_getcommunicator)(EPETRA_MAP map);
-
-void MANGLE(petra_map_destroy)(EPETRA_MAP map);
+void MANGLE(epetra_multivector_destroy)(EPETRA_MULTIVECTOR multivector);
 
 /*****************************************************/
 /**                  petra_blockmap                **/
 /***************************************************/
 
-EPETRA_BLOCKMAP_POINTER MANGLE(petra_blockmap_create1)(
+EPETRA_BLOCKMAP_POINTER MANGLE(epetra_blockmap_create1)(
                 EPETRA_INT numGlobalEquations, EPETRA_INT numlocalEquations, int *updateList,
                 EPETRA_INT numGlobalblocks, EPETRA_INT numlocalblocks, int *blockUpdateList,
                 int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm);
 
-EPETRA_BLOCKMAP_POINTER MANGLE(petra_blockmap_create2)(
+EPETRA_BLOCKMAP_POINTER MANGLE(epetra_blockmap_create2)(
                 EPETRA_INT numGlobalblocks, EPETRA_INT numlocalblocks, int *blockUpdateList,
                 int* blockSizes, EPETRA_INT indexBase, EPETRA_COMM comm);
 
-void MANGLE(petra_blockmap_destroy)(EPETRA_BLOCKMAP blockmap);
+void MANGLE(epetra_blockmap_destroy)(EPETRA_BLOCKMAP blockmap);
 
 /*****************************************************/
 /**                  petra_localmap                **/
 /***************************************************/
 
-EPETRA_LOCALMAP_POINTER MANGLE(petra_localmap_create)(EPETRA_INT numlocalEquations,
+EPETRA_LOCALMAP_POINTER MANGLE(epetra_localmap_create)(EPETRA_INT numlocalEquations,
                                EPETRA_INT indexBase, EPETRA_COMM comm);
 
-void MANGLE(petra_localmap_destroy)(EPETRA_LOCALMAP localmap);
+void MANGLE(epetra_localmap_destroy)(EPETRA_LOCALMAP localmap);
 
 /*****************************************************/
 /**                  petra_localblockmap           **/
 /***************************************************/
 
-EPETRA_LOCALBLOCKMAP_POINTER MANGLE(petra_localblockmap_create1)(
+EPETRA_LOCALBLOCKMAP_POINTER MANGLE(epetra_localblockmap_create1)(
                 EPETRA_INT numlocalEquations,
                 EPETRA_INT numlocalblocks,
                 int* blockSizes,
                 EPETRA_INT indexBase, EPETRA_COMM comm);
 
-EPETRA_LOCALBLOCKMAP_POINTER MANGLE(petra_localblockmap_create2)(
+EPETRA_LOCALBLOCKMAP_POINTER MANGLE(epetra_localblockmap_create2)(
                 EPETRA_INT numlocalblocks,
                 int* blockSizes,
                 EPETRA_INT indexBase, EPETRA_COMM comm);
 
-void MANGLE(petra_localblockmap_destroy)(EPETRA_LOCALBLOCKMAP localblockmap);
-
-/*****************************************************/
-/**                  petra_comm                    **/
-/***************************************************/
-
-#ifdef EPETRA_MPI
-EPETRA_COMM_POINTER MANGLE(petra_comm_create)(MPI_Comm MPI_communicator);
-#else
-EPETRA_COMM_POINTER MANGLE(petra_comm_create_serial)();
-#endif
-
-int MANGLE(petra_comm_getmypid)(EPETRA_COMM communicator);
-
-int MANGLE(petra_comm_getnumproc)(EPETRA_COMM communicator);
-
-void MANGLE(petra_comm_barrier)(EPETRA_COMM communicator);
-
-void MANGLE(petra_comm_destroy)(EPETRA_COMM communicator);
+void MANGLE(epetra_localblockmap_destroy)(EPETRA_LOCALBLOCKMAP localblockmap);
+#endif /* 0 */
 
 #ifdef __cplusplus
 }
