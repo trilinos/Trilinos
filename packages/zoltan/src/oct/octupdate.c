@@ -9,6 +9,7 @@
 #include "octupdate.h"
 #include "mpi.h"
 #include "migreg_const.h"
+#include "all_allo_const.h"
 
 /* NOTE: be careful later about region lists for nonterminal octants */
 
@@ -364,7 +365,8 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   /* ATTN: an arbitrary choice, is this necessary? */
   *c4 = max_num_objs = 2 * (*num_objs); 
 
-  obj_ids = (LB_ID *) LB_array_alloc(1, (*num_objs), sizeof(LB_ID));
+  obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, (*num_objs),
+                                     sizeof(LB_ID));
   if(lb->Get_All_Local_Objs == NULL) {
     fprintf(stderr, "%s:\n\t%s\n", "Error in octree load balance", 
 	    "user must declare function Get_All_Local_Objs.");

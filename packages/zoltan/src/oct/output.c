@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <lb_const.h>
+#include "all_allo_const.h"
 
 /* void print_stats()
  *
@@ -38,7 +39,8 @@ void print_stats(double timetotal, LB *lb, int numobj, double *timers,
   MPI_Barrier(MPI_COMM_WORLD);
 
 #if 0
-  obj_ids = (LB_ID *) LB_array_alloc(1, numobj, sizeof(LB_ID));
+  obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
+                                     sizeof(LB_ID));
   lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
   /* need to get weights of all the objects */
   weight = mweight = tweight = 0.0;
