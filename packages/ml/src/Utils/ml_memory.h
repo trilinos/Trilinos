@@ -58,6 +58,8 @@ extern "C"
 {
 #endif
 #endif
+  extern char *ML_memory_check(char *fmt, ...);
+
 
 extern  int  ML_memory_alloc( void **, unsigned int, char * );
 extern  int  ML_memory_free( void ** );
@@ -71,10 +73,6 @@ extern char *ML_allocate(unsigned int isize);
 extern void  ML_myfree(void *vptr);
 extern char *ML_realloc(void *vptr, unsigned int new_size);
 extern void ML_spit_it_out();
-#endif
-
-#ifdef ML_JANUS
-extern void ML_mchk(char *ptr,int line);
 #endif
 
 

@@ -710,55 +710,185 @@ ML_print_it();
 #endif
  
 
-/******************************************************************************
-   To use this routine, invoke with a call like
-
-       ML_mchk(__FILE__,__LINE__);
-
-*******************************************************************************/
-
-#ifdef ML_JANUS
-
-
+/*****************************************************************************
+ *  ML_memory_check: 
+ *    Print out memory usage information. ML_memory_check's arguments
+ *    are used to print an identifying string along with the memory information
+ *    and are identical to printf's arguments.
+ *
+ *    On return, ML_memory_check() returns a pointer to the last string
+ *    that ML_memory_check() used when print. 
+ *
+ *    ML_memory_check(NULL) does not print and only returns a pointer to
+ *    the last string used to print. This enables low level routines to
+ *    take previous string to ML_memory_check() and append to it.
+ *
+******************************************************************************/
+#define ML_NIntStats 6
+#define ML_NDblStats 1
+#include "malloc.h"
+#include "ml_utils.h"
+#include <stdarg.h>
+#ifdef ML_TFLOP
 int heap_info(long *a, long *b, long *c, long *d);
-
-void ML_mchk(char *ptr,int line)
-{
- long frags, tfree, lfree, tused;
- /*long nnodes,me;*/
- int nnodes,me;
- long sourcevec[4],maxvec[4],minvec[4],avgvec[4];
- int i;
- double inverse;
- 
- MPI_Comm_size(MPI_COMM_WORLD,&nnodes);
- MPI_Comm_rank(MPI_COMM_WORLD,&me);
- if (heap_info(&frags, &tfree, &lfree, &tused) == -1) {
-   printf("get_heap_info failed in mchk\n");
-   exit(1);
- }
- 
- sourcevec[0] = frags;
-/*convert to Kbytes on the fly*/
- sourcevec[1] = tfree/1024;
- sourcevec[2] = lfree/1024;
- sourcevec[3] = tused/1024;
- 
- 
- MPI_Reduce(sourcevec,maxvec, 4, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD); 
- MPI_Reduce(sourcevec,minvec, 4, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
- MPI_Reduce(sourcevec,avgvec, 4, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
- if (me == 0)
- {
-    inverse = 1.0/nnodes;
-    for (i =0; i < 4; i++) avgvec[i] = avgvec[i]*inverse;
- 
-    printf("Heap data at %s line %d \n",ptr, line);
-    printf("fragments         : (%8ld -- %8ld -- %8ld)\n",minvec[0],avgvec[0],maxvec[0]);
-    printf("free (KB)         : (%8ld -- %8ld -- %8ld)\n",minvec[1],avgvec[1],maxvec[1]);
-    printf("largest free (KB) : (%8ld -- %8ld -- %8ld)\n",minvec[2],avgvec[2],maxvec[2]);
-    printf("total used  (KB)  : (%8ld -- %8ld -- %8ld)\n",minvec[3],avgvec[3],maxvec[3]);
-    printf("\n");
- }
-}
 #endif
+char * ML_memory_check(char *fmt, ... )
+{
+#ifdef ML_MEMORY_CHK
+   long int fragments, total_free, largest_free, total_used;
+   static double start_time = -1.;
+   double elapsed_time;
+   int id, nnodes, i;
+   long isrcvec[ML_NIntStats],imaxvec[ML_NIntStats],
+        iminvec[ML_NIntStats],iavgvec[ML_NIntStats];
+   double dsrcvec[ML_NDblStats],dmaxvec[ML_NDblStats],
+        dminvec[ML_NDblStats],davgvec[ML_NDblStats];
+   static char *ml_memory_label = NULL;
+   va_list ap;
+#ifndef  ML_TFLOP
+   struct mallinfo M;
+   int *junk;
+   static long unsigned int ml_total_mem = 0;
+#endif
+
+  /* allocate space for string that is printed with memory information */
+
+  if (ml_memory_label == NULL) {
+    ml_memory_label = (char *) malloc(sizeof(char)*200);
+    ml_memory_label[0] = '\0';
+  }
+
+  /* if fmt is NULL just return the current string associated with */
+  /* the memory printing. The idea is that an low level function   */
+  /* can use this to get the string, append any additional info    */
+  /* and use this when it invokes this routine a second time.      */
+  if (fmt == NULL) return(ml_memory_label);
+
+  /* Take variable argument and transform it to string that will   */
+  /* is printed with memory statistics.                            */
+
+  va_start(ap, fmt);
+  vsprintf(ml_memory_label,fmt, ap);
+  va_end(ap);
+
+
+  elapsed_time = GetClock();
+  if (start_time == -1.) start_time = elapsed_time;
+  elapsed_time = elapsed_time - start_time;
+
+#ifdef ML_TFLOP
+   heap_info(&fragments, &total_free, &largest_free, &total_used);  
+#else
+   /* Try to estimate the amount of total space in the system */
+   /* by doing mallocs and frees on increasing size chunks.   */
+   /* Ideally 'ML_memory_check' should be called in the beginning of   */
+   /* the program to calibrate the total amount of avail. mem.*/
+
+   if (ml_total_mem == 0) {
+     junk = NULL;
+     ml_total_mem = 10000;
+     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
+       ml_total_mem *= 2;
+       free(junk);
+     }
+     ml_total_mem = ml_total_mem/2;
+     ml_total_mem = (int) (((double)ml_total_mem)*1.1);
+     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
+       ml_total_mem = (int) (((double)ml_total_mem)*1.1);
+       free(junk);
+     }
+     ml_total_mem = (int) (((double)ml_total_mem)/1.1);
+     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
+       ml_total_mem = ml_total_mem + 1000;
+       free(junk);
+     }
+     ml_total_mem = ml_total_mem - 1000;
+     ml_total_mem = ml_total_mem*sizeof(int);
+   }
+
+   /* now use system call to get memory used information */
+
+   M = mallinfo();
+   fragments = M.ordblks + M.smblks + M.hblks;
+   total_free = M.fsmblks + M.fordblks;
+   total_used = M.hblkhd + M.usmblks + M.uordblks;
+   total_free = ml_total_mem - total_used;
+   largest_free = -1024;
+#endif
+
+   /* convert to Kbytes */
+
+   total_free   = total_free/1024;
+   largest_free = largest_free/1024;
+   total_used   = total_used/1024;
+
+   /* Only print if fmt string is not empty */
+   /* This allows for an intialization of   */
+   /* ml_total_mem without any printing     */
+   if (strlen(fmt) == 0)    return(ml_memory_label);
+
+
+   isrcvec[0] = fragments;
+   isrcvec[1] = total_free;
+   isrcvec[2] = largest_free;
+   isrcvec[3] = total_used;
+   isrcvec[4] = total_free+total_used;
+   isrcvec[5] = (int) (((double)total_used*1000)/
+                          ((double)(total_free+total_used)));
+   dsrcvec[0] = elapsed_time;
+   nnodes = 1;
+   id = 0;
+#ifdef ML_MPI
+   MPI_Comm_rank(MPI_COMM_WORLD,&id);
+   MPI_Comm_size(MPI_COMM_WORLD,&nnodes);
+   MPI_Reduce(isrcvec,imaxvec,ML_NIntStats,MPI_LONG,MPI_MAX,0,MPI_COMM_WORLD); 
+   MPI_Reduce(isrcvec,iminvec,ML_NIntStats,MPI_LONG,MPI_MIN,0,MPI_COMM_WORLD);
+   MPI_Reduce(isrcvec,iavgvec,ML_NIntStats,MPI_LONG,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(dsrcvec,dmaxvec,ML_NDblStats,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD); 
+   MPI_Reduce(dsrcvec,dminvec,ML_NDblStats,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
+   MPI_Reduce(dsrcvec,davgvec,ML_NDblStats,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+#else
+   for (i =0; i < ML_NIntStats; i++) {
+     imaxvec[i] = isrcvec[i];
+     iminvec[i] = isrcvec[i];
+     iavgvec[i] = isrcvec[i];
+   }
+   for (i =0; i < ML_NDblStats; i++) {
+     dmaxvec[i] = dsrcvec[i];
+     dminvec[i] = dsrcvec[i];
+     davgvec[i] = dsrcvec[i];
+   }
+#endif
+   printf("%s(%d): blks = %d, free = %d, max free = %d, used = %d, total = %d, %% used = %e, time = %e\n",
+	  ml_memory_label,id,fragments, total_free, largest_free, total_used,
+	  total_free+total_used, 
+          ((double)total_used)/((double)(total_free+total_used)),elapsed_time);
+
+
+   if (id == 0)  {
+    for (i =0; i < ML_NIntStats; i++) iavgvec[i] = iavgvec[i]/((double) nnodes);
+    printf("Summary Heap data at %s\n",ml_memory_label);
+    printf("                        avg           min             max\n");
+    printf("---------------------------------------------------------\n");
+    printf("    blks     %14d %14d %14d %s\n",iavgvec[0], iminvec[0],imaxvec[0],
+	   ml_memory_label);
+    printf("    free     %14d %14d %14d %s\n",iavgvec[1], iminvec[1],imaxvec[1],
+	   ml_memory_label);
+    if (iavgvec[2] != -1)
+      printf("    max free %14d %14d %14d %s\n",iavgvec[2], iminvec[2],imaxvec[2],
+	   ml_memory_label);
+    printf("    used     %14d %14d %14d %s\n",iavgvec[3], iminvec[3],imaxvec[3],
+	   ml_memory_label);
+    printf("    total    %14d %14d %14d %s\n",iavgvec[4], iminvec[4],imaxvec[4],
+	   ml_memory_label);
+    printf("    %% used   %14.1f %14.1f %14.1f %s\n",
+	   ((double)iavgvec[5])/10.,((double)iminvec[5])/10.,((double)imaxvec[5])/10.,
+	   ml_memory_label);
+    printf("    time   %14.1f %14.1f %14.1f %s\n",
+	   davgvec[0],dminvec[0],dmaxvec[0], ml_memory_label);
+   }
+   return(ml_memory_label);
+#else
+   return(NULL);
+#endif
+}
