@@ -82,9 +82,10 @@ bool Quadratic::reset(Parameter::List& params)
   minBoundFactor = params.getParameter("Min Bounds Factor", 0.1);
   maxBoundFactor = params.getParameter("Max Bounds Factor", 0.9);
   inputList = &params;
-  totalNumLSSteps = 0;
-  totalNumIterations = 0;
+  totalNumLineSearchCalls = 0;
+  totalNumNonTrivialLineSearches = 0;
   totalNumFailedLineSearches = 0;
+  totalNumIterations = 0;
   return true;
 }
 
@@ -92,6 +93,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 			const Abstract::Vector& dir,
 			const Solver::Generic& s) 
 {
+  totalNumLineSearchCalls += 1;
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF(); 
@@ -120,13 +122,10 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
    cout << "\n" << Utils::fill(72) << "\n" << "-- Quadratic Line Search -- \n";
   }
   
-  // Get the main parameter list
+  // Get the linear solve tolerance if doing ared/pred for conv criteria
   const NOX::Parameter::List& p = s.getParameterList();
-
   double eta_original = 0.0;
   double eta = 0.0;
-
-  // Get the linear solve tolerance if doing ared/pred
   if (convCriteria == AredPred) {
     eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
     eta = eta_original;
@@ -143,7 +142,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   
   // Increment the number of newton steps requiring a line search
   if (newf >= convergence)
-    totalNumLSSteps += 1;
+    totalNumNonTrivialLineSearches += 1;
 
   // Iterate until convergence criteria is satisfied
   while (newf >= convergence) {  
@@ -157,40 +156,46 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
       cout << endl;
     }
 
+    // update the iteration count 
+    totalNumIterations += 1;
+    
     // Compute a new step length
     tempStep = -oldfprime/(2.0*(newf - oldf - oldfprime));
 
     //   Enforce bounds on minimum step size
-    if(tempStep < minBoundFactor) 
+    if (tempStep < minBoundFactor) 
       tempStep = minBoundFactor;
 
     //   Enforce bounds on maximum step size
-    if(tempStep > maxBoundFactor) 
+    if (tempStep > maxBoundFactor) 
       tempStep = maxBoundFactor;
+
+
+    // RPP: this was moved above eta calculation.  We were doing this wrong!
+    // Compute the actual step
+    tempStep *= step;
 
     // Safeguard while loop termination for by adjusting eta during "Ared/Pred".
     // The "Direction" also needs to use this eta in the next computation
     // if using inexact Newton with "Type 1" or Type 2" eta computation.
     eta = 1.0-tempStep*(1.0-eta);
-
-    tempStep *= step;
+    
     previousStep = step;
     prevf = newf; 
     step = tempStep;
 
-    // update the iteration count 
-    totalNumIterations += 1;
-    
     // Check for linesearch failure: if true, exit the method
     if ((step < minStep) || (niters > maxIters))
     {
       totalNumFailedLineSearches += 1;
       step = recoveryStep;
 
+      // For directions that require an iterative linear solve:
       // If we are not using a constant tolerance in the linear solver 
-      // (i.e. we are using either "Type 1" or "Type 2") then we must adjust
-      // the old tolerance to be used in the next computation of eta in the 
-      // direction object based on these linesearch results
+      // (i.e. we are using Homer Walker's "Type 1" or "Type 2" criteria) 
+      // then we must adjust the old tolerance to be used in the next 
+      // computation of eta in the direction object based on these 
+      // linesearch results
       eta = 1.0-step*(1.0-eta_original);
       inputList->setParameter("Adjusted Tolerance", eta);
       
@@ -198,11 +203,13 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
       newgrp.computeX(oldgrp, dir, step);
       newgrp.computeF();    
       newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-      cout << " (USING RECOVERY STEP!)" << endl;
-      cout << Utils::fill(72) << "\n" << endl;
+      if (Utils::doPrint(Utils::InnerIteration)) {
+	cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+	cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
+	cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
+	cout << " (USING RECOVERY STEP!)" << endl;
+	cout << Utils::fill(72) << "\n" << endl;
+      }
       isfailed = true;
       setOutputParameters();
       return(!isfailed);
@@ -224,10 +231,12 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
   } // end while loop
 
+  // For directions that require an iterative linear solve:
   // If we are not using a constant tolerance in the linear solver 
-  // (i.e. we are using either "Type 1" or "Type 2") then we must adjust
-  // the old tolerance to be used in the next computation of eta in the 
-  // direction object based on these linesearch results
+  // (i.e. we are using Homer Walker's "Type 1" or "Type 2" criteria) 
+  // then we must adjust the old tolerance to be used in the next 
+  // computation of eta in the direction object based on these 
+  // linesearch results
   inputList->setParameter("Adjusted Tolerance", eta);
   
   if (Utils::doPrint(Utils::InnerIteration)) {
@@ -245,8 +254,9 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
 bool Quadratic::setOutputParameters() {
   NOX::Parameter::List& outputList = inputList->sublist("Output");
-  outputList.setParameter("Total Number of Line Search Iterations", totalNumIterations);
+  outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
+  outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
   outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
-  outputList.setParameter("Total Number Steps Requiring Line Search", totalNumLSSteps);
+  outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
   return true;
 }
