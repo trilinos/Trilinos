@@ -272,6 +272,14 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
             errexit("terminating");
         }
 #endif
+        if (ncomm->myProc!=-1) { /* if we're in the new comm */
+            /* ncomm's first column now bcast to other columns */
+            MPI_Bcast(&nEdge, 1, MPI_INT, 0, ncomm->row_comm);
+#ifdef _DEBUG1
+            if (nEdge != (nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]))
+            errexit("nEdge(%d)!=nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y](%d)", nEdge, nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]);
+#endif
+        }
         
         if (nEdge)
             nhg->ewgt = (float*) ZOLTAN_MALLOC(nEdge*ohg->EdgeWeightDim*sizeof(float));
@@ -281,18 +289,16 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
                        ohg->EdgeWeightDim*sizeof(float), (char *) nhg->ewgt);
         if (ncomm->myProc!=-1) { /* if we're in the new comm */
             /* ncomm's first column now bcast to other columns */
-            MPI_Bcast(&nEdge, 1, MPI_INT, 0, ncomm->row_comm);
-#ifdef _DEBUG1
-            if (nEdge != (nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]))
-            errexit("nEdge(%d)!=nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y](%d)", nEdge, nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]);
-#endif
             if (nEdge) 
-                MPI_Bcast(nhg->ewgt, nEdge*ohg->EdgeWeightDim, MPI_FLOAT, 0, ncomm->row_comm);
+                MPI_Bcast(nhg->ewgt, nEdge*ohg->EdgeWeightDim, MPI_FLOAT, 0, 
+                          ncomm->row_comm);
         }
 
         Zoltan_Comm_Destroy(&plan);
     } else 
-        nEdge = (ncomm->myProc==-1) ? 0 : nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y];
+        nEdge = (ncomm->myProc==-1) 
+                ? 0 
+                : nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y];
     
 
     if (ncomm->myProc==-1) {
