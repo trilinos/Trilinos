@@ -150,7 +150,7 @@ MPI_LIBPATH		=
 # is distributed with Zoltan. Make sure that you use a header file
 # that is compatible with the library version you link. 
 #PARMETIS_LIBPATH 	= -L.
-#PARMETIS_INCPATH      = -I/Net/proj/zoltan/arch/all/src
+#PARMETIS_INCPATH      = -I/Net/proj/zoltan/arch/all/src/ParMETIS2
 
 # For graph-partitioning, Zoltan includes an interface to the
 # Jostle graph-partitioning library of Chris Walshaw, U. Greenwich.

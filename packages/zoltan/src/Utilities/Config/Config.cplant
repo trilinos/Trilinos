@@ -40,8 +40,8 @@ FARG      		= farg_typical
 MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/local/cplant/current/lib
 
-PARMETIS_LIBPATH 	= -L../../ParMETIS
-PARMETIS_INCPATH 	= -I../../ParMETIS
+PARMETIS_LIBPATH 	= -L../../ParMETIS2
+PARMETIS_INCPATH 	= -I../../ParMETIS2
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src

@@ -50,8 +50,8 @@ MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
                   -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 
-PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
-PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
+PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib/ParMETIS2
+PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src/ParMETIS2
 
 JOSTLE_LIBPATH 		= -L/Net/proj/zoltan/arch/solaris/lib
 JOSTLE_INCPATH 		= -I/Net/proj/zoltan/arch/all/src
