@@ -26,10 +26,13 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Tpetra_Object.hpp"
+#include "Tpetra_OutputObject.hpp"
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_Version.hpp"
+#include "Tpetra_VectorSpace.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_ElementSpace.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -37,26 +40,32 @@ int main(int argc, char *argv[])
 
 	cout << Tpetra::Tpetra_Version() << endl;
 
-	// test Object
-	cout << "*** Creating Object..." << endl;
-  Tpetra::Object obj1;
-	Tpetra::Object obj2("obj2");
+	// test OutputObject
+	cout << "*** Creating OutputObject..." << endl;
+	Tpetra::OutputObject obj1;
 
-	int temp1 = obj1.getTracebackMode();
-	cout << obj1 << endl;
-  cout << temp1 << endl;
+	obj1.newPrint(cout); cout << endl;
 
-	// test SerialComm
-	cout << "*** Creating SerialComm..." << endl;
-	Tpetra::SerialComm<double, int> comm1;
-	cout << comm1 << endl;
+	Teuchos::RefCountPtr<Tpetra::OutputManager> om = Teuchos::rcp (new Tpetra::OutputManager());
+	om->setVerbosity(Tpetra::Signature+Tpetra::Summary);
+	obj1.setOutputManager(om);
+	obj1.newPrint(cout); cout << endl;
 
-	// test Platform
-	cout << "*** Creating SerialPlatform..." << endl;
-	Tpetra::SerialPlatform<int, int> platform1;
-  int temp2 = platform1.getNumImages();
-	cout << platform1 << endl;
-  cout << temp2 << endl;
+	// test Vector object
+	int length = 10;
+        int indexBase = 0;
+	cout << "*** Creating Vector of length " << length << endl;
+	const Tpetra::SerialPlatform <int, int> platformE;
+	const Tpetra::SerialPlatform <int, double> platformV;
+	Tpetra::ElementSpace<int> elementspace(length, indexBase, platformE);
+	Tpetra::VectorSpace<int, double> vectorspace(elementspace, platformV);
+	Tpetra::Vector<int, double> v1(vectorspace);
+	cout << "Created v1, default constructor" << endl;
+
+	cout << v1 << endl;
+
+	v1.setOutputManager(om);
+	cout << v1 << endl;
 
 	cout << "*** Finished." << endl;
 

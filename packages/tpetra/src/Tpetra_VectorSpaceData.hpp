@@ -36,11 +36,11 @@ class VectorSpaceData : public Object {
 	friend class VectorSpace<OrdinalType, ScalarType>;
  public:
     // default constructor
-	VectorSpaceData(bool blockspace, 
-									OrdinalType indexBase, 
-									OrdinalType numMyEntries, 
-									OrdinalType numGlobalEntries, 
-									Platform<OrdinalType, ScalarType> const& platform) 
+  VectorSpaceData(bool blockspace, 
+		  OrdinalType indexBase, 
+		  OrdinalType numMyEntries, 
+		  OrdinalType numGlobalEntries, 
+		  Platform<OrdinalType, ScalarType> const& platform) 
     : Object("Tpetra::VectorSpaceData")
     , blockspace_(blockspace)
     , indexBase_(indexBase)

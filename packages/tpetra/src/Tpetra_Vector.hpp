@@ -69,8 +69,7 @@ template<typename OrdinalType, typename ScalarType> class VectorData;
 */
 
 template<typename OrdinalType, typename ScalarType>
-class Vector : public Teuchos::CompObject, public Object
-{
+class Vector : public Teuchos::CompObject, public Object, public virtual OutputObject {
 
 public:
   
