@@ -582,18 +582,11 @@ bool LinearProblem<Scalar>::setupCurrSystem()
 	TEST_FOR_EXCEPT( currFirstRhsOffset_  > totalNumRhs_ );
 #endif
 	// See if we are finished yet or not
-	if( currFirstRhsOffset_  == totalNumRhs_ )
-		return false; // Finished with all of the RHSs
-	// Determine the block size of the next set of RHS
-	int currNumRhs, blockSize;
-	if( augmentationAllowed_ ) {
-		blockSize = currNumRhs = blockSize_;
-	}
-	else {
-		// Determine how many RHS are remaining
-		const int numRhsRemaining = totalNumRhs_ - currFirstRhsOffset_;
-		blockSize = currNumRhs = min( numRhsRemaining,blockSize);
-	}
+	if( currFirstRhsOffset_  == totalNumRhs_ ) return false;
+	// Determine the block size and the number of RHSs of the next set block
+	const int numRhsRemaining = totalNumRhs_ - currFirstRhsOffset_;
+	const int currNumRhs      = min( numRhsRemaining, blockSize_ );
+	const int blockSize       = ( augmentationAllowed_ ? blockSize_ : currNumRhs );
 	// Setup the current block system
 	RefCountPtr<const TSFCore::VectorSpace<Scalar> > rhs_range = rhs_->range();
 	RefCountPtr<const TSFCore::VectorSpace<Scalar> > lhs_range = lhs_->range();

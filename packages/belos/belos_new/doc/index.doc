@@ -31,7 +31,7 @@ linear problem to a <tt>Belos::StatusTest</tt>.
 It is absoluting critical that the above interfaces be standarized
 upon since it is impossible to write a sophisticated nonlinear
 abstract numerical algorithm (ANA) that allows inexact solves without
-precise control of the linear solver.
+precise control over the linear solver.
 
 The next set of abstract classes provide a convenient means to access
 and invoke a concrete iterative linear solver and to help in making
@@ -39,8 +39,8 @@ the development of concrete iterative linear solvers easier.
 
 <ul>
 <li>
-<tt>Belos::BasicIteration</tt> defines an interface for presenting
-abstracting concrete iterative solver implementations away for
+<tt>Belos::BasicIteration</tt> defines an interface for
+abstracting concrete iterative linear solvers away for
 clients.  This is the basic interface that allows a client to access
 an iterative linear solver without knowing the exact concrete
 implemenation.
@@ -53,7 +53,8 @@ to be accessed by a concrete <tt>Belos::BasicIteration</tt> subclass.
 accessed by a client to setup the definition of a linear problem by
 setting the operator, left and/or right precondtioners, left and/or
 right scaling vectors, RHS multi-vector and LHS multi-vector (with
-initial guess).
+initial guess).  This interface also allows setting the status
+test and block size.
 </ul>
 
 The above interface classes satisfy all of the requirements spelled
@@ -62,7 +63,7 @@ out in ???.
 <li><b>Convenient implementations</b>
 
 The following classes define convient implementations of the basic
-interface classes buta are not at all required for standardization.
+interface classes but are not at all required for standardization.
 
 <ul>
 <li>
@@ -100,13 +101,13 @@ class diagram.
 <ul>
 <li>
 <tt>Belos::NonblockCg</tt> is a concrete implementation of a CG
-iterative solver that simultaniously solves for multiple RHS but is
+iterative linear solver that simultaniously solves for multiple RHS but is
 not a true block solver.  The primary purpose of this class is to test
 deflation.
 <li>
 <tt>Belos::NonblockGmres</tt> is a concrete implementation of a
-GMRES iterative solver that solves only single RHS at a time.  The
-primary purpose of this class is to test the special use cases related
+GMRES iterative linear solver that solves only single RHS at a time.  The
+primary purpose of this class is to test some of the special use cases related
 GMRES solvers.
 </ul>
 

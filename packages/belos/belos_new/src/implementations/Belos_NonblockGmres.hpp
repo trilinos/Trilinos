@@ -310,6 +310,7 @@ IterateReturn NonblockGmres<Scalar>::iterate( const int maxNumIter )
 		sn_.resize(maxKrylovDim);
 	}
 	// Solve the systems as a set of single RHS solves
+	lpi_->setBlockSize(1); // Only unit block sizes allowed!
 	bool allFinished = false;
 	while ( !allFinished  ) {
 		IterateReturn nextBlockReturn = nextBlock( maxNumIter, &allFinished );
