@@ -112,7 +112,7 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libteuchos_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__libteuchos_a_SOURCES_DIST =  \
+am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
@@ -142,7 +142,8 @@ am__libteuchos_a_SOURCES_DIST =  \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
 	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
-am__objects_1 = Teuchos_CommandLineProcessor.$(OBJEXT) \
+am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
+	Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
 	Teuchos_dyn_cast.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
 	Teuchos_Object.$(OBJEXT) Teuchos_ParameterEntry.$(OBJEXT) \
@@ -175,7 +176,8 @@ libteuchos_a_OBJECTS = $(am_libteuchos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Teuchos_CommandLineProcessor.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Teuchos_BLAS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_CommandLineProcessor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_CompObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Describable.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ExpatHandlerAdapter.Po \
@@ -454,6 +456,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_Workspace.hpp
 
 CORE = \
+	$(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
@@ -742,6 +745,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_BLAS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_CommandLineProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_CompObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Describable.Po@am__quote@
@@ -791,6 +795,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Teuchos_BLAS.o: $(srcdir)/Teuchos_BLAS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_BLAS.o -MD -MP -MF "$(DEPDIR)/Teuchos_BLAS.Tpo" -c -o Teuchos_BLAS.o `test -f '$(srcdir)/Teuchos_BLAS.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_BLAS.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_BLAS.Tpo" "$(DEPDIR)/Teuchos_BLAS.Po"; else rm -f "$(DEPDIR)/Teuchos_BLAS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_BLAS.cpp' object='Teuchos_BLAS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_BLAS.Po' tmpdepfile='$(DEPDIR)/Teuchos_BLAS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_BLAS.o `test -f '$(srcdir)/Teuchos_BLAS.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_BLAS.cpp
+
+Teuchos_BLAS.obj: $(srcdir)/Teuchos_BLAS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_BLAS.obj -MD -MP -MF "$(DEPDIR)/Teuchos_BLAS.Tpo" -c -o Teuchos_BLAS.obj `if test -f '$(srcdir)/Teuchos_BLAS.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_BLAS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_BLAS.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_BLAS.Tpo" "$(DEPDIR)/Teuchos_BLAS.Po"; else rm -f "$(DEPDIR)/Teuchos_BLAS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_BLAS.cpp' object='Teuchos_BLAS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_BLAS.Po' tmpdepfile='$(DEPDIR)/Teuchos_BLAS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_BLAS.obj `if test -f '$(srcdir)/Teuchos_BLAS.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_BLAS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_BLAS.cpp'; fi`
 
 Teuchos_CommandLineProcessor.o: $(srcdir)/Teuchos_CommandLineProcessor.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_CommandLineProcessor.o -MD -MP -MF "$(DEPDIR)/Teuchos_CommandLineProcessor.Tpo" -c -o Teuchos_CommandLineProcessor.o `test -f '$(srcdir)/Teuchos_CommandLineProcessor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_CommandLineProcessor.cpp; \

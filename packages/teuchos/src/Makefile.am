@@ -85,6 +85,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_Workspace.hpp
 
 CORE = \
+	$(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \

@@ -26,31 +26,18 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_Utils.hpp"
+#include "Teuchos_BLAS.hpp"
 
-namespace Teuchos {
-
-double Utils::chopVal_ = 1.0e-16;
-
-double Utils::chop(const double& x) 
-{
-	if (fabs(x) < chopVal_) return 0;
-	return x;
-}
-
-string Utils::toString(const int& x)
-{
-	char s[100];
-	sprintf(s, "%d", x);
-	return string(s);
-}
-
-string Utils::toString(const double& x)
-{
-	char s[100];
-	sprintf(s, "%g", x);
-	return string(s);
-}
-
-
-} // end namespace Teuchos
+const char Teuchos::ESideChar[] = {'L' , 'R' };
+const char Teuchos::ETranspChar[] = {'N' , 'T' , 'C' };
+const char Teuchos::EUploChar[] = {'U' , 'L' };
+const char Teuchos::EDiagChar[] = {'U' , 'N' };
+//const char Teuchos::EFactChar[] = {'F', 'N' };
+//const char Teuchos::ENormChar[] = {'O', 'I' };
+//const char Teuchos::ECompQChar[] = {'N', 'I', 'V' };
+//const char Teuchos::EJobChar[] = {'E', 'V', 'B' };
+//const char Teuchos::EJobSChar[] = {'E', 'S' };
+//const char Teuchos::EJobVSChar[] = {'V', 'N' };
+//const char Teuchos::EHowmnyChar[] = {'A', 'S' };
+//const char Teuchos::ECMachChar[] = {'E', 'S', 'B', 'P', 'N', 'R', 'M', 'U', 'L', 'O' };
+//const char Teuchos::ESortChar[] = {'N', 'S'};
