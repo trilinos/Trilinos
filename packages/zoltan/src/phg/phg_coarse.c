@@ -160,7 +160,7 @@ int Zoltan_PHG_Coarsening
   if (hg->EdgeWeightDim > 0) {
     c_hg->ewgt = (float*) ZOLTAN_MALLOC(hg->nEdge * hg->EdgeWeightDim 
                                                   * sizeof(float));
-    for (j = 0; j < hg->nEdge * hg->EdgeWeightDim; j++)
+    for (i = 0; i < hg->nEdge * hg->EdgeWeightDim; i++)
       c_hg->ewgt[i] = hg->ewgt[i];
   }
 
