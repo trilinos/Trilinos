@@ -109,13 +109,12 @@ int RL_freeList(pRList rlist) {
 }
 
 int RL_numRootOctants(pRList rlist) {
-  pOctant rootoct;
   int nroots = 0;
 
   if((rlist == NULL) || (rlist->oct != NULL))
     return -1;
 
-  while((rootoct = RL_nextRootOctant(&rlist))) 
+  while(RL_nextRootOctant(&rlist)) 
     nroots++;
 
   return nroots;

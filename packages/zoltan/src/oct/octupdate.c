@@ -1140,7 +1140,7 @@ static int LB_oct_subtree_dref(LB *lb, OCT_Global_Info *OCT_info,pOctant oct)
 
     if (nregions > (MAXOCTREGIONS*2) ) {
       fprintf(stderr, "OCT LB_oct_subtree_dref: warning: too many (%d) regions "
-	     "in oct %d (id=%d)\n",LB_Oct_nRegions(oct),(int)oct,LB_Oct_id(oct));
+	     "in oct (id=%d)\n",LB_Oct_nRegions(oct),LB_Oct_id(oct));
       return(-1);
     }
     else
@@ -1290,94 +1290,6 @@ static int idcompare(Rootid *i, Rootid *j)
   return( (i->id) - (j->id) );
 }
 /*****************************************************************************/
-/*
- * LB_oct_roots_in_order(pOctant **roots_ret,int *nroots_ret)
- *
- * Return an array of the local roots, sorted by id
- * Caller must free this array.
- *
- */
-void LB_oct_roots_in_order(OCT_Global_Info * OCT_info, pOctant **roots_ret, int *nroots_ret)
-{
-  int nroots;                                 /* number of roots */
-  pOctant *roots = NULL;                      /* array of roots */
-  Rootid *rootid = NULL;                      /* array of root id's */
-  pRList lroots;                              /* list of local roots */
-  pRList ptr;                                 /* ptr for iterating */
-  pOctant root ;                              /* a root octant */
-  int i;                                      /* index counter */
-  void *temp;                                 /* temp var used for iterating */
-
-  lroots = LB_POct_localroots(OCT_info);          /* get the list of all the local roots */
-  {
-    /* find the total number of roots on the list */
-    i=0;
-    ptr = lroots;
-    while(ptr != NULL) {
-      i++;
-      ptr = ptr->next;
-    }
-    nroots = i; 
-
-    /* set the return variables */
-    *nroots_ret=nroots;
-    if(nroots) {
-      roots=(pOctant *) LB_MALLOC(nroots * sizeof(pOctant));
-      rootid=(Rootid *) LB_MALLOC(nroots * sizeof(Rootid));
-      if((roots == NULL) || (rootid == NULL)) {
-	fprintf(stderr, "OCT LB_oct_roots_in_order: error in malloc\n");
-	abort();
-      }
-    }
-    *roots_ret=roots;
-    
-    i=0;
-    temp=NULL;
-    /* place roots in an array to be sorted */
-    while (lroots != NULL) {
-      rootid[i].ptr = lroots->oct;
-      rootid[i].id  = LB_Oct_id(lroots->oct);
-      i++;
-      lroots = lroots->next;
-    }
-  }
-  if (i!=nroots)
-    abort();
-
-  /* sort the array of roots */
-  qsort(rootid,(size_t)nroots,sizeof(Rootid),
-       (int(*)(const void *, const void *))idcompare);
-  /* qsort(rootid, nroots, sizeof(Rootid), (int(*)())idcompare); */
-  
-  /* give data to the return variable */
-  for (i=0; i<nroots; i++)
-    roots[i]=rootid[i].ptr;
-
-  LB_FREE(&rootid);
-}
-
-/*****************************************************************************/
-
-/*
- * pOctant LB_oct_findId(int id)
- *
- * find the first octant with given id
- *
- */
-pOctant LB_oct_findId(int id)
-{
-  void *temp;
-  pOctant oct;
-
-  oct=NULL;
-  temp=NULL;
-  while (oct=LB_POct_nextDfs(oct)) {
-    if (LB_Oct_id(oct)==id)
-      return(oct);
-  }
-
-  return(NULL);
-}
 #endif /* LGG_MIGOCT */
 
 /*****************************************************************************/

@@ -25,7 +25,7 @@ static int LB_copy_info(LB *lb, pRegion src, pRegion *dest);
  * the local subtree.
  */
 
-int LB_migreg_migrate_regions(LB *lb, Region *regions, 
+static int LB_migreg_migrate_regions(LB *lb, Region *regions, 
                               LB_ID_PTR gids, LB_ID_PTR lids,
                               int *npids, int nregions, int *c2) 
 {

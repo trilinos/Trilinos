@@ -11,12 +11,9 @@
 #include "octree_const.h"
 
 #ifdef LGG_MIGOCT
-extern void    LB_oct_roots_in_order(pOctant **roots_ret,int *nroots_ret);
 extern void    LB_oct_resetIdCount(int start_count);
 extern int     LB_oct_nextId(void);
 #endif /* LGG_MIGOCT */
-extern void    LB_oct_roots_in_order(OCT_Global_Info * OCT_info, pOctant **roots_ret,int *nroots_ret);
-extern pOctant LB_oct_findId(int i);
 extern int     LB_oct_subtree_insert(LB *, pOctant oct, pRegion region);
 
 extern void LB_oct_print_stats(LB *lb, double timetotal, double *timers, 

@@ -11,7 +11,6 @@
 
 #include "octree_const.h"
 extern int    LB_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum);
-extern int    LB_convert_idx_to_map(OCT_Global_Info *OCT_info, int dir, int cnum);
 extern int    LB_convert_idx_from_map(OCT_Global_Info *OCT_info, int dir, int cnum);
 
 extern void   LB_set_method(OCT_Global_Info *OCT_info,int method_number);

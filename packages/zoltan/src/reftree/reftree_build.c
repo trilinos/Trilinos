@@ -1381,7 +1381,6 @@ char *yo = "order_quad_quad";
          found = 1;
       }
     }
-    if (found) exit;
   }
   if (!found) {
     LB_PRINT_WARN(lb->Proc, yo, "Couldn't find out_vertex in children");

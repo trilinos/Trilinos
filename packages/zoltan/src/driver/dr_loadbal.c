@@ -279,7 +279,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
 {
   int found = 0;
   ELEM_INFO *elem;
-  ELEM_INFO *current_elem, *next_elem;
+  ELEM_INFO *next_elem;
   MESH_INFO_PTR mesh;
   int i, idx;
   int gid = num_gid_entries-1;
@@ -295,11 +295,10 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
 
   if (num_lid_entries) {
     idx = local_id[lid];
-    current_elem = &elem[idx];
   }
   else {
     /* testing zero-length local IDs; search by global ID for current elem */
-    current_elem = search_by_global_id(mesh, global_id[gid], &idx);
+    (void) search_by_global_id(mesh, global_id[gid], &idx);
   }
 
   if (idx+1 < mesh->num_elems) { 

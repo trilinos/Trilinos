@@ -29,6 +29,7 @@ static void LB_visit(LB *lb,pOctant octant);
 static void LB_visit_all_subtrees(LB *lb);
 static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part);
 static void LB_visit_by_dist(LB *lb,pOctant octant, pOctant children[8]);
+static int LB_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct);
 
 
 
@@ -95,7 +96,7 @@ void LB_dfs_partition(LB *lb, int *counter, float *c1) {
  *
  * sets the ids of all the octants so that there is a global numbering
  */
-int LB_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct) {
+static int LB_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct) {
   int id,                                      /* the id number of an octant */
       i;                                       /* index counter */
   int pid;

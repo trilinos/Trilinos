@@ -33,9 +33,9 @@ struct median {          /* median cut info */
 
 
 /* prototypes */
-void LB_reduce(int, int, int, int, struct median *, struct median *, int *,
+static void LB_reduce(int, int, int, int, struct median*, struct median*, int *,
                MPI_Datatype, MPI_Comm);
-void LB_scan(double *, double *, MPI_Comm, int, int, int);
+static void LB_scan(double *, double *, MPI_Comm, int, int, int);
 
 /************ R O U T I N E S   I N   T H I S   F I L E  **********************
 
@@ -487,7 +487,7 @@ void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-void LB_reduce(int nproc, int rank, int proc, int n, struct median *in,
+static void LB_reduce(int nproc, int rank, int proc, int n, struct median *in,
                struct median *inout, int *len, MPI_Datatype datatype,
                MPI_Comm comm)
 {
@@ -521,7 +521,7 @@ void LB_reduce(int nproc, int rank, int proc, int n, struct median *in,
          LB_reduce(nproc, rank, proc, m, in, inout, len, datatype, comm);
 }
 
-void LB_scan(double *wtok, double *wtupto, MPI_Comm local_comm, int proc,
+static void LB_scan(double *wtok, double *wtupto, MPI_Comm local_comm, int proc,
              int rank, int num_procs)
 {
    int to, tag = 32108;

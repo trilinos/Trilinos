@@ -17,24 +17,28 @@
 /*****************************************************************************/
 
 /* Prototypes for functions internal to this file */
+static int LB_Reftree_Sum_Weights(LB *lb);
 
 int LB_Reftree_Sum_Weights_gather(LB *lb);
 int LB_Reftree_Sum_Weights_pairs(LB *lb);
 int LB_Reftree_Sum_Weights_bcast(LB *lb);
-void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, int *count, int wdim);
-void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
-void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, LB_ID_PTR list, 
-                                  int *count);
-int LB_Reftree_Partition(LB *lb, int *num_export, LB_ID_PTR *export_global_ids,
-                         LB_ID_PTR *export_local_ids, int **export_procs);
-void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
-                               float *current_size, int *num_exp, float *cutoff,
-                               float partition_size, float eps);
-void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, int *num_exp);
-void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
-                            LB_ID_PTR *export_global_ids,
-                            LB_ID_PTR *export_local_ids, int **export_procs);
-int is_power_of_2(int n);
+
+static void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, 
+       int *count, int wdim);
+static void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
+static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
+       LB_ID_PTR list, int *count);
+static int LB_Reftree_Partition(LB *lb, int *num_export, 
+       LB_ID_PTR *export_global_ids, LB_ID_PTR *export_local_ids, 
+       int **export_procs);
+static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
+       float *current_size, int *num_exp, float *cutoff,
+       float partition_size, float eps);
+static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
+       int *num_exp);
+static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
+       int *num_export, LB_ID_PTR *export_global_ids,
+       LB_ID_PTR *export_local_ids, int **export_procs);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -126,7 +130,7 @@ int final_ierr; /* error code returned by this routine */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Sum_Weights(LB *lb)
+static int LB_Reftree_Sum_Weights(LB *lb)
 
 {
 /*
@@ -147,23 +151,6 @@ int LB_Reftree_Sum_Weights(LB *lb)
    return(LB_Reftree_Sum_Weights_pairs(lb));
    return(LB_Reftree_Sum_Weights_bcast(lb));
 */
-}
-
-int is_power_of_2(int n)
-{
-/*
- * determine if n is a power of 2
- */
-
-  int count, n2;
-  count = 0;
-  n2 = n;
-  if (n > 0) {
-    while(n2) {count++;n2=n2>>1;}
-    return(n==(1<<(count-1)));
-  } else {
-    return(0);
-  }
 }
 
 /*****************************************************************************/
@@ -858,7 +845,8 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, int *count, int wdim)
+static void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, 
+       int *count, int wdim)
 
 {
 /*
@@ -927,7 +915,7 @@ int all_assigned;  /* flag for all children assigned to this proc */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim)
+static void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim)
 
 {
 /*
@@ -960,8 +948,8 @@ int i, j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, LB_ID_PTR list, 
-                                  int *count)
+static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
+       LB_ID_PTR list, int *count)
 
 {
 /*
@@ -997,8 +985,9 @@ int j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Partition(LB *lb, int *num_export, LB_ID_PTR *export_global_ids,
-                         LB_ID_PTR *export_local_ids, int **export_procs)
+static int LB_Reftree_Partition(LB *lb, int *num_export, 
+       LB_ID_PTR *export_global_ids, LB_ID_PTR *export_local_ids, 
+       int **export_procs)
 
 {
 /*
@@ -1095,7 +1084,7 @@ float eps;            /* allowed deviation from average partition size */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
+static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
                               float partition_size, float eps)
 
@@ -1181,7 +1170,8 @@ float newsize; /* size of partition if this subroot gets added to it */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, int *num_exp)
+static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
+       int *num_exp)
 
 {
 /*
@@ -1202,8 +1192,8 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
-                            LB_ID_PTR *export_global_ids,
+static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
+                            int *num_export, LB_ID_PTR *export_global_ids,
                             LB_ID_PTR *export_local_ids, int **export_procs)
 {
 /*

@@ -74,8 +74,6 @@ extern void LB_Reftree_Free_Structure(LB *lb);
 extern void LB_Reftree_Reinitialize(LB *lb);
 extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
 
-extern int LB_Reftree_Sum_Weights(LB *lb);
-
 extern LB_REFTREE* LB_Reftree_hash_lookup(LB *lb, 
                                           struct LB_reftree_hash_node **hashtab,
                                           LB_ID_PTR key, int n);

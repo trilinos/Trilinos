@@ -18,6 +18,7 @@
 static int LB_Update_Connections(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts);
 
 static int LB_Final_Migration(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts, int nrecocts);
+static int LB_Update_Map(LB *lb);
 
 #define MigOctCommCreate 32760
 #define MigOctCommDo 32761
@@ -101,9 +102,6 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   char *yo = "LB_Migrate_Octants";
   pOctant *newocts = NULL;                          /* New foreign octant pointers */
 
-  double time1;
-
-  time1 = MPI_Wtime();
   if((newocts = (pOctant *) LB_MALLOC(sizeof(pOctant)*(nocts+10))) == NULL) {
     LB_TRACE_EXIT(lb, yo);
     return LB_MEMERR;
@@ -254,7 +252,6 @@ int nocts;          /* number of octants leaving this processor */
 {
   int i, j;
   int nsends;
-  int nlocal;
   int nreceives;
   pOctant parent;
   pOctant child;
@@ -282,8 +279,6 @@ int nocts;          /* number of octants leaving this processor */
   for (i=0; i<nocts; i++)              
     if (newpids[i]!=lb->Proc)
       nsends++;
-
-  nlocal = nocts-nsends;
 
   if(nocts > 0) {
     if((remoteumsg = (Update_msg *) LB_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
@@ -526,8 +521,8 @@ int nrecocts;       /* number of octants received in this processor */
 }
 
 
-int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
-  int i,j, k;
+static int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
+  int j, k;
   int *despid = NULL;
   int nroots, nreceives;
   pRList  RootList;                  /* list of the local roots */
@@ -554,7 +549,7 @@ int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
     return LB_MEMERR;
   }
   
-  i = 0; k = 0;
+  k = 0;
   for (j=0; j<lb->Num_Proc; j++) {
     RootList = LB_POct_localroots(OCT_info);
     while((RootOct = RL_nextRootOctant(&RootList))) {	
@@ -610,7 +605,7 @@ int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
   return ierr;
 }
 
-int LB_Update_Map(LB *lb) {
+static int LB_Update_Map(LB *lb) {
   int i;
   double x,y;
   pRList  RootList;                

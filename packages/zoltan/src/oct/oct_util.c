@@ -10,7 +10,6 @@
 #include "lb_const.h"
 #include "octant_const.h"
 #include "oct_util_const.h"
-#include "hilbert_const.h"
 #include "dfs_const.h"
 
 int LB_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum) {
@@ -30,7 +29,7 @@ int LB_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum) {
   return 0;
 }
 
-int LB_convert_idx_to_map(OCT_Global_Info *OCT_info, int dir, int cnum) {
+static int LB_convert_idx_to_map(OCT_Global_Info *OCT_info, int dir, int cnum) {
   int result = cnum;
   if(OCT_info->HILBERT) {
     if(OCT_info->OCT_dimension == 3) {
