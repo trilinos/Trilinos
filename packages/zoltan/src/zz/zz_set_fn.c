@@ -12,7 +12,6 @@
  ****************************************************************************/
 
 #include "zz_const.h"
-#include "lb_set_fn_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -325,45 +324,6 @@ int Zoltan_Set_Next_Border_Obj_Fn(
 {
   zz->Get_Next_Border_Obj = fn;
   zz->Get_Next_Border_Obj_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_Pre_Migrate_Fn(
-  ZZ *zz, 
-  ZOLTAN_PRE_MIGRATE_FN *fn, 
-  void *data
-)
-{
-  zz->Migrate.Pre_Migrate = fn;
-  zz->Migrate.Pre_Migrate_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_Mid_Migrate_Fn(
-  ZZ *zz, 
-  ZOLTAN_MID_MIGRATE_FN *fn, 
-  void *data
-)
-{
-  zz->Migrate.Mid_Migrate = fn;
-  zz->Migrate.Mid_Migrate_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_Post_Migrate_Fn(
-  ZZ *zz, 
-  ZOLTAN_POST_MIGRATE_FN *fn, 
-  void *data
-)
-{
-  zz->Migrate.Post_Migrate = fn;
-  zz->Migrate.Post_Migrate_Data = data;
   return ZOLTAN_OK;
 }
 
