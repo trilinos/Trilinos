@@ -49,10 +49,12 @@
 using namespace Teuchos;
 using namespace ML_Epetra;
 
+#ifdef MARZIO_GGB
 extern "C" {
   extern int ML_ggb_Set_SymmetricCycle(int flag);
   extern int ML_ggb_Set_CoarseSolver(int flag);
 }
+#endif
 
 // ============================================================================
 
@@ -76,10 +78,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     if( ! List_.get(parameter,false) ) return -1;
   }
 
+#ifdef MARZIO_GGB
   sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
   bool FltUseSym = List_.get(parameter,false);
   if( FltUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
   else                    ML_ggb_Set_SymmetricCycle(0);
+#endif
 
   int restarts = List_.get(Pre+"eigen-analysis: restart", 50);
   int NumEigenvalues = List_.get(Pre+"filtering: eigenvalues to compute", 5);
@@ -105,7 +109,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   }    
     
   if( Eigensolver =="ARPACK" ) {
-
+#ifdef MARZIO_GGB
     // check, only 1 proc is supported
     if( Comm().NumProc() != 1 ) {
       if( Comm().MyPID() == 0 )
@@ -135,7 +139,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     // now build the correction to be added to the ML cycle
       
     ML_build_ggb(ml_, flt_MatrixData_);
-      
+#else
+    cerr << ErrorMsg_ << "This feature is not available. Sorry." << endl;
+    exit( EXIT_FAILURE );
+#endif
+
   } else if( Eigensolver == "Anasazi" ) {
       
     // 1.- set parameters for Anasazi
@@ -256,7 +264,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       flt_solver_.Invert();
 	
     } else if( PrecType == "ml-cycle" ) {
-
+#ifdef MARZIO_GGB
       if( Comm().NumProc() != 1 ) {
 	cerr << ErrorMsg_ << "Option `filtering: type' == `ml-cycle' can be used only with 1 process." << endl
 	     << ErrorMsg_ << "You can select `projection' or `enhanced' for multi-process runs" << endl;
@@ -296,6 +304,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       // now build the correction to be added to the ML cycle
 	
       ML_build_ggb(ml_, flt_MatrixData_);
+#else
+    cerr << ErrorMsg_ << "This feature is not available. Sorry." << endl;
+    exit( EXIT_FAILURE );
+#endif
 	
     } else if( PrecType == "enhanced" ) {
 
