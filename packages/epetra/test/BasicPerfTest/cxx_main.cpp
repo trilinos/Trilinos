@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>6) if (argv[6][0]=='-' && argv[6][1]=='v') verbose = true;
 
-  if(argc < 2 && verbose) {
+  if(argc < 6) {
     cerr << "Usage: " << argv[0]
          << " NumNodesX NumNodesY NumProcX NumProcY NumPoints [-v]" << endl
          << "where:" << endl
@@ -156,9 +156,9 @@ int main(int argc, char *argv[])
     cout << " Number of local nodes in X direction  = " << numNodesX << endl
 	 << " Number of local nodes in Y direction  = " << numNodesY << endl
 	 << " Number of global nodes in X direction = " << numNodesX*numProcsX << endl
+	 << " Number of global nodes in Y direction = " << numNodesY*numProcsY << endl
 	 << " Number of local nonzero entries       = " << numNodesX*numNodesY*numPoints << endl
 	 << " Number of global nonzero entries      = " << numNodesX*numNodesY*numPoints*numProcsX*numProcsY << endl
-	 << " Number of global nodes in X direction = " << numNodesX*numProcsX << endl
 	 << " Number of Processors in X direction   = " << numProcsX << endl
 	 << " Number of Processors in Y direction   = " << numProcsY << endl
 	 << " Number of Points in stencil           = " << numPoints << endl << endl;
@@ -181,18 +181,20 @@ int main(int argc, char *argv[])
     return(1);
   }
 
+  Epetra_IntSerialDenseVector Xoff;
+  Epetra_IntSerialDenseVector Yoff;
   if (numPoints==5) {
 
      // Generate a 5-point 2D Finite Difference matrix
-    Epetra_IntSerialDenseVector Xoff(5);
-    Epetra_IntSerialDenseVector Yoff(5);
+    Xoff.Size(5);
+    Yoff.Size(5);
     Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
     Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
   }
   else {
     // Generate a 9-point 2D Finite Difference matrix
-    Epetra_IntSerialDenseVector Xoff(9);
-    Epetra_IntSerialDenseVector Yoff(9);
+    Xoff.Size(9);
+    Yoff.Size(9);
     Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
     Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
     Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
@@ -207,7 +209,8 @@ int main(int argc, char *argv[])
   Epetra_Vector * bt;
   Epetra_Vector * xexact;
 
-  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, Xoff.Values(), Yoff.Values(), comm, 
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+ Xoff.Values(), Yoff.Values(), comm, 
 		     map, A, b, bt, xexact);
 
   Epetra_Vector q(b->Map());
@@ -359,10 +362,10 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   int numMyEquations = numNodesX*numNodesY;
   
-  map = new Epetra_Map(-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
+  map = new Epetra_Map(-1, numMyEquations, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
-  int numGlobalElements = map->NumGlobalElements();
+  int numGlobalEquations = map->NumGlobalElements();
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
 
@@ -503,10 +506,10 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   int numMyElements = numNodesX*numNodesY;
   
-  ptMap = new Epetra_Map(-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
+  Epetra_Map ptMap(-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
-  int numGlobalEquations = ptMap->NumGlobalElements();
+  int numGlobalEquations = ptMap.NumGlobalElements();
 
   Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
   for (i=0; i<numMyElements; i++) 
@@ -597,16 +600,18 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
 			      int myPID, int * & myGlobalElements) {
 
-  myGlobalElements = new [numNodesX*numNodesY];
-  myProcX = myPID%numProcsX;
-  myProcY = myPID/numProcsX;
+  myGlobalElements = new int[numNodesX*numNodesY];
+  int myProcX = myPID%numProcsX;
+  int myProcY = myPID/numProcsX;
   int curGID = myProcY*(numProcsX*numNodesX)*numNodesY+myProcX*numNodesX;
   for (int j=0; j<numNodesY; j++) {
     for (int i=0; i<numNodesX; i++) {
-      myGlobalElements[j*numNodesX] = curGID+i;
+      myGlobalElements[j*numNodesX+i] = curGID+i;
     }
     curGID+=numNodesX*numProcsX;
   }
+  //for (int i=0; i<numNodesX*numNodesY; i++) cout << "MYPID " << myPID <<" GID "<< myGlobalElements[i] << endl;
+  
   return;
 }
 
