@@ -317,7 +317,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     delete [] LinkList;
     delete [] CurrentLevel;
 
-    for (i=0; i<NumMyRows_; i++) if (Levels[i]!=0) delete Levels[i];
+    for (i=0; i<NumMyRows_; i++) if (Levels[i]!=0) delete [] Levels[i];
     delete [] Levels;
     delete [] CurrentRow;
     delete [] LevelsRowU;
