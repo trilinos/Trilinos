@@ -506,16 +506,14 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 
 /* function definitions */
 
-#ifndef __cplusplus
-#ifndef max
-#define max(x,y) (( (x) > (y) ) ?  (x) : (y))     /* max function  */
+#ifndef AZ_MAX
+#define AZ_MAX(x,y) (( (x) > (y) ) ?  (x) : (y))     /* max function  */
 #endif
-#ifndef min
-#define min(x,y) (( (x) < (y) ) ?  (x) : (y))     /* min function  */
+#ifndef AZ_MIN
+#define AZ_MIN(x,y) (( (x) < (y) ) ?  (x) : (y))     /* min function  */
 #endif
-#ifndef sgn
-#define sgn(x)   (( (x) < 0.0 ) ? -1.0 : 1.0)  /* sign function */
-#endif
+#ifndef AZ_SGN
+#define AZ_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0)  /* sign function */
 #endif
 
 /*

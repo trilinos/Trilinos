@@ -144,7 +144,7 @@ double AZ_gmax_vec(int N, double vec[], int proc_config[])
 
   /**************************** execution begins ******************************/
 
-  for (i = 0; i < N; i++) rmax = max(rmax, vec[i]);
+  for (i = 0; i < N; i++) rmax = AZ_MAX(rmax, vec[i]);
   rmax = AZ_gmax_double(rmax, proc_config);
 
   return rmax;

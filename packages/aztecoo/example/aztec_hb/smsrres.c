@@ -42,7 +42,7 @@ double smsrres (int m, int n,
 	  sum += val[j] * x[indx[j]];
 
 	tmp[i] -= sum;
-	max_norm = max(fabs(tmp[i]),max_norm);
+	max_norm = AZ_MAX(fabs(tmp[i]),max_norm);
 	norm_tmp += tmp[i]*tmp[i];
 	norm_b += b[i]*b[i];
       }

@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
       for (i=0; i<N_local; i++) sum += fabs(x[i]-xexact[i]);
  printf("Processor %d:  Difference between exact and computed solution = %12.4g\n",
 	     proc_config[AZ_node],sum);
-      for (i=0; i<N_local; i++) largest = max(largest,fabs(xexact[i]));
+      for (i=0; i<N_local; i++) largest = AZ_MAX(largest,fabs(xexact[i]));
  printf("Processor %d:  Difference divided by max abs value of exact   = %12.4g\n",
 	     proc_config[AZ_node],sum/largest);
     }

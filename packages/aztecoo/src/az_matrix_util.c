@@ -104,7 +104,7 @@ double AZ_gmax_matrix_norm(double val[], int indx[],int bindx[], int rpntr[],
         k        = bindx_row + jcol;
         row_sum += fabs(val[k]);
       }
-      row_max = max(row_sum, row_max);
+      row_max = AZ_MAX(row_sum, row_max);
     }
 
     row_max = AZ_gmax_double(row_max, proc_config);
@@ -152,7 +152,7 @@ double AZ_gmax_matrix_norm(double val[], int indx[],int bindx[], int rpntr[],
         }
 
         iblk   -= num_col_blks;
-        row_max = max(row_sum, row_max);
+        row_max = AZ_MAX(row_sum, row_max);
         row_sum = 0.0;
       }
 

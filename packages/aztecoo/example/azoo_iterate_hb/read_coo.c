@@ -57,8 +57,8 @@ void read_coo(char *data_file, int *proc_config,
       while(!feof(data))
 	{
 	  fscanf(data, "%d %d %lf", &ii, &jj, &value) ;
-	  max_ii = max(max_ii,ii);
-	  max_jj = max(max_jj,jj);
+	  max_ii = AZ_MAX(max_ii,ii);
+	  max_jj = AZ_MAX(max_jj,jj);
 #ifdef DEBUG
 	  printf("Entry %d, %d = %lf.\n",ii,jj,value);
 #endif

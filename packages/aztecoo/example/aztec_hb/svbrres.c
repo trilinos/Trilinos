@@ -42,7 +42,7 @@ double svbrres (int m, int n, int m_blk,
 
     for (i = 0; i <m ; i++) 
       {
-	max_norm = max(fabs(tmp[i]),max_norm);
+	max_norm = AZ_MAX(fabs(tmp[i]),max_norm);
 	norm_tmp += tmp[i]*tmp[i];
 	norm_b += b[i]*b[i];
       }

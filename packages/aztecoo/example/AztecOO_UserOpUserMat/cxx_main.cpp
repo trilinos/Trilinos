@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 
   if (vb) cout << "Setting Preconditioner Matrix" << endl;
   solver.SetPrecMatrix(PrecMatrix);
+  //solver.SetAztecOption(AZ_precond, AZ_none);
 
   int Niters = nx*ny;
   solver.SetAztecOption(AZ_kspace, Niters);

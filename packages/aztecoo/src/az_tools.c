@@ -1877,7 +1877,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
   else                                  i = N_external;
 
   buf_size = AZ_gmax_int(i + 1, proc_config);
-  buf_size = max(buf_size, (AZ_TEST_ELE+1) * nprocs);
+  buf_size = AZ_MAX(buf_size, (AZ_TEST_ELE+1) * nprocs);
 
   extern_mess = (int *) AZ_allocate((unsigned) buf_size*sizeof(int));
   if (extern_mess == NULL) {
@@ -1897,7 +1897,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
      */
 
     extern_mess[0]       = -proc - 1;
-    num_sublist_elements = min(AZ_TEST_ELE, N_external - first_extern);
+    num_sublist_elements = AZ_MIN(AZ_TEST_ELE, N_external - first_extern);
 
     if (num_sublist_elements != 0)
       stride = (N_external - first_extern) / num_sublist_elements;

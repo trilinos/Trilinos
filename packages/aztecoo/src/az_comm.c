@@ -2333,7 +2333,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
 
         /* Buffer is not big enough. Allocate more space */
 
-        buf_len += max(500, length);
+        buf_len += AZ_MAX(500, length);
         temp = (char *) AZ_allocate(buf_len * sizeof(char));
         if (temp == NULL) {
           (void) fprintf(stderr, "no space in AZ_broadcast: temp\n");
@@ -2659,7 +2659,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
     max_messg_size = 0;
     for (n = 0; n < num_neighbors; n++) {
-      max_messg_size = max(max_messg_size, actual_recv_length[n]);
+      max_messg_size = AZ_MAX(max_messg_size, actual_recv_length[n]);
       finished_send_messg[n] = finished_recv_messg[n] = AZ_FALSE;
     }
     max_messg_size = AZ_gmax_int(max_messg_size, proc_config);

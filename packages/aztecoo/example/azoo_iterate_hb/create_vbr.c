@@ -107,7 +107,7 @@ void create_vbr(char *partition_file, int *proc_config,
       /* Estimate storage needed for VBR and allocate space */
 
       N_block_entries = *n_nonzeros;
-      n_vbr_nonzeros = min(abs(*n_nonzeros * blocksize * blocksize),
+      n_vbr_nonzeros = AZ_MIN(abs(*n_nonzeros * blocksize * blocksize),
 			   420000000/8);
       *N_blk_global = N_blk_equations;
 

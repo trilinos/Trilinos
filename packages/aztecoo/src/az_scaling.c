@@ -942,7 +942,7 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
           row_sum += fabs(val[k]);
         }
 
-        row_sum = row_sum * sgn(val[irow]);
+        row_sum = row_sum * AZ_SGN(val[irow]);
 
         if (fabs(row_sum) < DBL_MIN) {
           (void) fprintf(stderr, "%sERROR: Row %d is all zero's\n", yo, irow);
@@ -1002,7 +1002,7 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
 
               /* diagonal entry => get sign */
 
-              if (I == J) sign = sgn(val[t_index]);
+              if (I == J) sign = AZ_SGN(val[t_index]);
 
               row_sum += fabs(val[t_index]);
             }
