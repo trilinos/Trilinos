@@ -2860,6 +2860,24 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 }
 
 /*****************************************************************************/
+/* set to 1 to use another ML cycle after ggb, to 0 otherwise                */
+/*-------------------------------------------------------------------------- */
+
+static int ML_ggb_SymmetricCycle = 1;
+int ML_ggb_Set_SymmetricCycle(int flag) 
+{
+  ML_ggb_SymmetricCycle = flag;
+  return 0;
+}
+
+static int ML_ggb_CoarseSolver = 1;
+int ML_ggb_Set_CoarseSolver(int flag) 
+{
+  ML_ggb_CoarseSolver = flag;
+  return 0;
+}
+
+/*****************************************************************************/
 /* solve using V-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
 
@@ -2975,14 +2993,12 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
      }
      */
 
-
-
-     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
-
-
+     /* "after cycle" only if required (default is yes) */
+     if( ML_ggb_SymmetricCycle == 1 ) {
+       ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		   ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+     }
    }
-
 
    ML_free(din_temp);
    return 0;
@@ -5713,6 +5729,8 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    return(status);
 }
 
+#include "ml_amesos.h"
+
 int ML_build_ggb(ML *ml, void *data)
 {
   ML *ml_ggb;
@@ -5790,14 +5808,28 @@ int ML_build_ggb(ML *ml, void *data)
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
   ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
 
-  /* ML_Operator_Print(Pmat, "Pmat"); */
+  /*  ML_Operator_Print(Pmat, "Pmat"); */
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
   /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL,
       CSR_denseserialmatvec); */
 
   ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
-  ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+
+  switch( ML_ggb_CoarseSolver ) {
+  case 1:
+    // superlu, default solver
+    ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+    break;
+  case 2:
+    // amesos, now default is KLU
+    ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
+    break;
+  default:
+    printf("ERROR: coarse solver for GGB not correct\n");
+    exit( EXIT_FAILURE );
+  }
+    
   ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
 
 
