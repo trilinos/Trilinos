@@ -17,8 +17,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <math.h>
+#ifdef __STDC__
+#include <string.h>
+#else
+#include <strings.h>
+#endif  /* __STDC__ */
 
 #include "lbi_const.h"
 
