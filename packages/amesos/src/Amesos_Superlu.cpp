@@ -54,16 +54,17 @@ struct SLUData
 
 
 
-  //=============================================================================
-  Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
-    FactorizationDone_(false),
-    FactorizationOK_(false),
-    UseTranspose_(false),
-    iam_(-1),
-    SerialMap_(0), 
-    SerialCrsMatrixA_(0), 
-    SerialMatrix_(0)
-  {
+//=============================================================================
+Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
+  FactorizationDone_(false),
+  FactorizationOK_(false),
+  UseTranspose_(false),
+  iam_(-1),
+  SerialMap_(0), 
+  SerialCrsMatrixA_(0), 
+  SerialMatrix_(0),
+  IsLocal_(0)
+{
 
   using namespace SLU;
 
@@ -114,8 +115,8 @@ Amesos_Superlu::~Amesos_Superlu(void) {
   delete data_; 
 
 }
-//  See  pre and post conditions in Amesos_Superlu.h
 
+// ======================================================================
 int Amesos_Superlu::ConvertToSerial() { 
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
@@ -173,6 +174,7 @@ int Amesos_Superlu::ConvertToSerial() {
   return 0;
 }
 
+// ====================================================================== 
 int Amesos_Superlu::ReFactor(){
   
   using namespace SLU;
@@ -339,18 +341,19 @@ int Amesos_Superlu::Factor(){
   return 0;
 }   
 
-int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) {
+// ====================================================================== 
+int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) 
+{
 
-  //  Some compilers reject the following cast:
-  //  if( &ParameterList == 0 ) return 0;
-
+  /* the list is empty now
   if (ParameterList.isSublist("Superlu") ) {
     Teuchos::ParameterList SuperluParams = ParameterList.sublist("Superlu") ;
   }  
+  */
   return 0;
 }
 
-
+// ====================================================================== 
 bool Amesos_Superlu::MatrixShapeOK() const 
 { 
   bool OK = true;
@@ -360,13 +363,14 @@ bool Amesos_Superlu::MatrixShapeOK() const
   return OK; 
 }
 
-
+// ====================================================================== 
 int Amesos_Superlu::SymbolicFactorization() {
 
   FactorizationOK_ = false ; 
   return 0;
 }
 
+// ======================================================================
 int Amesos_Superlu::NumericFactorization() {
   
   using namespace SLU;
@@ -478,8 +482,14 @@ int Amesos_Superlu::NumericFactorization() {
   return 0;
 }
 
+// ====================================================================== 
+int Amesos_Superlu::Solve() 
+{ 
 
-int Amesos_Superlu::Solve() { 
+  if (!FactorizationDone_) {
+    FactorizationOK_ = false;
+    AMESOS_CHK_ERR(NumericFactorization());
+  }
 
   using namespace SLU;
 
