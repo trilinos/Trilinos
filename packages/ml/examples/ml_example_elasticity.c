@@ -8,10 +8,18 @@
 /*****************************************************************************/
 /* Sample driver for AZTEC/ML package. 
    this driver comes together with the examples in the directories
-   /shell_intersection/
-   /shell_lineal/
-   /shell_vb_intersection/
-   /shell_vb_lineal/
+
+   ExampleMatrices/shell_vb_intersection/ (<-under construction)
+   ExampleMatrices/shell_vb_lineal/       
+   
+   Each directory holds a file "inputfile" specifying ML-options and
+   a couple of data*.txt files specifiying the variable block system of equations
+
+   usage is :
+   ml_example_elasticity.exe ExampleMatrices/shell_vb_lineal
+   or:
+   ml_example_elasticity.exe ExampleMatrices/shell_vb_intersection
+
    These are small examples derived elasticity problems using finite element
    shell elements with 6 degrees of freedom per node
    The *_vb_* (Variable Block) directories contain matrices with condensed Dirichlet-boundary conditions,
@@ -19,74 +27,6 @@
    They are supposed to be used applying the type of aggregation
    "VBMetis" which can handle variable AND constant blocked matrices
 /*****************************************************************************/
-/* Here is a sample input file:
-#
-#  Test input file ML 
-#       
-# Notes: 
-#   1) Captilization should not matter
-#   2) Lines starting with # are comments
-#   3) Parallel Partitioning File is not used
-#      when only 1 processor is present.
-#   4) comments in [] indicate available options.
-#   5) The matrix must be stored in a file '.data' according
-#      to Aztec's AZ_read_msr() format.
-#   6) Including the file 'rhsfile' will cause this 
-#      data (stored in Aztec's AZ_read_msr() format)
-#      to be used as righthand side.
-#   7) Including the file 'initguessfile' will cause this 
-#      data (stored in Aztec's AZ_read_msr() format)
-#      to be used as righthand side.
-#   8) rigid body mode information can be input by
-#      keeping files 'rigid_body_mode%d' (stored
-#      in Aztec's AZ_read_msr() format) where %d
-#      starts from 0 and increases. Each file
-#      should contain 1 rigid body mode.
-#   9) The utility ml/util/az_capt2read.c (see comments)
-#      can be used to convert matlab/Aztec type data into 
-#      AZ_read_msr() format.
-#
------------------------------------------------
-      General Problem Specifications
------------------------------------------------
-Number of DOF per node       = 6
-Parallel Partitioning File   = 
-#                              [feature of reading partition file not impl.
-#                               with example ml_example_elasticity.exe]   
-Output Frequency             = 10       
-Tolerance                    = 1.0e-10
-Print Level                  = 10
-#                              [0,1,...]
-
------------------------------------------------
-      Solution Specifications
------------------------------------------------
-Max Number of Levels           = 10
-Type of Smoother               = SymGaussSeidel 
-#                                [Parasails, GaussSeidel, SymGaussSeidel, Poly,
-#                                 BlockGaussSeidel, VBSymGaussSeidel, Jacobi, Metis]
-Smoother steps per level       = 2
-Coarse grid solver             = Amesos
-#                                [Parasails, GaussSeidel, SymGaussSeidel, Poly,
-#                                 BlockGaussSeidel, Aggregate, Jacobi, Metis,
-#                                 SuperLU, Amesos]
-Coarse Grid iterations         = 1
-Outer Iteration                = Cg
-#                                [Cg, Bicgstab, Tfqmr, Gmres] 
-max number of outer iterations = 1000
------------------------------------------------
-      Aggregation Specifications
------------------------------------------------
-Type of Aggregation          = VBMetis
-#                              [VBMetis, Metis, Uncoupled, Coupled, Mis]
-Aggregate threshold          = 0.0
-Max coarse size              = 30
-Smoothed aggregation damping = 1.5 
-Spectral norm calculation    = Calc
-#                              [Anorm, Calc]
-# end of inputfile
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -140,6 +80,7 @@ int main(int argc, char *argv[])
   char filename[80];
   int    one = 1;
   int    proc,nprocs;
+  char pathfilename[100];
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
@@ -154,7 +95,8 @@ int main(int argc, char *argv[])
 #endif
 
    if (proc_config[AZ_node] == 0) {
-      ML_Reader_ReadInput(argv[1], &context);
+      sprintf(pathfilename,"%s/inputfile",argv[1]);
+      ML_Reader_ReadInput(pathfilename, &context);
    }
    else context = (struct reader_context *) ML_allocate(sizeof(struct reader_context));
    AZ_broadcast((char *) context,  sizeof(struct reader_context), proc_config,
@@ -172,7 +114,8 @@ int main(int argc, char *argv[])
   /* read in the number of matrix equations */
   leng = 0;
   if (proc_config[AZ_node] == 0) {
-	fp=fopen("data_matrix.txt","r");
+        sprintf(pathfilename,"%s/data_matrix.txt",argv[1]);
+        fp=fopen(pathfilename,"r");
      if (fp==NULL) {
         printf("**ERR** couldn't open file data_matrix.txt\n");
         exit(1);
@@ -222,15 +165,16 @@ int main(int argc, char *argv[])
   printf("proc %d N_update %d\n",proc_config[AZ_node],N_update);
   fflush(stdout);                   
 #endif
-  
-  ML_AZ_Reader_ReadVariableBlocks("data_vblocks.txt",&nblocks,&blocks,&block_pde,
+  sprintf(pathfilename,"%s/data_vblocks.txt",argv[1]);
+  ML_AZ_Reader_ReadVariableBlocks(pathfilename,&nblocks,&blocks,&block_pde,
                                   &N_update,&update,proc_config);
 #if 0 /* debug */
   printf("proc %d N_update %d\n",proc_config[AZ_node],N_update);
   fflush(stdout);                   
 #endif
 
-  AZ_input_msr_matrix("data_matrix.txt",update, &val, &bindx, N_update, proc_config);
+  sprintf(pathfilename,"%s/data_matrix.txt",argv[1]);
+  AZ_input_msr_matrix(pathfilename,update, &val, &bindx, N_update, proc_config);
 
   /* This code is to fix things up so that we are sure we have   */ 
   /* all blocks (including the ghost nodes) the same size.       */
@@ -314,10 +258,12 @@ int main(int argc, char *argv[])
    Nrigid = 0;
    if (proc_config[AZ_node] == 0) {
       sprintf(filename,"data_nullsp%d.txt",Nrigid);
-      while( (fp = fopen(filename,"r")) != NULL) {
+      sprintf(pathfilename,"%s/%s",argv[1],filename);
+      while( (fp = fopen(pathfilename,"r")) != NULL) {
           fclose(fp);
           Nrigid++;
           sprintf(filename,"data_nullsp%d.txt",Nrigid);
+          sprintf(pathfilename,"%s/%s",argv[1],filename);
       }
     }
     Nrigid = AZ_gsum_int(Nrigid,proc_config);
@@ -330,7 +276,8 @@ int main(int argc, char *argv[])
     }
 
    /* Set rhs */
-   fp = fopen("data_rhs.txt","r");
+   sprintf(pathfilename,"%s/data_rhs.txt",argv[1]);
+   fp = fopen(pathfilename,"r");
    if (fp == NULL) {
       rhs=(double *)ML_allocate(leng*sizeof(double));
       if (proc_config[AZ_node] == 0) printf("taking linear vector for rhs\n");
@@ -339,14 +286,15 @@ int main(int argc, char *argv[])
    else {
       fclose(fp);
       if (proc_config[AZ_node] == 0) printf("reading rhs from a file\n");
-      AZ_input_msr_matrix("data_rhs.txt", update, &rhs, &garbage, N_update, 
+      AZ_input_msr_matrix(pathfilename, update, &rhs, &garbage, N_update, 
                           proc_config);
    }
    AZ_reorder_vec(rhs, data_org, update_index, NULL);
 
    for (i = 0; i < Nrigid; i++) {
       sprintf(filename,"data_nullsp%d.txt",i);
-      AZ_input_msr_matrix(filename, update, &mode, &garbage, N_update, 
+      sprintf(pathfilename,"%s/%s",argv[1],filename);
+      AZ_input_msr_matrix(pathfilename, update, &mode, &garbage, N_update, 
                           proc_config);
       AZ_reorder_vec(mode, data_org, update_index, NULL);
 
@@ -580,7 +528,9 @@ int main(int argc, char *argv[])
 	
 
    /* Set x */
-
+   /*
+   there is no initguess supplied with these examples for the moment....
+   */
    fp = fopen("initguessfile","r");
    if (fp != NULL) {
       fclose(fp);
