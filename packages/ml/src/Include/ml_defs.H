@@ -7,6 +7,8 @@
 #define MLFORTRAN(aaa) aaa ## _
 #endif
 
+#define ML_VERSION        ml2_0_0_0
+
 #define ML_NONE           10
 #define ML_MGV            11
 #define ML_MG2CGC         12
@@ -106,6 +108,10 @@
 #define ML_MSR_MATRIX      -201
 #define ML_CSR_MATRIX      -203
 
+/* JJH -- these are message tags */
+#define ML_TAG_BASE        27000
+#define ML_TAG_PRESM       0
+#define ML_TAG_POSTSM      100
 
 #endif
 
