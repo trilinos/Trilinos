@@ -139,6 +139,7 @@ extern int ML_Gen_MGHierarchyVanek(ML *, int start, int increment_or_decrement);
 extern int ML_Set_Grid(ML *, int nl, void *grid, ML_GridFunc *);
 
 extern int ML_Init_Amatrix(ML *,int level,int ilen,int olen,void *data);
+extern int ML_Get_Amatrix(ML *ml, int level, ML_Operator **matrix);
 extern int ML_Set_Amatrix_Matvec(ML*,int,
                           int (*func)(void*,int,double*,int,double*));
 extern int ML_Set_Amatrix_Diag(ML*,int,int, double *);
