@@ -75,15 +75,21 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 /* Local declarations. */
   char *yo = "run_zoltan";
 
-#define MAXPROC 20
+  float *psize;                  /* Partition size */
+  int *partid;                   /* Partition numbers */
+  int *idx;                      /* Index numbers */
+  int nprocs;                    /* Number of processors. */
   int i;                         /* Loop index */
-  float psize[MAXPROC];          /* Partition size */
-  int part[MAXPROC];             /* Partition numbers */
-  int idx[MAXPROC];              /* Index numbers */
   int ierr;                      /* Error code */
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
+
+  /* Allocate space for arrays. */
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  psize = (float *) malloc(nprocs*sizeof(float)); 
+  partid = (int *) malloc(2*nprocs*sizeof(int)); 
+  idx = partid + nprocs;
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
@@ -130,12 +136,18 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   else if (Test_Local_Partitions == 3) {
     /* Variable partition sizes, but one partition per proc */
     i = 0;
-    psize[0] = (float) Proc;              /* Partition size = proc number */
+    psize[0] = (float) Proc;    /* Partition size = myproc */
+    /* Set partition sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    /* Reset partition sizes for upper half of procs. */
+    if (Proc >= nprocs/2){
+      psize[0] = 0.5 + (Proc%2);
+      Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    }
   }
   else if (Test_Local_Partitions == 4) {
-    /* Variable number of partitions per proc and partition sizes. */
-    /* Compute Proc partitions for each processor */
+    /* Variable number of partitions per proc and variable sizes. */
+    /* Request Proc partitions for each processor, of size 1/Proc.  */
     char s[8];
     sprintf(s, "%d", Proc);
     if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
@@ -144,15 +156,16 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     /* Each partition size is inverse to the no. of partitions on a proc. */ 
     for (i=0; i<Proc; i++){
-      part[i] = i;                    /* Local partition number */
-      /* part[i] = Proc*(Proc-1)/2 + i;  Global part number */
+      partid[i] = i;                    /* Local partition number */
       idx[i] = 0;
       psize[i] = 1.0/Proc; 
     }
-    if (Proc) 
-      Zoltan_LB_Set_Part_Sizes(zz, 0, Proc, part, idx, psize);
+    Zoltan_LB_Set_Part_Sizes(zz, 0, Proc, partid, idx, psize);
   }
 
+  /* Free tenmporary arrays for partition sizes. */
+  free(psize);
+  free(partid);
 
   /*
    * Set the callback functions
