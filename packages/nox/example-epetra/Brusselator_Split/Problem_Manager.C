@@ -222,7 +222,7 @@ bool Problem_Manager::solveMF()
 
   // Construct a composite Epetra_Map
   NumMyNodes = problemA.NumMyNodes + problemB.NumMyNodes;
-  int myGlobalNodes[NumMyNodes];
+  int* myGlobalNodes = new int[NumMyNodes];
   for (int i=0; i<problemA.NumMyNodes; i++)
     myGlobalNodes[i] = problemA.StandardMap->GID(i);
   int maxAllAGID = problemA.StandardMap->MaxAllGID();
@@ -230,6 +230,7 @@ bool Problem_Manager::solveMF()
     myGlobalNodes[i+problemA.NumMyNodes] = maxAllAGID + 1 +
                                            problemB.StandardMap->GID(i);
   Epetra_Map compositeMap(-1, NumMyNodes, myGlobalNodes, 0, *Comm);
+  delete [] myGlobalNodes; myGlobalNodes = 0;
 
   Epetra_Vector compositeSoln(compositeMap);
 
