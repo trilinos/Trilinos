@@ -63,19 +63,29 @@ int main(int argc, char *argv[])
 
     int         NumPDEEqns;
     Operator    A;
-    MultiVector NS;
 
     ReadSAMISMatrix("mtx.dat", A, NumPDEEqns);
-    //ReadSAMISKernel("ker.dat", NS);
 
     Teuchos::ParameterList List = ReadParameterList(InputFile.c_str());
     int  MaxLevels            = List.get("max levels", 10);
     int  AdditionalCandidates = List.get("additional candidates", 2);
-    bool UseDefaultNullSpace  = List.get("use default null space", true);
+    int  limKer               = List.get("limit kernel", -1);
 
+    if (AdditionalCandidates == 0 && limKer == 0)
+      limKer = -1;
+
+    // create multilevel preconditioner, do not compute hierarchy
     MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns);
 
-    Prec.AdaptCompute(UseDefaultNullSpace, AdditionalCandidates);
+    if (limKer) {
+      MultiVector NS;
+      ReadSAMISKernel("ker.dat", NS);
+      Prec.SetNullSpace(NS);
+      Prec.AdaptCompute(true, AdditionalCandidates);
+    }
+    else {
+      Prec.AdaptCompute(false, AdditionalCandidates - 1);
+    }
 
     MultiVector LHS(A.GetDomainSpace());
     MultiVector RHS(A.GetRangeSpace());
@@ -83,7 +93,7 @@ int main(int argc, char *argv[])
     LHS.Random();
     RHS = 0.0;
 
-    List.set("krylov: type", "cg");
+    List.set("krylov: type", "cg_condnum");
     Krylov(A, LHS, RHS, Prec, List);
 
     Finalize(); 
