@@ -428,7 +428,7 @@ void NOX::LAPACK::MultiVector::dot(
 			   const NOX::Abstract::MultiVector& y,
 			   NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  return dot(alpha, dynamic_cast<const NOX::LAPACK::MultiVector&>(y), b);
+  dot(alpha, dynamic_cast<const NOX::LAPACK::MultiVector&>(y), b);
 }
 
 void NOX::LAPACK::MultiVector::dot(
