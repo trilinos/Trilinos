@@ -162,7 +162,7 @@ int ierr = ZOLTAN_OK;
   Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
                                 (void *) hgp->global_str);
   Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LOCAL_IMPROVEMENT",
-                                (void *) hgp->rli_str);
+                                (void *) hgp->redmo_str);
   Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING", 
                                 (void *) &(hgp->ews));
   Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
@@ -173,7 +173,7 @@ int ierr = ZOLTAN_OK;
   strcpy(hgp->redm_str, "grg");
   strcpy(hgp->local_str, "hc");
   strcpy(hgp->global_str, "lin");
-  strcpy(hgp->rli_str, "aug3");
+  strcpy(hgp->redmo_str, "aug3");
   hgp->ews = 1;
   hgp->check_graph = 1;
 
