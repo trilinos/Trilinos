@@ -783,29 +783,38 @@ char  *yo = "matching_pgm";
 /* hyperedges in common with it (ie, the pair with greatest inner product).  */
 /* by Aaron Becker, UIUC, Summer 2004                                        */
 /* 8/5/04  Erik says matching_ipm is nearly equivalent to matching_rhm;
-   matching_ipm differs in that it selects matches in order of vertices,
-   rather than in random order.  There also may be a scale-factor difference.*/
+   but rhm uses a scaled inner product. */
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, n, v1, v2, edge, maxip, maxindex;
-    int   *adj;
-    float *ips; 
+    int   i, j, k, n, v1, v2, edge, maxip, maxindex;
+    int   *adj = NULL;
+    int   *order = NULL;
+    float *ips = NULL; 
     char  *yo = "matching_ipm";
 
     if (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
-     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
-        Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
+     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
     /*print_debug(hg);*/
 
-    for (i = 0; i < hg->nVtx; i++)
+    for (i = 0; i < hg->nVtx; i++){
         ips[i] = .0;
-        
+        order[i] = i;
+    }
+ 
+    /* random node visit order is default */
+    /* other options may be added later */
+    Zoltan_Rand_Perm_Int (order, hg->nVtx);
+
     /* for every vertex */
-    for (v1 = 0; v1 < hg->nVtx  &&  *limit > 0; v1++) {
+    for (k = 0; k < hg->nVtx  &&  *limit > 0; k++) {
+        v1 = order[k];
+
         if (match[v1] != v1)
             continue;
         
@@ -861,7 +870,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
       printf("\n");
     */
 
-    Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
     return ZOLTAN_OK;
 }
 
