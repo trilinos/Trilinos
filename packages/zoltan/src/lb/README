@@ -1,0 +1,40 @@
+
+LB DIRECTORY -- Zoltan query interface and application-callable routines.
+------------------------------------------------------------------------
+
+lbi_const.h      -- Application-visible file with typedefs for query functions
+                    and prototypes for application-callable library functions.
+                    Also #include lb_user_const.h.
+                    This file should be #included in application files that
+                    call the load-balancing library.
+
+lb_const.h       -- Load-balancing data structures that are private to the 
+                    library (i.e., not seen by the application).  Includes
+                    definitions of LB_Struct, LB_Tag_Struct, LB_Migrate_Struct,
+                    and LB_FN.
+                    Includes enumerated type LB_Method for methods included
+                    in the load-balancing library.
+                    Also includes macros and prototypes for load-balancing 
+                    functions.
+                    This file should be included in most load-balancing files
+                    since it includes the major data structure definitions.
+                    It #includes lbi_const.h.
+
+lb_user_const.h  -- Application-defined data types and manipulation macros
+                    for LB_GID and LB_LID.  This file is meant to be editted
+                    by the application developer to define data types for
+                    global and local object IDs.
+
+lb_util_const.h  -- Prototypes for external functions in lb_util.c.
+
+
+lb.c             -- Contains code for all application-callable library
+                    functions.  Routines that are not to be called by the
+                    application are not included in this file.
+
+lb_util.c        -- Contains code for non-algorithmic routines that are 
+                    not application-callable but are called by the 
+                    load-balancing library.  These routines are "service"
+                    routines to the general library framework.
+                    Currently, the only routine here is perform_error_checking.
+
