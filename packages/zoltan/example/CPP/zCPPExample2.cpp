@@ -21,14 +21,14 @@
 #define TEST_COPY
 
 #ifdef NAMESPACES_OK
-using namespace std;
+ using namespace std;
 
-#ifdef MPICPP
-using namespace MPI;
-#endif
+ #ifdef MPICPP
+ using namespace MPI;
+ #endif
 #else
-#define cout std::cout
-#define endl std::endl
+ #define cout std::cout
+ #define endl std::endl
 #endif
 
 static int MyNumPts=0;
