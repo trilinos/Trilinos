@@ -6,7 +6,8 @@
  *    exp(U0-1) + U1**3 -2 = 0
  */
 
-static char help[] = "Solves Dennis & Schnabel example problem in parallel.\n\n";
+static char help[] = 
+       "Solves Dennis & Schnabel example problem in parallel.\n\n";
 
 
 // Petsc Objects
@@ -71,7 +72,8 @@ int main(int argc, char *argv[])
   globalIndex[1] = 1;
   doubleArray[0] = 2.0;
   doubleArray[1] = 0.5;
-  ierr = VecSetValues(soln,2,globalIndex,doubleArray,INSERT_VALUES);CHKERRQ(ierr);
+  ierr = VecSetValues(soln,2,globalIndex,doubleArray,
+                                         INSERT_VALUES);CHKERRQ(ierr);
 //         Assemble vector, using the 2-step process:
 //         VecAssemblyBegin(), VecAssemblyEnd()
 
@@ -80,104 +82,122 @@ int main(int argc, char *argv[])
 
   // Begin Nonlinear Solver ************************************
 
-  // Create parameter list
+  // Create the top level parameter list
   NOX::Parameter::List nlParams;
-  nlParams.setParameter("Output Level", 4);
-  nlParams.setParameter("MyPID", MyPID);
+
+  // Specify nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+
+  // Set the printing parameters in the "Printing" sublist
+  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID);
+  printParams.setParameter("Output Precision", 3);
+  printParams.setParameter("Output Processor", 0);
+  printParams.setParameter("Output Information",
+                        NOX::Utils::OuterIteration +
+                        NOX::Utils::OuterIterationStatusTest +
+                        NOX::Utils::InnerIteration +
+                        NOX::Utils::Parameters +
+                        NOX::Utils::Details +
+                        NOX::Utils::Warning);
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   //searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
   searchParams.setParameter("Method", "Polynomial");
   //searchParams.setParameter("Method", "Secant");
-    //searchParams.setParameter("Max Iters", 10);
+  //searchParams.setParameter("Method", "Quadratic");
   //searchParams.setParameter("Method", "More'-Thuente");
-  searchParams.setParameter("Default Step", 1.0000);
-  //searchParams.setParameter("Recovery Step", 0.0001);
-  //searchParams.setParameter("Minimum Step", 0.0001);
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+  //
+  // Popular choices include the following (others may also exist)
+  //
   dirParams.setParameter("Method", "Newton");
+  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+    newtonParams.setParameter("Forcing Term Method", "Constant");
+    //newtonParams.setParameter("Forcing Term Method", "Type 1");
+    //newtonParams.setParameter("Forcing Term Method", "Type 2");
+    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+  // OR
   //dirParams.setParameter("Method", "Steepest Descent");
-    //dirParams.setParameter("Scaling Type", "None");
-    //dirParams.setParameter("Scaling Type", "2-Norm");
+  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
+    //sdParams.setParameter("Scaling Type", "None");
+    //sdParams.setParameter("Scaling Type", "2-Norm");
+    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
+  // OR
   //dirParams.setParameter("Method", "NonlinearCG");
-    //dirParams.setParameter("Restart Frequency", 1);
-    //dirParams.setParameter("Precondition", "On");
-    //dirParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //dirParams.setParameter("Method", "Dogleg Trust Region");
-  //dirParams.setParameter("Method", "Broyden");
-
-  // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
+  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+    //nlcgParams.setParameter("Restart Frequency", 2000);
+    //nlcgParams.setParameter("Precondition", "On");
+    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
   // Sublist for linear solver
+  // Note that preconditioning options as well as the following can be
+  // specified on the command line or via the file .petscrc
+  // See Petsc documentation for more info.
   NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Iteration Output Frequency", 50);    
   lsParams.setParameter("Preconditioning Matrix Type", "None"); 
 
-  // Create the Epetra_RowMatrix.  Uncomment one of the following:
-  // 1. User supplied
+  // Create the interface between the test problem and the nonlinear solver
+  // This is created using inheritance of the abstract base class:
+  // NOX::Petsc::Interface
+  Problem_Interface interface(Problem);
+
+  // Get a reference to the Petsc_RowMatrix created in Problem_Interface.  
   Mat& A = Problem.getJacobian();
-  string jacType = "User Supplied";
-  // 2. Matrix-Free
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference
-  //NOX::Epetra::FiniteDifference A(interface, soln);
 
   // Create the Group
-  NOX::Petsc::Group grp(lsParams, interface, soln, A, jacType);
-  grp.computeF();
+  NOX::Petsc::Group grp(lsParams, interface, soln, A);
+  grp.computeF(); // Needed to establish the initial convergence state
 
-  // Create the convergence tests
   // Create the convergence tests
   NOX::StatusTest::NormF testNormF(1.0e-6);
   NOX::StatusTest::MaxIters testMaxIters(1000);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
 
-  // Create the method
+  // Create the method and solve
   NOX::Solver::Manager solver(grp, combo, nlParams);
-
-//  cout << "Made it here .." << endl;
-//  cin.get();
-
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
       cout << "Nonlinear solver failed to converge!" << endl;
 
-/*
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
-  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+  // Get the Petsc_Vector with the final solution from the solver
+  const NOX::Petsc::Group& finalGroup = 
+      dynamic_cast<const NOX::Petsc::Group&>(solver.getSolutionGroup());
+  const Vec& finalSolution = (dynamic_cast<const NOX::Petsc::Vector&>
+        (finalGroup.getX())).getPetscVector();
 
   // End Nonlinear Solver **************************************
 
   // Print solution
+  if(MyPID==0)
+    printf("Final solution :\n");
   char file_name[25];
   FILE *ifp;
-  int NumMyElements = soln.Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
+  double* finalVals;
   ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
+  VecGetArray( finalSolution, &finalVals );
+  for(int i=0; i<3-NumProc; i++) {
+    printf("(proc %d)\t%d\t%e\n",MyPID,i,finalVals[i]);
+    fprintf(ifp, "%d  %E\n",i, finalVals[i]);
+  }
+  VecRestoreArray( finalSolution, &finalVals );
   fclose(ifp);
-
-*/
 
   ierr = PetscFinalize();CHKERRQ(ierr);
  
 return 0;
+
 } // end main
