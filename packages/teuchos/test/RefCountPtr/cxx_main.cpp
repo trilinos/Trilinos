@@ -44,28 +44,29 @@ A_g_return  = 1,
 	E_g_return  = 11,
 	E_f_return  = 12;
 
-// ////////////////////////////////////////////////
-//
-// Polymorphic multiple inheritance example
-//
-//            -----
-//           |  A  |
-//            -----
-//             /|\
-//              | 
-//         ------------
-//        |            |
-//      -----        ------
-//     |  B1 |      |  B2  |
-//      -----        ------
-//       /|\          /|\
-//        |            |
-//         ------------
-//              |
-//            -----
-//           |  C  |
-//            -----
-//
+/*
+
+ Polymorphic multiple inheritance example
+
+            -----
+           |  A  |
+            -----
+             /|\
+              | 
+         ------------
+        |            |
+      -----        ------
+     |  B1 |      |  B2  |
+      -----        ------
+       /|\          /|\
+        |            |
+         ------------
+              |
+            -----
+           |  C  |
+            -----
+
+*/
 
 class A {
 	int A_g_, A_f_;
@@ -102,19 +103,20 @@ public:
 	
 };
 
-// ////////////////////////////////////////////////
-//
-// Non-polymophic classes hiearchy examlpe
-//
-//            -----
-//           |  D  |
-//            -----
-//             /|\
-//              | 
-//            -----
-//           |  E  |
-//            -----
-//
+/*
+
+ Non-polymophic classes hiearchy examlpe
+
+            -----
+           |  D  |
+            -----
+             /|\
+              | 
+            -----
+           |  E  |
+            -----
+
+*/
 
 class D 
 {
@@ -392,8 +394,8 @@ int main( int argc, char* argv[] ) {
 	
 		// Test out getting the deallocator object
 		a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
-		DeallocDelete<C> &a_ptr1_dealloc = get_dealloc<DeallocDelete<C> >(a_ptr1);
-
+		get_dealloc<DeallocDelete<C> >(a_ptr1);
+    
 		// Test storing extra data and then getting it out again
 		set_extra_data( int(-5), "int", &a_ptr1 );
 		assert( get_extra_data<int>(a_ptr1,"int") == -5 );

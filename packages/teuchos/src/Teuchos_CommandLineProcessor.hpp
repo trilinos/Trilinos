@@ -72,11 +72,11 @@ public:
 	/** @name Behavior modes */
 	//@{
 
-	/// Set if all options must be recognised or not.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, recogniseAllOptions )
-
 	/// Set if an exception is thrown if there is a parse error or help is printed
 	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, throwExceptions )
+
+	/// Set if all options must be recognised or not.
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, recogniseAllOptions )
 
 	//@}
 

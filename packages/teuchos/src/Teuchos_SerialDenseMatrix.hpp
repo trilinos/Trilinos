@@ -284,13 +284,13 @@ namespace Teuchos {
   //@{ \name Norm methods.
 
     //! Returns the 1-norm of the matrix.
-    typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normOne() const;
+    typename ScalarTraits<ScalarType>::magnitudeType normOne() const;
 
     //! Returns the Infinity-norm of the matrix.
-    typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normInf() const;
+    typename ScalarTraits<ScalarType>::magnitudeType normInf() const;
 
     //! Returns the Frobenius-norm of the matrix.
-    typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normFrobenius() const; 
+    typename ScalarTraits<ScalarType>::magnitudeType normFrobenius() const; 
   //@}
 
   //@{ \name I/O methods.

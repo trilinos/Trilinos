@@ -156,7 +156,7 @@ namespace Teuchos {
   template<>
   struct ScalarTraits<int>
   {
-    typedef long long magnitudeType;
+    typedef int magnitudeType;
     
     static inline int undefinedParameters()
     {

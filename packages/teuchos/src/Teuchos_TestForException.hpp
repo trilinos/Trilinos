@@ -111,4 +111,13 @@ void TestForException_break();
     } \
 }
 
+
+///
+/** This macro is designed to be a short version of
+ * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+ *
+ * The exception thrown is <tt>std::logic_error</tt>.
+ */
+#define TEST_FOR_EXCEPT(throw_exception_test) TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
+
 #endif // TEST_FOR_EXCEPTION_H
