@@ -72,6 +72,26 @@ by
 </tr>
 
 <tr>
+<td VALIGN=TOP>int <i>Num_GID</i></td>
+
+<td>The number of array entries used to represent a 
+<a href="dev_lb_types.html">global ID</a>.
+Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>int <i>Num_LID</i></td>
+
+<td>The number of array entries used to represent a 
+<a href="dev_lb_types.html">local ID</a>.
+Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP>int <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">Debug_Level</a></i></td>
 
 <td>A flag indicating the amount of debugging information that should be
@@ -638,50 +658,12 @@ application registered function, of the form LB_FUNCNAME_FORT_FN *<i>Get_Funcnam
 These are for use within the Fortran interface. The load-balancing routines
 should invoke the usual application registered function regardless of whether
 the load balancing structure was created from C or Fortran.
-<p>The <b>LB_Tag_Struct</b> is provided to simplify the mechanics of storing
-both the global and local IDs (see <a href="#Tag_Struct">table</a> below).
-An <b>LB_Tag_Struct</b> can be associated with each object and manipulated
-as a single entity. A processor ID field is also associated with the <b>LB_Tag_Struct</b>;
-its use is determined by the algorithm. It can be used as a destination
-processor or as the "home" processor of the object.
-<br>&nbsp;
-<center><table BORDER WIDTH="90%" >
-<tr>
-<th><a NAME="Tag_Struct"></a>Fields of LB_Tag_Struct</th>
 
-<th>Description</th>
-</tr>
 
-<tr>
-<td VALIGN=TOP><a href="dev_lb_types.html#Macros">LB_GID</a> <i>Global_ID</i></td>
-
-<td>The unique global ID for an object, provided by the application.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><a href="dev_lb_types.html#Macros">LB_LID</a> <i>Local_ID</i></td>
-
-<td>A local ID for an object, provided by the application. This field is
-used for performance optimization within the application. It is not used
-by the load-balancing library but must be stored with the object to be
-passed to query functions.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>int <i>Proc</i></td>
-
-<td>A processor rank for the object within the <i>Communicator</i> of <b>LB_Struct</b>.
-This field may be the eventual destination of the object or the source
-processor for the object; its use is determined by the load-balancing algorithm.</td>
-</tr>
-
-<caption ALIGN=BOTTOM><i>Fields of the</i> <b>LB_Tag_Struct</b><i> data
-structure.</i></caption>
-</table></center>
 
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util.html">Next:&nbsp;
 Utilities</a>&nbsp; |&nbsp; <a href="dev_lb_types.html">Previous:&nbsp;
-Interface Data Types</a>]
+ID Data Types</a>]
 </body>
 </html>

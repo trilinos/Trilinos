@@ -26,7 +26,7 @@
 
 
 <H2>
-<A NAME="interface_types"></A>Interface Data Types</H2>
+<A NAME="interface_types"></A>ID Data Types</H2>
 Within the load-balancing algorithms, objects are identified by a global
 identification (ID) value provided by the application. This global ID must
 be unique across all processors. The application may also provide a local
@@ -35,11 +35,11 @@ data structure. For example, local array indices to objects' data may be provide
 as the local IDs; these indices can then be used to directly access data
 in the query functions. The load balancing library does not use these local
 IDs, but since it must pass them to the application in the interface query
-functions, it must store them with the objects' data.  Zoltan store each global
+functions, it must store them with the objects' data.  Zoltan stores each global
 and local ID as an array of unsigned integers.  Arrays of IDs are passed to
 the application as a one-dimensional array of unsigned integers with size
 <i>number_of_IDs</i> * <i>number_of_entries_per_ID</i>.
-A type definition <b>LB_ID_PTR</b> (in <i>lb/lbi_const.h</i>)
+A type definition <a href="../ug_html/ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a> (in <i>lb/lbi_const.h</i>)
 points to an ID or array of IDs.
 The number of array entries per ID can be set by the application using the 
 <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a> and

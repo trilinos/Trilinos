@@ -70,21 +70,26 @@ arrays can be set using the
 <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a> and 
 <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> 
 parameters; by default, one unsigned integer represents an ID.
-The following type definitions are defined in lb/lbi_const.h; they can be used
-by an application for memory allocation, MPI communication, and as arguments to
-<a href="ug_interface.html">load-balancing interface functions</a> and
-<a href="ug_query.html">application-registered query functions</a>.
-<blockquote>
-typedef unsigned int    LB_ID_TYPE;<br>
-typedef LB_ID_TYPE     *LB_ID_PTR;<br>
-#define LB_ID_MPI_TYPE  MPI_UNSIGNED<br>
-</blockquote>
-
 Applications may use whatever format is
 most convenient to store their IDs;
 the IDs can then be converted to
 and from Zoltan's ID format in the 
 <a href="ug_query.html">application-registered query functions</a>.
+<p>
+The following type definitions are defined in lb/lbi_const.h; they can be used
+by an application for memory allocation, MPI communication, and as arguments to
+<a href="ug_interface.html">load-balancing interface functions</a> and
+<a href="ug_query.html">application-registered query functions</a>.
+<blockquote>
+typedef unsigned int    <b>LB_ID_TYPE</b>;<br>
+typedef <b>LB_ID_TYPE</b>     *<b>LB_ID_PTR</b>;<br>
+#define <b>LB_ID_MPI_TYPE</b>  MPI_UNSIGNED<br>
+</blockquote>
+In the Fortran interface, IDs are passed as arrays of integers 
+since unsigned integers are not supported in Fortran.  See the description
+of the 
+<a href="ug_fortran_api.html#fortran ug api IDs">Fortran interface</a> 
+for more details.
 <p>
 The local IDs passed to
 Zoltan are not used by the library; they are provided

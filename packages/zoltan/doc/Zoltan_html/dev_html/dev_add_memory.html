@@ -29,8 +29,12 @@ Memory Management in Zoltan Load-Balancing Algorithms</h2>
 Zoltan contains a set of <a href="dev_util_mem.html">memory management
 routines</a>. It is strongly recommended that load-balancing algorithm
 developers use <a href="dev_util_mem.html#LB_Malloc"><b>LB_Malloc</b> </a>and
-<b><a href="dev_util_mem.html#LB_Free">LB_Free</a></b>instead
+<b><a href="dev_util_mem.html#LB_Free">LB_Free</a></b> instead
 of the standard C routines for most memory management.
+Macros that simplify the allocation of global and local identifiers (IDs) 
+are defined in <i>lb/lb_id_const.h</i>.  These macros are described in the 
+<a href="dev_lb_types.html">ID Data Types</a> section.
+
 <p>When a dynamic structure needs to be returned to the application, however,
 special memory allocation routines are needed.&nbsp; For example, the import
 and export lists of data to migrate are returned to an application from
@@ -77,9 +81,8 @@ must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
 
-<td>Usually of type int**, <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>**,
-or <b><a href="../ug_html/ug_usage.html#Macro defs">LB_LID</a></b>**. Returned
-as a pointer to the allocated space.</td>
+<td>Usually of type int** or <b><a href="dev_lb_types.html">LB_ID_PTR</a></b>*.
+Returned as a pointer to the allocated space.</td>
 </tr>
 
 <tr>
@@ -125,7 +128,7 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>Allocates an array with <i>num_import</i> <a href="../ug_html/ug_usage.html#Macro defs"><b>LB_GID</b>s</a>.</td>
+<td>Allocates an array with <i>num_import</i> <a href="dev_lb_types.html">global IDs</a>.</td>
 </tr>
 </table>
 
@@ -190,7 +193,7 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>Frees the <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>
+<td>Frees the <b><a href="dev_lb_types.html">global IDs</a></b>
 array <i>import_gid</i>.</td>
 </tr>
 </table>

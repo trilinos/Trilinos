@@ -46,7 +46,7 @@ in the refinement history.  The children of the root node are the elements
 of the initial coarse grid.  The children of all other nodes are the elements
 that were formed when the parent element was refined.  Upon first invocation,
 the refinement tree is initialized.  This creates the root node and initializes
-a hash table that maps global IDs (LB_GID) into nodes of the refinement tree.
+a hash table that maps global IDs into nodes of the refinement tree.
 It also queries the user for the elements of the initial grid and creates
 the children of the root node.  Currently, the user is required to provide
 the initial elements in a space filling curve order (or be satisfied with

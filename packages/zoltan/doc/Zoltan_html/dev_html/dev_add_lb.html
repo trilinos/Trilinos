@@ -36,13 +36,16 @@ balancing in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance<
 <BR>&nbsp;
 
 <P>
-<HR>typedef int <B>LB_FN</B>(struct <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
-*<I>lb</I>, int *<I>num_import</I>, <B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B>
-**<I>import_global_ids</I>, <B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B>
-**<I>import_local_ids</I>, int **<I>import_procs, </I>int *<I>num_export</I>,
-<B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B> **<I>export_global_ids</I>,
-<B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B> **<I>export_local_ids</I>,
-int **<I>export_procs</I>);&nbsp;
+<HR>typedef int <B>LB_FN</B>
+(struct&nbsp;<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>&nbsp;*<I>lb</I>,
+int&nbsp;*<I>num_import</I>,
+<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>import_global_ids</I>,
+<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>import_local_ids</I>,
+int&nbsp;**<I>import_procs</I>,
+int&nbsp;*<I>num_export</I>,
+<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>export_global_ids</I>,
+<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>export_local_ids</I>,
+int&nbsp;**<I>export_procs</I>);&nbsp;
 <HR>
 <BR>The <B>LB_FN</B> function type describes the arguments passed to a
 load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
