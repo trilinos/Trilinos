@@ -67,21 +67,20 @@ vector, graph and matrix objects that can be used on serial
 and parallel computers.  It is designed to make construction, use and redistribution
 of these objects as efficient and easy as possible.  Epetra objects are compatible with all
 other Trilinos packages, including all linear, nonlinear and eigen solvers and all
-preconditioners packages.  It also implements all Trilinos abstract interfaces and 
-provides access to the Zoltan~\cite{zoltan-ug} load balancing package, and an object-oriented
-interface to the BLAS~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}.
-
+preconditioners packages.  It also implements all Trilinos abstract
+interfaces.  Finally, Epetra 
+provides C++ programmers easy access to the Zoltan~\cite{zoltan-ug}
+load balancing package, the BLAS~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}.
 
 This user guide is designed to address two types of users: 
-(i) those who
-are primarily interested in using already-constructed Epetra objects (such as 
-numerical algorithm developers who want to implement algorithms via 
-operations on Epetra vector, graph and matrix objects) and 
-(ii) those who, in addition to using Epetra
+(i) those who, in addition to using Epetra
 objects, are also constructing Epetra vector, graphs and matrices.  This group
 includes application developers who are constructing these objects for the purpose
 of solving linear, nonlinear and eigensystems.
-
+(ii) those who
+are primarily interested in using already-constructed Epetra objects, such as 
+numerical algorithm developers who want to implement algorithms via 
+operations on Epetra vector, graph and matrix objects. 
 \end{abstract}
 
 
@@ -128,11 +127,12 @@ NOTE: Add section on repeated use of Epetra objects.
 Epetra is a collection of C++ classes that support the construction
 and use of common numerical linear algebra objects such as vectors,
 graphs and matrices.  It is primarily designed for irregular, parallel
-distributed memory computations, but can also be used on serial systems
+distributed memory computations, but can also be used on serial
+systems, and
 with structured data.  This user guide is intended to (i) introduce a new
-user to the basic features of Epetra, (ii) discuss in detail Epetra
-object constructors, and (iii) illustrate the use of
-Epetra's advance parallel data repartitioning capabilities to
+user to the basic features of Epetra, (ii) discuss the details of Epetra
+constructors, and (iii) illustrate the use of
+Epetra's advanced parallel data repartitioning capabilities to
 experienced users.  This document is not intended as a reference
 manual.  Detailed descriptions of Epetra classes and methods can be
 found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
@@ -333,7 +333,7 @@ programming model, it may be useful to read a bit about it.  Typing
 ``SPMD tutorial'' into a web search engine should be a sufficient
 starting point.}.  In this way, the remainder of our code can operate
 independent of how data is distributed.
-\subsubsection{Lines 37--57}
+\paragraph{Lines 37--57: Preview}
 The majority of executable code in this sample driver is devoted to
 constructing our sparse matrix.  At the end of this code segment we
 will have constructed a diagonal with each processor owning roughly
@@ -444,20 +444,20 @@ for proper clean up.
 \paragraph{Lines 1--2}
 Include system header files needed for screen output and system
 functions.
-\paragraph{Lines 3--5}
+\paragraph{Lines 3--6}
 Include Epetra header files needed to use Epetra classes.
 It is a good practice to explicitly include header files for all
 Epetra classes you explicitly use and only those header files.
-\paragraph{Line 7} Function declaration.  All information required for
+\paragraph{Line 8} Function declaration.  All information required for
 efficient parallel execution is associated with the matrix A that we
 pass in.
-\paragraph{Lines 9--11}
+\paragraph{Lines 10--12}
 Define parameter values needed for the power method iterations.  On
 exit, lambda will be returned as the approximate eigenvalue.  We
 arbitrarily define the maximum number of iterations to be ten times
 the dimension of our problem.  We arbitrarily define the tolerance to
 be 1.0E-10.
-\paragraph{Lines 13--15}
+\paragraph{Lines 14--16}
 Here we define vectors needed to execute the power method.  The
 \vector{} constructor requires an \map{}.  We use the same map that
 was used to construct the matrix.  Note that it is not necessary that
@@ -470,14 +470,68 @@ the row map of our matrix, we are forcing these vectors to be
 distributed on the parallel machine conformally with the rows of the
 matrix.  In many common situations, this is often the best 
 distribution.
-\paragraph{Line 17}
+\paragraph{Line 18}
 The Random() method fills the associated object with pseudo-random
 numbers.  This method is actually part of the \multivector{} class,
 but since \vector{} is a specialization of \multivector{}, this method
 is also available for \vector{} objects.
+\paragraph{Lines 20--22}
+Define variables needed for the iteration.
+\paragraph{Line 23} While loop requiring at least one iteration and
+iterating until niters is reach or the residual is less than the
+tolerance.
+\paragraph{Lines 24--27}
+These four lines use some of the methods available in the \vector{}
+and \crsmatrix{} classes to implement the power method.  Line 24
+computes the 2-norm of the vector z and returns it in the variable
+normz.  Note that the Norm2() method is actually defined in the
+\multivector{} class.  Norm2() returns an array of doubles containing
+the 2-norm of each vector in the \multivector{} object.  An \vector is
+an \multivector{} with one vector.  Therefore we can use the Norm2()
+interface by passing the address of a double (in this case
+``\&normz'') as an array of doubles of length one.
 
+Line 25 computes q, which is z normalized in the 2-norm.  Line 26
+computes z = A*q.  The first argument is a bool set to false, asserting
+that we are not multiplying by the transpose of A.  Line 27 computes
+the dot-product of q and z and puts the result in the variable
+lambda.  Like the Norm2() and Scale() methods, Dot() is a method in
+the \multivector{} class
+\paragraph{Lines 28--36}
+This segment of code is not essential to the power method.  It
+periodically (every 10 iterations, and on the final iteration) checks
+the 2-norm of the difference between A*q and lambda*q.  If lambda and
+q are an eigenpair, the difference will be zero, so the norm of the
+residual is a reasonable measure of how close we are to convergence.
+The only new issue worth mentioning here is to note that the if statement in
+line 32 is only around the output stream.  It makes sure that only one
+processor generatest the output message.  A user might be tempted to
+put the if statement on line 28 since the computations in this segment
+do affect the overal iteration.  However, the calls to Update() and
+Norm2() on lines 30 and 31 require all processors to participate.  If
+processor 0 were the only processor to execute these methods, Update()
+would produce incorrect results and Norm2() would cause the user
+program to stall.  More details on these topics can be found in
+Section~\ref{Section:Troubleshooting} on troubleshooting.
+\paragraph{Lines 37--39}
+Line 37 increments the iteration count.  Line 39 our approximation to
+the dominant eigenvalue.  Note that the vector q is our associated
+approximate eigenvector, but for this example we do not return it.
 
-\section{All About Epetra Maps and Matrices}
+\section{Epetra Maps and BlockMaps}
+\subsection{Global and Local IDs}
+\subsection{Constructing Maps}
+\subsubsection{Uniform Maps}
+\subsubsection{Linear Maps}
+\subsubsection{General Maps}
+
+\section{Epetra Vectors}
+\subsection{Constructing \vectors{}}
+\subsection{Using \vectors{}}
+\section{Epetra MultiVectors}
+\subsection{Constructing \multivectors{}}
+\subsubsection{Using \multivectors{}
+\section{All About Epetra Maps, Matrices and Graphs}
 \label{Section:MapsAndMatrices}
 
 \section{Constructing \crsmatrix{} Objects}
@@ -492,8 +546,26 @@ is also available for \vector{} objects.
 \addcontentsline{toc}{section}{References}
 
 \appendix
-\section{Commonly Used CVS Commands}
-\label{Section:CVS}
+\section{Troubleshooting}
+\label{Section:Troubleshooting}
+\subsection{Conditional Code, Incorrect Results and Stalled Programs}
+Many methods in Epetra distributed classes (those derive from the
+\distobject{} class) require all processors to
+participate in the method call.  For example, to compute the update of
+an \vector{}, all processors that own a portion of the vector must
+call the Update() method.  When calling a Norm2() method or something
+similar, all processors, regardless of whether they own any portion of
+a vector, must participate in the Norm2() call.  
+Figure~\ref{Figure:HungCode} illustrates
+several versions of a code segment that computes the 2-norm of a residual
+and prints it from processor 0.  Only the final version is correct.
+\begin{figure}
+\begin{center}
+\input{HungCode}
+\end{center}
+\caption{\label{Figure:HungCode} Common errors with conditional code}
+\end{figure}
+
 \section{Common Bugzilla Tasks}
 \label{Section:Bugzilla}
 
