@@ -1873,9 +1873,8 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
        }
    }
 
-   ML_rap(ml, &(ml->Rmat[parent_level]), &(ml->Amat[parent_level]), 
-          &(ml->Pmat[child_level]), &(ml->Amat[child_level]), 
-	  child_level, ml->Pmat[child_level].invec_leng);
+   ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]), 
+          &(ml->Pmat[child_level]), &(ml->Amat[child_level]));
 #ifdef ML_TIMING
    ml->Amat[child_level].build_time = GetClock() - t0;
    ml->timing->total_build_time   += ml->Amat[child_level].build_time;
