@@ -162,8 +162,11 @@ class Epetra_MapColoring: public Epetra_DistObject {
   //@}
   
   //@{ \name Color Information Access Methods.
-  //! Returns number of colors.
+  //! Returns number of colors on the calling processor.
   int NumColors() const {if (!ListsAreValid_) GenerateLists(); return(NumColors_);};
+  
+  //! Returns maximum over all processors of the number of colors.
+  int MaxNumColors() const;
   
   //! Array of length NumColors() containing List of color values used in this coloring.
   /*! Color values can be arbitrary integer values.  As a result, a user of a previously

@@ -27,12 +27,12 @@
 
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_MapColoring.h"
 class Epetra_LinearProblem;
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_Export;
-class Epetra_MapColoring;
 class Epetra_IntVector;
 
 //! Epetra_CrsSingletonFilter: A class for explicitly eliminating matrix rows and columns.
@@ -67,7 +67,7 @@ class Epetra_CrsSingletonFilter {
   int Analyze(Epetra_RowMatrix * FullMatrix);
 
   //! Returns true if singletons were detected in this matrix (must be called after Analyze() to be effective).
-  bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(NumRowSingletons_+NumColSingletons_>0);};
+  bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(RowMapColors_->MaxNumColors()>1);};
 
   //! Analyze the input matrix using density thresholds and detection of singletons to determine rows/cols to eliminate.
   /*! Analyzes the user's input matrix to determine rows and columns that should be explicitly

@@ -79,10 +79,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_DistObject& Source)
 Epetra_DistObject::~Epetra_DistObject(){
 
 
-   //cout << Map().Comm().MyPID() << " LenExports_ = " << LenExports_<< endl;
-   //cout << Map().Comm().MyPID() << " LenImports_ = " << LenImports_<< endl;
-   //cout << Map().Comm().MyPID() << " Exports_ = " << Exports_<< endl;
-   //cout << Map().Comm().MyPID() << " Imports_ = " << Imports_<< endl;
   if (Exports_!=0) delete [] Exports_;
   if (Imports_!=0) delete [] Imports_;
 

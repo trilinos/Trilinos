@@ -73,7 +73,7 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_MapColoring& Source)
 Epetra_MapColoring::~Epetra_MapColoring(){
 
 
-  if (Allocated_) delete [] ElementColors_;
+  if (Allocated_ && Map().NumMyElements()>0) delete [] ElementColors_;
   if (ListsAreGenerated_) DeleteLists();
 }
 
@@ -105,7 +105,7 @@ int Epetra_MapColoring::Allocate(int * ElementColors, int Increment)
   if (Allocated_) return(0);
   
   int NumMyElements = Map().NumMyElements();
-  ElementColors_ = new int[NumMyElements];
+  if (NumMyElements>0) ElementColors_ = new int[NumMyElements];
   for (int i=0; i< NumMyElements; i++) ElementColors_[i] = ElementColors[i*Increment];
   Allocated_ = true;
   return(0);
@@ -189,13 +189,18 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
-  int NumElements = ColorCount_[arrayIndex];
-  int * ColorElementLIDs = ColorLIDList(Color);
-  int * ColorElementGIDs = new int[NumElements];
-  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+  int NumElements = 0;
+  int * ColorElementLIDs = 0;
+  int * ColorElementGIDs =0;
+  if (arrayIndex>-1) NumElements = ColorCount_[arrayIndex];
+  if (NumElements>0) {
+    ColorElementLIDs = ColorLIDList(Color);
+    ColorElementGIDs = new int[NumElements];
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+  }
   Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, 
 				    Map().IndexBase(), Map().Comm());
-  delete [] ColorElementGIDs;
+  if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   return(map);
 }
 //=========================================================================
@@ -203,11 +208,17 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
-  int NumElements = ColorCount_[arrayIndex];
-  int * ColorElementLIDs = ColorLIDList(Color);
-  int * ColorElementSizes = new int[NumElements];
-  int * ColorElementGIDs = new int[NumElements];
-  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+  int NumElements = 0;
+  int * ColorElementLIDs = 0;
+  int * ColorElementSizes = 0;
+  int * ColorElementGIDs = 0;
+  if (arrayIndex>-1) NumElements = ColorCount_[arrayIndex];
+  if (NumElements>0) {
+    ColorElementLIDs = ColorLIDList(Color);
+    ColorElementSizes = new int[NumElements];
+    ColorElementGIDs = new int[NumElements];
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+  }
   int * MapElementSizes = Map().ElementSizeList();
 
   {for (int i=0; i<NumElements; i++) 
@@ -217,8 +228,8 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
 					      ColorElementSizes,
 					      Map().IndexBase(), Map().Comm());
 
-  delete [] ColorElementGIDs;
-  delete [] ColorElementSizes;
+  if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
+  if (ColorElementSizes!=0) delete [] ColorElementSizes;
 
   return(map);
 }
@@ -314,6 +325,14 @@ void Epetra_MapColoring::Print(ostream& os) const {
   return;
 }
 //=========================================================================
+int Epetra_MapColoring::MaxNumColors() const {
+
+  if (!ListsAreValid_) GenerateLists(); 
+  int tmp1 = NumColors_, tmp2;
+  Map().Comm().MaxAll(&tmp1, &tmp2, 1);
+  return(tmp2);
+}
+//=========================================================================
 int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
   return(0);
 }
@@ -364,6 +383,7 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
     Exports = (char *) IntExports;
   }
 
+
   if (Nrecv>LenImports) {
     if (LenImports>0) delete [] Imports;
     LenImports = Nrecv;
@@ -377,7 +397,7 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
 
   if (NumExportIDs>0) {
     ptr = (int *) Exports;    
-    for (int j=0; j<NumExportIDs; j++) *ptr++ = From[ExportLIDs[j]];
+    for (int j=0; j<NumExportIDs; j++) ptr[j] = From[ExportLIDs[j]];
   }
   
   return(0);
@@ -407,12 +427,12 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   ptr = (int *) Imports;
     
   if (CombineMode==Add)
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
+    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += ptr[j]; // Add to existing value
   else if(CombineMode==Insert)
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
+    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = ptr[j];
   else if(CombineMode==AbsMax) {
     for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = 0;
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],abs(*ptr++));
+    for (j=0; j<NumImportIDs; j++)  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],abs(ptr[j]));
   }
   
   return(0);
