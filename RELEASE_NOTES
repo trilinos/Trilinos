@@ -1,0 +1,193 @@
+################################################################################
+#
+# Trilinos Release 5.0 Release Notes
+#
+################################################################################
+
+Overview:
+
+Trilinos is a collection of compatible software packages that support parallel 
+linear algebra computations, solution of linear, non-linear and eigen systems 
+of equations and related capabilities. The majority of packages are written in 
+C++ using object-oriented techniques. All packages are self-contained, with the 
+Trilinos top layer providing a common look-and-feel and infrastructure. 
+
+Packages:
+
+The version 5.0 general release contains 17 packages: Amesos, Anasazi, AztecOO, 
+Didasko, Epetra, EpetraExt, Ifpack, Kokkos, Komplex, LOCA, ML, New_Package, 
+NOX, Pliris, PyTrilinos, Teuchos, and Triutils.
+
+The limited release contains an additional 5 packages that are available in 
+special situations by request. These are: Belos, Claps, Jpetra, Meros, and 
+Tpetra. 
+
+More information:
+
+Trilinos website: http://software.sandia.gov/trilinos 
+
+================================================================================
+
+Amesos
+
+- No release notes submitted. 
+
+--------------------------------------------------------------------------------
+
+Anasazi (New)
+
+- Anasazi framework includes abstract description of eigenproblem, eigensolver,
+  sorting, and linear algebra. 
+- Templated implementations of two block eigensolvers ( block Krylov-Schur and 
+  block Davidson ) are included in this release. 
+- Anasazi eigensolvers can use Epetra through linear algebra adapters. 
+- A basic implementation of the abstract eigenproblem class is given for 
+  solving standard and generalized eigenvalue problems. 
+- A basic implementation of the abstract sorting class is given for the block 
+  Krylov-Schur method. The block Davidson computes only the smallest 
+  eigenvalues at this time. 
+- Many examples for solving standard and generalized eigenvalues problems using 
+  Anasazi are provided in this release. 
+
+--------------------------------------------------------------------------------
+
+AztecOO
+
+- No release notes submitted. 
+
+--------------------------------------------------------------------------------
+
+Didasko (New)
+
+- No release notes submitted.
+
+-------------------------------------------------------------------------------- 
+Epetra
+
+- Memory efficiency improvement for MultiVector, CrsGraph and CrsMatrix 
+  classes. 
+- MultiVector uses much less O(NumVector) storage in important situations. 
+- CrsGraph and CrsMatrix support a static profile mode that allows one-time 
+  allocation of memory. 
+- CrsGraph and CrsMatrix support a more robust OptimizeStorage capability that 
+  improves memory use and performance. 
+- Performance improvement for CrsMatrix and VbrMatrix kernels. 
+- CrsMatrix matrix multiplication and triangular solves are 20% to 100% faster 
+  that Version 4.0 
+- VbrMatrix matrix multiplication is also improved for some important classes 
+  of problems. 
+- Initial vector architecture support for sparse matrix-vector multiplication. 
+- A new class called JadOperator supports matrix-vector multiplication using 
+  the so-called Jagged Diagonal data format. This format is especially 
+  effective for vector machines such as the Cray X1 and NEC SX series machines.
+
+--------------------------------------------------------------------------------
+ 
+EpetraExt
+
+- Scalable parallel distance-1 and distance-2 graph coloring. 
+- Sparse matrix Add for Epetra CRS matrices. 
+- Global index map "reindexing" tool for Epetra objects. 
+
+--------------------------------------------------------------------------------
+
+Ifpack
+
+- IFPACK 3.0 defines a general interface for preconditioners, through class 
+  Ifpack_Preconditioner. 
+- Class Ifpack_AdditiveSchwarz can be used to define general overlapping 
+  one-level domain decomposition preconditioners. 
+- IFPACK now offers point and block relaxation schemes, of Jacobi, 
+  Gauss-Seidel, and symmetric Gauss-Seidel type. For block schemes, the 
+  package supports both dense and sparse blocks. 
+- Two new factorizations, ILUT and ICT, have been introduced. 
+- A new user's guide is available. The doxygen documentation has been improved. 
+
+--------------------------------------------------------------------------------
+
+Kokkos (version 1.1)
+
+- No notable new features. 
+
+--------------------------------------------------------------------------------
+
+Komplex (version 2.0)
+
+- No notable new features. 
+
+--------------------------------------------------------------------------------
+
+LOCA
+
+- The LOCA library can now be built as a shared library using libtool. Known 
+  issues with this are: 
+  - Extra link libraries passed using the --with-libs configure flag should 
+    use the "-Lpath -lname" format instead of "path/libname.a" 
+  - Building LOCA as a static library on DEC architectures using template 
+    repositories does not work. On these architectures, only build LOCA as a 
+    shared library using the --enable-shared and --disable-static configure 
+    flags, or turn off template repositories using the "-tweak" C++ compiler 
+    flag. Note that if the later method is chosen, a large number of warnings 
+    will be issued each time an executable is linked against LOCA. 
+  - When building shared libraries on SGI systems in 64 bit, one must supply 
+    the "-64" C++ compiler flag to not only the compiler and linker through 
+    CXXFLAGS and LDFLAGS, but also to libtool using LIBTOOL_CCLINKER_FLAGS 
+    or --with-libtool-cclinker-flags. Also one must turn off template 
+    repositories and the template prelinker using the flags "-ptused 
+    -no_prelink -no_auto_include". 
+  - When building shared libraries on Solaris systems, one should add 
+    "-xlic_lib=sunperf" to CFLAGS, "-library=sunperf" to CXXFLAGS and 
+    LIBTOOL_CCLINKER_FLAGS, and make sure neither of these flags appear in 
+    LDFLAGS. 
+  - A basic, but functional python interface to NOX and LOCA now exists. A 
+    test exhibiting this functionality can be found in the 
+    Trilinos/packages/nox/test/lapack/LOCA_python directory. 
+
+--------------------------------------------------------------------------------
+
+ML
+
+- No notable new features. 
+
+--------------------------------------------------------------------------------
+
+New_Package (version 1.1)
+
+- New tests are working examples of how to add tests to the Trilinos 
+  Test-Harness. 
+
+--------------------------------------------------------------------------------
+
+NOX
+
+- No release notes submitted. 
+
+--------------------------------------------------------------------------------
+
+Pliris (New)
+
+- No release notes submitted. 
+
+--------------------------------------------------------------------------------
+
+PyTrilinos (New)
+
+- No release notes submitted. 
+
+--------------------------------------------------------------------------------
+
+Teuchos
+
+- Additional BLAS/LAPACK wrappers 
+- Teuchos::ScalarTraits template specializations for the GNU MP and Arprec 
+  arbitrary precision libraries 
+- Code enabling the conversion from NOX::Parameter::List to 
+  Teuchos::ParameterList, and vice versa. 
+
+--------------------------------------------------------------------------------
+
+Triutils
+
+- No release notes submitted.
+
+################################################################################
