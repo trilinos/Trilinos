@@ -63,14 +63,10 @@ AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
 # config.sub, config.guess) and M4 files.
 
 #
-#   I wimped out here.  I still think that ../../config can work 
-#   for any package with a frim dependency on Trilinos.
-#   But, using ../../config puts some ../../config files into a list
-#   of files that it looked like it might delete under certain circumstances,
-#   or perhaps put into some tar ball.  Anyway, it scared me off.
-#   In order to get rid of the local config directory, you have to 
-#   reference the config directory in Makefile.am and in bootstrap
-#   (which should use aclocal -I ../../config)
+# #np# This a a subdirectory of Trilinos/packages/new_package that contains
+# #np# a number of useful m4 files.  Any package that uses these m4 files
+# #np# will have to add them to the repository.  The m4 files perform various
+# #np# common checks and set common variable values to minimize redundant work.
 #
 AC_CONFIG_AUX_DIR(config)
 #  #np# - Change file names in next line 
