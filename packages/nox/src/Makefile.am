@@ -76,9 +76,7 @@ nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
-	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
-	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
@@ -90,9 +88,7 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_Tensor.C \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBased.C \
-	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
-	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
@@ -145,6 +141,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
+	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
@@ -155,6 +152,7 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
+	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \

@@ -165,9 +165,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.H \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Quadratic.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H \
@@ -179,9 +177,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.C \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Quadratic.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C \
@@ -235,6 +231,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
+	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 
@@ -246,6 +243,7 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
+	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 
@@ -368,6 +366,7 @@ am__objects_2 = NOX_LineSearch_Utils_Slope.$(OBJEXT) \
 	NOX_LineSearch_Backtrack.$(OBJEXT) \
 	NOX_LineSearch_Manager.$(OBJEXT) \
 	NOX_LineSearch_MoreThuente.$(OBJEXT) \
+	NOX_LineSearch_MoreThuente2.$(OBJEXT) \
 	NOX_LineSearch_Polynomial.$(OBJEXT)
 am__objects_3 = NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Generic.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
@@ -392,9 +391,7 @@ am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_Tensor.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Solver_InexactTrustRegionBased.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Solver_TensorBased.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	NOX_LineSearch_Quadratic.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_PolynomialWalker.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	NOX_LineSearch_MoreThuente2.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_NonlinearCG.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_NonlinearCG.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT) \
@@ -428,7 +425,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_NonlinearCG.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Polynomial.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_PolynomialWalker.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Quadratic.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po \
@@ -534,6 +530,8 @@ NOX_LineSearch_Backtrack.$(OBJEXT): $(srcdir)/NOX_LineSearch_Backtrack.C
 NOX_LineSearch_Manager.$(OBJEXT): $(srcdir)/NOX_LineSearch_Manager.C
 NOX_LineSearch_MoreThuente.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C
+NOX_LineSearch_MoreThuente2.$(OBJEXT): \
+	$(srcdir)/NOX_LineSearch_MoreThuente2.C
 NOX_LineSearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_Polynomial.C
 NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
@@ -563,11 +561,8 @@ NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
 NOX_Solver_InexactTrustRegionBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C
 NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
-NOX_LineSearch_Quadratic.$(OBJEXT): $(srcdir)/NOX_LineSearch_Quadratic.C
 NOX_LineSearch_PolynomialWalker.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C
-NOX_LineSearch_MoreThuente2.$(OBJEXT): \
-	$(srcdir)/NOX_LineSearch_MoreThuente2.C
 NOX_LineSearch_NonlinearCG.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C
 NOX_Direction_NonlinearCG.$(OBJEXT): \
@@ -607,7 +602,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_NonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Polynomial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_PolynomialWalker.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Quadratic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po@am__quote@
@@ -750,6 +744,18 @@ NOX_LineSearch_MoreThuente.obj: $(srcdir)/NOX_LineSearch_MoreThuente.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_MoreThuente.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_MoreThuente.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_MoreThuente.obj `cygpath -w $(srcdir)/NOX_LineSearch_MoreThuente.C`
+
+NOX_LineSearch_MoreThuente2.o: $(srcdir)/NOX_LineSearch_MoreThuente2.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_MoreThuente2.C' object='NOX_LineSearch_MoreThuente2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_MoreThuente2.o `test -f '$(srcdir)/NOX_LineSearch_MoreThuente2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_MoreThuente2.C
+
+NOX_LineSearch_MoreThuente2.obj: $(srcdir)/NOX_LineSearch_MoreThuente2.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_MoreThuente2.C' object='NOX_LineSearch_MoreThuente2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_MoreThuente2.obj `cygpath -w $(srcdir)/NOX_LineSearch_MoreThuente2.C`
 
 NOX_LineSearch_Polynomial.o: $(srcdir)/NOX_LineSearch_Polynomial.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Polynomial.C' object='NOX_LineSearch_Polynomial.o' libtool=no @AMDEPBACKSLASH@
@@ -1015,18 +1021,6 @@ NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.obj `cygpath -w $(srcdir)/NOX_Solver_TensorBased.C`
 
-NOX_LineSearch_Quadratic.o: $(srcdir)/NOX_LineSearch_Quadratic.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Quadratic.C' object='NOX_LineSearch_Quadratic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Quadratic.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Quadratic.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Quadratic.o `test -f '$(srcdir)/NOX_LineSearch_Quadratic.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Quadratic.C
-
-NOX_LineSearch_Quadratic.obj: $(srcdir)/NOX_LineSearch_Quadratic.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Quadratic.C' object='NOX_LineSearch_Quadratic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Quadratic.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Quadratic.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Quadratic.obj `cygpath -w $(srcdir)/NOX_LineSearch_Quadratic.C`
-
 NOX_LineSearch_PolynomialWalker.o: $(srcdir)/NOX_LineSearch_PolynomialWalker.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_PolynomialWalker.C' object='NOX_LineSearch_PolynomialWalker.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_PolynomialWalker.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_PolynomialWalker.TPo' @AMDEPBACKSLASH@
@@ -1038,18 +1032,6 @@ NOX_LineSearch_PolynomialWalker.obj: $(srcdir)/NOX_LineSearch_PolynomialWalker.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_PolynomialWalker.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_PolynomialWalker.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_PolynomialWalker.obj `cygpath -w $(srcdir)/NOX_LineSearch_PolynomialWalker.C`
-
-NOX_LineSearch_MoreThuente2.o: $(srcdir)/NOX_LineSearch_MoreThuente2.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_MoreThuente2.C' object='NOX_LineSearch_MoreThuente2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_MoreThuente2.o `test -f '$(srcdir)/NOX_LineSearch_MoreThuente2.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_MoreThuente2.C
-
-NOX_LineSearch_MoreThuente2.obj: $(srcdir)/NOX_LineSearch_MoreThuente2.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_MoreThuente2.C' object='NOX_LineSearch_MoreThuente2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_MoreThuente2.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_MoreThuente2.obj `cygpath -w $(srcdir)/NOX_LineSearch_MoreThuente2.C`
 
 NOX_LineSearch_NonlinearCG.o: $(srcdir)/NOX_LineSearch_NonlinearCG.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_NonlinearCG.C' object='NOX_LineSearch_NonlinearCG.o' libtool=no @AMDEPBACKSLASH@
