@@ -148,20 +148,37 @@ BTF = \
         $(srcdir)/btf/mattrans.f
 
 
-EXTRA_MPI_H = \
-	$(srcdir)/EDT_CrsGraph_Overlap.h \
+EXTRA_EPETRAEXT_ZOLTAN_H = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
 	$(srcdir)/EDT_LinearProblem_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
 	$(srcdir)/Epetra_ZoltanQuery.h
 
 
-EXTRA_MPI = \
-	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
+EXTRA_EPETRAEXT_ZOLTAN = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
 	$(srcdir)/EDT_LinearProblem_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
 	$(srcdir)/Epetra_ZoltanQuery.cpp
+
+
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@EPETRAEXT_ZOLTAN_H = \
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@        $(EXTRA_EPETRAEXT_ZOLTAN_H)
+
+@HAVE_EPETRAEXT_ZOLTAN_FALSE@EPETRAEXT_ZOLTAN_H = 
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@EPETRAEXT_ZOLTAN = \
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@        $(EXTRA_EPETRAEXT_ZOLTAN)
+
+@HAVE_EPETRAEXT_ZOLTAN_FALSE@EPETRAEXT_ZOLTAN = 
+
+EXTRA_MPI_H = \
+	$(srcdir)/EDT_CrsGraph_Overlap.h \
+	$(EPETRAEXT_ZOLTAN_H)
+
+
+EXTRA_MPI = \
+	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
+	$(EPETRAEXT_ZOLTAN)
 
 
 @HAVE_MPI_TRUE@MPI_H = \
@@ -187,7 +204,9 @@ libepetraext_trans_a_SOURCES = \
 #the distribution tarball.
 EXTRA_libepetraext_trans_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H)
+	$(EXTRA_MPI_H) \
+	$(EXTRA_EPETRAEXT_ZOLTAN) \
+	$(EXTRA_EPETRAEXT_ZOLTAN_H)
 
 
 # libraries to be installed in $(libexecdir)
@@ -200,9 +219,16 @@ EXTRA_libepetraext_trans_a_SOURCES = \
 
 @BUILD_TRANSFORM_FALSE@EPETRAEXT_TRANSFORM_H = 
 
+
+#Eventaully the Zoltan code will not be available in Trilinos/external/
+#Until then, we will set up this path automatically.  Users who get the
+#Zoltan source from somewhere else will need to specify the path.
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@EPETRAEXT_ZOLTAN_INCDIR = -I$(top_srcdir)/../../external/Zoltan_C++
+@HAVE_EPETRAEXT_ZOLTAN_FALSE@EPETRAEXT_ZOLTAN_INCDIR = 
+
 #We need the following to support separate build directories
 AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
-            -I$(top_srcdir)/../../external/Zoltan_C++
+            $(EPETRAEXT_ZOLTAN_INCDIR)
 
 
 
@@ -279,14 +305,16 @@ am__objects_2 = EDT_CrsGraph_BTF.$(OBJEXT) concmp.$(OBJEXT) \
 	fnrsum.$(OBJEXT) izero.$(OBJEXT) maxmatch.$(OBJEXT) \
 	rectblk.$(OBJEXT) mmc13e.$(OBJEXT) prtivs.$(OBJEXT) \
 	strchk.$(OBJEXT) mattrans.$(OBJEXT)
-am__objects_3 = EDT_CrsGraph_Overlap.$(OBJEXT) \
-	EDT_CrsGraph_Zoltan.$(OBJEXT) \
+am__objects_3 = EDT_CrsGraph_Zoltan.$(OBJEXT) \
 	EDT_LinearProblem_Zoltan.$(OBJEXT) \
 	EDT_CrsGraph_ZoltanOrder.$(OBJEXT) Epetra_ZoltanQuery.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
-@HAVE_MPI_FALSE@am__objects_4 =
+@HAVE_EPETRAEXT_ZOLTAN_TRUE@am__objects_4 = $(am__objects_3)
+@HAVE_EPETRAEXT_ZOLTAN_FALSE@am__objects_4 =
+am__objects_5 = EDT_CrsGraph_Overlap.$(OBJEXT) $(am__objects_4)
+@HAVE_MPI_TRUE@am__objects_6 = $(am__objects_5)
+@HAVE_MPI_FALSE@am__objects_6 =
 am_libepetraext_trans_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_4)
+	$(am__objects_6)
 libepetraext_trans_a_OBJECTS = $(am_libepetraext_trans_a_OBJECTS)
 
 DEFS = @DEFS@

@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_TRANSFORM_TESTS_TRUE BUILD_TRANSFORM_TESTS_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_TRANSFORM_TESTS_TRUE BUILD_TRANSFORM_TESTS_FALSE EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE HAVE_EPETRAEXT_ZOLTAN_TRUE HAVE_EPETRAEXT_ZOLTAN_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -886,6 +886,9 @@ Optional Features:
                           is no)
   --enable-format_io      Use package-defined IO formatting for output
                           (default is yes)
+  --enable-epetraext-zoltan
+                          Enable EpetraExt interface support for Zoltan
+                          (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -911,10 +914,6 @@ Optional Packages:
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
-  --with-zoltan           Enable Zoltan interface support (default is no)
-  --with-rtop             Enable RTOp interface support (default is no)
-  --with-esi              Enable ESI interface support (default is yes)
-  --with-superlu          Enable SuperLU interface support (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -3170,7 +3169,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3173:" \
+echo "$as_me:3172:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5906,23 +5905,23 @@ fi
 
 
 
-# Check whether --with-zoltan or --without-zoltan was given.
-if test "${with_zoltan+set}" = set; then
-  withval="$with_zoltan"
-  ac_cv_use_zoltan=$withval
+# Check whether --enable-epetraext-zoltan or --disable-epetraext-zoltan was given.
+if test "${enable_epetraext_zoltan+set}" = set; then
+  enableval="$enable_epetraext_zoltan"
+  ac_cv_use_epetraext_zoltan=$enableval
 else
-  ac_cv_use_zoltan=no
+  ac_cv_use_epetraext_zoltan=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use zoltan" >&5
-echo $ECHO_N "checking whether to use zoltan... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use epetraext-zoltan" >&5
+echo $ECHO_N "checking whether to use epetraext-zoltan... $ECHO_C" >&6
 
-if test "X$ac_cv_use_zoltan" != "Xno"; then
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN
+#define HAVE_EPETRAEXT_ZOLTAN
 _ACEOF
 
 else
@@ -5932,80 +5931,12 @@ fi
 
 
 
-# Check whether --with-rtop or --without-rtop was given.
-if test "${with_rtop+set}" = set; then
-  withval="$with_rtop"
-  ac_cv_use_rtop=$withval
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
+  HAVE_EPETRAEXT_ZOLTAN_TRUE=
+  HAVE_EPETRAEXT_ZOLTAN_FALSE='#'
 else
-  ac_cv_use_rtop=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use rtop" >&5
-echo $ECHO_N "checking whether to use rtop... $ECHO_C" >&6
-
-if test "X$ac_cv_use_rtop" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_RTOP
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --with-esi or --without-esi was given.
-if test "${with_esi+set}" = set; then
-  withval="$with_esi"
-  ac_cv_use_esi=$withval
-else
-  ac_cv_use_esi=yes
-fi;
-
-echo "$as_me:$LINENO: checking whether to use esi" >&5
-echo $ECHO_N "checking whether to use esi... $ECHO_C" >&6
-
-if test "X$ac_cv_use_esi" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ESI
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --with-superlu or --without-superlu was given.
-if test "${with_superlu+set}" = set; then
-  withval="$with_superlu"
-  ac_cv_use_superlu=$withval
-else
-  ac_cv_use_superlu=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use superlu" >&5
-echo $ECHO_N "checking whether to use superlu... $ECHO_C" >&6
-
-if test "X$ac_cv_use_superlu" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_SUPERLU
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
+  HAVE_EPETRAEXT_ZOLTAN_TRUE='#'
+  HAVE_EPETRAEXT_ZOLTAN_FALSE=
 fi
 
 
@@ -6101,7 +6032,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6104: \"$ac_link\") >&5
+(eval echo $as_me:6035: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6181,7 +6112,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6184: \"$ac_link\") >&5
+(eval echo $as_me:6115: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8618,7 +8549,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8621: \"$ac_link\") >&5
+(eval echo $as_me:8552: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8698,7 +8629,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8701: \"$ac_link\") >&5
+(eval echo $as_me:8632: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9038,6 +8969,13 @@ if test -z "${HAVE_THREADS_TRUE}" && test -z "${HAVE_THREADS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_THREADS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_THREADS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_EPETRAEXT_ZOLTAN_TRUE}" && test -z "${HAVE_EPETRAEXT_ZOLTAN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_EPETRAEXT_ZOLTAN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_EPETRAEXT_ZOLTAN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9662,6 +9600,8 @@ s,@BUILD_TRANSFORM_TESTS_FALSE@,$BUILD_TRANSFORM_TESTS_FALSE,;t t
 s,@EGREP@,$EGREP,;t t
 s,@HAVE_THREADS_TRUE@,$HAVE_THREADS_TRUE,;t t
 s,@HAVE_THREADS_FALSE@,$HAVE_THREADS_FALSE,;t t
+s,@HAVE_EPETRAEXT_ZOLTAN_TRUE@,$HAVE_EPETRAEXT_ZOLTAN_TRUE,;t t
+s,@HAVE_EPETRAEXT_ZOLTAN_FALSE@,$HAVE_EPETRAEXT_ZOLTAN_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

@@ -250,10 +250,10 @@ TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messag
                    WARNING_MESSAGES, no)
 TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
                    FORMAT_IO, yes)
-TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
-TAC_ARG_WITH_PACKAGE(esi, [Enable ESI interface support], ESI, yes)
-TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], 
+		EPETRAEXT_ZOLTAN, no)
+AM_CONDITIONAL(HAVE_EPETRAEXT_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Specify other directories 

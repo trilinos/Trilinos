@@ -53,20 +53,39 @@ BTF = \
         $(srcdir)/btf/strchk.f \
         $(srcdir)/btf/mattrans.f
 
-EXTRA_MPI_H = \
-	$(srcdir)/EDT_CrsGraph_Overlap.h \
+EXTRA_EPETRAEXT_ZOLTAN_H = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.h \
 	$(srcdir)/EDT_LinearProblem_Zoltan.h \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
 	$(srcdir)/Epetra_ZoltanQuery.h
 
-EXTRA_MPI = \
-	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
+EXTRA_EPETRAEXT_ZOLTAN = \
 	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
 	$(srcdir)/EDT_LinearProblem_Zoltan.cpp \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
 	$(srcdir)/Epetra_ZoltanQuery.cpp
 
+if HAVE_EPETRAEXT_ZOLTAN
+
+EPETRAEXT_ZOLTAN_H = \
+        $(EXTRA_EPETRAEXT_ZOLTAN_H)
+EPETRAEXT_ZOLTAN = \
+        $(EXTRA_EPETRAEXT_ZOLTAN)
+
+else
+
+EPETRAEXT_ZOLTAN_H =
+EPETRAEXT_ZOLTAN =
+
+endif
+
+EXTRA_MPI_H = \
+	$(srcdir)/EDT_CrsGraph_Overlap.h \
+	$(EPETRAEXT_ZOLTAN_H)
+
+EXTRA_MPI = \
+	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
+	$(EPETRAEXT_ZOLTAN)
 if HAVE_MPI
 
 MPI_H = \
@@ -94,7 +113,9 @@ libepetraext_trans_a_SOURCES = \
 #the distribution tarball.
 EXTRA_libepetraext_trans_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H)
+	$(EXTRA_MPI_H) \
+	$(EXTRA_EPETRAEXT_ZOLTAN) \
+	$(EXTRA_EPETRAEXT_ZOLTAN_H)
 
 if BUILD_TRANSFORM
 
@@ -112,9 +133,22 @@ EPETRAEXT_TRANSFORM_H =
 
 endif
 
+#Eventaully the Zoltan code will not be available in Trilinos/external/
+#Until then, we will set up this path automatically.  Users who get the
+#Zoltan source from somewhere else will need to specify the path.
+if HAVE_EPETRAEXT_ZOLTAN
+
+EPETRAEXT_ZOLTAN_INCDIR=-I$(top_srcdir)/../../external/Zoltan_C++
+
+else
+
+EPETRAEXT_ZOLTAN_INCDIR=
+
+endif
+
 #We need the following to support separate build directories
 AM_CPPFLAGS=-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
-            -I$(top_srcdir)/../../external/Zoltan_C++
+            $(EPETRAEXT_ZOLTAN_INCDIR)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

@@ -32,8 +32,8 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with esi enabled */
-#undef HAVE_ESI
+/* Define if want to build epetraext-zoltan */
+#undef HAVE_EPETRAEXT_ZOLTAN
 
 /* Define if want to build with fatal_messages enabled */
 #undef HAVE_FATAL_MESSAGES
@@ -77,9 +77,6 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build with rtop enabled */
-#undef HAVE_RTOP
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -104,9 +101,6 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define if want to build with superlu enabled */
-#undef HAVE_SUPERLU
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -121,9 +115,6 @@
 
 /* Define if want to build with warning_messages enabled */
 #undef HAVE_WARNING_MESSAGES
-
-/* Define if want to build with zoltan enabled */
-#undef HAVE_ZOLTAN
 
 /* define if STL map key is required to be const */
 #undef MUST_CONST_STL_MAP_KEY
