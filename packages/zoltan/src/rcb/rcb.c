@@ -695,8 +695,8 @@ static int rcb(
   if (lb->Proc == 0) {
     printf("LBLIB RCB Times:  \n");
   }
-  LB_Print_Time(lb, lb_time[0], "LBLIB     Build:       ");
-  LB_Print_Time(lb, lb_time[1], "LBLIB     RCB:         ");
+  LB_Print_Stats(lb, lb_time[0], "LBLIB     Build:       ");
+  LB_Print_Stats(lb, lb_time[1], "LBLIB     RCB:         ");
 
   if (lb->Debug > 6) {
     int i;
