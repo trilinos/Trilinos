@@ -33,8 +33,6 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-if HAVE_EPETRAEXT_INOUT
-
 INOUT_H = \
 	$(srcdir)/EpetraExt_mmio.h \
      $(srcdir)/EpetraExt_RowMatrixOut.h \
@@ -46,14 +44,6 @@ INOUT = \
      $(srcdir)/EpetraExt_RowMatrixOut.cpp \
      $(srcdir)/EpetraExt_MultiVectorOut.cpp \
      $(srcdir)/EpetraExt_VectorOut.cpp
-
-else
-
-INOUT_H = 
-INOUT = 
-
-endif
-
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
