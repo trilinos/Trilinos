@@ -52,10 +52,13 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     DCOPY_F77(&size, (double*)ThisNS.GetValues(v), &incr,
               null_vect + v * ThisNS.GetMyLength(), &incr);
 
+  /* needed for MIS, otherwise it sets the number of equations to
+   * the null space dimension */
+  agg_object->max_levels  = -7;
+
   ML_Aggregate_Set_NullSpace(agg_object, NumPDEEquations,
                              ThisNS.GetNumVectors(), null_vect, 
                              ThisNS.GetMyLength());
-
 
   if (CoarsenType == "Uncoupled") 
     agg_object->coarsen_scheme = ML_AGGR_UNCOUPLED;

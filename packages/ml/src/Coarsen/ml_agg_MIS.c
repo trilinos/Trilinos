@@ -164,8 +164,13 @@ int agg_offset, vertex_offset;
      problems on fine grid */
 
    diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
-   if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
-
+   /* MS * Added the following to support AdaptiveSA. In MLAPI_Aggregate.cpp
+    * MS * we create a new ML_Aggregate object, and diff_level turns out
+    * MS * to be different from 0 for all MLAPI levels. */
+   if (ml_ag->max_levels != -7)
+   {
+     if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
+   }
 
    /* ============================================================= */
    /* Figure out where the Dirichlet points are on the fine grid of */ 
@@ -226,6 +231,7 @@ int agg_offset, vertex_offset;
 #endif
    /*= `amalgamate' refers to the conversion from block matrices
      to point matrices */
+   
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
 #ifdef CLEAN_DEBUG
