@@ -18,25 +18,7 @@
 /* define if we can include <math.h> */
 #undef HAVE_MATH_H
 
-/* define if the compiler supports the mutable keyword */
-#undef HAVE_MUTABLE
-
-/* define if the compiler implements namespaces */
-#undef HAVE_NAMESPACES
-
-/* Define if you have the `pow' function. */
-#undef HAVE_POW
-
-/* Define if you have the `sqrt' function. */
-#undef HAVE_SQRT
-
-/* define if the compiler supports ISO C++ standard library */
-#undef HAVE_STD
-
-/* define if the compiler supports Standard Template Library */
-#undef HAVE_STL
-
-/* define is "using std::ostream" is okay */
+/* define if "using std::ostream" is okay */
 #undef NO_USING_STD_OSTREAM
 
 /* Name of package */

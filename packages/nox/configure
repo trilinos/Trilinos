@@ -687,22 +687,6 @@ ac_env_target_alias_set=${target_alias+set}
 ac_env_target_alias_value=$target_alias
 ac_cv_env_target_alias_set=${target_alias+set}
 ac_cv_env_target_alias_value=$target_alias
-ac_env_CC_set=${CC+set}
-ac_env_CC_value=$CC
-ac_cv_env_CC_set=${CC+set}
-ac_cv_env_CC_value=$CC
-ac_env_CFLAGS_set=${CFLAGS+set}
-ac_env_CFLAGS_value=$CFLAGS
-ac_cv_env_CFLAGS_set=${CFLAGS+set}
-ac_cv_env_CFLAGS_value=$CFLAGS
-ac_env_LDFLAGS_set=${LDFLAGS+set}
-ac_env_LDFLAGS_value=$LDFLAGS
-ac_cv_env_LDFLAGS_set=${LDFLAGS+set}
-ac_cv_env_LDFLAGS_value=$LDFLAGS
-ac_env_CPPFLAGS_set=${CPPFLAGS+set}
-ac_env_CPPFLAGS_value=$CPPFLAGS
-ac_cv_env_CPPFLAGS_set=${CPPFLAGS+set}
-ac_cv_env_CPPFLAGS_value=$CPPFLAGS
 ac_env_CXX_set=${CXX+set}
 ac_env_CXX_value=$CXX
 ac_cv_env_CXX_set=${CXX+set}
@@ -711,6 +695,14 @@ ac_env_CXXFLAGS_set=${CXXFLAGS+set}
 ac_env_CXXFLAGS_value=$CXXFLAGS
 ac_cv_env_CXXFLAGS_set=${CXXFLAGS+set}
 ac_cv_env_CXXFLAGS_value=$CXXFLAGS
+ac_env_LDFLAGS_set=${LDFLAGS+set}
+ac_env_LDFLAGS_value=$LDFLAGS
+ac_cv_env_LDFLAGS_set=${LDFLAGS+set}
+ac_cv_env_LDFLAGS_value=$LDFLAGS
+ac_env_CPPFLAGS_set=${CPPFLAGS+set}
+ac_env_CPPFLAGS_value=$CPPFLAGS
+ac_cv_env_CPPFLAGS_set=${CPPFLAGS+set}
+ac_cv_env_CPPFLAGS_value=$CPPFLAGS
 ac_env_F77_set=${F77+set}
 ac_env_F77_value=$F77
 ac_cv_env_F77_set=${F77+set}
@@ -803,28 +795,34 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
-  --enable-debug          Compile with debugging options
-  --enable-mpi            Enable MPI
-  --disable-trilinos      Disable TRILINOS
+  --enable-mpi            enable MPI using mpiCC C++ compiler
+  --enable-debug          compile with debugging
+  --enable-opt            compile with optimization
+  --disable-noxepetra     disable building noxepetra library
+  --enable-trilinos-dirs  enable use of Trilinos directory structure
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-flags            Specify add'l preprocessor flags ("-Dflag -Idir")
-  --with-ar               Specify archiver (default is "ar cru")
-  --with-mpiinc           Specify MPI includes (enables MPI)
-  --with-mpilib           Specify MPI libraries (enables MPI)
-  --with-pkgdir           Specify location of add'l packages (i.e., epetra)
+  --with-mpi              specify root directory of MPI installation
+  --with-mpi-cxx          specify MPI C++ compiler
+  --with-mpi-include      specify include directory for MPI
+  --with-mpi-libs         specify MPI libraries
+  --with-mpi-libdir       specify location of MPI libraries
+  --with-flags            add extra preprocessor flags ("-Dflag -Idir")
+  --with-ar               override archiver command (default is "ar cru")
+  --with-pkgdir           specify root directory of add'l packages
+  --with-ifpack-libdir    specify location of ifpack library
+  --with-aztecoo-libdir    specify location of aztecoo library
+  --with-epetra-libdir    specify location of epetra library
 
 Some influential environment variables:
-  CC          C compiler command
-  CFLAGS      C compiler flags
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
 
@@ -1552,83 +1550,12 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 # configure.
 
 # ------------------------------------------------------------------------
-# Check for user overrides
+# Check for user overrides (to be used later)
 # ------------------------------------------------------------------------
 
-if test -z "$CC"; then
-  USERDEF_CC=yes
-fi
-
-if test -z "$CFLAGS"; then
-  USERDEF_CFLAGS=yes
-fi
-
-if test -z "$CXX"; then
-  USERDEF_CXX=yes
-fi
-
-if test -z "$CXXFLAGS"; then
+if test -n "$CXXFLAGS"; then
   USERDEF_CXXFLAGS=yes
 fi
-
-# ------------------------------------------------------------------------
-# Extra flags and includes
-# ------------------------------------------------------------------------
-
-# Check whether --with-flags or --without-flags was given.
-if test "${with_flags+set}" = set; then
-  withval="$with_flags"
-
-XTRAFLAGS=$withval
-echo Using extra flags: $withval
-
-fi;
-
-# ------------------------------------------------------------------------
-# Debug configure command line option
-# ------------------------------------------------------------------------
-
-# Check whether --enable-debug or --disable-debug was given.
-if test "${enable_debug+set}" = set; then
-  enableval="$enable_debug"
-
-DEBUG=$enableval
-case $enableval in
-
-  yes) CXXFLAGS="${CXXFLAGS} -g"
-       CFLAGS="${CFLAGS} -g"
-       ;;
-
-  no)  CXXFLAGS="${CXXFLAGS} -O2"
-       CFLAGS="${CFLAGS} -O2"
-       ;;
-esac
-
-else
-  DEBUG=default
-
-fi;
-echo "$as_me:$LINENO: checking whether debugging is on" >&5
-echo $ECHO_N "checking whether debugging is on... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${DEBUG}" >&5
-echo "${ECHO_T}${DEBUG}" >&6
-
-# ------------------------------------------------------------------------
-# AR override command line option
-# ------------------------------------------------------------------------
-
-# Check whether --with-ar or --without-ar was given.
-if test "${with_ar+set}" = set; then
-  withval="$with_ar"
-
-echo "$as_me:$LINENO: checking user-defined archiver" >&5
-echo $ECHO_N "checking user-defined archiver... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6
-USE_ALTERNATE_AR=yes
-ALTERNATE_AR="${withval}"
-
-fi;
 
 # ------------------------------------------------------------------------
 # MPI configure command line option
@@ -1638,430 +1565,155 @@ fi;
 if test "${enable_mpi+set}" = set; then
   enableval="$enable_mpi"
 
-case $enableval in
-  yes)
-    USE_MPI=yes
-    USE_MPI_COMPILER=yes
-  ;;
-  no)
-    USE_MPI=no
-  ;;
-  *)
-    { { echo "$as_me:$LINENO: error: Invalid value for --enable-mpi ($enableval)" >&5
-echo "$as_me: error: Invalid value for --enable-mpi ($enableval)" >&2;}
-   { (exit 1); exit 1; }; }
-  ;;
-esac
+HAVE_PKG_MPI=yes
+MPI_CXX=mpiCC
 
 else
-  USE_MPI=no
+  HAVE_PKG_MPI=no
+
+fi;
+
+# Check whether --with-mpi or --without-mpi was given.
+if test "${with_mpi+set}" = set; then
+  withval="$with_mpi"
+
+HAVE_PKG_MPI=yes
+MPI_DIR=${withval}
+echo "$as_me:$LINENO: checking MPI directory" >&5
+echo $ECHO_N "checking MPI directory... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: $MPI_DIR" >&5
+echo "${ECHO_T}$MPI_DIR" >&6
+
+fi;
+
+# Check whether --with-mpi-cxx or --without-mpi-cxx was given.
+if test "${with_mpi_cxx+set}" = set; then
+  withval="$with_mpi_cxx"
+
+HAVE_PKG_MPI=yes
+MPI_CXX=${withval}
+echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
+echo $ECHO_N "checking user-defined MPI C++ compiler... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: $MPI_CXX" >&5
+echo "${ECHO_T}$MPI_CXX" >&6
+
+fi;
+
+# Check whether --with-mpi-include or --without-mpi-include was given.
+if test "${with_mpi_include+set}" = set; then
+  withval="$with_mpi_include"
+
+HAVE_PKG_MPI=yes
+MPI_INC=${withval}
+echo "$as_me:$LINENO: checking user-defined MPI includes" >&5
+echo $ECHO_N "checking user-defined MPI includes... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: $MPI_INC" >&5
+echo "${ECHO_T}$MPI_INC" >&6
+
+fi;
+
+# Check whether --with-mpi-libs or --without-mpi-libs was given.
+if test "${with_mpi_libs+set}" = set; then
+  withval="$with_mpi_libs"
+
+HAVE_PKG_MPI=yes
+MPI_LIBS=${withval}
+echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
+echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: $MPI_LIBS" >&5
+echo "${ECHO_T}$MPI_LIBS" >&6
+
+fi;
+
+# Check whether --with-mpi-libdir or --without-mpi-libdir was given.
+if test "${with_mpi_libdir+set}" = set; then
+  withval="$with_mpi_libdir"
+
+HAVE_PKG_MPI=yes
+MPI_LIBDIR=${withval}
+echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
+echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: $MPI_LIBS" >&5
+echo "${ECHO_T}$MPI_LIBS" >&6
 
 fi;
 
 echo "$as_me:$LINENO: checking whether we are using MPI" >&5
 echo $ECHO_N "checking whether we are using MPI... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${USE_MPI}" >&5
-echo "${ECHO_T}${USE_MPI}" >&6
-
-# Check whether --with-mpiinc or --without-mpiinc was given.
-if test "${with_mpiinc+set}" = set; then
-  withval="$with_mpiinc"
-
-USE_MPI=yes
-USE_MPI_COMPILER=no
-echo "$as_me:$LINENO: checking user-defined MPI includes" >&5
-echo $ECHO_N "checking user-defined MPI includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6
-CPPFLAGS="${CPPFLAGS} ${withval}"
-
-fi;
-
-# Check whether --with-mpilib or --without-mpilib was given.
-if test "${with_mpilib+set}" = set; then
-  withval="$with_mpilib"
-
-USE_MPI=yes
-USE_MPI_COMPILER=no
-echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
-echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6
-LIBS="${LIBS} ${withval}"
-
-fi;
+echo "$as_me:$LINENO: result: ${HAVE_PKG_MPI}" >&5
+echo "${ECHO_T}${HAVE_PKG_MPI}" >&6
 
 # ------------------------------------------------------------------------
-# Package-specific command line option
+# Check for MPI compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
-# Check whether --with-pkgdir or --without-pkgdir was given.
-if test "${with_pkgdir+set}" = set; then
-  withval="$with_pkgdir"
+if test X${MPI_CXX} != X; then
+  # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
+set dummy ${MPI_CXX}; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_MPI_CXX_EXISTS+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$MPI_CXX_EXISTS"; then
+  ac_cv_prog_MPI_CXX_EXISTS="$MPI_CXX_EXISTS" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPI_CXX_EXISTS="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
 
-USE_PKGDIR=yes
-USE_TRILINOS=yes
-PKGDIR=$withval
+  test -z "$ac_cv_prog_MPI_CXX_EXISTS" && ac_cv_prog_MPI_CXX_EXISTS="no"
+fi
+fi
+MPI_CXX_EXISTS=$ac_cv_prog_MPI_CXX_EXISTS
+if test -n "$MPI_CXX_EXISTS"; then
+  echo "$as_me:$LINENO: result: $MPI_CXX_EXISTS" >&5
+echo "${ECHO_T}$MPI_CXX_EXISTS" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
 
-fi;
-
-# Check whether --enable-trilinos or --disable-trilinos was given.
-if test "${enable_trilinos+set}" = set; then
-  enableval="$enable_trilinos"
-
-case $enableval in
-  yes)
-    USE_TRILINOS=yes
-  ;;
-  no)
-    USE_TRILINOS=no
-  ;;
-  *)
-    { { echo "$as_me:$LINENO: error: Invalid value for --disable-trilinos ($enableval)" >&5
-echo "$as_me: error: Invalid value for --disable-trilinos ($enableval)" >&2;}
+  if test X${MPI_CXX_EXISTS} = Xyes; then
+    CXX=$MPI_CXX
+  else
+    { { echo "$as_me:$LINENO: error: MPI C++ compiler ($MPI_CXX) not found." >&5
+echo "$as_me: error: MPI C++ compiler ($MPI_CXX) not found." >&2;}
    { (exit 1); exit 1; }; }
-  ;;
-esac
-
-else
-  USE_TRILINOS=yes
-
-fi;
-
-# ------------------------------------------------------------------------
-# Checks for MPI compilers (mpicc/mpiCC)
-# ------------------------------------------------------------------------
-
-if test X${USE_MPI} = Xyes; then
-
-  if test -z "$CC" && test X${USE_MPI_COMPILER} = Xyes; then
-    echo "$as_me:$LINENO: checking for mpicc" >&5
-echo $ECHO_N "checking for mpicc... $ECHO_C" >&6
-    # Extract the first word of "mpicc", so it can be a program name with args.
-set dummy mpicc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_MPICC_EXISTS+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$MPICC_EXISTS"; then
-  ac_cv_prog_MPICC_EXISTS="$MPICC_EXISTS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPICC_EXISTS="yes"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
   fi
-done
-done
-
-  test -z "$ac_cv_prog_MPICC_EXISTS" && ac_cv_prog_MPICC_EXISTS="no"
-fi
-fi
-MPICC_EXISTS=$ac_cv_prog_MPICC_EXISTS
-if test -n "$MPICC_EXISTS"; then
-  echo "$as_me:$LINENO: result: $MPICC_EXISTS" >&5
-echo "${ECHO_T}$MPICC_EXISTS" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-    if test X${MPICC_EXISTS} = Xyes; then
-      CC=mpicc
-    fi
-  fi
-
-  if test -z "$CXX" && test X${USE_MPI_COMPILER} = Xyes; then
-    echo "$as_me:$LINENO: checking for mpiCC" >&5
-echo $ECHO_N "checking for mpiCC... $ECHO_C" >&6
-    # Extract the first word of "mpiCC", so it can be a program name with args.
-set dummy mpiCC; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_MPICXX_EXISTS+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$MPICXX_EXISTS"; then
-  ac_cv_prog_MPICXX_EXISTS="$MPICXX_EXISTS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPICXX_EXISTS="yes"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  test -z "$ac_cv_prog_MPICXX_EXISTS" && ac_cv_prog_MPICXX_EXISTS="no"
-fi
-fi
-MPICXX_EXISTS=$ac_cv_prog_MPICXX_EXISTS
-if test -n "$MPICXX_EXISTS"; then
-  echo "$as_me:$LINENO: result: $MPICXX_EXISTS" >&5
-echo "${ECHO_T}$MPICXX_EXISTS" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-    if test X${MPICXX_EXISTS} = Xyes; then
-      CXX=mpiCC
-    fi
-  fi
-
 fi
 
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-echo "${ECHO_T}$ac_ct_CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  CC=$ac_ct_CC
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="cc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-echo "${ECHO_T}$ac_ct_CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  CC=$ac_ct_CC
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    set dummy "$as_dir/$ac_word" ${1+"$@"}
-    shift
-    ac_cv_prog_CC="$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl
+  for ac_prog in $CCC CC c++ g++ gcc cxx
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CC+set}" = set; then
+if test "${ac_cv_prog_CXX+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
+  if test -n "$CXX"; then
+  ac_cv_prog_CXX="$CXX" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2070,7 +1722,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="$ac_tool_prefix$ac_prog"
+    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2079,31 +1731,31 @@ done
 
 fi
 fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6
+CXX=$ac_cv_prog_CXX
+if test -n "$CXX"; then
+  echo "$as_me:$LINENO: result: $CXX" >&5
+echo "${ECHO_T}$CXX" >&6
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
-    test -n "$CC" && break
+    test -n "$CXX" && break
   done
 fi
-if test -z "$CC"; then
-  ac_ct_CC=$CC
-  for ac_prog in cl
+if test -z "$CXX"; then
+  ac_ct_CXX=$CXX
+  for ac_prog in $CCC CC c++ g++ gcc cxx
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
+if test "${ac_cv_prog_ac_ct_CXX+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
+  if test -n "$ac_ct_CXX"; then
+  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2112,7 +1764,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="$ac_prog"
+    ac_cv_prog_ac_ct_CXX="$ac_prog"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2121,30 +1773,25 @@ done
 
 fi
 fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-echo "${ECHO_T}$ac_ct_CC" >&6
+ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
+if test -n "$ac_ct_CXX"; then
+  echo "$as_me:$LINENO: result: $ac_ct_CXX" >&5
+echo "${ECHO_T}$ac_ct_CXX" >&6
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
-  test -n "$ac_ct_CC" && break
+  test -n "$ac_ct_CXX" && break
 done
+test -n "$ac_ct_CXX" || ac_ct_CXX="g++"
 
-  CC=$ac_ct_CC
+  CXX=$ac_ct_CXX
 fi
-
-fi
-
-test -z "$CC" && { { echo "$as_me:$LINENO: error: no acceptable cc found in \$PATH" >&5
-echo "$as_me: error: no acceptable cc found in \$PATH" >&2;}
-   { (exit 1); exit 1; }; }
 
 # Provide some information about the compiler.
 echo "$as_me:$LINENO:" \
-     "checking for C compiler version" >&5
+     "checking for C++ compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
   (eval $ac_compiler --version </dev/null >&5) 2>&5
@@ -2185,8 +1832,8 @@ ac_clean_files="$ac_clean_files a.out a.exe"
 # Try to create an executable without -o first, disregard a.out.
 # It will help us diagnose broken compilers, and finding out an intuition
 # of exeext.
-echo "$as_me:$LINENO: checking for C compiler default output" >&5
-echo $ECHO_N "checking for C compiler default output... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for C++ compiler default output" >&5
+echo $ECHO_N "checking for C++ compiler default output... $ECHO_C" >&6
 ac_link_default=`echo "$ac_link" | sed 's/ -o *conftest[^ ]*//'`
 if { (eval echo "$as_me:$LINENO: \"$ac_link_default\"") >&5
   (eval $ac_link_default) 2>&5
@@ -2214,8 +1861,8 @@ done
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:$LINENO: error: C compiler cannot create executables" >&5
-echo "$as_me: error: C compiler cannot create executables" >&2;}
+{ { echo "$as_me:$LINENO: error: C++ compiler cannot create executables" >&5
+echo "$as_me: error: C++ compiler cannot create executables" >&2;}
    { (exit 77); exit 77; }; }
 fi
 
@@ -2225,8 +1872,8 @@ echo "${ECHO_T}$ac_file" >&6
 
 # Check the compiler produces executables we can run.  If not, either
 # the compiler is broken, or we cross compile.
-echo "$as_me:$LINENO: checking whether the C compiler works" >&5
-echo $ECHO_N "checking whether the C compiler works... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether the C++ compiler works" >&5
+echo $ECHO_N "checking whether the C++ compiler works... $ECHO_C" >&6
 # FIXME: These cross compiler hacks should be removed for Autoconf 3.0
 # If not cross compiling, check that we can run a simple program.
 if test "$cross_compiling" != yes; then
@@ -2241,9 +1888,9 @@ if test "$cross_compiling" != yes; then
     if test "$cross_compiling" = maybe; then
 	cross_compiling=yes
     else
-	{ { echo "$as_me:$LINENO: error: cannot run C compiled programs.
+	{ { echo "$as_me:$LINENO: error: cannot run C++ compiled programs.
 If you meant to cross compile, use \`--host'." >&5
-echo "$as_me: error: cannot run C compiled programs.
+echo "$as_me: error: cannot run C++ compiled programs.
 If you meant to cross compile, use \`--host'." >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -2344,462 +1991,6 @@ echo "$as_me:$LINENO: result: $ac_cv_objext" >&5
 echo "${ECHO_T}$ac_cv_objext" >&6
 OBJEXT=$ac_cv_objext
 ac_objext=$OBJEXT
-echo "$as_me:$LINENO: checking whether we are using the GNU C compiler" >&5
-echo $ECHO_N "checking whether we are using the GNU C compiler... $ECHO_C" >&6
-if test "${ac_cv_c_compiler_gnu+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-#ifndef __GNUC__
-       choke me
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_compiler_gnu=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_compiler_gnu=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-ac_cv_c_compiler_gnu=$ac_compiler_gnu
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_c_compiler_gnu" >&5
-echo "${ECHO_T}$ac_cv_c_compiler_gnu" >&6
-GCC=`test $ac_compiler_gnu = yes && echo yes`
-ac_test_CFLAGS=${CFLAGS+set}
-ac_save_CFLAGS=$CFLAGS
-CFLAGS="-g"
-echo "$as_me:$LINENO: checking whether $CC accepts -g" >&5
-echo $ECHO_N "checking whether $CC accepts -g... $ECHO_C" >&6
-if test "${ac_cv_prog_cc_g+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_prog_cc_g=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_prog_cc_g=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_prog_cc_g" >&5
-echo "${ECHO_T}$ac_cv_prog_cc_g" >&6
-if test "$ac_test_CFLAGS" = set; then
-  CFLAGS=$ac_save_CFLAGS
-elif test $ac_cv_prog_cc_g = yes; then
-  if test "$GCC" = yes; then
-    CFLAGS="-g -O2"
-  else
-    CFLAGS="-g"
-  fi
-else
-  if test "$GCC" = yes; then
-    CFLAGS="-O2"
-  else
-    CFLAGS=
-  fi
-fi
-# Some people use a C++ compiler to compile C.  Since we use `exit',
-# in C++ we need to declare it.  In case someone uses the same compiler
-# for both compiling C and C++ we need to have the C++ compiler decide
-# the declaration of exit, since it's the most demanding environment.
-cat >conftest.$ac_ext <<_ACEOF
-#ifndef __cplusplus
-  choke me
-#endif
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  for ac_declaration in \
-   ''\
-   '#include <stdlib.h>' \
-   'extern "C" void std::exit (int) throw (); using std::exit;' \
-   'extern "C" void std::exit (int); using std::exit;' \
-   'extern "C" void exit (int) throw ();' \
-   'extern "C" void exit (int);' \
-   'void exit (int);'
-do
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <stdlib.h>
-$ac_declaration
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-exit (42);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  :
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-continue
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-$ac_declaration
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-exit (42);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  break
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-done
-rm -f conftest*
-if test -n "$ac_declaration"; then
-  echo '#ifdef __cplusplus' >>confdefs.h
-  echo $ac_declaration      >>confdefs.h
-  echo '#endif'             >>confdefs.h
-fi
-
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-ac_config_commands="$ac_config_commands default-1"
-
-am_make=${MAKE-make}
-cat > confinc << 'END'
-doit:
-	@echo done
-END
-# If we don't find an include directive, just comment out the code.
-echo "$as_me:$LINENO: checking for style of include used by $am_make" >&5
-echo $ECHO_N "checking for style of include used by $am_make... $ECHO_C" >&6
-am__include='#'
-am__quote=
-_am_result=none
-# First try GNU make style include.
-echo "include confinc" > confmf
-# We grep out `Entering directory' and `Leaving directory'
-# messages which can occur if `w' ends up in MAKEFLAGS.
-# In particular we don't look at `^make:' because GNU make might
-# be invoked under some other name (usually "gmake"), in which
-# case it prints its new name instead of `make'.
-if test "`$am_make -s -f confmf 2> /dev/null | fgrep -v 'ing directory'`" = "done"; then
-   am__include=include
-   am__quote=
-   _am_result=GNU
-fi
-# Now try BSD make style include.
-if test "$am__include" = "#"; then
-   echo '.include "confinc"' > confmf
-   if test "`$am_make -s -f confmf 2> /dev/null`" = "done"; then
-      am__include=.include
-      am__quote='"'
-      _am_result=BSD
-   fi
-fi
-
-echo "$as_me:$LINENO: result: $_am_result" >&5
-echo "${ECHO_T}$_am_result" >&6
-rm -f confinc confmf
-
-depcc="$CC"   am_compiler_list=
-
-echo "$as_me:$LINENO: checking dependency style of $depcc" >&5
-echo $ECHO_N "checking dependency style of $depcc... $ECHO_C" >&6
-if test "${am_cv_CC_dependencies_compiler_type+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -z "$AMDEP_TRUE" && test -f "$am_depcomp"; then
-  # We make a subdir and do the tests there.  Otherwise we can end up
-  # making bogus files that we don't know about and never remove.  For
-  # instance it was reported that on HP-UX the gcc test will end up
-  # making a dummy file named `D' -- because `-MD' means `put the output
-  # in D'.
-  mkdir conftest.dir
-  # Copy depcomp to subdir because otherwise we won't find it if we're
-  # using a relative directory.
-  cp "$am_depcomp" conftest.dir
-  cd conftest.dir
-
-  am_cv_CC_dependencies_compiler_type=none
-  if test "$am_compiler_list" = ""; then
-     am_compiler_list=`sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < ./depcomp`
-  fi
-  for depmode in $am_compiler_list; do
-    # We need to recreate these files for each test, as the compiler may
-    # overwrite some of them when testing with obscure command lines.
-    # This happens at least with the AIX C compiler.
-    echo '#include "conftest.h"' > conftest.c
-    echo 'int i;' > conftest.h
-    echo "${am__include} ${am__quote}conftest.Po${am__quote}" > confmf
-
-    case $depmode in
-    nosideeffect)
-      # after this tag, mechanisms are not by side-effect, so they'll
-      # only be used when explicitly requested
-      if test "x$enable_dependency_tracking" = xyes; then
-	continue
-      else
-	break
-      fi
-      ;;
-    none) break ;;
-    esac
-    # We check with `-c' and `-o' for the sake of the "dashmstdout"
-    # mode.  It turns out that the SunPro C++ compiler does not properly
-    # handle `-M -o', and we need to detect this.
-    if depmode=$depmode \
-       source=conftest.c object=conftest.o \
-       depfile=conftest.Po tmpdepfile=conftest.TPo \
-       $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
-       grep conftest.h conftest.Po > /dev/null 2>&1 &&
-       ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
-      am_cv_CC_dependencies_compiler_type=$depmode
-      break
-    fi
-  done
-
-  cd ..
-  rm -rf conftest.dir
-else
-  am_cv_CC_dependencies_compiler_type=none
-fi
-
-fi
-echo "$as_me:$LINENO: result: $am_cv_CC_dependencies_compiler_type" >&5
-echo "${ECHO_T}$am_cv_CC_dependencies_compiler_type" >&6
-CCDEPMODE="depmode=$am_cv_CC_dependencies_compiler_type"
-
-ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-if test -n "$ac_tool_prefix"; then
-  for ac_prog in $CCC g++ c++ gpp aCC CC cxx cc++ cl FCC KCC RCC xlC_r xlC
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CXX+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CXX"; then
-  ac_cv_prog_CXX="$CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-CXX=$ac_cv_prog_CXX
-if test -n "$CXX"; then
-  echo "$as_me:$LINENO: result: $CXX" >&5
-echo "${ECHO_T}$CXX" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-    test -n "$CXX" && break
-  done
-fi
-if test -z "$CXX"; then
-  ac_ct_CXX=$CXX
-  for ac_prog in $CCC g++ c++ gpp aCC CC cxx cc++ cl FCC KCC RCC xlC_r xlC
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_ac_ct_CXX+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_CXX"; then
-  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CXX="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
-if test -n "$ac_ct_CXX"; then
-  echo "$as_me:$LINENO: result: $ac_ct_CXX" >&5
-echo "${ECHO_T}$ac_ct_CXX" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$ac_ct_CXX" && break
-done
-test -n "$ac_ct_CXX" || ac_ct_CXX="g++"
-
-  CXX=$ac_ct_CXX
-fi
-
-# Provide some information about the compiler.
-echo "$as_me:$LINENO:" \
-     "checking for C++ compiler version" >&5
-ac_compiler=`set X $ac_compile; echo $2`
-{ (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
-  (eval $ac_compiler --version </dev/null >&5) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-{ (eval echo "$as_me:$LINENO: \"$ac_compiler -v </dev/null >&5\"") >&5
-  (eval $ac_compiler -v </dev/null >&5) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-{ (eval echo "$as_me:$LINENO: \"$ac_compiler -V </dev/null >&5\"") >&5
-  (eval $ac_compiler -V </dev/null >&5) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-
 echo "$as_me:$LINENO: checking whether we are using the GNU C++ compiler" >&5
 echo $ECHO_N "checking whether we are using the GNU C++ compiler... $ECHO_C" >&6
 if test "${ac_cv_cxx_compiler_gnu+set}" = set; then
@@ -3011,6 +2202,45 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+ac_config_commands="$ac_config_commands default-1"
+
+am_make=${MAKE-make}
+cat > confinc << 'END'
+doit:
+	@echo done
+END
+# If we don't find an include directive, just comment out the code.
+echo "$as_me:$LINENO: checking for style of include used by $am_make" >&5
+echo $ECHO_N "checking for style of include used by $am_make... $ECHO_C" >&6
+am__include='#'
+am__quote=
+_am_result=none
+# First try GNU make style include.
+echo "include confinc" > confmf
+# We grep out `Entering directory' and `Leaving directory'
+# messages which can occur if `w' ends up in MAKEFLAGS.
+# In particular we don't look at `^make:' because GNU make might
+# be invoked under some other name (usually "gmake"), in which
+# case it prints its new name instead of `make'.
+if test "`$am_make -s -f confmf 2> /dev/null | fgrep -v 'ing directory'`" = "done"; then
+   am__include=include
+   am__quote=
+   _am_result=GNU
+fi
+# Now try BSD make style include.
+if test "$am__include" = "#"; then
+   echo '.include "confinc"' > confmf
+   if test "`$am_make -s -f confmf 2> /dev/null`" = "done"; then
+      am__include=.include
+      am__quote='"'
+      _am_result=BSD
+   fi
+fi
+
+echo "$as_me:$LINENO: result: $_am_result" >&5
+echo "${ECHO_T}$_am_result" >&6
+rm -f confinc confmf
+
 depcc="$CXX"  am_compiler_list=
 
 echo "$as_me:$LINENO: checking dependency style of $depcc" >&5
@@ -3163,17 +2393,63 @@ fi
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
 
+# Check whether --with-flags or --without-flags was given.
+if test "${with_flags+set}" = set; then
+  withval="$with_flags"
+
+XTRAFLAGS=$withval
+echo Using extra flags: $withval
+
+fi;
+
+echo "$as_me:$LINENO: checking for extra preprocessor flags" >&5
+echo $ECHO_N "checking for extra preprocessor flags... $ECHO_C" >&6
+if test X$XTRAFLAGS = X; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: $XTRAFLAGS" >&5
+echo "${ECHO_T}$XTRAFLAGS" >&6
+  CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
+fi
+
+# ------------------------------------------------------------------------
+# Checks for special compiler options
+# ------------------------------------------------------------------------
+
+# Check whether --enable-debug or --disable-debug was given.
+if test "${enable_debug+set}" = set; then
+  enableval="$enable_debug"
+  DEBUG=$enableval
+else
+  DEBUG=default
+
+fi;
+echo "$as_me:$LINENO: checking whether debugging is on" >&5
+echo $ECHO_N "checking whether debugging is on... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${DEBUG}" >&5
+echo "${ECHO_T}${DEBUG}" >&6
+
+# Check whether --enable-opt or --disable-opt was given.
+if test "${enable_opt+set}" = set; then
+  enableval="$enable_opt"
+  OPT=$enableval
+else
+  OPT=default
+
+fi;
+echo "$as_me:$LINENO: checking whether optimization is on" >&5
+echo $ECHO_N "checking whether optimization is on... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${OPT}" >&5
+echo "${ECHO_T}${OPT}" >&6
+
 case $target in
 
   # IBM test
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
 
-    case $CC in
-      xlc* | cc* ) COPTIONS="-qnolm";;
-    esac
-
     case $CXX in
-      xlC* ) CXXOPTIONS="-qnolm -qrtti";;
+      xlC* ) SPECIAL_CXXFLAGS="-qnolm -qrtti";;
     esac
 
   ;;
@@ -3182,111 +2458,111 @@ case $target in
   mips-sgi-irix* )
 
     if test $CXX = CC; then
-     CXXOPTIONS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
-
-     if test X$USE_ALTERNATE_AR != Xyes; then
-       USE_ALTERNATE_AR=yes
-       ALTERNATE_AR="CC -ar -W,l -W,s -o"
-     fi
-
+     SPECIAL_CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
   ;;
 
 esac
 
-echo "$as_me:$LINENO: checking for extra preprocessor flags" >&5
-echo $ECHO_N "checking for extra preprocessor flags... $ECHO_C" >&6
-if test X$XTRAFLAGS = X; then
-echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
+echo "$as_me:$LINENO: checking for special C++ flags" >&5
+echo $ECHO_N "checking for special C++ flags... $ECHO_C" >&6
+if test X$USERDEF_CXXFLAGS = Xyes; then
+
+  echo "$as_me:$LINENO: result: $CXXFLAGS (user-specified via CXXFLAGS)" >&5
+echo "${ECHO_T}$CXXFLAGS (user-specified via CXXFLAGS)" >&6
+
 else
-echo "$as_me:$LINENO: result: $XTRAFLAGS" >&5
-echo "${ECHO_T}$XTRAFLAGS" >&6
+
+  if test X$SPECIAL_CXXFLAGS != X; then
+    echo "$as_me:$LINENO: result: $SPECIAL_CXXFLAGS" >&5
+echo "${ECHO_T}$SPECIAL_CXXFLAGS" >&6
+    CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
+  else
+    echo "$as_me:$LINENO: result: $CXXFLAGS (default)" >&5
+echo "${ECHO_T}$CXXFLAGS (default)" >&6
+  fi
+
 fi
 
-echo "$as_me:$LINENO: checking for extra C flags" >&5
-echo $ECHO_N "checking for extra C flags... $ECHO_C" >&6
-if test X$COPTIONS = X; then
-echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
-else
-echo "$as_me:$LINENO: result: $COPTIONS" >&5
-echo "${ECHO_T}$COPTIONS" >&6
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+# Check whether --with-ar or --without-ar was given.
+if test "${with_ar+set}" = set; then
+  withval="$with_ar"
+
+echo "$as_me:$LINENO: checking user-defined archiver" >&5
+echo $ECHO_N "checking user-defined archiver... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6
+USE_ALTERNATE_AR=yes
+ALTERNATE_AR="${withval}"
+
+fi;
+
+if test -n "$SPECIAL_AR" && test X$USE_ALTERNATE_AR != Xyes; then
+  USE_ALTERNATE_AR=yes
+  ALTERNATE_AR=$SPECIAL_AR
 fi
 
-echo "$as_me:$LINENO: checking for extra C++ flags" >&5
-echo $ECHO_N "checking for extra C++ flags... $ECHO_C" >&6
-if test X"$CXXOPTIONS" = X; then
-echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
-else
-echo "$as_me:$LINENO: result: $CXXOPTIONS" >&5
-echo "${ECHO_T}$CXXOPTIONS" >&6
-fi
+echo "$as_me:$LINENO: checking for special archiver command" >&5
+echo $ECHO_N "checking for special archiver command... $ECHO_C" >&6
+if test X${USE_ALTERNATE_AR} = Xyes; then
+   echo "$as_me:$LINENO: result: yes (${ALTERNATE_AR})" >&5
+echo "${ECHO_T}yes (${ALTERNATE_AR})" >&6
 
-CFLAGS="${CFLAGS} ${COPTIONS}"
-CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
-CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
+if true; then
+  USE_ALTERNATE_AR_TRUE=
+  USE_ALTERNATE_AR_FALSE='#'
+else
+  USE_ALTERNATE_AR_TRUE='#'
+  USE_ALTERNATE_AR_FALSE=
+fi
+else
+   echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+
+if false; then
+  USE_ALTERNATE_AR_TRUE=
+  USE_ALTERNATE_AR_FALSE='#'
+else
+  USE_ALTERNATE_AR_TRUE='#'
+  USE_ALTERNATE_AR_FALSE=
+fi
+fi
 
 # ------------------------------------------------------------------------
 # MPI link check
 # ------------------------------------------------------------------------
 
-if test X${USE_MPI} = Xyes; then
+if test X${HAVE_PKG_MPI} = Xyes; then
 
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+  if test X${MPI_DIR} != X && test X${MPI_INC} = X; then
+    MPI_INC=${MPI_DIR}/include
+  fi
 
-  echo "$as_me:$LINENO: checking whether MPI will link using C compiler" >&5
-echo $ECHO_N "checking whether MPI will link using C compiler... $ECHO_C" >&6
+  if test X${MPI_DIR} != X && test X${MPI_LIBDIR} = X; then
+    MPI_LIBDIR=${MPI_DIR}/lib
+  fi
 
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <mpi.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-int c; char** v; MPI_Init(&c,&v);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-   { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
-echo "$as_me: error: MPI cannot link" >&2;}
-   { (exit 1); exit 1; }; }
+  if test X${MPI_INC} != X; then
+    CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
+  fi
 
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  if test X${MPI_LIBDIR} != X; then
+    LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
+  fi
+
+  if test X${MPI_LIBS} = X && test X${MPI_LIBDIR} != X; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test X${MPI_LIBS} != X; then
+    LIBS = "${MPI_LIBS} ${LIBS}"
+  fi
 
   ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -3340,12 +2616,6 @@ echo "$as_me: error: MPI cannot link" >&2;}
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
@@ -3678,7 +2948,6 @@ fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 
 # can we say using std::ostream?
-
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3695,9 +2964,6 @@ cat >conftest.$ac_ext <<_ACEOF
 #include <iostream>
 #elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
-#else
-// Try to include it anyway
-#include <iostream>
 #endif
 
 #ifdef F77_DUMMY_MAIN
@@ -3709,9 +2975,7 @@ cat >conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-
 using std::ostream;
-
   ;
   return 0;
 }
@@ -3743,12 +3007,6 @@ _ACEOF
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-
-ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -3860,6 +3118,10 @@ echo "${ECHO_T}$ac_cv_search_pow" >&6
 if test "$ac_cv_search_pow" != no; then
   test "$ac_cv_search_pow" = "none required" || LIBS="$ac_cv_search_pow $LIBS"
 
+else
+  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
+echo "$as_me: error: Cannot find math library" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
 echo "$as_me:$LINENO: checking for library containing sqrt" >&5
@@ -3968,223 +3230,72 @@ echo "${ECHO_T}$ac_cv_search_sqrt" >&6
 if test "$ac_cv_search_sqrt" != no; then
   test "$ac_cv_search_sqrt" = "none required" || LIBS="$ac_cv_search_sqrt $LIBS"
 
-fi
-
-for ac_func in pow sqrt
-do
-as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $ac_func" >&5
-echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
-if eval "test \"\${$as_ac_var+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $ac_func (); below.  */
-#include <assert.h>
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char $ac_func ();
-char (*f) ();
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
-choke me
-#else
-f = $ac_func;
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  eval "$as_ac_var=yes"
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-eval "$as_ac_var=no"
+  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
+echo "$as_me: error: Cannot find math library" >&2;}
+   { (exit 1); exit 1; }; }
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
-if test `eval echo '${'$as_ac_var'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-done
 
 # ------------------------------------------------------------------------
-# Trilinos
+# Specify package directory
 # ------------------------------------------------------------------------
 
-# Case I: Using standard Trilinos directory structure
-# (a) Check if TRILINOS_HOME is valid
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
+# Check whether --with-pkgdir or --without-pkgdir was given.
+if test "${with_pkgdir+set}" = set; then
+  withval="$with_pkgdir"
 
-   echo "$as_me:$LINENO: checking whether TRILINOS_HOME is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_HOME is defined... $ECHO_C" >&6
-   if test $TRILINOS_HOME; then
-      echo "$as_me:$LINENO: result: yes (${TRILINOS_HOME})" >&5
-echo "${ECHO_T}yes (${TRILINOS_HOME})" >&6
-   else
-      echo "$as_me:$LINENO: result: no (using ${HOME}/Trilinos)" >&5
-echo "${ECHO_T}no (using ${HOME}/Trilinos)" >&6
-      TRILINOS_HOME=${HOME}/Trilinos
-   fi
+USE_PKGDIR=yes
+PKGDIR=$withval
 
-   echo "$as_me:$LINENO: checking whether TRILINOS_HOME is valid" >&5
-echo $ECHO_N "checking whether TRILINOS_HOME is valid... $ECHO_C" >&6
-   if test -d ${TRILINOS_HOME}; then
-      echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-   else
-      echo "$as_me:$LINENO: result: no (WARNING: DISABLING TRILINOS!!!!)" >&5
-echo "${ECHO_T}no (WARNING: DISABLING TRILINOS!!!!)" >&6
-      USE_TRILINOS=no
-   fi
-fi
+fi;
 
-# Case I: Using standard Trilinos directory structure
-# (b): Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
+if test X${USE_PKGDIR} = Xyes; then
 
-   echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
-   if test ${TRILINOS_ARCH}; then
-      echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
-echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
-   else
-      case $target in
-	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-  	  TRILINOS_ARCH="AIX"
-	  ;;
-	alpha-unknown-linux-gnu)
-	  TRILINOS_ARCH="LINUXALPHA"
-	  ;;
-	*)
-	  TRILINOS_ARCH="LINUX"
-  	  ;;
-      esac
-      echo "$as_me:$LINENO: result: no (using ${TRILINOS_ARCH})" >&5
-echo "${ECHO_T}no (using ${TRILINOS_ARCH})" >&6
-   fi
-
-   echo "$as_me:$LINENO: checking whether TRILINOS_COMM is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_COMM is defined... $ECHO_C" >&6
-   if test ${USE_MPI} = yes; then
-      TRILINOS_COMM="MPI"
-   else
-      TRILINOS_COMM="SERIAL"
-   fi
-   echo "$as_me:$LINENO: result: overriding with ${TRILINOS_COMM}" >&5
-echo "${ECHO_T}overriding with ${TRILINOS_COMM}" >&6
-
-   echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
-   if test ${TRILINOS_ID}; then
-      echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
-echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
-   else
-      echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-   fi
-
-   echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
-echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
-   if test ${TRILINOS_TARGET}; then
-      echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
-echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
-   else
-      TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
-      echo "$as_me:$LINENO: result: no (using ${TRILINOS_TARGET})" >&5
-echo "${ECHO_T}no (using ${TRILINOS_TARGET})" >&6
-   fi
-
-   TRILINOS_EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
-   TRILINOS_AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
-   TRILINOS_LIB_DIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
-fi
-
-# Case II: Using Trilinos ARCH directory (ala Xyce)
-# (a) Check is trilinos-arch-dir is valid
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
-
-   echo "$as_me:$LINENO: checking whether PKGDIR is valid" >&5
-echo $ECHO_N "checking whether PKGDIR is valid... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking whether package directory is valid" >&5
+echo $ECHO_N "checking whether package directory is valid... $ECHO_C" >&6
    if test -d ${PKGDIR}; then
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
    else
       { echo "$as_me:$LINENO: no" >&5
 echo "$as_me: no" >&6;}
-      { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-      USE_TRILINOS=no
+      { { echo "$as_me:$LINENO: error: Specified package directory does not exist" >&5
+echo "$as_me: error: Specified package directory does not exist" >&2;}
+   { (exit 1); exit 1; }; }
    fi
 
-fi
-
-# Case II: Using Trilinos ARCH directory (ala Xyce)
-# (b) Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
-
-   if test ${USE_MPI} = yes; then
-      TRILINOS_COMM="MPI"
-   else
-      TRILINOS_COMM="SERIAL"
-   fi
-
-   TRILINOS_EPETRA_INC=${PKGDIR}/include/epetra/
-   TRILINOS_AZTECOO_INC=${PKGDIR}/include/aztecoo/
-   TRILINOS_LIB_DIR=${PKGDIR}/lib/
+   LDFLAGS="${LDFLAGS} -L${PKGDIR}/lib"
+   CPPFLAGS="${CPPFLAGS} -I${PKGDIR}/include"
 
 fi
 
-# Set up flags for test compiles and links below
-if test ${USE_TRILINOS} = yes; then
-   LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
-fi
+# ------------------------------------------------------------------------
+# NOXEPETRA LIBRARY
+# ------------------------------------------------------------------------
 
-# Find a valid y12m
-if test ${USE_TRILINOS} = yes; then
-  ac_ext=f
-ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
-ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+# Check whether --enable-noxepetra or --disable-noxepetra was given.
+if test "${enable_noxepetra+set}" = set; then
+  enableval="$enable_noxepetra"
+  BUILD_NOXEPETRA=$enableval
+else
+  BUILD_NOXEPETRA=yes
 
-  ac_ext=f
+fi;
+
+# Check whether --enable-trilinos-dirs or --disable-trilinos-dirs was given.
+if test "${enable_trilinos_dirs+set}" = set; then
+  enableval="$enable_trilinos_dirs"
+  USE_TRILINOS_DIRS=$withval
+else
+  USE_TRILINOS_DIRS=default
+
+fi;
+
+# Case I: Using standard Trilinos directory structure
+# (a) Check if TRILINOS_HOME is valid
+if test ${BUILD_NOXEPETRA} = yes; then
+
+    ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
@@ -4275,7 +3386,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:4278:" \
+echo "$as_me:3389:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4394,208 +3505,289 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 
-echo "$as_me:$LINENO: checking for library containing y12mae" >&5
-echo $ECHO_N "checking for library containing y12mae... $ECHO_C" >&6
-if test "${ac_cv_search_y12mae+set}" = set; then
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+echo "$as_me:$LINENO: checking how to get verbose linking output from $F77" >&5
+echo $ECHO_N "checking how to get verbose linking output from $F77... $ECHO_C" >&6
+if test "${ac_cv_prog_f77_v+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_y12mae=no
+
 cat >conftest.$ac_ext <<_ACEOF
       program main
-      call y12mae
+
       end
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
+         { ac_try='test -s conftest.$ac_objext'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_search_y12mae="none required"
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_y12mae" = no; then
-  for ac_lib in y12m; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
+  ac_cv_prog_f77_v=
+# Try some options frequently used verbose output
+for ac_verb in -v -verbose --verbose -V -\#\#\#; do
+  ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+cat >conftest.$ac_ext <<_ACEOF
       program main
-      call y12mae
+
       end
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_y12mae="-l$ac_lib"
-break
+
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran 77 compiler in order to get
+# "verbose" output that we can then parse for the Fortran 77 linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_verb"
+(eval echo $as_me:3555: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+# If we are using xlf then replace all the commas with spaces.
+if echo $ac_f77_v_output | grep xlfentry >/dev/null 2>&1; then
+  ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'`
+fi
+
+# If we are using Cray Fortran then delete quotes.
+# Use "\"" instead of '"' for font-lock-mode.
+# FIXME: a more general fix for quoted arguments with spaces?
+if echo $ac_f77_v_output | grep cft90 >/dev/null 2>&1; then
+  ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"`
+fi
+  # look for -l* and *.a constructs in the output
+  for ac_arg in $ac_f77_v_output; do
+     case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a | -[lLRu]*)
+          ac_cv_prog_f77_v=$ac_verb
+          break 2 ;;
+     esac
+  done
+done
+if test -z "$ac_cv_prog_f77_v"; then
+   { echo "$as_me:$LINENO: WARNING: cannot determine how to obtain linking information from $F77" >&5
+echo "$as_me: WARNING: cannot determine how to obtain linking information from $F77" >&2;}
+fi
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
+{ echo "$as_me:$LINENO: WARNING: compilation failed" >&5
+echo "$as_me: WARNING: compilation failed" >&2;}
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_y12mae" >&5
-echo "${ECHO_T}$ac_cv_search_y12mae" >&6
-if test "$ac_cv_search_y12mae" != no; then
-  test "$ac_cv_search_y12mae" = "none required" || LIBS="$ac_cv_search_y12mae $LIBS"
+rm -f conftest.$ac_objext conftest.$ac_ext
 
-else
-  DONT_HAVE_LIBY12M="no"
 fi
-
-  if test -e "$DONT_HAVE_LIBY12M"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the Y12M library. This library is distributed with"
-    echo "Trilinos as an external package. Specify LDFLAGS on the configure line"
-    echo "to specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
-  fi
-fi
-
-# Find g2c if it exists (don't seem to need this if it's not there)
-if test ${USE_TRILINOS} = yes; then
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  echo "$as_me:$LINENO: checking for library containing s_copy" >&5
-echo $ECHO_N "checking for library containing s_copy... $ECHO_C" >&6
-if test "${ac_cv_search_s_copy+set}" = set; then
+echo "$as_me:$LINENO: result: $ac_cv_prog_f77_v" >&5
+echo "${ECHO_T}$ac_cv_prog_f77_v" >&6
+echo "$as_me:$LINENO: checking for Fortran 77 libraries" >&5
+echo $ECHO_N "checking for Fortran 77 libraries... $ECHO_C" >&6
+if test "${ac_cv_flibs+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_s_copy=no
+  if test "x$FLIBS" != "x"; then
+  ac_cv_flibs="$FLIBS" # Let the user override the test.
+else
+
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
 cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
+      program main
 
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char s_copy ();
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-s_copy ();
-  ;
-  return 0;
-}
+      end
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_s_copy="none required"
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_s_copy" = no; then
-  for ac_lib in g2c; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
 
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char s_copy ();
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-s_copy ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_s_copy="-l$ac_lib"
-break
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran 77 compiler in order to get
+# "verbose" output that we can then parse for the Fortran 77 linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
+(eval echo $as_me:3627: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+# If we are using xlf then replace all the commas with spaces.
+if echo $ac_f77_v_output | grep xlfentry >/dev/null 2>&1; then
+  ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'`
 fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+
+# If we are using Cray Fortran then delete quotes.
+# Use "\"" instead of '"' for font-lock-mode.
+# FIXME: a more general fix for quoted arguments with spaces?
+if echo $ac_f77_v_output | grep cft90 >/dev/null 2>&1; then
+  ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"`
+fi
+
+ac_cv_flibs=
+
+# Save positional arguments (if any)
+ac_save_positional="$@"
+
+set X $ac_f77_v_output
+while test $# != 1; do
+  shift
+  ac_arg=$1
+  case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a)
+            ac_exists=false
+  for ac_i in $ac_cv_flibs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
   done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_s_copy" >&5
-echo "${ECHO_T}$ac_cv_search_s_copy" >&6
-if test "$ac_cv_search_s_copy" != no; then
-  test "$ac_cv_search_s_copy" = "none required" || LIBS="$ac_cv_search_s_copy $LIBS"
 
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_flibs="$ac_cv_flibs $ac_arg"
 fi
 
+          ;;
+        -bI:*)
+            ac_exists=false
+  for ac_i in $ac_cv_flibs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_arg; do
+    ac_cv_flibs="$ac_cv_flibs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_flibs="$ac_cv_flibs $ac_arg"
+fi
 fi
 
-# Find valid BLAS
-if test ${USE_TRILINOS} = yes; then
+          ;;
+          # Ignore these flags.
+        -lang* | -lcrt0.o | -lc | -lgcc | -libmil | -LANG:=*)
+          ;;
+        -lkernel32)
+          test x"$CYGWIN" != xyes && ac_cv_flibs="$ac_cv_flibs $ac_arg"
+          ;;
+        -[LRuY])
+          # These flags, when seen by themselves, take an argument.
+          # We remove the space between option and argument and re-iterate
+          # unless we find an empty arg or a new option (starting with -)
+	  case $2 in
+             "" | -*);;
+             *)
+		ac_arg="$ac_arg$2"
+		shift; shift
+		set X $ac_arg "$@"
+		;;
+	  esac
+          ;;
+        -YP,*)
+          for ac_j in `echo $ac_arg | sed -e 's/-YP,/-L/;s/:/ -L/g'`; do
+              ac_exists=false
+  for ac_i in $ac_cv_flibs; do
+    if test x"$ac_j" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_arg="$ac_arg $ac_j"
+                               ac_cv_flibs="$ac_cv_flibs $ac_j"
+fi
+
+          done
+          ;;
+        -[lLR]*)
+            ac_exists=false
+  for ac_i in $ac_cv_flibs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_flibs="$ac_cv_flibs $ac_arg"
+fi
+
+          ;;
+          # Ignore everything else.
+  esac
+done
+# restore positional arguments
+set X $ac_save_positional; shift
+
+# We only consider "LD_RUN_PATH" on Solaris systems.  If this is seen,
+# then we insist that the "run path" must be an absolute path (i.e. it
+# must begin with a "/").
+case `(uname -sr) 2>/dev/null` in
+   "SunOS 5"*)
+      ac_ld_run_path=`echo $ac_f77_v_output |
+                        sed -n 's,^.*LD_RUN_PATH *= *\(/[^ ]*\).*$,-R\1,p'`
+      test "x$ac_ld_run_path" != x &&
+        if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_ld_run_path; do
+    ac_cv_flibs="$ac_cv_flibs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_flibs="$ac_cv_flibs $ac_ld_run_path"
+fi
+      ;;
+esac
+fi # test "x$FLIBS" = "x"
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_flibs" >&5
+echo "${ECHO_T}$ac_cv_flibs" >&6
+FLIBS="$ac_cv_flibs"
+
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  LIBS="$LIBS $FLIBS"
+
+  # Find valid BLAS
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4668,23 +3860,12 @@ if test "$ac_cv_search_dcopy" != no; then
   test "$ac_cv_search_dcopy" = "none required" || LIBS="$ac_cv_search_dcopy $LIBS"
 
 else
-  DONT_HAVE_BLAS="no"
+  { { echo "$as_me:$LINENO: error: Cannot find BLAS library" >&5
+echo "$as_me: error: Cannot find BLAS library" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
-  if test -e "$DONT_HAVE_LIBBLAS"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the BLAS library. It can be obtained at"
-    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
-    echo "specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
-  fi
-fi
-
-# Find valid LAPACK
-if test ${USE_TRILINOS} = yes; then
+  # Find valid LAPACK
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4757,81 +3938,287 @@ if test "$ac_cv_search_dgetrs" != no; then
   test "$ac_cv_search_dgetrs" = "none required" || LIBS="$ac_cv_search_dgetrs $LIBS"
 
 else
-  DONT_HAVE_LIBLAPACK="no"
+  { { echo "$as_me:$LINENO: error: Cannot find LAPACK library" >&5
+echo "$as_me: error: Cannot find LAPACK library" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
-  if test -e "$DONT_HAVE_LIBLAPACK"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the LAPACK library. It can be obtained at"
-    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
-    echo "specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
+  # Set TRILINOS_COMM (used several places)
+  if test ${HAVE_PKG_MPI} = yes; then
+    TRILINOS_COMM="MPI"
+  else
+    TRILINOS_COMM="SERIAL"
   fi
 
+  # If the package directory isn't specified, use the standard
+  # TRILINOS directory structure
+  if test X${USE_TRILINOS_DIRS} != Xno && test X${USE_PKGDIR} != Xyes; then
+    USE_TRILINOS_DIRS=yes
+  fi
+
+  if test ${USE_TRILINOS_DIRS} != yes && test X${USE_PKGDIR} != Xyes; then
+    { { echo "$as_me:$LINENO: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&5
+echo "$as_me: error: Must use --enable-trilinos-dirs or --with-pkgdir" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  if test X${USE_TRILINOS_DIRS} = Xyes; then
+
+    echo "$as_me:$LINENO: checking whether TRILINOS_HOME is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_HOME is defined... $ECHO_C" >&6
+    if test $TRILINOS_HOME; then
+       echo "$as_me:$LINENO: result: yes (${TRILINOS_HOME})" >&5
+echo "${ECHO_T}yes (${TRILINOS_HOME})" >&6
+    else
+       echo "$as_me:$LINENO: result: no (using ${HOME}/Trilinos)" >&5
+echo "${ECHO_T}no (using ${HOME}/Trilinos)" >&6
+       TRILINOS_HOME=${HOME}/Trilinos
+    fi
+
+    echo "$as_me:$LINENO: checking whether TRILINOS_HOME is valid" >&5
+echo $ECHO_N "checking whether TRILINOS_HOME is valid... $ECHO_C" >&6
+    if test -d ${TRILINOS_HOME}; then
+       echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+    else
+       echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+       { { echo "$as_me:$LINENO: error: TRILINOS_HOME is invalid" >&5
+echo "$as_me: error: TRILINOS_HOME is invalid" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
+    echo "$as_me:$LINENO: checking whether TRILINOS_ARCH is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ARCH is defined... $ECHO_C" >&6
+    if test ${TRILINOS_ARCH}; then
+       echo "$as_me:$LINENO: result: yes (${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ARCH})" >&6
+    else
+       case $target in
+ 	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+   	  TRILINOS_ARCH="AIX"
+ 	  ;;
+ 	alpha-unknown-linux-gnu)
+ 	  TRILINOS_ARCH="LINUXALPHA"
+ 	  ;;
+ 	*)
+ 	  TRILINOS_ARCH="LINUX"
+   	  ;;
+       esac
+       echo "$as_me:$LINENO: result: no (using ${TRILINOS_ARCH})" >&5
+echo "${ECHO_T}no (using ${TRILINOS_ARCH})" >&6
+    fi
+
+    echo "$as_me:$LINENO: checking whether TRILINOS_ID is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_ID is defined... $ECHO_C" >&6
+    if test ${TRILINOS_ID}; then
+       echo "$as_me:$LINENO: result: yes (${TRILINOS_ID})" >&5
+echo "${ECHO_T}yes (${TRILINOS_ID})" >&6
+    else
+       echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    fi
+
+    echo "$as_me:$LINENO: checking whether TRILINOS_TARGET is defined" >&5
+echo $ECHO_N "checking whether TRILINOS_TARGET is defined... $ECHO_C" >&6
+    if test ${TRILINOS_TARGET}; then
+       echo "$as_me:$LINENO: result: yes (${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}yes (${TRILINOS_TARGET})" >&6
+    else
+       TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
+       echo "$as_me:$LINENO: result: no (using ${TRILINOS_TARGET})" >&5
+echo "${ECHO_T}no (using ${TRILINOS_TARGET})" >&6
+    fi
+
+    EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
+    AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
+    TRILINOS_LIBDIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
+    LDFLAGS="${LDFLAGS} -L${TRILINOS_LIBDIR}"
+
+  else
+
+    EPETRA_INC=${PKGDIR}/include/epetra
+    AZTECOO_INC=${PKGDIR}/include/aztecoo
+    TRILINOS_LIBDIR=${PKGDIR}/lib
+
+  fi
+
+  # Find a valid y12m
+  ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+  echo "$as_me:$LINENO: checking for library containing y12mae" >&5
+echo $ECHO_N "checking for library containing y12mae... $ECHO_C" >&6
+if test "${ac_cv_search_y12mae+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_y12mae=no
+cat >conftest.$ac_ext <<_ACEOF
+      program main
+      call y12mae
+      end
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_y12mae="none required"
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_y12mae" = no; then
+  for ac_lib in y12m; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+      program main
+      call y12mae
+      end
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_y12mae="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_y12mae" >&5
+echo "${ECHO_T}$ac_cv_search_y12mae" >&6
+if test "$ac_cv_search_y12mae" != no; then
+  test "$ac_cv_search_y12mae" = "none required" || LIBS="$ac_cv_search_y12mae $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find y12m library" >&5
+echo "$as_me: error: Cannot find y12m library" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
-# Check for ifpack
-if test ${USE_TRILINOS} = yes; then
+  # Check for ifpack
+
+# Check whether --with-ifpack-libdir or --without-ifpack-libdir was given.
+if test "${with_ifpack_libdir+set}" = set; then
+  withval="$with_ifpack_libdir"
+  ifpack_LIBDIR=$withval
+fi;
+
   echo "$as_me:$LINENO: checking for ifpack" >&5
 echo $ECHO_N "checking for ifpack... $ECHO_C" >&6
-  if test -f ${TRILINOS_LIB_DIR}/libifpack.a; then
+  if test X${ifpack_LIBDIR} != X && test -f ${ifpack_LIBDIR}/libifpack.a; then
+    LDFLAGS="-L${ifpack_LIBDIR} ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/libifpack.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/ifpack/libifpack.a; then
+    LDFLAGS="-L${TRILINOS_LIBDIR}/ifpack ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
+    { { echo "$as_me:$LINENO: error: Cannot find ifpack library" >&5
+echo "$as_me: error: Cannot find ifpack library" >&2;}
+   { (exit 1); exit 1; }; }
   fi
-fi
 
-# Check for aztecoo
-if test ${USE_TRILINOS} = yes; then
+  LIBS="-lifpack ${LIBS}"
+
+# Check whether --with-aztecoo-libdir or --without-aztecoo-libdir was given.
+if test "${with_aztecoo_libdir+set}" = set; then
+  withval="$with_aztecoo_libdir"
+  aztecoo_LIBDIR=$withval
+fi;
+
   echo "$as_me:$LINENO: checking for aztecoo" >&5
 echo $ECHO_N "checking for aztecoo... $ECHO_C" >&6
-  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
+  if test X${aztecoo_LIBDIR} != X && test -f ${aztecoo_LIBDIR}/libaztecoo.a; then
+    LDFLAGS="-L${aztecoo_LIBDIR} ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/libaztecoo.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/aztecoo/libaztecoo.a; then
+    LDFLAGS="-L${TRILINOS_LIBDIR}/aztecoo ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
+    { { echo "$as_me:$LINENO: error: Cannot find aztecoo library" >&5
+echo "$as_me: error: Cannot find aztecoo library" >&2;}
+   { (exit 1); exit 1; }; }
   fi
-fi
 
-# Check for epetra
-if test ${USE_TRILINOS} = yes; then
+  LIBS="-laztecoo ${LIBS}"
+
+# Check whether --with-epetra-libdir or --without-epetra-libdir was given.
+if test "${with_epetra_libdir+set}" = set; then
+  withval="$with_epetra_libdir"
+  epetra_LIBDIR=$withval
+fi;
+
   echo "$as_me:$LINENO: checking for epetra" >&5
 echo $ECHO_N "checking for epetra... $ECHO_C" >&6
-  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
+  if test X${epetra_LIBDIR} != X && test -f ${epetra_LIBDIR}/libepetra.a; then
+    LDFLAGS="-L${epetra_LIBDIR} ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/libepetra.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${TRILINOS_LIBDIR}/epetra/libepetra.a; then
+    LDFLAGS="-L${TRILINOS_LIBDIR}/epetra ${LDFLAGS}"
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   else
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
-echo "$as_me: DISABLING TRILINOS!!" >&6;}
-    USE_TRILINOS=no
+    { { echo "$as_me:$LINENO: error: Cannot find epetra library" >&5
+echo "$as_me: error: Cannot find epetra library" >&2;}
+   { (exit 1); exit 1; }; }
   fi
-fi
 
-# If we make it through all the tests, define the correct libs and includes!!
-if test ${USE_TRILINOS} = yes; then
-  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
+  LIBS="-lepetra ${LIBS}"
+
+  # If we make it through all the tests, define the correct libs and includes!!
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${EPETRA_INC} -I${AZTECOO_INC}"
 fi
 
 # ------------------------------------------------------------------------
 # Checks for TRILINOS status
 # ------------------------------------------------------------------------
 
-if test X${USE_TRILINOS} = Xyes; then
+if test X${BUILD_NOXEPETRA} = Xyes; then
 
 if true; then
   BUILD_NOXEPETRA_TRUE=
@@ -4870,300 +4257,11 @@ fi
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
 
-echo "$as_me:$LINENO: checking whether the compiler implements namespaces" >&5
-echo $ECHO_N "checking whether the compiler implements namespaces... $ECHO_C" >&6
-if test "${ac_cv_cxx_namespaces+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
- ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
- cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-namespace Outer { namespace Inner { int i = 0; }}
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-using namespace Outer::Inner; return i;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_cxx_namespaces=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_cxx_namespaces=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
- ac_ext=f
-ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
-ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_f77_compiler_gnu
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_namespaces" >&5
-echo "${ECHO_T}$ac_cv_cxx_namespaces" >&6
-if test "$ac_cv_cxx_namespaces" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_NAMESPACES
-_ACEOF
-
-fi
-
-echo "$as_me:$LINENO: checking whether the compiler supports the mutable keyword" >&5
-echo $ECHO_N "checking whether the compiler supports the mutable keyword... $ECHO_C" >&6
-if test "${ac_cv_cxx_mutable+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
- ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
- cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-class A { mutable int i;
-          public:
-          int f (int n) const { i = n; return i; }
-        };
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-A a; return a.f (1);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_cxx_mutable=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_cxx_mutable=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
- ac_ext=f
-ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
-ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_f77_compiler_gnu
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_mutable" >&5
-echo "${ECHO_T}$ac_cv_cxx_mutable" >&6
-if test "$ac_cv_cxx_mutable" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_MUTABLE
-_ACEOF
-
-fi
-
-echo "$as_me:$LINENO: checking whether the compiler supports Standard Template Library" >&5
-echo $ECHO_N "checking whether the compiler supports Standard Template Library... $ECHO_C" >&6
-if test "${ac_cv_cxx_have_stl+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
- ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
- cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <list>
-#include <deque>
-#ifdef HAVE_NAMESPACES
-using namespace std;
-#endif
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-list<int> x; x.push_back(5);
-list<int>::iterator iter = x.begin(); if (iter != x.end()) ++iter; return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_cxx_have_stl=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_cxx_have_stl=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
- ac_ext=f
-ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
-ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_f77_compiler_gnu
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_have_stl" >&5
-echo "${ECHO_T}$ac_cv_cxx_have_stl" >&6
-if test "$ac_cv_cxx_have_stl" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_STL
-_ACEOF
-
-fi
-
-echo "$as_me:$LINENO: checking whether the compiler supports ISO C++ standard library" >&5
-echo $ECHO_N "checking whether the compiler supports ISO C++ standard library... $ECHO_C" >&6
-if test "${ac_cv_cxx_have_std+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
- ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
- cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <iostream>
-#include <map>
-#include <iomanip>
-#include <cmath>
-#ifdef HAVE_NAMESPACES
-using namespace std;
-#endif
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_cxx_have_std=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_cxx_have_std=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
- ac_ext=f
-ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
-ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_f77_compiler_gnu
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_cxx_have_std" >&5
-echo "${ECHO_T}$ac_cv_cxx_have_std" >&6
-if test "$ac_cv_cxx_have_std" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_STD
-_ACEOF
-
-fi
-
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
 
 # -- DEC CXX --
-if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-   XTRALDADD="cxx_repository/*.o"
-fi
-
-echo "$as_me:$LINENO: checking for extra object files to be linked" >&5
-echo $ECHO_N "checking for extra object files to be linked... $ECHO_C" >&6
-if test X$XTRALDADD = X; then
-echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
-else
-echo "$as_me:$LINENO: result: $XTRALDADD" >&5
-echo "${ECHO_T}$XTRALDADD" >&6
-fi
 
 # ------------------------------------------------------------------------
 # Checks for library functions
@@ -5172,36 +4270,6 @@ fi
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Alternate archiver
-# ------------------------------------------------------------------------
-
-echo "$as_me:$LINENO: checking for special archiver command" >&5
-echo $ECHO_N "checking for special archiver command... $ECHO_C" >&6
-if test X${USE_ALTERNATE_AR} = Xyes; then
-   echo "$as_me:$LINENO: result: yes (${ALTERNATE_AR})" >&5
-echo "${ECHO_T}yes (${ALTERNATE_AR})" >&6
-
-if true; then
-  USE_ALTERNATE_AR_TRUE=
-  USE_ALTERNATE_AR_FALSE='#'
-else
-  USE_ALTERNATE_AR_TRUE='#'
-  USE_ALTERNATE_AR_FALSE=
-fi
-else
-   echo "$as_me:$LINENO: result: none" >&5
-echo "${ECHO_T}none" >&6
-
-if false; then
-  USE_ALTERNATE_AR_TRUE=
-  USE_ALTERNATE_AR_FALSE='#'
-else
-  USE_ALTERNATE_AR_TRUE='#'
-  USE_ALTERNATE_AR_FALSE=
-fi
-fi
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -5811,32 +4879,28 @@ s,@AMDEP_TRUE@,$AMDEP_TRUE,;t t
 s,@AMDEP_FALSE@,$AMDEP_FALSE,;t t
 s,@AMDEPBACKSLASH@,$AMDEPBACKSLASH,;t t
 s,@DEPDIR@,$DEPDIR,;t t
-s,@MPICC_EXISTS@,$MPICC_EXISTS,;t t
-s,@MPICXX_EXISTS@,$MPICXX_EXISTS,;t t
-s,@CC@,$CC,;t t
-s,@CFLAGS@,$CFLAGS,;t t
-s,@LDFLAGS@,$LDFLAGS,;t t
-s,@CPPFLAGS@,$CPPFLAGS,;t t
-s,@ac_ct_CC@,$ac_ct_CC,;t t
-s,@am__include@,$am__include,;t t
-s,@am__quote@,$am__quote,;t t
-s,@CCDEPMODE@,$CCDEPMODE,;t t
+s,@MPI_CXX_EXISTS@,$MPI_CXX_EXISTS,;t t
 s,@CXX@,$CXX,;t t
 s,@CXXFLAGS@,$CXXFLAGS,;t t
+s,@LDFLAGS@,$LDFLAGS,;t t
+s,@CPPFLAGS@,$CPPFLAGS,;t t
 s,@ac_ct_CXX@,$ac_ct_CXX,;t t
+s,@am__include@,$am__include,;t t
+s,@am__quote@,$am__quote,;t t
 s,@CXXDEPMODE@,$CXXDEPMODE,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
+s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
+s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
+s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
+s,@FLIBS@,$FLIBS,;t t
 s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
 s,@BUILD_NOXEPETRA_TRUE@,$BUILD_NOXEPETRA_TRUE,;t t
 s,@BUILD_NOXEPETRA_FALSE@,$BUILD_NOXEPETRA_FALSE,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t
-s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
-s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
-s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF
 

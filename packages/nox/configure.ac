@@ -75,202 +75,146 @@ dnl committing.
 dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
-# Check for user overrides
+# Check for user overrides (to be used later)
 # ------------------------------------------------------------------------
 
-if test -z "$CC"; then
-  USERDEF_CC=yes
-fi
-
-if test -z "$CFLAGS"; then
-  USERDEF_CFLAGS=yes
-fi
-
-if test -z "$CXX"; then
-  USERDEF_CXX=yes
-fi
-
-if test -z "$CXXFLAGS"; then
+if test -n "$CXXFLAGS"; then
   USERDEF_CXXFLAGS=yes
 fi
-
-# ------------------------------------------------------------------------
-# Extra flags and includes
-# ------------------------------------------------------------------------
-
-AC_ARG_WITH(flags,
-[  --with-flags            Specify add'l preprocessor flags ("-Dflag -Idir")],
-[
-XTRAFLAGS=$withval
-echo Using extra flags: $withval
-]
-)
-
-# ------------------------------------------------------------------------
-# Debug configure command line option
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(debug,
-[  --enable-debug          Compile with debugging options],
-[
-DEBUG=$enableval
-case $enableval in
-
-  yes) CXXFLAGS="${CXXFLAGS} -g"
-       CFLAGS="${CFLAGS} -g"
-       ;;
-
-  no)  CXXFLAGS="${CXXFLAGS} -O2"
-       CFLAGS="${CFLAGS} -O2"
-       ;;
-esac
-],
-[DEBUG=default]
-)
-AC_MSG_CHECKING(whether debugging is on)
-AC_MSG_RESULT([${DEBUG}])
-
-# ------------------------------------------------------------------------
-# AR override command line option
-# ------------------------------------------------------------------------
-
-AC_ARG_WITH(ar,
-[  --with-ar               Specify archiver (default is "ar cru")],
-[
-AC_MSG_CHECKING(user-defined archiver)
-AC_MSG_RESULT([${withval}])
-USE_ALTERNATE_AR=yes
-ALTERNATE_AR="${withval}"
-]
-)
 
 # ------------------------------------------------------------------------
 # MPI configure command line option
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(mpi,
-[  --enable-mpi            Enable MPI],
+[  --enable-mpi            enable MPI using mpiCC C++ compiler],
 [
-case $enableval in
-  yes)
-    USE_MPI=yes 
-    USE_MPI_COMPILER=yes
-  ;;
-  no)
-    USE_MPI=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --enable-mpi ($enableval)])
-  ;;
-esac
+HAVE_PKG_MPI=yes 
+MPI_CXX=mpiCC
 ],
-[USE_MPI=no]
+[HAVE_PKG_MPI=no]
+)
+
+AC_ARG_WITH(mpi,
+[  --with-mpi              specify root directory of MPI installation],
+[
+HAVE_PKG_MPI=yes
+MPI_DIR=${withval}
+AC_MSG_CHECKING(MPI directory)
+AC_MSG_RESULT([$MPI_DIR])
+]
+)
+
+AC_ARG_WITH(mpi-cxx,
+[  --with-mpi-cxx          specify MPI C++ compiler],
+[
+HAVE_PKG_MPI=yes 
+MPI_CXX=${withval}
+AC_MSG_CHECKING(user-defined MPI C++ compiler)
+AC_MSG_RESULT([$MPI_CXX])
+]
+)
+
+AC_ARG_WITH(mpi-include,
+[  --with-mpi-include      specify include directory for MPI],
+[
+HAVE_PKG_MPI=yes
+MPI_INC=${withval}
+AC_MSG_CHECKING(user-defined MPI includes)
+AC_MSG_RESULT([$MPI_INC])
+]
+)
+
+AC_ARG_WITH(mpi-libs,
+[  --with-mpi-libs         specify MPI libraries],
+[
+HAVE_PKG_MPI=yes
+MPI_LIBS=${withval}
+AC_MSG_CHECKING(user-defined MPI libraries)
+AC_MSG_RESULT([$MPI_LIBS])
+]
+)
+
+AC_ARG_WITH(mpi-libdir,
+[  --with-mpi-libdir       specify location of MPI libraries],
+[
+HAVE_PKG_MPI=yes
+MPI_LIBDIR=${withval}
+AC_MSG_CHECKING(user-defined MPI libraries)
+AC_MSG_RESULT([$MPI_LIBS])
+]
 )
 
 AC_MSG_CHECKING(whether we are using MPI)
-AC_MSG_RESULT([${USE_MPI}])
-
-AC_ARG_WITH(mpiinc,
-[  --with-mpiinc           Specify MPI includes (enables MPI)],
-[
-USE_MPI=yes
-USE_MPI_COMPILER=no
-AC_MSG_CHECKING(user-defined MPI includes)
-AC_MSG_RESULT([${withval}])
-CPPFLAGS="${CPPFLAGS} ${withval}"
-]
-)
-
-AC_ARG_WITH(mpilib,
-[  --with-mpilib           Specify MPI libraries (enables MPI)],
-[
-USE_MPI=yes
-USE_MPI_COMPILER=no
-AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([${withval}])
-LIBS="${LIBS} ${withval}"
-]
-)
+AC_MSG_RESULT([${HAVE_PKG_MPI}])
 
 # ------------------------------------------------------------------------
-# Package-specific command line option
+# Check for MPI compiler (must be done *before* AC_PROG_CXX)
 # ------------------------------------------------------------------------
 
-AC_ARG_WITH(pkgdir,
-[  --with-pkgdir           Specify location of add'l packages (i.e., epetra)],
-[
-USE_PKGDIR=yes
-USE_TRILINOS=yes
-PKGDIR=$withval
-]
-)
-
-AC_ARG_ENABLE(trilinos,
-[  --disable-trilinos      Disable TRILINOS],
-[
-case $enableval in
-  yes)
-    USE_TRILINOS=yes
-  ;;
-  no)
-    USE_TRILINOS=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --disable-trilinos ($enableval)])
-  ;;
-esac
-],
-[USE_TRILINOS=yes]
-)
-
-# ------------------------------------------------------------------------
-# Checks for MPI compilers (mpicc/mpiCC)
-# ------------------------------------------------------------------------
-
-if test X${USE_MPI} = Xyes; then
-
-  if test -z "$CC" && test X${USE_MPI_COMPILER} = Xyes; then
-    AC_MSG_CHECKING(for mpicc)
-    AC_CHECK_PROG(MPICC_EXISTS, mpicc, yes, no)
-    if test X${MPICC_EXISTS} = Xyes; then
-      CC=mpicc
-    fi
+if test X${MPI_CXX} != X; then
+  AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
+  if test X${MPI_CXX_EXISTS} = Xyes; then
+    CXX=$MPI_CXX
+  else
+    AC_MSG_ERROR([MPI C++ compiler ($MPI_CXX) not found.])
   fi
-
-  if test -z "$CXX" && test X${USE_MPI_COMPILER} = Xyes; then
-    AC_MSG_CHECKING(for mpiCC)
-    AC_CHECK_PROG(MPICXX_EXISTS, mpiCC, yes, no)
-    if test X${MPICXX_EXISTS} = Xyes; then
-      CXX=mpiCC
-    fi
-  fi
-
 fi
 
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CXX(CC c++ g++ gcc cxx)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
 
+AC_ARG_WITH(flags,
+[  --with-flags            add extra preprocessor flags ("-Dflag -Idir")],
+[
+XTRAFLAGS=$withval
+echo Using extra flags: $withval
+]
+)
+
+AC_MSG_CHECKING([for extra preprocessor flags])
+if test X$XTRAFLAGS = X; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([$XTRAFLAGS])
+  CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
+fi
+
+# ------------------------------------------------------------------------
+# Checks for special compiler options
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(debug,
+[  --enable-debug          compile with debugging],
+[DEBUG=$enableval],
+[DEBUG=default]
+)
+AC_MSG_CHECKING(whether debugging is on)
+AC_MSG_RESULT([${DEBUG}])
+
+AC_ARG_ENABLE(opt,
+[  --enable-opt            compile with optimization],
+[OPT=$enableval],
+[OPT=default]
+)
+AC_MSG_CHECKING(whether optimization is on)
+AC_MSG_RESULT([${OPT}])
 
 case $target in
 
   # IBM test
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
 
-    case $CC in
-      xlc* | cc* ) COPTIONS="-qnolm";;
-    esac
-
     case $CXX in
-      xlC* ) CXXOPTIONS="-qnolm -qrtti";;
+      xlC* ) SPECIAL_CXXFLAGS="-qnolm -qrtti";;
     esac
 
   ;;
@@ -279,60 +223,90 @@ case $target in
   mips-sgi-irix* ) 
 
     if test $CXX = CC; then
-     CXXOPTIONS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
-     
-     if test X$USE_ALTERNATE_AR != Xyes; then
-       USE_ALTERNATE_AR=yes
-       ALTERNATE_AR="CC -ar -W,l -W,s -o"
-     fi
-
+     SPECIAL_CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     SPECIAL_AR="CC -ar -W,l -W,s -o"    
     fi
 
   ;;
 
 esac
 
-AC_MSG_CHECKING([for extra preprocessor flags])
-if test X$XTRAFLAGS = X; then
-AC_MSG_RESULT(none)
+AC_MSG_CHECKING([for special C++ flags])
+if test X$USERDEF_CXXFLAGS = Xyes; then
+
+  AC_MSG_RESULT([$CXXFLAGS (user-specified via CXXFLAGS)])
+
 else
-AC_MSG_RESULT([$XTRAFLAGS])
+
+  if test X$SPECIAL_CXXFLAGS != X; then
+    AC_MSG_RESULT([$SPECIAL_CXXFLAGS])
+    CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
+  else
+    AC_MSG_RESULT([$CXXFLAGS (default)])
+  fi
+
 fi
 
-AC_MSG_CHECKING([for extra C flags])
-if test X$COPTIONS = X; then
-AC_MSG_RESULT(none)
-else
-AC_MSG_RESULT($COPTIONS)
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(ar,
+[  --with-ar               override archiver command (default is "ar cru")],
+[
+AC_MSG_CHECKING(user-defined archiver)
+AC_MSG_RESULT([${withval}])
+USE_ALTERNATE_AR=yes
+ALTERNATE_AR="${withval}"
+]
+)
+
+if test -n "$SPECIAL_AR" && test X$USE_ALTERNATE_AR != Xyes; then
+  USE_ALTERNATE_AR=yes
+  ALTERNATE_AR=$SPECIAL_AR
 fi
 
-AC_MSG_CHECKING([for extra C++ flags])
-if test X"$CXXOPTIONS" = X; then
-AC_MSG_RESULT(none)
+AC_MSG_CHECKING(for special archiver command)
+if test X${USE_ALTERNATE_AR} = Xyes; then
+   AC_MSG_RESULT([yes (${ALTERNATE_AR})])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, true)
 else
-AC_MSG_RESULT($CXXOPTIONS)
+   AC_MSG_RESULT([none])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, false)
 fi
+AC_SUBST(ALTERNATE_AR)
 
-CFLAGS="${CFLAGS} ${COPTIONS}"
-CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
-CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS}"
+
 
 # ------------------------------------------------------------------------
 # MPI link check
 # ------------------------------------------------------------------------
 
-if test X${USE_MPI} = Xyes; then
+if test X${HAVE_PKG_MPI} = Xyes; then
 
-  AC_LANG_SAVE
+  if test X${MPI_DIR} != X && test X${MPI_INC} = X; then
+    MPI_INC=${MPI_DIR}/include
+  fi
 
-  AC_LANG_C
-  AC_MSG_CHECKING(whether MPI will link using C compiler)
-  AC_TRY_LINK([#include <mpi.h>],
-  [int c; char** v; MPI_Init(&c,&v);],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-   AC_MSG_ERROR(MPI cannot link)]
-  )
+  if test X${MPI_DIR} != X && test X${MPI_LIBDIR} = X; then
+    MPI_LIBDIR=${MPI_DIR}/lib
+  fi
+
+  if test X${MPI_INC} != X; then
+    CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
+  fi
+
+  if test X${MPI_LIBDIR} != X; then
+    LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
+  fi
+
+  if test X${MPI_LIBS} = X && test X${MPI_LIBDIR} != X; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test X${MPI_LIBS} != X; then
+    LIBS = "${MPI_LIBS} ${LIBS}"
+  fi
 
   AC_LANG_CPLUSPLUS 
   AC_MSG_CHECKING(whether MPI will link using C++ compiler)
@@ -342,8 +316,6 @@ if test X${USE_MPI} = Xyes; then
   [AC_MSG_RESULT(no)  
    AC_MSG_ERROR(MPI cannot link)]
   )
-
-  AC_LANG_RESTORE
 
 fi
 
@@ -424,8 +396,6 @@ AC_TRY_LINK([#include <cmath>],[],
 )
 
 # can we say using std::ostream?
-AC_LANG_SAVE
-
 AC_LANG_CPLUSPLUS 
 AC_MSG_CHECKING(whether "using std::ostream" is okay)
 AC_TRY_LINK(
@@ -434,237 +404,201 @@ AC_TRY_LINK(
 #include <iostream>
 #elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
-#else
-// Try to include it anyway
-#include <iostream>
 #endif
 ],
-[
-using std::ostream;
-],
+[using std::ostream;],
 [AC_MSG_RESULT(yes)], 
 [
   AC_MSG_RESULT(no)  
-  AC_DEFINE(NO_USING_STD_OSTREAM,,[define is "using std::ostream" is okay])
+  AC_DEFINE(NO_USING_STD_OSTREAM,,[define if "using std::ostream" is okay])
 ]
 )
-
-AC_LANG_RESTORE
 
 
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-AC_SEARCH_LIBS(pow,[m])
-AC_SEARCH_LIBS(sqrt,[m])
-AC_CHECK_FUNCS([pow sqrt])
-
+AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 # ------------------------------------------------------------------------
-# Trilinos
+# Specify package directory
 # ------------------------------------------------------------------------
 
-# Case I: Using standard Trilinos directory structure
-# (a) Check if TRILINOS_HOME is valid
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
+AC_ARG_WITH(pkgdir,
+[  --with-pkgdir           specify root directory of add'l packages],
+[
+USE_PKGDIR=yes
+PKGDIR=$withval
+]
+)
 
-   AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
-   if test $TRILINOS_HOME; then
-      AC_MSG_RESULT([yes (${TRILINOS_HOME})])
-   else
-      AC_MSG_RESULT([no (using ${HOME}/Trilinos)])
-      TRILINOS_HOME=${HOME}/Trilinos
-   fi
+if test X${USE_PKGDIR} = Xyes; then
 
-   AC_MSG_CHECKING(whether TRILINOS_HOME is valid)
-   if test -d ${TRILINOS_HOME}; then
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT([no (WARNING: DISABLING TRILINOS!!!!)])
-      USE_TRILINOS=no
-   fi
-fi
-
-# Case I: Using standard Trilinos directory structure
-# (b): Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
-
-   AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
-   if test ${TRILINOS_ARCH}; then
-      AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
-   else
-      case $target in
-	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-  	  TRILINOS_ARCH="AIX"
-	  ;;
-	alpha-unknown-linux-gnu)
-	  TRILINOS_ARCH="LINUXALPHA"
-	  ;;	
-	*)
-	  TRILINOS_ARCH="LINUX"
-  	  ;;
-      esac
-      AC_MSG_RESULT([no (using ${TRILINOS_ARCH})])
-   fi
-
-   AC_MSG_CHECKING(whether TRILINOS_COMM is defined)
-   if test ${USE_MPI} = yes; then
-      TRILINOS_COMM="MPI"
-   else
-      TRILINOS_COMM="SERIAL"
-   fi
-   AC_MSG_RESULT([overriding with ${TRILINOS_COMM}])
-
-   AC_MSG_CHECKING(whether TRILINOS_ID is defined)
-   if test ${TRILINOS_ID}; then
-      AC_MSG_RESULT([yes (${TRILINOS_ID})])
-   else
-      AC_MSG_RESULT(no)
-   fi
-
-   AC_MSG_CHECKING(whether TRILINOS_TARGET is defined)
-   if test ${TRILINOS_TARGET}; then
-      AC_MSG_RESULT([yes (${TRILINOS_TARGET})])
-   else
-      TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
-      AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
-   fi
-
-   TRILINOS_EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
-   TRILINOS_AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
-   TRILINOS_LIB_DIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
-fi
-
-
-# Case II: Using Trilinos ARCH directory (ala Xyce)
-# (a) Check is trilinos-arch-dir is valid
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
-
-   AC_MSG_CHECKING(whether PKGDIR is valid)
+   AC_MSG_CHECKING(whether package directory is valid)
    if test -d ${PKGDIR}; then
       AC_MSG_RESULT(yes)
    else
       AC_MSG_NOTICE(no)
-      AC_MSG_NOTICE([DISABLING TRILINOS!!])
-      USE_TRILINOS=no
+      AC_MSG_ERROR([Specified package directory does not exist])
    fi
 
-fi
-
-# Case II: Using Trilinos ARCH directory (ala Xyce)
-# (b) Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
-
-   if test ${USE_MPI} = yes; then
-      TRILINOS_COMM="MPI"
-   else
-      TRILINOS_COMM="SERIAL"
-   fi
-
-   TRILINOS_EPETRA_INC=${PKGDIR}/include/epetra/
-   TRILINOS_AZTECOO_INC=${PKGDIR}/include/aztecoo/
-   TRILINOS_LIB_DIR=${PKGDIR}/lib/
+   LDFLAGS="${LDFLAGS} -L${PKGDIR}/lib"
+   CPPFLAGS="${CPPFLAGS} -I${PKGDIR}/include"
 
 fi
 
-# Set up flags for test compiles and links below
-if test ${USE_TRILINOS} = yes; then
-   LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
-fi
+# ------------------------------------------------------------------------
+# NOXEPETRA LIBRARY
+# ------------------------------------------------------------------------
 
-# Find a valid y12m
-if test ${USE_TRILINOS} = yes; then
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(y12mae,[y12m],,DONT_HAVE_LIBY12M="no")
-  if test -e "$DONT_HAVE_LIBY12M"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the Y12M library. This library is distributed with"
-    echo "Trilinos as an external package. Specify LDFLAGS on the configure line"
-    echo "to specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
-  fi
-fi
+AC_ARG_ENABLE(noxepetra,
+[  --disable-noxepetra     disable building noxepetra library],
+[BUILD_NOXEPETRA=$enableval],
+[BUILD_NOXEPETRA=yes]
+)
 
-# Find g2c if it exists (don't seem to need this if it's not there)
-if test ${USE_TRILINOS} = yes; then
-  AC_LANG_C
-  AC_SEARCH_LIBS(s_copy,[g2c])
-fi
+AC_ARG_ENABLE(trilinos-dirs,
+[  --enable-trilinos-dirs  enable use of Trilinos directory structure],
+[USE_TRILINOS_DIRS=$withval],
+[USE_TRILINOS_DIRS=default]
+)
 
-# Find valid BLAS
-if test ${USE_TRILINOS} = yes; then
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dcopy,[cxml blas],,DONT_HAVE_BLAS="no")
-  if test -e "$DONT_HAVE_LIBBLAS"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the BLAS library. It can be obtained at"
-    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
-    echo "specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
-  fi
-fi
+AC_DEFUN(TRILINOS_LIB_CHECK,
+[
+  AC_ARG_WITH($1-libdir,
+  [  --with-$1-libdir    specify location of $1 library],
+  [$1_LIBDIR=$withval])
 
-# Find valid LAPACK
-if test ${USE_TRILINOS} = yes; then
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,DONT_HAVE_LIBLAPACK="no")
-  if test -e "$DONT_HAVE_LIBLAPACK"; then
-    echo "------------------------------------------------------------------------"
-    echo "Could not link to the LAPACK library. It can be obtained at"
-    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
-    echo "specify the name and/or path to the library."
-    echo "------------------------------------------------------------------------"
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
-  fi
-
-fi
-
-# Check for ifpack
-if test ${USE_TRILINOS} = yes; then
-  AC_MSG_CHECKING(for ifpack)
-  if test -f ${TRILINOS_LIB_DIR}/libifpack.a; then
+  AC_MSG_CHECKING(for $1)
+  if test X${$1_LIBDIR} != X && test -f ${$1_LIBDIR}/lib$1.a; then
+    LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  elif test -f ${TRILINOS_LIBDIR}/lib$1.a; then
+    AC_MSG_RESULT(yes)
+  elif test -f ${TRILINOS_LIBDIR}/$1/lib$1.a; then
+    LDFLAGS="-L${TRILINOS_LIBDIR}/$1 ${LDFLAGS}"
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
+    AC_MSG_ERROR([Cannot find $1 library])
   fi  
-fi
 
-# Check for aztecoo
-if test ${USE_TRILINOS} = yes; then
-  AC_MSG_CHECKING(for aztecoo)
-  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
-    AC_MSG_RESULT(yes)
+  LIBS="-l$1 ${LIBS}"
+
+])
+
+
+# Case I: Using standard Trilinos directory structure
+# (a) Check if TRILINOS_HOME is valid
+if test ${BUILD_NOXEPETRA} = yes; then
+
+  dnl Checks for libraries.
+  AC_F77_LIBRARY_LDFLAGS
+  LIBS="$LIBS $FLIBS"
+
+  # Find valid BLAS
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dcopy,[cxml blas],,AC_MSG_ERROR([Cannot find BLAS library]))
+
+  # Find valid LAPACK
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
+
+  # Set TRILINOS_COMM (used several places)
+  if test ${HAVE_PKG_MPI} = yes; then
+    TRILINOS_COMM="MPI"
   else
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
-  fi  
-fi
+    TRILINOS_COMM="SERIAL"
+  fi
 
-# Check for epetra
-if test ${USE_TRILINOS} = yes; then
-  AC_MSG_CHECKING(for epetra)
-  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
-    AC_MSG_RESULT(yes)
+  # If the package directory isn't specified, use the standard
+  # TRILINOS directory structure
+  if test X${USE_TRILINOS_DIRS} != Xno && test X${USE_PKGDIR} != Xyes; then
+    USE_TRILINOS_DIRS=yes
+  fi
+
+  if test ${USE_TRILINOS_DIRS} != yes && test X${USE_PKGDIR} != Xyes; then
+    AC_MSG_ERROR([Must use --enable-trilinos-dirs or --with-pkgdir])
+  fi
+
+  if test X${USE_TRILINOS_DIRS} = Xyes; then
+
+    AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
+    if test $TRILINOS_HOME; then
+       AC_MSG_RESULT([yes (${TRILINOS_HOME})])
+    else
+       AC_MSG_RESULT([no (using ${HOME}/Trilinos)])
+       TRILINOS_HOME=${HOME}/Trilinos
+    fi
+ 
+    AC_MSG_CHECKING(whether TRILINOS_HOME is valid)
+    if test -d ${TRILINOS_HOME}; then
+       AC_MSG_RESULT(yes)
+    else
+       AC_MSG_RESULT(no)
+       AC_MSG_ERROR([TRILINOS_HOME is invalid])
+    fi
+ 
+    AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
+    if test ${TRILINOS_ARCH}; then
+       AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
+    else
+       case $target in
+ 	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+   	  TRILINOS_ARCH="AIX"
+ 	  ;;
+ 	alpha-unknown-linux-gnu)
+ 	  TRILINOS_ARCH="LINUXALPHA"
+ 	  ;;	
+ 	*)
+ 	  TRILINOS_ARCH="LINUX"
+   	  ;;
+       esac
+       AC_MSG_RESULT([no (using ${TRILINOS_ARCH})])
+    fi
+ 
+ 
+    AC_MSG_CHECKING(whether TRILINOS_ID is defined)
+    if test ${TRILINOS_ID}; then
+       AC_MSG_RESULT([yes (${TRILINOS_ID})])
+    else
+       AC_MSG_RESULT(no)
+    fi
+ 
+    AC_MSG_CHECKING(whether TRILINOS_TARGET is defined)
+    if test ${TRILINOS_TARGET}; then
+       AC_MSG_RESULT([yes (${TRILINOS_TARGET})])
+    else
+       TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
+       AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
+    fi
+
+    EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
+    AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
+    TRILINOS_LIBDIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
+    LDFLAGS="${LDFLAGS} -L${TRILINOS_LIBDIR}"
+
   else
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([DISABLING TRILINOS!!])
-    USE_TRILINOS=no
-  fi  
-fi
 
-# If we make it through all the tests, define the correct libs and includes!!
-if test ${USE_TRILINOS} = yes; then
-  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
+    EPETRA_INC=${PKGDIR}/include/epetra
+    AZTECOO_INC=${PKGDIR}/include/aztecoo
+    TRILINOS_LIBDIR=${PKGDIR}/lib
+
+  fi
+
+  # Find a valid y12m
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find y12m library]))
+
+  # Check for ifpack
+  TRILINOS_LIB_CHECK(ifpack)
+  TRILINOS_LIB_CHECK(aztecoo)
+  TRILINOS_LIB_CHECK(epetra)
+
+  # If we make it through all the tests, define the correct libs and includes!!
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${EPETRA_INC} -I${AZTECOO_INC}"
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
@@ -673,13 +607,11 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Checks for TRILINOS status 
 # ------------------------------------------------------------------------
 
-if test X${USE_TRILINOS} = Xyes; then
+if test X${BUILD_NOXEPETRA} = Xyes; then
    AM_CONDITIONAL(BUILD_NOXEPETRA, true)
 else
    AM_CONDITIONAL(BUILD_NOXEPETRA, false)
 fi
-
-
 
 # ------------------------------------------------------------------------
 # Checks for types
@@ -711,26 +643,21 @@ dnl fi
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
 
-AC_CXX_NAMESPACES
-AC_CXX_MUTABLE
-AC_CXX_HAVE_STL
-AC_CXX_HAVE_STD
-
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
 
 # -- DEC CXX --
-if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-   XTRALDADD="cxx_repository/*.o"
-fi
+dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
+dnl    XTRALDADD="cxx_repository/*.o"
+dnl fi
 
-AC_MSG_CHECKING([for extra object files to be linked])
-if test X$XTRALDADD = X; then
-AC_MSG_RESULT(none)
-else
-AC_MSG_RESULT($XTRALDADD)
-fi
+dnl AC_MSG_CHECKING([for extra object files to be linked])
+dnl if test X$XTRALDADD = X; then
+dnl AC_MSG_RESULT(none)
+dnl else
+dnl AC_MSG_RESULT($XTRALDADD)
+dnl fi
 
 AC_SUBST(XTRALDADD)
 
@@ -742,19 +669,6 @@ AC_SUBST(XTRALDADD)
 # Checks for system services
 # ------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------
-# Alternate archiver
-# ------------------------------------------------------------------------
-
-AC_MSG_CHECKING(for special archiver command)
-if test X${USE_ALTERNATE_AR} = Xyes; then
-   AC_MSG_RESULT([yes (${ALTERNATE_AR})])
-   AM_CONDITIONAL(USE_ALTERNATE_AR, true)
-else
-   AC_MSG_RESULT([none])
-   AM_CONDITIONAL(USE_ALTERNATE_AR, false)
-fi
-AC_SUBST(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
