@@ -283,17 +283,9 @@ int i;
     lb->Method = OCTPART;
     lb->LB_Fn = LB_octpart;
   }
-  else if (strcasecmp(method_name, "PARMETIS_PART") == 0) {
-    lb->Method = PARMETIS_PART;
-    lb->LB_Fn = LB_ParMetis_Part;
-  }
-  else if (strcasecmp(method_name, "PARMETIS_REPART") == 0) {
-    lb->Method = PARMETIS_REPART;
-    lb->LB_Fn = LB_ParMetis_Part;
-  }
-  else if (strcasecmp(method_name, "PARMETIS_REFINE") == 0) {
-    lb->Method = PARMETIS_REFINE;
-    lb->LB_Fn = LB_ParMetis_Part;
+  else if (strcasecmp(method_name, "PARMETIS") == 0) {
+    lb->Method = PARMETIS;
+    lb->LB_Fn = LB_ParMetis;
   }
   else if (strcasecmp(method_name, "NONE") == 0) {
     lb->Method = NONE;
