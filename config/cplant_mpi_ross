@@ -1,15 +1,12 @@
-.././configure CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
+../configure --enable-nox --enable-nox-epetra \
+--enable-referencey12m \
+CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
 EPETRA_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
---enable-referencey12m --enable-nox --enable-nox-epetra \
---prefix=/enfs/tmp/jmwille/ROSS \
-CC=/usr/local/cplant/ross/current/bin/cc \
-CXX=/usr/local/cplant/ross/current/bin/c++ \
-F77=/usr/local/cplant/ross/current/bin/f77 \
 --with-mpi=/usr/local/cplant/ross/current \
---with-mpi-cxx="c++" \
---with-mpi-cc="cc" \
---with-mpi-f77="f77" \
+--with-mpi-cxx="/usr/local/cplant/ross/current/bin/c++" \
+--with-mpi-cc="/usr/local/cplant/ross/current/bin/cc" \
+--with-mpi-f77="/usr/local/cplant/ross/current/bin/f77" \
 --with-mpi-libdir="-L/usr/local/cplant/ross/current/lib" \
 --with-mpi-libs="-lmpi" --enable-mpi \
 --with-mpi-include=-I/usr/local/cplant/ross/current/include \
