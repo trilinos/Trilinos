@@ -42,11 +42,11 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(MultiLevelPreconditioner_Sym_SOURCES)
+SOURCES = $(IFPACKSmoothers_SOURCES)
 
-srcdir = /home/msala/Trilinos/packages/ml/test/IFPACKSmoothers
-top_srcdir = /home/msala/Trilinos/packages/ml
-VPATH = /home/msala/Trilinos/packages/ml/test/IFPACKSmoothers
+srcdir = .
+top_srcdir = ../..
+
 pkgdatadir = $(datadir)/ml
 pkglibdir = $(libdir)/ml
 pkgincludedir = $(includedir)/ml
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = i686-pc-linux-gnu
-noinst_PROGRAMS = MultiLevelPreconditioner_Sym$(EXEEXT)
+noinst_PROGRAMS = IFPACKSmoothers$(EXEEXT)
 subdir = test/IFPACKSmoothers
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,17 +98,15 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MultiLevelPreconditioner_Sym_OBJECTS =  \
-	MultiLevelPreconditioner_Sym-cxx_main.$(OBJEXT)
-MultiLevelPreconditioner_Sym_OBJECTS =  \
-	$(am_MultiLevelPreconditioner_Sym_OBJECTS)
-am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
-am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
-am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
-am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
-am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
-am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
+am_IFPACKSmoothers_OBJECTS = IFPACKSmoothers-cxx_main.$(OBJEXT)
+IFPACKSmoothers_OBJECTS = $(am_IFPACKSmoothers_OBJECTS)
+#am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
+#am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
+#am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
+#am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
+#am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
+#am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
+#am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
 am__DEPENDENCIES_8 =
 am__DEPENDENCIES_9 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
@@ -119,14 +117,14 @@ am__DEPENDENCIES_9 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-DEP_FILES = ./$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po
+DEP_FILES = ./$(DEPDIR)/IFPACKSmoothers-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MultiLevelPreconditioner_Sym_SOURCES)
-DIST_SOURCES = $(MultiLevelPreconditioner_Sym_SOURCES)
+SOURCES = $(IFPACKSmoothers_SOURCES)
+DIST_SOURCES = $(IFPACKSmoothers_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -142,14 +140,14 @@ AWK = gawk
 BLAS_LIBS = -lblas
 BUILD_TESTS_FALSE = #
 BUILD_TESTS_TRUE = 
-CC = mpicc
+CC = cc
 CCDEPMODE = depmode=gcc3
-CFLAGS =  -g -ansi -pedantic -Wall -Wconversion -g -O2
-CPPFLAGS = -I/home/msala/include 
-CXX = mpic++
-CXXCPP = mpic++ -E
+CFLAGS = -g -O2
+CPPFLAGS = 
+CXX = g++
+CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS =  -g -ansi -pedantic -Wall -Wconversion -g -O2
+CXXFLAGS = -g -O2
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -158,19 +156,19 @@ ECHO_N = -n
 ECHO_T = 
 EGREP = grep -E
 EXEEXT = .exe
-F77 = mpif77
+F77 = f77
 FFLAGS = -g -O2
-FLIBS =  -L/home/msala/lib/LINUX_MPI -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.2 -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.2/../../.. -larpack -ldscpack -lumfpack -ldsuperlu -lsuperludist-2.0 -lamd -lzoltan -lparmetis-3.1 -lmetis-4.0 -lParaSails -ly12m -llammpio -llamf77mpi -lmpi -llam -lutil -lfrtbegin -lg2c -lm -lgcc_s -lpthread
-HAVE_MPI_FALSE = #
-HAVE_MPI_TRUE = 
+FLIBS =  -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.2 -L/usr/lib/gcc-lib/i386-redhat-linux/3.2.2/../../.. -lfrtbegin -lg2c -lm -lgcc_s
+HAVE_MPI_FALSE = 
+HAVE_MPI_TRUE = #
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 LAPACK_LIBS = -llapack
-LDFLAGS = -L/home/msala/lib/LINUX_MPI 
+LDFLAGS = 
 LIBOBJS = 
-LIBS = -larpack -ldscpack -lumfpack -ldsuperlu -lsuperludist-2.0 -lamd -lzoltan -lparmetis-3.1 -lmetis-4.0 -lParaSails -ly12m 
+LIBS = 
 LTLIBOBJS = 
 MAINT = #
 MAINTAINER_MODE_FALSE = 
@@ -178,29 +176,30 @@ MAINTAINER_MODE_TRUE = #
 MAKEINFO = ${SHELL} /home/msala/Trilinos/packages/ml/config/missing --run makeinfo
 ML_BENCHMARKING_FALSE = 
 ML_BENCHMARKING_TRUE = #
-ML_BUILD_EXAMPLES_FALSE = 
-ML_BUILD_EXAMPLES_TRUE = #
-ML_STANDALONE_MODE_FALSE = 
-ML_STANDALONE_MODE_TRUE = #
-ML_USING_AMESOS_FALSE = #
-ML_USING_AMESOS_TRUE = 
-ML_USING_ANASAZI_FALSE = #
-ML_USING_ANASAZI_TRUE = 
-ML_USING_AZTECOO_FALSE = #
-ML_USING_AZTECOO_TRUE = 
-ML_USING_EPETRA_FALSE = #
-ML_USING_EPETRA_TRUE = 
-ML_USING_IFPACK_FALSE = #
-ML_USING_IFPACK_TRUE = 
-ML_USING_TEUCHOS_FALSE = #
-ML_USING_TEUCHOS_TRUE = 
-ML_USING_TRIUTILS_FALSE = #
-ML_USING_TRIUTILS_TRUE = 
-MPI_CC_EXISTS = yes
-MPI_CXX = mpic++
-MPI_CXX_EXISTS = yes
-MPI_F77_EXISTS = yes
-MPI_TEMP_CXX = no
+ML_BUILD_DIRECTORY = /home/msala/Trilinos/packages/ml
+ML_BUILD_EXAMPLES_FALSE = #
+ML_BUILD_EXAMPLES_TRUE = 
+ML_STANDALONE_MODE_FALSE = #
+ML_STANDALONE_MODE_TRUE = 
+ML_USING_AMESOS_FALSE = 
+ML_USING_AMESOS_TRUE = #
+ML_USING_ANASAZI_FALSE = 
+ML_USING_ANASAZI_TRUE = #
+ML_USING_AZTECOO_FALSE = 
+ML_USING_AZTECOO_TRUE = #
+ML_USING_EPETRA_FALSE = 
+ML_USING_EPETRA_TRUE = #
+ML_USING_IFPACK_FALSE = 
+ML_USING_IFPACK_TRUE = #
+ML_USING_TEUCHOS_FALSE = 
+ML_USING_TEUCHOS_TRUE = #
+ML_USING_TRIUTILS_FALSE = 
+ML_USING_TRIUTILS_TRUE = #
+MPI_CC_EXISTS = 
+MPI_CXX = 
+MPI_CXX_EXISTS = 
+MPI_F77_EXISTS = 
+MPI_TEMP_CXX = 
 OBJEXT = o
 PACKAGE = ml
 PACKAGE_BUGREPORT = jhu@sandia.gov
@@ -218,9 +217,9 @@ USE_ALTERNATE_AR_FALSE =
 USE_ALTERNATE_AR_TRUE = #
 VERSION = 3.0
 ac_aux_dir = config
-ac_ct_CC = 
-ac_ct_CXX = 
-ac_ct_F77 = 
+ac_ct_CC = cc
+ac_ct_CXX = g++
+ac_ct_F77 = f77
 ac_ct_RANLIB = ranlib
 ac_ct_STRIP = 
 am__fastdepCC_FALSE = #
@@ -252,7 +251,7 @@ localstatedir = ${prefix}/var
 mandir = ${prefix}/man
 mkdir_p = mkdir -p -- .
 oldincludedir = /usr/include
-prefix = /home/msala/Trilinos/LINUX_MPI
+prefix = /usr/local
 program_transform_name = s,x,x,
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
@@ -262,22 +261,22 @@ target_alias =
 target_cpu = i686
 target_os = linux-gnu
 target_vendor = pc
-#epetra_lib = 
-epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
-#aztecoo_lib = 
-aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
-#amesos_lib = 
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-#anasazi_lib = 
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
-#teuchos_lib = 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-#triutils_lib = 
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-#ifpack_lib = 
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-MultiLevelPreconditioner_Sym_SOURCES = $(srcdir)/cxx_main.cpp
-MultiLevelPreconditioner_Sym_DEPENDENCIES = \
+epetra_lib = 
+#epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+aztecoo_lib = 
+#aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+amesos_lib = 
+#amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+anasazi_lib = 
+#anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+teuchos_lib = 
+#teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+triutils_lib = 
+#triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+ifpack_lib = 
+#ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+IFPACKSmoothers_SOURCES = $(srcdir)/cxx_main.cpp
+IFPACKSmoothers_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(aztecoo_lib) \
 	$(epetra_lib) \
@@ -319,10 +318,10 @@ ml_libs = $(top_builddir)/src/libml.a        \
                 $(FLIBS)
 
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-MultiLevelPreconditioner_Sym_CPPFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Sym_CXXFLAGS = ${ml_common_include_locations}
-MultiLevelPreconditioner_Sym_LDADD = ${ml_libs}
-MultiLevelPreconditioner_Sym_LINK = ${mllink}
+IFPACKSmoothers_CPPFLAGS = ${ml_common_include_locations}
+IFPACKSmoothers_CXXFLAGS = ${ml_common_include_locations}
+IFPACKSmoothers_LDADD = ${ml_libs}
+IFPACKSmoothers__LINK = ${mllink}
 all: all-am
 
 .SUFFIXES:
@@ -359,9 +358,9 @@ $(ACLOCAL_M4): # $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MultiLevelPreconditioner_Sym$(EXEEXT): $(MultiLevelPreconditioner_Sym_OBJECTS) $(MultiLevelPreconditioner_Sym_DEPENDENCIES) 
-	@rm -f MultiLevelPreconditioner_Sym$(EXEEXT)
-	$(MultiLevelPreconditioner_Sym_LINK) $(MultiLevelPreconditioner_Sym_LDFLAGS) $(MultiLevelPreconditioner_Sym_OBJECTS) $(MultiLevelPreconditioner_Sym_LDADD) $(LIBS)
+IFPACKSmoothers$(EXEEXT): $(IFPACKSmoothers_OBJECTS) $(IFPACKSmoothers_DEPENDENCIES) 
+	@rm -f IFPACKSmoothers$(EXEEXT)
+	$(CXXLINK) $(IFPACKSmoothers_LDFLAGS) $(IFPACKSmoothers_OBJECTS) $(IFPACKSmoothers_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -369,7 +368,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po
+include ./$(DEPDIR)/IFPACKSmoothers-cxx_main.Po
 
 .cpp.o:
 	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -387,21 +386,21 @@ include ./$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po
 #	$(CXXDEPMODE) $(depcomp) \
 #	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MultiLevelPreconditioner_Sym-cxx_main.o: $(srcdir)/cxx_main.cpp
-	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Sym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Sym_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Sym-cxx_main.o -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo" -c -o MultiLevelPreconditioner_Sym-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo"; exit 1; fi
-#	source='$(srcdir)/cxx_main.cpp' object='MultiLevelPreconditioner_Sym-cxx_main.o' libtool=no \
-#	depfile='$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.TPo' \
+IFPACKSmoothers-cxx_main.o: $(srcdir)/cxx_main.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(IFPACKSmoothers_CPPFLAGS) $(CPPFLAGS) $(IFPACKSmoothers_CXXFLAGS) $(CXXFLAGS) -MT IFPACKSmoothers-cxx_main.o -MD -MP -MF "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo" -c -o IFPACKSmoothers-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+	then mv -f "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo" "$(DEPDIR)/IFPACKSmoothers-cxx_main.Po"; else rm -f "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo"; exit 1; fi
+#	source='$(srcdir)/cxx_main.cpp' object='IFPACKSmoothers-cxx_main.o' libtool=no \
+#	depfile='$(DEPDIR)/IFPACKSmoothers-cxx_main.Po' tmpdepfile='$(DEPDIR)/IFPACKSmoothers-cxx_main.TPo' \
 #	$(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Sym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Sym_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Sym-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(IFPACKSmoothers_CPPFLAGS) $(CPPFLAGS) $(IFPACKSmoothers_CXXFLAGS) $(CXXFLAGS) -c -o IFPACKSmoothers-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-MultiLevelPreconditioner_Sym-cxx_main.obj: $(srcdir)/cxx_main.cpp
-	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Sym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Sym_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_Sym-cxx_main.obj -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo" -c -o MultiLevelPreconditioner_Sym-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Tpo"; exit 1; fi
-#	source='$(srcdir)/cxx_main.cpp' object='MultiLevelPreconditioner_Sym-cxx_main.obj' libtool=no \
-#	depfile='$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_Sym-cxx_main.TPo' \
+IFPACKSmoothers-cxx_main.obj: $(srcdir)/cxx_main.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(IFPACKSmoothers_CPPFLAGS) $(CPPFLAGS) $(IFPACKSmoothers_CXXFLAGS) $(CXXFLAGS) -MT IFPACKSmoothers-cxx_main.obj -MD -MP -MF "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo" -c -o IFPACKSmoothers-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+	then mv -f "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo" "$(DEPDIR)/IFPACKSmoothers-cxx_main.Po"; else rm -f "$(DEPDIR)/IFPACKSmoothers-cxx_main.Tpo"; exit 1; fi
+#	source='$(srcdir)/cxx_main.cpp' object='IFPACKSmoothers-cxx_main.obj' libtool=no \
+#	depfile='$(DEPDIR)/IFPACKSmoothers-cxx_main.Po' tmpdepfile='$(DEPDIR)/IFPACKSmoothers-cxx_main.TPo' \
 #	$(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_Sym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_Sym_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_Sym-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(IFPACKSmoothers_CPPFLAGS) $(CPPFLAGS) $(IFPACKSmoothers_CXXFLAGS) $(CXXFLAGS) -c -o IFPACKSmoothers-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

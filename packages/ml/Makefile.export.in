@@ -27,6 +27,7 @@ ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
                   -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
                   -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI_LIBS) \
                   -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS) \
+                  -L$(EPETRAEXT_BUILD_DIRECTORY)/src  $(EPETRAEXT_LIBS) \
                   -L$(TRIUTILS_BUILD_DIRECTORY)/src $(TRIUTILS_LIBS) \
                   -L$(EPETRA_BUILD_DIRECTORY)/src  $(EPETRA_LIBS)
 
@@ -37,7 +38,8 @@ ML_EXPORT_INCLUDES = $(ML_INCLUDES) \
                   $(EPETRA_INCLUDES)  \
                   $(TRIUTILS_INCLUDES)  \
                   $(ANASAZI_INCLUDES)  \
-                  $(TEUCHOS_INCLUDES) 
+                  $(TEUCHOS_INCLUDES)  \
+                  $(EPETRAEXT_INCLUDES) 
 
 ##########################################################################
 # Set the absolute path to the ml build directory
@@ -58,7 +60,8 @@ ML_INCLUDES = -I$(top_srcdir)/src/Include            \
               -I$(top_srcdir)/src/Main               \
               -I$(top_srcdir)/src/Operator           \
               -I$(top_srcdir)/src/Smoother           \
-              -I$(top_srcdir)/src/Utils
+              -I$(top_srcdir)/src/Utils              \
+              -I$(top_srcdir)/src/MLAPI
 
 ##########################################################################
 # Using the absolute location of ml's build directory as
@@ -68,6 +71,8 @@ ML_INCLUDES = -I$(top_srcdir)/src/Include            \
 TEUCHOS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../teuchos
 
 EPETRA_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../epetra
+
+EPETRAEXT_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../epetraext
 
 IFPACK_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../ifpack
 
@@ -86,6 +91,8 @@ TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 @ML_USING_AZTECOO_TRUE@AZTECOO_LIBS = -laztecoo
 
 @ML_USING_EPETRA_TRUE@EPETRA_LIBS = -lepetra
+
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_LIBS = -lepetraext
 
 @ML_USING_IFPACK_TRUE@IFPACK_LIBS = -lifpack
 
@@ -108,6 +115,8 @@ TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 @ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(top_srcdir)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
 @ML_USING_TRIUTILS_TRUE@TRIUTILS_INCLUDES = -I$(top_srcdir)/../triutils/src -I$(TRIUTILS_BUILD_DIRECTORY)/src
 @ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(top_srcdir)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(top_srcdir)/../epetraext/src -I$(EPETRAEXT_BUILD_DIRECTORY)/src
+
 ##########################################################################
 #
 # Macro definitions to be exported from ml to non-Trilinos clients.
@@ -122,7 +131,7 @@ TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 #
 ##########################################################################
 
-ML_TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
+TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
 
-ML_TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
+TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
 

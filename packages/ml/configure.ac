@@ -413,6 +413,10 @@ AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], ML_AZTECOO)
 AM_CONDITIONAL(ML_USING_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, [Enable EpetraExt support. EpetraExt requires --enable_epetra. See notes for --enable-ml_metis.], ML_EPETRAEXT)
+#
+AM_CONDITIONAL(ML_USING_EPETRAEXT, test "X$ac_cv_use_epetraext" = "Xyes")
+
 #if we're not using epetra, then build certain ML examples
 #without dependencies on libepetra.a (and use C linker for C files,
 # otherwise use C++ linker for C examples as well)
@@ -598,31 +602,32 @@ AC_CONFIG_FILES([
 		examples/Advanced/Makefile
 		examples/BasicExamples/Makefile
 		examples/Elasticity/Makefile
-		examples/MatrixFormats/Makefile
-        examples/MatrixReading/Makefile
-		examples/StandAlone/Makefile
-        examples/TwoLevelDD/Makefile
-        examples/Maxwell/Makefile
-        examples/Visualization/Makefile
-        examples/MultipleRHS/Makefile
-        examples/Other/Makefile
-        test/Makefile
-        test/MultiLevelPreconditioner_NonSym/Makefile
-		test/MultiLevelPreconditioner_Sym/Makefile
-		test/MultiLevelPreconditioner_Maxwell/Makefile
-		test/ML_Operator2Epetra_RowMatrix/Makefile
-		test/Scalability/Makefile
-		test/VerySimple/Makefile
-		test/AztecSimple/Makefile
-		test/2d_Poisson/Makefile
-		test/3d_Poisson/Makefile
-		test/Zoltan/Makefile
-		test/IFPACKSmoothers/Makefile
+                examples/MatrixFormats/Makefile
+                examples/MatrixReading/Makefile
+                examples/StandAlone/Makefile
+                examples/TwoLevelDD/Makefile
+                examples/Maxwell/Makefile
+                examples/Visualization/Makefile
+                examples/MultipleRHS/Makefile
+                examples/MLAPI/Makefile
+                examples/Other/Makefile
+                test/Makefile
+                test/MultiLevelPreconditioner_NonSym/Makefile
+                test/MultiLevelPreconditioner_Sym/Makefile
+                test/MultiLevelPreconditioner_Maxwell/Makefile
+                test/ML_Operator2Epetra_RowMatrix/Makefile
+                test/Scalability/Makefile
+                test/VerySimple/Makefile
+                test/AztecSimple/Makefile
+                test/2d_Poisson/Makefile
+                test/3d_Poisson/Makefile
+                test/Zoltan/Makefile
+                test/IFPACKSmoothers/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
                 test/scripts/daily/serial/Makefile
-		])
+                ])
 
 AC_OUTPUT()
 

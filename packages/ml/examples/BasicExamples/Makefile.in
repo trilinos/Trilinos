@@ -42,7 +42,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = ml_aztec_simple$(EXEEXT) ml_operator$(EXEEXT) \
 	ml_preconditioner$(EXEEXT) ml_readex$(EXEEXT)
-DIST_COMMON = $(srcdir)/../Makefile-common.include \
+DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = examples/BasicExamples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -175,6 +175,8 @@ ML_USING_ANASAZI_FALSE = @ML_USING_ANASAZI_FALSE@
 ML_USING_ANASAZI_TRUE = @ML_USING_ANASAZI_TRUE@
 ML_USING_AZTECOO_FALSE = @ML_USING_AZTECOO_FALSE@
 ML_USING_AZTECOO_TRUE = @ML_USING_AZTECOO_TRUE@
+ML_USING_EPETRAEXT_FALSE = @ML_USING_EPETRAEXT_FALSE@
+ML_USING_EPETRAEXT_TRUE = @ML_USING_EPETRAEXT_TRUE@
 ML_USING_EPETRA_FALSE = @ML_USING_EPETRA_FALSE@
 ML_USING_EPETRA_TRUE = @ML_USING_EPETRA_TRUE@
 ML_USING_IFPACK_FALSE = @ML_USING_IFPACK_FALSE@

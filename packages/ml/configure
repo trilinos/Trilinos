@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -913,6 +913,8 @@ Optional Features:
                           can be used in adaptive preconditioning. Requires
                           --enable-epetra --enable-teuchos. See notes for
                           --enable-ml_metis.
+  --enable-epetraext      Enable EpetraExt support. EpetraExt requires
+                          --enable_epetra. See notes for --enable-ml_metis.
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -3915,7 +3917,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3918:" \
+echo "$as_me:3920:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7998,6 +8000,43 @@ else
 fi
 
 
+
+# Check whether --enable-epetraext or --disable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval="$enable_epetraext"
+  ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_EPETRAEXT 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
+
+if test "X$ac_cv_use_epetraext" = "Xyes"; then
+  ML_USING_EPETRAEXT_TRUE=
+  ML_USING_EPETRAEXT_FALSE='#'
+else
+  ML_USING_EPETRAEXT_TRUE='#'
+  ML_USING_EPETRAEXT_FALSE=
+fi
+
+
 #if we're not using epetra, then build certain ML examples
 #without dependencies on libepetra.a (and use C linker for C files,
 # otherwise use C++ linker for C examples as well)
@@ -8256,7 +8295,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8259: \"$ac_link\") >&5
+(eval echo $as_me:8298: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8334,7 +8373,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8337: \"$ac_link\") >&5
+(eval echo $as_me:8376: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11287,7 +11326,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11290: \"$ac_link\") >&5
+(eval echo $as_me:11329: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11365,7 +11404,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11368: \"$ac_link\") >&5
+(eval echo $as_me:11407: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11615,7 +11654,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/Scalability/Makefile test/VerySimple/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/Zoltan/Makefile test/IFPACKSmoothers/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/Scalability/Makefile test/VerySimple/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/Zoltan/Makefile test/IFPACKSmoothers/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11811,6 +11850,13 @@ if test -z "${ML_USING_AZTECOO_TRUE}" && test -z "${ML_USING_AZTECOO_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ML_USING_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ML_USING_EPETRAEXT_TRUE}" && test -z "${ML_USING_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_USING_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12293,6 +12339,7 @@ do
   "examples/Maxwell/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Maxwell/Makefile" ;;
   "examples/Visualization/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Visualization/Makefile" ;;
   "examples/MultipleRHS/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/MultipleRHS/Makefile" ;;
+  "examples/MLAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/MLAPI/Makefile" ;;
   "examples/Other/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Other/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/MultiLevelPreconditioner_NonSym/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_NonSym/Makefile" ;;
@@ -12489,6 +12536,8 @@ s,@ML_USING_TRIUTILS_TRUE@,$ML_USING_TRIUTILS_TRUE,;t t
 s,@ML_USING_TRIUTILS_FALSE@,$ML_USING_TRIUTILS_FALSE,;t t
 s,@ML_USING_AZTECOO_TRUE@,$ML_USING_AZTECOO_TRUE,;t t
 s,@ML_USING_AZTECOO_FALSE@,$ML_USING_AZTECOO_FALSE,;t t
+s,@ML_USING_EPETRAEXT_TRUE@,$ML_USING_EPETRAEXT_TRUE,;t t
+s,@ML_USING_EPETRAEXT_FALSE@,$ML_USING_EPETRAEXT_FALSE,;t t
 s,@ML_STANDALONE_MODE_TRUE@,$ML_STANDALONE_MODE_TRUE,;t t
 s,@ML_STANDALONE_MODE_FALSE@,$ML_STANDALONE_MODE_FALSE,;t t
 s,@ML_BUILD_EXAMPLES_TRUE@,$ML_BUILD_EXAMPLES_TRUE,;t t

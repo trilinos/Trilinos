@@ -125,6 +125,7 @@ ml_filtering_LDADD = ${ml_libs}
 ml_user_aggr_CPPFLAGS = ${ml_common_include_locations}
 ml_user_aggr_CXXFLAGS = ${ml_common_include_locations}
 ml_user_aggr_LDADD = ${ml_libs}
+ml_preconditioner_LINK = ${mllink}
 
 ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
 ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
