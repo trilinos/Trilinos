@@ -862,9 +862,9 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
   int *separator, *sep_size;
   int Nseparators, Nlocal, Nghost;
   ML_Operator *matrix_data;
-#endif
 #ifdef ML_TIMING
    double t0;
+#endif
 #endif
 
 #ifdef XYT

@@ -25,16 +25,18 @@ typedef long ftnlen;
 
 
 #ifndef FSUB_TYPE
+#  define  FSUB_TYPE int
 #  if defined(ncube)
 #     define  FSUB_TYPE void
-#  elif defined(paragon)
+#  endif
+#  if defined(paragon)
 #     define  FSUB_TYPE void
-#  elif defined(hp)
+#  endif
+#  if defined(hp)
 #     define  FSUB_TYPE void
-#  else
-#     define  FSUB_TYPE int
 #  endif
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {

@@ -47,6 +47,32 @@ int coarse_iterations = 0, use_cg = 0, num_levels = 2;
   int    *update = NULL, *external = NULL;
   int    *update_index = NULL, *extern_index = NULL;
 
+/* -------------  external function declarations -------------------------*/
+
+extern void init_options(int options[], double params[]);
+
+extern void init_guess_and_rhs(int update_index[],int update[], double *x[],
+                   double *b[], int data_org[], double val[], int indx[], 
+                   int bindx[], int rpntr[], int cpntr[], int bpntr[], 
+                   int proc_config[]);
+
+extern int construct_ml_grids(int, int *, AZ_MATRIX **, int **, int **, 
+                   int **, int **, int, int **, int **, int **, int **, 
+                   ML **, int *, double *, AZ_PRECOND **, int);
+
+extern void create_msr_matrix(int*, double **, int **, int);
+extern int ml_recv(void*, unsigned int, int *, int *, USR_COMM, USR_REQ *);
+extern int ml_wait(void*, unsigned int, int *, int *, USR_COMM, USR_REQ *);
+extern int ml_send(void*, unsigned int, int, int, USR_COMM );
+extern void Generate_mesh(int, ML_GridAGX **, int *, int **, int *);
+extern int ML_mapper0f( void *grid, double *din, double *dout);
+extern int ML_mapper0b( void *ml, double *din, double *dout);
+extern int ML_mapper1f( void *grid, double *din, double *dout);
+extern int ML_mapper1b( void *ml, double *din, double *dout);
+extern void add_row_3D(int row,int location,double val[],int bindx[], int *n);
+
+/* -------------  end external function declarations ----------------------*/
+
 int main(int argc, char *argv[])
 {
   int    i, input_option, precon_flag, N_elements_coarse;
@@ -69,19 +95,6 @@ int main(int argc, char *argv[])
   AZ_PRECOND  *Pmat = NULL;
   AZ_MATRIX   *Amat = NULL;
   ML          *ml;
-
-  /* -------------  external function declarations -------------------------*/
-
-  extern void init_options(int options[], double params[]);
-
-  extern void init_guess_and_rhs(int update_index[],int update[], double *x[],
-                   double *b[], int data_org[], double val[], int indx[], 
-                   int bindx[], int rpntr[], int cpntr[], int bpntr[], 
-                   int proc_config[]);
-
-  extern int construct_ml_grids(int, int *, AZ_MATRIX **, int **, int **, 
-                   int **, int **, int, int **, int **, int **, int **, 
-                   ML **, int *, double *, AZ_PRECOND **, int);
 
   /* ----------------------- execution begins --------------------------------*/
 
@@ -373,11 +386,6 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   */
 
   /**************************************************************************/
-  extern void create_msr_matrix(int*, double **, int **, int);
-  extern int ml_recv(void*, unsigned int, int *, int *, USR_COMM, USR_REQ *);
-  extern int ml_wait(void*, unsigned int, int *, int *, USR_COMM, USR_REQ *);
-  extern int ml_send(void*, unsigned int, int, int, USR_COMM );
-  extern void Generate_mesh(int, ML_GridAGX **, int *, int **, int *);
 
   N_levels = num_levels;
 
@@ -825,7 +833,6 @@ void create_msr_matrix(int update[], double **val, int **bindx, int N_update)
 {
   int i,total_nz, n = -1;
   int avg_nonzeros_per_row = 27;
-  extern void add_row_3D(int row,int location,double val[],int bindx[], int *n);
 
   total_nz = N_update*avg_nonzeros_per_row + 1;
   *bindx   = (int *) AZ_allocate(total_nz*sizeof(int));

@@ -6309,7 +6309,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    double          *pAux, *dk;
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
-   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2, dtemp3;
+   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
 
 
    n = outlen;

@@ -1909,7 +1909,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
    double          *tdiag;
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
-   int iii, jjj, degree;
+   int iii, degree;
    ML_Krylov   *kdata;
 #ifdef SYMMETRIZE
    ML_Operator *t3;

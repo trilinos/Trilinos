@@ -99,7 +99,8 @@ struct ML_Sm_ILUT_Data_Struct
 #ifdef SUPERLU
 #include "dsp_defs.h"
 #include "util.h"
-#elif DSUPERLU
+#endif
+#ifdef DSUPERLU
 #include "mpi.h"
 #include <malloc.h>
 #include "superlu_ddefs.h"

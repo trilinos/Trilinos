@@ -320,7 +320,6 @@ int CSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
 {
    register int    *bindx, j;
    int     *rowptr,  row, itemp;
-   register double *val;
    struct ML_CSR_MSRdata *input_matrix;
 
    row            = *requested_rows;
@@ -468,7 +467,7 @@ int VBR_cnst_blk_getrows(void *data, int N_requested_rows, int requested_rows[],
 
 int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
-   int i, j, k, Nrows, *bindx, bindx_row, nzeros;
+  int i, j, Nrows, *bindx;
    double            *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
