@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
@@ -17,11 +20,12 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+// 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
+// 
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
 // 
@@ -194,7 +198,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   oldsoln = soln;
 
   // Do line search and compute new soln.
-  ok = lineSearch.compute2(soln, step, dir, *this, direction);
+  //ok = lineSearch.compute2(soln, step, dir, *this, direction);
+  ok = lineSearch.compute(soln, step, dir, *this);
   if (!ok) {
     if (step == 0) {
       cout << "NOX::Solver::TensorBased::iterate - line search failed" << endl;
@@ -203,7 +208,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
        cout << "NOX::Solver::TensorBased::iterate - "
-	   << "using recovery step for line search" << endl;
+	    << "using recovery step for line search" << endl;
   }
       
 
@@ -263,6 +268,12 @@ const NOX::Parameter::List&
 NOX::Solver::TensorBased::getParameterList() const
 {
   return *paramsPtr;
+}
+
+const NOX::Direction::Tensor&
+NOX::Solver::TensorBased::getDirection() const
+{
+  return direction;
 }
 
 
@@ -326,12 +337,16 @@ NOX::LineSearch::Tensor::Tensor(const NOX::Utils& u, Parameter::List& params) :
 
 NOX::LineSearch::Tensor::~Tensor()
 {
-
+  printf("multsJv = %d   (linesearch)\n", multsJv);
 }
 
 bool NOX::LineSearch::Tensor::reset(Parameter::List& params)
-{ 
-  NOX::Parameter::List& lsparams = params.sublist("Tensor");
+{
+  multsJv = 0;
+  
+  //NOX::Parameter::List& lsparams = params.sublist("Tensor");
+  NOX::Parameter::List& lsparams =
+    params.sublist(params.getParameter("Method", "Tensor"));
   
   // Initialize linesearch parameters for this object
   minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
@@ -397,19 +412,28 @@ bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
 				      const NOX::Abstract::Vector& dir,
 				      const NOX::Solver::Generic& s)
 {
-  return false;
-}
-
-
-bool NOX::LineSearch::Tensor::compute2(NOX::Abstract::Group& newGrp,
-				       double& step, 
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Solver::Generic& s,
-				       NOX::Direction::Tensor& direction) 
-{
   bool ok;
   counter.incrementNumLineSearches();
   isNewtonDirection = false;
+
+  const NOX::Direction::Tensor& direction =
+    (dynamic_cast<const Solver::TensorBased*>(&s))->getDirection();
+
+#ifdef TRIAL_CODE
+  // New code added
+  const Solver::Generic* test = 0;
+  test = dynamic_cast<const Solver::TensorBased*>(&s);
+  if (test == 0)
+    {
+      //printf("Not a TensorBased solver...\n");
+    }
+  else
+    {
+      //printf("IS a TensorBased solver...\n");
+      direction = (dynamic_cast<const Solver::TensorBased*>(&s))->getDirection();
+    }
+#endif
+  
   
   if (counter.getNumLineSearches() == 1  ||  lsType == Newton)
     isNewtonDirection = true;
@@ -429,10 +453,11 @@ bool NOX::LineSearch::Tensor::compute2(NOX::Abstract::Group& newGrp,
       tensorf = 0.5*newGrp.getNormF()*newGrp.getNormF();
       tensorStep = step;
       isTensorDescent = true;
-    }      
-    const NOX::Abstract::Vector& dir2 = direction.getNewton();
+    }
 
-    ok = performLinesearch(newGrp, step, dir2, s, direction);
+    //const NOX::Abstract::Vector& dir2 = direction.getNewton();
+    //ok = performLinesearch(newGrp, step, dir2, s, direction);
+    ok = performLinesearch(newGrp, step, direction.getNewton(), s, direction);
     double newf = 0.5*newGrp.getNormF()*newGrp.getNormF();
 
     // If backtracking on the tensor step produced a better step, then use it.
@@ -441,20 +466,16 @@ bool NOX::LineSearch::Tensor::compute2(NOX::Abstract::Group& newGrp,
       newGrp.computeF();    
     }
   }
-#ifdef DEPRECATED_CODE
-  else if (lsType == Dual) 
-    ok = performDualLinesearch(newGrp, step, dir, s, direction);
-#endif
   
   return ok;
 }
 
 
 bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
-					double& step,
-					const NOX::Abstract::Vector& dir,
-					const NOX::Solver::Generic& s,
-					NOX::Direction::Tensor& direction)
+				double& step,
+				const NOX::Abstract::Vector& dir,
+				const NOX::Solver::Generic& s,
+				const NOX::Direction::Tensor& direction)
 {
   if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
@@ -464,6 +485,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   }
 
   // Local variables
+  NOX::Abstract::Vector* dir2 = NULL;
   bool isFailed = false;
   bool isAcceptable = false;
   bool isFirstPass = true;
@@ -484,18 +506,22 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
 
   // Compute directional derivative
   double fprime;
-  if (lsType == Curvilinear)
+  if (lsType == Curvilinear) 
     fprime = slopeObj.computeSlope(direction.getNewton(), oldsoln);
-  else
+  else 
     fprime = slopeObj.computeSlope(dir, oldsoln);
-
+  multsJv++;
+  
   // Compute the convergence criteria for the line search 
   double threshold = oldf + alpha*step*fprime;
   isAcceptable = (newf < threshold);
-    
-  // Update counter if a linesearch is needed
-  if (!isAcceptable) 
+
+  // Update counter and allocate memory for dir2 if a linesearch is needed
+  if (!isAcceptable) { 
     counter.incrementNumNonTrivialLineSearches();
+    dir2 = dir.clone(ShapeCopy);
+    *dir2 = dir;
+  }
 
   // Iterate until the trial point is accepted....
   while (!isAcceptable) {  
@@ -512,7 +538,9 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
     // Is the full tensor step a descent direction?  If not, switch to Newton
     if ((!isNewtonDirection) && (isFirstPass && fprime >= 0)) {
       // dir = oldsoln.getNewton();   // bwb - for when Newton put in group
-      fprime = slopeObj.computeSlope(direction.getNewton(), oldsoln);
+      *dir2 = direction.getNewton();
+      fprime = slopeObj.computeSlope(*dir2, oldsoln);
+      multsJv++;
       
       printf("  Switching to Newton.  New fprime = %e\n", fprime);
     }
@@ -535,14 +563,15 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
 
     // Compute new trial point and its function value
     if (lsType == Curvilinear) {
-      // bwb - move creation of dir2 outside so only done once.
-      NOX::Abstract::Vector* dir2 = dir.clone(ShapeCopy);
-      bool ok = direction.computeCurvilinearStep(*dir2, newsoln, s, step);
+
+      // bwb - oldsoln needed for preconditioner, test when right pre available
+      //bool ok = direction.computeCurvilinearStep2(*dir2, newsoln, s, step);
+      //bool ok = direction.computeCurvilinearStep(*dir2, newsoln, s, step);
+      bool ok = direction.computeCurvilinearStep(*dir2, oldsoln, s, step);
       newsoln.computeX(oldsoln, *dir2, 1.0);
-      delete dir2;
     }
     else {
-      newsoln.computeX(oldsoln, dir, step);
+      newsoln.computeX(oldsoln, *dir2, step);
     }
     newsoln.computeF();    
     newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
@@ -570,205 +599,14 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   print.printStep(lsIterations, step, oldf, newf, message);
   counter.setValues(*paramsPtr);
 
+  if (dir2 != NULL) {
+    delete dir2;
+    dir2 = NULL;
+  }
+    
   return (!isFailed);
 }
 
-
-#ifdef DEPRECATED_CODE
-bool NOX::LineSearch::Tensor::performDualLinesearch(NOX::Abstract::Group& newsoln,
-						    double& step,
-						    const NOX::Abstract::Vector& dir,
-						    const NOX::Solver::Generic& s,
-						    NOX::Direction::Tensor& direction)
-{
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
-    cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Dual Direction Linesearch -- \n";
-  }
-  
-  // Set counter to 1
-  int lsIterations = 1;
-
-  // local variables
-  bool ok;
-  bool isFailed = false;
-  bool lsRequired = false;
-  double tensorf = 1e29;
-  double tensors = defaultStep;
-
-  // Get Old F
-  const Abstract::Group& oldsoln = s.getPreviousSolutionGroup();
-  double oldf = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
-
-  // Compute new trial point and its function value
-  step = defaultStep;
-  newsoln.computeX(oldsoln, dir, step);
-  newsoln.computeF();    
-  double newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
-
-  // Computation of directional derivative used in curvature condition
-  NOX::Abstract::Vector* tmpvecptr = oldsoln.getX().clone(ShapeCopy);
-  oldsoln.applyJacobian(dir, *tmpvecptr);
-  double fprime = tmpvecptr->dot(oldsoln.getF());
-
-  double slope = slopeObj.computeSlope(dir, oldsoln);
-  printf("slope:   %16e   %16e\n", fprime, slope);
-
-  // Compute the convergence criteria for the line search 
-  double convergence = oldf + alpha*step*fprime;
-
-  // Increment the counter of nonlinear iterations requiring a linesearch
-  if (newf >= convergence) {
-    counter.incrementNumNonTrivialLineSearches();
-    lsRequired = true;
-  }
-    
-  // If the tensor step is a descent direction (fprime < 0),
-  // then backtrack until Armijo-Goldstein condition is satisfied.
-  while (newf >= convergence  &&  fprime < 0) {  
-
-    print.printStep(lsIterations, step, oldf, newf);
-
-    counter.incrementNumIterations();
-    lsIterations++;
-    
-    // Backtrack by reducing the step
-    step = selectLambda(newf, oldf, fprime, step);
-
-    // Check for linesearch failure: if true, exit the method
-    if ((step < minStep) || (lsIterations > maxIters)) {
-
-      counter.incrementNumFailedLineSearches();
-      step = recoveryStep;
-      
-      // Update the group, and exit linesearch
-      newsoln.computeX(oldsoln, dir, step);
-      newsoln.computeF();    
-      newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-      
-      // Print out info
-      string message = "(USING RECOVERY STEP!)";
-      print.printStep(lsIterations, step, oldf, newf, message);
-      
-      isFailed = true;
-      return (!isFailed);
-    }
-
-    // Compute new trial point and its function value
-    newsoln.computeX(oldsoln, dir, step);
-    newsoln.computeF();    
-    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-
-    // Recompute convergence criteria based on new step
-    convergence = oldf + alpha*step*fprime;
-
-  }  // end while loop
-
-
-  if (lsRequired) {
-
-    string message = "(STEP ACCEPTED!)";
-    print.printStep(lsIterations, step, oldf, newf, message);
-
-    // If tensor step is not descent, then use oldf to force acceptance
-    // of Newton backtrack...
-    if ( !(fprime < 0) )
-      newf = oldf;
-
-    // Save info from tensor backtrack and then try backtracking
-    // on the Newton step and compare with tensor backtrack.
-    tensorf = newf;
-    tensors = step;
-  
-    // Computation of directional derivative used in curvature condition
-    //const NOX::Abstract::Vector& dir2 = oldsoln.getNewton();// bwb - dNewton 
-    const NOX::Abstract::Vector& dir2 = direction.getNewton();
-    oldsoln.applyJacobian(dir2,*tmpvecptr);
-    fprime = tmpvecptr->dot(oldsoln.getF());
-
-    slope = slopeObj.computeSlope(dir2, oldsoln);
-    printf("slope:   %16e   %16e\n", fprime, slope);
-
-    // Compute new trial point and its function value
-    step = defaultStep;
-    newsoln.computeX(oldsoln, dir2, step);
-    newsoln.computeF();    
-    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
-
-    counter.incrementNumIterations();
-    lsIterations ++;
-  
-    // Compute the convergence criteria for the line search 
-    convergence = oldf + alpha*step*fprime;
-
-    //Iterate until Armijo-Goldstein condition is satisfied
-    while (newf >= convergence) {  
-    
-      print.printStep(lsIterations, step, oldf, newf);
-
-      counter.incrementNumIterations();
-      lsIterations ++;
-    
-      // Backtrack by reducing the step
-      step = selectLambda(newf, oldf, fprime, step);
-    
-      // Check for linesearch failure: if true, exit the method
-      if ((step < minStep) || (lsIterations > maxIters)) {
-	
-	counter.incrementNumFailedLineSearches();
-	step = recoveryStep;
-	
-	// Update the group, and exit linesearch
-	newsoln.computeX(oldsoln, dir2, step);
-	newsoln.computeF();    
-	newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-	
-	// Print out info
-	string message = "(USING RECOVERY STEP!)";
-	print.printStep(lsIterations, step, oldf, newf, message);
-
-	isFailed = true;
-	return (!isFailed);
-      }
-
-      // Compute new trial point and its function value
-      newsoln.computeX(oldsoln, dir2, step);
-      newsoln.computeF();    
-      newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-
-      // Recompute convergence criteria based on new step
-      convergence = oldf + alpha*step*fprime;
-
-    }  // end while loop
-  } // end if
-  
-  string message = "(STEP ACCEPTED!)";
-  print.printStep(lsIterations, step, oldf, newf, message);
-
-
-  // If backtracking on the tensor step produced a better step, then use it.
-  if (lsRequired  &&  tensorf < newf) {
-    newsoln.computeX(oldsoln, dir, tensors);
-    newsoln.computeF();    
-    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-  }
-
-  
-#if DEBUG_LEVEL > 1
-  cout << "Current point: ";
-  newsoln.getX().print();
-#endif
-
-  ok = !isFailed;
-
-  counter.setValues(*paramsPtr);
-  //counter.setValues(params);
-
-  delete tmpvecptr;
-
-  return ok;
-}
-#endif // DEPRECATED_CODE
 
 double NOX::LineSearch::Tensor::selectLambda(double newf, double oldf,
 					     double oldfprime, double lambda)

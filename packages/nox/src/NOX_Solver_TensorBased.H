@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
@@ -17,11 +20,12 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+// 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
+// 
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
 // 
@@ -35,7 +39,6 @@
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
 #include "NOX_Parameter_List.H"	    // class data element
-// #include "NOX_Abstract_Vector.H"    // for NOX::Abstract::Vector::NormType  (bwb-needed?)
 #include "NOX_Utils.H"              // class data element
 
 #include "NOX_LineSearch_Generic.H" // base class
@@ -65,12 +68,6 @@ public:
 	       const NOX::Abstract::Vector& dir,
 	       const NOX::Solver::Generic& s);
 
-  // Needed to work with tensor stuff 
-  bool compute2(NOX::Abstract::Group& newgrp, double& step, 
-		const NOX::Abstract::Vector& dir,
-		const NOX::Solver::Generic& s,
-		NOX::Direction::Tensor& direction);
-
 protected:
 
   //! Performs a standard tensor linesearch (tensor or Newton direction)
@@ -78,15 +75,7 @@ protected:
 			 double& step,
 			 const NOX::Abstract::Vector& dir,
 			 const NOX::Solver::Generic& s,
-			 NOX::Direction::Tensor& direction);
-
-#ifdef DEPRECATED_CODE
-  //! Performs a dual linesearch (tensor and Newton direction; cf. TENSOLVE)
-  bool performDualLinesearch(NOX::Abstract::Group& newsoln, double& step,
-			     const NOX::Abstract::Vector& dir,
-			     const Solver::Generic& s,
-			     NOX::Direction::Tensor& direction);
-#endif // DEPRECATED_CODE
+			 const NOX::Direction::Tensor& direction);
 
   //! Select lambda for linesearch (quadratic or halving)
   double selectLambda(double newf, double oldf,
@@ -149,10 +138,12 @@ protected:
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
 
+  //! Counter for number of Jacobian-vector products
+  mutable int multsJv;
+
 };
 } // namespace LineSearch
 } // namespace NOX
-
 
 
 
@@ -226,15 +217,18 @@ class TensorBased : public Generic {
 public:
 
   //! %TensorBased-method constructor. 
-  TensorBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t,
+  TensorBased(NOX::Abstract::Group& xgrp,
+	      NOX::StatusTest::Generic& t,
 	      NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TensorBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t,
+  virtual bool reset(NOX::Abstract::Group& xgrp,
+		     NOX::StatusTest::Generic& t,
 		     NOX::Parameter::List& p);
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t);
+  virtual bool reset(NOX::Abstract::Group& xgrp,
+		     NOX::StatusTest::Generic& t);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -242,7 +236,8 @@ public:
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const NOX::Parameter::List& getParameterList() const;
-  
+  virtual const NOX::Direction::Tensor& getDirection() const;
+
 protected:
   
   //! Print out initialization information and calcuation the RHS.
@@ -251,11 +246,6 @@ protected:
   //! Prints the current iteration information.
   virtual void printUpdate();
 
-#ifdef DELETE_EVENTUALLY
-  //! Sets the output parameters for the solver in an "Output" sublist
-  bool setOutputParameters(); 
-#endif
-  
 protected:
   
   //! Current solution.
