@@ -10,16 +10,16 @@ ARCH_FFLAGS= -O0 -g
 
 # Define compiler commands
 
-CC=mpicc
-FC=mpif77
-CXX=mpiCC
+CC=/usr/local/mpich/bin/mpicc
+FC=/usr/local/mpich/bin/mpif77
+CXX=/usr/local/mpich/bin/mpiCC
 
 #Define include directories (remember to use -Idirectory_name)
 
-MPI_INCLUDES = 
+MPI_INCLUDES = -I/usr/local/mpich/include
 ARCH_INCLUDES = $(MPI_INCLUDES)
 
-LIBMPI = -lmpi
+LIBMPI = -L/usr/local/mpich/lib -lmpi
 ARCH_LIBS = -lm -lg2c $(MPI_LIBS)
 
 ################## External Libraries ##########################
