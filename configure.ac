@@ -85,6 +85,8 @@ AC_ARG_ENABLE(aztecoo-teuchos,
  [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
  ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
 
+TAC_ARG_ENABLE_FEATURE(claps, [Build claps], CLAPS, no)
+AM_CONDITIONAL(BUILD_CLAPS, test "X$ac_cv_use_claps" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
@@ -157,6 +159,7 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno"  ||
+        test "X$ac_cv_use_claps" != "Xno"  ||
         test "X$ac_cv_use_meros" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
@@ -179,6 +182,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
         test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
+        test "X$ac_cv_use_claps" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
 fi
@@ -198,6 +202,10 @@ fi
 if test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/aztecoo])
+fi
+
+if test "X$ac_cv_use_claps" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/claps])
 fi
 
 if test "X$ac_cv_use_komplex" != "Xno"; then
