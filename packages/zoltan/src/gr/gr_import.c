@@ -17,7 +17,7 @@ int header_size = sizeof(int);  /* THIS MUST BE SAME AS IN SEND !!!! */
 
   MPI_Get_Count(&mpi_status, MPI_BYTE, &size);
 
-  *buf = (char *) array_alloc(1, size, sizeof(char);
+  *buf = (char *) Array_Alloc(1, size, sizeof(char);
 
   error = MPI_Recv(*buf, size, MPI_BYTE, mpi_status.MPI_SOURCE, 
                    mpi_status.MPI_TAG, MPI_COMM_WORLD, &mpi_status);
@@ -108,7 +108,7 @@ ID *buf_edges;
       } /* end CONCERNED */
       edge_cnt += recv_vertex->num_edges;
     } /* end loop over vertices received */
-    LB_safe_free((void **) &buf);
+    LB_Free((void **) &buf);
   } /* end loop over messages */
 }
 

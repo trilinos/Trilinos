@@ -271,21 +271,21 @@ static int rcb(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
+    dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                      sizeof(int));
     if (dotmark == NULL)
       rcb_error(lb, dotmax*sizeof(int));
-    coord = (double *) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
+    coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                       sizeof(double));
     if (coord == NULL) {
-      LB_safe_free((void **) &dotmark);
+      LB_Free((void **) &dotmark);
       rcb_error(lb, dotmax*sizeof(int));
     }
-    wgts = (double *) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
+    wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                      sizeof(double));
     if (wgts == NULL) {
-      LB_safe_free((void **) &dotmark);
-      LB_safe_free((void **) &coord);
+      LB_Free((void **) &dotmark);
+      LB_Free((void **) &coord);
       rcb_error(lb, dotmax*sizeof(int));
     }
   }
@@ -397,24 +397,24 @@ static int rcb(
 
     if (allocflag) {
       allocflag = 0;
-      LB_safe_free((void **) &dotmark);
-      LB_safe_free((void **) &coord);
-      LB_safe_free((void **) &wgts);
-      dotmark = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
+      LB_Free((void **) &dotmark);
+      LB_Free((void **) &coord);
+      LB_Free((void **) &wgts);
+      dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                        (unsigned) dotmax, sizeof(int));
       if (dotmark == NULL)
         rcb_error(lb, dotmax*sizeof(int));
-      coord = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
+      coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                         (unsigned) dotmax, sizeof(double));
       if (coord == NULL) {
-        LB_safe_free((void **) &dotmark);
+        LB_Free((void **) &dotmark);
         rcb_error(lb, dotmax*sizeof(int));
       }
-      wgts = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
+      wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                        (unsigned) dotmax, sizeof(double));
       if (wgts == NULL) {
-        LB_safe_free((void **) &dotmark);
-        LB_safe_free((void **) &coord);
+        LB_Free((void **) &dotmark);
+        LB_Free((void **) &coord);
         rcb_error(lb, dotmax*sizeof(int));
       }
     }
@@ -489,7 +489,7 @@ static int rcb(
       dotmax = overalloc * dotnew;
       if (dotmax < dotnew) dotmax = dotnew;
       dotpt = (struct rcb_dot *) 
-	LB_SREALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
+	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
       if (dotpt == NULL) rcb_error(lb, dotmax*sizeof(struct rcb_dot));
       rcb->Dots = dotpt;
       if (RCB_STATS) counters[6]++;
@@ -505,7 +505,7 @@ static int rcb(
     /* malloc comm send buffer */
 
     if (outgoing > 0) {
-      dotbuf = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1,
+      dotbuf = (struct rcb_dot *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                  (unsigned) outgoing,
                                                  sizeof(struct rcb_dot));
       if (dotbuf == NULL) {
@@ -555,7 +555,7 @@ static int rcb(
 
     length = outgoing * sizeof(struct rcb_dot);
     MPI_Rsend(dotbuf,length,MPI_CHAR,procpartner,1,lb->Communicator);
-    LB_safe_free((void **) &dotbuf);
+    LB_Free((void **) &dotbuf);
     
     dotnum = dotnew;
 
@@ -598,9 +598,9 @@ static int rcb(
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
-  LB_safe_free((void **) &coord);
-  LB_safe_free((void **) &wgts);
-  LB_safe_free((void **) &dotmark);
+  LB_Free((void **) &coord);
+  LB_Free((void **) &wgts);
+  LB_Free((void **) &dotmark);
 
   LB_end_time = MPI_Wtime();
   LB_time[1] = LB_end_time - LB_start_time;
@@ -627,21 +627,21 @@ static int rcb(
 
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
-    *import_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *import_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(LB_GID));
     if (!(*import_global_ids))
       rcb_error(lb, *num_import*sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *import_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(LB_LID));
     if (!(*import_local_ids)) {
-      LB_safe_free((void **) import_global_ids);
+      LB_Free((void **) import_global_ids);
       rcb_error(lb, *num_import*sizeof(LB_LID));
     }
-    *import_procs      = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *import_procs      = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(int));
     if (!(*import_procs)) {
-      LB_safe_free((void **) import_global_ids);
-      LB_safe_free((void **) import_local_ids);
+      LB_Free((void **) import_global_ids);
+      LB_Free((void **) import_local_ids);
       rcb_error(lb, *num_import*sizeof(int));
     }
 

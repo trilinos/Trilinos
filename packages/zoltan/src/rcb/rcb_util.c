@@ -62,17 +62,17 @@ int i, ierr = 0;
    */
 
   if (lb->Data_Structure == NULL) {
-    rcb = (RCB_STRUCT *) LB_SMALLOC(sizeof(RCB_STRUCT));
+    rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));
     if (!rcb) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       exit(-1);
     }
     lb->Data_Structure = (void *) rcb;
-    rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__, __LINE__,
+    rcb->Tree_Ptr = (struct rcb_tree *) LB_Array_Alloc(__FILE__, __LINE__,
                                                      1, lb->Num_Proc, 
                                                      sizeof(struct rcb_tree));
-    rcb->Box = (struct rcb_box *) LB_SMALLOC(sizeof(struct rcb_box));
+    rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
     if (!rcb->Tree_Ptr || !rcb->Box) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -81,7 +81,7 @@ int i, ierr = 0;
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
-    LB_safe_free((void **) &(rcb->Dots));
+    LB_Free((void **) &(rcb->Dots));
   }
 
   /*
@@ -96,7 +96,7 @@ int i, ierr = 0;
     exit(-1);
   }
   *max_obj = 1.5 * *num_obj;
-  rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1,
+  rcb->Dots = (struct rcb_dot *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                 *max_obj,
                                                 sizeof(struct rcb_dot));
   if (!rcb->Dots) {
@@ -136,11 +136,11 @@ int i, ierr = 0;
      *  dot for each object.
      */
 
-    objs_global = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+    objs_global = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(LB_GID));
-    objs_local  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+    objs_local  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(LB_LID));
-    objs_wgt    = (float  *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+    objs_wgt    = (float  *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(float));
     if (!objs_global || !objs_local || !objs_wgt) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
@@ -160,9 +160,9 @@ int i, ierr = 0;
       initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i],
                      wgtflag, objs_wgt[i]);
     }
-    LB_safe_free((void **) &objs_global);
-    LB_safe_free((void **) &objs_local);
-    LB_safe_free((void **) &objs_wgt);
+    LB_Free((void **) &objs_global);
+    LB_Free((void **) &objs_local);
+    LB_Free((void **) &objs_wgt);
   }
   else if (lb->Get_First_Obj != NULL && lb->Get_Next_Obj != NULL) {
 

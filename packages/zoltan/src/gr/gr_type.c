@@ -42,7 +42,7 @@ GRAPH *graph;
    *  For now, assuming size of GRAPH is same for both graph types. 
    */
 
-  graph = (GRAPH *) smalloc(sizeof(GRAPH));
+  graph = (GRAPH *) LB_Malloc(sizeof(GRAPH));
 
   switch (BL_Graph_Type) {
   case GRAPH_BINARY_TREE:

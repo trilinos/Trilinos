@@ -164,7 +164,7 @@ static void free_tree_graph(GRAPH **graph)
  */
 
   free_tree((TREE **) (&((*graph)->Graph_Data)));
-  LB_safe_free((void **) graph);
+  LB_Free((void **) graph);
 }
 
 /****************************************************************************/
@@ -177,7 +177,7 @@ static void free_tree(TREE **p_root)
     free_tree(&((*p_root)->Left));
     free_tree(&((*p_root)->Right));
     LB_free_vertex(&((*p_root)->Vertex));
-    LB_safe_free((void **) p_root);
+    LB_Free((void **) p_root);
   }
 }
 
@@ -199,7 +199,7 @@ TREE_LOOP *loop;
    * Assign loop to same address.
    */
 
-  *loop_control = (LOOP_CONTROL) LB_SMALLOC(sizeof(TREE_LOOP));
+  *loop_control = (LOOP_CONTROL) LB_MALLOC(sizeof(TREE_LOOP));
   loop = (TREE_LOOP *) (*loop_control);
 
   /* Initialize LOOP_CONTROL */
@@ -244,7 +244,7 @@ TREE *node = loop->Current_Node;
     /*
      *  Function has been called with a NULL tree.  Return NULL.
      */
-    LB_safe_free((void **) loop_control);
+    LB_Free((void **) loop_control);
     return(NULL);
   }
 
@@ -277,7 +277,7 @@ TREE *node = loop->Current_Node;
       if (node != NULL)
         return(node->Vertex);
       else {
-        LB_safe_free((void **) loop_control);
+        LB_Free((void **) loop_control);
         return(NULL);
       }
     }
@@ -417,7 +417,7 @@ int comparison;
 
   if (*p_root == NULL) {
     /* element is not in the tree; insert it */
-    *p_root = (TREE *)LB_SMALLOC(sizeof(TREE));
+    *p_root = (TREE *)LB_MALLOC(sizeof(TREE));
     if (*p_root == NULL) {
       fprintf(stderr, "Out of memory in avl_insert\n");
       exit(-1);
@@ -661,7 +661,7 @@ TREE *x;
     *p_root = x->Left;
     if (*p_root != NULL)
       (*p_root)->Parent = q;
-    LB_safe_free((void **) &x);
+    LB_Free((void **) &x);
   }
 }
 
@@ -695,13 +695,13 @@ int comparison;
         if (*p_root != NULL)
           (*p_root)->Parent = q->Parent;
         *h = TRUE;
-        LB_safe_free((void **) &q);
+        LB_Free((void **) &q);
       } else if (q->Left == NULL) {
         *p_root = q->Right;
         if (*p_root != NULL)
           (*p_root)->Parent = q->Parent;
         *h = TRUE;
-        LB_safe_free((void **) &q);
+        LB_Free((void **) &q);
       } else {
         avl_del(&((*p_root)->Left), h);
         if (*h) {

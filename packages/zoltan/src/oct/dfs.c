@@ -299,17 +299,17 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
 
   i = POC_nOctants();
   if(POC_nOctants()) {          /* allocate space for octants being migrated */
-    docts = (pOctant *) LB_array_alloc(__FILE__, __LINE__, 1, POC_nOctants(),
+    docts = (pOctant *) LB_Array_Alloc(__FILE__, __LINE__, 1, POC_nOctants(),
                                        sizeof(pOctant));
     if(!docts) {
       fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
       abort();
     }
-    dpids = (int *) LB_array_alloc(__FILE__, __LINE__, 1, POC_nOctants(),
+    dpids = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, POC_nOctants(),
                                    sizeof(int));
     if(!dpids) {
       fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
-      LB_safe_free((void **) &docts);
+      LB_Free((void **) &docts);
       abort();
     }
   }
@@ -340,8 +340,8 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
   LB_Migrate_Objects(lb, docts, dpids, dcount, export_regs, nsentags, 
 		     import_regs, nrectags, c2, c3, counter3, counter4);
 
-  LB_safe_free((void **) &docts);
-  LB_safe_free((void **) &dpids);
+  LB_Free((void **) &docts);
+  LB_Free((void **) &dpids);
   
 #if 0
   LB_print_sync_start(lb, TRUE);
@@ -366,7 +366,7 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
   }
   
   LB_migreg_migrate_regions(lb, pmeshpb,migregions,nregions,TRUE);
-  LB_safe_free((void **) &migregions);
+  LB_Free((void **) &migregions);
 #endif
 }
 

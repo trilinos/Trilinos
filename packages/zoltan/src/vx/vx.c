@@ -63,7 +63,7 @@ char *tmp;
    *  fields.
    */
 
-  tmp = (char *) LB_SMALLOC(size);
+  tmp = (char *) LB_MALLOC(size);
   vertex = (VERTEX *) tmp;
   tmp += size_vertex;
   vertex->Nbor_List = (ID *) (tmp);
@@ -118,5 +118,5 @@ char *tmp;
 
 void LB_free_vertex(VERTEX **vertex)
 {
-  LB_safe_free((void **) vertex);
+  LB_Free((void **) vertex);
 }

@@ -81,7 +81,7 @@ static HASH_TABLE *new_hash_table()
 HASH_TABLE *table;
 int i, num_buckets;
   
-  table = (HASH_TABLE *) LB_SMALLOC(sizeof(HASH_TABLE));
+  table = (HASH_TABLE *) LB_MALLOC(sizeof(HASH_TABLE));
 
   num_buckets = table->Num_Buckets = NUM_HASH_BUCKETS;
   for (i = 0; i < num_buckets; i++) 
@@ -103,7 +103,7 @@ int num_buckets = (*table)->Num_Buckets;
   for (i = 0; i < num_buckets; i++) 
     LB_free_bucket(&((*table)->Bucket[i]));
 
-  LB_safe_free((void **) table);
+  LB_Free((void **) table);
 }
 
 /*****************************************************************************/
@@ -171,7 +171,7 @@ static void free_hash_graph(GRAPH **graph)
  */
 
   free_hash_table((HASH_TABLE **) (&(*graph)->Graph_Data));
-  LB_safe_free((void **) graph);
+  LB_Free((void **) graph);
 }
 
 /*****************************************************************************/
@@ -187,7 +187,7 @@ static VERTEX *first_vertex_hash_graph(GRAPH *graph,
  */
 HASH_TABLE_LOOP *loop;
 
-  *loop_control = (LOOP_CONTROL) LB_SMALLOC(sizeof(HASH_TABLE_LOOP));
+  *loop_control = (LOOP_CONTROL) LB_MALLOC(sizeof(HASH_TABLE_LOOP));
   loop = (HASH_TABLE_LOOP *) (*loop_control);
 
   /*  Initialize LOOP_CONTROL */
@@ -243,7 +243,7 @@ int i;
        */
 
       vertex = NULL;
-      LB_safe_free((void **) loop_control);
+      LB_Free((void **) loop_control);
     }
   }
 

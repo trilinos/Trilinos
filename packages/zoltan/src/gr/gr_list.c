@@ -47,7 +47,7 @@ void LB_add_to_bucket(LIST_ENTRY **head_list, VERTEX *vertex)
 char *yo = "LB_add_to_bucket";
 LIST_ENTRY *new;
 
-  new = (LIST_ENTRY *) LB_SMALLOC(sizeof(LIST_ENTRY));
+  new = (LIST_ENTRY *) LB_MALLOC(sizeof(LIST_ENTRY));
   if (!new) {
     fprintf(stderr, "Error from %s: Insufficient memory\n", yo);
     exit(-1);
@@ -154,5 +154,5 @@ LIST_ENTRY *prev, *next;
     next->Prev = prev;
   }
 
-  LB_safe_free((void **) ptr);
+  LB_Free((void **) ptr);
 }

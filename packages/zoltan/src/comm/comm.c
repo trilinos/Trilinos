@@ -56,7 +56,7 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* malloc buf for largest send */
 
-  buf = (char *) LB_SMALLOC(nsize*plan->nsendmax*sizeof(char));
+  buf = (char *) LB_MALLOC(nsize*plan->nsendmax*sizeof(char));
   if ((nsize*plan->nsendmax > 0) && !buf) {
       fprintf(stderr, "Error in %s: Insufficient memory\n", yo);
       exit(-1);
@@ -87,7 +87,7 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* free temporary send buffer */
 
-  LB_safe_free((void **) &buf);
+  LB_Free((void **) &buf);
 
 /* wait on all incoming messages */
 
@@ -124,19 +124,19 @@ struct Comm_Obj *LB_comm_create(
 
 /* allocate plan and work vectors */
 
-  plan = (struct Comm_Obj *) LB_SMALLOC(sizeof(struct Comm_Obj));
+  plan = (struct Comm_Obj *) LB_MALLOC(sizeof(struct Comm_Obj));
   if (!plan) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (plan)\n",
               me, yo);
       exit(-1);
   }
-  list = (int *) LB_SMALLOC(nprocs*sizeof(int));
+  list = (int *) LB_MALLOC(nprocs*sizeof(int));
   if (!list) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (list)\n",
               me, yo);
       exit(-1);
   }
-  counts = (int *) LB_SMALLOC(nprocs*sizeof(int));
+  counts = (int *) LB_MALLOC(nprocs*sizeof(int));
   if (!counts) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (counts)\n",
               me, yo);
@@ -161,25 +161,25 @@ struct Comm_Obj *LB_comm_create(
 
 /* storage for recv info, not including self */
 
-  procs_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  procs_from = (int *) LB_MALLOC(nrecv*sizeof(int));
   if ((nrecv > 0) && !procs_from) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (procs_from)\n",
               me, yo);
       exit(-1);
   }
-  lengths_from = (int *) LB_SMALLOC(nrecv*sizeof(int));
+  lengths_from = (int *) LB_MALLOC(nrecv*sizeof(int));
   if ((nrecv > 0) && !lengths_from) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (lengths_from)\n",
               me, yo);
       exit(-1);
   }
-  request = (MPI_Request *) LB_SMALLOC(nrecv*sizeof(MPI_Request));
+  request = (MPI_Request *) LB_MALLOC(nrecv*sizeof(MPI_Request));
   if ((nrecv > 0) && !request) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (request)\n",
               me, yo);
       exit(-1);
   }
-  status = (MPI_Status *) LB_SMALLOC(nrecv*sizeof(MPI_Status));
+  status = (MPI_Status *) LB_MALLOC(nrecv*sizeof(MPI_Status));
   if ((nrecv > 0) && !status) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (status)\n",
               me, yo);
@@ -198,19 +198,19 @@ struct Comm_Obj *LB_comm_create(
 
 /* storage for send info, including self */
 
-  procs_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  procs_to = (int *) LB_MALLOC((nsend+nself)*sizeof(int));
   if ((nsend+nself > 0) && !procs_to) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (procs_to)\n",
               me, yo);
       exit(-1);
   }
-  lengths_to = (int *) LB_SMALLOC((nsend+nself)*sizeof(int));
+  lengths_to = (int *) LB_MALLOC((nsend+nself)*sizeof(int));
   if ((nsend+nself > 0) && !lengths_to) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (lengths_to)\n",
               me, yo);
       exit(-1);
   }
-  indices_to = (int *) LB_SMALLOC(n*sizeof(int));
+  indices_to = (int *) LB_MALLOC(n*sizeof(int));
   if ((n > 0) && !indices_to) {
       fprintf(stderr, "[%d] Error in %s: Insufficient memory (indices_to)\n",
               me, yo);
@@ -283,8 +283,8 @@ struct Comm_Obj *LB_comm_create(
 
 /* free work vectors */
 
-  LB_safe_free((void **) &counts);
-  LB_safe_free((void **) &list);
+  LB_Free((void **) &counts);
+  LB_Free((void **) &list);
     
 /* initialize plan and return it */
 
@@ -319,15 +319,15 @@ void LB_comm_destroy(struct Comm_Obj **plan)
 
 /* free internal arrays */
 
-  LB_safe_free((void **) &((*plan)->procs_to));
-  LB_safe_free((void **) &((*plan)->procs_from));
-  LB_safe_free((void **) &((*plan)->lengths_to));
-  LB_safe_free((void **) &((*plan)->lengths_from));
-  LB_safe_free((void **) &((*plan)->indices_to));
+  LB_Free((void **) &((*plan)->procs_to));
+  LB_Free((void **) &((*plan)->procs_from));
+  LB_Free((void **) &((*plan)->lengths_to));
+  LB_Free((void **) &((*plan)->lengths_from));
+  LB_Free((void **) &((*plan)->indices_to));
 
 /* free plan itself */
 
-  LB_safe_free((void **) plan);
+  LB_Free((void **) plan);
 }
 
 

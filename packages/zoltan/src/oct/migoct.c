@@ -76,7 +76,7 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 		     import_regions, pimreg, npimregs, c3);
 
   if(npimregs > 0)
-    LB_safe_free((void **) &pimreg);
+    LB_Free((void **) &pimreg);
 
   if(max_objs > (*counter3))
    (*counter3) = max_objs;
@@ -161,9 +161,9 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   if (count > 0) {
     /* allocate some space */
-    mtags = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count,
+    mtags = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count,
                                      sizeof(Region));
-    export_pids = (int *) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count,
+    export_pids = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count,
                                          sizeof(int));
     if(export_pids == NULL) {
       fprintf(stderr, "ERROR: unable to malloc export_pids in tag_regions\n");
@@ -184,7 +184,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   
   if (count2 > 0) {
     /* allocate some space */
-    ptags = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count2,
+    ptags = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned)count2,
                                      sizeof(Region));
     if(ptags == NULL) {
       fprintf(stderr, "(%d)ERROR: unable to malloc %d ptags in tag_regions\n",
@@ -260,7 +260,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   im_load = 0;
   comm_plan = LB_comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
-  tmp = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, nreceives,
+  tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
                                  sizeof(Region));
   
   if((nreceives != 0) && (tmp == NULL)) {
@@ -282,7 +282,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   if((j + npimtags) != 0) {                   /* malloc import array */
-    imp = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (j + npimtags),
+    imp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, (j + npimtags),
                                    sizeof(Region));
     if(imp == NULL) {
       fprintf(stderr, "ERROR in malloc_new_objects, %s\n",
@@ -309,7 +309,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   *nrectags = j;
 
-  LB_safe_free((void **) &tmp);
+  LB_Free((void **) &tmp);
 
   /*
    * fprintf(stderr,
@@ -354,11 +354,11 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 
     /* allocate memory */
 
-    *import_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__,
+    *import_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__,
+    *import_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(LB_LID));
-    *import_procs      = (int *)   LB_array_alloc(__FILE__, __LINE__,
+    *import_procs      = (int *)   LB_Array_Alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(int));
     if (!(*import_global_ids) || !(*import_local_ids) || !(*import_procs)) {
       fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
@@ -375,7 +375,7 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 #if 0
 
   /* KDD -- LB_Compute_Destinations will perform this operation for us. */
-  new_export = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, *nsentags,
+  new_export = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1, *nsentags,
                                          sizeof(LB_TAG));
   if(((*nsentags) > 0) && (new_export == NULL)) {
     fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);

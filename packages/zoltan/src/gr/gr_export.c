@@ -172,7 +172,7 @@ int header_size = sizeof(int);   /* assume header is only num of vertices */
     if (size > max_size) max_size = size;
   }
    
-  buf = (char *) array_alloc(1, max_size + header_size, sizeof(char));
+  buf = (char *) Array_Alloc(1, max_size + header_size, sizeof(char));
 
   for (i = 0; i < nborhd->Num_Proc; i++) {
     index = nborhd->Nbor_Proc[i];
@@ -198,7 +198,7 @@ int header_size = sizeof(int);   /* assume header is only num of vertices */
     error = MPI_Send(buf, size, MPI_BYTE, index, MSG_EXPORT, MPI_COMM_WORLD);
   }
 
-  LB_safe_free((void **) &buf);
+  LB_Free((void **) &buf);
 }
 
 /*****************************************************************************/
@@ -211,8 +211,8 @@ EXPORT_LIST *list_ptr;
 LIST **proc_exp_list;
 int *proc_exp_cnt, proc_exp_edge_cnt;
 
-  proc_exp_list = (LIST **) array_alloc(1, Num_Proc, sizeof(LIST *));
-  proc_exp_cnt = (int *) array_alloc(1, 2 * Num_Proc, sizeof(int));
+  proc_exp_list = (LIST **) Array_Alloc(1, Num_Proc, sizeof(LIST *));
+  proc_exp_cnt = (int *) Array_Alloc(1, 2 * Num_Proc, sizeof(int));
   proc_exp_edge_cnt = proc_exp_cnt + Num_Proc;
   
   build_send_lists(graph, export_list, proc_exp_list, proc_exp_cnt, 
@@ -227,7 +227,7 @@ int *proc_exp_cnt, proc_exp_edge_cnt;
 
   update_graph_due_to_exports(graph, export_list);
 
-  LB_safe_free((void **) &proc_exp_list);
-  LB_safe_free((void **) &proc_exp_cnt);
+  LB_Free((void **) &proc_exp_list);
+  LB_Free((void **) &proc_exp_cnt);
 }
 

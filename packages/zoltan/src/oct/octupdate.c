@@ -205,9 +205,9 @@ int lb_oct_init(
   else
     LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
 
-  LB_safe_free((void **) &export_regs);
-  LB_safe_free((void **) &import_regs);
-  LB_safe_free((void **) &export_tags);
+  LB_Free((void **) &export_regs);
+  LB_Free((void **) &import_regs);
+  LB_Free((void **) &export_tags);
   root = POC_localroots();
   while(root != NULL) {
     root2 = root->next;
@@ -356,7 +356,7 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
     extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *) LB_array_alloc(__FILE__, __LINE__, 1, hold,
+    array = (Map *) LB_Array_Alloc(__FILE__, __LINE__, 1, hold,
                                    sizeof(Map));       /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
@@ -426,10 +426,10 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
  */
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, array, c1, c2);
   
-  LB_safe_free((void **) &array);
+  LB_Free((void **) &array);
   while(ptr1 != NULL) {
     ptr = ptr1->next;
-    LB_safe_free((void **) &ptr1);
+    LB_Free((void **) &ptr1);
     ptr1 = ptr;
   }
 }
@@ -473,11 +473,11 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   /* ATTN: an arbitrary choice, is this necessary? */
   max_num_objs = 2 * (*num_objs); 
 
-  obj_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__,
+  obj_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__,
                                             1, *num_objs, sizeof(LB_GID));
-  obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__,
+  obj_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__,
                                             1, *num_objs, sizeof(LB_LID));
-  obj_wgts       = (float *) LB_array_alloc(__FILE__, __LINE__,
+  obj_wgts       = (float *) LB_Array_Alloc(__FILE__, __LINE__,
                                             1, *num_objs, sizeof(float));
   if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
@@ -556,9 +556,9 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
     ptr = NULL;
   }
-  LB_safe_free((void **) &obj_global_ids);
-  LB_safe_free((void **) &obj_local_ids);
-  LB_safe_free((void **) &obj_wgts);
+  LB_Free((void **) &obj_global_ids);
+  LB_Free((void **) &obj_local_ids);
+  LB_Free((void **) &obj_wgts);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, lb->Communicator);
@@ -597,7 +597,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   int ierr = 0;
   char *yo = "initialize_region";
 
-  reg = (pRegion) LB_SMALLOC(sizeof(Region));
+  reg = (pRegion) LB_MALLOC(sizeof(Region));
   *ret = reg;
   LB_SET_GID(reg->Tag.Global_ID, global_id);
   LB_SET_LID(reg->Tag.Local_ID, local_id);
@@ -951,7 +951,7 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
     cnum=LB_child_which_wrapper(oct, region->Coord);
     /* add region to octant's regionlist */
     POC_addRegion(child[cnum], region);
-    LB_safe_free((void **) &region);
+    LB_Free((void **) &region);
     region = entry;
   }
 
@@ -1174,9 +1174,9 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
     /* set the return variables */
     *nroots_ret=nroots;
     if(nroots) {
-      roots=(pOctant *) LB_array_alloc(__FILE__, __LINE__, 1, nroots,
+      roots=(pOctant *) LB_Array_Alloc(__FILE__, __LINE__, 1, nroots,
                                        sizeof(pOctant));
-      rootid=(Rootid *) LB_array_alloc(__FILE__, __LINE__, 1, nroots,
+      rootid=(Rootid *) LB_Array_Alloc(__FILE__, __LINE__, 1, nroots,
                                        sizeof(Rootid));
       if((roots == NULL) || (rootid == NULL)) {
 	fprintf(stderr, "LB_oct_roots_in_order: error in malloc\n");
@@ -1206,7 +1206,7 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
   for (i=0; i<nroots; i++)
     roots[i]=rootid[i].ptr;
 
-  LB_safe_free((void **) &rootid);
+  LB_Free((void **) &rootid);
 }
 
 /*****************************************************************************/
