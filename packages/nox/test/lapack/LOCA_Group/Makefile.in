@@ -272,8 +272,8 @@ LOCA_Group_LDADD = \
                    -L$(top_builddir)/src-loca/src-lapack -llocalapack \
                    -L$(top_builddir)/src-loca/src -lloca $(BLAS_LIBS) \
                    -L$(top_builddir)/src-lapack -lnoxlapack \
-		   -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
-	           $(LIBS) $(FLIBS)
+		   -L$(top_builddir)/src -lnox $(LIBS) \
+	           $(BLAS_LIBS) $(FLIBS)
 
 all: all-am
 

@@ -288,8 +288,8 @@ testNonlinear_CXXFLAGS = \
 
 testNonlinear_LDADD = \
                       -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
-	              $(LIBS) $(FLIBS)
+                      -L$(top_builddir)/src -lnox $(LIBS) \
+	              $(BLAS_LIBS) $(FLIBS)
 
 INTERFACE_EPETRANEW = $(srcdir)/Interface_EpetraNew.C
 testNonlinear_EpetraNew_SOURCES = \
@@ -308,8 +308,8 @@ testNonlinear_EpetraNew_CXXFLAGS = \
 
 testNonlinear_EpetraNew_LDADD = \
                       -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
-	              $(LIBS) $(FLIBS)
+                      -L$(top_builddir)/src -lnox $(LIBS) \
+	              $(BLAS_LIBS) $(FLIBS)
 
 testNonlinear_trans_SOURCES = \
                         $(INTERFACE_EPETRANEW) \
@@ -327,8 +327,8 @@ testNonlinear_trans_CXXFLAGS = \
 
 testNonlinear_trans_LDADD = \
                       -L$(top_builddir)/src-epetra -lnoxepetra \
-                      -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
-	              $(LIBS) $(FLIBS)
+                      -L$(top_builddir)/src -lnox $(LIBS) \
+	              $(BLAS_LIBS) $(FLIBS)
 
 all: all-am
 
