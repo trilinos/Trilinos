@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   A.FillComplete();
 
   // print the sparsity to file, postscript format
-  Ifpack_PrintSparsity(A,"OrigA","orig.ps");
+  Ifpack_PrintSparsity(A,"OrigA.ps");
 
   // create the reordering...
   Ifpack_RCMReordering Reorder;
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
   Ifpack_ReorderFilter ReordA(&A,&Reorder);
 
   // print the sparsity to file, postscript format
-  Ifpack_PrintSparsity(ReordA,"ReordA", "reord.ps");
+  Ifpack_PrintSparsity(ReordA,"ReordA.ps");
 
 #else
   puts("Please configure ifpack with --enable-teuchos to run this example");
