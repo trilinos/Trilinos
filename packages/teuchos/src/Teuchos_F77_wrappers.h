@@ -79,7 +79,17 @@
 
 #define FORTRAN_FUNC_CALL_UL(UFUNC_NAME,LFUNC_NAME) FORTRAN_NAME_UL(UFUNC_NAME,LFUNC_NAME)
 
-#define FORTRAN_COMMMON_BLOCK_NAME_UL(UNAME,LNAME)  FORTRAN_NAME_UL(UNAME,LNAME)
+#define FORTRAN_COMMMON_BLOCK_NAME_UL(UNAME,LNAME)  FORTRAN_NAME_UL(UNAME,LNAME)\
+
+#define FORTRAN_NAME_UL_(UNAME,LNAME) F77_FUNC_(LNAME,UNAME)
+
+#define FORTRAN_FUNC_DECL_UL_(TYPE,UFUNC_NAME,LFUNC_NAME) TYPE F77_CALL_PREFIX FORTRAN_NAME_UL_(UFUNC_NAME,LFUNC_NAME)
+
+#define FORTRAN_FUNC_CALL_UL_(UFUNC_NAME,LFUNC_NAME) FORTRAN_NAME_UL_(UFUNC_NAME,LFUNC_NAME)
+
+#define FORTRAN_COMMMON_BLOCK_NAME_UL_(UNAME,LNAME)  FORTRAN_NAME_UL_(UNAME,LNAME)\
+
+#ifdef __cplusplus
 
 // These are the platform dependent C++ equivalents of fortran types
 // RAB: 2003/11/20: ToDo: Move this into Teuchos namespace at some point
@@ -95,6 +105,8 @@ typedef unsigned int				f_char_len;				// length argument for a CHARACTER*(*)
 //typedef std::complex<f_dbl_prec>	f_complex_16;			// COMPLEX*16
 
 enum {	F_TRUE = true, F_FALSE = false }; // Let compiler figure this out!
+
+#endif /* __cplusplus */
 
 } // namespace FortranTypes
 
