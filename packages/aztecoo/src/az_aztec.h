@@ -32,9 +32,35 @@
  *          Ray   S. Tuminaro,   SNL
  */
 #ifndef __AZTECH__
+
+/* Set variable to indicate that this file has already been included */
+
+#define __AZTECH__
+
+
+/* Some older codes use AZ_MPI to set MPI mode for AztecOO/Aztec.
+ * Check to see if AZ_MPI is defined, and define AZTEC_MPI if
+ * it is not already defined.
+ */
+
+#if defined(AZ_MPI) && !defined(AZTEC_MPI) 
+#define AZTEC_MPI
+#endif
+
+/* Force AZTEC_MPI to be defined if ML_MPI is defined */
+
 #if defined(ML_MPI) && !defined(AZTEC_MPI) 
 #define AZTEC_MPI
 #endif
+
+/* The definition of MPI_AZRequest and MPI_AZComm depend on
+ * whether or not we are using MPI.
+ * NOTE:  This technique can cause problems if az_aztec.h (this file)
+ *        is included with AZTEC_MPI undefined in some files and with
+ *        AZTEC_MPI defined in other files.  Therefore, users must
+ *        make sure that AZTEC_MPI is either defined or undefined for
+ *        all files that are compiled and including az_aztec.h.
+ */
 
 #ifdef AZTEC_MPI
 #include <mpi.h>
@@ -45,10 +71,6 @@
 #define MPI_AZComm    int 
 #endif
 
-
-/* Set variable to indicate that this file has already been included */
-
-#define __AZTECH__
 
 /*structure definitions*/
 
