@@ -10,6 +10,22 @@ LINKER=$3
 THELIBRARIES=$4
 THEARCHS=$5
 
+#
+# see if echo -n or echo "\c" supresses newlines
+# then create a file (used in compile_list) with just a '.'
+#
+\rm -f thedot; echo  -n "." > thedot
+tt2=`wc thedot | sed "s/^ *.//" | sed "s/ *. *//" | sed "s/ *thedot//"`
+if test `expr $tt2` -ne '1'
+then
+   \rm -f thedot ; echo ".\c" > thedot
+   tt2=`wc thedot | sed "s/^ *.//" | sed "s/ *. *//" | sed "s/ *thedot//"`
+   if test `expr $tt2` -ne '1'
+   then
+      \rm -f thedot; echo -n "." | sed "s/-n//" > thedot
+   fi
+fi
+
 \rm -f ml_lapack.c
 ln -s ../src/Utils/ml_lapack.c .
 #
@@ -22,7 +38,6 @@ grep FUNC ../src/Utils/ml_lapack.c | sed "s/\#ifndef /-D/g" | \
      sed "s/$/ \\\/" >> la_defs
 ${echo} "-o ml_lapack.o -I../Obj ml_lapack.c \\" >> la_defs
 ${echo} "-DML_DUMMY_FUNC" >> la_defs
-#${echo} "unalias rm" >> la_defs
 ${echo} "\\" "rm -f ml_lapack1.o" | sed "s/ rm /rm /" >> la_defs
 ${echo} "mv ml_lapack.o ml_lapack1.o" >> la_defs
 \rm -f lower_list upper_list 
@@ -160,5 +175,5 @@ chmod +x la_defs; ./la_defs
 #lineslessone=`expr ${no_lines} - 1`
 #tail -${lineslessone} la_defs | grep FUNC > .thedefs
 grep "^.DML.*FUNC" la_defs > .thedefs
-\rm -f la_defs temprog.c temprog.o ml_lapack.c .errors ml_lapack1.o 
+\rm -f la_defs temprog.c temprog.o ml_lapack.c .errors ml_lapack1.o thedot
 
