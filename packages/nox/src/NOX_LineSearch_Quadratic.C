@@ -142,6 +142,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   // Iterate until convergence criteria is satisfied
   while (newf >= convergence) {  
 
+    cout << "Top NewF = " << newf << " >=  convergence = " << convergence << endl;
+
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
@@ -212,13 +214,14 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
 
     // Compute the convergence criteria for the line search 
-    double convergence = 0.0;
     if (convCriteria == ArmijoGoldstein) {
       convergence = oldf + alpha*step*oldfprime;
     }
     else if (convCriteria == AredPred) {
-      convergence = oldf*(1.0-alpha*(1-eta));
+      convergence = oldf*(1.0-alpha*(11.0-eta));
     }
+
+    cout << "Bottom NewF = " << newf << " >=  convergence = " << convergence << endl;
 
   } // end while loop
 
