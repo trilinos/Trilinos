@@ -598,7 +598,7 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
   // NOTE: for HB problems, this value has already been set
   
   if( name_ == "diag" || name_ == "tridiag"  ||
-      name_ == "laplace 1d" || name_ == "eye" ||
+      name_ == "laplace_1d" || name_ == "eye" ||
       name_ == "lehmer" || name_ == "minij" ||
       name_ == "ris" || name_ == "hilbert" ||
       name_ == "jordblock" ) {
@@ -612,7 +612,7 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
   }
     
   else if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
-	   || name_ == "recirc_2d" ) {
+	   || name_ == "laplace_2d_9pt" || name_ == "recirc_2d" ) {
     if( NumGlobalElements_ <= 0 ) {  
       if( nx_ > 0 && ny_ > 0 )
 	NumGlobalElements_ = nx_*ny_;
@@ -849,6 +849,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrix(void)
     else if( name_ == "laplace_1d" ) assert(CreateMatrixLaplace1d()==0);
       
     else if( name_ == "laplace_2d" ) assert(CreateMatrixLaplace2d()==0);
+
+    else if( name_ == "laplace_2d_9pt" ) assert(CreateMatrixLaplace2d_9pt()==0);
 
     else if( name_ == "recirc_2d" ) assert(CreateMatrixRecirc2d()==0);
       
@@ -1235,6 +1237,90 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil2d(void)
       
 }
 
+// ================================================ ====== ==== ==== == =
+int Trilinos_Util_MatrixGallery::CreateMatrixLaplace2d_9pt(void)
+{
+
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Creating matrix `laplace_2d_9pt'...\n";
+  }
+
+  if( nx_ == -1 || ny_ == -1 ) {
+    nx_ = (int)sqrt((double)NumGlobalElements_);
+    ny_ = nx_;
+      
+    if( nx_ * ny_ != NumGlobalElements_ ) {
+      cerr << ErrorMsg << "The number of global elements must be a square number\n"
+	   << ErrorMsg << "(now is " << NumGlobalElements_ << "). Returning...\n";
+      return -2;
+    }
+  }
+    
+  int left, right, lower, upper;
+    
+  matrix_ = new Epetra_CrsMatrix(Copy,*map_,9);
+    
+  // Add  rows one-at-a-time
+    
+  double Values[8], diag;
+  for( int i=0 ; i<8 ; ++i ) Values[i] = -1.0;
+  int Indices[8];
+  int NumEntries;
+
+  diag = 8.0;
+  
+  //  z3  e  z4
+  //   b  a  c
+  //  z1  d  z2
+  for( int i=0 ; i<NumMyElements_; ++i ) {
+    int NumEntries=0;
+    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+			       left, right, lower, upper);
+    if( left != -1 ) {
+      Indices[NumEntries] = left;
+      ++NumEntries;
+    }
+    if( right != -1 ) {
+      Indices[NumEntries] = right;
+      ++NumEntries;
+    }
+    if( lower != -1 ) {
+      Indices[NumEntries] = lower;
+      ++NumEntries;
+    }
+    if( upper != -1 ) {
+      Indices[NumEntries] = upper;
+      ++NumEntries;
+    }
+    if( left != -1 && lower != -1 ) {
+      Indices[NumEntries] = lower-1;
+      ++NumEntries;
+    }
+    if( right != -1 && lower != -1 ) {
+      Indices[NumEntries] = lower+1;
+      ++NumEntries;
+    }
+    if( left != -1 && upper != -1 ) {
+      Indices[NumEntries] = upper-1;
+      ++NumEntries;
+    }
+    if( right != -1 && upper != -1 ) {
+      Indices[NumEntries] = upper+1;
+      ++NumEntries;
+    }
+    
+    // put the off-diagonal entries
+    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices)==0);
+    // Put in the diagonal entry
+    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i)==0);
+  }
+  matrix_->FillComplete();
+
+  return 0;
+      
+}
 // ================================================ ====== ==== ==== == =
 int Trilinos_Util_MatrixGallery::CreateMatrixLaplace2d(void)
 {
@@ -1981,8 +2067,8 @@ int Trilinos_Util_MatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(
 
 // ================================================ ====== ==== ==== == =  
 void Trilinos_Util_MatrixGallery::GetNeighboursCartesian2d( const int i, const int nx, const int ny,
-				int & left, int & right, 
-				int & lower, int & upper) 
+							    int & left, int & right, 
+							    int & lower, int & upper) 
 {
 
   int ix, iy;
@@ -2181,3 +2267,89 @@ ostream & operator << (ostream& os,
 }
 
 
+int Trilinos_Util_MatrixGallery::GetCartesianCoordinates(double * & x,
+							 double * & y,
+							 double * & z)
+{
+
+  if( map_ == NULL ) assert(CreateMap()==0);
+  
+  double length = 1.0;
+  double delta_x, delta_y, delta_z;
+
+  int ix, iy, iz;
+  
+  if( name_ == "diag" || name_ == "tridiag"  ||
+      name_ == "laplace_1d" || name_ == "eye" ) {
+    
+    delta_x = length/(nx_-1);
+
+    x = new double[NumMyElements_];
+    assert( x != 0 );
+    
+    for( int i=0 ; i<NumMyElements_ ; ++i ) {
+
+      ix = MyGlobalElements_[i];
+      x[i] = delta_x * ix;
+
+    }
+    
+  } else  if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
+      || name_ == "laplace_2d_9pt" || name_ == "recirc_2d" ) {
+  
+    delta_x = length/(nx_-1);
+    delta_y = length/(ny_-1);
+
+    x =  new double[NumMyElements_];
+    y =  new double[NumMyElements_];
+    assert( x != 0 ); assert( y != 0 );
+    
+    for( int i=0 ; i<NumMyElements_ ; ++i ) {
+
+      ix = MyGlobalElements_[i]%nx_;
+      iy = (MyGlobalElements_[i] - ix)/ny_;
+
+      x[i] = delta_x * ix;
+      y[i] = delta_y * iy;
+
+    }
+    
+  } else if( name_ == "laplace_3d" || name_ == "cross_stencil_3d" ) {
+  
+    delta_x = length/(nx_-1);
+    delta_y = length/(ny_-1);
+    delta_y = length/(nz_-1);
+
+    x =  new double[NumMyElements_];
+    y =  new double[NumMyElements_];
+    z =  new double[NumMyElements_];
+    assert( x != 0 ); assert( y != 0 ); assert( z != 0 );
+    
+    for( int i=0 ; i<NumMyElements_ ; i++ ) {
+
+      int ixy = MyGlobalElements_[i]%(nx_*ny_);
+      iz = (MyGlobalElements_[i] - ixy)/(nx_*ny_);
+
+      ix = ixy%nx_;
+      iy = (ixy - ix)/ny_;
+      
+      x[i] = delta_x * ix;
+      y[i] = delta_y * iy;
+      z[i] = delta_y * iz;
+
+    }
+    
+  } else {
+
+      cerr << ErrorMsg << "You can build Cartesian coordinates" << endl
+	   << ErrorMsg << "only with one of the following problem_type:" << endl
+	   << ErrorMsg << "<diag> / <tridiag> / <laplace_1d> / <eye>" << endl
+	   << ErrorMsg << "<laplace_2d> / <cross_stencil_2d> / <laplace_2d_9pt> / <recirc_2d>" << endl
+	   << ErrorMsg << "<laplace_3d> / <cross_stencil_3d>" << endl;
+
+      return(-1);
+  }
+
+  return( 0 );
+  
+}

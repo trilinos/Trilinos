@@ -337,12 +337,14 @@ return 0 ;
 
   void PrintVbrMatrixAndVectors();
 
+  //! Get pointers to double vectors containing coordinates of points.
+  int GetCartesianCoordinates(double * & x, double * & y, double * & z);
+  
   //! Print out detailed information about the problem at hand
   friend ostream & operator << (ostream& os,
-				const Trilinos_Util_MatrixGallery & G ); 
-
+				const Trilinos_Util_MatrixGallery & G );
   //@}
-
+  
 private:
 
   //@{ \name Creation methods.
@@ -408,6 +410,8 @@ private:
   int CreateMatrixCrossStencil2d();
 
   int CreateMatrixLaplace2d();
+
+  int CreateMatrixLaplace2d_9pt();
 
   int CreateMatrixRecirc2d();
 
