@@ -169,6 +169,42 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     Zoltan_LB_Set_Part_Sizes(zz, 0, Proc, partid, idx, psize);
   }
+  else if (Test.Local_Partitions == 6) {
+    /* Variable partition sizes, but one partition per proc */
+    /* When nprocs >= 6, zero-sized partitions on processors >= 2. */
+    i = 0;
+    psize[0] = (float) Proc;
+    /* Set partition sizes using global numbers. */
+    Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    /* Reset partition sizes for procs near end. */
+    if (nprocs >= 6 && Proc >= nprocs-4){
+      psize[0] = 0.;
+      Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    }
+    else if (nprocs < 6) {
+      Gen_Error(0, "warning:  Test Local Partitions = 6 should be run "
+                    "on six or more processors.\n");
+      error_report(Proc);
+    }
+  }
+  else if (Test.Local_Partitions == 7) {
+    /* Variable partition sizes, but one partition per proc */
+    /* When nprocs >= 6, zero-sized partitions on processors 0, 1, 2, and 3. */
+    i = 0;
+    psize[0] = (float) Proc;
+    /* Set partition sizes using global numbers. */
+    Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    /* Reset partition sizes for procs near beginning. */
+    if (nprocs >= 6 && Proc < 4){
+      psize[0] = 0.;
+      Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
+    }
+    else if (nprocs < 6) {
+      Gen_Error(0, "warning:  Test Local Partitions = 7 should be run "
+                    "on six or more processors.\n");
+      error_report(Proc);
+    }
+  }
 
   /* Free tenmporary arrays for partition sizes. */
   safe_free((void **) &psize);
