@@ -62,6 +62,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  * EBEB: We should change the function interface to return min/max/sum stats. 
  * EBEB: These data can be computed both w.r.t. processors and partitions.
  * EBEB: Not all partition stats have been implemented yet.
+ *
+ * EBEB: Current version only works if every partition is wholly
+ *       contained within a processor.
  */
 
 {
@@ -305,7 +308,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Statistics with respect to processors:\n", yo);
+      printf("\n%s  Statistics with respect to %1d processors:\n", yo, nproc);
       printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
       printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
         yo, stats[imin*NUM_STATS], 
@@ -472,7 +475,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Statistics with respect to partitions: \n", yo);
+      printf("\n%s  Statistics with respect to %1d partitions: \n", yo, nparts);
       printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
       printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
         yo, stats[imin*NUM_STATS], 
