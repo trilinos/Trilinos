@@ -443,8 +443,8 @@ AC_TRY_COMPILE(
 # ------------------------------------------------------------------------
 
 
-AC_ARG_ENABLE(noxepetra,
-[  --enable-noxepetra      compile noxepetra library],
+AC_ARG_ENABLE(epetra,
+[  --enable-epetra         compile noxepetra library],
 [BUILD_LIBNOXEPETRA=$enableval],
 [BUILD_LIBNOXEPETRA=no]
 )
@@ -518,23 +518,24 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(noxepetra-examples,
-[  --enable-noxepetra-examples  compile epetra examples],
-[BUILD_NOXEPETRA_EXAMPLES=${enableval}],
-[BUILD_NOXEPETRA_EXAMPLES=${BUILD_LIBNOXEPETRA}]
+[  --enable-epetra-examples     compile epetra examples],
+[BUILD_EPETRA_EXAMPLES=${enableval}],
+[BUILD_EPETRA_EXAMPLES=${BUILD_LIBNOXEPETRA}]
 )
 
-dnl if test X${BUILD_LIBNOXEPETRA} != Xyes; then
-dnl   BUILD_NOXEPETRA_EXAMPLES=no
-dnl fi
+# Cannot build the example if we don't build the library
+if test X${BUILD_LIBNOXEPETRA} != Xyes; then
+   BUILD_EPETRA_EXAMPLES=no
+fi
 
 AC_MSG_CHECKING(whether we should build the noxepetra examples)
-AC_MSG_RESULT(${BUILD_NOXEPETRA_EXAMPLES})
+AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
 
 # ------------------------------------------------------------------------
 # Checks for basic libraries
 # ------------------------------------------------------------------------
 
-if test ${BUILD_NOXEPETRA_EXAMPLES} = yes; then
+if test ${BUILD_EPETRA_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -545,7 +546,7 @@ fi
 # Check for MPI library
 # ------------------------------------------------------------------------
 
-if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes; then
+if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
 
   if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR="${MPI_DIR}/lib"
@@ -606,7 +607,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 ])
 
-if test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes; then
+if test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
@@ -669,7 +670,7 @@ fi
 # ------------------------------------------------------------------------
 
 AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${BUILD_LIBNOXEPETRA} = Xyes)
-AM_CONDITIONAL(BUILD_NOXEPETRA_EXAMPLES, test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes)
+AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${BUILD_EPETRA_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # LOCA Stuff
@@ -760,7 +761,6 @@ AC_CONFIG_FILES([
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
 		example-epetra/1Dfem_nonlinear/Makefile
-		example-epetra/1Dfem_LOCA/Makefile
 		])
 
 AC_OUTPUT()

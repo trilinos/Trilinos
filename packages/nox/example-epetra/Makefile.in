@@ -80,7 +80,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_NOXEPETRA_EXAMPLES_TRUE@SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
+@BUILD_EPETRA_EXAMPLES_TRUE@SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear
 subdir = example-epetra
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
@@ -92,7 +92,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
+DIST_SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear
 all: all-recursive
 
 .SUFFIXES:
@@ -313,7 +313,6 @@ uninstall-info: uninstall-info-recursive
 	uninstall-am uninstall-info-am uninstall-info-recursive \
 	uninstall-recursive
 
-#SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
