@@ -190,14 +190,14 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
     /* Compute vertex visit order. */
     Zoltan_PHG_Vertex_Visit_Order(zz, hg, hgp, order);
 
-    /* for every vertex */
+    /* for every (local) vertex */
     for (k = 0; k < hg->nVtx; k++) {
         v1 = order[k];
 
-        if (match[v1] != v1)
+        if (match[v1] != v1)  /* v1 is already matched, so skip to next */
             continue;
 
-        nadj = 0;  /* number of neighbors */
+        nadj = 0;  /* number of neighbors (nonzero inner products) */
 
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
@@ -399,7 +399,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
           }
         } 
 
-        /* broadcast the winner, best_vertex */
+        /* broadcast the winner, best_vertex, to entire proc column */
         MPI_Bcast(&best_vertex, 1, MPI_INT, 0, hgc->col_comm); 
 
         /* match if inner product > 0 */
