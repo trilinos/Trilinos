@@ -3391,9 +3391,10 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrExactSolution(void)
   if( BlockMap_ == NULL ) CreateBlockMap();
   // now we can expand to the Vbr format
   VbrExactSolution_ = new Epetra_MultiVector(*BlockMap_,NumVectors_);
-  for( int j=0 ; j<NumMyElements_ ; j++ ) 
-    for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
-      (*VbrExactSolution_)[j*NumPDEEqns_+i] = (*ExactSolution_)[j];
+  for (int k = 0 ; k < NumVectors_ ; ++k)
+    for( int j=0 ; j<NumMyElements_ ; j++ ) 
+      for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
+	(*VbrExactSolution_)[k][j*NumPDEEqns_+i] = (*ExactSolution_)[k][j];
     }
 
   return;
@@ -3419,10 +3420,11 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrStartingSolution(void)
   if( BlockMap_ == NULL ) CreateBlockMap();
   // now we can expand to the Vbr format
   VbrStartingSolution_ = new Epetra_MultiVector(*BlockMap_,NumVectors_);
-  for( int j=0 ; j<NumMyElements_ ; j++ ) 
-    for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
-      (*VbrStartingSolution_)[j*NumPDEEqns_+i] = (*StartingSolution_)[j];
-    }
+  for (int k = 0 ; k < NumVectors_ ; ++k)
+    for( int j=0 ; j<NumMyElements_ ; j++ ) 
+      for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
+	(*VbrStartingSolution_)[k][j*NumPDEEqns_+i] = (*StartingSolution_)[k][j];
+      }
 
   return;
   
