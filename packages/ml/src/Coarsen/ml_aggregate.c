@@ -2273,13 +2273,15 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      /* This lines are required by ML_Project_Coordinates(), */
      /* in ML_Gen_MultiLevelHierarchy(), since I use Ptent   */
      /* to project the coordinates down to the next level    */
-     if (ag->P_tentative[coarse] != 0)
-     {
-       newP = ML_Operator_Create(Pmat->comm);
-       ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
-       ML_Operator_Destroy(&(ag->P_tentative[coarse]));
-       ag->P_tentative[coarse] = newP;
-       newP = NULL;
+     if (ag->P_tentative != 0) {
+       if (ag->P_tentative[coarse] != 0)
+       {
+         newP = ML_Operator_Create(Pmat->comm);
+         ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
+         ML_Operator_Destroy(&(ag->P_tentative[coarse]));
+         ag->P_tentative[coarse] = newP;
+         newP = NULL;
+       }
      }
      /* end of MS modif */
 
