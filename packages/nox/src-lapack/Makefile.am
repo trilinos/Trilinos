@@ -71,9 +71,9 @@ if BUILD_LIBNOXLAPACK
 
 lib_LIBRARIES = libnoxlapack.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(NOX_LAPACK_H)
+include_HEADERS = $(NOX_LAPACK_H)
 
 endif
 

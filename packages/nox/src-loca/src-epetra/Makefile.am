@@ -66,9 +66,9 @@ if BUILD_LIBLOCAEPETRA
 
 lib_LIBRARIES = liblocaepetra.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(LOCA_EPETRA_H)
+include_HEADERS = $(LOCA_EPETRA_H)
 
 endif
 

@@ -237,9 +237,9 @@ if BUILD_LIBLOCA
 
 lib_LIBRARIES = libloca.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(LOCA_H)
+include_HEADERS = $(LOCA_H)
 
 endif
 

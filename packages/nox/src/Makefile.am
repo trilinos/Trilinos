@@ -51,10 +51,10 @@ libnox_a_SOURCES = \
 	$(UTILS) 
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = \
+include_HEADERS = \
 	$(srcdir)/NOX.H \
 	$(srcdir)/NOX_Common.H \
 	$(ABSTRACT_H) \
@@ -72,7 +72,7 @@ pkginclude_HEADERS = \
 
 if BUILD_PRERELEASE
 
-nodist_pkginclude_HEADERS = \
+nodist_include_HEADERS = \
 	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
@@ -80,7 +80,8 @@ nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
 	$(srcdir)/NOX_Direction_Broyden.H \
-	$(srcdir)/NOX_Direction_ModifiedNewton.H 
+	$(srcdir)/NOX_Direction_ModifiedNewton.H \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 
 nodist_libnox_a_SOURCES = \
@@ -91,7 +92,8 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
 	$(srcdir)/NOX_Direction_Broyden.C \
-	$(srcdir)/NOX_Direction_ModifiedNewton.C 
+	$(srcdir)/NOX_Direction_ModifiedNewton.C \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
 
 endif
 
@@ -112,8 +114,8 @@ EXTRA_DIST = \
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/nox
-nodist_pkgexecinclude_HEADERS = NOX_Config.h
+execincludedir = $(exec_prefix)/include/
+nodist_execinclude_HEADERS = NOX_Config.h
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
@@ -157,15 +159,13 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
+	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \

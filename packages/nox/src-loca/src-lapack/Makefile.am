@@ -66,9 +66,9 @@ if BUILD_LIBLOCALAPACK
 
 lib_LIBRARIES = liblocalapack.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(LOCA_LAPACK_H)
+include_HEADERS = $(LOCA_LAPACK_H)
 
 endif
 

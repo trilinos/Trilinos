@@ -67,9 +67,9 @@ if BUILD_LIBNOXPETSC
 
 lib_LIBRARIES = libnoxpetsc.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(PETSC_H)
+include_HEADERS = $(PETSC_H)
 
 endif
 

@@ -145,9 +145,9 @@ libnox_a_SOURCES = \
 
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
-pkginclude_HEADERS = \
+include_HEADERS = \
 	$(srcdir)/NOX.H \
 	$(srcdir)/NOX_Common.H \
 	$(ABSTRACT_H) \
@@ -163,7 +163,7 @@ pkginclude_HEADERS = \
 # ------------------------------------------------------------------------
 # Parts of the code that are not ready to be included in nightly release
 # ------------------------------------------------------------------------
-@BUILD_PRERELEASE_TRUE@nodist_pkginclude_HEADERS = \
+@BUILD_PRERELEASE_TRUE@nodist_include_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.H \
@@ -171,7 +171,8 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.H \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.H 
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.H \
+@BUILD_PRERELEASE_TRUE@        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_SOURCES = \
@@ -182,7 +183,8 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.C \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.C 
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.C \
+@BUILD_PRERELEASE_TRUE@        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
 
 
 
@@ -202,8 +204,8 @@ EXTRA_DIST = \
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
-pkgexecincludedir = $(exec_prefix)/include/nox
-nodist_pkgexecinclude_HEADERS = NOX_Config.h
+execincludedir = $(exec_prefix)/include/
+nodist_execinclude_HEADERS = NOX_Config.h
 
 
 # ------------------------------------------------------------------------
@@ -251,16 +253,14 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
+	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C \
-        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 
 PARAMETER_H = \
@@ -373,8 +373,7 @@ am__objects_2 = NOX_LineSearch_Utils_Slope.$(OBJEXT) \
 	NOX_LineSearch_Polynomial.$(OBJEXT)
 am__objects_3 = NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Generic.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
-	NOX_Direction_SteepestDescent.$(OBJEXT) \
-	NOX_Direction_Utils_InexactNewton.$(OBJEXT)
+	NOX_Direction_SteepestDescent.$(OBJEXT)
 am__objects_4 = NOX_Parameter_Entry.$(OBJEXT) \
 	NOX_Parameter_List.$(OBJEXT)
 am__objects_5 = NOX_Solver_Manager.$(OBJEXT) \
@@ -399,7 +398,8 @@ am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_NonlinearCG.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_Broyden.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	NOX_Direction_ModifiedNewton.$(OBJEXT)
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_ModifiedNewton.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_Utils_InexactNewton.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS) $(nodist_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -454,10 +454,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libnox_a_SOURCES)
-HEADERS = $(nodist_pkgexecinclude_HEADERS) $(nodist_pkginclude_HEADERS) \
-	$(pkginclude_HEADERS)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS) \
+	$(nodist_include_HEADERS)
 
-DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in \
+DIST_COMMON = $(include_HEADERS) Makefile.am Makefile.in \
 	NOX_Config.h.in
 SOURCES = $(libnox_a_SOURCES) $(nodist_libnox_a_SOURCES)
 
@@ -542,8 +542,6 @@ NOX_Direction_Generic.$(OBJEXT): $(srcdir)/NOX_Direction_Generic.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_SteepestDescent.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
-NOX_Direction_Utils_InexactNewton.$(OBJEXT): \
-	$(srcdir)/NOX_Direction_Utils_InexactNewton.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
 NOX_Parameter_List.$(OBJEXT): $(srcdir)/NOX_Parameter_List.C
 NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
@@ -575,6 +573,8 @@ NOX_Direction_QuasiNewton.$(OBJEXT): \
 NOX_Direction_Broyden.$(OBJEXT): $(srcdir)/NOX_Direction_Broyden.C
 NOX_Direction_ModifiedNewton.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_ModifiedNewton.C
+NOX_Direction_Utils_InexactNewton.$(OBJEXT): \
+	$(srcdir)/NOX_Direction_Utils_InexactNewton.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
 	$(libnox_a_AR) libnox.a $(libnox_a_OBJECTS) $(libnox_a_LIBADD)
@@ -819,18 +819,6 @@ NOX_Direction_SteepestDescent.obj: $(srcdir)/NOX_Direction_SteepestDescent.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_SteepestDescent.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_SteepestDescent.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_SteepestDescent.obj `cygpath -w $(srcdir)/NOX_Direction_SteepestDescent.C`
-
-NOX_Direction_Utils_InexactNewton.o: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.o `test -f '$(srcdir)/NOX_Direction_Utils_InexactNewton.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Utils_InexactNewton.C
-
-NOX_Direction_Utils_InexactNewton.obj: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.obj `cygpath -w $(srcdir)/NOX_Direction_Utils_InexactNewton.C`
 
 NOX_Parameter_Entry.o: $(srcdir)/NOX_Parameter_Entry.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Parameter_Entry.C' object='NOX_Parameter_Entry.o' libtool=no @AMDEPBACKSLASH@
@@ -1095,61 +1083,73 @@ NOX_Direction_ModifiedNewton.obj: $(srcdir)/NOX_Direction_ModifiedNewton.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_ModifiedNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_ModifiedNewton.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_ModifiedNewton.obj `cygpath -w $(srcdir)/NOX_Direction_ModifiedNewton.C`
+
+NOX_Direction_Utils_InexactNewton.o: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.o `test -f '$(srcdir)/NOX_Direction_Utils_InexactNewton.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Utils_InexactNewton.C
+
+NOX_Direction_Utils_InexactNewton.obj: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.obj `cygpath -w $(srcdir)/NOX_Direction_Utils_InexactNewton.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
-nodist_pkgexecincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
-	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(nodist_pkgexecincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
-	  $(nodist_pkgexecincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
 	done
 
-uninstall-nodist_pkgexecincludeHEADERS:
+uninstall-includeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	@list='$(include_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
 	done
-nodist_pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-nodist_pkgincludeHEADERS: $(nodist_pkginclude_HEADERS)
+nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
-	@list='$(nodist_pkginclude_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(execincludedir)
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(nodist_pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  $(nodist_pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f"; \
+	  $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f; \
 	done
 
-uninstall-nodist_pkgincludeHEADERS:
+uninstall-nodist_execincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_pkginclude_HEADERS)'; for p in $$list; do \
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(execincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(execincludedir)/$$f; \
 	done
-pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-nodist_includeHEADERS: $(nodist_include_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
-	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " $(nodist_includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(nodist_includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
 	done
 
-uninstall-pkgincludeHEADERS:
+uninstall-nodist_includeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
 	done
 
 ETAGS = etags
@@ -1219,7 +1219,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) NOX_Config.h
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir) $(DESTDIR)$(pkgincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir) $(DESTDIR)$(includedir)
 
 install: install-am
 install-exec: install-exec-am
@@ -1264,11 +1264,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-nodist_pkgincludeHEADERS \
-	install-pkgincludeHEADERS
+install-data-am: install-includeHEADERS install-nodist_includeHEADERS
 
-install-exec-am: install-libLIBRARIES \
-	install-nodist_pkgexecincludeHEADERS
+install-exec-am: install-libLIBRARIES install-nodist_execincludeHEADERS
 
 install-info: install-info-am
 
@@ -1284,24 +1282,24 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-nodist_pkgincludeHEADERS uninstall-pkgincludeHEADERS
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS \
+	uninstall-nodist_includeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES distclean distclean-compile distclean-depend \
 	distclean-generic distclean-hdr distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-libLIBRARIES install-man \
-	install-nodist_pkgexecincludeHEADERS \
-	install-nodist_pkgincludeHEADERS install-pkgincludeHEADERS \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man \
+	install-nodist_execincludeHEADERS install-nodist_includeHEADERS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic tags uninstall \
-	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-nodist_pkgincludeHEADERS uninstall-pkgincludeHEADERS
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS \
+	uninstall-nodist_includeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

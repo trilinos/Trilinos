@@ -78,9 +78,9 @@ if BUILD_LIBNOXEPETRA
 
 lib_LIBRARIES = libnoxepetra.a
 
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 
-pkginclude_HEADERS = $(EPETRA_H)
+include_HEADERS = $(EPETRA_H)
 
 endif
 
