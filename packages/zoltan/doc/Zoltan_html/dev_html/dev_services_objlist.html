@@ -65,7 +65,7 @@ int *<i>ierr</i>);
 <hr>
 <b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs (and object
 weights, if 
-<b><a href="../ug_html/ug_alg.html#General_Parameters">OBJ_WEIGHT_DIM</a></b> 
+<b><a href="../ug_html/ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></b> 
 is not zero) for all objects on a processor.
  It is a convenient function that frees algorithm developers from calling an
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
@@ -100,7 +100,7 @@ query function pair directly.
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 <td>Upon return, an array of local IDs of objects on the current processor.
 NULL is returned when
-<a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> is zero.
+<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> is zero.
 </td>
 </tr>
 

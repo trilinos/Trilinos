@@ -54,9 +54,9 @@ every period between roll-overs.</li>
 </ul>
 
 Within Zoltan, it is recommended to select which timer to use by setting the
-<a href="../ug_html/ug_alg.html#TIMER">TIMER</a> 
-general parameter via <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
-The default value of <a href="../ug_html/ug_alg.html#TIMER">TIMER</a> is <i>wall</i>.&nbsp; Zoltan stores an
+<a href="../ug_html/ug_param.html#TIMER">TIMER</a> 
+general parameter via <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+The default value of <a href="../ug_html/ug_param.html#TIMER">TIMER</a> is <i>wall</i>.&nbsp; Zoltan stores an
 integer representation of the selected timing method in <i>zz->Timer</i>.  
 This value should be passed to <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>, 
 as in <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>(<i>zz->Timer</i>).
@@ -72,7 +72,7 @@ double <b>Zoltan_Time</b>(int <i>timer</i>);&nbsp;
 <p><b>Zoltan_Time</b> returns the time in seconds, measured from some fixed
 reference time. Note that the time is <i>not </i>synchronized among different
 processors or processes. The time may be either CPU time or wall-clock
-time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+time. The timer is selected through <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>

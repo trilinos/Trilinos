@@ -55,7 +55,7 @@ function, resetting parameter values that are appropriate to the method.
 of so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These
 are normally stored in the Zoltan structure and may be accessed by
 any part of the Zoltan code (including all the methods). A list of the
-<a href="../ug_html/ug_alg.html#General_Parameters">key
+<a href="../ug_html/ug_param.html#General_Parameters">key
 parameters currently used in Zoltan</a> can be found in the User's Guide.
 <p>The routines that control parameter setting are listed below. Note that
 these routines have been written to be as independent of Zoltan as possible.
@@ -84,7 +84,7 @@ int <b>Zoltan_Set_Param</b>(struct <b><a href="dev_lb_structs.html">Zoltan_Struc
 *<i>zz</i>, char *<i>param_name</i>, char *<i>new_val</i>);
 <br>
 <hr>
-<p>The <b>Zoltan_Set_Param</b> function is the <a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">user
+<p>The <b>Zoltan_Set_Param</b> function is the <a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">user
 interface for parameter setting</a>. Its principle purpose is to call a
 sequence of more domain-specific routines for setting domain-specific parameters
 (e.g., <b>Zoltan_RCB_Set_Param</b>). If you are adding algorithms to Zoltan,

@@ -29,7 +29,7 @@
 <h2>
 <a NAME="Debugging"></a>Debugging Services</h2>
 Execution of code for debugging can be controlled by algorithm specific
-parameters or by the Zoltan key parameter <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>.
+parameters or by the Zoltan key parameter <a href="../ug_html/ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>.
 The value of the <i>Debug_Level</i> field of the <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 structure can be tested to determine whether the user desires debugging
 information.&nbsp; Several constants (<b>ZOLTAN_DEBUG_*</b>) are defined in
@@ -43,8 +43,8 @@ of a function.
 <blockquote><a href="#ZOLTAN_TRACE_ENTER">ZOLTAN_TRACE_ENTER</a>
 <br><a href="#ZOLTAN_TRACE_EXIT">ZOLTAN_TRACE_EXIT</a>
 <br><a href="#ZOLTAN_TRACE_DETAIL">ZOLTAN_TRACE_DETAIL</a></blockquote>
-These macros produce output depending upon the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
-parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.&nbsp;&nbsp;
+These macros produce output depending upon the value of the <a href="../ug_html/ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
+parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.&nbsp;&nbsp;
 The macros are defined in <i>zz/zz_const.h.</i>
 <p><a href="#Debug Example">Examples</a> of the use of these macros can
 be found <a href="#Debug Example">below</a> and in <i>lb/lb_balance.c</i> 
@@ -64,8 +64,8 @@ a given processor is entering a function.&nbsp; The call to the macro should
 be included at the beginning of major functions for which debugging information
 is desired.&nbsp; Output includes the processor number and the function
 name passed as an argument to the macro.&nbsp; The amount of output produced
-is controlled by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
-parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+is controlled by the value of the <a href="../ug_html/ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
+parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
@@ -115,8 +115,8 @@ a given processor is exiting a function.&nbsp; The call to the macro should
 be included at the end of major functions (and before return statements)
 for which debugging information is desired.&nbsp; Output includes the processor
 number and the function name passed as an argument to the macro.&nbsp;
-The amount of output produced is controlled by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
-parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+The amount of output produced is controlled by the value of the <a href="../ug_html/ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
+parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
@@ -168,8 +168,8 @@ has progressed through a routine.&nbsp; It can also be used to print values
 of variables.&nbsp; See the example below.&nbsp; Output includes the processor
 number, the function name passed as an argument to the macro, and a user-defined
 message passed to the macro.&nbsp; The amount of output produced is controlled
-by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
-parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+by the value of the <a href="../ug_html/ug_param.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
+parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>

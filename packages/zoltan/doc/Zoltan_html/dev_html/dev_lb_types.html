@@ -50,9 +50,9 @@ of unsigned integers with size
 <i>number_of_IDs</i> * <i>number_of_entries_per_ID</i>.
 A type definition <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 (in <i>include/zoltan_types.h</i>) points to an ID or array of IDs. The number
-of array entries per ID can be set by the application using the <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+of array entries per ID can be set by the application using the <a href="../ug_html/ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and
-<a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
 parameters.
 <h4>
 <a NAME="ID alloc"></a>Allocating IDs</h4>
@@ -86,7 +86,7 @@ IDs requested is zero.
 
 <td>Allocates and returns a pointer to an array of <i>n</i> global IDs,
 where the index into the array for the <i>i<sup>th</sup></i> global ID
-is <i>i</i>*<a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+is <i>i</i>*<a href="../ug_html/ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -96,7 +96,7 @@ is <i>i</i>*<a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 
 <td>Allocates and returns a pointer to an array of <i>n</i> local IDs,
 where the index into the array for the <i>i<sup>th</sup></i> local ID is
-<i>i</i>*<a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+<i>i</i>*<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -124,8 +124,8 @@ replacing the current array pointed to by<i> ptr</i>.</td>
 <a NAME="ID Ops"></a>Common Operations on IDs</h4>
 In addition, macros are defined for common operations on global and local
 IDs.&nbsp; These macros include error checking when appropriate and account
-for different values of <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
-and <a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.&nbsp;
+for different values of <a href="../ug_html/ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.&nbsp;
 Use of these macros improves code robustness and simplifies code maintenance;
 their use is highly recommended.
 <br>&nbsp;

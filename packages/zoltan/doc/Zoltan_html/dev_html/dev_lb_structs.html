@@ -32,7 +32,7 @@ The <b>Zoltan_Struct</b> data structure is the main data structure for interfaci
 between Zoltan and the application. The application
 creates an <b>Zoltan_Struct</b> data structure through a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.
 Fields of the data structure are then set through calls from the application
-to interface routines such as <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+to interface routines such as <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 and <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.
 The fields of the <b>Zoltan_Struct</b> data structure are listed and described
 in the <a href="#Zoltan_Struct">table</a> below. See the <a href="../ug_html/ug.html">Zoltan
@@ -79,8 +79,8 @@ by
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">global ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
 </td>
 </tr>
 
@@ -90,13 +90,13 @@ for <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">local ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.
 </td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>int <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">Debug_Level</a></i></td>
+<td VALIGN=TOP>int <i><a href="../ug_html/ug_param.html#Debug Levels in Zoltan">Debug_Level</a></i></td>
 
 <td>A flag indicating the amount of debugging information that should be
 printed by Zoltan.</td>
@@ -124,8 +124,8 @@ for different Zoltan structures to have different parameter settings.</td>
 
 <td>Flag indicating whether algorithms used should be forced to be deterministic;
 used to obtain completely reproducible results.&nbsp; Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 </tr>
 
 <tr>
@@ -133,8 +133,8 @@ for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 
 <td>Number of weights per object.
 &nbsp; Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
@@ -142,8 +142,8 @@ for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 
 <td>For graph algorithms, number of weights per edge. 
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
@@ -151,8 +151,8 @@ for <a href="../ug_html/ug_alg.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
 
 <td>  Timer type that is currently active.
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#TIMER">TIMER</a>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_param.html#TIMER">TIMER</a>.</td>
 </tr>
 
 <tr>
@@ -587,7 +587,7 @@ pointer is cast by the algorithm to the appropriate data type.</td>
 
 <td>The degree of load balance which is considered acceptable.
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 </tr>
 
@@ -597,7 +597,7 @@ for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 <td>A flag indicating whether the application wants import and/or export
 lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
 Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 </tr>
 
@@ -665,7 +665,7 @@ in in the following <a href="#Migrate_Fields">table</a>.
 auto-migration for the application. If true, Zoltan
 calls <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
-to the user. Set in <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+to the user. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#AUTO_MIGRATE">AUTO_MIGRATE</a>.</td>
 </tr>
 
