@@ -22,7 +22,7 @@ AM_MAINTAINER_MODE
 # Use automake, getting name and version from variables defined by
 # AC_INIT command.
 
-AM_INIT_AUTOMAKE(Trilinos, 2.1)
+AM_INIT_AUTOMAKE(Trilinos, 3.0.1)
 
 # Specify required version of autoconf.
 
@@ -36,15 +36,6 @@ ac_configure_args="$ac_configure_args --with-trilinos"
 TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
 AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 
-# For now, blas and lapack will not be included
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-
-# After building Amesos from the Trilinos level is stabilized, the 
-#default could be changed to yes.
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
@@ -95,20 +86,18 @@ AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 ## #np# - If your package requires epetra - you should add
 ## it to the following list
-##	test "X$ac_cv_use_new_package" != "Xyes" || 
+##	test "X$ac_cv_use_new_package" != "Xno" || 
 TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
-	test "X$ac_cv_use_tsf" != "Xyes" || 
-	test "X$ac_cv_use_tsfcore" != "Xyes" || 
-	test "X$ac_cv_use_tsfcoreutils" != "Xyes" || 
-	test "X$ac_cv_use_amesos" != "Xyes" || 
+	test "X$ac_cv_use_tsf" != "Xno" || 
+	test "X$ac_cv_use_amesos" != "Xno" || 
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
-	test "X$ac_cv_use_new_package" != "Xyes" || 
-        test "X$ac_cv_use_epetraext" != "Xyes")
+	test "X$ac_cv_use_new_package" != "Xno" || 
+        test "X$ac_cv_use_epetraext" != "Xno")
 
 if test "X$ac_cv_use_y12m" != "Xno"; then
   AC_CONFIG_SUBDIRS([external/y12m])
@@ -118,12 +107,10 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
-	test "X$ac_cv_use_tsfcore" != "Xyes" || 
-	test "X$ac_cv_use_tsfcoreutils" != "Xyes" || 
-	test "X$ac_cv_use_amesos" != "Xyes" || 
+	test "X$ac_cv_use_amesos" != "Xno" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
-	test "X$ac_cv_use_new_package" != "Xyes" || 
-        test "X$ac_cv_use_epetraext" != "Xyes" ||
+	test "X$ac_cv_use_new_package" != "Xno" || 
+        test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
 fi

@@ -1493,7 +1493,7 @@ fi
 
 # Define the identity of the package.
 PACKAGE=Trilinos
-VERSION=2.1
+VERSION=3.0.1
 
 cat >>confdefs.h <<_ACEOF
 #define PACKAGE "$PACKAGE"
@@ -1588,15 +1588,6 @@ else
   BUILD_Y12M_FALSE=
 fi
 
-# For now, blas and lapack will not be included
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-
-# After building Amesos from the Trilinos level is stabilized, the
-#default could be changed to yes.
 
 # Check whether --enable-amesos or --disable-amesos was given.
 if test "${enable_amesos+set}" = set; then
@@ -2023,7 +2014,7 @@ fi
 
 ## #np# - If your package requires epetra - you should add
 ## it to the following list
-##	test "X$ac_cv_use_new_package" != "Xyes" ||
+##	test "X$ac_cv_use_new_package" != "Xno" ||
 
 # Check whether --enable-epetra or --disable-epetra was given.
 if test "${enable_epetra+set}" = set; then
@@ -2053,16 +2044,14 @@ fi
 
 if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_tsf" != "Xyes" ||
-	test "X$ac_cv_use_tsfcore" != "Xyes" ||
-	test "X$ac_cv_use_tsfcoreutils" != "Xyes" ||
-	test "X$ac_cv_use_amesos" != "Xyes" ||
+	test "X$ac_cv_use_tsf" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
-	test "X$ac_cv_use_new_package" != "Xyes" ||
-        test "X$ac_cv_use_epetraext" != "Xyes"; then
+	test "X$ac_cv_use_new_package" != "Xno" ||
+        test "X$ac_cv_use_epetraext" != "Xno"; then
   BUILD_EPETRA_TRUE=
   BUILD_EPETRA_FALSE='#'
 else
@@ -2081,12 +2070,10 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_tsfcore" != "Xyes" ||
-	test "X$ac_cv_use_tsfcoreutils" != "Xyes" ||
-	test "X$ac_cv_use_amesos" != "Xyes" ||
+	test "X$ac_cv_use_amesos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_new_package" != "Xyes" ||
-        test "X$ac_cv_use_epetraext" != "Xyes" ||
+	test "X$ac_cv_use_new_package" != "Xno" ||
+        test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
 
 
