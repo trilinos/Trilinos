@@ -452,7 +452,7 @@ AM_CONDITIONAL(ML_BUILD_EXAMPLES, test "X$ac_cv_use_ml_examples" != "Xno")
 # End of embedded tac_arg_enable_feature_sub_check.m4
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB( ml, tests, [Build ML tests], ML_TESTS)
+TAC_ARG_ENABLE_FEATURE_SUB( ml, tests, [Build ML tests], ML_TESTS,no)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ml_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
