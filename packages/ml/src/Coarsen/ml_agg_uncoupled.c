@@ -78,6 +78,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    double  *nullspace_vect=NULL, *new_null=NULL, *work=NULL, *qr_tmp=NULL;
    double  /*largest,*/ thesign, dtemp;
    char    *col_entered;
+   ML_Operator *Cmatrix;
    struct  ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc     *getrow_obj;
@@ -347,12 +348,32 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* perform coarsening                                            */
    /* ============================================================= */
 
-   if (ml_ag->num_PDE_eqns != 1)
-      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Amatrix,amal_mat_indx,
+
+
+
+   if (ml_ag->num_PDE_eqns != 1) {
+     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+     csr_data->columns = amal_mat_indx;
+     csr_data->values  = NULL;
+
+     Cmatrix = ML_Operator_Create(Amatrix->comm);
+     ML_Operator_Set_ApplyFuncData(Cmatrix,Amatrix->invec_leng/ml_ag->num_PDE_eqns, 
+				   Amatrix->outvec_leng/ml_ag->num_PDE_eqns ,
+				   ML_EMPTY,csr_data,
+				   Amatrix->outvec_leng/ml_ag->num_PDE_eqns,NULL,0);
+     ML_Operator_Set_Getrow(Cmatrix, ML_EXTERNAL, 
+			    Amatrix->outvec_leng/ml_ag->num_PDE_eqns, 
+			    MSR_get_ones_rows);
+
+      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
                                         bdry_array, &aggr_count, &aggr_index); 
-   else 
+      ML_Operator_Destroy(Cmatrix);
+      ML_free(csr_data);
+   }
+   else {
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Amatrix,mat_indx,
                                      bdry_array, &aggr_count, &aggr_index); 
+   }
    ML_free( bdry_array );
 
    /* ============================================================= */
@@ -1047,11 +1068,11 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
    }
-#ifdef out
+#define newstuff
+#ifdef newstuff
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amat, &aggr_count, Nrows, aggr_index,
    				 Nrows, comm, NULL, "MIS");
-#endif
-
+#else
    /* ============================================================= */
    /* Phase 2 : aggregate the rest of the nodes into one of the     */
    /*           existing LOCAL aggregates. (attach_scheme)          */
@@ -1287,6 +1308,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       printf("Aggregation (UC) error : not all nodes processed.\n");
       exit(1);
    }
+#endif
 
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
