@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/csh
 set error = 0
 set AnError = False
 #set printexitvalue
