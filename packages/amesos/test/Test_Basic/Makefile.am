@@ -85,6 +85,7 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
 	cp  $(srcdir)/In_KheadSorted.mtx  KheadSorted.mtx
 	cp  $(srcdir)/In_Khead.triS Khead.triS  
+	cp  $(srcdir)/In_count_coverage count_coverage  
 
 SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp \
            $(srcdir)/SparseDirectTimingVars.h \

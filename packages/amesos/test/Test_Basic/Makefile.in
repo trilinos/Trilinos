@@ -190,6 +190,8 @@ HAVE_AMESOS_TRIUTILS_FALSE = @HAVE_AMESOS_TRIUTILS_FALSE@
 HAVE_AMESOS_TRIUTILS_TRUE = @HAVE_AMESOS_TRIUTILS_TRUE@
 HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
+HAVE_COVERAGE_FALSE = @HAVE_COVERAGE_FALSE@
+HAVE_COVERAGE_TRUE = @HAVE_COVERAGE_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
@@ -713,6 +715,7 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
 	cp  $(srcdir)/In_KheadSorted.mtx  KheadSorted.mtx
 	cp  $(srcdir)/In_Khead.triS Khead.triS  
+	cp  $(srcdir)/In_count_coverage count_coverage  
 
 clean:  clean-am
 	rm -f  662_bus_out.rsa \

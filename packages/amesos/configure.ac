@@ -269,6 +269,9 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_amesos_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(coverage, [Check to make sure that our test coverage has not dropped (not all packages are sensitive to this option)], COVERAGE, no)
+AM_CONDITIONAL(HAVE_COVERAGE, test "X$ac_cv_use_coverage" != "Xno")
+
 
 AC_ARG_ENABLE(epetraext,
  [AC_HELP_STRING([--enable-epetraext],[Allow Amesos tests and examples to use Epetraext to build matrices.   Default is no. Requires Epetraext package.])],

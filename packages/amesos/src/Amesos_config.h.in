@@ -70,6 +70,9 @@
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
+/* Define if want to build coverage */
+#undef HAVE_COVERAGE
+
 /* Define to 1 if you have the <cstdio> header file. */
 #undef HAVE_CSTDIO
 

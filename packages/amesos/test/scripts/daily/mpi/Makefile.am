@@ -89,9 +89,24 @@ endif
 
 if HAVE_VALGRIND
 VALGRIND_TEST = TestValgrind
+TestValgrind_SOURCES = $(srcdir)/TestValgrind
+
+TestValgrind$(EXEEXT): $(srcdir)/TestValgrind
+	cp $(srcdir)/TestValgrind TestValgrind$(EXEEXT) 
 else
 VALGRIND_TEST = 
 endif
+
+if HAVE_COVERAGE
+COVERAGE_TEST = TestCoverage
+TestCoverage_SOURCES = $(srcdir)/TestCoverage
+
+TestCoverage$(EXEEXT): $(srcdir)/TestCoverage
+	cp $(srcdir)/TestCoverage TestCoverage$(EXEEXT) 
+else
+COVERAGE_TEST = 
+endif
+
 
 if HAVE_AMESOS_UMFPACK
 UMFPACK_TEST = TestUmfpack
@@ -148,13 +163,6 @@ TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
 endif
 
-if HAVE_VALGRIND
-TestValgrind_SOURCES = $(srcdir)/TestValgrind
-
-TestValgrind$(EXEEXT): $(srcdir)/TestValgrind
-	cp $(srcdir)/TestValgrind TestValgrind$(EXEEXT) 
-endif
-
 # if HAVE_AMESOS_SCALAPACK
 # TestScalapack_SOURCES = $(srcdir)/TestScalapack
 # 
@@ -179,6 +187,9 @@ TestMumps$(EXEEXT): $(srcdir)/TestMumps
 	cp $(srcdir)/TestMumps TestMumps$(EXEEXT) 
 endif
 
+#
+#  Note:  COVERAGE_TEST must be listed last so that it will execute last
+#
 noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)
+	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)  $(COVERAGE_TEST)
 
