@@ -48,6 +48,7 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+
 extern void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
                        int *cpntr, int *bpntr, double *b, double *c,
                        int exchange_flag, int *data_org, int *proc_config);
@@ -412,10 +413,14 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 {
   double *val;
   int *data_org, *bindx;
-  register int j, k, irow;
+  register int j, irow;
  int          N;
+#ifndef AZ_DONT_UNROLL_LOOPS
  int          *bindx_ptr;
  double       sum;
+#else
+ int nzeros, bindx_row, k;
+#endif
 
   val = Amat->val;
   bindx = Amat->bindx;
@@ -427,6 +432,9 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
   /* exchange boundary info */
 
   AZ_exchange_bdry(b, data_org, proc_config);
+
+  /* This is the default */
+#ifndef AZ_DONT_UNROLL_LOOPS
 
   j = bindx[0];
   bindx_ptr = &bindx[j];
@@ -451,5 +459,25 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
     }
     c[irow] = sum;
   }
+
+  /* This is available for backward compatibility.  Turn on by specifying -DAZ_DONT_UNROLL_LOOPS to the compiler */
+#else                                                                           
+
+  for (irow = 0; irow < N; irow++) {
+    /* compute diagonal contribution */
+    *c = val[irow] * b[irow];
+    /* nonzero off diagonal contribution */
+    bindx_row = bindx[irow];
+    nzeros    = bindx[irow+1] - bindx_row;
+    for (j = 0; j < nzeros; j++) {
+      k   = bindx_row + j;
+      *c += val[k] * b[bindx[k]];
+    }
+    c++;
+    
+  }
+  
+#endif
+
 } /* AZ_MSR_matvec_mult */
 
