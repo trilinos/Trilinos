@@ -35,10 +35,10 @@
 #include <string>
 
 // Different line searches
-#include "NOX_Linesearch_Fullstep.H"
+#include "NOX_Linesearch_FullStep.H"
 #include "NOX_Linesearch_Halving.H"
 #include "NOX_Linesearch_Polynomial.H"
-#include "NOX_Linesearch_MoreThunte.H"
+#include "NOX_Linesearch_MoreThuente.H"
 
 using namespace NOX;
 using namespace NOX::Linesearch;
@@ -100,8 +100,8 @@ void Manager::newPtr(const Parameter::List& params)
     ptr = new Halving(params);
   else if (method == "Polynomial")
     ptr = new Polynomial(params);
-  else if (method == "More Thunte")
-    ptr = new MoreThunte(params);
+  else if (method == "More'-Thuente")
+    ptr = new MoreThuente(params);
   else {
     ptr = NULL;
     cout << "ERROR: invalid choice \"" << method << "\" for line search method "

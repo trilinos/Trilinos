@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_MoreThunte.H"
+#include "NOX_Linesearch_MoreThuente.H"
 
 #include "NOX_Utils.H"		// for static doPrint function
 #include <iomanip>		// for setw
@@ -40,24 +40,24 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-MoreThunte::MoreThunte(const Parameter::List& params) 
+MoreThuente::MoreThuente(const Parameter::List& params) 
 {
   reset(params);
 }
 
-MoreThunte::~MoreThunte()
+MoreThuente::~MoreThuente()
 {
 
 }
 
-void MoreThunte::reset(const Parameter::List& params)
+void MoreThuente::reset(const Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
 }
 
-bool MoreThunte::operator()(Abstract::Group& newgrp, double& step, 
+bool MoreThuente::operator()(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
 
@@ -121,7 +121,7 @@ bool MoreThunte::operator()(Abstract::Group& newgrp, double& step,
    nfev = 0 ; /* initialize # function evaluations  */
     
   if (Utils::doPrint(1)) {
-   cout << "\n" << Utils::fill(72) << "\n" << " -- More'-Thunte Line Search -- \n";
+   cout << "\n" << Utils::fill(72) << "\n" << " -- More'-Thuente Line Search -- \n";
   }
 
 /*  Begin loop up to max # function evaluations  */
@@ -249,7 +249,7 @@ bool MoreThunte::operator()(Abstract::Group& newgrp, double& step,
 
 
 
-int MoreThunte::MTStep(double *stx, double *fx, double *dx, 
+int MoreThuente::MTStep(double *stx, double *fx, double *dx, 
            double *sty, double *fy,
            double *dy, double *stp, double *fp, double *dp, double *stepmin,
            double *stepmax, int *bracket)
@@ -486,7 +486,7 @@ int MoreThunte::MTStep(double *stx, double *fx, double *dx,
 
 
 
-double MoreThunte::mymin(double x, double y)
+double MoreThuente::mymin(double x, double y)
 {
    if(x < y) return x ;
    return y ;
@@ -496,7 +496,7 @@ double MoreThunte::mymin(double x, double y)
 
 
 
-double MoreThunte::mymax(double x, double y)
+double MoreThuente::mymax(double x, double y)
 {
    if(x < y) return y ;
    return x ;

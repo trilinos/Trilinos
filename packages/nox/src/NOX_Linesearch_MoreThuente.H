@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_MORETHUNTE_H
-#define NOX_MORETHUNTE_H
+#ifndef NOX_MORETHUENTE_H
+#define NOX_MORETHUENTE_H
 
 #include "NOX_Linesearch_Generic.H"
 
@@ -40,15 +40,15 @@ namespace Linesearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel
 
-class MoreThunte : public Generic {
+class MoreThuente : public Generic {
 
 public:
 
   //! Constructor
-  MoreThunte(const Parameter::List& params);
+  MoreThuente(const Parameter::List& params);
 
   //! Destructor
-  ~MoreThunte();
+  ~MoreThuente();
   
   // derived
   void reset(const Parameter::List& params);
