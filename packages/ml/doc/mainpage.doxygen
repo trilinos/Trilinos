@@ -3,7 +3,7 @@
 \image html ml-image.jpg
 \image latex ml-logo.eps
 
-\section table Table of Contents
+\section ml_table Table of Contents
 
 - \ref ml_intro
 - \ref ml_download
@@ -124,6 +124,7 @@ The ML developers are:
 - Ray S. Tuminaro
 - Jonathan J. Hu
 - Marzio G. Sala
+- Michael W. Gee
 
 \section ml_doc Documentation about ML
 
