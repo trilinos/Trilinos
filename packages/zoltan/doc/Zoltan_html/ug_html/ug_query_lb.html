@@ -149,9 +149,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -268,9 +268,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: first_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -411,11 +411,11 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -645,9 +645,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -775,10 +775,10 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Border_Obj
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: first_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -929,12 +929,12 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -1167,8 +1167,8 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
@@ -1272,8 +1272,8 @@ ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
@@ -1383,8 +1383,8 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
@@ -1748,8 +1748,8 @@ assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
 out_vertex, ierr&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
@@ -1925,10 +1925,10 @@ assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
 ierr&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
@@ -2095,8 +2095,8 @@ ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Num_Child&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
@@ -2208,8 +2208,8 @@ child_gids, child_lids, assigned, num_vert, vertices, ref_type, in_vertex,
 out_vertex, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: parent_gid&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: parent_lid&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: parent_gid&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: parent_lid&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
@@ -2404,8 +2404,8 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 wgt_dim, obj_wgt, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
