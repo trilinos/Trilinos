@@ -3,7 +3,7 @@
 #include "Epetra_Comm.h"
 #include "Trilinos_Util.h"
 
-void Trilinos_Util_create_vbr(Epetra_Comm & Comm, char *partition_file,
+void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 		int *N_global, int *N_blk_global, 
 		int *n_nonzeros, int *n_blk_nonzeros,
 		int *N_update, int **update,

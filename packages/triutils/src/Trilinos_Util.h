@@ -1,7 +1,9 @@
 class Epetra_Comm;
 class Epetra_Vector;
 class Epetra_Map;
+class Epetra_BlockMap;
 class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
 
 #define Trilinos_Util_max(x,y) (( x > y ) ? x : y)     /* max function  */
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
@@ -32,13 +34,21 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
 
-void Trilinos_Util_distrib_msr_matrix(Epetra_Comm & Comm,
+void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
+				 const Epetra_Comm  &comm, 
+				 Epetra_BlockMap *& map, 
+				 Epetra_VbrMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact);
+
+void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *n_nonzeros, 
            int *N_update, int **update, 
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact);
 
-void Trilinos_Util_distrib_vbr_matrix(Epetra_Comm & Comm,
+void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global, 
            int *n_nonzeros,  int *n_blk_nonzeros,
            int *N_update, int **update, 
@@ -46,7 +56,7 @@ void Trilinos_Util_distrib_vbr_matrix(Epetra_Comm & Comm,
            int **bpntr, int **bindx,
 	      double **x, double **b, double **xexact);
 
-void Trilinos_Util_create_vbr(Epetra_Comm & Comm, char *part_file,
+void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *part_file,
                 int *N_global, int *N_blk_global, 
                 int *n_nonzeros, int *n_blk_nonzeros,
                 int *N_update, int **update,

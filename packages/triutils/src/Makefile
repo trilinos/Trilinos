@@ -36,7 +36,8 @@ TRIUTILS_CC = \
            Trilinos_Util_ssrcsr.cpp \
            Trilinos_Util_coocsr.cpp  \
            Trilinos_Util_ReadHb2Epetra.cpp \
-           Trilinos_Util_ReadHpc2Epetra.cpp	
+           Trilinos_Util_ReadHpc2Epetra.cpp	\
+           Trilinos_Util_ReadHb2EpetraVbr.cpp
 
 TRIUTILS_C = 
 TRIUTILS_F =
