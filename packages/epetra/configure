@@ -3921,6 +3921,8 @@ echo "${ECHO_T}no" >&6
 echo "$as_me: error: MPI cannot link" >&2;}
    { (exit 1); exit 1; }; }
 
+fi
+rm -f conftest.err conftest.$ac_ext
 
   if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR="${MPI_DIR}/lib"
@@ -3937,10 +3939,6 @@ echo "$as_me: error: MPI cannot link" >&2;}
   if test -n "${MPI_LIBS}"; then
     LIBS="${MPI_LIBS} ${LIBS}"
   fi
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
 
 #   AC_LANG_CPLUSPLUS
 #   AC_MSG_CHECKING(whether MPI will link using C++ compiler)
@@ -5631,7 +5629,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5634: \"$ac_link\") >&5
+(eval echo $as_me:5632: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5710,7 +5708,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5713: \"$ac_link\") >&5
+(eval echo $as_me:5711: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7983,7 +7981,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7986: \"$ac_link\") >&5
+(eval echo $as_me:7984: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8062,7 +8060,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8065: \"$ac_link\") >&5
+(eval echo $as_me:8063: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -31,7 +31,7 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
      echo "to specify all the specific MPI compile options."
      echo "-----"
      AC_MSG_ERROR(MPI cannot link)
-    ]
+    ])
 
   if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR="${MPI_DIR}/lib"
@@ -48,8 +48,6 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
   if test -n "${MPI_LIBS}"; then
     LIBS="${MPI_LIBS} ${LIBS}"
   fi
-
-  )
 
 #   AC_LANG_CPLUSPLUS 
 #   AC_MSG_CHECKING(whether MPI will link using C++ compiler)
