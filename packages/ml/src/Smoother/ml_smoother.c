@@ -3097,89 +3097,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 }
 #endif /* ifdef MatrixProductHiptmair */
 
-/* ************************************************************************* 
-   Function to _regenerate_ the matrix products needed in the Hiptmair
-   smoother on one level.  This function assumes that only the fine grid
-   edge matrix has changed.  The restriction, interpolation, and discrete
-   gradients should all be the same.
-   ************************************************************************* */
-
-#ifdef MatrixProductHiptmair
-int ML_Smoother_Gen_Hiptmair_DataReuse(ML_Sm_Hiptmair_Data **data,
-                                       ML_Operator *Amat)
-{
-   ML_Sm_Hiptmair_Data *dataptr;
-   ML_Operator *tmpmat, *Tmat, *Tmat_trans;
-   ML_Krylov   *kdata; 
-#ifdef ML_TIMING_DETAILED
-   double t0;
-
-   t0 = GetClock();
-#endif
-
-   dataptr = *data;
-   Tmat = dataptr->Tmat;
-   Tmat_trans = dataptr->Tmat_trans;
-
-   /* Get maximum eigenvalue for damping parameter. */
-
-   kdata = ML_Krylov_Create( Amat->comm );
-   ML_Krylov_Set_PrintFreq( kdata, 0 );
-   ML_Krylov_Set_ComputeEigenvalues( kdata );
-   ML_Krylov_Set_Amatrix(kdata, Amat);
-   ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
-   dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
-   dataptr->omega = 1.0 / dataptr->max_eig;
-   ML_Krylov_Destroy(&kdata);
-
-   /* Check matrix dimensions. */
-
-   if (Tmat_trans->invec_leng != Amat->outvec_leng)
-   {
-      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Tmat_trans and Amat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tTmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
-			 Tmat_trans->invec_leng, Amat->outvec_leng);
-      exit(1);
-   }
-   if ( dataptr->Tmat_trans->invec_leng != Amat->outvec_leng )
-   {
-      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Tmat_trans and Amat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tATmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
-			 dataptr->Tmat_trans->invec_leng, Amat->outvec_leng);
-      exit(1);
-   }
-   if ( Amat->invec_leng != Tmat->outvec_leng )
-   {
-      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Amat and Tmat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tAmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
-			 Amat->invec_leng, Tmat->outvec_leng);
-      exit(1);
-   }
-
-   /* Triple matrix product T^{*}AT. */
-
-   /* But first free the existing triple matrix product. */
-   ML_Operator_Destroy(dataptr->sm_nodal->my_level->Amat);
-   tmpmat = ML_Operator_Create(Amat->comm);
-   ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
-
-   /* Modify ML_Smoother data structure for nodes.
-      This is used in symmetric GS sweep over nodes.
-      This guy should already have been allocated. */
-   dataptr->sm_nodal->my_level->Amat = tmpmat;
-   dataptr->sm_nodal->my_level->comm = tmpmat->comm;
-   dataptr->TtATmat = tmpmat;
-
-#ifdef ML_TIMING
-         ml->pre_smoother[i].build_time = GetClock() - t0;
-#endif       
-   return 0;
-}
-#endif /* ifdef MatrixProductHiptmair */
-
 /*******************************************************************************
 * The old ML_Smoother_Gen_Hiptmair_Data function.                              *
 *******************************************************************************/
@@ -5753,3 +5670,32 @@ void ML_Smoother_Clean_ParaSails(void *data)
    ML_free(tptr);
 }
 #endif
+
+/*******************************************************************************
+ Reinitialize the smoother.  This is useful when just the operators have
+ changed in the multigrid hierarchy (the interpolation and projection are
+ the same) and the smoother needs to be regenerated on each level.
+
+ pre_smoother   the pre-smoother data structure created in ML_Create
+ post_smoother   the postre-smoother data structure created in ML_Create
+ SingleLevel    single level data structure created in ML_Create
+ N_levels       (number of entries in ml_edges array) - 1
+*******************************************************************************/
+
+int ML_Smoother_Reinit(ML_Smoother *pre_smoother, ML_Smoother *post_smoother,
+                       ML_1Level *SingleLevel, int N_levels)
+{
+    int             i;
+    char            str[80];
+
+    for (i = 0; i < N_levels; i++)
+    {
+       ML_Smoother_Init( &(pre_smoother[i]), &(SingleLevel[i]) );
+       ML_Smoother_Init( &(post_smoother[i]), &(SingleLevel[i]) );
+       sprintf(str,"PreS_%d",i);
+       ML_Smoother_Set_Label( &(pre_smoother[i]),str);
+       sprintf(str,"PostS_%d",i);
+       ML_Smoother_Set_Label( &(post_smoother[i]),str);
+    }
+    return 0;
+}
