@@ -24,6 +24,9 @@
 #include "ml_lapack.h"
 #endif
 
+#include "ml_agg_METIS.h"
+#include "ml_agg_genP.h"
+
 int warning_flag = 0;
 
 /***************************************************************************/
@@ -437,27 +440,72 @@ void new_norm(AZ_PRECOND *prec, double res[], double *result)
 {
   ML          *ml;
   int         NN;
-  extern ML_Operator *globbie;
+  extern ML_Operator *globbie; /* T transpose */
+#ifdef MODELPROBLEM
   extern double gsigma;
   extern int  gnx;
+#else
+  double *randvec, *product, dtemp3, dtemp4;
+  ML_Operator *Amat;
+#endif
   double dtemp, dtemp2, *temp;
   static double r0 = -1.;
+  static double weighting = 0.0;
 
   ml    = (ML *) AZ_get_precond_data(prec);
+#ifndef MODELPROBLEM
+  Amat = &(ml->Amat[ml->ML_finest_level]);
+#endif
   NN = globbie->invec_leng;
 
-  dtemp = sqrt(ML_gdot(NN, res, res, ml->comm));
-  temp = (double *) ML_allocate(sizeof(double)*globbie->outvec_leng);
-  ML_Operator_Apply(globbie, globbie->invec_leng, res, globbie->outvec_leng, temp);
-  dtemp2 = sqrt(ML_gdot(globbie->outvec_leng, temp, temp, ml->comm));
+  dtemp = sqrt(ML_gdot(2*NN, res, res, ml->comm));
+  /* twice as long, for Equivalent Real Form */
+  temp = (double *) ML_allocate(sizeof(double)*2*globbie->outvec_leng);
+  /*real part*/
+  ML_Operator_Apply(globbie, globbie->invec_leng, res, globbie->outvec_leng,
+temp);
+  /*imag part*/
+  ML_Operator_Apply(globbie, globbie->invec_leng, res+NN, globbie->outvec_leng,
+temp+globbie->outvec_leng);
+
+  dtemp2 = sqrt(ML_gdot(2*globbie->outvec_leng, temp, temp, ml->comm));
+  /*
+  if (ml->comm->ML_mypid == 0) printf("in t-norm: %e %e\n",dtemp,dtemp2);
+  */
+#ifdef MODELPROBLEM
   /*  printf("this guy is %e  %d\n",dtemp2,gnx); */
-  dtemp2 = dtemp2*((double)(gnx*gnx))/gsigma;
+  weighting = (double (gnx*gnx)) / gsigma;
+#else
+  /* warning!!!! if matrix changes, then this won't work anymore */
+  if (weighting == 0.0) {
+    randvec = (double *) ML_allocate(sizeof(double)*Amat->invec_leng);
+    ML_random_vec(randvec, Amat->invec_leng, Amat->comm);
+    product = (double *) ML_allocate(sizeof(double)*Amat->outvec_leng);
+    ML_Operator_Apply(Amat,Amat->invec_leng,randvec,Amat->outvec_leng,product);
+    /*first term*/
+    dtemp3 = sqrt(ML_gdot(Amat->outvec_leng, product, product, ml->comm));
+    /*if (ml->comm->ML_mypid == 0) printf("first term weighting %e\n",dtemp3);*/    /*second term*/
+    /*real part*/
+    ML_Operator_Apply(globbie, globbie->invec_leng, product,
+                      globbie->outvec_leng, temp);
+    /*imag part*/
+    ML_Operator_Apply(globbie, globbie->invec_leng, product+NN,
+                      globbie->outvec_leng, temp+globbie->outvec_leng);
+    dtemp4 = sqrt(ML_gdot(globbie->outvec_leng*2, temp, temp, ml->comm));
+    /*if (ml->comm->ML_mypid ==0) printf("second term weighting %e\n",dtemp4);*/    weighting = dtemp3 / dtemp4;
+    ML_free(randvec); ML_free(product);
+    /*if (ml->comm->ML_mypid == 0) printf("(|r|,|T^t r|, ratio) %e %e * %e\n",dtemp3,dtemp4,weighting);*/
+  }
+#endif
+  dtemp2 = dtemp2 * weighting;
 
   *result = dtemp2 + dtemp;
+  /*
   if (r0 == -1.) {
     r0 = *result;
   }
   *result = *result/r0;
+  */
   /*  printf("do nothing %d   %e %e\n",NN,dtemp, dtemp2); */
   ML_free(temp);
 
