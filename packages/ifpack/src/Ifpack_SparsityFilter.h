@@ -9,7 +9,6 @@ class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_BlockMap;
-using namespace std;
 
 //! Ifpack_SparsityFilter: a class to drop based on sparsity.
 

@@ -102,6 +102,22 @@
 #endif
 
 #endif
+
+#if defined(TFLOP)
+#ifdef HAVE_STRING
+using std::string;
+#endif
+#ifdef HAVE_IOSTREAM
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+#endif
+#else /* NOT TFLOP */
+using namespace std;
+#endif /* defined(TFLOP) */
+
 #endif
 
 // prints out an error message if variable is not zero,

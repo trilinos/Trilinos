@@ -261,6 +261,7 @@ int Ifpack_Riluk::ComputeSetup()
   NumMyDiagonals_ = NumNonzeroDiags;
   if (NumNonzeroDiags != NumMyRows()) ierr = 1; // Diagonals are not right, warn user
 
+  IFPACK_CHK_ERR(ierr);
   return(ierr);
 }
 

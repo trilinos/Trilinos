@@ -26,7 +26,8 @@ Ifpack_DropFilter::Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
   NormInf_(0.0),
   NormOne_(0.0)
 {
-  MaxNumEntries_ = A_.MaxNumEntries();
+  MaxNumEntries_ = A_.MaxNumEntries(); // FIXME: this may be wrong if
+  // the matrix has no diagonal entries
   Indices_.resize(MaxNumEntries_);
   Values_.resize(MaxNumEntries_);
 

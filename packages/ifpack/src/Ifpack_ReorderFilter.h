@@ -3,14 +3,13 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
+#include <vector>
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_BlockMap;
 class Ifpack_Reordering;
-using namespace std;
-#include <vector>
 
 //! Ifpack_ReorderFilter: a class for light-weight reorder of local rows and columns of an Epetra_RowMatrix.
 
