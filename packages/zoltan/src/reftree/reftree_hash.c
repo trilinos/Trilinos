@@ -1,4 +1,20 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+
 #include "lb_const.h"
+#include "lb_util_const.h"
 #include "reftree_const.h"
 #include "all_allo_const.h"
 
