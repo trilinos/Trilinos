@@ -613,27 +613,45 @@ long file names.
 
 \subsection{Adding and Removing Source Files}
 \label{Subsection:AddSource}
-%add how to add directories
+
 Commonly a developer needs to add files to or remove files from a Trilinos 
-package.  We outline the steps for adding or removing source files from a 
-Trilinos package that uses Autotools.  The below outline assumes the simple 
-addition or removal of files.  Special situations such as adding header file 
-or library dependencies to a Trilinos package or conditionally compiling new 
-files require a more complicated process.  In addition, the following 
-restrictions apply only to development and release branches.  If a branch is 
+package.  
+
+This process can be divided into eight steps:
+
+\begin{enumerate}
+\item Obtain the supported versions of Autoconf and Automake.
+\item Update source code from Trilinos repository
+\item Add new files to or remove obsolete files from the Trilinos repository
+\item List new files in or remove obsolete files from Makefile.am
+\item Bootstrap
+\item Test the new code
+\item Update source code from Trilinos repository
+\item Commit the changes to the Trilinos repository
+\end{enumerate}
+
+We describe these steps below in greater detail.  The steps assume a simple 
+addition or removal of source files from a Trilinos package that uses 
+Autotools.  Special situations such as adding header file or library 
+dependencies or conditionally compiling new files require a more complicated 
+process.  In addition, many of the restrictions listed below apply only to 
+development and release branches.  If a branch is 
 established for a separate purpose (for example, to attempt an experimental 
 restructuring of existing code), the restrictions do not apply.  However, in 
 this case, the restrictions do apply when any changes from the branch are to 
-be merged back into the development branch.
+be merged back into the development branch.  
+
+The section frequently mentions various CVS commands.  For more information on 
+these CVS commands, see Section~\ref{Section:CVS}.   For a 
+more complete listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
  
 \begin{enumerate}
 \item Obtain the supported versions of Autoconf and Automake.
 
 The current supported versions of Autoconf and Automake are documented in   
 \InlineDirectory{Trilinos/config/AutotoolsVersionInfo}, which can be found in 
-the Trilinos repository.  The Trilinos team does not keep up with the latest 
-versions of Autoconf and Automake, so please do not assume that the most 
-recent versions are supported.  The supported versions of Autoconf and 
+the Trilinos repository.  Do not assume that the most recent versions Autoconf 
+and Automake are supported.  The supported versions of Autoconf and 
 Automake can always be found on software.sandia.gov.  This makes software a 
 good machine to bootstrap on.
 
@@ -654,11 +672,6 @@ in the directory where the files are located (in a checked out version of the
 Trilinos repository).  To remove the same files, type
 
 \DisplayCommand{cvs remove abc.cpp abc.h}
-
-The above commands do not actually add the files to or remove the files from 
-the repository, but simply prepare for the addition or removal of the files.  
-The initial version of the file will be added to the repository later using 
-\InlineCommand{cvs commit}.
 
 \item List new files in or remove obsolete files from Makefile.am
 
@@ -725,41 +738,10 @@ changes to the repository.  Start by typing
 
 \DisplayCommand{cvs commit}
 
-Now, look at the list of files that are to be added, removed  or modified.  
-It is easy to inadvertantly commit files.  It is also easy to forget to use 
-\InlineCommand{cvs add}.  If a file has not been added, it will not show up on 
-the list of files to be added.  Conversely, to remove a file, don't forget to 
-use \InlineCommand{cvs remove}.  
-
-Here are a few helpful tips to use when verifying the list of files 
-to be committed.  
-\begin{itemize}
-\item Make sure that all directly modified files appear in the list.  
-\item Make sure that files generated from files that were modified 
-appear in the list.  When modifying a Makefile.am, the corresponding 
-Makefile.in will change also.  When modifying configure.ac, configure will 
-also change, but some Makefile.in files will also change when using macros 
-such as AC\_SUBST.  
-\item If unsure about whether or not a 
-file should be in the commit list, abort the commit by closing the edior 
-without saving, and chosing \InlineCommand{abort}.  Then, if abc.cpp is in 
-question, type 
-
-\DisplayCommand{cvs diff abc.cpp}
-
-Next, look at the diff output and see if it makes sense for the changes that 
-were made.  After verifying that all of the files that are in the list belong 
-there and that all files that belong in the list are listed, enter an 
-appropriate description of the changes that were made.  Detailed log 
-messages make it easier to track problems in the future.  Also, reference any 
-associated Bugzilla issue numbers and indicate which tests were run before 
-making the change.  Note that lines in the log message that begin with 
-``CVS:'' will be removed.  Lines describing files that are to be added, 
-removed or modified should appear in the log message, so remove the ``CVS:'' 
-from the beginning of these lines.  (Typically this means that the ``CVS:'' 
-should be removed from every line except line two.)
-
-\end{itemize}
+Next verify the list of files that appears and enter an appropritate log 
+message.  Developers who are unfamiliar with the process of committing changes 
+should see Section~\ref{Section:CVS} for a more detailed description of this 
+process.
 
 Finally, save the file, and exit the CVS editor to commit the changes.
 
@@ -778,8 +760,8 @@ Provided that the new files are not added to the make structure, the addition
 of the new files should not negatively affect the repository.  Distribution 
 tarballs will even skip over the new source.  A common log message for this 
 type of commit is simply ``Checking in for safe keeping; code is not yet 
-funcitoning''.  Sometimes developers will include a short description of what 
-the code will do when complete.
+funcitoning''.  Developers are encouraged to include a short description of 
+what the code will do when it is complete.
 \end{enumerate}
 
 \section{Services Available to Trilinos Packages}
@@ -1653,6 +1635,9 @@ collection of Trilinos packages depend on each other.
 \appendix
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
+Below is a brief description of the most commonly used CVS commands.  For a 
+more complete listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
+
 \begin{itemize}
 \item {\bf Checking Out a Working Copy:}
 To get started, checkout a working copy of the development branch from the CVS 
@@ -1705,13 +1690,96 @@ relative directory \InlineDirectory'{examples}, type
 
 \DisplayCommand{cvs -q diff abc.cpp examples}
 
-%\item{Committing Changes}
-%update!
+\item {\bf Adding Files to and Removing Files From the Repository:}
 
+To add new files \InlineDirectory{abc.cpp} and \InlineDirectory{abc.h} to the 
+Trilinos repository, type
+
+\DisplayCommand{cvs add abc.cpp abc.h}
+
+in the directory where the files are located (in a checked out version of the 
+Trilinos repository).  To remove the same files, type
+
+\DisplayCommand{cvs remove abc.cpp abc.h}
+
+The above commands do not actually add the files to or remove the files from 
+the repository, but simply prepare for the addition or removal of the files.  
+The initial version of the file will be written to the repository using 
+\InlineCommand{cvs commit}.
+
+The \InlineCommand{cvs add} command can also be 
+used to add new directories to the repository.  When adding a directory, no 
+subsequent \InlineCommand{cvs commit} is necessary.  Directories cannot be 
+removed from the repository using \InlineCommand{cvs remove}.
+
+\item{\bf Committing Changes:}
+Note that the \InlineDirectory'{CVSEDITOR} environment variable denotes which 
+text editor will be used to edit CVS commit logs.  The default value for
+\InlineDirectory'{CVSEDITOR} is 
+\begin {verbatim} 
+vi
+\end {verbatim}.
+
+Before committing changes, be sure to perform a CVS update.  Any conflicts 
+must be resolved before a commit will complete properly.  Changes are 
+committed (saved) to the repository using the following command:
+
+\DisplayCommand{cvs commit}
+
+The above command will recursively check the current directory and all 
+directories that are direct descendants of the current directory for changes.  
+To commit only specific files or directories (specified directories will be 
+checked recursively for changes), append the files and directories to be 
+committed as additional arguments to the commit command.  For example, to 
+commit the changes to the file called file1, and the directory called 
+directory1, type
+
+\DisplayCommand{cvs commit file1 directory1}
+
+At this point, an editor window will appear with a list of files that are to 
+be added, removed, or modified.  Make sure that the list makes sense for the 
+changes that are to be made.  It is easy to inadvertantly commit files or to 
+forget to remove files.  Use \InlineCommand{cvs add} to add a file and
+\InlineCommand{cvs remove} to remove a file from the repository.  
+
+Here are a few helpful tips to use when verifying the list of files 
+to be committed.  
+\begin{itemize}
+\item Make sure that all directly modified files appear in the list.  
+\item Make sure that files generated from files that were modified 
+appear in the list.  When modifying a Makefile.am, the corresponding 
+Makefile.in will change also.  When modifying configure.ac, configure will 
+also change, but some Makefile.in files will also change when using macros 
+such as AC\_SUBST.  
+\item If unsure about whether or not a 
+file should be in the commit list, abort the commit by closing the edior 
+without saving, and chosing \InlineCommand{abort}.  Then, if abc.cpp is in 
+question, type 
+
+\DisplayCommand{cvs diff abc.cpp}
+
+Next, look at the diff output and see if it makes sense for the changes that 
+were made.  
+
+\end{itemize}
+
+After verifying that all of the files that are in the list belong 
+there and that all files that belong in the list are listed, enter an 
+appropriate description of the changes that were made.  Detailed log 
+messages make it easier to track problems in the future.  Also, reference any 
+associated Bugzilla issue numbers and indicate which tests were run before 
+making the change.  Note that lines in the log message that begin with 
+``CVS:'' will be removed.  Lines describing files that are to be added, 
+removed or modified should appear in the log message, so remove the ``CVS:'' 
+from the beginning of these lines.  (Typically this means that the ``CVS:'' 
+should be removed from every line except line two.)
+
+Finally, save the file, and exit the CVS editor to commit the changes.
+
+%Possible future topics include:
 %\item{Working with Branches}
 %cvs status
 
-%... Must be expanded, add info about when to check in, and which branch... also move much of the cvs stuff from the add/remove file section to here
 \end{itemize}
 
 %\section{Common Bugzilla Tasks}
