@@ -74,6 +74,9 @@ loca = \
 pliris = \
 --enable-pliris
 
+pytrilinos = \
+--enable-pytrilinos
+
 superludist = \
 --enable-superludist
 
