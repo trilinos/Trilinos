@@ -89,7 +89,11 @@ void Newton::init()
   }
 
   // Compute RHS of initital guess
-  solnptr->computeRHS();
+  bool ok = solnptr->computeRHS();
+  if (!ok) {
+    cout << "NOX::Solver::Newton::init - Unable to compute RHS" << endl;
+    throw "NOX Error";
+  }
 
   // Test the initial guess
   status = testptr->operator()(*this);
@@ -136,18 +140,36 @@ Status::StatusType Newton::iterate()
   Status::Test& test = *testptr;
 
   // Compute the direction for the update vector at the current solution.
-  /* NOTE FROM TAMMY: Need to check the return status! */
-  direction(dir, soln, *this);
+  bool ok;
+  ok = direction(dir, soln, *this);
+  if (!ok) {
+    cout << "NOX::Solver::Newton::iterate - unable to calculate Newton direction" << endl;
+    status = Status::Failed;
+    return status;
+  }
 
   // Copy current soln to the old soln.
   oldsoln = soln;
 
   // Do line search and compute new soln.
-  /* NOTE FROM TAMMY: Need to check the return status! */
-  linesearch(soln, step, oldsoln, dir);
+  ok = linesearch(soln, step, oldsoln, dir);
+  if (!ok) {
+    if (step == 0) {
+      cout << "NOX::Solver::Newton::iterate - linesearch failed" << endl;
+      status = Status::Failed;
+      return status;
+    }
+    else if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Solver::Newton::iterate - using recovery step for linesearch" << endl;
+  }
 
   // Compute RHS for new current solution.
-  soln.computeRHS();
+  ok = soln.computeRHS();
+  if (!ok) {
+    cout << "NOX::Solver::Newton::iterate - unable to compute RHS" << endl;
+    status = Status::Failed;
+    return status;
+  }
 
   // Update iteration count.
   niter ++;
