@@ -34,9 +34,9 @@ FEVector_test_SOURCES = $(srcdir)/cxx_main.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h 
 
-FEVector_test_DEPENDENCIES = $(EPETRA_LIBS)
+FEVector_test_DEPENDENCIES = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS)
 
 FEVector_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-FEVector_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+FEVector_test_LDADD = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 

@@ -32,8 +32,8 @@ noinst_PROGRAMS = VbrMatrix_test
 
 VbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-VbrMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
+VbrMatrix_test_DEPENDENCIES = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS)
 
 VbrMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-VbrMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+VbrMatrix_test_LDADD = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
