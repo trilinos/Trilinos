@@ -175,7 +175,6 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          scaled[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j] ;
       d->fhsfc (scaled, (int*)&TWO, key) ;
       dots[i].fsfc = convert_key (key) ;
-printf("%d KDDKDD %d (%f,%f,%f) %g \n", zz->Proc, gids[i], scaled[0],scaled[1],scaled[2], dots[i].fsfc);
       }
 
    /* Initalize work fraction (should be user specified vector in future) */
