@@ -220,8 +220,7 @@ int i;
   }
   else if (strcasecmp(method_name, "OCTPART") == 0) {
     lb->Method = OCTPART;
-    lb->LB_Fn = oct_init;
-    LB_Debug = 7;
+    lb->LB_Fn = lb_oct_init;
   }
   else if (strcasecmp(method_name, "NONE") == 0) {
     lb->Method = NONE;

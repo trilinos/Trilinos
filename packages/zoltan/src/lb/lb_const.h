@@ -12,14 +12,17 @@
  * $Revision$
  *
  *====================================================================*/
+#ifndef __LB_CONST_H
+#define __LB_CONST_H
+
 #ifndef lint
 static char *cvs_lbconsth_id = "$Id$";
 #endif
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <math.h>
 
 #include "par_const.h"
 #include "lbi_const.h"
@@ -47,10 +50,6 @@ typedef struct LB_Struct LB;
 typedef struct LB_Comm_Struct LB_COMM;
 
 typedef void LB_FN(LB *, int*, int*, int *, LB_TAG **);
-typedef void LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE(LB *, int n_cells_orig, int *n_requests);
-typedef void LB_COMM_BUILD_SEND_REQUEST_LIST_FN_TYPE(LB *, int n_cells_orig);
-typedef int  LB_COMM_OBJ_DATA_SIZE_FN_TYPE(int object_type);
-typedef void LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE(LB_ID object, char *start_pos_in_buffer);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -171,4 +170,6 @@ struct LB_Struct {
 
 extern LB_FN lb_rcb;
 extern LB_FN lb_wheat;
-extern LB_FN oct_init;
+extern LB_FN lb_oct_init;
+
+#endif

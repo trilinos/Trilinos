@@ -12,6 +12,9 @@
  * $Revision$
  *
  *====================================================================*/
+#ifndef __LB_UTIL_CONST_H
+#define __LB_UTIL_CONST_H
+
 #ifndef lint
 static char *cvs_lbutilconsth_id = "$Id$";
 #endif
@@ -29,4 +32,4 @@ extern void compute_destinations(LB *, int, LB_TAG *, int *, LB_TAG **);
 /*****************************************************************************/
 /*****************************************************************************/
 
-
+#endif

@@ -12,6 +12,9 @@
  * $Revision$
  *
  *====================================================================*/
+#ifndef __RCB_CONST_H
+#define __RCB_CONST_H
+
 #ifndef lint
 static char *cvs_rcbconsth_id = "$Id$";
 #endif
@@ -74,3 +77,4 @@ extern void rcb_rtn(
 
 extern void rcb_build_data_structure(LB *, int *, int *);
 
+#endif
