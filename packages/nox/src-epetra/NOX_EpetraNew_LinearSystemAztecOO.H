@@ -37,6 +37,7 @@
 #include "NOX_Parameter_List.H"
 #include "Epetra_Time.h"        // class data element
 #ifdef HAVE_NOX_ML_EPETRA
+#include "Epetra_Map.h"
 #include "ml_epetra_preconditioner.h"
 #include "NOX_Parameter_Arbitrary.H"
 #include "Teuchos_ParameterList.hpp"
