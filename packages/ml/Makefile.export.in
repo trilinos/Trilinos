@@ -15,8 +15,8 @@ ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
                   -L$(IFPACK_BUILD_DIRECTORY)/src  $(IFPACK_LIBS) \
                   -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
                   -L$(EPETRA_BUILD_DIRECTORY)/src  -lepetra \
-                  -L$(TRIUTILS_BUILD_DIRECTORY)/src $(TRIUTILS)
-                  -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI) \
+                  -L$(TRIUTILS_BUILD_DIRECTORY)/src $(TRIUTILS_LIBS) \
+                  -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI_LIBS) \
                   -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS)
 
 ##########################################################################
@@ -44,10 +44,6 @@ AMESOS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../amesos
 ANASAZI_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../anasazi
 
 TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
-
-ML_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../ml
-
-
 
 ##########################################################################
 # Decide whether to link with Amesos, Teuchos, or Ifpack libraries
