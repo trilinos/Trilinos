@@ -345,7 +345,7 @@ int chaco_dist_graph(
             return 0;
           }
           if (use_ewgts) {
-            send_ewgts = (float *) malloc(nvtx_edges * sizeof(int));
+            send_ewgts = (float *) malloc(nvtx_edges * sizeof(float));
             if (send_ewgts == NULL) {
               Gen_Error(0, "fatal: insufficient memory");
               return 0;
