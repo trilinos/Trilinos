@@ -76,6 +76,7 @@ struct ML_Operator_Subspace_Struct {
    double *VAV;                     /* dimension by dimension system to solve */
    int    *pivots;                  /* pivots for VAV factorization */
    int    VAVdone;                  /* true if VAV is calculated already */
+   double *res1,*res2,*vec1,*vec2;      /* work vectors */
 };
 
 /* -------------------------------------------------------------------- */
