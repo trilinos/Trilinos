@@ -3773,4 +3773,284 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   return;
   
 }
+
+
+/* ------------------------------------------------------------------------ */
+/*!
+ \brief function to variable block information from file
+ <pre>
+    
+    Author:  Michael W. Gee, Org. 9214, November 2004
+     
+    read file with variable blocks and distribute the info according to
+    given update vectors. If update does not align with blocks
+    modify update vectors
+    
+    the layout of the file is as follows:
+    
+    5                                        // number of variable blocks in file ( (equal_to_number_of_rows)-1 in file)
+    3  0 3   1 4   2 5                       // <number_of_rows_in_block> <row_number_1> <pde_equation_of_row_1> <row_number_2> <pde_equation_of_row_2> <row_number_3> <pde_equation_of_row_3>
+    2  3 0   4 1                             // <number_of_rows_in_block> <row_number_1> <pde_equation_of_row_1> <row_number_2> <pde_equation_of_row_2> 
+    1  5 3                                   // <number_of_rows_in_block> <row_number_1> <pde_equation_of_row_1> 
+    6  6 0   7 1   8 2   9 3   10 4   11 5   // <number_of_rows_in_block> <row_number_1> <pde_equation_of_row_1> etc ...
+ 
+ </pre>
+ \param cmd_file_name      char*      (input)            name of input file
+ \param nblocks            int*       (output)           number of blocks read
+ \param blocks             int**      (output)           list of block indizes
+ \param block_pde          int**      (output)           list of indizes to which pde-equation the row belongs to
+ \param N_update           int*       (input/output)     length of update
+ \param update             int**      (input/output)     list of rows updated on this processor
+ \param proc_config        int[]      (input)            aztec object holding parallel layout
+ 
+ \warning A linear distribution of rows is assumed and update MIGHT be reallocated and modified.
+ 
+ \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
+     ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
+*/
+/* ------------------------------------------------------------------------ */
+void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **blocks,
+                                     int **block_pde, int *N_update, int **update, 
+                                     int proc_config[])
+{
+  FILE *ifp=NULL;
+  int   i,j,row,count=0,count2=0,gcount,index=-1;
+  int   proc=-1,nprocs=0;
+  int   G_update=0, gnblocks=0, *gblocks=NULL, *gblock_pde=NULL, block, pde;
+  char  buffer[200],*buffptr=NULL;
+  int   bsize;
+  int   firstrow,lastrow,faligned=0,laligned=0,*tmp;
+  /*********************** BEGIN EXECUTION ***********************************/
+  proc   = proc_config[AZ_node];
+  nprocs = proc_config[AZ_N_procs];
+  
+  /* Open the file containing block information*/
+
+  if ( (ifp = fopen(cmd_file_name, "r")) != NULL) {
+  fclose(ifp);   
+  } else {
+    if (proc==0) {
+      (void) fprintf(stderr, "data_variableblocks: Can't open input file, %s,",
+                     cmd_file_name);
+      (void) fprintf(stderr, " for reading\n");
+      (void) fprintf(stderr,"***WRNG***: assuming constant block sizes\n");
+    }
+    *nblocks=0;
+    (*blocks)=NULL;
+    return;
+  }
+  
+  if (*N_update <= 0 || (*update)==NULL) {
+    (void) fprintf(stderr,"no update vector present for reading blocks\n",
+                          "%s:%d\n",__FILE__,__LINE__);
+    fflush(stderr);
+    exit(EXIT_FAILURE);
+  }
+  
+  /* get global length */
+  G_update   = AZ_gsum_int(*N_update,proc_config);
+  gblock_pde = (int*)ML_allocate(G_update*sizeof(int));
+  gblocks    = (int*)ML_allocate(G_update*sizeof(int));
+  if (gblocks == NULL)
+  {
+     (void) fprintf(stderr,"not enough space to read blocks\n",
+                           "%s:%d\n",__FILE__,__LINE__);
+     exit(EXIT_FAILURE);
+  }
+  
+  if (proc==0)
+  {
+     ifp = fopen(cmd_file_name, "r");
+     if (ifp==NULL) 
+     {
+        (void) fprintf(stderr,"could not open file\n",
+                              "%s:%d\n",__FILE__,__LINE__);
+        exit(EXIT_FAILURE);
+     }
+     fgets(buffer,199,ifp);
+     gnblocks = strtol(buffer,&buffptr,10);
+     
+     /* loop all blocks and fill gblocks and gblock_pde */
+     count=0;
+     for (i=0; i<gnblocks; i++)
+     {
+        if (fgets(buffer,199,ifp)==NULL)
+        {
+           printf("***ERR***error reading file %s\n",cmd_file_name,
+                  "%s:%d\n",__FILE__,__LINE__);
+           exit(EXIT_FAILURE);
+        }
+        bsize = strtol(buffer,&buffptr,10);
+        for (j=0; j<bsize; j++)
+        {
+           row = strtol(buffptr,&buffptr,10);
+           gblocks[row] = i;
+           pde = strtol(buffptr,&buffptr,10);
+           gblock_pde[row] = pde;
+           count++;
+        }
+     }
+     if (G_update != count)
+     {
+        (void) fprintf(stderr,"number of dofs in file %s ",cmd_file_name);
+        (void) fprintf(stderr,"does not match total number of dofs\n",
+                              "%s:%d\n",__FILE__,__LINE__);
+        fflush(stderr); exit(EXIT_FAILURE);
+     }
+     fclose(ifp);
+     ifp=NULL;
+  }
+  AZ_broadcast((char*)(&gnblocks),         sizeof(int),proc_config,AZ_PACK);
+  AZ_broadcast((char*)gblocks    ,G_update*sizeof(int),proc_config,AZ_PACK);
+  AZ_broadcast((char*)gblock_pde ,G_update*sizeof(int),proc_config,AZ_PACK);
+  AZ_broadcast(NULL,                                 0,proc_config,AZ_SEND);
+
+  /* check that the pointers in gbptr are aligned with the length of update */
+  /* if not, a block is split into pieces and has to be fixed               */
+  faligned=0;
+  laligned=0;
+  count2=0;
+  while (faligned==0 || laligned==0 )
+  {
+    count2++;
+    if (count2>5)
+    {
+       fprintf(stderr,"Cannot align update vector to block distribution\n",
+                      "%s:%d\n",__FILE__,__LINE__);
+       fflush(stderr);
+       exit(EXIT_FAILURE);
+    }
+    firstrow = (*update)[0];
+    lastrow  = (*update)[*N_update-1];
+    /* check firstrow */
+    if (firstrow != 0)
+    {
+       if (gblocks[firstrow] != gblocks[firstrow-1]) faligned=1;
+       else                                          faligned=0;
+    }
+    else faligned=1;
+    /* check lastrow */
+    if (lastrow != G_update-1)
+    {
+       if (gblocks[lastrow] != gblocks[lastrow+1]) laligned=1;
+       else                                        laligned=0;
+    }
+    else laligned=1;
+#if 0 /* for debugging turn to 1 */
+    printf("proc %d: faligned %d laligned %d\n",proc,faligned,laligned);
+    fflush(stdout);
+#endif  
+    /* fix splitting of block at beginning of update */
+    /* find out how many rows there are in the split-block and drop them */
+    /* NOTE: A linear distribution of rows is assumed!!! */
+    if (faligned==0)
+    {
+       block = gblocks[firstrow];
+       count = 0;
+       i     = firstrow+1;
+       while (gblocks[i]==block)
+       {
+          count++;
+#if 0 /* for debugging turn to 1 */
+          printf("proc %d block %d gblocks[%d] %d firstrow %d count %d\n",
+                  proc,block,i,gblocks[i],firstrow,count);
+#endif
+          i++;
+       }
+       count++; i++;
+       for (i=0; i<*N_update-count; i++)
+          (*update)[i] = (*update)[i+count];
+       *N_update -= count;
+    }
+
+    /* fixing splitting of block at end of update */
+    /* find out how many missing rows there are in the split-block and add them */
+    if (laligned==0)
+    {
+       block = gblocks[lastrow];
+       count = 0;
+       i     = lastrow+1;
+       while (gblocks[i]==block)
+       {
+          count++;
+#if 0 /* for debugging turn to 1 */
+          printf("proc %d block %d gblocks[%d] %d lastrow %d count %d\n",
+                  proc,block,i,gblocks[i],lastrow,count);
+#endif
+          i++;
+       }
+       *update = (int*)AZ_realloc((void*)(*update),(*N_update+count)*sizeof(int));
+       if (*update==NULL) {
+       fprintf(stderr,"Allocation of memory failed\n",
+                      "%s:%d\n",__FILE__,__LINE__); 
+       fflush(stderr); exit(EXIT_FAILURE);
+       }
+       for (i=*N_update; i<*N_update+count; i++)
+       {
+          (*update)[i] = (*update)[i-1]+1;
+       }
+       *N_update += count;
+#if 0 /* for debugging turn to 1 */
+       printf("proc %d *N_update %d\n",proc,*N_update);
+       fflush(stdout);
+#endif
+    }
+  }  
+  
+  /* allocate local blocks */
+  (*block_pde) = (int*)ML_allocate((*N_update)*sizeof(int));
+  (*blocks)    = (int*)ML_allocate((*N_update)*sizeof(int));
+  if (*blocks==NULL)
+  {
+     (void) fprintf(stderr,"not enough space to allocate blocks: *blocks\n",
+                           "%s:%d\n",__FILE__,__LINE__);
+     fflush(stderr);
+     exit(EXIT_FAILURE);
+  }
+  /* go through update and copy block information */
+  for (i=0; i<*N_update; i++)
+  {
+        (*blocks)[i] = gblocks   [(*update)[i]];
+     (*block_pde)[i] = gblock_pde[(*update)[i]];
+  }
+
+  /* get local number of blocks: *nblocks */
+  /* 'misuse' gblocks as it is no longer needed and it is sure long enough */
+  count=0;
+  for (i=0; i<*N_update; i++)
+  {
+     block = (*blocks)[i];
+     /* look for block in gblocks of length count */
+     index = AZ_find_index(block,gblocks,count);
+     /* if it's not there, put it in */
+     if (index==-1)
+        gblocks[count++]=block;
+  } 
+  /* check global sum of blocks */   
+  gcount = AZ_gsum_int(count,proc_config);
+#if 0 /* for debugging turn to 1 */
+  if (proc==0)
+  {
+    (void) fprintf(stderr,"input number of blocks %d\n",gnblocks);
+    (void) fprintf(stderr,"count number of blocks %d\n",gcount);
+  }
+#endif
+  if (gcount != gnblocks)
+  {
+        if (proc==0) 
+        {
+          (void) fprintf(stderr,"***ERR*** global number of variable blocks wrong\n",
+                                "%s:%d\n",__FILE__,__LINE__);
+          fflush(stderr);
+        }
+        exit(EXIT_FAILURE);
+  }
+  *nblocks = count;
+    
+  ML_free(gblocks);
+  ML_free(gblock_pde);
+
+return;
+}
+
 #endif

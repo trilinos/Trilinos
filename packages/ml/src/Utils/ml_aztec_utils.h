@@ -196,6 +196,11 @@ extern void AZ_block_matvec(double *, double *, AZ_MATRIX *, int *);
 
 extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
 extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
+/* mgee */
+extern void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **blocks,
+                                     int **block_pde, int *N_update, int **update, 
+                                     int proc_config[]);
+
 
 /* The following definition and function declaration as used by
    MLAZ_iterate, which is supposed to replace AZ_iterate in code
