@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Object List function</title>
@@ -19,63 +19,49 @@
      $Date$
      $Revision$
 -->
-
 </head>
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
 |&nbsp; <a href="dev_services_hash.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous</a></i></b></div>
 <!------------------------------------------------------------------------->
-
 <h2>
 Object List Function</h2>
-Most algorithms in Zoltan obtain information about all objects located on
-a processor.  
-To provide this information, an application can register
-either an 
-<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-query function
-or an
+Most algorithms in Zoltan obtain information about all objects located
+on a processor. To provide this information, an application can register
+either an <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or an
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 /
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-query function pair.
-Algorithms can call these query functions to obtain object information.
-<p>
-However, because this operation is common to many algorithms, Zoltan provides a
-single function that can be called from an algorithm to obtain a list of object
-IDs and weights (if appropriate).  This function, <b>Zoltan_Get_Obj_List</b>, 
-provides a uniform method of calling
-the registered query functions supplied by the application.  Its use simplifies
-new algorithm development and code maintenance in Zoltan.
-An example of its use can be found in <i>rcb/shared.c</i>.
-<p>
-
-<!------------------------------------------------------------------------->
-<hr>
-<a NAME="Zoltan_Get_Obj_List"></a>
-<hr>
-void<b> Zoltan_Get_Obj_List</b>(
-struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b> *<i>zz</i>, 
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>,
-int <i>wdim</i>,
-float *<i>objwgts</i>, 
-int *<i>ierr</i>);
-<hr>
-<b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs (and object
-weights, if 
-<b><a href="../ug_html/ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></b> 
-is not zero) for all objects on a processor.
- It is a convenient function that frees algorithm developers from calling an
+query function pair. Algorithms can call these query functions to obtain
+object information.
+<p>However, because this operation is common to many algorithms, Zoltan
+provides a single function that can be called from an algorithm to obtain
+a list of object IDs and weights (if appropriate). This function, <b>Zoltan_Get_Obj_List</b>,
+provides a uniform method of calling the registered query functions supplied
+by the application. Its use simplifies new algorithm development and code
+maintenance in Zoltan. An example of its use can be found in <i>rcb/shared.c</i>.
+<p>Note that&nbsp; <b>Zoltan_Get_Obj_List,</b>&nbsp; contrary to most Zoltan
+functions, allocates memory for its return lists.
+<p><!------------------------------------------------------------------------->
+<hr><a NAME="Zoltan_Get_Obj_List"></a>
+<hr>void<b> Zoltan_Get_Obj_List</b>( struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+*<i>zz</i>, int *<i>num_obj,</i> <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_ids</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>local_ids</i>, int <i>wdim</i>, float *<i>objwgts</i>, int *<i>ierr</i>);
+<hr><b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs (and
+object weights, if <b><a href="../ug_html/ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></b>
+is not zero) for all objects on a processor. It is a convenient function
+that frees algorithm developers from calling an
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-query function
-or an
+query function or an
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query function pair directly.
 <br>&nbsp;
-<table WIDTH="100%" NOSAVE>
+<table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="20%" NOSAVE><b>Arguments:</b></td>
 
@@ -85,49 +71,53 @@ query function pair directly.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
 
-<td>A pointer to the Zoltan structure created by 
-<b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
+<td>A pointer to the Zoltan structure created by <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>Upon return,&nbsp; the number of objects.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
 
-<td>Upon return, an array of global IDs of objects on the current processor.
-</td>
+<td>Upon return, an array of global IDs of objects on the current processor.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
 <td>Upon return, an array of local IDs of objects on the current processor.
 NULL is returned when
-<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> is zero.
-</td>
+<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+is zero.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wdim</i></td>
-<td>
-The number of weights associated with an object (typically 1), or 0 if weights
-are not requested.
-</td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>objwgts</i></td>
-<td>
-Upon return, an array of object weights. Weights for object <i>i</i> are stored in
-<i>objwgts</i>[(<i>i</i>-1)*<i>wdim</i>:<i>i</i>*<i>wdim</i>-1].  
-If <i>wdim</i> is zero, the
-return value of objwgts is undefined and may be NULL.
-</td>
+
+<td>Upon return, an array of object weights. Weights for object <i>i</i>
+are stored in
+<i>objwgts</i>[(<i>i</i>-1)*<i>wdim</i>:<i>i</i>*<i>wdim</i>-1].
+If <i>wdim</i> is zero, the return value of objwgts is undefined and may
+be NULL.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ierr</i></td>
-<td>
-<a href="../ug_html/ug_interface.html#Error Codes">Error code</a>.
-</td>
+
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code</a>.</td>
 </tr>
+
 <tr>
 <td VALIGN=TOP><b>Required Query Functions:</b></td>
 
@@ -147,12 +137,9 @@ return value of objwgts is undefined and may be NULL.
 or <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 pair</td>
 </tr>
-
-
 </table>
 
-<p>
-<!------------------------------------------------------------------------->
+<p><!------------------------------------------------------------------------->
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Next:&nbsp;
 Hash Function</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous:&nbsp;
