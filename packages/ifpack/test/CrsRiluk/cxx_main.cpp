@@ -166,12 +166,15 @@ int main(int argc, char *argv[])
 	Indices[1] = MyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
-     assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i)>0); // Put in the diagonal entry
+     int ierr;
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+     IFPACK_CHK_ERR(ierr);
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i); // Put in the diagonal entry
+     IFPACK_CHK_ERR(ierr);
     }
   
   // Finish up
-  assert(A.TransformToLocal()==0);
+  A.TransformToLocal();
 
   // Create vectors for Power method
 
@@ -289,12 +292,15 @@ int main(int argc, char *argv[])
 	    Indices1[1] = MyGlobalElements1[i]+1;
 	    NumEntries1 = 2;
 	  }
-	assert(A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1)==0);
-	assert(A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i)>0); // Put in the diagonal entry
+        int ierr;
+	A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1);
+        IFPACK_CHK_ERR(ierr);
+	A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i); // Put in the diagonal entry
+        IFPACK_CHK_ERR(ierr);
       }
     
     // Finish up
-    assert(A1.TransformToLocal()==0);
+    A1.TransformToLocal();
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;

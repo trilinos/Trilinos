@@ -29,8 +29,9 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
   }
 
   // only square serial matrices
-  assert (A_.NumMyRows() == A_.NumMyCols());
-  assert (A_.NumMyRows() == A_.NumGlobalRows());
+  if ((A_.NumMyRows() != A_.NumMyCols()) ||
+     (A_.NumMyRows() != A_.NumGlobalRows()))
+    IFPACK_CHK_ERRV(-1);
 
   NumRows_ = A_.NumMyRows();
   MaxNumEntriesA_ = A_.MaxNumEntries();

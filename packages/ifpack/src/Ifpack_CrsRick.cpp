@@ -267,14 +267,14 @@ int Ifpack_CrsRick::Factor() {
  // Fill InV, InI with current row of L, D and U combined
 
     NumIn = MaxNumEntries;
-    assert(L_->ExtractMyRowCopy(i, NumIn, NumL, InV, InI)==0);
+    IFPACK_CHK_ERR(L_->ExtractMyRowCopy(i, NumIn, NumL, InV, InI)==0);
     LV = InV;
     LI = InI;
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
     
-    assert(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1)==0);
+    IFPACK_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1));
     NumIn = NumL+NumU+1;
     UV = InV+NumL+1;
     UI = InI+NumL+1;
@@ -290,7 +290,7 @@ int Ifpack_CrsRick::Factor() {
 
       InV[jj] *= DV[j];
       
-      assert(U_->ExtractMyRowView(j, NumUU, UUV, UUI)==0); // View of row above
+      IFPACK_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
 
       if (RelaxValue_==0.0) {
 	for (k=0; k<NumUU; k++) {
@@ -310,7 +310,8 @@ int Ifpack_CrsRick::Factor() {
 	}
       }
      }
-    if (NumL) assert(L_->ReplaceMyValues(i, NumL, LV, LI)==0);  // Replace current row of L
+    if (NumL) 
+      IFPACK_CHK_ERR(L_->ReplaceMyValues(i, NumL, LV, LI));  // Replace current row of L
 
     DV[i] = InV[NumL]; // Extract Diagonal value
 
@@ -328,7 +329,8 @@ int Ifpack_CrsRick::Factor() {
 
     for (j=0; j<NumU; j++) UV[j] *= DV[i]; // Scale U by inverse of diagonal
 
-    if (NumU) assert(U_->ReplaceMyValues(i, NumU, UV, UI)==0);  // Replace current row of L and U
+    if (NumU) 
+      IFPACK_CHK_ERR(U_->ReplaceMyValues(i, NumU, UV, UI));  // Replace current row of L and U
 
 
     // Reset column flags

@@ -38,7 +38,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
 
   // want to store the diagonal vector. FIXME: am I really useful?
   Diagonal_ = new Epetra_Vector(*Map_);
-  assert (Diagonal_ != 0);
+  if (Diagonal_ == 0) IFPACK_CHK_ERRV(-5);
   
   // store this for future access to ExtractMyRowCopy().
   // This is the # of nonzeros in the non-local matrix
@@ -69,7 +69,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
     
     NumEntries_[i] = 0;
     int Nnz;
-    assert (ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]) == 0);
+    IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]));
 
     if (Nnz > ActualMaxNumEntries)
       ActualMaxNumEntries = Nnz;

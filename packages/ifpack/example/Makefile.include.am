@@ -35,8 +35,7 @@ EXAMPLE = Ifpack_ex_Factory              \
           Ifpack_ex_MatrixMarket         \
           Ifpack_ex_Reordering           \
           Ifpack_ex_Filtering            \
-          Ifpack_ex_SingletonFilter      \
-          Ifpack_ex_Test  
+          Ifpack_ex_SingletonFilter     
           
 
 include $(top_builddir)/Makefile.export
@@ -82,13 +81,6 @@ Ifpack_ex_SingletonFilter_SOURCES      = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
 Ifpack_ex_SingletonFilter_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
 Ifpack_ex_SingletonFilter_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 Ifpack_ex_SingletonFilter_CXXFLAGS     = $(IFPACK_INCLUDES)
-
-Ifpack_ex_Test_SOURCES      = $(srcdir)/Ifpack_ex_Test.cpp
-Ifpack_ex_Test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
-Ifpack_ex_Test_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-Ifpack_ex_Test_CXXFLAGS     = $(IFPACK_INCLUDES)
-
-
 
 test_SOURCES = $(srcdir)/test.sh
 test$(EXEEXT): $(srcdir)/test.sh

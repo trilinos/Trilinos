@@ -511,7 +511,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
       cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
       exit(EXIT_FAILURE);
     }
-    assert (Reordering_ != 0);
+    if (Reordering_ == 0) IFPACK_CHK_ERR(-5);
 
     IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
     IFPACK_CHK_ERR(Reordering_->Compute(*MatrixPtr));
@@ -519,7 +519,9 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
     // now create reordered localized matrix
     ReorderedLocalizedMatrix_ = 
       new Ifpack_ReorderFilter(MatrixPtr,Reordering_);
-    assert(ReorderedLocalizedMatrix_ != 0);
+
+    if (ReorderedLocalizedMatrix_ == 0) IFPACK_CHK_ERR(-5);
+
     MatrixPtr = ReorderedLocalizedMatrix_;
   }
 
@@ -749,7 +751,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 					  X.NumVectors());
     OverlappingY = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
                                           Y.NumVectors());
-    assert (OverlappingY != 0);
+    if (OverlappingY == 0) IFPACK_CHK_ERR(-5);
 
     OverlappingY->PutScalar(0.0);
     OverlappingX->PutScalar(0.0);

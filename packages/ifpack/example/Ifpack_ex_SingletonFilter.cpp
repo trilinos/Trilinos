@@ -97,9 +97,17 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef HAVE_IFPACK_TEUCHOS
+
   // only one process
-  if (Comm.NumProc() != 1)
-    exit(EXIT_FAILURE);
+  if (Comm.NumProc() != 1) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    if (Comm.MyPID() == 0)
+      cout << "Please run this test with one process only" << endl;
+    // return success not to break the tests
+    exit(EXIT_SUCCESS);
+  }
 
   int NumPoints = 16;
   

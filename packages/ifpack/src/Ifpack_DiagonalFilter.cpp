@@ -34,7 +34,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 {
 
   int NumVectors = X.NumVectors();
-  assert (NumVectors = Y.NumVectors());
+  if (NumVectors != Y.NumVectors())
+    IFPACK_CHK_ERR(-2);
 
   Y.PutScalar(0.0);
 

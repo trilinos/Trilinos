@@ -26,6 +26,11 @@
 // ***********************************************************************
 //@HEADER
 
+// FIXME: assert below are not correct if NDEBUG is defined
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #include <stdio.h>
 #include <stdlib.h>

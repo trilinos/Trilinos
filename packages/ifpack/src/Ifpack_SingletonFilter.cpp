@@ -29,8 +29,9 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
     exit(EXIT_FAILURE);
   }
   
-  assert (A_.NumMyRows() == A_.NumGlobalRows());
-  assert (A_.NumMyRows() == A_.NumMyCols());
+  if ((A_.NumMyRows() != A_.NumGlobalRows()) ||
+     (A_.NumMyRows() != A_.NumMyCols()))
+    IFPACK_CHK_ERRV(-1);
   
   NumRowsA_ = (A_.NumMyRows());
   MaxNumEntriesA_ = A_.MaxNumEntries();

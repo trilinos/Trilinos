@@ -210,7 +210,7 @@ int Ifpack_PointRelaxation::Compute()
   if (IsParallel_ && ((PrecType_ == IFPACK_GS) || (PrecType_ == IFPACK_SGS))) {
     Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
                                   Matrix().RowMatrixRowMap());
-    assert (Importer_ != 0);
+    if (Importer_ == 0) IFPACK_CHK_ERR(-5);
   }
 
   ++NumCompute_;
@@ -372,7 +372,7 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
   int NumVectors = LHS.NumVectors();
   Epetra_MultiVector* A_times_LHS;
   A_times_LHS = new Epetra_MultiVector(LHS.Map(),NumVectors);
-  assert (A_times_LHS != 0);
+  if (A_times_LHS == 0) IFPACK_CHK_ERR(-5);
 
   for (int j = 0; j < NumSweeps_ ; j++) {
 

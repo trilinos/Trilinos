@@ -2,7 +2,11 @@
 
 echo "compiling the examples..."
 make
+echo ""
 echo "running the examples... (this may take a while)"
+echo "NOTE: this simple test supposes that you are using MPI, and that"
+echo "the command to execute MPI programs in mpirun -np <num procs> <exe>"
+echo "You may need to change the source of this script."
 echo ""
 FILELIST="Ifpack_ex_Amesos.exe \
           Ifpack_ex_BlockRelaxation.exe \

@@ -25,8 +25,9 @@ Ifpack_DropFilter::Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
     exit(EXIT_FAILURE);
   }
   
-  assert (A_.NumMyRows() == A_.NumGlobalRows());
-  assert (A_.NumMyRows() == A_.NumMyCols());
+  if ((A_.NumMyRows() != A_.NumGlobalRows()) ||
+      (A_.NumMyRows() != A_.NumMyCols()))
+    IFPACK_CHK_ERRV(-2);
 
   NumRows_ = A_.NumMyRows();
   MaxNumEntriesA_ = A_.MaxNumEntries();

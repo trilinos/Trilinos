@@ -342,7 +342,8 @@ int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
     grow = A.RowMatrixRowMap().GID(i);
-    assert (grow != -1);
+    if (grow == -1)
+      IFPACK_CHK_ERR(-1);
 
     int Nnz;
     IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
@@ -356,7 +357,8 @@ int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
       if (colVal[j] != 0.0) {
         ++count;
         gcol = A.RowMatrixColMap().GID(colInd[j]);
-        assert (gcol != -1);
+        if (gcol == -1)
+          IFPACK_CHK_ERR(-1);
         if (gcol < grow) 
           MyLowerNonzeros++;
         else if (gcol > grow) 

@@ -263,7 +263,7 @@ int Ifpack_ICT::Compute()
     double DiscardedElements = 0.0;
 
     for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      if (IFPACK_ABS((*where).second) > cutoff) {
+      if (IFPACK_ABS((*where).second) > cutoff || ((*where).first == row_i)) {
         IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &((*where).second),
                                               (int*)&((*where).first)));
       }
@@ -295,6 +295,8 @@ int Ifpack_ICT::Compute()
   H_->Multiply(false,RHS2,RHS3);
 
   RHS1.Update(-1.0, RHS3, 1.0);
+  cout << endl;
+  cout << RHS1;
 #endif
 
   IsComputed_ = true;

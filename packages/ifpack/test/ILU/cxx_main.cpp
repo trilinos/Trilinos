@@ -107,7 +107,9 @@ int main(int argc, char *argv[]) {
   Ifpack_CrsRiluk* RILU = 0;
 
   Graph = new Ifpack_IlukGraph(A->Graph(), LevelFill, Overlap);
-  assert(Graph->ConstructFilledGraph()==0);
+  int ierr;
+  ierr = Graph->ConstructFilledGraph();
+  IFPACK_CHK_ERR(ierr);
 
   RILU = new Ifpack_CrsRiluk(*Graph);
   RILU->SetAbsoluteThreshold(Athresh);
@@ -116,7 +118,7 @@ int main(int argc, char *argv[]) {
   int initerr = RILU->InitValues(*A);
   if (initerr!=0) cout << Comm << "*ERR* InitValues = " << initerr;
 
-  assert(RILU->Factor()==0);
+  RILU->Factor();
 
   // Define label for printing out during the solve phase
   string label = "Ifpack_CrsRiluk Preconditioner: LevelFill = " + toString(LevelFill) +
@@ -171,7 +173,8 @@ int main(int argc, char *argv[]) {
 
   int NewIters = solver.NumIters();
 
-  assert (OldIters == NewIters);
+  if (OldIters != NewIters)
+    IFPACK_CHK_ERR(-1);
 
   if (Prec!=0) delete Prec;
 

@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include "Ifpack_ConfigDefs.h"
 #if defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_AZTECOO)
 #ifdef HAVE_MPI

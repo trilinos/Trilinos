@@ -169,7 +169,8 @@ int main(int argc, char *argv[]) {
 
   int NewIters = solver.NumIters();
 
-  assert (OldIters == NewIters);
+  if (OldIters != NewIters)
+    IFPACK_CHK_ERR(-1);
 
   if (Prec!=0) delete Prec;
 

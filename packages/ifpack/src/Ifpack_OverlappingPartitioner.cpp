@@ -126,7 +126,8 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     }
     // no singletons should be here, as the matrix is
     // supposed to be filtered through Ifpack_SingletonFilter
-    assert (Partition_[i] != -1);
+    if (Partition_[i] == -1)
+      IFPACK_CHK_ERR(-1);
     sizes[Partition_[i]]++;
   }
 

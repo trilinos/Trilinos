@@ -539,7 +539,8 @@ int Ifpack_BlockRelaxation<T>::Compute()
     // not needed by Jacobi (done by matvec)
     Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
                                   Matrix().RowMatrixRowMap());
-    assert (Importer_ != 0);
+
+    if (Importer_ == 0) IFPACK_CHK_ERR(-5);
   }
   IsComputed_ = true;
   ComputeTime_ += Time_.ElapsedTime();
@@ -1133,7 +1134,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
     delete Graph_;
 
   Graph_ = new Ifpack_Graph_Epetra_RowMatrix(&Matrix());
-  assert (Graph_ != 0);
+  if (Graph_ == 0) IFPACK_CHK_ERR(-5);
 
   if (PartitionerType_ == "linear")
     Partitioner_ = new Ifpack_LinearPartitioner(Graph_);
@@ -1148,7 +1149,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   else
     IFPACK_CHK_ERR(-2);
 
-  assert (Partitioner_ != 0);
+  if (Partitioner_ == 0) IFPACK_CHK_ERR(-5);
 
   // need to partition the graph of A
   IFPACK_CHK_ERR(Partitioner_->SetParameters(List_));

@@ -131,7 +131,8 @@ int main(int argc, char *argv[])
   if (Comm.MyPID() == 0)
     cout << "Norm of Y using C = " << Norm_C << endl;
 
-  assert (IFPACK_ABS(Norm_B - Norm_C) < 1e-5);
+  if (IFPACK_ABS(Norm_B - Norm_C) > 1e-5)
+    IFPACK_CHK_ERR(-1);
 
   // ======================= //
   // now localize the matrix //

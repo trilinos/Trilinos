@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("recirc_2d", Comm);
   Gallery.Set("problem_size", NumPoints);
   Epetra_RowMatrix*   Matrix = Gallery.GetMatrix();
   Epetra_MultiVector* LHS    = Gallery.GetStartingSolution();
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 
         Epetra_Time Time(Comm);
 
-        IFPACKPrec = Factory.Create("ICT", Matrix);
+        IFPACKPrec = Factory.Create("ILUT", Matrix);
         // set the parameters and build the preconditioner
         Teuchos::ParameterList IFPACKList;
         IFPACKList.set("fact: relative threshold", this_rthresh);
@@ -216,8 +216,8 @@ int main(int argc, char *argv[])
         // set for AztecOO
         solver.SetPrecOperator(IFPACKPrec);
         // other parameters for AztecOO
-        solver.SetAztecOption(AZ_solver, AZ_cg);
-        solver.SetAztecOption(AZ_kspace, 500);
+        solver.SetAztecOption(AZ_solver, AZ_gmres);
+        solver.SetAztecOption(AZ_kspace, 500); 
         solver.SetAztecOption(AZ_output, AZ_none);
         // solve with 500 iterations and 1e-12 tolerance  
         solver.Iterate(500, 1e-5);
