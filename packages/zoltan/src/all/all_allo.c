@@ -44,19 +44,23 @@ static char *cvs_all_allo_c =
  *
  *      POINT    **points, corner;
  *
- *      points = (POINT **) LB_array_alloc (2, x, y, sizeof(POINT));
- *                               ^ ^ ^
- *                               | | |
- *         number of dimensions--+ | |
- *                                 | |
- *          first dimension max----+ |
- *                                   |
- *         second dimension max------+
+ *      points = (POINT **)LB_array_alloc(file, lineno, 2, x, y, sizeof(POINT));
+ *                                        ^     ^       ^  ^  ^
+ *                                        |     |       |  |  |
+ *                 name of calling file---*     |       |  |  |
+ *                                              |       |  |  |
+ *                  line number of call---------*       |  |  |
+ *                                                      |  |  |
+ *                 number of dimensions-----------------+  |  |
+ *                                                         |  |
+ *                  first dimension max--------------------+  |
+ *                                                            |
+ *                 second dimension max-----------------------+
  *
  *         (points may be now be used as if it were declared
  *          POINT points[x][y])
  *
- *          This particular version is limited to dimensions of 3 or less.
+ *          This particular version is limited to dimensions of 4 or less.
  *
  *      corner = points[2][3]; (refer to the structure as you would any array)
  *
@@ -104,7 +108,7 @@ static char *cvs_all_allo_c =
 
 #ifdef __STDC__
 
-double *LB_array_alloc(int numdim, ...)
+double *LB_array_alloc(char *file, int lineno, int numdim, ...)
 
 #else
 
@@ -118,6 +122,7 @@ va_dcl
 /*****************************************************************************/
 
 {
+  char *yo = "LB_array_alloc";
   int i, j;
   struct dim {
     long index;  /* Number of elements in the dimension  */
@@ -127,6 +132,8 @@ va_dcl
   } dim[4];      /* Info about each dimension            */
 
 #ifndef __STDC__
+  char *file;           /* Filename of source code from call.   */
+  int lineno;           /* Line number of call.                 */
   int numdim;           /* Number of dimensions                 */
 #endif
 
@@ -138,20 +145,22 @@ va_dcl
   va_list va;           /* Current pointer in the argument list */
 
 #ifdef __STDC__
-  va_start(va, numdim);
+  va_start(va, file);
 #else
   va_start(va);
+  file = va_arg(va, char *);
+  lineno = va_arg(va, int);
   numdim = va_arg(va, int);
 #endif
 
   if (numdim <= 0) {
-    fprintf(stderr, "LB_array_alloc ERROR: number of dimensions, %d, is <=0\n",
-            numdim);
+    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n",
+            yo, file, lineno, numdim);
     exit(-1);
   }
   else if (numdim > 4) {
-    fprintf(stderr, "LB_array_alloc ERROR: number of dimensions, %d, is > 4\n",
-            numdim);
+    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 4\n",
+            yo, file, lineno, numdim);
     exit(-1);
   }
 
@@ -159,9 +168,9 @@ va_dcl
 
   if (dim[0].index <= 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, LB_array_alloc called with first "
+    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
             "dimension <= 0, %d\n\twill return the nil pointer\n", 
-            dim[0].index);
+            yo, file, lineno, dim[0].index);
 #endif
     return((double *) NULL);
   }
@@ -172,8 +181,8 @@ va_dcl
   for (i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, int);
     if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: LB_array_alloc called with dimension %d <= 0, "
-              "%d\n", i+1, dim[i].index);
+      fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
+              "%d\n", yo, file, lineno, i+1, dim[i].index);
       fprintf(stderr, "\twill return the nil pointer\n");
       return((double *) NULL);
     }
