@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
   int    j;
 #endif
 
+
   /* See Aztec User's Guide for more information on the */
   /* variables that follow.                             */
 
@@ -789,6 +790,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 {
    int    i, j, k, nprocs, nprocs_1d, mypid, mypid_y, mypid_z;
    int    icnt, *intlist, offset, nelmnt_1d, nelmnt_part_yz, estart_y; 
+   ml_big_int *big_intlist;
    int    estart_z, nelmnt_local, nstart_y, nstart_z, index, eend_y, eend_z;
    int    nelmnt_2d, nnode_1d, nnode_local_y, nnode_local_z, nnode_local;
    int    nnode_2d, nnode_expand, nnode_x, nnode_y, nnode_z, ***cube;
@@ -836,7 +838,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    /* generate the global element numbers of the local elements */
 
-   ML_memory_alloc((void**) &intlist, nelmnt_local * sizeof(int), "AP1");
+   ML_memory_alloc((void**) &big_intlist, nelmnt_local * sizeof(ml_big_int), "AP1");
    estart_y  = nelmnt_part_yz * mypid_y;
    estart_z  = nelmnt_part_yz * mypid_z;
    eend_y    = estart_y + nelmnt_part_yz - 1;
@@ -846,9 +848,9 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    for (k = estart_z; k <= eend_z; k++) 
       for (j = estart_y; j <= eend_y; j++) 
          for (i = 0; i < nelmnt_1d; i++)
-            intlist[icnt++] = i + j * nelmnt_1d + k * nelmnt_2d;
-   ML_GridAGX_Load_ElmntGlobalNum(mesh, nelmnt_local, intlist);
-   ML_memory_free( (void **) &intlist);
+            big_intlist[icnt++] = i + j * nelmnt_1d + k * nelmnt_2d;
+   ML_GridAGX_Load_ElmntGlobalNum(mesh, nelmnt_local, big_intlist);
+   ML_memory_free( (void **) &big_intlist);
 
    /* generate the local computational grid */
 
