@@ -9429,7 +9429,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/verySimple/Makefile test/Makefile test/Comm/Makefile test/Distributor/Makefile test/Platform/Makefile test/ElementSpace/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/BasicPerfTest/Makefile"
+                                                                                                                                                      ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile test/Makefile test/Comm/Makefile test/Distributor/Makefile test/Platform/Makefile test/ElementSpace/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/BasicPerfTest/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10034,6 +10034,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/verySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
+  "example/EpetraTpetraProfile/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/EpetraTpetraProfile/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/Comm/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;
   "test/Distributor/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Distributor/Makefile" ;;

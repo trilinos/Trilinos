@@ -271,6 +271,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		example/verySimple/Makefile
+		example/EpetraTpetraProfile/Makefile
 		test/Makefile
 		test/Comm/Makefile
 		test/Distributor/Makefile

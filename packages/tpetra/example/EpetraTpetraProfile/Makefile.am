@@ -26,5 +26,24 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = verySimple EpetraTpetraProfile
+EXEEXT = .exe
 
+noinst_PROGRAMS = EpetraTpetraProfile
+
+EpetraTpetraProfile_SOURCES = $(srcdir)/cxx_main.cpp
+
+EpetraTpetraProfile_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a
+
+EpetraTpetraProfile_CXXFLAGS = -I$(top_srcdir)/src \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	-I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+
+EpetraTpetraProfile_LDADD = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
