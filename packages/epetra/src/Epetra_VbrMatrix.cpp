@@ -915,9 +915,8 @@ int Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   if (!Filled()) return(-1); // Can't get diagonal unless matrix is filled
   if (!RowMap().SameAs(Diagonal.Map())) return(-2); // Maps must be the same
   double * diagptr = Diagonal.Values();
-  int Base = IndexBase();
   for(int i=0; i<NumMyBlockRows_; i++){
-    int BlockRow = i + Base;
+    int BlockRow = i;
     int RowDim = ElementSizeList_[i];
     int NumEntries = NumBlockEntriesPerRow_[i];
     int * Indices = Indices_[i];
@@ -947,7 +946,7 @@ int Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy(int SizeOfValues, double * V
 	
   if (CurBlockDiag_==-1) return(-1); // BeginExtractBlockDiagonalCopy was not called
   int i = CurBlockDiag_;
-  int BlockRow =  + IndexBase();
+  int BlockRow = i;
   int RowDim = ElementSizeList_[i];
   int NumEntries = NumBlockEntriesPerRow_[i];
   int * Indices = Indices_[i];
@@ -978,7 +977,7 @@ int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double * & Values, int & LDA
 	
   if (CurBlockDiag_==-1) return(-1); // BeginExtractBlockDiagonalCopy was not called
   int i = CurBlockDiag_;
-  int BlockRow =  + IndexBase();
+  int BlockRow = i;
   int RowDim = ElementSizeList_[i];
   int NumEntries = NumBlockEntriesPerRow_[i];
   int * Indices = Indices_[i];
