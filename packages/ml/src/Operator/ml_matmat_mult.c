@@ -46,6 +46,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    */
    int tcols, hash_used, j, *tptr;
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
+   int allzeros;
    /*
    t1 = GetClock();
    */
@@ -104,14 +105,22 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       if (current->getrow->pre_comm != NULL) {
 	if (current->getrow->pre_comm->total_rcv_length <= 0) {
 #ifdef charles
-	  printf("%d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
+      if (Amatrix->comm->ML_mypid == 0)
+         printf("*** ML_matmat_mult: %s x %s\n",Amatrix->label,Bmatrix->label);
+	  printf("*** %d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
+#endif
+#ifdef charles
+#undef charles
 #endif
 	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
 	}
 
          Next_est += current->getrow->pre_comm->total_rcv_length;
 #ifdef charles
-	  printf("%d: Nghost = %d  %d\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length); fflush(stdout);
+	  printf("*** %d: Nghost = %d  %d (%d x %d)\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length,Bmatrix->outvec_leng,Bmatrix->invec_leng); fflush(stdout);
+#endif
+#ifdef charles
+#undef charles
 #endif
       }
 #ifdef charles
@@ -564,22 +573,30 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       /* store matrix row */
 
+#ifdef ML_LOWMEMORY
       memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
       memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
       next_nz += Ncols;
 
-#ifdef out
+#else
       /* above code might be a bit faster??? */
+      allzeros = 1;
       for (k = 0; k < Ncols; k++) {
-	/* This 'if' might break some applications somewhere */
-	/* but I can't remember who and where or why?        */
-	/* For now, I want to reduce memory in alegra so I am*/
-	/* putting it in. If we later want to take this out  */
-	/* we should use the memcpy code above.              */
-	if (accum_val[k] != 0.0) {
+      /* This 'if' might break some applications somewhere */
+      /* but I can't remember who and where or why?        */
+      /* For now, I want to reduce memory in alegra so I am*/
+      /* putting it in. If we later want to take this out  */
+      /* we should use the memcpy code above.              */
+        if (accum_val[k] != 0.0) {
+          allzeros = 0;
           Ccol[next_nz] = accum_col[k];
           Cval[next_nz++] = accum_val[k];
-	}
+        }
+      }
+      /* if entire row is zero, store one entry to avoid empty row */
+      if (allzeros) {
+        Ccol[next_nz] = accum_col[0];
+        Cval[next_nz++] = accum_val[0];
       }
 #endif
       /*      */
@@ -965,10 +982,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 
    if (Mat1->invec_leng != Mat2->outvec_leng)
    {
-     printf("In ML_2matmult: matrix dimensions do not agree:\n");
-     printf("\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n",
-                       Mat1->invec_leng, Mat2->outvec_leng);
-      exit(1);
+     pr_error("In ML_2matmult: matrix dimensions do not agree:\n\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n", Mat1->invec_leng, Mat2->outvec_leng);
    }
 
    comm = Mat1->comm;
@@ -980,8 +994,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    Mat2->getrow->use_loc_glob_map = ML_YES;
 
    if (max_per_proc == 0 && comm->ML_mypid == 0) {
-     printf("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
-     exit(1);
+     pr_error("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
    }
 
    if (Mat1->getrow->pre_comm != NULL)
@@ -1250,8 +1263,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
    newwhere = (int *) ML_allocate(sizeof(int)*HASH_SIZE);
    if ( newwhere == NULL) {
-      printf("Not enough space for hash table in ML_matmatmult().\n");
-      exit(1);
+      pr_error("Not enough space for hash table in ML_matmatmult().\n");
    }
    for (i = 0; i < HASH_SIZE; i++) newwhere[i] = -1;
 
