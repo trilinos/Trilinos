@@ -4,10 +4,8 @@ CXXFLAGS="-O3 -D__USE_STD_IOSTREAM" \
 TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
 --with-mpi=/usr/local/cplant/ross/current \
---with-mpi-cxx="/usr/local/cplant/ross/current/bin/c++" \
---with-mpi-cc="/usr/local/cplant/ross/current/bin/cc" \
---with-mpi-f77="/usr/local/cplant/ross/current/bin/f77" \
---with-mpi-libdir="-L/usr/local/cplant/ross/current/lib" \
+CXX="/usr/local/cplant/ross/current/bin/c++" \
+CC="/usr/local/cplant/ross/current/bin/cc" \
+F77="/usr/local/cplant/ross/current/bin/f77" \
 --enable-mpi \
---with-mpi-include=-I/usr/local/cplant/ross/current/include
 

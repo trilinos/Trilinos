@@ -6,9 +6,8 @@
 	CXX=ciCC CC=cicc F77=cif77 \
 	CXXFLAGS="-g -rwstl -Wc,-tlocal -DTFLOP" \
 	CPPFLAGS="-g -rwstl -Wc,-tlocal -DTFLOP" \
-	--enable-mpi --with-mpi-cxx=ciCC \
+	--enable-mpi \
         --enable-nox --enable-nox-epetra \
         --with-mpi-incdir=. \
-	--with-mpi-cc=cicc --with-mpi-f77=cif77 \
-     --with-mpi-include=-I. --with-mpi-libdir=-L. --with-mpi-libs=-lmpi
+     --with-mpi-libdir=. --with-mpi-libs=-lmpi
 

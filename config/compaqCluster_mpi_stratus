@@ -1,5 +1,5 @@
-.././configure --enable-mpi --with-cxxflags="-DMPI_NO_CPPBIND" \
---with-cxxflags=-DMPICH_SKIP_MPICXX \
+.././configure --enable-mpi \
+--with-cxxflags="-DMPI_NO_CPPBIND -DMPICH_SKIP_MPICXX" \
 --enable-nox --enable-nox-epetra \
 --enable-new_package --enable-epetraext \
 --with-mpi-libs=-lmpi
