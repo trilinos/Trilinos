@@ -21,8 +21,9 @@ extern "C" {
 #include "phg.h"
 
 
-
+static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
 static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
+
 
 
 /* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
@@ -35,6 +36,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
     int exist = 1;
     if (!strcasecmp(hgp->redm_str, "no"))       hgp->matching = NULL;
+    else if (!strcasecmp(hgp->redm_str, "loc")) hgp->matching = matching_loc;    
     else if (!strcasecmp(hgp->redm_str, "ipm")) hgp->matching = matching_ipm;
     else {
         exist = 0;
@@ -52,6 +54,9 @@ static char *uMe(PHGComm *hgc)
     sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->Proc, hgc->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
     return msg;
 }
+
+
+
 
 
 /* Removed sim() from serial version at this point */
@@ -103,7 +108,86 @@ End:
 }
 
 
+/* UVC:
+   a simple HCM/IPM variant: root of each column procs find HCM using only its local data.
+   This matching is implemented just for testing purposes.
+ */
+static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
+{
+    int i, j, *eweight, *adj, *visit, degzero=0;
+    char *yo = "matching_loc";
+    PHGComm *hgc=hg->comm;
 
+    if (!hgc->myProc_y) { /* only root of each column does this */
+        if (!(visit = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+            || !(adj = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+            || !(eweight = (int*) ZOLTAN_CALLOC (hg->nVtx, sizeof(int))) ) {
+            Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
+        for (i=0; i<hg->nVtx; ++i)
+            visit[i] = i;
+        Zoltan_PHG_Rand_Perm_Int(visit, hg->nVtx);
+
+        for (i = 0; i<hg->nVtx; ++i) {
+            int v = visit[i];
+            if (match[v] == v) {
+                if ( hg->vindex[v] == hg->vindex[v+1] )
+                    degzero++; // isolated vertex detection
+                else {
+                    int maxuv=-1, maxu=-1, adjsz=0, k;
+
+                    for (j = hg->vindex[v]; j < hg->vindex[v+1]; ++j) {
+                        int edge = hg->vedge[j];
+                        for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; ++k) {
+                            int u = hg->hvertex[k];
+                            if (u == match[u] && u != v) {
+                                if (eweight[u]==0)
+                                    adj[adjsz++] = u;
+                                ++eweight[u];
+                            }
+                        }
+                    }
+                    for (k = 0; k < adjsz; ++k) {
+                        int u = adj[k];
+                        if (eweight[u] > maxuv) {
+                            maxu = u;
+                            maxuv = eweight[u];
+                        }
+                        eweight[u] = 0;
+                    }
+                    if (maxu!=-1) {
+                        //match the maximally connected one with the current vertex
+                        match[v] = maxu;
+                        match[maxu] = v;
+                    }
+                }
+            }
+        }
+
+
+        // match isolated vertices
+        if (degzero) {
+            int v = -1; // mark the first isolated vertex with -1
+            for (i = 0; i< hg->nVtx; ++i)
+                if (hg->vindex[i]==hg->vindex[i+1]) { /* degree zero */
+                    if (v == -1)
+                        v = i;
+                    else {
+                        match[i] = v;
+                        match[v] = i;
+                        v = -1;
+                    }                
+                }
+        }
+    }
+    MPI_Bcast(match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+
+    Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
+    return ZOLTAN_OK;
+}
+    
 /*****************************************************************************/
 
 /*

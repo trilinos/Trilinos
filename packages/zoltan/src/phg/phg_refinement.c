@@ -17,6 +17,8 @@ extern "C" {
 #endif
 
 #include <stdarg.h>
+#include <math.h>
+#include <float.h>
 #include "phg.h"
 
 
@@ -95,15 +97,15 @@ exit(1);
 }
 
 
-typedef int  (*SelectFunc)(HEAP heap[2], double *weights, double *max_weight);
+typedef int  (*SelectFunc)(HEAP heap[2], double *weights, double *max_weight, double zeropw);
 
-static int fm2_select(HEAP heap[2], double *weights, double *max_weight)
+static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double zeropw)
 {
     int from;
     /* select a vertex with max gain; if possible */
     if (Zoltan_heap_not_empty(&heap[0]) && Zoltan_heap_not_empty(&heap[1])) {
         if (Zoltan_heap_max_value(&heap[0])==Zoltan_heap_max_value(&heap[1]))
-            from = (weights[0] < max_weight[0]) ? 1 : 0;
+            from = (weights[0] < zeropw) ? 1 : 0;
         else
             from = (Zoltan_heap_max_value(&heap[0])>Zoltan_heap_max_value(&heap[1])) ? 0 : 1;
     } else if (Zoltan_heap_empty(&heap[0])) {
@@ -114,6 +116,73 @@ static int fm2_select(HEAP heap[2], double *weights, double *max_weight)
     } else
         from = 0;
     return Zoltan_heap_extract_max(&heap[from]);    
+}
+
+
+static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *gain, HEAP *heap, int *pins[2], int *lpins[2], double *weights, double *lweights, int *mark, int *adj)
+{
+    float oldgain=gain[v];
+    int   pno=part[v], vto=1-pno, adjsz=0, j, i;
+    
+    mark[v] = 1;
+    part[v] = vto;
+    weights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
+    weights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
+    lweights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
+    lweights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
+
+    for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
+        int n = hg->vedge[j];
+        int w = hg->ewgt ? hg->ewgt[n] : 1.0;
+    
+        --pins[pno][n];
+        --lpins[pno][n];
+#ifdef _DEBUG2
+        if (pins[pno][n] < 0)
+            errexit("move of %d makes pin[%d][%d]=%d", v, pno, n, pins[pno][n]);
+#endif
+
+        if (pins[pno][n]==1) {
+            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
+                int u = hg->hvertex[i]; 
+                if (part[u]==pno) {
+                    gain[u] += w;
+                    if (!mark[u]) {
+                        adj[adjsz++] = u;
+                        mark[u] = -1;
+                    }
+                }
+            }
+        }
+
+        ++pins[vto][n];
+        ++lpins[vto][n];
+        if (pins[vto][n]==1) { /* now there is at least one pin here */
+            for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
+                int u = hg->hvertex[i];
+                if (part[u]==pno) { 
+                    gain[u] += w;
+                    if (!mark[u]) {
+                        adj[adjsz++] = u;
+                        mark[u] = -1;
+                    }
+                }
+            }
+        } 
+    }
+    
+    gain[v] = -oldgain;    
+    for (i=0; i<adjsz; i++) {
+        int u=adj[i], p=part[u];
+        
+        mark[u] = 0;
+#ifdef _DEBUG
+        if (part[u] == vto)
+            errexit("hey while moving v=%d u=%d is in part %d", v, u, part[u]);
+#endif
+        if (Zoltan_heap_has_elem(&heap[p], u))
+            Zoltan_heap_change_value(&heap[p], u, gain[u]);
+    }
 }
 
 
@@ -153,7 +222,7 @@ static void fm2_move_vertex(int v, PHGraph *hg, Partition part, float *gain, HEA
             for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
                 int u = hg->hvertex[i]; 
                 if (part[u]==pno) {
-                    gain[u] -= w;
+                    gain[u] += w;
                     if (!mark[u]) {
                         adj[adjsz++] = u;
                         mark[u] = -1;
@@ -209,7 +278,7 @@ static int refine_fm2 (
 )
 {
     int    i, j,  *pins[2], *lpins[2], *moves=0, *mark=0, *adj=0, round=0, best_cutsizeat, cont;
-    double total_weight, weights[2], lweights[2], max_weight[2];
+    double total_weight, weights[2], lweights[2], max_weight[2], zeropw, minvw=DBL_MAX;
     double cutsize, best_cutsize, ratio = hg->ratio, best_imbalance, imbalance;
     float  *gain=0, *lgain=0;
     HEAP   heap[2];
@@ -249,15 +318,21 @@ static int refine_fm2 (
     /* Calculate the weights in each partition and total, then maxima */
     weights[0] = weights[1] = 0.0;
     lweights[0] = lweights[1] = 0.0;
-    if (hg->vwgt)  
-        for (i = 0; i < hg->nVtx; i++)
+    if (hg->vwgt) 
+        for (i = 0; i < hg->nVtx; i++) {
             lweights[part[i]] += hg->vwgt[i];
-    else  
+            minvw = (minvw > hg->vwgt[i]) ? hg->vwgt[i] : minvw;
+        }
+    else {
+        minvw = 1.0;
         for (i = 0; i < hg->nVtx; i++)
             lweights[part[i]] += 1.0;
+    }
 
     MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
     total_weight = weights[0] + weights[1];
+    zeropw = total_weight * ratio;
+    total_weight = lweights[0] + lweights[1];    
     max_weight[0] = total_weight * bal_tol *      ratio;
     max_weight[1] = total_weight * bal_tol * (1 - ratio);
 
@@ -266,8 +341,8 @@ static int refine_fm2 (
     if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx,  sizeof(int)))
-        || !(adj      = (int*)   ZOLTAN_CALLOC(hg->nVtx,  sizeof(int)))                
-        || !(moves    = (int*)   ZOLTAN_CALLOC(hg->nVtx,  sizeof(int)))
+        || !(adj      = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))                
+        || !(moves    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
         || !(gain     = (float*) ZOLTAN_CALLOC(hg->nVtx,  sizeof(float)))
         || !(lgain    = (float*) ZOLTAN_CALLOC(hg->nVtx,  sizeof(float))) ) {
          Zoltan_Multifree(__FILE__,__LINE__, 7, &pins[0], &lpins[0], &mark, &adj, &moves, &gain, &lgain);
@@ -277,15 +352,19 @@ static int refine_fm2 (
     pins[1] = &(pins[0][hg->nEdge]);
     lpins[1] = &(lpins[0][hg->nEdge]);
 
+    Zoltan_heap_init(zz, &heap[0], hg->nVtx);
+    Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
+
     /* Initial calculation of the pins distribution  */
     for (i = 0; i < hg->nEdge; ++i)
         for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
             ++(lpins[part[hg->hvertex[j]]][i]);
 
     do {
-        int v=1, movecnt=0, neggaincnt=0;
+        int v=1, movecnt=0, neggaincnt=0, from, to;
         int maxneggain = (hgp->fm_max_neg_move < 0) ? hg->nVtx : hgp->fm_max_neg_move;
 
+/*        memset(pins[0], 0, 2*hg->nEdge*sizeof(int));*/
         MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
         best_cutsizeat=0;
         cutsize = 0.0;
@@ -295,8 +374,11 @@ static int refine_fm2 (
         }
         MPI_Allreduce(&cutsize, &best_cutsize, 1, MPI_DOUBLE, MPI_SUM, hgc->col_comm);
         cutsize = best_cutsize;
-        imbalance = MAX (weights[0]-max_weight[0], weights[1]-max_weight[1]);
-    
+        imbalance = fabs(weights[0]-zeropw)/zeropw;
+
+        from = (weights[0] < zeropw) ? 1 : 0;
+        to = 1-from;
+                
 #ifdef _DEBUG
     /* Just for debugging */
         best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
@@ -309,42 +391,46 @@ static int refine_fm2 (
 #endif
         
         for (i = 0; i < hg->nVtx; i++)
-            for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
-                int edge = hg->vedge[j];
-                if (pins[part[i]][edge] == 1)
-                    lgain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                else if (pins[1-part[i]][edge] == 0)
-                    lgain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
-            }
+            if (part[i]==from)  /* compute only the gains of the vertices from 'from' part */
+                for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
+                    int edge = hg->vedge[j];
+                    if (pins[part[i]][edge] == 1)
+                        lgain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    else if (pins[1-part[i]][edge] == 0)
+                        lgain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                }
         /* now sum up all gains on only first row of processors */
         MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, 0, hgc->col_comm);
 
         best_cutsize = cutsize;
         best_imbalance = imbalance;
-        printf("%s: FM PassCnt= %d  Cut=%.2lf  Imbal= %.2lf\n", uMe(hgc), round+1, cutsize, imbalance);
+        printf("%s: FM PassCnt= %d (%d->%d) Cut=%.2lf  Imbal= %.2lf (minvw:%.1lf)\n", uMe(hgc), round, from, to, cutsize, imbalance, minvw);
 
         if (!hgc->myProc_y) { /* those are the lucky ones; each proc in column-group
                                  could have compute the same moves concurrently; but for this
                                  version we'll do in in the root procs and broadcast */
             /* Initialize the heaps and fill them with the gain values */
-            Zoltan_heap_init(zz, &heap[0], hg->nVtx);
-            Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
+            Zoltan_heap_clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
-                Zoltan_heap_input(&heap[part[i]], i, gain[i]);
-            Zoltan_heap_make(&heap[0]);
-            Zoltan_heap_make(&heap[1]);
+                if (part[i]==from)
+                    Zoltan_heap_input(&heap[from], i, gain[i]);
+            Zoltan_heap_make(&heap[from]);
             
-            while ((v>=0) && (neggaincnt < maxneggain)) {
-                int from, to;
+            while ((v>=0) && (neggaincnt < maxneggain) && ((lweights[to]+minvw) <= max_weight[to]) ) {
 
-                v = (*select_func)(heap, weights, max_weight);
-                if (v<0) /* there was nothing to select */
+
+                if (Zoltan_heap_empty(&heap[from])) /* too bad it is empty */
                     break;
-                from = part[v];
-                to = 1-from;
+                v = Zoltan_heap_extract_max(&heap[from]);    
+                
+#ifdef _DEBUG
+                if (from != part[v])
+                    errexit("hooop from=%d part[%d]=%d", from, v, part[v]);
+#endif
 
-                mark[v]++;
-                if (weights[to]+((hg->vwgt)? hg->vwgt[v] : 1.0) > max_weight[to]) {
+
+                ++mark[v];
+                if (lweights[to]+((hg->vwgt)? hg->vwgt[v] : 1.0) > max_weight[to]) {
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d [%4.0lf, %4.0lf] NF\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1]);
                     moves[movecnt++] = -(v+1);
                     continue;
@@ -354,8 +440,8 @@ static int refine_fm2 (
                 ++neggaincnt;
                 cutsize -= gain[v];
 
-                fm2_move_vertex(v, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
-                imbalance = MAX (weights[0]-max_weight[0], weights[1]-max_weight[1]);
+                fm2_move_vertex_oneway(v, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
+                imbalance = fabs(weights[0]-zeropw)/zeropw;
                 if ((cutsize<best_cutsize) || (cutsize==best_cutsize && imbalance < best_imbalance)) {
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d [%4.0lf, %4.0lf] %.1lf <-- Best\n", uMe(hgc), movecnt, v, -gain[v], from, weights[0], weights[1], cutsize); /* after move gain is -oldgain */
                     
@@ -368,12 +454,12 @@ static int refine_fm2 (
                 ++movecnt;
             }
 
-            printf("%s END of Pass bestcut= %.1lf @ %d curcut: %.1lf\n", uMe(hgc), best_cutsize, best_cutsizeat, cutsize); 
+            printf("%s END of Pass %d bestcut= %.1lf @ %d curcut: %.1lf\n", uMe(hgc), round, best_cutsize, best_cutsizeat, cutsize); 
             /* roll back the moves without any improvement */
             for (i=movecnt-1; i>=best_cutsizeat; --i) {
                 int v = moves[i];
                 if (v>0)
-                    fm2_move_vertex(v-1, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
+                    fm2_move_vertex_oneway(v-1, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
             }
             printf("%s Roll back completed!\n", uMe(hgc));
         }
@@ -387,15 +473,43 @@ static int refine_fm2 (
             for (i=0; i<best_cutsizeat; ++i) {
                 int v = moves[i];
                 if (v>0)
-                    fm2_move_vertex(v-1, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
+                    fm2_move_vertex_oneway(v-1, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
             }
         }
+
+#ifdef _DEBUG
+        for (i = 0; i < hg->nEdge; ++i) {
+            int lp[2];
+
+            lp[0] = lp[1] = 0;
+            for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+                ++(lp[part[hg->hvertex[j]]]);
+            if ((lp[0] != lpins[0][i]) || (lp[1] != lpins[1][i]))
+                errexit("for net %d -- lp=[%d, %d] lpins[%d, %d]", i, lp[0], lp[1], lpins[0][i], lpins[1][i]);
+        }
+#endif
+
+        
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
         cont = 0;
         MPI_Allreduce(&best_cutsizeat, &cont, 1, MPI_INT, MPI_LOR, hgc->row_comm);
         printf("%s after allreduce best_cutsizeat=%d,  cont=%d,  round=%d  limit=%d\n", uMe(hgc), best_cutsizeat, cont, round, hgp->fm_loop_limit);
-    } while (cont &&  (round++ < hgp->fm_loop_limit));
 
+#ifdef _DEBUG
+    /* Just for debugging */
+        best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
+        printf("%s: End of Pass %d computed cutsize=%.2lf Real cutsize=%.2lf\n", uMe(hgc), round, cutsize,
+               best_cutsize);
+        if (cutsize<best_cutsize) {
+            errexit("Invalid cut!!!");
+        }
+        /* debuggging code ends here */
+#endif
+        
+    } while (cont &&  (++round < hgp->fm_loop_limit));
+
+    Zoltan_heap_free(&heap[0]);
+    Zoltan_heap_free(&heap[1]);
     Zoltan_Multifree(__FILE__, __LINE__, 7, &pins[0], &lpins[0], &mark, &adj, &moves, &gain, &lgain);
     return ZOLTAN_OK;
 }

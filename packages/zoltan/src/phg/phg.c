@@ -168,7 +168,7 @@ static int Zoltan_PHG_Initialize_Params(
 )
 {
   int ierr;
-  char *yo = "Zoltan_PHG_Initalize_Params";
+  /* UVC: notused: char *yo = "Zoltan_PHG_Initalize_Params"; */
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",     (void*) &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->comm.nProc_x));
@@ -195,7 +195,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->comm.nProc_x = -1;
   hgp->comm.nProc_y = -1;
-  hgp->fm_loop_limit = 2;
+  hgp->fm_loop_limit = 20;
   hgp->fm_max_neg_move = 250;  
 
   /* Get application values of parameters. */
@@ -370,8 +370,6 @@ static int set_proc_distrib(
     char *yo = "set_proc_distrib";
     int tmp;
     int ierr = ZOLTAN_OK;
-    MPI_Group groupall;
-    int n, *ranks;
     
     if (comm->nProc_x == -1 && comm->nProc_y == -1) {
         /* Compute default */

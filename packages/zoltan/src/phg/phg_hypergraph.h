@@ -47,7 +47,7 @@ typedef struct {
   
 typedef struct {
   int info;       /* primarily for debugging recursive algorithms;initially 0 */
-  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct:
+  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct: (set in phg_build)
                      UVCUVC: I've included here because nProc_x, nProc_y was here
                      for convenience.
                    */
