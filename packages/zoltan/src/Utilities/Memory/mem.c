@@ -22,7 +22,6 @@ extern "C" {
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "mpi.h"
 #include "zoltan_mem.h"
 
 #ifdef __STDC__
@@ -37,6 +36,16 @@ static int bytes_max = 0;	/* Largest total of active allocations */
 
 static int nmalloc = 0;         /* number of calls to malloc */
 static int nfree = 0;           /* number of calls to free */
+
+/* Macro to get rank information for printing and error messages. */
+/* If not using MPI, compile with -DZOLTAN_NO_MPI; all messages   */
+/* will print with proc = 0.                                      */
+#ifdef ZOLTAN_NO_MPI
+#define GET_RANK(a) *(a)=0
+#else
+#include "mpi.h"
+#define GET_RANK(a) MPI_Comm_rank(MPI_COMM_WORLD, (a))
+#endif
 
 #define MAX_STRING_LEN 50
 static struct malloc_debug_data {
@@ -277,7 +286,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
   if (n > 0) {
     pntr = (double *) malloc((unsigned) n);
     if (pntr == NULL) {
-      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      GET_RANK(&proc);
       fprintf(stderr, "%s (from %s,%d) No space on proc %d - number of bytes "
               "requested = %d\n", yo, filename, lineno, proc, n);
       return ((double *) NULL);
@@ -287,7 +296,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
   else if (n == 0)
     pntr = NULL;
   else {		/* n < 0 */
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+    GET_RANK(&proc);
     fprintf(stderr, "%s (from %s,%d) ERROR on proc %d: "
 	    "Negative malloc argument. (%d)\n", yo, filename, lineno, proc, n);
     return ((double *) NULL);
@@ -299,7 +308,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
       malloc(sizeof(struct malloc_debug_data));
 
     if (new_ptr == NULL) {
-      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      GET_RANK(&proc);
       fprintf(stderr, "WARNING: No space on proc %d for malloc_debug %d.\n",
 	proc, n);
       return (pntr);
@@ -320,7 +329,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
 
   if (DEBUG_MEMORY > 2) {
     /* Print out details of allocation. */
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+    GET_RANK(&proc);
     fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx, "
       "file=%s, line=%d\n",
       proc, nmalloc, n, (long) pntr, filename, lineno);
@@ -360,7 +369,7 @@ double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
         for (dbptr = top; dbptr != NULL && (void *) (dbptr->ptr) != ptr;
 	   dbptr = dbptr->next);
 	if (dbptr == NULL) {	/* previous allocation not found in list. */
-	   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+           GET_RANK(&proc);
 	   fprintf(stderr, "Proc %d: Memory error: "
 	     "In realloc, address not found in debug list (0x%lx)\n",
 	     proc, (long) ptr);
@@ -376,7 +385,7 @@ double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
       }
 
       if (p == NULL) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+        GET_RANK(&proc);
         fprintf(stderr, "%s (from %s,%d) No space on proc %d - "
 		"number of bytes requested = %d\n",
 		yo, filename, lineno, proc, n);
@@ -416,7 +425,7 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
       prev = &(dbptr->next);
     }
     if (dbptr == NULL) {
-      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      GET_RANK(&proc);
       fprintf(stderr, "Proc %d: Memory error: In free, address (0x%lx) "
 	"not found in debug list. File=%s, line=%d.\n", proc, 
         (long) *ptr, filename, lineno);
@@ -475,16 +484,16 @@ va_decl
 
 /* Print out status of malloc/free calls.  Flag any memory leaks. */
 
-void      Zoltan_Memory_Stats()
+void Zoltan_Memory_Stats()
 {
     struct malloc_debug_data *dbptr;	/* loops through debug list */
     int       proc;		/* processor ID */
 
 
     if (DEBUG_MEMORY == 1) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+        GET_RANK(&proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
-    proc, nmalloc, nfree);
+                         proc, nmalloc, nfree);
         if (nmalloc > nfree)
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
@@ -493,9 +502,10 @@ void      Zoltan_Memory_Stats()
                           "# free > # malloc.\n", proc);
     }
     else if (DEBUG_MEMORY > 1) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, max bytes"
-    " %d, total bytes %d\n", proc, nmalloc, nfree, bytes_max, bytes_used);
+        GET_RANK(&proc);
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
+                        "Max bytes = %d, total bytes = %d\n", 
+                         proc, nmalloc, nfree, bytes_max, bytes_used);
         if (nmalloc > nfree) 
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
@@ -515,20 +525,22 @@ void      Zoltan_Memory_Stats()
 } /* Zoltan_Memory_Stats */
 
 
-/* Return number associated with the most recent malloc call. */
 int       Zoltan_Malloc_Num()
 {
+/* Return number associated with the most recent malloc call. */
   return (nmalloc);
 } /* Zoltan_Malloc_Num */
 
 
 int Zoltan_Memory_Usage (int type)
-   {
+{
+/* Return memory usage information:  total bytes used currently or  *
+ * maximum bytes used at any point.  Default is maximum bytes used. */
    if (type == ZOLTAN_MEM_STAT_TOTAL)
       return bytes_used ;
 
    return bytes_max ;
-   }
+}
 
 /*****************************************************************************/
 /*                      END of mem.c                                         */
