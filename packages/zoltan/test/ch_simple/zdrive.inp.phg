@@ -1,9 +1,11 @@
 Decomposition Method    = phg
-Zoltan Parameters      = phg_nproc_x=1
+Zoltan Parameters	= phg_proc_split=1
+Zoltan Parameters	= PHG_OUTPUT_LEVEL=1
+# Zoltan Parameters      = phg_nproc_x=1
 #Zoltan Parameters      = debug_memory=2
-Zoltan Parameters       = num_global_partitions=2
-Zoltan Parameters       = phg_refinement=no
-Zoltan Parameters       = phg_reduction_method=no
-Zoltan Parameters       = phg_coarse_partitioning=gr1
+Zoltan Parameters       = num_global_partitions=4
+#Zoltan Parameters       = phg_refinement=no
+#Zoltan Parameters       = phg_reduction_method=no
+#Zoltan Parameters       = phg_coarse_partitioning=gr1
 File Type               = hypergraph
 File Name               = simple

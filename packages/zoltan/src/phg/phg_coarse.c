@@ -475,8 +475,8 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
   Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) hlsize, sizeof(int), (char *) ip);
-  /* now ewgt sizes */
-  Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) c_hg->ewgt, sizeof(int), (char *) c_ewgt);
+  /* now ewgt  */
+  Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) c_hg->ewgt, c_hg->EdgeWeightDim*sizeof(float), (char *) c_ewgt);
 
   /* now vertices of hyperedges */
   Zoltan_Comm_Resize(plan, hlsize, PLAN_TAG+13, &idx);
@@ -738,7 +738,8 @@ int Zoltan_PHG_Coarsening
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
   }
-  if (hg->nVtx>0 && !(c_vindex = (int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))){
+  /* UVC: bug fix we need to allocate at least size of 1; removed nVtx check */
+  if (!(c_vindex = (int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
