@@ -540,6 +540,9 @@ AC_CONFIG_FILES([
                 test/Makefile
                 test/MultiLevelPreconditioner_NonSym/Makefile
 		test/MultiLevelPreconditioner_Sym/Makefile
+		test/VerySimple/Makefile
+		test/AztecSimple/Makefile
+		test/MultiLevelPreconditioner_Maxwell/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
