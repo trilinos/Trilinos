@@ -184,6 +184,31 @@ int AztecOO::SetAztecDefaults() {
 }
 
 //=============================================================================
+int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
+
+  inConstructor_ = true;  // Shut down complaints about zero pointers for a while
+                          //  Although this routine is not a constructor, we treat it like one
+
+  // Try to cast operator to matrix 
+  Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
+  if (UserMatrix!=0) 
+    SetUserMatrix(UserMatrix);
+  else
+    SetUserOperator(prob.GetOperator());
+  
+  SetLHS(prob.GetLHS());
+  SetRHS(prob.GetRHS());
+
+  SetProblemOptions(prob.GetPDL(), prob.IsOperatorSymmetric());
+
+  inConstructor_ = false;  // Turn back on
+
+  return(0);
+
+}
+
+
+//=============================================================================
 int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
 
   if (UserOperator == 0 && inConstructor_ == true) return(0);

@@ -122,6 +122,15 @@ class AztecOO {
   
   //@{ \name Post-construction setup methods.
 
+  //! AztecOO Epetra_LinearProblem Set
+  /*! Associates an already defined Epetra_LinearProblem as the problem that will be solved during
+      iterations.  This method allows the user to change which problem is being solved by an existing
+      AztecOO object.
+      \warning If a preconditioner has been pre-built and associated with this AztecOO object, the 
+      Epetra_LinearProblem being passed in to this method \e must have compatible domain and range maps.
+   */
+  int SetProblem(const Epetra_LinearProblem& prob);
+
   //! AztecOO User Operator Set
   /*! Associates an already defined Epetra_Operator as the linear operator for the linear system
       system that will be solved during
