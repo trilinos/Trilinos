@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX PYTHON_CSPEC PYTHON_LSPEC BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir EPETRA_BUILD_DIRECTORY LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX PYTHON_CSPEC PYTHON_LSPEC BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE WITH_SWIG HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir EPETRA_BUILD_DIRECTORY LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -941,7 +941,8 @@ Optional Packages:
   --with-rtop             Enable RTOp interface support (default is no)
   --with-python[=PYTHON]
                           absolute path name of Python executable
-  --with-swig             enable swig and set swig binary
+  --with-swig[=SWIG]
+                          enable swig and set swig binary
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -3834,7 +3835,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3837:" \
+echo "$as_me:3838:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7799,6 +7800,13 @@ echo "$as_me: error: failed to find required module Numeric" >&2;}
 		fi
 	fi
 
+
+  # If user specifies prefix, use it for the PYTHON_PREFIX
+  if test $prefix != $ac_default_prefix; then
+    PYTHON_PREFIX=$prefix
+    PYTHON_EXECPREFIX=$exec_prefix
+  fi
+
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -7819,6 +7827,7 @@ fi
 # Configure swig
 # ------------------------------------------------------------------------
 
+# Check for --with-swig[=path]
 
 # Check whether --with-swig or --without-swig was given.
 if test "${with_swig+set}" = set; then
@@ -7827,9 +7836,48 @@ if test "${with_swig+set}" = set; then
 	     if test X${withval} != Xyes ; then
 	     	SWIG=$withval
 	     fi
-else
-  WITH_SWIG=no
 fi;
+
+# If --with-swig not present, check for swig in standard path
+if test X${WITH_SWIG} != Xyes; then
+  # Extract the first word of "swig", so it can be a program name with args.
+set dummy swig; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_WITH_SWIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$WITH_SWIG"; then
+  ac_cv_prog_WITH_SWIG="$WITH_SWIG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_WITH_SWIG="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_WITH_SWIG" && ac_cv_prog_WITH_SWIG="no"
+fi
+fi
+WITH_SWIG=$ac_cv_prog_WITH_SWIG
+if test -n "$WITH_SWIG"; then
+  echo "$as_me:$LINENO: result: $WITH_SWIG" >&5
+echo "${ECHO_T}$WITH_SWIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+fi
+
 echo "$as_me:$LINENO: checking whether we should enable swig support" >&5
 echo $ECHO_N "checking whether we should enable swig support... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: ${WITH_SWIG}" >&5
@@ -8075,7 +8123,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8078: \"$ac_link\") >&5
+(eval echo $as_me:8126: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8153,7 +8201,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8156: \"$ac_link\") >&5
+(eval echo $as_me:8204: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11028,7 +11076,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11031: \"$ac_link\") >&5
+(eval echo $as_me:11079: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11106,7 +11154,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11109: \"$ac_link\") >&5
+(eval echo $as_me:11157: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12252,6 +12300,7 @@ s,@PYTHON_CSPEC@,$PYTHON_CSPEC,;t t
 s,@PYTHON_LSPEC@,$PYTHON_LSPEC,;t t
 s,@BUILD_PYTHON_TRUE@,$BUILD_PYTHON_TRUE,;t t
 s,@BUILD_PYTHON_FALSE@,$BUILD_PYTHON_FALSE,;t t
+s,@WITH_SWIG@,$WITH_SWIG,;t t
 s,@HAVE_SWIG_TRUE@,$HAVE_SWIG_TRUE,;t t
 s,@HAVE_SWIG_FALSE@,$HAVE_SWIG_FALSE,;t t
 s,@GNU_HAVE_SWIG@,$GNU_HAVE_SWIG,;t t

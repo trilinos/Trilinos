@@ -223,6 +223,7 @@ TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -468,14 +469,14 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
 	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)',"      >> $@
+	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
 	@echo "}"                                   >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
-	$(PYTHON) $(srcdir)/setup.py install
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
 clean:
 	$(PYTHON) $(srcdir)/setup.py clean

@@ -57,14 +57,14 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
 	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
-	@echo "  'PYTHON'      : '$(PYTHON)',"      >> $@
+	@echo "  'PYTHON'      : '$(PYTHON)'"       >> $@
 	@echo "}"                                   >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
-	$(PYTHON) $(srcdir)/setup.py install
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
 clean:
 	$(PYTHON) $(srcdir)/setup.py clean

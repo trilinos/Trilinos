@@ -290,6 +290,13 @@ if test -n "$PYTHON"; then
 
   # Check for Numeric
   AC_PYTHON_MODULE(Numeric,yes)
+
+  # If user specifies prefix, use it for the PYTHON_PREFIX
+  if test $prefix != $ac_default_prefix; then
+    PYTHON_PREFIX=$prefix
+    PYTHON_EXECPREFIX=$exec_prefix
+  fi
+
 else
   AC_MSG_RESULT(no)
   BUILD_PYTHON=no
@@ -300,13 +307,19 @@ fi
 # Configure swig
 # ------------------------------------------------------------------------
 
+# Check for --with-swig[=path]
 AC_ARG_WITH(swig,
-	    [AC_HELP_STRING([--with-swig],[enable swig and set swig binary])],
+	    [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],[enable swig and set swig binary])],
 	    [WITH_SWIG=yes
 	     if test X${withval} != Xyes ; then
 	     	SWIG=$withval
-	     fi],
-            [WITH_SWIG=no])
+	     fi])
+
+# If --with-swig not present, check for swig in standard path
+if test X${WITH_SWIG} != Xyes; then
+  AC_CHECK_PROG(WITH_SWIG,swig,yes,no)
+fi
+
 AC_MSG_CHECKING(whether we should enable swig support)
 AC_MSG_RESULT([${WITH_SWIG}])
 AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
