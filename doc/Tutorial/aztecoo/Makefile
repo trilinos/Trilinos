@@ -29,9 +29,18 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
 
+# you may need to modify the content of variable AZTECOO_LIBS if AztecOO has
+# been compiled with support for Y12M, In this case specify the
+# location of the library with -L and the library name with -l.
+# For example, you may need something like
+# AZTECOO_LIBS = -L/home/msala/lib/LINUX_MPI -ly12m
+# If AztecOO has been configured without Y12M, leave the 
+# following line as it is.
+AZTECOO_LIBS = 
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
-	-laztecoo -ltriutils -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	-laztecoo -ltriutils -lepetra $(AZTECOO_LIBS) \
+	$(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 all: ex1 ex2
 
