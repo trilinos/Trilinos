@@ -35,16 +35,14 @@ char *val)			/* value of variable */
     int status;
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
-    int debug_memory;
     PARAM_VARS malloc_params[] = {
-	{ "DEBUG_MEMORY", &debug_memory, "INT" },
+	{ "DEBUG_MEMORY", NULL, "INT" },
 	{ NULL, NULL, NULL }
     };
 
     status = LB_Check_Param(name, val, malloc_params, &result, &index);
     if (status == 0 && index == 0) {
-	debug_memory = result.ival;
-	LB_Set_Memory_Debug(debug_memory);
+	LB_Set_Memory_Debug(result.ival);
 	status = 3;
     }
 
