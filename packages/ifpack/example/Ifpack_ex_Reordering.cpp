@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+#ifdef HAVE_IFPACK_TEUCHOS
+
   // only one process
   if (Comm.NumProc() != 1)
     exit(EXIT_FAILURE);
@@ -107,6 +109,10 @@ int main(int argc, char *argv[])
 
   // print the sparsity to file, postscript format
   Ifpack_PrintSparsity(ReordA,"ReordA", "reord.ps");
+
+#else
+  puts("Please configure ifpack with --enable-teuchos to run this example");
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 
