@@ -33,8 +33,6 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_LAPACK_WRAPPERS_H
 
 #include "Epetra_ConfigDefs.h"
-#include <stdio.h>
-#include <string.h>
 
 #if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
 
@@ -67,6 +65,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DORMHR_F77  F77_FUNC(sormhr,SORMHR)
 #define DTREVC_F77  F77_FUNC(strevc,STREVC)
 #define DTREXC_F77  F77_FUNC(strexc,STREXC)
+#define DGELSS_F77  F77_FUNC(sgelss,SGELSS)
+#define DSTEV_F77   F77_FUNC(sstev,SSTEV)
+#define DGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
 
 #endif
 #if defined(INTEL_CXML)
@@ -93,6 +94,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
+#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
+#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
+#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 
 #endif
 #if defined(INTEL_MKL)
@@ -119,6 +123,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
+#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
+#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
+#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 
 #endif
 
@@ -168,7 +175,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
-
+#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
+#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
+#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 
 #endif
 
@@ -179,6 +188,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DGESV_F77   F77_FUNC(dgesv,DGESV)
 #define DGEEQU_F77  F77_FUNC(dgeequ,DGEEQU)
 #define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
+#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
+#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
+#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
@@ -206,6 +218,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define STREVC_F77  F77_FUNC(strevc,STREVC)
 #define STREXC_F77  F77_FUNC(strexc,STREXC)
 #define SLAMCH_F77  F77_FUNC(slamch,SLAMCH)
+#define SGELSS_F77  F77_FUNC(sgelss,SGELSS)
+#define SSTEV_F77   F77_FUNC(sstev,SSTEV)
+#define SGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
 
 #define DLASWP_F77  F77_FUNC(dlaswp,DLASWP)
 #define DLAIC1_F77  F77_FUNC(dlaic1,DLAIC1)
@@ -266,6 +281,15 @@ void PREFIX DPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, double * a,
                        double * rcond, double * ferr, double * berr, double * work, 
                        int * iwork, int * info);
 
+void PREFIX DGELSS_F77(int * m, int * n, int * nrhs, double * a, 
+				   int * lda, double * b, int * ldb, double * s,
+				   double * rcond, int * rank, double * work,
+				   int * lwork, int * info); 
+
+void PREFIX DGEQPF_F77(int * m, int * n, double * a,
+				   int * lda, int * jpvt, double * tau,
+				   double * work, int * info);
+
   /* Single precision LAPACK linear solvers*/
 void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
 void PREFIX SGETRS_F77(Epetra_fcd, int* n, int* nrhs, float* a,
@@ -317,6 +341,15 @@ void PREFIX SPOSVX_F77(Epetra_fcd, Epetra_fcd, int * n, int * nrhs, float * a,
                        float * rcond, float * ferr, float * berr, float * work, 
                        int * iwork, int * info);
 
+void PREFIX SGELSS_F77(int * m, int * n, int * nrhs, float * a,
+                       int * lda, float * b, int * ldb, float * s,
+                       float * rcond, int * rank, float * work,
+                       int * lwork, int * info);
+
+void PREFIX SGEQPF_F77(int * m, int * n, float * a,
+                       int * lda, int * jpvt, float * tau,
+                       float * work, int * info);
+
   /* Double precision LAPACK eigen solvers*/
 void PREFIX DGELS_F77(Epetra_fcd ch, int*, int*, int*,
                        double*, int*, double*, int*, double*, int*, int*);
@@ -346,6 +379,10 @@ void PREFIX DTREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, double * t
 
 void PREFIX DTREXC_F77(Epetra_fcd, int * n, double * t, int * ldt, double * q,
                         int * ldq, int * ifst, int * ilst, double * work, int * info);
+
+void PREFIX DSTEV_F77(Epetra_fcd jobz, int * n, double * d,
+                      double * e, double * z, int * ldz,
+                      double * work, int * info);
 
 double PREFIX DLAMCH_F77(Epetra_fcd);
 
@@ -379,6 +416,10 @@ void PREFIX STREVC_F77(Epetra_fcd, Epetra_fcd, int * select, int * n, float * t,
 
 void  PREFIX STREXC_F77(Epetra_fcd, int * n, float * t, int * ldt, float * q,
                         int * ldq, int * ifst, int * ilst, float * work, int * info);
+
+void PREFIX SSTEV_F77(Epetra_fcd jobz, int * n, float * d,
+                      float * e, float * z, int * ldz,
+                      float * work, int * info);
 
 float  PREFIX SLAMCH_F77(Epetra_fcd);
 
