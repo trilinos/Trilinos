@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     DistributedMatrix MatA(FineSpace, FineSpace);
 
-    // assembel the matrix on processor 0 only
+    // assemble the matrix on processor 0 only
     if (GetMyPID() == 0) {
       for (int i = 0 ; i < NX ; ++i) {
         MatA.SetElement(2*i, 2*i, 2.0);
@@ -101,16 +101,18 @@ int main(int argc, char *argv[])
 #endif
 
     Teuchos::ParameterList List;
-    List.set("PDE equations", 2);
-    List.set("max levels", 10); 
     List.set("smoother: type", "symmetric Gauss-Seidel");
     List.set("smoother: sweeps", 10);
     List.set("smoother: damping factor", 1.0);
     List.set("coarse: type", "Amesos-KLU");
-    List.get("coarse: max size", 32);
+    List.set("coarse: max size", 32);
+    List.set("adapt: max reduction", 0.1);
+    List.get("adapt: iters fine", 15);
+    List.get("adapt: iters coarse", 5);
 
-    // create the multilevel preconditioner
-    MultiLevelAdaptiveSA Prec(A, List);
+    int NumPDEEqns = 2;
+    int MaxLevels  = 10;
+    MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
 
     // =============================================================== //
     // setup the hierarchy:                                            //
@@ -160,7 +162,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("The ML API requires the following configurataion options:");
+  puts("The ML API requires the following configuration options:");
   puts("\t--enable-epetra");
   puts("\t--enable-teuchos");
   puts("\t--enable-ifpack");
