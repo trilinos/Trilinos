@@ -14,7 +14,9 @@ if( !(defined(@ARGV) && scalar(@ARGV)==1) ) {
   die "Error, this script takes one and only one argument for the build makefile.!\n";
 }
 
-# Takes just one options and that is the directory where Trilinos is built
+# Takes just one option and that is the makefile to grab options macros from.
+# Note, this may be any appropriate makefile for which the following macros
+# are defined (not just Teuchos).
 my $teuchos_makefile = shift;
 
 my $cmnd =
