@@ -63,7 +63,8 @@ DIST_H =
 DIST = 
 
 COMP_H = \
-	$(srcdir)/BelosBlockCG.hpp 
+	$(srcdir)/BelosBlockCG.hpp \
+	$(srcdir)/BelosBlockGmres.hpp
 
 COMP = 
 

@@ -135,4 +135,4 @@ lib_LIBRARIES = $(BELOSTEST_LIB)
 
 MAINTAINERCLEANFILES = Makefile.in 
 
-SUBDIRS = . BlockCG
+SUBDIRS = . BlockCG BlockGmres

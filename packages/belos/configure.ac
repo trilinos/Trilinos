@@ -264,15 +264,13 @@ AC_SUBST(ac_aux_dir)
 # Output files
 # ------------------------------------------------------------------------
 ##
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  New package comes only with src and example.
-#  You will need to change AC_CONFIG_FILES below and Makefile.am
-#  to add a new directory.
+
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
+		test/BlockGmres/Makefile
 		])
 
 AC_OUTPUT()

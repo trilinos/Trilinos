@@ -18,9 +18,10 @@ bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/test -I$(top_srcdir)/src \
 		-I$(top_builddir)/../triutils/src
 
 bl_pgmres_hb_LDADD = $(top_builddir)/test/libBelosTest.a \
-		$(top_builddir)/../epetra/src/libepetra.a \
 		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../ifpack/src/libifpack.a $(LAPACK_LIBS) \
+		$(top_builddir)/../ifpack/src/libifpack.a \
+		$(top_builddir)/../epetra/src/libepetra.a \
+		$(LAPACK_LIBS) \
 		$(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 
