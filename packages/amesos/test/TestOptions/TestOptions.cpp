@@ -2,6 +2,9 @@
 //  To run this under valgrind, try:
 //  valgrind --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
+//  test/scripts/daily/serial/TestMemoryLeaks[.exe] performs an automated test for memory leaks
+//  using valgrind and this code.
+//
 //
 
 //  TestOptions tests all options for each Amesos Class on a limited number 
