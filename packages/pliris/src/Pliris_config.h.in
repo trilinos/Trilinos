@@ -69,6 +69,9 @@
 /* define if the compiler supports Standard Template Library */
 #undef HAVE_STL
 
+/* Define to 1 if you have the <string> header file. */
+#undef HAVE_STRING
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 

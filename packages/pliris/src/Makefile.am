@@ -189,7 +189,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 # Pliris library specifications
 # ------------------------------------------------------------------------
 
-PLIRIS_LIBS = libdlu.a libslu.a libzlu.a libclu.a
+PLIRIS_LIBS = libdpliris.a libspliris.a libzpliris.a libcpliris.a
 
 PLIRIS_H = \
 	$(CORE_H) \
@@ -200,7 +200,7 @@ PLIRIS_H = \
 	$(MPI_H) \
         $(MPI_EPETRA_H)
 
-libdlu_a_SOURCES = \
+libdpliris_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(SERIAL) \
@@ -209,7 +209,7 @@ libdlu_a_SOURCES = \
 	$(MPI) \
         $(MPI_EPETRA)
 
-libslu_a_SOURCES = \
+libspliris_a_SOURCES = \
         $(CORE) \
         $(UTIL) \
         $(SERIAL) \
@@ -217,7 +217,7 @@ libslu_a_SOURCES = \
         $(COMP) \
         $(MPI)
 
-libzlu_a_SOURCES = \
+libzpliris_a_SOURCES = \
         $(CORE) \
         $(UTIL) \
         $(SERIAL) \
@@ -225,7 +225,7 @@ libzlu_a_SOURCES = \
         $(COMP) \
         $(MPI)
 
-libclu_a_SOURCES = \
+libcpliris_a_SOURCES = \
         $(CORE) \
         $(UTIL) \
         $(SERIAL) \
@@ -235,7 +235,7 @@ libclu_a_SOURCES = \
 
 #We only need to list files under the "EXTRA" heading once to
 #make sure the files are included in the distribution tarball.
-EXTRA_libdlu_a_SOURCES = \
+EXTRA_libdpliris_a_SOURCES = \
 	$(EXTRA_CORE) \
 	$(EXTRA_CORE_H) \
 	$(EXTRA_UTIL) \
@@ -243,21 +243,21 @@ EXTRA_libdlu_a_SOURCES = \
 	$(EXTRA_EPETRA_COMPAT) \
 	$(EXTRA_EPETRA_COMPAT_H)
 
-#libdlu_a_AM_CFLAGS =-DDREAL
-libdlu_a_CFLAGS =-DDREAL
-libdlu_a_CXXFLAGS =-DDREAL
+#libdpliris_a_AM_CFLAGS =-DDREAL
+libdpliris_a_CFLAGS =-DDREAL
+libdpliris_a_CXXFLAGS =-DDREAL
 
-#libslu_a_AM_CFLAGS =-DSREAL
-libslu_a_CFLAGS =-DSREAL
-libslu_a_CXXFLAGS =-DSREAL
+#libspliris_a_AM_CFLAGS =-DSREAL
+libspliris_a_CFLAGS =-DSREAL
+libspliris_a_CXXFLAGS =-DSREAL
 
-#libclu_a_AM_CFLAGS =-DSCPLX
-libclu_a_CFLAGS =-DSCPLX
-libclu_a_CXXFLAGS =-DSCPLX
+#libcpliris_a_AM_CFLAGS =-DSCPLX
+libcpliris_a_CFLAGS =-DSCPLX
+libcpliris_a_CXXFLAGS =-DSCPLX
 
-#libzlu_a_AM_CFLAGS =-DZCPLX
-libzlu_a_CFLAGS =-DZCPLX
-libzlu_a_CXXFLAGS =-DZCPLX
+#libzpliris_a_AM_CFLAGS =-DZCPLX
+libzpliris_a_CFLAGS =-DZCPLX
+libzpliris_a_CXXFLAGS =-DZCPLX
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -272,18 +272,18 @@ libzlu_a_CXXFLAGS =-DZCPLX
 if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-libdlu_a_AR = $(ALTERNATE_AR)
-libslu_a_AR = $(ALTERNATE_AR)
-libclu_a_AR = $(ALTERNATE_AR)
-libzlu_a_AR = $(ALTERNATE_AR)
+libdpliris_a_AR = $(ALTERNATE_AR)
+libspliris_a_AR = $(ALTERNATE_AR)
+libcpliris_a_AR = $(ALTERNATE_AR)
+libzpliris_a_AR = $(ALTERNATE_AR)
 
 else
 
 #np# replace new_package with the name of the package being autotool'ed here
-libdlu_a_AR = $(AR) cru
-libslu_a_AR = $(AR) cru
-libclu_a_AR = $(AR) cru
-libzlu_a_AR = $(AR) cru
+libdpliris_a_AR = $(AR) cru
+libspliris_a_AR = $(AR) cru
+libcpliris_a_AR = $(AR) cru
+libzpliris_a_AR = $(AR) cru
 
 endif
 
@@ -293,10 +293,10 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libdlu_a_LIBADD = $(XTRALDADD)
-libslu_a_LIBADD = $(XTRALDADD)
-libclu_a_LIBADD = $(XTRALDADD)
-libzlu_a_LIBADD = $(XTRALDADD)
+libdpliris_a_LIBADD = $(XTRALDADD)
+libspliris_a_LIBADD = $(XTRALDADD)
+libcpliris_a_LIBADD = $(XTRALDADD)
+libzpliris_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
