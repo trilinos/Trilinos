@@ -17,6 +17,12 @@
 #include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
 
+// Headers needed for Coloring
+#ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
+#include "EDT_CrsGraph_MapColoring.h"
+#include "EDT_CrsGraph_MapColoringIndex.h"
+#endif
+
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
@@ -72,10 +78,33 @@ void Problem_Manager::registerComplete()
   {
     Interfaces.push_back(new Problem_Interface(**iter));
 
+    // Use this for analytic Matrix Fills
+//    Groups.push_back(new NOX::Epetra::Group(nlParams->sublist("Printing"),
+//      nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
+//      *Interfaces.back(), (*iter)->getSolution(), (*iter)->getJacobian()));
+
+    // OR use this to fill matrices using Finite-Differences with Coloring
+#ifdef HAVE_NOX_EPETRAEXT
+    bool verbose = false;
+    TmpMapColorings.push_back(new EpetraExt::CrsGraph_MapColoring(verbose));
+    ColorMaps.push_back(&((*TmpMapColorings.back())((*iter)->getGraph())));
+    ColorMapIndexSets.push_back(new 
+      EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.back()));
+    ColumnsSets.push_back(&(*ColorMapIndexSets.back())((*iter)->getGraph()));
+#else
+    if(MyPID==0)
+      cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+    exit(0);
+#endif
+    MatrixOperators.push_back(new
+      NOX::Epetra::FiniteDifferenceColoring(*Interfaces.back(), 
+        (*iter)->getSolution(), (*iter)->getGraph(), *ColorMaps.back(), 
+        *ColumnsSets.back()));
+
     Groups.push_back(new NOX::Epetra::Group(nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-      *Interfaces.back(), (*iter)->getSolution(), (*iter)->getJacobian()));
-    Groups.back()->computeF();
+      *Interfaces.back(), (*iter)->getSolution(), *MatrixOperators.back()));
+    Groups.back()->computeF(); // Needed to establish convergence state
    
     Solvers.push_back(new NOX::Solver::Manager(*Groups.back(), *statusTest,
                                                *nlParams));
@@ -254,9 +283,44 @@ bool Problem_Manager::solveMF()
   for (int i=0; i<problemB.getSolution().MyLength(); i++)
     compositeSoln[i+solnAlength] = problemB.getSolution()[i];
 
+  // Set up a problem interface for the Problem Manager
+  Problem_Interface interface(*this);
+
   // Now create a composite matrix graph needed for preconditioning
   AA = new Epetra_CrsGraph(Copy, compositeMap, 0);
   generateGraph();
+
+/* --------------  Block for Coloring Preconditioner Operator ------
+
+  // NOT YET WORKING
+  // This needs more work to deal with the parallel-use coloring capability.
+
+  // We now attempt to use Coloring on the global preconditioning matrix
+  // Create the Epetra_RowMatrix using Finite Difference with Coloring
+#ifdef HAVE_NOX_EPETRAEXT
+  bool verbose = false;
+  EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose );
+  Epetra_MapColoring* colorMap = &tmpMapColoring(*AA);
+  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+  vector<Epetra_IntVector>* columns = &colorMapIndex(*AA);
+#else
+  if(MyPID==0)
+    cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+  exit(0);
+#endif
+
+  // Use this constructor to create the graph numerically as a means of timing
+  // the old way of looping without colors :
+  //  NOX::Epetra::FiniteDifferenceColoring A(interface, soln,
+  //                                          *colorMap, *columns);
+  // Or use this as the standard way of using finite differencing with coloring
+  // where the application is responsible for creating the matrix graph
+  // beforehand, ie as is done in Problem.
+  NOX::Epetra::FiniteDifferenceColoring* A = 
+    new NOX::Epetra::FiniteDifferenceColoring(interface, compositeSoln, *AA,
+                                              *colorMap, *columns);
+// --------  End of Block for Coloring Preconditioner Operator ------ */
+
 
   // Create a preconditioning matrix using the graph just created - this 
   // creates a static graph so we can refill the new matirx after
@@ -264,17 +328,15 @@ bool Problem_Manager::solveMF()
   A = new Epetra_CrsMatrix(Copy, *AA); 
   A->TransformToLocal();
 
-  Problem_Interface interface(*this);
-
+  // Create the Matrix-Free Jacobian Operator
   NOX::Epetra::MatrixFree Jac(interface, compositeSoln);
-  Epetra_CrsMatrix& Prec = *A;
 
   NOX::Parameter::List& lsParams = 
     nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
-//  lsParams.setParameter("Preconditioning", "None");
+  //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix");
   NOX::Epetra::Group grp(nlParams->sublist("Printing"), lsParams,
-    interface, compositeSoln, Jac, Prec);
+    interface, compositeSoln, Jac, *A);
   grp.computeF();
 
   NOX::Solver::Manager solver(grp, *statusTest, *nlParams);
@@ -354,9 +416,56 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
     Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
                     &graphB = (*Problems[1]).getGraph();
 
-    Epetra_CrsMatrix &matrixA = (*Problems[0]).getJacobian(),
-                     &matrixB = (*Problems[1]).getJacobian();
-  
+    Epetra_CrsMatrix *matrixAPtr,
+                     *matrixBPtr;
+
+    // Use each group's operator test to determine the type of Jacobian
+    // operator being used by each.
+    NOX::Epetra::Group::OperatorType opTypeA = grpA.getOperatorType(
+                                     grpA.getSharedJacobian().getOperator());
+    NOX::Epetra::Group::OperatorType opTypeB = grpB.getOperatorType(
+                                     grpB.getSharedJacobian().getOperator());
+
+    if (opTypeA == NOX::Epetra::Group::NoxFiniteDifferenceRowMatrix )
+      matrixAPtr = const_cast<Epetra_CrsMatrix*>(
+        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
+        (grpA.getSharedJacobian().getOperator()).getUnderlyingMatrix());
+    else if (opTypeA == NOX::Epetra::Group::EpetraRowMatrix )
+      // NOTE: We are getting the matrix from the problem.  This SHOULD be
+      // the same matrix wrapped in the group.  A safer alternative would be
+      // to get this matrix from the group as above for a more general 
+      // operator.
+      matrixAPtr = &(*Problems[0]).getJacobian();
+    else
+    {
+      if (MyPID==0)
+        cout << "Jacobian operator for Problem A not supported for "
+             << "preconditioning Matrix-Free coupling solver." << endl;
+      exit(0);
+    }
+
+    if (opTypeB == NOX::Epetra::Group::NoxFiniteDifferenceRowMatrix )
+      matrixBPtr = const_cast<Epetra_CrsMatrix*>(
+        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
+        (grpB.getSharedJacobian().getOperator()).getUnderlyingMatrix());
+    else if (opTypeB == NOX::Epetra::Group::EpetraRowMatrix )
+      // NOTE: We are getting the matrix from the problem.  This SHOULD be
+      // the same matrix wrapped in the group.  A safer alternative would be
+      // to get this matrix from the group as above for a more general 
+      // operator.
+      matrixBPtr = &(*Problems[1]).getJacobian();
+    else
+    {
+      if (MyPID==0)
+        cout << "Jacobian operator for Problem B not supported for "
+             << "preconditioning Matrix-Free coupling solver." << endl;
+      exit(0);
+    }
+
+    // Create convenient references for each Jacobian operator
+    Epetra_CrsMatrix &matrixA = *matrixAPtr,
+                     &matrixB = *matrixBPtr;
+
     int maxAllAGID = matrixA.Map().MaxAllGID();
     int* indices = new int[maxAllAGID];
     double* values = new double[maxAllAGID];

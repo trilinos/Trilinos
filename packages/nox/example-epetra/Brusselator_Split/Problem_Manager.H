@@ -7,6 +7,11 @@
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
 
+#ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
+#include "EDT_CrsGraph_MapColoring.h"
+#include "EDT_CrsGraph_MapColoringIndex.h"
+#endif  
+
 //Forward declarations
 //class GenericEpetraProblem;
 
@@ -65,6 +70,14 @@ private:
 
   NOX::Parameter::List* nlParams;          // NLSolver parameter list
   NOX::StatusTest::Combo* statusTest;      // Convergence criterion (ia)
+
+  // Additional containers to allow each problem to use FD Coloring
+  vector<EpetraExt::CrsGraph_MapColoring*> TmpMapColorings;
+  vector<Epetra_MapColoring*> ColorMaps;
+  vector<EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
+  vector<vector<Epetra_IntVector>*> ColumnsSets;
+  vector<Epetra_Operator*> MatrixOperators;
+
 
 };
 #endif
