@@ -8189,7 +8189,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockMap/Makefile test/CrsGraph/Makefile test/CrsMatrix/Makefile test/CrsRectMatrix/Makefile test/ImportExport/Makefile test/Map/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile test/Comm/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockMap/Makefile test/CrsGraph/Makefile test/CrsMatrix/Makefile test/CrsRectMatrix/Makefile test/ImportExport/Makefile test/Map/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile test/Comm/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8693,6 +8693,13 @@ do
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/petra_power_method/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/petra_power_method/Makefile" ;;
   "example/verySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
+  "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
+  "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
+  "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
+  "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
+  "test/scripts/weekly/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/Makefile" ;;
+  "test/scripts/weekly/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/mpi/Makefile" ;;
+  "test/scripts/weekly/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/serial/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/Epetra_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Epetra_config.h:src/Epetra_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

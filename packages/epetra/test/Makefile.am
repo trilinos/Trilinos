@@ -3,4 +3,4 @@
 
 SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix ImportExport \
 Map MultiVector Object SerialDense SerialSpdDense \
-VbrMatrix Vector Comm
+VbrMatrix Vector Comm scripts

@@ -325,6 +325,13 @@ AC_CONFIG_FILES([
 		example/Makefile 
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/mpi/Makefile
+		test/scripts/daily/serial/Makefile
+		test/scripts/weekly/Makefile
+		test/scripts/weekly/mpi/Makefile
+		test/scripts/weekly/serial/Makefile
 		])
 
 AC_OUTPUT()
