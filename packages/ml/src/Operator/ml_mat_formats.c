@@ -1201,7 +1201,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
-       /* rrsst       if (val_ptr[k] != 0.0) */
+       if (val_ptr[k] != 0.0)
          sum  +=  p2[bindx[k]];
      }
 
@@ -1287,7 +1287,7 @@ int sCSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doubl
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
-       /* rrsst       if (val_ptr[k] != 0.0) */
+       if (val_ptr[k] != 0.0)
          sum  +=  p2[bindx[k]];
      }
 
