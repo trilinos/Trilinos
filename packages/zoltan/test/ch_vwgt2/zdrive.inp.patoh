@@ -2,7 +2,7 @@ Decomposition Method 	= patoh
 Zoltan Parameters	= remap=0
 Zoltan Parameters	= obj_weight_dim=2
 #Zoltan Parameters	= debug_level=10
-Zoltan Parameters	= num_global_partitions=3
+Zoltan Parameters	= num_global_partitions=4
 File Type		= hypergraph
 File Name		= vwgt2
 Parallel Disk Info	= number=0
