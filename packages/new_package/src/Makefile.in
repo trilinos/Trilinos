@@ -137,7 +137,8 @@ SOURCES = $(libnew_package_a_SOURCES) \
 DIST_SOURCES = $(am__libnew_package_a_SOURCES_DIST) \
 	$(EXTRA_libnew_package_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Newp_Hello.h \
-	$(srcdir)/Newp_Jambo.h
+	$(srcdir)/New_Package_ConfigDefs.h \
+	$(srcdir)/New_Package_Version.h $(srcdir)/Newp_Jambo.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -265,12 +266,15 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Newp_Hello.h 
+	$(srcdir)/Newp_Hello.h \
+	$(srcdir)/New_Package_ConfigDefs.h
 
 CORE = \
 	$(srcdir)/Newp_Hello.cpp
 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/New_Package_Version.h
+
 UTIL = 
 ENUM_H = 
 UNIPROC_H = 

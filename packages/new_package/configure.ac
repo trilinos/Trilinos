@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(new_package, 0.0, YourName@sandia.gov)
+AC_INIT(new_package, 1.1d, YourName@sandia.gov)
 
 # Hello World!
 #  #np# - package name below

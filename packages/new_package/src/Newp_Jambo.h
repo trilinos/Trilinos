@@ -29,7 +29,7 @@
 
 #ifndef _NEWP_JAMBO_H_
 #define _NEWP_JAMBO_H_
-#include "Epetra_ConfigDefs.h"
+#include "New_Package_ConfigDefs.h"
 #include "Newp_Jambo.h"
 
 #ifdef EPETRA_MPI

@@ -1,5 +1,4 @@
-
-//@HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //                     New_Package Example Package
@@ -25,68 +24,15 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
 
-#ifndef _NEWP_HELLO_H_
-#define _NEWP_HELLO_H_
+#ifndef NEW_PACKAGE_VERSION_H
+#define NEW_PACKAGE_VERSION_H
+
 #include "New_Package_ConfigDefs.h"
-#include "Newp_Hello.h"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Comm.h"
-//! Newp_Hello: A sample class 
+	string New_Package_Version() { 
+		return("New_Package Version 1.1d - 05/26/2004"); 
+	};
 
-/*! The Newp_Hello class prints out a "Hello World" type message
-
-<b>A typical heading</b>
-<ul>
-  <li> A typical first list entry
-  <li> A typical second list entry
-</ul>
-
-<b>Another typical heading</b>
-
-*/
-
-//=========================================================================
-class Newp_Hello {
-
-  public:
-
-  //@{ \name Constructors/destructors.
-  //! Basic Newp_Hello constuctor.
-  /*! Creates a Newp_Hello object and fills with default values.  
-
-    \warning Newp_Hello is English language only.  In Africa use Newp_Jambo.
-
-    \param Comm In
-           An Epetra Communicator 
-
-    \return  Newp_Hello object
-
-  */
-  Newp_Hello(const Epetra_Comm& Comm);
-
-  //! Newp_Hello copy constructor.
-  
-  Newp_Hello(const Newp_Hello& Source);
-  //@}
-  
-  //@{ \name Print methods
-
-  //! Print method
-  virtual void Print(ostream & os) const;
-  //@}
-
-
- private:
-
-  const Epetra_Comm& Comm_ ; 
-
-};
-
-#endif /* _NEWP_HELLO_H_ */
+#endif /* NEW_PACKAGE_VERSION_H */

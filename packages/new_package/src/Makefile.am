@@ -43,12 +43,14 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Newp_Hello.h 
+	$(srcdir)/Newp_Hello.h \
+	$(srcdir)/New_Package_ConfigDefs.h
 
 CORE = \
 	$(srcdir)/Newp_Hello.cpp
 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/New_Package_Version.h
 
 UTIL = 
 
