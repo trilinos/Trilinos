@@ -87,11 +87,10 @@ endif
 
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
+  GDEFINES += -DLB_NEMESIS
   THIRD_PARTY_LIBS += -lnemIc -lexoIIc -lnetcdf
   THIRD_PARTY_LIBPATH += $(NEMESIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(NEMESIS_INCPATH)
-else
-  GDEFINES += -DLB_NO_NEMESIS
 endif
 
 
