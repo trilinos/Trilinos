@@ -9,6 +9,12 @@
 
 #define ML_VERSION        ml2_0_0_0
 
+#ifndef MB_MODIF
+#define MB_MODIF
+#endif
+#ifndef RST_MODIF
+#define RST_MODIF
+#endif
 #define ML_NONE           10
 #define ML_MGV            11
 #define ML_MG2CGC         12
@@ -88,6 +94,7 @@
 #define ML_ADD                1
 #define ML_NO                 0
 #define ML_YES                1
+#define ML_Set                111
 
 #define ML_EMPTY             -1
 #define ML_DEFAULT           -2
