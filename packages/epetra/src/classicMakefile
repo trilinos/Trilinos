@@ -50,9 +50,9 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_IntVector.cpp \
             Epetra_MapColoring.cpp \
             Epetra_RowMatrixTransposer.cpp \
+            $(EPETRA_EXTRACOMM_CLASS)
 #           Epetra_C_wrappers.cpp \
 #           Epetra_Fortran_wrappers.cpp \
-            $(EPETRA_EXTRACOMM_CLASS)
 
 EPETRA_F =
 
