@@ -84,7 +84,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     if (ny<3) {cout << "ny = " << ny << ": Must be greater than 2 for meaningful graph." << endl; exit(1);}
   }
   
-  int NumGlobalEquations = nx*ny;
+  int NumGlobalPoints = nx*ny;
   int IndexBase = 0;
 
   if (verbose)
@@ -94,9 +94,9 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
   // Create a 5 point stencil graph, level 1 fill of it and level 2 fill of it
 
-  Epetra_Map Map(NumGlobalEquations, IndexBase, Comm);
+  Epetra_Map Map(NumGlobalPoints, IndexBase, Comm);
 
-  int NumMyEquations = Map.NumMyEquations();
+  int NumMyPoints = Map.NumMyPoints();
 
   Epetra_CrsGraph A(Copy, Map, 5);
   Epetra_CrsGraph L0(Copy, Map, 2);
@@ -197,27 +197,27 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   Ifpack_IlukGraph ILU0(A, 0, 0);
   assert(ILU0.ConstructFilledGraph()==0);
 
-  assert(check(L0, U0, ILU0, NumGlobalEquations, NumMyEquations, 0, verbose)==0);
+  assert(check(L0, U0, ILU0, NumGlobalPoints, NumMyPoints, 0, verbose)==0);
 
   if (verbose) cout << "\n\n*****Testing ILU(1) constructor on A" << endl<< endl;
 
   Ifpack_IlukGraph ILU1(A, 1, 0);
   assert(ILU1.ConstructFilledGraph()==0);
 
-  assert(check(L1, U1, ILU1, NumGlobalEquations, NumMyEquations, 1, verbose)==0);
+  assert(check(L1, U1, ILU1, NumGlobalPoints, NumMyPoints, 1, verbose)==0);
 
   if (verbose) cout << "\n\n*****Testing ILU(2) constructor on A" << endl<< endl;
 
   Ifpack_IlukGraph ILU2(A, 2, 0);
   assert(ILU2.ConstructFilledGraph()==0);
 
-  assert(check(L2, U2, ILU2, NumGlobalEquations, NumMyEquations, 2, verbose)==0);
+  assert(check(L2, U2, ILU2, NumGlobalPoints, NumMyPoints, 2, verbose)==0);
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
   Ifpack_IlukGraph ILUC(ILU2);
   
-  assert(check(L2, U2, ILUC, NumGlobalEquations, NumMyEquations, 2, verbose)==0);
+  assert(check(L2, U2, ILUC, NumGlobalPoints, NumMyPoints, 2, verbose)==0);
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
@@ -244,25 +244,25 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     // Construct a Map that puts 6 equations on each PE
     
     int NumElements1 = 6;
-    int NumEquations1 = NumElements1;
+    int NumPoints1 = NumElements1;
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of terms for the ith global equation on this processor
     
-    int * NumNz1 = new int[NumEquations1];
+    int * NumNz1 = new int[NumPoints1];
     
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
     
-    for (i=0; i<NumEquations1; i++)
-      if (i==0 || i == NumEquations1-1)
+    for (i=0; i<NumPoints1; i++)
+      if (i==0 || i == NumPoints1-1)
 	NumNz1[i] = 2;
       else
 	NumNz1[i] = 3;
     
     // Create a Epetra_Matrix
     
-    Epetra_Map Map1(NumEquations1, NumEquations1, 1, Comm);
+    Epetra_Map Map1(NumPoints1, NumPoints1, 1, Comm);
     Epetra_CrsGraph A1(Copy, Map1, NumNz1);
     
     // Add  rows one-at-a-time
@@ -273,16 +273,16 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     int *Indices1 = new int[2];
     int NumEntries1;
     
-    for (i=0; i<NumEquations1; i++)
+    for (i=0; i<NumPoints1; i++)
       {
 	if (i==0)
 	  {
 	    Indices1[0] = 2;
 	    NumEntries1 = 1;
 	  }
-	else if (i == NumEquations1-1)
+	else if (i == NumPoints1-1)
 	  {
-	    Indices1[0] = NumEquations1-1;
+	    Indices1[0] = NumPoints1-1;
 	    NumEntries1 = 1;
 	  }
 	else
