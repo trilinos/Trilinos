@@ -96,7 +96,7 @@ EXAMPLE = UG_Ex1
 
 noinst_PROGRAMS = $(EXAMPLE)
 
-UG_Ex1_SOURCES = $(srcdir)/cxx_main.cpp
+UG_Ex1_SOURCES = $(srcdir)/cxx_main.cpp  $(srcdir)/power_method.cpp
 
 UG_Ex1_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
@@ -112,7 +112,8 @@ CONFIG_CLEAN_FILES =
 noinst_PROGRAMS = UG_Ex1$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_UG_Ex1_OBJECTS = UG_Ex1-cxx_main.$(OBJEXT)
+am_UG_Ex1_OBJECTS = UG_Ex1-cxx_main.$(OBJEXT) \
+	UG_Ex1-power_method.$(OBJEXT)
 UG_Ex1_OBJECTS = $(am_UG_Ex1_OBJECTS)
 UG_Ex1_LDFLAGS =
 
@@ -123,7 +124,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/UG_Ex1-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/UG_Ex1-cxx_main.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/UG_Ex1-power_method.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -147,6 +149,7 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 UG_Ex1-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
+UG_Ex1-power_method.$(OBJEXT): $(srcdir)/power_method.cpp
 UG_Ex1$(EXEEXT): $(UG_Ex1_OBJECTS) $(UG_Ex1_DEPENDENCIES) 
 	@rm -f UG_Ex1$(EXEEXT)
 	$(CXXLINK) $(UG_Ex1_LDFLAGS) $(UG_Ex1_OBJECTS) $(UG_Ex1_LDADD) $(LIBS)
@@ -158,6 +161,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UG_Ex1-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UG_Ex1-power_method.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -185,6 +189,18 @@ UG_Ex1-cxx_main.obj: $(srcdir)/cxx_main.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/UG_Ex1-cxx_main.Po' tmpdepfile='$(DEPDIR)/UG_Ex1-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(UG_Ex1_CXXFLAGS) $(CXXFLAGS) -c -o UG_Ex1-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
+
+UG_Ex1-power_method.o: $(srcdir)/power_method.cpp
+@AMDEP_TRUE@	source='$(srcdir)/power_method.cpp' object='UG_Ex1-power_method.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/UG_Ex1-power_method.Po' tmpdepfile='$(DEPDIR)/UG_Ex1-power_method.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(UG_Ex1_CXXFLAGS) $(CXXFLAGS) -c -o UG_Ex1-power_method.o `test -f '$(srcdir)/power_method.cpp' || echo '$(srcdir)/'`$(srcdir)/power_method.cpp
+
+UG_Ex1-power_method.obj: $(srcdir)/power_method.cpp
+@AMDEP_TRUE@	source='$(srcdir)/power_method.cpp' object='UG_Ex1-power_method.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/UG_Ex1-power_method.Po' tmpdepfile='$(DEPDIR)/UG_Ex1-power_method.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(UG_Ex1_CXXFLAGS) $(CXXFLAGS) -c -o UG_Ex1-power_method.obj `cygpath -w $(srcdir)/power_method.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
