@@ -70,11 +70,13 @@ ENUM_H = \
 	$(srcdir)/Epetra_DataAccess.h
 
 UNIPROC_H = \
+	$(srcdir)/Epetra_SerialDenseOperator.h  \
 	$(srcdir)/Epetra_SerialDenseMatrix.h  \
 	$(srcdir)/Epetra_SerialSpdDenseSolver.h \
 	$(srcdir)/Epetra_SerialDenseSolver.h   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.h \
 	$(srcdir)/Epetra_SerialDenseVector.h \
+	$(srcdir)/Epetra_SerialDenseSVD.h \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.h \
 	$(srcdir)/Epetra_IntSerialDenseVector.h
 
@@ -84,6 +86,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialDenseSolver.cpp   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp \
 	$(srcdir)/Epetra_SerialDenseVector.cpp \
+	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
 	$(srcdir)/Epetra_IntSerialDenseVector.cpp 
 

@@ -35,6 +35,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
+#include "Epetra_SerialDenseOperator.h"
 class Epetra_SerialSymDenseMatrix;
 class Epetra_VbrMatrix;
 
@@ -90,7 +91,7 @@ method in the Epetra_CompObject base class.
 
 
 //=========================================================================
-class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_BLAS {
+class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_SerialDenseOperator, public Epetra_BLAS {
 
   public:
   
@@ -368,6 +369,60 @@ This function performs a variety of matrix-matrix multiply operations.
   virtual double InfNorm() const {return(NormInf());};
   //@}
 
+  //@{ \name Additional methods to support Epetra_SerialDenseOperator interface
+ 
+    //! If set true, transpose of this operator will be applied.
+    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
+        does not support transpose use, this method should return a value of -1.
+ 
+    \param In
+           UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+ 
+    \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
+  */
+    virtual int SetUseTranspose(bool UseTranspose) { UseTranspose_ = UseTranspose; return (0); }
+ 
+    //! Returns the result of a Epetra_SerialDenseOperator applied to a Epetra_SerialDenseMatrix X in Y.
+    /*!
+    \param In
+           X - A Epetra_SerialDenseMatrix to multiply with operator.
+    \param Out
+           Y -A Epetra_SerialDenseMatrix containing result.
+ 
+    \return Integer error code, set to 0 if successful.
+  */
+    virtual int Apply(const Epetra_SerialDenseMatrix& X, Epetra_SerialDenseMatrix& Y)
+    { return Y.Multiply( Epetra_SerialDenseMatrix::UseTranspose(), false, 1.0, *this, X, 0.0 ); }
+ 
+    //! Returns the result of a Epetra_SerialDenseOperator inverse applied to an Epetra_SerialDenseMatrix X in Y.
+    /*!
+    \param In
+           X - A Epetra_SerialDenseMatrix to solve for.
+    \param Out
+           Y -A Epetra_SerialDenseMatrix containing result.
+ 
+    \return Integer error code, set to 0 if successful.
+ 
+  */
+    virtual int ApplyInverse(const Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & Y) { return (-1); }
+ 
+    //! Returns a character string describing the operator
+    virtual char * Label() const { return Epetra_Object::Label(); }
+ 
+    //! Returns the current UseTranspose setting.
+    virtual bool UseTranspose() const { return UseTranspose_; }
+ 
+    //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
+    virtual bool HasNormInf() const { return true; }
+
+    //! Returns the row dimension of operator
+    virtual int RowDim() const { return M(); } 
+ 
+    //! Returns the column dimension of operator 
+    virtual int ColDim() const { return N(); } 
+  //@}  
+
  protected:
 
   void CopyMat(double* Source, int Source_LDA, int NumRows, int NumCols,
@@ -388,6 +443,8 @@ This function performs a variety of matrix-matrix multiply operations.
 
   int LDA_;
   double* A_;
+
+  bool UseTranspose_;
 };
 
 // inlined definitions of op() and op[]

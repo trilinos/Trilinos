@@ -56,7 +56,17 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   no_delete_(false),
   recv_array_(0),
   send_array_(0),
-  comm_plan_reverse_(0){
+  comm_plan_reverse_(0),
+  sizes_(0),
+  sizes_to_(0),
+  sizes_from_(0),
+  starts_to_(0),
+  starts_from_(0),
+  starts_to_ptr_(0),
+  starts_from_ptr_(0),
+  indices_to_ptr_(0),
+  indices_from_ptr_(0)
+{
 }
 
 //==============================================================================
@@ -83,7 +93,17 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   no_delete_(Distributor.no_delete_),
   recv_array_(0),
   send_array_(0),
-  comm_plan_reverse_(0){
+  comm_plan_reverse_(0),
+  sizes_(0),
+  sizes_to_(0),
+  sizes_from_(0),
+  starts_to_(0),
+  starts_from_(0),
+  starts_to_ptr_(0),
+  starts_from_ptr_(0),
+  indices_to_ptr_(0),
+  indices_from_ptr_(0)
+{
   int i;
   if (nsends_>0) {
     lengths_to_ = new int[nsends_];
@@ -701,6 +721,111 @@ int Epetra_MpiDistributor::DoReverseWaits(char * export_objs,
 }
 
 //==============================================================================
+//---------------------------------------------------------------------------
+//Resize Method                      (Heaphy) 
+//---------------------------------------------------------------------------
+int Epetra_MpiDistributor::Resize( int * sizes, int & recv_size )
+{ 
+  int  i, j, k;         // loop counters
+  int sum; 
+ 
+  if (sizes == 0) return 0; 
+     
+  int my_proc; 
+  MPI_Comm_rank (comm_, &my_proc);  
+     
+  if( sizes_ == 0 ) 
+  {  
+    sizes_ = new int[nexports_]; 
+    sizes_to_ = new int[nsends_ + self_msg_];
+    sizes_from_ = new int [nrecvs_ + self_msg_];
+    starts_to_ptr_ = new int[nsends_ + self_msg_];
+    indices_to_ptr_ = new int[nexports_]; 
+    starts_from_ptr_  = new int[nrecvs_ + self_msg_]; 
+  }
+  else 
+  {  
+    //test and see if we are already setup for these sizes
+    bool match = true; 
+    for( i = 0; i < nexports_; ++i )
+      match = match && (sizes_[i]==sizes[i]);
+    if( match )  
+    {
+      recv_size = total_recv_length_;
+      return 0;
+    }
+    else
+      EPETRA_CHK_ERR(-1); //currently do not support resetting of sizes...
+  } 
+ 
+  for (i = 0; i < nexports_; i++)
+    sizes_[i] = sizes[i]; 
+ 
+  for (i = 0; i < nsends_ + self_msg_; i++) 
+    sizes_to_[i] = 0;                       
+ 
+  //Sends not blocked, so have to do more work
+  int * offset = new int[nexports_];
+   
+  //Compute address for every item in send array
+  sum = 0; 
+  for( i = 0; i < nexports_; ++i )
+  {  
+    offset[i] = sum; 
+    sum += sizes_[i];
+  }
+   
+  sum = 0;
+  max_send_length_ = 0;
+  for( i = 0; i < nsends_ + self_msg_; ++i )
+  {
+    starts_to_ptr_[i] = sum;
+    for( j = starts_to_[i]; j < (starts_to_[i]+lengths_to_[i]); ++j )
+    {
+      indices_to_ptr_[j] = offset[ indices_to_[j] ];
+      sizes_to_[i] += sizes_[ indices_to_[j] ];
+    }
+    if( sizes_to_[i] > max_send_length_ && procs_to_[i] != my_proc )
+      max_send_length_ = sizes_to_[i];
+    sum += sizes_to_[i];
+  }
+ 
+  delete [] offset;
+ 
+  //  Exchange sizes routine inserted here:
+  int self_index_to = -1;
+  for (i = 0; i < nsends_ + self_msg_; i++)
+  {
+    if(procs_to_[i] != my_proc)
+      MPI_Send ((void *) &sizes_to_[i], 1, MPI_INT, procs_to_[i], tag_, comm_);
+    else
+      self_index_to = i;
+  }
+ 
+  total_recv_length_ = 0;
+  for (i = 0; i < nrecvs_ + self_msg_; i++)
+  {
+    if (procs_from_[i] != my_proc)
+      MPI_Recv((void *) &sizes_from_[i], 1, MPI_INT, procs_from_[i], tag_, comm_, status_);
+    else
+      sizes_from_[i] = sizes_to_[self_index_to];
+    total_recv_length_ += sizes_from_[i];
+  }
+  // end of exchanges sizes insert
+ 
+  sum = 0;
+  for (i = 0; i < nrecvs_ + self_msg_; i++)
+  {
+     starts_from_ptr_[i] = sum;
+     sum += sizes_from_[i];
+  }
+ 
+  recv_size = total_recv_length_;
+ 
+  return 0;
+}
+
+//==============================================================================
 // GSComm_Comm Do method
 int Epetra_MpiDistributor::Do(char * export_objs, const int * & obj_size, char * import_objs )
 {
@@ -811,3 +936,57 @@ void Epetra_MpiDistributor::Print( ostream & os) const
   return;
 }
 
+//---------------------------------------------------------------------------
+int Epetra_MpiDistributor::Sort_ints(
+ int *vals_sort,     //  values to be sorted  
+ int *vals_other,    // other array to be reordered with sort
+ int  nvals)         // length of these two arrays
+{
+// It is primarily used to sort messages to improve communication flow. 
+// This routine will also insure that the ordering produced by the invert_map
+// routines is deterministic.  This should make bugs more reproducible.  This
+// is accomplished by sorting the message lists by processor ID.
+// This is a distribution count sort algorithm (see Knuth)
+//  This version assumes non negative integers. 
+   
+    if (nvals <= 1) return 0;
+        
+    int i;                        // loop counter        
+     
+    // find largest int, n, to size sorting array, then allocate and clear it
+    int n = 0;  
+    for (i = 0; i < nvals; i++)  
+       if (n < vals_sort[i]) n = vals_sort[i]; 
+    int *pos = new int [n+2];  
+    for (i = 0; i < n+2; i++) pos[i] = 0;
+ 
+    // copy input arrays into temporary copies to allow sorting original arrays
+    int *copy_sort  = new int [nvals]; 
+    int *copy_other = new int [nvals]; 
+    for (i = 0; i < nvals; i++)
+    { 
+      copy_sort[i]  = vals_sort[i]; 
+      copy_other[i] = vals_other[i];  
+    }                           
+ 
+    // count the occurances of integers ("distribution count")
+    int *p = pos+1;
+    for (i = 0; i < nvals; i++) p[copy_sort[i]]++;
+ 
+    // create the partial sum of distribution counts 
+    for (i = 1; i < n; i++) p[i] += p[i-1]; 
+ 
+    // the shifted partitial sum is the index to store the data  in sort order
+    p = pos; 
+    for (i = 0; i < nvals; i++)         
+    {                                   
+      vals_sort  [p[copy_sort [i]]]   = copy_sort[i];
+      vals_other [p[copy_sort [i]]++] = copy_other[i]; 
+    } 
+ 
+    delete [] copy_sort;
+    delete [] copy_other; 
+    delete [] pos; 
+ 
+    return 0;
+}

@@ -473,6 +473,12 @@ int Epetra_VbrMatrix::SubmitBlockEntry(double *Values, int LDA,
 }
 
 //==========================================================================
+int Epetra_VbrMatrix::SubmitBlockEntry( Epetra_SerialDenseMatrix &Mat)
+{
+  return SubmitBlockEntry( Mat.A(), Mat.LDA(), Mat.M(), Mat.N() );
+}
+
+//==========================================================================
 int Epetra_VbrMatrix::EndSubmitEntries() {
 
   if (CurEntry_!=CurNumBlockEntries_) EPETRA_CHK_ERR(-6); // Did not submit right number of entries

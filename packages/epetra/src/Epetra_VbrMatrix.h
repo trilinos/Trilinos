@@ -289,6 +289,27 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     */
     int SubmitBlockEntry(double *Values, int LDA, int NumRows, int NumCols);
 
+    //! Submit a block entry to the indicated block row and column specified in the Begin routine.
+    /* Submit a block entry that will recorded in the block row that was initiated by one of the
+       Begin routines listed above.  Once a one of the following routines: BeginInsertGlobalValues(),
+       BeginInsertMyValues(), BeginReplaceGlobalValues(), BeginReplaceMyValues(), BeginSumIntoGlobalValues(),
+       BeginSumIntoMyValues(), you \e must call SubmitBlockEntry() NumBlockEntries times to register the values 
+       corresponding to the block indices passed in to the Begin routine.  If the Epetra_VbrMatrix constuctor
+       was called in Copy mode, the values will be copied.  However, no copying will be done until the EndSubmitEntries()
+       function is call to complete submission of the current block row.  If the constructor was called in View mode, all
+       block entries passed via SubmitBlockEntry() will not be copied, but a pointer will be set to point to the argument Values
+       that was passed in by the user.
+
+       For performance reasons, SubmitBlockEntry() does minimal processing of data.  Any processing that can be
+       delayed is performed in EndSubmitEntries().
+
+    \param In
+           Mat - Preformed dense matrix block.
+
+    \return Integer error code, set to 0 if successful.
+    */
+    int SubmitBlockEntry( Epetra_SerialDenseMatrix &Mat );
+
     //! Completes processing of all data passed in for the current block row.
     /*! This function completes the processing of all block entries submitted via SubmitBlockEntry().  
         It also checks to make sure that SubmitBlockEntry was called the correct number of times as

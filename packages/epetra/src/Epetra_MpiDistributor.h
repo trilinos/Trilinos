@@ -119,6 +119,9 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! Wait on a reverse set of posts
   int DoReverseWaits(char * export_objs,const int & obj_size, char * import_objs);
+
+  //! Resize method allowing for variable message lengths
+  int Resize (int *sizes, int &recv_size);
   //@}
 
   //@{ \name Execute Gather/Scatter Operations (Non-constant size objects: NOT IMPLEMENTED)
@@ -158,24 +161,45 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 		       int *& export_procs,
 		       const int & my_proc );
 
+    int Sort_ints( int *vals, int *other, int nvals );
+
   private:
 
     int * lengths_to_;
     int * procs_to_;
     int * indices_to_;
     int  size_indices_to_;
+
     int * lengths_from_;
     int * procs_from_;
     int * indices_from_;
     int  size_indices_from_;
+
+    int * sizes_;
+
+    int * sizes_to_;
+    int * starts_to_;
+    int * starts_to_ptr_;
+    int * indices_to_ptr_;
+
+    int * sizes_from_;
+    int * starts_from_;
+    int * starts_from_ptr_;
+    int * indices_from_ptr_;
+
     int   nrecvs_;
     int   nsends_;
+    int   nexports_;
+
     int   self_msg_;
     int   max_send_length_;
     int   total_recv_length_;
+
     int   tag_;
+
     const Epetra_MpiComm * epComm_;
     const MPI_Comm      comm_;
+
     MPI_Request * request_;
     MPI_Status  * status_;
 

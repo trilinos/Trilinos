@@ -165,11 +165,13 @@ ENUM_H = \
 
 
 UNIPROC_H = \
+	$(srcdir)/Epetra_SerialDenseOperator.h  \
 	$(srcdir)/Epetra_SerialDenseMatrix.h  \
 	$(srcdir)/Epetra_SerialSpdDenseSolver.h \
 	$(srcdir)/Epetra_SerialDenseSolver.h   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.h \
 	$(srcdir)/Epetra_SerialDenseVector.h \
+	$(srcdir)/Epetra_SerialDenseSVD.h \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.h \
 	$(srcdir)/Epetra_IntSerialDenseVector.h
 
@@ -180,6 +182,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialDenseSolver.cpp   \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp \
 	$(srcdir)/Epetra_SerialDenseVector.cpp \
+	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
 	$(srcdir)/Epetra_IntSerialDenseVector.cpp 
 
@@ -418,6 +421,7 @@ am__objects_3 = Epetra_SerialDenseMatrix.$(OBJEXT) \
 	Epetra_SerialDenseSolver.$(OBJEXT) \
 	Epetra_SerialSymDenseMatrix.$(OBJEXT) \
 	Epetra_SerialDenseVector.$(OBJEXT) \
+	Epetra_SerialDenseSVD.$(OBJEXT) \
 	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
 	Epetra_IntSerialDenseVector.$(OBJEXT)
 am__objects_4 = Epetra_SerialComm.$(OBJEXT) \
@@ -491,6 +495,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialComm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialCommData.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialDenseMatrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialDenseSVD.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialDenseSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialDenseVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialDistributor.Po \
@@ -596,6 +601,7 @@ Epetra_SerialSymDenseMatrix.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialSymDenseMatrix.cpp
 Epetra_SerialDenseVector.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialDenseVector.cpp
+Epetra_SerialDenseSVD.$(OBJEXT): $(srcdir)/Epetra_SerialDenseSVD.cpp
 Epetra_IntSerialDenseMatrix.$(OBJEXT): \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp
 Epetra_IntSerialDenseVector.$(OBJEXT): \
@@ -679,6 +685,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialComm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialCommData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialDenseMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialDenseSVD.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialDenseSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialDenseVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialDistributor.Po@am__quote@
@@ -859,6 +866,18 @@ Epetra_SerialDenseVector.obj: $(srcdir)/Epetra_SerialDenseVector.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SerialDenseVector.Po' tmpdepfile='$(DEPDIR)/Epetra_SerialDenseVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SerialDenseVector.obj `cygpath -w $(srcdir)/Epetra_SerialDenseVector.cpp`
+
+Epetra_SerialDenseSVD.o: $(srcdir)/Epetra_SerialDenseSVD.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_SerialDenseSVD.cpp' object='Epetra_SerialDenseSVD.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SerialDenseSVD.Po' tmpdepfile='$(DEPDIR)/Epetra_SerialDenseSVD.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SerialDenseSVD.o `test -f '$(srcdir)/Epetra_SerialDenseSVD.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_SerialDenseSVD.cpp
+
+Epetra_SerialDenseSVD.obj: $(srcdir)/Epetra_SerialDenseSVD.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_SerialDenseSVD.cpp' object='Epetra_SerialDenseSVD.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_SerialDenseSVD.Po' tmpdepfile='$(DEPDIR)/Epetra_SerialDenseSVD.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SerialDenseSVD.obj `cygpath -w $(srcdir)/Epetra_SerialDenseSVD.cpp`
 
 Epetra_IntSerialDenseMatrix.o: $(srcdir)/Epetra_IntSerialDenseMatrix.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_IntSerialDenseMatrix.cpp' object='Epetra_IntSerialDenseMatrix.o' libtool=no @AMDEPBACKSLASH@

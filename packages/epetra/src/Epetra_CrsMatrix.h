@@ -532,7 +532,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	/*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
 		\e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
 		and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
-		will make the infinity norm of the resulting matrix exactly 1.
+		will make the one norm of the resulting matrix exactly 1.
     \param Out
 		x -A Epetra_Vector containing the row sums of the \e this matrix. 
 		\warning It is assumed that the distribution of x is the same as the rows of \e this.
@@ -540,6 +540,19 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
 	int InvRowSums(Epetra_Vector& x) const;
+	
+	//! Computes the max of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
+	/*! The vector x will return such that x[i] will contain the inverse of max of the absolute values of the 
+		\e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
+		and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
+		will make the infinity norm of the resulting matrix exactly 1.
+    \param Out
+		x -A Epetra_Vector containing the row maxx of the \e this matrix. 
+		\warning It is assumed that the distribution of x is the same as the rows of \e this.
+		
+    \return Integer error code, set to 0 if successful.
+  */
+	int InvRowMaxs(Epetra_Vector& x) const;
 	
 	//! Scales the Epetra_CrsMatrix on the left with a Epetra_Vector x.
 	/*! The \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the row number of A
@@ -563,6 +576,19 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
 	int InvColSums(Epetra_Vector& x) const;
+
+	//! Computes the max of absolute values of the columns of the Epetra_CrsMatrix, results returned in x.
+	/*! The vector x will return such that x[j] will contain the inverse of max of the absolute values of the 
+		\e this matrix will be such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
+		and j denotes the global column number of A.  Using the resulting vector from this function as input to 
+		RighttScale() will make the one norm of the resulting matrix exactly 1.
+    \param Out
+		x -A Epetra_Vector containing the column maxs of the \e this matrix. 
+		\warning It is assumed that the distribution of x is described by the DomainMap() of \e this.
+		
+    \return Integer error code, set to 0 if successful.
+  */
+	int InvColMaxs(Epetra_Vector& x) const;
 
 	//! Scales the Epetra_CrsMatrix on the right with a Epetra_Vector x.
 	/*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
