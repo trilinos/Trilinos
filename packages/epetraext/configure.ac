@@ -218,7 +218,7 @@ fi
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h algorithm algorithm.h],,,)
+AC_CHECK_HEADERS([string string.h algorithm algo.h algorithm.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  EpetraExt requires at least one or the other.]])
@@ -240,8 +240,8 @@ if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" 
   AC_MSG_ERROR([[Cannot find iostream or iostream.h.  EpetraExt requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find algorithm or algorithm.h.  EpetraExt requires at least one or the other.]])
+if test "X$ac_cv_header_algorithm" != "Xyes"  && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  EpetraExt requires at least one of these.]])
 fi
 
 if test "X${host}" != "Xtflop"; then
