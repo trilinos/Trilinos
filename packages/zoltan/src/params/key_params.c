@@ -27,6 +27,8 @@ static PARAM_VARS Key_params[] = {
 	{ "DEBUG_PROCESSOR", NULL, "INT" },
 	{ "DETERMINISTIC", NULL, "INT" },
 	{ "TIMER", NULL, "STRING" },
+	{ "NUM_GID_ENTRIES", NULL, "INT" },
+	{ "NUM_LID_ENTRIES", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -78,9 +80,9 @@ char *val)			/* value of variable */
             result.ival = LB_OBJ_WEIGHT_DEF;
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Obj_Weight_Dim value (%d) "
-		"being set to 0.", result.ival);
+		"being set to %d.", result.ival, LB_OBJ_WEIGHT_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
-	    result.ival = 0;
+	    result.ival = LB_OBJ_WEIGHT_DEF;
 	}
 	lb->Obj_Weight_Dim = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
@@ -91,9 +93,9 @@ char *val)			/* value of variable */
             result.ival = LB_COMM_WEIGHT_DEF;
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Comm_Weight_Dim value (%d) "
-		"being set to 0.", result.ival);
+		"being set to %d.", result.ival, LB_COMM_WEIGHT_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
-	    result.ival = 0;
+	    result.ival = LB_COMM_WEIGHT_DEF;
 	}
 	lb->Comm_Weight_Dim = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
@@ -104,9 +106,9 @@ char *val)			/* value of variable */
             result.ival = LB_DEBUG_LEVEL_DEF;
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Debug_Level value (%d) "
-		"being set to 0.", result.ival);
+		"being set to %d.", result.ival, LB_DEBUG_LEVEL_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
-	    result.ival = 0;
+	    result.ival = LB_DEBUG_LEVEL_DEF;
 	}
 	lb->Debug_Level = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
@@ -117,9 +119,9 @@ char *val)			/* value of variable */
             result.ival = LB_DEBUG_PROC_DEF;
 	if (result.ival < 0 || result.ival > lb->Num_Proc) {
 	    sprintf(msg, "Invalid Debug_Processor value (%d) "
-		"being set to 0.", result.ival);
+		"being set to %d.", result.ival, LB_DEBUG_PROC_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
-	    result.ival = 0;
+	    result.ival = LB_DEBUG_PROC_DEF;
 	}
 	lb->Debug_Proc = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
@@ -130,9 +132,9 @@ char *val)			/* value of variable */
             result.ival = LB_DETERMINISTIC_DEF;
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Deterministic value (%d) "
-		"being set to TRUE.", result.ival);
+		"being set to %d.", result.ival, LB_DETERMINISTIC_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
-	    result.ival = TRUE;
+	    result.ival = LB_DETERMINISTIC_DEF;
 	}
 	lb->Deterministic = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
@@ -143,6 +145,32 @@ char *val)			/* value of variable */
         lb->Timer = tmp;
 
 	if (status==0) status = 3;	/* Don't add to Params field of LB */
+        break;
+
+      case 8:           /* Num_GID_Entries */
+        if (result.def)
+            result.ival = LB_NUM_ID_ENTRIES_DEF;
+        if (result.ival < 0) {
+	    sprintf(msg, "Invalid Num_GID_Entries value (%d) "
+		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
+            result.ival = LB_NUM_ID_ENTRIES_DEF;
+        }
+        lb->Num_GID = result.ival;
+        status = 3;
+        break;
+
+      case 9:           /* Num_LID_Entries */
+        if (result.def)
+            result.ival = LB_NUM_ID_ENTRIES_DEF;
+        if (result.ival < 0) {
+	    sprintf(msg, "Invalid Num_LID_Entries value (%d) "
+		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
+            result.ival = LB_NUM_ID_ENTRIES_DEF;
+        }
+        lb->Num_LID = result.ival;
+        status = 3;
         break;
 
       }  /* end switch (index) */
