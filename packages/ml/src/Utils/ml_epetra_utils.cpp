@@ -323,7 +323,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 			 double ReorderedNullSpace[],
 			 int ComputeNewNullSpace,
 			 double StartingBdry[], double ReorderedBdry[],
-			 MPI_Comm mpi_communicator,
+			 USR_COMM mpi_communicator,
 			 ML_Comm *ml_communicator ) 
 {
   
@@ -390,7 +390,7 @@ void ML_DestroyQ(void)
 ML_Operator * ML_BuildQt( int StartingNumElements,
 			  int ReorderedNumElements,
 			  int reordered_decomposition[],
-			  MPI_Comm mpi_communicator,
+			  USR_COMM mpi_communicator,
 			  ML_Comm *ml_communicator ) 
 {
   
