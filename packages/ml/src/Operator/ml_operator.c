@@ -106,6 +106,7 @@ int ML_Operator_Clean( ML_Operator *mat)
 #ifdef ML_FLOPS
    int i, nglobflop;
    double mflops;
+   double maxfl,minfl,avgfl;
 #endif
 
    if (mat == NULL) return 0;
@@ -130,24 +131,24 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
-   if  (mat->label != NULL) {
+   /* this could be wrong if one processor does nothing with a particular
+      operator, but others do something. */
+   if  (mat->label != NULL && mat->apply_time ! 0.0)
+   {
      t1 = ML_gsum_double(mat->apply_time, mat->comm);
      nglobflop = mat->nflop;
      ML_gsum_scalar_int(&nglobflop, &i, mat->comm);
      mflops = ((double) nglobflop) / t1;
      mflops = mflops / (1024 * 1024);
-     mflops = mflops / ((double) mat->comm->ML_nprocs);
-     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
-     printf(" Mflop rating for %s (average) \t= %e\n", mat->label,mflops);
+     avgfl = mflops / ((double) mat->comm->ML_nprocs);
      mflops = (double) mat->nflop / mat->apply_time;
+     maxfl = ML_gmax_double(mflops, mat->comm);
+     mflops = - mflops;
      mflops = ML_gmax_double(mflops, mat->comm);
-     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
-        printf(" Mflop rating for %s (maximum) \t= %e\n",mat->label,mflops);
-     mflops = - (double) mat->nflop / mat->apply_time;
-     mflops = ML_gmax_double(mflops, mat->comm);
-     mflops = -mflops;
-     if ( (mat->comm->ML_mypid == 0) && (mflops != 0.0))
-        printf(" Mflop rating for %s (minimum) \t= %e\n",mat->label,mflops);
+     minfl = -mflops;
+     if (mat->comm->ML_mypid == 0) 
+       printf(" Mflop rating for %s (min, average, max) \t= %e\n",
+              mat->label,minfl,avgfl,maxfl);
    }
 #endif
 
