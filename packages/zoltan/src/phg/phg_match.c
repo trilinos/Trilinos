@@ -275,8 +275,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
               printf("%d %4.2f, ", adj[i], *(ptr-1));
 #endif
             }
-            if (i<MAX_NNZ-1){
-              /* marker to say there is no more data */
+            if (nadj < MAX_NNZ){
+              /* insert marker to say there is no more data */
               *ptr++ = -1.;
               *ptr++ = -1.;
 #ifdef DEBUG_EB
@@ -289,39 +289,21 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
           }
           else {
             /* ptr = sendbuf */
-            if (1) {
-              /* Pick random selection of vertices if more than MAX_NNZ.
-                 This is quick, but it would be better to select the largest
-                 values, see below. */
-              Zoltan_Rand_Perm_Int(adj, nadj);
-              for (i=0; i<MAX_NNZ; i++){
-                *ptr++ = (float) adj[i];
-                *ptr++ = lips[adj[i]];
-              }
-            }
-            else {
-              /* Pick highest values if too many nonzeros */
-              /* Warning: slow algorithm to find top MAX_NNZ values */ 
-              /* quickselect would be faster! */
-  #ifdef DEBUG_EB
-              printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
-                  nadj, MAX_NNZ);
-  #endif
-              for (i=0; i<MAX_NNZ; i++){
-                maxip = 0.0;
-                for (j=0; j<nadj; j++){
-                  if (lips[adj[j]]>maxip){
-                    best_vertex = adj[j];
-                    maxip = lips[best_vertex];
-                    lips[best_vertex] = 0.0;
-                  }
-                }
-                *ptr++ = (float) best_vertex;
-                *ptr++ = maxip;
-              }
+#ifdef DEBUG_EB
+            printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
+                nadj, MAX_NNZ);
+#endif
+            /* Pick random selection of vertices if more than MAX_NNZ.
+               This is quick. We tried picking highest values but
+               this didn't seem to improve quality. */
+            Zoltan_Rand_Perm_Int(adj, nadj);
+            for (i=0; i<MAX_NNZ; i++){
+              *ptr++ = (float) adj[i];
+              *ptr++ = lips[adj[i]];
             }
           }
 
+#ifdef DEBUG_EB
           /* EBEB Sanity check for debugging */
           ptr = (float *) sendbuf;
           for (i=0; i<MAX_NNZ; i++, ptr+=2){
@@ -331,6 +313,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
               ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
             }
           }
+#endif
 
           /* send partial inner product values to root row */
           /* use fixed size, probably faster than variable sized Gatherv */
@@ -349,7 +332,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
               for (j=0; j<MAX_NNZ; j++){
                 v2 = *ptr++;
                 if (v2<0) break; /* skip to data from next proc */
-                /* EBEB Sanity check for debugging */
+                /* Sanity check for debugging */
                 if (v2 > hg->nVtx){
                   sprintf(msg, "vertex %d > %d is out of range!\n", v2, hg->nVtx);
                   ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
