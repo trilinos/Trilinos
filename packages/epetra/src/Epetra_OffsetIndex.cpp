@@ -138,11 +138,12 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
                                                 const Epetra_CrsGraph & TargetGraph,
                                                 const int * PermuteLIDs )
 {
-  int GlobalMaxNumSourceIndices = SourceGraph.GlobalMaxNumIndices();
-  int GlobalMaxNumTargetIndices = TargetGraph.GlobalMaxNumIndices();
+  const int GlobalMaxNumSourceIndices = SourceGraph.GlobalMaxNumIndices();
+  const int GlobalMaxNumTargetIndices = TargetGraph.GlobalMaxNumIndices();
 
   int NumSourceIndices;
-  int SourceIndices[GlobalMaxNumSourceIndices];
+  int * SourceIndices = 0;
+  if( GlobalMaxNumSourceIndices>0 ) SourceIndices = new int[GlobalMaxNumSourceIndices];
 
   //setup Same Offsets
   SameOffsets_ = new int*[NumSame_];
@@ -191,6 +192,8 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
         PermuteOffsets_[i][j] = -1;
     }
   }
+
+  if( GlobalMaxNumSourceIndices>0 ) delete [] SourceIndices;
 }
 
 //==============================================================================
@@ -200,10 +203,11 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
                                                  const int * RemoteLIDs,
                                                  Epetra_Distributor & Distor )
 {
-  int GlobalMaxNumIndices = SourceGraph.GlobalMaxNumIndices();
+  const int GlobalMaxNumIndices = SourceGraph.GlobalMaxNumIndices();
 
   int NumIndices;
-  int Indices[GlobalMaxNumIndices];
+  int * Indices = 0;
+  if( GlobalMaxNumIndices>0 ) Indices = new int[GlobalMaxNumIndices];
 
   //Pack Source Rows
   int * Sizes = 0;
@@ -257,6 +261,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     }
   }
 
+  if( GlobalMaxNumIndices>0 ) delete [] Indices;
   if( Sizes ) delete [] Sizes;
   if( SourceArray ) delete [] SourceArray;
   if( RecvArray ) delete [] RecvArray;
