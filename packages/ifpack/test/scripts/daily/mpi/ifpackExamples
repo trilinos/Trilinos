@@ -100,7 +100,7 @@ cd ../example
 # avoids problem of no executables in subdirectory
 touch fakefile.exe
 foreach g(*.exe)
- if( $g != "fakefile.exe") then
+ if( $g != "fakefile.exe" & $g != "test.exe" ) then
   echo "[IFPACK TestExamples]" >>& $file
   echo "[IFPACK TestExamples] Testing file >>" $g "<<" >>& $file
     if( "$2" == "True" ) then
