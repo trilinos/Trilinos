@@ -1,0 +1,107 @@
+# To run makefile:
+#    1) set environment variable ARCH to sgi, sun, tflop, or pclinux.
+#       Other machines require an appropriate makefile.$(ARCH) file.
+#
+#    2) MPI users:
+#         a) set environment variable PACKAGES to "-DML_MPI"
+#         b) edit makefile.$(ARCH) to use mpicc or 
+#            set environment variables 
+#                MPI_INC_PATH: -I/mpi_include_directories  
+#                MPI_LIB_PATH: -L/mpi_lib_directories -lmpi
+#
+#    3) Aztec users:
+#         a) set environment variable PACKAGES to "-DAZTEC"
+#         b) set environment variables 
+#             AZTEC_INC_PATH : -I/aztec_include directories
+#             AZTEC_LIB_PATH : -L/aztec_lib_directories -laztec
+#
+#    4) SuperLU users:
+#         a) set environment variable PACKAGES to "-DSUPERLU"
+#         b) set environment variables 
+#             SUPERLU_INC_PATH : -I/superlu_include directories
+#             SUPERLU_LIB_PATH : -L/superlu_lib_directories -lsuperlu
+#
+include ../etc/makefile.$(ARCH)
+DEFINES= -D$(ARCH) $(PACKAGES)
+
+INCLUDES=-I. $(SUPERLU_INC_PATH) $(AZTEC_INC_PATH) $(MPI_INC_PATH)
+LIB_PATHS=$(AZTEC_LIB_PATH) $(SUPERLU_LIB_PATH) $(MPI_LIB_PATH) 
+
+CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) 
+#VPATH=../examples:../src
+#=======================================================================
+# ML source files
+#=======================================================================
+
+ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
+       ml_struct.c       ml_comm.c         ml_gridagx.c \
+       ml_operatoragx.c  ml_superlu.c      ml_comminfoagx.c \
+       ml_grid.c         ml_rap.c          ml_aggregate.c \
+       ml_elementagx.c   ml_intlist.c      ml_rap_utils.c \
+       ml_utils.c        ml_exch_row.c     \
+       ml_setup.c        ml_vec.c          ml_get_basis.c \
+       ml_matmat_mult.c  ml_solver.c       ml_check.c \
+       ml_bdrypts.c      ml_mapper.c       ml_gridfunc.c \
+       ml_smoother.c     ml_csolve.c       ml_operator.c \
+       ml_op_utils.c     ml_comminfoop.c   ml_mat_formats.c \
+       ml_agg_genP.c ml_lapack.c mli_solver.c ml_agg_coupled.c \
+       ml_krylov.c       ml_cg.c           ml_gmres.c \
+       ml_agg_uncoupled.c ml_agg_dd.c \
+       ml_bicgstabl.c    ml_pde.c          ml_xxt.c ml_agg_MIS.c
+#=======================================================================
+# ML include files
+#=======================================================================
+
+ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
+	 ml_aggregate.h      ml_grid.h           ml_rap.h               \
+	 ml_aztec_utils.h    ml_gridagx.h        ml_smooth_prolongator.h\
+	ml_bdrypts.h         ml_gridfunc.h       ml_smoother.h          \
+	ml_check.h           ml_include.h        ml_solver.h            \
+	ml_comm.h            ml_intlist.h        ml_struct.h            \
+	ml_comminfoagx.h     ml_mapper.h         ml_utils.h             \
+	ml_comminfoop.h      ml_mat_formats.h    ml_vec.h               \
+	ml_csolve.h          ml_memory.h         ml_krylov.h            \
+	ml_defs.h            ml_op_utils.h       ml_gmres.h             \
+	ml_elementagx.h      ml_operator.h       ml_bicgstabl.h         \
+	mli_solver.h
+
+#=======================================================================
+# Sample application files
+#=======================================================================
+
+#DEFAULT : libml.a
+
+APPLICATION_C = mlguide.c
+
+ML_OBJ          = $(ML_C:.c=.o)
+APPLICATION_OBJ = $(APPLICATION_C:.c=.o)
+APPLICATION     = $(APPLICATION_C:.c= )
+
+$(APPLICATION): $(APPLICATION_OBJ) libml.a
+	echo "Linking"; \
+	$(LINKER) $(APPLICATION_OBJ) $(ARCH_FLAGS) $(DEFINES) \
+	   $(INCLUDES) \
+	   -o $(APPLICATION) libml.a \
+	   $(LIB_PATHS) \
+	   $(ARCH_LIBS) -lm
+
+libml.a: $(ML_OBJ)
+	$(AR) rcv libml.a $(ML_OBJ); \
+	$(RANLIB) libml.a
+
+
+driver: libml.a driver.c
+	cc -c $(PACKAGES) $(MPI_INC_PATH) driver.c
+	cc -o driver driver.o -L. -lml \
+           $(SUPERLU_LIB_PATH) \
+           $(MPI_LIB_PATH) -lsocket -lnsl -L/usr/local/lib -lblas -lm
+#          -lrpc -lgs -lpthread -ldxml -lm -lmpi
+
+#
+# dependencies for 'c' files
+#
+include ../etc/depends.ml
+
+clean:
+	@echo "junk" > dummy.o
+	@rm -f *.o *.a $(APPLICATION) core ml_example1d ml_example2d ml_example3d ml_readex

@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Utility for compressing source files into 1 directory via links.
+#
+#   Usage:    flatten [directory]
+#
+#        If directory is ommited, this creates a directory called 'flat'.
+#
+# Note: The makefile associated with the resulting flattened directory
+#       uses `depends.ml'. This file assumes that the source code is
+#       in a directory 'flat'. If there is no such directory, things don't
+#       work. Thus, the first time this utility should be run without
+#       specifying a directory. Subsequent invokations can then be used
+#       to create additional Obj directories.
+#
+DEST=Obj_$1
+if test `expr $DEST` = `expr Obj_`
+   then
+   DEST=flat
+fi
+echo flatten into $DEST
+DIRECTORIES="Coarsen Comm FEGrid Krylov Main Operator Smoother Utils"
+mkdir ../$DEST
+cd ../$DEST
+for i in $DIRECTORIES
+do
+   echo $i
+   for j in ../src/$i/*.[ch]
+   do
+     FILE=`echo $j | sed "s,.*/,,"`
+     ln -s $j $FILE
+   done
+done
+ln -s ../src/Include/ml_include.h ml_include.h
+ln -s ../src/Include/ml_defs.h ml_defs.h
+ln -s ../etc/flat_Makefile Makefile
