@@ -84,34 +84,14 @@ namespace Anasazi {
     
     //@{ \name Solution return methods.
     
-    //! This method puts the real part of the computed eigenvectors in %evecs.
-    void getEvecs(MultiVec<TYPE>& evecs); 
+    //! This method returns the real part of the computed Ritz values.
+    const TYPE * GetRealRitzVals() { return _ritzvals_r; };
     
-    //! This method puts the imaginary part of the computed eigenvectors in %ievecs.
-    void getiEvecs(MultiVec<TYPE>& ievecs);
+    //! This method returns the imaginary part of the computed Ritz values.
+    const TYPE * GetImagRitzVals() { return _ritzvals_i; };
     
-    //! This method returns the real part of the \c nev computed eigenvalues.
-    TYPE * getEvals();
-    
-    //! This method returns a requested number of computed eigenvalues.
-    /*! The input \c num can be greater than \c nev, but the method will only return
-      the number of eigenvalues it has approximations to.  On exit, \c num will be the
-      number of eigenvalue approximations that were returned 
-    */
-    TYPE * getEvals( int& num );
-    
-    //! This method returns the imaginary part of the computed eigenvalues.
-    TYPE * getiEvals();
-    
-    //! This method returns a requested number of computed eigenvalues.
-    /*! The input \c num can be greater than \c nev, but the method will only return
-      the number of eigenvalues it has approximations to.  On exit, \c num will be the
-      number of eigenvalue approximations that were returned 
-    */
-    TYPE * getiEvals( int& num );
-    
-    //! This method returns the residuals for the computed eigenpairs.
-    TYPE * getResiduals();
+    //! This method returns the Ritz residuals for the computed eigenpairs.
+    const TYPE * GetRitzResiduals() { return _ritzresiduals; };
     //@}
     
     //@{ \name Output methods.
@@ -132,19 +112,26 @@ namespace Anasazi {
     void SetBlkTols();
     void CheckBlkArnRed( const int j );
     void CheckSchurVecs( const int j ); 
+
     Eigenproblem<TYPE> &_problem; // must be passed in by the user
     SortManager<TYPE> &_sm; // must be passed in by the user
     OutputManager<TYPE> &_om; // must be passed in by the user
-    MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
+
+    MultiVec<TYPE> *_basisvecs;
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
-    const int _nev, _length, _block, _restarts, _step;
+    const int _length, _restarts, _step;
     const TYPE _residual_tolerance;
-    TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
+    TYPE *_ritzresiduals, *_ritzvals_r, *_ritzvals_i;
     int *_order;
-    int _restartiter, _iter, _jstart, _jend, _nevblock, _defblock;
+    int _restartiter, _iter, _jstart, _jend, _nevblock;
     int _offset, _maxoffset;
     bool _initialguess, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
+
+    // Information obtained from the eigenproblem
+    MultiVec<TYPE> *_evecr, *_eveci; 
+    const int _nev, _block;  
+    TYPE *_evalr, *_evali;  
   };
   //
   // Implementation
@@ -164,26 +151,18 @@ namespace Anasazi {
     _sm(sm),
     _om(om),
     _basisvecs(0), 
-    _evecr(0), 
-    _eveci(0), 
     _hessmatrix(),
-    _nev(problem.GetNEV()), 
     _length(length), 
-    _block(problem.GetBlockSize()), 
     _restarts(restarts),
     _step(step),
     _residual_tolerance(tol),
     _ritzresiduals(0), 
-    _actualresiduals(0),
-    _evalr(0), 
-    _evali(0), 
     _order(0),
     _restartiter(0), 
     _iter(0), 
     _jstart(0), 
     _jend(0), 
     _nevblock(0),
-    _defblock(0),
     _offset(0),
     _maxoffset(0),
     _initialguess(true), 
@@ -196,7 +175,13 @@ namespace Anasazi {
     _dep_tol(1.0), 
     _blk_tol(1.0),
     _sing_tol(1.0),
-    _def_tol(1.0)
+    _def_tol(1.0),
+    _evecr(problem.GetREvecs()), 
+    _eveci(problem.GetIEvecs()), 
+    _nev(problem.GetNEV()), 
+    _block(problem.GetBlockSize()), 
+    _evalr(problem.GetREvals()), 
+    _evali(problem.GetIEvals())
     {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -215,17 +200,12 @@ namespace Anasazi {
     //
     MultiVec<TYPE>* ivec = _problem.GetInitVec();
     assert(ivec!=NULL);
-    
-    assert(_length>0); assert(_block>0); assert(_step>0);
+    //
+    assert(_length>0); assert(_step>0);
     //
     // Make room for the Arnoldi vectors and F.
     //
     _basisvecs = ivec->Clone((_length+1)*_block); assert(_basisvecs!=NULL);
-    //
-    // Make room for the eigenvectors
-    //
-    _evecr = ivec->Clone(_nev+1); assert(_evecr!=NULL);
-    _eveci = ivec->Clone(_nev+1); assert(_eveci!=NULL);
     //
     // Create the rectangular Hessenberg matrix
     //
@@ -234,16 +214,14 @@ namespace Anasazi {
     // Create the vectors for eigenvalues and their residual errors and
     // initialize them.
     //
-    _evalr = new TYPE[ _block*_length ]; assert(_evalr!=NULL);  
-    _evali = new TYPE[ _block*_length ]; assert(_evali!=NULL);  
+    _ritzvals_r = new TYPE[ _block*_length ]; assert(_ritzvals_r!=NULL);  
+    _ritzvals_i = new TYPE[ _block*_length ]; assert(_ritzvals_i!=NULL);  
     _ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals!=NULL);
-    _actualresiduals = new TYPE[ _block*_length ]; assert(_actualresiduals!=NULL);
     _order = new int[ _block*_length ]; assert(_order!=NULL);
     const TYPE one = 1.0, zero = 0.0;
     for (int i=0; i< _block*_length; i++) {
-      _evalr[i] = zero; _evali[i] = zero;
+      _ritzvals_r[i] = zero; _ritzvals_i[i] = zero;
       _ritzresiduals[i] = one;
-      _actualresiduals[i] = one;
     }			
     //
     //  Set the tolerances for block orthogonality
@@ -268,156 +246,10 @@ namespace Anasazi {
   BlockArnoldi<TYPE>::~BlockArnoldi() 
   {
     if (_basisvecs) delete _basisvecs;
-    if (_evecr) delete _evecr;
-    if (_eveci) delete _eveci;
     if (_ritzresiduals) delete [] _ritzresiduals;
-    if (_actualresiduals) delete [] _actualresiduals;
-    if (_evalr) delete [] _evalr;
-    if (_evali) delete [] _evali;
+    if (_ritzvals_r) delete [] _ritzvals_r;
+    if (_ritzvals_i) delete [] _ritzvals_i;
     if (_order) delete [] _order;
-  }
-  
-  template <class TYPE>
-  void BlockArnoldi<TYPE>::getEvecs(MultiVec<TYPE>& evecs) {
-    //
-    // Return zero vectors if we haven't started the factorization.
-    if (!_jstart) {
-      evecs.MvInit(0.0);
-      return;
-    }
-    //
-    //  Compute the current eigenvectors if they are not current.
-    //
-    if (!_isevecscurrent) { ComputeEvecs(); }
-    int i, numvecs = evecs.GetNumberVecs(); 
-    if (numvecs > _nev) {
-      numvecs = _nev;
-    } 
-    int* index = new int[ numvecs ];
-    for (i=0; i<numvecs; i++) {
-      index[i] = i;
-    }
-    evecs.SetBlock( *_evecr, index, numvecs );
-    
-    delete [] index;
-  }
-  
-  template <class TYPE>
-  void BlockArnoldi<TYPE>::getiEvecs(MultiVec<TYPE>& ievecs) {
-    //
-    // Return zero vectors if we haven't started the factorization.
-    if (!_jstart) {
-      ievecs.MvInit(0.0);
-      return;
-    }
-    //
-    //  Compute the current eigenvectors if they are not current.
-    //
-    if (!_isevecscurrent) { ComputeEvecs(); }
-    int i, numvecs = ievecs.GetNumberVecs(); 
-    if (numvecs > _nev) {
-      numvecs = _nev;
-    } 
-    int* index = new int[ numvecs ];
-    for (i=0; i<numvecs; i++) {
-      index[i] = i;
-    }
-    ievecs.SetBlock( *_eveci, index, numvecs );
-    
-    delete [] index;
-  }
-  
-  template <class TYPE>
-  TYPE * BlockArnoldi<TYPE>::getEvals() {
-    int i;
-    TYPE *temp_evals = new TYPE[ _nev ];
-    for (i=0; i<_nev; i++) {
-      temp_evals[i] = _evalr[i];
-    }
-    return temp_evals;		
-  }
-  
-  template <class TYPE>
-  TYPE * BlockArnoldi<TYPE>::getEvals( int& num ) {
-    int i;
-    
-    // Correct the value of num if it's greater than the number of eigenvalue
-    // approximations available.  If there was a restart recently, then there
-    // may be more eigenvalue approximations than _jstart would lead you to
-    // believe.
-    switch ( _restarts ) {
-    case 0 :
-      if ( num > _jstart*_block ) {
-	num = _jstart*_block;
-      }
-      break;
-    default :
-      if ( _jstart==_nevblock && num > _length*_block ) {
-	num = _length*_block;
-      }
-      else if ( _jstart!=_nevblock && num > _jstart*_block ) {
-		    num = _jstart*_block;
-      }
-      break;
-    }
-    
-    // Now copy the eigenvalues.
-    TYPE *temp_evals = new TYPE[ num ];
-    for (i=0; i<num; i++) {
-      temp_evals[i] = _evalr[i];
-    }
-    return temp_evals;		
-  }
-  
-  template <class TYPE>
-  TYPE * BlockArnoldi<TYPE>::getiEvals() {
-    int i;
-    TYPE *temp_evals = new TYPE[ _nev ];
-    for (i=0; i<_nev; i++) {
-      temp_evals[i] = _evali[i];
-    }
-    return temp_evals;		
-  }
-  
-  template <class TYPE>
-  TYPE * BlockArnoldi<TYPE>::getiEvals( int& num ) {
-    int i;
-    // Correct the value of num if it's greater than the number of eigenvalue
-    // approximations available.  If there was a restart recently, then there
-    // may be more eigenvalue approximations than _jstart would lead you to
-    // believe.
-    switch ( _restarts ) {
-    case 0 :
-      if ( num > _jstart*_block ) {
-	num = _jstart*_block;
-      }
-      break;
-    default :
-      if ( _jstart==_nevblock && num > _length*_block ) {
-	num = _length*_block;
-      }
-      else if ( _jstart!=_nevblock && num > _jstart*_block ) {
-	num = _jstart*_block;
-      }
-      break;
-    }
-    
-    // Now copy the eigenvalues.
-    TYPE *temp_evals = new TYPE[ num ];
-    for (i=0; i<num; i++) {
-      temp_evals[i] = _evali[i];
-    }
-    return temp_evals;		
-  }
-  
-  template <class TYPE>
-  TYPE * BlockArnoldi<TYPE>::getResiduals() {
-    int i;
-    TYPE *temp_resids = new TYPE[ _nev ];
-    for (i=0; i<_nev; i++) {
-      temp_resids[i] = _ritzresiduals[i];
-    }
-    return temp_resids;		
   }
   
   template <class TYPE>
@@ -553,6 +385,11 @@ namespace Anasazi {
     while (_schurerror > _residual_tolerance && _restartiter <= _restarts && !_exit_flg) {
       iterate( _step );
     }
+    //
+    // Compute the current approximate eigenvectors before returning.
+    //
+    ComputeEvecs();    
+    //
   }
   
   template <class TYPE>
@@ -639,12 +476,6 @@ namespace Anasazi {
 	}
       }
     }
-    //
-    // Compute the current eigenvalue estimates before returning.
-    //
-    //cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<endl<<endl;       
-    //cout<<_hessmatrix<<endl;
-    
   }
   
   
@@ -1248,7 +1079,7 @@ namespace Anasazi {
       for (i=0; i<_maxoffset; i++) {
 	numimag = 0;
 	for (j=0; j<(_nevblock+i)*_block; j++) { 
-	  if (_evali[j]!=zero) { numimag++; }; 
+	  if (_ritzvals_i[j]!=zero) { numimag++; }; 
 	}
 	if (!(numimag % 2)) { _offset = i; break; }
       }
@@ -1285,18 +1116,15 @@ namespace Anasazi {
     //  will provide an approximate 2-norm to scale.
     //
     TYPE tempsf; 
-    _scalefactor = lapack.LAPY2(_evalr[0],_evali[0]);
+    _scalefactor = lapack.LAPY2(_ritzvals_r[0],_ritzvals_i[0]);
     for (i=1; i<n; i++) {
-      tempsf = lapack.LAPY2(_evalr[i],_evali[i]);
+      tempsf = lapack.LAPY2(_ritzvals_r[i],_ritzvals_i[i]);
       if (tempsf > _scalefactor) _scalefactor = tempsf;
     }
     _scalefactor = sqrt(_scalefactor);
     _schurerror = sub_block_b2.normFrobenius()/_scalefactor;
-    //
-    // ------------>  NOT SURE IF RITZRESIDUALS CAN BE UPDATED AFTER DEFLATION!
-    //
-    //for (i=0; i<_nevtemp ; i++) {
-    for (i=_defblock*_block; i<_nevtemp ; i++) {
+
+    for (i=0; i<_nevtemp ; i++) {
       Teuchos::SerialDenseMatrix<int,TYPE> s(Teuchos::View, sub_block_b, _block, 1, 0, i);
       _ritzresiduals[i] = blas.NRM2(_block, s.values(), 1)/_scalefactor;
     }   
@@ -1437,7 +1265,7 @@ namespace Anasazi {
       TYPE t_evecnrm;
       i = 0;
       while ( i < curr_nev ) {	
-	if (_evali[i] != zero) {
+	if (_ritzvals_i[i] != zero) {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	  // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	  evecstempr = evecstemp->CloneView( index+i, 1 );
@@ -1478,13 +1306,13 @@ namespace Anasazi {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
 	  evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
 	  eveci1 = _eveci->CloneView( indexi+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]],
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvals_i[indexi[i]])/_ritzvals_i[indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  // Change index and set non-conjugate part of imag eigenvector.
 	  indexi[i]--;
 	  eveci1 = _eveci->CloneView( indexi+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]],
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvals_i[indexi[i]])/_ritzvals_i[indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  delete evecstempi; evecstempi=0;
@@ -1506,6 +1334,7 @@ namespace Anasazi {
   void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     Teuchos::LAPACK<int,TYPE> lapack; 
+    Teuchos::BLAS<int,TYPE> blas;
     int i, j, info=0;
     int n = H.numRows(), ldh = H.stride(), ldq = Q.stride(); 
     TYPE* ptr_h = H.values();
@@ -1550,19 +1379,26 @@ namespace Anasazi {
     int *bwork = new int[ n ];
     char * jobvs = "V";
     char * sort = "N";
-    lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, &sdim,_evalr,
-		 _evali, ptr_q, ldq, work, lwork, bwork, &info );
+    lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, &sdim,_ritzvals_r,
+		 _ritzvals_i, ptr_q, ldq, work, lwork, bwork, &info );
     assert(info==0);
     //
-    // Sort the eigenvalues, this also sorts the _order vector so we know
+    // Sort the Ritz values, this also returns the permutation vector in _order so we know
     // which ones we want. 
     //
     //cout<<"Before sorting the Schur form (H):"<<endl;
     //H.print(cout);	  
     if (_problem.IsSymmetric())
-      _sm.sort( n, _evalr, _order );
+      _sm.sort( n, _ritzvals_r, _order );
     else
-      _sm.sort( n, _evalr, _evali, _order );
+      _sm.sort( n, _ritzvals_r, _ritzvals_i, _order );
+    //
+    // Copy the nev eigenvalues into the proper vectors
+    // NOTE:  If we don't have nev Ritz values, then only n are copied
+    //
+    ( n > _nev ? blas.COPY( _nev, _ritzvals_r, 1, _evalr, 1 ) : blas.COPY( n, _ritzvals_r, 1, _evalr, 1 ) );
+    if (!_problem.IsSymmetric() )
+      ( n > _nev ? blas.COPY( _nev, _ritzvals_i, 1, _evali, 1 ) : blas.COPY( n, _ritzvals_i, 1, _evali, 1 ) );
     //
     // Reorder real Schur factorization, remember to add one to the indices for the
     // fortran call and determine offset.  The offset is necessary since the TREXC
@@ -1576,7 +1412,7 @@ namespace Anasazi {
     int *_order2 = new int[ n ]; assert(_order2!=NULL);
     i = 0; 
     while (i < n) {
-      if (_evali[i] != zero) {
+      if (_ritzvals_i[i] != zero) {
 	offset2[_nevtemp] = 0;
 	for (j=i; j<n; j++) {
 	  if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
@@ -1638,37 +1474,6 @@ namespace Anasazi {
       index[i] = _nevtemp + i;
     }
     _basisvecs->SetBlock( *F_vec, index, _block);
-    //
-    //  Check for blocks to deflate
-    //  DEFLATION IS NOT READY RIGHT NOW!!!!!!!!
-    //	int defcnt;
-    //	i = _defblock;
-    //	while ( i<_nevblock ) {
-    //		defcnt = 0;
-    //		for (j=0; j<_block; j++) {
-    //			if (_ritzresiduals[i*_block+j] < _def_tol ) { defcnt++; }
-    //		}
-    //		if (defcnt == _block) {
-    //			_defblock++;
-    //		}
-    //		i++;
-    //	}		
-    //
-    //  If there are blocks to deflate, we need to set the subdiagonal entries to zero
-    //
-    if (_defblock > 0) {
-      if (_om.doOutput(2)) {
-	cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<endl;
-	cout<<"Number of blocks being deflated : "<<_defblock<<endl;
-      }
-      TYPE zero = 0.0;
-      Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, _block, _defblock*_block, _nevtemp, 0);
-      for (i=0; i<_block; i++) {
-	for (j=0; j<_defblock*_block; j++) {
-	  Hj( i, j ) = zero;
-	}
-      }
-    }
     //
     //  Reset the pointer.
     //

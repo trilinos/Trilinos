@@ -277,6 +277,9 @@ int main(int argc, char *argv[]) {
 	MyProblem.SetNEV( nev );
 	MyProblem.SetBlockSize( block );
 
+        // Inform the eigenproblem that you are finishing passing it information
+        assert( MyProblem.SetProblem()==0 );
+
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
         Anasazi::BasicSort<double> MySort( which );
 
@@ -305,22 +308,23 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// obtain results directly
-	double* resids = MyBlockArnoldi.getResiduals();
-	double* evalr = MyBlockArnoldi.getEvals(); 
+	double* evalr = MyProblem.GetREvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
-	Anasazi::PetraVec evecr(Map, nev);
-	MyBlockArnoldi.getEvecs( evecr );
+	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
+	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
 
+	int* index = new int[ nev ];
+	for (i=0; i<nev; i++) { index[i] = i; }
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	MyProblem.AInProd( one, evecr, evecr, dmatr );
+	MyProblem.AInProd( one, *(evecr->CloneView( index, nev )), *(evecr->CloneView( index, nev )), dmatr );
 	double compeval;
 
 	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
 	cout<<"Real Part \t Rayleigh Error"<<endl;
 	for (i=0; i<nev; i++) {
 		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<abs(compeval-one/evalr[i])<<endl;
+		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/evalr[i])<<endl;
 	}
 
 	// output results to screen
@@ -334,9 +338,6 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-        if (resids) delete [] resids;
-	if (evalr) delete [] evalr;
-
 	delete &A, &B;
 	delete &Map;
 	delete &Comm;

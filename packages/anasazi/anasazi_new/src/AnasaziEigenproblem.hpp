@@ -119,6 +119,11 @@ namespace Anasazi {
     */
     void SetSymmetric( const bool isSym = true ){ _isSym = isSym; };
     
+    //! Inform the eigenproblem that is has all the information it needs to define the eigenproblem.
+    /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
+     */
+    ReturnType SetProblem();
+
     //@}
     
     //@{ \name Accessor Methods.
@@ -294,8 +299,74 @@ namespace Anasazi {
   template<class TYPE>
   Eigenproblem<TYPE>::~Eigenproblem(void)
   {
+    if (_REvecs) delete _REvecs;
+    if (_IEvecs) delete _IEvecs;
+    if (_REvals) delete _REvals;
+    if (_IEvals) delete _IEvals;
   }
   
+  //=============================================================================
+  //	SetProblem (sanity check method)
+  //=============================================================================
+
+  template<class TYPE>
+  ReturnType Eigenproblem<TYPE>::SetProblem() 
+  {
+    //----------------------------------------------------------------
+    // Sanity Checks
+    //----------------------------------------------------------------
+    // If there is no operator, then we can't proceed.
+    if (!_A && !_Op) { return Failed; }
+
+    // If there is no initial vector, then we don't have anything to clone workspace from.
+    if (!_InitVec) { return Failed; }
+
+    // If we don't need any eigenvalues, we don't need to continue.
+    if (_nev == 0) { return Failed; }
+
+    // If there is a zero blocksize, we don't need to continue.
+    if (_blocksize == 0) { return Failed; }
+
+    // If this eigenproblem is being reused, then we may need to increase the space
+    // for the eigenvalues / eigenvectors
+    if (_REvecs) {
+      int old_nev = _REvecs->GetNumberVecs();
+      //
+      // If the size of the old eigenproblem is larger than the new one, then
+      // make sure all the storage required for the eigenproblem exists (check symmetry)
+      //
+      if (_nev <= old_nev) {
+	if (!_isSym) {
+	  if (!_IEvals) { _IEvals = new TYPE[ _nev + _blocksize ]; }
+	  if (!_IEvecs) { _IEvecs = _REvecs->Clone( _nev + _blocksize ); }
+	}
+	return Ok;
+      } else {
+	//
+	// We need more space:  Delete old storage and reallocate.
+	//
+	if (_REvecs) delete _REvecs;
+	if (_IEvecs) delete _IEvecs;
+	if (_REvals) delete _REvals;
+	if (_IEvals) delete _IEvals;
+      }
+    }	
+	
+    // If there is an A, but no operator, we can set them equal.
+    if (_A && !_Op) { _Op = _A; }
+
+    //----------------------------------------------------------------
+    // Allocate Memory
+    //----------------------------------------------------------------
+    _REvecs = _InitVec->Clone( _nev + _blocksize );
+    _REvals = new TYPE[ _nev + _blocksize ];
+    if (!_isSym) {
+      _IEvecs = _InitVec->Clone( _nev + _blocksize );
+      _IEvals = new TYPE[ _nev + _blocksize ];
+    }
+    return Ok;
+  }
+
   //=============================================================================
   //	Implementations (Matrix/Operator Application Methods)
   //=============================================================================
@@ -341,8 +412,6 @@ namespace Anasazi {
   { 
     if (_Op) {
       return(_Op->Apply( X, Y, trans )); 
-    } else if (_A) {
-      return(_A->Apply( X, Y, trans )); 
     } else {
       return Undefined;
     }

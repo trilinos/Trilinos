@@ -37,6 +37,7 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_LAPACK.hpp"
 
 #include "Trilinos_Util.h"
 
@@ -54,7 +55,8 @@ int main(int argc, char *argv[]) {
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
-	
+	double zero = 0.0;
+
 #ifdef EPETRA_MPI	
 	// Initialize MPI	
 	MPI_Init(&argc,&argv); 	
@@ -160,6 +162,9 @@ int main(int argc, char *argv[]) {
 	MyProblem.SetNEV( nev );
 	MyProblem.SetBlockSize( block );
 
+       // Inform the eigenproblem that you are finishing passing it information
+        assert( MyProblem.SetProblem()==0 );
+
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
         Anasazi::BasicSort<double> MySort( which );
 
@@ -188,18 +193,79 @@ int main(int argc, char *argv[]) {
 #endif
 
         // obtain results directly
-        double* resids = MyBlockArnoldi.getResiduals();
-        double* evalr = MyBlockArnoldi.getEvals();
-        double* evali = MyBlockArnoldi.getiEvals();
+        double* evalr = MyProblem.GetREvals();
+        double* evali = MyProblem.GetIEvals();
 
-        // retrieve eigenvectors
-        Anasazi::PetraVec evecr(Map, nev);
-        MyBlockArnoldi.getEvecs( evecr );
-        Anasazi::PetraVec eveci(Map, nev);
-        MyBlockArnoldi.getiEvecs( eveci );
+	// retrieve eigenvectors
+	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
+        Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
+        Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetIEvecs());
 
         // output results to screen
         MyBlockArnoldi.currentStatus();
+
+	// Compute residuals.
+	Teuchos::LAPACK<int,double> lapack;
+	Anasazi::PetraVec tempevecr(Map,nev), tempAevec(Map,nev);
+	Anasazi::PetraVec tempeveci(Map,nev);
+	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
+	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
+	double* normA = new double[nev];
+	double* tempnrm = new double[nev];
+	cout<<endl<< "Actual Residuals"<<endl;
+	cout<<"------------------------------------------------------"<<endl;
+	Breal.putScalar(0.0); 
+	if (!MyProblem.IsSymmetric())
+	  Bimag.putScalar(0.0);
+	int* index = new int[ nev ];
+	for (i=0; i<nev; i++) { 
+	  index[i] = i;
+	  normA[i] = 0.0;
+	  Breal(i,i) = evalr[i]; 
+	  if (!MyProblem.IsSymmetric())
+	    Bimag(i,i) = evali[i]; 
+	}
+	Amat.Apply( *(evecr->CloneView( index, nev )), tempAevec );
+	tempAevec.MvTimesMatAddMv( -1.0, *(evecr->CloneView( index, nev )) , Breal, 1.0 );
+	if (!MyProblem.IsSymmetric()) {
+	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
+	  tempAevec.MvNorm( normA );
+	  Amat.Apply( *(eveci->CloneView( index, nev )), tempAevec );
+	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
+	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
+	}
+	tempAevec.MvNorm( tempnrm );
+	i = 0;
+	while (i < nev) {
+	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
+	  if (MyProblem.IsSymmetric()) {
+	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evalr[i]);
+	    i++;
+	  } else {
+	    normA[i] /= lapack.LAPY2( evalr[i], evali[i] );
+	    if (evali[i] != zero) {
+	      normA[i+1] = normA[i];
+	      i = i+2;
+	    } else {
+	      i++;
+	    }
+	  }
+	}
+	if (MyProblem.IsSymmetric()) {
+	  cout<<"Real Part"<<"\t"<<"Residual"<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	  for (i=0; i<nev; i++) {
+	    cout<< evalr[i] << "\t\t"<< normA[i] << endl;
+	  }  
+	  cout<<"------------------------------------------------------"<<endl;
+	} else {
+	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	  for (i=0; i<nev; i++) {
+	    cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
+	  }  
+	  cout<<"------------------------------------------------------"<<endl;
+	}	
 
 #ifdef UNIX
         if (verbose)
@@ -207,9 +273,6 @@ int main(int argc, char *argv[]) {
 #endif
 
         // Release all objects
-        delete [] resids;
-	delete [] evalr;
-	delete [] evali;
         delete [] NumNz;
 
   	return 0;

@@ -13,7 +13,7 @@ endif
 ANASAZI_BIRAM_EX_HB = BlockArnoldiPetraExHb
 #endif 
 
-noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) $(ANASAZI_BIRAM_EX_HB) BlockArnoldiPetraEx 
+noinst_PROGRAMS = BlockArnoldiPetraEx $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
 
