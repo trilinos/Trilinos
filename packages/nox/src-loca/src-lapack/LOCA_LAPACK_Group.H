@@ -145,6 +145,9 @@ namespace LOCA {
       //! Get scale vector
       virtual const NOX::Abstract::Vector& getScaleVec() const;
 
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
     protected:
 
       //! Compute a default scale vector (vector of all one's)

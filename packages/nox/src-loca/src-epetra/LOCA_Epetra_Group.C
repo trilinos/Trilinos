@@ -34,6 +34,10 @@
 
 #include "LOCA_Epetra_Interface.H"        // class data members
 #include "NOX_Parameter_List.H"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "NOX_Epetra_SharedOperator.H"
+#include "Epetra_Vector.h"
 
 LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
 			   NOX::Parameter::List& par, 
@@ -44,7 +48,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   NOX::Epetra::Group(printParams, par, i, x, J),
   params(p),
   userInterface(i),
-  scaleVec(x)
+  scaleVec(x),
+  tmpVectorPtr2(0)
 {
   computeScaleVec();  // use default method for computing scale vector
 }
@@ -59,7 +64,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   NOX::Epetra::Group(printParams, par, i, x, J, M),
   params(p),
   userInterface(i),
-  scaleVec(x)
+  scaleVec(x),
+  tmpVectorPtr2(0)
 {
   computeScaleVec();  // use default method for computing scale vector
 }
@@ -74,7 +80,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   NOX::Epetra::Group(printParams, par, i, x, J),
   params(p),
   userInterface(i),
-  scaleVec(s)
+  scaleVec(s),
+  tmpVectorPtr2(0)
 {
 }
 
@@ -89,7 +96,8 @@ LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
   NOX::Epetra::Group(printParams, par, i, x, J, M),
   params(p),
   userInterface(i),
-  scaleVec(s)
+  scaleVec(s),
+  tmpVectorPtr2(0)
 {
 }
 
@@ -98,12 +106,14 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   NOX::Epetra::Group(source, type),
   params(source.params),
   userInterface(source.userInterface),
-  scaleVec(source.scaleVec)
+  scaleVec(source.scaleVec),
+  tmpVectorPtr2(0)
 {
 }
 
 LOCA::Epetra::Group::~Group() 
 {
+  delete tmpVectorPtr2;
 }
 
 NOX::Abstract::Group* 
@@ -236,4 +246,51 @@ LOCA::Epetra::Group::getScaleVec() const {
 void
 LOCA::Epetra::Group::computeScaleVec() {
   scaleVec.init(1.0);
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+
+  //Allocate temporary vectors if not aready done
+  if (tmpVectorPtr == 0)
+    tmpVectorPtr = new Epetra_Vector(xVector.getEpetraVector());
+  if (tmpVectorPtr2 == 0)
+    tmpVectorPtr2 = new Epetra_Vector(xVector.getEpetraVector());
+
+  tmpVectorPtr2->PutScalar(1.0-conParamValue);
+
+  // See if it is an Epetra_CrsMatrix
+  Epetra_CrsMatrix* testCrs = 0;
+  testCrs = dynamic_cast<Epetra_CrsMatrix*>
+            (&(sharedJacobian.getOperator(this)));
+  if (testCrs != 0) {
+
+    testCrs->Scale(conParamValue);
+    testCrs->ExtractDiagonalCopy(*tmpVectorPtr);
+    tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
+    testCrs->ReplaceDiagonalValues(*tmpVectorPtr);
+    return LOCA::Abstract::Group::Ok;
+
+  }
+
+  // See if it is an Epetra_VbrMatrix
+  Epetra_VbrMatrix* testVbr = 0;
+  testVbr = dynamic_cast<Epetra_VbrMatrix*>(&(sharedJacobian.getOperator(this)));
+  if (testVbr != 0) {
+    
+    testVbr->Scale(conParamValue);
+    testVbr->ExtractDiagonalCopy(*tmpVectorPtr);
+    tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
+    testVbr->ReplaceDiagonalValues(*tmpVectorPtr);
+    return LOCA::Abstract::Group::Ok;
+  }
+
+  // Otherwise this alg won't work
+  cout << "ERROR: LOCA::Epetra::Group::augmentJacobianForHomotopy() - "
+       << "the Jacobian must be either an Epetra_CrsMatrix or an "
+       << "Epetra_VbrMatrix!" << endl;
+  throw "LOCA Error";
+
+  return LOCA::Abstract::Group::Ok;
 }

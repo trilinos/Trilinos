@@ -234,3 +234,18 @@ void
 LOCA::LAPACK::Group::computeScaleVec() {
   scaleVec.init(1.0);
 }
+
+NOX::Abstract::Group::ReturnType 
+LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+  int size = scaleVec.length();
+
+  // Scale the matrix by the value of the homotopy continuation param
+  jacobianMatrix.scale(conParamValue);
+
+  // Add the scaled identity matrix to the jacobian
+  for (int i = 0; i < size; i++) 
+    jacobianMatrix(i,i) += (1.0 - conParamValue);
+
+  return NOX::Abstract::Group::Ok;
+}

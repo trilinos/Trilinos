@@ -197,6 +197,9 @@ namespace LOCA {
       //! Get the scale vector
       virtual const NOX::Abstract::Vector& getScaleVec() const;
 
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
     protected:
   
       //! Compute a default scale vector (vector of all one's)
@@ -219,6 +222,11 @@ namespace LOCA {
 
       //! Scale vector
       NOX::Epetra::Vector scaleVec;
+
+      //! Extra vector needed for intermediate calculations of LOCA routines.
+      /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
+       */
+      Epetra_Vector* tmpVectorPtr2;
 
     };
 
