@@ -131,6 +131,7 @@ typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
 extern int Debug_Driver;
+extern int Number_Iterations;
 extern int Debug_Chaco_Input;
 extern int Chaco_In_Assign_Inv;
 

@@ -49,45 +49,17 @@ LB_EDGE_LIST_FN get_edge_list;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
+int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
+                 MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
-  struct LB_Struct *lb;
-
-  /* Variables returned by Zoltan */
-  LB_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
-  LB_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
-  int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
-                                    imported.                                */
-  LB_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
-  LB_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
-  int   *export_procs = NULL;    /* Proc IDs of destination procs for nodes
-                                    to be exported.                          */
-  int num_imported;              /* Number of nodes to be imported.          */
-  int num_exported;              /* Number of nodes to be exported.          */
-  int new_decomp;                /* Flag indicating whether the decomposition
-                                    has changed                              */
-  int num_gid_entries;           /* Number of array entries in a global ID.  */
-  int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
   int ierr;                      /* Error code                               */
-  char errmsg[128];		 /* Error message */
-
-/***************************** BEGIN EXECUTION ******************************/
+  char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
-
-  LB_Set_Param(NULL, "DEBUG_MEMORY", "1");
-
-  /*
-   *  Create a load-balancing structure.
-   */
-  if ((lb = LB_Create(MPI_COMM_WORLD)) == NULL) {
-    Gen_Error(0, "fatal:  NULL returned from LB_Create()\n");
-    return 0;
-  }
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
@@ -99,7 +71,6 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
       return 0;
     }
   }
-
 
   /* Set the method */
   if (LB_Set_Method(lb, prob->method) == LB_FATAL) {
@@ -155,6 +126,42 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
     return 0;
   }
 
+  DEBUG_TRACE_END(Proc, yo);
+  return 1;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
+               MESH_INFO_PTR mesh)
+{
+/* Local declarations. */
+  char *yo = "run_zoltan";
+
+  /* Variables returned by Zoltan */
+  LB_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
+  LB_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
+  int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
+                                    imported.                                */
+  LB_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
+  LB_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
+  int   *export_procs = NULL;    /* Proc IDs of destination procs for nodes
+                                    to be exported.                          */
+  int num_imported;              /* Number of nodes to be imported.          */
+  int num_exported;              /* Number of nodes to be exported.          */
+  int new_decomp;                /* Flag indicating whether the decomposition
+                                    has changed                              */
+  int num_gid_entries;           /* Number of array entries in a global ID.  */
+  int num_lid_entries;           /* Number of array entries in a local ID.   */
+
+  int i;                         /* Loop index                               */
+
+/***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
+
   /* Evaluate the old balance */
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nBEFORE load balancing\n");
@@ -198,13 +205,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
 
-  LB_Destroy(&lb);
-
-  LB_Memory_Stats();
-
   DEBUG_TRACE_END(Proc, yo);
   return 1;
-
 }
 
 /*****************************************************************************/

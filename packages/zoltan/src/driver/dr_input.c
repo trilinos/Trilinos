@@ -160,6 +160,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** The Number of iterations of the balancer to preform ******/
+      else if (token_compare(cptr, "number of iterations")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Number_Iterations) != 1) {
+          Gen_Error(0, "fatal: number of iterations must be an integer.");
+          return 0;
+        }
+      }
+
       /****** The Chaco Input Assignment Inverse flag ******/
       else if (token_compare(cptr, "chaco input assignment inverse")) {
         cptr = strtok(NULL, "\t=");
@@ -479,6 +489,8 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /***************************** BEGIN EXECUTION ******************************/
 
   MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 
