@@ -119,7 +119,9 @@ CommandLineProcessor::parse(
  			print_bad_opt(i,argv,errout);
 			return PARSE_UNRECOGNISED_OPTION;
 		}
-		const opt_val_val_t &opt_val_val = itr->second;
+                // Changed access to second value of map to not use overloaded arrow operator, 
+                // otherwise this code will not compile on Janus (HKT, 12/01/2003) 
+                const opt_val_val_t &opt_val_val = (*itr).second;
 		switch( opt_val_val.opt_type ) {
 			case OPT_BOOL_TRUE:
 				*((bool*)opt_val_val.opt_val) = true;
