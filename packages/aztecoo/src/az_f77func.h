@@ -55,10 +55,10 @@
 #else /* Define az_fcd for all other machines */
 
 #define az_fcd char * 
+#define PREFIX
 
 #ifndef HAVE_CONFIG_H
 
-#define PREFIX
 #ifdef F77_FUNC
 #undef F77_FUNC
 #endif
