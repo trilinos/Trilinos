@@ -294,8 +294,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              IfpackOverlap, LevelID_[level], pre_or_post,
                              IfpackList,*Comm_);
+
 #else
-      cerr << ErrorMsg_ << "IFAPCK not available." << endl
+      cerr << ErrorMsg_ << "IFPACK not available." << endl
 	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
 	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
