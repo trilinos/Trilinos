@@ -22,7 +22,7 @@ extern "C" {
 #include "zoltan_comm.h"
 
     
-//#define USE_NEW_COARSENING  
+/* #define USE_NEW_COARSENING  */
 #define REMOVE_IDENTICAL_NETS
     
     
@@ -256,7 +256,6 @@ int Zoltan_PHG_Coarsening
 
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of resulting coarse vertices. */
-  *LevelCnt   = 0;
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
   me = hgc->myProc_x;             /* short name, convenience variable */
   size  = 0;                      /* size (in ints) to communicate */
@@ -295,7 +294,6 @@ int Zoltan_PHG_Coarsening
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
   
-  /* Use communication plan for unstructured communication. */
   
   /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
   /* We pack ints and floats into same buffer */
@@ -329,9 +327,10 @@ int Zoltan_PHG_Coarsening
        !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))
     || !(ahvertex = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
       MEMORY_ERROR;
+  if (!(ahindex = (int *) ZOLTAN_CALLOC(hg->nEdge+1, sizeof(int))))
+      MEMORY_ERROR;
   if (hg->nEdge && (
-       !(ahindex = (int *) ZOLTAN_CALLOC(hg->nEdge+1, sizeof(int)))
-    || !(hlsize  = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
+       !(hlsize  = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
     || !(lhash   = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
     || !(hash    = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
           ))
@@ -353,6 +352,7 @@ int Zoltan_PHG_Coarsening
   }
       
   /* index all received data for rapid lookup */
+  *LevelCnt   = 0;
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, source_lno=ip[i++];
     int lno=VTX_GNO_TO_LNO (hg, ip[i++]);
@@ -391,8 +391,7 @@ int Zoltan_PHG_Coarsening
   /* Allocate edge weight and index array for coarse hgraph */
   c_hg->EdgeWeightDim = (hg->EdgeWeightDim > 0) ? hg->EdgeWeightDim : 1;
   if (c_hg->nEdge) {
-      if (!(c_hg->ewgt =(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float)))
-          || !(c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int))))
+      if (!(c_hg->ewgt =(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
           MEMORY_ERROR;
       if (hg->EdgeWeightDim)
           for (i = 0; i < hg->nEdge * hg->EdgeWeightDim; ++i)
@@ -401,6 +400,9 @@ int Zoltan_PHG_Coarsening
           for (i = 0; i < c_hg->nEdge; ++i)
               c_hg->ewgt[i] = 1.0;
   }
+  if (!(c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int))))
+      MEMORY_ERROR;
+
   if (c_hg->nPins>0 && !(c_hg->hvertex = (int*)ZOLTAN_MALLOC (c_hg->nPins*sizeof(int))))
       MEMORY_ERROR;
 
@@ -464,10 +466,11 @@ int Zoltan_PHG_Coarsening
   ZOLTAN_FREE(&hash); /* we don't need it anymore */
 
   /* now local sizes */
+  if (!(ahindex = (int *)  ZOLTAN_MALLOC((1+size) * sizeof(int))))
+    MEMORY_ERROR;
   if (size && (
        !(ip      = (int *)  ZOLTAN_MALLOC(size * sizeof(int)))
     || !(hsize =   (int *)  ZOLTAN_MALLOC(size * sizeof(int)))       
-    || !(ahindex = (int *)  ZOLTAN_MALLOC((1+size) * sizeof(int)))
     || !(c_ewgt  = (float *)ZOLTAN_MALLOC(size * sizeof(float)*c_hg->EdgeWeightDim)))) 
       MEMORY_ERROR;
 
@@ -484,6 +487,7 @@ int Zoltan_PHG_Coarsening
 
   Zoltan_Comm_Destroy (&plan);
 
+  /* in order to find identical nets; we're going to sort hash values and compare them */
   if (size && !(slist = (SortItem *) ZOLTAN_MALLOC(size * sizeof(SortItem))))
       MEMORY_ERROR;
   ahindex[0] = 0;
@@ -502,7 +506,7 @@ int Zoltan_PHG_Coarsening
 
           if (hlsize[n1]==hlsize[n2] &&
               !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]], sizeof(int)*hlsize[n1])) {
-              listproc[n2] = 1+n1;
+              listproc[n2] = 1+n1; /* n2 is potentially identical to n1 */
               ++idx;
           }
           ++i;
@@ -527,7 +531,7 @@ int Zoltan_PHG_Coarsening
           ++c_hg->nEdge;
           ip[i] = 1; /* Don't ignore */
       } else 
-          ip[i] = 0; /* ignore */
+          ip[i] = 0; /* ignore size 0/1 nets*/
   }
   
   Zoltan_Multifree(__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
