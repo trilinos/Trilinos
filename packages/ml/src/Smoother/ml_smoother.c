@@ -4768,9 +4768,9 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
    double *x2;
    ML_Smoother  *smooth_ptr;
    register int    *bindx_ptr;
-   register double sum, *ptr_val;
-   int             bindx_row, *bindx;
-   double          *ptr_b, *val = NULL;
+   register double sum;
+   int             *bindx;
+   double          *val = NULL;
    struct ML_CSR_MSRdata *ptr = NULL;
 
    smooth_ptr = (ML_Smoother *) sm;
@@ -4819,35 +4819,55 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
          ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
 
-      bindx_row = bindx[0];
-      bindx_ptr = &bindx[bindx_row];
-      ptr_val   = &val[bindx_row];
-      ptr_b     = rhs;
-
-      for (i = 0; i < Nrows; i++)
-      {
-         sum    = *ptr_b++;
-	  
-	     for (j = bindx[i]; j < bindx[i+1]; j++)
-            sum -= *ptr_val++ * x2[*bindx_ptr++];
-         if (val[i] != 0.0)
-            x2[i] = sum/val[i];
+      j = bindx[0];
+      bindx_ptr = &bindx[j];
+      for (i = 0; i < Nrows; i++) {
+	sum =  rhs[i];
+	while (j+10 < bindx[i+1]) {
+	  sum -= (val[j+9]*x2[bindx_ptr[9]] +
+		  val[j+8]*x2[bindx_ptr[8]] +
+		  val[j+7]*x2[bindx_ptr[7]] +
+		  val[j+6]*x2[bindx_ptr[6]] +
+		  val[j+5]*x2[bindx_ptr[5]] +
+		  val[j+4]*x2[bindx_ptr[4]] +
+		  val[j+3]*x2[bindx_ptr[3]] +
+		  val[j+2]*x2[bindx_ptr[2]] +
+		  val[j+1]*x2[bindx_ptr[1]] +
+		  val[j]*x2[*bindx_ptr]);
+	  bindx_ptr += 10;
+	  j += 10;
+	}
+	while (j < bindx[i+1]) {
+	  sum -= val[j++] * x2[*bindx_ptr++];
+	}
+	if (val[i] != 0.0) x2[i] = sum/val[i];
       }
 
+      j--;
       bindx_ptr--;
-      ptr_val--;
-      ptr_b--;
 
-      for (i = Nrows - 1; i >= 0; i--)
-      {
-         sum    = *ptr_b--;
+      for (i = Nrows - 1; i >= 0; i--) {
+	sum    = rhs[i];
 
-         for (j = bindx[i]; j < bindx[i+1]; j++)
-            sum -= *ptr_val-- * x2[*bindx_ptr--];
-         if (val[i] != 0.0)
-            x2[i] = sum/val[i];
+	while (j-9 >= bindx[i]) {
+	  bindx_ptr -= 10;
+	  j -= 10;
+	  sum -= (val[j+10]*x2[bindx_ptr[10]] +
+		  val[j+9]*x2[bindx_ptr[9]] +
+		  val[j+8]*x2[bindx_ptr[8]] +
+		  val[j+7]*x2[bindx_ptr[7]] +
+		  val[j+6]*x2[bindx_ptr[6]] +
+		  val[j+5]*x2[bindx_ptr[5]] +
+		  val[j+4]*x2[bindx_ptr[4]] +
+		  val[j+3]*x2[bindx_ptr[3]] +
+		  val[j+2]*x2[bindx_ptr[2]] +
+		  val[j+1]*x2[bindx_ptr[1]]);
+	}
+	while (j >= bindx[i]) {
+	  sum -= val[j--] * x2[*bindx_ptr--];
+	}
+	if (val[i] != 0.0) x2[i] = sum/val[i];
       }
-
    }
 
    if (getrow_comm != NULL) {
@@ -5658,22 +5678,15 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
 #define MB_FORNOW
 #ifdef 	MB_FORNOW
-   pAux  = (double *) ML_allocate(n*sizeof(double));
-   res   = (double *) ML_allocate(n*sizeof(double));
-   y     = (double *) ML_allocate(n*sizeof(double));
+   pAux  = (double *) ML_allocate((n+1)*sizeof(double));
+   res   = (double *) ML_allocate((n+1)*sizeof(double));
+   y     = (double *) ML_allocate((n+1)*sizeof(double));
 
    if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
    if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
    if (y    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
 #endif
 
-   if (smooth_ptr->init_guess == ML_NONZERO)
-     ML_Operator_Apply(Amat, n, x, n, pAux);
-   else { 
-     for (i = 0; i < n; i++) pAux[i] = 0.0;
-   }
-
-   for (i = 0; i < n; i++) pAux[i] = rhs[i] - pAux[i]; 
 #ifdef RST_MODIF
 
    /* ----------------------------------------------------------------- */
@@ -5725,25 +5738,48 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    Amat->matvec->ML_id    = ML_EXTERNAL;
    Amat->matvec->external = DinvA;
    Amat->data             = &DinvA_widget;
-
-
-
-
 #endif
 
+   if (deg != 1) {
+   if (smooth_ptr->init_guess == ML_NONZERO) {
+     ML_Operator_Apply(Amat, n, x, n, pAux);
+     for (i = 0; i < n; i++) pAux[i] = (rhs[i]
+#ifdef RST_MODIF
+			                /diagonal[i]
+#endif
+                                        - pAux[i]); 
+   }
+   else { 
+     for (i = 0; i < n; i++) pAux[i] = rhs[i]
+#ifdef RST_MODIF
+			                /diagonal[i]
+#endif
+                                                    ;
+   }
+   }
 
 
    if (deg == 1) { 
 
-#ifdef RST_MODIF
-     for (i = 0; i < Amat->outvec_leng; i++) pAux[i] = pAux[i]/diagonal[i];
-#endif
        cf = over * mlsCf[0]; 
 
-       for (i=0; i<n; i++) x[i] += cf * pAux[i]; 
+       //       for (i=0; i<n; i++) x[i] += cf * pAux[i]; 
+       if (smooth_ptr->init_guess == ML_NONZERO) {
+	 ML_Operator_Apply(Amat, n, x, n, pAux);
+	 for (i = 0; i < n; i++) x[i] += cf * (rhs[i]
+#ifdef RST_MODIF
+			                /diagonal[i]
+#endif
+                                        - pAux[i]); 
+       }
+       else { 
+	 for (i = 0; i < n; i++) x[i] = cf*rhs[i]
+#ifdef RST_MODIF
+			                /diagonal[i]
+#endif
+                                                    ;
+       }
 #ifdef 	MB_FORNOW
-       /* @@@ clean up later in destructor, right now clean in here .... */
-       /* @@@ must deallocate here if we decide to stick with local allocations */
        if (y)    { ML_free(   y);    y = NULL; } 
        if (res)  { ML_free( res);  res = NULL; } 
        if (pAux) { ML_free(pAux); pAux = NULL; }
@@ -6248,10 +6284,10 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget;
    int              deg, i, j, k, n, nn;
-   double          *pAux, *res, *dk;
+   double          *pAux, *dk;
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
-   double          *diagonal, *vals, *tdiag;
+   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2, dtemp3;
 
 
    n = outlen;
@@ -6259,29 +6295,14 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    deg    = widget->mlsDeg;
 
-   pAux  = (double *) ML_allocate(n*sizeof(double));
-   res   = (double *) ML_allocate(n*sizeof(double));
-   dk     = (double *) ML_allocate(n*sizeof(double));
+   pAux  = (double *) ML_allocate((n+1)*sizeof(double));
+   dk     = (double *) ML_allocate((n+1)*sizeof(double));
 
    if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
-   if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
    if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
 
-   if (smooth_ptr->init_guess == ML_NONZERO)
-     ML_Operator_Apply(Amat, n, x, n, pAux);
-   else { 
-     for (i = 0; i < n; i++) pAux[i] = 0.0;
-   }
-   for (i = 0; i < n; i++) res[i] = rhs[i] - pAux[i]; 
-
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
-   alpha = beta/8.;           /* frequency errors.    */
-   /*
-   ML_Operator_Print(Amat,"hi");
-   for (i = 0; i < n; i++) printf("x(%d) = %20.13e;\n",i+1,x[i]);
-   for (i = 0; i < n; i++) printf("rhs(%d) = %20.13e;\n",i+1,rhs[i]);
-   */
-
+   alpha = Amat->lambda_max*1.1/8.8;           /* frequency errors.    */
    delta = (beta - alpha)/2.;
    theta = (beta + alpha)/2.;
    s1 = theta/delta;
@@ -6329,25 +6350,31 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
 
-   for (i = 0; i < Amat->outvec_leng; i++) dk[i] = res[i] /(theta*diagonal[i]);
-
-   if (outlen == 1) { theta = 1.; deg = 0; }
-   for (k = 0; k < deg; k++) {
-     for (i = 0; i < Amat->outvec_leng; i++) x[i] += dk[i];
-     rhokp1 = 1./(2.*s1 - rhok);
-     /*
-     printf("%d:      res = %e \n",k,sqrt(ML_gdot(n, res, res, Amat->comm)));
-     */
+   if (smooth_ptr->init_guess == ML_NONZERO) {
      ML_Operator_Apply(Amat, n, x, n, pAux);
-     for (i = 0; i < Amat->outvec_leng; i++) res[i] = rhs[i] - pAux[i]; 
-
-     for (i = 0; i < Amat->outvec_leng; i++) {
-        dk[i] = rhokp1 * rhok * dk[i] + 2.*rhokp1*res[i]/(delta*diagonal[i]);
+     for (i = 0; i < n; i++) {
+       dk[i] = (rhs[i] - pAux[i])/(theta*diagonal[i]);
+       x[i] += dk[i];
      }
+   }
+   else { 
+     for (i = 0; i < n; i++) {
+       x[i] = dk[i] = rhs[i]/(theta*diagonal[i]);
+     }
+   }
+
+   for (k = 0; k < deg-1; k++) {
+     ML_Operator_Apply(Amat, n, x, n, pAux);
+     rhokp1 = 1./(2.*s1 - rhok);
+     dtemp1 = rhokp1*rhok;
+     dtemp2 = 2.*rhokp1/delta;
      rhok = rhokp1;
+     for (i = 0; i < n; i++) {
+       dk[i] = dtemp1 * dk[i] + dtemp2*(rhs[i]-pAux[i])/diagonal[i];
+       x[i] += dk[i];
+     }
    }
    ML_free(dk);
-   ML_free(res);
    ML_free(pAux);
    return 0;	
 }
