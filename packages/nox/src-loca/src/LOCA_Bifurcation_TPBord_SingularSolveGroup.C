@@ -35,7 +35,7 @@
 
 LOCA::Bifurcation::TPBord::SingularSolveGroup::SingularSolveGroup(
 					   const NOX::Parameter::List& params)
-  : singularSolveManager(params.sublist("Singular Solve"))
+  : singularSolveManager(const_cast<NOX::Parameter::List&>(params).sublist("Singular Solve"))
 {
 }
 
