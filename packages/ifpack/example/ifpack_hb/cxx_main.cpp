@@ -161,12 +161,12 @@ int main(int argc, char *argv[]) {
     Epetra_Flops fact_counter;
   
     elapsed_time = timer.ElapsedTime();
-    ILUK = new Ifpack_CrsRiluk(A, *IlukGraph);
+    ILUK = new Ifpack_CrsRiluk(*IlukGraph);
     ILUK->SetFlopCounter(fact_counter);
     ILUK->SetAbsoluteThreshold(Athresh);
     ILUK->SetRelativeThreshold(Rthresh);
     //assert(ILUK->InitValues()==0);
-    int initerr = ILUK->InitValues();
+    int initerr = ILUK->InitValues(A);
     if (initerr!=0) cout << Comm << "InitValues error = " << initerr;
     assert(ILUK->Factor()==0);
     elapsed_time = timer.ElapsedTime() - elapsed_time;

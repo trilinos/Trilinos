@@ -119,11 +119,23 @@ class Ifpack_IlukGraph {
   
   //! Returns the the overlapped graph.
   virtual Epetra_CrsGraph * OverlapGraph() const  {return(OverlapGraph_);};
+
+    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
+    virtual const Epetra_BlockMap & DomainMap() const {return(DomainMap_);};
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    virtual const Epetra_BlockMap & RangeMap() const{return(RangeMap_);};
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    virtual const Epetra_Comm & Comm() const{return(Comm_);};
   
  private:
     
 
   const Epetra_CrsGraph & Graph_;
+  const Epetra_BlockMap & DomainMap_;
+  const Epetra_BlockMap & RangeMap_;
+  const Epetra_Comm & Comm_;
   Epetra_CrsGraph * OverlapGraph_;
   Epetra_Import * OverlapImporter_;
   Epetra_BlockMap * OverlapRowMap_;

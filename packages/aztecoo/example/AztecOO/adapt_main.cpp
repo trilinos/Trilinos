@@ -13,6 +13,7 @@
 #define __cplusplus
 #endif
 #include "Epetra_SerialComm.h"
+#include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
@@ -138,21 +139,22 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_output, 0);
   //solver.SetAztecOption(AZ_graph_fill, 2);
   solver.SetAztecOption(AZ_overlap, 0);
+  //solver.SetAztecOption(AZ_reorder, 0);
   //solver.SetAztecOption(AZ_poly_ord, 9);
   solver.SetAztecParam(AZ_ilut_fill, 1.0);
-  //solver.SetAztecParam(AZ_drop, 0.0);
-  //double rthresh = 1.0;
+  solver.SetAztecParam(AZ_drop, 0.0);
+  //double rthresh = 1.01;
   //cout << "Rel threshold = " << rthresh << endl;
   //solver.SetAztecParam(AZ_rthresh, rthresh);
   //double athresh = 1.0e-2;
   //cout << "Abs threshold = " << athresh << endl;
   //solver.SetAztecParam(AZ_athresh, athresh);
 
-  solver.SetAztecOption(AZ_conv, AZ_noscaled);
-  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e12);
+  //solver.SetAztecOption(AZ_/conv, AZ_noscaled);
+  //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e12);
 
 
-  int Niters = 200;
+  int Niters = 400;
   solver.SetAztecOption(AZ_kspace, Niters);
   
   double norminf = A.NormInf();
@@ -162,26 +164,31 @@ int main(int argc, char *argv[])
 	 << "\n One-norm of A before scaling = " << normone<< endl << endl;
 
 
-    if (bilu) {
-      int NumTrials = 3;
-      double athresholds[] = {0.0, 1.0E-14, 1.0E-3};
-      double rthresholds[] = {0.0, 1.0E-14, 1.0E-3};
-      double condestThreshold = 1.0E16;
-      double maxFill = 4.0;
-      int maxKspace = 4*Niters;
-      solver.SetAdaptiveParams(NumTrials, athresholds, rthresholds, condestThreshold, maxFill, maxKspace);
-    }
-    else {
-      int NumTrials = 7;
-      double athresholds[] = {0.0, 1.0E-12, 1.0E-12, 1.0E-5, 1.0E-5, 1.0E-2, 1.0E-2};
-      double rthresholds[] = {1.0, 1.0,     1.01,    1.0,    1.01,   1.01,   1.1   };
-      double condestThreshold = 1.0E16;
-      double maxFill = 4.0;
-      int maxKspace = 4*Niters;
-      solver.SetAdaptiveParams(NumTrials, athresholds, rthresholds, condestThreshold, maxFill, maxKspace);
-    }
+  if (bilu) {
+    int NumTrials = 3;
+    double athresholds[] = {0.0, 1.0E-14, 1.0E-3};
+    double rthresholds[] = {0.0, 1.0E-14, 1.0E-3};
+    double condestThreshold = 1.0E16;
+    double maxFill = 4.0;
+    int maxKspace = 4*Niters;
+    solver.SetAdaptiveParams(NumTrials, athresholds, rthresholds, condestThreshold, maxFill, maxKspace);
+  }
+  else {
+    int NumTrials = 7;
+    double athresholds[] = {0.0, 1.0E-12, 1.0E-12, 1.0E-5, 1.0E-5, 1.0E-2, 1.0E-2};
+    double rthresholds[] = {1.0, 1.0,     1.01,    1.0,    1.01,   1.01,   1.1   };
+    double condestThreshold = 1.0E16;
+    double maxFill = 4.0;
+    int maxKspace = 4*Niters;
+    solver.SetAdaptiveParams(NumTrials, athresholds, rthresholds, condestThreshold, maxFill, maxKspace);
+  }
 
-  solver.AdaptiveIterate(Niters, 20, 5.0e-10);
+  Epetra_Time timer(comm);
+  solver.AdaptiveIterate(Niters, 1, 5.0e-7);
+  double atime = timer.ElapsedTime();
+  if (comm.MyPID()==0) cout << "AdaptiveIterate total time = " << atime << endl;
+
+  
   norminf = A.NormInf();
   normone = A.NormOne();
   if (comm.MyPID()==0) 

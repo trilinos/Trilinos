@@ -5,6 +5,9 @@
 //==============================================================================
 Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill, int LevelOverlap)
   : Graph_(Graph),
+    DomainMap_(Graph.DomainMap()),
+    RangeMap_(Graph.RangeMap()),
+    Comm_(Graph.Comm()),
     OverlapGraph_(0),
     OverlapRowMap_(0),
     OverlapImporter_(0),
@@ -27,6 +30,9 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill,
 //==============================================================================
 Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph) 
   : Graph_(Graph.Graph_),
+    DomainMap_(Graph.DomainMap()),
+    RangeMap_(Graph.RangeMap()),
+    Comm_(Graph.Comm()),
     OverlapGraph_(Graph.OverlapGraph_),
     OverlapRowMap_(Graph.OverlapRowMap_),
     OverlapImporter_(Graph.OverlapImporter_),

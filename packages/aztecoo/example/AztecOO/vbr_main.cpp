@@ -162,23 +162,24 @@ int main(int argc, char *argv[])
   //problem->SetPDL(easy);
 
   //solver.SetAztecOption(AZ_precond, AZ_none);
-  //solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  solver.SetAztecOption(AZ_precond, AZ_Jacobi);
   //solver.SetAztecOption(AZ_precond, AZ_ls);
   //solver.SetAztecOption(AZ_scaling, 8);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
+  //solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
   //solver.SetAztecOption(AZ_output, 0);
-  //solver.SetAztecOption(AZ_graph_fill, 2);
+  solver.SetAztecOption(AZ_graph_fill, 1);
   //solver.SetAztecOption(AZ_overlap, 1);
-  //solver.SetAztecOption(AZ_poly_ord, 10);
+  //solver.SetAztecOption(AZ_poly_ord, 1);
   //solver.SetAztecParam(AZ_ilut_fill, 2.0);
   //solver.SetAztecParam(AZ_drop, 0.1);
-  //solver.SetAztecParam(AZ_rthresh, 1e-12);
-  //solver.SetAztecParam(AZ_athresh, 1e-12);
+  //solver.SetAztecParam(AZ_rthresh, 1e-3);
+  //solver.SetAztecParam(AZ_athresh, 1e-3);
 
   //solver.SetAztecOption(AZ_reorder, 2);
 
-  int Niters = 1200;
+  int Niters = 500;
   solver.SetAztecOption(AZ_kspace, Niters);
   double norminf = A.NormInf();
   double normone = A.NormOne();

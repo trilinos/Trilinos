@@ -7,9 +7,11 @@
 #include "Epetra_MultiVector.h"
 
 //==============================================================================
-Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Epetra_CrsMatrix &A, const Ifpack_IlukGraph & Graph) 
-  : A_(A),
-    Graph_(Graph),
+Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph) 
+  : Graph_(Graph),
+    DomainMap_(Graph.DomainMap()),
+    RangeMap_(Graph.RangeMap()),
+    Comm_(Graph.Comm()),
     UseTranspose_(false),
     Allocated_(false),
     ValuesInitialized_(false),
@@ -27,8 +29,10 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Epetra_CrsMatrix &A, const Ifpack_IlukGra
 
 //==============================================================================
 Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix) 
-  : A_(FactoredMatrix.A_),
-    Graph_(FactoredMatrix.Graph_),
+  : Graph_(FactoredMatrix.Graph_),
+    DomainMap_(FactoredMatrix.DomainMap_),
+    RangeMap_(FactoredMatrix.RangeMap_),
+    Comm_(FactoredMatrix.Comm_),
     UseTranspose_(FactoredMatrix.UseTranspose_),
     Allocated_(FactoredMatrix.Allocated_),
     ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
@@ -76,7 +80,7 @@ Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
 }
 
 //==========================================================================
-int Ifpack_CrsRiluk::InitValues() {
+int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
 
   // if (!Allocated()) return(-1); // This test is not needed at this time.  All constructors allocate.
 
@@ -88,12 +92,12 @@ int Ifpack_CrsRiluk::InitValues() {
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
-  Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A_;
+  Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A;
 
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
   
   OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
-  OverlapA->Import(A_, *Graph_.OverlapImporter(), Insert);
+  OverlapA->Import(A, *Graph_.OverlapImporter(), Insert);
   OverlapA->TransformToLocal();
   }
 
@@ -502,8 +506,8 @@ int Ifpack_CrsRiluk::Condest(bool Trans, double & ConditionNumberEstimate) const
     return(0);
   }
   // Create a vector with all values equal to one
-  Epetra_Vector Ones(A_.RowMap());
-  Epetra_Vector OnesResult(Ones);
+  Epetra_Vector Ones(DomainMap());
+  Epetra_Vector OnesResult(RangeMap());
   Ones.PutScalar(1.0);
 
   EPETRA_CHK_ERR(Solve(Trans, Ones, OnesResult)); // Compute the effect of the solve on the vector of ones
