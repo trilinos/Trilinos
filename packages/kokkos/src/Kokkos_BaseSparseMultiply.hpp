@@ -267,7 +267,7 @@ namespace Kokkos {
       haveValues_(source.haveValues_),
       hasUnitDiagonal_(source.hasUnitDiagonal_),
       hasClassicHbStructure_(source.ClassicHbStructure_),
-      hasClassicHbValues_(sourceClassicHbValues._),
+      hasClassicHbValues_(source.ClassicHbValues._),
       numRows_(source.numRows_),
       numCols_(source.numCols_),
       numRC_(source.numRC_),
@@ -289,9 +289,9 @@ namespace Kokkos {
   void BaseSparseMultiply<OrdinalType, ScalarType>::copyProfile() {
 
     if (profile_!=0) {
-      OrdinalType * old_profiles = profiles_;
-      profiles_ = new OrdinalType*[NumRC_];
-      copyOrdinals(numRC_, old_profiles, profiles_);
+      OrdinalType * old_profiles = profile_;
+      profile_ = new OrdinalType*[numRC_];
+      copyOrdinals(numRC_, old_profiles, profile_);
     }
   }
 
@@ -310,8 +310,8 @@ namespace Kokkos {
 	OrdinalType offset = 0;
 	for (OrdinalType i=0; i< numRC_; i++) {
 	  indices_[i] = allIndices_+offset;
-	  copyOrdinals(profiles_[i], tmp_indices_[i], indices_[i]);
-	  offset += profiles_[i];
+	  copyOrdinals(profile_[i], tmp_indices[i], indices_[i]);
+	  offset += profile_[i];
 	}
 	hasClassicHbStructure_ = true;
       }
@@ -334,8 +334,8 @@ namespace Kokkos {
 	OrdinalType offset = 0;
 	for (OrdinalType i=0; i< numRC_; i++) {
 	  values_[i] = allValues_+offset;
-	  copyScalars(profiles_[i], tmp_values_[i], values_[i]);
-	  offset += profiles_[i];
+	  copyScalars(profile_[i], tmp_values[i], values_[i]);
+	  offset += profile_[i];
 	}
 	hasClassicHbValues_ = true;
       }
@@ -566,7 +566,7 @@ namespace Kokkos {
 	  yp[curIndices[j]] += curValues[j] * xp[i];
       }
     }
-    updateFlops(costOfMatVec_);
+    updateFlops(this->costOfMatVec_);
     return(0);
   }
 
@@ -637,7 +637,7 @@ namespace Kokkos {
 	}
       }
     }
-    updateFlops(costOfMatVec_);
+    updateFlops(this->costOfMatVec_);
     return(0);
   }
 
@@ -702,7 +702,7 @@ namespace Kokkos {
 	}
       }
     }
-    updateFlops(costOfMatVec_ * ((double) numVectors));
+    updateFlops(this->costOfMatVec_ * ((double) numVectors));
     return(0);
   }
   //==============================================================================

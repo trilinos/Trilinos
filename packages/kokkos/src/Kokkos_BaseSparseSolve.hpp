@@ -288,9 +288,9 @@ namespace Kokkos {
   void BaseSparseSolve<OrdinalType, ScalarType>::copyProfile() {
 
     if (profile_!=0) {
-      OrdinalType * old_profiles = profiles_;
-      profiles_ = new OrdinalType*[NumRC_];
-      copyOrdinals(numRC_, old_profiles, profiles_);
+      OrdinalType * old_profiles = profile_;
+      profile_ = new OrdinalType*[numRC_];
+      copyOrdinals(numRC_, old_profiles, profile_);
     }
   }
 
@@ -309,8 +309,8 @@ namespace Kokkos {
 	OrdinalType offset = 0;
 	for (OrdinalType i=0; i< numRC_; i++) {
 	  indices_[i] = allIndices_+offset;
-	  copyOrdinals(profiles_[i], tmp_indices_[i], indices_[i]);
-	  offset += profiles_[i];
+	  copyOrdinals(profile_[i], tmp_indices[i], indices_[i]);
+	  offset += profile_[i];
 	}
       }
     }
@@ -332,8 +332,8 @@ namespace Kokkos {
 	OrdinalType offset = 0;
 	for (OrdinalType i=0; i< numRC_; i++) {
 	  values_[i] = allValues_+offset;
-	  copyScalars(profiles_[i], tmp_values_[i], values_[i]);
-	  offset += profiles_[i];
+	  copyScalars(profile_[i], tmp_values[i], values_[i]);
+	  offset += profile_[i];
 	}
       }
     }
@@ -604,7 +604,7 @@ namespace Kokkos {
 	}
       }
     }
-    updateFlops(costOfSolve_);
+    updateFlops(this->costOfSolve_);
     return(0);
   }
 
@@ -718,7 +718,7 @@ namespace Kokkos {
 	}
       }
     }
-    updateFlops(costOfSolve_ * ((double) numVectors));
+    updateFlops(this->costOfSolve_ * ((double) numVectors));
     return(0);
   }
 

@@ -385,7 +385,7 @@ namespace Kokkos {
 	curEntries += curNumEntries;	
       }
     }
-    updateFlops(costOfMatVec_);
+    updateFlops(this->costOfMatVec_);
     return(0);
   }
 
@@ -452,7 +452,7 @@ namespace Kokkos {
 	curEntries += curNumEntries;
       }
     }
-    updateFlops(costOfMatVec_ * ((double) numVectors));
+    updateFlops(this->costOfMatVec_ * ((double) numVectors));
     return(0);
   }
 
