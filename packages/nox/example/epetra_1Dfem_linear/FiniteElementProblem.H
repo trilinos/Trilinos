@@ -28,10 +28,9 @@ class FiniteElementProblem {
 public:
 
   // Constructor
-  FiniteElementProblem::FiniteElementProblem(int NumGlobalElements, 
-					     Epetra_Comm& Comm);
+  FiniteElementProblem(int NumGlobalElements, Epetra_Comm& Comm);
   // Dstructor
-  FiniteElementProblem::~FiniteElementProblem();
+  ~FiniteElementProblem();
 
   // Evaluates the function (RHS) and/or the Jacobian using the solution 
   // values in solnVector.
