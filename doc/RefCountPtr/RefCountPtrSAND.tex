@@ -1,0 +1,247 @@
+\documentclass[pdf,ps2pdf,11pt]{SANDreport}
+\usepackage{pslatex}
+
+%Local stuff
+\usepackage{graphicx}
+\usepackage{latexsym}
+\input{rab_commands}
+
+\newtheorem{commandment}{Commandment}
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+
+\title{\center
+{\Huge\bf RefCountPtr}\\[1.5ex]
+A Smart Reference-Counted Pointer Class for Automatic Dynamic
+Memory Management in C++.
+}
+\author{
+Roscoe A. Bartlett \\ Optimization/Uncertainty Estim \\
+Sandia National Laboratories\footnote{
+Sandia is a multiprogram laboratory operated by Sandia Corporation, a
+Lockheed-Martin Company, for the United States Department of Energy
+under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
+}
+\date{}
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2003-xxx}
+\SANDprintDate{October 2003}
+\SANDauthor{
+Roscoe A. Bartlett \\ Optimization/Uncertainty Estim
+}
+
+% ---------------------------------------------------------------------------- %
+% The following definitions are optional. The values shown are the default
+% ones provided by SANDreport.cls
+%
+\SANDreleaseType{Unlimited Release}
+%\SANDreleaseType{Not approved for release outside Sandia}
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+%\SANDsupersed{SAND1901-0001}{January 1901}
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+
+\maketitle
+
+% ------------------------------------------------------------------------ %
+% An Abstract is required for SAND reports
+%
+
+%
+\begin{abstract}
+%
+Dynamic memory management in C++ is one of the most common areas of
+difficulty for amateur and expert C++ developers alike.  The improper
+use of \texttt{new} and \texttt{delete} is arguably the most common
+cause (followed by indexing past array bounds) of of incorrect program
+behavior and segmentation faults in C++ programs.  Here we describe a
+very simple templated concrete C++ class called \texttt{RefCountPtr<>}
+the combines the concepts of a smart pointer and reference counting to
+build a low-overhead but effective means for simplifying dynamic
+memory management.  We discuss the proper use of this new data type
+and how it relates to the builtin C++ data types and other
+user-defined data types.
+%
+\end{abstract}
+%
+
+% ------------------------------------------------------------------------ %
+% An Acknowledgement section is optional but important, if someone made
+% contributions or helped beyond the normal part of a work assignment.
+% Use \section* since we don't want it in the table of context
+%
+\clearpage
+\section*{Acknowledgement}
+The author would like to thank ...
+
+The format of this report is based on information found
+in~\cite{Sand98-0730}.
+
+% ------------------------------------------------------------------------ %
+% The table of contents and list of figures and tables
+% Comment out \listoffigures and \listoftables if there are no
+% figures or tables. Make sure this starts on an odd numbered page
+%
+\clearpage
+\tableofcontents
+\listoffigures
+%\listoftables
+
+% ---------------------------------------------------------------------- %
+% An optional preface or Foreword
+%\clearpage
+%\section{Preface}
+%Although muggles usually have only limited experience with
+%magic, and many even dispute its existence, it is worthwhile
+%to be open minded and explore the possibilities.
+
+% ---------------------------------------------------------------------- %
+% An optional executive summary
+%\clearpage
+%\section{Summary}
+%Once a certain level of mistrust and scepticism has
+%been overcome, magic finds many uses in todays science
+%and engineering. In this report we explain some of the
+%fundamental spells and instruments of magic and wizardry. We
+%then conclude with a few examples on how they can be used
+%in daily activities at national Laboratories.
+
+% ---------------------------------------------------------------------- %
+% An optional glossary. We don't want it to be numbered
+%\clearpage
+%\section*{Nomenclature}
+%\addcontentsline{toc}{section}{Nomenclature}
+%\begin{itemize}
+%\item[alohomora]
+%spell to open locked doors and containers
+%\end{itemize}
+
+% ---------------------------------------------------------------------- %
+% This is where the body of the report begins; usually with an Introduction
+%
+\SANDmain % Start the main part of the report
+
+\input{RefCountPtrBody}
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\bibliographystyle{plain}
+\bibliography{references}
+\addcontentsline{toc}{section}{References}
+
+% ---------------------------------------------------------------------- %
+% Appendices should be stand-alone for SAND reports. If there is only
+% one appendix, put \setcounter{secnumdepth}{0} after \appendix
+%
+\appendix
+%\input{apdx_RefCountPtrDecl}
+\input{apdx_RefCountPtrQuickStart}
+
+\begin{SANDdistribution}
+% External
+%\SANDdistExternal{1}{} Omar Ghattas \\ Carnegie Mellon University\\5000 Forms Ave.\\Pittsburgh, PA 15213
+%\SANDdistExternal{1}{} Larry Biegler \\ Department Chemeical Engineering\\Carnegie Mellon University\\5000 Forms Ave.\\Pittsburgh, PA 15213
+\SANDdistExternal{1}{} Carl Laird \\ Department Chemeical Engineering\\Carnegie Mellon University\\5000 Forms Ave.\\Pittsburgh, PA 15213
+\SANDdistExternal{1}{} Matthias Heinkenschloss \\ Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Bill Symes\\Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Tony Padula\\Department of Computational and Applied Mathematics\\MS 134 Rice University\\
+6100 S. Main Street\\Houston, TX 77005-1892
+\SANDdistExternal{1}{} Mark Gockenbach \\ Department of Mathematical Sciences\\Michigan Technological University\\ 
+1400 Townsend Drive\\Houghton, Michigan 49931-1295, U.S.A.
+\SANDdistExternal{1}{} George Biros \\ Department of Applied Mechanics and Mechanical Engineering\\University of Pennsylvania\\
+220 Towne Building 220 S. 33rd St.\\Philadelphia, PA 19104-6315, USA 
+% Sandia Line
+%\SANDdistInternal{1}{0847}{Bill Camp}{9200}
+%\SANDdistInternal{1}{0847}{Sudip Dosanjh}{9233}
+% 9211
+\SANDdistInternal{1}{0847}{Scott Mitchell}{9211}
+\SANDdistInternal{1}{1110}{Roscoe Bartlett}{9211}
+\SANDdistInternal{1}{1110}{Scott Collis}{9211}
+\SANDdistInternal{1}{0847}{Bart van Bloemen Waanders}{9211}
+\SANDdistInternal{1}{0847}{Mike Eldred}{9211}
+\SANDdistInternal{1}{0819}{Tim Trucano}{9211}
+\SANDdistInternal{1}{0847}{Tony Giunta}{9211}
+\SANDdistInternal{1}{0947}{Laura Swiler}{9211}
+% 9214
+\SANDdistInternal{1}{9217}{Mark Adams}{9214}
+\SANDdistInternal{1}{1110}{Pavel Bochev}{9214}
+\SANDdistInternal{1}{1110}{Todd Coffey}{9214}
+\SANDdistInternal{1}{1110}{David Day}{9214}
+\SANDdistInternal{1}{1110}{John Delaurentis}{9214}
+\SANDdistInternal{1}{1110}{Michael Heroux}{9214}
+\SANDdistInternal{1}{1110}{Ulrich Hetmaniuk}{9214}
+\SANDdistInternal{1}{9217}{Jonathan Hu}{9214}
+\SANDdistInternal{1}{1110}{Richard Lehoucq}{9214}
+\SANDdistInternal{1}{1110}{Louis Romero}{9214}
+\SANDdistInternal{1}{1110}{David Ropp}{9214}
+\SANDdistInternal{1}{1110}{Heidi Thornquist}{9214}
+\SANDdistInternal{1}{9217}{Raymond Tuminaro}{9214}
+\SANDdistInternal{1}{1110}{James Willenbring}{9214}
+\SANDdistInternal{1}{1110}{David Womble}{9214}
+% 8962
+\SANDdistInternal{1}{9217}{Steve Thomas}{8962}
+\SANDdistInternal{1}{9217}{Paul Boggs}{8962}
+\SANDdistInternal{1}{9217}{Kevin Long}{8962}
+\SANDdistInternal{1}{9217}{Patricia Hough}{8962}
+\SANDdistInternal{1}{9217}{Tamara Kolda}{8962}
+\SANDdistInternal{1}{9217}{Monica Martinez-Canales}{8962}
+\SANDdistInternal{1}{9217}{Pamela Williams}{8962}
+\SANDdistInternal{1}{9217}{Victoria Howle}{8962}
+% Sandia Misc
+\SANDdistInternal{1}{1110}{William Hart}{9215}
+\SANDdistInternal{1}{0847}{Steve Wojtkiewicz}{9124}
+% Xyce developers
+\SANDdistInternal{1}{0316}{Eric Keiter}{9233}
+\SANDdistInternal{1}{0316}{Scott Hutchinson}{9233}
+% Premo developers
+\SANDdistInternal{1}{0316}{Curt Ober}{9233}
+\SANDdistInternal{1}{0316}{Tom Smith}{9233}
+% Main Sierra developers
+\SANDdistInternal{1}{9143}{Carter Edwards}{0827}
+\SANDdistInternal{1}{9143}{James Stewart}{0826}
+% Main Nevada developers
+\SANDdistInternal{1}{0819}{Ricard Drake}{9231}
+% NOX/LOCA developers
+\SANDdistInternal{1}{0316}{Robert Hoekstra}{9233}
+\SANDdistInternal{1}{0316}{Roger Pawlowski}{9233}
+\SANDdistInternal{1}{1110}{Eric Phipps}{9233}
+\SANDdistInternal{1}{1110}{Andrew Salinger}{9233}
+% Other Trilinos developers
+\SANDdistInternal{1}{0826}{Alan Williams}{8961}
+\SANDdistExternal{1}{}{Kendall Stanley}{}
+% Housekeeping copies necessary for every unclassified report:
+\SANDdistInternal{1}{9018}{Central Technical Files}{8945-1}
+\SANDdistInternal{2}{0899}{Technical Library}{9610}
+\SANDdistInternal{2}{0612}{Review \& Approval Desk}{4916}
+% If report has a Patent Caution or Patent Interest, add this:
+%\SANDdistInternal{3}{0161}{Patent and Licensing Office}{4916}
+\end{SANDdistribution}
+
+\end{document}

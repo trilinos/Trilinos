@@ -1,0 +1,524 @@
+%
+\section{Introduction to \texttt{RefCountPtr<>}}
+%
+
+Described here is the templated class \texttt{Teuchos::RefCountPtr<>}
+and a set of global template functions for implementing automatic
+garbage collection in C++ using smart reference counted pointers.
+This design is based partly on the interface for
+\texttt{std::auto\_ptr<>} and Items 28 and 29 in "More Effective C++"
+by Scott Myers [???]. In short, using this class allows one client to
+dynamically create an object (using \texttt{new} for instance), pass
+the object around to many other clients which also need to access the
+object and then never requiring any client to explicitly call delete.
+The object will (almost magically) be deleted when all of the clients
+remove their references to it.  This is very similiar to the type of
+garbage collection that is in languages like Perl and Java.  There
+are, however, some pathological cases (such as the classic problem of
+circular references) where \texttt{RefCountPtr<>} will result in a
+memory leak but these situations be avoided by planing ahead.
+However, realizing the potential of hands-off garbage collection with
+\texttt{RefCountPtr<>} requires following some rules.  These rules are
+spelled out in the form of commandments in the following discussion.
+
+The following class hierarchy is used to demonstrate this smart
+pointer design.
+%
+{\scriptsize\begin{verbatim}
+class A { public: virtual ~A(){} A& operator=(const A&){} virtual void f(){} };
+class B1 : virtual public A {};
+class B2 : virtual public A {};
+class C : virtual public B1, virtual public B2 {};
+class D {};
+class E : public D {};
+\end{verbatim}}
+%
+Note that the classes \texttt{A}, \texttt{B1}, \texttt{B2} and
+\texttt{C} are polymorphic (with multiple inheritance using virtual
+base classes) while the classes \texttt{D} and \texttt{E} are not.  In
+the following description, all of the code examples are written as
+though there was a \texttt{using namespace Teuchos;} declaration is
+the current scope or all of the code resides in the
+\texttt{Teuchos} namespace.
+
+The complete C++ declarations for all of the code discussed here are
+shown in Figure \ref{rcp:fig:decl}.  A short quick-start/reference for
+\texttt{RefCountPtr<>} is contained in Appendix
+\ref{rcp:apdx:quickstart}.
+
+\begin{figure}
+{\scriptsize\begin{verbatim}
+namespace Teuchos {
+
+enum ENull { null };
+
+template<class T>
+class DeallocDelete { public: void free( T* ptr ) { if(ptr) delete ptr; }  };
+
+template<class T>
+class RefCountPtr {
+public:
+  typedef T  element_type;
+  RefCountPtr( ENull null_arg = null );
+  RefCountPtr(const RefCountPtr<T>& r_ptr);
+  template<class T2> RefCountPtr(const RefCountPtr<T2>& r_ptr);
+  ~RefCountPtr();
+  RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
+  T* operator->() const;
+  T& operator*() const;
+  T* get() const;
+  T* release();
+  int count() const;
+  void set_has_ownership();
+  bool has_ownership() const;
+  bool shares_resource(const RefCountPtr<T>& r_ptr) const;
+private:
+  ...
+};
+
+template<class T>            RefCountPtr<T> rcp( T* p );
+template<class T>            RefCountPtr<T> rcp( T* p, bool owns_mem);
+template<class T
+  ,class Dealloc_T>          RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T2, class T1> RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+
+}
+\end{verbatim}}
+\caption{\label{rcp:fig:decl}
+Declaration of C++ code for \texttt{RefCountPtr<>} and supporting functions.}
+\end{figure}
+
+%
+\subsection{Initializing \texttt{RefCountPtr} Objects}
+%
+
+A smart reference counted pointer to a dynammicallly allocated object
+(of type \texttt{A} for instance) is initialized as follows
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<A>             a_ptr   = rcp(new A); // A       *       a_ptr   = new A;
+RefCountPtr<const A>       ca_ptr  = rcp(new A); // const A *       ca_ptr  = new A;
+const RefCountPtr<A>       a_cptr  = rcp(new A); // A       * const a_cptr  = new A;
+const RefCountPtr<const A> ca_cptr = rcp(new A); // const A * const ca_cptr = new A;
+\end{verbatim}}
+%
+The above code shows how all the various combinations for const or
+non-const pointers to const or non-const objects are expressed (this
+is explained in more detail in Item 28 in [???]).  There is no
+automatic conversion from raw pointers to smart pointers for many good
+reasons (again, see Item 28 in [???]).  To allow such an implicit
+conversion almost guarentees memory allocation/deallocation errors
+will occur.  Therefore, the following templated function
+%
+{\scriptsize\begin{verbatim}
+template<class T> RefCountPtr<T> rcp(T* p);
+\end{verbatim}}
+%
+\noindent{}must be used to initialize a smart pointer.
+The reason for this is somewhat complicated but it is related to
+multiple inheritance and virtual base classes.
+
+\begin{commandment}\label{rcp:cmd:rcp-new}
+Thou shall only call \texttt{new} directly
+in the call to \texttt{rcp(...)} to create a dynamically allocated
+object that is to be managed by a \texttt{RefCountPtr<>} object.
+\end{commandment}
+
+The only case where the template function \texttt{rcp<>(...)} should
+not be used to create a smart pointer is the initialization to
+\texttt{NULL}.  One way to initialize a null smart pointer is to just
+use the default constructor as
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<A> a_ptr;   // A a_ptr = NULL:
+\end{verbatim}}
+%
+One of the big pluses for using \texttt{RefCountPtr<>} over raw
+pointers (independent of the reference counting and garbage collection
+features) is this default initialization to \texttt{NULL}.
+To be more explicit about the initialization to \texttt{NULL} (and for
+passing a null pointer into a function), a special constructor is
+included which takes the enumeration value \texttt{null}.  For example
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<A> a_ptr = null; // i.e. A a_ptr = NULL:
+\end{verbatim}}
+%
+
+\begin{commandment}
+Thou shall only create a \texttt{NULL}
+\texttt{RefCountPtr<>} object by using the default constructor
+or by using the \texttt{null} enum (and its associated special
+constructor).
+\end{commandment}
+
+Another situation that commonly occurs is when an object is allocated
+on the stack, but must be passed to a client that only accepts a
+\texttt{RefCountPtr<>} object.  For example, suppose that there is a
+class \texttt{Foo} that is declared as follows
+%
+{\scriptsize\begin{verbatim}
+class Foo {
+public:
+    Foo(
+    void f() { a_->f() };
+private:
+    RefCountPtr<A>  a_;
+};
+\end{verbatim}}
+%
+The following code fragment shows how to allocate an object of concrete
+type \texttt{C} on the stack and then pass this object into the constructor
+for \texttt{Foo}
+%
+{\scriptsize\begin{verbatim}
+C c;
+Foo foo(rcp(&c,false));
+\end{verbatim}}
+%
+In this example, the templated function
+%
+{\scriptsize\begin{verbatim}
+template<class T> RefCountPtr<T> rcp( T* p, bool owns_mem );
+\end{verbatim}}
+%
+\noindent{}is used with the parameter \texttt{owns\_mem} set to
+\texttt{false}.  In this example, when the \texttt{foo} object
+goes out of scope (and its \texttt{Foo::a\_} member is deleted),
+\texttt{delete} will not be called on the underlying pointer and no
+memory error will occur.  For more specialized types of memory
+deallocation control see Section ???.
+
+\begin{commandment}
+Thou shall only pass a raw pointer for an object that is
+\underline{not} allocated by \texttt{new} (e.g.~allocated on the stack) into a
+\texttt{RefCountPtr<>} object by using the templated function
+\texttt{rcp<T>(T* p, bool owns\_mem)} and setting \texttt{owns\_mem} set
+to \texttt{false}.
+\end{commandment}
+
+%
+\subsection{Accessing the underlying object in a \texttt{RefCountPtr<>}}
+%
+
+Through the magic of the overloaded member operator functions
+\texttt{RefCountPtr<T>::operator->()} and
+\texttt{RefCountPtr<T>::operator*()}, the underlying object being reference
+counted can be accessed exactly the same as for raw pointers such as
+follows
+
+{\scriptsize\begin{verbatim}
+a_ptr->f();
+(*a_ptr).f();
+\end{verbatim}}
+
+Therefore, using a smart reference counted pointer is very similar to
+using a raw C++ pointer.  Some things you can do with smart
+reference-counted pointers that are similar as for raw pointers are
+
+{\scriptsize\begin{verbatim}
+RefCountPtr<A>
+  a_ptr1     = rcp(new A),   // Initialize them from a raw pointer from new
+  a_ptr2     = rcp(new A);   // ""
+A *ra_ptr1   = new A,        // ""
+  *ra_ptr2   = new A;        // ""
+a_ptr1       = rcp(ra_ptr2); // Assign from a raw pointer (only do this once!)
+a_ptr2       = a_ptr1;       // Assign one smart pointer to another
+a_ptr1       = rcp(ra_ptr1); // Assign from a raw pointer (only do this once!)
+a_ptr1->f();                 // Access a member using ->
+ra_ptr1->f();                // ""
+*a_ptr1      = *a_ptr2;      // Dereference the objects and assign
+*ra_ptr1     = *ra_ptr2;     // "" 
+\end{verbatim}}
+
+What makes smart pointers different however is that the above piece of code
+does not create any memory leaks that would have otherwise occurred
+if \texttt{a\_ptr1} and \texttt{a\_ptr2} where raw C++ pointers.
+
+\textbf{Warning!} It is not advisable to create a raw pointer using
+\texttt{new} first and then pass it into a \texttt{RefCountPtr<>} in
+ad different statement as shown above (which breaks Commandment
+\ref{rcp:cmd:rcp-new}) unless you are 100\% sure of what you are
+doing.  Subtle issues with multiple inheritance can result in a
+runtime segmentation fault on certain platforms.  Breaking Commandment
+\ref{rcp:cmd:rcp-new} just increases the likelihood that a programming
+error will occur.
+
+However, these smart reference counted pointers can not be used
+everywhere a raw pointer can be.  For instance the following
+statements will not compile
+
+{\scriptsize\begin{verbatim}
+a_ptr1++;           // Error, pointer arithmetic ++, --, +, - etc. not defined!
+a_ptr1 == ra_ptr1;  // Error, comparision operators ==, !=, <=, >= etc. not defined!
+\end{verbatim}}
+
+Since a smart reference-counted pointer can not be used everywhere a
+raw C++ pointer can be, there is a means for getting at the raw C++
+pointer with the \texttt{RefCountPtr<T>::get()} function (same as with
+\texttt{std::auto\_ptr<T>::get()}).  For example, to check if two smart pointer
+objects contain pointers to the same object you would check:
+
+{\scriptsize\begin{verbatim}
+if( a_ptr1.get() == a_ptr2.get() )
+    std::cout << "a_ptr1 and a_ptr2 point to the same object\n";
+\end{verbatim}}
+
+The goal of \texttt{RefCountPtr<>} is not to hide the fact that you
+are using smart pointers over raw pointers and therefore not all raw
+pointer syntax is allowed.
+
+%
+\subsection{Conversion of \texttt{RefCountPtr<>} objects}
+%
+
+The conversion of smart pointers according to existing raw C++ pointer
+conversion rules (e.g.~from derived to base classes, from non-const to
+const) is just as easy as with raw C++ pointers.  For raw C++
+pointers, the compiler will implicitly cast up an inheritance hiearchy
+(i.e. \texttt{*B1 => *A} or \texttt{*E => *D}).  For smart reference
+counted pointers this is just as easy.  For example, the below code
+compiles and runs just fine
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<C>  c_ptr  = rcp(new C);
+RefCountPtr<A>  a_ptr  = c_ptr;
+RefCountPtr<B1> b1_ptr = c_ptr;
+RefCountPtr<D>  d_ptr  = rcp(new E);
+\end{verbatim}}
+%
+To perform other non-implicit type conversions with pointers such as
+\texttt{static\-\_cast<>}, \texttt{const\-\_cast<>} and \texttt{dynamic\-\_cast<>} there are
+corresponding non-member template functions
+\texttt{rcp\-\_static\-\_cast<>(...)}, \texttt{rcp\-\_const\-\_cast<>(...)} and
+\texttt{rcp\-\_dynamic\-\_cast<>(...)} respectively with the following prototypes:
+%
+{\scriptsize\begin{verbatim}
+template<class T2, class T1>
+RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
+
+template<class T2, class T1>
+RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
+
+template<class T2, class T1>
+RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+\end{verbatim}}
+%
+The usage of these conversion template functions looks very similar to
+the syntax with raw C++ pointers.  For example
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<const C>   c_ptr   = rcp(new C);
+RefCountPtr<const A>   ca_ptr  = c_ptr;
+RefCountPtr<const C>   cc_ptr1 = rcp_dynamic_cast<const C>(ca_ptr);  // Safe!
+RefCountPtr<const C>   cc_ptr2 = rcp_static_cast<const C>(ca_ptr);   // Unsafe!
+RefCountPtr<A>         a_ptr   = rcp_const_cast<A>(ca_ptr);          // Cast away const
+\end{verbatim}}
+%
+Just as with the case with the built-in C++ conversion operators, some
+types of conversions will not compile.  For example
+%
+{\scriptsize\begin{verbatim}
+RefCountPtr<C>       c_ptr1 = rcp(new C);
+RefCountPtr<A>       a_ptr  = c_ptr;
+RefCountPtr<const C> c_ptr2 = rcp_dynamic_cast<const C>(a_ptr);                      // Error!
+RefCountPtr<const C> c_ptr3 = rcp_dynamic_cast<const C>(const_cast<const A>(a_ptr)); // Okay!
+RefCountPtr<D>  d_ptr  = rcp(new D);
+RefCountPtr<E>  e_ptr1 = rcp_dynamic_cast<E>(d_ptr); // Error, D and E are not polymorphic!
+RefCountPtr<E>  e_ptr2 = rcp_static_cast<E>(d_ptr);  // Okay, but unchecked!
+\end{verbatim}}
+
+\begin{commandment}
+Thou shalt only cast between \texttt{RefCountPtr<>} objects
+using the above described templated conversion functions.
+\end{commandment}
+
+%
+\subsection{Accessing reference-count information}
+%
+
+\texttt{RefCountPtr<>} contains the member functions
+%
+{\scriptsize\begin{verbatim}
+template<class T> int  RefCountPtr<T>::count() const {...}
+template<class T> bool RefCountPtr<T>::has_ownership() const {...}
+\end{verbatim}}
+%
+\noindent{}which can be used to ascertain the status of a reference-counted
+object.  Specifically, if \texttt{ptr} is a \texttt{RefCountPtr<A>}
+object and \texttt{(ptr.count()==1 \&\& ptr.has\_ownership())==true}
+then the client that owns \texttt{ptr} (where \texttt{ptr} is perhaps
+as a private data member) can infer that it is the only client that
+has a reference to this object and therefore, this client is free to
+change the object freely without worry that such a change will affect
+another client.
+
+This type of information must be used very carefully but can be very
+helpful in simplifying the logic in cerain types of applications. If
+this type of logic is to be used then it must be documented very
+clearly since it is easy to falsely show a reference count higher than
+the number of clients that really own \texttt{RefCountPtr<>} objects to
+the reference-counted object.
+
+%
+\subsection{Customized Deallocation through templated \texttt{Dealloc} Policy Objects}
+%
+
+ToDo: Discuss this topic and (create and) discuss a default
+implementation where a RefCountPtr object is embeadded in the Dealloc
+object.
+
+%
+\section{The proper use of \texttt{RefCountPtr<>} and other C++ data types}
+%
+
+After the basics of \texttt{RefCountPtr<>} are understood its use is
+quite strightforward and this class can be used with any type of
+built-in or user-defined concrete or abstract data type.  Therefore,
+one may ask why \texttt{RefCountPtr<>} should not be used for all
+objects.  There is nothing stoping a developer from using
+\texttt{RefCountPtr<>} in this way but to do so would be overkill.
+The most compelling situation where \texttt{RefCountPtr<>} should be
+used is when a client needs to maintain a private data member to
+another object which is of an abstract type or is an object that is
+shared with other clients.  Note that \texttt{RefCountPtr<>} usually
+should not be used for built-in data types such as \texttt{int} or
+\texttt{double} unless there is a desire to allow another client to
+change the value remotely (which is rarely a good idea to allow in
+general).
+
+In this author's opinion, \texttt{RefCountPtr<>} should only be used
+to wrap an object in situations where the client has more than a
+transient relationship to the object.  An example of transient
+relationship with an object is one where the object is simpliy passed
+into and out of a function and no ``memory'' of the object resides
+after the function call finishes.  A non-transient relationship is one
+where a client maintains a private data member to an external object
+that may be shared by another client.
+
+ToDo: give some examples of good and bad uses of \texttt{RefCountPtr<>}
+
+%
+\subsection{Passing \texttt{RefCountPtr<>} and other types of objects to and from functions}
+%
+
+In some respects, the C++ language is a highly expressive programming
+language where the programmers intent for an interface or a function
+prototype can be decerned by just looking at the C++ declaration and
+not even needing to look at auxiliary documentation.  For example, if
+a reference or pointer argument into a function has the \texttt{const}
+qualifier, then a developer can automatically (and rightly) assume
+that that argument will not be changed within the implementation of
+the function.  The language tries to help enforce \texttt{const} but
+in the end, it is up to the implementer of a function to be true to
+the promise of the \texttt{const} modifier in the function prototype.
+
+There are other ways to take advantage of the language in a way that
+the general nature of arguments passed to and from a function can be
+largly discerned just by looking at the C++ prototype for the
+function.  The \texttt{const} qualifier just mentioned above is one of the language
+features which is self documenting but there are others.  Another
+example is passing arrays to and from functions.
+
+\begin{table}
+%
+%\fbox{
+\begin{minipage}{\textwidth}
+\begin{tabular}{|c|c|c|}
+\hline
+type
+& transitive
+& non-transitive \\
+\hline
+non-mutable object (required)
+& \texttt{S s} \{or\} \texttt{const S s} \{or\} \texttt{const S \&s}
+& \texttt{const RefCountPtr<const S> \&s} \\
+\hline
+non-mutable object (optional)
+& \texttt{const S *s}
+& \texttt{const RefCountPtr<const S> \&s} \\
+\hline
+mutable object
+& \texttt{S *s}
+& \texttt{const RefCountPtr<S> \&s} \\
+\hline
+non-mutable array of objects
+& \texttt{const S s[]}
+& \texttt{RefCountPtr<const S> s[]} \\
+\hline
+mutable array of objects
+& \texttt{S s[]}
+& \texttt{RefCountPtr<S> s[]} \\
+\hline
+\end{tabular}
+\begin{center}
+C++ declarations for passing small concrete (i.e.~with value
+sementics) objects to and from functions for various reasons (where
+\texttt{S} is a place holder for an actual built-in or user-defined
+data type).
+\end{center}
+\end{minipage}
+%} % end fbox
+%
+\\[5ex]
+%
+%\fbox{
+\begin{minipage}{\textwidth}
+\begin{tabular}{|c|c|c|}
+\hline
+type
+& transitive
+& non-transitive \\
+\hline
+non-mutable object (required)
+& \texttt{const A \&a}
+& \texttt{const RefCountPtr<const A> \&a} \\
+\hline
+non-mutable object (optional)
+& \texttt{const A *a}
+& \texttt{const RefCountPtr<const A> \&a} \\
+\hline
+mutable object
+& \texttt{S *s}
+& \texttt{const RefCountPtr<A> \&a} \\
+\hline
+non-mutable array of objects
+& \texttt{const A* a[]}
+& \texttt{RefCountPtr<const A> a[]} \\
+\hline
+mutable array of objects
+& \texttt{A* a[]}
+& \texttt{RefCountPtr<A> a[]} \\
+\hline
+\end{tabular}
+\begin{center}
+C++ declarations for passing abstract (i.e.~with reference or pointer
+sementics) or large concrete objects to and from functions for various
+reasons (where \texttt{A} is a place holder for an actual abstract C++
+base class).
+\end{center}
+\end{minipage}
+%} % end fbox
+%
+\caption{Declarations for arguments being passed into and out of C++ functions.}
+%
+\end{table}
+
+ToDo: Discuss why the arguments are passed as shown in the above
+tables.
+
+ToDo: Discuss why non-mutable transitive S can be (S s) or (const S s)
+or (const S \&s) and what the issues are.
+
+ToDo: Discuss why a pointer and not a non-const reference is used for
+ouput (mutable) arguments.
+
+ToDo: Discuss passing a \texttt{RefCountPtr<>} object to be initialized in a
+function.
+
+%
+\section{Summary}
+%
