@@ -551,6 +551,7 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
 
   MyMax = -DBL_MAX;
   MyMin = DBL_MAX;
+  MyAvg = 0.0;
 
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
@@ -577,6 +578,7 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
 
   MyMax = 0.0;
   MyMin = DBL_MAX;
+  MyAvg = 0.0;
 
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
