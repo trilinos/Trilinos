@@ -1,17 +1,17 @@
-# !/bin/sh
+#!/bin/sh
 # This script calls the EpetraTpetraProfile example multiple times, each time with a different dataset.
 # You should set the location of your build directory and the location of your hb files below.
 
-set BUILDHOME=~pmsexton/Trilinos/THESIS/packages/tpetra/example/EpetraTpetraProfile
-set DATAHOME=~pmsexton/HB_files
+DATAHOME="/home/pmsexton/HB_files"
+BUILDHOME="/home/pmsexton/Trilinos/THESIS_SERIAL/packages/tpetra/example/EpetraTpetraProfile"
 
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube27p_32n_natural.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube7p_64n_natural.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/defroll.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/DIE3D.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube27p_32n_natural.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube7p_64n_natural.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/defroll.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/DIE3D.hb
 $BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/goma_braze_npspg.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/hutch3.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/NIMROD2.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/RHPentium_new_rcm.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/hutch3.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/NIMROD2.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/RHPentium_new_rcm.hb
 $BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/small.hb
-#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/viscoelastic.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/viscoelastic.hb
